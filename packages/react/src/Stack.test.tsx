@@ -1,6 +1,7 @@
 /**
  * Stack — behavior scenarios from the component doc, one test each, in the doc's order.
- * Stack has no interactive behavior (a11y.role: none), so every scenario only asserts render.
+ * Stack has no interactive behavior (a11y.role: none): the two authored scenarios assert the
+ * semantics `element` renders, and every derived scenario only asserts render.
  */
 import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
@@ -15,6 +16,18 @@ function setup(given: Partial<StackProps> = {}) {
 }
 
 describe('Stack', () => {
+  it('nav-element-is-a-navigation-landmark', () => {
+    const { getByRole } = setup({ element: 'nav' });
+    expect(getByRole('navigation').getAttribute('data-ds')).toBe('Stack');
+  });
+
+  it('list-element-is-a-list', () => {
+    const { getByRole, getAllByRole } = setup({ element: 'ul' });
+    expect(getByRole('list').getAttribute('data-ds')).toBe('Stack');
+    // each child is wrapped in an `li`, so assistive technology counts the items
+    expect(getAllByRole('listitem')).toHaveLength(3);
+  });
+
   /* derived: a11y.role */
   it('renders', () => {
     const { container } = setup();

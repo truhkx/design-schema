@@ -1,4 +1,4 @@
-import { type ComponentPropsWithoutRef, type CSSProperties, type ReactNode, type Ref, type ReactElement } from 'react';
+import { type ComponentPropsWithoutRef, type CSSProperties, type ReactElement, type Ref } from 'react';
 import { cssVar, type TokenRef } from '@demo/tokens';
 import './Icon.css';
 
@@ -31,13 +31,16 @@ export type IconName =
   | 'file';
 export type IconSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
-/** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
-export type IconOverridableBinding = 'size' | 'color' | 'strokeWidth';
+/**
+ * Style bindings that can be overridden per instance. `strokeWidth` is locked: line glyphs stay
+ * legible at `xs` because they stroke at the focus-ring width, so it is not in this union (a
+ * consumer who must change it sets `--demo-icon-stroke-width` from their own CSS).
+ */
+export type IconOverridableBinding = 'size' | 'color';
 
 const OVERRIDE_HOOK: Record<IconOverridableBinding, string> = {
   size: '--demo-icon-size',
   color: '--demo-icon-color',
-  strokeWidth: '--demo-icon-stroke-width',
 };
 
 function overridesToStyle(overrides: Partial<Record<IconOverridableBinding, TokenRef | undefined>>): CSSProperties {
@@ -49,34 +52,37 @@ function overridesToStyle(overrides: Partial<Record<IconOverridableBinding, Toke
   return style as CSSProperties;
 }
 
+/* Only declared when the bundler defines it; never assumed. */
 declare const process: { env: Record<string, string | undefined> } | undefined;
 const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
 
 /**
- * Glyphs drawn on a 16×16 grid, keyed by `name`.
+ * Glyphs drawn on a 16×16 grid, keyed by `name` — one `<path>` each, with the `d` taken verbatim
+ * from `tools/icon-paths.json`, the one table every platform draws from (the SwiftUI paths and the
+ * reference PNGs in `tests/icon-snapshots/` are generated from it, and the SwiftUI gate compares
+ * pixels). To add or redraw a glyph, change that JSON, not this table.
  *
- * Line glyphs (check, dash, chevrons, close, plus, minus, external, search, arrows, calendar,
- * menu, list, grid, folder, file) are bare `<path>`/`<rect>` shapes and inherit the root
- * `<svg>`'s `fill="none" stroke="currentColor"`. Filled glyphs (the four status shapes, ellipsis,
- * play, pause) set `fill="currentColor" stroke="none"` on themselves; the status shapes are
- * single `fill-rule="evenodd"` paths whose inner mark (i, check, !, x) is a hole, so they read on
- * any surface without a second color. `list`'s bullet dots are filled the same way.
+ * Line glyphs are bare paths and inherit the root `<svg>`'s `fill="none" stroke="currentColor"`;
+ * `filled` glyphs (the four status shapes, ellipsis, play, pause) carry
+ * `fill="currentColor" stroke="none" fill-rule="evenodd"` themselves, so a status shape is a single
+ * path whose inner mark (i, check, !, ×) is a hole and reads on any surface without a second color.
  *
- * Other components render `<Icon name>`; nothing else should import this table.
+ * A module export: other components render `<Icon name>`, and nothing else imports this table.
  */
-export const paths: Record<IconName, ReactNode> = {
-  check: <path d="M3 8.5l3.5 3.5L13 5" />,
-  dash: <path d="M4 8h8" />,
-  'chevron-right': <path d="M6 3l5 5-5 5" />,
-  'chevron-down': <path d="M3 6l5 5 5-5" />,
-  'chevron-up': <path d="M3 10l5-5 5 5" />,
-  'chevron-left': <path d="M10 3L5 8l5 5" />,
-  close: <path d="M3 3l10 10M13 3L3 13" />,
-  plus: <path d="M8 3v10M3 8h10" />,
-  minus: <path d="M3 8h10" />,
+export const paths: Record<IconName, ReactElement> = {
+  check: <path data-part="glyph" d="M3 8.5l3.5 3.5L13 5" />,
+  dash: <path data-part="glyph" d="M4 8h8" />,
+  'chevron-right': <path data-part="glyph" d="M6 3l5 5-5 5" />,
+  'chevron-down': <path data-part="glyph" d="M3 6l5 5 5-5" />,
+  'chevron-up': <path data-part="glyph" d="M3 10l5-5 5 5" />,
+  'chevron-left': <path data-part="glyph" d="M10 3L5 8l5 5" />,
+  close: <path data-part="glyph" d="M3 3l10 10M13 3L3 13" />,
+  plus: <path data-part="glyph" d="M8 3v10M3 8h10" />,
+  minus: <path data-part="glyph" d="M3 8h10" />,
   /* circle-i */
   info: (
     <path
+      data-part="glyph"
       fill="currentColor"
       stroke="none"
       fillRule="evenodd"
@@ -86,6 +92,7 @@ export const paths: Record<IconName, ReactNode> = {
   /* circle-check */
   success: (
     <path
+      data-part="glyph"
       fill="currentColor"
       stroke="none"
       fillRule="evenodd"
@@ -95,6 +102,7 @@ export const paths: Record<IconName, ReactNode> = {
   /* triangle-! */
   warning: (
     <path
+      data-part="glyph"
       fill="currentColor"
       stroke="none"
       fillRule="evenodd"
@@ -104,52 +112,38 @@ export const paths: Record<IconName, ReactNode> = {
   /* octagon-x */
   danger: (
     <path
+      data-part="glyph"
       fill="currentColor"
       stroke="none"
       fillRule="evenodd"
       d="M5 1h6l4 4v6l-4 4H5l-4-4V5zm-.6 4.6 1.2-1.2L8 6.8l2.4-2.4 1.2 1.2L9.2 8l2.4 2.4-1.2 1.2L8 9.2l-2.4 2.4-1.2-1.2L6.8 8z"
     />
   ),
-  external: <path d="M6 3H3v10h10v-3M9 3h4v4M13 3L7 9" />,
+  external: <path data-part="glyph" d="M6 3H3v10h10v-3M9 3h4v4M13 3L7 9" />,
+  /* three dots, the web table's three r=1.25 circles as one path */
   ellipsis: (
-    <g fill="currentColor" stroke="none">
-      <circle cx="3" cy="8" r="1.25" />
-      <circle cx="8" cy="8" r="1.25" />
-      <circle cx="13" cy="8" r="1.25" />
-    </g>
+    <path
+      data-part="glyph"
+      fill="currentColor"
+      stroke="none"
+      fillRule="evenodd"
+      d="M1.75,8a1.25,1.25 0 1,0 2.5,0a1.25,1.25 0 1,0 -2.5,0M6.75,8a1.25,1.25 0 1,0 2.5,0a1.25,1.25 0 1,0 -2.5,0M11.75,8a1.25,1.25 0 1,0 2.5,0a1.25,1.25 0 1,0 -2.5,0"
+    />
   ),
-  search: <path d="M7 2.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 1 0 0-9zM10.3 10.3L14 14" />,
-  'arrow-right': <path d="M3 8h10M9 4l4 4-4 4" />,
-  'arrow-left': <path d="M13 8H3M7 4L3 8l4 4" />,
-  calendar: <path d="M2.5 3.5h11v10h-11zM2.5 6.5h11M5.5 1.5v3M10.5 1.5v3" />,
-  menu: <path d="M2 4h12M2 8h12M2 12h12" />,
-  list: (
-    <>
-      <path d="M5 4h9M5 8h9M5 12h9" />
-      <g fill="currentColor" stroke="none">
-        <circle cx="2" cy="4" r="1" />
-        <circle cx="2" cy="8" r="1" />
-        <circle cx="2" cy="12" r="1" />
-      </g>
-    </>
-  ),
-  grid: (
-    <g>
-      <rect x="2" y="2" width="5" height="5" />
-      <rect x="9" y="2" width="5" height="5" />
-      <rect x="2" y="9" width="5" height="5" />
-      <rect x="9" y="9" width="5" height="5" />
-    </g>
-  ),
-  play: <path fill="currentColor" stroke="none" d="M4 2L14 8L4 14Z" />,
+  search: <path data-part="glyph" d="M7 2.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 1 0 0-9zM10.3 10.3L14 14" />,
+  'arrow-right': <path data-part="glyph" d="M3 8h10M9 4l4 4-4 4" />,
+  'arrow-left': <path data-part="glyph" d="M13 8H3M7 4L3 8l4 4" />,
+  calendar: <path data-part="glyph" d="M2.5 3.5h11v10h-11zM2.5 6.5h11M5.5 1.5v3M10.5 1.5v3" />,
+  menu: <path data-part="glyph" d="M2 4h12M2 8h12M2 12h12" />,
+  /* the bullet dots are zero-length round-capped strokes, so the whole glyph is one stroked path */
+  list: <path data-part="glyph" d="M5 4h9M5 8h9M5 12h9M2 4h.01M2 8h.01M2 12h.01" />,
+  grid: <path data-part="glyph" d="M2 2h5v5H2zM9 2h5v5H9zM2 9h5v5H2zM9 9h5v5H9z" />,
+  play: <path data-part="glyph" fill="currentColor" stroke="none" fillRule="evenodd" d="M4 2l10 6-10 6z" />,
   pause: (
-    <g fill="currentColor" stroke="none">
-      <rect x="3" y="2" width="3" height="12" />
-      <rect x="10" y="2" width="3" height="12" />
-    </g>
+    <path data-part="glyph" fill="currentColor" stroke="none" fillRule="evenodd" d="M3 2h3v12H3zM10 2h3v12H10z" />
   ),
-  folder: <path d="M2 13L2 2L7 2L7 4L14 4L14 13Z" />,
-  file: <path d="M4 2H9L12 5V14H4Z M9 2V5H12" />,
+  folder: <path data-part="glyph" d="M2 13V2h5v2h7v9z" />,
+  file: <path data-part="glyph" d="M4 2h5l3 3v9H4zM9 2v3h3" />,
 };
 
 export interface IconProps
@@ -190,20 +184,31 @@ export interface IconProps
  * Give it a `label` only when the icon is the whole message — a lone warning triangle in a table
  * cell, say — and the label is what a screen reader should say instead.
  *
- * Glyphs are drawn in `currentColor`, so a CtaButton, Link or Callout colors them for free; only an
- * icon with no colored ancestor falls back to `color.foreground`. Line glyphs use the focus-ring
- * width as their stroke.
+ * Glyphs are drawn in `currentColor`, so a CtaButton, Link or Callout colors them for free; an icon with
+ * no colored ancestor falls back to what the document root resolves, `color.foreground`. Line
+ * glyphs use the focus-ring width as their stroke, at every size, so they stay legible at `xs`.
  */
-export const Icon = function Icon({ ref, name, size = 'md', inline = false, label, overrides, className, style, ...rest }: IconProps & { ref?: Ref<SVGSVGElement> | undefined }): ReactElement {
+export const Icon = function Icon({
+  ref,
+  name,
+  size = 'md',
+  inline = false,
+  label,
+  overrides,
+  className,
+  style,
+  ...rest
+}: IconProps & { ref?: Ref<SVGSVGElement> | undefined }): ReactElement {
   const labelled = label !== undefined && label !== '';
-  const glyph = paths[name];
+  const glyph: ReactElement | undefined = paths[name];
 
   if (isDev && !glyph) {
-    // eslint-disable-next-line no-console
-    console.warn(`Icon: unknown name "${name}"`);
+    console.warn(`Icon: unknown name "${name}" — no glyph in the paths table, so nothing is drawn.`);
   }
 
-  const classes = ['demo-icon', inline ? 'demo-icon--inline' : `demo-icon--${size}`, className ?? null]
+  // The size class is applied even when `inline`: the hook stays set for consistency, and
+  // `.demo-icon--inline` (later in the cascade) takes the font size from the surrounding text instead.
+  const classes = ['demo-icon', `demo-icon--${size}`, inline ? 'demo-icon--inline' : null, className ?? null]
     .filter(Boolean)
     .join(' ');
 

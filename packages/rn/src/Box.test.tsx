@@ -55,53 +55,53 @@ describe('Box', () => {
   });
 
   /* derived: props.insetBlock */
-  it('renders-insetblock-none', () => {
+  it('renders-inset-block-none', () => {
     const s = setup({ insetBlock: 'none' });
     expect(s.toJSON()).not.toBeNull();
   });
 
-  it('renders-insetblock-sm', () => {
+  it('renders-inset-block-sm', () => {
     const s = setup({ insetBlock: 'sm' });
     expect(s.toJSON()).not.toBeNull();
   });
 
-  it('renders-insetblock-md', () => {
+  it('renders-inset-block-md', () => {
     const s = setup({ insetBlock: 'md' });
     expect(s.toJSON()).not.toBeNull();
   });
 
-  it('renders-insetblock-lg', () => {
+  it('renders-inset-block-lg', () => {
     const s = setup({ insetBlock: 'lg' });
     expect(s.toJSON()).not.toBeNull();
   });
 
-  it('renders-insetblock-xl', () => {
+  it('renders-inset-block-xl', () => {
     const s = setup({ insetBlock: 'xl' });
     expect(s.toJSON()).not.toBeNull();
   });
 
   /* derived: props.insetInline */
-  it('renders-insetinline-none', () => {
+  it('renders-inset-inline-none', () => {
     const s = setup({ insetInline: 'none' });
     expect(s.toJSON()).not.toBeNull();
   });
 
-  it('renders-insetinline-sm', () => {
+  it('renders-inset-inline-sm', () => {
     const s = setup({ insetInline: 'sm' });
     expect(s.toJSON()).not.toBeNull();
   });
 
-  it('renders-insetinline-md', () => {
+  it('renders-inset-inline-md', () => {
     const s = setup({ insetInline: 'md' });
     expect(s.toJSON()).not.toBeNull();
   });
 
-  it('renders-insetinline-lg', () => {
+  it('renders-inset-inline-lg', () => {
     const s = setup({ insetInline: 'lg' });
     expect(s.toJSON()).not.toBeNull();
   });
 
-  it('renders-insetinline-xl', () => {
+  it('renders-inset-inline-xl', () => {
     const s = setup({ insetInline: 'xl' });
     expect(s.toJSON()).not.toBeNull();
   });

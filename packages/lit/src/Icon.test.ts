@@ -1,6 +1,10 @@
 /**
  * <ds-icon> — behavior scenarios from the component doc, one test each, in the doc's order.
  * Runs in headless Chromium (Vitest browser mode). See generated/prompts/Icon.lit.md.
+ *
+ * Icon has no interaction, focus or animation, so the derived scenarios only assert render; the
+ * two scenarios written in the doc are about what assistive technology sees, which on Lit is the
+ * <svg> in the shadow root (the host is a plain element with no role of its own).
  */
 import { beforeEach, describe, expect, it } from 'vitest';
 import './Icon.js';
@@ -18,7 +22,8 @@ async function setup(given: Given = {}) {
   }
   document.body.append(el);
   await el.updateComplete;
-  return { el };
+  const glyph = el.shadowRoot!.querySelector('svg')!;
+  return { el, glyph };
 }
 
 beforeEach(() => {
@@ -26,6 +31,23 @@ beforeEach(() => {
 });
 
 describe('ds-icon', () => {
+  /**
+   * Decorative icons carry no information the adjacent text does not, so "Save" is announced as
+   * "Save", not "check mark Save" (WCAG 1.1.1).
+   */
+  it('unlabelled-icon-is-hidden-from-assistive-technology', async () => {
+    const { glyph } = await setup();
+    expect(glyph.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  /** When set, the icon is exposed as an image with this name; the aria-hidden of the decorative case is gone. */
+  it('label-makes-the-icon-meaningful', async () => {
+    const { glyph } = await setup({ name: 'warning', label: 'Warning: over quota' });
+    expect(glyph.getAttribute('role')).toBe('img');
+    expect(glyph.getAttribute('aria-hidden')).toBeNull();
+    expect(glyph).toHaveAccessibleName('Warning: over quota');
+  });
+
   /* derived: anatomy.glyph */
   it('renders', async () => {
     const { el } = await setup();
@@ -192,7 +214,7 @@ describe('ds-icon', () => {
   /* derived: a11y.requires. No `given` in the doc; the Default story's args are
      decorative (no label), so a label is set here to exercise the mechanism. */
   it('has-accessible-name', async () => {
-    const { el } = await setup({ label: 'Warning: over quota' });
-    expect(el.shadowRoot!.querySelector('svg')).toHaveAccessibleName('Warning: over quota');
+    const { glyph } = await setup({ label: 'Accessible name' });
+    expect(glyph).toHaveAccessibleName('Accessible name');
   });
 });

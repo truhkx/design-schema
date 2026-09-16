@@ -1,10 +1,10 @@
 import * as React from 'react';
 import { Text as RNText } from 'react-native';
-import type { TextStyle } from 'react-native';
+import type { TextInstance, TextStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
-import { toTextAlign } from './Text';
-import type { TextAlign } from './Text';
+import { TextStyleContext, toTextAlign } from './Text';
+import type { TextAlign, TextStyleContextValue } from './Text';
 import { toFontWeight, toLineHeight, useTheme } from './theme';
 import type { Tokens } from './theme';
 
@@ -12,7 +12,11 @@ import type { Tokens } from './theme';
 export type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6 | '1' | '2' | '3' | '4' | '5' | '6';
 export type HeadingSize = '4xl' | '3xl' | '2xl' | 'xl' | 'lg' | 'md';
 
-/** The style bindings a caller may replace with a different token; see the component's overrides contract. */
+/**
+ * The style bindings a caller may replace with a different token; see the component's
+ * overrides contract. `color` is locked — heading text is contrast-checked at AAA
+ * against the page background, so it is not overridable and is ignored if passed.
+ */
 export type HeadingOverridableBinding = 'fontFamily' | 'fontWeight' | 'fontSize' | 'lineHeight' | 'marginBlockEnd';
 
 export interface HeadingProps {
@@ -22,14 +26,16 @@ export interface HeadingProps {
    * regardless of level. Document the outline in the screen's design instead.
    */
   level: HeadingLevel;
-  /** Visual size, independent of level. Defaults to the size that matches the level. */
+  /** Visual size, independent of level. Defaults per level: 1 → 4xl, 2 → 3xl, 3 → 2xl, 4 → xl, 5 → lg, 6 → md. */
   size?: HeadingSize | undefined;
   /** The heading text. Keep it short and descriptive; it is what appears in the page outline. */
   children: React.ReactNode;
-  /** Horizontal text alignment. */
+  /** Horizontal text alignment. `start`/`end` follow writing direction. */
   align?: TextAlign | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<HeadingOverridableBinding, TokenRef | undefined>> | undefined;
+  /** The rendered `Text`, for measurement or accessibility focus. */
+  ref?: React.Ref<TextInstance> | undefined;
 }
 
 const LEVEL_SIZE: Record<'1' | '2' | '3' | '4' | '5' | '6', HeadingSize> = {
@@ -61,34 +67,44 @@ const SIZE_TOKEN = {
  * the whole point of this component: it lets designers pick the right look without
  * breaking the outline.
  *
- * Renders `Text` with `accessibilityRole="header"`. `level` chooses the default
- * size only; VoiceOver and TalkBack expose the header trait but not a level. Do not
- * simulate levels with `accessibilityLabel` prefixes.
+ * Renders `Text` with `accessibilityRole="header"`. `level` chooses the default size
+ * only; VoiceOver and TalkBack expose the header trait but not a level, so there is
+ * no outline to navigate on native — document it in the screen's design. Do not
+ * simulate levels with `accessibilityLabel` prefixes like "Heading level 2"; it is
+ * noisy and non-standard.
+ *
+ * `marginBlockEnd` is the one margin the system allows, because a heading owns the
+ * gap to its own first paragraph; it maps to `marginBottom`, since React Native has
+ * no logical margins.
  */
-export function Heading({ level, size, children, align = 'start', overrides }: HeadingProps): React.JSX.Element {
+export function Heading({ level, size, children, align = 'start', overrides, ref }: HeadingProps): React.JSX.Element {
   const { tokens: t } = useTheme();
+
   const levelKey = String(level) as '1' | '2' | '3' | '4' | '5' | '6';
   const resolvedSize: HeadingSize = size ?? LEVEL_SIZE[levelKey];
-  const defaultFontSize = t[SIZE_TOKEN[resolvedSize]];
-  const fontSize = overrides?.fontSize ? (resolveToken(t, overrides.fontSize) as number) : defaultFontSize;
-  const lineHeightMultiplier = overrides?.lineHeight
-    ? (resolveToken(t, overrides.lineHeight) as number)
-    : t.fontLineHeightTight;
-  const fontWeight = overrides?.fontWeight ? (resolveToken(t, overrides.fontWeight) as number) : t.fontWeightSemibold;
+  const fontSize = overrides?.fontSize ? (resolveToken(t, overrides.fontSize) as number) : t[SIZE_TOKEN[resolvedSize]];
+  const color = t.colorForegroundStrong;
 
-  const style: TextStyle = {
-    fontFamily: overrides?.fontFamily ? (resolveToken(t, overrides.fontFamily) as string) : t.fontFamilyHeading,
-    fontWeight: toFontWeight(fontWeight),
-    fontSize,
-    lineHeight: toLineHeight(fontSize, lineHeightMultiplier),
-    color: t.colorForegroundStrong,
-    marginBottom: overrides?.marginBlockEnd ? (resolveToken(t, overrides.marginBlockEnd) as number) : t.spaceSm,
-    textAlign: toTextAlign(align),
-  };
+  const style = React.useMemo<TextStyle>(() => {
+    const lineHeightMultiplier = overrides?.lineHeight ? (resolveToken(t, overrides.lineHeight) as number) : t.fontLineHeightTight;
+    const fontWeight = overrides?.fontWeight ? (resolveToken(t, overrides.fontWeight) as number) : t.fontWeightSemibold;
+
+    return {
+      fontFamily: overrides?.fontFamily ? (resolveToken(t, overrides.fontFamily) as string) : t.fontFamilyHeading,
+      fontWeight: toFontWeight(fontWeight),
+      fontSize,
+      lineHeight: toLineHeight(fontSize, lineHeightMultiplier),
+      color,
+      marginBottom: overrides?.marginBlockEnd ? (resolveToken(t, overrides.marginBlockEnd) as number) : t.spaceSm,
+      textAlign: toTextAlign(align),
+    };
+  }, [t, align, overrides, fontSize, color]);
+
+  const contextValue = React.useMemo<TextStyleContextValue>(() => ({ fontSize, color, nested: true }), [fontSize, color]);
 
   return (
-    <RNText accessibilityRole="header" allowFontScaling style={style} testID="Heading">
-      {children}
+    <RNText ref={ref} testID="Heading" accessibilityRole="header" allowFontScaling style={style}>
+      <TextStyleContext.Provider value={contextValue}>{children}</TextStyleContext.Provider>
     </RNText>
   );
 }

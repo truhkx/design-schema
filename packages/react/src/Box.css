@@ -41,7 +41,8 @@
 .ds-box--inset-inline-lg { --ds-box-padding-inline: var(--layout-inset-lg); }
 .ds-box--inset-inline-xl { --ds-box-padding-inline: var(--layout-inset-xl); }
 
-/* surface → color.background.{surface}; `none` sets no background, leaving the parent's showing through. */
+/* surface → color.background.{surface} (locked, so the hook is set here and never from `overrides`);
+   `none` sets no background, leaving the parent's showing through. */
 .ds-box--surface-default { --ds-box-background: var(--color-background); background-color: var(--ds-box-background); }
 .ds-box--surface-subtle { --ds-box-background: var(--color-background-subtle); background-color: var(--ds-box-background); }
 .ds-box--surface-strong { --ds-box-background: var(--color-background-strong); background-color: var(--ds-box-background); }

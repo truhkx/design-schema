@@ -7,6 +7,7 @@ const content = <Text element="p">Box content.</Text>;
 const meta: Meta<typeof Box> = {
   title: 'Box/React',
   component: Box,
+  tags: ['autodocs'],
   args: {
     inset: 'md',
     surface: 'subtle',
@@ -68,3 +69,25 @@ export const ElementHeader: Story = { args: { element: 'header' } };
 export const ElementFooter: Story = { args: { element: 'footer' } };
 export const ElementMain: Story = { args: { element: 'main' } };
 export const ElementNav: Story = { args: { element: 'nav' } };
+
+/* examples from the component doc */
+
+/** A panel lifted off the page with a tinted surface, rounded corners and the usual inset. */
+export const HighlightedPanel: Story = {
+  args: { children: 'A panel of settings', inset: 'md', surface: 'subtle', radius: 'md' },
+};
+
+/** A dense row bounded by a thin border rather than a fill. */
+export const BorderedRow: Story = {
+  args: { children: 'A row of data', inset: 'sm', border: true },
+};
+
+/** A full-width band with more vertical than horizontal padding, on the strongest surface. */
+export const HeroBand: Story = {
+  args: { children: 'A hero band', insetBlock: 'xl', insetInline: 'lg', surface: 'strong' },
+};
+
+/** A padded region whose element makes it a navigation landmark on web. */
+export const NavigationRegion: Story = {
+  args: { children: 'The sidebar links', element: 'nav', inset: 'md' },
+};

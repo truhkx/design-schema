@@ -6,7 +6,7 @@ import type { TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
 import { Icon } from './Icon';
 import type { IconName } from './Icon';
-import { Text } from './Text';
+import { Text, TextForegroundContext } from './Text';
 import { toEasing, toLineHeight, useReducedMotion, useTheme } from './theme';
 import type { Tokens } from './theme';
 
@@ -305,16 +305,20 @@ export function Toast({
           </View>
         ) : null}
         <View style={messageStyle}>
-          <Text
-            overrides={{
-              color: 'color.inverse.foreground',
-              fontFamily: overrides?.fontFamily,
-              fontSize: overrides?.fontSize,
-              lineHeight: overrides?.lineHeight,
-            }}
-          >
-            {message}
-          </Text>
+          {/* text: color.inverse.foreground, locked. Text's own `color` binding is locked too, so
+              the message cannot be handed a color override; the inverse surface provides its
+              foreground to the subtree instead, the way web and Lit re-scope --color-foreground. */}
+          <TextForegroundContext.Provider value={t.colorInverseForeground}>
+            <Text
+              overrides={{
+                fontFamily: overrides?.fontFamily,
+                fontSize: overrides?.fontSize,
+                lineHeight: overrides?.lineHeight,
+              }}
+            >
+              {message}
+            </Text>
+          </TextForegroundContext.Provider>
         </View>
         {actionLabel !== undefined ? <Button label={actionLabel} variant="ghost" size="sm" inverse onPress={handleAction} /> : null}
         {isDismissible ? (

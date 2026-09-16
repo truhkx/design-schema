@@ -1,7 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
-import { html } from 'lit';
+import { html, type TemplateResult } from 'lit';
 import './Stack.js';
 import './Button.js';
+import './Input.js';
+import './Text.js';
 import type { StackAlign, StackDirection, StackElement, StackGap, StackJustify } from './Stack.js';
 
 interface StackArgs {
@@ -14,6 +16,28 @@ interface StackArgs {
 }
 
 const GAPS: StackGap[] = ['none', 'tight', 'normal', 'loose', 'section'];
+
+/** Stack slots its children, so the content is part of the render, never an arg. */
+function renderStack(args: StackArgs, content: TemplateResult): TemplateResult {
+  return html`
+    <ds-stack
+      direction=${args.direction}
+      gap=${args.gap}
+      align=${args.align}
+      justify=${args.justify}
+      ?wrap=${args.wrap}
+      .element=${args.element}
+    >
+      ${content}
+    </ds-stack>
+  `;
+}
+
+const buttons: TemplateResult = html`
+  <ds-button label="Save changes"></ds-button>
+  <ds-button variant="secondary" label="Preview"></ds-button>
+  <ds-button variant="ghost" label="Cancel"></ds-button>
+`;
 
 const meta: Meta<StackArgs> = {
   title: 'Stack/Lit',
@@ -34,20 +58,7 @@ const meta: Meta<StackArgs> = {
     wrap: false,
     element: 'div',
   },
-  render: (args) => html`
-    <ds-stack
-      direction=${args.direction}
-      gap=${args.gap}
-      align=${args.align}
-      justify=${args.justify}
-      ?wrap=${args.wrap}
-      .element=${args.element}
-    >
-      <ds-button label="Save changes"></ds-button>
-      <ds-button variant="secondary" label="Preview"></ds-button>
-      <ds-button variant="ghost" label="Cancel"></ds-button>
-    </ds-stack>
-  `,
+  render: (args) => renderStack(args, buttons),
 };
 
 export default meta;
@@ -56,8 +67,8 @@ type Story = StoryObj<StackArgs>;
 export const Default: Story = {};
 
 /* direction */
-export const Vertical: Story = { args: { direction: 'vertical' } };
-export const Horizontal: Story = { args: { direction: 'horizontal', align: 'center' } };
+export const DirectionVertical: Story = { args: { direction: 'vertical' } };
+export const DirectionHorizontal: Story = { args: { direction: 'horizontal', align: 'center' } };
 
 /* gap */
 const gapStory = (gap: StackGap): Story => ({ args: { gap, direction: 'horizontal', align: 'center' } });
@@ -85,16 +96,7 @@ export const JustifyBetween: Story = justifyStory('between');
 /* wrap */
 export const Wrap: Story = {
   args: { direction: 'horizontal', align: 'center', wrap: true },
-  render: (args) => html`
-    <div style="max-inline-size: 20rem">
-      <ds-stack direction=${args.direction} gap=${args.gap} align=${args.align} justify=${args.justify} ?wrap=${args.wrap} .element=${args.element}>
-        <ds-button label="Save changes"></ds-button>
-        <ds-button variant="secondary" label="Preview"></ds-button>
-        <ds-button variant="secondary" label="Duplicate"></ds-button>
-        <ds-button variant="ghost" label="Cancel"></ds-button>
-      </ds-stack>
-    </div>
-  `,
+  render: (args) => html`<div style="max-inline-size: 16rem">${renderStack(args, buttons)}</div>`,
 };
 
 /* element */
@@ -103,3 +105,66 @@ export const ElementSection: Story = { args: { element: 'section' } };
 export const ElementNav: Story = { args: { element: 'nav', direction: 'horizontal', align: 'center' } };
 export const ElementUl: Story = { args: { element: 'ul' } };
 export const ElementOl: Story = { args: { element: 'ol' } };
+
+/* examples from the component doc */
+
+/** The usual vertical rhythm between fields in a form. */
+export const FormFields: Story = {
+  args: { direction: 'vertical', gap: 'normal' },
+  render: (args) =>
+    renderStack(
+      args,
+      html`
+        <ds-input label="Full name" name="name" type="text"></ds-input>
+        <ds-input label="Email address" name="email" type="email"></ds-input>
+        <ds-input label="Phone number" name="phone" type="tel"></ds-input>
+      `,
+    ),
+};
+
+/** A row of actions at the end of a form or card, tightly spaced and pushed to the end. */
+export const ButtonRow: Story = {
+  args: { direction: 'horizontal', gap: 'tight', justify: 'end', align: 'center' },
+  render: (args) =>
+    renderStack(
+      args,
+      html`
+        <ds-button variant="secondary" label="Cancel"></ds-button>
+        <ds-button type="submit" label="Submit"></ds-button>
+      `,
+    ),
+};
+
+/** The section rhythm between the regions of a page. */
+export const PageSections: Story = {
+  args: { direction: 'vertical', gap: 'section' },
+  render: (args) =>
+    renderStack(
+      args,
+      html`
+        <ds-text>The first region of the page</ds-text>
+        <ds-text>The second region of the page</ds-text>
+        <ds-text>The third region of the page</ds-text>
+      `,
+    ),
+};
+
+/** A horizontal group that reflows onto new lines on narrow viewports instead of overflowing. */
+export const WrappingFilters: Story = {
+  args: { direction: 'horizontal', gap: 'tight', wrap: true, align: 'center' },
+  render: (args) => html`
+    <div style="max-inline-size: 16rem">
+      ${renderStack(
+        args,
+        html`
+          <ds-button variant="secondary" size="sm" label="All"></ds-button>
+          <ds-button variant="ghost" size="sm" label="Open"></ds-button>
+          <ds-button variant="ghost" size="sm" label="In review"></ds-button>
+          <ds-button variant="ghost" size="sm" label="Merged"></ds-button>
+          <ds-button variant="ghost" size="sm" label="Closed"></ds-button>
+          <ds-button variant="ghost" size="sm" label="Archived"></ds-button>
+        `,
+      )}
+    </div>
+  `,
+};

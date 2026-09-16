@@ -7,17 +7,11 @@ export type BoxSurface = 'none' | 'default' | 'subtle' | 'strong';
 export type BoxRadius = 'none' | 'sm' | 'md' | 'lg' | 'full';
 export type BoxElement = 'div' | 'section' | 'article' | 'aside' | 'header' | 'footer' | 'main' | 'nav';
 
-/** Overridable style hooks; see the `overrides` property. */
-export type BoxOverridableBinding =
-  | 'paddingBlock'
-  | 'paddingInline'
-  | 'background'
-  | 'border'
-  | 'borderWidth'
-  | 'radius';
+/** Overridable style hooks; see the `overrides` property. `background` is locked and excluded. */
+export type BoxOverridableBinding = 'paddingBlock' | 'paddingInline' | 'border' | 'borderWidth' | 'radius';
 
-/** Sectioning `element` values and the implicit landmark role each maps to. `div`/`section` set no role. */
-const SECTIONING_ROLES: Partial<Record<BoxElement, string | undefined>> = {
+/** Sectioning `element` values and the implicit role each maps to. `div`/`section` set no role. */
+const SECTIONING_ROLES: Partial<Record<BoxElement, string>> = {
   article: 'article',
   aside: 'complementary',
   header: 'banner',
@@ -29,7 +23,6 @@ const SECTIONING_ROLES: Partial<Record<BoxElement, string | undefined>> = {
 const HOOKS: Record<BoxOverridableBinding, string> = {
   paddingBlock: '--ds-box-padding-block',
   paddingInline: '--ds-box-padding-inline',
-  background: '--ds-box-background',
   border: '--ds-box-border',
   borderWidth: '--ds-box-border-width',
   radius: '--ds-box-radius',
@@ -39,20 +32,29 @@ const HOOKS: Record<BoxOverridableBinding, string> = {
  * `<ds-box>` — Box (category: layout, role: none).
  *
  * `<ds-box inset="md" surface="subtle" radius="md">`. The host is the box
- * itself (`:host { display: block }`); children stay in the light DOM behind
- * a default slot, so Box never touches their semantics. Padding, background,
- * border and radius are all reflected-attribute-driven CSS custom properties
- * on `:host`, so nothing but the host renders in the shadow root. `element`
- * sets a landmark role on the host via `ElementInternals` for the sectioning
- * values only (`article`, `aside`, `header`, `footer`, `main`, `nav`); `div`
- * and `section` carry no role.
+ * itself (`:host { display: block }`); children stay in the light DOM behind a
+ * default slot, so Box never touches their semantics and never spaces them —
+ * put a Stack inside for that. Padding, background, border and radius all come
+ * from reflected attributes on `:host`, so nothing but the slot renders in the
+ * shadow root. `element` swaps nothing there: the host is the element, so the
+ * prop exists for API parity and sets a role through `ElementInternals` for the
+ * sectioning values only (`article`, `aside`, `header`, `footer`, `main`,
+ * `nav`); `div` and `section` carry no role. Prefer Landmark for page regions.
  *
  * ## When to use
  *
  * Use a Box to give a region a background or padding: a sidebar panel, a
- * highlighted row, a footer band, the inside of a modal. Use `insetBlock`/
- * `insetInline` when the axes differ; put a Stack inside for gaps between
- * children — Box never spaces its own content.
+ * highlighted row, a footer band, the inside of a modal. Choose `inset` by role
+ * — `sm` for dense rows, `md` for most panels, `lg` for page-level containers,
+ * `xl` for hero bands — and use `insetBlock`/`insetInline` when the axes differ.
+ *
+ * ## When not to use
+ *
+ * Not to put space between two components (that is Stack), not as a page
+ * container (that is Container), and never nested more than two surfaces deep
+ * (`subtle` on `default`, `strong` on `subtle`) — the contrast pairs are only
+ * checked two deep. It never scrolls and never clips: `radius` does not imply
+ * `overflow: hidden`, and a child that should be clipped clips itself.
  *
  * @slot - Any content. Box does not space its children; put a Stack inside for that.
  */
@@ -64,13 +66,11 @@ export class DsBox extends LitElement {
       box-sizing: border-box;
       --ds-box-padding-block: var(--layout-inset-none);
       --ds-box-padding-inline: var(--layout-inset-none);
-      --ds-box-background: transparent;
       --ds-box-border: var(--color-border);
       --ds-box-border-width: var(--border-width-thin);
       --ds-box-radius: var(--radius-none);
       padding-block: var(--ds-box-padding-block);
       padding-inline: var(--ds-box-padding-inline);
-      background: var(--ds-box-background);
       border-style: solid;
       border-width: 0;
       border-color: var(--ds-box-border);
@@ -103,7 +103,7 @@ export class DsBox extends LitElement {
       --ds-box-padding-inline: var(--layout-inset-xl);
     }
 
-    /* paddingBlock override, per axis: layout.inset.{insetBlock}. Declared after inset to win. */
+    /* paddingBlock: layout.inset.{insetBlock}, declared after inset so the axis wins. */
     :host([inset-block='none']) {
       --ds-box-padding-block: var(--layout-inset-none);
     }
@@ -120,7 +120,7 @@ export class DsBox extends LitElement {
       --ds-box-padding-block: var(--layout-inset-xl);
     }
 
-    /* paddingInline override, per axis: layout.inset.{insetInline}. Declared after inset to win. */
+    /* paddingInline: layout.inset.{insetInline}, declared after inset so the axis wins. */
     :host([inset-inline='none']) {
       --ds-box-padding-inline: var(--layout-inset-none);
     }
@@ -137,21 +137,19 @@ export class DsBox extends LitElement {
       --ds-box-padding-inline: var(--layout-inset-xl);
     }
 
-    /* background: color.background.{surface}; none renders transparent. */
-    :host([surface='none']) {
-      --ds-box-background: transparent;
-    }
+    /* background: color.background.{surface}, locked — no override hook.
+       surface="none" matches no rule, so the parent's background shows through. */
     :host([surface='default']) {
-      --ds-box-background: var(--color-background);
+      background: var(--color-background);
     }
     :host([surface='subtle']) {
-      --ds-box-background: var(--color-background-subtle);
+      background: var(--color-background-subtle);
     }
     :host([surface='strong']) {
-      --ds-box-background: var(--color-background-strong);
+      background: var(--color-background-strong);
     }
 
-    /* border / borderWidth: color.border, border.width.thin. A thin default border, only when present. */
+    /* border / borderWidth: color.border, border.width.thin — a thin default border, only when asked for. */
     :host([border]) {
       border-width: var(--ds-box-border-width);
     }
@@ -174,16 +172,19 @@ export class DsBox extends LitElement {
     }
   `;
 
-  /** Padding on all sides. Use `insetBlock`/`insetInline` when the axes differ. */
+  /** Padding on all sides, from the layout inset presets. Use `insetBlock`/`insetInline` when the axes differ. */
   @property({ reflect: true }) accessor inset: BoxInset = 'none';
 
-  /** Vertical padding, overriding `inset` on that axis. */
+  /** Vertical padding, overriding `inset` on that axis. Defaults to `inset`. */
   @property({ reflect: true, attribute: 'inset-block' }) accessor insetBlock: BoxInset | undefined;
 
-  /** Horizontal padding, overriding `inset` on that axis. */
+  /** Horizontal padding, overriding `inset` on that axis. Defaults to `inset`. */
   @property({ reflect: true, attribute: 'inset-inline' }) accessor insetInline: BoxInset | undefined;
 
-  /** Background. `none` is transparent; `default`/`subtle`/`strong` step up. */
+  /**
+   * Background. `none` is transparent; `default` is the page background (use to
+   * lift content off a subtle parent); `subtle` and `strong` step up.
+   */
   @property({ reflect: true }) accessor surface: BoxSurface = 'none';
 
   /** A thin default border. */
@@ -193,15 +194,17 @@ export class DsBox extends LitElement {
   @property({ reflect: true }) accessor radius: BoxRadius = 'none';
 
   /**
-   * Element to render. The host is always the element in the DOM; sectioning
-   * values (`article`, `aside`, `header`, `footer`, `main`, `nav`) set the
-   * matching landmark role on the host through `ElementInternals`. `div` and
-   * `section` set no role. Prefer Landmark for page regions.
+   * Element to render. The host is always the element in the DOM, so this swaps
+   * nothing in the shadow root; sectioning values (`article`, `aside`, `header`,
+   * `footer`, `main`, `nav`) set the matching implicit role on the host through
+   * `ElementInternals`, and `div`/`section` set none. Sectioning values only
+   * when the box is a semantic region; prefer Landmark for page regions.
    */
   @property() accessor element: BoxElement = 'div';
 
-  /** Per-instance style overrides: `{ background: 'color.status.danger.background' }`. */
-  @property({ attribute: false }) accessor overrides: Partial<Record<BoxOverridableBinding, TokenRef | undefined>> | undefined;
+  /** Per-instance style overrides: `{ radius: 'radius.lg' }`. The locked `background` is ignored. */
+  @property({ attribute: false })
+  accessor overrides: Partial<Record<BoxOverridableBinding, TokenRef | undefined>> | undefined;
 
   private readonly internals: ElementInternals;
 
@@ -213,13 +216,16 @@ export class DsBox extends LitElement {
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('data-ds', 'Box');
+    /* The host is the surface (anatomy: surface); there is no box in the shadow root to carry the part. */
+    this.setAttribute('data-part', 'surface');
   }
 
   protected override willUpdate(changed: PropertyValues): void {
     if (changed.has('element')) {
       this.internals.role = SECTIONING_ROLES[this.element] ?? null;
     }
-    if (changed.has('overrides')) {
+    /* `border` and `radius` decide which overrides are in effect, so a change to either re-applies them. */
+    if (changed.has('overrides') || changed.has('border') || changed.has('radius')) {
       this.applyOverrides();
     }
   }
@@ -228,11 +234,28 @@ export class DsBox extends LitElement {
     return html`<slot></slot>`;
   }
 
+  /**
+   * Overrides change values, never presence: `border: false` draws no border and
+   * `radius: none` rounds nothing, so those bindings are not in effect and their
+   * overrides are no-ops.
+   */
+  private isInEffect(binding: BoxOverridableBinding): boolean {
+    switch (binding) {
+      case 'border':
+      case 'borderWidth':
+        return this.border;
+      case 'radius':
+        return this.radius !== 'none';
+      default:
+        return true;
+    }
+  }
+
   private applyOverrides(): void {
     for (const binding of Object.keys(HOOKS) as BoxOverridableBinding[]) {
       const ref = this.overrides?.[binding];
       const hook = HOOKS[binding];
-      if (ref === undefined) {
+      if (ref === undefined || !this.isInEffect(binding)) {
         this.style.removeProperty(hook);
       } else {
         this.style.setProperty(hook, cssVar(ref));

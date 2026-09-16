@@ -15,6 +15,12 @@ function setup(given: Partial<TextProps> = {}) {
 }
 
 describe('Text', () => {
+  it('truncated-text-keeps-the-full-string-reachable', () => {
+    const children = 'A sentence long enough to be clipped by its column.';
+    const { container } = setup({ truncate: true, children });
+    expect(container.querySelector('[data-ds="Text"]')).toHaveAttribute('title', children);
+  });
+
   it('renders', () => {
     const { container } = setup();
     expect(container.firstChild).not.toBeNull();
@@ -88,7 +94,7 @@ describe('Text', () => {
     expect(container.firstChild).not.toBeNull();
   });
 
-  it('renders-tone-onAction', () => {
+  it('renders-tone-on-action', () => {
     const { container } = setup({ tone: 'onAction' });
     expect(container.firstChild).not.toBeNull();
   });

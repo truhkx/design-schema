@@ -52,8 +52,11 @@
   line-height: 0;
 }
 
-/* message: grows to fill the row; color -> color.inverse.foreground, forwarded to the composed Text's own `color` override. */
+/* message: grows to fill the row; color -> color.inverse.foreground. Text's `color` binding is
+   locked, so the inverse color comes through Text's CSS hook — the sanctioned escape hatch —
+   rather than its `overrides` prop. */
 .ds-toast__message {
+  --ds-text-color: var(--ds-toast-text);
   flex: 1 1 auto;
   min-inline-size: 0;
 }

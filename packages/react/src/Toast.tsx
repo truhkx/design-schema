@@ -324,8 +324,9 @@ export const Toast = function Toast({
         element="span"
         data-part="message"
         className="ds-toast__message"
+        // The inverse-surface color is not forwarded here: Text's `color` binding is locked, so the
+        // message reads Toast's own `--ds-toast-text` hook through `.ds-toast__message` instead.
         overrides={{
-          color: 'color.inverse.foreground' as TokenRef,
           ...(overrides?.fontFamily ? { fontFamily: overrides.fontFamily } : null),
           ...(overrides?.fontSize ? { fontSize: overrides.fontSize } : null),
           ...(overrides?.lineHeight ? { lineHeight: overrides.lineHeight } : null),

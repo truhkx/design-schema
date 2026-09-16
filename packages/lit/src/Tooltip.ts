@@ -75,9 +75,11 @@ const POPUP_CLASS = 'ds-tooltip-popup';
 const POPUP_STYLE_MARKER = 'data-ds-tooltip-popup-style';
 
 /* surface: color.inverse.surface, text: color.inverse.foreground — both locked, so the popup's
-   background is hard-coded here and its text color is forwarded to the composed <ds-text> below. */
+   background is set here; Text's own `color` binding is locked too, so the popup cannot forward a
+   color override to the composed <ds-text> and re-scopes the token that element already reads. */
 const POPUP_STYLE_CSS = `
 .${POPUP_CLASS} {
+  --color-foreground: var(--color-inverse-foreground);
   position: fixed;
   inset: auto;
   box-sizing: border-box;
@@ -527,9 +529,7 @@ export class DsTooltip extends LitElement {
     if (!this.popupEl) {
       return;
     }
-    const textOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {
-      color: 'color.inverse.foreground',
-    };
+    const textOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
     if (this.overrides?.fontFamily) {
       textOverrides.fontFamily = this.overrides.fontFamily;
     }

@@ -52,9 +52,10 @@ export type SliderOverridableBinding =
   | 'disabledOpacity'
   | 'transition';
 
-/** Bindings owned by the root; fontSize/labelWeight/valueSize/helperSize/fontFamily/errorText are
- * forwarded into the composed Text elements' own `overrides` contract instead, since Text already
- * exposes them (the same split Meter and RadioGroup use). */
+/** Bindings owned by the root; fontSize/labelWeight/valueSize/helperSize/fontFamily are forwarded
+ * into the composed Text elements' own `overrides` contract instead, since Text already exposes
+ * them (the same split Meter and RadioGroup use). `errorText` has no forward: Text's `color` is a
+ * locked binding. */
 const ROOT_OVERRIDE_HOOK: Partial<Record<SliderOverridableBinding, string | undefined>> = {
   track: '--ds-slider-track',
   trackHeight: '--ds-slider-track-height',
@@ -115,7 +116,9 @@ function overridesToStyle(overrides: Partial<Record<SliderOverridableBinding, To
         errorTextOverrides.fontSize = ref;
         break;
       case 'errorText':
-        errorTextOverrides.color = ref;
+        // No-op: the error message is a composed Text with `tone="danger"`, and Text's `color`
+        // binding is locked (every tone is contrast-checked), so it cannot be overridden here and
+        // Slider must not restyle the child. Accepted and ignored, per the overrides contract.
         break;
     }
   }

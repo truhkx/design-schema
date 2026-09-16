@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
-import { html } from 'lit';
+import { html, type TemplateResult } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Box.js';
 import './Text.js';
@@ -19,6 +19,23 @@ const INSETS: BoxInset[] = ['none', 'sm', 'md', 'lg', 'xl'];
 const SURFACES: BoxSurface[] = ['none', 'default', 'subtle', 'strong'];
 const RADII: BoxRadius[] = ['none', 'sm', 'md', 'lg', 'full'];
 const ELEMENTS: BoxElement[] = ['div', 'section', 'article', 'aside', 'header', 'footer', 'main', 'nav'];
+
+/** Box slots its children, so the content is part of the render, never an arg. */
+function renderBox(args: BoxArgs, content: TemplateResult): TemplateResult {
+  return html`
+    <ds-box
+      inset=${args.inset}
+      inset-block=${ifDefined(args.insetBlock)}
+      inset-inline=${ifDefined(args.insetInline)}
+      surface=${args.surface}
+      ?border=${args.border}
+      radius=${args.radius}
+      element=${args.element}
+    >
+      ${content}
+    </ds-box>
+  `;
+}
 
 const meta: Meta<BoxArgs> = {
   title: 'Box/Lit',
@@ -41,19 +58,7 @@ const meta: Meta<BoxArgs> = {
     radius: 'none',
     element: 'div',
   },
-  render: (args) => html`
-    <ds-box
-      inset=${args.inset}
-      inset-block=${ifDefined(args.insetBlock)}
-      inset-inline=${ifDefined(args.insetInline)}
-      surface=${args.surface}
-      ?border=${args.border}
-      radius=${args.radius}
-      element=${args.element}
-    >
-      <ds-text>Box content</ds-text>
-    </ds-box>
-  `,
+  render: (args) => renderBox(args, html`<ds-text>Box content</ds-text>`),
 };
 
 export default meta;
@@ -61,41 +66,81 @@ type Story = StoryObj<BoxArgs>;
 
 export const Default: Story = {};
 
-/* inset */
-export const InsetNone: Story = { args: { inset: 'none' } };
-export const InsetSm: Story = { args: { inset: 'sm' } };
-export const InsetMd: Story = { args: { inset: 'md' } };
-export const InsetLg: Story = { args: { inset: 'lg' } };
-export const InsetXl: Story = { args: { inset: 'xl' } };
+/* inset — shown on a subtle surface so the padding is visible */
+const insetStory = (inset: BoxInset): Story => ({ args: { inset, surface: 'subtle' } });
+export const InsetNone: Story = insetStory('none');
+export const InsetSm: Story = insetStory('sm');
+export const InsetMd: Story = insetStory('md');
+export const InsetLg: Story = insetStory('lg');
+export const InsetXl: Story = insetStory('xl');
 
-/* insetBlock (overrides inset on the vertical axis) */
-export const InsetBlockSm: Story = { args: { inset: 'lg', insetBlock: 'sm' } };
+/* insetBlock — overrides inset on the vertical axis */
+const insetBlockStory = (insetBlock: BoxInset): Story => ({ args: { inset: 'md', insetBlock, surface: 'subtle' } });
+export const InsetBlockNone: Story = insetBlockStory('none');
+export const InsetBlockSm: Story = insetBlockStory('sm');
+export const InsetBlockMd: Story = insetBlockStory('md');
+export const InsetBlockLg: Story = insetBlockStory('lg');
+export const InsetBlockXl: Story = insetBlockStory('xl');
 
-/* insetInline (overrides inset on the horizontal axis) */
-export const InsetInlineSm: Story = { args: { inset: 'lg', insetInline: 'sm' } };
+/* insetInline — overrides inset on the horizontal axis */
+const insetInlineStory = (insetInline: BoxInset): Story => ({ args: { inset: 'md', insetInline, surface: 'subtle' } });
+export const InsetInlineNone: Story = insetInlineStory('none');
+export const InsetInlineSm: Story = insetInlineStory('sm');
+export const InsetInlineMd: Story = insetInlineStory('md');
+export const InsetInlineLg: Story = insetInlineStory('lg');
+export const InsetInlineXl: Story = insetInlineStory('xl');
 
 /* surface */
-export const SurfaceNone: Story = { args: { surface: 'none' } };
-export const SurfaceDefault: Story = { args: { surface: 'default', inset: 'md' } };
-export const SurfaceSubtle: Story = { args: { surface: 'subtle', inset: 'md' } };
-export const SurfaceStrong: Story = { args: { surface: 'strong', inset: 'md' } };
+const surfaceStory = (surface: BoxSurface): Story => ({ args: { surface, inset: 'md' } });
+export const SurfaceNone: Story = surfaceStory('none');
+export const SurfaceDefault: Story = surfaceStory('default');
+export const SurfaceSubtle: Story = surfaceStory('subtle');
+export const SurfaceStrong: Story = surfaceStory('strong');
 
 /* border */
-export const BorderTrue: Story = { args: { border: true, inset: 'md' } };
+export const Border: Story = { args: { border: true, inset: 'md' } };
 
-/* radius */
-export const RadiusNone: Story = { args: { radius: 'none', surface: 'subtle', inset: 'md' } };
-export const RadiusSm: Story = { args: { radius: 'sm', surface: 'subtle', inset: 'md' } };
-export const RadiusMd: Story = { args: { radius: 'md', surface: 'subtle', inset: 'md' } };
-export const RadiusLg: Story = { args: { radius: 'lg', surface: 'subtle', inset: 'md' } };
-export const RadiusFull: Story = { args: { radius: 'full', surface: 'subtle', inset: 'md' } };
+/* radius — on a tinted surface so the corners read */
+const radiusStory = (radius: BoxRadius): Story => ({ args: { radius, surface: 'subtle', inset: 'md' } });
+export const RadiusNone: Story = radiusStory('none');
+export const RadiusSm: Story = radiusStory('sm');
+export const RadiusMd: Story = radiusStory('md');
+export const RadiusLg: Story = radiusStory('lg');
+export const RadiusFull: Story = radiusStory('full');
 
-/* element */
-export const ElementDiv: Story = { args: { element: 'div' } };
-export const ElementSection: Story = { args: { element: 'section' } };
-export const ElementArticle: Story = { args: { element: 'article' } };
-export const ElementAside: Story = { args: { element: 'aside' } };
-export const ElementHeader: Story = { args: { element: 'header' } };
-export const ElementFooter: Story = { args: { element: 'footer' } };
-export const ElementMain: Story = { args: { element: 'main' } };
-export const ElementNav: Story = { args: { element: 'nav' } };
+/* element — the host is the element; sectioning values set the matching role */
+const elementStory = (element: BoxElement): Story => ({ args: { element, inset: 'md', surface: 'subtle' } });
+export const ElementDiv: Story = elementStory('div');
+export const ElementSection: Story = elementStory('section');
+export const ElementArticle: Story = elementStory('article');
+export const ElementAside: Story = elementStory('aside');
+export const ElementHeader: Story = elementStory('header');
+export const ElementFooter: Story = elementStory('footer');
+export const ElementMain: Story = elementStory('main');
+export const ElementNav: Story = elementStory('nav');
+
+/* examples from the component doc */
+
+/** A panel lifted off the page with a tinted surface, rounded corners and the usual inset. */
+export const HighlightedPanel: Story = {
+  args: { inset: 'md', surface: 'subtle', radius: 'md' },
+  render: (args) => renderBox(args, html`<ds-text>A panel of settings</ds-text>`),
+};
+
+/** A dense row bounded by a thin border rather than a fill. */
+export const BorderedRow: Story = {
+  args: { inset: 'sm', border: true },
+  render: (args) => renderBox(args, html`<ds-text>A row of data</ds-text>`),
+};
+
+/** A full-width band with more vertical than horizontal padding, on the strongest surface. */
+export const HeroBand: Story = {
+  args: { insetBlock: 'xl', insetInline: 'lg', surface: 'strong' },
+  render: (args) => renderBox(args, html`<ds-text>A hero band</ds-text>`),
+};
+
+/** A padded region whose element makes it a navigation landmark on web. */
+export const NavigationRegion: Story = {
+  args: { element: 'nav', inset: 'md' },
+  render: (args) => renderBox(args, html`<ds-text>The sidebar links</ds-text>`),
+};

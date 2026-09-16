@@ -69,3 +69,19 @@ export const ToneOnAction: Story = {
 export const AlignStart: Story = { args: { align: 'start' } };
 export const AlignCenter: Story = { args: { align: 'center' } };
 export const AlignEnd: Story = { args: { align: 'end' } };
+
+// examples
+/** The default paragraph — body size, regular weight, default tone. */
+export const BodyCopy: Story = {
+  args: { children: 'Changes are saved automatically. You can undo any change for 30 days.' },
+};
+
+/** Secondary metadata at the smallest readable size, muted so it sits behind the content it annotates. */
+export const Caption: Story = {
+  args: { children: 'Last updated 2 minutes ago.', size: 'xs', tone: 'muted' },
+};
+
+/** One line of text in a dense cell. Native has no `title` equivalent, so only screen readers reach the rest. */
+export const TruncatedCell: Story = {
+  args: { children: 'Quarterly revenue summary for the EMEA region.', truncate: true },
+};

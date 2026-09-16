@@ -13,13 +13,15 @@ export type BoxSurface = 'none' | 'default' | 'subtle' | 'strong';
 export type BoxRadius = 'none' | 'sm' | 'md' | 'lg' | 'full';
 export type BoxElement = 'div' | 'section' | 'article' | 'aside' | 'header' | 'footer' | 'main' | 'nav';
 
-/** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
-export type BoxOverridableBinding = 'paddingBlock' | 'paddingInline' | 'background' | 'border' | 'borderWidth' | 'radius';
+/**
+ * Style bindings that can be overridden per instance; accessibility-bearing bindings are never in
+ * this list. `background` is locked: the surface colours are the pairs the contrast gate checks.
+ */
+export type BoxOverridableBinding = 'paddingBlock' | 'paddingInline' | 'border' | 'borderWidth' | 'radius';
 
 const OVERRIDE_HOOK: Record<BoxOverridableBinding, string> = {
   paddingBlock: '--ds-box-padding-block',
   paddingInline: '--ds-box-padding-inline',
-  background: '--ds-box-background',
   border: '--ds-box-border',
   borderWidth: '--ds-box-border-width',
   radius: '--ds-box-radius',
@@ -29,7 +31,9 @@ function overridesToStyle(overrides: Partial<Record<BoxOverridableBinding, Token
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as BoxOverridableBinding[]) {
     const ref = overrides[binding];
-    if (ref) style[OVERRIDE_HOOK[binding]] = cssVar(ref);
+    const hook = OVERRIDE_HOOK[binding];
+    // A locked binding passed at runtime has no hook here and is ignored.
+    if (ref && hook) style[hook] = cssVar(ref);
   }
   return style as CSSProperties;
 }
@@ -39,9 +43,9 @@ export interface BoxProps extends Omit<ComponentPropsWithoutRef<'div'>, 'childre
   children: ReactNode;
   /** Padding on all sides, from the layout inset presets. Use `insetBlock`/`insetInline` when the axes differ. */
   inset?: BoxInset | undefined;
-  /** Vertical padding, overriding `inset` on that axis. */
+  /** Vertical padding, overriding `inset` on that axis. Defaults to `inset`. */
   insetBlock?: BoxInset | undefined;
-  /** Horizontal padding, overriding `inset` on that axis. */
+  /** Horizontal padding, overriding `inset` on that axis. Defaults to `inset`. */
   insetInline?: BoxInset | undefined;
   /** Background. `none` is transparent; `default` is the page background (use to lift content off a subtle parent); `subtle` and `strong` step up. */
   surface?: BoxSurface | undefined;
@@ -64,6 +68,9 @@ export interface BoxProps extends Omit<ComponentPropsWithoutRef<'div'>, 'childre
  * conventions about elevation and content). Choose `inset` by role — `sm` for dense rows, `md`
  * for most panels, `lg` for page-level containers, `xl` for hero bands — and let the theme's
  * rhythm decide the numbers.
+ *
+ * Box adds no role of its own; when `element` is a sectioning element the native element carries
+ * the semantics (`nav` → navigation, `article` → article). It never carries margin.
  */
 export const Box = function Box({
   ref,
@@ -90,6 +97,8 @@ export const Box = function Box({
     surface !== 'none' ? `ds-box--surface-${surface}` : null,
     border ? 'ds-box--border' : null,
     radius !== 'none' ? `ds-box--radius-${radius}` : null,
+    // Composing components (Popover, BottomSheet) pass a layout-only class for their own body
+    // part; they never restyle the box itself, which stays on the token hooks in Box.css.
     className ?? null,
   ]
     .filter(Boolean)
@@ -99,7 +108,8 @@ export const Box = function Box({
   const mergedStyle = overrideStyle || style ? { ...overrideStyle, ...style } : undefined;
 
   return (
-    <Tag {...rest} ref={ref as Ref<HTMLElement>} data-ds="Box" className={classes} style={mergedStyle}>
+    // `data-part` precedes the spread so a composing parent can name the part it is standing in for.
+    <Tag data-part="surface" {...rest} ref={ref as Ref<HTMLElement>} data-ds="Box" className={classes} style={mergedStyle}>
       {children}
     </Tag>
   );

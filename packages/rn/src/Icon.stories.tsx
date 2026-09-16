@@ -58,8 +58,31 @@ export const SizeMd: Story = { args: { size: 'md' } };
 export const SizeLg: Story = { args: { size: 'lg' } };
 export const SizeXl: Story = { args: { size: 'xl' } };
 
-// inline — nested in a system Text so the glyph inherits its size and color
-export const Inline: Story = {
+/**
+ * A lone status glyph that is the whole message, so it says what it means instead of
+ * what it depicts.
+ */
+export const StatusInACell: Story = { args: { name: 'warning', label: 'Warning: over quota' } };
+
+/**
+ * The usual case — a glyph next to text, with no label, so the label carries the
+ * meaning alone.
+ */
+export const DecorativeBesideALabel: Story = {
+  args: { name: 'check', size: 'sm' },
+  render: (args) => (
+    <Text size="sm">
+      <Icon {...args} /> Saved
+    </Text>
+  ),
+};
+
+/**
+ * An icon sized at 1em of the surrounding text and sitting on its baseline, for use
+ * inside a Text or Link — nested in a system `Text`, so the glyph takes that Text's
+ * size and color.
+ */
+export const InlineInRunningText: Story = {
   args: { name: 'external', inline: true },
   render: (args) => (
     <Text size="lg">
@@ -67,9 +90,6 @@ export const Inline: Story = {
     </Text>
   ),
 };
-
-// label — meaningful icon, exposed as an image with this name
-export const Label: Story = { args: { name: 'warning', label: 'Warning: over quota' } };
 
 /** Stands in for a parent (an Alert, say) passing its own resolved color — there is no `currentColor` on native. */
 function WithParentColor(props: IconProps): React.JSX.Element {
@@ -82,10 +102,11 @@ export const Color: Story = {
   render: (args) => <WithParentColor {...args} />,
 };
 
-// overrides — replaces individual style bindings with a different token
+// overrides — replaces individual style bindings with a different token. `strokeWidth`
+// is locked (it keeps line glyphs legible at xs) and so is not in the type.
 export const WithOverrides: Story = {
   args: {
     name: 'search',
-    overrides: { size: 'font.size.xl', color: 'color.status.danger.icon', strokeWidth: 'border.width.thin' },
+    overrides: { size: 'font.size.xl', color: 'color.status.danger.icon' },
   },
 };

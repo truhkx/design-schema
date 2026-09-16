@@ -269,12 +269,14 @@ export function Checkbox({
           <>
             <Animated.View style={boxStyle(state)} accessibilityElementsHidden importantForAccessibility="no">
               <Animated.View style={indicatorStyle}>
-                <Icon
-                  name={indeterminate ? 'dash' : 'check'}
-                  size="xs"
-                  color={t.colorControlSelectedForeground}
-                  overrides={{ strokeWidth: overrides?.indicatorStroke }}
-                />
+                {/*
+                  `overrides.indicatorStroke` no longer reaches the glyph: Icon's
+                  `strokeWidth` is a locked binding (it is what keeps line glyphs
+                  legible at xs), and there is no cascade to route it through as on
+                  web. The Checkbox binding stays in the type until Checkbox is
+                  regenerated against the current Icon contract.
+                */}
+                <Icon name={indeterminate ? 'dash' : 'check'} size="xs" color={t.colorControlSelectedForeground} />
               </Animated.View>
             </Animated.View>
             <View style={textColumnStyle}>

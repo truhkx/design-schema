@@ -620,13 +620,13 @@
 <header>
   <div class="wrap">
     <h1>Manifest Debugger</h1>
-    <div class="summary"><a class="filter-pill all" data-k="all" href="#filter-all">All</a><a class="filter-pill err" data-k="errors" href="#filter-errors">2/54 API errors</a><a class="filter-pill info" data-k="infos" href="#filter-infos">2/54 infos</a><a class="filter-pill" data-k="no-api" href="#filter-no-api">1/54 without API description</a><span class="filter-pill ok" aria-disabled="true">702 stories ok</span><a class="filter-pill info" data-k="story-warnings" href="#filter-story-warnings">36/702 incomplete snippets</a></div>
+    <div class="summary"><a class="filter-pill all" data-k="all" href="#filter-all">All</a><a class="filter-pill err" data-k="errors" href="#filter-errors">2/54 API errors</a><a class="filter-pill info" data-k="infos" href="#filter-infos">2/54 infos</a><a class="filter-pill" data-k="no-api" href="#filter-no-api">1/54 without API description</a><span class="filter-pill ok" aria-disabled="true">709 stories ok</span><a class="filter-pill info" data-k="story-warnings" href="#filter-story-warnings">36/709 incomplete snippets</a></div>
   </div>
 </header>
 <main>
   <div class="wrap">
     <div class="note info" style="margin-bottom: 16px;">
-            <strong>Tip:</strong> You are using <code>react-docgen</code> (the default). Generation took <strong>2.5s</strong>. For higher quality prop types, consider switching to <code>react-docgen-typescript</code> in your <code>main.ts</code>:
+            <strong>Tip:</strong> You are using <code>react-docgen</code> (the default). Generation took <strong>8.2s</strong>. For higher quality prop types, consider switching to <code>react-docgen-typescript</code> in your <code>main.ts</code>:
             <pre><code>typescript: {
   reactDocgen: 'react-docgen-typescript',
 }</code></pre>
@@ -9466,7 +9466,7 @@ import { Button } from './Button';</code></pre>
       <div class="badges">
         <label for="c-22-heading-react-props" class="badge ok as-toggle">6 prop types</label>
         
-        <label for="c-22-heading-react-stories" class="badge ok as-toggle">16 stories</label>
+        <label for="c-22-heading-react-stories" class="badge ok as-toggle">19 stories</label>
         
         
       </div>
@@ -9705,6 +9705,36 @@ size?: HeadingSize | undefined</code></pre>
               <pre><code>const AlignEnd = () =&gt; &lt;Heading level=&quot;2&quot; align=&quot;end&quot;&gt;Account settings&lt;/Heading&gt;;</code></pre>
               
             </div>
+            <div class="note ok">
+              <div class="row">
+                <span class="ex-name">Page Title</span>
+                <span class="badge ok">story ok</span>
+              </div>
+              
+              <div class="hint">The one level-1 heading on a page, at its default size.</div>
+              <pre><code>const PageTitle = () =&gt; &lt;Heading level=&quot;1&quot; align=&quot;start&quot;&gt;Account settings&lt;/Heading&gt;;</code></pre>
+              
+            </div>
+            <div class="note ok">
+              <div class="row">
+                <span class="ex-name">Section Heading</span>
+                <span class="badge ok">story ok</span>
+              </div>
+              
+              <div class="hint">A major section of the page, one level below the title.</div>
+              <pre><code>const SectionHeading = () =&gt; &lt;Heading level=&quot;2&quot; align=&quot;start&quot;&gt;Billing&lt;/Heading&gt;;</code></pre>
+              
+            </div>
+            <div class="note ok">
+              <div class="row">
+                <span class="ex-name">Subsection Sized Up</span>
+                <span class="badge ok">story ok</span>
+              </div>
+              
+              <div class="hint">A level-4 heading given a larger size so it still reads as a section start in a wide layout.</div>
+              <pre><code>const SubsectionSizedUp = () =&gt; &lt;Heading level=&quot;4&quot; align=&quot;start&quot; size=&quot;xl&quot;&gt;Payment methods&lt;/Heading&gt;;</code></pre>
+              
+            </div>
         </div>
     
     
@@ -9727,7 +9757,7 @@ size?: HeadingSize | undefined</code></pre>
       <div class="badges">
         <label for="c-23-icon-react-props" class="badge ok as-toggle">6 prop types</label>
         
-        <label for="c-23-icon-react-stories" class="badge ok as-toggle">34 stories</label>
+        <label for="c-23-icon-react-stories" class="badge ok as-toggle">35 stories</label>
         
         
       </div>
@@ -9743,9 +9773,9 @@ Link, the ellipsis in a collapsed Breadcrumb. Use `inline` when the icon is insi
 Give it a `label` only when the icon is the whole message — a lone warning triangle in a table
 cell, say — and the label is what a screen reader should say instead.
 
-Glyphs are drawn in `currentColor`, so a Button, Link or Alert colors them for free; only an
-icon with no colored ancestor falls back to `color.foreground`. Line glyphs use the focus-ring
-width as their stroke.</div>
+Glyphs are drawn in `currentColor`, so a Button, Link or Alert colors them for free; an icon with
+no colored ancestor falls back to what the document root resolves, `color.foreground`. Line
+glyphs use the focus-ring width as their stroke, at every size, so they stay legible at `xs`.</div>
     
   </div>
 
@@ -10162,23 +10192,35 @@ size?: IconSize | undefined = &#39;md&#39;</code></pre>
             </div>
             <div class="note ok">
               <div class="row">
-                <span class="ex-name">Inline</span>
+                <span class="ex-name">Status In A Cell</span>
                 <span class="badge ok">story ok</span>
               </div>
               
               
-              <pre><code>const Inline = () =&gt; &lt;Text element=&quot;p&quot;&gt;Opens in a new tab &lt;Icon name=&quot;external&quot; size=&quot;md&quot; inline /&gt;
-&lt;/Text&gt;;</code></pre>
+              <pre><code>const StatusInACell = () =&gt; &lt;Icon name=&quot;warning&quot; size=&quot;md&quot; inline={false} label=&quot;Warning: over quota&quot; /&gt;;</code></pre>
               
             </div>
             <div class="note ok">
               <div class="row">
-                <span class="ex-name">Labelled</span>
+                <span class="ex-name">Decorative Beside A Label</span>
                 <span class="badge ok">story ok</span>
               </div>
               
               
-              <pre><code>const Labelled = () =&gt; &lt;Icon name=&quot;warning&quot; size=&quot;md&quot; inline={false} label=&quot;Warning: over quota&quot; /&gt;;</code></pre>
+              <pre><code>const DecorativeBesideALabel = () =&gt; &lt;Text element=&quot;span&quot; size=&quot;sm&quot;&gt;
+    &lt;Icon name=&quot;check&quot; size=&quot;sm&quot; inline={false} /&gt;Saved
+        &lt;/Text&gt;;</code></pre>
+              
+            </div>
+            <div class="note ok">
+              <div class="row">
+                <span class="ex-name">Inline In Running Text</span>
+                <span class="badge ok">story ok</span>
+              </div>
+              
+              
+              <pre><code>const InlineInRunningText = () =&gt; &lt;Text&gt;The report opens in a new tab &lt;Icon name=&quot;external&quot; size=&quot;md&quot; inline /&gt;
+&lt;/Text&gt;;</code></pre>
               
             </div>
         </div>
@@ -19877,7 +19919,7 @@ import { TabPanel } from './Tabs';</code></pre>
       <div class="badges">
         <label for="c-48-text-react-props" class="badge ok as-toggle">9 prop types</label>
         
-        <label for="c-48-text-react-stories" class="badge ok as-toggle">21 stories</label>
+        <label for="c-48-text-react-stories" class="badge ok as-toggle">24 stories</label>
         
         
       </div>
@@ -19925,7 +19967,7 @@ align?: TextAlign | undefined = &#39;start&#39;
 children: ReactNode
 
 /**
- * The HTML element to render — `p` for a block, `span` for inline.
+ * The HTML element to render — `p` for a block, `span` for inline. Labels and legends are rendered by Input and (planned) Fieldset, which own the association.
  */
 element?: TextElement | undefined = &#39;p&#39;
 
@@ -19947,7 +19989,7 @@ size?: TextSize | undefined = &#39;md&#39;
 tone?: TextTone | undefined = &#39;default&#39;
 
 /**
- * Clip to one line with an ellipsis. On web the full text is exposed via `title` when children is a plain string; otherwise the consumer passes `title`.
+ * Clip to one line with an ellipsis. The full text is exposed via `title` when children is a plain string; otherwise the consumer passes `title`.
  */
 truncate?: boolean | undefined = false
 
@@ -20292,18 +20334,66 @@ weight?: TextWeight | undefined = &#39;regular&#39;</code></pre>
             </div>
             <div class="note ok">
               <div class="row">
-                <span class="ex-name">Truncate</span>
+                <span class="ex-name">Body Copy</span>
                 <span class="badge ok">story ok</span>
               </div>
               
+              <div class="hint">The default paragraph - body size, regular weight, default tone.</div>
+              <pre><code>const BodyCopy = () =&gt; &lt;Text
+    size=&quot;md&quot;
+    weight=&quot;regular&quot;
+    tone=&quot;default&quot;
+    align=&quot;start&quot;
+    truncate={false}
+    element=&quot;p&quot;&gt;Changes are saved automatically. You can undo any change for 30 days.&lt;/Text&gt;;</code></pre>
               
-              <pre><code>const Truncate = () =&gt; &lt;Text
+            </div>
+            <div class="note ok">
+              <div class="row">
+                <span class="ex-name">Caption</span>
+                <span class="badge ok">story ok</span>
+              </div>
+              
+              <div class="hint">Secondary metadata at the smallest readable size, muted so it sits behind the content it annotates.</div>
+              <pre><code>const Caption = () =&gt; &lt;Text
+    size=&quot;xs&quot;
+    weight=&quot;regular&quot;
+    tone=&quot;muted&quot;
+    align=&quot;start&quot;
+    truncate={false}
+    element=&quot;p&quot;&gt;Last updated 2 minutes ago.&lt;/Text&gt;;</code></pre>
+              
+            </div>
+            <div class="note ok">
+              <div class="row">
+                <span class="ex-name">Inline Error Wording</span>
+                <span class="badge ok">story ok</span>
+              </div>
+              
+              <div class="hint">Error copy where the danger tone is paired with explicit words, so color alone never carries the meaning.</div>
+              <pre><code>const InlineErrorWording = () =&gt; &lt;Text
+    size=&quot;md&quot;
+    weight=&quot;regular&quot;
+    tone=&quot;danger&quot;
+    align=&quot;start&quot;
+    truncate={false}
+    element=&quot;span&quot;&gt;Error: enter an email address like name@example.com&lt;/Text&gt;;</code></pre>
+              
+            </div>
+            <div class="note ok">
+              <div class="row">
+                <span class="ex-name">Truncated Cell</span>
+                <span class="badge ok">story ok</span>
+              </div>
+              
+              <div class="hint">One line of text in a dense cell, with the full string still reachable.</div>
+              <pre><code>const TruncatedCell = () =&gt; &lt;Text
     size=&quot;md&quot;
     weight=&quot;regular&quot;
     tone=&quot;default&quot;
     align=&quot;start&quot;
     truncate
-    element=&quot;p&quot;&gt;This sentence is intentionally long so that it overflows the container and is clipped to one line with an ellipsis; the full text is still available in the title attribute.&lt;/Text&gt;;</code></pre>
+    element=&quot;p&quot;&gt;Quarterly revenue summary for the EMEA region.&lt;/Text&gt;;</code></pre>
               
             </div>
         </div>

@@ -1,5 +1,5 @@
 {
-  "layout": "sweep",
+  "layout": "scenarios",
   "platforms": {
     "react": true,
     "lit": true,
@@ -20,13 +20,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text>Use the email you signed up with.</Text>",
-        "lit": "<ds-text>Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "lit": null,
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text>Use the email you signed up with. We will send a verification code to it.</Text>",
         "swift": null
       },
       "stories": {
         "react": "Default",
-        "lit": "Default",
+        "lit": null,
         "rn": "Default",
         "swift": null
       },
@@ -48,13 +48,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text size=\"xs\">Use the email you signed up with.</Text>",
-        "lit": "<ds-text size=\"xs\">Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "lit": null,
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text size=\"xs\">Use the email you signed up with. We will send a verification code to it.</Text>",
         "swift": null
       },
       "stories": {
         "react": "SizeXs",
-        "lit": "SizeXs",
+        "lit": null,
         "rn": "SizeXs",
         "swift": null
       },
@@ -64,7 +64,7 @@
         "value": "xs"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Size Sm",
@@ -79,13 +79,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text size=\"sm\">Use the email you signed up with.</Text>",
-        "lit": "<ds-text size=\"sm\">Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "lit": null,
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text size=\"sm\">Use the email you signed up with. We will send a verification code to it.</Text>",
         "swift": null
       },
       "stories": {
         "react": "SizeSm",
-        "lit": "SizeSm",
+        "lit": null,
         "rn": "SizeSm",
         "swift": null
       },
@@ -95,7 +95,7 @@
         "value": "sm"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Size Md",
@@ -110,13 +110,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text size=\"md\">Use the email you signed up with.</Text>",
-        "lit": "<ds-text size=\"md\">Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "lit": null,
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text size=\"md\">Use the email you signed up with. We will send a verification code to it.</Text>",
         "swift": null
       },
       "stories": {
         "react": "SizeMd",
-        "lit": "SizeMd",
+        "lit": null,
         "rn": "SizeMd",
         "swift": null
       },
@@ -126,7 +126,7 @@
         "value": "md"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Size Lg",
@@ -141,13 +141,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text size=\"lg\">Use the email you signed up with.</Text>",
-        "lit": "<ds-text size=\"lg\">Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "lit": null,
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text size=\"lg\">Use the email you signed up with. We will send a verification code to it.</Text>",
         "swift": null
       },
       "stories": {
         "react": "SizeLg",
-        "lit": "SizeLg",
+        "lit": null,
         "rn": "SizeLg",
         "swift": null
       },
@@ -157,7 +157,7 @@
         "value": "lg"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Size Xl",
@@ -172,13 +172,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text size=\"xl\">Use the email you signed up with.</Text>",
-        "lit": "<ds-text size=\"xl\">Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "lit": null,
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text size=\"xl\">Use the email you signed up with. We will send a verification code to it.</Text>",
         "swift": null
       },
       "stories": {
         "react": "SizeXl",
-        "lit": "SizeXl",
+        "lit": null,
         "rn": "SizeXl",
         "swift": null
       },
@@ -188,7 +188,7 @@
         "value": "xl"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Weight Regular",
@@ -203,13 +203,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text weight=\"regular\">Use the email you signed up with.</Text>",
-        "lit": "<ds-text weight=\"regular\">Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "lit": null,
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text weight=\"regular\">Use the email you signed up with. We will send a verification code to it.</Text>",
         "swift": null
       },
       "stories": {
         "react": "WeightRegular",
-        "lit": "WeightRegular",
+        "lit": null,
         "rn": "WeightRegular",
         "swift": null
       },
@@ -219,7 +219,7 @@
         "value": "regular"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Weight Medium",
@@ -234,13 +234,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text weight=\"medium\">Use the email you signed up with.</Text>",
-        "lit": "<ds-text weight=\"medium\">Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "lit": null,
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text weight=\"medium\">Use the email you signed up with. We will send a verification code to it.</Text>",
         "swift": null
       },
       "stories": {
         "react": "WeightMedium",
-        "lit": "WeightMedium",
+        "lit": null,
         "rn": "WeightMedium",
         "swift": null
       },
@@ -250,7 +250,7 @@
         "value": "medium"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Weight Semibold",
@@ -265,13 +265,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text weight=\"semibold\">Use the email you signed up with.</Text>",
-        "lit": "<ds-text weight=\"semibold\">Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "lit": null,
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text weight=\"semibold\">Use the email you signed up with. We will send a verification code to it.</Text>",
         "swift": null
       },
       "stories": {
         "react": "WeightSemibold",
-        "lit": "WeightSemibold",
+        "lit": null,
         "rn": "WeightSemibold",
         "swift": null
       },
@@ -281,7 +281,7 @@
         "value": "semibold"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Weight Bold",
@@ -296,13 +296,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text weight=\"bold\">Use the email you signed up with.</Text>",
-        "lit": "<ds-text weight=\"bold\">Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "lit": null,
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text weight=\"bold\">Use the email you signed up with. We will send a verification code to it.</Text>",
         "swift": null
       },
       "stories": {
         "react": "WeightBold",
-        "lit": "WeightBold",
+        "lit": null,
         "rn": "WeightBold",
         "swift": null
       },
@@ -312,7 +312,7 @@
         "value": "bold"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Tone Default",
@@ -327,13 +327,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text tone=\"default\">Use the email you signed up with.</Text>",
-        "lit": "<ds-text tone=\"default\">Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "lit": null,
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text tone=\"default\">Use the email you signed up with. We will send a verification code to it.</Text>",
         "swift": null
       },
       "stories": {
         "react": "ToneDefault",
-        "lit": "ToneDefault",
+        "lit": null,
         "rn": "ToneDefault",
         "swift": null
       },
@@ -343,7 +343,7 @@
         "value": "default"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Tone Strong",
@@ -358,13 +358,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text tone=\"strong\">Use the email you signed up with.</Text>",
-        "lit": "<ds-text tone=\"strong\">Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "lit": null,
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text tone=\"strong\">Use the email you signed up with. We will send a verification code to it.</Text>",
         "swift": null
       },
       "stories": {
         "react": "ToneStrong",
-        "lit": "ToneStrong",
+        "lit": null,
         "rn": "ToneStrong",
         "swift": null
       },
@@ -374,7 +374,7 @@
         "value": "strong"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Tone Muted",
@@ -389,13 +389,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text tone=\"muted\">Use the email you signed up with.</Text>",
-        "lit": "<ds-text tone=\"muted\">Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "lit": null,
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text tone=\"muted\">Use the email you signed up with. We will send a verification code to it.</Text>",
         "swift": null
       },
       "stories": {
         "react": "ToneMuted",
-        "lit": "ToneMuted",
+        "lit": null,
         "rn": "ToneMuted",
         "swift": null
       },
@@ -405,7 +405,7 @@
         "value": "muted"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Tone Danger",
@@ -420,13 +420,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text tone=\"danger\">Error: enter an email address like name@example.com.</Text>",
-        "lit": "<ds-text tone=\"danger\">Error: enter an email address like name@example.com</ds-text>",
+        "lit": null,
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text tone=\"danger\">Error: enter an email address like name@example.com</Text>",
         "swift": null
       },
       "stories": {
         "react": "ToneDanger",
-        "lit": "ToneDanger",
+        "lit": null,
         "rn": "ToneDanger",
         "swift": null
       },
@@ -436,7 +436,7 @@
         "value": "danger"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Tone On Action",
@@ -451,7 +451,7 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text tone=\"onAction\">Text on an action background</Text>",
-        "lit": "<div style=\"background: var(--color-action-primary-background); padding: var(--space-md)\">\n  <ds-text tone=\"onAction\">Text on an action background</ds-text>\n</div>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\nimport type { TextAlign, TextElement, TextSize, TextTone, TextWeight } from '@design-schema/lit';\n\ninterface TextArgs {\n  size: TextSize;\n  weight: TextWeight;\n  tone: TextTone;\n  align: TextAlign;\n  truncate: boolean;\n  element: TextElement;\n  text: string;\n}\n\nfunction renderText(args: TextArgs): TemplateResult {\n  return html`\n    <ds-text\n      size=${args.size}\n      weight=${args.weight}\n      tone=${args.tone}\n      align=${args.align}\n      ?truncate=${args.truncate}\n      .element=${args.element}\n      >${args.text}</ds-text\n    >\n  `;\n}\n\nhtml`\n  <div style=\"background: var(--color-action-primary-background); padding: var(--space-md)\">${renderText({ tone: 'onAction', text: 'Text on an action background' })}</div>\n`;",
         "rn": "import * as React from 'react';\nimport { View } from 'react-native';\nimport { Text, useTheme } from '@design-schema/rn';\n\nfunction OnActionSurface(props: React.ComponentProps<typeof Text>): React.JSX.Element {\n  const { tokens } = useTheme();\n  return (\n    <View\n      style={{\n        backgroundColor: tokens.colorActionPrimaryBackground,\n        paddingHorizontal: tokens.spaceMd,\n        paddingVertical: tokens.spaceSm,\n        borderRadius: tokens.radiusMd,\n      }}\n    >\n      <Text {...props} />\n    </View>\n  );\n}\n\n<OnActionSurface tone=\"onAction\">Save changes</OnActionSurface>",
         "swift": null
       },
@@ -467,7 +467,7 @@
         "value": "onAction"
       },
       "decorated": true,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Align Start",
@@ -482,13 +482,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text align=\"start\">Use the email you signed up with.</Text>",
-        "lit": "<ds-text align=\"start\">Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "lit": null,
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text align=\"start\">Use the email you signed up with. We will send a verification code to it.</Text>",
         "swift": null
       },
       "stories": {
         "react": "AlignStart",
-        "lit": "AlignStart",
+        "lit": null,
         "rn": "AlignStart",
         "swift": null
       },
@@ -498,7 +498,7 @@
         "value": "start"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Align Center",
@@ -513,13 +513,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text align=\"center\">Use the email you signed up with.</Text>",
-        "lit": "<ds-text align=\"center\">Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "lit": null,
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text align=\"center\">Use the email you signed up with. We will send a verification code to it.</Text>",
         "swift": null
       },
       "stories": {
         "react": "AlignCenter",
-        "lit": "AlignCenter",
+        "lit": null,
         "rn": "AlignCenter",
         "swift": null
       },
@@ -529,7 +529,7 @@
         "value": "center"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Align End",
@@ -544,13 +544,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text align=\"end\">Use the email you signed up with.</Text>",
-        "lit": "<ds-text align=\"end\">Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "lit": null,
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text align=\"end\">Use the email you signed up with. We will send a verification code to it.</Text>",
         "swift": null
       },
       "stories": {
         "react": "AlignEnd",
-        "lit": "AlignEnd",
+        "lit": null,
         "rn": "AlignEnd",
         "swift": null
       },
@@ -560,7 +560,7 @@
         "value": "end"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Element P",
@@ -575,13 +575,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text element=\"p\">Use the email you signed up with.</Text>",
-        "lit": "<ds-text element=\"p\">Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "lit": null,
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "ElementP",
-        "lit": "ElementP",
+        "lit": null,
         "rn": null,
         "swift": null
       },
@@ -591,7 +591,7 @@
         "value": "p"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Element Span",
@@ -606,13 +606,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text element=\"span\">Use the email you signed up with.</Text>",
-        "lit": "<ds-text element=\"span\">Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
+        "lit": null,
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "ElementSpan",
-        "lit": "ElementSpan",
+        "lit": null,
         "rn": null,
         "swift": null
       },
@@ -622,12 +622,96 @@
         "value": "span"
       },
       "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Body Copy",
+      "args": {
+        "children": "Changes are saved automatically. You can undo any change for 30 days.",
+        "size": "md",
+        "weight": "regular",
+        "tone": "default",
+        "align": "start",
+        "truncate": false,
+        "element": "p"
+      },
+      "snippets": {
+        "react": "import { Text } from '@design-schema/react';\n\n<Text>Changes are saved automatically. You can undo any change for 30 days.</Text>",
+        "lit": null,
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text>Changes are saved automatically. You can undo any change for 30 days.</Text>",
+        "swift": null
+      },
+      "stories": {
+        "react": "BodyCopy",
+        "lit": null,
+        "rn": "BodyCopy",
+        "swift": null
+      },
+      "storyId": "text-react--body-copy",
+      "sweep": null,
+      "decorated": false,
       "primary": true
     },
     {
-      "title": "Truncate",
+      "title": "Caption",
       "args": {
-        "children": "This sentence is intentionally long so that it overflows the container and is clipped to one line with an ellipsis; the full text is still available in the title attribute.",
+        "children": "Last updated 2 minutes ago.",
+        "size": "xs",
+        "weight": "regular",
+        "tone": "muted",
+        "align": "start",
+        "truncate": false,
+        "element": "p"
+      },
+      "snippets": {
+        "react": "import { Text } from '@design-schema/react';\n\n<Text size=\"xs\" tone=\"muted\">Last updated 2 minutes ago.</Text>",
+        "lit": null,
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text size=\"xs\" tone=\"muted\">Last updated 2 minutes ago.</Text>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Caption",
+        "lit": null,
+        "rn": "Caption",
+        "swift": null
+      },
+      "storyId": "text-react--caption",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Inline Error Wording",
+      "args": {
+        "children": "Error: enter an email address like name@example.com",
+        "size": "md",
+        "weight": "regular",
+        "tone": "danger",
+        "align": "start",
+        "truncate": false,
+        "element": "span"
+      },
+      "snippets": {
+        "react": "import { Text } from '@design-schema/react';\n\n<Text tone=\"danger\" element=\"span\">Error: enter an email address like name@example.com</Text>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "InlineErrorWording",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "text-react--inline-error-wording",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Truncated Cell",
+      "args": {
+        "children": "Quarterly revenue summary for the EMEA region.",
         "size": "md",
         "weight": "regular",
         "tone": "default",
@@ -636,18 +720,18 @@
         "element": "p"
       },
       "snippets": {
-        "react": "import { Text } from '@design-schema/react';\n\n<Text truncate>This sentence is intentionally long so that it overflows the container and is clipped to one line with an ellipsis; the full text is still available in the title attribute.</Text>",
-        "lit": "<div style=\"max-inline-size: 16rem\">\n  <ds-text truncate>Changes are saved automatically. You can undo any change for 30 days.</ds-text>\n</div>",
-        "rn": null,
+        "react": "import { Text } from '@design-schema/react';\n\n<Text truncate>Quarterly revenue summary for the EMEA region.</Text>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\nimport type { TextAlign, TextElement, TextSize, TextTone, TextWeight } from '@design-schema/lit';\n\ninterface TextArgs {\n  size: TextSize;\n  weight: TextWeight;\n  tone: TextTone;\n  align: TextAlign;\n  truncate: boolean;\n  element: TextElement;\n  text: string;\n}\n\nfunction renderText(args: TextArgs): TemplateResult {\n  return html`\n    <ds-text\n      size=${args.size}\n      weight=${args.weight}\n      tone=${args.tone}\n      align=${args.align}\n      ?truncate=${args.truncate}\n      .element=${args.element}\n      >${args.text}</ds-text\n    >\n  `;\n}\n\nhtml`\n  <div style=\"max-inline-size: 16rem\">${renderText({ truncate: true, text: 'Quarterly revenue summary for the EMEA region.' })}</div>\n`;",
+        "rn": "import { Text } from '@design-schema/rn';\n\n<Text truncate>Quarterly revenue summary for the EMEA region.</Text>",
         "swift": null
       },
       "stories": {
-        "react": "Truncate",
-        "lit": "Truncate",
-        "rn": null,
+        "react": "TruncatedCell",
+        "lit": "TruncatedCell",
+        "rn": "TruncatedCell",
         "swift": null
       },
-      "storyId": "text-react--truncate",
+      "storyId": "text-react--truncated-cell",
       "sweep": {
         "prop": "truncate",
         "value": true

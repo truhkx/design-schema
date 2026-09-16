@@ -5,7 +5,7 @@ import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { useFormContext } from './FormContext';
 import type { FormFieldHandle } from './FormContext';
-import { Text } from './Text';
+import { Text, TextForegroundContext } from './Text';
 import { toEasing, toLineHeight, useReducedMotion, useTheme } from './theme';
 import type { Tokens } from './theme';
 
@@ -181,6 +181,7 @@ interface ThumbStyleTokens {
   haloOpacity: number;
   minTarget: number;
   bubbleSurface: string;
+  bubbleText: string;
   motionEasingStandard: readonly number[];
   transitionDuration: number;
 }
@@ -381,9 +382,12 @@ const SliderThumb = React.forwardRef<ViewInstance, SliderThumbProps>(function Sl
     >
       {showBubble && dragging ? (
         <View pointerEvents="none" style={bubbleStyle}>
-          <Text size="sm" overrides={{ color: 'color.inverse.foreground' }}>
-            {formatValue(value)}
-          </Text>
+          {/* bubbleText: color.inverse.foreground, locked. Text's own `color` binding is locked
+              too, so the bubble provides its foreground to the subtree rather than forwarding a
+              color override to the composed Text. */}
+          <TextForegroundContext.Provider value={st.bubbleText}>
+            <Text size="sm">{formatValue(value)}</Text>
+          </TextForegroundContext.Provider>
         </View>
       ) : null}
       <Animated.View pointerEvents="none" style={haloStyle} />
@@ -596,6 +600,7 @@ export function Slider({
     haloOpacity: thumbActiveScale,
     minTarget: t.sizeTargetComfortable,
     bubbleSurface: t.colorInverseSurface,
+    bubbleText: t.colorInverseForeground,
     motionEasingStandard: t.motionEasingStandard,
     transitionDuration,
   };
@@ -779,7 +784,10 @@ export function Slider({
       ) : null}
       {displayedError !== undefined ? (
         <View testID="Slider.errorMessage" accessibilityLiveRegion={summarised ? 'none' : 'assertive'}>
-          <Text size="sm" tone="danger" overrides={{ ...helperOverrides, color: overrides?.errorText }}>
+          {/* `overrides.errorText` has no forward: the message is a composed Text with
+              `tone="danger"`, whose `color` binding is locked (every tone is contrast-checked),
+              so Slider must not restyle it. Accepted and ignored, per the overrides contract. */}
+          <Text size="sm" tone="danger" overrides={helperOverrides}>
             {displayedError}
           </Text>
         </View>

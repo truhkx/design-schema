@@ -298,8 +298,11 @@ export class DsSlider extends LitElement {
       outline-offset: var(--border-width-focus);
     }
 
-    /* bubbleSurface: color.inverse.surface, locked; bubbleText forwarded to the composed ds-text */
+    /* bubbleSurface: color.inverse.surface, locked; bubbleText: color.inverse.foreground, locked.
+       Text's own color binding is locked too, so the bubble cannot forward a color override to
+       it — it re-scopes the foreground token the composed ds-text already reads instead. */
     .bubble {
+      --color-foreground: var(--color-inverse-foreground);
       position: absolute;
       inset-block-end: calc(100% + var(--ds-slider-part-gap));
       inset-inline-start: 50%;
@@ -586,7 +589,7 @@ export class DsSlider extends LitElement {
         </div>
         ${showBubble
           ? html`<div class="bubble" part="valueText">
-              <ds-text size="sm" element="span" .overrides=${this.bubbleTextOverrides}>${text}</ds-text>
+              <ds-text size="sm" element="span">${text}</ds-text>
             </div>`
           : nothing}
       </div>
@@ -854,11 +857,6 @@ export class DsSlider extends LitElement {
       result.fontSize = this.overrides.helperSize;
     }
     return result;
-  }
-
-  /** bubbleText: color.inverse.foreground, locked — forwarded as a fixed override, like Tooltip's popup text. */
-  private get bubbleTextOverrides(): Partial<Record<TextOverridableBinding, TokenRef | undefined>> {
-    return { color: 'color.inverse.foreground' };
   }
 
   /** Mirror value and validity into ElementInternals so an owning native form sees them. */

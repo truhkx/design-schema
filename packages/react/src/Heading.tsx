@@ -81,7 +81,7 @@ export const Heading = function Heading({ ref, level, size, children, align = 's
   const mergedStyle = overrideStyle || style ? { ...overrideStyle, ...style } : undefined;
 
   return (
-    <Tag {...rest} ref={ref as Ref<HTMLHeadingElement>} data-ds="Heading" className={classes} style={mergedStyle}>
+    <Tag {...rest} ref={ref as Ref<HTMLHeadingElement>} data-ds="Heading" data-part="text" className={classes} style={mergedStyle}>
       {children}
     </Tag>
   );

@@ -11,7 +11,7 @@ export type HeadingAlign = 'start' | 'center' | 'end';
 export type HeadingOverridableBinding = 'fontFamily' | 'fontWeight' | 'fontSize' | 'lineHeight' | 'marginBlockEnd';
 
 const HOOKS: Record<HeadingOverridableBinding, string> = {
-  fontFamily: `--ds-heading-font-family`,
+  fontFamily: '--ds-heading-font-family',
   fontWeight: '--ds-heading-font-weight',
   fontSize: '--ds-heading-font-size',
   lineHeight: '--ds-heading-line-height',
@@ -27,29 +27,51 @@ const TAGS: Record<HeadingLevel, StaticValue> = {
   '6': literal`h6`,
 };
 
-function isHeadingLevel(value: unknown): value is HeadingLevel {
-  return typeof value === 'string' && Object.prototype.hasOwnProperty.call(TAGS, value);
+/** The element rendered when `level` is missing or unknown, so the heading is never dropped. */
+const FALLBACK_LEVEL: HeadingLevel = '2';
+
+/**
+ * Canonical levels are the strings `'1'`–`'6'`; the number form (`level=3`,
+ * `.level = 3`) is accepted too and reflects as the same attribute.
+ */
+function normalizeLevel(value: HeadingLevel | number | null | undefined): HeadingLevel | undefined {
+  if (value === undefined || value === null) return undefined;
+  const key = String(value);
+  return Object.prototype.hasOwnProperty.call(TAGS, key) ? (key as HeadingLevel) : undefined;
 }
 
 /**
  * `<ds-heading>` — Heading (category: typography).
  *
- * `<ds-heading level="2">` renders a real `<h2>` inside its shadow root with
- * `part="heading"`. `level` chooses the element (document outline); `size`
- * chooses the visual size independently and defaults to the size that matches
- * the level (1→4xl, 2→3xl, 3→2xl, 4→xl, 5→lg, 6→md).
+ * `<ds-heading level="2">` renders a real `<h2>` inside its shadow root. `level`
+ * chooses the semantic element — the document outline screen-reader users
+ * navigate by — and `size` chooses the visual size independently, defaulting to
+ * the size that matches the level (1→4xl, 2→3xl, 3→2xl, 4→xl, 5→lg, 6→md).
+ * `level`, `size` and `align` are reflected, so `ds-heading[level='1']`
+ * selectors work from a consuming app.
  *
  * ## When to use
  *
  * Use a Heading to title a page, a section, or a card that contains its own
- * content. Choose `level` from the document outline — the page title is `1`,
- * its major sections are `2`, their subsections `3` — and then choose `size`
+ * content. Choose `level` from the document outline — the page title is `1`, its
+ * major sections are `2`, their subsections `3` — and then choose `size`
  * separately if the default visual size is wrong for the layout. Decoupling
  * level from size is the whole point of this component: it lets designers pick
  * the right look without breaking the outline.
  *
+ * ## When not to use
+ *
+ * Do not use a Heading purely to make text large or bold — use `<ds-text>` with
+ * a larger size. Do not skip levels (a `2` followed by a `4`), do not use more
+ * than one `level="1"` per page, and do not put interactive controls inside a
+ * heading.
+ *
+ * Styling comes through the `--ds-heading-*` hooks and the `overrides`
+ * property, never `::part`. Headings inside shadow roots are exposed to
+ * assistive technology normally, but some in-page outline tools do not see them.
+ *
  * @slot - The heading text. Keep it short and descriptive; it is what appears in the page outline.
- * @csspart heading - The rendered `<h1>`–`<h6>`.
+ * @csspart text - The rendered `<h1>`–`<h6>`.
  */
 @customElement('ds-heading')
 export class DsHeading extends LitElement {
@@ -68,18 +90,20 @@ export class DsHeading extends LitElement {
     }
 
     .heading {
+      /* marginBlockEnd: space.sm — the one margin the system allows, because a
+         heading owns the gap to its own first paragraph. */
       margin-block: 0 var(--ds-heading-margin-block-end);
       margin-inline: 0;
       font-family: var(--ds-heading-font-family);
       font-weight: var(--ds-heading-font-weight);
       font-size: var(--ds-heading-font-size);
       line-height: var(--ds-heading-line-height);
-      /* color: color.foreground.strong, locked — no override hook */
+      /* color: color.foreground.strong, locked (AAA against color.background) — no override hook */
       color: var(--color-foreground-strong);
       text-align: start;
     }
 
-    /* fontSize: font.size.{size} default per level */
+    /* fontSize: font.size.{size}, defaulted per level */
     :host([level='1']) {
       --ds-heading-font-size: var(--font-size-4xl);
     }
@@ -99,7 +123,7 @@ export class DsHeading extends LitElement {
       --ds-heading-font-size: var(--font-size-md);
     }
 
-    /* fontSize: an explicit size wins over the level default */
+    /* fontSize: an explicit size wins over the level default (same specificity, later rule) */
     :host([size='4xl']) {
       --ds-heading-font-size: var(--font-size-4xl);
     }
@@ -132,18 +156,27 @@ export class DsHeading extends LitElement {
 
   /**
    * Position in the document outline. Controls the semantic element, not the
-   * visual size. Required; a missing or unknown level falls back to `<h2>`.
+   * visual size — screen-reader users navigate by heading level, so levels must
+   * not skip (h1 → h3). Required; the canonical values are the strings `'1'`–
+   * `'6'` and the numbers `1`–`6` are accepted too. A missing or unknown level
+   * falls back to `<h2>`.
    */
-  @property({ reflect: true }) accessor level!: HeadingLevel;
+  @property({ type: String, reflect: true }) accessor level!: HeadingLevel | 1 | 2 | 3 | 4 | 5 | 6;
 
-  /** Visual size, independent of level. Defaults to the size that matches the level. */
-  @property({ reflect: true }) accessor size: HeadingSize | undefined;
+  /**
+   * Visual size, independent of level. Defaults per level: 1 → 4xl, 2 → 3xl,
+   * 3 → 2xl, 4 → xl, 5 → lg, 6 → md.
+   */
+  @property({ type: String, reflect: true }) accessor size: HeadingSize | undefined;
 
-  /** Horizontal text alignment. */
-  @property({ reflect: true }) accessor align: HeadingAlign = 'start';
+  /** Horizontal text alignment. `start`/`end` follow writing direction. */
+  @property({ type: String, reflect: true }) accessor align: HeadingAlign = 'start';
 
   /** Per-instance style overrides: `{ fontSize: 'font.size.lg' }`. `color` is locked and ignored. */
   @property({ attribute: false }) accessor overrides: Partial<Record<HeadingOverridableBinding, TokenRef | undefined>> | undefined;
+
+  /** Development-only: the missing-level warning is emitted at most once per element. */
+  private warnedMissingLevel = false;
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -154,11 +187,21 @@ export class DsHeading extends LitElement {
     if (changed.has('overrides')) {
       this.applyOverrides();
     }
+    if (import.meta.env.DEV && changed.has('level') && normalizeLevel(this.level) === undefined) {
+      if (!this.warnedMissingLevel) {
+        this.warnedMissingLevel = true;
+        console.warn(
+          `<ds-heading> needs a level from 1 to 6 to sit in the document outline; got ${String(
+            this.level,
+          )}. Rendering <h${FALLBACK_LEVEL}>.`,
+        );
+      }
+    }
   }
 
   protected override render(): TemplateResult {
-    const tag = isHeadingLevel(this.level) ? TAGS[this.level] : TAGS['2'];
-    return html`<${tag} class="heading" part="heading"><slot></slot></${tag}>`;
+    const tag = TAGS[normalizeLevel(this.level) ?? FALLBACK_LEVEL];
+    return html`<${tag} class="heading" part="text" data-part="text"><slot></slot></${tag}>`;
   }
 
   private applyOverrides(): void {

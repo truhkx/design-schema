@@ -64,8 +64,23 @@ export const Border: Story = { args: { border: true, inset: 'md' } };
 export const WithOverrides: Story = {
   args: {
     inset: 'md',
-    surface: 'subtle',
+    border: true,
     radius: 'sm',
-    overrides: { background: 'color.status.info.background', radius: 'radius.lg' },
+    overrides: { paddingBlock: 'layout.inset.xl', radius: 'radius.lg', border: 'color.border.strong' },
   },
+};
+
+/** A panel lifted off the page with a tinted surface, rounded corners and the usual inset. */
+export const HighlightedPanel: Story = {
+  args: { children: <Text>A panel of settings</Text>, inset: 'md', surface: 'subtle', radius: 'md' },
+};
+
+/** A dense row bounded by a thin border rather than a fill. */
+export const BorderedRow: Story = {
+  args: { children: <Text>A row of data</Text>, inset: 'sm', border: true },
+};
+
+/** A full-width band with more vertical than horizontal padding, on the strongest surface. */
+export const HeroBand: Story = {
+  args: { children: <Text>A hero band</Text>, insetBlock: 'xl', insetInline: 'lg', surface: 'strong' },
 };

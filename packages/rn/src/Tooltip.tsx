@@ -3,7 +3,7 @@ import { Animated, I18nManager, Platform, View } from 'react-native';
 import type { LayoutChangeEvent, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
-import { Text } from './Text';
+import { Text, TextForegroundContext } from './Text';
 import { toEasing, useReducedMotion, useTheme } from './theme';
 
 export type TooltipPlacement = 'top' | 'bottom' | 'start' | 'end';
@@ -322,17 +322,21 @@ export function Tooltip({
           importantForAccessibility="no"
           style={bubbleStyle}
         >
-          <Text
-            size="sm"
-            overrides={{
-              color: 'color.inverse.foreground',
-              fontFamily: overrides?.fontFamily,
-              fontSize: overrides?.fontSize,
-              lineHeight: overrides?.lineHeight,
-            }}
-          >
-            {content}
-          </Text>
+          {/* surface: color.inverse.surface, text: color.inverse.foreground — both locked, and
+              Text's own `color` binding is locked as well, so the popup provides its foreground to
+              the subtree instead of forwarding a color override to the composed Text. */}
+          <TextForegroundContext.Provider value={t.colorInverseForeground}>
+            <Text
+              size="sm"
+              overrides={{
+                fontFamily: overrides?.fontFamily,
+                fontSize: overrides?.fontSize,
+                lineHeight: overrides?.lineHeight,
+              }}
+            >
+              {content}
+            </Text>
+          </TextForegroundContext.Provider>
         </Animated.View>
       ) : null}
     </View>

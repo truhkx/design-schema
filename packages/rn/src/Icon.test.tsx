@@ -21,6 +21,31 @@ function setup(given: Partial<IconProps> = {}) {
 }
 
 describe('Icon', () => {
+  /*
+   * Decorative icons carry no information the adjacent text does not, so "Save" is
+   * announced as "Save", not "check mark Save" (WCAG 1.1.1).
+   */
+  it('unlabelled-icon-is-hidden-from-assistive-technology', () => {
+    setup();
+    // The default queries skip elements hidden from assistive technology, so not
+    // finding the root is the scenario; the props are what hide it.
+    expect(screen.queryByTestId('Icon')).toBeNull();
+    const root = screen.getByTestId('Icon', { includeHiddenElements: true });
+    expect(root.props.accessibilityElementsHidden).toBe(true);
+    expect(root.props.importantForAccessibility).toBe('no');
+  });
+
+  /*
+   * When set, the icon is exposed as an image with this name; the aria-hidden of the
+   * decorative case is gone.
+   */
+  it('label-makes-the-icon-meaningful', () => {
+    setup({ name: 'warning', label: 'Warning: over quota' });
+    expect(screen.getByLabelText('Warning: over quota')).toBeTruthy();
+    expect(screen.getByTestId('Icon').props.accessibilityElementsHidden).toBe(false);
+    expect(screen.getByTestId('Icon').props.accessibilityRole).toBe('image');
+  });
+
   /* derived: renders */
   it('renders', () => {
     const s = setup();

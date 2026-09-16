@@ -5,6 +5,7 @@ import { Text } from './Text';
 const meta: Meta<typeof Icon> = {
   title: 'Icon/React',
   component: Icon,
+  tags: ['autodocs'],
   args: {
     name: 'check',
     size: 'md',
@@ -52,15 +53,27 @@ export const SizeMd: Story = { args: { size: 'md' } };
 export const SizeLg: Story = { args: { size: 'lg' } };
 export const SizeXl: Story = { args: { size: 'xl' } };
 
-/* booleans */
-export const Inline: Story = {
-  args: { inline: true, name: 'external' },
+/* A lone status glyph that is the whole message, so it says what it means instead of what it depicts. */
+export const StatusInACell: Story = {
+  args: { name: 'warning', label: 'Warning: over quota' },
+};
+
+/* The usual case - a glyph next to text, with no label, so the label carries the meaning alone. */
+export const DecorativeBesideALabel: Story = {
+  args: { name: 'check', size: 'sm' },
   render: (args) => (
-    <Text element="p">
-      Opens in a new tab <Icon {...args} />
+    <Text element="span" size="sm">
+      <Icon {...args} /> Saved
     </Text>
   ),
 };
 
-/* label: a meaningful icon, announced as an image. */
-export const Labelled: Story = { args: { name: 'warning', label: 'Warning: over quota' } };
+/* An icon sized at 1em of the surrounding text and sitting on its baseline, for use inside a Text or Link. */
+export const InlineInRunningText: Story = {
+  args: { name: 'external', inline: true },
+  render: (args) => (
+    <Text>
+      The report opens in a new tab <Icon {...args} />
+    </Text>
+  ),
+};

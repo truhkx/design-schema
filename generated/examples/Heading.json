@@ -1,5 +1,5 @@
 {
-  "layout": "sweep",
+  "layout": "scenarios",
   "platforms": {
     "react": true,
     "lit": true,
@@ -56,7 +56,7 @@
         "value": "1"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Level 2",
@@ -83,7 +83,7 @@
         "value": "2"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Level 3",
@@ -110,7 +110,7 @@
         "value": "3"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Level 4",
@@ -137,7 +137,7 @@
         "value": "4"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Level 5",
@@ -164,7 +164,7 @@
         "value": "5"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Level 6",
@@ -191,7 +191,7 @@
         "value": "6"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Size 4 Xl",
@@ -219,7 +219,7 @@
         "value": "4xl"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Size 3 Xl",
@@ -247,7 +247,7 @@
         "value": "3xl"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Size 2 Xl",
@@ -275,7 +275,7 @@
         "value": "2xl"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Size Xl",
@@ -303,7 +303,7 @@
         "value": "xl"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Size Lg",
@@ -331,7 +331,7 @@
         "value": "lg"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Size Md",
@@ -359,7 +359,7 @@
         "value": "md"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Align Start",
@@ -386,7 +386,7 @@
         "value": "start"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Align Center",
@@ -413,7 +413,7 @@
         "value": "center"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Align End",
@@ -439,6 +439,85 @@
         "prop": "align",
         "value": "end"
       },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Page Title",
+      "args": {
+        "level": "1",
+        "children": "Account settings",
+        "align": "start"
+      },
+      "snippets": {
+        "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"1\">Account settings</Heading>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "PageTitle",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "heading-react--page-title",
+      "sweep": {
+        "prop": "level",
+        "value": "1"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Section Heading",
+      "args": {
+        "level": "2",
+        "children": "Billing",
+        "align": "start"
+      },
+      "snippets": {
+        "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"2\">Billing</Heading>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "SectionHeading",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "heading-react--section-heading",
+      "sweep": {
+        "prop": "level",
+        "value": "2"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Subsection Sized Up",
+      "args": {
+        "level": "4",
+        "children": "Payment methods",
+        "align": "start",
+        "size": "xl"
+      },
+      "snippets": {
+        "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"4\" size=\"xl\">Payment methods</Heading>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "SubsectionSizedUp",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "heading-react--subsection-sized-up",
+      "sweep": null,
       "decorated": false,
       "primary": true
     }

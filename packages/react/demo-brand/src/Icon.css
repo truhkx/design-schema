@@ -1,36 +1,41 @@
 /* Icon — styled only through Design Schema token custom properties. */
 
 /*
- * The <svg> is 1em square; `size` sets the em. Glyphs inherit the text color (currentColor), so
- * `color` is only the fallback for an icon with no colored ancestor.
+ * The <svg> is a 1em square; `size` sets that em, so the glyph box tracks the type scale.
+ *
+ * color: the default is currentColor, so glyphs take the text color and a CtaButton, Link or Callout
+ * colors them for free; color.foreground is only what that inheritance resolves to at the root.
+ * `overrides.color` (or the hook, set from a consumer's CSS) sets an explicit color instead.
  */
 .demo-icon {
-  --demo-icon-color: var(--color-foreground);
+  --demo-icon-color: currentColor;
+  /* strokeWidth (locked): border.width.focus — line glyphs use the focus-ring width so they stay legible at xs. */
   --demo-icon-stroke-width: var(--border-width-focus);
   box-sizing: content-box;
   display: inline-block;
   flex-shrink: 0;
   vertical-align: middle;
   color: var(--demo-icon-color);
-  /* strokeWidth: border.width.focus — line glyphs use the focus-ring width so they stay legible at xs. */
   stroke-width: var(--demo-icon-stroke-width);
   overflow: visible;
 }
 
-/* Stroke thickness stays the token width on screen at every rendered size. */
-.demo-icon path,
-.demo-icon rect {
+/* Stroke thickness stays the token width in screen pixels at every rendered size. */
+.demo-icon path {
   vector-effect: non-scaling-stroke;
 }
 
-/* size → font.size.{size}: width and height. */
+/* size → font.size.{size}: the em the 1em box is drawn at. */
 .demo-icon--xs { --demo-icon-size: var(--font-size-xs); font-size: var(--demo-icon-size); }
 .demo-icon--sm { --demo-icon-size: var(--font-size-sm); font-size: var(--demo-icon-size); }
 .demo-icon--md { --demo-icon-size: var(--font-size-md); font-size: var(--demo-icon-size); }
 .demo-icon--lg { --demo-icon-size: var(--font-size-lg); font-size: var(--demo-icon-size); }
 .demo-icon--xl { --demo-icon-size: var(--font-size-xl); font-size: var(--demo-icon-size); }
 
-/* inline: 1em of the surrounding text, sitting on its baseline. The size override has no effect here. */
+/*
+ * inline: 1em of the surrounding text, sitting on its baseline. Last in the cascade, so it wins
+ * over the size rule above and `overrides.size` is a no-op here, as the binding documents.
+ */
 .demo-icon--inline {
   font-size: inherit;
   vertical-align: -0.125em;

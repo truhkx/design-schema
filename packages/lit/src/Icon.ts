@@ -33,28 +33,35 @@ export type IconName =
 
 export type IconSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
-/** Overridable style hooks; see the `overrides` property. */
-export type IconOverridableBinding = 'size' | 'color' | 'strokeWidth';
+/**
+ * Style bindings that can be overridden per instance. `strokeWidth` is locked: line glyphs stay
+ * legible at `xs` because they stroke at the focus-ring width, so it is not in this union (its
+ * `--ds-icon-stroke-width` hook still exists, for a consumer who must change it from their own CSS).
+ */
+export type IconOverridableBinding = 'size' | 'color';
 
 const HOOKS: Record<IconOverridableBinding, string> = {
   size: '--ds-icon-size',
   color: '--ds-icon-color',
-  strokeWidth: '--ds-icon-stroke-width',
 };
 
 /**
- * The glyph table (anatomy: glyph), one `<path d>` per glyph on a 16×16 grid,
- * with `d` strings copied verbatim from `tools/icon-paths.json` — the table
- * every platform draws from. Module-private on purpose: other elements
- * compose `<ds-icon name>` and never import the paths. To add or redraw a
- * glyph, change the JSON, not this file.
+ * The glyph table, one `<path d>` per glyph on a 16×16 grid, with the `d`
+ * strings copied verbatim from `tools/icon-paths.json` — the one table every
+ * platform draws from (the SwiftUI paths and the reference PNGs in
+ * `tests/icon-snapshots/` are generated from it, and the SwiftUI gate compares
+ * pixels). To add or redraw a glyph, change that JSON, not this file.
  *
- * Line glyphs are stroked in `currentColor` at `border.width.focus` (set in
- * CSS on the `<svg>`); filled glyphs (the four status shapes and the
- * ellipsis) carry `class="filled"` and have no stroke — each is one
- * `fill-rule: evenodd` path whose inner mark is a hole. The status shapes are
- * four different silhouettes (circle-i, circle-check, triangle-!, octagon-x)
- * so tone is never carried by color alone.
+ * Module-private on purpose: other elements compose `<ds-icon name>` and never
+ * import the paths.
+ *
+ * Line glyphs are bare paths, stroked in `currentColor` at `border.width.focus`
+ * from the `<svg>`'s CSS; `filled` glyphs — the four status shapes, the
+ * ellipsis, play and pause — carry `class="filled"` and have no stroke. Each
+ * status shape is a single `fill-rule: evenodd` path whose inner mark (i,
+ * check, !, ×) is a hole, so it reads on any surface, and the four are four
+ * different silhouettes (circle-i, circle-check, triangle-!, octagon-x) so tone
+ * is never carried by color alone.
  */
 const GLYPHS: Record<IconName, TemplateResult> = {
   check: html`<path d="M3 8.5l3.5 3.5L13 5" />`,
@@ -66,23 +73,25 @@ const GLYPHS: Record<IconName, TemplateResult> = {
   close: html`<path d="M3 3l10 10M13 3L3 13" />`,
   plus: html`<path d="M8 3v10M3 8h10" />`,
   minus: html`<path d="M3 8h10" />`,
+  /* circle-i */
   info: html`<path
     class="filled"
     d="M8 1a7 7 0 1 0 0 14A7 7 0 1 0 8 1zm0 3a1 1 0 1 0 0 2 1 1 0 1 0 0-2zM7 7h2v4.5H7z"
   />`,
+  /* circle-check */
   success: html`<path
     class="filled"
     d="M8 1a7 7 0 1 0 0 14A7 7 0 1 0 8 1zM3.9 8.6 7 11.7l5.1-5.1-1.2-1.2L7 9.3 5.1 7.4z"
   />`,
-  warning: html`<path
-    class="filled"
-    d="M8 1.5 15 14H1zM7 5.5h2V10H7zm1 5.5a1 1 0 1 0 0 2 1 1 0 1 0 0-2z"
-  />`,
+  /* triangle-! */
+  warning: html`<path class="filled" d="M8 1.5 15 14H1zM7 5.5h2V10H7zm1 5.5a1 1 0 1 0 0 2 1 1 0 1 0 0-2z" />`,
+  /* octagon-x */
   danger: html`<path
     class="filled"
     d="M5 1h6l4 4v6l-4 4H5l-4-4V5zm-.6 4.6 1.2-1.2L8 6.8l2.4-2.4 1.2 1.2L9.2 8l2.4 2.4-1.2 1.2L8 9.2l-2.4 2.4-1.2-1.2L6.8 8z"
   />`,
   external: html`<path d="M6 3H3v10h10v-3M9 3h4v4M13 3L7 9" />`,
+  /* three dots, the web table's three r=1.25 circles as one path */
   ellipsis: html`<path
     class="filled"
     d="M1.75,8a1.25,1.25 0 1,0 2.5,0a1.25,1.25 0 1,0 -2.5,0M6.75,8a1.25,1.25 0 1,0 2.5,0a1.25,1.25 0 1,0 -2.5,0M11.75,8a1.25,1.25 0 1,0 2.5,0a1.25,1.25 0 1,0 -2.5,0"
@@ -92,6 +101,7 @@ const GLYPHS: Record<IconName, TemplateResult> = {
   'arrow-left': html`<path d="M13 8H3M7 4L3 8l4 4" />`,
   calendar: html`<path d="M2.5 3.5h11v10h-11zM2.5 6.5h11M5.5 1.5v3M10.5 1.5v3" />`,
   menu: html`<path d="M2 4h12M2 8h12M2 12h12" />`,
+  /* the bullet dots are zero-length round-capped strokes, so the whole glyph is one stroked path */
   list: html`<path d="M5 4h9M5 8h9M5 12h9M2 4h.01M2 8h.01M2 12h.01" />`,
   grid: html`<path d="M2 2h5v5H2zM9 2h5v5H9zM2 9h5v5H2zM9 9h5v5H9z" />`,
   play: html`<path class="filled" d="M4 2l10 6-10 6z" />`,
@@ -106,15 +116,20 @@ const GLYPHS: Record<IconName, TemplateResult> = {
  * `<ds-icon name="check" size="sm">` renders one inline `<svg viewBox="0 0 16 16">`
  * in its shadow root. The glyph is drawn in `currentColor`, and `color`
  * inherits through the shadow root, so a `<ds-icon>` inside a `<ds-button>`,
- * `<ds-link>` or `<ds-alert>` takes that component's foreground for free. Size
- * comes from the `font.size.{size}` scale so a glyph beside a label matches the
- * label; with `inline` it is 1em of the surrounding text and sits on the
- * baseline instead.
+ * `<ds-link>` or `<ds-alert>` takes that component's foreground for free;
+ * `color.foreground` is only what that inheritance resolves to at the root.
+ * Size comes from the `font.size.{size}` scale — it is the host's font size, of
+ * which the glyph box is 1em — so a glyph beside a label matches the label.
+ * With `inline` the font size is inherited from the surrounding text instead
+ * and the glyph sits on its baseline.
  *
  * Without `label` the icon is decorative and hidden from assistive technology
  * (`aria-hidden="true"`), so "Save" is announced as "Save", not "check mark
- * Save". With `label` it is exposed as an image with that name (`role="img"`
- * + `aria-label`). It never receives focus (`focusable="false"`).
+ * Save". With `label` it is exposed as an image with that name (`role="img"` +
+ * `aria-label`). Both sit on the `<svg>` in the shadow root — the host is a
+ * plain unknown element with no role, so the glyph is the only node assistive
+ * technology sees either way. It never takes focus — no `delegatesFocus`, and
+ * `focusable="false"` on the `<svg>` for old Edge.
  *
  * ## When to use
  *
@@ -122,24 +137,28 @@ const GLYPHS: Record<IconName, TemplateResult> = {
  * Button, the chevron in a Disclosure, the status shape in an Alert, the check
  * in a Checkbox, the external mark on a Link, the ellipsis in a collapsed
  * Breadcrumb. Use `inline` inside running text. Give it a `label` only when
- * the icon is the whole message. Do not use an Icon as a button: wrap it in a
- * `<ds-button icon-only label="…">`, which brings the target size, focus ring
- * and accessible name.
+ * the icon is the whole message — a lone warning triangle in a table cell,
+ * say — and the label is what a screen reader should say instead. Do not use
+ * an Icon as a button: wrap it in a `<ds-button icon-only label="…">`, which
+ * brings the target size, focus ring and accessible name.
  *
- * @csspart glyph - The `<svg>` (anatomy: glyph).
+ * @csspart glyph - The `<svg>` drawing the glyph (anatomy: glyph).
  */
 @customElement('ds-icon')
 export class DsIcon extends LitElement {
   static override styles: CSSResult = css`
-    /* size: font.size.{size} via --ds-icon-size; color: currentColor, falling back to inherit so an ancestor (Button, Link, Alert) colors this icon for free */
     :host {
+      /* size: font.size.{size} — the em the 1em glyph box is drawn at, so the box tracks the type scale */
+      --ds-icon-size: var(--font-size-md);
+      /* color: currentColor, so an ancestor (Button, Link, Alert) colors this glyph for free */
+      --ds-icon-color: currentColor;
+      /* strokeWidth (locked): border.width.focus — the focus-ring width, so line glyphs stay legible at xs */
+      --ds-icon-stroke-width: var(--border-width-focus);
       display: inline-flex;
       flex-shrink: 0;
-      --ds-icon-size: var(--font-size-md);
-      --ds-icon-stroke-width: var(--border-width-focus);
-      inline-size: var(--ds-icon-size);
-      block-size: var(--ds-icon-size);
-      color: var(--ds-icon-color, inherit);
+      vertical-align: middle;
+      font-size: var(--ds-icon-size);
+      color: var(--ds-icon-color);
     }
 
     :host([size='xs']) {
@@ -158,10 +177,15 @@ export class DsIcon extends LitElement {
       --ds-icon-size: var(--font-size-xl);
     }
 
-    /* inline: 1em of the surrounding text, aligned to its baseline; ignores size (and any size override) */
+    /*
+     * inline: 1em of the surrounding text, sitting on its baseline. Last in the cascade, so it wins
+     * over the font-size above and an overrides.size entry is a no-op here, as the binding
+     * documents — the hook keeps its value either way.
+     */
     :host([inline]) {
       display: inline-block;
       vertical-align: -0.125em;
+      font-size: inherit;
       inline-size: 1em;
       block-size: 1em;
     }
@@ -170,11 +194,10 @@ export class DsIcon extends LitElement {
       display: none;
     }
 
-    /* strokeWidth: border.width.focus, kept at that thickness at every size so line glyphs stay legible at xs */
     svg {
       display: block;
-      inline-size: 100%;
-      block-size: 100%;
+      inline-size: 1em;
+      block-size: 1em;
       overflow: visible;
       fill: none;
       stroke: currentColor;
@@ -183,11 +206,12 @@ export class DsIcon extends LitElement {
       stroke-linejoin: round;
     }
 
-    svg > * {
+    /* The stroke stays the token width in screen pixels at every rendered size. */
+    path {
       vector-effect: non-scaling-stroke;
     }
 
-    /* filled glyphs (status shapes, ellipsis) have no stroke; each is one evenodd path whose inner mark is a hole */
+    /* filled glyphs have no stroke; each is one evenodd path whose inner mark is a hole */
     .filled {
       fill: currentColor;
       stroke: none;
@@ -198,25 +222,32 @@ export class DsIcon extends LitElement {
   /**
    * Which glyph. The set is deliberately small and grows only when a component
    * needs a shape; `info`, `success`, `warning` and `danger` are the four status
-   * shapes (circle-i, circle-check, triangle-!, octagon-x).
+   * shapes (circle-i, circle-check, triangle-!, octagon-x) so tone is never
+   * carried by color alone.
    */
-  @property({ reflect: true }) accessor name!: IconName;
+  @property({ type: String, reflect: true }) accessor name!: IconName;
 
   /** Rendered size, from the font-size scale so icons line up with text of the same size. */
-  @property({ reflect: true }) accessor size: IconSize = 'md';
+  @property({ type: String, reflect: true }) accessor size: IconSize = 'md';
 
-  /** Size the glyph at 1em of the surrounding text and align it to the baseline, ignoring `size`. */
+  /**
+   * Size the glyph at 1em of the surrounding text and align it to the text
+   * baseline, ignoring `size`. For icons inside Text, Link and Button labels.
+   */
   @property({ type: Boolean, reflect: true }) accessor inline = false;
 
   /**
-   * Accessible name. When set, the icon is meaningful and exposed as an image
-   * with this name; when omitted, it is decorative and hidden from assistive
-   * technology. Most icons sit next to text and should have no label.
+   * Accessible name. When set (non-empty), the icon is meaningful and exposed as
+   * an image with this name; when omitted or empty, it is decorative and hidden
+   * from assistive technology. Most icons sit next to text and should have no
+   * label.
    */
-  @property() accessor label: string | undefined;
+  @property({ type: String }) accessor label: string | undefined;
 
   /** Per-instance style overrides: `{ color: 'color.status.danger.icon' }`. */
-  @property({ attribute: false }) accessor overrides: Partial<Record<IconOverridableBinding, TokenRef | undefined>> | undefined;
+  @property({ attribute: false }) accessor overrides:
+    | Partial<Record<IconOverridableBinding, TokenRef | undefined>>
+    | undefined;
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -245,14 +276,16 @@ export class DsIcon extends LitElement {
     const glyph: TemplateResult | undefined = GLYPHS[this.name];
     if (import.meta.env.DEV && glyph === undefined) {
       console.warn(
-        `<ds-icon> ${this.name === undefined ? 'requires a `name`' : `has no glyph named "${this.name}"`}.`,
+        `<ds-icon> ${this.name === undefined ? 'requires a `name`' : `has no glyph named "${this.name}"`} — no glyph in the table, so an empty svg is drawn.`,
       );
     }
-    const labelled = Boolean(this.label);
+    /* An empty `label` is no label: the icon is decorative, as when it is omitted. */
+    const labelled = this.label !== undefined && this.label !== '';
 
     return html`
       <svg
         part="glyph"
+        data-part="glyph"
         viewBox="0 0 16 16"
         focusable="false"
         role=${ifDefined(labelled ? 'img' : undefined)}

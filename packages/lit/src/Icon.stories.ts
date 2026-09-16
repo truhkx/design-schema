@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Icon.js';
+import './Text.js';
 import type { IconName, IconSize } from './Icon.js';
 
 interface IconArgs {
@@ -105,23 +106,32 @@ export const SizeMd: Story = { args: { size: 'md' } };
 export const SizeLg: Story = { args: { size: 'lg' } };
 export const SizeXl: Story = { args: { size: 'xl' } };
 
-/* inline: 1em of the surrounding text, on its baseline */
-export const Inline: Story = {
-  args: { inline: true, name: 'external' },
-  render: (args) => html`
-    <p style="font-size: var(--font-size-lg); color: var(--color-foreground)">
-      Opens in a new tab
-      <ds-icon name=${args.name} size=${args.size} ?inline=${args.inline}></ds-icon>
-    </p>
-  `,
-};
-
-/* label: meaningful icon, exposed as an image */
-export const Labelled: Story = {
+/* A lone status glyph that is the whole message, so it says what it means instead of what it depicts. */
+export const StatusInACell: Story = {
   args: { name: 'warning', label: 'Warning: over quota' },
 };
 
-/* color inherits through the shadow root (currentColor) */
+/* The usual case - a glyph next to text, with no label, so the label carries the meaning alone. */
+export const DecorativeBesideALabel: Story = {
+  args: { name: 'check', size: 'sm' },
+  render: (args) => html`
+    <ds-text element="span" size="sm">
+      <ds-icon name=${args.name} size=${args.size} ?inline=${args.inline}></ds-icon> Saved
+    </ds-text>
+  `,
+};
+
+/* An icon sized at 1em of the surrounding text and sitting on its baseline, for use inside a Text or Link. */
+export const InlineInRunningText: Story = {
+  args: { name: 'external', inline: true },
+  render: (args) => html`
+    <ds-text>
+      The report opens in a new tab <ds-icon name=${args.name} ?inline=${args.inline}></ds-icon>
+    </ds-text>
+  `,
+};
+
+/* color inherits through the shadow root (currentColor), so an ancestor colors the glyph for free */
 export const InheritsColor: Story = {
   args: { name: 'danger' },
   render: (args) => html`
@@ -134,7 +144,9 @@ export const InheritsColor: Story = {
 /* the whole set at every size */
 export const AllGlyphs: Story = {
   render: () => html`
-    <div style="display: grid; grid-template-columns: max-content repeat(5, max-content); gap: var(--space-md); align-items: center; color: var(--color-foreground); font-family: var(--font-family-body); font-size: var(--font-size-sm)">
+    <div
+      style="display: grid; grid-template-columns: max-content repeat(5, max-content); gap: var(--space-md); align-items: center; color: var(--color-foreground); font-family: var(--font-family-body); font-size: var(--font-size-sm)"
+    >
       ${NAMES.map(
         (name) => html`
           <code>${name}</code>

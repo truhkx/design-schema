@@ -8985,6 +8985,24 @@
           "id": "heading-react--align-end",
           "name": "Align End",
           "snippet": "const AlignEnd = () => <Heading level=\"2\" align=\"end\">Account settings</Heading>;"
+        },
+        {
+          "id": "heading-react--page-title",
+          "name": "Page Title",
+          "snippet": "const PageTitle = () => <Heading level=\"1\" align=\"start\">Account settings</Heading>;",
+          "description": "The one level-1 heading on a page, at its default size."
+        },
+        {
+          "id": "heading-react--section-heading",
+          "name": "Section Heading",
+          "snippet": "const SectionHeading = () => <Heading level=\"2\" align=\"start\">Billing</Heading>;",
+          "description": "A major section of the page, one level below the title."
+        },
+        {
+          "id": "heading-react--subsection-sized-up",
+          "name": "Subsection Sized Up",
+          "snippet": "const SubsectionSizedUp = () => <Heading level=\"4\" align=\"start\" size=\"xl\">Payment methods</Heading>;",
+          "description": "A level-4 heading given a larger size so it still reads as a section start in a wide layout."
         }
       ],
       "import": "import { Heading } from '@design-schema/react';"
@@ -8994,9 +9012,9 @@
       "name": "Icon",
       "path": "./src/Icon.stories.tsx",
       "jsDocTags": {},
-      "description": "Icon — Design Schema, category: primitive.\n\nWhen to use:\nUse an Icon wherever a component's anatomy names one: the leading icon in a Button, the chevron\nin a Disclosure, the status shape in an Alert, the check in a Checkbox, the external mark on a\nLink, the ellipsis in a collapsed Breadcrumb. Use `inline` when the icon is inside running text.\nGive it a `label` only when the icon is the whole message — a lone warning triangle in a table\ncell, say — and the label is what a screen reader should say instead.\n\nGlyphs are drawn in `currentColor`, so a Button, Link or Alert colors them for free; only an\nicon with no colored ancestor falls back to `color.foreground`. Line glyphs use the focus-ring\nwidth as their stroke.",
+      "description": "Icon — Design Schema, category: primitive.\n\nWhen to use:\nUse an Icon wherever a component's anatomy names one: the leading icon in a Button, the chevron\nin a Disclosure, the status shape in an Alert, the check in a Checkbox, the external mark on a\nLink, the ellipsis in a collapsed Breadcrumb. Use `inline` when the icon is inside running text.\nGive it a `label` only when the icon is the whole message — a lone warning triangle in a table\ncell, say — and the label is what a screen reader should say instead.\n\nGlyphs are drawn in `currentColor`, so a Button, Link or Alert colors them for free; an icon with\nno colored ancestor falls back to what the document root resolves, `color.foreground`. Line\nglyphs use the focus-ring width as their stroke, at every size, so they stay legible at `xs`.",
       "reactDocgen": {
-        "description": "Icon — Design Schema, category: primitive.\n\nWhen to use:\nUse an Icon wherever a component's anatomy names one: the leading icon in a Button, the chevron\nin a Disclosure, the status shape in an Alert, the check in a Checkbox, the external mark on a\nLink, the ellipsis in a collapsed Breadcrumb. Use `inline` when the icon is inside running text.\nGive it a `label` only when the icon is the whole message — a lone warning triangle in a table\ncell, say — and the label is what a screen reader should say instead.\n\nGlyphs are drawn in `currentColor`, so a Button, Link or Alert colors them for free; only an\nicon with no colored ancestor falls back to `color.foreground`. Line glyphs use the focus-ring\nwidth as their stroke.",
+        "description": "Icon — Design Schema, category: primitive.\n\nWhen to use:\nUse an Icon wherever a component's anatomy names one: the leading icon in a Button, the chevron\nin a Disclosure, the status shape in an Alert, the check in a Checkbox, the external mark on a\nLink, the ellipsis in a collapsed Breadcrumb. Use `inline` when the icon is inside running text.\nGive it a `label` only when the icon is the whole message — a lone warning triangle in a table\ncell, say — and the label is what a screen reader should say instead.\n\nGlyphs are drawn in `currentColor`, so a Button, Link or Alert colors them for free; an icon with\nno colored ancestor falls back to what the document root resolves, `color.foreground`. Line\nglyphs use the focus-ring width as their stroke, at every size, so they stay legible at `xs`.",
         "methods": [],
         "displayName": "Icon",
         "definedInFile": "C:\\Users\\gamew\\dev\\design schema\\packages\\react\\src\\Icon.tsx",
@@ -9210,7 +9228,7 @@
                       "elements": [
                         {
                           "name": "union",
-                          "raw": "'size' | 'color' | 'strokeWidth'",
+                          "raw": "'size' | 'color'",
                           "elements": [
                             {
                               "name": "literal",
@@ -9219,10 +9237,6 @@
                             {
                               "name": "literal",
                               "value": "'color'"
-                            },
-                            {
-                              "name": "literal",
-                              "value": "'strokeWidth'"
                             }
                           ]
                         },
@@ -9440,14 +9454,19 @@
           "snippet": "const SizeXl = () => <Icon name=\"check\" size=\"xl\" inline={false} />;"
         },
         {
-          "id": "icon-react--inline",
-          "name": "Inline",
-          "snippet": "const Inline = () => <Text element=\"p\">Opens in a new tab <Icon name=\"external\" size=\"md\" inline />\r\n</Text>;"
+          "id": "icon-react--status-in-a-cell",
+          "name": "Status In A Cell",
+          "snippet": "const StatusInACell = () => <Icon name=\"warning\" size=\"md\" inline={false} label=\"Warning: over quota\" />;"
         },
         {
-          "id": "icon-react--labelled",
-          "name": "Labelled",
-          "snippet": "const Labelled = () => <Icon name=\"warning\" size=\"md\" inline={false} label=\"Warning: over quota\" />;"
+          "id": "icon-react--decorative-beside-a-label",
+          "name": "Decorative Beside A Label",
+          "snippet": "const DecorativeBesideALabel = () => <Text element=\"span\" size=\"sm\">\r\n    <Icon name=\"check\" size=\"sm\" inline={false} />Saved\r\n        </Text>;"
+        },
+        {
+          "id": "icon-react--inline-in-running-text",
+          "name": "Inline In Running Text",
+          "snippet": "const InlineInRunningText = () => <Text>The report opens in a new tab <Icon name=\"external\" size=\"md\" inline />\r\n</Text>;"
         }
       ],
       "import": "import { Icon, Text } from '@design-schema/react';"
@@ -20599,7 +20618,7 @@
                 }
               ]
             },
-            "description": "Clip to one line with an ellipsis. On web the full text is exposed via `title` when children is a plain string; otherwise the consumer passes `title`.",
+            "description": "Clip to one line with an ellipsis. The full text is exposed via `title` when children is a plain string; otherwise the consumer passes `title`.",
             "defaultValue": {
               "value": "false",
               "computed": false
@@ -20630,7 +20649,7 @@
                 }
               ]
             },
-            "description": "The HTML element to render — `p` for a block, `span` for inline.",
+            "description": "The HTML element to render — `p` for a block, `span` for inline. Labels and legends are rendered by Input and (planned) Fieldset, which own the association.",
             "defaultValue": {
               "value": "'p'",
               "computed": false
@@ -20650,7 +20669,7 @@
                       "elements": [
                         {
                           "name": "union",
-                          "raw": "'fontFamily' | 'fontSize' | 'fontWeight' | 'lineHeight' | 'color'",
+                          "raw": "'fontFamily' | 'fontSize' | 'fontWeight' | 'lineHeight'",
                           "elements": [
                             {
                               "name": "literal",
@@ -20667,10 +20686,6 @@
                             {
                               "name": "literal",
                               "value": "'lineHeight'"
-                            },
-                            {
-                              "name": "literal",
-                              "value": "'color'"
                             }
                           ]
                         },
@@ -20828,9 +20843,28 @@
           "snippet": "const ElementSpan = () => <Text\r\n    size=\"md\"\r\n    weight=\"regular\"\r\n    tone=\"default\"\r\n    align=\"start\"\r\n    truncate={false}\r\n    element=\"span\">Use the email you signed up with.</Text>;"
         },
         {
-          "id": "text-react--truncate",
-          "name": "Truncate",
-          "snippet": "const Truncate = () => <Text\r\n    size=\"md\"\r\n    weight=\"regular\"\r\n    tone=\"default\"\r\n    align=\"start\"\r\n    truncate\r\n    element=\"p\">This sentence is intentionally long so that it overflows the container and is clipped to one line with an ellipsis; the full text is still available in the title attribute.</Text>;"
+          "id": "text-react--body-copy",
+          "name": "Body Copy",
+          "snippet": "const BodyCopy = () => <Text\r\n    size=\"md\"\r\n    weight=\"regular\"\r\n    tone=\"default\"\r\n    align=\"start\"\r\n    truncate={false}\r\n    element=\"p\">Changes are saved automatically. You can undo any change for 30 days.</Text>;",
+          "description": "The default paragraph - body size, regular weight, default tone."
+        },
+        {
+          "id": "text-react--caption",
+          "name": "Caption",
+          "snippet": "const Caption = () => <Text\r\n    size=\"xs\"\r\n    weight=\"regular\"\r\n    tone=\"muted\"\r\n    align=\"start\"\r\n    truncate={false}\r\n    element=\"p\">Last updated 2 minutes ago.</Text>;",
+          "description": "Secondary metadata at the smallest readable size, muted so it sits behind the content it annotates."
+        },
+        {
+          "id": "text-react--inline-error-wording",
+          "name": "Inline Error Wording",
+          "snippet": "const InlineErrorWording = () => <Text\r\n    size=\"md\"\r\n    weight=\"regular\"\r\n    tone=\"danger\"\r\n    align=\"start\"\r\n    truncate={false}\r\n    element=\"span\">Error: enter an email address like name@example.com</Text>;",
+          "description": "Error copy where the danger tone is paired with explicit words, so color alone never carries the meaning."
+        },
+        {
+          "id": "text-react--truncated-cell",
+          "name": "Truncated Cell",
+          "snippet": "const TruncatedCell = () => <Text\r\n    size=\"md\"\r\n    weight=\"regular\"\r\n    tone=\"default\"\r\n    align=\"start\"\r\n    truncate\r\n    element=\"p\">Quarterly revenue summary for the EMEA region.</Text>;",
+          "description": "One line of text in a dense cell, with the full string still reachable."
         }
       ],
       "import": "import { Text } from '@design-schema/react';"
@@ -23220,6 +23254,6 @@
   },
   "meta": {
     "docgen": "react-docgen",
-    "durationMs": 2467
+    "durationMs": 8155
   }
 }

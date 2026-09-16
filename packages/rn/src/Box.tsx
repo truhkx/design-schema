@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { View } from 'react-native';
-import type { ViewStyle } from 'react-native';
+import type { ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { useTheme } from './theme';
@@ -10,26 +10,39 @@ export type BoxInset = 'none' | 'sm' | 'md' | 'lg' | 'xl';
 export type BoxSurface = 'none' | 'default' | 'subtle' | 'strong';
 export type BoxRadius = 'none' | 'sm' | 'md' | 'lg' | 'full';
 
-/** The style bindings a caller may replace with a different token; see the component's overrides contract. */
-export type BoxOverridableBinding = 'paddingBlock' | 'paddingInline' | 'background' | 'border' | 'borderWidth' | 'radius';
+/**
+ * The style bindings a caller may replace with a different token; see the component's
+ * overrides contract. `background` is locked — it carries the contrast the build checks
+ * against the foreground tokens — so it is not in the union and is ignored if passed.
+ */
+export type BoxOverridableBinding = 'paddingBlock' | 'paddingInline' | 'border' | 'borderWidth' | 'radius';
 
 export interface BoxProps {
   /** Any content. Box does not space its children; put a Stack inside for that. */
   children: React.ReactNode;
   /** Padding on all sides, from the layout inset presets. Use `insetBlock`/`insetInline` when the axes differ. */
   inset?: BoxInset | undefined;
-  /** Vertical padding, overriding `inset` on that axis. */
+  /** Vertical padding, overriding `inset` on that axis. Defaults to `inset`. */
   insetBlock?: BoxInset | undefined;
-  /** Horizontal padding, overriding `inset` on that axis. */
+  /** Horizontal padding, overriding `inset` on that axis. Defaults to `inset`. */
   insetInline?: BoxInset | undefined;
-  /** Background. `none` is transparent; `default` is the page background; `subtle` and `strong` step up. */
+  /**
+   * Background. `none` is transparent; `default` is the page background (use to lift
+   * content off a subtle parent); `subtle` and `strong` step up.
+   */
   surface?: BoxSurface | undefined;
   /** A thin default border. */
   border?: boolean | undefined;
   /** Corner radius from the theme's presets. */
   radius?: BoxRadius | undefined;
-  /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
+  /**
+   * Replace individual style bindings with a different token from the theme. The only
+   * per-instance styling surface — there is no `style` prop. Overrides change values,
+   * never presence: `border: false` and `radius: none` make the matching entries no-ops.
+   */
   overrides?: Partial<Record<BoxOverridableBinding, TokenRef | undefined>> | undefined;
+  /** The rendered `View` — the surface itself — for measurement or accessibility focus. */
+  ref?: React.Ref<ViewInstance> | undefined;
 }
 
 const INSET_TOKEN = {
@@ -55,12 +68,17 @@ const RADIUS_TOKEN = {
 } as const satisfies Record<BoxRadius, keyof Tokens>;
 
 /**
- * Box — a surface: padding, background, border, radius. It spaces nothing between
- * children (put a Stack inside for that) and never carries margin of its own.
+ * Box — a surface: padding around a group of content, a background under it, a border,
+ * rounded corners. It has no opinions about what is inside and no spacing between its
+ * children (that is Stack's job), and it never carries margin of its own.
  *
- * Renders a `View` with paddingVertical/paddingHorizontal, backgroundColor,
- * borderWidth/borderColor and borderRadius resolved from the token object.
- * `element` does not apply on React Native.
+ * Renders a `View` with paddingVertical/paddingHorizontal from `layout.inset.*`,
+ * backgroundColor from `color.background.*` (nothing for `surface: none`, so the
+ * parent's shows through), borderWidth/borderColor when `border`, and borderRadius
+ * from `radius.*`. It adds no accessibility role of its own; `radius` does not clip
+ * (a child that should be clipped clips itself). The `element` prop is web/Lit only —
+ * React Native has no sectioning elements, so the `nav`/`article` semantics those
+ * builds render have no counterpart here; use Landmark for a page region.
  */
 export function Box({
   children,
@@ -71,6 +89,7 @@ export function Box({
   border = false,
   radius = 'none',
   overrides,
+  ref,
 }: BoxProps): React.JSX.Element {
   const { tokens: t } = useTheme();
 
@@ -84,14 +103,17 @@ export function Box({
       paddingHorizontal: overrides?.paddingInline
         ? (resolveToken(t, overrides.paddingInline) as number)
         : t[INSET_TOKEN[inlineInset]],
+      // `radius: none` renders square corners, so the override has nothing to replace.
       borderRadius:
         radius !== 'none' && overrides?.radius ? (resolveToken(t, overrides.radius) as number) : t[RADIUS_TOKEN[radius]],
     };
 
+    // `surface: none` sets no background at all; `background` is locked, so it is never overridden.
     if (surface !== 'none') {
-      next.backgroundColor = overrides?.background ? (resolveToken(t, overrides.background) as string) : t[SURFACE_TOKEN[surface]];
+      next.backgroundColor = t[SURFACE_TOKEN[surface]];
     }
 
+    // `border: false` draws no border, so both border overrides are no-ops.
     if (border) {
       next.borderWidth = overrides?.borderWidth ? (resolveToken(t, overrides.borderWidth) as number) : t.borderWidthThin;
       next.borderColor = overrides?.border ? (resolveToken(t, overrides.border) as string) : t.colorBorder;
@@ -101,7 +123,7 @@ export function Box({
   }, [t, inset, insetBlock, insetInline, surface, border, radius, overrides]);
 
   return (
-    <View style={style} testID="Box">
+    <View ref={ref} style={style} testID="Box">
       {children}
     </View>
   );

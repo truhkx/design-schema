@@ -16,17 +16,17 @@ hold for the mechanism to be what it claims to be:
    hooks, and every HTML element name appears in the renamed file exactly as it does in the
    canonical one.
 
-**Result: 591 name(s) differ across 24 file(s), 0 of them unexplained.**
+**Result: 593 name(s) differ across 24 file(s), 0 of them unexplained.**
 
 ## What moved, by kind
 
 | Kind of identifier           | Occurrences |
 | ---------------------------- | ----------- |
 | file name                    | 14          |
-| component name               | 136         |
+| component name               | 138         |
 | prop name                    | 22          |
-| class or custom-element name | 159         |
-| CSS custom-property prefix   | 267         |
+| class or custom-element name | 160         |
+| CSS custom-property prefix   | 266         |
 | package scope                | 7           |
 
 ## File by file
@@ -45,14 +45,14 @@ hold for the mechanism to be what it claims to be:
 | src/Disclosure.stories.tsx       | Expander.stories.tsx   | 219   | 10     | component name, file name                                                                                     |
 | src/Disclosure.tsx               | Expander.tsx           | 818   | 36     | CSS custom-property prefix, class or custom-element name, component name, file name, package scope            |
 | src/FormContext.ts               | (same name)            | 281   | 0      | —                                                                                                             |
-| src/Icon.css                     | (same name)            | 163   | 23     | CSS custom-property prefix, class or custom-element name                                                      |
-| src/Icon.tsx                     | (same name)            | 941   | 13     | CSS custom-property prefix, class or custom-element name, component name, package scope                       |
+| src/Icon.css                     | (same name)            | 222   | 24     | CSS custom-property prefix, class or custom-element name, component name                                      |
+| src/Icon.tsx                     | (same name)            | 1094  | 14     | CSS custom-property prefix, class or custom-element name, component name, package scope                       |
 | src/Link.css                     | (same name)            | 210   | 34     | CSS custom-property prefix, class or custom-element name                                                      |
 | src/Link.tsx                     | (same name)            | 466   | 11     | CSS custom-property prefix, class or custom-element name, package scope                                       |
 | src/Stack.css                    | (same name)            | 160   | 29     | CSS custom-property prefix, class or custom-element name                                                      |
 | src/Stack.tsx                    | (same name)            | 475   | 10     | CSS custom-property prefix, class or custom-element name, package scope                                       |
 | src/Text.css                     | (same name)            | 150   | 40     | CSS custom-property prefix, class or custom-element name                                                      |
-| src/Text.tsx                     | (same name)            | 509   | 16     | CSS custom-property prefix, class or custom-element name, package scope                                       |
+| src/Text.tsx                     | (same name)            | 565   | 16     | CSS custom-property prefix, class or custom-element name, package scope                                       |
 | src/custom/analytics.ts          | (same name)            | 65    | 0      | —                                                                                                             |
 | behavior/Alert.web.test.tsx      | Callout.web.test.tsx   | 315   | 11     | component name, file name                                                                                     |
 | behavior/Button.web.test.tsx     | CtaButton.web.test.tsx | 576   | 15     | component name, file name, prop name                                                                          |
@@ -129,12 +129,12 @@ hold for the mechanism to be what it claims to be:
 | `--ds-link-underline-offset`               | `--demo-link-underline-offset`               | CSS custom-property prefix   | 3           |
 | `--ds-link-underline-thickness`            | `--demo-link-underline-thickness`            | CSS custom-property prefix   | 3           |
 | `--ds-stack-gap`                           | `--demo-stack-gap`                           | CSS custom-property prefix   | 11          |
-| `--ds-text-color`                          | `--demo-text-color`                          | CSS custom-property prefix   | 7           |
+| `--ds-text-color`                          | `--demo-text-color`                          | CSS custom-property prefix   | 6           |
 | `--ds-text-font-family`                    | `--demo-text-font-family`                    | CSS custom-property prefix   | 3           |
 | `--ds-text-font-size`                      | `--demo-text-font-size`                      | CSS custom-property prefix   | 7           |
 | `--ds-text-font-weight`                    | `--demo-text-font-weight`                    | CSS custom-property prefix   | 6           |
 | `--ds-text-line-height`                    | `--demo-text-line-height`                    | CSS custom-property prefix   | 3           |
-| `Alert`                                    | `Callout`                                    | component name               | 28          |
+| `Alert`                                    | `Callout`                                    | component name               | 29          |
 | `Alert.css`                                | `Callout.css`                                | file name                    | 1           |
 | `Alert.stories.tsx`                        | `Callout.stories.tsx`                        | file name                    | 1           |
 | `Alert.test.tsx`                           | `Callout.test.tsx`                           | file name                    | 1           |
@@ -144,7 +144,7 @@ hold for the mechanism to be what it claims to be:
 | `AlertOverridableBinding`                  | `CalloutOverridableBinding`                  | component name               | 5           |
 | `AlertProps`                               | `CalloutProps`                               | component name               | 8           |
 | `AlertTone`                                | `CalloutTone`                                | component name               | 2           |
-| `Button`                                   | `CtaButton`                                  | component name               | 33          |
+| `Button`                                   | `CtaButton`                                  | component name               | 34          |
 | `Button.css`                               | `CtaButton.css`                              | file name                    | 1           |
 | `Button.stories.tsx`                       | `CtaButton.stories.tsx`                      | file name                    | 1           |
 | `Button.test.tsx`                          | `CtaButton.test.tsx`                         | file name                    | 1           |
@@ -183,6 +183,7 @@ hold for the mechanism to be what it claims to be:
 | `ds-disclosure__summary`                   | `demo-expander__summary`                     | class or custom-element name | 1           |
 | `ds-disclosure__trigger`                   | `demo-expander__trigger`                     | class or custom-element name | 7           |
 | `ds-icon`                                  | `demo-icon`                                  | class or custom-element name | 12          |
+| `ds-input__description`                    | `demo-input__description`                    | class or custom-element name | 1           |
 | `ds-link`                                  | `demo-link`                                  | class or custom-element name | 11          |
 | `ds-link__external-icon`                   | `demo-link__external-icon`                   | class or custom-element name | 2           |
 | `ds-link__external-suffix`                 | `demo-link__external-suffix`                 | class or custom-element name | 2           |

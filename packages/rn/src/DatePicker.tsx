@@ -11,7 +11,7 @@ import { Icon } from './Icon';
 import { Select } from './Select';
 import type { ListboxItem, ListboxValue } from './Listbox';
 import { Stack } from './Stack';
-import { Text } from './Text';
+import { Text, TextForegroundContext } from './Text';
 import { toLineHeight, useTheme } from './theme';
 import type { Tokens } from './theme';
 
@@ -804,12 +804,17 @@ export function DatePicker({
     };
   };
 
-  const dayTextColor = (cell: (typeof gridDays)[number]): TokenRef | undefined => {
+  /**
+   * The day label's own locked foreground, provided to the composed Text through
+   * `TextForegroundContext`: Text's `color` binding is locked, so a selected day cannot hand it
+   * `color.control.selectedForeground` as an override. `undefined` leaves the tone in charge.
+   */
+  const dayTextColor = (cell: (typeof gridDays)[number]): string | undefined => {
     if (isSelected(cell.iso)) {
-      return 'color.control.selectedForeground';
+      return t.colorControlSelectedForeground;
     }
     if (cell.outsideMonth) {
-      return 'color.foreground.muted';
+      return t.colorForegroundMuted;
     }
     return undefined;
   };
@@ -836,7 +841,7 @@ export function DatePicker({
         style={fieldTextStyle(startFocused, displayedError !== undefined)}
         testID="DatePicker.input"
       />
-      <Text overrides={{ color: 'color.foreground.muted' as TokenRef }}>{'–'}</Text>
+      <Text tone="muted">{'–'}</Text>
       <TextInput
         ref={endInputRef}
         accessibilityLabel={`${visibleLabel}, ${COPY.endLabel}`}
@@ -998,9 +1003,11 @@ export function DatePicker({
                     style={({ pressed }) => dayCellStyle(cell, pressed)}
                     testID="DatePicker.day"
                   >
-                    <Text size="sm" overrides={{ fontSize: overrides?.dayFontSize, color: dayTextColor(cell) }}>
-                      {cell.d}
-                    </Text>
+                    <TextForegroundContext.Provider value={dayTextColor(cell)}>
+                      <Text size="sm" overrides={{ fontSize: overrides?.dayFontSize }}>
+                        {cell.d}
+                      </Text>
+                    </TextForegroundContext.Provider>
                   </Pressable>
                 ))}
               </View>

@@ -36,3 +36,20 @@ export const SizeMd: Story = { args: { size: 'md' } };
 export const AlignStart: Story = { args: { align: 'start' } };
 export const AlignCenter: Story = { args: { align: 'center' } };
 export const AlignEnd: Story = { args: { align: 'end' } };
+
+/* examples from the component doc */
+
+/** The one level-1 heading on a page, at its default size. */
+export const PageTitle: Story = {
+  args: { level: '1', children: 'Account settings' },
+};
+
+/** A major section of the page, one level below the title. */
+export const SectionHeading: Story = {
+  args: { level: '2', children: 'Billing' },
+};
+
+/** A level-4 heading given a larger size so it still reads as a section start in a wide layout. */
+export const SubsectionSizedUp: Story = {
+  args: { level: '4', size: 'xl', children: 'Payment methods' },
+};

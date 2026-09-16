@@ -117,20 +117,20 @@
     }
   },
   "Box.web": {
-    "hash": "5a7e0df2de946918",
-    "lastAttemptHash": "5a7e0df2de946918",
-    "generatedAt": "2026-09-10T21:18:45+00:00",
-    "model": "sonnet",
+    "hash": "1a57fecfd6935e73",
+    "lastAttemptHash": "1a57fecfd6935e73",
+    "generatedAt": "2026-09-16T06:41:01+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.2357,
+    "costUsd": 3.0941,
     "files": [
       "packages/react/src/Box.css",
       "packages/react/src/Box.stories.tsx",
       "packages/react/src/Box.test.tsx",
       "packages/react/src/Box.tsx"
     ],
-    "gaps": 0,
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -508,19 +508,19 @@
     }
   },
   "Heading.web": {
-    "hash": "5deebd559e09a36c",
-    "lastAttemptHash": "5deebd559e09a36c",
-    "generatedAt": "2026-09-10T21:14:28+00:00",
-    "model": "sonnet",
+    "hash": "28929ec46fdb5fb4",
+    "lastAttemptHash": "28929ec46fdb5fb4",
+    "generatedAt": "2026-09-16T06:12:25+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.1868,
+    "costUsd": 1.581,
     "files": [
-      "packages/react/src/Heading.css",
       "packages/react/src/Heading.stories.tsx",
+      "packages/react/src/Heading.test.tsx",
       "packages/react/src/Heading.tsx"
     ],
-    "gaps": 0,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -531,20 +531,20 @@
     }
   },
   "Icon.web": {
-    "hash": "472ebff36ada6dd0",
-    "lastAttemptHash": "472ebff36ada6dd0",
-    "generatedAt": "2026-09-10T23:48:41+00:00",
-    "model": "sonnet",
+    "hash": "47e0b01f5a7a8d52",
+    "lastAttemptHash": "47e0b01f5a7a8d52",
+    "generatedAt": "2026-09-16T05:21:15+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.2991,
+    "costUsd": 2.3847,
     "files": [
       "packages/react/src/Icon.css",
       "packages/react/src/Icon.stories.tsx",
-      "packages/react/src/Icon.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Icon.test.tsx",
+      "packages/react/src/Icon.tsx"
     ],
-    "gaps": 0,
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -951,19 +951,19 @@
     }
   },
   "Stack.web": {
-    "hash": "703c13a97536740e",
-    "lastAttemptHash": "703c13a97536740e",
-    "generatedAt": "2026-09-10T21:15:58+00:00",
-    "model": "sonnet",
+    "hash": "a85ad38076e9f1f8",
+    "lastAttemptHash": "a85ad38076e9f1f8",
+    "generatedAt": "2026-09-16T06:23:59+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.328,
+    "costUsd": 1.7408,
     "files": [
-      "packages/react/src/Stack.css",
       "packages/react/src/Stack.stories.tsx",
+      "packages/react/src/Stack.test.tsx",
       "packages/react/src/Stack.tsx"
     ],
-    "gaps": 2,
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1066,20 +1066,22 @@
     }
   },
   "Text.web": {
-    "hash": "e050d5b7ab03d6bb",
-    "lastAttemptHash": "e050d5b7ab03d6bb",
-    "generatedAt": "2026-09-10T21:13:54+00:00",
-    "model": "sonnet",
+    "hash": "949a60c88d7c3174",
+    "lastAttemptHash": "949a60c88d7c3174",
+    "generatedAt": "2026-09-16T05:52:00+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.2374,
+    "costUsd": 5.0857,
     "files": [
-      "packages/react/src/Text.css",
+      "packages/react/src/Slider.tsx",
       "packages/react/src/Text.stories.tsx",
+      "packages/react/src/Text.test.tsx",
       "packages/react/src/Text.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Toast.css",
+      "packages/react/src/Toast.tsx"
     ],
-    "gaps": 0,
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,

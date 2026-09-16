@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { Platform } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
@@ -11,14 +12,19 @@ import type { IconName } from './paths';
 export type { IconName };
 export type IconSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
-/** The style bindings a caller may replace with a different token; see the component's overrides contract. */
-export type IconOverridableBinding = 'size' | 'color' | 'strokeWidth';
+/**
+ * The style bindings a caller may replace with a different token; see the component's
+ * overrides contract. `strokeWidth` is locked: line glyphs stay legible at `xs` only
+ * because they stroke at the focus width, so it is not overridable.
+ */
+export type IconOverridableBinding = 'size' | 'color';
 
 export interface IconProps {
   /**
    * Which glyph. The set is deliberately small and grows only when a component needs
-   * a shape; `info`, `success`, `warning` and `danger` are the four status shapes so
-   * tone is never carried by color alone.
+   * a shape; `info`, `success`, `warning` and `danger` are the four status shapes
+   * (circle-i, circle-check, triangle-!, octagon-x) so tone is never carried by color
+   * alone.
    */
   name: IconName;
   /** Rendered size, from the font-size scale so icons line up with text of the same size. */
@@ -33,7 +39,8 @@ export interface IconProps {
   label?: string | undefined;
   /**
    * React Native only: the color the parent passes, because there is no
-   * `currentColor`. Falls back to `color.foreground`.
+   * `currentColor`. Falls back to `color.foreground` when the icon is not nested in a
+   * `Text` (a nested glyph takes its parent Text's color instead).
    */
   color?: string | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
@@ -48,6 +55,9 @@ const SIZE_TOKEN = {
   xl: 'fontSizeXl',
 } as const satisfies Record<IconSize, keyof Tokens>;
 
+/** The shared glyph grid every platform draws on: path data is 16×16 and `viewBox` scales it to the rendered box. */
+const GRID = 16; // literal-ok: the glyph grid's coordinate space, not a size value
+
 /**
  * Icon — a single glyph that takes its size from the type scale and, on this
  * platform, an explicit color from its parent.
@@ -61,19 +71,17 @@ const SIZE_TOKEN = {
  * Renders `Svg`/`Path` from `react-native-svg` (the package's one sanctioned
  * dependency) against the same 16×16 `paths` table as web/Lit, so the glyphs stay
  * visually identical across platforms. Line glyphs stroke at `border.width.focus`
- * with `vectorEffect="non-scaling-stroke"` so they stay legible at `xs`; the four
- * status shapes and `ellipsis` fill instead, with no stroke.
+ * so they stay legible at `xs`; the four status shapes, `ellipsis`, `play` and
+ * `pause` fill instead, with no stroke.
  *
  * There is no `currentColor` on native, so `color` is an explicit prop that falls
- * back to `color.foreground` — except when `inline` and nested inside a system
- * `Text`, where it falls back to that Text's own resolved size and color via
- * `TextStyleContext` instead, so the glyph matches its surrounding copy exactly
- * (`size`, `md` default, and `color.foreground` still apply standalone).
+ * back to `color.foreground` — except inside a system `Text`, where the glyph takes
+ * that Text's own resolved color through `TextStyleContext`, and (with `inline`) its
+ * font size too, so it matches the surrounding copy exactly.
  *
- * `size` is ignored (a no-op) while `inline` is set, since size then comes from the
- * text context instead. `strokeWidth` is a no-op on the four filled glyphs, which
- * have no stroke. Decorative (no `label`): `accessibilityElementsHidden` and
- * `importantForAccessibility="no"`. Labelled: `accessibilityRole="image"` and
+ * `size` is ignored (a no-op) while `inline` is set, since the size then comes from
+ * the text context instead. Decorative (no `label`): `accessibilityElementsHidden`
+ * and `importantForAccessibility="no"`. Labelled: `accessibilityRole="image"` and
  * `accessibilityLabel`. No interaction, no focus, no animation.
  */
 export function Icon({ name, size = 'md', inline = false, label, color, overrides }: IconProps): React.JSX.Element {
@@ -92,11 +100,14 @@ export function Icon({ name, size = 'md', inline = false, label, color, override
       ? (resolveToken(t, overrides.size) as number)
       : t[SIZE_TOKEN[size]];
 
+  // The prop is what a parent passes in place of `currentColor`, so it wins; an
+  // override replaces the binding's default, which is the enclosing Text's color
+  // when there is one and `color.foreground` otherwise.
   const resolvedColor =
     color ??
     (overrides?.color
       ? (resolveToken(t, overrides.color) as string)
-      : inline && textStyle.nested
+      : textStyle.nested
         ? textStyle.color
         : t.colorForeground);
 
@@ -109,13 +120,16 @@ export function Icon({ name, size = 'md', inline = false, label, color, override
     return <Svg testID="Icon" width={dimension} height={dimension} viewBox="0 0 16 16" />;
   }
 
-  // Filled glyphs (the status shapes, ellipsis) have no stroke, so a strokeWidth
-  // override on them is a no-op — the binding is not in effect.
+  // `border.width.focus` is a screen-pixel thickness. react-native-web honors
+  // `vector-effect="non-scaling-stroke"` and keeps it there; native ignores the hint
+  // and reads strokeWidth in grid units, so convert it at the rendered size — the
+  // stroke is then the same thickness at every size, which is the point at `xs`.
+  // Filled glyphs draw no stroke at all.
   const strokeWidth = glyph.filled
     ? undefined
-    : overrides?.strokeWidth
-      ? (resolveToken(t, overrides.strokeWidth) as number)
-      : t.borderWidthFocus;
+    : Platform.OS === 'web'
+      ? t.borderWidthFocus
+      : t.borderWidthFocus * (GRID / dimension);
 
   return (
     <Svg
@@ -134,9 +148,9 @@ export function Icon({ name, size = 'md', inline = false, label, color, override
       importantForAccessibility={decorative ? 'no' : 'auto'}
     >
       {glyph.filled ? (
-        <Path d={glyph.d} fill={resolvedColor} stroke="none" fillRule="evenodd" />
+        <Path testID="Icon.glyph" d={glyph.d} fill={resolvedColor} stroke="none" fillRule="evenodd" />
       ) : (
-        <Path d={glyph.d} vectorEffect="non-scaling-stroke" />
+        <Path testID="Icon.glyph" d={glyph.d} vectorEffect="non-scaling-stroke" />
       )}
     </Svg>
   );

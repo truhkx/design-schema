@@ -215,7 +215,10 @@ export class DsToast extends LitElement {
       color: var(--color-inverse-status-danger);
     }
 
+    /* text: color.inverse.foreground, locked. Text's own color binding is locked as well, so the
+       message cannot be handed a color override — the token it already reads is re-scoped here. */
     .message {
+      --color-foreground: var(--color-inverse-foreground);
       flex: 1 1 auto;
       min-inline-size: 0;
     }
@@ -316,9 +319,7 @@ export class DsToast extends LitElement {
   }
 
   protected override render(): TemplateResult {
-    const textOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {
-      color: 'color.inverse.foreground',
-    };
+    const textOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
     if (this.overrides?.fontFamily) {
       textOverrides.fontFamily = this.overrides.fontFamily;
     }

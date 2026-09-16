@@ -4,7 +4,7 @@
  * gate runs this file after every generation round. See generated/prompts/Heading.web.md.
  */
 import { describe, expect, it } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { Heading, type HeadingProps } from './Heading';
 import meta from './Heading.stories';
 
@@ -15,6 +15,20 @@ function setup(given: Partial<HeadingProps> = {}) {
 }
 
 describe('Heading', () => {
+  it('level-puts-the-heading-in-the-outline', () => {
+    setup({ level: '3' });
+    const heading = screen.getByRole('heading', { level: 3 });
+    expect(heading.tagName).toBe('H3');
+  });
+
+  it('size-does-not-change-the-outline', () => {
+    setup({ level: '2', size: 'md' });
+    // The smallest size is applied, and the element is still the h2 the outline needs.
+    const heading = screen.getByRole('heading', { level: 2 });
+    expect(heading.tagName).toBe('H2');
+    expect(heading).toHaveClass('ds-heading--size-md');
+  });
+
   it('renders', () => {
     const { container } = setup();
     expect(container.firstChild).not.toBeNull();

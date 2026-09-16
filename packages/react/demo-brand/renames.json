@@ -102,15 +102,15 @@
       "dir": "src",
       "canonical": "Icon.css",
       "brand": "Icon.css",
-      "names": 163,
-      "differ": 23
+      "names": 222,
+      "differ": 24
     },
     {
       "dir": "src",
       "canonical": "Icon.tsx",
       "brand": "Icon.tsx",
-      "names": 941,
-      "differ": 13
+      "names": 1094,
+      "differ": 14
     },
     {
       "dir": "src",
@@ -151,7 +151,7 @@
       "dir": "src",
       "canonical": "Text.tsx",
       "brand": "Text.tsx",
-      "names": 509,
+      "names": 565,
       "differ": 16
     },
     {
@@ -188,7 +188,7 @@
       "category": "component name",
       "from": "Alert",
       "to": "Callout",
-      "count": 28
+      "count": 29
     },
     {
       "category": "component name",
@@ -218,7 +218,7 @@
       "category": "component name",
       "from": "Button",
       "to": "CtaButton",
-      "count": 33
+      "count": 34
     },
     {
       "category": "component name",
@@ -393,6 +393,12 @@
       "from": "ds-icon",
       "to": "demo-icon",
       "count": 12
+    },
+    {
+      "category": "class or custom-element name",
+      "from": "ds-input__description",
+      "to": "demo-input__description",
+      "count": 1
     },
     {
       "category": "class or custom-element name",
@@ -842,7 +848,7 @@
       "category": "CSS custom-property prefix",
       "from": "--ds-text-color",
       "to": "--demo-text-color",
-      "count": 7
+      "count": 6
     },
     {
       "category": "CSS custom-property prefix",

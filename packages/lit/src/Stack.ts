@@ -15,6 +15,7 @@ const HOOKS: Record<StackOverridableBinding, string> = {
   gap: '--ds-stack-gap',
 };
 
+/** Comments and whitespace-only text are not children the list wraps in an `<li>`. */
 function isRenderable(node: Node): node is Element | Text {
   return node instanceof Element || (node instanceof Text && node.data.trim() !== '');
 }
@@ -37,8 +38,14 @@ function isRenderable(node: Node): node is Element | Text {
  * meaning — `nav` for navigation, `ul` for a list of like items — so the
  * structure is exposed to assistive technology.
  *
+ * ## When not to use
+ *
+ * Not for two-dimensional layouts (use Grid, planned) and not for positioning
+ * a single element (use spacing tokens on the parent). Never set spacing
+ * between children with margins on the children.
+ *
  * @slot - Any components. Stack does not style its children; it only positions them.
- * @csspart container - The semantic wrapper when `element` is not `div`.
+ * @csspart container - The semantic wrapper when `element` is not `div`; for `div` the host is the container.
  */
 @customElement('ds-stack')
 export class DsStack extends LitElement {
@@ -116,7 +123,9 @@ export class DsStack extends LitElement {
       flex-wrap: wrap;
     }
 
-    /* Semantic wrappers contribute no box; the host stays the flex container. */
+    /* Semantic wrappers contribute no box, so the host stays the flex container
+       and the slotted children stay its flex items. Dropping the boxes also
+       drops the UA list margin, padding and marker. */
     section,
     nav,
     ul,
@@ -145,8 +154,14 @@ export class DsStack extends LitElement {
   @property() accessor element: StackElement = 'div';
 
   /** Per-instance style overrides: `{ gap: 'layout.gap.loose' }`. */
-  @property({ attribute: false }) accessor overrides: Partial<Record<StackOverridableBinding, TokenRef | undefined>> | undefined;
+  @property({ attribute: false })
+  accessor overrides: Partial<Record<StackOverridableBinding, TokenRef | undefined>> | undefined;
 
+  /**
+   * The `<li>` wrappers are one per light-DOM child, so a child added or
+   * removed after the first render has to re-render. `childList` only: a
+   * callback that watched attributes would see its own `data-ds` write.
+   */
   private readonly observer = new MutationObserver(() => this.requestUpdate());
 
   override connectedCallback(): void {
@@ -193,7 +208,11 @@ export class DsStack extends LitElement {
     this.assignSlots();
   }
 
-  /** Assign light-DOM children to the shadow slots (manual slot assignment). */
+  /**
+   * Assign light-DOM children to the shadow slots. Manual assignment keeps the
+   * children where the consumer put them: nothing is reparented, so there is no
+   * `slotchange` loop to guard against. Re-assigning the same nodes is a no-op.
+   */
   private assignSlots(): void {
     const slots = Array.from(this.renderRoot.querySelectorAll('slot'));
     const items = this.items;
@@ -221,7 +240,7 @@ export class DsStack extends LitElement {
     for (const binding of Object.keys(HOOKS) as StackOverridableBinding[]) {
       const ref = this.overrides?.[binding];
       const hook = HOOKS[binding];
-      /* gap: none has no gap to override — presence rule. */
+      /* gap: none has no gap in effect, so overrides.gap is a no-op — presence rule. */
       if (ref === undefined || (binding === 'gap' && this.gap === 'none')) {
         this.style.removeProperty(hook);
       } else {

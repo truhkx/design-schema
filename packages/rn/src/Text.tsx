@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { I18nManager, Text as RNText } from 'react-native';
-import type { TextStyle } from 'react-native';
+import type { TextInstance, TextStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { toFontWeight, toLineHeight, useTheme } from './theme';
@@ -11,8 +11,12 @@ export type TextWeight = 'regular' | 'medium' | 'semibold' | 'bold';
 export type TextTone = 'default' | 'strong' | 'muted' | 'danger' | 'onAction';
 export type TextAlign = 'start' | 'center' | 'end';
 
-/** The style bindings a caller may replace with a different token; see the component's overrides contract. */
-export type TextOverridableBinding = 'fontFamily' | 'fontSize' | 'fontWeight' | 'lineHeight' | 'color';
+/**
+ * The style bindings a caller may replace with a different token; see the component's
+ * overrides contract. `color` is locked — the tone colors are contrast-checked against
+ * the page background, so it is not overridable and is ignored if passed.
+ */
+export type TextOverridableBinding = 'fontFamily' | 'fontSize' | 'fontWeight' | 'lineHeight';
 
 export interface TextProps {
   /** The text content. Inline formatting (nested Text) is allowed; block elements are not. */
@@ -29,6 +33,8 @@ export interface TextProps {
   truncate?: boolean | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<TextOverridableBinding, TokenRef | undefined>> | undefined;
+  /** The rendered `Text`, for measurement or accessibility focus. */
+  ref?: React.Ref<TextInstance> | undefined;
 }
 
 const SIZE_TOKEN = {
@@ -70,6 +76,23 @@ const DEFAULT_TEXT_STYLE_CONTEXT: TextStyleContextValue = { fontSize: 0, color: 
 
 export const TextStyleContext: React.Context<TextStyleContextValue> = React.createContext<TextStyleContextValue>(DEFAULT_TEXT_STYLE_CONTEXT);
 
+/**
+ * The foreground color in force for a subtree, standing in for the CSS cascade.
+ *
+ * Text's `color` binding is locked — every tone is contrast-checked against the page
+ * background — so a component that owns a surface with a foreground of its own (Toast,
+ * Tooltip, Slider's value bubble, DatePicker's selected day) cannot hand Text a color
+ * through `overrides`. On web and Lit those components re-scope the `--color-foreground`
+ * custom property around the composed text; React Native has no cascade to re-scope, so
+ * they provide the color here instead and keep composing `Text` rather than restyling it
+ * or drawing their own. A `tone` other than `default` still wins, since it carries
+ * meaning the surface does not.
+ *
+ * Package-internal: it is not re-exported from the package entry point, because a
+ * consumer's surface should grow a schema binding rather than paint text by hand.
+ */
+export const TextForegroundContext: React.Context<string | undefined> = React.createContext<string | undefined>(undefined);
+
 /** Resolves `start`/`end` against the current writing direction, since RN's `textAlign` has no logical values. */
 export function toTextAlign(align: TextAlign): TextStyle['textAlign'] {
   if (align === 'center') {
@@ -96,6 +119,11 @@ export function toTextAlign(align: TextAlign): TextStyle['textAlign'] {
  * scaling applies. There is no `element` prop on native. Provides
  * `TextStyleContext` with the resolved `fontSize`/`color` so inline children
  * (Icon, Link) can match this Text instead of falling back to a default.
+ *
+ * Native has no equivalent of web's `title`, so a truncated string has no
+ * sighted affordance to reach the rest of it — screen readers still read it in
+ * full. Keep truncated copy short enough that the visible line carries the
+ * meaning.
  */
 export function Text({
   children,
@@ -105,11 +133,14 @@ export function Text({
   align = 'start',
   truncate = false,
   overrides,
+  ref,
 }: TextProps): React.JSX.Element {
   const { tokens: t } = useTheme();
 
+  const surfaceColor = React.useContext(TextForegroundContext);
+
   const fontSize = overrides?.fontSize ? (resolveToken(t, overrides.fontSize) as number) : t[SIZE_TOKEN[size]];
-  const color = overrides?.color ? (resolveToken(t, overrides.color) as string) : t[TONE_TOKEN[tone]];
+  const color = tone === 'default' && surfaceColor !== undefined ? surfaceColor : t[TONE_TOKEN[tone]];
 
   const style = React.useMemo<TextStyle>(() => {
     const lineHeightMultiplier = overrides?.lineHeight ? (resolveToken(t, overrides.lineHeight) as number) : t.fontLineHeightNormal;
@@ -132,6 +163,7 @@ export function Text({
 
   return (
     <RNText
+      ref={ref}
       testID="Text"
       allowFontScaling
       numberOfLines={truncate ? 1 : undefined}

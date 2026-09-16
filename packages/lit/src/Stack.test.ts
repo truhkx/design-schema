@@ -1,6 +1,7 @@
 /**
  * <ds-stack> — behavior scenarios from the component doc, one test each, in the doc's order.
- * Stack has no interactive behavior (a11y.role: none), so every scenario only asserts render.
+ * Stack has no interactive behavior (a11y.role: none): the two `element` scenarios assert the
+ * semantics the wrapper renders, and every derived scenario only asserts render.
  * Runs in headless Chromium (Vitest browser mode). See generated/prompts/Stack.lit.md.
  */
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -27,6 +28,23 @@ beforeEach(() => {
 });
 
 describe('ds-stack', () => {
+  it('nav-element-is-a-navigation-landmark', async () => {
+    const { el } = await setup({ element: 'nav' });
+    expect(el.shadowRoot!.querySelector('[role="navigation"]')).not.toBeNull();
+    expect(el.shadowRoot!.querySelector('nav')).not.toBeNull();
+  });
+
+  it('list-element-is-a-list', async () => {
+    const el = document.createElement('ds-stack');
+    el.element = 'ul';
+    el.append(document.createElement('span'), document.createElement('span'));
+    document.body.append(el);
+    await el.updateComplete;
+    expect(el.shadowRoot!.querySelector('[role="list"]')).not.toBeNull();
+    /* each child is wrapped in an li, so assistive technology counts the items */
+    expect(el.shadowRoot!.querySelectorAll('li')).toHaveLength(2);
+  });
+
   /* derived: a11y.role */
   it('renders', async () => {
     const { el } = await setup();

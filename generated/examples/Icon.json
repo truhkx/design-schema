@@ -869,31 +869,7 @@
       "primary": false
     },
     {
-      "title": "Inline",
-      "args": {
-        "name": "external",
-        "size": "md",
-        "inline": true
-      },
-      "snippets": {
-        "react": "import { Icon, Text } from '@design-schema/react';\n\n<Text element=\"p\">\n  Opens in a new tab <Icon name=\"external\" inline />\n</Text>",
-        "lit": "<p style=\"font-size: var(--font-size-lg); color: var(--color-foreground)\">\n  Opens in a new tab\n  <ds-icon name=\"external\" inline></ds-icon>\n</p>",
-        "rn": "import { Icon, Text } from '@design-schema/rn';\n\n<Text size=\"lg\">\n  Read the release notes <Icon name=\"external\" inline />\n</Text>",
-        "swift": null
-      },
-      "stories": {
-        "react": "Inline",
-        "lit": "Inline",
-        "rn": "Inline",
-        "swift": null
-      },
-      "storyId": "icon-react--inline",
-      "sweep": null,
-      "decorated": false,
-      "primary": true
-    },
-    {
-      "title": "Labelled",
+      "title": "Status In A Cell",
       "args": {
         "name": "warning",
         "size": "md",
@@ -907,18 +883,66 @@
         "swift": null
       },
       "stories": {
-        "react": "Labelled",
-        "lit": "Labelled",
-        "rn": "Label",
+        "react": "StatusInACell",
+        "lit": "StatusInACell",
+        "rn": "StatusInACell",
         "swift": null
       },
-      "storyId": "icon-react--labelled",
+      "storyId": "icon-react--status-in-a-cell",
       "sweep": {
         "prop": "name",
         "value": "warning"
       },
       "decorated": false,
       "primary": false
+    },
+    {
+      "title": "Decorative Beside A Label",
+      "args": {
+        "name": "check",
+        "size": "sm",
+        "inline": false
+      },
+      "snippets": {
+        "react": "import { Icon, Text } from '@design-schema/react';\n\n<Text element=\"span\" size=\"sm\">\n  <Icon name=\"check\" size=\"sm\" /> Saved\n</Text>",
+        "lit": "<ds-text element=\"span\" size=\"sm\">\n  <ds-icon name=\"check\" size=\"sm\"></ds-icon> Saved\n</ds-text>",
+        "rn": "import { Icon, Text } from '@design-schema/rn';\n\n<Text size=\"sm\">\n  <Icon name=\"check\" size=\"sm\" /> Saved\n</Text>",
+        "swift": null
+      },
+      "stories": {
+        "react": "DecorativeBesideALabel",
+        "lit": "DecorativeBesideALabel",
+        "rn": "DecorativeBesideALabel",
+        "swift": null
+      },
+      "storyId": "icon-react--decorative-beside-a-label",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Inline In Running Text",
+      "args": {
+        "name": "external",
+        "size": "md",
+        "inline": true
+      },
+      "snippets": {
+        "react": "import { Icon, Text } from '@design-schema/react';\n\n<Text>\n  The report opens in a new tab <Icon name=\"external\" inline />\n</Text>",
+        "lit": "<ds-text>\n  The report opens in a new tab <ds-icon name=\"external\" inline></ds-icon>\n</ds-text>",
+        "rn": "import { Icon, Text } from '@design-schema/rn';\n\n<Text size=\"lg\">\n  Read the release notes <Icon name=\"external\" inline />\n</Text>",
+        "swift": null
+      },
+      "stories": {
+        "react": "InlineInRunningText",
+        "lit": "InlineInRunningText",
+        "rn": "InlineInRunningText",
+        "swift": null
+      },
+      "storyId": "icon-react--inline-in-running-text",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
     }
   ]
 }

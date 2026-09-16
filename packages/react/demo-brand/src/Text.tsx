@@ -8,22 +8,26 @@ export type TextTone = 'default' | 'strong' | 'muted' | 'danger' | 'onAction';
 export type TextAlign = 'start' | 'center' | 'end';
 export type TextElement = 'p' | 'span';
 
-/** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
-export type TextOverridableBinding = 'fontFamily' | 'fontSize' | 'fontWeight' | 'lineHeight' | 'color';
+/**
+ * Style bindings that can be overridden per instance; accessibility-bearing bindings are never in
+ * this list. `color` is locked: every tone is contrast-checked against the page background, so it
+ * is not overridable and is ignored if passed.
+ */
+export type TextOverridableBinding = 'fontFamily' | 'fontSize' | 'fontWeight' | 'lineHeight';
 
 const OVERRIDE_HOOK: Record<TextOverridableBinding, string> = {
   fontFamily: '--demo-text-font-family', // literal-ok: CSS custom-property hook name, not a font stack
   fontSize: '--demo-text-font-size',
   fontWeight: '--demo-text-font-weight',
   lineHeight: '--demo-text-line-height',
-  color: '--demo-text-color',
 };
 
 function overridesToStyle(overrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as TextOverridableBinding[]) {
     const ref = overrides[binding];
-    if (ref) style[OVERRIDE_HOOK[binding]] = cssVar(ref);
+    const hook = OVERRIDE_HOOK[binding];
+    if (ref && hook) style[hook] = cssVar(ref);
   }
   return style as CSSProperties;
 }
@@ -39,9 +43,9 @@ export interface TextProps extends Omit<ComponentPropsWithoutRef<'p'>, 'children
   tone?: TextTone | undefined;
   /** Horizontal alignment. `start`/`end` follow writing direction. */
   align?: TextAlign | undefined;
-  /** Clip to one line with an ellipsis. On web the full text is exposed via `title` when children is a plain string; otherwise the consumer passes `title`. */
+  /** Clip to one line with an ellipsis. The full text is exposed via `title` when children is a plain string; otherwise the consumer passes `title`. */
   truncate?: boolean | undefined;
-  /** The HTML element to render — `p` for a block, `span` for inline. */
+  /** The HTML element to render — `p` for a block, `span` for inline. Labels and legends are rendered by Input and (planned) Fieldset, which own the association. */
   element?: TextElement | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<TextOverridableBinding, TokenRef | undefined>> | undefined;
@@ -91,6 +95,8 @@ export const Text = function Text({
     TONE_CLASS[tone],
     `demo-text--align-${align}`,
     truncate ? 'demo-text--truncate' : null,
+    // Composing components pass a layout-only class (`.demo-input__description { margin: 0 }`); they
+    // never restyle Text's own typography, which stays on the token hooks below.
     className ?? null,
   ]
     .filter(Boolean)

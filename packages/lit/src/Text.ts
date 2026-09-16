@@ -10,15 +10,14 @@ export type TextTone = 'default' | 'strong' | 'muted' | 'danger' | 'onAction';
 export type TextAlign = 'start' | 'center' | 'end';
 export type TextElement = 'p' | 'span';
 
-/** Overridable style hooks; see the `overrides` property. Nothing is locked. */
-export type TextOverridableBinding = 'fontFamily' | 'fontSize' | 'fontWeight' | 'lineHeight' | 'color';
+/** Overridable style hooks; see the `overrides` property. `color` is locked and excluded. */
+export type TextOverridableBinding = 'fontFamily' | 'fontSize' | 'fontWeight' | 'lineHeight';
 
 const HOOKS: Record<TextOverridableBinding, string> = {
-  fontFamily: `--ds-text-font-family`,
+  fontFamily: '--ds-text-font-family',
   fontSize: '--ds-text-font-size',
   fontWeight: '--ds-text-font-weight',
   lineHeight: '--ds-text-line-height',
-  color: '--ds-text-color',
 };
 
 const TAGS: Record<TextElement, StaticValue> = {
@@ -35,8 +34,8 @@ function isTextElement(value: unknown): value is TextElement {
  *
  * `<ds-text size="sm" tone="muted">` renders the chosen `element` inside a
  * shadow root with `part="text"`. The host is `display: contents` for
- * `span`-like use and `display: block` otherwise, so the rendered element
- * takes part in the surrounding layout directly. Reflected attributes allow
+ * `span`-like use and `display: block` otherwise, so the rendered element takes
+ * part in the surrounding layout directly. Reflected attributes allow
  * `ds-text[tone="danger"]` selectors in consuming apps.
  *
  * ## When to use
@@ -47,8 +46,13 @@ function isTextElement(value: unknown): value is TextElement {
  * when a phrase must stand out from surrounding body copy. Use `weight` to
  * create hierarchy inside a size; it is calmer than jumping sizes.
  *
+ * Do not use Text for section titles — that is `<ds-heading>`, which carries
+ * document structure — and do not use `tone="danger"` decoratively: it is
+ * reserved for error and destructive messaging, paired with explicit wording so
+ * colour never carries the meaning alone.
+ *
  * @slot - The text content. Inline formatting (emphasis, links) is allowed; block elements are not.
- * @csspart text - The rendered element.
+ * @csspart text - The rendered `<p>` or `<span>`.
  */
 @customElement('ds-text')
 export class DsText extends LitElement {
@@ -59,11 +63,6 @@ export class DsText extends LitElement {
       --ds-text-font-size: var(--font-size-md);
       --ds-text-font-weight: var(--font-weight-regular);
       --ds-text-line-height: var(--font-line-height-normal);
-      --ds-text-color: var(--color-foreground);
-    }
-
-    :host([hidden]) {
-      display: none;
     }
 
     .text {
@@ -73,7 +72,8 @@ export class DsText extends LitElement {
       font-size: var(--ds-text-font-size);
       font-weight: var(--ds-text-font-weight);
       line-height: var(--ds-text-line-height);
-      color: var(--ds-text-color);
+      /* color: color.foreground.{tone}, locked — read straight from the token, no hook */
+      color: var(--color-foreground);
       text-align: start;
     }
 
@@ -116,20 +116,20 @@ export class DsText extends LitElement {
     }
 
     /* color: color.foreground.{tone} ("default" is the bare color.foreground token) */
-    :host([tone='default']) {
-      --ds-text-color: var(--color-foreground);
+    :host([tone='default']) .text {
+      color: var(--color-foreground);
     }
-    :host([tone='strong']) {
-      --ds-text-color: var(--color-foreground-strong);
+    :host([tone='strong']) .text {
+      color: var(--color-foreground-strong);
     }
-    :host([tone='muted']) {
-      --ds-text-color: var(--color-foreground-muted);
+    :host([tone='muted']) .text {
+      color: var(--color-foreground-muted);
     }
-    :host([tone='danger']) {
-      --ds-text-color: var(--color-foreground-danger);
+    :host([tone='danger']) .text {
+      color: var(--color-foreground-danger);
     }
-    :host([tone='onAction']) {
-      --ds-text-color: var(--color-foreground-on-action);
+    :host([tone='onAction']) .text {
+      color: var(--color-foreground-on-action);
     }
 
     :host([align='start']) .text {
@@ -142,7 +142,7 @@ export class DsText extends LitElement {
       text-align: end;
     }
 
-    /* truncate: one line with an ellipsis; the full text is exposed via title */
+    /* truncate: one line with an ellipsis; the full text stays reachable as title */
     :host([truncate]) .text {
       overflow: hidden;
       text-overflow: ellipsis;
@@ -153,27 +153,41 @@ export class DsText extends LitElement {
       max-inline-size: 100%;
       vertical-align: bottom;
     }
+
+    :host([hidden]) {
+      display: none;
+    }
   `;
 
-  /** Maps to the font size scale. `md` is body copy; `xs` is the smallest readable size. */
-  @property({ reflect: true }) accessor size: TextSize = 'md';
+  /**
+   * Maps to the font size scale. `md` is body copy; `xs` is the smallest
+   * readable size and is reserved for captions and metadata.
+   */
+  @property({ type: String, reflect: true }) accessor size: TextSize = 'md';
 
   /** Emphasis without changing size. Prefer weight over color for hierarchy. */
-  @property({ reflect: true }) accessor weight: TextWeight = 'regular';
+  @property({ type: String, reflect: true }) accessor weight: TextWeight = 'regular';
 
   /** Semantic color. `onAction` is only for text placed on an action background. */
-  @property({ reflect: true }) accessor tone: TextTone = 'default';
+  @property({ type: String, reflect: true }) accessor tone: TextTone = 'default';
 
   /** Horizontal alignment. `start`/`end` follow writing direction. */
-  @property({ reflect: true }) accessor align: TextAlign = 'start';
+  @property({ type: String, reflect: true }) accessor align: TextAlign = 'start';
 
-  /** Clip to one line with an ellipsis. The full text remains available as `title`. */
+  /**
+   * Clip to one line with an ellipsis. The full text is exposed via `title`
+   * when the slotted content is plain text; otherwise the consumer sets `title`
+   * on the host. Screen readers still read the whole string.
+   */
   @property({ type: Boolean, reflect: true }) accessor truncate = false;
 
-  /** The HTML element to render. Choose by meaning, not by layout. */
-  @property() accessor element: TextElement = 'p';
+  /**
+   * The HTML element to render — `p` for a block, `span` for inline. Labels and
+   * legends are rendered by Input and Fieldset, which own the association.
+   */
+  @property({ type: String }) accessor element: TextElement = 'p';
 
-  /** Per-instance style overrides: `{ color: 'color.foreground.danger' }`. Nothing is locked. */
+  /** Per-instance style overrides: `{ fontSize: 'font.size.lg' }`. `color` is locked and ignored. */
   @property({ attribute: false }) accessor overrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> | undefined;
 
   /** Plain-text content of the default slot, used for `title` when truncated. */
@@ -189,7 +203,12 @@ export class DsText extends LitElement {
       this.applyOverrides();
     }
     if (changed.has('element')) {
-      this.style.display = this.element === 'span' ? 'contents' : 'block';
+      // `span` hosts get out of the way so the inline run joins its surrounding line.
+      if (this.element === 'span') {
+        this.style.setProperty('display', 'contents');
+      } else {
+        this.style.removeProperty('display');
+      }
     }
   }
 

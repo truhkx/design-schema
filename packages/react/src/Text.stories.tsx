@@ -4,6 +4,7 @@ import { Text } from './Text';
 const meta: Meta<typeof Text> = {
   title: 'Text/React',
   component: Text,
+  tags: ['autodocs'],
   args: {
     children: 'Use the email you signed up with.',
     size: 'md',
@@ -58,13 +59,26 @@ export const AlignEnd: Story = { args: { align: 'end' } };
 export const ElementP: Story = { args: { element: 'p' } };
 export const ElementSpan: Story = { args: { element: 'span' } };
 
-/* truncate */
-export const Truncate: Story = {
-  args: {
-    truncate: true,
-    children:
-      'This sentence is intentionally long so that it overflows the container and is clipped to one line with an ellipsis; the full text is still available in the title attribute.',
-  },
+/* examples from the component doc */
+
+/** The default paragraph - body size, regular weight, default tone. */
+export const BodyCopy: Story = {
+  args: { children: 'Changes are saved automatically. You can undo any change for 30 days.' },
+};
+
+/** Secondary metadata at the smallest readable size, muted so it sits behind the content it annotates. */
+export const Caption: Story = {
+  args: { children: 'Last updated 2 minutes ago.', size: 'xs', tone: 'muted' },
+};
+
+/** Error copy where the danger tone is paired with explicit words, so color alone never carries the meaning. */
+export const InlineErrorWording: Story = {
+  args: { children: 'Error: enter an email address like name@example.com', tone: 'danger', element: 'span' },
+};
+
+/** One line of text in a dense cell, with the full string still reachable. */
+export const TruncatedCell: Story = {
+  args: { children: 'Quarterly revenue summary for the EMEA region.', truncate: true },
   decorators: [
     (Story) => (
       <div style={{ maxInlineSize: '24ch' }}>

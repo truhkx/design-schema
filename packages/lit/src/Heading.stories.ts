@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
-import { html } from 'lit';
+import { html, type TemplateResult } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Heading.js';
 import type { HeadingAlign, HeadingLevel, HeadingSize } from './Heading.js';
@@ -9,6 +9,14 @@ interface HeadingArgs {
   size?: HeadingSize | undefined;
   align: HeadingAlign;
   text: string;
+}
+
+function renderHeading(args: HeadingArgs): TemplateResult {
+  return html`
+    <ds-heading level=${args.level} size=${ifDefined(args.size)} align=${args.align}
+      >${args.text}</ds-heading
+    >
+  `;
 }
 
 const meta: Meta<HeadingArgs> = {
@@ -25,11 +33,7 @@ const meta: Meta<HeadingArgs> = {
     align: 'start',
     text: 'Account settings',
   },
-  render: (args) => html`
-    <ds-heading level=${args.level} size=${ifDefined(args.size)} align=${args.align}
-      >${args.text}</ds-heading
-    >
-  `,
+  render: renderHeading,
 };
 
 export default meta;
@@ -37,7 +41,7 @@ type Story = StoryObj<HeadingArgs>;
 
 export const Default: Story = {};
 
-/* level (default size follows the level) */
+/* level (the default size follows the level) */
 export const Level1: Story = { args: { level: '1' } };
 export const Level2: Story = { args: { level: '2' } };
 export const Level3: Story = { args: { level: '3' } };
@@ -57,3 +61,20 @@ export const SizeMd: Story = { args: { size: 'md' } };
 export const AlignStart: Story = { args: { align: 'start' } };
 export const AlignCenter: Story = { args: { align: 'center' } };
 export const AlignEnd: Story = { args: { align: 'end' } };
+
+/* examples from the component doc */
+
+/** The one level-1 heading on a page, at its default size. */
+export const PageTitle: Story = {
+  args: { level: '1', text: 'Account settings' },
+};
+
+/** A major section of the page, one level below the title. */
+export const SectionHeading: Story = {
+  args: { level: '2', text: 'Billing' },
+};
+
+/** A level-4 heading given a larger size so it still reads as a section start in a wide layout. */
+export const SubsectionSizedUp: Story = {
+  args: { level: '4', size: 'xl', text: 'Payment methods' },
+};

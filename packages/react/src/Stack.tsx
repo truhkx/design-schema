@@ -98,7 +98,15 @@ export const Stack = function Stack({
   const role = isList ? 'list' : rest.role;
 
   return (
-    <Tag {...rest} ref={ref as Ref<HTMLElement>} role={role} data-ds="Stack" className={classes} style={mergedStyle}>
+    <Tag
+      {...rest}
+      ref={ref as Ref<HTMLElement>}
+      role={role}
+      data-ds="Stack"
+      data-part="container"
+      className={classes}
+      style={mergedStyle}
+    >
       {isList
         ? Children.map(children, (child) =>
             child === null || child === undefined || typeof child === 'boolean' ? null : (

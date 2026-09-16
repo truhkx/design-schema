@@ -101,7 +101,7 @@ describe('ds-text', () => {
     expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
   });
 
-  it('renders-tone-onAction', async () => {
+  it('renders-tone-on-action', async () => {
     const { el } = await setup({ tone: 'onAction' });
     expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
   });

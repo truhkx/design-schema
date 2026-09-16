@@ -1,6 +1,7 @@
 /**
  * Box — behavior scenarios from the component doc, one test each, in the doc's order.
- * Box has no interactive behavior (a11y.role: none), so every scenario only asserts render.
+ * Box has no interactive behavior (a11y.role: none), so apart from the two sectioning-element
+ * scenarios every scenario only asserts render.
  */
 import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
@@ -15,6 +16,21 @@ function setup(given: Partial<BoxProps> = {}) {
 }
 
 describe('Box', () => {
+  it('nav-element-carries-navigation-semantics', () => {
+    const { getByRole } = setup({ element: 'nav' });
+    const region = getByRole('navigation');
+    expect(region.tagName).toBe('NAV');
+    // Box adds no role of its own: the element is the semantics.
+    expect(region.hasAttribute('role')).toBe(false);
+  });
+
+  it('article-element-carries-article-semantics', () => {
+    const { getByRole } = setup({ element: 'article' });
+    const region = getByRole('article');
+    expect(region.tagName).toBe('ARTICLE');
+    expect(region.hasAttribute('role')).toBe(false);
+  });
+
   /* derived: a11y.role */
   it('renders', () => {
     const { container } = setup();
@@ -48,53 +64,53 @@ describe('Box', () => {
   });
 
   /* derived: props.insetBlock */
-  it('renders-insetblock-none', () => {
+  it('renders-inset-block-none', () => {
     const { container } = setup({ insetBlock: 'none' });
     expect(container.firstChild).not.toBeNull();
   });
 
-  it('renders-insetblock-sm', () => {
+  it('renders-inset-block-sm', () => {
     const { container } = setup({ insetBlock: 'sm' });
     expect(container.firstChild).not.toBeNull();
   });
 
-  it('renders-insetblock-md', () => {
+  it('renders-inset-block-md', () => {
     const { container } = setup({ insetBlock: 'md' });
     expect(container.firstChild).not.toBeNull();
   });
 
-  it('renders-insetblock-lg', () => {
+  it('renders-inset-block-lg', () => {
     const { container } = setup({ insetBlock: 'lg' });
     expect(container.firstChild).not.toBeNull();
   });
 
-  it('renders-insetblock-xl', () => {
+  it('renders-inset-block-xl', () => {
     const { container } = setup({ insetBlock: 'xl' });
     expect(container.firstChild).not.toBeNull();
   });
 
   /* derived: props.insetInline */
-  it('renders-insetinline-none', () => {
+  it('renders-inset-inline-none', () => {
     const { container } = setup({ insetInline: 'none' });
     expect(container.firstChild).not.toBeNull();
   });
 
-  it('renders-insetinline-sm', () => {
+  it('renders-inset-inline-sm', () => {
     const { container } = setup({ insetInline: 'sm' });
     expect(container.firstChild).not.toBeNull();
   });
 
-  it('renders-insetinline-md', () => {
+  it('renders-inset-inline-md', () => {
     const { container } = setup({ insetInline: 'md' });
     expect(container.firstChild).not.toBeNull();
   });
 
-  it('renders-insetinline-lg', () => {
+  it('renders-inset-inline-lg', () => {
     const { container } = setup({ insetInline: 'lg' });
     expect(container.firstChild).not.toBeNull();
   });
 
-  it('renders-insetinline-xl', () => {
+  it('renders-inset-inline-xl', () => {
     const { container } = setup({ insetInline: 'xl' });
     expect(container.firstChild).not.toBeNull();
   });

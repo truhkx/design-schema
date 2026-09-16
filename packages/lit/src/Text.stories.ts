@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
-import { html } from 'lit';
+import { html, type TemplateResult } from 'lit';
 import './Text.js';
 import type { TextAlign, TextElement, TextSize, TextTone, TextWeight } from './Text.js';
 
@@ -11,6 +11,20 @@ interface TextArgs {
   truncate: boolean;
   element: TextElement;
   text: string;
+}
+
+function renderText(args: TextArgs): TemplateResult {
+  return html`
+    <ds-text
+      size=${args.size}
+      weight=${args.weight}
+      tone=${args.tone}
+      align=${args.align}
+      ?truncate=${args.truncate}
+      .element=${args.element}
+      >${args.text}</ds-text
+    >
+  `;
 }
 
 const meta: Meta<TextArgs> = {
@@ -33,17 +47,7 @@ const meta: Meta<TextArgs> = {
     element: 'p',
     text: 'Changes are saved automatically. You can undo any change for 30 days.',
   },
-  render: (args) => html`
-    <ds-text
-      size=${args.size}
-      weight=${args.weight}
-      tone=${args.tone}
-      align=${args.align}
-      ?truncate=${args.truncate}
-      .element=${args.element}
-      >${args.text}</ds-text
-    >
-  `,
+  render: renderText,
 };
 
 export default meta;
@@ -68,15 +72,13 @@ export const WeightBold: Story = { args: { weight: 'bold' } };
 export const ToneDefault: Story = { args: { tone: 'default' } };
 export const ToneStrong: Story = { args: { tone: 'strong' } };
 export const ToneMuted: Story = { args: { tone: 'muted' } };
-export const ToneDanger: Story = { args: { tone: 'danger', text: 'Error: enter an email address like name@example.com' } };
+export const ToneDanger: Story = {
+  args: { tone: 'danger', text: 'Error: enter an email address like name@example.com' },
+};
 export const ToneOnAction: Story = {
   args: { tone: 'onAction', text: 'Text on an action background' },
   render: (args) => html`
-    <div style="background: var(--color-action-primary-background); padding: var(--space-md)">
-      <ds-text size=${args.size} weight=${args.weight} tone=${args.tone} align=${args.align} ?truncate=${args.truncate} .element=${args.element}
-        >${args.text}</ds-text
-      >
-    </div>
+    <div style="background: var(--color-action-primary-background); padding: var(--space-md)">${renderText(args)}</div>
   `,
 };
 
@@ -89,14 +91,25 @@ export const AlignEnd: Story = { args: { align: 'end' } };
 export const ElementP: Story = { args: { element: 'p' } };
 export const ElementSpan: Story = { args: { element: 'span' } };
 
-/* truncate */
-export const Truncate: Story = {
-  args: { truncate: true },
-  render: (args) => html`
-    <div style="max-inline-size: 16rem">
-      <ds-text size=${args.size} weight=${args.weight} tone=${args.tone} align=${args.align} ?truncate=${args.truncate} .element=${args.element}
-        >${args.text}</ds-text
-      >
-    </div>
-  `,
+/* examples from the component doc */
+
+/** The default paragraph — body size, regular weight, default tone. */
+export const BodyCopy: Story = {
+  args: { text: 'Changes are saved automatically. You can undo any change for 30 days.' },
+};
+
+/** Secondary metadata at the smallest readable size, muted so it sits behind the content it annotates. */
+export const Caption: Story = {
+  args: { text: 'Last updated 2 minutes ago.', size: 'xs', tone: 'muted' },
+};
+
+/** Error copy where the danger tone is paired with explicit words, so color alone never carries the meaning. */
+export const InlineErrorWording: Story = {
+  args: { text: 'Error: enter an email address like name@example.com', tone: 'danger', element: 'span' },
+};
+
+/** One line of text in a dense cell, with the full string still reachable. */
+export const TruncatedCell: Story = {
+  args: { text: 'Quarterly revenue summary for the EMEA region.', truncate: true },
+  render: (args) => html`<div style="max-inline-size: 16rem">${renderText(args)}</div>`,
 };

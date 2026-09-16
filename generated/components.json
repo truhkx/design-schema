@@ -1246,7 +1246,14 @@
             "iconSize": "size"
           }
         },
-        "dismissButton": "Button"
+        "dismissButton": {
+          "component": "Button",
+          "props": {
+            "variant": "ghost",
+            "size": "sm",
+            "iconOnly": true
+          }
+        }
       },
       "parts": {
         "body": {
@@ -1317,55 +1324,63 @@
       "styles": {
         "background": {
           "token": "color.status.{tone}.background",
+          "part": "container",
           "locked": true
         },
         "foreground": {
           "token": "color.status.{tone}.foreground",
+          "part": "heading",
           "description": "Heading color.",
           "locked": true
         },
         "bodyColor": {
           "token": "color.foreground",
           "part": "body",
-          "description": "Body text keeps the page foreground so long messages read as text, not as colored emphasis.",
+          "description": "Body text keeps the page foreground so long messages read as text, not as colored emphasis. On React Native a string or number body is wrapped in the system Text, whose default tone is this color, so no color is passed; a non-string body is rendered as given.",
           "locked": true
         },
         "border": {
           "token": "color.status.{tone}.border",
+          "part": "container",
           "locked": false
         },
         "icon": {
           "token": "color.status.{tone}.icon",
           "part": "icon",
-          "description": "Leading icon: info circle, check circle, warning triangle, or error octagon by tone, rendered with the system Icon (`info`, `success`, `warning`, `danger`) and colored by passing this token as `overrides.color` to the Icon — the sanctioned way to color a composed child. Decorative; the tone is also conveyed by the heading or role.",
+          "description": "Leading icon: info circle, check circle, warning triangle, or error octagon by tone, rendered with the system Icon (`info`, `success`, `warning`, `danger`) and colored by passing this token path as `overrides.color` to the Icon on every platform, React Native included (never Icon's RN `color` prop) — the sanctioned way to color a composed child. Override through `overrides.icon`; the --ds-alert-icon hook does not recolor the Icon. Decorative; the tone is also conveyed by the heading or role.",
           "locked": true
         },
         "borderWidth": {
           "token": "border.width.thin",
+          "part": "container",
           "locked": false
         },
         "radius": {
           "token": "radius.md",
+          "part": "container",
           "locked": false
         },
         "padding": {
           "token": "space.md",
+          "part": "container",
           "locked": false
         },
         "gap": {
           "token": "space.3",
+          "part": "container",
           "description": "Horizontal gap between icon, content, and dismiss button.",
           "locked": false
         },
         "partGap": {
           "token": "space.1",
+          "part": "container",
           "description": "Vertical gap between heading and body.",
           "locked": false
         },
         "iconSize": {
           "token": "font.size.lg",
           "part": "icon",
-          "description": "Forwarded to the Icon as `overrides.size`; Icon's `size` enum is not used here.",
+          "description": "Forwarded to the Icon as `overrides.size` (a token path, default font.size.lg); Icon's `size` enum is not used here. Override through `overrides.iconSize`; the --ds-alert-icon-size hook does not resize the Icon. The icon part is a box as tall as the first line of text — headingSize × lineHeight when there is a heading, else fontSize × lineHeight, or iconSize when that is larger — with the Icon centred in it, so the glyph lines up with the first line; that math reads the same token as the forward.",
           "locked": false
         },
         "headingSize": {
@@ -1381,20 +1396,25 @@
         },
         "fontFamily": {
           "token": "font.family.body",
+          "part": "container",
+          "description": "Inherited by heading and a string body on web and Lit; on React Native forwarded to the heading Text style and to the body Text's `overrides.fontFamily`.",
           "locked": false
         },
         "fontSize": {
           "token": "font.size.md",
-          "description": "Body text. It reaches a string body directly; a body composed of Text or Link children keeps its own sizing, since a composite never restyles a child.",
+          "part": "body",
+          "description": "Body text. It reaches a string body directly (on React Native through the wrapping Text's `overrides.fontSize`, with lineHeight forwarded the same way); a body composed of Text or Link children keeps its own sizing, since a composite never restyles a child.",
           "locked": false
         },
         "lineHeight": {
           "token": "font.lineHeight.normal",
+          "part": "container",
           "locked": false
         },
         "dismissMargin": {
           "token": "space.1",
-          "description": "Negative block/inline-end margin on the dismiss Button so its target sits in the corner without enlarging the padding; the Button keeps its own colors, radius and focus ring.",
+          "part": "dismissButton",
+          "description": "Negative block/inline-end margin on the wrapper around the dismiss Button (web span, Lit span, RN View) so its target sits in the corner without enlarging the padding; the Button keeps its own colors, radius and focus ring. On React Native this is the one sanctioned sibling margin (marginTop and marginEnd of −dismissMargin on the wrapper View).",
           "locked": false
         }
       },
@@ -1445,7 +1465,7 @@
           "attributes": [
             "role"
           ],
-          "notes": "role=\"status\" | \"alert\" from `live` (each implies its aria-live; set only the role); no role when off. Rendering the role on the component root is enough for the announcement, since React mounts the element and its content together. The dismiss button is the system Button (ghost, sm, iconOnly, label copy.dismissLabel) unchanged — composites never restyle a child; the ghost foreground is checked against every tone background. The region's accessible name is the heading (aria-labelledby) when present, otherwise the body element, so an Alert always has a name even without a heading."
+          "notes": "role=\"status\" | \"alert\" from `live` (each implies its aria-live; set only the role); no role when off. Rendering the role on the component root is enough for the announcement, since React mounts the element and its content together. The dismiss button is the system Button (ghost, sm, iconOnly, label copy.dismissLabel, `leadingIcon` the system Icon `close` with `inline`) unchanged — composites never restyle a child; the ghost foreground is checked against every tone background. Button writes its own data-part, so `data-part=\"dismissButton\"` goes on a span wrapper the Alert owns (it also carries dismissMargin), and tests click the button inside it; likewise `data-part=\"icon\"` is on the span box that aligns the Icon, which renders no Alert hook of its own. The region's accessible name is the heading (aria-labelledby) when present, otherwise the body element, so an Alert always has a name even without a heading; the whole body text, link text included, is then the name, which is intended (a status region is named by its content). On dismiss, \"next focusable\" means a, button, input, select, textarea, [tabindex] ≥ 0 or contenteditable in document order after the alert, skipping disabled elements, elements inside `inert`, and elements that are not rendered (hidden or display none)."
         },
         "lit": {
           "tag": "ds-alert",
@@ -1454,7 +1474,7 @@
             "live",
             "dismissible"
           ],
-          "notes": "The role is set on the host element via ElementInternals so the live region is in the light DOM tree where assistive technology expects it. `dismiss` is a composed CustomEvent; the inner button's `press` is stopped so consumers see one event. `heading` is a property (attribute `heading`) or the named slot `heading`; body is the default slot. Accessible name: the host is named by aria-labelledby the heading when present, else by the body text (a status region is named by its content), via ElementInternals ariaLabelledByElements where supported and aria-label with the text otherwise — ids never cross the shadow root, so a literal aria-label is the fallback, not an idref. Shadow parts carry the anatomy names in kebab-case (`dismiss-button`, not `dismiss`)."
+          "notes": "The role is a plain `role` attribute on the host (not ElementInternals), set from `live` and removed when live=off, so the live region is the host in the light DOM and tests read it. `dismiss` is a composed CustomEvent; the inner button's `press` is stopped so consumers see one event. `heading` is a string property (attribute `heading`) only — there is no named heading slot, as on every platform the heading is plain text; body is the default slot. Accessible name: a plain `aria-label` attribute on the host carrying the heading text when present, else the slotted body text (a status region is named by its content), updated when either changes — ids never cross the shadow root and ElementInternals ariaLabelledByElements is not used, so tests read the name from the attribute. Shadow parts carry the anatomy names verbatim, camelCase, for both `part` and `data-part` (`part=\"dismissButton\" data-part=\"dismissButton\"`); the dismissButton part is a span wrapper the element owns around `<ds-button>` (whose leading icon is `<ds-icon name=\"close\" inline>`), and the icon part a span box around the tone `<ds-icon>`; both children keep their own hooks. The same next-focusable rule as web applies on dismiss."
         },
         "rn": {
           "element": "View",
@@ -1463,7 +1483,7 @@
             "accessibilityLiveRegion",
             "accessibilityLabel"
           ],
-          "notes": "live=alert → accessibilityRole=\"alert\" and accessibilityLiveRegion=\"assertive\"; status → accessibilityLiveRegion=\"polite\"; off → neither. iOS ignores live regions, so with live≠off call AccessibilityInfo.announceForAccessibility on mount and again whenever heading or body change (a changed message is a new message). The label is heading + body when body is a string; otherwise heading only — a body that is not plain text should carry its own accessible text. The dismiss button is the system Button. Native cannot move focus to an arbitrary element, so the focus-onward step the web and Lit builds perform on dismiss is skipped here; the dismiss Button is inside the alert and its own removal returns focus to the enclosing screen, which is the native equivalent."
+          "notes": "live=alert → accessibilityRole=\"alert\" and accessibilityLiveRegion=\"assertive\"; status → accessibilityLiveRegion=\"polite\" and no role (native has no status role; react-native-web's role=\"status\" is not used), so RN tests check accessibilityLiveRegion instead of a status role; off → neither. iOS ignores live regions, so on iOS only (Platform.OS === 'ios', since Android already announces through accessibilityLiveRegion) with live≠off call AccessibilityInfo.announceForAccessibility on mount and again whenever heading or body change (a changed message is a new message). The label is heading + body when body is a string; otherwise heading only — a body that is not plain text should carry its own accessible text, and with no heading and a non-string body accessibilityLabel is left unset (the region has no name; its children are read on their own). A string or number body is wrapped in the system Text (default tone, fontFamily, fontSize and lineHeight through its `overrides`). The heading is a raw Text styled with foreground, headingSize, headingWeight, fontFamily and lineHeight, with no accessibilityRole=\"header\", as web renders no heading element. The icon part is a View as tall as the first line holding the tone Icon with `overrides.color` set to the `icon` token path; parts carry testID `Alert.<part>` on Views the Alert owns (the dismissButton wrapper View also carries dismissMargin). The dismiss button is the system Button (ghost, sm, iconOnly, label copy.dismissLabel) whose `leadingIcon` is the Icon `close` with `overrides.color` color.action.ghost.foreground, since Button cannot recolor it. Native cannot move focus to an arbitrary element, so the focus-onward step the web and Lit builds perform on dismiss is skipped here; the dismiss Button is inside the alert and its own removal returns focus to the enclosing screen, which is the native equivalent."
         },
         "swiftui": {
           "element": "HStack",
@@ -1507,7 +1527,7 @@
         },
         {
           "name": "live-status-renders-the-status-role",
-          "description": "The default; role=status implies aria-live=polite, so the message is announced politely.",
+          "description": "The default; role=status implies aria-live=polite, so the message is announced politely. React Native has no status role, so the test there checks the polite live region instead.",
           "given": {
             "live": "status"
           },
@@ -1517,6 +1537,13 @@
               "platforms": [
                 "web",
                 "lit"
+              ]
+            },
+            {
+              "attribute": "accessibilityLiveRegion",
+              "is": "polite",
+              "platforms": [
+                "rn"
               ]
             }
           ]
@@ -1532,7 +1559,8 @@
               "attribute": "role",
               "is": null,
               "platforms": [
-                "web"
+                "web",
+                "lit"
               ]
             }
           ]
@@ -1693,7 +1721,7 @@
       "Behavior": "An Alert rendered with `live: status` or `alert` is announced by screen readers when it appears in the tree, without moving focus. An Alert present at load with `live: off` is read in sequence like any content. The dismiss button fires `onDismiss` and the consumer removes the alert. Because activation happens inside the alert, the component first moves focus to the next focusable element after the alert in reading order (or to the previous one when there is none), so focus is never lost when the alert disappears; if nothing outside the alert is focusable, focus is left alone. On native, focus cannot be moved programmatically to an arbitrary element, an acknowledged limit. Alerts never auto-dismiss and never animate in — a message that fades or slides is a Toast.",
       "Content guidelines": "The heading says what happened in a few words (\"Changes saved\", \"Payment failed\"); the body says what it means and what to do next, in one or two sentences, with a Link if there is somewhere to go. Do not restate the tone in the heading (\"Error: …\", \"Warning!\") — the icon and role carry it, and screen readers already announce `alert` as an alert. Do not use exclamation marks. `danger` alerts are the only ones where the body may start with the cause.",
       "Accessibility": "The message is announced when it appears, politely for `status` and immediately for `alert` (WCAG 4.1.3 Status Messages), and it is never used to move focus (3.2.1). Tone is conveyed by the icon shape and the heading, not only by color (1.4.1). Heading, body, links, the dismiss button and icon meet contrast on the tinted background in both modes — 4.5:1 for text and 3:1 for the icon (1.4.3, 1.4.11); the build checks every tone. The region is named by its own content — `aria-labelledby` the heading when there is one, otherwise the body element (on native, `accessibilityLabel`) — so the alert has a name in the accessibility tree without inventing one that repeats the tone. The dismiss button has an accessible name from `copy.dismissLabel`, visible focus, and a 24px target (2.4.7, 2.5.8). Only `danger` and blocking `warning` alerts use `live: alert`; interrupting for good news is a real cost to screen-reader users.",
-      "Platform notes": "### Web\nRender `<div role={live === 'off' ? undefined : live}>` — `role=\"status\"` implies `aria-live=\"polite\"` and `role=\"alert\"` implies assertive, so set only the role. Inside: the icon (`aria-hidden` inline SVG), a content column with the heading as a `<p>` in `headingWeight` and `foreground` (a raw element, not Text, which has no status tones; and not a heading element, so it does not disturb the outline) and the body, and, when dismissible, the system Button (`ghost`, `size: sm`, `iconOnly`, label `copy.dismissLabel`, a 1em × glyph as `leadingIcon`) pulled into the corner with `dismissMargin`. The `heading` prop must not be forwarded as the native `title` attribute. Colors come from the `{tone}` bindings; use `border` on all sides at `borderWidth`.\n\n### Lit\n`<ds-alert tone=\"danger\" live=\"alert\" heading=\"Payment failed\">` sets `role` on the host via `ElementInternals` so the live region is the host itself, which assistive technology sees in the light DOM. The body is the default slot and `heading` is a property (or a named `heading` slot for rich headings). Dispatch a composed `dismiss` CustomEvent (stop the inner `press`); the consumer removes the element. The dismiss `<ds-button>` is used unchanged — no `::part` restyling. Reflect `tone`, `live` and `dismissible`.\n\n### React Native\nRender a `View` with `accessibilityRole=\"alert\"` when `live` is `alert`, `accessibilityLiveRegion=\"assertive\"` or `\"polite\"` by `live`, and `accessibilityLabel` = heading + body (when body is a string) so the whole message is one announcement. iOS does not honour live regions: in an effect on mount, when `live !== 'off'`, call `AccessibilityInfo.announceForAccessibility()` with the heading and body joined by a full stop, and again whenever they change. Apply `background`, `border` and `radius` from the tone tokens; render the icon with the `icon` color and `accessibilityElementsHidden`. The dismiss button is the system Button (`ghost`, `sm`, `iconOnly`, with a × glyph as `leadingIcon`), pulled into the corner with `dismissMargin`.",
+      "Platform notes": "### Web\nRender `<div role={live === 'off' ? undefined : live}>` — `role=\"status\"` implies `aria-live=\"polite\"` and `role=\"alert\"` implies assertive, so set only the role. Inside: the icon (the system Icon named by tone, decorative so it hides itself, in a `data-part=\"icon\"` span box as tall as the first line), a content column with the heading as a `<p>` in `headingWeight` and `foreground` (a raw element, not Text, which has no status tones; and not a heading element, so it does not disturb the outline) and the body, and, when dismissible, the system Button (`ghost`, `size: sm`, `iconOnly`, label `copy.dismissLabel`, `<Icon name=\"close\" inline />` as `leadingIcon`) in a `data-part=\"dismissButton\"` span pulled into the corner with `dismissMargin`. The `heading` prop must not be forwarded as the native `title` attribute. Colors come from the `{tone}` bindings; use `border` on all sides at `borderWidth`.\n\n### Lit\n`<ds-alert tone=\"danger\" live=\"alert\" heading=\"Payment failed\">` sets a plain `role` attribute on the host (removed when `live` is `off`) so the live region is the host itself, which assistive technology sees in the light DOM, and names the host with a plain `aria-label` carrying the heading text, else the body text. The body is the default slot and `heading` is a string property only (no named slot). Dispatch a composed `dismiss` CustomEvent (stop the inner `press`); the consumer removes the element. The dismiss `<ds-button>` is used unchanged — no `::part` restyling. Reflect `tone`, `live` and `dismissible`.\n\n### React Native\nRender a `View` with `accessibilityRole=\"alert\"` when `live` is `alert`, `accessibilityLiveRegion=\"assertive\"` or `\"polite\"` by `live`, and `accessibilityLabel` = heading + body (when body is a string) so the whole message is one announcement. iOS does not honour live regions: on iOS only, in an effect on mount, when `live !== 'off'`, call `AccessibilityInfo.announceForAccessibility()` with the heading and body joined by a full stop, and again whenever they change. Apply `background`, `border` and `radius` from the tone tokens; render the tone Icon with the `icon` token path as `overrides.color` (decorative, so it is hidden from assistive technology). The dismiss button is the system Button (`ghost`, `sm`, `iconOnly`, with `<Icon name=\"close\" overrides={{ color: 'color.action.ghost.foreground' }} />` as `leadingIcon`), in a wrapper View pulled into the corner with `dismissMargin` — the one negative margin this component uses.",
       "Related": "Form, Toast (planned), Note (planned), Dialog (planned)."
     },
     "extensions": [],
@@ -3635,17 +3663,31 @@
         "item",
         "link",
         "separator",
-        "current"
+        "current",
+        "expand"
       ],
       "composition": {
-        "link": "Link"
+        "link": {
+          "component": "Link",
+          "props": {
+            "tone": "default"
+          }
+        },
+        "expand": {
+          "component": "Button",
+          "props": {
+            "variant": "ghost",
+            "size": "sm",
+            "iconOnly": true
+          }
+        }
       },
       "props": {
         "items": {
           "type": "array",
           "required": true,
           "shape": "{ label: string; href?: string }[]",
-          "description": "The trail from root to current page, in order. Every item but the last needs an `href`; an ancestor without one renders as plain text (never an empty link). The last is the current page and its `href` is ignored. Export the item type as `BreadcrumbItem`."
+          "description": "The trail from root to current page, in order. Every item but the last needs an `href`; an ancestor without one, or with an empty-string `href`, renders as plain text (never an empty link). The last is the current page and its `href` is ignored. An empty array renders the named landmark around an empty list; a single item renders only the current page; neither raises a dev warning. Lit starts the property as `[]`. Export the item type as `BreadcrumbItem`."
         },
         "label": {
           "type": "string",
@@ -3656,12 +3698,12 @@
         "collapse": {
           "type": "boolean",
           "default": true,
-          "description": "When there are more than four items, show the first, an ellipsis, and the last two; the ellipsis is a button that reveals the rest. Set false for short trails that must always show in full."
+          "description": "When there are more than four items, show the first, an ellipsis, and the last two; the ellipsis is a button that reveals the rest. The rule is literal: five items hide the second and third. Once revealed the trail stays expanded for the life of the instance, even if `items` changes. Set false for short trails that must always show in full."
         }
       },
       "events": {
         "onNavigate": {
-          "description": "Fired when a non-current item is activated, as `(item, index, event)`. On web the link still navigates unless the consumer calls `event.preventDefault()`; on native there is no event, the handler is the navigation, and without one the Link falls back to Linking.openURL.",
+          "description": "Fired when a non-current item is activated, as `(item, index, event)` on web and `(item, index)` on native, where there is no event. On web the link still navigates unless the handler returns `false` or calls `event.preventDefault()`. On Lit, `preventDefault()` on the `navigate` CustomEvent or on `detail.originalEvent` both cancel (the first also prevents the original click). On native the handler is passed to Link as `onPress` and typed `boolean | void`: it is the navigation, so returning `false` has nothing to cancel (Breadcrumb links are never `external`); without a handler the Link falls back to Linking.openURL.",
           "platforms": {
             "web": "onNavigate",
             "lit": "navigate",
@@ -3684,39 +3726,48 @@
         "itemColor": {
           "token": "color.foreground.muted",
           "part": "item",
-          "description": "An ancestor item without `href`, rendered as plain text (a level that has no page of its own).",
+          "description": "Set on the item (the `<li>` on web and Lit), so it reaches an ancestor without `href` rendered as plain text (a level that has no page of its own); the Link and the current page set their own colours over it. On native, where colour does not inherit through a View, the plain ancestor Text takes it directly.",
           "locked": true
         },
         "separatorColor": {
           "token": "color.foreground.muted",
           "part": "separator",
-          "description": "A slash or chevron between items, aria-hidden.",
+          "description": "A slash or chevron between items, aria-hidden. On web and Lit the separator is the `::before` of every item after the first, so it has no element or data-part of its own and this binding styles that pseudo-element; on native it is a Text with testID `Breadcrumb.separator`.",
           "locked": true
         },
         "gap": {
           "token": "space.2",
-          "description": "Gap on both sides of the separator.",
+          "part": "list",
+          "description": "Applied twice, never as margins: as the list's column gap between items, and as the gap inside each item between its leading separator and its content. The separator belongs to the item after it, so a wrapped line may start with a separator. The ellipsis sits in its own item like any other. Row gap between wrapped lines is none; the items' minTarget height spaces the lines.",
           "locked": false
         },
         "fontFamily": {
           "token": "font.family.body",
+          "part": "nav",
+          "description": "Set on the nav and inherited on web and Lit; on native forwarded like fontSize.",
           "locked": false
         },
         "fontSize": {
           "token": "font.size.sm",
-          "description": "Set on the nav; the Links inherit it on web. On native each ancestor Link is wrapped in a Text whose `overrides.fontSize` receives this binding (and any override of it), so the size is one value everywhere.",
+          "part": "nav",
+          "description": "Set on the nav; the Links inherit it on web and Lit. On native each ancestor Link is wrapped in a Text (the `link` part) whose `overrides` receive fontSize, fontFamily, fontWeight and lineHeight (and any override of them), and plain ancestors, the current page and separators are Text at the same values, so the type is one value everywhere.",
           "locked": false
         },
         "fontWeight": {
           "token": "font.weight.regular",
+          "part": "nav",
+          "description": "Set on the nav and inherited on web and Lit; on native forwarded like fontSize.",
           "locked": false
         },
         "lineHeight": {
           "token": "font.lineHeight.normal",
+          "part": "nav",
+          "description": "Set on the nav and inherited on web and Lit; on native forwarded like fontSize.",
           "locked": false
         },
         "minTarget": {
           "token": "size.target.min",
+          "part": "item",
           "description": "Each item reaches 24px tall via min-height on the list item, not on the inline Link.",
           "locked": true
         }
@@ -3757,7 +3808,7 @@
             "aria-label",
             "aria-current"
           ],
-          "notes": "<nav aria-label> containing an <ol> of <li>; each ancestor is a ds Link, the last item is a <span aria-current=\"page\">. Separators are CSS-generated (li + li::before) from the custom property --ds-breadcrumb-separator, set inline on the nav from copy.separator, so the copy string lives in code and the separator is not in the accessibility tree at all. The ellipsis is the system Button (ghost, sm, iconOnly) unchanged."
+          "notes": "<nav aria-label> containing an <ol> of <li>; each ancestor is a ds Link, the last item is a <span aria-current=\"page\">. Separators are CSS-generated (li + li::before) from the custom property --ds-breadcrumb-separator, set inline on the nav from copy.separator, so the copy string lives in code and the separator is not in the accessibility tree at all. The ellipsis is the system Button (ghost, sm, iconOnly, leadingIcon the system Icon `ellipsis`) unchanged, inside `<span data-part=\"expand\">` in its own `<li>`. Each ancestor Link sits inside `<span data-part=\"link\">`; Link keeps its own `data-part=\"anchor\"`. `copy.current` is not rendered: aria-current=\"page\" announces it."
         },
         "lit": {
           "tag": "ds-breadcrumb",
@@ -3767,7 +3818,7 @@
               "attribute": "no-collapse"
             }
           ],
-          "notes": "`items` is a property (.items=${[...]}). The nav and list are rendered in the shadow root; the landmark is still exposed from inside a shadow root. `navigate` is a composed CustomEvent with detail { item, index, originalEvent }; calling preventDefault() on detail.originalEvent (the retargeted native click) cancels navigation. The inner ds-button's `press` is stopped so consumers see only `navigate`."
+          "notes": "`items` is a property (.items=${[...]}). The nav and list are rendered in the shadow root; the landmark is still exposed from inside a shadow root. `navigate` is a composed CustomEvent with detail { item, index, originalEvent }; calling preventDefault() on detail.originalEvent (the retargeted native click) cancels navigation, and so does preventDefault() on the `navigate` event itself (it also prevents the original click). The inner ds-button's `press` is stopped so consumers see only `navigate`. Parts carry `part` and `data-part` with the anatomy names: `link` and `expand` on spans wrapping ds-link and ds-button; separators are `::before` pseudo-elements with no part. `copy.current` is not rendered."
         },
         "rn": {
           "element": "View",
@@ -3775,7 +3826,7 @@
             "role=navigation",
             "accessibilityLabel"
           ],
-          "notes": "A horizontal, wrapping View with role=\"navigation\" (semantic on react-native-web; no accessibilityRole value exists for it) labelled with `label`; ancestors are ds Links (Text with role link) whose onPress fires onNavigate, the current page is Text with accessibilityState={{ selected: true }}. Separators are Text with importantForAccessibility=\"no\" / accessibilityElementsHidden. Breadcrumbs are rare on native — most screens rely on the navigation stack — and are provided mainly for tablet and react-native-web layouts."
+          "notes": "A horizontal, wrapping View with role=\"navigation\" (semantic on react-native-web; no accessibilityRole value exists for it) labelled with `label`; ancestors are ds Links (Text with role link) whose onPress fires onNavigate, the current page is Text with accessibilityState={{ selected: true }} and accessibilityLabel '<label>, <copy.current>' (screen readers would otherwise say only \"selected\"). Separators are Text with importantForAccessibility=\"no\" / accessibilityElementsHidden. The one root View is both the `nav` and `list` parts (testID `Breadcrumb`; there is no `Breadcrumb.nav` or `Breadcrumb.list`); items are Views with testID `Breadcrumb.item`, the Text wrapping each Link carries `Breadcrumb.link` (Link takes no testID), separators `Breadcrumb.separator`, the current Text `Breadcrumb.current`, and a View around the ellipsis Button `Breadcrumb.expand`. Breadcrumbs are rare on native — most screens rely on the navigation stack — and are provided mainly for tablet and react-native-web layouts."
         },
         "swiftui": {
           "element": "HStack",
@@ -3793,7 +3844,7 @@
       "behavior": [
         {
           "name": "click-on-an-ancestor-reports-navigation",
-          "description": "Each ancestor is a Link that fires onNavigate, so a client-side router can intercept it.",
+          "description": "Each ancestor is a Link that fires onNavigate, so a client-side router can intercept it. The test activates the first ancestor link and expects `(items[0], 0)`.",
           "when": {
             "click": "link"
           },
@@ -3987,10 +4038,10 @@
       "Overview": "A breadcrumb answers \"where am I?\" and \"how do I go up a level?\" in one line. It is a secondary navigation: it never replaces the primary nav or the back button, and it shows the site's hierarchy, not the user's history.",
       "When to use": "Use a Breadcrumb on pages that live three or more levels deep in a hierarchy — documentation, catalogues, settings sub-pages, file browsers — where the user benefits from seeing the ancestors and jumping to any of them. Place it above the page title, at the top of `main`.",
       "When not to use": "Do not use a Breadcrumb on top-level pages or in flat sites; a single-item trail is noise. Do not use it to show history (\"you came from Search\"); that is what Back is for. Do not use it as a step indicator for a wizard (use Stepper, planned); steps are not places. Do not put actions in it.",
-      "Behavior": "Each ancestor is a Link that navigates on activation and fires `onNavigate` with the item first, so client-side routers can intercept. The last item is the current page: plain text with `aria-current=\"page\"`, not focusable. With `collapse` and more than four items, the trail shows the first item, an ellipsis button labelled `copy.expandLabel`, and the last two; activating the ellipsis replaces it with the hidden items (one-way; the trail does not re-collapse) and moves focus to the first revealed link. On narrow widths the trail wraps rather than truncating so every ancestor stays reachable.",
+      "Behavior": "Each ancestor is a Link that navigates on activation and fires `onNavigate` with the item first, so client-side routers can intercept. The last item is the current page: plain text with `aria-current=\"page\"`, not focusable. With `collapse` and more than four items, the trail shows the first item, an ellipsis button labelled `copy.expandLabel`, and the last two; activating the ellipsis replaces it with the hidden items (one-way; the trail does not re-collapse, even when `items` changes) and moves focus to the first revealed item that is a link; if no revealed item has an `href`, focus goes to the first revealed item itself (`tabindex=\"-1\"` on its `<li>` on web and Lit), so focus never falls to the page. On narrow widths the trail wraps rather than truncating so every ancestor stays reachable.",
       "Content guidelines": "Item labels are the page titles of the ancestors, shortened if they are long, and always in the same order as the site structure. The root item is the section or product name (\"Docs\", \"Catalogue\"), not \"Home\", unless the trail really starts at the home page. Do not repeat the current page's title in the trail if the page heading is directly below and the trail is long; but when in doubt, include it — the APG expects the current page as the last item.",
       "Accessibility": "The breadcrumb is a `navigation` landmark with a name that distinguishes it from other navigations (WCAG 1.3.1, 2.4.8, APG breadcrumb). Items are in an ordered list so the count and order are announced. Ancestors are real links with visible underline and focus ring (2.4.4, 2.4.7); the current page carries `aria-current=\"page\"` and is not a link, so users are not offered a link to where they already are. Separators are hidden from assistive technology (they are visual punctuation) and the ellipsis is a real button with an accessible name. Link, current and separator colors all meet 4.5:1 on the page background.",
-      "Platform notes": "### Web\nRender `<nav aria-label={label}><ol>` with `<li>` per item. Ancestors render the system `Link` (`tone: default`, inheriting the nav's `fontSize`); the last renders `<span aria-current=\"page\">`. Draw separators with `li + li::before { content: var(--ds-breadcrumb-separator) }` in `separatorColor`, so they are invisible to assistive technology. The ellipsis is the system `Button` (`ghost`, `size: sm`, `iconOnly`, `label: copy.expandLabel`, a three-dot glyph as `leadingIcon`). Call `onNavigate(item, index, event)` from the link's `onClick` before the default navigation; consumers routing client-side call `event.preventDefault()` on that event. Link and Button bring their own focus rings; Breadcrumb adds none.\n\n### Lit\n`<ds-breadcrumb .items=${items}>` renders the `<nav>`, list and `<ds-link>` elements in its shadow root. Landmarks inside shadow roots are exposed normally. Dispatch a composed `navigate` CustomEvent with `detail: { item, index, originalEvent }` from the inner link's click; consumers who route client-side call `preventDefault()` on `detail.originalEvent`. `collapse` defaults to true, so it reflects as the negated attribute `no-collapse` — a bare boolean attribute cannot express false in static HTML.\n\n### React Native\nRender a `View` with `flexDirection: 'row'`, `flexWrap: 'wrap'`, `accessibilityLabel={label}` and `role=\"navigation\"` (semantic on react-native-web, ignored on native). Ancestors are the system `Link` nested in a `Text` at `fontSize` so they inherit it, with `onPress` calling `onNavigate(item, index)`; each item sits in a `View` with `minHeight: minTarget`. Focus after expanding goes to the revealed items' container via `setAccessibilityFocus` (hardware-keyboard focus cannot be moved to a Text link); the current page is `Text` in `currentColor` with `accessibilityState={{ selected: true }}`; separators are `Text` in `separatorColor` with `accessibilityElementsHidden` and `importantForAccessibility=\"no\"`. The ellipsis is the system `Button` (`ghost`, `iconOnly`).",
+      "Platform notes": "### Web\nRender `<nav aria-label={label}><ol>` with `<li>` per item. Ancestors render the system `Link` (`tone: default`, inheriting the nav's `fontSize`); the last renders `<span aria-current=\"page\">`. Draw separators with `li + li::before { content: var(--ds-breadcrumb-separator) }` in `separatorColor`, so they are invisible to assistive technology. The ellipsis is the system `Button` (`ghost`, `size: sm`, `iconOnly`, `label: copy.expandLabel`, the system `Icon` named `ellipsis` as `leadingIcon`). Call `onNavigate(item, index, event)` from the link's `onClick` before the default navigation; consumers routing client-side return `false` or call `event.preventDefault()` on that event. Link and Button bring their own focus rings; Breadcrumb adds none.\n\n### Lit\n`<ds-breadcrumb .items=${items}>` renders the `<nav>`, list and `<ds-link>` elements in its shadow root. Landmarks inside shadow roots are exposed normally. Dispatch a composed `navigate` CustomEvent with `detail: { item, index, originalEvent }` from the inner link's click; consumers who route client-side call `preventDefault()` on `detail.originalEvent`. `collapse` defaults to true, so it reflects as the negated attribute `no-collapse` — a bare boolean attribute cannot express false in static HTML.\n\n### React Native\nRender a `View` with `flexDirection: 'row'`, `flexWrap: 'wrap'`, `accessibilityLabel={label}` and `role=\"navigation\"` (semantic on react-native-web, ignored on native). Ancestors are the system `Link` nested in a `Text` whose `overrides` receive `fontSize`, `fontFamily`, `fontWeight` and `lineHeight` so the Link inherits them, with `onPress` calling `onNavigate(item, index)`; each item sits in a row `View` with `minHeight: minTarget` and `gap` between its separator and content, and the root row uses `columnGap: gap`. Focus after expanding goes to the first revealed item's `View` (index 1) via `setAccessibilityFocus` (hardware-keyboard focus cannot be moved to a Text link); the current page is `Text` in `currentColor` with `accessibilityState={{ selected: true }}` and `copy.current` appended to its label; separators are `Text` in `separatorColor` with `accessibilityElementsHidden` and `importantForAccessibility=\"no\"`. The ellipsis is the system `Button` (`ghost`, `size: sm`, `iconOnly`) with the `ellipsis` Icon passed through Button's own icon prop, so Button colours it (no explicit `color`).",
       "Related": "Link, Landmark, Heading, Stepper (planned)."
     },
     "extensions": [],
@@ -5824,6 +5875,41 @@
         "description",
         "errorMessage"
       ],
+      "composition": {
+        "indicator": {
+          "component": "Icon",
+          "props": {
+            "size": "xs"
+          },
+          "forwards": {
+            "indicator": "color"
+          }
+        },
+        "description": {
+          "component": "Text",
+          "props": {
+            "size": "sm",
+            "tone": "muted"
+          },
+          "forwards": {
+            "helperSize": "fontSize",
+            "fontFamily": "fontFamily",
+            "lineHeight": "lineHeight"
+          }
+        },
+        "errorMessage": {
+          "component": "Text",
+          "props": {
+            "size": "sm",
+            "tone": "danger"
+          },
+          "forwards": {
+            "helperSize": "fontSize",
+            "fontFamily": "fontFamily",
+            "lineHeight": "lineHeight"
+          }
+        }
+      },
       "props": {
         "label": {
           "type": "string",
@@ -5844,7 +5930,7 @@
         "value": {
           "type": "string",
           "default": "on",
-          "description": "The value submitted when checked. Lets several checkboxes share a `name` to form a multi-select."
+          "description": "What a native HTML <form> submits under `name` when checked (web and Lit only). The enclosing Form (React, React Native, ds-form) ignores it and collects the boolean `checked`. Checkboxes sharing a `name` are not a multi-select under Form; give each its own name."
         },
         "checked": {
           "type": "boolean",
@@ -5938,19 +6024,20 @@
         "indicator": {
           "token": "color.control.selectedForeground",
           "part": "indicator",
-          "description": "The check mark (`Icon name=\"check\"`) and the mixed dash (`Icon name=\"dash\"`) in this color, at `size: xs`, centered in the control. On web/Lit the Icon is inside the control element; the indicator has no separate DOM node to hook, so tests target the control.",
+          "description": "The check mark (`Icon name=\"check\"`, when checked) and the mixed dash (`Icon name=\"dash\"`, when the mixed indicator shows) in this color, at `size: xs`, centered in the control; nothing is rendered when unchecked. The color reaches the Icon only through its `color` override (a token path); the Checkbox hook does not style the Icon. The web/Lit control is a void <input>, so the control and the indicator sit in a box wrapper span that stacks them in one cell: the input keeps `data-part=\"control\"`, and the indicator is an aria-hidden span with `pointer-events: none` over the input holding the Icon, carrying `data-part=\"indicator\"` (web) / `part=\"indicator\"` and `data-part=\"indicator\"` (Lit). On native the Icon sits inside the drawn control View.",
           "locked": true
         },
         "indicatorStroke": {
           "token": "border.width.focus",
           "part": "indicator",
-          "description": "Stroke thickness of the check mark and dash. Locked, as Icon's own strokeWidth is and on the same token, so the two already agree and nothing is forwarded into the composed Icon.",
+          "description": "Stroke thickness of the check mark and dash. Locked, as Icon's own strokeWidth is and on the same token, so the two already agree and nothing is forwarded into the composed Icon. It declares no --ds-checkbox-* hook on any platform: Icon already applies it.",
           "locked": true
         },
         "pressedOverlay": {
           "token": "opacity.disabled",
+          "part": "control",
           "state": "pressed",
-          "description": "While pressed, the box shows controlSelectedBackground at this opacity.",
+          "description": "While pressed (web/Lit `:active`), an unchecked, not-mixed, enabled box shows controlSelectedBackground at this opacity over controlBackground; the border is unchanged. A checked or mixed box (already filled) and a disabled one show no overlay. Web/Lit: `color-mix(in srgb, <controlSelectedBackground> calc(<pressedOverlay> * 100%), <controlBackground>)` as the control background. Native: an absolutely filled overlay View inside the control, so the border does not fade.",
           "locked": false
         },
         "controlBorderInvalid": {
@@ -5970,69 +6057,90 @@
         },
         "gap": {
           "token": "space.2",
-          "description": "Horizontal gap between control and label.",
+          "part": "label",
+          "description": "Horizontal gap between control and label (the row's flex gap). The gap is part of the hit area: a press on it toggles.",
           "locked": false
         },
         "partGap": {
           "token": "space.1",
-          "description": "Vertical gap between label, description, and error.",
+          "part": "description",
+          "description": "Vertical gap between label and description (the text column inside the row), and between the row and the error message below it (the root column's gap).",
           "locked": false
         },
         "labelColor": {
           "token": "color.foreground",
           "part": "label",
+          "description": "Web/Lit: the native <label>'s own rule. Native: the label Text's `default` tone, no hook.",
           "locked": true
         },
         "labelSize": {
           "token": "font.size.md",
           "part": "label",
+          "description": "Web/Lit: the native <label>'s own rule. Native: forwarded to the label Text as its `fontSize` override (Text `size: md`).",
           "locked": false
         },
         "labelWeight": {
           "token": "font.weight.regular",
           "part": "label",
+          "description": "Web/Lit: the native <label>'s own rule. Native: forwarded to the label Text as its `fontWeight` override (Text `weight: regular`).",
           "locked": false
         },
         "helperSize": {
           "token": "font.size.sm",
+          "part": "description",
+          "description": "Description and error text size. Reaches the composed Texts only through their `fontSize` override, with fontFamily and lineHeight forwarded the same way; no --ds-checkbox-* hook.",
           "locked": false
         },
         "descriptionText": {
           "token": "color.foreground.muted",
           "part": "description",
+          "description": "Realised by the composed Text's `muted` tone; no --ds-checkbox-* hook.",
           "locked": true
         },
         "errorText": {
           "token": "color.foreground.danger",
+          "part": "errorMessage",
+          "description": "Realised by the composed Text's `danger` tone; no --ds-checkbox-* hook.",
           "locked": true
         },
         "fontFamily": {
           "token": "font.family.body",
+          "part": "label",
+          "description": "The label's own rule on web/Lit (forwarded to the label Text on native), and forwarded to the description and error Texts.",
           "locked": false
         },
         "lineHeight": {
           "token": "font.lineHeight.normal",
+          "part": "label",
+          "description": "As fontFamily: the label's own rule on web/Lit, forwarded to every composed Text.",
           "locked": false
         },
         "focusRing": {
           "token": "color.border.focus",
+          "part": "control",
+          "description": "Web/Lit: an outline of focusRingWidth in this color around the control on :focus-visible. Native (hardware keyboard focus): the control's border takes this color at focusRingWidth while focused; the box keeps its size, so the glyph area shrinks by the width difference.",
           "locked": true
         },
         "focusRingWidth": {
           "token": "border.width.focus",
+          "part": "control",
           "locked": true
         },
         "minTarget": {
           "token": "size.target.comfortable",
-          "description": "Minimum height of the control + label row; the whole row is the hit area.",
+          "part": "control",
+          "description": "Minimum height of the control + label row; the whole row is the hit area, including the gap. The row has no vertical padding: it is at least this tall and centers the control and the text column on the cross axis. The error message sits below the row, outside the hit area.",
           "locked": true
         },
         "disabledOpacity": {
           "token": "opacity.disabled",
+          "part": "control",
+          "description": "Dims the control (with its indicator) and the label. The description and error stay at full opacity so they remain readable.",
           "locked": false
         },
         "transition": {
           "token": "motion.duration.fast",
+          "part": "control",
           "description": "Fill and indicator transitions, with motion.easing.standard.",
           "locked": false
         }
@@ -6118,7 +6226,7 @@
             "aria-required",
             "aria-checked"
           ],
-          "notes": "A native <input type=\"checkbox\"> styled with appearance: none — never a visually hidden input under a fake box, so native form participation, click-on-label and Space all keep working. `indeterminate` is set as the DOM property (it has no attribute) and mirrored as aria-checked=\"mixed\"."
+          "notes": "A native <input type=\"checkbox\"> styled with appearance: none — never a visually hidden input under a fake box, so native form participation, click-on-label and Space all keep working. `indeterminate` is set as the DOM property (it has no attribute) and mirrored as aria-checked=\"mixed\". The root is a wrapper div (data-ds), but the forwarded ref resolves to the <input>, the interactive native element, as in Input. A click whose target is the row itself (the gap) is forwarded to the input. Fieldset's group `disabled` arrives as the `disabled` prop Fieldset passes to its direct child fields; there is no React FieldsetContext. copy.checked, copy.unchecked and copy.mixed are not used (native checked state plus aria-checked=mixed)."
         },
         "lit": {
           "tag": "ds-checkbox",
@@ -6128,7 +6236,7 @@
             "required",
             "invalid"
           ],
-          "notes": "Form-associated via ElementInternals: setFormValue(checked ? value : null). The internal <input> is in the shadow root with delegatesFocus, and its native `change` is not composed, so re-dispatch a composed `change` CustomEvent from the host. `checked` behaves like a native input: the `checked` attribute is the initial state only and the property tracks the live state, so `checked` is not reflected. Form value is `checked ? value : null` (native semantics); ds-form collects the boolean."
+          "notes": "Form-associated via ElementInternals: setFormValue(checked ? value : null). The internal <input> is in the shadow root with delegatesFocus, and its native `change` is not composed, so re-dispatch a composed `change` CustomEvent from the host. `checked` behaves like a native input: the `checked` attribute is the initial state only and the property tracks the live state, so `checked` is not reflected. The property starts from the `checked` attribute, else `defaultChecked`, and every toggle updates it; there is no controlled mode on Lit. Native form value is `checked ? value : null` (native semantics); ds-form collects the boolean `checked` (`currentValue`, false when unchecked). Validity (ElementInternals) follows the same precedence as the rendered error. Group disabled: ds-fieldset sets the `disabled` property on its direct data-ds-field children (the host carries `data-ds-field`), and the field also honours formDisabledCallback from a native fieldset or form. Shadow parts use the anatomy names verbatim for both `part` and `data-part` (control, indicator, label, description, errorMessage). copy.checked, copy.unchecked and copy.mixed are not used."
         },
         "rn": {
           "element": "Pressable",
@@ -6138,7 +6246,7 @@
             "accessibilityHint",
             "accessibilityState"
           ],
-          "notes": "No native checkbox in core RN. Render Pressable containing a drawn control and Text label; accessibilityState={{ checked: indeterminate ? \"mixed\" : checked, disabled }}. Errors use accessibilityLiveRegion (Android) / AccessibilityInfo.announceForAccessibility (iOS), as in Input."
+          "notes": "No native checkbox in core RN. Render Pressable (the row) containing a drawn control View and the text column (label Text, description Text); accessibilityState={{ checked: indeterminate ? \"mixed\" : checked, disabled }}. The label is a composed Text (`size: md`, `weight: regular`, tone default) with labelSize, labelWeight, fontFamily and lineHeight passed through its overrides. accessibilityLabel is the label plus copy.requiredIndicator when required, prefixed by the Fieldset legend from FieldsetContext (which also carries the group `disabled`) as '<legend>, <label>'. The drawn control is hidden from accessibility (accessibilityElementsHidden, importantForAccessibility=\"no\"), so the Pressable row is the one accessible element; RN tests check that instead of querying the control. The error Text renders below the Pressable, outside it (a tap on it does not toggle and it is not in the hint), separated by partGap. RN has no invalid accessibility state: invalid is shown by controlBorderInvalid and conveyed to assistive technology by the error text through accessibilityLiveRegion (Android) / AccessibilityInfo.announceForAccessibility (iOS), as in Input; RN tests of the error check its text. copy.checked, copy.unchecked and copy.mixed are not used."
         },
         "swiftui": {
           "element": "Toggle",
@@ -6151,7 +6259,7 @@
             ".contentShape",
             "Icon"
           ],
-          "notes": "A `Toggle` with a package `ToggleStyle` that draws the box from tokens and a `check`/`dash` Icon — SwiftUI exposes a Toggle to VoiceOver as a switch with on/off; the style adds `.accessibilityValue(copy.checked / copy.unchecked / copy.mixed)` so the state is spoken as a checkbox state, and `indeterminate` sets the mixed value and the dash glyph. The label is the Toggle's label view (`hideLabel` → `.labelsHidden()` with `.accessibilityLabel`). Description and error as Input. Registers with the Form environment; `disabled` per the conventions."
+          "notes": "A `Toggle` with a package `ToggleStyle` that draws the box from tokens and a `check`/`dash` Icon — SwiftUI exposes a Toggle to VoiceOver as a switch with on/off; the style adds `.accessibilityValue(copy.checked / copy.unchecked / copy.mixed)` so the state is spoken as a checkbox state (these three copy strings are used on SwiftUI only), and `indeterminate` sets the mixed value and the dash glyph. The label is the Toggle's label view (`hideLabel` → `.labelsHidden()` with `.accessibilityLabel`). Description and error as Input. Registers with the Form environment; `disabled` per the conventions."
         }
       },
       "behavior": [
@@ -6331,6 +6439,7 @@
         },
         {
           "name": "error-marks-invalid-and-is-announced",
+          "description": "RN has no invalid accessibility state or alert role; there it checks the error text, which is announced through the live region / announcement.",
           "given": {
             "error": "Accept the terms to continue."
           },
@@ -6478,12 +6587,12 @@
     ],
     "sections": {
       "Overview": "A checkbox is a single yes/no choice that the user makes and then submits, as opposed to a Switch, which takes effect the moment it is flipped. Groups of checkboxes are a multi-select; a single checkbox is consent, an agreement, or an option.",
-      "When to use": "Use a Checkbox for one independent option (\"Remember me\"), for terms and consent (`required`), or several with the same `name` when the user may pick any number of items. Use `indeterminate` on a \"select all\" parent when only some of its children are checked.",
+      "When to use": "Use a Checkbox for one independent option (\"Remember me\"), for terms and consent (`required`), or several, each with its own `name`, when the user may pick any number of items. Use `indeterminate` on a \"select all\" parent when only some of its children are checked.",
       "When not to use": "Do not use a Checkbox for a setting that applies immediately without a submit step; use Switch. Do not use it to pick exactly one of several options; use RadioGroup. Do not use a lone checkbox as an on/off for something with a strong, immediate effect (sound, notifications) — that is a Switch even if it sits in a form.",
-      "Behavior": "Clicking or tapping anywhere on the row — control, label, or description — toggles the state and fires `onChange` with the new boolean. The description is not inside the label (it would join the accessible name); a click on it is forwarded to the control. Space toggles from the keyboard; Enter does not (it submits the enclosing form on web, and the component must not intercept that). Uncontrolled unless `checked` is provided. Toggling an `indeterminate` checkbox clears the mixed state and sets `checked` to the new value; the consumer decides what happens to the children. `disabled` controls are visible, readable and focusable (`aria-disabled`, not the native attribute), and are skipped by the Form. `required` appends `copy.requiredIndicator` to the label, sets `aria-required`, and on a failed submit the Form renders `copy.required` as the error. Validation precedence: `error` prop, then `required` (renders `copy.required`), then `invalid` (renders `copy.invalid`) — the same order as Input. Inside a Form, `validate: blur` means \"on change\" for a checkbox; there is no useful blur moment. The Form collects `value` when checked and nothing (no key) when unchecked. Inside a Fieldset the field reads `FieldsetContext`: `disabled` from the group applies as if set on the field, and on native the legend prefixes the accessibility label (\"Shipping address, Street\").",
+      "Behavior": "Clicking or tapping anywhere on the row — control, label, or description — toggles the state and fires `onChange` with the new boolean. The description is not inside the label (it would join the accessible name); a click on it is forwarded to the control. Space toggles from the keyboard; Enter does not (it submits the enclosing form on web, and the component must not intercept that). The whole row is the hit area, including the gap between control and label; the error message below the row is not. Uncontrolled unless `checked` is provided (on Lit the `checked` property is always the live state; see the Lit note). `onChange` fires only for a user toggle: nothing fires on mount, and a controlled `checked` catching up with a change already reported does not fire again. Toggling an `indeterminate` checkbox sets `checked` to `!checked` and clears the mixed indicator locally (aria-checked, the DOM property, the dash) until the `indeterminate` prop changes value again; a consumer that keeps passing `true` unchanged sees it cleared. Consumers who own the mixed state update `indeterminate` in `onChange`, and decide what happens to the children. `disabled` controls are visible, readable and focusable (`aria-disabled`, not the native attribute), and are skipped by the Form; `disabledOpacity` dims the control and label, not the description or error. `required` appends `copy.requiredIndicator` to the label and sets `aria-required`; the indicator is plain label text at the label's size and color (not aria-hidden) and is part of the accessible name on every platform, including the native accessibilityLabel. Error display: the error slot shows `error` when set, else the Form's message, else — only while `invalid` is true — `copy.required` if the box is required and unchecked, otherwise `copy.invalid`. Validity (`validationMessage`, ElementInternals) follows the same order — the same as Input. The Form marks a failing field by setting its `invalid` and never sets `error`. Inside a Form, `validate: blur` means \"on change\" for a checkbox; there is no useful blur moment. The Form (React, React Native, ds-form) collects the boolean `checked` under `name` — `false` when unchecked. `value` is only what a native HTML `<form>` submits when checked (web and Lit). Several checkboxes sharing a `name` are not a multi-select under Form: give each its own name. Inside a Fieldset the group's `disabled` applies as if set on the field — on web through the `disabled` prop Fieldset passes to its direct child fields, on Lit through the `disabled` property ds-fieldset sets on its direct data-ds-field children (or formDisabledCallback from a native fieldset/form), and on native through `FieldsetContext`, which also carries the legend that prefixes the accessibility label (\"Shipping address, Street\"). The label is a native `<label for>` on web/Lit, styled from Checkbox's label bindings, and a composed Text on native; description and error are Text.",
       "Content guidelines": "Labels are short, positive statements of what checking does (\"Send me product updates\"), never negated (\"Do not send me…\") — a negated checkbox is a double negative when unchecked. Descriptions explain consequence or scope in one sentence. Errors say what to do, not what is wrong (\"Accept the terms to create your account\").",
       "Accessibility": "The label is visible and associated with the control (WCAG 1.3.1, 3.3.2), so the accessible name is the label and the whole row is the target. The state is conveyed by the native checked state or `aria-checked`, including `mixed` (4.1.2), and the visual indicator is a shape — check mark, dash — not only a color change (1.4.1). Description and error are linked with `aria-describedby`, and the error uses `role=\"alert\"` (3.3.1). Focus is visible on the control with the focus ring (2.4.7). The row is at least 44px tall on every platform and the control itself is 20px, inside the 24px minimum target when the row is the hit area (2.5.8). The selected fill and the rest border both meet 3:1 against the page background as UI component boundaries (1.4.11), and the indicator meets 4.5:1 on the selected fill; the build checks all pairs.",
-      "Platform notes": "### Web\nRender `<input type=\"checkbox\">` with `appearance: none` and draw the box, check mark and dash in CSS using the control tokens. Label it with `<label for>`, link description and error with `aria-describedby`. For disabled, set `aria-disabled` and call `preventDefault()` in both `click` and `change` handlers (checkboxes ignore `readOnly`) so the input stays focusable but does not toggle. `aria-checked` is set only to `\"mixed\"` when indeterminate; the native checked state covers the rest. Set `input.indeterminate = true` via the DOM property and add `aria-checked=\"mixed\"`; browsers do not expose the property as an attribute.\n\n### Lit\n`<ds-checkbox>` is form-associated (`static formAssociated = true`) so a native `<form>` sees `name`/`value`, and inside `<ds-form>` it is collected by `name` like `ds-input`. The inner `<input>` lives in the shadow root with `delegatesFocus: true`; because the native `change` event is not composed, re-dispatch a composed `change` CustomEvent with `detail: { checked }`. Expose `checkValidity()` and `reportValidity()` for `required`.\n\n### React Native\nThere is no checkbox in core React Native. Render a `Pressable` with `accessibilityRole=\"checkbox\"`, `accessibilityLabel={label}`, `accessibilityHint={description}` and `accessibilityState={{ checked: indeterminate ? 'mixed' : checked, disabled }}`, containing a `View` drawn with the control tokens and a `Text` label. The pressed state uses `controlSelectedBackground` at `disabledOpacity` on the box. Space on a hardware keyboard is handled by the platform when the role is set. Errors are announced as in Input.",
+      "Platform notes": "### Web\nRender `<input type=\"checkbox\">` with `appearance: none` and draw the box in CSS using the control tokens; the check mark and dash are the composed Icon in the indicator span stacked over the input (see the `indicator` binding). Label it with `<label for>`, link description and error with `aria-describedby`. For disabled, set `aria-disabled` and call `preventDefault()` in both `click` and `change` handlers (checkboxes ignore `readOnly`) so the input stays focusable but does not toggle. `aria-checked` is set only to `\"mixed\"` when indeterminate; the native checked state covers the rest. Set `input.indeterminate = true` via the DOM property and add `aria-checked=\"mixed\"`; browsers do not expose the property as an attribute.\n\n### Lit\n`<ds-checkbox>` is form-associated (`static formAssociated = true`) so a native `<form>` sees `name`/`value`, and inside `<ds-form>` it is collected by `name` like `ds-input`. The inner `<input>` lives in the shadow root with `delegatesFocus: true`; because the native `change` event is not composed, re-dispatch a composed `change` CustomEvent with `detail: { checked }`. Expose `checkValidity()` and `reportValidity()` for `required`.\n\n### React Native\nThere is no checkbox in core React Native. Render a `Pressable` with `accessibilityRole=\"checkbox\"`, `accessibilityLabel` (the label plus `copy.requiredIndicator` when required, legend-prefixed inside a Fieldset), `accessibilityHint={description}` and `accessibilityState={{ checked: indeterminate ? 'mixed' : checked, disabled }}`, containing a `View` drawn with the control tokens and a `Text` label. The pressed state is an overlay View inside the unchecked box showing `controlSelectedBackground` at `pressedOverlay` opacity. Space on a hardware keyboard is handled by the platform when the role is set. Errors are announced as in Input.",
       "Related": "Switch, RadioGroup, Form, Input."
     },
     "extensions": [],
@@ -10939,7 +11048,7 @@
         "children": {
           "type": "content",
           "required": true,
-          "description": "The content of the panel. Rendered only while open (not merely hidden), so heavy content is not laid out until asked for."
+          "description": "The content of the panel. Rendered only while open (not merely hidden), so heavy content is not laid out until asked for. On React Native the component (not the consumer) wraps string or number children in the package `Text`, which gives them `panelColor` through Text's default tone; other children keep their own colour, since native has no style inheritance."
         },
         "open": {
           "type": "boolean",
@@ -10958,7 +11067,7 @@
         "disabled": {
           "type": "boolean",
           "default": false,
-          "description": "The trigger cannot be activated. Stays focusable and is announced as disabled; the panel keeps its current state."
+          "description": "The trigger cannot be activated. Stays focusable and is announced as disabled. Only the trigger is dimmed (`disabledOpacity`); the panel keeps its current state and full opacity."
         },
         "keepMounted": {
           "type": "boolean",
@@ -10979,7 +11088,7 @@
       },
       "events": {
         "onToggle": {
-          "description": "Fired after the state changes, with the new boolean `open` and a reason: `pointer`, `keyboard`, or `controlled` (Accordion relies on it). Web and Lit read the activation method from the native click (`event.detail === 0` means keyboard); Pressable reports nothing of the kind, so native always says `pointer` and Accordion derives its own reasons there.",
+          "description": "Fired after the state changes, with the new boolean `open` and a reason: `pointer`, `keyboard`, or `controlled` (Accordion relies on it). Web and Lit read the activation method from the native click (`event.detail === 0` means keyboard); Pressable reports nothing of the kind, so native always says `pointer` for a trigger press (keyboard activation cannot be told apart) and Accordion derives its own reasons there. The payload is `{ open, reason }` on every platform (Lit: `event.detail`). A controlled `open` change the component did not cause reports `controlled`; when the consumer sets `open` to the value a user toggle already reported, that echo does not fire again (a pending request that is never echoed is cleared at the next `open` change); nothing fires on mount.",
           "platforms": {
             "web": "onToggle",
             "lit": "toggle",
@@ -11026,7 +11135,7 @@
           "token": "color.background.subtle",
           "part": "trigger",
           "state": "hover",
-          "description": "Pointer hover and pressed state of the trigger.",
+          "description": "Pointer hover and pressed state of the trigger — web and Lit apply it on :hover and :active, RN on onHoverIn/onHoverOut or pressed; suppressed while disabled. The background change is instant (no transition).",
           "locked": true
         },
         "triggerPaddingBlock": {
@@ -11067,7 +11176,8 @@
         },
         "icon": {
           "token": "color.foreground.muted",
-          "description": "The chevron is `Icon name=\"chevron-right\" inline` rotated 90° when open, so it follows the trigger's font size (including a `triggerFontSize` override). Mirrored in right-to-left writing on every platform (`[dir=rtl]` on web; `I18nManager.isRTL` → `chevron-left` on native).",
+          "part": "triggerIcon",
+          "description": "Colour of the `triggerIcon` part: a wrapper the Disclosure owns (a span on web/Lit, a View on native) that carries this colour and the rotation, around the system `Icon name=\"chevron-right\"` (decorative, aria-hidden), which keeps its own hook and is not restyled. Rotated 90° when open. On web and Lit the Icon is `inline`, so it follows the trigger's font size (including a `triggerFontSize` override). On native the Icon is not inline (an inline Icon ignores size) and its `overrides.size` receives the `triggerFontSize` token (default `font.size.md`). Mirrored in right-to-left writing on every platform (`[dir=rtl]` → `scaleX(-1)` on web and Lit, composed as `scaleX(-1) rotate(90deg)` when open; `I18nManager.isRTL` → `chevron-left` on native).",
           "locked": true
         },
         "panelPaddingBlock": {
@@ -11087,23 +11197,29 @@
         },
         "focusRing": {
           "token": "color.border.focus",
+          "part": "trigger",
           "locked": true
         },
         "focusRingWidth": {
           "token": "border.width.focus",
+          "part": "trigger",
           "locked": true
         },
         "minTarget": {
           "token": "size.target.min",
+          "part": "trigger",
           "locked": true
         },
         "disabledOpacity": {
           "token": "opacity.disabled",
+          "part": "trigger",
+          "description": "Dims the trigger only; the panel keeps full opacity.",
           "locked": false
         },
         "transition": {
           "token": "motion.duration.base",
-          "description": "Chevron rotation, with motion.easing.standard; instant under reduced motion. The panel itself does not animate height.",
+          "part": "triggerIcon",
+          "description": "Chevron rotation only, with motion.easing.standard; instant under reduced motion (on native the chevron snaps until useReducedMotion has resolved, so nothing animates on first render). The panel itself does not animate height, and the trigger hover background has no transition.",
           "locked": false
         }
       },
@@ -11150,7 +11266,7 @@
             "aria-disabled",
             "hidden"
           ],
-          "notes": "A wrapping <div> (so the optional heading and the panel are siblings) containing a native <button aria-expanded aria-controls> and a panel <div id> rendered only while open (or `hidden` while closed with keepMounted); aria-controls is set only while the panel exists — the APG pattern rather than <details>, so the state is controllable, the trigger can sit inside a heading, and the panel can be unmounted. Chevron is an inline SVG with aria-hidden."
+          "notes": "A wrapping <div> (so the optional heading and the panel are siblings) containing a native <button aria-expanded aria-controls> and a panel <div id> rendered only while open (or `hidden` while closed with keepMounted); aria-controls is set only while the panel exists — the APG pattern rather than <details>, so the state is controllable, the trigger can sit inside a heading, and the panel can be unmounted. The chevron is the system `Icon name=\"chevron-right\" inline` (aria-hidden) inside the `triggerIcon` wrapper span. Props extend the trigger button's attributes (`ComponentPropsWithoutRef<'button'>` minus the ones the component owns: className, style, type, disabled, aria-expanded, aria-controls, aria-disabled, onClick, onToggle) and the rest go to the trigger. `ref` resolves to the trigger <button>, not the wrapping <div>, because Accordion moves focus between triggers with it. `disabled` sets aria-disabled=\"true\" and never the native attribute, so the button is not :disabled."
         },
         "lit": {
           "tag": "ds-disclosure",
@@ -11159,17 +11275,16 @@
             "disabled",
             "keep-mounted"
           ],
-          "notes": "Shadow root with delegatesFocus; the summary is a property, the panel content is the default slot, and the slot is rendered only while open (with keep-mounted the slot is always rendered and its wrapper gets `hidden` while closed). Light-DOM children exist either way, so ds-form skips fields inside a closed ds-disclosure that lacks keep-mounted, matching the other platforms. `toggle` is a composed CustomEvent with detail { open }. `open` is reflected so it can be styled and set from markup; the resolved state is readable as `currentOpen` (ds-form reads `currentOpen` and `keepMounted` to skip hidden fields); `heading-level` is an attribute."
+          "notes": "Shadow root with delegatesFocus; the summary is a property, the panel content is the default slot, and the slot is rendered only while open (with keep-mounted the slot is always rendered and its wrapper gets `hidden` while closed). Light-DOM children exist either way, so ds-form skips fields inside a closed ds-disclosure that lacks keep-mounted, matching the other platforms. `toggle` is a composed CustomEvent with detail { open, reason }. `open` is reflected so it can be styled and set from markup; the resolved state is readable as `currentOpen` (ds-form reads `currentOpen` and `keepMounted` to skip hidden fields); `heading-level` and `default-open` are attributes (`default-open` is not reflected). The chevron is `<ds-icon name=\"chevron-right\" inline>` (aria-hidden) inside the `triggerIcon` wrapper span, mirrored under [dir=rtl] like web."
         },
         "rn": {
           "element": "Pressable",
           "props": [
             "accessibilityRole=button",
             "accessibilityLabel",
-            "accessibilityState",
-            "accessibilityHint"
+            "accessibilityState"
           ],
-          "notes": "Pressable trigger with accessibilityState={{ expanded: open, disabled }} and the panel conditionally rendered below. Screen readers read \"expanded/collapsed\" from the state; there is no aria-controls equivalent. `headingLevel` sets accessibilityRole=\"header\" on the trigger text instead of a level. The chevron is the system Icon, mirrored to `chevron-left` under `I18nManager.isRTL` with the open rotation reversed to match, and its `overrides.size` receives the same token as `triggerFontSize` so the glyph tracks the trigger text. Native has no notion of focus within a subtree, so a panel that closes while something inside it held focus cannot hand focus back to the trigger; the screen reader falls to the next element, which is the trigger itself."
+          "notes": "Pressable trigger with accessibilityState={{ expanded: open, disabled }} and the panel conditionally rendered below. Screen readers read \"expanded/collapsed\" from the state; there is no aria-controls equivalent. No accessibilityHint: it would only repeat the state accessibilityState already announces. `copy.expanded`/`copy.collapsed` are unused here. `headingLevel` sets accessibilityRole=\"header\" on the summary Text instead of a level, so RN tests for the heading-level scenarios check that it renders and that the summary Text has the header role, not a level. RN tests do not check that a disabled trigger stays focusable (RNTL has no focusable assertion for a Pressable); they check accessibilityState.disabled. The chevron is the system Icon (not inline, since an inline Icon ignores size) inside the `triggerIcon` wrapper View, mirrored to `chevron-left` under `I18nManager.isRTL` with the open rotation reversed to match, and its `overrides.size` receives the same token as `triggerFontSize` (default `font.size.md`) so the glyph tracks the trigger text. Until useReducedMotion resolves, the chevron is set directly (no animation on first render). A trigger press always reports reason `pointer`. The component wraps string or number children in the package Text (panelColor via its default tone); other children keep their own colour. Native has no notion of focus within a subtree, so a panel that closes while something inside it held focus cannot hand focus back to the trigger; the screen reader falls to the next element, which is the trigger itself."
         },
         "swiftui": {
           "element": "VStack",
@@ -11395,10 +11510,10 @@
       "Overview": "A disclosure is a button that reveals content beneath it. It is deliberately plain: no border, no card, no animation of the panel. The pattern's job is to keep long pages scannable by hiding detail until it is wanted — FAQ answers, advanced options, \"show more\".",
       "When to use": "Use a Disclosure to hide secondary content that some users need and most do not: optional settings, long explanations, a list of details behind a summary count. Stack several to make an accordion — each is independent; nothing in this component closes its siblings. Set `headingLevel` when the summaries are section titles so they appear in the outline and screen-reader heading lists.",
       "When not to use": "Do not use a Disclosure to hide content that most users need to see or that is required to complete a task; show it. Do not use it for navigation menus (use Menu, planned) or for content that should take over the screen (use Dialog or BottomSheet, planned). Do not use it as a fake tab set; tabs replace content, disclosures add to it.",
-      "Behavior": "Activating the trigger with pointer, Enter, Space, or assistive technology flips the state and fires `onToggle` with the new value. When open, the panel is rendered directly after the trigger in reading order and focus stays on the trigger; users move into the panel themselves. When closed, the panel is removed from the tree (or hidden, with `keepMounted`), so focus inside it must be moved to the trigger first; the component does this when it closes while focus is within, whether the close came from the trigger or from a controlled `open` change. A closed panel's form fields are not collected by a Form unless `keepMounted` is set, so any Disclosure that holds fields must set it. Uncontrolled unless `open` is provided. The chevron rotates over `transition`; the panel appears and disappears without animation, so nothing reflows under the user's pointer.",
+      "Behavior": "Activating the trigger with pointer, Enter, Space, or assistive technology flips the state and fires `onToggle` with the new value. When open, the panel is rendered directly after the trigger in reading order and focus stays on the trigger; users move into the panel themselves. When closed, the panel is removed from the tree (or hidden, with `keepMounted`), so focus inside it must be moved to the trigger first; the component does this when it closes while focus is within (focus inside the panel, or on the body after leaving the now-hidden panel), whether the close came from the trigger or from a controlled `open` change. A closed panel's form fields are not collected by a Form unless `keepMounted` is set, so any Disclosure that holds fields must set it. Uncontrolled unless `open` is provided. The chevron rotates over `transition`; the panel appears and disappears without animation, so nothing reflows under the user's pointer.",
       "Content guidelines": "The summary is the name of what is hidden, not an instruction: \"Advanced options\", \"Shipping details\", \"What happens if I cancel?\" — never \"Click to expand\" or \"More\". Do not put the state in the label (\"Show\" / \"Hide\"); the expanded state is announced and shown by the chevron. If a count helps, put it in the summary (\"3 attachments\").",
       "Accessibility": "The trigger is a real button with the summary as its accessible name (WCAG 4.1.2) and exposes `aria-expanded` / `expanded` so the state is announced (4.1.2, APG disclosure). The panel is associated with `aria-controls` on web and follows the trigger in DOM order on every platform, so sequential navigation reaches it next (1.3.2, 2.4.3). Enter and Space toggle; there are no arrow-key semantics, because a lone disclosure is not a composite (2.1.1). Focus is visible on the trigger (2.4.7) and the trigger meets the 24px target (2.5.8). Nothing is hidden with CSS alone: a closed panel is either not in the tree or carries the `hidden` attribute, so it is not in the accessibility tree either way. The chevron animation is disabled under reduced motion (2.3.3).",
-      "Platform notes": "### Web\nRender `<button type=\"button\" aria-expanded={open} aria-controls={panelId}>` containing the chevron (`aria-hidden`) and the summary text; wrap it in `<h{headingLevel}>` when set (the heading has no styling of its own — the button carries it). Render `<div id={panelId}>` after the button only while open, or with the `hidden` attribute while closed when `keepMounted` is set; set `aria-controls` only while the panel exists, so there is never a dangling reference. Use `aria-disabled` rather than `disabled` so the trigger stays discoverable. Mirror the chevron under `[dir=rtl]`. `headingLevel` also accepts a number. Do not use `<details>`: its open state cannot be controlled without side effects, its summary cannot be inside a heading, and browsers differ on how they announce it.\n\n### Lit\n`<ds-disclosure summary=\"…\" open>` renders the trigger in the shadow root and the panel as a default `<slot>` that exists only while open. The light-DOM children still exist in the document when closed, but children not assigned to any slot are neither rendered nor in the accessibility tree, so omitting the slot is sufficient — do not add `hidden` to the consumer's nodes. Dispatch a composed `toggle` CustomEvent with `detail: { open }`. Reflect `open` and `disabled`.\n\n### React Native\nRender a `Pressable` with `accessibilityRole=\"button\"`, `accessibilityLabel={summary}` and `accessibilityState={{ expanded: open, disabled }}`, containing the chevron and a `Text`; render the children in a `View` below it only while open (or with `display: 'none'` while closed when `keepMounted` is set). Moving focus back to the trigger on close is not possible on native (no notion of focus-within), a platform limit. When `headingLevel` is set, mark the summary `Text` with `accessibilityRole=\"header\"` — native has no heading levels. Rotate the chevron with `Animated` over `transition`, or set it directly when `AccessibilityInfo.isReduceMotionEnabled()` is true.",
+      "Platform notes": "### Web\nRender `<button type=\"button\" aria-expanded={open} aria-controls={panelId}>` containing the chevron (`aria-hidden`) and the summary text; wrap it in `<h{headingLevel}>` when set (the heading has no styling of its own — the button carries it), so the heading-level scenarios assert a heading of that level contains the trigger. Render `<div id={panelId}>` after the button only while open, or with the `hidden` attribute while closed when `keepMounted` is set; set `aria-controls` only while the panel exists, so there is never a dangling reference. Use `aria-disabled` rather than `disabled` so the trigger stays discoverable. Mirror the chevron under `[dir=rtl]`. `headingLevel` also accepts a number. Do not use `<details>`: its open state cannot be controlled without side effects, its summary cannot be inside a heading, and browsers differ on how they announce it.\n\n### Lit\n`<ds-disclosure summary=\"…\" open>` renders the trigger in the shadow root and the panel as a default `<slot>` that exists only while open. The light-DOM children still exist in the document when closed, but children not assigned to any slot are neither rendered nor in the accessibility tree, so omitting the slot is sufficient — do not add `hidden` to the consumer's nodes. Dispatch a composed `toggle` CustomEvent with `detail: { open, reason }`. Reflect `open` and `disabled`.\n\n### React Native\nRender a `Pressable` with `accessibilityRole=\"button\"`, `accessibilityLabel={summary}` and `accessibilityState={{ expanded: open, disabled }}`, containing the chevron and a `Text`; render the children in a `View` below it only while open (or with `display: 'none'` while closed when `keepMounted` is set). Moving focus back to the trigger on close is not possible on native (no notion of focus-within), a platform limit. When `headingLevel` is set, mark the summary `Text` with `accessibilityRole=\"header\"` — native has no heading levels. Rotate the chevron with `Animated` over `transition`, or set it directly when `AccessibilityInfo.isReduceMotionEnabled()` is true.",
       "Related": "Button, Heading, Accordion (planned), Dialog (planned)."
     },
     "extensions": [],
@@ -12401,8 +12516,47 @@
         "errorMessage"
       ],
       "composition": {
-        "legend": "Text",
-        "description": "Text",
+        "legend": {
+          "component": "Text",
+          "props": {
+            "tone": "default",
+            "size": "md",
+            "weight": "medium",
+            "element": "span"
+          },
+          "forwards": {
+            "legendSize": "fontSize",
+            "legendWeight": "fontWeight",
+            "fontFamily": "fontFamily",
+            "lineHeight": "lineHeight"
+          }
+        },
+        "description": {
+          "component": "Text",
+          "props": {
+            "tone": "muted",
+            "size": "sm",
+            "element": "span"
+          },
+          "forwards": {
+            "helperSize": "fontSize",
+            "fontFamily": "fontFamily",
+            "lineHeight": "lineHeight"
+          }
+        },
+        "errorMessage": {
+          "component": "Text",
+          "props": {
+            "tone": "danger",
+            "size": "sm",
+            "element": "span"
+          },
+          "forwards": {
+            "helperSize": "fontSize",
+            "fontFamily": "fontFamily",
+            "lineHeight": "lineHeight"
+          }
+        },
         "fields": {
           "component": "Stack",
           "forwards": {
@@ -12420,7 +12574,7 @@
         "children": {
           "type": "content",
           "required": true,
-          "description": "The fields, usually a Stack of Inputs, Checkboxes or Switches."
+          "description": "The fields as direct children, usually Inputs, Checkboxes or Switches; Fieldset renders the Stack around them."
         },
         "description": {
           "type": "string",
@@ -12430,7 +12584,7 @@
         "error": {
           "type": "string",
           "description": "A group-level error (cross-field validation such as \"End date must be after start date\"). Field-level errors stay on the fields.",
-          "a11y": "Rendered once under the group with role=alert and linked with aria-describedby; while set, the group carries aria-invalid=\"true\" (accessibilityState invalid is not available on native, so the error text alone identifies it there)."
+          "a11y": "Rendered once under the group, only while set (no empty live region; inserting the role=alert region announces it), and linked with aria-describedby; while set, the group carries aria-invalid=\"true\" (accessibilityState invalid is not available on native, so the error text alone identifies it there)."
         },
         "disabled": {
           "type": "boolean",
@@ -12452,52 +12606,67 @@
         "legendColor": {
           "token": "color.foreground",
           "part": "legend",
+          "description": "Realised by the composed legend Text's `default` tone; no --ds-fieldset-* hook.",
           "locked": true
         },
         "legendSize": {
           "token": "font.size.md",
           "part": "legend",
+          "description": "Reaches the legend Text only through its `overrides.fontSize`.",
           "locked": false
         },
         "legendWeight": {
           "token": "font.weight.medium",
           "part": "legend",
+          "description": "Reaches the legend Text only through its `overrides.fontWeight`.",
           "locked": false
         },
         "descriptionText": {
           "token": "color.foreground.muted",
           "part": "description",
+          "description": "Realised by the composed description Text's `muted` tone; no --ds-fieldset-* hook.",
           "locked": true
         },
         "helperSize": {
           "token": "font.size.sm",
+          "part": "description",
+          "description": "Description and error text size. Reaches both Texts only through their `overrides.fontSize`; no --ds-fieldset-* hook.",
           "locked": false
         },
         "errorText": {
           "token": "color.foreground.danger",
+          "part": "errorMessage",
+          "description": "Realised by the composed error Text's `danger` tone; no --ds-fieldset-* hook.",
           "locked": true
         },
         "partGap": {
           "token": "layout.gap.tight",
-          "description": "Vertical gap between legend, description, fields and error.",
+          "part": "group",
+          "description": "Vertical gap between legend, description, fields and error, set on the group root. On web and Lit the <legend> does not take part in flex gap, so below the legend it is a margin.",
           "locked": false
         },
         "fieldsGap": {
           "token": "layout.gap.{gap}",
           "part": "fields",
-          "description": "The composed Stack's gap. An `overrides.fieldsGap` is forwarded to the Stack's own `overrides.gap`; Fieldset never styles the Stack itself.",
+          "description": "The composed Stack's gap. It reaches the Stack only as a token path through the Stack's own `overrides.gap`. Fieldset's own CSS hook (--ds-fieldset-fields-gap) does not reach the Stack, and Fieldset does not set the Stack's CSS hooks (--ds-stack-gap) either; page CSS sizes the gap through the Stack's own hooks.",
           "locked": false
         },
         "disabledOpacity": {
           "token": "opacity.disabled",
+          "part": "legend",
+          "description": "Dims the legend and description only while `disabled`; the fields dim themselves, so the group root and the fields wrapper are never dimmed.",
           "locked": false
         },
         "fontFamily": {
           "token": "font.family.body",
+          "part": "legend",
+          "description": "Reaches the legend, description and error Texts only through their `overrides.fontFamily`.",
           "locked": false
         },
         "lineHeight": {
           "token": "font.lineHeight.normal",
+          "part": "legend",
+          "description": "Reaches the legend, description and error Texts only through their `overrides.lineHeight`.",
           "locked": false
         }
       },
@@ -12538,7 +12707,7 @@
             "aria-disabled",
             "aria-invalid"
           ],
-          "notes": "A native <fieldset> with a <legend>. No border and no padding (the browser defaults are reset); the group is structure, not a box — wrap it in a Box or Card for a surface. `disabled` uses aria-disabled on the fieldset plus each field's own disabled handling (the native disabled attribute on fieldset would remove fields from the tab order). A <legend> does not participate in flex gap, so partGap below it is a margin. With `error` set, the <fieldset> carries aria-invalid=\"true\" and aria-describedby the error id (the group is the invalid thing; fields inside keep their own state)."
+          "notes": "A native <fieldset> with a <legend>. No border and no padding (the browser defaults are reset); the group is structure, not a box — wrap it in a Box or Card for a surface. `disabled` uses aria-disabled on the fieldset and passes `disabled` to its direct child fields (fragments flattened; the native disabled attribute on fieldset would remove fields from the tab order). No React FieldsetContext is exported. The `fields` part is a <div data-part=\"fields\"> wrapper Fieldset owns around the Stack; the Stack keeps its own data-part. The errorMessage part is a <div role=\"alert\" data-part=\"errorMessage\"> with the error id around the danger Text. A <legend> does not participate in flex gap, so partGap below it is a margin. With `error` set, the <fieldset> carries aria-invalid=\"true\" and aria-describedby the error id (the group is the invalid thing; fields inside keep their own state)."
         },
         "lit": {
           "tag": "ds-fieldset",
@@ -12546,16 +12715,16 @@
             "disabled",
             "gap"
           ],
-          "notes": "Shadow root with a <fieldset><legend> and a default slot for the fields, which stay in the light DOM so ds-form still collects them. The group error is rendered in the shadow root, and the <fieldset> carries aria-invalid=\"true\" with it, as on web. The legend and description render their text through <ds-text> inside the native <legend>/<p>, so legendSize, legendWeight and helperSize reach it as Text overrides rather than as Fieldset's own rules. `disabled` is propagated to slotted ds-* fields via their `disabled` property on slotchange and reverted when cleared (remembering which it set), the same way ds-form does."
+          "notes": "Shadow root with a <fieldset><legend> and a default slot for the fields, which stay in the light DOM so ds-form still collects them. The group error is rendered in the shadow root, and the <fieldset> carries aria-invalid=\"true\" with it, as on web. The legend, description and error render their text through <ds-text> (element span) inside the native <legend>, a description wrapper and a role=alert wrapper, so legendSize, legendWeight, helperSize, fontFamily and lineHeight reach them only as Text overrides, never as Fieldset rules or by setting --ds-text-* hooks. `disabled` is set as the `disabled` property on direct light-DOM children carrying data-ds-field, on slotchange and whenever `disabled` changes, remembering which it set so clearing never enables a field disabled on its own. The required indicator is derived from those same direct data-ds-field children's `required`, recomputed on slotchange and on their `required` attribute changes. The group's role and accessible name come from the native <fieldset>/<legend> inside the shadow root; ids never cross the shadow boundary."
         },
         "rn": {
           "element": "View",
           "props": [
-            "accessibilityRole",
+            "role",
             "accessibilityLabel",
             "accessibilityHint"
           ],
-          "notes": "A View that is NOT `accessible` (so children stay individually reachable). The legend is plain Text — not a header trait, which would put it in the headings rotor — and each child field receives the legend as a prefix in its accessibilityLabel through a FieldsetContext (\"Shipping address, Street\"), which is how VoiceOver and TalkBack users learn the grouping on native. The group error is announced as in Input."
+          "notes": "A View with `role=\"group\"` (not the legacy accessibilityRole) that is NOT `accessible` (so children stay individually reachable). Its accessibilityLabel is the legend plus copy.requiredIndicator when shown; `description` maps to its accessibilityHint. The legend is plain Text — not a header trait, which would put it in the headings rotor — and FieldsetContext carries `disabled` and the legend, which Input, Checkbox, Switch and RadioGroup read: they render disabled and prefix their accessibilityLabel with the legend (\"Shipping address, Street\"), which is how VoiceOver and TalkBack users learn the grouping on native. There is no clone fallback. A non-field child (plain Text, a custom control) gets no legend association on native; that is acceptable, since the legend is still read in order before it. The legend, description, fields Stack and error sit in plain Views carrying `Fieldset.legend`, `Fieldset.description`, `Fieldset.fields` and `Fieldset.errorMessage` testIDs, because Text and Stack take none. A non-accessible View exposes no state, so `disabled` is not asserted on the group; RN tests check the legend text and toHaveAccessibleName on the group view. The group error is announced as in Input."
         },
         "swiftui": {
           "element": "VStack",
@@ -12582,7 +12751,8 @@
             {
               "name": "Delivery window",
               "platforms": [
-                "web"
+                "web",
+                "lit"
               ]
             }
           ]
@@ -12626,7 +12796,8 @@
               "state": "disabled",
               "is": true,
               "platforms": [
-                "web"
+                "web",
+                "lit"
               ]
             }
           ]
@@ -12635,38 +12806,38 @@
       "examples": [
         {
           "name": "shipping-address",
-          "description": "Two related Inputs under one legend.",
+          "description": "Two related Inputs, labelled Street and City, as direct children under one legend.",
           "given": {
             "legend": "Shipping address",
-            "children": "Street and city Inputs."
+            "children": "An Input name=street label=Street and an Input name=city label=City"
           }
         },
         {
           "name": "notification-preferences",
-          "description": "A set of Checkboxes with the rule that governs them under the legend.",
+          "description": "Three Checkboxes, labelled Email, SMS and Push, with the rule that governs them under the legend.",
           "given": {
             "legend": "Notification preferences",
             "description": "You can change these at any time.",
-            "children": "Email, SMS and Push Checkboxes.",
+            "children": "A Checkbox name=email label=Email, a Checkbox name=sms label=SMS and a Checkbox name=push label=Push",
             "gap": "tight"
           }
         },
         {
           "name": "date-range-with-a-group-error",
-          "description": "Cross-field validation reported on the group rather than on one field.",
+          "description": "Cross-field validation reported on the group rather than on one field, across two text Inputs labelled Start date and End date.",
           "given": {
             "legend": "Reporting period",
             "error": "End date must be after start date.",
-            "children": "Start date and End date Inputs."
+            "children": "An Input name=startDate label=Start date and an Input name=endDate label=End date"
           }
         },
         {
           "name": "disabled-group",
-          "description": "Every field inside disabled while the section does not apply.",
+          "description": "Every field inside disabled while the section does not apply - two Inputs labelled Street and City.",
           "given": {
             "legend": "Billing address",
             "disabled": true,
-            "children": "Street and city Inputs."
+            "children": "An Input name=street label=Street and an Input name=city label=City"
           }
         }
       ]
@@ -12751,10 +12922,10 @@
       "Overview": "A fieldset is how a form says \"these belong together.\" A screen-reader user tabbing into \"Street\" hears \"Shipping address, Street\" and knows where they are; a sighted user sees the legend and the fields indented under it by nothing more than rhythm. It is the container RadioGroup builds on, offered for any set of fields: an address, a date range, a set of notification switches.",
       "When to use": "Use a Fieldset whenever two or more fields share a name a user would say aloud — an address, a card, \"Which days?\" as a set of Checkboxes, a start and end date. Give it a `description` when the group needs a rule (\"We only ship within the EU\") and put cross-field errors on the group rather than on one field.",
       "When not to use": "Do not wrap a whole form in a Fieldset; the Form's `label` names the form. Do not use it for a single field. Do not use it for visual grouping without a shared meaning — that is a Box or a Card — and do not use it as a page section (Landmark, Heading with `section` spacing). RadioGroup already is a fieldset; do not nest one inside it.",
-      "Behavior": "Renders the legend, optional description, the fields in a Stack with `gap`, and an optional error. `disabled` disables every field inside while keeping them visible and focusable per each field's own rule. Inside a Form, the group itself is not a field; its children register individually, and the group `error` is set by the consumer from `onInvalid` or its own cross-field check. The `requiredIndicator` is appended to the legend when every field inside is required, so the indicator is not repeated on each. The required indicator is derived: it appears when every direct child field has `required` (fields wrapped in a consumer's own container are not inspected — put fields directly inside the Fieldset). `disabled` and the legend reach the fields through `FieldsetContext`, which Input, Checkbox, Switch and RadioGroup read: they render disabled, and on native prefix their accessibility label with the legend; until a field reads the context, Fieldset also clones direct children with `disabled` — a direct child that is not a field (a plain wrapper, a piece of text) takes the cloned prop and ignores it, which is the intended no-op rather than an error. On React Native the group uses the `role=\"group\"` prop (RN ≥ 0.74), not the legacy accessibilityRole.",
+      "Behavior": "Renders the legend, optional description, the fields in a Stack with `gap`, and the error only while `error` is set. `disabled` disables every field inside while keeping them visible and focusable per each field's own rule. How it reaches them differs by platform: on web, Fieldset passes `disabled` to its direct child fields (fragments flattened; no React FieldsetContext is exported); on Lit, ds-fieldset sets the `disabled` property on direct children carrying data-ds-field on slotchange and whenever `disabled` changes, remembering which it set; on React Native and SwiftUI, `FieldsetContext` carries `disabled` and the legend, and Input, Checkbox, Switch and RadioGroup read it (there is no clone fallback). Inside a Form, the group itself is not a field; its children register individually, and the group `error` is set by the consumer from `onInvalid` or its own cross-field check. The `requiredIndicator` is appended inside the legend when every field inside is required, so the indicator is not repeated on each. It inherits the legend Text's styling and is part of the group's accessible name on every platform (\"Shipping address (required)\"; on React Native the group's accessibilityLabel includes it). The required indicator is derived: it appears when every direct child field has `required` (fragments count as direct on web; fields wrapped in a consumer's own container are not inspected — put fields directly inside the Fieldset). On Lit it is recomputed on slotchange and when a direct data-ds-field child's `required` attribute changes. On React Native the group uses the `role=\"group\"` prop (RN ≥ 0.74), not the legacy accessibilityRole.",
       "Content guidelines": "Legends are short noun phrases in sentence case (\"Shipping address\") or, for a set of choices, the question (\"Which days should we deliver?\"). Descriptions state a rule in one sentence. Group errors name the relationship that failed (\"End date must be after start date\"), not the field.",
       "Accessibility": "A native group with a name means the relationship between fields is programmatically determinable (WCAG 1.3.1) and each field's accessible context includes the group (3.3.2). Description and error are linked from the group with `aria-describedby`, the group carries `aria-invalid` while an error is set, and the error announces when it appears (3.3.1). No color-only signals; text meets AA in both modes.",
-      "Platform notes": "### Web\n`<fieldset aria-describedby>` with `<legend>` and a `Stack` for the children; reset the browser's border, padding and `min-inline-size`. Render the description and error as `Text` with ids; the error has `role=\"alert\"`. For `disabled`, set `aria-disabled` on the fieldset and pass `disabled` down through a `FieldsetContext` that Input, Checkbox, Switch and RadioGroup read (add the context read to those components when they regenerate; until then, the fieldset clones direct children with `disabled`).\n\n### Lit\n`<ds-fieldset legend=\"Shipping address\" gap=\"normal\">` with a shadow `<fieldset><legend>` and a default slot. Propagate `disabled` to slotted `ds-*` fields on `slotchange` and on change, remembering which elements it disabled so clearing does not enable a field that was disabled on its own.\n\n### React Native\n`View` (not `accessible`) with the legend and description as `Text`; provide a `FieldsetContext` with the legend that Input, Checkbox, Switch and RadioGroup prefix into their `accessibilityLabel`. The group error uses the same announcement mechanism as Input. `disabled` flows through the same context.",
+      "Platform notes": "### Web\n`<fieldset aria-describedby>` with `<legend>` and a `Stack` for the children inside a `data-part=\"fields\"` wrapper Fieldset owns; reset the browser's border, padding and `min-inline-size`. Render the legend, description and error as `Text` (element span) inside Fieldset-owned elements carrying the parts and ids; the error wrapper has `role=\"alert\"` and exists only while `error` is set. For `disabled`, set `aria-disabled` on the fieldset and pass `disabled` to its direct child fields, flattening fragments. Fieldset exports no FieldsetContext on web.\n\n### Lit\n`<ds-fieldset legend=\"Shipping address\" gap=\"normal\">` with a shadow `<fieldset><legend>` and a default slot. Set the `disabled` property on direct children carrying `data-ds-field` on `slotchange` and whenever `disabled` changes, remembering which elements it disabled so clearing does not enable a field that was disabled on its own. Derive the required indicator from the same children's `required` on `slotchange` and on their `required` attribute changes.\n\n### React Native\n`View` (not `accessible`) with `role=\"group\"`, an accessibilityLabel of the legend plus the required indicator, and `description` as its accessibilityHint; the legend, description and error are `Text` inside plain Views carrying `Fieldset.<part>` testIDs. Provide a `FieldsetContext` carrying `disabled` and the legend; Input, Checkbox, Switch and RadioGroup read it, render disabled and prefix the legend into their `accessibilityLabel`. Fieldset does not clone children. The group error uses the same announcement mechanism as Input. Tests check the legend text and toHaveAccessibleName on the group view; a non-accessible View exposes no disabled state, so disabled is not asserted there.",
       "Related": "Form, Input, Checkbox, RadioGroup, Stack, Box."
     },
     "extensions": [],
@@ -15199,7 +15370,7 @@
         },
         "label": {
           "type": "string",
-          "description": "Accessible name. Required for `region` and `form`, and whenever the page has more than one landmark of the same role (two navigations: \"Main\" and \"Footer\"). Not shown visually.",
+          "description": "Accessible name. Required for `region` and `form`, and whenever the page has more than one landmark of the same role (two navigations: \"Main\" and \"Footer\"). Not shown visually. An empty string counts as absent (no aria-label, and missing for the warnings). `banner`, `main` and `contentinfo` never take a label: on web and Lit one passed to them is not rendered and a development warning says so.",
           "a11y": "Rendered as aria-label; the name is read together with the role (\"Main navigation, landmark\")."
         },
         "children": {
@@ -15240,14 +15411,14 @@
             "role",
             "aria-label"
           ],
-          "notes": "Native elements carry the roles: banner→header, navigation→nav, main→main, complementary→aside, contentinfo→footer, region→section (only a landmark when labelled), search→form role=search (always, for SSR safety, until <search> is in the React typings), form→form. The explicit role attribute is always emitted on header and footer (they lose the landmark role inside sectioning content, and ancestry is unknown at render time) and whenever `as` overrides the element."
+          "notes": "Native elements carry the roles: banner→header, navigation→nav, main→main, complementary→aside, contentinfo→footer, region→section (only a landmark when labelled), search→form role=search (always, for SSR safety, until <search> is in the React typings), form→form. The explicit role attribute is emitted on header and footer (they lose the landmark role inside sectioning content, and ancestry is unknown at render time), when `as` differs from the role's default element, and when the element does not imply the role (form role=search); `as` equal to the default element adds nothing. `region` without a label renders a plain <section> with no role attribute, plus the missing-label warning. Landmark takes no className or style (the Link rule): a composite that needs its own classes, style or positioning (SidePanel) renders its own styled element and composes Landmark inside it, passing only `role`, `as`, `label` or `aria-labelledby`. A composite's `aria-labelledby` is forwarded to the element and the text it references counts as the label for the warnings."
         },
         "lit": {
           "tag": "ds-landmark",
           "reflect": [
             "role"
           ],
-          "notes": "No shadow DOM and no wrapper element: the host itself takes role and aria-label via ElementInternals so it is the landmark in the light DOM tree, and children are ordinary light-DOM children. The property is named `landmark` (attribute `role`) because `role` already exists on HTMLElement. With no shadow root there is no static styles; set `display: block` inline in connectedCallback when the host has no display set. Do not also render a native <nav> inside — a nested landmark of the same role is a duplicate."
+          "notes": "No shadow DOM and no wrapper element: the host itself carries plain reflected `role` and `aria-label` attributes (not ElementInternals, which the accessible-name tooling does not read) so it is the landmark in the light DOM tree. Children are ordinary light-DOM children: there is no <slot>, so the rule that each slot renders as <slot> does not apply, and the `region` part has no `part`/`data-part`; the host's `data-ds=\"Landmark\"` is its only hook. The property is named `landmark` and reflects to the `role` attribute (that is what `reflect: [role]` means) because `role` already exists on HTMLElement; `label` reflects to `aria-label`. With no role (attribute absent) no role is exposed and a development warning fires. With no shadow root there is no static styles; set `display: block` inline in connectedCallback when the host has no display set. Do not also render a native <nav> inside — a nested landmark of the same role is a duplicate."
         },
         "rn": {
           "element": "View",
@@ -15255,7 +15426,7 @@
             "role",
             "accessibilityLabel"
           ],
-          "notes": "Native platforms have no landmark navigation (VoiceOver and TalkBack have no landmark rotor), so Landmark is structure for react-native-web and a labelled View on iOS and Android. Pass `role` (RN ≥ 0.73) so react-native-web renders the semantic element; on native it maps to the nearest accessibilityRole or none. Exception: RN's `Role` union has no `search` landmark (only the `searchbox` widget), so `search` is passed as the legacy accessibilityRole=\"search\", which react-native-web maps to the ARIA search landmark; iOS and Android have no equivalent, so it is web-parity only. The label is applied as accessibilityLabel only for `region`, `form`, and `navigation`, so screen readers get a group name without every View announcing a role."
+          "notes": "Native platforms have no landmark navigation (VoiceOver and TalkBack have no landmark rotor), so Landmark is structure for react-native-web and a labelled View on iOS and Android. Pass `role` (RN ≥ 0.73) so react-native-web renders the semantic element; on native it maps to the nearest accessibilityRole or none. Exception: RN's `Role` union has no `search` landmark (only the `searchbox` widget), so `search` is passed as the legacy accessibilityRole=\"search\", which react-native-web maps to the ARIA search landmark; iOS and Android have no equivalent, so it is web-parity only. The label is applied as accessibilityLabel only for `region`, `form`, and `navigation`, so screen readers get a group name without every View announcing a role. A View cannot hold a raw string, so Landmark wraps string and number children in the package Text itself. With no document to scan, only the missing-label warning applies. Native has no landmark query, so RN tests check the `role` (or, for `search`, `accessibilityRole`) and `accessibilityLabel` props on the View instead of a role lookup."
         },
         "swiftui": {
           "element": "VStack",
@@ -15277,11 +15448,52 @@
           },
           "then": [
             {
-              "role": "navigation"
+              "role": "navigation",
+              "platforms": [
+                "web",
+                "lit"
+              ]
+            },
+            {
+              "attribute": "role",
+              "is": "navigation",
+              "platforms": [
+                "rn"
+              ]
             }
           ],
           "platforms": [
-            "web"
+            "web",
+            "lit",
+            "rn"
+          ]
+        },
+        {
+          "name": "search-is-the-search-landmark",
+          "description": "search renders the search landmark; React Native has no search Role, so it goes through the legacy accessibilityRole.",
+          "given": {
+            "role": "search"
+          },
+          "then": [
+            {
+              "role": "search",
+              "platforms": [
+                "web",
+                "lit"
+              ]
+            },
+            {
+              "attribute": "accessibilityRole",
+              "is": "search",
+              "platforms": [
+                "rn"
+              ]
+            }
+          ],
+          "platforms": [
+            "web",
+            "lit",
+            "rn"
           ]
         },
         {
@@ -15296,27 +15508,45 @@
             }
           ],
           "platforms": [
-            "web"
+            "web",
+            "lit"
           ]
         },
         {
           "name": "a-region-is-named-by-its-label",
-          "description": "A region is a landmark only when it is named; the label is rendered as aria-label.",
+          "description": "A region is a landmark only when it is named; the label is rendered as aria-label (accessibilityLabel on React Native).",
           "given": {
             "role": "region",
             "label": "Related articles"
           },
           "then": [
             {
-              "role": "region"
+              "role": "region",
+              "platforms": [
+                "web",
+                "lit"
+              ]
             },
             {
               "attribute": "aria-label",
-              "is": "Related articles"
+              "is": "Related articles",
+              "platforms": [
+                "web",
+                "lit"
+              ]
+            },
+            {
+              "attribute": "accessibilityLabel",
+              "is": "Related articles",
+              "platforms": [
+                "rn"
+              ]
             }
           ],
           "platforms": [
-            "web"
+            "web",
+            "lit",
+            "rn"
           ]
         },
         {
@@ -15624,10 +15854,10 @@
       "Overview": "Landmarks are the page's table of contents for assistive technology. A screen-reader user arriving on a page presses one key to jump to the main content, another to list the navigations, another for the search. Without landmarks they read from the top. This component exists so that every page in the system gets the same, correct set of them without anyone remembering which element implies which role.",
       "When to use": "Wrap the page's major regions in a Landmark: one `banner` for the site header, one `main` for the primary content, `navigation` for each navigation block (labelled when there is more than one), `complementary` for sidebars that make sense on their own, `contentinfo` for the site footer, `search` around the site search form, and `region` for any other section a user might want to jump to — a \"Related articles\" block, a dashboard panel. Every page should have exactly one `main`.",
       "When not to use": "Do not wrap everything: a page with twenty landmarks is as hard to navigate as one with none. Layout containers, cards, list items and form groups are not landmarks; use Stack, Fieldset (planned), or nothing. Do not use `region` without a `label` — an unlabelled region is not exposed as a landmark and the component will warn. Do not use Landmark to style a region; it has no visual bindings by design.",
-      "Behavior": "Landmark renders its children inside the appropriate element with the appropriate role and name, and nothing else: no padding, background, or layout. It is transparent to layout on every platform (`display: contents` is *not* used, because it removes the element's semantics in some browsers; instead the element is a plain block and consumers lay it out like any block). In development, the component warns when `main` appears more than once in a document, when `region` or `form` has no `label`, and when two `navigation`, `complementary`, `region` or `form` landmarks in the same root share a label or both lack one (`banner`, `main` and `contentinfo` never take labels). On native there is no document to scan, so only the missing-label warning applies.",
+      "Behavior": "Landmark renders its children inside the appropriate element with the appropriate role and name, and nothing else: no padding, background, or layout. It is transparent to layout on every platform (`display: contents` is *not* used, because it removes the element's semantics in some browsers; instead the element is a plain block and consumers lay it out like any block). In development, the component warns when `main` appears more than once in a document, when `region` or `form` has no `label` (`Landmark: role \"<role>\" is only a landmark when it has a label.`), and when two `navigation`, `complementary`, `region` or `form` landmarks in the same root share a label or both lack one. The naming sources that count are `label` (an empty string is absent) and an `aria-labelledby` a composite passes, read as the text it references. `banner`, `main` and `contentinfo` never take labels: a label passed to them is not rendered, with the warning `Landmark: role \"<role>\" does not take a label; it was not rendered.` Warnings fire when the offending combination appears or changes (mount, or a change of role, label or element), not on every render. For the duplicate checks the landmark scans its `getRootNode()` for `[data-ds=\"Landmark\"]`, and only the later landmark in document order warns; native landmarks not rendered by Landmark are not counted. With no role at all (a Lit host without the attribute) no role is exposed and the component warns. On native there is no document to scan, so only the missing-label warning applies.\n\nThe Default story is role `navigation` with label \"Main\" and the text \"Primary links.\", a role that takes a label, so the derived accessible-name and renders-as scenarios apply to it. Example `children` strings are text content: stories render them inside the package Text (on React Native Landmark does this itself).",
       "Content guidelines": "Labels name the region in one or two words and do not repeat the role: \"Main\" and \"Footer\" for two navigations (read as \"Main navigation\"), not \"Main navigation menu\". Labels are sentence case and never punctuated. Where the region already starts with a visible heading, the label should match the heading text.",
       "Accessibility": "Landmark regions let users bypass blocks and understand page structure (WCAG 1.3.1, 2.4.1). Each region has a role from the ARIA landmark set, and a name when the role appears more than once or when the role is `region` or `form`, which are landmarks only when named (4.1.2). Exactly one `main` per document. Native HTML elements are used wherever they imply the role, so no ARIA is added where the element already provides it, in line with the first rule of ARIA. Nested landmarks are allowed only where the APG allows them: a `navigation` inside `banner` is fine; a `main` inside anything is not.",
-      "Platform notes": "### Web\nChoose the element from `role` unless `as` is set: `banner`→`<header role=\"banner\">`, `navigation`→`<nav>`, `main`→`<main>`, `complementary`→`<aside>`, `contentinfo`→`<footer role=\"contentinfo\">`, `region`→`<section aria-label>`, `search`→`<form role=\"search\">`, `form`→`<form aria-label>`. Always emit `role` on `header` and `footer` and whenever `as` overrides the default element; never branch on `document` at render time (SSR). Apply `aria-label` from `label`. The forwarded ref is typed `HTMLElement` (not the specific element chosen by `as`), so render through `createElement` with `HTMLAttributes<HTMLElement>` rather than a union of intrinsic tags. Development warnings use `process.env.NODE_ENV !== 'production'`.\n\n### Lit\n`<ds-landmark role=\"navigation\" label=\"Main\">` uses no shadow root. The property is `landmark` (attribute `role`). In `connectedCallback`, set `display: block` inline when unset, so the host element itself is the landmark and its light-DOM children are its content. The role and the name are plain reflected attributes on the host — `role` and `aria-label` — not `ElementInternals.role` / `.ariaLabel`, which the accessible-name tooling does not read; `label` therefore reflects to the `aria-label` attribute, and a story sets it as a property or writes `aria-label` directly. With no shadow root there is nothing to carry a `part`, so `data-ds=\"Landmark\"` on the host is the only hook for the `region` part. Warnings are logged in development builds only (`import.meta.env.DEV`; the package tsconfig includes `vite/client` types).\n\n### React Native\nRender a `View` with the `role` prop (which react-native-web turns into the semantic element and iOS/Android map to the nearest accessibility role or ignore), and `accessibilityLabel={label}` for `navigation`, `region` and `form` so the group has a name for TalkBack and VoiceOver. Do not set `accessible={true}` on the container; it would collapse every child into one element. There is no jump-to-landmark on native — the value here is web parity and a consistent structure for the same screen code.",
+      "Platform notes": "### Web\nChoose the element from `role` unless `as` is set: `banner`→`<header role=\"banner\">`, `navigation`→`<nav>`, `main`→`<main>`, `complementary`→`<aside>`, `contentinfo`→`<footer role=\"contentinfo\">`, `region`→`<section aria-label>`, `search`→`<form role=\"search\">`, `form`→`<form aria-label>`. Always emit `role` on `header` and `footer`, when `as` differs from the role's default element, and when the element does not imply the role (`<form role=\"search\">`); `as` equal to the default adds nothing, and an unlabelled `region` is a plain `<section>` plus the warning. Landmark takes no `className` or `style`; a composite that needs its own classes renders its own element around Landmark and passes only `role`, `as`, `label` or `aria-labelledby`. Never branch on `document` at render time (SSR). Apply `aria-label` from `label`. The forwarded ref is typed `HTMLElement` (not the specific element chosen by `as`), so render through `createElement` with `HTMLAttributes<HTMLElement>` rather than a union of intrinsic tags. Development warnings use `process.env.NODE_ENV !== 'production'`.\n\n### Lit\n`<ds-landmark role=\"navigation\" label=\"Main\">` uses no shadow root. The property is `landmark` (attribute `role`). In `connectedCallback`, set `display: block` inline when unset, so the host element itself is the landmark and its light-DOM children are its content. The role and the name are plain reflected attributes on the host — `role` and `aria-label` — not `ElementInternals.role` / `.ariaLabel`, which the accessible-name tooling does not read; `label` therefore reflects to the `aria-label` attribute, and a story sets it as a property or writes `aria-label` directly. With no shadow root there is nothing to carry a `part`, so `data-ds=\"Landmark\"` on the host is the only hook for the `region` part. Warnings are logged in development builds only (`import.meta.env.DEV`; the package tsconfig includes `vite/client` types).\n\n### React Native\nRender a `View` with the `role` prop (which react-native-web turns into the semantic element and iOS/Android map to the nearest accessibility role or ignore; `search` uses `accessibilityRole=\"search\"`), string and number children wrapped in the package `Text`, and `accessibilityLabel={label}` for `navigation`, `region` and `form` so the group has a name for TalkBack and VoiceOver. Do not set `accessible={true}` on the container; it would collapse every child into one element. There is no jump-to-landmark on native — the value here is web parity and a consistent structure for the same screen code.",
       "Related": "Stack, Heading, Breadcrumb, SkipLink (planned)."
     },
     "extensions": [],
@@ -17860,37 +18090,68 @@
       "apg": "meter",
       "anatomy": [
         "container",
+        "header",
         "label",
         "valueText",
         "track",
         "fill"
       ],
+      "composition": {
+        "label": {
+          "component": "Text",
+          "props": {
+            "element": "span",
+            "size": "sm",
+            "weight": "medium",
+            "tone": "default"
+          },
+          "forwards": {
+            "labelSize": "fontSize",
+            "labelWeight": "fontWeight",
+            "fontFamily": "fontFamily",
+            "lineHeight": "lineHeight"
+          }
+        },
+        "valueText": {
+          "component": "Text",
+          "props": {
+            "element": "span",
+            "size": "sm",
+            "tone": "muted"
+          },
+          "forwards": {
+            "valueSize": "fontSize",
+            "fontFamily": "fontFamily",
+            "lineHeight": "lineHeight"
+          }
+        }
+      },
       "props": {
         "value": {
           "type": "number",
           "required": true,
-          "description": "The current measurement. Clamped to `min`…`max` for the bar; the accessible value is the clamped number too."
+          "description": "The current measurement. Clamped to `min`…`max` for the bar; the accessible value is the clamped number too. Lit starts the property at 0, with no development warning."
         },
         "min": {
           "type": "number",
           "default": 0,
-          "description": "Lower bound of the range."
+          "description": "Lower bound of the range. On Lit a missing or unparseable attribute falls back to 0."
         },
         "max": {
           "type": "number",
           "default": 100,
-          "description": "Upper bound of the range. Must be greater than `min`."
+          "description": "Upper bound of the range. Must be greater than `min`. On Lit a missing or unparseable attribute falls back to 100."
         },
         "label": {
           "type": "string",
           "required": true,
-          "description": "Visible label naming the measurement (\"Storage used\"). Also the accessible name.",
+          "description": "Visible label naming the measurement (\"Storage used\"). Also the accessible name. Lit starts the property as an empty string, with no development warning.",
           "a11y": "Associated with the meter as its accessible name (aria-labelledby / accessibilityLabel)."
         },
         "valueText": {
           "type": "string",
-          "description": "Human-readable value shown at the end of the label row and announced instead of the raw number (\"3.2 GB of 10 GB\", \"Strong\"). Omit to show and announce the percentage, rounded to a whole number (\"32%\").",
-          "a11y": "Rendered as aria-valuetext / accessibilityValue.text."
+          "description": "Human-readable value shown at the end of the label row and announced instead of the raw number (\"3.2 GB of 10 GB\", \"Strong\"). Omit to show and announce the percentage, rounded to a whole number (\"32%\"): `Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 0 })` of the fill fraction. Rounding is for the text only; the fill width uses the exact fraction. The announced string is the same on every platform.",
+          "a11y": "Always rendered, as aria-valuetext (web, Lit) and accessibilityValue.text (React Native): valueText when given, else the formatted percentage."
         },
         "tone": {
           "type": "enum",
@@ -17907,7 +18168,7 @@
         "hideValue": {
           "type": "boolean",
           "default": false,
-          "description": "Hides the visible value text (a boolean attribute can only turn things on, so the flag is the hiding one). The accessible value is always exposed."
+          "description": "Hides the visible value text (a boolean attribute can only turn things on, so the flag is the hiding one). The accessible value is always exposed. Lit attribute `hide-value`, not reflected."
         }
       },
       "styles": {
@@ -17929,53 +18190,68 @@
         },
         "radius": {
           "token": "radius.full",
+          "part": "track",
+          "description": "Rounds the track and the fill ends; the track clips the fill (overflow hidden).",
           "locked": false
         },
         "labelColor": {
           "token": "color.foreground",
           "part": "label",
+          "description": "Realised by the label Text's tone default; no hook of its own.",
           "locked": true
         },
         "labelSize": {
           "token": "font.size.sm",
           "part": "label",
+          "description": "Forwarded to the label Text's fontSize override.",
           "locked": false
         },
         "labelWeight": {
           "token": "font.weight.medium",
           "part": "label",
+          "description": "Forwarded to the label Text's fontWeight override.",
           "locked": false
         },
         "valueColor": {
           "token": "color.foreground.muted",
+          "part": "valueText",
+          "description": "Realised by the value Text's tone muted; no hook of its own.",
           "locked": true
         },
         "valueSize": {
           "token": "font.size.sm",
+          "part": "valueText",
+          "description": "Forwarded to the value Text's fontSize override. The value text weight is Text's regular and is not a binding.",
           "locked": false
         },
         "fontFamily": {
           "token": "font.family.body",
+          "part": "header",
+          "description": "Forwarded to both Texts' fontFamily overrides; never styles them directly.",
           "locked": false
         },
         "lineHeight": {
           "token": "font.lineHeight.normal",
+          "part": "header",
+          "description": "Forwarded to both Texts' lineHeight overrides; never styles them directly.",
           "locked": false
         },
         "partGap": {
           "token": "space.1",
-          "description": "Vertical gap between the label row and the track.",
+          "part": "container",
+          "description": "Vertical gap between the label row (header) and the track.",
           "locked": false
         },
         "labelGap": {
           "token": "space.2",
-          "part": "label",
-          "description": "Horizontal gap between the label and the value text in the label row.",
+          "part": "header",
+          "description": "Horizontal gap between the label and the value text in the header row.",
           "locked": false
         },
         "transition": {
           "token": "motion.duration.base",
-          "description": "Fill width change, with motion.easing.standard; instant under reduced motion.",
+          "part": "fill",
+          "description": "Fill inline-size change, with motion.easing.standard; instant under reduced motion.",
           "locked": false
         }
       },
@@ -18022,7 +18298,7 @@
             "aria-valuetext",
             "aria-labelledby"
           ],
-          "notes": "A <div role=\"meter\"> per the APG rather than <meter>: the native element is inconsistently announced, hard to style across browsers, and cannot take our tone colors reliably. The label is a real element referenced by aria-labelledby; the track and fill are plain divs."
+          "notes": "A <div role=\"meter\"> per the APG rather than <meter>: the native element is inconsistently announced, hard to style across browsers, and cannot take our tone colors reliably. The label is a real element referenced by aria-labelledby; the track and fill are plain divs. role=meter and every aria-value* attribute sit on the track, while data-ds sits on the root wrapper: they are different elements. aria-valuetext is always set (valueText, else the formatted percentage)."
         },
         "lit": {
           "tag": "ds-meter",
@@ -18032,7 +18308,7 @@
             "min",
             "max"
           ],
-          "notes": "The meter role is set on the inner element in the shadow root, labelled by the shadow label element. Numeric attributes reflect as strings; parse them. No events."
+          "notes": "The meter role and aria-value* attributes are plain attributes on the track element in the shadow root; data-ds is on the root wrapper, a different element. aria-valuetext is always set. aria-labelledby points at the composed ds-text host of the label inside the same shadow root, which is a valid target. Numeric attributes reflect as strings; parse them, falling back to 0/100 when missing or unparseable. `hideValue` is the attribute `hide-value`, not reflected. No events."
         },
         "rn": {
           "element": "View",
@@ -18041,7 +18317,7 @@
             "accessibilityLabel",
             "accessibilityValue"
           ],
-          "notes": "RN 0.73+ has role=\"meter\" (react-native-web renders role=meter; iOS/Android map it to the nearest trait or a plain value). The container is `accessible` so label and value announce as one element, with accessibilityValue={{ min, max, now, text }} where text is valueText when given and omitted otherwise (the platform then reads the number). The fill animates in measured pixels from onLayout — a percentage width cannot be interpolated — and snaps on first layout and on resize."
+          "notes": "RN 0.73+ has role=\"meter\" (react-native-web renders role=meter; iOS/Android map it to the nearest trait or a plain value). The container is `accessible` so label and value announce as one element, with accessibilityValue={{ min, max, now, text }} where text is always set: valueText when given, else the same formatted percentage web and Lit announce. The fill animates in measured pixels from onLayout — a percentage width cannot be interpolated — and snaps with no animation before the width is known, on first layout and on resize. RN tests check the name through accessibilityLabel and the visible text; accessibilityValue is not asserted by the scenarios."
         },
         "swiftui": {
           "element": "VStack",
@@ -18253,10 +18529,10 @@
       "Overview": "A meter shows how much of something there is against a known scale. Its shape is a bar because people read fullness at a glance, but its meaning is the number, which is why the label and value are always exposed to assistive technology and, by default, shown.",
       "When to use": "Use a Meter for a measurement with a fixed range: storage or quota used, battery, password strength, a score out of ten, a budget consumed. Let the consumer decide the tone from thresholds it understands (\"over 90% is `danger`\"); the meter just paints. Provide `valueText` whenever the raw percentage is not what a person would say.",
       "When not to use": "Do not use a Meter for the progress of a task — uploads, loading, multi-step flows — because progress moves toward completion and has different semantics; use ProgressBar (planned). Do not use it for a value without a meaningful range, or as a decorative bar chart; use a chart component. Do not use tone to encode a category (blue for A, green for B): tones mean status.",
-      "Behavior": "The fill width is `(value − min) / (max − min)` of the track, clamped to 0–100%; a non-finite `value` is treated as `min`. Changes to `value` animate the fill width over `transition`, instantly under reduced motion. Nothing is interactive; the meter has no focus, no events, and no hover. If `max ≤ min` the component renders an empty track, exposes `valuenow = min` with the given bounds, and warns in development.",
+      "Behavior": "The fill width is `(value − min) / (max − min)` of the track, clamped to 0–100%; a non-finite `value` is treated as `min`. Changes to `value` animate the fill width over `transition`, instantly under reduced motion. Nothing is interactive; the meter has no focus, no events, and no hover. If `max ≤ min` the component renders an empty track, exposes `valuenow = min` with the given bounds, shows and announces \"0%\" (unless `valueText` is given), and warns in development.",
       "Content guidelines": "Labels name the measurement as a noun phrase (\"Storage used\", \"Password strength\"). Value text is what a person would say aloud: \"3.2 GB of 10 GB\", \"Strong\", \"7 of 10\" — not \"32%\" unless percent is how people think about it. Never put instructions in the meter; if the user must act on the value, put an Alert or helper Text beside it.",
-      "Accessibility": "The meter exposes role `meter` with the current, minimum and maximum values, and a text alternative when `valueText` is set (WCAG 1.3.1, 4.1.2; APG meter). Its accessible name is the visible label (2.5.3). The fill meets 3:1 against both the track and the page background, so the filled portion is legible as a graphic (1.4.11); the build checks all four tones in both modes. The empty track is deliberately low-contrast: WCAG 1.4.11 exempts a boundary that is not needed to identify the component, and here the label and value text identify it — an empty meter reads as \"0%\" from its text, not from a faint bar. The tone is never the only signal — the value text is the primary information, and consumers that change tone at a threshold should say why in the value text (\"9.5 GB of 10 GB\"). Width animation respects reduced motion (2.3.3).",
-      "Platform notes": "### Web\nRender a wrapper containing a label row (a `Text element=\"span\"` with `id={labelId}` and, unless `hideValue`, a `<span>` with the value text in `valueColor`) and `<div role=\"meter\" aria-labelledby={labelId} aria-valuenow aria-valuemin aria-valuemax aria-valuetext>` as the track, containing the fill `<div>` with `width: N%`. Use `overflow: hidden` and `radius` on the track so the fill clips to the rounded ends. Transition `width` over `transition`, wrapped in `@media (prefers-reduced-motion: no-preference)`.\n\n### Lit\n`<ds-meter label=\"Storage used\" value=\"32\" value-text=\"3.2 GB of 10 GB\" tone=\"warning\">` renders the same structure in its shadow root; `aria-labelledby` works within one shadow root. Reflect `tone`, `value`, `min` and `max` as attributes (numbers as strings; convert with `Number`). Expose no events.\n\n### React Native\nRender an `accessible` `View` with `role=\"meter\"`, `accessibilityLabel={label}` and `accessibilityValue={{ min, max, now: clamped, text: valueText }}`, containing a label row of two `Text` elements and a track `View` with `overflow: 'hidden'` and the fill `View`. Measure the track with `onLayout` and animate the fill's pixel width with `Animated` over `transition` (`useNativeDriver: false` — layout properties, and react-native-web has no native driver), skipped when `useReducedMotion()` is true.",
+      "Accessibility": "The meter exposes role `meter` with the current, minimum and maximum values, and a text alternative — `valueText`, or the rounded percentage when it is omitted (WCAG 1.3.1, 4.1.2; APG meter). Its accessible name is the visible label (2.5.3). The fill meets 3:1 against both the track and the page background, so the filled portion is legible as a graphic (1.4.11); the build checks all four tones in both modes. The empty track is deliberately low-contrast: WCAG 1.4.11 exempts a boundary that is not needed to identify the component, and here the label and value text identify it — an empty meter reads as \"0%\" from its text, not from a faint bar. The tone is never the only signal — the value text is the primary information, and consumers that change tone at a threshold should say why in the value text (\"9.5 GB of 10 GB\"). Width animation respects reduced motion (2.3.3).",
+      "Platform notes": "### Web\nRender a root wrapper (`data-ds`, gap `partGap`) containing the header row (`data-part=\"header\"`, a flex row with gap `labelGap`) — a `Text element=\"span\" size=\"sm\" weight=\"medium\" tone=\"default\"` with `id={labelId}` and, unless `hideValue`, a `Text element=\"span\" size=\"sm\" tone=\"muted\"` with the value text, each receiving its forwarded overrides — and `<div role=\"meter\" aria-labelledby={labelId} aria-valuenow aria-valuemin aria-valuemax aria-valuetext>` as the track, containing the fill `<div>` with `inline-size: N%` from the exact fraction. Use `overflow: hidden` and `radius` on the track so the fill clips to the rounded ends. Transition `inline-size` over `transition`, wrapped in `@media (prefers-reduced-motion: no-preference)`.\n\n### Lit\n`<ds-meter label=\"Storage used\" value=\"32\" value-text=\"3.2 GB of 10 GB\" tone=\"warning\">` renders the same structure in its shadow root, with composed `ds-text` elements for the label and value; `aria-labelledby` works within one shadow root and may point at the label's `ds-text` host. Reflect `tone`, `value`, `min` and `max` as attributes (numbers as strings; convert with `Number`). Expose no events.\n\n### React Native\nRender an `accessible` `View` with `role=\"meter\"`, `accessibilityLabel={label}` and `accessibilityValue={{ min, max, now: clamped, text: valueText ?? formattedPercent }}`, containing a header row of two `Text` elements and a track `View` with `overflow: 'hidden'` and the fill `View`. Measure the track with `onLayout` and animate the fill's pixel width with `Animated` over `transition` (`useNativeDriver: false` — layout properties, and react-native-web has no native driver), skipped when `useReducedMotion()` is true.",
       "Related": "ProgressBar (planned), Alert, Text."
     },
     "extensions": [],
@@ -20188,6 +20464,44 @@
         "radioDescription",
         "errorMessage"
       ],
+      "composition": {
+        "description": {
+          "component": "Text",
+          "props": {
+            "size": "sm",
+            "tone": "muted"
+          },
+          "forwards": {
+            "helperSize": "fontSize",
+            "fontFamily": "fontFamily",
+            "lineHeight": "lineHeight"
+          }
+        },
+        "radioDescription": {
+          "component": "Text",
+          "props": {
+            "size": "sm",
+            "tone": "muted"
+          },
+          "forwards": {
+            "helperSize": "fontSize",
+            "fontFamily": "fontFamily",
+            "lineHeight": "lineHeight"
+          }
+        },
+        "errorMessage": {
+          "component": "Text",
+          "props": {
+            "size": "sm",
+            "tone": "danger"
+          },
+          "forwards": {
+            "helperSize": "fontSize",
+            "fontFamily": "fontFamily",
+            "lineHeight": "lineHeight"
+          }
+        }
+      },
       "props": {
         "label": {
           "type": "string",
@@ -20313,36 +20627,56 @@
       "styles": {
         "controlBackground": {
           "token": "color.control.background",
+          "part": "radio",
           "locked": true
         },
         "controlBorder": {
           "token": "color.control.border",
+          "part": "radio",
           "locked": true
         },
         "controlBorderWidth": {
           "token": "border.width.thin",
+          "part": "radio",
           "locked": false
         },
         "controlSelectedBackground": {
           "token": "color.control.selectedBackground",
+          "part": "radio",
           "description": "Selected border color; the fill stays controlBackground and the dot is drawn inside.",
           "locked": true
         },
         "indicator": {
           "token": "color.control.selectedBackground",
-          "description": "The centre dot, controlSize minus 2 × space.1 in diameter.",
+          "part": "radioIndicator",
+          "description": "The centre dot, controlSize minus 2 × space.1 in diameter. One rule on every platform: the dot carries a hook only where it is a real node. Web/Lit draw it as a pseudo-element of the appearance:none input (::before or ::after, either is fine), which has no data-part or part; on native it is a View inside the drawn control carrying testID=\"RadioGroup.radioIndicator\".",
           "locked": true
         },
         "controlBorderInvalid": {
           "token": "color.border.danger",
+          "part": "radio",
           "locked": false
         },
         "controlSize": {
           "token": "space.5",
+          "part": "radio",
           "locked": false
         },
         "controlRadius": {
           "token": "radius.full",
+          "part": "radio",
+          "locked": false
+        },
+        "optionPaddingBlock": {
+          "token": "space.1",
+          "part": "radio",
+          "description": "Block padding of each option row (the row wrapper holding radio, radioLabel and radioDescription; not an anatomy part). The row still meets minTarget.",
+          "locked": false
+        },
+        "optionTextGap": {
+          "token": "space.1",
+          "part": "radioDescription",
+          "description": "Vertical gap between an option's radioLabel and its radioDescription.",
           "locked": false
         },
         "optionGap": {
@@ -20377,27 +20711,34 @@
         },
         "labelColor": {
           "token": "color.foreground",
+          "part": "radioLabel",
           "locked": true
         },
         "labelSize": {
           "token": "font.size.md",
+          "part": "radioLabel",
           "locked": false
         },
         "labelWeight": {
           "token": "font.weight.regular",
+          "part": "radioLabel",
           "locked": false
         },
         "helperSize": {
           "token": "font.size.sm",
+          "description": "Size of description, radioDescription and errorMessage; reaches the composed Text only through its fontSize override.",
           "locked": false
         },
         "descriptionText": {
           "token": "color.foreground.muted",
           "part": "description",
+          "description": "Realised by the composed Text's tone muted (description and radioDescription); declares no hook of its own.",
           "locked": true
         },
         "errorText": {
           "token": "color.foreground.danger",
+          "part": "errorMessage",
+          "description": "Realised by the composed Text's tone danger; declares no hook of its own.",
           "locked": true
         },
         "fontFamily": {
@@ -20410,10 +20751,13 @@
         },
         "focusRing": {
           "token": "color.border.focus",
+          "part": "radio",
+          "description": "On focus-visible the radio's border becomes focusRingWidth in this color, replacing controlBorderWidth/controlBorder (web, Lit and native alike); the option row is not outlined.",
           "locked": true
         },
         "focusRingWidth": {
           "token": "border.width.focus",
+          "part": "radio",
           "locked": true
         },
         "minTarget": {
@@ -20423,6 +20767,7 @@
         },
         "disabledOpacity": {
           "token": "opacity.disabled",
+          "description": "Dims option rows only. A disabled option in an enabled group dims its own row; a disabled group dims every option row once (not stacked with the option's own opacity) and leaves legend, description and errorMessage at full opacity.",
           "locked": false
         },
         "transition": {
@@ -20520,7 +20865,7 @@
             "aria-invalid",
             "aria-required"
           ],
-          "notes": "A <fieldset role=\"radiogroup\"> with a <legend>, containing native <input type=\"radio\" name> elements styled with appearance: none. The role is set explicitly: a fieldset's implicit role is `group`, which is not what this component declares. The radioIndicator part is a ::after pseudo-element with no node of its own, so it carries no hook on any platform; shadow parts elsewhere are the anatomy names in kebab-case (`radio-label`, `radio-description`, `error-message`). Native radios sharing a name already implement roving tabindex and arrow-key movement; do not reimplement it. A disabled option uses the real `disabled` attribute so native arrow movement skips it (the one place the system prefers `disabled` over aria-disabled); a disabled group uses aria-disabled on the fieldset and every radio plus preventDefault guards, so it stays focusable but inert. Each radio has its own <label for>; option descriptions are linked per radio with aria-describedby. The group error is linked from the fieldset."
+          "notes": "A <fieldset role=\"radiogroup\"> with a <legend>, containing native <input type=\"radio\" name> elements styled with appearance: none. The role is set explicitly: a fieldset's implicit role is `group`, which is not what this component declares. The root fieldset carries data-part=\"group\"; every other part with a node carries its anatomy name verbatim (data-part=\"radioLabel\", \"radioDescription\", \"errorMessage\"). The radioIndicator is a ::before or ::after pseudo-element of the input (either is fine) with no node of its own, so it has no hook on web or Lit (native: see the rn note). aria-invalid and aria-required go on the fieldset only, never on the individual radios. copy.position is not rendered on web or Lit: native radios sharing a name already announce their position. Native radios sharing a name already implement roving tabindex and arrow-key movement; do not reimplement it. A disabled option uses the real `disabled` attribute so native arrow movement skips it (the one place the system prefers `disabled` over aria-disabled); a disabled group uses aria-disabled on the fieldset and every radio plus preventDefault guards, so it stays focusable but inert. Each radio has its own <label for>; option descriptions are linked per radio with aria-describedby. The group error is linked from the fieldset."
         },
         "lit": {
           "tag": "ds-radio-group",
@@ -20530,7 +20875,7 @@
             "disabled",
             "invalid"
           ],
-          "notes": "Form-associated (setFormValue(value)). The radios are rendered inside the shadow root from the `options` property, so they share one root and native grouping by name works; the native change is not composed, so re-dispatch a composed `change` CustomEvent with detail { value }. `options` is a property, not an attribute."
+          "notes": "Form-associated (setFormValue(value)). The radios are rendered inside the shadow root from the `options` property, so they share one root and native grouping by name works; the native change is not composed, so re-dispatch a composed `change` CustomEvent with detail { value }. `options` is a property, not an attribute. The shadow fieldset has role=\"radiogroup\" (plain attribute, as on web), data-part and part \"group\"; other parts use the anatomy names verbatim in camelCase for both `part` and `data-part` (radioLabel, radioDescription, errorMessage); radioIndicator is a pseudo-element with no part. Ids do not cross the shadow root: option ids are `${name || 'radio-group'}-${value}` inside it, and the description/error ids the fieldset references live there too. aria-invalid goes on the fieldset only. Host focus() is overridden to focus the checked radio, else the first enabled one (delegatesFocus alone would pick the first in tree order). While the group is disabled, click, arrow keys and Space are preventDefault-ed on the fieldset, since native radios move and select on arrows regardless of aria-disabled. The host carries data-ds-field; group disabled from a Fieldset arrives as the `disabled` property ds-fieldset sets, or through formDisabledCallback from a native fieldset/form."
         },
         "rn": {
           "element": "View",
@@ -20539,7 +20884,7 @@
             "accessibilityLabel",
             "accessibilityHint"
           ],
-          "notes": "The group is a View with accessibilityRole=\"radiogroup\"; each option is a Pressable with accessibilityRole=\"radio\" and accessibilityState={{ checked, disabled }}. There is no roving tabindex or arrow movement on native — every radio is a stop for the screen reader and for hardware-keyboard focus. That is the platform convention, not a defect. Validation precedence is Input's (error → required → invalid with copy.invalid). Individually disabled options use accessibilityState.disabled and a press guard, never the Pressable `disabled` prop, so they stay reachable."
+          "notes": "The group is a View with accessibilityRole=\"radiogroup\"; each option is a Pressable with accessibilityRole=\"radio\" and accessibilityState={{ checked, disabled }}. There is no roving tabindex or arrow movement on native — every radio is a stop for the screen reader and for hardware-keyboard focus. That is the platform convention, not a defect. Validation precedence is Input's (error → required → invalid with copy.invalid). Individually disabled options use accessibilityState.disabled and a press guard, never the Pressable `disabled` prop, so they stay reachable. Hooks: the root View is the group part and carries testID=\"RadioGroup\" (there is no separate RadioGroup.group); the drawn dot is a real View carrying testID=\"RadioGroup.radioIndicator\"; other parts use RadioGroup.<part>. The group accessibilityLabel is the visible legend including copy.requiredIndicator, so required is announced, prefixed by a Fieldset legend from FieldsetContext (\"<legend>, <label>\"), which also supplies group disabled. Each radio's accessibilityLabel is `${label}, ${description}` when it has a description, else the label, and its accessibilityValue={{ text }} is copy.position (\"1 of 3\"). The focus ring replaces the drawn control's border, not the row. Native limits: no arrow keys or roving tabindex (each radio is a screen-reader and keyboard stop, the accessible alternative), and no invalid accessibility state (the error is announced through the live region / announcement as in Input). Behavior tests on rn check that onChange does not fire, the copy text, and the radios' unchecked state, not a disabled or invalid state attribute."
         },
         "swiftui": {
           "element": "VStack",
@@ -20552,7 +20897,7 @@
             ".onMoveCommand",
             "@FocusState"
           ],
-          "notes": "A container `.accessibilityElement(children: .contain)` named by the legend, holding one `Button` per option that draws the radio circle from the tokens and carries `.isSelected` for the checked option (VoiceOver: 'Email, selected, button, 1 of 3' — the count is announced from `.accessibilityValue(copy.position)`). Arrow keys on iPad move the selection through `@FocusState` per the keyboard table (`.onMoveCommand`); the group is one focus section. `orientation` picks `VStack`/`HStack`. Registers with the Form environment as one field."
+          "notes": "A container `.accessibilityElement(children: .contain)` named by the legend, holding one `Button` per option that draws the radio circle from the tokens and carries `.isSelected` for the checked option (VoiceOver: 'Email, selected, button, 1 of 3' — the count is announced from `.accessibilityValue(copy.position)`). Arrow keys on iPad move the selection through `@FocusState` per the keyboard table (`.onMoveCommand`); the group is one focus section. `orientation` picks `VStack`/`HStack`. Registers with the Form environment as one field; group disabled and the legend prefix come from FieldsetContext."
         }
       },
       "behavior": [
@@ -20610,7 +20955,7 @@
         },
         {
           "name": "disabled-group-is-inert",
-          "description": "A fully disabled group stays visible and focusable but selects nothing.",
+          "description": "A fully disabled group stays visible and focusable but selects nothing. On rn the test checks that onChange does not fire and the radio stays unchecked.",
           "given": {
             "disabled": true
           },
@@ -20626,7 +20971,8 @@
               "state": "disabled",
               "is": true,
               "platforms": [
-                "web"
+                "web",
+                "lit"
               ]
             }
           ]
@@ -20645,7 +20991,7 @@
         },
         {
           "name": "invalid-renders-the-invalid-copy",
-          "description": "Validation precedence is error, then required, then invalid; with only invalid set the group renders copy.invalid and is marked invalid.",
+          "description": "The displayed error is error, then the Form's message, then while invalid copy.required (required and nothing selected) else copy.invalid; with only invalid set the group renders copy.invalid and is marked invalid. On rn the test checks the copy text only.",
           "given": {
             "invalid": true
           },
@@ -20810,10 +21156,10 @@
       "Overview": "A radio group asks one question and takes one answer. Its strength is that every option is visible at once, so the user can compare before choosing; its cost is vertical space, which is why it suits short sets.",
       "When to use": "Use a RadioGroup when the user must pick exactly one of two to about seven options and seeing them all helps the decision — plan tiers, shipping methods, a \"how did you hear about us\". Give options a `description` when the label alone does not tell them apart. Set `defaultValue` when there is a sensible default; leave the group unselected when the choice is consequential and you want a deliberate answer.",
       "When not to use": "Do not use a RadioGroup for more than about seven options or for options the user must scroll to see; use Select (planned). Do not use it for a yes/no; use Checkbox or Switch. Do not use it for an immediate mode switch in a toolbar; that is a SegmentedControl (planned). Do not let a user deselect: once a radio is chosen, one is always chosen.",
-      "Behavior": "Clicking or tapping an option row selects it and fires `onChange` with its value. From the keyboard, Tab moves into the group (to the selected radio, or the first when none is selected), arrow keys move the selection between enabled options and wrap around, and Space selects a focused radio that the arrows did not already select. Tab leaves the group. Individual disabled options are natively disabled and skipped by the arrows; they stay visible and readable but are not focus stops — a deliberate exception to the system's aria-disabled rule, because a radio that can be reached but not chosen is more confusing than one that is skipped. Uncontrolled unless `value` is provided. Disabled options are skipped by arrow movement and cannot be selected; a fully `disabled` group is focusable but inert. `required` appends `copy.requiredIndicator` to the legend and sets `aria-required` on the group; on a failed submit the Form renders `copy.required` as the group error. Validation precedence: `error` prop, then `required` (renders `copy.required`), then `invalid` (renders `copy.invalid`) — the same order as Input. Inside a Form, `validate: blur` runs when focus leaves the whole group, not when it moves between radios; the Form collects the selected value, or nothing (no key) when none is selected. Inside a Fieldset the field reads `FieldsetContext`: `disabled` from the group applies as if set on the field, and on native the legend prefixes the accessibility label (\"Shipping address, Street\").",
+      "Behavior": "Clicking or tapping an option row selects it and fires `onChange` with its value. From the keyboard, Tab moves into the group (to the selected radio, or the first when none is selected), arrow keys move the selection between enabled options and wrap around, and Space selects a focused radio that the arrows did not already select. Tab leaves the group. Individual disabled options are natively disabled and skipped by the arrows; they stay visible and readable but are not focus stops — a deliberate exception to the system's aria-disabled rule, because a radio that can be reached but not chosen is more confusing than one that is skipped. Uncontrolled unless `value` is provided. Disabled options are skipped by arrow movement and cannot be selected; a fully `disabled` group is focusable but inert. A disabled option in an enabled group dims its row with `disabledOpacity`; a disabled group dims the option rows once (no stacking) and keeps legend, description and error at full opacity. `required` appends `copy.requiredIndicator` to the legend — plain legend text that stays part of the group's accessible name on every platform — and sets `aria-required` on the group. The error shown is: the `error` prop; else the Form's message; else, only while `invalid` is true, `copy.required` when the group is required and nothing is selected, otherwise `copy.invalid`. `validate()` checks `required` then `invalid`, as Input does. A standalone required group with nothing selected therefore shows `copy.required` only once it is marked invalid (directly or by Form validation), never before. Inside a Form, `validate: blur` runs when focus leaves the whole group (web/Lit: focus-out of the fieldset), not when it moves between radios; `validate: change` validates on each change; native has no group blur and validates on change. The Form collects the selected value, or nothing (no key) when none is selected. Inside a Fieldset, `disabled` from the group applies as if set on the field — on web through the `disabled` prop Fieldset passes to the RadioGroup (React has no FieldsetContext), on Lit through the `disabled` property ds-fieldset sets on data-ds-field children (or formDisabledCallback), and on RN and SwiftUI through `FieldsetContext`, which also carries the legend that prefixes the accessibility label (\"Shipping address, Plan\"). `copy.position` (\"1 of 3\") is spoken on native only — SwiftUI's accessibilityValue and each RN radio's accessibilityValue text; web and Lit do not render it. The Default story renders the shipping-method example with nothing selected (no `defaultValue`), so a click on the first radio reports `standard`.",
       "Content guidelines": "The legend is a question or a noun phrase for what is being chosen (\"Shipping method\"). Option labels are parallel — all nouns or all short phrases — sentence case, and never end in a full stop. Put the recommended or most common option first, not the default; `defaultValue` marks the default. Option descriptions are one line: price, timing, consequence.",
       "Accessibility": "The group is exposed with role `radiogroup` (native `fieldset`/`legend` on web) and its legend is the group's accessible name (WCAG 1.3.1, 3.3.2); each radio's name is its own label. Selection is exposed as checked state (4.1.2) and shown by the dot, not by color alone (1.4.1). The group follows the APG radio pattern for keyboard: one tab stop, arrows to move and select (2.1.1). Description and error are linked from the group (3.3.1), with the error announced when it appears. Each option row reaches the 44px target (2.5.8). Selected and rest control borders meet 3:1 on the page background (1.4.11); the build checks the pairs.",
-      "Platform notes": "### Web\nRender `<fieldset role=\"radiogroup\">` with `<legend>` and, per option, `<input type=\"radio\" name value id>` plus `<label for>`; style the input with `appearance: none` and draw the ring and dot with the control tokens. Native radios with a shared `name` provide roving tabindex and arrow movement, so do not add `tabindex` or key handlers. Link the group description and error to the `<fieldset>` with `aria-describedby`, and per-option descriptions to their radio. Per-option `disabled` is the native attribute; group `disabled` is `aria-disabled` on the fieldset and radios with `preventDefault()` guards. Option ids are `${groupId}-${value}`. A `<legend>` does not take part in the fieldset's flex gap, so `partGap` below it is a margin.\n\n### Lit\n`<ds-radio-group>` takes `options` as a property (`.options=${[...]}`) and renders the fieldset and radios inside its shadow root, where the shared `name` groups them natively. It is form-associated: `setFormValue(value)` on change, and `checkValidity()` / `reportValidity()` implement `required`. Re-dispatch a composed `change` CustomEvent with `detail: { value }`. Reflect `orientation`, `required`, `disabled` and `invalid`.\n\n### React Native\nRender a `View` with `accessibilityRole=\"radiogroup\"`, `accessibilityLabel={label}` and `accessibilityHint={description}` — not `accessible`, or the radios would collapse into it; on iOS this means the legend reaches VoiceOver as the preceding `Text`, not as a group name (platform limit) — a `Text` legend, and one `Pressable` per option with `accessibilityRole=\"radio\"`, `accessibilityLabel` (label plus description), and `accessibilityState={{ checked: value === option.value, disabled }}`. Arrow-key movement does not exist on native; every radio is its own focus stop, and there is no group-level blur, so `validate: blur` runs on change. On a failed submit the Form focuses the first enabled radio. The group error is announced as in Input.",
+      "Platform notes": "### Web\nRender `<fieldset role=\"radiogroup\">` with `<legend>` and, per option, `<input type=\"radio\" name value id>` plus `<label for>`; style the input with `appearance: none` and draw the ring and dot with the control tokens. Native radios with a shared `name` provide roving tabindex and arrow movement, so do not add `tabindex` or key handlers. Link the group description and error to the `<fieldset>` with `aria-describedby`, and per-option descriptions to their radio. Per-option `disabled` is the native attribute; group `disabled` is `aria-disabled` on the fieldset and radios with `preventDefault()` guards. Option ids are `${groupId}-${value}`. A `<legend>` does not take part in the fieldset's flex gap, so `partGap` below it is a margin.\n\n### Lit\n`<ds-radio-group>` takes `options` as a property (`.options=${[...]}`) and renders the fieldset and radios inside its shadow root, where the shared `name` groups them natively. It is form-associated: `setFormValue(value)` on change, and `checkValidity()` / `reportValidity()` implement `required`. Re-dispatch a composed `change` CustomEvent with `detail: { value }`. Reflect `orientation`, `required`, `disabled` and `invalid`. The shadow fieldset sets `role=\"radiogroup\"` as on web; option ids are `${name || 'radio-group'}-${value}` within the shadow root; `focus()` targets the checked radio, else the first enabled one.\n\n### React Native\nRender a `View` with `accessibilityRole=\"radiogroup\"`, `accessibilityLabel` (the legend with `copy.requiredIndicator` when required) and `accessibilityHint={description}` — not `accessible`, or the radios would collapse into it; on iOS this means the legend reaches VoiceOver as the preceding `Text`, not as a group name (platform limit) — a `Text` legend, and one `Pressable` per option with `accessibilityRole=\"radio\"`, `accessibilityLabel` (`${label}, ${description}`, or the label alone), `accessibilityValue={{ text: copy.position }}`, and `accessibilityState={{ checked: value === option.value, disabled }}`. Arrow-key movement does not exist on native; every radio is its own focus stop, and there is no group-level blur, so `validate: blur` runs on change. On a failed submit the Form focuses the first enabled radio. The group error is announced as in Input.",
       "Related": "Checkbox, Switch, Form, Select (planned)."
     },
     "extensions": [],
@@ -23305,7 +23651,7 @@
             "aria-modal",
             "inert"
           ],
-          "notes": "Non-modal (default, APG disclosure): the trigger Button gets aria-expanded and aria-controls={panelId}; the panel is the composed Landmark at the `role` the prop names — an <aside aria-labelledby>, or a <nav> for `navigation` — rendered through a portal, so Tab from the trigger does not walk into it by document order; the panel's own Shift+Tab-from-first returns to the trigger and Tab-from-last continues past it, the same seam Popover has, with the `hidden` attribute when closed (after the exit transition), position: fixed at the edge, full height, on layer.sheet, with an optional scrim <div aria-hidden> that closes on click. Focus stays on the trigger on open; Escape anywhere inside closes and refocuses the trigger; a focusout to outside the panel and trigger does NOT close it (unlike Popover — a navigation panel should survive a stray click) but a pointerdown on the scrim or outside does when dismissible. Modal: the same content in the native <dialog> via showModal() as Dialog and BottomSheet, inert page and scroll lock through FocusScope's modal contract, focus moved to the first control. A Link followed inside the panel closes it with reason navigation (a client-side router fires onOpenChange; a full navigation makes it moot). Persistent mode above the chosen breakpoint (matchMedia on the token): render the same Landmark at the `role` the prop names in the page grid beside the content, no dialog, no scrim, no trap, trigger hidden with display none. The switch must not lose the panel's content state (the same children render in both). Safe-area padding via env(safe-area-inset-left/right). `container?: HTMLElement` (default document.body) is the portal target — a platform prop, not a schema prop. `trigger` is exactly one element, typed as such, because it is cloned to carry aria-expanded, aria-controls and the toggle."
+          "notes": "Non-modal (default, APG disclosure): the trigger Button gets aria-expanded and aria-controls={panelId}; the panel is the composed Landmark at the `role` the prop names — an <aside aria-labelledby>, or a <nav> for `navigation` — rendered through a portal, so Tab from the trigger does not walk into it by document order; the panel's own Shift+Tab-from-first returns to the trigger and Tab-from-last continues past it, the same seam Popover has, with the `hidden` attribute when closed (after the exit transition), position: fixed at the edge, full height, on layer.sheet, with an optional scrim <div aria-hidden> that closes on click. Focus stays on the trigger on open; Escape anywhere inside closes and refocuses the trigger; a focusout to outside the panel and trigger does NOT close it (unlike Popover — a navigation panel should survive a stray click) but a pointerdown on the scrim or outside does when dismissible. Modal: the same content in the native <dialog> via showModal() as Dialog and BottomSheet, inert page and scroll lock through FocusScope's modal contract, focus moved to the first control. A Link followed inside the panel closes it with reason navigation (a client-side router fires onOpenChange; a full navigation makes it moot). Persistent mode above the chosen breakpoint (matchMedia on the token): render the same Landmark at the `role` the prop names in the page grid beside the content, no dialog, no scrim, no trap, trigger hidden with display none. The switch must not lose the panel's content state (the same children render in both). Safe-area padding via env(safe-area-inset-left/right). Landmark takes no className or style, so the panel's classes, inline style and ref go on SidePanel's own positioned element, which composes Landmark inside it passing only `role`, `as` and `aria-labelledby`. `container?: HTMLElement` (default document.body) is the portal target — a platform prop, not a schema prop. `trigger` is exactly one element, typed as such, because it is cloned to carry aria-expanded, aria-controls and the toggle."
         },
         "lit": {
           "tag": "ds-side-panel",
@@ -26559,6 +26905,20 @@
         "label",
         "description"
       ],
+      "composition": {
+        "description": {
+          "component": "Text",
+          "props": {
+            "size": "sm",
+            "tone": "muted"
+          },
+          "forwards": {
+            "helperSize": "fontSize",
+            "fontFamily": "fontFamily",
+            "lineHeight": "lineHeight"
+          }
+        }
+      },
       "props": {
         "label": {
           "type": "string",
@@ -26572,7 +26932,7 @@
         },
         "checked": {
           "type": "boolean",
-          "description": "Controlled state. Omit for an uncontrolled control.",
+          "description": "Controlled state (web, RN, SwiftUI): a controlled switch shows a new state only once this prop changes. Omit for an uncontrolled control. Lit has no controlled mode: the `checked` property is the live state like a native input (it starts from the `checked` attribute, else `defaultChecked`, and every toggle updates it).",
           "controls": {
             "event": "onChange",
             "default": "defaultChecked",
@@ -26587,7 +26947,7 @@
         "disabled": {
           "type": "boolean",
           "default": false,
-          "description": "Cannot be toggled. Stays visible, readable and focusable."
+          "description": "Cannot be toggled. Stays visible, readable and focusable on web, Lit and SwiftUI; a disabled native React Native Switch is not focusable (platform limit, see platforms.rn.notes). Still registered with the Form, where the Form's disabled-field rule applies, as for Checkbox."
         },
         "description": {
           "type": "string",
@@ -26606,7 +26966,7 @@
       },
       "events": {
         "onChange": {
-          "description": "Fired when the state changes, with the new boolean. The change is already in effect; there is nothing to submit.",
+          "description": "Fired when the user changes the state, with the new boolean. The change is already in effect; there is nothing to submit. A controlled prop change fires nothing, a press that asks for the current value (next equals checked) fires nothing, and nothing fires on mount.",
           "platforms": {
             "web": "onChange",
             "lit": "change",
@@ -26642,43 +27002,49 @@
         "thumb": {
           "token": "color.control.selectedForeground",
           "part": "thumb",
-          "description": "Thumb color in both states.",
+          "description": "Thumb color in both states. Web and Lit draw the thumb the same way: a `::before` pseudo-element of the native input, so the thumb part has no element and no data-part/part hook on either platform; its bindings are the input's own rules. RN: no view (the native Switch draws it), so there is no `Switch.thumb` testID. SwiftUI: a shape in the ToggleStyle.",
           "locked": true
         },
         "trackWidth": {
           "token": "space.10",
           "part": "track",
+          "description": "Overridable on web, Lit and SwiftUI. RN: drawn by the native Switch, so it is not in the RN overridable binding type.",
           "locked": false
         },
         "trackHeight": {
           "token": "space.6",
           "part": "track",
+          "description": "As trackWidth: not overridable on RN.",
           "locked": false
         },
         "thumbSize": {
           "token": "space.5",
           "part": "thumb",
-          "description": "Thumb diameter; it travels trackWidth − thumbSize − 2 × thumbInset.",
+          "description": "Thumb diameter; it travels trackWidth − thumbSize − 2 × thumbInset. Not overridable on RN.",
           "locked": false
         },
         "thumbInset": {
           "token": "space.1",
           "part": "thumb",
-          "description": "Gap between the thumb and the track edge; split evenly on the short axis.",
+          "description": "Gap between the thumb and the track edge; split evenly on the short axis. Not overridable on RN.",
           "locked": false
         },
         "radius": {
           "token": "radius.full",
+          "part": "track",
+          "description": "Applies to both the track and the thumb. Not overridable on RN.",
           "locked": false
         },
         "gap": {
           "token": "space.3",
-          "description": "Gap between track and label.",
+          "part": "label",
+          "description": "Gap between track and label (the row's flex gap). The gap is part of the hit area: a click or press on it toggles.",
           "locked": false
         },
         "partGap": {
           "token": "space.1",
-          "description": "Vertical gap between label and description.",
+          "part": "description",
+          "description": "Vertical gap between label and description (the text column).",
           "locked": false
         },
         "labelColor": {
@@ -26689,6 +27055,7 @@
         "labelSize": {
           "token": "font.size.md",
           "part": "label",
+          "description": "Also sets the track alignment: the track sits at the top of the row, centred on the label's first line (labelSize × lineHeight), as Checkbox.",
           "locked": false
         },
         "labelWeight": {
@@ -26698,42 +27065,56 @@
         },
         "helperSize": {
           "token": "font.size.sm",
+          "part": "description",
+          "description": "Description text size. Reaches the composed Text only through its `fontSize` override, with fontFamily and lineHeight forwarded the same way; no --ds-switch-* hook.",
           "locked": false
         },
         "descriptionText": {
           "token": "color.foreground.muted",
           "part": "description",
+          "description": "Realised by the composed Text's `muted` tone; no --ds-switch-* hook.",
           "locked": true
         },
         "fontFamily": {
           "token": "font.family.body",
+          "part": "label",
+          "description": "The label's own rule, and forwarded to the description Text.",
           "locked": false
         },
         "lineHeight": {
           "token": "font.lineHeight.normal",
+          "part": "label",
+          "description": "As fontFamily: the label's own rule, forwarded to the description Text.",
           "locked": false
         },
         "focusRing": {
           "token": "color.border.focus",
+          "part": "track",
+          "description": "Web/Lit/SwiftUI only. RN: the native Switch has no focus events, so the OS focus indicator is used and this binding is not applied.",
           "locked": true
         },
         "focusRingWidth": {
           "token": "border.width.focus",
-          "description": "Drawn around the track, offset by focusRingWidth like every other control.",
+          "part": "track",
+          "description": "Drawn around the track, offset by focusRingWidth like every other control. Not applied on RN (OS indicator).",
           "locked": true
         },
         "minTarget": {
           "token": "size.target.comfortable",
-          "description": "Minimum row height; the whole row toggles.",
+          "part": "label",
+          "description": "Minimum block size of the full-width row (web/Lit: min-block-size; RN: the row's minHeight). The row has no vertical padding. The whole row toggles, including the gap between label and track.",
           "locked": true
         },
         "disabledOpacity": {
           "token": "opacity.disabled",
+          "part": "track",
+          "description": "Dims the track (with its thumb), the label and the description.",
           "locked": false
         },
         "transition": {
           "token": "motion.duration.fast",
-          "description": "Thumb travel and track color, with motion.easing.standard; travel is instant under reduced motion.",
+          "part": "thumb",
+          "description": "Thumb travel and track color, with motion.easing.standard. Under reduced motion both are removed: the thumb jumps and the color changes instantly. Not applied on RN (OS animation).",
           "locked": false
         }
       },
@@ -26804,15 +27185,16 @@
             "aria-describedby",
             "aria-checked"
           ],
-          "notes": "A native <input type=\"checkbox\" role=\"switch\"> styled with appearance: none. Keeps label association, Space toggling and form participation for free; role=switch makes screen readers say \"on/off\" instead of \"checked\". The track and thumb are drawn in CSS on the input itself."
+          "notes": "A native <input type=\"checkbox\" role=\"switch\"> styled with appearance: none. Keeps label association, Space toggling and form participation for free; role=switch makes screen readers say \"on/off\" instead of \"checked\". The track and thumb are drawn in CSS on the input itself: the input carries data-part=\"track\" and the thumb is its ::before pseudo-element, with no hook. The input stays uncontrolled for its native checked state (no React-held `checked` on the element, so a prevented click on a disabled switch cannot leave the DOM out of step); the component tracks the state and mirrors it as aria-checked. The row is a full-width flex row with min-block-size minTarget and no padding; a click whose target is the row itself (the gap) or the description is forwarded to the input. The track sits at the top of the row, centred on the label's first line (calc from labelSize × lineHeight). Group disabled: Fieldset passes `disabled` to its direct child fields; there is no React FieldsetContext. Registered with Form like Checkbox, including when disabled."
         },
         "lit": {
           "tag": "ds-switch",
           "reflect": [
+            "name",
             "disabled",
             "label-position"
           ],
-          "notes": "Form-associated like ds-checkbox: the native form value is \"on\" or null (native semantics) while ds-form collects `currentValue` as a boolean. Shadow root with delegatesFocus; the native change is not composed, so re-dispatch a composed `change` CustomEvent with detail { checked }. `checked` is not reflected (attribute = initial state)."
+          "notes": "Form-associated like ds-checkbox: the native form value is \"on\" or null (native semantics) while ds-form collects `currentValue` as a boolean. `name` is reflected so a name set as a property is still submitted by a native <form>. Shadow root with delegatesFocus; the native change is not composed, so re-dispatch a composed `change` CustomEvent with detail { checked }. `checked` behaves like a native input: the attribute is the initial state only, the property is the live state (starts from the attribute, else `defaultChecked`, and follows every toggle), and it is not reflected; there is no controlled mode on Lit. The host sets data-ds-field=\"change\" (ds-form discovers fields by attribute and validates this one on change). DsFormField: `required` is always false, `validationMessage` is empty, checkValidity()/reportValidity() always return true, and there is no `error` property. Group disabled: ds-fieldset sets the `disabled` property on its direct data-ds-field children, and the switch also honours formDisabledCallback from a native fieldset or form. The thumb is the input's ::before pseudo-element, as on web, with no part; shadow parts otherwise use the anatomy names verbatim for `part` and `data-part` (track on the input, label, description)."
         },
         "rn": {
           "element": "Switch",
@@ -26825,7 +27207,7 @@
             "thumbColor",
             "ios_backgroundColor"
           ],
-          "notes": "Uses the native Switch for platform-native feel; trackOn/trackOff map to trackColor {true, false} and thumb to thumbColor; ios_backgroundColor = trackOff. Platform limits: track and thumb sizes, radius, thumb travel and the focus ring are the OS values (trackWidth, trackHeight, thumbSize, thumbInset, radius, focusRing*, transition are not applied); a disabled native Switch is not focusable. The label row is a Pressable wrapping the Switch so the whole row toggles. The native Switch draws its own track and thumb, so trackWidth/trackHeight/thumbSize/thumbInset/radius are not overridable on native; the gap and text bindings are."
+          "notes": "Uses the native Switch for platform-native feel; trackOn/trackOff map to trackColor {true, false} and thumb to thumbColor; ios_backgroundColor = trackOff. Platform limits: track and thumb sizes, radius, thumb travel and the focus ring are the OS values (trackWidth, trackHeight, thumbSize, thumbInset, radius, focusRing*, transition are not applied); a disabled native Switch is not focusable (the Switch receives `disabled`, the documented exception to the no-disabled-on-Pressable rule; accessibilityState.disabled still announces it, and the label and description stay readable). The label row is a Pressable wrapping the Switch so the whole row toggles; minTarget is the row's minHeight and the row has no padding and no frame around the track. The native Switch draws its own track and thumb, so trackWidth, trackHeight, thumbSize, thumbInset, radius and transition are omitted from the RN overridable binding union (they stay overridable on web, Lit and SwiftUI); the gap and text bindings are overridable. `Switch.track` is the testID of the native Switch; the thumb has no view and no testID. The focus ring is the OS focus indicator (focusRing/focusRingWidth not applied). Behavior scenarios that `click: track` fire valueChange on the switch role in RN tests; clicks on the label or description fire press. Group disabled and name: FieldsetContext carries `disabled` and the legend; the accessibilityLabel is prefixed '<legend>, <label>' (the ', ' separator is fixed punctuation, not copy)."
         },
         "swiftui": {
           "element": "Toggle",
@@ -26836,12 +27218,13 @@
             ".labelsHidden",
             "Animation"
           ],
-          "notes": "A `Toggle` with a package `ToggleStyle`: the track and thumb are drawn from the tokens (`trackOn`/`trackOff`/`thumb`) — not the system switch, which cannot take the theme — with the thumb travel animated over the `transition` binding unless reduced motion. VoiceOver reads it as a switch with on/off (`.accessibilityValue`), the label from the label view; `hideLabel` uses `.labelsHidden()`. `checkedLabel`/`uncheckedLabel` copy becomes the value text."
+          "notes": "A `Toggle` with a package `ToggleStyle`: the track and thumb are drawn from the tokens (`trackOn`/`trackOff`/`thumb`) — not the system switch, which cannot take the theme — with the thumb travel animated over the `transition` binding unless reduced motion. VoiceOver reads it as a switch with on/off (`.accessibilityValue`), the label from the label view; `hideLabel` uses `.labelsHidden()`. `checkedLabel`/`uncheckedLabel` copy becomes the value text. Group disabled and name: FieldsetContext carries `disabled` and the legend; the accessibility label is prefixed '<legend>, <label>' (fixed punctuation, not copy)."
         }
       },
       "behavior": [
         {
           "name": "click-on-track-toggles-on",
+          "description": "RN has no click on the native Switch: RN tests fire valueChange on the switch role (and press on the label or description).",
           "when": {
             "click": "track"
           },
@@ -27161,10 +27544,10 @@
       "Overview": "A switch is a light switch: flip it and the thing happens. That immediacy is what separates it from a Checkbox, which records a choice to be submitted later. Every switch answers the question \"is this on?\" and the label names what \"this\" is.",
       "When to use": "Use a Switch for a binary setting that applies as soon as it changes and can be undone by flipping it back: notifications, dark mode, Wi‑Fi, \"show archived\". Use it in settings lists and preference panels, with `labelPosition: start` so the labels line up and the switches sit at the row end.",
       "When not to use": "Do not use a Switch for a choice that is only applied on Save or Submit; use Checkbox, so the user is not misled into thinking the change is already live. If a form of switches must have a Save button, the switches are checkboxes. Do not use a Switch for two named options (\"Metric / Imperial\"); that is a RadioGroup or a SegmentedControl (planned). Do not use a Switch where turning it on triggers a flow (a confirmation dialog, a sign-in): use a Button, because a switch that jumps back to off when the flow is cancelled is confusing.",
-      "Behavior": "Clicking or tapping the row, or pressing Space on the control, flips the state, moves the thumb, and fires `onChange` with the new boolean. Enter is neither intercepted nor used to toggle. The row is full width: with `labelPosition: start` the label is at the start and the switch at the row's end; with `end` the switch comes first and the label follows it. The consumer applies the effect immediately; if it can fail asynchronously, the switch should be controlled and flipped back with an error message elsewhere — the switch itself has no error state by design. Uncontrolled unless `checked` is provided. `disabled` switches are visible, readable and focusable (`aria-disabled`), and do not toggle. Thumb travel is animated with `transition`, and is instant when the user prefers reduced motion. Inside a Fieldset the field reads `FieldsetContext`: `disabled` from the group applies as if set on the field, and on native the legend prefixes the accessibility label (\"Shipping address, Street\").",
+      "Behavior": "Clicking or tapping the row, or pressing Space on the control, flips the state, moves the thumb, and fires `onChange` with the new boolean. Enter is neither intercepted nor used to toggle. The row is full width: with `labelPosition: start` the label is at the start and the switch at the row's end; with `end` the switch comes first and the label follows it. The consumer applies the effect immediately; if it can fail asynchronously, the switch should be controlled and flipped back with an error message elsewhere — the switch itself has no error state by design. Uncontrolled unless `checked` is provided; a controlled switch shows the new state only once the prop changes. On Lit there is no controlled mode: the `checked` property is the live state, as on a native input. `onChange` fires only for user changes: not on mount, not for a controlled prop change, and not for a press that asks for the value it already has. `disabled` switches are visible, readable and focusable (`aria-disabled`), and do not toggle; a disabled native React Native Switch is the exception and cannot take focus. A disabled switch is still registered with the Form, whose disabled-field rule applies. `disabledOpacity` dims the track, label and description. Thumb travel and the track color change are animated with `transition`; under reduced motion both are instant. The track sits at the top of the row, centred on the label's first line, so a wrapping label or a description does not pull it down. Inside a Fieldset the group's `disabled` applies as if set on the field: on web Fieldset passes `disabled` to its direct child fields; on Lit ds-fieldset sets the `disabled` property on its direct `data-ds-field` children and the switch also honours `formDisabledCallback`; on React Native and SwiftUI `FieldsetContext` carries `disabled` and the legend, which prefixes the accessibility label as \"<legend>, <label>\" (\"Notifications, Email\") — the \", \" is fixed punctuation, not copy.",
       "Content guidelines": "The label names the thing, not the state (\"Email notifications\", not \"Turn on email notifications\" or \"Enabled\"): the state is announced by the control and shown by its position. Do not add \"On/Off\" text next to the track; it is redundant for sighted users and read twice by screen readers. Descriptions state the effect in one sentence (\"Sends a daily summary at 9:00\").",
       "Accessibility": "The switch has role `switch` and its state is exposed as `aria-checked` / `accessibilityState.checked`, so screen readers announce \"on\" or \"off\" (WCAG 4.1.2). The label is visible and associated (1.3.1, 3.3.2). State is not conveyed by color alone: the thumb position changes (1.4.1). The on track meets 3:1 against the page background and the thumb meets 3:1 against both track states (1.4.11); the build checks these as non-text pairs. Focus is visible around the track (2.4.7). Space toggles the switch (2.1.1); Enter is left alone. The row meets the 44px comfortable target (2.5.8). The thumb animation respects `prefers-reduced-motion` (2.3.3).",
-      "Platform notes": "### Web\nRender `<input type=\"checkbox\" role=\"switch\">` with `appearance: none`, sized `trackWidth × trackHeight`, and draw the thumb with a pseudo-element translated by `trackWidth − thumbSize − 2 × thumbInset` when checked. Set `aria-checked` explicitly to mirror the checked state (track it in component state when uncontrolled), since some screen readers do not derive it from a checkbox carrying `role=\"switch\"`. For disabled, `aria-disabled` plus `preventDefault()` on `click` and `change`. Mirror the thumb travel under `[dir=rtl]`. Label with `<label for>`; the `labelPosition` prop changes flex order only.\n\n### Lit\n`<ds-switch>` is form-associated so a `name` inside a native `<form>` or `<ds-form>` contributes `\"on\"` when checked. The inner input is in the shadow root with `delegatesFocus: true`; re-dispatch a composed `change` CustomEvent with `detail: { checked }`. Reflect `checked` (initial), `disabled` and `label-position`.\n\n### React Native\nUse the native `Switch` with `accessibilityRole=\"switch\"`, `accessibilityLabel`, `accessibilityHint={description}`, `accessibilityState={{ checked, disabled }}`, `trackColor={{ false: trackOff, true: trackOn }}`, `thumbColor={thumb}` and `ios_backgroundColor={trackOff}`. Wrap the row in a `Pressable` that toggles the value so the label is part of the target, with `accessible={false}` on the wrapper so the Switch is the single focusable element. The track and thumb dimensions come from the OS; the size tokens are documented but not applied here.",
+      "Platform notes": "### Web\nRender `<input type=\"checkbox\" role=\"switch\">` with `appearance: none`, sized `trackWidth × trackHeight`, and draw the thumb with a pseudo-element translated by `trackWidth − thumbSize − 2 × thumbInset` when checked. Set `aria-checked` explicitly to mirror the checked state, since some screen readers do not derive it from a checkbox carrying `role=\"switch\"`: the input stays uncontrolled for its native checked state, and the component holds the state (the `checked` prop when controlled) and mirrors it into `aria-checked`. For disabled, `aria-disabled` plus `preventDefault()` on `click` and `change`. Mirror the thumb travel under `[dir=rtl]`. Label with `<label for>`; the `labelPosition` prop changes flex order only.\n\n### Lit\n`<ds-switch>` is form-associated so a `name` inside a native `<form>` or `<ds-form>` contributes `\"on\"` when checked. The inner input is in the shadow root with `delegatesFocus: true`; re-dispatch a composed `change` CustomEvent with `detail: { checked }`. Reflect `name`, `disabled` and `label-position`; `checked` is not reflected (the attribute is the initial state, the property the live state). The host carries `data-ds-field=\"change\"`; the switch never validates.\n\n### React Native\nUse the native `Switch` with `accessibilityRole=\"switch\"`, `accessibilityLabel`, `accessibilityHint={description}`, `accessibilityState={{ checked, disabled }}`, `trackColor={{ false: trackOff, true: trackOn }}`, `thumbColor={thumb}` and `ios_backgroundColor={trackOff}`. Wrap the row in a `Pressable` that toggles the value so the label is part of the target, with `accessible={false}` on the wrapper so the Switch is the single focusable element. The track and thumb dimensions, radius, animation and focus indicator come from the OS; those bindings are documented but not applied or overridable here. A disabled native Switch is not focusable.",
       "Related": "Checkbox, RadioGroup, Form."
     },
     "extensions": [],

@@ -62,6 +62,31 @@ component:
   - label
   - description
   - errorMessage
+  composition:
+    indicator:
+      component: Icon
+      props:
+        size: xs
+      forwards:
+        indicator: color
+    description:
+      component: Text
+      props:
+        size: sm
+        tone: muted
+      forwards:
+        helperSize: fontSize
+        fontFamily: fontFamily
+        lineHeight: lineHeight
+    errorMessage:
+      component: Text
+      props:
+        size: sm
+        tone: danger
+      forwards:
+        helperSize: fontSize
+        fontFamily: fontFamily
+        lineHeight: lineHeight
   props:
     label:
       type: string
@@ -81,8 +106,10 @@ component:
     value:
       type: string
       default: 'on'
-      description: The value submitted when checked. Lets several checkboxes share
-        a `name` to form a multi-select.
+      description: What a native HTML <form> submits under `name` when checked (web
+        and Lit only). The enclosing Form (React, React Native, ds-form) ignores it
+        and collects the boolean `checked`. Checkboxes sharing a `name` are not a
+        multi-select under Form; give each its own name.
     checked:
       type: boolean
       description: Controlled checked state. Omit for an uncontrolled control.
@@ -161,23 +188,36 @@ component:
     indicator:
       token: color.control.selectedForeground
       part: indicator
-      description: 'The check mark (`Icon name="check"`) and the mixed dash (`Icon
-        name="dash"`) in this color, at `size: xs`, centered in the control. On web/Lit
-        the Icon is inside the control element; the indicator has no separate DOM
-        node to hook, so tests target the control.'
+      description: 'The check mark (`Icon name="check"`, when checked) and the mixed
+        dash (`Icon name="dash"`, when the mixed indicator shows) in this color, at
+        `size: xs`, centered in the control; nothing is rendered when unchecked. The
+        color reaches the Icon only through its `color` override (a token path); the
+        Checkbox hook does not style the Icon. The web/Lit control is a void <input>,
+        so the control and the indicator sit in a box wrapper span that stacks them
+        in one cell: the input keeps `data-part="control"`, and the indicator is an
+        aria-hidden span with `pointer-events: none` over the input holding the Icon,
+        carrying `data-part="indicator"` (web) / `part="indicator"` and `data-part="indicator"`
+        (Lit). On native the Icon sits inside the drawn control View.'
       locked: true
     indicatorStroke:
       token: border.width.focus
       part: indicator
-      description: Stroke thickness of the check mark and dash. Locked, as Icon's
+      description: 'Stroke thickness of the check mark and dash. Locked, as Icon''s
         own strokeWidth is and on the same token, so the two already agree and nothing
-        is forwarded into the composed Icon.
+        is forwarded into the composed Icon. It declares no --ds-checkbox-* hook on
+        any platform: Icon already applies it.'
       locked: true
     pressedOverlay:
       token: opacity.disabled
+      part: control
       state: pressed
-      description: While pressed, the box shows controlSelectedBackground at this
-        opacity.
+      description: 'While pressed (web/Lit `:active`), an unchecked, not-mixed, enabled
+        box shows controlSelectedBackground at this opacity over controlBackground;
+        the border is unchanged. A checked or mixed box (already filled) and a disabled
+        one show no overlay. Web/Lit: `color-mix(in srgb, <controlSelectedBackground>
+        calc(<pressedOverlay> * 100%), <controlBackground>)` as the control background.
+        Native: an absolutely filled overlay View inside the control, so the border
+        does not fade.'
       locked: false
     controlBorderInvalid:
       token: color.border.danger
@@ -193,56 +233,95 @@ component:
       locked: false
     gap:
       token: space.2
-      description: Horizontal gap between control and label.
+      part: label
+      description: 'Horizontal gap between control and label (the row''s flex gap).
+        The gap is part of the hit area: a press on it toggles.'
       locked: false
     partGap:
       token: space.1
-      description: Vertical gap between label, description, and error.
+      part: description
+      description: Vertical gap between label and description (the text column inside
+        the row), and between the row and the error message below it (the root column's
+        gap).
       locked: false
     labelColor:
       token: color.foreground
       part: label
+      description: 'Web/Lit: the native <label>''s own rule. Native: the label Text''s
+        `default` tone, no hook.'
       locked: true
     labelSize:
       token: font.size.md
       part: label
+      description: 'Web/Lit: the native <label>''s own rule. Native: forwarded to
+        the label Text as its `fontSize` override (Text `size: md`).'
       locked: false
     labelWeight:
       token: font.weight.regular
       part: label
+      description: 'Web/Lit: the native <label>''s own rule. Native: forwarded to
+        the label Text as its `fontWeight` override (Text `weight: regular`).'
       locked: false
     helperSize:
       token: font.size.sm
+      part: description
+      description: Description and error text size. Reaches the composed Texts only
+        through their `fontSize` override, with fontFamily and lineHeight forwarded
+        the same way; no --ds-checkbox-* hook.
       locked: false
     descriptionText:
       token: color.foreground.muted
       part: description
+      description: Realised by the composed Text's `muted` tone; no --ds-checkbox-*
+        hook.
       locked: true
     errorText:
       token: color.foreground.danger
+      part: errorMessage
+      description: Realised by the composed Text's `danger` tone; no --ds-checkbox-*
+        hook.
       locked: true
     fontFamily:
       token: font.family.body
+      part: label
+      description: The label's own rule on web/Lit (forwarded to the label Text on
+        native), and forwarded to the description and error Texts.
       locked: false
     lineHeight:
       token: font.lineHeight.normal
+      part: label
+      description: 'As fontFamily: the label''s own rule on web/Lit, forwarded to
+        every composed Text.'
       locked: false
     focusRing:
       token: color.border.focus
+      part: control
+      description: 'Web/Lit: an outline of focusRingWidth in this color around the
+        control on :focus-visible. Native (hardware keyboard focus): the control''s
+        border takes this color at focusRingWidth while focused; the box keeps its
+        size, so the glyph area shrinks by the width difference.'
       locked: true
     focusRingWidth:
       token: border.width.focus
+      part: control
       locked: true
     minTarget:
       token: size.target.comfortable
-      description: Minimum height of the control + label row; the whole row is the
-        hit area.
+      part: control
+      description: 'Minimum height of the control + label row; the whole row is the
+        hit area, including the gap. The row has no vertical padding: it is at least
+        this tall and centers the control and the text column on the cross axis. The
+        error message sits below the row, outside the hit area.'
       locked: true
     disabledOpacity:
       token: opacity.disabled
+      part: control
+      description: Dims the control (with its indicator) and the label. The description
+        and error stay at full opacity so they remain readable.
       locked: false
     transition:
       token: motion.duration.fast
+      part: control
       description: Fill and indicator transitions, with motion.easing.standard.
       locked: false
   copy:
@@ -309,7 +388,13 @@ component:
       notes: 'A native <input type="checkbox"> styled with appearance: none — never
         a visually hidden input under a fake box, so native form participation, click-on-label
         and Space all keep working. `indeterminate` is set as the DOM property (it
-        has no attribute) and mirrored as aria-checked="mixed".'
+        has no attribute) and mirrored as aria-checked="mixed". The root is a wrapper
+        div (data-ds), but the forwarded ref resolves to the <input>, the interactive
+        native element, as in Input. A click whose target is the row itself (the gap)
+        is forwarded to the input. Fieldset''s group `disabled` arrives as the `disabled`
+        prop Fieldset passes to its direct child fields; there is no React FieldsetContext.
+        copy.checked, copy.unchecked and copy.mixed are not used (native checked state
+        plus aria-checked=mixed).'
     lit:
       tag: ds-checkbox
       reflect:
@@ -322,8 +407,16 @@ component:
         its native `change` is not composed, so re-dispatch a composed `change` CustomEvent
         from the host. `checked` behaves like a native input: the `checked` attribute
         is the initial state only and the property tracks the live state, so `checked`
-        is not reflected. Form value is `checked ? value : null` (native semantics);
-        ds-form collects the boolean.'
+        is not reflected. The property starts from the `checked` attribute, else `defaultChecked`,
+        and every toggle updates it; there is no controlled mode on Lit. Native form
+        value is `checked ? value : null` (native semantics); ds-form collects the
+        boolean `checked` (`currentValue`, false when unchecked). Validity (ElementInternals)
+        follows the same precedence as the rendered error. Group disabled: ds-fieldset
+        sets the `disabled` property on its direct data-ds-field children (the host
+        carries `data-ds-field`), and the field also honours formDisabledCallback
+        from a native fieldset or form. Shadow parts use the anatomy names verbatim
+        for both `part` and `data-part` (control, indicator, label, description, errorMessage).
+        copy.checked, copy.unchecked and copy.mixed are not used.'
     rn:
       element: Pressable
       props:
@@ -331,10 +424,22 @@ component:
       - accessibilityLabel
       - accessibilityHint
       - accessibilityState
-      notes: 'No native checkbox in core RN. Render Pressable containing a drawn control
-        and Text label; accessibilityState={{ checked: indeterminate ? "mixed" : checked,
-        disabled }}. Errors use accessibilityLiveRegion (Android) / AccessibilityInfo.announceForAccessibility
-        (iOS), as in Input.'
+      notes: 'No native checkbox in core RN. Render Pressable (the row) containing
+        a drawn control View and the text column (label Text, description Text); accessibilityState={{
+        checked: indeterminate ? "mixed" : checked, disabled }}. The label is a composed
+        Text (`size: md`, `weight: regular`, tone default) with labelSize, labelWeight,
+        fontFamily and lineHeight passed through its overrides. accessibilityLabel
+        is the label plus copy.requiredIndicator when required, prefixed by the Fieldset
+        legend from FieldsetContext (which also carries the group `disabled`) as ''<legend>,
+        <label>''. The drawn control is hidden from accessibility (accessibilityElementsHidden,
+        importantForAccessibility="no"), so the Pressable row is the one accessible
+        element; RN tests check that instead of querying the control. The error Text
+        renders below the Pressable, outside it (a tap on it does not toggle and it
+        is not in the hint), separated by partGap. RN has no invalid accessibility
+        state: invalid is shown by controlBorderInvalid and conveyed to assistive
+        technology by the error text through accessibilityLiveRegion (Android) / AccessibilityInfo.announceForAccessibility
+        (iOS), as in Input; RN tests of the error check its text. copy.checked, copy.unchecked
+        and copy.mixed are not used.'
     swiftui:
       element: Toggle
       props:
@@ -348,11 +453,11 @@ component:
       notes: A `Toggle` with a package `ToggleStyle` that draws the box from tokens
         and a `check`/`dash` Icon — SwiftUI exposes a Toggle to VoiceOver as a switch
         with on/off; the style adds `.accessibilityValue(copy.checked / copy.unchecked
-        / copy.mixed)` so the state is spoken as a checkbox state, and `indeterminate`
-        sets the mixed value and the dash glyph. The label is the Toggle's label view
-        (`hideLabel` → `.labelsHidden()` with `.accessibilityLabel`). Description
-        and error as Input. Registers with the Form environment; `disabled` per the
-        conventions.
+        / copy.mixed)` so the state is spoken as a checkbox state (these three copy
+        strings are used on SwiftUI only), and `indeterminate` sets the mixed value
+        and the dash glyph. The label is the Toggle's label view (`hideLabel` → `.labelsHidden()`
+        with `.accessibilityLabel`). Description and error as Input. Registers with
+        the Form environment; `disabled` per the conventions.
   behavior:
   - name: click-on-control-toggles-on
     when:
@@ -450,6 +555,8 @@ component:
     then:
     - copy: requiredIndicator
   - name: error-marks-invalid-and-is-announced
+    description: RN has no invalid accessibility state or alert role; there it checks
+      the error text, which is announced through the live region / announcement.
     given:
       error: Accept the terms to continue.
     then:
@@ -524,6 +631,14 @@ component:
 
 - `checked` is controlled when given, uncontrolled from `defaultChecked` when omitted; changes reported by `onChange` (emit `change`); drives state `checked`
 
+## Parts and slots
+
+- `control`: element
+- `indicator`: component `Icon`; props `size` = "xs"; forwards `indicator` → `overrides.color`
+- `label`: element
+- `description`: component `Text`; props `size` = "sm", `tone` = "muted"; forwards `helperSize` → `overrides.fontSize`, `fontFamily` → `overrides.fontFamily`, `lineHeight` → `overrides.lineHeight`
+- `errorMessage`: component `Text`; props `size` = "sm", `tone` = "danger"; forwards `helperSize` → `overrides.fontSize`, `fontFamily` → `overrides.fontFamily`, `lineHeight` → `overrides.lineHeight`
+
 ## Style bindings
 
 - `controlBackground`: token `color.control.background`; part `control`
@@ -532,14 +647,25 @@ component:
 - `controlSelectedBackground`: token `color.control.selectedBackground`; part `control`; locked
 - `indicator`: token `color.control.selectedForeground`; part `indicator`; locked
 - `indicatorStroke`: token `border.width.focus`; part `indicator`; locked
-- `pressedOverlay`: token `opacity.disabled`; state `pressed`
+- `pressedOverlay`: token `opacity.disabled`; part `control`; state `pressed`
 - `controlBorderInvalid`: token `color.border.danger`; part `control`
 - `controlSize`: token `space.5`; part `control`
 - `controlRadius`: token `radius.sm`; part `control`
+- `gap`: token `space.2`; part `label`
+- `partGap`: token `space.1`; part `description`
 - `labelColor`: token `color.foreground`; part `label`; locked
 - `labelSize`: token `font.size.md`; part `label`
 - `labelWeight`: token `font.weight.regular`; part `label`
+- `helperSize`: token `font.size.sm`; part `description`
 - `descriptionText`: token `color.foreground.muted`; part `description`; locked
+- `errorText`: token `color.foreground.danger`; part `errorMessage`; locked
+- `fontFamily`: token `font.family.body`; part `label`
+- `lineHeight`: token `font.lineHeight.normal`; part `label`
+- `focusRing`: token `color.border.focus`; part `control`; locked
+- `focusRingWidth`: token `border.width.focus`; part `control`; locked
+- `minTarget`: token `size.target.comfortable`; part `control`; locked
+- `disabledOpacity`: token `opacity.disabled`; part `control`
+- `transition`: token `motion.duration.fast`; part `control`
 
 ## Form and overlay
 
@@ -677,6 +803,8 @@ Each scenario below becomes one test. They are platform-neutral: `given` are pro
   then:
   - copy: requiredIndicator
 - name: error-marks-invalid-and-is-announced
+  description: RN has no invalid accessibility state or alert role; there it checks
+    the error text, which is announced through the live region / announcement.
   given:
     error: Accept the terms to continue.
   then:
@@ -725,8 +853,17 @@ notes: 'Form-associated via ElementInternals: setFormValue(checked ? value : nul
   The internal <input> is in the shadow root with delegatesFocus, and its native `change`
   is not composed, so re-dispatch a composed `change` CustomEvent from the host. `checked`
   behaves like a native input: the `checked` attribute is the initial state only and
-  the property tracks the live state, so `checked` is not reflected. Form value is
-  `checked ? value : null` (native semantics); ds-form collects the boolean.'
+  the property tracks the live state, so `checked` is not reflected. The property
+  starts from the `checked` attribute, else `defaultChecked`, and every toggle updates
+  it; there is no controlled mode on Lit. Native form value is `checked ? value :
+  null` (native semantics); ds-form collects the boolean `checked` (`currentValue`,
+  false when unchecked). Validity (ElementInternals) follows the same precedence as
+  the rendered error. Group disabled: ds-fieldset sets the `disabled` property on
+  its direct data-ds-field children (the host carries `data-ds-field`), and the field
+  also honours formDisabledCallback from a native fieldset or form. Shadow parts use
+  the anatomy names verbatim for both `part` and `data-part` (control, indicator,
+  label, description, errorMessage). copy.checked, copy.unchecked and copy.mixed are
+  not used.'
 ```
 
 ## Guidance
@@ -737,7 +874,7 @@ A checkbox is a single yes/no choice that the user makes and then submits, as op
 
 ## When to use
 
-Use a Checkbox for one independent option ("Remember me"), for terms and consent (`required`), or several with the same `name` when the user may pick any number of items. Use `indeterminate` on a "select all" parent when only some of its children are checked.
+Use a Checkbox for one independent option ("Remember me"), for terms and consent (`required`), or several, each with its own `name`, when the user may pick any number of items. Use `indeterminate` on a "select all" parent when only some of its children are checked.
 
 ## When not to use
 
@@ -745,7 +882,7 @@ Do not use a Checkbox for a setting that applies immediately without a submit st
 
 ## Behavior
 
-Clicking or tapping anywhere on the row — control, label, or description — toggles the state and fires `onChange` with the new boolean. The description is not inside the label (it would join the accessible name); a click on it is forwarded to the control. Space toggles from the keyboard; Enter does not (it submits the enclosing form on web, and the component must not intercept that). Uncontrolled unless `checked` is provided. Toggling an `indeterminate` checkbox clears the mixed state and sets `checked` to the new value; the consumer decides what happens to the children. `disabled` controls are visible, readable and focusable (`aria-disabled`, not the native attribute), and are skipped by the Form. `required` appends `copy.requiredIndicator` to the label, sets `aria-required`, and on a failed submit the Form renders `copy.required` as the error. Validation precedence: `error` prop, then `required` (renders `copy.required`), then `invalid` (renders `copy.invalid`) — the same order as Input. Inside a Form, `validate: blur` means "on change" for a checkbox; there is no useful blur moment. The Form collects `value` when checked and nothing (no key) when unchecked. Inside a Fieldset the field reads `FieldsetContext`: `disabled` from the group applies as if set on the field, and on native the legend prefixes the accessibility label ("Shipping address, Street").
+Clicking or tapping anywhere on the row — control, label, or description — toggles the state and fires `onChange` with the new boolean. The description is not inside the label (it would join the accessible name); a click on it is forwarded to the control. Space toggles from the keyboard; Enter does not (it submits the enclosing form on web, and the component must not intercept that). The whole row is the hit area, including the gap between control and label; the error message below the row is not. Uncontrolled unless `checked` is provided (on Lit the `checked` property is always the live state; see the Lit note). `onChange` fires only for a user toggle: nothing fires on mount, and a controlled `checked` catching up with a change already reported does not fire again. Toggling an `indeterminate` checkbox sets `checked` to `!checked` and clears the mixed indicator locally (aria-checked, the DOM property, the dash) until the `indeterminate` prop changes value again; a consumer that keeps passing `true` unchanged sees it cleared. Consumers who own the mixed state update `indeterminate` in `onChange`, and decide what happens to the children. `disabled` controls are visible, readable and focusable (`aria-disabled`, not the native attribute), and are skipped by the Form; `disabledOpacity` dims the control and label, not the description or error. `required` appends `copy.requiredIndicator` to the label and sets `aria-required`; the indicator is plain label text at the label's size and color (not aria-hidden) and is part of the accessible name on every platform, including the native accessibilityLabel. Error display: the error slot shows `error` when set, else the Form's message, else — only while `invalid` is true — `copy.required` if the box is required and unchecked, otherwise `copy.invalid`. Validity (`validationMessage`, ElementInternals) follows the same order — the same as Input. The Form marks a failing field by setting its `invalid` and never sets `error`. Inside a Form, `validate: blur` means "on change" for a checkbox; there is no useful blur moment. The Form (React, React Native, ds-form) collects the boolean `checked` under `name` — `false` when unchecked. `value` is only what a native HTML `<form>` submits when checked (web and Lit). Several checkboxes sharing a `name` are not a multi-select under Form: give each its own name. Inside a Fieldset the group's `disabled` applies as if set on the field — on web through the `disabled` prop Fieldset passes to its direct child fields, on Lit through the `disabled` property ds-fieldset sets on its direct data-ds-field children (or formDisabledCallback from a native fieldset/form), and on native through `FieldsetContext`, which also carries the legend that prefixes the accessibility label ("Shipping address, Street"). The label is a native `<label for>` on web/Lit, styled from Checkbox's label bindings, and a composed Text on native; description and error are Text.
 
 ## Content guidelines
 
@@ -758,13 +895,13 @@ The label is visible and associated with the control (WCAG 1.3.1, 3.3.2), so the
 ## Platform notes
 
 ### Web
-Render `<input type="checkbox">` with `appearance: none` and draw the box, check mark and dash in CSS using the control tokens. Label it with `<label for>`, link description and error with `aria-describedby`. For disabled, set `aria-disabled` and call `preventDefault()` in both `click` and `change` handlers (checkboxes ignore `readOnly`) so the input stays focusable but does not toggle. `aria-checked` is set only to `"mixed"` when indeterminate; the native checked state covers the rest. Set `input.indeterminate = true` via the DOM property and add `aria-checked="mixed"`; browsers do not expose the property as an attribute.
+Render `<input type="checkbox">` with `appearance: none` and draw the box in CSS using the control tokens; the check mark and dash are the composed Icon in the indicator span stacked over the input (see the `indicator` binding). Label it with `<label for>`, link description and error with `aria-describedby`. For disabled, set `aria-disabled` and call `preventDefault()` in both `click` and `change` handlers (checkboxes ignore `readOnly`) so the input stays focusable but does not toggle. `aria-checked` is set only to `"mixed"` when indeterminate; the native checked state covers the rest. Set `input.indeterminate = true` via the DOM property and add `aria-checked="mixed"`; browsers do not expose the property as an attribute.
 
 ### Lit
 `<ds-checkbox>` is form-associated (`static formAssociated = true`) so a native `<form>` sees `name`/`value`, and inside `<ds-form>` it is collected by `name` like `ds-input`. The inner `<input>` lives in the shadow root with `delegatesFocus: true`; because the native `change` event is not composed, re-dispatch a composed `change` CustomEvent with `detail: { checked }`. Expose `checkValidity()` and `reportValidity()` for `required`.
 
 ### React Native
-There is no checkbox in core React Native. Render a `Pressable` with `accessibilityRole="checkbox"`, `accessibilityLabel={label}`, `accessibilityHint={description}` and `accessibilityState={{ checked: indeterminate ? 'mixed' : checked, disabled }}`, containing a `View` drawn with the control tokens and a `Text` label. The pressed state uses `controlSelectedBackground` at `disabledOpacity` on the box. Space on a hardware keyboard is handled by the platform when the role is set. Errors are announced as in Input.
+There is no checkbox in core React Native. Render a `Pressable` with `accessibilityRole="checkbox"`, `accessibilityLabel` (the label plus `copy.requiredIndicator` when required, legend-prefixed inside a Fieldset), `accessibilityHint={description}` and `accessibilityState={{ checked: indeterminate ? 'mixed' : checked, disabled }}`, containing a `View` drawn with the control tokens and a `Text` label. The pressed state is an overlay View inside the unchecked box showing `controlSelectedBackground` at `pressedOverlay` opacity. Space on a hardware keyboard is handled by the platform when the role is set. Errors are announced as in Input.
 
 ## Related
 

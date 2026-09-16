@@ -7,6 +7,10 @@ component:
   status: review
   apg: radio
   anatomy: [group, legend, description, radio, radioIndicator, radioLabel, radioDescription, errorMessage]
+  composition:
+    description: { component: Text, props: { size: sm, tone: muted }, forwards: { helperSize: fontSize, fontFamily: fontFamily, lineHeight: lineHeight } }
+    radioDescription: { component: Text, props: { size: sm, tone: muted }, forwards: { helperSize: fontSize, fontFamily: fontFamily, lineHeight: lineHeight } }
+    errorMessage: { component: Text, props: { size: sm, tone: danger }, forwards: { helperSize: fontSize, fontFamily: fontFamily, lineHeight: lineHeight } }
   props:
     label:
       type: string
@@ -69,32 +73,34 @@ component:
     - { keys: [ArrowUp, ArrowLeft], action: 'Moves to and selects the previous enabled radio, wrapping.', from: last, expect: focus-prev }
     - { keys: [' '], action: 'Selects the focused radio when the arrows did not already select it.', from: inside, expect: manual }
   styles:
-    controlBackground: { token: color.control.background }
-    controlBorder: { token: color.control.border }
-    controlBorderWidth: { token: border.width.thin }
-    controlSelectedBackground: { token: color.control.selectedBackground, description: 'Selected border color; the fill stays controlBackground and the dot is drawn inside.' }
-    indicator: { token: color.control.selectedBackground, description: 'The centre dot, controlSize minus 2 × space.1 in diameter.' }
-    controlBorderInvalid: { token: color.border.danger }
-    controlSize: { token: space.5 }
-    controlRadius: { token: radius.full }
+    controlBackground: { token: color.control.background, part: radio }
+    controlBorder: { token: color.control.border, part: radio }
+    controlBorderWidth: { token: border.width.thin, part: radio }
+    controlSelectedBackground: { token: color.control.selectedBackground, part: radio, description: 'Selected border color; the fill stays controlBackground and the dot is drawn inside.' }
+    indicator: { token: color.control.selectedBackground, part: radioIndicator, description: 'The centre dot, controlSize minus 2 × space.1 in diameter. One rule on every platform: the dot carries a hook only where it is a real node. Web/Lit draw it as a pseudo-element of the appearance:none input (::before or ::after, either is fine), which has no data-part or part; on native it is a View inside the drawn control carrying testID="RadioGroup.radioIndicator".' }
+    controlBorderInvalid: { token: color.border.danger, part: radio }
+    controlSize: { token: space.5, part: radio }
+    controlRadius: { token: radius.full, part: radio }
+    optionPaddingBlock: { token: space.1, part: radio, description: 'Block padding of each option row (the row wrapper holding radio, radioLabel and radioDescription; not an anatomy part). The row still meets minTarget.' }
+    optionTextGap: { token: space.1, part: radioDescription, description: 'Vertical gap between an option''s radioLabel and its radioDescription.' }
     optionGap: { token: space.2, description: Horizontal gap between radio and its label. }
     listGap: { token: space.2, description: 'Gap between options (vertical or horizontal).' }
     partGap: { token: space.1, description: 'Vertical gap between legend, description, list, and error.' }
     legendColor: { token: color.foreground, part: legend }
     legendSize: { token: font.size.md, part: legend }
     legendWeight: { token: font.weight.medium, part: legend }
-    labelColor: { token: color.foreground }
-    labelSize: { token: font.size.md }
-    labelWeight: { token: font.weight.regular }
-    helperSize: { token: font.size.sm }
-    descriptionText: { token: color.foreground.muted, part: description }
-    errorText: { token: color.foreground.danger }
+    labelColor: { token: color.foreground, part: radioLabel }
+    labelSize: { token: font.size.md, part: radioLabel }
+    labelWeight: { token: font.weight.regular, part: radioLabel }
+    helperSize: { token: font.size.sm, description: 'Size of description, radioDescription and errorMessage; reaches the composed Text only through its fontSize override.' }
+    descriptionText: { token: color.foreground.muted, part: description, description: 'Realised by the composed Text''s tone muted (description and radioDescription); declares no hook of its own.' }
+    errorText: { token: color.foreground.danger, part: errorMessage, description: 'Realised by the composed Text''s tone danger; declares no hook of its own.' }
     fontFamily: { token: font.family.body }
     lineHeight: { token: font.lineHeight.normal }
-    focusRing: { token: color.border.focus }
-    focusRingWidth: { token: border.width.focus }
+    focusRing: { token: color.border.focus, part: radio, description: 'On focus-visible the radio''s border becomes focusRingWidth in this color, replacing controlBorderWidth/controlBorder (web, Lit and native alike); the option row is not outlined.' }
+    focusRingWidth: { token: border.width.focus, part: radio }
     minTarget: { token: size.target.comfortable, description: 'Minimum height of each option row; the whole row is the hit area.' }
-    disabledOpacity: { token: opacity.disabled }
+    disabledOpacity: { token: opacity.disabled, description: 'Dims option rows only. A disabled option in an enabled group dims its own row; a disabled group dims every option row once (not stacked with the option''s own opacity) and leaves legend, description and errorMessage at full opacity.' }
     transition: { token: motion.duration.fast }
   copy:
     required: '{label} is required.'
@@ -127,19 +133,19 @@ component:
     web:
       element: fieldset
       attributes: [role=radiogroup, aria-describedby, aria-invalid, aria-required]
-      notes: 'A <fieldset role="radiogroup"> with a <legend>, containing native <input type="radio" name> elements styled with appearance: none. The role is set explicitly: a fieldset''s implicit role is `group`, which is not what this component declares. The radioIndicator part is a ::after pseudo-element with no node of its own, so it carries no hook on any platform; shadow parts elsewhere are the anatomy names in kebab-case (`radio-label`, `radio-description`, `error-message`). Native radios sharing a name already implement roving tabindex and arrow-key movement; do not reimplement it. A disabled option uses the real `disabled` attribute so native arrow movement skips it (the one place the system prefers `disabled` over aria-disabled); a disabled group uses aria-disabled on the fieldset and every radio plus preventDefault guards, so it stays focusable but inert. Each radio has its own <label for>; option descriptions are linked per radio with aria-describedby. The group error is linked from the fieldset.'
+      notes: 'A <fieldset role="radiogroup"> with a <legend>, containing native <input type="radio" name> elements styled with appearance: none. The role is set explicitly: a fieldset''s implicit role is `group`, which is not what this component declares. The root fieldset carries data-part="group"; every other part with a node carries its anatomy name verbatim (data-part="radioLabel", "radioDescription", "errorMessage"). The radioIndicator is a ::before or ::after pseudo-element of the input (either is fine) with no node of its own, so it has no hook on web or Lit (native: see the rn note). aria-invalid and aria-required go on the fieldset only, never on the individual radios. copy.position is not rendered on web or Lit: native radios sharing a name already announce their position. Native radios sharing a name already implement roving tabindex and arrow-key movement; do not reimplement it. A disabled option uses the real `disabled` attribute so native arrow movement skips it (the one place the system prefers `disabled` over aria-disabled); a disabled group uses aria-disabled on the fieldset and every radio plus preventDefault guards, so it stays focusable but inert. Each radio has its own <label for>; option descriptions are linked per radio with aria-describedby. The group error is linked from the fieldset.'
     lit:
       tag: ds-radio-group
       reflect: [orientation, required, disabled, invalid]
-      notes: 'Form-associated (setFormValue(value)). The radios are rendered inside the shadow root from the `options` property, so they share one root and native grouping by name works; the native change is not composed, so re-dispatch a composed `change` CustomEvent with detail { value }. `options` is a property, not an attribute.'
+      notes: 'Form-associated (setFormValue(value)). The radios are rendered inside the shadow root from the `options` property, so they share one root and native grouping by name works; the native change is not composed, so re-dispatch a composed `change` CustomEvent with detail { value }. `options` is a property, not an attribute. The shadow fieldset has role="radiogroup" (plain attribute, as on web), data-part and part "group"; other parts use the anatomy names verbatim in camelCase for both `part` and `data-part` (radioLabel, radioDescription, errorMessage); radioIndicator is a pseudo-element with no part. Ids do not cross the shadow root: option ids are `${name || ''radio-group''}-${value}` inside it, and the description/error ids the fieldset references live there too. aria-invalid goes on the fieldset only. Host focus() is overridden to focus the checked radio, else the first enabled one (delegatesFocus alone would pick the first in tree order). While the group is disabled, click, arrow keys and Space are preventDefault-ed on the fieldset, since native radios move and select on arrows regardless of aria-disabled. The host carries data-ds-field; group disabled from a Fieldset arrives as the `disabled` property ds-fieldset sets, or through formDisabledCallback from a native fieldset/form.'
     rn:
       element: View
       props: [accessibilityRole=radiogroup, accessibilityLabel, accessibilityHint]
-      notes: 'The group is a View with accessibilityRole="radiogroup"; each option is a Pressable with accessibilityRole="radio" and accessibilityState={{ checked, disabled }}. There is no roving tabindex or arrow movement on native — every radio is a stop for the screen reader and for hardware-keyboard focus. That is the platform convention, not a defect. Validation precedence is Input''s (error → required → invalid with copy.invalid). Individually disabled options use accessibilityState.disabled and a press guard, never the Pressable `disabled` prop, so they stay reachable.'
+      notes: 'The group is a View with accessibilityRole="radiogroup"; each option is a Pressable with accessibilityRole="radio" and accessibilityState={{ checked, disabled }}. There is no roving tabindex or arrow movement on native — every radio is a stop for the screen reader and for hardware-keyboard focus. That is the platform convention, not a defect. Validation precedence is Input''s (error → required → invalid with copy.invalid). Individually disabled options use accessibilityState.disabled and a press guard, never the Pressable `disabled` prop, so they stay reachable. Hooks: the root View is the group part and carries testID="RadioGroup" (there is no separate RadioGroup.group); the drawn dot is a real View carrying testID="RadioGroup.radioIndicator"; other parts use RadioGroup.<part>. The group accessibilityLabel is the visible legend including copy.requiredIndicator, so required is announced, prefixed by a Fieldset legend from FieldsetContext ("<legend>, <label>"), which also supplies group disabled. Each radio''s accessibilityLabel is `${label}, ${description}` when it has a description, else the label, and its accessibilityValue={{ text }} is copy.position ("1 of 3"). The focus ring replaces the drawn control''s border, not the row. Native limits: no arrow keys or roving tabindex (each radio is a screen-reader and keyboard stop, the accessible alternative), and no invalid accessibility state (the error is announced through the live region / announcement as in Input). Behavior tests on rn check that onChange does not fire, the copy text, and the radios'' unchecked state, not a disabled or invalid state attribute.'
     swiftui:
       element: VStack
       props: [.accessibilityElement=contain, .accessibilityLabel, Button, .accessibilityAddTraits=isSelected, .focusable, .onMoveCommand, '@FocusState']
-      notes: 'A container `.accessibilityElement(children: .contain)` named by the legend, holding one `Button` per option that draws the radio circle from the tokens and carries `.isSelected` for the checked option (VoiceOver: ''Email, selected, button, 1 of 3'' — the count is announced from `.accessibilityValue(copy.position)`). Arrow keys on iPad move the selection through `@FocusState` per the keyboard table (`.onMoveCommand`); the group is one focus section. `orientation` picks `VStack`/`HStack`. Registers with the Form environment as one field.'
+      notes: 'A container `.accessibilityElement(children: .contain)` named by the legend, holding one `Button` per option that draws the radio circle from the tokens and carries `.isSelected` for the checked option (VoiceOver: ''Email, selected, button, 1 of 3'' — the count is announced from `.accessibilityValue(copy.position)`). Arrow keys on iPad move the selection through `@FocusState` per the keyboard table (`.onMoveCommand`); the group is one focus section. `orientation` picks `VStack`/`HStack`. Registers with the Form environment as one field; group disabled and the legend prefix come from FieldsetContext.'
   behavior:
     # Authored scenarios; the parser adds renders/enum/error-identified ones from the schema.
     - name: click-on-an-option-reports-its-value
@@ -162,19 +168,19 @@ component:
       then:
         - { event: onChange, fired: false }
     - name: disabled-group-is-inert
-      description: A fully disabled group stays visible and focusable but selects nothing.
+      description: 'A fully disabled group stays visible and focusable but selects nothing. On rn the test checks that onChange does not fire and the radio stays unchecked.'
       given: { disabled: true }
       when: { click: radio }
       then:
         - { event: onChange, fired: false }
-        - { state: disabled, is: true, platforms: [web] }
+        - { state: disabled, is: true, platforms: [web, lit] }
     - name: required-is-shown-in-the-legend
       description: required appends copy.requiredIndicator to the legend, not only a color.
       given: { required: true }
       then:
         - { copy: requiredIndicator }
     - name: invalid-renders-the-invalid-copy
-      description: 'Validation precedence is error, then required, then invalid; with only invalid set the group renders copy.invalid and is marked invalid.'
+      description: 'The displayed error is error, then the Form''s message, then while invalid copy.required (required and nothing selected) else copy.invalid; with only invalid set the group renders copy.invalid and is marked invalid. On rn the test checks the copy text only.'
       given: { invalid: true }
       then:
         - { copy: invalid }
@@ -231,7 +237,7 @@ Do not use a RadioGroup for more than about seven options or for options the use
 
 ## Behavior
 
-Clicking or tapping an option row selects it and fires `onChange` with its value. From the keyboard, Tab moves into the group (to the selected radio, or the first when none is selected), arrow keys move the selection between enabled options and wrap around, and Space selects a focused radio that the arrows did not already select. Tab leaves the group. Individual disabled options are natively disabled and skipped by the arrows; they stay visible and readable but are not focus stops — a deliberate exception to the system's aria-disabled rule, because a radio that can be reached but not chosen is more confusing than one that is skipped. Uncontrolled unless `value` is provided. Disabled options are skipped by arrow movement and cannot be selected; a fully `disabled` group is focusable but inert. `required` appends `copy.requiredIndicator` to the legend and sets `aria-required` on the group; on a failed submit the Form renders `copy.required` as the group error. Validation precedence: `error` prop, then `required` (renders `copy.required`), then `invalid` (renders `copy.invalid`) — the same order as Input. Inside a Form, `validate: blur` runs when focus leaves the whole group, not when it moves between radios; the Form collects the selected value, or nothing (no key) when none is selected. Inside a Fieldset the field reads `FieldsetContext`: `disabled` from the group applies as if set on the field, and on native the legend prefixes the accessibility label ("Shipping address, Street").
+Clicking or tapping an option row selects it and fires `onChange` with its value. From the keyboard, Tab moves into the group (to the selected radio, or the first when none is selected), arrow keys move the selection between enabled options and wrap around, and Space selects a focused radio that the arrows did not already select. Tab leaves the group. Individual disabled options are natively disabled and skipped by the arrows; they stay visible and readable but are not focus stops — a deliberate exception to the system's aria-disabled rule, because a radio that can be reached but not chosen is more confusing than one that is skipped. Uncontrolled unless `value` is provided. Disabled options are skipped by arrow movement and cannot be selected; a fully `disabled` group is focusable but inert. A disabled option in an enabled group dims its row with `disabledOpacity`; a disabled group dims the option rows once (no stacking) and keeps legend, description and error at full opacity. `required` appends `copy.requiredIndicator` to the legend — plain legend text that stays part of the group's accessible name on every platform — and sets `aria-required` on the group. The error shown is: the `error` prop; else the Form's message; else, only while `invalid` is true, `copy.required` when the group is required and nothing is selected, otherwise `copy.invalid`. `validate()` checks `required` then `invalid`, as Input does. A standalone required group with nothing selected therefore shows `copy.required` only once it is marked invalid (directly or by Form validation), never before. Inside a Form, `validate: blur` runs when focus leaves the whole group (web/Lit: focus-out of the fieldset), not when it moves between radios; `validate: change` validates on each change; native has no group blur and validates on change. The Form collects the selected value, or nothing (no key) when none is selected. Inside a Fieldset, `disabled` from the group applies as if set on the field — on web through the `disabled` prop Fieldset passes to the RadioGroup (React has no FieldsetContext), on Lit through the `disabled` property ds-fieldset sets on data-ds-field children (or formDisabledCallback), and on RN and SwiftUI through `FieldsetContext`, which also carries the legend that prefixes the accessibility label ("Shipping address, Plan"). `copy.position` ("1 of 3") is spoken on native only — SwiftUI's accessibilityValue and each RN radio's accessibilityValue text; web and Lit do not render it. The Default story renders the shipping-method example with nothing selected (no `defaultValue`), so a click on the first radio reports `standard`.
 
 ## Content guidelines
 
@@ -247,10 +253,10 @@ The group is exposed with role `radiogroup` (native `fieldset`/`legend` on web) 
 Render `<fieldset role="radiogroup">` with `<legend>` and, per option, `<input type="radio" name value id>` plus `<label for>`; style the input with `appearance: none` and draw the ring and dot with the control tokens. Native radios with a shared `name` provide roving tabindex and arrow movement, so do not add `tabindex` or key handlers. Link the group description and error to the `<fieldset>` with `aria-describedby`, and per-option descriptions to their radio. Per-option `disabled` is the native attribute; group `disabled` is `aria-disabled` on the fieldset and radios with `preventDefault()` guards. Option ids are `${groupId}-${value}`. A `<legend>` does not take part in the fieldset's flex gap, so `partGap` below it is a margin.
 
 ### Lit
-`<ds-radio-group>` takes `options` as a property (`.options=${[...]}`) and renders the fieldset and radios inside its shadow root, where the shared `name` groups them natively. It is form-associated: `setFormValue(value)` on change, and `checkValidity()` / `reportValidity()` implement `required`. Re-dispatch a composed `change` CustomEvent with `detail: { value }`. Reflect `orientation`, `required`, `disabled` and `invalid`.
+`<ds-radio-group>` takes `options` as a property (`.options=${[...]}`) and renders the fieldset and radios inside its shadow root, where the shared `name` groups them natively. It is form-associated: `setFormValue(value)` on change, and `checkValidity()` / `reportValidity()` implement `required`. Re-dispatch a composed `change` CustomEvent with `detail: { value }`. Reflect `orientation`, `required`, `disabled` and `invalid`. The shadow fieldset sets `role="radiogroup"` as on web; option ids are `${name || 'radio-group'}-${value}` within the shadow root; `focus()` targets the checked radio, else the first enabled one.
 
 ### React Native
-Render a `View` with `accessibilityRole="radiogroup"`, `accessibilityLabel={label}` and `accessibilityHint={description}` — not `accessible`, or the radios would collapse into it; on iOS this means the legend reaches VoiceOver as the preceding `Text`, not as a group name (platform limit) — a `Text` legend, and one `Pressable` per option with `accessibilityRole="radio"`, `accessibilityLabel` (label plus description), and `accessibilityState={{ checked: value === option.value, disabled }}`. Arrow-key movement does not exist on native; every radio is its own focus stop, and there is no group-level blur, so `validate: blur` runs on change. On a failed submit the Form focuses the first enabled radio. The group error is announced as in Input.
+Render a `View` with `accessibilityRole="radiogroup"`, `accessibilityLabel` (the legend with `copy.requiredIndicator` when required) and `accessibilityHint={description}` — not `accessible`, or the radios would collapse into it; on iOS this means the legend reaches VoiceOver as the preceding `Text`, not as a group name (platform limit) — a `Text` legend, and one `Pressable` per option with `accessibilityRole="radio"`, `accessibilityLabel` (`${label}, ${description}`, or the label alone), `accessibilityValue={{ text: copy.position }}`, and `accessibilityState={{ checked: value === option.value, disabled }}`. Arrow-key movement does not exist on native; every radio is its own focus stop, and there is no group-level blur, so `validate: blur` runs on change. On a failed submit the Form focuses the first enabled radio. The group error is announced as in Input.
 
 ## Related
 

@@ -28,3 +28,7 @@ Gaps where a sibling component's generated code is wrong. The docs are already r
 - Text.tsx (rn): hardcodes `testID="Text"` and takes no testID prop, so a composite cannot tag it `Input.<part>`.
 - Feed (web): passes `tabIndex={-1}` to Card instead of `focusable`.
 - Tree.tsx / Tree.css (web): passes `className` and `data-part="label"` to Link and strips its underline; should pass `tone="inherit"`, put its part on its own wrapper and keep the underline. tree.md should also say href nodes use `tone: inherit`.
+- Fieldset.tsx (rn): remove the `disabled` clone fallback; Input, Checkbox, Switch and RadioGroup already read FieldsetContext.
+- Fieldset.tsx (react): drop the exported FieldsetContext/useFieldsetContext no field reads; keep passing `disabled` to direct child fields.
+- Fieldset.ts (lit): stop setting Text's --ds-text-* and Stack's --ds-stack-gap hooks from Fieldset hooks; forward through `overrides` only.
+- SidePanel.tsx (react): put the panel's classes, style and ref on its own element and compose Landmark inside with role/as/aria-labelledby only; then drop className/style forwarding from Landmark.

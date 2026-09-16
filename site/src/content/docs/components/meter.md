@@ -6,29 +6,32 @@ component:
   category: data
   status: review
   apg: meter
-  anatomy: [container, label, valueText, track, fill]
+  anatomy: [container, header, label, valueText, track, fill]
+  composition:
+    label: { component: Text, props: { element: span, size: sm, weight: medium, tone: default }, forwards: { labelSize: fontSize, labelWeight: fontWeight, fontFamily: fontFamily, lineHeight: lineHeight } }
+    valueText: { component: Text, props: { element: span, size: sm, tone: muted }, forwards: { valueSize: fontSize, fontFamily: fontFamily, lineHeight: lineHeight } }
   props:
     value:
       type: number
       required: true
-      description: The current measurement. Clamped to `min`…`max` for the bar; the accessible value is the clamped number too.
+      description: 'The current measurement. Clamped to `min`…`max` for the bar; the accessible value is the clamped number too. Lit starts the property at 0, with no development warning.'
     min:
       type: number
       default: 0
-      description: Lower bound of the range.
+      description: 'Lower bound of the range. On Lit a missing or unparseable attribute falls back to 0.'
     max:
       type: number
       default: 100
-      description: Upper bound of the range. Must be greater than `min`.
+      description: 'Upper bound of the range. Must be greater than `min`. On Lit a missing or unparseable attribute falls back to 100.'
     label:
       type: string
       required: true
-      description: Visible label naming the measurement ("Storage used"). Also the accessible name.
+      description: 'Visible label naming the measurement ("Storage used"). Also the accessible name. Lit starts the property as an empty string, with no development warning.'
       a11y: Associated with the meter as its accessible name (aria-labelledby / accessibilityLabel).
     valueText:
       type: string
-      description: 'Human-readable value shown at the end of the label row and announced instead of the raw number ("3.2 GB of 10 GB", "Strong"). Omit to show and announce the percentage, rounded to a whole number ("32%").'
-      a11y: Rendered as aria-valuetext / accessibilityValue.text.
+      description: 'Human-readable value shown at the end of the label row and announced instead of the raw number ("3.2 GB of 10 GB", "Strong"). Omit to show and announce the percentage, rounded to a whole number ("32%"): `Intl.NumberFormat(locale, { style: ''percent'', maximumFractionDigits: 0 })` of the fill fraction. Rounding is for the text only; the fill width uses the exact fraction. The announced string is the same on every platform.'
+      a11y: 'Always rendered, as aria-valuetext (web, Lit) and accessibilityValue.text (React Native): valueText when given, else the formatted percentage.'
     tone:
       type: enum
       enumRef: tone
@@ -38,22 +41,22 @@ component:
     hideValue:
       type: boolean
       default: false
-      description: 'Hides the visible value text (a boolean attribute can only turn things on, so the flag is the hiding one). The accessible value is always exposed.'
+      description: 'Hides the visible value text (a boolean attribute can only turn things on, so the flag is the hiding one). The accessible value is always exposed. Lit attribute `hide-value`, not reflected.'
   styles:
     track: { token: color.background.strong, part: track }
     fill: { token: 'color.status.{tone}.icon', part: fill, description: 'The icon step of each status hue is the one guaranteed 3:1 against the page background, which makes it the right non-text fill.' }
     trackHeight: { token: space.2, part: track }
-    radius: { token: radius.full }
-    labelColor: { token: color.foreground, part: label }
-    labelSize: { token: font.size.sm, part: label }
-    labelWeight: { token: font.weight.medium, part: label }
-    valueColor: { token: color.foreground.muted }
-    valueSize: { token: font.size.sm }
-    fontFamily: { token: font.family.body }
-    lineHeight: { token: font.lineHeight.normal }
-    partGap: { token: space.1, description: 'Vertical gap between the label row and the track.' }
-    labelGap: { token: space.2, part: label, description: 'Horizontal gap between the label and the value text in the label row.' }
-    transition: { token: motion.duration.base, description: 'Fill width change, with motion.easing.standard; instant under reduced motion.' }
+    radius: { token: radius.full, part: track, description: 'Rounds the track and the fill ends; the track clips the fill (overflow hidden).' }
+    labelColor: { token: color.foreground, part: label, description: 'Realised by the label Text''s tone default; no hook of its own.' }
+    labelSize: { token: font.size.sm, part: label, description: 'Forwarded to the label Text''s fontSize override.' }
+    labelWeight: { token: font.weight.medium, part: label, description: 'Forwarded to the label Text''s fontWeight override.' }
+    valueColor: { token: color.foreground.muted, part: valueText, description: 'Realised by the value Text''s tone muted; no hook of its own.' }
+    valueSize: { token: font.size.sm, part: valueText, description: 'Forwarded to the value Text''s fontSize override. The value text weight is Text''s regular and is not a binding.' }
+    fontFamily: { token: font.family.body, part: header, description: 'Forwarded to both Texts'' fontFamily overrides; never styles them directly.' }
+    lineHeight: { token: font.lineHeight.normal, part: header, description: 'Forwarded to both Texts'' lineHeight overrides; never styles them directly.' }
+    partGap: { token: space.1, part: container, description: 'Vertical gap between the label row (header) and the track.' }
+    labelGap: { token: space.2, part: header, description: 'Horizontal gap between the label and the value text in the header row.' }
+    transition: { token: motion.duration.base, part: fill, description: 'Fill inline-size change, with motion.easing.standard; instant under reduced motion.' }
   a11y:
     role: meter
     requires: [accessible-name, contrast-aa, reduced-motion]
@@ -66,15 +69,15 @@ component:
     web:
       element: div
       attributes: [role=meter, aria-valuenow, aria-valuemin, aria-valuemax, aria-valuetext, aria-labelledby]
-      notes: 'A <div role="meter"> per the APG rather than <meter>: the native element is inconsistently announced, hard to style across browsers, and cannot take our tone colors reliably. The label is a real element referenced by aria-labelledby; the track and fill are plain divs.'
+      notes: 'A <div role="meter"> per the APG rather than <meter>: the native element is inconsistently announced, hard to style across browsers, and cannot take our tone colors reliably. The label is a real element referenced by aria-labelledby; the track and fill are plain divs. role=meter and every aria-value* attribute sit on the track, while data-ds sits on the root wrapper: they are different elements. aria-valuetext is always set (valueText, else the formatted percentage).'
     lit:
       tag: ds-meter
       reflect: [tone, value, min, max]
-      notes: 'The meter role is set on the inner element in the shadow root, labelled by the shadow label element. Numeric attributes reflect as strings; parse them. No events.'
+      notes: 'The meter role and aria-value* attributes are plain attributes on the track element in the shadow root; data-ds is on the root wrapper, a different element. aria-valuetext is always set. aria-labelledby points at the composed ds-text host of the label inside the same shadow root, which is a valid target. Numeric attributes reflect as strings; parse them, falling back to 0/100 when missing or unparseable. `hideValue` is the attribute `hide-value`, not reflected. No events.'
     rn:
       element: View
       props: [role=meter, accessibilityLabel, accessibilityValue]
-      notes: 'RN 0.73+ has role="meter" (react-native-web renders role=meter; iOS/Android map it to the nearest trait or a plain value). The container is `accessible` so label and value announce as one element, with accessibilityValue={{ min, max, now, text }} where text is valueText when given and omitted otherwise (the platform then reads the number). The fill animates in measured pixels from onLayout — a percentage width cannot be interpolated — and snaps on first layout and on resize.'
+      notes: 'RN 0.73+ has role="meter" (react-native-web renders role=meter; iOS/Android map it to the nearest trait or a plain value). The container is `accessible` so label and value announce as one element, with accessibilityValue={{ min, max, now, text }} where text is always set: valueText when given, else the same formatted percentage web and Lit announce. The fill animates in measured pixels from onLayout — a percentage width cannot be interpolated — and snaps with no animation before the width is known, on first layout and on resize. RN tests check the name through accessibilityLabel and the visible text; accessibilityValue is not asserted by the scenarios.'
     swiftui:
       element: VStack
       props: [.accessibilityElement=combine, .accessibilityValue, GeometryReader, Rectangle, .accessibilityAddTraits=updatesFrequently]
@@ -134,7 +137,7 @@ Do not use a Meter for the progress of a task — uploads, loading, multi-step f
 
 ## Behavior
 
-The fill width is `(value − min) / (max − min)` of the track, clamped to 0–100%; a non-finite `value` is treated as `min`. Changes to `value` animate the fill width over `transition`, instantly under reduced motion. Nothing is interactive; the meter has no focus, no events, and no hover. If `max ≤ min` the component renders an empty track, exposes `valuenow = min` with the given bounds, and warns in development.
+The fill width is `(value − min) / (max − min)` of the track, clamped to 0–100%; a non-finite `value` is treated as `min`. Changes to `value` animate the fill width over `transition`, instantly under reduced motion. Nothing is interactive; the meter has no focus, no events, and no hover. If `max ≤ min` the component renders an empty track, exposes `valuenow = min` with the given bounds, shows and announces "0%" (unless `valueText` is given), and warns in development.
 
 ## Content guidelines
 
@@ -142,18 +145,18 @@ Labels name the measurement as a noun phrase ("Storage used", "Password strength
 
 ## Accessibility
 
-The meter exposes role `meter` with the current, minimum and maximum values, and a text alternative when `valueText` is set (WCAG 1.3.1, 4.1.2; APG meter). Its accessible name is the visible label (2.5.3). The fill meets 3:1 against both the track and the page background, so the filled portion is legible as a graphic (1.4.11); the build checks all four tones in both modes. The empty track is deliberately low-contrast: WCAG 1.4.11 exempts a boundary that is not needed to identify the component, and here the label and value text identify it — an empty meter reads as "0%" from its text, not from a faint bar. The tone is never the only signal — the value text is the primary information, and consumers that change tone at a threshold should say why in the value text ("9.5 GB of 10 GB"). Width animation respects reduced motion (2.3.3).
+The meter exposes role `meter` with the current, minimum and maximum values, and a text alternative — `valueText`, or the rounded percentage when it is omitted (WCAG 1.3.1, 4.1.2; APG meter). Its accessible name is the visible label (2.5.3). The fill meets 3:1 against both the track and the page background, so the filled portion is legible as a graphic (1.4.11); the build checks all four tones in both modes. The empty track is deliberately low-contrast: WCAG 1.4.11 exempts a boundary that is not needed to identify the component, and here the label and value text identify it — an empty meter reads as "0%" from its text, not from a faint bar. The tone is never the only signal — the value text is the primary information, and consumers that change tone at a threshold should say why in the value text ("9.5 GB of 10 GB"). Width animation respects reduced motion (2.3.3).
 
 ## Platform notes
 
 ### Web
-Render a wrapper containing a label row (a `Text element="span"` with `id={labelId}` and, unless `hideValue`, a `<span>` with the value text in `valueColor`) and `<div role="meter" aria-labelledby={labelId} aria-valuenow aria-valuemin aria-valuemax aria-valuetext>` as the track, containing the fill `<div>` with `width: N%`. Use `overflow: hidden` and `radius` on the track so the fill clips to the rounded ends. Transition `width` over `transition`, wrapped in `@media (prefers-reduced-motion: no-preference)`.
+Render a root wrapper (`data-ds`, gap `partGap`) containing the header row (`data-part="header"`, a flex row with gap `labelGap`) — a `Text element="span" size="sm" weight="medium" tone="default"` with `id={labelId}` and, unless `hideValue`, a `Text element="span" size="sm" tone="muted"` with the value text, each receiving its forwarded overrides — and `<div role="meter" aria-labelledby={labelId} aria-valuenow aria-valuemin aria-valuemax aria-valuetext>` as the track, containing the fill `<div>` with `inline-size: N%` from the exact fraction. Use `overflow: hidden` and `radius` on the track so the fill clips to the rounded ends. Transition `inline-size` over `transition`, wrapped in `@media (prefers-reduced-motion: no-preference)`.
 
 ### Lit
-`<ds-meter label="Storage used" value="32" value-text="3.2 GB of 10 GB" tone="warning">` renders the same structure in its shadow root; `aria-labelledby` works within one shadow root. Reflect `tone`, `value`, `min` and `max` as attributes (numbers as strings; convert with `Number`). Expose no events.
+`<ds-meter label="Storage used" value="32" value-text="3.2 GB of 10 GB" tone="warning">` renders the same structure in its shadow root, with composed `ds-text` elements for the label and value; `aria-labelledby` works within one shadow root and may point at the label's `ds-text` host. Reflect `tone`, `value`, `min` and `max` as attributes (numbers as strings; convert with `Number`). Expose no events.
 
 ### React Native
-Render an `accessible` `View` with `role="meter"`, `accessibilityLabel={label}` and `accessibilityValue={{ min, max, now: clamped, text: valueText }}`, containing a label row of two `Text` elements and a track `View` with `overflow: 'hidden'` and the fill `View`. Measure the track with `onLayout` and animate the fill's pixel width with `Animated` over `transition` (`useNativeDriver: false` — layout properties, and react-native-web has no native driver), skipped when `useReducedMotion()` is true.
+Render an `accessible` `View` with `role="meter"`, `accessibilityLabel={label}` and `accessibilityValue={{ min, max, now: clamped, text: valueText ?? formattedPercent }}`, containing a header row of two `Text` elements and a track `View` with `overflow: 'hidden'` and the fill `View`. Measure the track with `onLayout` and animate the fill's pixel width with `Animated` over `transition` (`useNativeDriver: false` — layout properties, and react-native-web has no native driver), skipped when `useReducedMotion()` is true.
 
 ## Related
 

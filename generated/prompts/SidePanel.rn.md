@@ -412,10 +412,12 @@ component:
         page grid beside the content, no dialog, no scrim, no trap, trigger hidden
         with display none. The switch must not lose the panel''s content state (the
         same children render in both). Safe-area padding via env(safe-area-inset-left/right).
-        `container?: HTMLElement` (default document.body) is the portal target — a
-        platform prop, not a schema prop. `trigger` is exactly one element, typed
-        as such, because it is cloned to carry aria-expanded, aria-controls and the
-        toggle.'
+        Landmark takes no className or style, so the panel''s classes, inline style
+        and ref go on SidePanel''s own positioned element, which composes Landmark
+        inside it passing only `role`, `as` and `aria-labelledby`. `container?: HTMLElement`
+        (default document.body) is the portal target — a platform prop, not a schema
+        prop. `trigger` is exactly one element, typed as such, because it is cloned
+        to carry aria-expanded, aria-controls and the toggle.'
     lit:
       tag: ds-side-panel
       reflect:

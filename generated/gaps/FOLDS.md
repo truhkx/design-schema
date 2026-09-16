@@ -403,3 +403,240 @@ One line per decision: `<date> <Component> <platform>: <gap> → <what the doc n
 2026-09-16 Link web: copy expectation has no matcher → reads anchor text content incl. visually hidden suffix
 2026-09-16 Link web: examples lack surrounding paragraph text → quoted paragraph text in both examples
 2026-09-16 Link web: colorHover applied to :hover and :active → hover only
+2026-09-16 Alert rn: dismiss close glyph icon name and color token unnamed → Icon close, overrides.color color.action.ghost.foreground; composition names Button ghost/sm/iconOnly
+2026-09-16 Alert rn: icon color via overrides.color vs Icon color prop → overrides.color token path on every platform, never RN color prop
+2026-09-16 Alert rn: bodyColor and body typography have no RN mechanism → string/number body wrapped in Text; default tone, typography via overrides
+2026-09-16 Alert rn: whether heading Text gets accessibilityRole header → raw styled Text, no header role, matching web
+2026-09-16 Alert rn: announceForAccessibility iOS-only or every platform → iOS only; Android relies on accessibilityLiveRegion
+2026-09-16 Alert rn: non-string body without heading leaves region unnamed → accessibilityLabel left unset; children read on their own
+2026-09-16 Alert rn: status scenario has no RN check, role status? → no role on native; rn checks accessibilityLiveRegion polite
+2026-09-16 Alert rn: icon alignment with the first line unstated → icon box as tall as first line, Icon centred (iconSize description)
+2026-09-16 Alert rn: dismissMargin negative margin vs no-sibling-margins rule → the one sanctioned margin, on the wrapper View
+2026-09-16 Alert lit: role via ElementInternals vs plain host attribute → plain role attribute on host, removed when live off
+2026-09-16 Alert lit: ariaLabelledByElements name invisible to tests → plain host aria-label with heading text, else body text
+2026-09-16 Alert lit: --ds-alert-icon-size hook does not reach Icon → override through overrides.iconSize; hook does not resize Icon
+2026-09-16 Alert lit: container bindings have no part → background, border, borderWidth, radius, padding, gap, partGap, fontFamily, lineHeight part container
+2026-09-16 Alert lit: named heading slot absent from parts → heading is a string property only; no named slot
+2026-09-16 Alert lit: part names kebab-case vs anatomy names verbatim → camelCase for part and data-part
+2026-09-16 Alert lit: live-off-renders-no-role limited to web → now [web, lit]
+2026-09-16 Alert web: dismissButton data-part blocked by Button's own hook → span wrapper carries data-part and dismissMargin; tests click inner button
+2026-09-16 Alert web: icon part hook for a composed Icon → span alignment box carries data-part icon
+2026-09-16 Alert web: inline iconSize override defeats consumer CSS hook → hook does not resize Icon; override through overrides.iconSize
+2026-09-16 Alert web: body aria-labelledby makes rich body text the name → intended; whole body text including links is the name
+2026-09-16 Alert web: next focusable element on dismiss undefined → selector list, skipping disabled, inert and unrendered elements
+2026-09-16 Alert web: notes say inline SVG, binding says Icon → system Icon named by tone in the icon box
+2026-09-16 Alert web: dismiss glyph described as 1em × glyph → Icon name close with inline
+2026-09-16 Breadcrumb rn: nav and list parts share one root View → root View is both parts, testID Breadcrumb, no nav/list testIDs
+2026-09-16 Breadcrumb rn: Link takes no testID for the link part → Text wrapping each Link carries Breadcrumb.link; full testID list in rn notes
+2026-09-16 Breadcrumb rn: copy.current has no stated use on rn → rn current Text accessibilityLabel is '<label>, <copy.current>'
+2026-09-16 Breadcrumb rn: returning false from onNavigate changes nothing on native → typed boolean | void and passed as Link onPress; nothing to cancel
+2026-09-16 Breadcrumb rn: native handler has no event argument → onNavigate is (item, index) on native
+2026-09-16 Breadcrumb rn: gap without margins, and row gap unspecified → root columnGap plus item-internal gap after separator; row gap none
+2026-09-16 Breadcrumb rn: only fontSize reaches the Link's wrapping Text → wrapping Text overrides get fontSize, fontFamily, fontWeight, lineHeight
+2026-09-16 Breadcrumb rn: ellipsis glyph unnamed and has no colour source → Icon ellipsis through Button's icon prop, Button colours it
+2026-09-16 Breadcrumb rn: ellipsis Button size sm missing from rn notes → composition expand props variant ghost, size sm, iconOnly
+2026-09-16 Breadcrumb rn: no container of revealed items to focus → setAccessibilityFocus on first revealed item's View (index 1)
+2026-09-16 Breadcrumb rn: click link scenario doesn't say which link → first ancestor link, expects (items[0], 0)
+2026-09-16 Breadcrumb lit: separator is a pseudo-element with no data-part → separatorColor styles item ::before; no part on web/Lit; rn Text Breadcrumb.separator
+2026-09-16 Breadcrumb lit: itemColor on li but described for plain ancestors → set on item, reaches plain text; Link/current set own
+2026-09-16 Breadcrumb lit: ellipsis button has no anatomy part → new anatomy part expand on a wrapper span (part+data-part), rn View Breadcrumb.expand
+2026-09-16 Breadcrumb lit: first revealed item may have no href → first revealed link, else first revealed item via tabindex -1
+2026-09-16 Breadcrumb lit: gap on both sides of separator with separator in item → list column gap plus item gap; wrapped line may start with separator
+2026-09-16 Breadcrumb lit: ellipsis glyph described as three-dot glyph → system Icon ellipsis as Button leadingIcon
+2026-09-16 Breadcrumb lit: navigate cancel via event or originalEvent → both cancel; preventDefault on navigate also prevents the click
+2026-09-16 Breadcrumb lit: expanded reset when items changes unstated → stays expanded for the instance's life
+2026-09-16 Breadcrumb lit: required items has no initial value → Lit starts items as []
+2026-09-16 Breadcrumb web: Link data-part clashes with link part → span data-part link wraps Link; Link keeps anchor
+2026-09-16 Breadcrumb web: itemColor part vs plain-ancestor description → set on li, reaches plain text; Link/current override
+2026-09-16 Breadcrumb web: gap without margins, row gap unspecified → list column-gap plus li gap; row gap none
+2026-09-16 Breadcrumb web: copy.current unused on web → not rendered on web/Lit; aria-current announces it
+2026-09-16 Breadcrumb web: ellipsis glyph unnamed → Icon ellipsis
+2026-09-16 Breadcrumb web: revealed item without href focus target → first revealed link, else first revealed li tabindex -1
+2026-09-16 Breadcrumb web: empty-string href handling → counts as absent, plain text
+2026-09-16 Breadcrumb web: onNavigate cancel only via preventDefault → returning false or preventDefault cancels
+2026-09-16 Breadcrumb web: five items hide only a little → literal rule kept; five items hide the second and third
+2026-09-16 Breadcrumb web: empty or single-item trail uncovered → empty list inside named landmark / lone current page, no dev warning
+2026-09-16 Checkbox rn: Form value is boolean but prose says value when checked → Form collects boolean checked; value is native-form only; shared names aren't a multi-select
+2026-09-16 Checkbox rn: accessibilityLabel is label only, yet required must be in name → label plus requiredIndicator, prefixed with the Fieldset legend
+2026-09-16 Checkbox rn: who clears indeterminate, a prop with no event → a toggle clears the mixed indicator locally until the prop changes
+2026-09-16 Checkbox rn: next checked value when toggling from indeterminate unspecified → toggling from mixed sets checked to !checked
+2026-09-16 Checkbox rn: native focus ring geometry unspecified → focused control's border takes focusRing at focusRingWidth; box keeps its size
+2026-09-16 Checkbox rn: pressedOverlay has no part → part control; native draws it as an overlay View inside the box
+2026-09-16 Checkbox rn: row vertical padding to centre control in minTarget unbound → no padding; row is at least minTarget tall and centres its contents
+2026-09-16 Checkbox rn: helperSize/fontFamily/lineHeight have no part → parts given; forwarded to description/errorMessage Text, and the label Text on native
+2026-09-16 Checkbox rn: errorMessage placement and gap unspecified → below the Pressable, outside the hit area, separated by partGap
+2026-09-16 Checkbox rn: RN has no invalid accessibility state → danger border plus announced error text; RN checks the text
+2026-09-16 Checkbox rn: control hidden from accessibility, scenario assumes it's queryable → row is the one accessible element and RN tests check that
+2026-09-16 Checkbox lit: controlled section contradicts Lit live checked property → property starts from attribute else defaultChecked, tracks toggles
+2026-09-16 Checkbox lit: what ds-form collects is contradictory → boolean checked; native form gets checked ? value : null
+2026-09-16 Checkbox lit: void input can't contain indicator Icon → box wrapper stacks input and indicator span with part/data-part indicator
+2026-09-16 Checkbox lit: pressedOverlay has no part or CSS state → :active on unchecked, not-mixed, enabled control, color-mix over controlBackground
+2026-09-16 Checkbox lit: helperSize/errorText/partGap have no part → parts given; Text props and forwards in composition; colours from tone
+2026-09-16 Checkbox lit: copy.checked/unchecked/mixed unused on Lit → SwiftUI only; web/Lit/rn notes say unused
+2026-09-16 Checkbox lit: is requiredIndicator part of the accessible name → yes on every platform, plain label text
+2026-09-16 Checkbox lit: validationMessage precedence when invalid+required+unchecked → error, Form message, then copy.required if unchecked, else copy.invalid
+2026-09-16 Checkbox lit: no Lit mechanism for Fieldset disabled → ds-fieldset sets disabled on direct data-ds-field children, plus formDisabledCallback
+2026-09-16 Checkbox web: Form value model contradicts value multi-select → declared boolean model; value prop and When to use rewritten
+2026-09-16 Checkbox web: indicator "inside the control" but input is void → wrapper box span; indicator span carries data-part indicator
+2026-09-16 Checkbox web: ref on root wrapper vs input element → forwarded ref resolves to the <input>
+2026-09-16 Checkbox web: indeterminate clearing has no controlled pair → local clear until indeterminate prop changes value
+2026-09-16 Checkbox web: no React FieldsetContext for group disabled → Fieldset passes disabled prop to direct child fields
+2026-09-16 Checkbox web: indicatorStroke hook declared but unread → locked, declares no hook on any platform; Icon applies it
+2026-09-16 Checkbox web: pressedOverlay on checked/mixed boxes unspecified → unchecked, not-mixed, enabled only
+2026-09-16 Checkbox web: copy.checked/unchecked/mixed unused on web → SwiftUI-only, web note says unused
+2026-09-16 Checkbox web: requiredIndicator muted or smaller unstated → plain label text, same size and colour as the label
+2026-09-16 Checkbox web: does the gap between control and label toggle → yes, whole row including gap
+2026-09-16 Checkbox web: disabledOpacity target part unnamed → part control; dims control and label, not description or error
+2026-09-16 Disclosure rn: inline chevron Icon conflicts with overrides.size from triggerFontSize → native non-inline Icon with overrides.size triggerFontSize; web/Lit inline Icon
+2026-09-16 Disclosure rn: accessibilityHint listed but its content never stated → removed from rn props; would only repeat accessibilityState
+2026-09-16 Disclosure rn: copy.expanded/collapsed have no stated use on native → SwiftUI-only; rn notes say unused
+2026-09-16 Disclosure rn: disabled opacity on whole element conflicts with panel keeping state → disabled dims the trigger only
+2026-09-16 Disclosure rn: hover binding says pressed but Pressable reports only pressed → RN onHoverIn/onHoverOut or pressed, suppressed while disabled
+2026-09-16 Disclosure rn: string children cannot render in a View → component wraps string/number children in the package Text
+2026-09-16 Disclosure rn: panelColor cannot reach arbitrary children on native → wrapped strings get it via Text tone; other children keep their own colour
+2026-09-16 Disclosure rn: keyboard reason indistinguishable, controlled echo unstated → native press reports pointer; controlled only for uncaused changes; echoes not re-fired
+2026-09-16 Disclosure rn: useReducedMotion resolves async so first rotation may animate → chevron snaps until useReducedMotion resolves
+2026-09-16 Disclosure rn: disabled-trigger-stays-focusable untestable on RN → RN tests check accessibilityState.disabled, not focusability
+2026-09-16 Disclosure rn: heading-level scenarios only check render on native → RN tests check render and the header role on the summary Text
+2026-09-16 Disclosure lit: toggle detail documented as { open } but payload has reason → detail { open, reason } on every platform
+2026-09-16 Disclosure lit: controlled echo of a user click unspecified → echo not re-fired; pending request clears at the next open change
+2026-09-16 Disclosure lit: copy.expanded/collapsed unused on Lit → SwiftUI-only; web/Lit rely on aria-expanded
+2026-09-16 Disclosure lit: icon binding has no part → part triggerIcon, a wrapper carrying colour and rotation around the Icon
+2026-09-16 Disclosure lit: hover background has no transition binding → transition covers only the chevron; hover background change is instant
+2026-09-16 Disclosure lit: RTL mirroring with open rotation unstated for Lit → [dir=rtl] scaleX(-1), plus rotate(90deg) when open, on web and Lit
+2026-09-16 Disclosure lit: defaultOpen attribute name missing → default-open attribute, not reflected
+2026-09-16 Disclosure web: ref target unclear when root is not interactive → ref resolves to the trigger <button> because Accordion needs it
+2026-09-16 Disclosure web: notes say inline SVG, contradicting the Icon binding → system Icon chevron-right inline, aria-hidden, in the triggerIcon wrapper
+2026-09-16 Disclosure web: icon binding lacks part; no size forward on web → part triggerIcon; inline Icon follows trigger font on web/Lit
+2026-09-16 Disclosure web: focusRing/minTarget/disabledOpacity/transition have no part → first ones part trigger; transition part triggerIcon
+2026-09-16 Disclosure web: hover binding says pressed but its state is only hover → :hover and :active, suppressed while disabled
+2026-09-16 Disclosure web: web props base unspecified → props extend the button's attributes; rest goes to the trigger
+2026-09-16 Disclosure web: controlled echo and mount firing unspecified → echo not re-fired, controlled only for uncaused changes, nothing on mount
+2026-09-16 Disclosure web: disabled state assertion with aria-disabled unclear → aria-disabled="true", never the native attribute
+2026-09-16 Disclosure web: focus-within undefined after focus leaves to non-focusable area → restore when inside the panel or on body after leaving it
+2026-09-16 Disclosure web: renders-heading-level scenarios only say renders → scenarios check a heading of that level contains the trigger
+2026-09-16 Fieldset rn: rn props list accessibilityRole but guidance says role prop → rn props list role; role="group", not accessibilityRole
+2026-09-16 Fieldset rn: clone fallback kept though rn fields read FieldsetContext → RN/SwiftUI fields read FieldsetContext; no clone fallback
+2026-09-16 Fieldset rn: description mapping to accessibilityHint unstated → description is the group View's accessibilityHint
+2026-09-16 Fieldset rn: description/error Text size, helperSize/errorText have no part → description Text muted sm, error Text danger sm; parts given
+2026-09-16 Fieldset rn: fontFamily/lineHeight have no part → part legend; reach the Texts only through overrides
+2026-09-16 Fieldset rn: partGap has no part → part group, gap on the root
+2026-09-16 Fieldset rn: Stack/Text take no testID for part hooks → plain Views carrying Fieldset.<part> testIDs
+2026-09-16 Fieldset rn: requiredIndicator in group accessibilityLabel unstated → part of the accessible name on every platform
+2026-09-16 Fieldset rn: examples give children as prose → descriptions and children strings name the concrete fields
+2026-09-16 Fieldset rn: disabled scenario web-only, RN checks undocumented → RN checks legend text and toHaveAccessibleName
+2026-09-16 Fieldset rn: non-field child gets no native label association → acceptable; the legend is read in order before it
+2026-09-16 Fieldset lit: legend/helper sizes forwarded beyond "add no other forwards" → Text forwards list fontSize/fontWeight/fontFamily/lineHeight
+2026-09-16 Fieldset lit: fieldsGap CSS hook cannot reach Stack → token path through Stack overrides.gap only; no --ds-stack-gap
+2026-09-16 Fieldset lit: Text defaults need props beyond composition → composition props: legend default/md/medium/span, description muted/sm/span, error danger/sm/span
+2026-09-16 Fieldset lit: disabledOpacity has no part → dims legend and description only
+2026-09-16 Fieldset lit: helperSize no part, errorMessage plain element → errorMessage is a composed Text; helperSize via overrides
+2026-09-16 Fieldset lit: error region always present or only while set → rendered only while error is set
+2026-09-16 Fieldset lit: requiredIndicator in accessible name and styling unstated → inside legend, inherits legend Text, part of the name
+2026-09-16 Fieldset lit: required indicator has no reactive source → direct data-ds-field children's required on slotchange plus attribute changes
+2026-09-16 Fieldset lit: disabled propagation target "slotted ds-* fields" vague → disabled property on direct data-ds-field children, remembering which it set
+2026-09-16 Fieldset lit: examples give children as prose, no date Input → children strings name each field; date range uses text Inputs
+2026-09-16 Fieldset lit: legend name expectation web-only → [web, lit]
+2026-09-16 Fieldset lit: disabled scenario web-only, no Lit test → [web, lit]
+2026-09-16 Fieldset web: no data-part="fields" hook on the Stack → Fieldset-owned wrapper carries data-part fields
+2026-09-16 Fieldset web: Text bindings forwarded despite "add no other forwards" → forwards listed for legend, description and error Texts
+2026-09-16 Fieldset web: errorMessage Text in guidance but plain in parts → danger sm Text inside a role=alert wrapper
+2026-09-16 Fieldset web: legendColor/descriptionText have no CSS hook → Text tones default/muted; no hook
+2026-09-16 Fieldset web: disabledOpacity has no part → dims legend and description only
+2026-09-16 Fieldset web: fragment children count as direct for required? → fragments flattened and count; other wrappers not inspected
+2026-09-16 Fieldset web: FieldsetContext location and type unstated → web passes disabled to direct child fields; no React FieldsetContext
+2026-09-16 Fieldset web: examples give children as prose → concrete children strings and descriptions
+2026-09-16 Fieldset web: requiredIndicator in accessible name unstated → included in the group's accessible name
+2026-09-16 Landmark rn: has-accessible-name needs a Default role that takes a label → Default story is role navigation, label "Main"
+2026-09-16 Landmark rn: bare string example children cannot sit in a View → Landmark wraps string and number children in Text
+2026-09-16 Landmark rn: no rn scenario checks role reaches the View → role, search and region scenarios check role/accessibilityRole/accessibilityLabel on rn
+2026-09-16 Landmark rn: missing-label warning text unstated → warning text named; only the missing-label warning applies on rn
+2026-09-16 Landmark lit: schema notes say ElementInternals, guidance says plain attributes → plain reflected role/aria-label attributes
+2026-09-16 Landmark lit: reflect lists role but the property is landmark → landmark property reflects to role; label to aria-label
+2026-09-16 Landmark lit: Default story role unstated, chose main → Default story is role navigation with label "Main"
+2026-09-16 Landmark lit: children are light DOM, no slot to render → no <slot>; example strings render in Text
+2026-09-16 Landmark lit: region part cannot carry part/data-part → host's data-ds="Landmark" is the only hook
+2026-09-16 Landmark lit: no role attribute behavior unstated → no role exposed, development warning
+2026-09-16 Landmark web: SidePanel passes className/style through Landmark → Landmark takes no className/style; composites wrap their own element
+2026-09-16 Landmark web: which naming sources count for the warnings → label (empty is absent) and a composite's aria-labelledby text
+2026-09-16 Landmark web: which instance warns and how often → later landmark in document order, on appear or change
+2026-09-16 Landmark web: label on banner/main/contentinfo dropped, warned or rendered → not rendered, with a development warning
+2026-09-16 Landmark web: role explicitness when as equals the default element → explicit on header/footer, differing as, non-implying element
+2026-09-16 Landmark web: Default role main makes odd renders-as pairs → Default story is role navigation with label "Main"
+2026-09-16 Landmark web: unlabelled region, and as section with another role → plain <section> plus warning; role emitted when not implied
+2026-09-16 Landmark web: empty-string label not covered → counts as absent
+2026-09-16 Meter rn: no valueWeight binding, value text weight unspecified → Text's regular, not a binding
+2026-09-16 Meter rn: valueColor and valueSize have no part → part valueText; Text tone muted and a fontSize forward
+2026-09-16 Meter rn: accessibilityValue.text omitted when no valueText → always valueText, else the same formatted percentage
+2026-09-16 Meter rn: fill behaviour before first layout unstated → snaps with no animation on first layout and resize
+2026-09-16 Meter lit: labelGap bound to label but it belongs to the row → new header anatomy part; labelGap on header
+2026-09-16 Meter lit: seven bindings have no part → radius track, value* valueText, partGap container, fonts forwarded, transition fill
+2026-09-16 Meter lit: required value and label have no Lit starting value → value 0, label '', no warning
+2026-09-16 Meter lit: aria-valuetext when valueText is omitted → always set, to valueText or the rounded percentage
+2026-09-16 Meter lit: percentage string has no locale or format rule → Intl.NumberFormat percent, maximumFractionDigits 0
+2026-09-16 Meter lit: fill width from rounded or exact percentage → exact fraction for width; rounding only for text
+2026-09-16 Meter lit: missing or unparseable min/max attributes → fall back to 0 and 100
+2026-09-16 Meter lit: label Text props unstated, value a plain span → both Text with props and forwards
+2026-09-16 Meter lit: hideValue attribute name and reflection → hide-value, not reflected
+2026-09-16 Meter lit: can aria-labelledby point at a composed ds-text host → yes, inside the same shadow root
+2026-09-16 Meter web: labelGap on label, no part for the label row → header part, flex row with gap labelGap
+2026-09-16 Meter web: seven bindings have no part → part per binding; fonts reach Texts only through forwards
+2026-09-16 Meter web: value as a plain span conflicts with composition rules → value is Text span sm muted
+2026-09-16 Meter web: aria-valuetext when valueText is omitted → always set; same string on every platform
+2026-09-16 Meter web: what text shows when max <= min → empty track, shows and announces 0%
+2026-09-16 Meter web: role element vs data-ds element unstated → role/aria-value* on the track, data-ds on the root
+2026-09-16 Meter web: notes say transition width → inline-size for fill size and transition
+2026-09-16 RadioGroup rn: standalone required group ever renders copy.required? → only once marked invalid, after error and Form message
+2026-09-16 RadioGroup rn: where copy.position goes on RN → each radio's accessibilityValue text; not rendered on web/Lit
+2026-09-16 RadioGroup rn: how label and description join in accessibilityLabel → `${label}, ${description}`
+2026-09-16 RadioGroup rn: group accessibilityLabel with or without required indicator → legend including requiredIndicator, Fieldset legend prefixed
+2026-09-16 RadioGroup rn: root testID vs a separate group hook → root is the group part, testID RadioGroup
+2026-09-16 RadioGroup rn: whether the native dot View carries a hook → hook only where it is a real node; RN RadioGroup.radioIndicator
+2026-09-16 RadioGroup rn: focus-visible part not named → focusRing on radio replaces the control's border
+2026-09-16 RadioGroup rn: Default story args and selection unspecified → Default is shipping-method with nothing selected
+2026-09-16 RadioGroup rn: disabled option opacity stacking with disabled group → rows dim once, no stacking
+2026-09-16 RadioGroup rn: option row padding and label–description gap unbound → optionPaddingBlock and optionTextGap on space.1
+2026-09-16 RadioGroup rn: disabled/invalid scenarios, what RN asserts → onChange not firing, copy text, unchecked state
+2026-09-16 RadioGroup lit: shadow part names kebab-case vs verbatim → anatomy names verbatim camelCase
+2026-09-16 RadioGroup lit: copy.position has no web/Lit use → not rendered on web/Lit; native only
+2026-09-16 RadioGroup lit: groupId for option ids undefined in shadow root → `${name || 'radio-group'}-${value}`
+2026-09-16 RadioGroup lit: label–description spacing unbound → optionTextGap space.1
+2026-09-16 RadioGroup lit: delegatesFocus focuses first radio, not the checked one → host focus() targets checked, else first enabled
+2026-09-16 RadioGroup lit: arrow keys and Space in a disabled group → prevented on the fieldset
+2026-09-16 RadioGroup lit: aria-invalid on the fieldset or each radio → fieldset only (web and Lit)
+2026-09-16 RadioGroup lit: disabledOpacity target for a disabled group → option rows only
+2026-09-16 RadioGroup lit: disabled-group-is-inert state check web-only → [web, lit]
+2026-09-16 RadioGroup web: no FieldsetContext in React → web gets the disabled prop Fieldset passes
+2026-09-16 RadioGroup web: precedence for display or validate() → display error, Form message, then while invalid; validate() required then invalid
+2026-09-16 RadioGroup web: copy.position unused on web → not rendered on web/Lit
+2026-09-16 RadioGroup web: radioIndicator as ::after only or also ::before → either pseudo-element, no hook
+2026-09-16 RadioGroup web: descriptionText/errorText hooks never read → composition Text tones; no own hook; sizes forwarded
+2026-09-16 RadioGroup web: whether the root carries data-part group → fieldset carries data-part group
+2026-09-16 RadioGroup web: validate blur vs change for a radio group → blur is group focus-out; change on each change
+2026-09-16 Switch rn: Overrides list track/thumb geometry the native Switch draws → omitted from RN overridable union; overridable on web/Lit/SwiftUI
+2026-09-16 Switch rn: thumb part has no view, track testID placement → no thumb view or testID on RN; Switch.track is the native Switch
+2026-09-16 Switch rn: disabled says focusable but native Switch cannot focus → stated limit; accessibilityState announces disabled
+2026-09-16 Switch rn: click track impossible on a native Switch → RN tests fire valueChange on the switch role, press on label/description
+2026-09-16 Switch rn: focus ring and minTarget cannot be drawn natively → OS focus indicator; minTarget is the row's minHeight
+2026-09-16 Switch rn: Fieldset disabled and legend prefix only in prose → FieldsetContext carries disabled and legend, '<legend>, <label>'
+2026-09-16 Switch rn: no copy for the Fieldset prefix separator → ', ' is fixed punctuation, not copy
+2026-09-16 Switch rn: controlled prop change and no-op press firing unstated → neither fires onChange; nothing on mount
+2026-09-16 Switch rn: row padding and padded track frame unspecified → no row padding, no frame; only minHeight minTarget
+2026-09-16 Switch lit: Controlled-state contract contradicts Lit live checked → Lit carve-out: live property, no controlled mode
+2026-09-16 Switch lit: guidance reflects checked while notes say not reflected → checked not reflected
+2026-09-16 Switch lit: pseudo-element thumb has no hook, rendered real span → web and Lit both draw thumb as input ::before, no hook
+2026-09-16 Switch lit: DsFormField required/error/validity for a never-validating field → required false, empty message, always valid, no error
+2026-09-16 Switch lit: discovery context undefined for Lit → host sets data-ds-field="change"
+2026-09-16 Switch lit: radius has no part → part track; applies to track and thumb
+2026-09-16 Switch lit: gap/partGap/helperSize/fontFamily/lineHeight lack parts → parts assigned; description Text sm muted forwards
+2026-09-16 Switch lit: track alignment with wrapping label or description → top of row, centred on label first line
+2026-09-16 Switch lit: FieldsetContext has no Lit mechanism → ds-fieldset sets disabled on data-ds-field children, plus formDisabledCallback
+2026-09-16 Switch lit: name not reflected so native form misses it → name reflected
+2026-09-16 Switch web: no React FieldsetContext → Fieldset passes disabled to direct child fields
+2026-09-16 Switch web: description Text forwards undeclared → forwards fontSize/fontFamily/lineHeight; tone muted, no hook
+2026-09-16 Switch web: thumb pseudo-element hookless not stated intentional → input ::before with no hook on web and Lit, by design
+2026-09-16 Switch web: disabled Switch form submission unstated → registered like Checkbox; Form's disabled-field rule applies
+2026-09-16 Switch web: disabledOpacity has no part → part track; dims track, label and description
+2026-09-16 Switch web: reduced motion covers track colour change? → both thumb travel and colour transition removed
+2026-09-16 Switch web: minTarget row sizing and gap clicks → min-block-size comfortable target on full-width row; gap clicks toggle
+2026-09-16 Switch web: controlled input vs aria-checked mirroring → input uncontrolled for native state; aria-checked mirrored

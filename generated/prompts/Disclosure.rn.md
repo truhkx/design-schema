@@ -73,7 +73,10 @@ component:
       type: content
       required: true
       description: The content of the panel. Rendered only while open (not merely
-        hidden), so heavy content is not laid out until asked for.
+        hidden), so heavy content is not laid out until asked for. On React Native
+        the component (not the consumer) wraps string or number children in the package
+        `Text`, which gives them `panelColor` through Text's default tone; other children
+        keep their own colour, since native has no style inheritance.
     open:
       type: boolean
       description: Controlled open state. Omit for an uncontrolled disclosure.
@@ -89,7 +92,8 @@ component:
       type: boolean
       default: false
       description: The trigger cannot be activated. Stays focusable and is announced
-        as disabled; the panel keeps its current state.
+        as disabled. Only the trigger is dimmed (`disabledOpacity`); the panel keeps
+        its current state and full opacity.
     keepMounted:
       type: boolean
       default: false
@@ -113,7 +117,13 @@ component:
         a reason: `pointer`, `keyboard`, or `controlled` (Accordion relies on it).
         Web and Lit read the activation method from the native click (`event.detail
         === 0` means keyboard); Pressable reports nothing of the kind, so native always
-        says `pointer` and Accordion derives its own reasons there.'
+        says `pointer` for a trigger press (keyboard activation cannot be told apart)
+        and Accordion derives its own reasons there. The payload is `{ open, reason
+        }` on every platform (Lit: `event.detail`). A controlled `open` change the
+        component did not cause reports `controlled`; when the consumer sets `open`
+        to the value a user toggle already reported, that echo does not fire again
+        (a pending request that is never echoed is cleared at the next `open` change);
+        nothing fires on mount.'
       platforms:
         web: onToggle
         lit: toggle
@@ -147,7 +157,9 @@ component:
       token: color.background.subtle
       part: trigger
       state: hover
-      description: Pointer hover and pressed state of the trigger.
+      description: Pointer hover and pressed state of the trigger — web and Lit apply
+        it on :hover and :active, RN on onHoverIn/onHoverOut or pressed; suppressed
+        while disabled. The background change is instant (no transition).
       locked: true
     triggerPaddingBlock:
       token: space.sm
@@ -180,10 +192,17 @@ component:
       locked: false
     icon:
       token: color.foreground.muted
-      description: The chevron is `Icon name="chevron-right" inline` rotated 90° when
-        open, so it follows the trigger's font size (including a `triggerFontSize`
-        override). Mirrored in right-to-left writing on every platform (`[dir=rtl]`
-        on web; `I18nManager.isRTL` → `chevron-left` on native).
+      part: triggerIcon
+      description: 'Colour of the `triggerIcon` part: a wrapper the Disclosure owns
+        (a span on web/Lit, a View on native) that carries this colour and the rotation,
+        around the system `Icon name="chevron-right"` (decorative, aria-hidden), which
+        keeps its own hook and is not restyled. Rotated 90° when open. On web and
+        Lit the Icon is `inline`, so it follows the trigger''s font size (including
+        a `triggerFontSize` override). On native the Icon is not inline (an inline
+        Icon ignores size) and its `overrides.size` receives the `triggerFontSize`
+        token (default `font.size.md`). Mirrored in right-to-left writing on every
+        platform (`[dir=rtl]` → `scaleX(-1)` on web and Lit, composed as `scaleX(-1)
+        rotate(90deg)` when open; `I18nManager.isRTL` → `chevron-left` on native).'
       locked: true
     panelPaddingBlock:
       token: space.sm
@@ -199,20 +218,28 @@ component:
       locked: true
     focusRing:
       token: color.border.focus
+      part: trigger
       locked: true
     focusRingWidth:
       token: border.width.focus
+      part: trigger
       locked: true
     minTarget:
       token: size.target.min
+      part: trigger
       locked: true
     disabledOpacity:
       token: opacity.disabled
+      part: trigger
+      description: Dims the trigger only; the panel keeps full opacity.
       locked: false
     transition:
       token: motion.duration.base
-      description: Chevron rotation, with motion.easing.standard; instant under reduced
-        motion. The panel itself does not animate height.
+      part: triggerIcon
+      description: Chevron rotation only, with motion.easing.standard; instant under
+        reduced motion (on native the chevron snaps until useReducedMotion has resolved,
+        so nothing animates on first render). The panel itself does not animate height,
+        and the trigger hover background has no transition.
       locked: false
   copy:
     expanded: Expanded
@@ -246,12 +273,19 @@ component:
       - aria-controls
       - aria-disabled
       - hidden
-      notes: A wrapping <div> (so the optional heading and the panel are siblings)
+      notes: 'A wrapping <div> (so the optional heading and the panel are siblings)
         containing a native <button aria-expanded aria-controls> and a panel <div
         id> rendered only while open (or `hidden` while closed with keepMounted);
         aria-controls is set only while the panel exists — the APG pattern rather
         than <details>, so the state is controllable, the trigger can sit inside a
-        heading, and the panel can be unmounted. Chevron is an inline SVG with aria-hidden.
+        heading, and the panel can be unmounted. The chevron is the system `Icon name="chevron-right"
+        inline` (aria-hidden) inside the `triggerIcon` wrapper span. Props extend
+        the trigger button''s attributes (`ComponentPropsWithoutRef<''button''>` minus
+        the ones the component owns: className, style, type, disabled, aria-expanded,
+        aria-controls, aria-disabled, onClick, onToggle) and the rest go to the trigger.
+        `ref` resolves to the trigger <button>, not the wrapping <div>, because Accordion
+        moves focus between triggers with it. `disabled` sets aria-disabled="true"
+        and never the native attribute, so the button is not :disabled.'
     lit:
       tag: ds-disclosure
       reflect:
@@ -263,24 +297,36 @@ component:
         keep-mounted the slot is always rendered and its wrapper gets `hidden` while
         closed). Light-DOM children exist either way, so ds-form skips fields inside
         a closed ds-disclosure that lacks keep-mounted, matching the other platforms.
-        `toggle` is a composed CustomEvent with detail { open }. `open` is reflected
-        so it can be styled and set from markup; the resolved state is readable as
-        `currentOpen` (ds-form reads `currentOpen` and `keepMounted` to skip hidden
-        fields); `heading-level` is an attribute.
+        `toggle` is a composed CustomEvent with detail { open, reason }. `open` is
+        reflected so it can be styled and set from markup; the resolved state is readable
+        as `currentOpen` (ds-form reads `currentOpen` and `keepMounted` to skip hidden
+        fields); `heading-level` and `default-open` are attributes (`default-open`
+        is not reflected). The chevron is `<ds-icon name="chevron-right" inline>`
+        (aria-hidden) inside the `triggerIcon` wrapper span, mirrored under [dir=rtl]
+        like web.
     rn:
       element: Pressable
       props:
       - accessibilityRole=button
       - accessibilityLabel
       - accessibilityState
-      - accessibilityHint
       notes: 'Pressable trigger with accessibilityState={{ expanded: open, disabled
         }} and the panel conditionally rendered below. Screen readers read "expanded/collapsed"
-        from the state; there is no aria-controls equivalent. `headingLevel` sets
-        accessibilityRole="header" on the trigger text instead of a level. The chevron
-        is the system Icon, mirrored to `chevron-left` under `I18nManager.isRTL` with
-        the open rotation reversed to match, and its `overrides.size` receives the
-        same token as `triggerFontSize` so the glyph tracks the trigger text. Native
+        from the state; there is no aria-controls equivalent. No accessibilityHint:
+        it would only repeat the state accessibilityState already announces. `copy.expanded`/`copy.collapsed`
+        are unused here. `headingLevel` sets accessibilityRole="header" on the summary
+        Text instead of a level, so RN tests for the heading-level scenarios check
+        that it renders and that the summary Text has the header role, not a level.
+        RN tests do not check that a disabled trigger stays focusable (RNTL has no
+        focusable assertion for a Pressable); they check accessibilityState.disabled.
+        The chevron is the system Icon (not inline, since an inline Icon ignores size)
+        inside the `triggerIcon` wrapper View, mirrored to `chevron-left` under `I18nManager.isRTL`
+        with the open rotation reversed to match, and its `overrides.size` receives
+        the same token as `triggerFontSize` (default `font.size.md`) so the glyph
+        tracks the trigger text. Until useReducedMotion resolves, the chevron is set
+        directly (no animation on first render). A trigger press always reports reason
+        `pointer`. The component wraps string or number children in the package Text
+        (panelColor via its default tone); other children keep their own colour. Native
         has no notion of focus within a subtree, so a panel that closes while something
         inside it held focus cannot hand focus back to the trigger; the screen reader
         falls to the next element, which is the trigger itself.'
@@ -390,9 +436,15 @@ component:
 - `triggerFontSize`: token `font.size.md`; part `trigger`
 - `triggerFontWeight`: token `font.weight.medium`; part `trigger`
 - `triggerRadius`: token `radius.md`; part `trigger`
+- `icon`: token `color.foreground.muted`; part `triggerIcon`; locked
 - `panelPaddingBlock`: token `space.sm`; part `panel`
 - `panelPaddingInline`: token `space.sm`; part `panel`
 - `panelColor`: token `color.foreground`; part `panel`; locked
+- `focusRing`: token `color.border.focus`; part `trigger`; locked
+- `focusRingWidth`: token `border.width.focus`; part `trigger`; locked
+- `minTarget`: token `size.target.min`; part `trigger`; locked
+- `disabledOpacity`: token `opacity.disabled`; part `trigger`
+- `transition`: token `motion.duration.base`; part `triggerIcon`
 
 ## Constants and examples
 
@@ -494,16 +546,25 @@ props:
 - accessibilityRole=button
 - accessibilityLabel
 - accessibilityState
-- accessibilityHint
 notes: 'Pressable trigger with accessibilityState={{ expanded: open, disabled }} and
   the panel conditionally rendered below. Screen readers read "expanded/collapsed"
-  from the state; there is no aria-controls equivalent. `headingLevel` sets accessibilityRole="header"
-  on the trigger text instead of a level. The chevron is the system Icon, mirrored
+  from the state; there is no aria-controls equivalent. No accessibilityHint: it would
+  only repeat the state accessibilityState already announces. `copy.expanded`/`copy.collapsed`
+  are unused here. `headingLevel` sets accessibilityRole="header" on the summary Text
+  instead of a level, so RN tests for the heading-level scenarios check that it renders
+  and that the summary Text has the header role, not a level. RN tests do not check
+  that a disabled trigger stays focusable (RNTL has no focusable assertion for a Pressable);
+  they check accessibilityState.disabled. The chevron is the system Icon (not inline,
+  since an inline Icon ignores size) inside the `triggerIcon` wrapper View, mirrored
   to `chevron-left` under `I18nManager.isRTL` with the open rotation reversed to match,
-  and its `overrides.size` receives the same token as `triggerFontSize` so the glyph
-  tracks the trigger text. Native has no notion of focus within a subtree, so a panel
-  that closes while something inside it held focus cannot hand focus back to the trigger;
-  the screen reader falls to the next element, which is the trigger itself.'
+  and its `overrides.size` receives the same token as `triggerFontSize` (default `font.size.md`)
+  so the glyph tracks the trigger text. Until useReducedMotion resolves, the chevron
+  is set directly (no animation on first render). A trigger press always reports reason
+  `pointer`. The component wraps string or number children in the package Text (panelColor
+  via its default tone); other children keep their own colour. Native has no notion
+  of focus within a subtree, so a panel that closes while something inside it held
+  focus cannot hand focus back to the trigger; the screen reader falls to the next
+  element, which is the trigger itself.'
 ```
 
 ## Guidance
@@ -522,7 +583,7 @@ Do not use a Disclosure to hide content that most users need to see or that is r
 
 ## Behavior
 
-Activating the trigger with pointer, Enter, Space, or assistive technology flips the state and fires `onToggle` with the new value. When open, the panel is rendered directly after the trigger in reading order and focus stays on the trigger; users move into the panel themselves. When closed, the panel is removed from the tree (or hidden, with `keepMounted`), so focus inside it must be moved to the trigger first; the component does this when it closes while focus is within, whether the close came from the trigger or from a controlled `open` change. A closed panel's form fields are not collected by a Form unless `keepMounted` is set, so any Disclosure that holds fields must set it. Uncontrolled unless `open` is provided. The chevron rotates over `transition`; the panel appears and disappears without animation, so nothing reflows under the user's pointer.
+Activating the trigger with pointer, Enter, Space, or assistive technology flips the state and fires `onToggle` with the new value. When open, the panel is rendered directly after the trigger in reading order and focus stays on the trigger; users move into the panel themselves. When closed, the panel is removed from the tree (or hidden, with `keepMounted`), so focus inside it must be moved to the trigger first; the component does this when it closes while focus is within (focus inside the panel, or on the body after leaving the now-hidden panel), whether the close came from the trigger or from a controlled `open` change. A closed panel's form fields are not collected by a Form unless `keepMounted` is set, so any Disclosure that holds fields must set it. Uncontrolled unless `open` is provided. The chevron rotates over `transition`; the panel appears and disappears without animation, so nothing reflows under the user's pointer.
 
 ## Content guidelines
 
@@ -535,10 +596,10 @@ The trigger is a real button with the summary as its accessible name (WCAG 4.1.2
 ## Platform notes
 
 ### Web
-Render `<button type="button" aria-expanded={open} aria-controls={panelId}>` containing the chevron (`aria-hidden`) and the summary text; wrap it in `<h{headingLevel}>` when set (the heading has no styling of its own — the button carries it). Render `<div id={panelId}>` after the button only while open, or with the `hidden` attribute while closed when `keepMounted` is set; set `aria-controls` only while the panel exists, so there is never a dangling reference. Use `aria-disabled` rather than `disabled` so the trigger stays discoverable. Mirror the chevron under `[dir=rtl]`. `headingLevel` also accepts a number. Do not use `<details>`: its open state cannot be controlled without side effects, its summary cannot be inside a heading, and browsers differ on how they announce it.
+Render `<button type="button" aria-expanded={open} aria-controls={panelId}>` containing the chevron (`aria-hidden`) and the summary text; wrap it in `<h{headingLevel}>` when set (the heading has no styling of its own — the button carries it), so the heading-level scenarios assert a heading of that level contains the trigger. Render `<div id={panelId}>` after the button only while open, or with the `hidden` attribute while closed when `keepMounted` is set; set `aria-controls` only while the panel exists, so there is never a dangling reference. Use `aria-disabled` rather than `disabled` so the trigger stays discoverable. Mirror the chevron under `[dir=rtl]`. `headingLevel` also accepts a number. Do not use `<details>`: its open state cannot be controlled without side effects, its summary cannot be inside a heading, and browsers differ on how they announce it.
 
 ### Lit
-`<ds-disclosure summary="…" open>` renders the trigger in the shadow root and the panel as a default `<slot>` that exists only while open. The light-DOM children still exist in the document when closed, but children not assigned to any slot are neither rendered nor in the accessibility tree, so omitting the slot is sufficient — do not add `hidden` to the consumer's nodes. Dispatch a composed `toggle` CustomEvent with `detail: { open }`. Reflect `open` and `disabled`.
+`<ds-disclosure summary="…" open>` renders the trigger in the shadow root and the panel as a default `<slot>` that exists only while open. The light-DOM children still exist in the document when closed, but children not assigned to any slot are neither rendered nor in the accessibility tree, so omitting the slot is sufficient — do not add `hidden` to the consumer's nodes. Dispatch a composed `toggle` CustomEvent with `detail: { open, reason }`. Reflect `open` and `disabled`.
 
 ### React Native
 Render a `Pressable` with `accessibilityRole="button"`, `accessibilityLabel={summary}` and `accessibilityState={{ expanded: open, disabled }}`, containing the chevron and a `Text`; render the children in a `View` below it only while open (or with `display: 'none'` while closed when `keepMounted` is set). Moving focus back to the trigger on close is not possible on native (no notion of focus-within), a platform limit. When `headingLevel` is set, mark the summary `Text` with `accessibilityRole="header"` — native has no heading levels. Rotate the chevron with `Animated` over `transition`, or set it directly when `AccessibilityInfo.isReduceMotionEnabled()` is true.

@@ -7,8 +7,9 @@ component:
   status: review
   anatomy: [group, legend, description, fields, errorMessage]
   composition:
-    legend: Text
-    description: Text
+    legend: { component: Text, props: { tone: default, size: md, weight: medium, element: span }, forwards: { legendSize: fontSize, legendWeight: fontWeight, fontFamily: fontFamily, lineHeight: lineHeight } }
+    description: { component: Text, props: { tone: muted, size: sm, element: span }, forwards: { helperSize: fontSize, fontFamily: fontFamily, lineHeight: lineHeight } }
+    errorMessage: { component: Text, props: { tone: danger, size: sm, element: span }, forwards: { helperSize: fontSize, fontFamily: fontFamily, lineHeight: lineHeight } }
     fields: { component: Stack, forwards: { fieldsGap: gap } }
   props:
     legend:
@@ -19,7 +20,7 @@ component:
     children:
       type: content
       required: true
-      description: The fields, usually a Stack of Inputs, Checkboxes or Switches.
+      description: The fields as direct children, usually Inputs, Checkboxes or Switches; Fieldset renders the Stack around them.
     description:
       type: string
       description: Persistent helper text under the legend.
@@ -27,7 +28,7 @@ component:
     error:
       type: string
       description: A group-level error (cross-field validation such as "End date must be after start date"). Field-level errors stay on the fields.
-      a11y: Rendered once under the group with role=alert and linked with aria-describedby; while set, the group carries aria-invalid="true" (accessibilityState invalid is not available on native, so the error text alone identifies it there).
+      a11y: Rendered once under the group, only while set (no empty live region; inserting the role=alert region announces it), and linked with aria-describedby; while set, the group carries aria-invalid="true" (accessibilityState invalid is not available on native, so the error text alone identifies it there).
     disabled:
       type: boolean
       default: false
@@ -38,17 +39,17 @@ component:
       default: normal
       description: Gap between the fields, from the layout rhythm. Fieldset renders the Stack itself; children are the raw fields.
   styles:
-    legendColor: { token: color.foreground, part: legend }
-    legendSize: { token: font.size.md, part: legend }
-    legendWeight: { token: font.weight.medium, part: legend }
-    descriptionText: { token: color.foreground.muted, part: description }
-    helperSize: { token: font.size.sm }
-    errorText: { token: color.foreground.danger }
-    partGap: { token: layout.gap.tight, description: 'Vertical gap between legend, description, fields and error.' }
-    fieldsGap: { token: 'layout.gap.{gap}', part: fields, description: 'The composed Stack''s gap. An `overrides.fieldsGap` is forwarded to the Stack''s own `overrides.gap`; Fieldset never styles the Stack itself.' }
-    disabledOpacity: { token: opacity.disabled }
-    fontFamily: { token: font.family.body }
-    lineHeight: { token: font.lineHeight.normal }
+    legendColor: { token: color.foreground, part: legend, description: 'Realised by the composed legend Text''s `default` tone; no --ds-fieldset-* hook.' }
+    legendSize: { token: font.size.md, part: legend, description: 'Reaches the legend Text only through its `overrides.fontSize`.' }
+    legendWeight: { token: font.weight.medium, part: legend, description: 'Reaches the legend Text only through its `overrides.fontWeight`.' }
+    descriptionText: { token: color.foreground.muted, part: description, description: 'Realised by the composed description Text''s `muted` tone; no --ds-fieldset-* hook.' }
+    helperSize: { token: font.size.sm, part: description, description: 'Description and error text size. Reaches both Texts only through their `overrides.fontSize`; no --ds-fieldset-* hook.' }
+    errorText: { token: color.foreground.danger, part: errorMessage, description: 'Realised by the composed error Text''s `danger` tone; no --ds-fieldset-* hook.' }
+    partGap: { token: layout.gap.tight, part: group, description: 'Vertical gap between legend, description, fields and error, set on the group root. On web and Lit the <legend> does not take part in flex gap, so below the legend it is a margin.' }
+    fieldsGap: { token: 'layout.gap.{gap}', part: fields, description: 'The composed Stack''s gap. It reaches the Stack only as a token path through the Stack''s own `overrides.gap`. Fieldset''s own CSS hook (--ds-fieldset-fields-gap) does not reach the Stack, and Fieldset does not set the Stack''s CSS hooks (--ds-stack-gap) either; page CSS sizes the gap through the Stack''s own hooks.' }
+    disabledOpacity: { token: opacity.disabled, part: legend, description: 'Dims the legend and description only while `disabled`; the fields dim themselves, so the group root and the fields wrapper are never dimmed.' }
+    fontFamily: { token: font.family.body, part: legend, description: 'Reaches the legend, description and error Texts only through their `overrides.fontFamily`.' }
+    lineHeight: { token: font.lineHeight.normal, part: legend, description: 'Reaches the legend, description and error Texts only through their `overrides.lineHeight`.' }
   copy:
     requiredIndicator: ' (required)'
   a11y:
@@ -62,15 +63,15 @@ component:
     web:
       element: fieldset
       attributes: [aria-describedby, aria-disabled, aria-invalid]
-      notes: 'A native <fieldset> with a <legend>. No border and no padding (the browser defaults are reset); the group is structure, not a box — wrap it in a Box or Card for a surface. `disabled` uses aria-disabled on the fieldset plus each field''s own disabled handling (the native disabled attribute on fieldset would remove fields from the tab order). A <legend> does not participate in flex gap, so partGap below it is a margin. With `error` set, the <fieldset> carries aria-invalid="true" and aria-describedby the error id (the group is the invalid thing; fields inside keep their own state).'
+      notes: 'A native <fieldset> with a <legend>. No border and no padding (the browser defaults are reset); the group is structure, not a box — wrap it in a Box or Card for a surface. `disabled` uses aria-disabled on the fieldset and passes `disabled` to its direct child fields (fragments flattened; the native disabled attribute on fieldset would remove fields from the tab order). No React FieldsetContext is exported. The `fields` part is a <div data-part="fields"> wrapper Fieldset owns around the Stack; the Stack keeps its own data-part. The errorMessage part is a <div role="alert" data-part="errorMessage"> with the error id around the danger Text. A <legend> does not participate in flex gap, so partGap below it is a margin. With `error` set, the <fieldset> carries aria-invalid="true" and aria-describedby the error id (the group is the invalid thing; fields inside keep their own state).'
     lit:
       tag: ds-fieldset
       reflect: [disabled, gap]
-      notes: 'Shadow root with a <fieldset><legend> and a default slot for the fields, which stay in the light DOM so ds-form still collects them. The group error is rendered in the shadow root, and the <fieldset> carries aria-invalid="true" with it, as on web. The legend and description render their text through <ds-text> inside the native <legend>/<p>, so legendSize, legendWeight and helperSize reach it as Text overrides rather than as Fieldset''s own rules. `disabled` is propagated to slotted ds-* fields via their `disabled` property on slotchange and reverted when cleared (remembering which it set), the same way ds-form does.'
+      notes: 'Shadow root with a <fieldset><legend> and a default slot for the fields, which stay in the light DOM so ds-form still collects them. The group error is rendered in the shadow root, and the <fieldset> carries aria-invalid="true" with it, as on web. The legend, description and error render their text through <ds-text> (element span) inside the native <legend>, a description wrapper and a role=alert wrapper, so legendSize, legendWeight, helperSize, fontFamily and lineHeight reach them only as Text overrides, never as Fieldset rules or by setting --ds-text-* hooks. `disabled` is set as the `disabled` property on direct light-DOM children carrying data-ds-field, on slotchange and whenever `disabled` changes, remembering which it set so clearing never enables a field disabled on its own. The required indicator is derived from those same direct data-ds-field children''s `required`, recomputed on slotchange and on their `required` attribute changes. The group''s role and accessible name come from the native <fieldset>/<legend> inside the shadow root; ids never cross the shadow boundary.'
     rn:
       element: View
-      props: [accessibilityRole, accessibilityLabel, accessibilityHint]
-      notes: 'A View that is NOT `accessible` (so children stay individually reachable). The legend is plain Text — not a header trait, which would put it in the headings rotor — and each child field receives the legend as a prefix in its accessibilityLabel through a FieldsetContext ("Shipping address, Street"), which is how VoiceOver and TalkBack users learn the grouping on native. The group error is announced as in Input.'
+      props: [role, accessibilityLabel, accessibilityHint]
+      notes: 'A View with `role="group"` (not the legacy accessibilityRole) that is NOT `accessible` (so children stay individually reachable). Its accessibilityLabel is the legend plus copy.requiredIndicator when shown; `description` maps to its accessibilityHint. The legend is plain Text — not a header trait, which would put it in the headings rotor — and FieldsetContext carries `disabled` and the legend, which Input, Checkbox, Switch and RadioGroup read: they render disabled and prefix their accessibilityLabel with the legend ("Shipping address, Street"), which is how VoiceOver and TalkBack users learn the grouping on native. There is no clone fallback. A non-field child (plain Text, a custom control) gets no legend association on native; that is acceptable, since the legend is still read in order before it. The legend, description, fields Stack and error sit in plain Views carrying `Fieldset.legend`, `Fieldset.description`, `Fieldset.fields` and `Fieldset.errorMessage` testIDs, because Text and Stack take none. A non-accessible View exposes no state, so `disabled` is not asserted on the group; RN tests check the legend text and toHaveAccessibleName on the group view. The group error is announced as in Input.'
     swiftui:
       element: VStack
       props: [.accessibilityElement=contain, .accessibilityLabel, Stack, FieldsetContext=environment]
@@ -82,7 +83,7 @@ component:
       given: { legend: 'Delivery window' }
       then:
         - { text: 'Delivery window' }
-        - { name: 'Delivery window', platforms: [web] }
+        - { name: 'Delivery window', platforms: [web, lit] }
     - name: the-description-is-rendered
       description: Persistent helper text under the legend, linked to the group.
       given: { description: 'We only ship within the EU.' }
@@ -97,20 +98,20 @@ component:
       description: aria-disabled on the fieldset; the fields inside stay visible and focusable by their own rule.
       given: { disabled: true }
       then:
-        - { state: disabled, is: true, platforms: [web] }
+        - { state: disabled, is: true, platforms: [web, lit] }
   examples:
     - name: shipping-address
-      description: Two related Inputs under one legend.
-      given: { legend: 'Shipping address', children: 'Street and city Inputs.' }
+      description: Two related Inputs, labelled Street and City, as direct children under one legend.
+      given: { legend: 'Shipping address', children: 'An Input name=street label=Street and an Input name=city label=City' }
     - name: notification-preferences
-      description: A set of Checkboxes with the rule that governs them under the legend.
-      given: { legend: 'Notification preferences', description: 'You can change these at any time.', children: 'Email, SMS and Push Checkboxes.', gap: 'tight' }
+      description: Three Checkboxes, labelled Email, SMS and Push, with the rule that governs them under the legend.
+      given: { legend: 'Notification preferences', description: 'You can change these at any time.', children: 'A Checkbox name=email label=Email, a Checkbox name=sms label=SMS and a Checkbox name=push label=Push', gap: 'tight' }
     - name: date-range-with-a-group-error
-      description: Cross-field validation reported on the group rather than on one field.
-      given: { legend: 'Reporting period', error: 'End date must be after start date.', children: 'Start date and End date Inputs.' }
+      description: Cross-field validation reported on the group rather than on one field, across two text Inputs labelled Start date and End date.
+      given: { legend: 'Reporting period', error: 'End date must be after start date.', children: 'An Input name=startDate label=Start date and an Input name=endDate label=End date' }
     - name: disabled-group
-      description: Every field inside disabled while the section does not apply.
-      given: { legend: 'Billing address', disabled: true, children: 'Street and city Inputs.' }
+      description: Every field inside disabled while the section does not apply - two Inputs labelled Street and City.
+      given: { legend: 'Billing address', disabled: true, children: 'An Input name=street label=Street and an Input name=city label=City' }
 ---
 
 A fieldset is how a form says "these belong together." A screen-reader user tabbing into "Street" hears "Shipping address, Street" and knows where they are; a sighted user sees the legend and the fields indented under it by nothing more than rhythm. It is the container RadioGroup builds on, offered for any set of fields: an address, a date range, a set of notification switches.
@@ -125,7 +126,7 @@ Do not wrap a whole form in a Fieldset; the Form's `label` names the form. Do no
 
 ## Behavior
 
-Renders the legend, optional description, the fields in a Stack with `gap`, and an optional error. `disabled` disables every field inside while keeping them visible and focusable per each field's own rule. Inside a Form, the group itself is not a field; its children register individually, and the group `error` is set by the consumer from `onInvalid` or its own cross-field check. The `requiredIndicator` is appended to the legend when every field inside is required, so the indicator is not repeated on each. The required indicator is derived: it appears when every direct child field has `required` (fields wrapped in a consumer's own container are not inspected — put fields directly inside the Fieldset). `disabled` and the legend reach the fields through `FieldsetContext`, which Input, Checkbox, Switch and RadioGroup read: they render disabled, and on native prefix their accessibility label with the legend; until a field reads the context, Fieldset also clones direct children with `disabled` — a direct child that is not a field (a plain wrapper, a piece of text) takes the cloned prop and ignores it, which is the intended no-op rather than an error. On React Native the group uses the `role="group"` prop (RN ≥ 0.74), not the legacy accessibilityRole.
+Renders the legend, optional description, the fields in a Stack with `gap`, and the error only while `error` is set. `disabled` disables every field inside while keeping them visible and focusable per each field's own rule. How it reaches them differs by platform: on web, Fieldset passes `disabled` to its direct child fields (fragments flattened; no React FieldsetContext is exported); on Lit, ds-fieldset sets the `disabled` property on direct children carrying data-ds-field on slotchange and whenever `disabled` changes, remembering which it set; on React Native and SwiftUI, `FieldsetContext` carries `disabled` and the legend, and Input, Checkbox, Switch and RadioGroup read it (there is no clone fallback). Inside a Form, the group itself is not a field; its children register individually, and the group `error` is set by the consumer from `onInvalid` or its own cross-field check. The `requiredIndicator` is appended inside the legend when every field inside is required, so the indicator is not repeated on each. It inherits the legend Text's styling and is part of the group's accessible name on every platform ("Shipping address (required)"; on React Native the group's accessibilityLabel includes it). The required indicator is derived: it appears when every direct child field has `required` (fragments count as direct on web; fields wrapped in a consumer's own container are not inspected — put fields directly inside the Fieldset). On Lit it is recomputed on slotchange and when a direct data-ds-field child's `required` attribute changes. On React Native the group uses the `role="group"` prop (RN ≥ 0.74), not the legacy accessibilityRole.
 
 ## Content guidelines
 
@@ -138,13 +139,13 @@ A native group with a name means the relationship between fields is programmatic
 ## Platform notes
 
 ### Web
-`<fieldset aria-describedby>` with `<legend>` and a `Stack` for the children; reset the browser's border, padding and `min-inline-size`. Render the description and error as `Text` with ids; the error has `role="alert"`. For `disabled`, set `aria-disabled` on the fieldset and pass `disabled` down through a `FieldsetContext` that Input, Checkbox, Switch and RadioGroup read (add the context read to those components when they regenerate; until then, the fieldset clones direct children with `disabled`).
+`<fieldset aria-describedby>` with `<legend>` and a `Stack` for the children inside a `data-part="fields"` wrapper Fieldset owns; reset the browser's border, padding and `min-inline-size`. Render the legend, description and error as `Text` (element span) inside Fieldset-owned elements carrying the parts and ids; the error wrapper has `role="alert"` and exists only while `error` is set. For `disabled`, set `aria-disabled` on the fieldset and pass `disabled` to its direct child fields, flattening fragments. Fieldset exports no FieldsetContext on web.
 
 ### Lit
-`<ds-fieldset legend="Shipping address" gap="normal">` with a shadow `<fieldset><legend>` and a default slot. Propagate `disabled` to slotted `ds-*` fields on `slotchange` and on change, remembering which elements it disabled so clearing does not enable a field that was disabled on its own.
+`<ds-fieldset legend="Shipping address" gap="normal">` with a shadow `<fieldset><legend>` and a default slot. Set the `disabled` property on direct children carrying `data-ds-field` on `slotchange` and whenever `disabled` changes, remembering which elements it disabled so clearing does not enable a field that was disabled on its own. Derive the required indicator from the same children's `required` on `slotchange` and on their `required` attribute changes.
 
 ### React Native
-`View` (not `accessible`) with the legend and description as `Text`; provide a `FieldsetContext` with the legend that Input, Checkbox, Switch and RadioGroup prefix into their `accessibilityLabel`. The group error uses the same announcement mechanism as Input. `disabled` flows through the same context.
+`View` (not `accessible`) with `role="group"`, an accessibilityLabel of the legend plus the required indicator, and `description` as its accessibilityHint; the legend, description and error are `Text` inside plain Views carrying `Fieldset.<part>` testIDs. Provide a `FieldsetContext` carrying `disabled` and the legend; Input, Checkbox, Switch and RadioGroup read it, render disabled and prefix the legend into their `accessibilityLabel`. Fieldset does not clone children. The group error uses the same announcement mechanism as Input. Tests check the legend text and toHaveAccessibleName on the group view; a non-accessible View exposes no disabled state, so disabled is not asserted there.
 
 ## Related
 

@@ -22,3 +22,14 @@ Gaps a fold cannot answer because they are about the tools, not the docs.
 - Package digest: the `toLineHeight` signature has its arguments reversed against theme.tsx's `toLineHeight(fontSize, multiplier)` (Link, rn).
 - Behavior harness: the `copy:` expectation has no defined matcher; Link's scenario now says text content, but the harness should define it for every component (Link, web).
 - Generator conventions: "every style binding becomes a hook" contradicts "locked bindings excluded" (Input, lit).
+- Story/example args (again): Default args merge into examples and no doc field names the Default story. Landmark and RadioGroup now state theirs in Behavior ("The Default story is …"); the generator should read that sentence (Alert, Landmark, Meter, RadioGroup; all platforms).
+- Story rules: "one story per enum value" has nothing to apply to without enums; boolean CollapseTrue/CollapseFalse stories duplicate the deep-trail example (Breadcrumb, web/rn).
+- Keyboard story "three focusable children" conflicts with a one-tab-stop radio group; the Default three-option group should satisfy it (RadioGroup, all).
+- TypeScript convention: schema `shape` fields written `x?: T` should be emitted as `x?: T | undefined` under exactOptionalPropertyTypes (Breadcrumb, RadioGroup; web).
+- Lit test harness: reading text across a nested ds-link shadow root (Breadcrumb, lit); Playwright needs `{ force: true }` to click an aria-disabled trigger (Disclosure, lit).
+- Behavior scenario vocabulary: cannot express an event payload field (Disclosure `reason`), a controlled prop change, `hidden` on a part, or focus returning to a trigger (Disclosure, lit); cannot assert rn accessibilityValue.text, and rn has-accessible-name has no defined check method (Meter, rn).
+- RN behavior tests: a control hidden from accessibility (the Checkbox box) must be queried through its row or with includeHiddenElements (Checkbox, rn).
+- Landmark rn scenarios now check `role`/`accessibilityRole` props through `attribute:`; confirm the rn harness reads props that way (Landmark, rn).
+- Package digest (rn): `useNativeDriver: false` is for layout props; transform-only animations keep the native driver (Disclosure, rn).
+- Lit story/test generator: skip examples and scenarios whose `platforms` exclude lit without the doc restating it; validate Stack `gap` values in stories (Landmark, lit).
+- Generator conventions: the browser caveat for a pseudo-element on an appearance:none input belongs in shared conventions (RadioGroup, lit).

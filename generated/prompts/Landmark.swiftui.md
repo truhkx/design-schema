@@ -79,7 +79,10 @@ component:
       type: string
       description: 'Accessible name. Required for `region` and `form`, and whenever
         the page has more than one landmark of the same role (two navigations: "Main"
-        and "Footer"). Not shown visually.'
+        and "Footer"). Not shown visually. An empty string counts as absent (no aria-label,
+        and missing for the warnings). `banner`, `main` and `contentinfo` never take
+        a label: on web and Lit one passed to them is not rendered and a development
+        warning says so.'
       a11y: Rendered as aria-label; the name is read together with the role ("Main
         navigation, landmark").
     children:
@@ -118,21 +121,34 @@ component:
       notes: 'Native elements carry the roles: banner→header, navigation→nav, main→main,
         complementary→aside, contentinfo→footer, region→section (only a landmark when
         labelled), search→form role=search (always, for SSR safety, until <search>
-        is in the React typings), form→form. The explicit role attribute is always
-        emitted on header and footer (they lose the landmark role inside sectioning
-        content, and ancestry is unknown at render time) and whenever `as` overrides
-        the element.'
+        is in the React typings), form→form. The explicit role attribute is emitted
+        on header and footer (they lose the landmark role inside sectioning content,
+        and ancestry is unknown at render time), when `as` differs from the role''s
+        default element, and when the element does not imply the role (form role=search);
+        `as` equal to the default element adds nothing. `region` without a label renders
+        a plain <section> with no role attribute, plus the missing-label warning.
+        Landmark takes no className or style (the Link rule): a composite that needs
+        its own classes, style or positioning (SidePanel) renders its own styled element
+        and composes Landmark inside it, passing only `role`, `as`, `label` or `aria-labelledby`.
+        A composite''s `aria-labelledby` is forwarded to the element and the text
+        it references counts as the label for the warnings.'
     lit:
       tag: ds-landmark
       reflect:
       - role
-      notes: 'No shadow DOM and no wrapper element: the host itself takes role and
-        aria-label via ElementInternals so it is the landmark in the light DOM tree,
-        and children are ordinary light-DOM children. The property is named `landmark`
-        (attribute `role`) because `role` already exists on HTMLElement. With no shadow
-        root there is no static styles; set `display: block` inline in connectedCallback
-        when the host has no display set. Do not also render a native <nav> inside
-        — a nested landmark of the same role is a duplicate.'
+      notes: 'No shadow DOM and no wrapper element: the host itself carries plain
+        reflected `role` and `aria-label` attributes (not ElementInternals, which
+        the accessible-name tooling does not read) so it is the landmark in the light
+        DOM tree. Children are ordinary light-DOM children: there is no <slot>, so
+        the rule that each slot renders as <slot> does not apply, and the `region`
+        part has no `part`/`data-part`; the host''s `data-ds="Landmark"` is its only
+        hook. The property is named `landmark` and reflects to the `role` attribute
+        (that is what `reflect: [role]` means) because `role` already exists on HTMLElement;
+        `label` reflects to `aria-label`. With no role (attribute absent) no role
+        is exposed and a development warning fires. With no shadow root there is no
+        static styles; set `display: block` inline in connectedCallback when the host
+        has no display set. Do not also render a native <nav> inside — a nested landmark
+        of the same role is a duplicate.'
     rn:
       element: View
       props:
@@ -147,7 +163,11 @@ component:
         which react-native-web maps to the ARIA search landmark; iOS and Android have
         no equivalent, so it is web-parity only. The label is applied as accessibilityLabel
         only for `region`, `form`, and `navigation`, so screen readers get a group
-        name without every View announcing a role.'
+        name without every View announcing a role. A View cannot hold a raw string,
+        so Landmark wraps string and number children in the package Text itself. With
+        no document to scan, only the missing-label warning applies. Native has no
+        landmark query, so RN tests check the `role` (or, for `search`, `accessibilityRole`)
+        and `accessibilityLabel` props on the View instead of a role lookup.'
     swiftui:
       element: VStack
       props:
@@ -169,8 +189,35 @@ component:
       role: navigation
     then:
     - role: navigation
+      platforms:
+      - web
+      - lit
+    - attribute: role
+      is: navigation
+      platforms:
+      - rn
     platforms:
     - web
+    - lit
+    - rn
+  - name: search-is-the-search-landmark
+    description: search renders the search landmark; React Native has no search Role,
+      so it goes through the legacy accessibilityRole.
+    given:
+      role: search
+    then:
+    - role: search
+      platforms:
+      - web
+      - lit
+    - attribute: accessibilityRole
+      is: search
+      platforms:
+      - rn
+    platforms:
+    - web
+    - lit
+    - rn
   - name: main-is-the-primary-content-landmark
     description: Exactly one main per page; the element carries the role.
     given:
@@ -179,18 +226,31 @@ component:
     - role: main
     platforms:
     - web
+    - lit
   - name: a-region-is-named-by-its-label
     description: A region is a landmark only when it is named; the label is rendered
-      as aria-label.
+      as aria-label (accessibilityLabel on React Native).
     given:
       role: region
       label: Related articles
     then:
     - role: region
+      platforms:
+      - web
+      - lit
     - attribute: aria-label
       is: Related articles
+      platforms:
+      - web
+      - lit
+    - attribute: accessibilityLabel
+      is: Related articles
+      platforms:
+      - rn
     platforms:
     - web
+    - lit
+    - rn
   - name: an-overridden-element-still-carries-its-role
     description: The explicit role attribute is emitted whenever `as` overrides the
       default element.
@@ -282,7 +342,9 @@ Do not wrap everything: a page with twenty landmarks is as hard to navigate as o
 
 ## Behavior
 
-Landmark renders its children inside the appropriate element with the appropriate role and name, and nothing else: no padding, background, or layout. It is transparent to layout on every platform (`display: contents` is *not* used, because it removes the element's semantics in some browsers; instead the element is a plain block and consumers lay it out like any block). In development, the component warns when `main` appears more than once in a document, when `region` or `form` has no `label`, and when two `navigation`, `complementary`, `region` or `form` landmarks in the same root share a label or both lack one (`banner`, `main` and `contentinfo` never take labels). On native there is no document to scan, so only the missing-label warning applies.
+Landmark renders its children inside the appropriate element with the appropriate role and name, and nothing else: no padding, background, or layout. It is transparent to layout on every platform (`display: contents` is *not* used, because it removes the element's semantics in some browsers; instead the element is a plain block and consumers lay it out like any block). In development, the component warns when `main` appears more than once in a document, when `region` or `form` has no `label` (`Landmark: role "<role>" is only a landmark when it has a label.`), and when two `navigation`, `complementary`, `region` or `form` landmarks in the same root share a label or both lack one. The naming sources that count are `label` (an empty string is absent) and an `aria-labelledby` a composite passes, read as the text it references. `banner`, `main` and `contentinfo` never take labels: a label passed to them is not rendered, with the warning `Landmark: role "<role>" does not take a label; it was not rendered.` Warnings fire when the offending combination appears or changes (mount, or a change of role, label or element), not on every render. For the duplicate checks the landmark scans its `getRootNode()` for `[data-ds="Landmark"]`, and only the later landmark in document order warns; native landmarks not rendered by Landmark are not counted. With no role at all (a Lit host without the attribute) no role is exposed and the component warns. On native there is no document to scan, so only the missing-label warning applies.
+
+The Default story is role `navigation` with label "Main" and the text "Primary links.", a role that takes a label, so the derived accessible-name and renders-as scenarios apply to it. Example `children` strings are text content: stories render them inside the package Text (on React Native Landmark does this itself).
 
 ## Content guidelines
 
@@ -295,13 +357,13 @@ Landmark regions let users bypass blocks and understand page structure (WCAG 1.3
 ## Platform notes
 
 ### Web
-Choose the element from `role` unless `as` is set: `banner`→`<header role="banner">`, `navigation`→`<nav>`, `main`→`<main>`, `complementary`→`<aside>`, `contentinfo`→`<footer role="contentinfo">`, `region`→`<section aria-label>`, `search`→`<form role="search">`, `form`→`<form aria-label>`. Always emit `role` on `header` and `footer` and whenever `as` overrides the default element; never branch on `document` at render time (SSR). Apply `aria-label` from `label`. The forwarded ref is typed `HTMLElement` (not the specific element chosen by `as`), so render through `createElement` with `HTMLAttributes<HTMLElement>` rather than a union of intrinsic tags. Development warnings use `process.env.NODE_ENV !== 'production'`.
+Choose the element from `role` unless `as` is set: `banner`→`<header role="banner">`, `navigation`→`<nav>`, `main`→`<main>`, `complementary`→`<aside>`, `contentinfo`→`<footer role="contentinfo">`, `region`→`<section aria-label>`, `search`→`<form role="search">`, `form`→`<form aria-label>`. Always emit `role` on `header` and `footer`, when `as` differs from the role's default element, and when the element does not imply the role (`<form role="search">`); `as` equal to the default adds nothing, and an unlabelled `region` is a plain `<section>` plus the warning. Landmark takes no `className` or `style`; a composite that needs its own classes renders its own element around Landmark and passes only `role`, `as`, `label` or `aria-labelledby`. Never branch on `document` at render time (SSR). Apply `aria-label` from `label`. The forwarded ref is typed `HTMLElement` (not the specific element chosen by `as`), so render through `createElement` with `HTMLAttributes<HTMLElement>` rather than a union of intrinsic tags. Development warnings use `process.env.NODE_ENV !== 'production'`.
 
 ### Lit
 `<ds-landmark role="navigation" label="Main">` uses no shadow root. The property is `landmark` (attribute `role`). In `connectedCallback`, set `display: block` inline when unset, so the host element itself is the landmark and its light-DOM children are its content. The role and the name are plain reflected attributes on the host — `role` and `aria-label` — not `ElementInternals.role` / `.ariaLabel`, which the accessible-name tooling does not read; `label` therefore reflects to the `aria-label` attribute, and a story sets it as a property or writes `aria-label` directly. With no shadow root there is nothing to carry a `part`, so `data-ds="Landmark"` on the host is the only hook for the `region` part. Warnings are logged in development builds only (`import.meta.env.DEV`; the package tsconfig includes `vite/client` types).
 
 ### React Native
-Render a `View` with the `role` prop (which react-native-web turns into the semantic element and iOS/Android map to the nearest accessibility role or ignore), and `accessibilityLabel={label}` for `navigation`, `region` and `form` so the group has a name for TalkBack and VoiceOver. Do not set `accessible={true}` on the container; it would collapse every child into one element. There is no jump-to-landmark on native — the value here is web parity and a consistent structure for the same screen code.
+Render a `View` with the `role` prop (which react-native-web turns into the semantic element and iOS/Android map to the nearest accessibility role or ignore; `search` uses `accessibilityRole="search"`), string and number children wrapped in the package `Text`, and `accessibilityLabel={label}` for `navigation`, `region` and `form` so the group has a name for TalkBack and VoiceOver. Do not set `accessible={true}` on the container; it would collapse every child into one element. There is no jump-to-landmark on native — the value here is web parity and a consistent structure for the same screen code.
 
 ## Related
 

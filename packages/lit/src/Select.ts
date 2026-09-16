@@ -1,12 +1,22 @@
 import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
-import { ifDefined } from 'lit/directives/if-defined.js';
 import { classMap } from 'lit/directives/class-map.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
+import { live } from 'lit/directives/live.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
-import './Text.js';
 import './Icon.js';
 import './Listbox.js';
-import type { DsListbox, ListboxChangeDetail, ListboxGroupOption, ListboxItem, ListboxOption, ListboxValue } from './Listbox.js';
+import './Text.js';
+import type { IconOverridableBinding } from './Icon.js';
+import type {
+  DsListbox,
+  ListboxActiveChangeDetail,
+  ListboxChangeDetail,
+  ListboxGroupOption,
+  ListboxItem,
+  ListboxOption,
+} from './Listbox.js';
+import type { TextOverridableBinding } from './Text.js';
 
 export type SelectNative = 'auto' | 'always' | 'never';
 
@@ -27,18 +37,16 @@ export interface SelectOpenChangeDetail {
 
 /**
  * Overridable style hooks; see the `overrides` property. `triggerBackground`,
- * `triggerBorder`, `valueColor`, `placeholderColor`, `chevron`,
- * `descriptionText`, `errorText`, `minTarget` and `focusRingWidth` are locked
- * and excluded.
+ * `triggerBorder`, `triggerBorderFocus`, `valueColor`, `placeholderColor`,
+ * `chevron`, `descriptionText`, `errorText`, `minTarget`, `minTargetSm` and
+ * `focusRingWidth` are locked and excluded.
  */
 export type SelectOverridableBinding =
-  | 'triggerBorderFocus'
   | 'triggerBorderInvalid'
   | 'triggerBorderWidth'
   | 'triggerRadius'
   | 'triggerPaddingInline'
   | 'triggerPaddingBlock'
-  | 'triggerPaddingBlockSm'
   | 'triggerGap'
   | 'partGap'
   | 'labelWeight'
@@ -51,19 +59,17 @@ export type SelectOverridableBinding =
   | 'layer'
   | 'fontFamily'
   | 'fontSize'
+  | 'fontWeight'
   | 'lineHeight'
-  | 'minTargetSm'
   | 'disabledOpacity'
   | 'enter';
 
 const HOOKS: Record<SelectOverridableBinding, string> = {
-  triggerBorderFocus: '--ds-select-trigger-border-focus',
   triggerBorderInvalid: '--ds-select-trigger-border-invalid',
   triggerBorderWidth: '--ds-select-trigger-border-width',
   triggerRadius: '--ds-select-trigger-radius',
   triggerPaddingInline: '--ds-select-trigger-padding-inline',
   triggerPaddingBlock: '--ds-select-trigger-padding-block',
-  triggerPaddingBlockSm: '--ds-select-trigger-padding-block-sm',
   triggerGap: '--ds-select-trigger-gap',
   partGap: '--ds-select-part-gap',
   labelWeight: '--ds-select-label-weight',
@@ -76,8 +82,8 @@ const HOOKS: Record<SelectOverridableBinding, string> = {
   layer: '--ds-select-layer',
   fontFamily: '--ds-select-font-family', // literal-ok: CSS custom-property name, not a font stack
   fontSize: '--ds-select-font-size',
+  fontWeight: '--ds-select-font-weight',
   lineHeight: '--ds-select-line-height',
-  minTargetSm: '--ds-select-min-target-sm',
   disabledOpacity: '--ds-select-disabled-opacity',
   enter: '--ds-select-enter',
 };
@@ -92,6 +98,11 @@ const COPY_REQUIRED = (label: string): string => `${label} is required.`;
 const COPY_INVALID = (label: string): string => `${label} is not valid.`;
 /** copy.requiredIndicator */
 const COPY_REQUIRED_INDICATOR = ' (required)';
+
+/** chevron (locked): color.foreground.muted, forwarded to the composed Icon's `color` binding. */
+const CHEVRON_OVERRIDES: Partial<Record<IconOverridableBinding, TokenRef | undefined>> = {
+  color: 'color.foreground.muted',
+};
 
 /** Whether the running browser implements the Popover API. Evaluated once. */
 const POPOVER_SUPPORTED = typeof HTMLElement !== 'undefined' && typeof HTMLElement.prototype.showPopover === 'function';
@@ -113,49 +124,50 @@ function flattenOptions(options: ListboxOption[]): ListboxItem[] {
   return result;
 }
 
+function sameValue(a: SelectValue | null, b: SelectValue | null): boolean {
+  if (Array.isArray(a) && Array.isArray(b)) {
+    return a.length === b.length && a.every((entry, index) => entry === b[index]);
+  }
+  return a === b;
+}
+
 /**
- * `<ds-select>` — Select (category: input, APG pattern: combobox — select-only).
+ * `<ds-select>` — Select (category: input, APG pattern: combobox, select-only).
  *
  * `<ds-select label="Country" name="country" .options=${options}>` renders a
- * `<button role="combobox" aria-haspopup="listbox" aria-expanded aria-controls>`
- * showing the current value, and a popup composing `<ds-listbox>` for the
- * options. The popup uses the Popover API (`popover="manual"`,
- * `showPopover()`) for top-layer rendering when the browser supports it, and
- * a `position: fixed` + `layer.dropdown` fallback otherwise, positioned below
- * (flipped above on overflow) the trigger at least as wide as it. Real DOM
- * focus stays on the trigger the whole time the popup is open — keys are
- * forwarded to the composed Listbox's own `handleKey`, so
- * `aria-activedescendant`-style navigation, Home/End/typeahead and
- * Space/Enter selection all come from Listbox's own keyboard model. The
- * element is form-associated (`setFormValue`, `FormData` for `multiple`) and
- * implements the `DsFormField` interface. `native="always"` renders a native
- * `<select>`/`<select multiple>` instead, with the same label/description/
- * error wiring and no popup — `native="auto"` never uses it on web (that is
- * a React Native / phone behavior).
+ * `<label for>` wrapping `<ds-text>`, a `<button role="combobox"
+ * aria-haspopup="listbox">` trigger showing the value and a `chevron-down`
+ * `<ds-icon>`, and a popup wrapping an embedded `<ds-listbox>`. The popup uses
+ * the Popover API (`popover="manual"`) when available and a `position: fixed`
+ * fallback on `layer.dropdown` otherwise, placed below the trigger (flipped
+ * above at the viewport edge) and at least as wide as it.
+ *
+ * DOM focus stays on the trigger while the popup is open: its keys are
+ * forwarded to the Listbox's `handleKey`. `aria-activedescendant` cannot reach
+ * an option inside the Listbox's shadow root, so the active option's label is
+ * exposed through `aria-describedby` on a live element instead.
+ *
+ * `value` and `open` are controlled when set (the element reports `change` /
+ * `open-change` and waits for the property), uncontrolled from `defaultValue`
+ * and an internal closed state otherwise. The element is form-associated
+ * (`setFormValue`, a `FormData` with one entry per value for `multiple`) and
+ * carries `data-ds-field` for `<ds-form>`. `native="always"` renders a native
+ * `<select>` with the same label, description and error wiring and no popup;
+ * `auto` and `never` both render the popup on web.
  *
  * ## When to use
  *
- * Use a Select for a form field with about seven to fifty options that people
- * recognise on sight. Use `multiple` for tags or memberships when a set of
- * Checkboxes would be too long. Use `native="always"` on web for forms that
- * must work without JavaScript.
+ * A form field with about seven to fifty options people recognise on sight;
+ * `multiple` for tags or memberships when a set of Checkboxes would be too long.
  *
  * ## When not to use
  *
- * Do not use a Select for two to six options; use a RadioGroup so every
- * option is visible. Not for actions (Menu), for switching modes
- * (SegmentedControl), or for on/off (Switch).
+ * Not for two to six options (RadioGroup), actions (Menu), switching modes
+ * (SegmentedControl) or on/off (Switch). Use Combobox when typing to filter is
+ * faster than scrolling.
  *
- * @fires change - Fired when the value changes, with `{ value }` (array with `multiple`) in `detail`.
- * @fires open-change - Fired when the popup opens or closes, with `{ open }` in `detail`.
- * @csspart label - The field's visible label (anatomy: label).
- * @csspart description - The helper text under the label (anatomy: description).
- * @csspart trigger - The `role="combobox"` button, or the native `<select>` when `native="always"` (anatomy: trigger).
- * @csspart value - The trigger's value text (anatomy: value).
- * @csspart chevron - The trigger's trailing `<ds-icon>` (anatomy: chevron).
- * @csspart popup - The positioned popup surface (anatomy: popup).
- * @csspart listbox - The composed `<ds-listbox>` (anatomy: listbox).
- * @csspart errorMessage - The `role="alert"` error message region (anatomy: errorMessage).
+ * @fires change - The value changed; `detail.value` (an array with `multiple`).
+ * @fires open-change - The popup opened or closed; `detail.open`.
  */
 @customElement('ds-select')
 export class DsSelect extends LitElement {
@@ -169,14 +181,11 @@ export class DsSelect extends LitElement {
   static override styles: CSSResult = css`
     :host {
       display: block;
-      font-family: var(--font-family-body);
-      --ds-select-trigger-border-focus: var(--color-border-focus);
       --ds-select-trigger-border-invalid: var(--color-border-danger);
       --ds-select-trigger-border-width: var(--border-width-thin);
       --ds-select-trigger-radius: var(--radius-md);
       --ds-select-trigger-padding-inline: var(--space-md);
       --ds-select-trigger-padding-block: var(--space-sm);
-      --ds-select-trigger-padding-block-sm: var(--space-1);
       --ds-select-trigger-gap: var(--layout-gap-normal);
       --ds-select-part-gap: var(--space-1);
       --ds-select-label-weight: var(--font-weight-medium);
@@ -189,19 +198,31 @@ export class DsSelect extends LitElement {
       --ds-select-layer: var(--layer-dropdown);
       --ds-select-font-family: var(--font-family-body);
       --ds-select-font-size: var(--font-size-md);
+      --ds-select-font-weight: var(--font-weight-regular);
       --ds-select-line-height: var(--font-line-height-normal);
-      --ds-select-min-target-sm: var(--size-target-min);
       --ds-select-disabled-opacity: var(--opacity-disabled);
       --ds-select-enter: var(--motion-duration-fast);
+      font-family: var(--ds-select-font-family);
     }
 
     :host([hidden]) {
       display: none;
     }
 
-    /* fontSize: font.size.{size} */
+    /* triggerPaddingBlock: by size (sm → space.1); fontSize: font.size.{size} */
     :host([size='sm']) {
+      --ds-select-trigger-padding-block: var(--space-1);
       --ds-select-font-size: var(--font-size-sm);
+    }
+
+    .group {
+      display: grid;
+      gap: var(--ds-select-part-gap);
+    }
+
+    /* disabledOpacity: the whole field dims, as Input does */
+    .group.disabled {
+      opacity: var(--ds-select-disabled-opacity);
     }
 
     .visually-hidden {
@@ -217,229 +238,172 @@ export class DsSelect extends LitElement {
       border: 0;
     }
 
-    .label {
+    [data-part='label'] {
       display: block;
-      font-size: var(--ds-select-font-size);
-      font-weight: var(--ds-select-label-weight);
-      line-height: var(--ds-select-line-height);
-    }
-
-    /* descriptionText: color.foreground.muted, locked (set on ds-text via tone="muted") */
-    .description {
-      margin-block-start: var(--ds-select-part-gap);
     }
 
     /* triggerBackground / triggerBorder: color.background / color.border.strong, locked */
-    .trigger {
+    [data-part='trigger'] {
       box-sizing: border-box;
       display: flex;
       align-items: center;
-      justify-content: space-between;
       gap: var(--ds-select-trigger-gap);
       inline-size: 100%;
+      /* minTarget: size.target.comfortable, locked */
       min-block-size: var(--size-target-comfortable);
-      margin-block-start: var(--ds-select-part-gap);
+      margin: 0;
       padding-block: var(--ds-select-trigger-padding-block);
       padding-inline: var(--ds-select-trigger-padding-inline);
-      border: var(--ds-select-trigger-border-width) solid var(--color-border-strong);
+      border-style: solid;
+      border-width: var(--ds-select-trigger-border-width);
+      border-color: var(--color-border-strong);
       border-radius: var(--ds-select-trigger-radius);
       background: var(--color-background);
+      color: var(--color-foreground);
       font-family: var(--ds-select-font-family);
       font-size: var(--ds-select-font-size);
+      font-weight: var(--ds-select-font-weight);
       line-height: var(--ds-select-line-height);
-      color: var(--color-foreground);
+      text-align: start;
       cursor: pointer;
-      transition:
-        border-color var(--ds-select-enter) var(--motion-easing-standard),
-        padding var(--ds-select-enter) var(--motion-easing-standard);
     }
 
-    @media (prefers-reduced-motion: reduce) {
-      .trigger,
-      .popup,
-      .chevron {
-        transition: none;
-      }
+    /* minTargetSm: size.target.min, locked — the trigger floor at sm */
+    :host([size='sm']) [data-part='trigger'] {
+      min-block-size: var(--size-target-min);
     }
 
-    /* triggerPaddingBlockSm / minTargetSm replace the md bindings at size sm */
-    :host([size='sm']) .trigger {
-      min-block-size: var(--ds-select-min-target-sm);
-      padding-block: var(--ds-select-trigger-padding-block-sm);
-    }
-
-    /*
-     * focusRingWidth (locked) replaces triggerBorderWidth while focused; padding
-     * shrinks by the difference (border-box sizing) so the trigger does not shift.
-     */
-    .trigger:focus-visible {
-      border-color: var(--ds-select-trigger-border-focus);
+    /* triggerBorderFocus + focusRingWidth (locked): the focus width replaces the border width; padding shrinks by the difference */
+    [data-part='trigger']:focus-visible {
+      outline: none;
+      border-color: var(--color-border-focus);
       border-width: var(--border-width-focus);
-      padding-inline: calc(
-        var(--ds-select-trigger-padding-inline) - (var(--border-width-focus) - var(--ds-select-trigger-border-width))
-      );
       padding-block: calc(
         var(--ds-select-trigger-padding-block) - (var(--border-width-focus) - var(--ds-select-trigger-border-width))
       );
-    }
-
-    :host([size='sm']) .trigger:focus-visible {
-      padding-block: calc(
-        var(--ds-select-trigger-padding-block-sm) - (var(--border-width-focus) - var(--ds-select-trigger-border-width))
+      padding-inline: calc(
+        var(--ds-select-trigger-padding-inline) - (var(--border-width-focus) - var(--ds-select-trigger-border-width))
       );
     }
 
-    :host([invalid]) .trigger {
-      border-color: var(--ds-select-trigger-border-invalid);
-    }
-    :host([invalid]) .trigger:focus-visible {
+    :host([invalid]) [data-part='trigger'],
+    :host([invalid]) [data-part='trigger']:focus-visible {
       border-color: var(--ds-select-trigger-border-invalid);
     }
 
-    .trigger.disabled {
-      opacity: var(--ds-select-disabled-opacity);
+    .group.disabled [data-part='trigger'] {
       cursor: not-allowed;
     }
 
     /* valueColor: color.foreground, locked */
-    .value {
+    [data-part='value'] {
       flex: 1;
       min-inline-size: 0;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      text-align: start;
       color: var(--color-foreground);
     }
 
     /* placeholderColor: color.foreground.muted, locked */
-    .value.placeholder {
+    [data-part='value'][data-placeholder] {
       color: var(--color-foreground-muted);
     }
 
-    /* chevron: color.foreground.muted, locked */
-    .chevron {
+    [data-part='chevron'] {
       flex: none;
-      color: var(--color-foreground-muted);
-      transition: transform var(--ds-select-enter) var(--motion-easing-standard);
-    }
-    .chevron.is-open {
-      transform: rotate(180deg);
     }
 
-    .popup {
+    [data-part='popup'] {
       position: fixed;
       inset: auto;
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+      overflow: hidden;
       border-style: solid;
       border-width: var(--border-width-thin);
       border-color: var(--ds-select-popup-border);
       border-radius: var(--ds-select-popup-radius);
       background: var(--ds-select-popup-surface);
       box-shadow: var(--ds-select-popup-shadow);
+      color: var(--color-foreground);
       z-index: var(--ds-select-layer);
-      max-block-size: calc(100vh - 2 * var(--layout-gutter));
       opacity: 1;
-      transform: translateY(0);
-      transition:
-        opacity var(--ds-select-enter) var(--motion-easing-standard),
-        transform var(--ds-select-enter) var(--motion-easing-standard);
-    }
-
-    .popup[hidden] {
-      display: none;
+      /* enter: popup fade */
+      transition: opacity var(--ds-select-enter) var(--motion-easing-standard);
     }
 
     @starting-style {
-      .popup:popover-open {
+      [data-part='popup'] {
         opacity: 0;
-        transform: translateY(var(--space-1));
       }
     }
 
-    .listbox {
+    [data-part='listbox'] {
       display: block;
     }
 
-    .native-select {
-      box-sizing: border-box;
+    .native {
+      display: grid;
+    }
+
+    .native > * {
+      grid-area: 1 / 1;
+    }
+
+    .native [data-part='trigger'] {
       display: block;
-      inline-size: 100%;
-      min-block-size: var(--size-target-comfortable);
-      margin-block-start: var(--ds-select-part-gap);
-      padding-block: var(--ds-select-trigger-padding-block);
-      padding-inline: var(--ds-select-trigger-padding-inline);
-      border: var(--ds-select-trigger-border-width) solid var(--color-border-strong);
-      border-radius: var(--ds-select-trigger-radius);
-      font-family: var(--ds-select-font-family);
-      font-size: var(--ds-select-font-size);
-      line-height: var(--ds-select-line-height);
-      color: var(--color-foreground);
-      background: var(--color-background);
       appearance: none;
-      -webkit-appearance: none;
+      padding-inline-end: calc(
+        2 * var(--ds-select-trigger-padding-inline) + var(--ds-select-trigger-gap) + var(--font-size-md)
+      );
     }
 
-    :host([size='sm']) .native-select {
-      min-block-size: var(--ds-select-min-target-sm);
-      padding-block: var(--ds-select-trigger-padding-block-sm);
+    .native-chevron {
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding-inline: var(--ds-select-trigger-padding-inline);
+      pointer-events: none;
     }
 
-    .native-select:focus-visible {
-      border-color: var(--color-border-focus);
-      border-width: var(--border-width-focus);
-    }
-
-    :host([invalid]) .native-select {
-      border-color: var(--color-border-danger);
-    }
-
-    .native-select:disabled {
-      opacity: var(--ds-select-disabled-opacity);
-      cursor: not-allowed;
-    }
-
-    /* errorText: color.foreground.danger, locked */
-    .error {
-      font-size: var(--ds-select-helper-size);
-      line-height: var(--ds-select-line-height);
-      color: var(--color-foreground-danger);
-    }
-    .error:not(:empty) {
-      margin-block-start: var(--ds-select-part-gap);
+    @media (prefers-reduced-motion: reduce) {
+      [data-part='popup'] {
+        transition: none;
+      }
     }
   `;
 
   /** Visible label. Always rendered. */
-  @property() accessor label!: string;
+  @property() accessor label = '';
 
   /** Field name for the Form. */
-  @property() accessor name!: string;
+  @property() accessor name = '';
 
-  /** The options, passed through to the composed Listbox. A property, not an attribute. */
+  /** The options, passed through to the Listbox. A property, not an attribute. */
   @property({ attribute: false }) accessor options: ListboxOption[] = [];
 
-  /** Controlled value (array with `multiple`). Omit for uncontrolled. */
+  /** Controlled value (array with `multiple`). Omit for an uncontrolled field. */
   @property({ attribute: false }) accessor value: SelectValue | undefined;
 
-  /** Initial value (array with `multiple`) for an uncontrolled field. */
+  /** Initial value (array with `multiple`). */
   @property({ attribute: false }) accessor defaultValue: SelectValue | undefined;
 
-  /** Shown in the trigger when nothing is selected. Defaults to `copy.placeholder`. Not a substitute for `label`. */
+  /** Text shown in the trigger when nothing is selected. Defaults to `copy.placeholder`. Not a substitute for the label. */
   @property() accessor placeholder: string | undefined;
 
   /** Visually hide the label (it remains the accessible name), for compact pickers such as DatePicker's month and year. */
   @property({ type: Boolean, attribute: 'hide-label' }) accessor hideLabel = false;
 
-  /** sm for pickers inside toolbars and calendar headers. Not listed under this component's `platforms.lit.reflect`, but the fontSize/triggerPaddingBlockSm/minTargetSm bindings resolve per value and need an attribute selector, matching Button/Input's reflected `size` in this package — see the generator's gap notes. */
-  @property({ reflect: true }) accessor size: SelectSize = 'md';
+  /** sm for pickers inside toolbars and calendar headers. */
+  @property({ type: String, reflect: true }) accessor size: SelectSize = 'md';
 
-  /** Controlled popup state, for programmatic opening and for stories and tests. Omit for the trigger-driven default. */
-  @property({ type: Boolean, reflect: true }) accessor open: boolean | undefined;
+  /** Controlled popup state. Omit for the trigger-driven default. */
+  @property({ type: Boolean }) accessor open: boolean | undefined;
 
-  /** Pick any number. The trigger shows the count (or the labels when two or fewer); the popup stays open while toggling. */
+  /** Pick any number. The trigger shows the labels (two or fewer) or `copy.selectedCount`; the popup stays open while toggling. */
   @property({ type: Boolean, reflect: true }) accessor multiple = false;
 
   /** Helper text under the label. */
@@ -454,9 +418,10 @@ export class DsSelect extends LitElement {
   /** Marks the field invalid. Usually set by the Form. */
   @property({ type: Boolean, reflect: true }) accessor invalid = false;
 
-  private errorValue?: string | undefined;
+  private errorValue: string | undefined;
+  private invalidFromError = false;
 
-  /** Error message. Setting it implies `invalid`. */
+  /** Error message; implies invalid. */
   get error(): string | undefined {
     return this.errorValue;
   }
@@ -464,48 +429,53 @@ export class DsSelect extends LitElement {
   set error(value: string | undefined) {
     const old = this.errorValue;
     this.errorValue = value;
-    // Setting `error` implies `invalid`, synchronously so `checkValidity()`
-    // right after an assignment is already correct.
-    this.invalid = Boolean(value);
+    if (value) {
+      if (!this.invalid) {
+        this.invalidFromError = true;
+        this.invalid = true;
+      }
+    } else if (this.invalidFromError) {
+      this.invalidFromError = false;
+      this.invalid = false;
+    }
+    this.syncInternals();
     this.requestUpdate('error', old);
   }
 
-  /**
-   * `auto` never uses the platform picker on web (the styled popup below is
-   * used); `always` forces a native `<select>` (forms that must work without
-   * JS); `never` forces the popup everywhere. `auto` and `never` render
-   * identically on this platform.
-   */
-  @property({ reflect: true }) accessor native: SelectNative = 'auto';
+  /** `auto` and `never` render the styled popup on web; `always` renders a native `<select>`. */
+  @property({ type: String, reflect: true }) accessor native: SelectNative = 'auto';
 
   /** Per-instance style overrides: `{ triggerRadius: 'radius.sm' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) accessor overrides: Partial<Record<SelectOverridableBinding, TokenRef | undefined>> | undefined;
+  @property({ attribute: false }) accessor overrides:
+    | Partial<Record<SelectOverridableBinding, TokenRef | undefined>>
+    | undefined;
 
-  /** Uncontrolled value (seeded from `defaultValue`). */
+  /** Uncontrolled value, seeded from `defaultValue`. */
   @state() private accessor internalValue: SelectValue | undefined;
 
-  /** Uncontrolled popup open state, used when `open` is omitted. */
+  /** Uncontrolled popup state. */
   @state() private accessor internalOpen = false;
 
-  /** Disabled by an owning native form / fieldset (via `formDisabledCallback`). */
+  /** The Listbox's active option while the popup is open. */
+  @state() private accessor activeValue: string | null = null;
+
+  /** Disabled by an owning native form or fieldset. */
   @state() private accessor formDisabled = false;
 
-  @query('#trigger') private accessor triggerEl!: HTMLButtonElement | null;
-  @query('#native-select') private accessor nativeSelectEl!: HTMLSelectElement | null;
-  @query('#listbox') private accessor listboxEl!: DsListbox | null;
-  @query('#popup') private accessor popupEl!: HTMLElement | null;
-
-  private readonly popoverSupported = POPOVER_SUPPORTED;
-  private wasOpen = false;
+  @query('[data-part=trigger]') private accessor triggerEl!: HTMLElement | null;
+  @query('[data-part=popup]') private accessor popupEl!: HTMLElement | null;
+  @query('[data-part=listbox]') private accessor listboxEl!: DsListbox | null;
 
   private readonly internals: ElementInternals;
+  private shown = false;
+  private warned = false;
 
   constructor() {
     super();
     this.internals = this.attachInternals();
+    this.addEventListener('focusout', this.handleFocusOut);
   }
 
-  /** Every selectable item, groups flattened, in document order. */
   private get flatItems(): ListboxItem[] {
     return flattenOptions(this.options);
   }
@@ -514,65 +484,55 @@ export class DsSelect extends LitElement {
     return this.disabled || this.formDisabled;
   }
 
-  /** Whether the popup is currently open, controlled or not. */
+  private get usesPopup(): boolean {
+    return this.native !== 'always';
+  }
+
+  /** Whether the popup is open, controlled or not. */
   get currentOpen(): boolean {
     return this.open ?? this.internalOpen;
   }
 
-  /** The current selection: a value, an array (`multiple`), or `null` when nothing is selected (no key in the Form). */
+  /** The current selection: a value, an array with `multiple`, or null when nothing is selected. */
   get currentValue(): SelectValue | null {
-    const value = this.value ?? this.internalValue;
+    const value = this.value !== undefined ? this.value : this.internalValue;
     if (this.multiple) {
-      const list = Array.isArray(value) ? value : [];
+      const list = Array.isArray(value) ? value : typeof value === 'string' && value !== '' ? [value] : [];
       return list.length > 0 ? list : null;
     }
-    return typeof value === 'string' && value !== '' ? value : null;
+    const single = Array.isArray(value) ? value[0] : value;
+    return typeof single === 'string' && single !== '' ? single : null;
   }
 
-  /** The owning native form, if any (from `ElementInternals`). */
+  /** The owning native form, if any. */
   get form(): HTMLFormElement | null {
     return this.internals.form;
   }
 
+  /** The field's own copy string for its current validity, or '' when valid. */
   get validationMessage(): string {
-    return this.internals.validationMessage;
+    return this.computeValidationMessage() ?? '';
   }
 
   private get selectedSet(): Set<string> {
     const value = this.currentValue;
-    if (this.multiple) {
-      return new Set(Array.isArray(value) ? value : []);
-    }
-    return new Set(typeof value === 'string' ? [value] : []);
-  }
-
-  /** The value passed to the composed Listbox — always defined, so it always stays controlled by this element. */
-  private get listboxValue(): ListboxValue {
-    const value = this.currentValue;
-    if (this.multiple) {
-      return Array.isArray(value) ? value : [];
-    }
-    return typeof value === 'string' ? value : '';
-  }
-
-  private get displayLabels(): string[] {
-    const value = this.currentValue;
-    if (value === null) {
-      return [];
-    }
-    const values = Array.isArray(value) ? value : [value];
-    const labelByValue = new Map(this.flatItems.map((item) => [item.value, item.label] as const));
-    return values.map((entry) => labelByValue.get(entry) ?? entry);
+    return new Set(value === null ? [] : Array.isArray(value) ? value : [value]);
   }
 
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('data-ds', 'Select');
+    this.setAttribute('data-ds-field', '');
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.removeGlobalListeners();
+    this.shown = false;
+  }
+
+  override focus(options?: FocusOptions): void {
+    this.triggerEl?.focus(options);
   }
 
   checkValidity(): boolean {
@@ -590,14 +550,14 @@ export class DsSelect extends LitElement {
   }
 
   formResetCallback(): void {
-    this.value = undefined;
     this.internalValue = this.defaultValue;
-    this.closePopup(false);
   }
 
-  formStateRestoreCallback(state: File | string | FormData | null): void {
-    if (typeof state === 'string' && !this.multiple) {
-      this.value = state;
+  formStateRestoreCallback(restored: File | string | FormData | null): void {
+    if (typeof restored === 'string') {
+      this.internalValue = restored;
+    } else if (restored instanceof FormData) {
+      this.internalValue = restored.getAll(this.name).filter((entry): entry is string => typeof entry === 'string');
     }
   }
 
@@ -608,156 +568,225 @@ export class DsSelect extends LitElement {
     if (changed.has('overrides')) {
       this.applyOverrides();
     }
+    const isOpen = this.usesPopup && this.currentOpen;
+    if (isOpen && !this.shown) {
+      // The popup opens with the selected (or first) option active.
+      this.activeValue = this.defaultActiveValue();
+    } else if (!isOpen) {
+      this.activeValue = null;
+    }
   }
 
   protected override updated(): void {
     this.syncInternals();
-    const isOpen = this.currentOpen;
-    if (isOpen !== this.wasOpen) {
-      this.wasOpen = isOpen;
-      if (isOpen) {
-        this.handleOpened();
-      } else {
-        this.handleClosed();
-      }
+    const isOpen = this.usesPopup && this.currentOpen;
+    if (isOpen && !this.shown) {
+      this.shown = true;
+      this.showPopup();
+    } else if (!isOpen && this.shown) {
+      this.shown = false;
+      this.hidePopup();
     }
-    this.warnInDev();
+    if (import.meta.env.DEV && !this.warned) {
+      this.warned = true;
+      if (!this.label) console.warn('<ds-select> requires a `label`.', this);
+      if (!this.name) console.warn('<ds-select> requires a `name`.', this);
+    }
   }
 
   protected override render(): TemplateResult {
     const isDisabled = this.isDisabled;
-    const describedBy =
-      [this.description ? 'description' : '', this.error ? 'error-message' : '']
-        .filter((id) => id !== '')
-        .join(' ') || undefined;
-
-    if (this.native === 'always') {
-      return this.renderNative(isDisabled, describedBy);
-    }
-
-    const labels = this.displayLabels;
-    const triggerText =
-      labels.length === 0
-        ? this.placeholder || COPY_PLACEHOLDER
-        : this.multiple
-          ? labels.length <= 2
-            ? labels.join(', ')
-            : COPY_SELECTED_COUNT(labels.length)
-          : labels[0];
-
-    const isOpen = this.currentOpen;
+    const message = this.errorValue || (this.invalid ? COPY_INVALID(this.label) : '');
+    const describedBy = [
+      this.description ? 'description' : '',
+      message ? 'error' : '',
+      this.usesPopup && this.currentOpen ? 'active-option' : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
+    const o = this.overrides;
+    const helperOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {
+      fontSize: o?.helperSize,
+      fontFamily: o?.fontFamily,
+      lineHeight: o?.lineHeight,
+    };
+    const labelOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {
+      fontWeight: o?.labelWeight,
+      fontSize: o?.fontSize,
+      fontFamily: o?.fontFamily,
+      lineHeight: o?.lineHeight,
+    };
 
     return html`
-      <ds-text id="label" part="label" class=${classMap({ label: true, 'visually-hidden': this.hideLabel })} element="p" weight="medium"
-        >${this.label}${this.required
-          ? html`<span aria-hidden="true">${COPY_REQUIRED_INDICATOR}</span>`
-          : nothing}</ds-text
-      >
-      ${this.description
-        ? html`<ds-text id="description" part="description" class="description" element="p" tone="muted" size="sm"
-            >${this.description}</ds-text
-          >`
-        : nothing}
+      <div class=${classMap({ group: true, disabled: isDisabled })}>
+        <label
+          id="label"
+          data-part="label"
+          part="label"
+          for="trigger"
+          class=${classMap({ 'visually-hidden': this.hideLabel })}
+          @click=${this.handleLabelClick}
+          ><ds-text element="span" size=${this.size} weight="medium" .overrides=${labelOverrides}
+            >${this.label}${this.required ? COPY_REQUIRED_INDICATOR : nothing}</ds-text
+          ></label
+        >
+        ${this.description
+          ? html`<ds-text
+              id="description"
+              data-part="description"
+              part="description"
+              element="p"
+              size="sm"
+              tone="muted"
+              .overrides=${helperOverrides}
+              >${this.description}</ds-text
+            >`
+          : nothing}
+        ${this.usesPopup ? this.renderPopupField(isDisabled, describedBy) : this.renderNativeField(isDisabled, describedBy)}
+        <div id="error" data-part="errorMessage" part="errorMessage" role="alert" ?hidden=${!message}>
+          ${message
+            ? html`<ds-text element="p" size="sm" tone="danger" .overrides=${helperOverrides}>${message}</ds-text>`
+            : nothing}
+        </div>
+      </div>
+    `;
+  }
+
+  private renderPopupField(isDisabled: boolean, describedBy: string): TemplateResult {
+    const isOpen = this.currentOpen;
+    const labels = this.displayLabels();
+    const text =
+      labels.length === 0
+        ? this.placeholder || COPY_PLACEHOLDER
+        : labels.length <= 2
+          ? labels.join(', ')
+          : COPY_SELECTED_COUNT(labels.length);
+    const activeLabel =
+      this.activeValue === null ? '' : (this.flatItems.find((item) => item.value === this.activeValue)?.label ?? '');
+
+    return html`
       <button
         id="trigger"
+        data-part="trigger"
         part="trigger"
-        class=${classMap({ trigger: true, disabled: isDisabled })}
         type="button"
         role="combobox"
         aria-haspopup="listbox"
         aria-expanded=${isOpen ? 'true' : 'false'}
         aria-controls="popup"
-        aria-labelledby="label"
-        aria-describedby=${ifDefined(describedBy)}
+        aria-labelledby="label value"
+        aria-describedby=${ifDefined(describedBy || undefined)}
         aria-invalid=${ifDefined(this.invalid ? 'true' : undefined)}
         aria-required=${ifDefined(this.required ? 'true' : undefined)}
         aria-disabled=${ifDefined(isDisabled ? 'true' : undefined)}
         @click=${this.handleTriggerClick}
         @keydown=${this.handleTriggerKeydown}
       >
-        <span id="value" part="value" class=${classMap({ value: true, placeholder: labels.length === 0 })}
-          >${triggerText}</span
-        >
-        <ds-icon part="chevron" class=${classMap({ chevron: true, 'is-open': isOpen })} name="chevron-down"></ds-icon>
+        <span id="value" data-part="value" part="value" ?data-placeholder=${labels.length === 0}>${text}</span>
+        <ds-icon data-part="chevron" part="chevron" name="chevron-down" .overrides=${CHEVRON_OVERRIDES}></ds-icon>
       </button>
+      <span id="active-option" class="visually-hidden" aria-live="polite">${isOpen ? activeLabel : ''}</span>
       <div
         id="popup"
-        class="popup"
+        data-part="popup"
         part="popup"
-        popover=${this.popoverSupported ? 'manual' : nothing}
-        ?hidden=${this.popoverSupported ? false : !isOpen}
+        popover=${ifDefined(POPOVER_SUPPORTED ? 'manual' : undefined)}
+        ?hidden=${!POPOVER_SUPPORTED && !isOpen}
+        @mousedown=${this.handlePopupMouseDown}
+        @click=${this.handlePopupClick}
       >
         <ds-listbox
-          id="listbox"
+          data-part="listbox"
           part="listbox"
-          class="listbox"
-          label=${this.label}
+          labelledBy="label"
+          embedded
+          .selectionFollowsFocus=${false}
           .options=${this.options}
-          .value=${this.listboxValue}
+          .value=${this.multiple ? (this.currentValue ?? []) : (this.currentValue ?? '')}
+          .initialActiveValue=${this.activeValue ?? undefined}
+          .activeValue=${this.activeValue}
           ?multiple=${this.multiple}
           ?disabled=${isDisabled}
           @change=${this.handleListboxChange}
+          @active-change=${this.handleListboxActiveChange}
         ></ds-listbox>
       </div>
-      <div id="error-message" part="errorMessage" class="error" role="alert">${this.error ?? ''}</div>
     `;
   }
 
-  private renderNative(isDisabled: boolean, describedBy: string | undefined) {
-    return html`
-      <ds-text id="label" part="label" class=${classMap({ label: true, 'visually-hidden': this.hideLabel })} element="p" weight="medium"
-        >${this.label}${this.required
-          ? html`<span aria-hidden="true">${COPY_REQUIRED_INDICATOR}</span>`
-          : nothing}</ds-text
-      >
-      ${this.description
-        ? html`<ds-text id="description" part="description" class="description" element="p" tone="muted" size="sm"
-            >${this.description}</ds-text
-          >`
-        : nothing}
-      <select
-        id="native-select"
-        part="trigger"
-        class="native-select"
-        name=${this.name}
-        ?multiple=${this.multiple}
-        ?disabled=${isDisabled}
-        ?required=${this.required}
-        aria-labelledby="label"
-        aria-describedby=${ifDefined(describedBy)}
-        aria-invalid=${ifDefined(this.invalid ? 'true' : undefined)}
-        @change=${this.handleNativeChange}
-      >
-        ${!this.multiple
-          ? html`<option value="" ?selected=${this.currentValue === null}>${this.placeholder || COPY_PLACEHOLDER}</option>`
-          : nothing}
-        ${this.renderNativeOptions(this.options)}
-      </select>
-      <div id="error-message" part="errorMessage" class="error" role="alert">${this.error ?? ''}</div>
-    `;
-  }
-
-  private renderNativeOptions(options: ListboxOption[]): unknown[] {
+  private renderNativeField(isDisabled: boolean, describedBy: string): TemplateResult {
     const selected = this.selectedSet;
-    return options.map((option) => {
-      if (isGroupOption(option)) {
-        return html`<optgroup label=${option.group}>${this.renderNativeOptions(option.options)}</optgroup>`;
-      }
-      return html`<option value=${option.value} ?selected=${selected.has(option.value)} ?disabled=${option.disabled === true}
-        >${option.label}</option
-      >`;
-    });
+    const renderOptions = (options: ListboxOption[]): unknown[] =>
+      options.map((option) =>
+        isGroupOption(option)
+          ? html`<optgroup label=${option.group}>${renderOptions(option.options)}</optgroup>`
+          : html`<option
+              value=${option.value}
+              .selected=${live(selected.has(option.value))}
+              ?disabled=${option.disabled === true}
+            >
+              ${option.label}
+            </option>`,
+      );
+
+    return html`
+      <div class="native">
+        <select
+          id="trigger"
+          data-part="trigger"
+          part="trigger"
+          ?multiple=${this.multiple}
+          ?disabled=${isDisabled}
+          ?required=${this.required}
+          aria-describedby=${ifDefined(describedBy || undefined)}
+          aria-invalid=${ifDefined(this.invalid ? 'true' : undefined)}
+          @change=${this.handleNativeChange}
+        >
+          ${this.multiple
+            ? nothing
+            : html`<option value="" .selected=${live(selected.size === 0)}>
+                ${this.placeholder || COPY_PLACEHOLDER}
+              </option>`}
+          ${renderOptions(this.options)}
+        </select>
+        ${this.multiple
+          ? nothing
+          : html`<span class="native-chevron"
+              ><ds-icon data-part="chevron" part="chevron" name="chevron-down" .overrides=${CHEVRON_OVERRIDES}></ds-icon
+            ></span>`}
+      </div>
+    `;
   }
+
+  private displayLabels(): string[] {
+    const value = this.currentValue;
+    if (value === null) {
+      return [];
+    }
+    const labelByValue = new Map(this.flatItems.map((item) => [item.value, item.label] as const));
+    return (Array.isArray(value) ? value : [value]).map((entry) => labelByValue.get(entry) ?? entry);
+  }
+
+  private defaultActiveValue(): string | null {
+    const items = this.flatItems.filter((item) => item.disabled !== true);
+    const selected = this.selectedSet;
+    return (items.find((item) => selected.has(item.value)) ?? items[0])?.value ?? null;
+  }
+
+  /** The label focuses the trigger; it never activates it. */
+  private readonly handleLabelClick = (event: Event): void => {
+    if (!this.usesPopup) {
+      return;
+    }
+    event.preventDefault();
+    this.triggerEl?.focus();
+  };
 
   private readonly handleTriggerClick = (): void => {
     if (this.isDisabled) {
       return;
     }
-    if (this.currentOpen) {
-      this.closePopup(false);
-    } else {
-      this.openPopup();
-    }
+    this.requestOpen(!this.currentOpen, true);
   };
 
   private readonly handleTriggerKeydown = (event: KeyboardEvent): void => {
@@ -769,7 +798,7 @@ export class DsSelect extends LitElement {
     if (!this.currentOpen) {
       if (key === 'Enter' || key === ' ' || key === 'ArrowDown' || key === 'ArrowUp') {
         event.preventDefault();
-        this.openPopup();
+        this.requestOpen(true, false);
       }
       return;
     }
@@ -777,28 +806,50 @@ export class DsSelect extends LitElement {
     switch (key) {
       case 'Escape':
         event.preventDefault();
-        this.closePopup(true);
+        event.stopPropagation();
+        this.requestOpen(false, true);
         break;
-      case 'Tab': {
-        // Commit and hide synchronously so the browser's own Tab traversal
-        // (computed right after this handler returns, ahead of Lit's async
-        // re-render) does not land inside the now-closing popup.
-        if (!this.multiple) {
-          const active = this.activeOptionItem();
-          if (active && !active.disabled) {
-            this.commitValue(active.value);
-          }
-        }
-        this.hidePopupImmediately();
-        this.setOpen(false);
-        break;
-      }
       case 'Enter':
         event.preventDefault();
-        this.listboxEl?.handleKey(new KeyboardEvent('keydown', { key: ' ' }));
+        if (this.multiple) {
+          this.listboxEl?.handleKey(new KeyboardEvent('keydown', { key: ' ' }));
+        } else {
+          this.commitActive();
+          this.requestOpen(false, true);
+        }
+        break;
+      case 'Tab':
+        // No preventDefault: focus moves on.
+        if (!this.multiple) {
+          this.commitActive();
+        }
+        this.requestOpen(false, false);
+        break;
+      case ' ':
+        this.listboxEl?.handleKey(event);
+        if (!this.multiple) {
+          this.requestOpen(false, true);
+        }
         break;
       default:
         this.listboxEl?.handleKey(event);
+    }
+  };
+
+  /** Keeps DOM focus on the trigger while the pointer works the list. */
+  private readonly handlePopupMouseDown = (event: MouseEvent): void => {
+    event.preventDefault();
+  };
+
+  private readonly handlePopupClick = (event: MouseEvent): void => {
+    if (this.multiple) {
+      return;
+    }
+    const option = event
+      .composedPath()
+      .find((node): node is HTMLElement => node instanceof HTMLElement && node.getAttribute('role') === 'option');
+    if (option && option.getAttribute('aria-disabled') !== 'true') {
+      this.requestOpen(false, true);
     }
   };
 
@@ -806,149 +857,73 @@ export class DsSelect extends LitElement {
     // Internal to the composition; the host dispatches its own `change`.
     event.stopPropagation();
     this.commitValue(event.detail.value);
-    if (!this.multiple) {
-      this.closePopup(true);
-    }
+  };
+
+  private readonly handleListboxActiveChange = (event: CustomEvent<ListboxActiveChangeDetail>): void => {
+    event.stopPropagation();
+    this.activeValue = event.detail.value;
   };
 
   private readonly handleNativeChange = (event: Event): void => {
-    const select = event.target as HTMLSelectElement;
-    const next: SelectValue = this.multiple
-      ? Array.from(select.selectedOptions).map((option) => option.value)
-      : select.value;
-    this.commitValue(next);
+    const select = event.currentTarget as HTMLSelectElement;
+    this.commitValue(
+      this.multiple ? Array.from(select.selectedOptions, (option) => option.value) : select.value,
+    );
   };
 
   private readonly handleOutsidePointerDown = (event: PointerEvent): void => {
-    if (event.composedPath().includes(this)) {
-      return;
+    if (!event.composedPath().includes(this)) {
+      this.requestOpen(false, false);
     }
-    this.closePopup(false);
+  };
+
+  /** Focus leaving the element closes the popup. */
+  private readonly handleFocusOut = (event: FocusEvent): void => {
+    const next = event.relatedTarget;
+    if (this.currentOpen && next instanceof Node && next !== this && !this.contains(next)) {
+      this.requestOpen(false, false);
+    }
   };
 
   private readonly handleReposition = (): void => {
-    if (this.currentOpen) {
-      this.updatePosition();
-    }
+    this.updatePosition();
   };
 
-  private readonly handleWindowBlur = (): void => {
-    this.closePopup(false);
-  };
-
-  private activeOptionItem(): ListboxItem | undefined {
-    const active = this.listboxEl?.activeValue;
-    if (!active) {
-      return undefined;
+  /** Single-select: commits the active option. */
+  private commitActive(): void {
+    const item = this.flatItems.find((candidate) => candidate.value === this.activeValue);
+    if (item && item.disabled !== true) {
+      this.commitValue(item.value);
     }
-    return this.flatItems.find((item) => item.value === active);
   }
 
-  private openPopup(): void {
-    if (this.currentOpen || this.isDisabled) {
+  /** Reports the new popup state; only an uncontrolled element applies it. */
+  private requestOpen(next: boolean, restoreFocus: boolean): void {
+    if (this.currentOpen === next || (next && this.isDisabled)) {
       return;
     }
-    this.setOpen(true);
-  }
-
-  private closePopup(restoreFocus: boolean): void {
-    if (!this.currentOpen) {
-      return;
+    if (this.open === undefined) {
+      this.internalOpen = next;
+      if (!next) {
+        // Hide at once so a Tab computed right after this handler does not land in the list.
+        this.hidePopup();
+      }
     }
-    this.setOpen(false);
-    if (restoreFocus) {
+    this.dispatchEvent(
+      new CustomEvent<SelectOpenChangeDetail>('open-change', { detail: { open: next }, bubbles: true, composed: true }),
+    );
+    if (!next && restoreFocus) {
       this.triggerEl?.focus();
     }
   }
 
-  /** Writes to `open` when controlled, else to `internalOpen`. */
-  private setOpen(next: boolean): void {
-    if (this.open !== undefined) {
-      this.open = next;
-    } else {
-      this.internalOpen = next;
-    }
-  }
-
-  private handleOpened(): void {
-    if (this.popoverSupported) {
-      this.popupEl?.showPopover();
-    }
-    this.updatePosition();
-    this.addGlobalListeners();
-    if (this.listboxEl) {
-      this.listboxEl.activeValue = this.defaultActiveValue();
-    }
-    this.dispatchOpenChange(true);
-  }
-
-  private handleClosed(): void {
-    this.removeGlobalListeners();
-    this.hidePopupImmediately();
-    if (this.listboxEl) {
-      this.listboxEl.activeValue = null;
-    }
-    this.dispatchOpenChange(false);
-  }
-
-  private defaultActiveValue(): string | null {
-    const items = this.flatItems.filter((item) => item.disabled !== true);
-    if (items.length === 0) {
-      return null;
-    }
-    const selected = this.selectedSet;
-    const match = items.find((item) => selected.has(item.value));
-    return (match ?? items[0])!.value;
-  }
-
-  private hidePopupImmediately(): void {
-    if (this.popoverSupported) {
-      if (this.popupEl?.matches(':popover-open')) {
-        this.popupEl.hidePopover();
-      }
-    } else if (this.popupEl) {
-      this.popupEl.hidden = true;
-    }
-  }
-
-  private addGlobalListeners(): void {
-    document.addEventListener('pointerdown', this.handleOutsidePointerDown, true);
-    window.addEventListener('scroll', this.handleReposition, true);
-    window.addEventListener('resize', this.handleReposition);
-    window.addEventListener('blur', this.handleWindowBlur);
-  }
-
-  private removeGlobalListeners(): void {
-    document.removeEventListener('pointerdown', this.handleOutsidePointerDown, true);
-    window.removeEventListener('scroll', this.handleReposition, true);
-    window.removeEventListener('resize', this.handleReposition);
-    window.removeEventListener('blur', this.handleWindowBlur);
-  }
-
-  private updatePosition(): void {
-    const trigger = this.triggerEl;
-    const popup = this.popupEl;
-    if (!trigger || !popup) {
+  /** Reports a changed value; only an uncontrolled element stores it. */
+  private commitValue(next: SelectValue): void {
+    const normalized: SelectValue | null = Array.isArray(next) ? (next.length > 0 ? next : null) : next || null;
+    if (sameValue(normalized, this.currentValue)) {
       return;
     }
-    const triggerRect = trigger.getBoundingClientRect();
-    const popupRect = popup.getBoundingClientRect();
-    const viewportHeight = document.documentElement.clientHeight;
-    const gap = parseFloat(getComputedStyle(popup).getPropertyValue('--ds-select-popup-offset')) || 0;
-
-    const overflowsBelow = triggerRect.bottom + gap + popupRect.height > viewportHeight;
-    const opensUpward = overflowsBelow && triggerRect.top - gap - popupRect.height >= 0;
-
-    popup.style.top = opensUpward ? 'auto' : `${triggerRect.bottom + gap}px`;
-    popup.style.bottom = opensUpward ? `${viewportHeight - triggerRect.top + gap}px` : 'auto';
-    popup.style.left = `${triggerRect.left}px`;
-    popup.style.minWidth = `${triggerRect.width}px`;
-  }
-
-  private commitValue(next: SelectValue): void {
-    if (this.value !== undefined) {
-      this.value = next;
-    } else {
+    if (this.value === undefined) {
       this.internalValue = next;
     }
     this.dispatchEvent(
@@ -956,44 +931,103 @@ export class DsSelect extends LitElement {
     );
   }
 
-  private dispatchOpenChange(open: boolean): void {
-    this.dispatchEvent(
-      new CustomEvent<SelectOpenChangeDetail>('open-change', { detail: { open }, bubbles: true, composed: true }),
-    );
+  private showPopup(): void {
+    const popup = this.popupEl;
+    if (!popup) {
+      return;
+    }
+    if (POPOVER_SUPPORTED && !popup.matches(':popover-open')) {
+      popup.showPopover();
+    }
+    this.addGlobalListeners();
+    this.updatePosition();
+    void this.listboxEl?.updateComplete.then(() => this.updatePosition());
   }
 
-  /** Mirrors value and validity into ElementInternals. */
+  private hidePopup(): void {
+    this.removeGlobalListeners();
+    const popup = this.popupEl;
+    if (!popup) {
+      return;
+    }
+    if (POPOVER_SUPPORTED) {
+      if (popup.matches(':popover-open')) {
+        popup.hidePopover();
+      }
+    } else if (!popup.hidden) {
+      popup.hidden = true;
+    }
+  }
+
+  private addGlobalListeners(): void {
+    document.addEventListener('pointerdown', this.handleOutsidePointerDown, true);
+    window.addEventListener('scroll', this.handleReposition, true);
+    window.addEventListener('resize', this.handleReposition);
+  }
+
+  private removeGlobalListeners(): void {
+    document.removeEventListener('pointerdown', this.handleOutsidePointerDown, true);
+    window.removeEventListener('scroll', this.handleReposition, true);
+    window.removeEventListener('resize', this.handleReposition);
+  }
+
+  /** Below the trigger, flipped above when it would overflow the viewport; at least as wide as the trigger. */
+  private updatePosition(): void {
+    const trigger = this.triggerEl;
+    const popup = this.popupEl;
+    if (!trigger || !popup || !this.shown) {
+      return;
+    }
+    const triggerRect = trigger.getBoundingClientRect();
+    const popupHeight = popup.getBoundingClientRect().height;
+    const viewportHeight = document.documentElement.clientHeight;
+    const offset = parseFloat(getComputedStyle(this).getPropertyValue(HOOKS.popupOffset)) || 0;
+    const above =
+      triggerRect.bottom + offset + popupHeight > viewportHeight && triggerRect.top - offset - popupHeight >= 0;
+
+    popup.style.top = above ? 'auto' : `${triggerRect.bottom + offset}px`;
+    popup.style.bottom = above ? `${viewportHeight - triggerRect.top + offset}px` : 'auto';
+    popup.style.left = `${triggerRect.left}px`;
+    popup.style.minInlineSize = `${triggerRect.width}px`;
+  }
+
+  /** Validation in the doc's order: required, then invalid (`error` text, else `copy.invalid`). */
+  private computeValidationMessage(): string | null {
+    if (this.required && this.currentValue === null) {
+      return COPY_REQUIRED(this.label);
+    }
+    if (this.errorValue) {
+      return this.errorValue;
+    }
+    if (this.invalid) {
+      return COPY_INVALID(this.label);
+    }
+    return null;
+  }
+
   private syncInternals(): void {
     const value = this.currentValue;
     const isDisabled = this.isDisabled;
-
-    if (this.multiple) {
-      if (isDisabled || value === null) {
-        this.internals.setFormValue(null);
-      } else {
-        const formData = new FormData();
-        for (const entry of value as string[]) {
-          formData.append(this.name, entry);
-        }
-        this.internals.setFormValue(formData);
+    if (isDisabled || value === null || !this.name) {
+      this.internals.setFormValue(null);
+    } else if (Array.isArray(value)) {
+      const data = new FormData();
+      for (const entry of value) {
+        data.append(this.name, entry);
       }
+      this.internals.setFormValue(data);
     } else {
-      this.internals.setFormValue(isDisabled || value === null ? null : (value as string));
+      this.internals.setFormValue(value);
     }
 
-    if (isDisabled) {
+    const message = isDisabled ? null : this.computeValidationMessage();
+    const anchor = this.triggerEl ?? undefined;
+    if (message === null) {
       this.internals.setValidity({});
-      return;
-    }
-    const anchor = this.triggerEl ?? this.nativeSelectEl;
-    if (this.error) {
-      this.internals.setValidity({ customError: true }, this.error, anchor!);
-    } else if (this.invalid) {
-      this.internals.setValidity({ customError: true }, COPY_INVALID(this.label), anchor!);
     } else if (this.required && value === null) {
-      this.internals.setValidity({ valueMissing: true }, COPY_REQUIRED(this.label), anchor!);
+      this.internals.setValidity({ valueMissing: true }, message, anchor);
     } else {
-      this.internals.setValidity({});
+      this.internals.setValidity({ customError: true }, message, anchor);
     }
   }
 
@@ -1006,21 +1040,6 @@ export class DsSelect extends LitElement {
       } else {
         this.style.setProperty(hook, cssVar(ref));
       }
-    }
-  }
-
-  private warnInDev(): void {
-    if (!import.meta.env.DEV) {
-      return;
-    }
-    if (!this.label) {
-      console.warn('<ds-select> requires a `label`.', this);
-    }
-    if (!this.name) {
-      console.warn('<ds-select> requires a `name`.', this);
-    }
-    if (!this.options || this.options.length === 0) {
-      console.warn('<ds-select> requires at least one option in `options`.', this);
     }
   }
 }

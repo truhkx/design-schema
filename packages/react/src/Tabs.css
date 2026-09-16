@@ -159,6 +159,7 @@
 }
 
 .ds-tabs__panel {
+  box-sizing: border-box;
   font-size: var(--ds-tabs-font-size);
   line-height: var(--ds-tabs-line-height);
   color: var(--color-foreground);

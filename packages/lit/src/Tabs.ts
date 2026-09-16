@@ -22,13 +22,12 @@ export interface TabsChangeDetail {
   value: string;
 }
 
-/** Overridable style hooks; see the `overrides` property. `tabColor`, `tabSelectedColor`, `tabHoverBackground`, `indicator`, `badgeColor`, `minTarget`, `focusRing` and `focusRingWidth` are locked and excluded. */
+/** Overridable style hooks; see the `overrides` property. Locked bindings (`tabColor`, `tabSelectedColor`, `tabHoverBackground`, `indicator`, `indicatorThickness`, `badgeColor`, `minTarget`, `focusRing`, `focusRingWidth`) are excluded. */
 export type TabsOverridableBinding =
   | 'tabPaddingBlock'
   | 'tabPaddingInline'
   | 'tabGap'
   | 'listGap'
-  | 'indicatorThickness'
   | 'listBorder'
   | 'listBorderWidth'
   | 'panelGap'
@@ -46,7 +45,6 @@ const HOOKS: Record<TabsOverridableBinding, string> = {
   tabPaddingInline: '--ds-tabs-tab-padding-inline',
   tabGap: '--ds-tabs-tab-gap',
   listGap: '--ds-tabs-list-gap',
-  indicatorThickness: '--ds-tabs-indicator-thickness',
   listBorder: '--ds-tabs-list-border',
   listBorderWidth: '--ds-tabs-list-border-width',
   panelGap: '--ds-tabs-panel-gap',
@@ -60,14 +58,16 @@ const HOOKS: Record<TabsOverridableBinding, string> = {
   disabledOpacity: '--ds-tabs-disabled-opacity',
 };
 
+type ControlsElement = HTMLElement & { ariaControlsElements?: readonly Element[] | null };
+
 /**
  * `<ds-tab-panel>` — the light-DOM wrapper for one Tabs panel (anatomy: panel).
  *
  * `<ds-tabs>` manages its `hidden`, `role`, `tabindex` and `aria-label`
- * attributes from slotchange and selection changes; consumers only set `id`
- * (matching a `tabs[].id`) and put content inside. `aria-label` carries the
- * matching tab's label rather than `aria-labelledby`, because the tab lives in
- * `<ds-tabs>`'s shadow root and an IDREF cannot cross that boundary.
+ * attributes; consumers only set `id` (matching a `tabs[].id`) and put content
+ * inside. The panel is named with `aria-label` (the tab's label) rather than
+ * `aria-labelledby`, because the tab lives in `<ds-tabs>`'s shadow root and a
+ * reference cannot point into a descendant shadow tree.
  */
 @customElement('ds-tab-panel')
 export class DsTabPanel extends LitElement {
@@ -85,6 +85,7 @@ export class DsTabPanel extends LitElement {
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('data-ds', 'TabPanel');
+    this.setAttribute('data-part', 'panel');
   }
 
   protected override render(): TemplateResult {
@@ -96,41 +97,30 @@ export class DsTabPanel extends LitElement {
  * `<ds-tabs>` — Tabs (category: navigation, APG pattern: tabs).
  *
  * `<ds-tabs label="Project sections" .tabs=${tabs}>` renders a `role="tablist"`
- * of native `<button role="tab">` in its shadow root, one per entry of `tabs`.
- * Panels are light-DOM `<ds-tab-panel id>` children, slotted after the list;
- * `<ds-tabs>` stamps `role`, `tabindex` and `aria-label` onto them and toggles
- * `hidden` for the unselected ones. Panels are never moved, detached or
- * re-appended — re-inserting a node that is already a child would re-fire
- * `slotchange` and spin the renderer — so on Lit a panel's state always
- * survives switching and `keepMounted` has no further effect. The list is
- * one roving-tabindex stop: arrow keys along `orientation` move
- * real focus between enabled tabs and wrap, `automatic` activation selects as
- * focus moves, `manual` activation only selects on Enter/Space (the browser
- * already fires `click` for a focused `<button>` on either key, so no extra
- * handling is needed). The indicator is an absolutely positioned bar measured
- * from the selected tab's box and animated with `transition`, removed under
- * reduced motion. Selecting a tab fires a composed `change` CustomEvent with
- * `{ value }`.
+ * of native `<button role="tab">` in its shadow root. Panels are light-DOM
+ * `<ds-tab-panel id>` children; `<ds-tabs>` stamps `role`, `tabindex` and
+ * `aria-label` onto them and toggles `hidden` on the unselected ones. Panels
+ * are never moved, detached or re-appended, so on Lit an unselected panel is
+ * always kept in the tree (hidden) and `keepMounted` changes nothing further.
+ *
+ * The list is one roving-tabindex stop: arrow keys along `orientation` move
+ * focus between enabled tabs and wrap, Home/End jump, `automatic` activation
+ * selects as focus moves and `manual` selects on Enter/Space (a native button
+ * click). Disabled tabs are `aria-disabled`, skipped and never selected.
  *
  * ## When to use
  *
- * Use Tabs to split a region into two to about seven views of equal standing
- * that the user switches between often. Use `manual` activation when a panel
- * is expensive to show, `vertical` when horizontal room is short, and `fill`
- * on phones for two to four tabs.
+ * Two to about seven views of equal standing that the user switches between
+ * often. `manual` when a panel is expensive, `vertical` when horizontal room is
+ * short, `fill` on phones for two to four tabs.
  *
  * ## When not to use
  *
- * Not for navigation between pages (use a nav landmark of Links), not for a
+ * Not for navigation between pages (a nav landmark of Links), not for a
  * sequence, and not when several panels must be visible at once.
  *
- * @fires change - Fired when the selected tab changes, with `{ value }` in `detail`.
- * @csspart tablist - The `role="tablist"` container (anatomy: tablist).
- * @csspart tab - Each `role="tab"` button (anatomy: tab).
- * @csspart tab-label - A tab's visible label (anatomy: tabLabel).
- * @csspart tab-icon - A tab's leading `<ds-icon>` (anatomy: tabIcon).
- * @csspart tab-badge - A tab's trailing badge (anatomy: tabBadge).
- * @csspart indicator - The bar tracking the selected tab (anatomy: indicator).
+ * @fires change - The selected tab changed by user action; `detail: { value }`.
+ * @slot - `<ds-tab-panel>` elements, one per tab, in the same order.
  */
 @customElement('ds-tabs')
 export class DsTabs extends LitElement {
@@ -141,25 +131,35 @@ export class DsTabs extends LitElement {
 
   static override styles: CSSResult = css`
     :host {
-      display: flex;
-      flex-direction: column;
-      gap: var(--ds-tabs-panel-gap);
+      --ds-tabs-tab-color: var(--color-foreground-muted);
+      --ds-tabs-tab-selected-color: var(--color-foreground-strong);
+      --ds-tabs-tab-hover-background: var(--color-background-subtle);
       --ds-tabs-tab-padding-block: var(--space-sm);
       --ds-tabs-tab-padding-inline: var(--space-md);
       --ds-tabs-tab-gap: var(--layout-gap-tight);
       --ds-tabs-list-gap: var(--layout-gap-none);
+      --ds-tabs-indicator: var(--color-control-selected-background);
       --ds-tabs-indicator-thickness: var(--border-width-focus);
       --ds-tabs-list-border: var(--color-border);
       --ds-tabs-list-border-width: var(--border-width-thin);
       --ds-tabs-panel-gap: var(--layout-gap-loose);
+      --ds-tabs-badge-color: var(--color-foreground-muted);
       --ds-tabs-badge-size: var(--font-size-xs);
       --ds-tabs-font-family: var(--font-family-body);
       --ds-tabs-font-size: var(--font-size-md);
       --ds-tabs-font-weight: var(--font-weight-medium);
       --ds-tabs-line-height: var(--font-line-height-normal);
       --ds-tabs-radius: var(--radius-sm);
+      --ds-tabs-min-target: var(--size-target-comfortable);
+      --ds-tabs-focus-ring: var(--color-border-focus);
+      --ds-tabs-focus-ring-width: var(--border-width-focus);
       --ds-tabs-transition: var(--motion-duration-fast);
       --ds-tabs-disabled-opacity: var(--opacity-disabled);
+
+      display: flex;
+      flex-direction: column;
+      /* panelGap: between the tab list and the panel */
+      gap: var(--ds-tabs-panel-gap);
     }
 
     :host([hidden]) {
@@ -171,7 +171,7 @@ export class DsTabs extends LitElement {
       align-items: flex-start;
     }
 
-    .tablist {
+    [data-part='tablist'] {
       position: relative;
       box-sizing: border-box;
       display: flex;
@@ -184,7 +184,7 @@ export class DsTabs extends LitElement {
       scrollbar-width: none;
     }
 
-    :host([orientation='vertical']) .tablist {
+    :host([orientation='vertical']) [data-part='tablist'] {
       flex-direction: column;
       border-block-end: none;
       border-inline-end: var(--ds-tabs-list-border-width) solid var(--ds-tabs-list-border);
@@ -192,11 +192,11 @@ export class DsTabs extends LitElement {
       overflow-y: auto;
     }
 
-    :host([fit='fill']) .tablist {
-      flex: 1 1 auto;
+    :host([orientation='vertical'][fit='fill']) [data-part='tablist'] {
+      align-self: stretch;
     }
 
-    .tab {
+    [data-part='tab'] {
       position: relative;
       box-sizing: border-box;
       display: inline-flex;
@@ -204,7 +204,9 @@ export class DsTabs extends LitElement {
       align-items: center;
       justify-content: flex-start;
       gap: var(--ds-tabs-tab-gap);
-      min-block-size: var(--size-target-comfortable);
+      min-block-size: var(--ds-tabs-min-target);
+      min-inline-size: var(--ds-tabs-min-target);
+      margin: 0;
       padding-block: var(--ds-tabs-tab-padding-block);
       padding-inline: var(--ds-tabs-tab-padding-inline);
       border: 0;
@@ -214,58 +216,52 @@ export class DsTabs extends LitElement {
       font-size: var(--ds-tabs-font-size);
       font-weight: var(--ds-tabs-font-weight);
       line-height: var(--ds-tabs-line-height);
-      /* tabColor: color.foreground.muted, locked */
-      color: var(--color-foreground-muted);
+      color: var(--ds-tabs-tab-color);
       white-space: nowrap;
       cursor: pointer;
-      transition: color var(--ds-tabs-transition) var(--motion-easing-standard);
     }
 
-    :host([fit='fill']) .tab {
+    :host([fit='fill']) [data-part='tab'] {
       flex: 1 1 0%;
       justify-content: center;
     }
 
-    /* tabHoverBackground: color.background.subtle, locked */
-    .tab:hover:not(:disabled) {
-      background: var(--color-background-subtle);
+    [data-part='tab']:hover:not([aria-disabled='true']) {
+      background: var(--ds-tabs-tab-hover-background);
     }
 
-    /* tabSelectedColor: color.foreground.strong, locked — selection is also conveyed by aria-selected and the indicator, not color alone */
-    .tab[aria-selected='true'] {
-      color: var(--color-foreground-strong);
+    /* Selection is also carried by aria-selected and the indicator, not color alone. */
+    [data-part='tab'][aria-selected='true'] {
+      color: var(--ds-tabs-tab-selected-color);
     }
 
-    /* focusRing / focusRingWidth: color.border.focus / border.width.focus, locked */
-    .tab:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: calc(-1 * var(--border-width-focus));
+    [data-part='tab']:focus-visible {
+      outline: var(--ds-tabs-focus-ring-width) solid var(--ds-tabs-focus-ring);
+      outline-offset: calc(-1 * var(--ds-tabs-focus-ring-width));
     }
 
-    .tab:disabled {
+    [data-part='tab'][aria-disabled='true'] {
       opacity: var(--ds-tabs-disabled-opacity);
       cursor: not-allowed;
     }
 
-    .tab-icon {
+    [data-part='tabIcon'] {
       flex: none;
     }
 
-    .tab-label {
+    [data-part='tabLabel'] {
       min-inline-size: 0;
     }
 
-    /* badgeColor: color.foreground.muted, locked */
-    .badge {
+    [data-part='tabBadge'] {
       flex: none;
       font-size: var(--ds-tabs-badge-size);
-      color: var(--color-foreground-muted);
+      color: var(--ds-tabs-badge-color);
     }
 
-    /* indicator: color.control.selectedBackground, locked */
-    .indicator {
+    [data-part='indicator'] {
       position: absolute;
-      background: var(--color-control-selected-background);
+      background: var(--ds-tabs-indicator);
       opacity: 0;
       pointer-events: none;
       transition:
@@ -274,74 +270,77 @@ export class DsTabs extends LitElement {
         block-size var(--ds-tabs-transition) var(--motion-easing-standard);
     }
 
-    :host(:not([orientation='vertical'])) .indicator {
+    /* Horizontal: an underline flush against the list border at the bottom edge. */
+    :host(:not([orientation='vertical'])) [data-part='indicator'] {
       inset-block-end: 0;
       inset-inline-start: 0;
       block-size: var(--ds-tabs-indicator-thickness);
     }
 
-    :host([orientation='vertical']) .indicator {
-      inset-inline-start: 0;
+    /* Vertical: a side bar flush against the inline-end edge, next to the panels. */
+    :host([orientation='vertical']) [data-part='indicator'] {
       inset-block-start: 0;
+      inset-inline-end: 0;
       inline-size: var(--ds-tabs-indicator-thickness);
     }
 
     ::slotted(*) {
+      flex: 1 1 auto;
       min-inline-size: 0;
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .tab,
-      .indicator {
+      [data-part='indicator'] {
         transition: none;
       }
     }
   `;
 
-  /** The tabs in order. Two to about seven. A property, not an attribute. */
+  /** The tabs in order. A property, not an attribute. */
   @property({ attribute: false }) accessor tabs: TabsTab[] = [];
 
-  /** Accessible name of the tab list. Not shown visually. */
-  @property() accessor label!: string;
+  /** Accessible name of the tab list ("Account sections"). Not shown visually. */
+  @property() accessor label: string = '';
 
   /** Controlled selected tab id. Omit for uncontrolled. */
-  @property({ reflect: true }) accessor value: string | undefined;
+  @property({ type: String, reflect: true }) accessor value: string | undefined;
 
   /** Initially selected tab id. Defaults to the first enabled tab. */
   @property({ attribute: 'default-value' }) accessor defaultValue: string | undefined;
 
-  /** `automatic` selects a tab as arrow keys move to it; `manual` moves focus only, selecting on Enter/Space. */
-  @property({ reflect: true }) accessor activation: TabsActivation = 'automatic';
+  /** `automatic` selects a tab as arrow keys move to it; `manual` moves focus only and selects on Enter/Space. */
+  @property({ type: String, reflect: true }) accessor activation: TabsActivation = 'automatic';
 
   /** Vertical tab lists sit beside their panels and use Up/Down arrows. */
-  @property({ reflect: true }) accessor orientation: TabsOrientation = 'horizontal';
+  @property({ type: String, reflect: true }) accessor orientation: TabsOrientation = 'horizontal';
 
-  /** `fill` stretches tabs across the width; `start` packs them at the start. */
-  @property({ reflect: true }) accessor fit: TabsFit = 'start';
+  /** `start` packs tabs at the start; `fill` stretches them along the list. */
+  @property({ type: String, reflect: true }) accessor fit: TabsFit = 'start';
 
   /**
-   * Kept for API parity with other platforms. On Lit, panels are light-DOM
-   * elements the host never detaches, so an unselected panel's state already
-   * survives switching regardless of this flag; it has no further effect here.
+   * Keep unselected panels in the tree (hidden). On Lit panels are the
+   * consumer's light-DOM children and are only ever hidden, never detached, so
+   * both values keep them in the tree.
    */
-  @property({ type: Boolean, reflect: true, attribute: 'keep-mounted' }) accessor keepMounted = false;
+  @property({ type: Boolean, attribute: 'keep-mounted' }) accessor keepMounted = false;
 
-  /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings are ignored. */
+  /** Per-instance style overrides: `{ radius: 'radius.md' }`. Locked bindings are not accepted. */
   @property({ attribute: false }) accessor overrides: Partial<Record<TabsOverridableBinding, TokenRef | undefined>> | undefined;
 
-  /** Uncontrolled selection, seeded from `defaultValue` (or the first enabled tab) on first update. */
+  /** Uncontrolled selection, seeded from `defaultValue` (or the first enabled tab). */
   @state() private accessor internalValue: string | undefined;
 
-  /** The tab currently carrying the roving tabindex and (usually) real focus. */
+  /** The tab carrying the roving tabindex. */
   @state() private accessor focusedId: string | null = null;
 
-  @query('.tablist') private accessor tablistEl!: HTMLElement | null;
-  @query('.indicator') private accessor indicatorEl!: HTMLElement | null;
+  @query('[data-part=tablist]') private accessor tablistEl!: HTMLElement | null;
+  @query('[data-part=indicator]') private accessor indicatorEl!: HTMLElement | null;
 
-  private resizeObserver?: ResizeObserver | undefined;
+  private resizeObserver: ResizeObserver | undefined;
   private lastScrolledId: string | null = null;
+  private readonly warned = new Set<string>();
 
-  /** The currently selected tab id, controlled or not. */
+  /** The selected tab id, controlled or not. */
   get currentValue(): string | null {
     return this.value ?? this.internalValue ?? null;
   }
@@ -354,19 +353,20 @@ export class DsTabs extends LitElement {
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.resizeObserver?.disconnect();
+    this.resizeObserver = undefined;
   }
 
   protected override firstUpdated(): void {
-    if (this.tablistEl) {
+    this.lastScrolledId = this.currentValue;
+    if (this.tablistEl && typeof ResizeObserver !== 'undefined') {
       this.resizeObserver = new ResizeObserver(() => this.updateIndicator());
       this.resizeObserver.observe(this.tablistEl);
     }
   }
 
   protected override willUpdate(changed: PropertyValues): void {
-    if (!this.hasUpdated) {
+    if (this.internalValue === undefined && (changed.has('tabs') || changed.has('defaultValue'))) {
       this.internalValue = this.defaultValue ?? this.tabs.find((tab) => tab.disabled !== true)?.id;
-      this.focusedId = this.currentValue;
     }
     if (changed.has('overrides')) {
       this.applyOverrides();
@@ -376,50 +376,66 @@ export class DsTabs extends LitElement {
   protected override updated(): void {
     this.syncPanels();
     this.updateIndicator();
-    this.maybeScrollSelectedIntoView();
+    this.scrollSelectedIntoView();
     this.warnInDev();
   }
 
   protected override render(): TemplateResult {
     const selected = this.currentValue;
+    const rovingId = this.rovingId();
     return html`
       <div
-        class="tablist"
+        data-part="tablist"
         part="tablist"
         role="tablist"
         aria-label=${this.label}
         aria-orientation=${this.orientation}
         @keydown=${this.handleKeydown}
+        @focusout=${this.handleFocusOut}
       >
-        ${this.tabs.map((tab) => this.renderTab(tab, tab.id === selected))}
-        <span class="indicator" part="indicator" aria-hidden="true"></span>
+        ${this.tabs.map((tab, index) => this.renderTab(tab, index, tab.id === selected, tab.id === rovingId))}
+        <span data-part="indicator" part="indicator" aria-hidden="true"></span>
       </div>
       <slot @slotchange=${this.handleSlotChange}></slot>
     `;
   }
 
-  private renderTab(tab: TabsTab, selected: boolean) {
+  private renderTab(tab: TabsTab, index: number, selected: boolean, roving: boolean): TemplateResult {
     const disabled = tab.disabled === true;
-    const focused = (this.focusedId ?? this.currentValue) === tab.id;
+    const hasBadge = tab.badge !== undefined && tab.badge !== '';
     return html`
       <button
         type="button"
-        class="tab"
+        data-part="tab"
         part="tab"
         role="tab"
-        id="tab-${tab.id}"
+        id="tab-${index}"
         data-id=${tab.id}
         aria-selected=${selected ? 'true' : 'false'}
-        aria-controls=${tab.id}
-        tabindex=${focused ? 0 : -1}
-        ?disabled=${disabled}
+        aria-disabled=${disabled ? 'true' : nothing}
+        aria-labelledby=${hasBadge ? `tab-${index}-label tab-${index}-badge` : nothing}
+        tabindex=${roving ? 0 : -1}
         @click=${() => this.handleTabClick(tab)}
       >
-        ${tab.icon ? html`<ds-icon class="tab-icon" part="tab-icon" name=${tab.icon}></ds-icon>` : nothing}
-        <span class="tab-label" part="tab-label">${tab.label}</span>
-        ${tab.badge !== undefined ? html`<span class="badge" part="tab-badge">${tab.badge}</span>` : nothing}
+        ${tab.icon ? html`<ds-icon data-part="tabIcon" part="tabIcon" name=${tab.icon}></ds-icon>` : nothing}
+        <span data-part="tabLabel" part="tabLabel" id="tab-${index}-label">${tab.label}</span>
+        ${hasBadge
+          ? html`<span data-part="tabBadge" part="tabBadge" id="tab-${index}-badge">${tab.badge}</span>`
+          : nothing}
       </button>
     `;
+  }
+
+  /** The tab that is the list's single tab stop: the focused one, else the selected one, else the first enabled. */
+  private rovingId(): string | null {
+    const enabled = this.enabledTabs();
+    const candidates = [this.focusedId, this.currentValue];
+    for (const id of candidates) {
+      if (id !== null && enabled.some((tab) => tab.id === id)) {
+        return id;
+      }
+    }
+    return enabled[0]?.id ?? null;
   }
 
   private readonly handleTabClick = (tab: TabsTab): void => {
@@ -431,9 +447,9 @@ export class DsTabs extends LitElement {
   };
 
   private readonly handleKeydown = (event: KeyboardEvent): void => {
-    const horizontal = this.orientation !== 'vertical';
-    const nextKey = horizontal ? 'ArrowRight' : 'ArrowDown';
-    const prevKey = horizontal ? 'ArrowLeft' : 'ArrowUp';
+    const vertical = this.orientation === 'vertical';
+    const nextKey = vertical ? 'ArrowDown' : 'ArrowRight';
+    const prevKey = vertical ? 'ArrowUp' : 'ArrowLeft';
     if (event.key === nextKey) {
       event.preventDefault();
       this.moveFocus(1);
@@ -449,8 +465,18 @@ export class DsTabs extends LitElement {
     }
   };
 
+  /** Leaving the list returns the tab stop to the selected tab. */
+  private readonly handleFocusOut = (event: FocusEvent): void => {
+    const next = event.relatedTarget as Node | null;
+    if (next && this.tablistEl?.contains(next)) {
+      return;
+    }
+    this.focusedId = null;
+  };
+
   private handleSlotChange(): void {
     this.syncPanels();
+    this.warnInDev();
   }
 
   private enabledTabs(): TabsTab[] {
@@ -462,22 +488,17 @@ export class DsTabs extends LitElement {
     if (items.length === 0) {
       return;
     }
-    const currentIndex = items.findIndex((tab) => tab.id === (this.focusedId ?? this.currentValue));
-    let nextIndex = currentIndex + delta;
-    if (nextIndex < 0) {
-      nextIndex = items.length - 1;
-    } else if (nextIndex >= items.length) {
-      nextIndex = 0;
-    }
+    const currentIndex = items.findIndex((tab) => tab.id === this.rovingId());
+    const nextIndex = (currentIndex + delta + items.length) % items.length;
     this.focusTab(items[nextIndex]!.id);
   }
 
   private focusEdge(edge: 'first' | 'last'): void {
     const items = this.enabledTabs();
-    if (items.length === 0) {
-      return;
+    const target = edge === 'first' ? items[0] : items[items.length - 1];
+    if (target) {
+      this.focusTab(target.id);
     }
-    this.focusTab(edge === 'first' ? items[0]!.id : items[items.length - 1]!.id);
   }
 
   private focusTab(id: string): void {
@@ -486,40 +507,59 @@ export class DsTabs extends LitElement {
       this.selectTab(id);
     }
     void this.updateComplete.then(() => {
-      this.renderRoot.querySelector<HTMLElement>(`[data-id="${CSS.escape(id)}"]`)?.focus();
+      this.tabElement(id)?.focus();
     });
   }
 
+  /** Reports a user selection. Uncontrolled selection updates at once; controlled waits for `value` to change. */
   private selectTab(id: string): void {
     if (id === this.currentValue) {
-      this.focusedId = id;
       return;
     }
-    if (this.value !== undefined) {
-      this.value = id;
-    } else {
+    if (this.value === undefined) {
       this.internalValue = id;
     }
-    this.focusedId = id;
     this.dispatchEvent(
       new CustomEvent<TabsChangeDetail>('change', { detail: { value: id }, bubbles: true, composed: true }),
     );
   }
 
-  /** Re-labels each slotted `<ds-tab-panel>` and toggles `hidden` for the unselected ones. Never moves, detaches or re-appends a panel. */
+  private tabElement(id: string): HTMLElement | null {
+    return this.renderRoot.querySelector<HTMLElement>(`[data-part=tab][data-id="${CSS.escape(id)}"]`);
+  }
+
+  private panels(): HTMLElement[] {
+    return Array.from(this.querySelectorAll<HTMLElement>(':scope > ds-tab-panel'));
+  }
+
+  /**
+   * Labels each slotted panel, toggles `hidden` on the unselected ones and points
+   * each tab's aria-controls at its panel. Never moves, detaches or re-appends a
+   * panel, and writes an attribute only when its value differs.
+   */
   private syncPanels(): void {
     const selected = this.currentValue;
-    for (const panel of this.querySelectorAll<HTMLElement>(':scope > ds-tab-panel')) {
+    const panels = this.panels();
+    for (const panel of panels) {
       const tab = this.tabs.find((candidate) => candidate.id === panel.id);
       if (!tab) {
-        // A panel without a matching tab is not rendered; see warnInDev.
-        panel.setAttribute('hidden', '');
+        // A panel without a matching tab is not rendered (forced hidden); see warnInDev.
+        if (!panel.hidden) panel.hidden = true;
         continue;
       }
-      panel.setAttribute('role', 'tabpanel');
-      panel.setAttribute('tabindex', '0');
-      panel.setAttribute('aria-label', tab.label);
-      panel.toggleAttribute('hidden', tab.id !== selected);
+      setAttr(panel, 'role', 'tabpanel');
+      setAttr(panel, 'tabindex', '0');
+      setAttr(panel, 'aria-label', tab.label);
+      const hide = tab.id !== selected;
+      if (panel.hidden !== hide) panel.hidden = hide;
+    }
+    for (const button of this.renderRoot.querySelectorAll<ControlsElement>('[data-part=tab]')) {
+      if (!('ariaControlsElements' in button)) break;
+      const panel = panels.find((candidate) => candidate.id === button.dataset['id']);
+      const current = button.ariaControlsElements ?? null;
+      if (panel ? current?.[0] !== panel : current !== null) {
+        button.ariaControlsElements = panel ? [panel] : null;
+      }
     }
   }
 
@@ -529,9 +569,7 @@ export class DsTabs extends LitElement {
       return;
     }
     const selected = this.currentValue;
-    const tabEl = selected
-      ? this.renderRoot.querySelector<HTMLElement>(`[data-id="${CSS.escape(selected)}"]`)
-      : null;
+    const tabEl = selected !== null ? this.tabElement(selected) : null;
     if (!tabEl) {
       indicator.style.opacity = '0';
       return;
@@ -548,16 +586,27 @@ export class DsTabs extends LitElement {
     }
   }
 
-  /** Keeps the selected tab in view when the tab list scrolls (overflowing tabs). */
-  private maybeScrollSelectedIntoView(): void {
+  /** Keeps the selected tab visible when the list overflows, scrolling the list only (never the page). */
+  private scrollSelectedIntoView(): void {
     const selected = this.currentValue;
-    if (selected === null || selected === this.lastScrolledId) {
+    const list = this.tablistEl;
+    if (selected === null || selected === this.lastScrolledId || !list) {
       return;
     }
     this.lastScrolledId = selected;
-    this.renderRoot
-      .querySelector<HTMLElement>(`[data-id="${CSS.escape(selected)}"]`)
-      ?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    const tabEl = this.tabElement(selected);
+    if (!tabEl) {
+      return;
+    }
+    if (this.orientation === 'vertical') {
+      const end = tabEl.offsetTop + tabEl.offsetHeight;
+      if (tabEl.offsetTop < list.scrollTop) list.scrollTop = tabEl.offsetTop;
+      else if (end > list.scrollTop + list.clientHeight) list.scrollTop = end - list.clientHeight;
+    } else {
+      const end = tabEl.offsetLeft + tabEl.offsetWidth;
+      if (tabEl.offsetLeft < list.scrollLeft) list.scrollLeft = tabEl.offsetLeft;
+      else if (end > list.scrollLeft + list.clientWidth) list.scrollLeft = end - list.clientWidth;
+    }
   }
 
   private applyOverrides(): void {
@@ -576,25 +625,32 @@ export class DsTabs extends LitElement {
     if (!import.meta.env.DEV) {
       return;
     }
+    const warn = (message: string): void => {
+      if (this.warned.has(message)) return;
+      this.warned.add(message);
+      console.warn(message, this);
+    };
     if (!this.label) {
-      console.warn("<ds-tabs> requires a `label`, the tab list's accessible name.", this);
+      warn("<ds-tabs> requires a `label`, the tab list's accessible name.");
     }
-    if (!this.tabs || this.tabs.length === 0) {
-      console.warn('<ds-tabs> requires at least one entry in `tabs`.', this);
-    }
-    const panels = Array.from(this.querySelectorAll<HTMLElement>(':scope > ds-tab-panel'));
-    const panelIds = new Set(panels.map((panel) => panel.id));
+    const panelIds = new Set(this.panels().map((panel) => panel.id));
     for (const tab of this.tabs) {
       if (!panelIds.has(tab.id)) {
-        console.warn(`<ds-tabs> tab "${tab.id}" has no matching <ds-tab-panel id="${tab.id}">.`, this);
+        warn(`<ds-tabs> tab "${tab.id}" has no matching <ds-tab-panel id="${tab.id}">.`);
       }
     }
     const tabIds = new Set(this.tabs.map((tab) => tab.id));
-    for (const panel of panels) {
-      if (!tabIds.has(panel.id)) {
-        console.warn(`<ds-tabs> has a <ds-tab-panel id="${panel.id}"> with no matching entry in \`tabs\`.`, panel);
+    for (const id of panelIds) {
+      if (!tabIds.has(id)) {
+        warn(`<ds-tabs> has a <ds-tab-panel id="${id}"> with no matching entry in \`tabs\`; it stays hidden.`);
       }
     }
+  }
+}
+
+function setAttr(el: Element, name: string, value: string): void {
+  if (el.getAttribute(name) !== value) {
+    el.setAttribute(name, value);
   }
 }
 

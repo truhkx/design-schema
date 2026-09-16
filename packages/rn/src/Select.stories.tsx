@@ -42,13 +42,65 @@ export const NativeAuto: Story = { args: { native: 'auto' } };
 export const NativeAlways: Story = { args: { native: 'always' } };
 export const NativeNever: Story = { args: { native: 'never' } };
 
+// examples
+export const CountryPicker: Story = {
+  args: {
+    label: 'Country',
+    name: 'country',
+    placeholder: 'Choose a country',
+    options: [
+      { value: 'ca', label: 'Canada' },
+      { value: 'fr', label: 'France' },
+      { value: 'jp', label: 'Japan' },
+    ],
+  },
+};
+
+export const MultiSelectRoles: Story = {
+  args: {
+    label: 'Roles',
+    name: 'roles',
+    multiple: true,
+    options: [
+      { value: 'frontend', label: 'Frontend' },
+      { value: 'backend', label: 'Backend' },
+      { value: 'design', label: 'Design' },
+    ],
+  },
+};
+
+export const ForcedNativePicker: Story = {
+  args: {
+    label: 'Country',
+    name: 'country',
+    native: 'always',
+    options: [
+      { value: 'ca', label: 'Canada' },
+      { value: 'us', label: 'United States' },
+    ],
+  },
+};
+
+export const CompactPickerInAHeader: Story = {
+  args: {
+    label: 'Month',
+    name: 'month',
+    hideLabel: true,
+    size: 'sm',
+    options: [
+      { value: '1', label: 'January' },
+      { value: '2', label: 'February' },
+    ],
+  },
+};
+
 // notable states
 export const Multiple: Story = {
   args: {
     label: 'Time zones',
     name: 'timeZones',
     multiple: true,
-    defaultValue: ['us', 'ca'],
+    defaultValue: ['us', 'ca', 'fr'],
   },
 };
 
@@ -60,8 +112,6 @@ export const Grouped: Story = {
     ],
   },
 };
-
-export const HideLabel: Story = { args: { hideLabel: true } };
 
 export const Required: Story = { args: { required: true } };
 

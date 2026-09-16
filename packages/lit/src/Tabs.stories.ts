@@ -9,25 +9,18 @@ interface TabsArgs {
   tabs: TabsTab[];
   value?: string | undefined;
   defaultValue?: string | undefined;
-  activation: TabsActivation;
-  orientation: TabsOrientation;
-  fit: TabsFit;
-  keepMounted: boolean;
+  activation?: TabsActivation | undefined;
+  orientation?: TabsOrientation | undefined;
+  fit?: TabsFit | undefined;
+  keepMounted?: boolean | undefined;
 }
 
 const TABS: TabsTab[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'activity', label: 'Activity', badge: '3' },
-  { id: 'files', label: 'Files', icon: 'external' },
+  { id: 'files', label: 'Files' },
   { id: 'members', label: 'Members', disabled: true },
 ];
-
-const PANEL_CONTENT: Record<string, string> = {
-  overview: 'A summary of the project: status, owner and recent changes.',
-  activity: 'A chronological feed of comments, edits and status changes.',
-  files: 'Every file attached to this project, newest first.',
-  members: 'The people with access to this project and their roles.',
-};
 
 const meta: Meta<TabsArgs> = {
   title: 'Tabs/Lit',
@@ -40,12 +33,12 @@ const meta: Meta<TabsArgs> = {
     orientation: { control: 'select', options: ['horizontal', 'vertical'] },
     fit: { control: 'select', options: ['start', 'fill'] },
     keepMounted: { control: 'boolean' },
+    value: { control: 'text' },
+    defaultValue: { control: 'text' },
   },
   args: {
     label: 'Project sections',
     tabs: TABS,
-    value: undefined,
-    defaultValue: undefined,
     activation: 'automatic',
     orientation: 'horizontal',
     fit: 'start',
@@ -57,12 +50,12 @@ const meta: Meta<TabsArgs> = {
       .tabs=${args.tabs}
       value=${ifDefined(args.value)}
       default-value=${ifDefined(args.defaultValue)}
-      activation=${args.activation}
-      orientation=${args.orientation}
-      fit=${args.fit}
-      ?keep-mounted=${args.keepMounted}
+      activation=${args.activation ?? 'automatic'}
+      orientation=${args.orientation ?? 'horizontal'}
+      fit=${args.fit ?? 'start'}
+      ?keep-mounted=${args.keepMounted ?? false}
     >
-      ${args.tabs.map((tab) => html`<ds-tab-panel id=${tab.id}>${PANEL_CONTENT[tab.id] ?? tab.label}</ds-tab-panel>`)}
+      ${args.tabs.map((tab) => html`<ds-tab-panel id=${tab.id}>${tab.label}</ds-tab-panel>`)}
     </ds-tabs>
   `,
 };
@@ -84,13 +77,69 @@ export const OrientationVertical: Story = { args: { orientation: 'vertical' } };
 export const FitStart: Story = { args: { fit: 'start' } };
 export const FitFill: Story = { args: { fit: 'fill' } };
 
-export const KeepMountedTrue: Story = { args: { keepMounted: true } };
-
+/* notable states */
+export const KeepMounted: Story = { args: { keepMounted: true } };
 export const WithDefaultValue: Story = { args: { defaultValue: 'activity' } };
+export const Controlled: Story = { args: { value: 'files' } };
 
 /**
- * Renders with its trigger-less tab list open and at least three focusable
- * (enabled) tabs so the keyboard gate can verify arrow navigation, wrapping,
- * Home/End, Tab-out and, under manual activation, Enter/Space selection.
+ * The tab list with three enabled tabs, for the keyboard gate. Manual activation so
+ * Enter/Space selection is observable; `orientation` is read from the story URL
+ * (`args=orientation:vertical`) for the Up/Down rules.
  */
-export const Keyboard: Story = { args: { tabs: TABS, activation: 'manual' } };
+export const Keyboard: Story = {
+  args: {
+    tabs: [
+      { id: 'overview', label: 'Overview' },
+      { id: 'activity', label: 'Activity' },
+      { id: 'files', label: 'Files' },
+    ],
+    activation: 'manual',
+  },
+};
+
+/* examples */
+export const AccountSections: Story = {
+  args: {
+    label: 'Account sections',
+    tabs: [
+      { id: 'profile', label: 'Profile' },
+      { id: 'billing', label: 'Billing' },
+      { id: 'security', label: 'Security' },
+    ],
+  },
+};
+
+export const ManualActivationForExpensivePanels: Story = {
+  args: {
+    label: 'Report sections',
+    tabs: [
+      { id: 'summary', label: 'Summary' },
+      { id: 'details', label: 'Details' },
+    ],
+    activation: 'manual',
+  },
+};
+
+export const VerticalTabsBesideTheirPanels: Story = {
+  args: {
+    label: 'Settings sections',
+    tabs: [
+      { id: 'general', label: 'General' },
+      { id: 'members', label: 'Members' },
+    ],
+    orientation: 'vertical',
+  },
+};
+
+export const FilledTabsWithABadge: Story = {
+  args: {
+    label: 'Inbox sections',
+    tabs: [
+      { id: 'inbox', label: 'Inbox', badge: '3' },
+      { id: 'archive', label: 'Archive' },
+    ],
+    fit: 'fill',
+    keepMounted: true,
+  },
+};

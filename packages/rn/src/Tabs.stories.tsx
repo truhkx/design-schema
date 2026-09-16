@@ -1,6 +1,7 @@
+import type * as React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Tabs, TabPanel } from './Tabs';
-import type { TabsTab } from './Tabs';
+import type { TabsProps, TabsTab } from './Tabs';
 import { Text } from './Text';
 import { withTheme } from './decorators';
 
@@ -11,6 +12,15 @@ const TABS: TabsTab[] = [
   { id: 'settings', label: 'Settings', disabled: true },
 ];
 
+/** One TabPanel per tab, matching ids — the examples' `children`. */
+function panelsFor(tabs: TabsTab[]): React.JSX.Element[] {
+  return tabs.map((tab) => (
+    <TabPanel key={tab.id} id={tab.id}>
+      <Text>{`${tab.label} panel.`}</Text>
+    </TabPanel>
+  ));
+}
+
 const meta: Meta<typeof Tabs> = {
   title: 'Tabs/React Native',
   component: Tabs,
@@ -19,50 +29,79 @@ const meta: Meta<typeof Tabs> = {
     label: 'Project sections',
     tabs: TABS,
   },
+  render: (args: TabsProps) => <Tabs {...args}>{panelsFor(args.tabs)}</Tabs>,
 };
 
 export default meta;
 
 type Story = StoryObj<typeof Tabs>;
 
-export const Default: Story = {
-  render: (args) => (
-    <Tabs {...args}>
-      <TabPanel id="overview">
-        <Text>Summary of the project's health and recent activity.</Text>
-      </TabPanel>
-      <TabPanel id="activity">
-        <Text>A log of recent changes.</Text>
-      </TabPanel>
-      <TabPanel id="files">
-        <Text>The project's file tree.</Text>
-      </TabPanel>
-      <TabPanel id="settings">
-        <Text>Project settings.</Text>
-      </TabPanel>
-    </Tabs>
-  ),
-};
+export const Default: Story = {};
 
 // activation
-export const ActivationAutomatic: Story = { ...Default, args: { activation: 'automatic' } };
-export const ActivationManual: Story = { ...Default, args: { activation: 'manual' } };
+export const ActivationAutomatic: Story = { args: { activation: 'automatic' } };
+export const ActivationManual: Story = { args: { activation: 'manual' } };
 
 // orientation
-export const OrientationHorizontal: Story = { ...Default, args: { orientation: 'horizontal' } };
-export const OrientationVertical: Story = { ...Default, args: { orientation: 'vertical' } };
+export const OrientationHorizontal: Story = { args: { orientation: 'horizontal' } };
+export const OrientationVertical: Story = { args: { orientation: 'vertical' } };
 
 // fit
-export const FitStart: Story = { ...Default, args: { fit: 'start' } };
-export const FitFill: Story = { ...Default, args: { fit: 'fill' } };
+export const FitStart: Story = { args: { fit: 'start' } };
+export const FitFill: Story = { args: { fit: 'fill' } };
 
 // notable states
-export const KeepMounted: Story = { ...Default, args: { keepMounted: true } };
+export const KeepMounted: Story = { args: { keepMounted: true } };
 
 export const WithOverrides: Story = {
-  ...Default,
-  args: { overrides: { radius: 'radius.full', indicatorThickness: 'border.width.thin' } },
+  args: { overrides: { radius: 'radius.md', tabPaddingInline: 'space.lg' } },
 };
 
-/** At least three focusable tabs, for the axe gate and manual keyboard checks on react-native-web. */
-export const Keyboard: Story = { ...Default };
+/** At least three focusable tabs, for the axe gate and manual keyboard checks on react-native-web; accepts `orientation` as an arg. */
+export const Keyboard: Story = { args: { orientation: 'horizontal' } };
+
+// examples
+export const AccountSections: Story = {
+  args: {
+    label: 'Account sections',
+    tabs: [
+      { id: 'profile', label: 'Profile' },
+      { id: 'billing', label: 'Billing' },
+      { id: 'security', label: 'Security' },
+    ],
+  },
+};
+
+export const ManualActivationForExpensivePanels: Story = {
+  args: {
+    label: 'Report sections',
+    tabs: [
+      { id: 'summary', label: 'Summary' },
+      { id: 'details', label: 'Details' },
+    ],
+    activation: 'manual',
+  },
+};
+
+export const VerticalTabsBesideTheirPanels: Story = {
+  args: {
+    label: 'Settings sections',
+    tabs: [
+      { id: 'general', label: 'General' },
+      { id: 'members', label: 'Members' },
+    ],
+    orientation: 'vertical',
+  },
+};
+
+export const FilledTabsWithABadge: Story = {
+  args: {
+    label: 'Inbox sections',
+    tabs: [
+      { id: 'inbox', label: 'Inbox', badge: '3' },
+      { id: 'archive', label: 'Archive' },
+    ],
+    fit: 'fill',
+    keepMounted: true,
+  },
+};

@@ -24,7 +24,7 @@ import type { ListboxGroup, ListboxItem, ListboxOption, ListboxValue } from './L
 import { Text } from './Text';
 import { toEasing, useReducedMotion, useTheme } from './theme';
 
-/** How typing narrows `options`. `none` never filters; `async` leaves filtering to the consumer. */
+/** How typing narrows `options`. `none` never filters (type-ahead only); `async` leaves filtering to the consumer. */
 export type ComboboxFilter = 'startsWith' | 'contains' | 'none' | 'async';
 
 /** The selection: a value, or with `multiple` an array of values. An empty string / empty array is "nothing selected". */
@@ -32,7 +32,6 @@ export type ComboboxValue = string | string[];
 
 /** The style bindings a caller may replace with a different token; see the component's overrides contract. */
 export type ComboboxOverridableBinding =
-  | 'fieldBorderFocus'
   | 'fieldBorderInvalid'
   | 'fieldBorderWidth'
   | 'fieldRadius'
@@ -60,27 +59,29 @@ export type ComboboxOverridableBinding =
   | 'enter';
 
 export interface ComboboxProps {
-  /** Visible label. Always rendered. Also the field's `accessibilityLabel`. */
+  /** Visible label. Always rendered. Also the input's `accessibilityLabel`. */
   label: string;
   /** Field name for the Form. */
   name: string;
   /** The full option set, or the current page of results when `filter` is `async`. Passed through to the Listbox after filtering. */
   options: ListboxItem[];
-  /** Controlled selected value(s) (array with `multiple`). With `allowCustom`, a value not in `options` is a custom entry. */
-  value?: ComboboxValue | undefined;
-  /** Initial selected value(s). */
-  defaultValue?: ComboboxValue | undefined;
+  /** Controlled selected value(s). With `multiple`, an array. With `allowCustom`, a value not in `options` is a custom entry. */
+  value?: string | string[] | undefined;
+  /** Initial value(s). */
+  defaultValue?: string | string[] | undefined;
+  /** Controlled popup state, for programmatic use and for stories and tests. Omit for the typing-driven default. */
+  open?: boolean | undefined;
   /** Controlled text of the input. Usually uncontrolled; controlled by consumers driving `async` filtering. */
   inputValue?: string | undefined;
   /** Pick many: selected options appear as chips before the input, each removable; the list stays open while toggling; Backspace in an empty input removes the last chip. */
   multiple?: boolean | undefined;
-  /** Typed text that matches no option can be committed as a value. Enter commits it; the list shows `copy.addCustom` as the first row. */
+  /** Typed text that matches no option can be committed as a value (tags, emails). Enter or a comma commits it; the list shows `copy.addCustom` as a synthetic first row. */
   allowCustom?: boolean | undefined;
-  /** How typing narrows `options`. */
+  /** How typing narrows `options`: by prefix, by substring (default), not at all (type-ahead), or by the consumer (`async`). */
   filter?: ComboboxFilter | undefined;
   /** Example input shown while empty. Never the only description. */
   placeholder?: string | undefined;
-  /** Helper text under the label. Also the field's `accessibilityHint`. */
+  /** Helper text under the label. Also the input's `accessibilityHint`. */
   description?: string | undefined;
   /** Must have a value to submit. */
   required?: boolean | undefined;
@@ -96,32 +97,42 @@ export interface ComboboxProps {
   clearable?: boolean | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<ComboboxOverridableBinding, TokenRef | undefined>> | undefined;
+  /** The root view. */
+  ref?: React.Ref<ViewInstance> | undefined;
   /** Fired when the selected value(s) change (array with `multiple`; custom entries included when `allowCustom`). */
-  onChange?: ((value: ComboboxValue) => void) | undefined;
+  onChange?: ((value: string | string[]) => void) | undefined;
   /** Fired on every keystroke with the input text. The hook for `async` filtering. */
   onInputChange?: ((value: string) => void) | undefined;
   /** Fired when the list opens or closes. */
   onOpenChange?: ((open: boolean) => void) | undefined;
 }
 
+/** copy.* — used verbatim; `{…}` params are interpolated, `resultCount` is selected by `Intl.PluralRules`. */
 const COPY = {
   empty: 'No matches',
   loading: 'Loading…',
-  addCustom: (value: string): string => `Add "${value}"`,
+  addCustom: 'Add "{value}"',
   clearLabel: 'Clear',
   toggleLabel: 'Show options',
-  removeChip: (label: string): string => `Remove ${label}`,
-  resultCount: (count: number): string => `${count} results available`,
-  required: (label: string): string => `${label} is required.`,
-  invalid: (label: string): string => `${label} is not valid.`,
-  requiredIndicator: ' (required)',
-  // Not in the schema's copy block; the BottomSheet footer for `multiple` needs a
-  // label and none was given. Same addition Select makes for its own BottomSheet footer.
   done: 'Done',
+  removeChip: 'Remove {label}',
+  resultCount: {
+    one: '{count} result available',
+    other: '{count} results available',
+  },
+  activeOption: '{option}',
+  required: '{label} is required.',
+  invalid: '{label} is not valid.',
+  requiredIndicator: ' (required)',
 } as const;
 
-// Sentinel prefix marking the synthetic "add custom" row injected into the Listbox's
-// `options`, so the existing engine (no schema changes) can render and activate it.
+function resultCountText(count: number): string {
+  const form = new Intl.PluralRules(undefined).select(count) === 'one' ? COPY.resultCount.one : COPY.resultCount.other;
+  return form.replace('{count}', String(count));
+}
+
+// Prefix marking the synthetic "add custom" row given to the Listbox, so the
+// existing engine renders and commits it like any other option.
 const CUSTOM_PREFIX = '__ds_combobox_custom__:';
 
 function isGroup(item: ListboxItem): item is ListboxGroup {
@@ -140,40 +151,37 @@ function flattenOptions(items: ListboxItem[]): ListboxOption[] {
   return result;
 }
 
+/** Case- and diacritic-insensitive comparison key. */
+function fold(text: string): string {
+  return text
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase();
+}
+
 type Rect = { x: number; y: number; width: number; height: number };
 
 /**
  * Combobox — an input that narrows as you type and lets you pick, or, with
  * `allowCustom`, keep what you typed.
  *
- * When to use: Use for long lists (fifty-plus), for values typed faster than found
- * (dates, codes), for `async` search against a server, and for multi-value fields
- * where chips make the selection legible. Use `allowCustom` when new values are
- * legitimate (tags, invitees). Do not use it for short static lists (Select) or to
- * navigate to search results (a search form).
+ * When to use: long lists (fifty-plus), values typed faster than found, `async`
+ * search against a server, and multi-value fields where chips make the selection
+ * legible. Use Select for short static lists.
  *
- * Composes the same `Listbox` engine `Select` uses for its popup. On phones the
- * field is a `Pressable` summary (chips read-only, for glanceability) that opens a
- * `BottomSheet` containing the real `TextInput` (autofocused by the sheet's own
- * `FocusScope`) above the `Listbox`, with a `Done` footer action under `multiple`;
- * on tablets and react-native-web the field holds the `TextInput` directly and the
- * popup is an anchored `Modal` positioned below it (flipped above on overflow),
- * deliberately not focus-trapping, since focus must stay in the input while the
- * list is browsed by touch. Typing filters `options` per `filter` and opens the
- * list; selecting a row commits and, single-select, closes the popup, while
- * `multiple` adds a chip, clears the text and stays open. `allowCustom` injects a
- * synthetic first row (`copy.addCustom`) into the Listbox's own `options` when the
- * typed text matches nothing, so committing it needs no engine change. Because
- * `Listbox`'s own rows are touch `Pressable`s with no key-event API, the web
- * keyboard model's arrow-key/Home/End active-option browsing and Tab-does-not-commit
- * behavior have no native equivalent (the same acknowledged limit `Listbox`
- * documents); only Escape (closes, then clears — reachable via a hardware/RNW
- * keyboard), Enter (commits typed custom text via `onSubmitEditing`) and Backspace
- * on an empty `multiple` input (removes the last chip, via `onKeyPress`) are wired.
- * Result counts, loading and empty states are announced with
- * `AccessibilityInfo.announceForAccessibility`, debounced. Validation and Form
- * registration work as `Input`'s: precedence is `error` prop → `required` →
- * `invalid`.
+ * Composes the same `Listbox` engine as `Select` (`embedded`). On phones the field is
+ * a `Pressable` summary (chips read-only) that opens a `BottomSheet height="full"`
+ * with the chips and the `TextInput` at the top of its body, the `Listbox` below and
+ * a `copy.done` footer Button; on tablets and react-native-web the field holds the
+ * `TextInput` directly and the popup is an anchored `Modal` below it (flipped above on
+ * overflow) that does not trap focus. Listbox rows are touch `Pressable`s with no key
+ * events, so arrow browsing, Alt+ArrowDown and Tab-without-committing have no native
+ * equivalent: a tap commits, Enter or a comma through the `TextInput` commits typed
+ * custom text, Escape (hardware keyboard / react-native-web) closes then clears the
+ * text, and blurring the anchored field closes the list. Result counts, loading and
+ * empty states are announced with `AccessibilityInfo.announceForAccessibility` after
+ * `motion.duration.base × 2`. Validation and Form registration work as `Input`'s:
+ * `error` prop → `required` → `invalid`.
  */
 export function Combobox({
   label,
@@ -181,6 +189,7 @@ export function Combobox({
   options,
   value,
   defaultValue,
+  open: openProp,
   inputValue,
   multiple = false,
   allowCustom = false,
@@ -194,6 +203,7 @@ export function Combobox({
   loading = false,
   clearable = true,
   overrides,
+  ref,
   onChange,
   onInputChange,
   onOpenChange,
@@ -209,27 +219,30 @@ export function Combobox({
   const emptyValue: ComboboxValue = multiple ? [] : '';
   const [internalValue, setInternalValue] = React.useState<ComboboxValue>(defaultValue ?? emptyValue);
   const [internalInputText, setInternalInputText] = React.useState<string>('');
+  const [internalOpen, setInternalOpen] = React.useState(false);
+  // The toggle button opens the full, unfiltered list for that opening; the next keystroke filters again.
+  const [showAll, setShowAll] = React.useState(false);
   const [focused, setFocused] = React.useState(false);
-  const [open, setOpen] = React.useState(false);
-  const [popupMounted, setPopupMounted] = React.useState(false);
+  const [popupMounted, setPopupMounted] = React.useState(openProp ?? false);
   const [fieldRect, setFieldRect] = React.useState<Rect | null>(null);
   const [popupHeight, setPopupHeight] = React.useState<number | null>(null);
+  const [statusText, setStatusText] = React.useState<string>('');
   const progress = React.useRef(new Animated.Value(0)).current;
 
   const isValueControlled = value !== undefined;
-  const currentValue = isValueControlled ? (value as ComboboxValue) : internalValue;
+  const currentValue: ComboboxValue = isValueControlled ? value : internalValue;
   const isInputControlled = inputValue !== undefined;
-  const currentInputText = isInputControlled ? (inputValue as string) : internalInputText;
+  const currentInputText = isInputControlled ? inputValue : internalInputText;
+  const isOpenControlled = openProp !== undefined;
+  const open = isOpenControlled ? openProp : internalOpen;
   const isDisabled = disabled || (form?.disabled ?? false);
   const formError = form?.errors[name];
   const displayedError = error !== undefined && error !== '' ? error : formError;
   const isInvalid = invalid || displayedError !== undefined;
   const summarised = form !== null && form.errorSummary;
 
-  // No native OS combobox surface exists, and typing on a phone with a floating
-  // list under the keyboard is unusable, so phones get a BottomSheet instead.
-  const isPhoneWidth = windowWidth <= t.layoutMaxWidthProse;
-  const usesSheet = isPhoneWidth;
+  // Typing on a phone with a floating list under the keyboard is unusable, so phones get a BottomSheet.
+  const usesSheet = windowWidth <= t.layoutMaxWidthProse;
 
   const flatOptions = React.useMemo(() => flattenOptions(options), [options]);
   const labelFor = React.useCallback(
@@ -237,20 +250,19 @@ export function Combobox({
     [flatOptions],
   );
 
-  const selectedValues: string[] = multiple && Array.isArray(currentValue) ? currentValue : [];
-  const selectedValue: string | undefined =
-    !multiple && typeof currentValue === 'string' && currentValue !== '' ? currentValue : undefined;
+  const selectedValues: string[] = multiple ? (Array.isArray(currentValue) ? currentValue : currentValue !== '' ? [currentValue] : []) : [];
+  const selectedValue: string | undefined = !multiple && typeof currentValue === 'string' && currentValue !== '' ? currentValue : undefined;
   const hasSelection = multiple ? selectedValues.length > 0 : selectedValue !== undefined;
 
   const trimmedInput = currentInputText.trim();
+  const needle = fold(trimmedInput);
 
   const filteredItems = React.useMemo<ListboxItem[]>(() => {
-    if (filter === 'none' || filter === 'async' || trimmedInput === '') {
+    if (filter === 'none' || filter === 'async' || showAll || needle === '') {
       return options;
     }
-    const needle = trimmedInput.toLowerCase();
     const matches = (option: ListboxOption): boolean =>
-      filter === 'startsWith' ? option.label.toLowerCase().startsWith(needle) : option.label.toLowerCase().includes(needle);
+      filter === 'startsWith' ? fold(option.label).startsWith(needle) : fold(option.label).includes(needle);
     return options.reduce<ListboxItem[]>((acc, item) => {
       if (isGroup(item)) {
         const groupMatches = item.options.filter(matches);
@@ -262,17 +274,20 @@ export function Combobox({
       }
       return acc;
     }, []);
-  }, [options, filter, trimmedInput]);
+  }, [options, filter, showAll, needle]);
 
-  const hasExactMatch = flatOptions.some(
-    (option) => option.label.toLowerCase() === trimmedInput.toLowerCase() || option.value.toLowerCase() === trimmedInput.toLowerCase(),
-  );
-  const showCustomRow = allowCustom && trimmedInput !== '' && !hasExactMatch;
+  // `filter: none` is type-ahead: the list is not narrowed; the first label starting with the text is pre-highlighted.
+  const typeAheadValue =
+    filter === 'none' && needle !== '' ? flatOptions.find((option) => !option.disabled && fold(option.label).startsWith(needle))?.value : undefined;
+
+  const exactMatch = flatOptions.find((option) => fold(option.label) === needle || fold(option.value) === needle);
+  const showCustomRow = allowCustom && trimmedInput !== '' && exactMatch === undefined;
   const customOption: ListboxOption | null = showCustomRow
-    ? { value: `${CUSTOM_PREFIX}${trimmedInput}`, label: COPY.addCustom(trimmedInput) }
+    ? { value: `${CUSTOM_PREFIX}${trimmedInput}`, label: COPY.addCustom.replace('{value}', trimmedInput) }
     : null;
   const listboxItems: ListboxItem[] = customOption !== null ? [customOption, ...filteredItems] : filteredItems;
   const resultCount = flattenOptions(filteredItems).length;
+  const isLoading = filter === 'async' && loading;
 
   const validateValue = React.useCallback(
     (candidate: ComboboxValue): string | null => {
@@ -280,42 +295,48 @@ export function Combobox({
         return error;
       }
       if (required) {
-        const empty = multiple ? !Array.isArray(candidate) || candidate.length === 0 : candidate === '';
+        const empty = Array.isArray(candidate) ? candidate.length === 0 : candidate === '';
         if (empty) {
-          return COPY.required(label);
+          return COPY.required.replace('{label}', label);
         }
       }
       if (invalid) {
-        return COPY.invalid(label);
+        return COPY.invalid.replace('{label}', label);
       }
       return null;
     },
-    [required, multiple, label, error, invalid],
+    [required, label, error, invalid],
   );
 
-  const focusFieldA11y = React.useCallback((): void => {
-    const node = fieldRef.current ? findNodeHandle(fieldRef.current) : null;
-    if (node != null) {
-      AccessibilityInfo.setAccessibilityFocus(node);
+  const changeOpen = (next: boolean): void => {
+    if (next === open) {
+      return;
     }
-  }, []);
+    if (!isOpenControlled) {
+      setInternalOpen(next);
+    }
+    if (!next) {
+      setShowAll(false);
+    }
+    onOpenChange?.(next);
+  };
 
-  const latest = React.useRef({ currentValue, validateValue });
-  latest.current = { currentValue, validateValue };
+  const latest = React.useRef({ currentValue, validateValue, changeOpen });
+  latest.current = { currentValue, validateValue, changeOpen };
   const handle = React.useMemo<FormFieldHandle>(
     () => ({
+      // FormFieldValue has no array form: multiple values are submitted comma-joined (a comma always commits, so no value contains one).
       getValue: () => {
         const current = latest.current.currentValue;
-        if (multiple) {
-          return Array.isArray(current) && current.length > 0 ? current : undefined;
+        if (Array.isArray(current)) {
+          return current.length > 0 ? current.join(',') : undefined;
         }
-        return typeof current === 'string' && current !== '' ? current : undefined;
+        return current !== '' ? current : undefined;
       },
       validate: () => latest.current.validateValue(latest.current.currentValue),
       focus: () => {
         if (usesSheet) {
-          setOpen(true);
-          onOpenChange?.(true);
+          latest.current.changeOpen(true);
           return;
         }
         const input = inputRef.current;
@@ -329,7 +350,7 @@ export function Combobox({
         }
       },
     }),
-    [multiple, usesSheet, onOpenChange],
+    [usesSheet],
   );
 
   const register = form?.register;
@@ -348,22 +369,29 @@ export function Combobox({
     }
   }, [displayedError, summarised]);
 
-  // Debounced polite announcement of result count / loading / empty, matching the
-  // web model's ~500ms debounce (`motion.duration.base` × 2).
+  // constant statusDebounce: motion.duration.base × 2.
+  const statusDebounce = t.motionDurationBase * 2;
   React.useEffect(() => {
     if (!open) {
+      setStatusText('');
       return undefined;
     }
-    const text = filter === 'async' && loading ? COPY.loading : resultCount === 0 ? COPY.empty : COPY.resultCount(resultCount);
+    const text = isLoading ? COPY.loading : resultCount === 0 ? COPY.empty : resultCountText(resultCount);
     const timeout = setTimeout(() => {
-      AccessibilityInfo.announceForAccessibility(text);
-    }, t.motionDurationBase * 2);
+      setStatusText(text);
+      // Android reads the polite live region below; iOS needs the explicit announcement.
+      if (Platform.OS !== 'android') {
+        AccessibilityInfo.announceForAccessibility(text);
+      }
+    }, statusDebounce);
     return () => clearTimeout(timeout);
-  }, [open, filter, loading, resultCount, t.motionDurationBase]);
+  }, [open, isLoading, resultCount, statusDebounce]);
 
-  const changeOpen = (next: boolean): void => {
-    setOpen(next);
-    onOpenChange?.(next);
+  const focusFieldA11y = (): void => {
+    const node = fieldRef.current ? findNodeHandle(fieldRef.current) : null;
+    if (node != null) {
+      AccessibilityInfo.setAccessibilityFocus(node);
+    }
   };
 
   const closePopup = (refocus: boolean): void => {
@@ -396,9 +424,10 @@ export function Combobox({
   const resolveCustom = (raw: string): string => (raw.startsWith(CUSTOM_PREFIX) ? raw.slice(CUSTOM_PREFIX.length) : raw);
 
   const handleListboxChange = (next: ListboxValue): void => {
+    setShowAll(false);
     if (multiple) {
       const resolved = (Array.isArray(next) ? next : [next]).map(resolveCustom);
-      commitValue(resolved);
+      commitValue(Array.from(new Set(resolved)));
       commitInputText('');
       return;
     }
@@ -406,7 +435,17 @@ export function Combobox({
     const resolved = raw === undefined ? '' : resolveCustom(raw);
     commitValue(resolved);
     commitInputText(resolved === '' ? '' : labelFor(resolved));
-    closePopup(false);
+    closePopup(!usesSheet);
+  };
+
+  const handleActiveChange = (active: string | null): void => {
+    if (active === null) {
+      return;
+    }
+    const option = listboxItems.length > 0 ? flattenOptions(listboxItems).find((o) => o.value === active) : undefined;
+    if (option !== undefined) {
+      AccessibilityInfo.announceForAccessibility(COPY.activeOption.replace('{option}', option.label));
+    }
   };
 
   const handleTogglePress = (): void => {
@@ -416,6 +455,7 @@ export function Combobox({
     if (open) {
       closePopup(true);
     } else {
+      setShowAll(true);
       changeOpen(true);
     }
   };
@@ -435,34 +475,50 @@ export function Combobox({
     commitValue(selectedValues.filter((v) => v !== chipValue));
   };
 
-  const handleChangeText = (text: string): void => {
-    commitInputText(text);
-    if (!open) {
-      changeOpen(true);
-    }
-  };
-
-  const commitCustomFromText = (): void => {
-    if (!allowCustom || trimmedInput === '') {
+  /** Commits `raw` as typed text: an option it names exactly, otherwise (allowCustom) a custom entry. */
+  const commitTyped = (raw: string): void => {
+    const text = raw.trim();
+    if (text === '') {
+      commitInputText('');
       return;
     }
+    const key = fold(text);
+    const match = flatOptions.find((option) => !option.disabled && (fold(option.label) === key || fold(option.value) === key));
+    if (match === undefined && !allowCustom) {
+      return;
+    }
+    const committed = match?.value ?? text;
     if (multiple) {
-      if (!selectedValues.includes(trimmedInput)) {
-        commitValue([...selectedValues, trimmedInput]);
+      if (!selectedValues.includes(committed)) {
+        commitValue([...selectedValues, committed]);
       }
       commitInputText('');
     } else {
-      commitValue(trimmedInput);
-      commitInputText(trimmedInput);
+      commitValue(committed);
+      commitInputText(match?.label ?? text);
       closePopup(false);
     }
   };
 
-  // Native has no key-event API reaching the option list (see the doc comment), so
-  // Enter's only job here is committing typed custom text; there is no "active
-  // option" for it to commit otherwise.
+  const handleChangeText = (text: string): void => {
+    setShowAll(false);
+    if (allowCustom && text.includes(',')) {
+      // A comma commits the text before it as a custom value and clears the input.
+      commitTyped(text.slice(0, text.indexOf(',')));
+      commitInputText('');
+      return;
+    }
+    commitInputText(text);
+    if (!open && !isDisabled) {
+      changeOpen(true);
+    }
+  };
+
+  // Enter has no active option to commit on native (rows are touch-only); it commits typed text.
   const handleSubmitEditing = (): void => {
-    commitCustomFromText();
+    if (allowCustom) {
+      commitTyped(currentInputText);
+    }
   };
 
   const handleKeyPress = (event: TextInputKeyPressEvent): void => {
@@ -471,27 +527,26 @@ export function Combobox({
       commitValue(selectedValues.slice(0, -1));
       return;
     }
-    // Only reachable via a hardware keyboard or react-native-web; on-screen
-    // keyboards do not emit an Escape key.
+    // Reachable only from a hardware keyboard or react-native-web.
     if (key === 'Escape') {
       if (open) {
-        closePopup(true);
-      } else if (clearable) {
-        handleClear();
+        closePopup(false);
+      } else if (clearable && currentInputText !== '') {
+        commitInputText('');
       }
     }
   };
 
   const handleFocus = (): void => {
     setFocused(true);
-    if (!open) {
-      changeOpen(true);
-    }
   };
 
   const handleBlur = (): void => {
     setFocused(false);
-    closePopup(false);
+    // In the sheet, tapping a row dismisses the keyboard; only the anchored field closes on blur.
+    if (!usesSheet) {
+      closePopup(false);
+    }
     if (form !== null && form.validateMode === 'blur') {
       form.reportValidity(name, validateValue(currentValue));
     }
@@ -507,10 +562,7 @@ export function Combobox({
     setPopupHeight(event.nativeEvent.layout.height);
   };
 
-  const fieldBorderFocusColor = overrides?.fieldBorderFocus ? (resolveToken(t, overrides.fieldBorderFocus) as string) : t.colorBorderFocus;
-  const fieldBorderInvalidColor = overrides?.fieldBorderInvalid
-    ? (resolveToken(t, overrides.fieldBorderInvalid) as string)
-    : t.colorBorderDanger;
+  const fieldBorderInvalidColor = overrides?.fieldBorderInvalid ? (resolveToken(t, overrides.fieldBorderInvalid) as string) : t.colorBorderDanger;
   const fieldBorderWidth = overrides?.fieldBorderWidth ? (resolveToken(t, overrides.fieldBorderWidth) as number) : t.borderWidthThin;
   const fieldRadius = overrides?.fieldRadius ? (resolveToken(t, overrides.fieldRadius) as number) : t.radiusMd;
   const fieldPaddingInline = overrides?.fieldPaddingInline ? (resolveToken(t, overrides.fieldPaddingInline) as number) : t.spaceMd;
@@ -521,7 +573,6 @@ export function Combobox({
   const chipPaddingBlock = overrides?.chipPaddingBlock ? (resolveToken(t, overrides.chipPaddingBlock) as number) : t.space0;
   const chipGap = overrides?.chipGap ? (resolveToken(t, overrides.chipGap) as number) : t.layoutGapTight;
   const partGap = overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.space1;
-  const labelWeight = overrides?.labelWeight ? (resolveToken(t, overrides.labelWeight) as number) : t.fontWeightMedium;
   const popupSurface = overrides?.popupSurface ? (resolveToken(t, overrides.popupSurface) as string) : t.colorOverlaySurface;
   const popupBorder = overrides?.popupBorder ? (resolveToken(t, overrides.popupBorder) as string) : t.colorBorder;
   const popupShadow = overrides?.popupShadow ? (resolveToken(t, overrides.popupShadow) as typeof t.shadowOverlay) : t.shadowOverlay;
@@ -532,14 +583,13 @@ export function Combobox({
   const enterDuration = overrides?.enter ? (resolveToken(t, overrides.enter) as number) : t.motionDurationFast;
   const iconColor = t.colorForegroundMuted;
 
-  // Popup-Modal path only (the BottomSheet manages its own mount/animation).
+  // Anchored-popup path only; the BottomSheet runs its own animation.
   React.useEffect(() => {
     if (usesSheet || !popupMounted) {
       return undefined;
     }
     if (open) {
-      const node = fieldRef.current;
-      node?.measureInWindow((x, y, width, height) => setFieldRect({ x, y, width, height }));
+      fieldRef.current?.measureInWindow((x, y, width, height) => setFieldRect({ x, y, width, height }));
       if (reducedMotion) {
         progress.setValue(1);
         return undefined;
@@ -580,7 +630,7 @@ export function Combobox({
   const showClear = clearable && !isDisabled && (hasSelection || currentInputText !== '');
 
   const singleSummaryText = selectedValue !== undefined ? labelFor(selectedValue) : (placeholder ?? '');
-  const summaryIsPlaceholder = selectedValue === undefined && !hasSelection;
+  const summaryIsPlaceholder = !hasSelection;
 
   const containerStyle: ViewStyle = {
     flexDirection: 'column',
@@ -588,9 +638,10 @@ export function Combobox({
     opacity: isDisabled ? disabledOpacity : 1,
   };
 
-  const insetShrink = t.borderWidthFocus - fieldBorderWidth;
+  // The focus border is drawn thicker; padding shrinks by the difference so content does not shift.
   const activeFieldBorderWidth = focused ? t.borderWidthFocus : fieldBorderWidth;
-  const fieldBorderColor = focused ? fieldBorderFocusColor : isInvalid ? fieldBorderInvalidColor : t.colorBorderStrong;
+  const insetShrink = focused ? t.borderWidthFocus - fieldBorderWidth : 0;
+  const fieldBorderColor = focused ? t.colorBorderFocus : isInvalid ? fieldBorderInvalidColor : t.colorBorderStrong;
 
   const fieldRowStyle: ViewStyle = {
     flexDirection: 'row',
@@ -602,13 +653,14 @@ export function Combobox({
     borderWidth: activeFieldBorderWidth,
     borderColor: fieldBorderColor,
     borderRadius: fieldRadius,
-    paddingHorizontal: fieldPaddingInline + insetShrink,
-    paddingVertical: fieldPaddingBlock + insetShrink,
+    paddingHorizontal: fieldPaddingInline - insetShrink,
+    paddingVertical: fieldPaddingBlock - insetShrink,
   };
 
   const chipStyle: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
+    flexShrink: 1,
     gap: chipGap,
     backgroundColor: t.colorBackgroundStrong,
     borderRadius: chipRadius,
@@ -620,6 +672,7 @@ export function Combobox({
     flexGrow: 1,
     flexShrink: 1,
     flexBasis: 0,
+    minHeight: t.sizeTargetMin,
     fontFamily: overrides?.fontFamily ? (resolveToken(t, overrides.fontFamily) as string) : t.fontFamilyBody,
     fontSize: overrides?.fontSize ? (resolveToken(t, overrides.fontSize) as number) : t.fontSizeMd,
     color: t.colorForeground,
@@ -641,25 +694,25 @@ export function Combobox({
     disabledOpacity: overrides?.disabledOpacity,
   };
 
-  const emptyMessage = filter === 'async' && loading ? COPY.loading : COPY.empty;
-
   const renderChip = (chipValue: string, interactive: boolean): React.JSX.Element => {
     const chipLabel = labelFor(chipValue);
     return (
       <View key={chipValue} style={chipStyle} testID="Combobox.chip">
-        <Text size="sm" overrides={chipTextOverrides}>
+        <Text size="sm" truncate overrides={chipTextOverrides}>
           {chipLabel}
         </Text>
         {interactive ? (
-          <Button
-            label={COPY.removeChip(chipLabel)}
-            variant="ghost"
-            size="sm"
-            iconOnly
-            disabled={isDisabled}
-            leadingIcon={<Icon name="close" size="xs" color={iconColor} />}
-            onPress={() => handleRemoveChip(chipValue)}
-          />
+          <View testID="Combobox.chipRemove">
+            <Button
+              label={COPY.removeChip.replace('{label}', chipLabel)}
+              variant="ghost"
+              size="sm"
+              iconOnly
+              disabled={isDisabled}
+              leadingIcon={<Icon name="close" size="xs" color={iconColor} />}
+              onPress={() => handleRemoveChip(chipValue)}
+            />
+          </View>
         ) : null}
       </View>
     );
@@ -672,47 +725,53 @@ export function Combobox({
       accessibilityLabel={visibleLabel}
       accessibilityHint={description}
       accessibilityState={{ disabled: isDisabled, expanded: open }}
+      accessibilityValue={!multiple && selectedValue !== undefined ? { text: labelFor(selectedValue) } : undefined}
       editable={!isDisabled}
       value={currentInputText}
       placeholder={placeholder}
       placeholderTextColor={t.colorForegroundMuted}
       autoCapitalize="none"
       autoCorrect={false}
-      allowFontScaling
+      autoFocus={usesSheet}
       onChangeText={handleChangeText}
       onFocus={handleFocus}
       onBlur={handleBlur}
       onKeyPress={handleKeyPress}
       onSubmitEditing={handleSubmitEditing}
+      submitBehavior={multiple ? 'submit' : 'blurAndSubmit'}
       style={inputTextStyle}
       testID="Combobox.input"
     />
   );
 
   const listbox = (
-    <Listbox
-      label={label}
-      options={listboxItems}
-      multiple={multiple}
-      value={currentValue}
-      disabled={isDisabled}
-      embedded
-      emptyMessage={emptyMessage}
-      onChange={handleListboxChange}
-      overrides={listboxOverrides}
-    />
+    <View testID="Combobox.listbox">
+      <Listbox
+        label={label}
+        options={listboxItems}
+        multiple={multiple}
+        value={multiple ? selectedValues : (selectedValue ?? '')}
+        disabled={isDisabled}
+        embedded
+        loading={isLoading}
+        emptyMessage={COPY.empty}
+        initialActiveValue={typeAheadValue}
+        onChange={handleListboxChange}
+        onActiveChange={handleActiveChange}
+        overrides={listboxOverrides}
+      />
+    </View>
   );
 
-  const statusText =
-    filter === 'async' && loading ? COPY.loading : resultCount === 0 ? COPY.empty : COPY.resultCount(resultCount);
-
-  const status = open ? (
-    <View accessibilityLiveRegion="polite" importantForAccessibility="yes" testID="Combobox.status">
-      <Text size="xs" tone="muted" overrides={helperOverrides}>
-        {statusText}
-      </Text>
+  const status = (
+    <View accessibilityLiveRegion="polite" testID="Combobox.status">
+      {open && statusText !== '' ? (
+        <Text size="sm" tone="muted" overrides={helperOverrides}>
+          {statusText}
+        </Text>
+      ) : null}
     </View>
-  ) : null;
+  );
 
   const spaceBelow = fieldRect !== null ? windowHeight - (fieldRect.y + fieldRect.height) : 0;
   const spaceAbove = fieldRect !== null ? fieldRect.y : 0;
@@ -720,16 +779,14 @@ export function Combobox({
   const flipAbove = fieldRect !== null && spaceBelow < measuredPopupHeight + popupOffset && spaceAbove > spaceBelow;
   const popupTop =
     fieldRect === null ? 0 : flipAbove ? fieldRect.y - popupOffset - measuredPopupHeight : fieldRect.y + fieldRect.height + popupOffset;
-  const popupLeft = fieldRect?.x ?? 0;
-  const popupWidth = fieldRect?.width;
 
   const hostStyle: ViewStyle = { flex: 1 };
 
   const popupOuterStyle: Animated.WithAnimatedValue<ViewStyle> = {
     position: 'absolute',
     top: popupTop,
-    left: popupLeft,
-    width: popupWidth,
+    left: fieldRect?.x ?? 0,
+    minWidth: fieldRect?.width ?? 0,
     borderRadius: popupRadius,
     zIndex: layer,
     opacity: progress,
@@ -744,17 +801,35 @@ export function Combobox({
     overflow: 'hidden',
   };
 
-  const sheetChipsRowStyle: ViewStyle = { flexDirection: 'row', flexWrap: 'wrap', gap: fieldGap, marginBottom: t.space2 };
+  const sheetFieldStyle: ViewStyle = { flexDirection: 'column', gap: fieldGap };
+  const sheetChipsRowStyle: ViewStyle = { flexDirection: 'row', flexWrap: 'wrap', gap: fieldGap };
+
+  const clearButton = showClear ? (
+    <View testID="Combobox.clearButton">
+      <Button
+        label={COPY.clearLabel}
+        variant="ghost"
+        size="sm"
+        iconOnly
+        leadingIcon={<Icon name="close" size="xs" color={iconColor} />}
+        onPress={handleClear}
+      />
+    </View>
+  ) : null;
 
   return (
-    <View testID="Combobox" style={containerStyle}>
-      <Text weight="medium" overrides={labelOverrides}>
-        {visibleLabel}
-      </Text>
-      {description !== undefined ? (
-        <Text size="sm" tone="muted" overrides={helperOverrides}>
-          {description}
+    <View ref={ref} testID="Combobox" style={containerStyle}>
+      <View testID="Combobox.label">
+        <Text weight="medium" overrides={labelOverrides}>
+          {visibleLabel}
         </Text>
+      </View>
+      {description !== undefined ? (
+        <View testID="Combobox.description">
+          <Text size="sm" tone="muted" overrides={helperOverrides}>
+            {description}
+          </Text>
+        </View>
       ) : null}
       {usesSheet ? (
         <Pressable
@@ -763,44 +838,47 @@ export function Combobox({
           accessibilityLabel={visibleLabel}
           accessibilityHint={description}
           accessibilityState={{ disabled: isDisabled, expanded: open }}
-          accessibilityValue={!multiple && hasSelection ? { text: singleSummaryText } : undefined}
+          accessibilityValue={hasSelection ? { text: multiple ? selectedValues.map(labelFor).join(', ') : singleSummaryText } : undefined}
           onPress={handleTogglePress}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           style={fieldRowStyle}
           testID="Combobox.field"
         >
-          {multiple ? selectedValues.map((v) => renderChip(v, false)) : null}
-          {!multiple || selectedValues.length === 0 ? (
-            <Text tone={summaryIsPlaceholder ? 'muted' : 'default'} overrides={fieldTextOverrides}>
+          {multiple && selectedValues.length > 0 ? (
+            <View style={sheetChipsRowStyle} testID="Combobox.chips">
+              {selectedValues.map((v) => renderChip(v, false))}
+            </View>
+          ) : (
+            <Text tone={summaryIsPlaceholder ? 'muted' : 'default'} truncate overrides={fieldTextOverrides}>
               {singleSummaryText}
             </Text>
-          ) : null}
-          <Icon name="chevron-down" size="xs" color={iconColor} />
+          )}
+          <View testID="Combobox.toggleButton" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+            <Icon name="chevron-down" size="xs" color={iconColor} />
+          </View>
         </Pressable>
       ) : (
         <View ref={fieldRef} style={fieldRowStyle} testID="Combobox.field">
-          {multiple ? selectedValues.map((v) => renderChip(v, true)) : null}
+          {multiple && selectedValues.length > 0 ? (
+            <View style={sheetChipsRowStyle} testID="Combobox.chips">
+              {selectedValues.map((v) => renderChip(v, true))}
+            </View>
+          ) : null}
           {textInput}
-          {showClear ? (
+          {clearButton}
+          <View testID="Combobox.toggleButton">
             <Button
-              label={COPY.clearLabel}
+              label={COPY.toggleLabel}
               variant="ghost"
               size="sm"
               iconOnly
-              leadingIcon={<Icon name="close" size="xs" color={iconColor} />}
-              onPress={handleClear}
+              expanded={open}
+              disabled={isDisabled}
+              leadingIcon={<Icon name="chevron-down" size="xs" color={iconColor} />}
+              onPress={handleTogglePress}
             />
-          ) : null}
-          <Button
-            label={COPY.toggleLabel}
-            variant="ghost"
-            size="sm"
-            iconOnly
-            disabled={isDisabled}
-            leadingIcon={<Icon name="chevron-down" size="xs" color={iconColor} />}
-            onPress={handleTogglePress}
-          />
+          </View>
         </View>
       )}
       {status}
@@ -815,16 +893,22 @@ export function Combobox({
         <BottomSheet
           open={open}
           heading={label}
+          height="full"
           onClose={() => closePopup(true)}
-          footer={multiple ? <Button label={COPY.done} onPress={() => closePopup(true)} /> : undefined}
+          footer={<Button label={COPY.done} onPress={() => closePopup(true)} />}
         >
-          <>
+          <View style={sheetFieldStyle} testID="Combobox.popup">
             {multiple && selectedValues.length > 0 ? (
-              <View style={sheetChipsRowStyle}>{selectedValues.map((v) => renderChip(v, true))}</View>
+              <View style={sheetChipsRowStyle} testID="Combobox.chips">
+                {selectedValues.map((v) => renderChip(v, true))}
+              </View>
             ) : null}
-            {textInput}
-          </>
-          {listbox}
+            <View style={fieldRowStyle}>
+              {textInput}
+              {clearButton}
+            </View>
+            {listbox}
+          </View>
         </BottomSheet>
       ) : (
         <Modal visible={popupMounted} transparent animationType="none" onRequestClose={() => closePopup(true)} statusBarTranslucent>

@@ -4,9 +4,9 @@ import type { SegmentedControlOption } from './SegmentedControl';
 import { withTheme } from './decorators';
 
 const OPTIONS: SegmentedControlOption[] = [
-  { value: 'list', label: 'List', icon: 'external' },
-  { value: 'grid', label: 'Grid', icon: 'check' },
-  { value: 'map', label: 'Map', icon: 'info', disabled: true },
+  { value: 'list', label: 'List' },
+  { value: 'grid', label: 'Grid' },
+  { value: 'board', label: 'Board' },
 ];
 
 const meta: Meta<typeof SegmentedControl> = {
@@ -29,21 +29,69 @@ export const Default: Story = {};
 export const SizeSm: Story = { args: { size: 'sm' } };
 export const SizeMd: Story = { args: { size: 'md' } };
 
-// fill
+// notable states
 export const Fill: Story = { args: { fill: true } };
 
-// iconOnly
 export const IconOnly: Story = {
   args: {
     iconOnly: true,
-    options: OPTIONS.map((option) => ({ ...option, icon: option.icon ?? 'info' })),
+    options: [
+      { value: 'list', label: 'List view', icon: 'list' },
+      { value: 'grid', label: 'Grid view', icon: 'grid' },
+    ],
   },
 };
 
-// notable states
-export const WithOverrides: Story = {
-  args: { overrides: { groupRadius: 'radius.full', segmentRadius: 'radius.full' } },
+export const DisabledSegment: Story = {
+  args: {
+    options: [
+      { value: 'list', label: 'List' },
+      { value: 'grid', label: 'Grid' },
+      { value: 'board', label: 'Board', disabled: true },
+    ],
+  },
 };
 
-/** At least three focusable segments, for the axe gate and manual keyboard checks on react-native-web. */
+export const WithOverrides: Story = {
+  args: { overrides: { segmentPaddingInline: 'space.lg', transition: 'motion.duration.base' } },
+};
+
+/** Three focusable segments, for the axe gate and manual keyboard checks on react-native-web. */
 export const Keyboard: Story = {};
+
+// examples
+export const ViewMode: Story = {
+  args: {
+    label: 'View mode',
+    options: [
+      { value: 'list', label: 'List' },
+      { value: 'grid', label: 'Grid' },
+    ],
+    defaultValue: 'list',
+  },
+};
+
+export const IconOnlyToolbar: Story = {
+  args: {
+    label: 'View mode',
+    options: [
+      { value: 'list', label: 'List view', icon: 'list' },
+      { value: 'grid', label: 'Grid view', icon: 'grid' },
+    ],
+    iconOnly: true,
+    size: 'sm',
+  },
+};
+
+export const FilledRangeSwitch: Story = {
+  args: {
+    label: 'Range',
+    options: [
+      { value: 'day', label: 'Day' },
+      { value: 'week', label: 'Week' },
+      { value: 'month', label: 'Month' },
+    ],
+    defaultValue: 'week',
+    fill: true,
+  },
+};

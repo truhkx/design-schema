@@ -18,12 +18,7 @@
   --ds-combobox-chip-padding-inline: var(--space-2);
   --ds-combobox-chip-padding-block: var(--space-0);
   --ds-combobox-chip-gap: var(--layout-gap-tight);
-  --ds-combobox-icon-color: var(--color-foreground-muted);
   --ds-combobox-part-gap: var(--space-1);
-  --ds-combobox-label-weight: var(--font-weight-medium);
-  --ds-combobox-helper-size: var(--font-size-sm);
-  --ds-combobox-description-text: var(--color-foreground-muted);
-  --ds-combobox-error-text: var(--color-foreground-danger);
   --ds-combobox-font-family: var(--font-family-body);
   --ds-combobox-font-size: var(--font-size-md);
   --ds-combobox-chip-size: var(--font-size-sm);
@@ -31,6 +26,7 @@
   --ds-combobox-min-target: var(--size-target-comfortable);
   --ds-combobox-focus-ring-width: var(--border-width-focus);
   --ds-combobox-disabled-opacity: var(--opacity-disabled);
+  --ds-combobox-enter: var(--motion-duration-fast);
   display: flex;
   flex-direction: column;
   gap: var(--ds-combobox-part-gap);
@@ -39,12 +35,7 @@
 }
 
 .ds-combobox__label {
-  display: inline-block;
-  cursor: default;
-}
-
-.ds-combobox__required {
-  font-weight: var(--ds-combobox-label-weight);
+  align-self: flex-start;
 }
 
 .ds-combobox__field {
@@ -61,20 +52,21 @@
   border-radius: var(--ds-combobox-field-radius);
   background-color: var(--ds-combobox-field-background);
   cursor: text;
+  transition: border-color var(--ds-combobox-enter) var(--motion-easing-standard);
 }
 
-/* borderFocus + focusRingWidth: the border thickens and recolors as the focus indicator; padding
-   shrinks by the added width so the field's outer box does not shift. `:has(:focus-visible)`
-   (rather than `:focus-within`) since the focusable node is the nested <input>, not this wrapper,
-   and the ring should track keyboard focus specifically, same as every other field. */
-.ds-combobox__field:has(:focus-visible) {
+/* fieldBorderFocus + focusRingWidth, as Input: the border is the focus ring; padding shrinks by the
+   difference so the field does not shift. Drawn while the input itself has focus. */
+.ds-combobox__field:has(.ds-combobox__input:focus-visible) {
   border-color: var(--ds-combobox-field-border-focus);
   border-width: var(--ds-combobox-focus-ring-width);
   padding-inline: calc(var(--ds-combobox-field-padding-inline) - (var(--ds-combobox-focus-ring-width) - var(--ds-combobox-field-border-width)));
   padding-block: calc(var(--ds-combobox-field-padding-block) - (var(--ds-combobox-focus-ring-width) - var(--ds-combobox-field-border-width)));
 }
 
-.ds-combobox--invalid .ds-combobox__field {
+/* fieldBorderInvalid: stays when focused, so focus never hides the error. */
+.ds-combobox--invalid .ds-combobox__field,
+.ds-combobox--invalid .ds-combobox__field:has(.ds-combobox__input:focus-visible) {
   border-color: var(--ds-combobox-field-border-invalid);
 }
 
@@ -83,14 +75,8 @@
   cursor: not-allowed;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .ds-combobox__field {
-    transition:
-      border-color var(--motion-duration-fast) var(--motion-easing-standard),
-      border-width var(--motion-duration-fast) var(--motion-easing-standard),
-      padding-inline var(--motion-duration-fast) var(--motion-easing-standard),
-      padding-block var(--motion-duration-fast) var(--motion-easing-standard);
-  }
+.ds-combobox__chips {
+  display: contents;
 }
 
 .ds-combobox__chip {
@@ -98,6 +84,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--ds-combobox-chip-gap);
+  min-inline-size: 0;
   max-inline-size: 100%;
   padding-inline: var(--ds-combobox-chip-padding-inline);
   padding-block: var(--ds-combobox-chip-padding-block);
@@ -109,26 +96,30 @@
 }
 
 .ds-combobox__chip-label {
+  min-inline-size: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.ds-combobox__control {
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
 .ds-combobox__input {
-  flex: 1 1 auto;
-  min-inline-size: 3em;
+  flex: 1 1 var(--size-target-comfortable);
+  min-inline-size: var(--size-target-comfortable);
   box-sizing: border-box;
   margin: 0;
   padding: 0;
   border: 0;
   background: transparent;
   color: var(--ds-combobox-input-color);
-  font: inherit;
   font-family: var(--ds-combobox-font-family);
   font-size: var(--ds-combobox-font-size);
   line-height: var(--ds-combobox-line-height);
   outline: none;
-  -webkit-appearance: none;
   appearance: none;
 }
 
@@ -141,16 +132,8 @@
   cursor: not-allowed;
 }
 
-.ds-combobox__field .ds-button {
-  flex: 0 0 auto;
-}
-
-.ds-combobox__field .ds-button svg {
-  color: var(--ds-combobox-icon-color);
-}
-
+/* The visually-hidden clip pattern: the one sanctioned pixel literal. */
 .ds-combobox__status {
-  /* visually hidden: clipped to a 1px box, off the normal flow */
   position: absolute;
   inline-size: 1px;
   block-size: 1px;
@@ -160,6 +143,8 @@
   white-space: nowrap;
 }
 
+/* The popup is portaled, so it declares its own hooks. The embedded Listbox draws no surface,
+   border or radius; the popup owns them. */
 .ds-combobox__popup {
   --ds-combobox-popup-surface: var(--color-overlay-surface);
   --ds-combobox-popup-border: var(--color-border);
@@ -170,47 +155,34 @@
   --ds-combobox-enter: var(--motion-duration-fast);
   box-sizing: border-box;
   position: fixed;
-  min-inline-size: var(--ds-combobox-field-width, 0px);
+  z-index: var(--ds-combobox-layer);
   max-inline-size: calc(100vw - 2 * var(--layout-gutter));
-  max-block-size: calc(100vh - 2 * var(--layout-gutter));
+  overflow: hidden;
+  background-color: var(--ds-combobox-popup-surface);
+  border: var(--border-width-thin) solid var(--ds-combobox-popup-border);
   border-radius: var(--ds-combobox-popup-radius);
   box-shadow: var(--ds-combobox-popup-shadow);
-  z-index: var(--ds-combobox-layer);
-  opacity: 0;
-  /* Rises from `--ds-combobox-enter-offset`, set per `data-vertical` below. */
-  --ds-combobox-enter-offset: calc(-1 * var(--ds-combobox-popup-offset));
-  transform: translateY(var(--ds-combobox-enter-offset));
-  transition-property: opacity, transform;
-  transition-duration: var(--ds-combobox-enter);
-  transition-timing-function: var(--motion-easing-standard);
+  opacity: 1;
+  transition: opacity var(--ds-combobox-enter) var(--motion-easing-standard);
 }
 
-/* popupSurface/popupBorder/popupRadius are drawn by the nested Listbox's own root, not this
-   wrapper; forwarded via the sanctioned CSS custom-property escape hatch (Listbox's `surface` is
-   locked, and mirroring `border`/`radius` here keeps them in sync with this wrapper's
-   shadow-clipping radius from one source). */
-.ds-combobox__popup > .ds-listbox {
-  --ds-listbox-surface: var(--ds-combobox-popup-surface);
-  --ds-listbox-border: var(--ds-combobox-popup-border);
-  --ds-listbox-radius: var(--ds-combobox-popup-radius);
-  min-inline-size: 100%;
+@starting-style {
+  .ds-combobox__popup {
+    opacity: 0;
+  }
 }
 
+/* popupOffset: the gap between the field and the popup, on whichever side it opened. */
 .ds-combobox__popup[data-vertical='bottom'] {
   margin-block-start: var(--ds-combobox-popup-offset);
 }
 
 .ds-combobox__popup[data-vertical='top'] {
   margin-block-end: var(--ds-combobox-popup-offset);
-  --ds-combobox-enter-offset: var(--ds-combobox-popup-offset);
-}
-
-.ds-combobox__popup--entered {
-  opacity: 1;
-  transform: translateY(0);
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .ds-combobox__field,
   .ds-combobox__popup {
     transition: none;
   }

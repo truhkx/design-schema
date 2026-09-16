@@ -31,7 +31,6 @@ export type TabsOverridableBinding =
   | 'tabPaddingInline'
   | 'tabGap'
   | 'listGap'
-  | 'indicatorThickness'
   | 'listBorder'
   | 'listBorderWidth'
   | 'panelGap'
@@ -49,7 +48,6 @@ const OVERRIDE_HOOK: Record<TabsOverridableBinding, string> = {
   tabPaddingInline: '--ds-tabs-tab-padding-inline',
   tabGap: '--ds-tabs-tab-gap',
   listGap: '--ds-tabs-list-gap',
-  indicatorThickness: '--ds-tabs-indicator-thickness',
   listBorder: '--ds-tabs-list-border',
   listBorderWidth: '--ds-tabs-list-border-width',
   panelGap: '--ds-tabs-panel-gap',
@@ -63,13 +61,15 @@ const OVERRIDE_HOOK: Record<TabsOverridableBinding, string> = {
   disabledOpacity: '--ds-tabs-disabled-opacity',
 };
 
-function overridesToStyle(overrides: Partial<Record<TabsOverridableBinding, TokenRef | undefined>>): CSSProperties {
+function overridesToStyle(overrides: Partial<Record<TabsOverridableBinding, TokenRef | undefined>>): CSSProperties | undefined {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as TabsOverridableBinding[]) {
+    const hook = OVERRIDE_HOOK[binding];
     const ref = overrides[binding];
-    if (ref) style[OVERRIDE_HOOK[binding]] = cssVar(ref);
+    // Locked bindings have no hook and are ignored if passed.
+    if (hook && ref) style[hook] = cssVar(ref);
   }
-  return style as CSSProperties;
+  return Object.keys(style).length > 0 ? (style as CSSProperties) : undefined;
 }
 
 function firstEnabledId(items: TabsItem[]): string | undefined {
@@ -80,31 +80,22 @@ function firstEnabledId(items: TabsItem[]): string | undefined {
 declare const process: { env: Record<string, string | undefined> } | undefined;
 const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
 
-export interface TabPanelProps extends Omit<ComponentPropsWithoutRef<'div'>, 'id'> {
+export interface TabPanelProps extends Omit<ComponentPropsWithoutRef<'div'>, 'id' | 'className' | 'style'> {
   /** Matches the `id` of the tab this panel belongs to. */
   id: string;
   children: ReactNode;
 }
 
-/** The wrapper for one tab's content — a direct child of `Tabs`, one per tab, in the same order. */
-export const TabPanel = function TabPanel({ ref, id, children, className, ...rest }: TabPanelProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
+/** The wrapper for one tab's content — a child of `Tabs`, one per tab, in the same order. */
+export function TabPanel({ ref, id, children, ...rest }: TabPanelProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
   return (
-    <div
-      {...rest}
-      ref={ref}
-      id={id}
-      role="tabpanel"
-      tabIndex={0}
-      data-ds="TabPanel"
-      data-part="panel"
-      className={['ds-tabs__panel', className ?? null].filter(Boolean).join(' ')}
-    >
+    <div {...rest} ref={ref} id={id} role="tabpanel" tabIndex={0} data-ds="TabPanel" data-part="panel" className="ds-tabs__panel">
       {children}
     </div>
   );
-};
+}
 
-export interface TabsProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children' | 'onChange'> {
+export interface TabsProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children' | 'onChange' | 'defaultValue' | 'className' | 'style'> {
   /** The tabs in order. `badge` is a short count or status shown after the label ("3", "New"). */
   tabs: TabsItem[];
   /**
@@ -132,7 +123,7 @@ export interface TabsProps extends Omit<ComponentPropsWithoutRef<'div'>, 'childr
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<TabsOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the selected tab changes, with the new id. */
-  onChange?: ((id: string) => void) | undefined;
+  onChange?: ((value: string) => void) | undefined;
 }
 
 /**
@@ -144,7 +135,7 @@ export interface TabsProps extends Omit<ComponentPropsWithoutRef<'div'>, 'childr
  * preview. Use `manual` activation when a panel is expensive to show. Use `vertical` when there are
  * many tabs and horizontal room is short. Use `fill` on phones for two to four tabs.
  */
-export const Tabs = function Tabs({
+export function Tabs({
   ref,
   tabs,
   children,
@@ -157,125 +148,132 @@ export const Tabs = function Tabs({
   keepMounted = false,
   overrides,
   onChange,
-  className,
-  style,
   ...rest
 }: TabsProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
-  const generatedId = useId();
-  const baseId = `ds-tabs${generatedId}`;
-
+  const baseId = `ds-tabs${useId()}`;
+  const listRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef(new Map<string, HTMLButtonElement>());
 
+  const items = tabs;
   const allPanels = Children.toArray(children).filter(isValidElement) as ReactElement<TabPanelProps>[];
   const panelIds = new Set(allPanels.map((panel) => panel.props.id));
-  const tabIds = new Set(tabs.map((tab) => tab.id));
-  const renderTabs = tabs.filter((tab) => panelIds.has(tab.id));
+  const tabIds = new Set(items.map((tab) => tab.id));
+  // A tab without a matching panel, or a panel without a tab, is not rendered.
+  const renderTabs = items.filter((tab) => panelIds.has(tab.id));
   const panels = allPanels.filter((panel) => tabIds.has(panel.props.id));
 
-  if (isDev && !label) {
-    console.warn('Tabs: `label` is required and becomes the tab list’s accessible name.');
-  }
-  if (isDev) {
-    for (const tab of tabs) {
-      if (!panelIds.has(tab.id)) console.warn(`Tabs: tab "${tab.id}" has no matching panel; it will not be rendered.`);
+  const orphanKey = [
+    ...items.filter((tab) => !panelIds.has(tab.id)).map((tab) => `tab:${tab.id}`),
+    ...allPanels.filter((panel) => !tabIds.has(panel.props.id)).map((panel) => `panel:${panel.props.id}`),
+  ].join('|');
+
+  useEffect(() => {
+    if (!isDev || !orphanKey) return;
+    for (const entry of orphanKey.split('|')) {
+      const [kind, id] = entry.split(':');
+      console.warn(
+        kind === 'tab'
+          ? `Tabs: tab "${id}" has no matching TabPanel; it is not rendered.`
+          : `Tabs: TabPanel "${id}" has no matching tab; it is not rendered.`,
+      );
     }
-    for (const panel of allPanels) {
-      if (!tabIds.has(panel.props.id)) {
-        console.warn(`Tabs: panel "${panel.props.id}" has no matching tab; it will not be rendered.`);
-      }
-    }
-  }
+  }, [orphanKey]);
 
   const isControlled = value !== undefined;
-  const [internalValue, setInternalValue] = useState<string | undefined>(
-    () => defaultValue ?? firstEnabledId(renderTabs),
-  );
+  const [internalValue, setInternalValue] = useState<string | undefined>(() => defaultValue ?? firstEnabledId(renderTabs));
   const selected = isControlled ? value : internalValue;
 
-  // The roving-tabindex target: tracks the selection under automatic activation, but can lead it
-  // under manual activation until Enter/Space catches the selection up.
+  // The roving-tabindex target: follows the selection, but under manual activation leads it until
+  // Enter/Space catches the selection up.
   const [activeId, setActiveId] = useState<string | undefined>(selected);
-  const [indicatorStyle, setIndicatorStyle] = useState<CSSProperties>();
+  const [indicatorStyle, setIndicatorStyle] = useState<CSSProperties | undefined>(undefined);
 
   useEffect(() => {
     setActiveId(selected);
   }, [selected]);
 
-  const selectTab = (id: string) => {
+  // Only enabled, rendered tabs can hold the tab stop; fall back to the first enabled one.
+  const enabled = renderTabs.filter((tab) => !tab.disabled);
+  const tabStopId = enabled.some((tab) => tab.id === activeId) ? activeId : enabled[0]?.id;
+
+  const selectTab = (id: string): void => {
+    if (id === selected) return;
     if (!isControlled) setInternalValue(id);
-    if (id !== selected) onChange?.(id);
+    onChange?.(id);
   };
 
-  const setTabRef = (id: string) => (el: HTMLButtonElement | null) => {
-    if (el) tabRefs.current.set(id, el);
-    else tabRefs.current.delete(id);
-  };
-
-  const focusTab = (id: string) => {
-    setActiveId(id);
-    tabRefs.current.get(id)?.focus();
-  };
-
-  // Position the indicator under (horizontal) or beside (vertical) the selected tab, and keep it
-  // scrolled into view; reflows on resize since `fill` widths and wrapped labels can change.
+  // Position the indicator on the selected tab and keep that tab scrolled into view within the list.
   useLayoutEffect(() => {
+    const list = listRef.current;
     const tabEl = selected ? tabRefs.current.get(selected) : undefined;
-    if (!tabEl) return undefined;
+    if (!list || !tabEl) {
+      setIndicatorStyle(undefined);
+      return undefined;
+    }
 
-    const measure = () => {
-      setIndicatorStyle(
+    let last = '';
+    const measure = (): void => {
+      const next =
         orientation === 'horizontal'
           ? { insetInlineStart: tabEl.offsetLeft, inlineSize: tabEl.offsetWidth }
-          : { insetBlockStart: tabEl.offsetTop, blockSize: tabEl.offsetHeight },
-      );
+          : { insetBlockStart: tabEl.offsetTop, blockSize: tabEl.offsetHeight };
+      const key = JSON.stringify(next);
+      if (key === last) return;
+      last = key;
+      setIndicatorStyle(next);
     };
     measure();
-    if (typeof tabEl.scrollIntoView === 'function') tabEl.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
-  }, [selected, orientation, fit, tabs]);
+    // Scroll the list only, never the page.
+    if (orientation === 'horizontal') {
+      const start = tabEl.offsetLeft;
+      const end = start + tabEl.offsetWidth;
+      if (start < list.scrollLeft) list.scrollLeft = start;
+      else if (end > list.scrollLeft + list.clientWidth) list.scrollLeft = end - list.clientWidth;
+    }
 
-  const handleTabClick = (tab: TabsItem) => {
-    if (tab.disabled) return;
-    setActiveId(tab.id);
-    selectTab(tab.id);
-  };
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(measure);
+    observer.observe(list);
+    return () => observer.disconnect();
+  }, [selected, orientation, fit, renderTabs.length]);
 
-  const handleListKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
-    const enabled = renderTabs.filter((tab) => !tab.disabled);
+  const handleListKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>): void => {
     if (enabled.length === 0) return;
-    const currentIndex = enabled.findIndex((tab) => tab.id === activeId);
+    const focusedId = (event.target as HTMLElement).closest<HTMLElement>('[role="tab"]')?.dataset.tabId ?? tabStopId;
+    const currentIndex = enabled.findIndex((tab) => tab.id === focusedId);
     const nextKey = orientation === 'horizontal' ? 'ArrowRight' : 'ArrowDown';
     const prevKey = orientation === 'horizontal' ? 'ArrowLeft' : 'ArrowUp';
 
-    const moveTo = (id: string) => {
-      focusTab(id);
+    const moveTo = (index: number): void => {
+      const id = enabled[index]!.id;
+      setActiveId(id);
+      tabRefs.current.get(id)?.focus();
       if (activation === 'automatic') selectTab(id);
     };
 
     switch (event.key) {
       case nextKey:
         event.preventDefault();
-        moveTo(enabled[(currentIndex + 1) % enabled.length]!.id);
+        moveTo(currentIndex < 0 ? 0 : (currentIndex + 1) % enabled.length);
         break;
       case prevKey:
         event.preventDefault();
-        moveTo(enabled[(currentIndex - 1 + enabled.length) % enabled.length]!.id);
+        moveTo(currentIndex < 0 ? enabled.length - 1 : (currentIndex - 1 + enabled.length) % enabled.length);
         break;
       case 'Home':
         event.preventDefault();
-        moveTo(enabled[0]!.id);
+        moveTo(0);
         break;
       case 'End':
         event.preventDefault();
-        moveTo(enabled[enabled.length - 1]!.id);
+        moveTo(enabled.length - 1);
         break;
       case 'Enter':
       case ' ':
-        if (activation === 'manual' && activeId) {
+        if (activation === 'manual' && focusedId && currentIndex >= 0) {
           event.preventDefault();
-          selectTab(activeId);
+          selectTab(focusedId);
         }
         break;
       default:
@@ -283,16 +281,18 @@ export const Tabs = function Tabs({
     }
   };
 
-  const classes = ['ds-tabs', `ds-tabs--${orientation}`, `ds-tabs--fit-${fit}`, className ?? null]
-    .filter(Boolean)
-    .join(' ');
-
-  const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
-  const mergedStyle = overrideStyle || style ? { ...overrideStyle, ...style } : undefined;
+  const mountedPanelIds = new Set(panels.map((panel) => panel.props.id).filter((id) => keepMounted || id === selected));
 
   return (
-    <div {...rest} ref={ref} data-ds="Tabs" className={classes} style={mergedStyle}>
+    <div
+      {...rest}
+      ref={ref}
+      data-ds="Tabs"
+      className={`ds-tabs ds-tabs--${orientation} ds-tabs--fit-${fit}`}
+      style={overrides ? overridesToStyle(overrides) : undefined}
+    >
       <div
+        ref={listRef}
         role="tablist"
         aria-label={label}
         aria-orientation={orientation}
@@ -300,30 +300,38 @@ export const Tabs = function Tabs({
         className="ds-tabs__list"
         onKeyDown={handleListKeyDown}
       >
-        {renderTabs.map((tab) => {
-          const tabId = `${baseId}-tab-${tab.id}`;
+        {renderTabs.map((tab, index) => {
           const isSelected = tab.id === selected;
-          const tabClasses = [
-            'ds-tabs__tab',
-            isSelected ? 'ds-tabs__tab--selected' : null,
-            tab.disabled ? 'ds-tabs__tab--disabled' : null,
-          ]
-            .filter(Boolean)
-            .join(' ');
           return (
             <button
               key={tab.id}
-              ref={setTabRef(tab.id)}
+              ref={(el) => {
+                if (el) tabRefs.current.set(tab.id, el);
+                else tabRefs.current.delete(tab.id);
+              }}
               type="button"
               role="tab"
-              id={tabId}
+              id={`${baseId}-tab-${tab.id}`}
+              data-tab-id={tab.id}
               aria-selected={isSelected ? 'true' : 'false'}
-              aria-controls={tab.id}
+              aria-controls={mountedPanelIds.has(tab.id) ? tab.id : undefined}
               aria-disabled={tab.disabled ? 'true' : undefined}
-              tabIndex={tab.id === activeId ? 0 : -1}
+              aria-posinset={index + 1}
+              aria-setsize={renderTabs.length}
+              tabIndex={tab.id === tabStopId ? 0 : -1}
               data-part="tab"
-              className={tabClasses}
-              onClick={() => handleTabClick(tab)}
+              className={[
+                'ds-tabs__tab',
+                isSelected ? 'ds-tabs__tab--selected' : null,
+                tab.disabled ? 'ds-tabs__tab--disabled' : null,
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              onClick={() => {
+                if (tab.disabled) return;
+                setActiveId(tab.id);
+                selectTab(tab.id);
+              }}
             >
               {tab.icon ? (
                 <span className="ds-tabs__tab-icon" data-part="tabIcon">
@@ -334,7 +342,9 @@ export const Tabs = function Tabs({
                 {tab.label}
               </span>
               {tab.badge ? (
-                <span className="ds-tabs__badge" data-part="badge">
+                <span className="ds-tabs__badge" data-part="tabBadge">
+                  {/* Keeps the badge a separate word in the tab's name ("Inbox 3"). */}
+                  {' '}
                   {tab.badge}
                 </span>
               ) : null}
@@ -346,15 +356,14 @@ export const Tabs = function Tabs({
       <div className="ds-tabs__panels">
         {panels.map((panel) => {
           const panelId = panel.props.id;
-          const isSelected = panelId === selected;
-          if (!isSelected && !keepMounted) return null;
+          if (!mountedPanelIds.has(panelId)) return null;
           return cloneElement(panel, {
             key: panelId,
             'aria-labelledby': `${baseId}-tab-${panelId}`,
-            hidden: !isSelected,
+            hidden: panelId !== selected,
           });
         })}
       </div>
     </div>
   );
-};
+}

@@ -11,6 +11,7 @@ interface ComboboxArgs {
   options: ListboxOption[];
   value?: ComboboxValue | undefined;
   defaultValue?: ComboboxValue | undefined;
+  open?: boolean | undefined;
   inputValue?: string | undefined;
   multiple: boolean;
   allowCustom: boolean;
@@ -25,37 +26,12 @@ interface ComboboxArgs {
   clearable: boolean;
 }
 
-const COUNTRY_OPTIONS: ListboxOption[] = [
-  { value: 'us', label: 'United States' },
-  { value: 'ca', label: 'Canada' },
-  { value: 'mx', label: 'Mexico' },
-  { value: 'fr', label: 'France' },
-  { value: 'de', label: 'Germany' },
-  { value: 'jp', label: 'Japan' },
-];
-
-const PEOPLE_OPTIONS: ListboxOption[] = [
-  { value: 'ada', label: 'Ada Lovelace', description: 'ada@example.com' },
-  { value: 'grace', label: 'Grace Hopper', description: 'grace@example.com' },
-  { value: 'katherine', label: 'Katherine Johnson', description: 'katherine@example.com' },
-];
-
-const GROUPED_OPTIONS: ListboxOption[] = [
-  {
-    group: 'North America',
-    options: [
-      { value: 'us', label: 'United States' },
-      { value: 'ca', label: 'Canada' },
-      { value: 'mx', label: 'Mexico' },
-    ],
-  },
-  {
-    group: 'Europe',
-    options: [
-      { value: 'fr', label: 'France' },
-      { value: 'de', label: 'Germany' },
-    ],
-  },
+const FRUIT_OPTIONS: ListboxOption[] = [
+  { value: 'apple', label: 'Apple' },
+  { value: 'apricot', label: 'Apricot' },
+  { value: 'banana', label: 'Banana' },
+  { value: 'cherry', label: 'Cherry' },
+  { value: 'grape', label: 'Grape' },
 ];
 
 const meta: Meta<ComboboxArgs> = {
@@ -66,30 +42,18 @@ const meta: Meta<ComboboxArgs> = {
   },
   argTypes: {
     filter: { control: 'select', options: ['startsWith', 'contains', 'none', 'async'] },
-    multiple: { control: 'boolean' },
-    allowCustom: { control: 'boolean' },
-    required: { control: 'boolean' },
-    disabled: { control: 'boolean' },
-    invalid: { control: 'boolean' },
-    loading: { control: 'boolean' },
-    clearable: { control: 'boolean' },
+    open: { control: 'boolean' },
   },
   args: {
-    label: 'Country',
-    name: 'country',
-    options: COUNTRY_OPTIONS,
-    value: undefined,
-    defaultValue: undefined,
-    inputValue: undefined,
+    label: 'Fruit',
+    name: 'fruit',
+    options: FRUIT_OPTIONS,
     multiple: false,
     allowCustom: false,
     filter: 'contains',
-    placeholder: undefined,
-    description: undefined,
     required: false,
     disabled: false,
     invalid: false,
-    error: undefined,
     loading: false,
     clearable: true,
   },
@@ -100,7 +64,8 @@ const meta: Meta<ComboboxArgs> = {
       .options=${args.options}
       .value=${args.value}
       .defaultValue=${args.defaultValue}
-      input-value=${ifDefined(args.inputValue)}
+      .open=${args.open}
+      .inputValue=${args.inputValue}
       ?multiple=${args.multiple}
       ?allow-custom=${args.allowCustom}
       filter=${args.filter}
@@ -111,7 +76,7 @@ const meta: Meta<ComboboxArgs> = {
       ?invalid=${args.invalid}
       error=${ifDefined(args.error)}
       ?loading=${args.loading}
-      ?no-clear=${!args.clearable}
+      .clearable=${args.clearable}
     ></ds-combobox>
   `,
 };
@@ -125,53 +90,69 @@ export const Default: Story = {};
 export const FilterStartsWith: Story = { args: { filter: 'startsWith' } };
 export const FilterContains: Story = { args: { filter: 'contains' } };
 export const FilterNone: Story = { args: { filter: 'none' } };
-export const FilterAsync: Story = { args: { filter: 'async', loading: false } };
+export const FilterAsync: Story = { args: { filter: 'async' } };
 
-/* boolean states */
-export const MultipleTrue: Story = {
-  args: { multiple: true, options: PEOPLE_OPTIONS, label: 'Assignees', name: 'assignees', defaultValue: ['ada'] },
-};
-export const AllowCustomTrue: Story = {
-  args: { allowCustom: true, label: 'Tags', name: 'tags', options: PEOPLE_OPTIONS, multiple: true },
-};
-export const RequiredTrue: Story = { args: { required: true } };
-export const DisabledTrue: Story = { args: { disabled: true, defaultValue: 'us' } };
-export const LoadingTrue: Story = { args: { filter: 'async', loading: true } };
-export const ClearableFalse: Story = { args: { clearable: false, defaultValue: 'us' } };
+/* states */
+export const Open: Story = { args: { open: true } };
+export const Multiple: Story = { args: { multiple: true, defaultValue: ['apple', 'cherry'] } };
+export const AllowCustom: Story = { args: { allowCustom: true, multiple: true } };
+export const Loading: Story = { args: { filter: 'async', loading: true, open: true } };
+export const NotClearable: Story = { args: { clearable: false, defaultValue: 'banana' } };
+export const WithDescription: Story = { args: { description: 'Pick one for the order.', placeholder: 'Search fruit' } };
+export const Required: Story = { args: { required: true } };
+export const Disabled: Story = { args: { disabled: true, defaultValue: 'apple' } };
+export const Invalid: Story = { args: { invalid: true } };
+export const WithError: Story = { args: { error: 'Fix this before continuing.' } };
 
-export const WithDescription: Story = {
+/** Rendered open with its input, clear button and toggle button, for the keyboard gate. */
+export const Keyboard: Story = { args: { open: true, defaultValue: 'apple' } };
+
+/* examples */
+export const FruitPicker: Story = {
   args: {
-    label: 'Assignee',
-    name: 'assignee',
-    options: PEOPLE_OPTIONS,
-    description: 'Search by name or email.',
-    defaultValue: 'ada',
+    label: 'Fruit',
+    name: 'fruit',
+    options: [
+      { value: 'apple', label: 'Apple' },
+      { value: 'apricot', label: 'Apricot' },
+      { value: 'banana', label: 'Banana' },
+    ],
   },
 };
 
-export const Grouped: Story = {
-  args: { label: 'Country', options: GROUPED_OPTIONS, defaultValue: 'fr' },
+export const MultiSelectWithChips: Story = {
+  args: {
+    label: 'Roles',
+    name: 'roles',
+    multiple: true,
+    defaultValue: ['frontend'],
+    options: [
+      { value: 'frontend', label: 'Frontend' },
+      { value: 'backend', label: 'Backend' },
+      { value: 'design', label: 'Design' },
+    ],
+  },
 };
 
-export const ErrorIdentified: Story = {
-  args: { required: true, error: 'Fix this before continuing.' },
+export const FreeTextTags: Story = {
+  args: {
+    label: 'Tags',
+    name: 'tags',
+    multiple: true,
+    allowCustom: true,
+    options: [
+      { value: 'urgent', label: 'Urgent' },
+      { value: 'billing', label: 'Billing' },
+    ],
+  },
 };
 
-/**
- * Renders open with its field and at least three focusable children (input,
- * clear button, toggle button) so the keyboard gate can verify
- * ArrowDown/ArrowUp-to-open, arrow navigation, Enter to commit, Escape,
- * Tab and Backspace-removes-chip. Real DOM focus stays on the input the
- * whole time — the popup opens via `play` clicking the toggle button, since
- * (unlike Menu/Popover/Dialog) this component's schema has no controlled
- * `open` prop to set declaratively.
- */
-export const Keyboard: Story = {
-  args: { options: COUNTRY_OPTIONS, defaultValue: 'us', clearable: true },
-  play: async ({ canvasElement }) => {
-    const combobox = canvasElement.querySelector('ds-combobox');
-    const toggle = combobox?.shadowRoot?.querySelector('#toggle-button');
-    const toggleButton = toggle?.shadowRoot?.querySelector<HTMLButtonElement>('button');
-    toggleButton?.click();
+export const AsyncResults: Story = {
+  args: {
+    label: 'Customer',
+    name: 'customer',
+    filter: 'async',
+    loading: true,
+    options: [{ value: 'acme', label: 'Acme Ltd' }],
   },
 };

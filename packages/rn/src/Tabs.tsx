@@ -1,6 +1,15 @@
 import * as React from 'react';
-import { Animated, I18nManager, Pressable, ScrollView, Text as RNText, View } from 'react-native';
-import type { LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent, PressableStateCallbackType, ScrollViewInstance, TextStyle, ViewStyle } from 'react-native';
+import { Animated, I18nManager, Platform, Pressable, ScrollView, Text as RNText, View } from 'react-native';
+import type {
+  LayoutChangeEvent,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  PressableStateCallbackType,
+  ScrollViewInstance,
+  TextStyle,
+  ViewInstance,
+  ViewStyle,
+} from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Icon } from './Icon';
@@ -12,7 +21,7 @@ export type TabsOrientation = 'horizontal' | 'vertical';
 export type TabsFit = 'start' | 'fill';
 
 /** One tab. `badge` is a short count or status shown after the label ("3", "New"). */
-export type TabsTab = { id: string; label: string; icon?: IconName | undefined; disabled?: boolean | undefined; badge?: string | undefined };
+export type TabsTab = { id: string; label: string; icon?: IconName; disabled?: boolean; badge?: string };
 
 /** The style bindings a caller may replace with a different token; see the component's overrides contract. */
 export type TabsOverridableBinding =
@@ -20,7 +29,6 @@ export type TabsOverridableBinding =
   | 'tabPaddingInline'
   | 'tabGap'
   | 'listGap'
-  | 'indicatorThickness'
   | 'listBorder'
   | 'listBorderWidth'
   | 'panelGap'
@@ -34,7 +42,7 @@ export type TabsOverridableBinding =
   | 'disabledOpacity';
 
 export interface TabsProps {
-  /** The tabs in order. */
+  /** The tabs in order. `badge` is a short count or status shown after the label ("3", "New"). */
   tabs: TabsTab[];
   /** One `TabPanel` per tab, in the same order, each with a matching `id`. Only the selected panel is rendered unless `keepMounted`. */
   children: React.ReactNode;
@@ -45,29 +53,35 @@ export interface TabsProps {
   /** Initially selected tab id. Defaults to the first enabled tab. */
   defaultValue?: string | undefined;
   /**
-   * `automatic` selects a tab as arrow keys move to it; `manual` moves focus only and
-   * selects on Enter/Space. Native has no arrow-key focus movement (see the
-   * component doc), so this has no observable effect on this platform; it is still
-   * accepted and typed for parity with the other platforms.
+   * `automatic` selects a tab as arrow keys move to it (fine when panels are cheap);
+   * `manual` moves focus only and selects on Enter/Space (use when a panel loads data).
+   * Arrow keys reach a tab list only through react-native-web or a hardware keyboard;
+   * a touch always selects the touched tab.
    */
   activation?: TabsActivation | undefined;
-  /** Vertical tab lists sit beside their panels and use Up/Down arrows on a hardware keyboard. */
+  /** Vertical tab lists sit beside their panels and use Up/Down arrows. */
   orientation?: TabsOrientation | undefined;
   /** `start` packs tabs at the start; `fill` stretches them across the width (phones, two to four tabs). */
   fit?: TabsFit | undefined;
   /** Keep unselected panels in the tree (hidden) so their state survives switching. */
   keepMounted?: boolean | undefined;
   /** Fired when the selected tab changes, with the new id. */
-  onChange?: ((id: string) => void) | undefined;
+  onChange?: ((value: string) => void) | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<TabsOverridableBinding, TokenRef | undefined>> | undefined;
+  /** The root `View`. */
+  ref?: React.Ref<ViewInstance> | undefined;
 }
 
 export interface TabPanelProps {
   /** Must match a `tabs[].id`. */
   id: string;
-  children: React.ReactNode;
+  children?: React.ReactNode | undefined;
 }
+
+const COPY = {
+  position: (index: number, total: number): string => `${index} of ${total}`,
+} as const;
 
 /** Wraps one tab's content. Rendered by `Tabs`, never directly. */
 export function TabPanel({ children }: TabPanelProps): React.JSX.Element {
@@ -88,36 +102,32 @@ function collectPanels(children: React.ReactNode): Map<string, React.ReactNode> 
   return panels;
 }
 
+const isWeb = Platform.OS === 'web';
+
 /**
- * Tabs — one region of a screen showing one of several equal-standing views, with
- * the tab list as a single stop in the accessibility order.
+ * Tabs — one region of a screen showing one of several equal-standing views.
  *
- * When to use: Use Tabs to split a region into two to about seven alternative views
- * — the sections of a settings page, "Overview / Activity / Files" on a record.
- * Use `manual` activation when a panel is expensive to show (native has no
- * arrow-key movement, so this only documents intent — see below). Use `vertical`
- * when there are many tabs and horizontal room is short, `fill` on phones for two
- * to four tabs. Do not use Tabs for navigation between pages (a nav Landmark of
- * Links, styled as tabs if you like) or for a sequence (Stepper, planned).
+ * When to use: two to about seven alternative views of one region — the sections of a
+ * settings page, "Overview / Activity / Files" on a record. `manual` activation when a
+ * panel is expensive to show, `vertical` when there are many tabs and horizontal room is
+ * short, `fill` on phones for two to four tabs. Not for navigation between pages (a nav
+ * Landmark of Links), not for a sequence (Stepper), not for panels the user must compare.
  *
- * Renders a `ScrollView` (fit `start`, so overflowing tabs scroll, the selected tab
- * kept in view) or a `View` with each tab at `flex: 1` (fit `fill`) of `Pressable`s
- * with `accessibilityRole="tab"` and `accessibilityState={{ selected, disabled }}`,
- * carrying `accessibilityRole="tablist"` and `accessibilityLabel={label}` itself.
- * The indicator is an `Animated.View` positioned from each tab's measured
- * `onLayout` rect and animated between tabs over `transition` with
- * `motion.easing.standard`, snapping instead under reduced motion. Panels are
- * `View`s; only the selected one renders unless `keepMounted`, in which case the
- * others stay in the tree with `display: 'none'` and are hidden from assistive
- * technology.
+ * Renders a `ScrollView` (fit `start`: overflowing tabs scroll, the selected tab kept in
+ * view) or a `View` whose tabs grow along the orientation axis (fit `fill`) of `Pressable`s
+ * with `accessibilityRole="tab"`, `accessibilityState={{ selected, disabled }}` and
+ * `accessibilityValue` from `copy.position`; the list carries `accessibilityRole="tablist"`
+ * and `accessibilityLabel={label}`. The indicator is an `Animated.View` positioned from
+ * each tab's measured layout and moved over `transition` with `motion.easing.standard`,
+ * snapping under reduced motion. Panels are `View`s; only the selected one renders
+ * unless `keepMounted`, when the rest stay mounted with `display: 'none'` and hidden
+ * from assistive technology.
  *
- * Acknowledged native limits: there is no generic key-event API on `Pressable`, so
- * arrow-key/Home/End movement and the automatic/manual distinction are a web
- * keyboard model with no RN equivalent (the same limit `Menu` and `RadioGroup`
- * document) — every tab is its own accessibility stop, and touching one always
- * selects it immediately regardless of `activation`. Tab-from-the-list-into-the-
- * panel and the panel's `tabpanel`/`aria-labelledby` pairing have no native
- * equivalent either; panels are plain `View`s.
+ * Keyboard: on react-native-web the list handles `onKeyDown` — arrows along the
+ * orientation move focus between enabled tabs and wrap (selecting under `automatic`),
+ * Home/End jump, Enter/Space press the focused tab, and only the selected tab is a tab
+ * stop (roving). On iOS/Android there is no key event on `View`/`Pressable`, so every
+ * tab is its own accessibility stop, as on native, and a press always selects.
  */
 export function Tabs({
   tabs,
@@ -131,6 +141,7 @@ export function Tabs({
   keepMounted = false,
   onChange,
   overrides,
+  ref,
 }: TabsProps): React.JSX.Element {
   const { tokens: t } = useTheme();
   const reducedMotion = useReducedMotion();
@@ -153,7 +164,7 @@ export function Tabs({
       });
       panelsById.forEach((_panel, id) => {
         if (!tabs.some((tab) => tab.id === id)) {
-          console.warn(`Tabs: TabPanel id "${id}" has no matching entry in tabs[].`);
+          console.warn(`Tabs: TabPanel id "${id}" has no matching entry in tabs[]; it is not rendered.`);
         }
       });
     }
@@ -163,7 +174,6 @@ export function Tabs({
   const tabPaddingInline = overrides?.tabPaddingInline ? (resolveToken(t, overrides.tabPaddingInline) as number) : t.spaceMd;
   const tabGap = overrides?.tabGap ? (resolveToken(t, overrides.tabGap) as number) : t.layoutGapTight;
   const listGap = overrides?.listGap ? (resolveToken(t, overrides.listGap) as number) : t.layoutGapNone;
-  const indicatorThickness = overrides?.indicatorThickness ? (resolveToken(t, overrides.indicatorThickness) as number) : t.borderWidthFocus;
   const listBorderColor = overrides?.listBorder ? (resolveToken(t, overrides.listBorder) as string) : t.colorBorder;
   const listBorderWidth = overrides?.listBorderWidth ? (resolveToken(t, overrides.listBorderWidth) as number) : t.borderWidthThin;
   const panelGap = overrides?.panelGap ? (resolveToken(t, overrides.panelGap) as number) : t.layoutGapLoose;
@@ -176,22 +186,19 @@ export function Tabs({
   const transitionDuration = overrides?.transition ? (resolveToken(t, overrides.transition) as number) : t.motionDurationFast;
   const disabledOpacity = overrides?.disabledOpacity ? (resolveToken(t, overrides.disabledOpacity) as number) : t.opacityDisabled;
 
-  const tabColor = t.colorForegroundMuted;
-  const tabSelectedColor = t.colorForegroundStrong;
-  const tabHoverBackground = t.colorBackgroundSubtle;
+  // Locked bindings: never read from overrides.
   const indicatorColor = t.colorControlSelectedBackground;
-  const badgeColor = t.colorForegroundMuted;
-  const minTarget = t.sizeTargetComfortable;
-  const focusRingColor = t.colorBorderFocus;
-  const focusRingWidth = t.borderWidthFocus;
+  const indicatorThickness = t.borderWidthFocus;
 
   const tabLayoutsRef = React.useRef(new Map<string, TabLayout>());
+  const tabRefs = React.useRef(new Map<string, ViewInstance>());
   const hasMeasuredIndicatorRef = React.useRef(false);
   const indicatorOffset = React.useRef(new Animated.Value(0)).current;
   const indicatorExtent = React.useRef(new Animated.Value(0)).current;
   const scrollRef = React.useRef<ScrollViewInstance>(null);
   const scrollOffsetRef = React.useRef(0);
   const viewportSizeRef = React.useRef(0);
+  const focusedIdRef = React.useRef<string | undefined>(undefined);
 
   const updateIndicator = React.useCallback(
     (id: string): void => {
@@ -207,19 +214,10 @@ export function Tabs({
         hasMeasuredIndicatorRef.current = true;
         return;
       }
+      const easing = toEasing(t.motionEasingStandard);
       Animated.parallel([
-        Animated.timing(indicatorOffset, {
-          toValue: offset,
-          duration: transitionDuration,
-          easing: toEasing(t.motionEasingStandard),
-          useNativeDriver: false,
-        }),
-        Animated.timing(indicatorExtent, {
-          toValue: extent,
-          duration: transitionDuration,
-          easing: toEasing(t.motionEasingStandard),
-          useNativeDriver: false,
-        }),
+        Animated.timing(indicatorOffset, { toValue: offset, duration: transitionDuration, easing, useNativeDriver: false }),
+        Animated.timing(indicatorExtent, { toValue: extent, duration: transitionDuration, easing, useNativeDriver: false }),
       ]).start();
     },
     [isHorizontal, reducedMotion, transitionDuration, t.motionEasingStandard, indicatorOffset, indicatorExtent],
@@ -236,8 +234,7 @@ export function Tabs({
         return;
       }
       const start = isHorizontal ? layout.x : layout.y;
-      const size = isHorizontal ? layout.width : layout.height;
-      const end = start + size;
+      const end = start + (isHorizontal ? layout.width : layout.height);
       const viewStart = scrollOffsetRef.current;
       const viewEnd = viewStart + viewportSizeRef.current;
       let target: number | null = null;
@@ -248,11 +245,7 @@ export function Tabs({
       }
       if (target !== null) {
         const animated = !reducedMotion;
-        if (isHorizontal) {
-          scrollView.scrollTo({ x: Math.max(0, target), animated });
-        } else {
-          scrollView.scrollTo({ y: Math.max(0, target), animated });
-        }
+        scrollView.scrollTo(isHorizontal ? { x: Math.max(0, target), animated } : { y: Math.max(0, target), animated });
       }
     },
     [fit, isHorizontal, reducedMotion],
@@ -295,11 +288,91 @@ export function Tabs({
     onChange?.(id);
   };
 
-  const outerStyle: ViewStyle = { flexDirection: isHorizontal ? 'column' : 'row' };
+  // react-native-web only: View has no key events on iOS/Android.
+  const handleKeyDown = (event: { key?: string; nativeEvent?: { key?: string }; preventDefault?: () => void }): void => {
+    const key = event.key ?? event.nativeEvent?.key;
+    const enabled = tabs.filter((tab) => tab.disabled !== true);
+    if (enabled.length === 0 || key === undefined) {
+      return;
+    }
+    const fromId = focusedIdRef.current ?? currentValue;
+    const fromIndex = enabled.findIndex((tab) => tab.id === fromId);
+    const nextKey = isHorizontal ? (rtl ? 'ArrowLeft' : 'ArrowRight') : 'ArrowDown';
+    const prevKey = isHorizontal ? (rtl ? 'ArrowRight' : 'ArrowLeft') : 'ArrowUp';
+    let targetIndex: number;
+    if (key === nextKey) {
+      targetIndex = fromIndex < 0 ? 0 : (fromIndex + 1) % enabled.length;
+    } else if (key === prevKey) {
+      targetIndex = fromIndex <= 0 ? enabled.length - 1 : fromIndex - 1;
+    } else if (key === 'Home') {
+      targetIndex = 0;
+    } else if (key === 'End') {
+      targetIndex = enabled.length - 1;
+    } else {
+      return;
+    }
+    event.preventDefault?.();
+    const target = enabled[targetIndex]!;
+    tabRefs.current.get(target.id)?.focus();
+    if (activation === 'automatic') {
+      selectTab(target.id);
+    }
+  };
+
+  const keyProps: Record<string, unknown> = isWeb ? { onKeyDown: handleKeyDown } : {};
+
+  const styleTokens: TabButtonStyleTokens = {
+    paddingBlock: tabPaddingBlock,
+    paddingInline: tabPaddingInline,
+    gap: tabGap,
+    minTarget: t.sizeTargetComfortable,
+    radius,
+    hoverBackground: t.colorBackgroundSubtle,
+    disabledOpacity,
+    focusRingColor: t.colorBorderFocus,
+    focusRingWidth: t.borderWidthFocus,
+    fontFamily,
+    fontSize,
+    fontWeight,
+    lineHeightMultiplier,
+    color: t.colorForegroundMuted,
+    selectedColor: t.colorForegroundStrong,
+    badgeColor: t.colorForegroundMuted,
+    badgeSize,
+  };
+
+  // The roving tab stop on web: the selected tab, or the first enabled one when nothing is selected.
+  const tabStopId = tabs.some((tab) => tab.id === currentValue && tab.disabled !== true) ? currentValue : firstEnabledId;
+
+  const tabButtons = tabs.map((tab, index) => (
+    <TabButton
+      key={tab.id}
+      tab={tab}
+      position={COPY.position(index + 1, tabs.length)}
+      selected={tab.id === currentValue}
+      tabStop={tab.id === tabStopId}
+      fill={fit === 'fill'}
+      horizontal={isHorizontal}
+      styleTokens={styleTokens}
+      onSelect={selectTab}
+      onMeasured={handleTabLayout}
+      onFocusChange={(id, focused) => {
+        focusedIdRef.current = focused ? id : focusedIdRef.current === id ? undefined : focusedIdRef.current;
+      }}
+      registerRef={(id, instance) => {
+        if (instance) {
+          tabRefs.current.set(id, instance);
+        } else {
+          tabRefs.current.delete(id);
+        }
+      }}
+    />
+  ));
 
   const listContentStyle: ViewStyle = {
     flexDirection: isHorizontal ? 'row' : 'column',
-    alignItems: isHorizontal ? 'center' : 'stretch',
+    alignItems: 'stretch',
+    flexGrow: fit === 'fill' ? 1 : 0,
     gap: listGap,
     position: 'relative',
     borderBottomWidth: isHorizontal ? listBorderWidth : 0,
@@ -328,43 +401,15 @@ export function Tabs({
         transform: [{ translateY: indicatorOffset }],
       };
 
-  const panelContainerStyle: ViewStyle = {
-    flex: 1,
-    marginTop: isHorizontal ? panelGap : 0,
-    ...(!isHorizontal ? (rtl ? { marginRight: panelGap } : { marginLeft: panelGap }) : null),
-  };
-
-  const styleTokens: TabButtonStyleTokens = {
-    paddingBlock: tabPaddingBlock,
-    paddingInline: tabPaddingInline,
-    gap: tabGap,
-    minTarget,
-    radius,
-    hoverBackground: tabHoverBackground,
-    disabledOpacity,
-    focusRingColor,
-    focusRingWidth,
-    fontFamily,
-    fontSize,
-    fontWeight,
-    lineHeightMultiplier,
-    color: tabColor,
-    selectedColor: tabSelectedColor,
-    badgeColor,
-    badgeSize,
-  };
-
-  const tabButtons = tabs.map((tab) => (
-    <TabButton
-      key={tab.id}
-      tab={tab}
-      selected={tab.id === currentValue}
-      fill={fit === 'fill'}
-      styleTokens={styleTokens}
-      onSelect={selectTab}
-      onMeasured={handleTabLayout}
+  const indicator = (
+    <Animated.View
+      style={indicatorStyle}
+      testID="Tabs.indicator"
+      pointerEvents="none"
+      accessibilityElementsHidden
+      importantForAccessibility="no"
     />
-  ));
+  );
 
   const list =
     fit === 'start' ? (
@@ -374,43 +419,43 @@ export function Tabs({
         showsHorizontalScrollIndicator={false}
         showsVerticalScrollIndicator={false}
         onScroll={handleScroll}
-        scrollEventThrottle={16}
+        scrollEventThrottle={16} // literal-ok: one frame at 60 Hz, not a size
         onLayout={handleViewportLayout}
-        accessibilityRole="tablist"
-        accessibilityLabel={label}
-        testID="Tabs.tablist"
+        style={{ flexGrow: 0 }}
       >
-        <View style={listContentStyle}>
+        <View {...keyProps} accessibilityRole="tablist" accessibilityLabel={label} testID="Tabs.tablist" style={listContentStyle}>
           {tabButtons}
-          <Animated.View style={indicatorStyle} testID="Tabs.indicator" />
+          {indicator}
         </View>
       </ScrollView>
     ) : (
       <View
         onLayout={handleViewportLayout}
+        {...keyProps}
         accessibilityRole="tablist"
         accessibilityLabel={label}
         testID="Tabs.tablist"
         style={listContentStyle}
       >
         {tabButtons}
-        <Animated.View style={indicatorStyle} testID="Tabs.indicator" />
+        {indicator}
       </View>
     );
 
   return (
-    <View testID="Tabs" style={outerStyle}>
+    <View ref={ref} testID="Tabs" style={{ flexDirection: isHorizontal ? 'column' : 'row', gap: panelGap }}>
       {list}
-      <View style={panelContainerStyle}>
+      <View style={{ flex: 1 }}>
         {tabs.map((tab) => {
           const selected = tab.id === currentValue;
-          if (!selected && !keepMounted) {
+          if ((!selected && !keepMounted) || !panelsById.has(tab.id)) {
             return null;
           }
           return (
             <View
               key={tab.id}
               testID="Tabs.panel"
+              accessibilityLabel={tab.label}
               style={{ display: selected ? 'flex' : 'none' }}
               accessibilityElementsHidden={!selected}
               importantForAccessibility={selected ? 'auto' : 'no-hide-descendants'}
@@ -446,16 +491,34 @@ interface TabButtonStyleTokens {
 
 interface TabButtonProps {
   tab: TabsTab;
+  position: string;
   selected: boolean;
+  tabStop: boolean;
   fill: boolean;
+  horizontal: boolean;
   styleTokens: TabButtonStyleTokens;
   onSelect: (id: string) => void;
   onMeasured: (id: string, event: LayoutChangeEvent) => void;
+  onFocusChange: (id: string, focused: boolean) => void;
+  registerRef: (id: string, instance: ViewInstance | null) => void;
 }
 
-/** One tab. Its own component so focus/press state does not re-render the whole list. */
-function TabButton({ tab, selected, fill, styleTokens: s, onSelect, onMeasured }: TabButtonProps): React.JSX.Element {
+/** One tab. Its own component so focus/hover state does not re-render the whole list. */
+function TabButton({
+  tab,
+  position,
+  selected,
+  tabStop,
+  fill,
+  horizontal,
+  styleTokens: s,
+  onSelect,
+  onMeasured,
+  onFocusChange,
+  registerRef,
+}: TabButtonProps): React.JSX.Element {
   const [focused, setFocused] = React.useState(false);
+  const [hovered, setHovered] = React.useState(false);
   const disabled = tab.disabled === true;
   const foreground = selected ? s.selectedColor : s.color;
 
@@ -463,15 +526,16 @@ function TabButton({ tab, selected, fill, styleTokens: s, onSelect, onMeasured }
     flexDirection: 'row',
     alignItems: 'center',
     flexGrow: fill ? 1 : 0,
-    flexBasis: fill ? 0 : undefined,
-    justifyContent: fill ? 'center' : 'flex-start',
+    flexShrink: fill ? 1 : 0,
+    flexBasis: fill ? 0 : 'auto',
+    justifyContent: fill && horizontal ? 'center' : 'flex-start',
     gap: s.gap,
     minHeight: s.minTarget,
     minWidth: s.minTarget,
     paddingVertical: s.paddingBlock,
     paddingHorizontal: s.paddingInline,
     borderRadius: s.radius,
-    backgroundColor: pressed && !disabled ? s.hoverBackground : 'transparent',
+    backgroundColor: (hovered || pressed) && !disabled ? s.hoverBackground : 'transparent',
     borderWidth: s.focusRingWidth,
     borderColor: focused ? s.focusRingColor : 'transparent',
     opacity: disabled ? s.disabledOpacity : 1,
@@ -493,20 +557,33 @@ function TabButton({ tab, selected, fill, styleTokens: s, onSelect, onMeasured }
   };
 
   const accessibleName = tab.badge !== undefined ? `${tab.label}, ${tab.badge}` : tab.label;
+  // Roving tab stop on react-native-web; on native every tab stays its own stop.
+  const webFocusProps: Record<string, unknown> = Platform.OS === 'web' ? { focusable: tabStop && !disabled } : {};
 
   return (
     <Pressable
+      ref={(instance: ViewInstance | null) => registerRef(tab.id, instance)}
       accessibilityRole="tab"
       accessibilityLabel={accessibleName}
       accessibilityState={{ selected, disabled }}
-      // Never the native `disabled` prop: it would drop the tab from the focus order.
+      accessibilityValue={{ text: position }}
+      {...webFocusProps}
+      // Never the native `disabled` prop: it would drop the tab from the accessibility order.
       onPress={() => {
         if (!disabled) {
           onSelect(tab.id);
         }
       }}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
+      onFocus={() => {
+        setFocused(true);
+        onFocusChange(tab.id, true);
+      }}
+      onBlur={() => {
+        setFocused(false);
+        onFocusChange(tab.id, false);
+      }}
+      onHoverIn={() => setHovered(true)}
+      onHoverOut={() => setHovered(false)}
       onLayout={(event) => onMeasured(tab.id, event)}
       style={rowStyle}
       testID="Tabs.tab"

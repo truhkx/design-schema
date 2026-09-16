@@ -1,18 +1,20 @@
 {
   "Accordion.web": {
-    "hash": "871a7f0fb1198aad",
-    "lastAttemptHash": "871a7f0fb1198aad",
-    "generatedAt": "2026-09-10T22:43:45+00:00",
-    "model": "sonnet",
+    "hash": "00e494c8171c1a08",
+    "lastAttemptHash": "00e494c8171c1a08",
+    "generatedAt": "2026-09-16T12:56:14+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.4085,
+    "costUsd": 1.3957,
     "files": [
       "packages/react/src/Accordion.css",
       "packages/react/src/Accordion.stories.tsx",
-      "packages/react/src/Accordion.tsx"
+      "packages/react/src/Accordion.test.tsx",
+      "packages/react/src/Accordion.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 3,
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -261,19 +263,20 @@
     }
   },
   "Combobox.web": {
-    "hash": "3d33b265093131e2",
-    "lastAttemptHash": "3d33b265093131e2",
-    "generatedAt": "2026-09-10T22:42:04+00:00",
-    "model": "sonnet",
+    "hash": "c9103d2907677298",
+    "lastAttemptHash": "c9103d2907677298",
+    "generatedAt": "2026-09-16T12:44:17+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.5498,
+    "costUsd": 4.1577,
     "files": [
       "packages/react/src/Combobox.css",
       "packages/react/src/Combobox.stories.tsx",
+      "packages/react/src/Combobox.test.tsx",
       "packages/react/src/Combobox.tsx"
     ],
-    "gaps": 8,
+    "gaps": 15,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -639,19 +642,21 @@
     }
   },
   "Listbox.web": {
-    "hash": "6c6e901cbdae5eba",
-    "lastAttemptHash": "6c6e901cbdae5eba",
-    "generatedAt": "2026-09-10T22:32:52+00:00",
-    "model": "sonnet",
+    "hash": "7acb485349cd55e7",
+    "lastAttemptHash": "7acb485349cd55e7",
+    "generatedAt": "2026-09-16T12:13:53+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.6473,
+    "costUsd": 2.5196,
     "files": [
       "packages/react/src/Listbox.css",
       "packages/react/src/Listbox.stories.tsx",
-      "packages/react/src/Listbox.tsx"
+      "packages/react/src/Listbox.test.tsx",
+      "packages/react/src/Listbox.tsx",
+      "packages/react/src/Select.tsx"
     ],
-    "gaps": 5,
+    "gaps": 15,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -853,18 +858,19 @@
     }
   },
   "SegmentedControl.web": {
-    "hash": "4de8462770a4313a",
-    "lastAttemptHash": "4de8462770a4313a",
-    "generatedAt": "2026-09-10T22:30:18+00:00",
-    "model": "sonnet",
+    "hash": "bcdc44ad8525f064",
+    "lastAttemptHash": "bcdc44ad8525f064",
+    "generatedAt": "2026-09-16T12:04:05+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.4258,
+    "costUsd": 1.2764,
     "files": [
-      "packages/react/src/SegmentedControl.css",
+      "packages/react/src/SegmentedControl.stories.tsx",
+      "packages/react/src/SegmentedControl.test.tsx",
       "packages/react/src/SegmentedControl.tsx"
     ],
-    "gaps": 0,
+    "gaps": 12,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -875,20 +881,20 @@
     }
   },
   "Select.web": {
-    "hash": "e577df66f0de4b70",
-    "lastAttemptHash": "e577df66f0de4b70",
-    "generatedAt": "2026-09-10T22:40:36+00:00",
-    "model": "sonnet",
+    "hash": "57c77a06be87ebd2",
+    "lastAttemptHash": "57c77a06be87ebd2",
+    "generatedAt": "2026-09-16T12:26:46+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.2716,
+    "costUsd": 2.6285,
     "files": [
       "packages/react/src/Select.css",
       "packages/react/src/Select.stories.tsx",
-      "packages/react/src/Select.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Select.test.tsx",
+      "packages/react/src/Select.tsx"
     ],
-    "gaps": 5,
+    "gaps": 16,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1063,18 +1069,20 @@
     }
   },
   "Tabs.web": {
-    "hash": "a3cf6dc65cf1b394",
-    "lastAttemptHash": "a3cf6dc65cf1b394",
-    "generatedAt": "2026-09-10T22:28:38+00:00",
-    "model": "sonnet",
+    "hash": "5bfb2b620e622e36",
+    "lastAttemptHash": "5bfb2b620e622e36",
+    "generatedAt": "2026-09-16T11:54:56+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.7502,
+    "costUsd": 1.4209,
     "files": [
+      "packages/react/src/Tabs.css",
       "packages/react/src/Tabs.stories.tsx",
+      "packages/react/src/Tabs.test.tsx",
       "packages/react/src/Tabs.tsx"
     ],
-    "gaps": 3,
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,

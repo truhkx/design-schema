@@ -15,6 +15,7 @@
   --ds-listbox-option-description-size: var(--font-size-sm);
   --ds-listbox-option-active-background: var(--color-background-subtle);
   --ds-listbox-option-selected-weight: var(--font-weight-medium);
+  --ds-listbox-option-selected-check: var(--color-control-selected-background);
   --ds-listbox-group-label-color: var(--color-foreground-muted);
   --ds-listbox-group-label-size: var(--font-size-xs);
   --ds-listbox-group-label-weight: var(--font-weight-semibold);
@@ -27,17 +28,12 @@
   --ds-listbox-focus-ring: var(--color-border-focus);
   --ds-listbox-focus-ring-width: var(--border-width-focus);
   --ds-listbox-disabled-opacity: var(--opacity-disabled);
-  --ds-listbox-transition: var(--motion-duration-fast);
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: var(--ds-listbox-option-gap);
   overflow-y: auto;
-  margin: 0;
   padding: var(--ds-listbox-list-padding);
-  border-style: solid;
-  border-width: var(--ds-listbox-border-width);
-  border-color: var(--ds-listbox-border);
+  border: var(--ds-listbox-border-width) solid var(--ds-listbox-border);
   border-radius: var(--ds-listbox-radius);
   /* surface: locked — never overridable. */
   background-color: var(--ds-listbox-surface);
@@ -48,7 +44,36 @@
   color: var(--ds-listbox-option-color);
 }
 
-.ds-listbox[data-max-visible='all'] {
+/*
+ * maxVisible: rows are fontSize × lineHeight + 2 × optionPaddingBlock tall (never under the target
+ * minimum). The cap is that row height times the row count, plus the list's own padding and border.
+ */
+.ds-listbox--max-visible-5 {
+  --ds-listbox-visible-rows: 5;
+}
+
+.ds-listbox--max-visible-8 {
+  --ds-listbox-visible-rows: 8;
+}
+
+.ds-listbox--max-visible-12 {
+  --ds-listbox-visible-rows: 12;
+}
+
+.ds-listbox--max-visible-5,
+.ds-listbox--max-visible-8,
+.ds-listbox--max-visible-12 {
+  max-block-size: calc(
+    var(--ds-listbox-visible-rows) *
+      max(
+        var(--ds-listbox-min-target),
+        var(--ds-listbox-font-size) * var(--ds-listbox-line-height) + 2 * var(--ds-listbox-option-padding-block)
+      ) +
+      2 * var(--ds-listbox-list-padding) + 2 * var(--ds-listbox-border-width)
+  );
+}
+
+.ds-listbox--max-visible-all {
   overflow-y: visible;
 }
 
@@ -63,8 +88,7 @@
   cursor: not-allowed;
 }
 
-/* embedded: the popup that hosts the list owns border, surface and radius; overrides for
-   border/borderWidth/radius are no-ops here since the shorthand below ignores their hooks. */
+/* embedded: the host popup owns border, surface and radius; the list keeps its listPadding. */
 .ds-listbox--embedded {
   border: none;
   border-radius: 0;
@@ -74,13 +98,12 @@
 .ds-listbox__group {
   display: flex;
   flex-direction: column;
-  gap: var(--ds-listbox-option-gap);
 }
 
+/* groupLabelColor: locked — never overridable. */
 .ds-listbox__group-label {
   padding-block: var(--ds-listbox-group-label-padding-block);
   padding-inline: var(--ds-listbox-option-padding-inline);
-  /* groupLabelColor: locked — never overridable. */
   color: var(--ds-listbox-group-label-color);
   font-size: var(--ds-listbox-group-label-size);
   font-weight: var(--ds-listbox-group-label-weight);
@@ -96,13 +119,15 @@
   padding-inline: var(--ds-listbox-option-padding-inline);
   min-block-size: var(--ds-listbox-min-target);
   border-radius: var(--ds-listbox-option-radius);
+  color: var(--ds-listbox-option-color);
   cursor: pointer;
   user-select: none;
+  transition: background-color var(--motion-duration-fast) var(--motion-easing-standard);
 }
 
-@media (prefers-reduced-motion: no-preference) {
+@media (prefers-reduced-motion: reduce) {
   .ds-listbox__option {
-    transition: background-color var(--ds-listbox-transition) var(--motion-easing-standard);
+    transition: none;
   }
 }
 
@@ -111,7 +136,8 @@
   background-color: var(--ds-listbox-option-active-background);
 }
 
-.ds-listbox__option--selected .ds-listbox__label {
+/* Selection is weight (and the check with `multiple`), never the background. */
+.ds-listbox__option--selected {
   font-weight: var(--ds-listbox-option-selected-weight);
 }
 
@@ -120,11 +146,14 @@
   opacity: var(--ds-listbox-disabled-opacity);
 }
 
-/* optionCheck: always rendered so labels align; only visible when selected. */
+.ds-listbox--disabled .ds-listbox__option--disabled {
+  opacity: 1;
+}
+
+/* optionSelectedCheck: locked; the slot is always present with `multiple` so labels align. */
 .ds-listbox__check {
   flex: 0 0 auto;
   display: inline-flex;
-  line-height: 0;
   visibility: hidden;
 }
 
@@ -135,7 +164,6 @@
 .ds-listbox__icon {
   flex: 0 0 auto;
   display: inline-flex;
-  line-height: 0;
 }
 
 .ds-listbox__text {
@@ -144,19 +172,13 @@
   min-inline-size: 0;
 }
 
-/* optionColor: locked — never overridable. */
-.ds-listbox__label {
-  color: var(--ds-listbox-option-color);
-}
-
 /* optionDescriptionColor: locked — never overridable. */
 .ds-listbox__description {
   color: var(--ds-listbox-option-description-color);
   font-size: var(--ds-listbox-option-description-size);
 }
 
-.ds-listbox__empty,
-.ds-listbox__error {
+.ds-listbox__empty {
   padding-block: var(--ds-listbox-option-padding-block);
   padding-inline: var(--ds-listbox-option-padding-inline);
 }

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { AccessibilityInfo, FlatList, Platform, Pressable, Text as RNText, View, findNodeHandle } from 'react-native';
-import type { LayoutChangeEvent, ListRenderItemInfo, TextStyle, ViewStyle } from 'react-native';
+import type { LayoutChangeEvent, ListRenderItemInfo, TextStyle, ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { useFormContext } from './FormContext';
@@ -19,9 +19,10 @@ export type ListboxOption = {
   disabled?: boolean | undefined;
 };
 
-/** A labelled cluster of options, rendered with a non-interactive heading row. */
+/** A labelled cluster of options, rendered with a non-interactive group label row. */
 export type ListboxGroup = { group: string; options: ListboxOption[] };
 
+/** One entry of `options`: an option or a group of options. */
 export type ListboxItem = ListboxOption | ListboxGroup;
 
 /** The selection: a value, or with `multiple` an array of values. */
@@ -54,7 +55,7 @@ export interface ListboxProps {
   label: string;
   /** Flat or grouped options. */
   options: ListboxItem[];
-  /** Allow any number of selections. The value becomes an array; each option shows a check indicator. */
+  /** Allow any number of selections. The value becomes an array; each option shows a check indicator; selection toggles. */
   multiple?: boolean | undefined;
   /** Controlled selection: a value, or with `multiple` an array. Omit for uncontrolled. */
   value?: ListboxValue | undefined;
@@ -62,39 +63,27 @@ export interface ListboxProps {
   defaultValue?: ListboxValue | undefined;
   /**
    * Single-select only: on the web keyboard model, arrow keys select as they move.
-   * Native has no arrow-key browsing to intercept — a `Pressable`'s activation is
-   * already the only "move" it gets — so this flag is accepted for API parity but has
-   * no runtime effect on this platform.
+   * Native has no arrow-key browsing, so this is accepted for parity with no runtime effect.
    */
   selectionFollowsFocus?: boolean | undefined;
   /** At least one option must be selected to submit when inside a Form. */
   required?: boolean | undefined;
-  /**
-   * Marks the list invalid. Usually set by the Form. No dedicated border token exists
-   * for this component (unlike Input/Select's own bordered fields), so this only feeds
-   * the `error` → `required` → `invalid` message precedence; it has no visual
-   * treatment of its own.
-   */
+  /** Marks the list invalid and shows `copy.invalid` below it. */
   invalid?: boolean | undefined;
-  /** Error message rendered below the list. Setting it implies `invalid`. */
+  /** Error message rendered below the list; implies invalid. */
   error?: string | undefined;
   /**
-   * The list lives inside a popup (Select, Combobox) that owns the border, surface
-   * and radius; the list draws none of its own.
+   * The list lives inside a popup (Select, Combobox) that owns the border, surface and
+   * radius; the list draws none of its own, and overrides of those bindings are no-ops.
    */
   embedded?: boolean | undefined;
   /**
-   * The option that is active when the list first renders. Defaults to the first
-   * selected option, else the first enabled option. Pre-highlights that row's active
-   * background; native has no single tab stop to move real accessibility focus onto
-   * ahead of the user reaching it, so this is visual only — see the generation gap
-   * notes.
+   * The option pre-highlighted as active. It wins when it names an enabled option;
+   * otherwise the first selected, else the first enabled. Visual only on native: there
+   * is no single tab stop to move.
    */
-  defaultActiveValue?: string | undefined;
-  /**
-   * Options are being fetched (async Combobox); shows `copy.loading` in place of the
-   * empty message and marks the list `accessibilityState.busy`.
-   */
+  initialActiveValue?: string | undefined;
+  /** Options are being fetched; shows `copy.loading` in place of the empty message and marks the list busy. */
   loading?: boolean | undefined;
   /** The whole list is inert but readable. */
   disabled?: boolean | undefined;
@@ -106,39 +95,51 @@ export interface ListboxProps {
   maxVisible?: ListboxMaxVisible | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<ListboxOverridableBinding, TokenRef | undefined>> | undefined;
+  /** The root view. */
+  ref?: React.Ref<ViewInstance> | undefined;
   /** Fired when the selection changes, with the new value (array when `multiple`). */
   onChange?: ((value: ListboxValue) => void) | undefined;
-  /** Fired as the focused (active) option changes, with its value. */
-  onActiveChange?: ((value: string) => void) | undefined;
+  /** Fired as the active (focused or hovered) option changes; null when no option is active. */
+  onActiveChange?: ((value: string | null) => void) | undefined;
 }
 
 const COPY = {
   empty: 'No options',
-  required: (label: string): string => `${label} is required.`,
-  // Not in the schema's copy block, which names `copy.invalid` without defining it.
-  // Matches the wording Input and Select use for the same prop. See the generation
-  // gap notes.
-  invalid: (label: string): string => `${label} is not valid.`,
-  selectedCount: (count: number): string => `${count} selected`,
+  required: '{label} is required.',
+  invalid: '{label} is not valid.',
+  selectedCount: '{count} selected',
   loading: 'Loading…',
 } as const;
 
-type ListboxRow = { kind: 'group'; key: string; label: string } | { kind: 'option'; key: string; option: ListboxOption };
+function withLabel(template: string, label: string): string {
+  return template.replace('{label}', label);
+}
+
+type ListboxRow =
+  | { kind: 'group'; key: string; label: string }
+  | { kind: 'option'; key: string; option: ListboxOption; firstOption: boolean };
 
 function isGroup(item: ListboxItem): item is ListboxGroup {
   return 'group' in item;
 }
 
+/** Rows in display order; empty groups are omitted. */
 function flattenRows(items: ListboxItem[]): ListboxRow[] {
   const rows: ListboxRow[] = [];
+  let sawOption = false;
+  const pushOption = (key: string, option: ListboxOption): void => {
+    rows.push({ kind: 'option', key, option, firstOption: !sawOption });
+    sawOption = true;
+  };
   items.forEach((item, itemIndex) => {
     if (isGroup(item)) {
+      if (item.options.length === 0) {
+        return;
+      }
       rows.push({ kind: 'group', key: `group-${itemIndex}`, label: item.group });
-      item.options.forEach((option, optionIndex) => {
-        rows.push({ kind: 'option', key: `${itemIndex}-${optionIndex}-${option.value}`, option });
-      });
+      item.options.forEach((option, optionIndex) => pushOption(`${itemIndex}-${optionIndex}-${option.value}`, option));
     } else {
-      rows.push({ kind: 'option', key: `${itemIndex}-${item.value}`, option: item });
+      pushOption(`${itemIndex}-${item.value}`, item);
     }
   });
   return rows;
@@ -157,44 +158,22 @@ function flattenOptions(items: ListboxItem[]): ListboxOption[] {
 }
 
 /**
- * Listbox — the engine behind a picker: the list of options a Select's popup or a
- * Combobox's suggestions actually renders, extracted so all three behave identically,
- * including for multi-select.
+ * Listbox — the engine behind a picker: the list a Select's popup or a Combobox's
+ * suggestions renders, so all of them behave identically, including for multi-select.
  *
- * When to use: Use a standalone Listbox when the options should stay visible — a
- * settings picker, a transfer list. Use `multiple` for "pick any". Do not use it for
- * two to seven options that fit without scrolling (RadioGroup or Checkbox) or for
- * actions (Menu).
- *
- * Renders a `FlatList` (virtualised — long option lists are common) of `Pressable`
- * rows with `accessibilityRole="menuitem"` (there is no listbox/option role on
- * native) and `accessibilityState={{ selected, disabled }}` (`checked` instead of
- * `selected` when `multiple`). Groups are plain, non-interactive rows — not the
- * header trait, which would enter the headings rotor. `maxVisible` becomes a
- * `maxHeight` computed from the first row's measured height, so the list scrolls
- * after that many rows; `all` never scrolls. Each row is its own accessibility stop:
- * native has no generic key-event API on `Pressable`, so arrow navigation, Home/End,
- * Page Up/Down, typeahead and the multi-select modifiers (Shift+Arrow, Ctrl/Cmd+A)
- * from the web keyboard model have no equivalent here — the same acknowledged limit
- * `Menu` documents. Enter/Space activation is the native accessibility "activate"
- * action and needs no extra wiring. The check indicator is always rendered (invisible
- * when unselected) so labels align; it and the leading option `Icon` are decorative
- * (hidden from assistive tech) since the row's own accessibility label and state
- * already carry that meaning. Focus is tracked by hand (`onFocus`/`onBlur`) to draw
- * the active background and focus ring and to fire `onActiveChange`. Inside a Form
- * the list registers by `name` (when given) and contributes the selected value, or
- * the array for `multiple` (`undefined`, i.e. no key, when nothing is selected);
- * `required` fails with `copy.required` when nothing is selected, and focus on a
- * failed submit moves to the list itself. `error` (or a Form-derived error) takes
- * precedence over `required`, which takes precedence over the boolean-only `invalid`
- * flag (no dedicated border token exists for this component, so `invalid` alone has
- * no visual treatment). `embedded` drops the list's own border, surface and radius
- * for use inside a popup that already draws them (Select, Combobox). `loading` shows
- * `copy.loading` in place of the empty message and marks the list
- * `accessibilityState.busy`. `defaultActiveValue` (falling back to the first selected
- * option, else the first enabled one) only pre-highlights that row's active
- * background on mount — native has no single tab stop to move real accessibility
- * focus onto ahead of the user reaching it.
+ * Renders a `FlatList` (virtualised) of `Pressable` rows with
+ * `accessibilityRole="menuitem"` (native has no listbox/option roles) and
+ * `accessibilityState={{ selected, disabled }}`, `checked` instead with `multiple`.
+ * Find the list by its accessible label, never by role. Groups are plain label rows,
+ * not the header trait. `maxVisible` becomes `maxHeight` = rows × the height measured
+ * from the first option row; `all` never scrolls. Each row is its own accessibility
+ * stop and a tap is the selection: arrows, Home/End, Page keys, typeahead, Shift+Arrow
+ * and Ctrl+A have no native form, and `selectionFollowsFocus` has no runtime effect.
+ * The active row (focused, hovered, or pre-highlighted by `initialActiveValue`) gets
+ * `color.background.subtle`; focus draws a `color.border.focus` ring. Selection shows
+ * by weight, and with `multiple` by the check (an invisible slot when unselected, so
+ * labels align). Inside a Form the list registers by `name`; the message below it
+ * follows `error` → Form error (`copy.required`) → `invalid` (`copy.invalid`).
  */
 export function Listbox({
   label,
@@ -207,13 +186,14 @@ export function Listbox({
   invalid = false,
   error,
   embedded = false,
-  defaultActiveValue,
+  initialActiveValue,
   loading = false,
   disabled = false,
   name,
   emptyMessage,
   maxVisible = '8',
   overrides,
+  ref,
   onChange,
   onActiveChange,
 }: ListboxProps): React.JSX.Element {
@@ -221,31 +201,24 @@ export function Listbox({
   const form = useFormContext();
   const listRef = React.useRef<FlatList<ListboxRow>>(null);
   const [internalValue, setInternalValue] = React.useState<ListboxValue | undefined>(defaultValue);
-  const [focusedValue, setFocusedValue] = React.useState<string | null>(() => {
-    if (defaultActiveValue !== undefined) {
-      return defaultActiveValue;
+  const [activeValue, setActiveValue] = React.useState<string | null>(() => {
+    const enabled = flattenOptions(options).filter((option) => option.disabled !== true);
+    if (initialActiveValue !== undefined && enabled.some((option) => option.value === initialActiveValue)) {
+      return initialActiveValue;
     }
-    const initialValue = value ?? defaultValue;
-    const initiallySelected = multiple
-      ? Array.isArray(initialValue) && initialValue.length > 0
-        ? initialValue[0]
-        : undefined
-      : typeof initialValue === 'string'
-        ? initialValue
-        : undefined;
-    if (initiallySelected !== undefined) {
-      return initiallySelected;
-    }
-    return flattenOptions(options).find((option) => option.disabled !== true)?.value ?? null;
+    const initial = value ?? defaultValue;
+    const selected = Array.isArray(initial) ? initial : initial !== undefined ? [initial] : [];
+    const firstSelected = enabled.find((option) => selected.includes(option.value));
+    return firstSelected?.value ?? enabled[0]?.value ?? null;
   });
+  const [focusedValue, setFocusedValue] = React.useState<string | null>(null);
   const [rowHeight, setRowHeight] = React.useState<number | null>(null);
 
   const isControlled = value !== undefined;
   const currentValue = isControlled ? value : internalValue;
   const isDisabled = disabled || (form?.disabled ?? false);
 
-  const orderedOptions = React.useMemo(() => flattenOptions(options), [options]);
-  const orderedValues = React.useMemo(() => orderedOptions.map((option) => option.value), [orderedOptions]);
+  const orderedValues = React.useMemo(() => flattenOptions(options).map((option) => option.value), [options]);
   const rows = React.useMemo(() => flattenRows(options), [options]);
   const hasOptions = rows.some((row) => row.kind === 'option');
 
@@ -253,7 +226,8 @@ export function Listbox({
   const selectedValue: string | undefined = !multiple && typeof currentValue === 'string' ? currentValue : undefined;
 
   const formError = name !== undefined ? form?.errors[name] : undefined;
-  const displayedError = error !== undefined && error !== '' ? error : formError;
+  const displayedError =
+    error !== undefined && error !== '' ? error : (formError ?? (invalid ? withLabel(COPY.invalid, label) : undefined));
   const summarised = form !== null && form.errorSummary;
 
   React.useEffect(() => {
@@ -264,22 +238,21 @@ export function Listbox({
 
   const validateValue = React.useCallback(
     (candidate: ListboxValue | undefined): string | null => {
-      // Precedence: `error` prop, then `required`, then `invalid`.
       if (error !== undefined && error !== '') {
         return error;
       }
       if (required) {
-        const empty = multiple ? !Array.isArray(candidate) || candidate.length === 0 : candidate === undefined;
+        const empty = Array.isArray(candidate) ? candidate.length === 0 : candidate === undefined || candidate === '';
         if (empty) {
-          return COPY.required(label);
+          return withLabel(COPY.required, label);
         }
       }
       if (invalid) {
-        return COPY.invalid(label);
+        return withLabel(COPY.invalid, label);
       }
       return null;
     },
-    [required, multiple, label, error, invalid],
+    [required, label, error, invalid],
   );
 
   const latest = React.useRef({ currentValue, validateValue });
@@ -350,12 +323,22 @@ export function Listbox({
     commit(option.value);
   };
 
+  const activate = (next: string | null): void => {
+    if (next === activeValue) {
+      return;
+    }
+    setActiveValue(next);
+    onActiveChange?.(next);
+  };
   const handleFocusOption = (optionValue: string): void => {
     setFocusedValue(optionValue);
-    onActiveChange?.(optionValue);
+    activate(optionValue);
   };
   const handleBlurOption = (optionValue: string): void => {
     setFocusedValue((prev) => (prev === optionValue ? null : prev));
+    if (activeValue === optionValue) {
+      activate(null);
+    }
   };
 
   const border = overrides?.border ? (resolveToken(t, overrides.border) as string) : t.colorBorderStrong;
@@ -388,29 +371,21 @@ export function Listbox({
   const rowCount = maxVisible === 'all' ? null : Number(maxVisible);
   const maxHeight = rowCount !== null && rowHeight !== null ? rowCount * rowHeight : undefined;
 
-  const handleFirstRowLayout = (event: LayoutChangeEvent): void => {
-    if (rowHeight === null) {
-      setRowHeight(event.nativeEvent.layout.height);
+  const handleFirstOptionLayout = (event: LayoutChangeEvent): void => {
+    const height = event.nativeEvent.layout.height;
+    if (height !== rowHeight) {
+      setRowHeight(height);
     }
   };
 
   const containerStyle: ViewStyle = {
-    ...(embedded
-      ? null
-      : {
-          borderWidth,
-          borderColor: border,
-          borderRadius: radius,
-          backgroundColor: t.colorBackground,
-        }),
+    // `embedded`: the popup owns border, surface and radius, so their overrides are no-ops.
+    ...(embedded ? null : { borderWidth, borderColor: border, borderRadius: radius, backgroundColor: t.colorBackground }),
     opacity: isDisabled ? disabledOpacity : 1,
     overflow: 'hidden',
   };
 
-  const listStyle: ViewStyle = {
-    padding: listPadding,
-    ...(maxHeight !== undefined ? { maxHeight } : null),
-  };
+  const listStyle: ViewStyle = { padding: listPadding, ...(maxHeight !== undefined ? { maxHeight } : null) };
 
   const groupLabelRowStyle: ViewStyle = {
     paddingHorizontal: optionPaddingInline,
@@ -426,7 +401,8 @@ export function Listbox({
     color: t.colorForegroundMuted,
   };
 
-  const optionRowStyle = (focused: boolean, optionDisabled: boolean): ViewStyle => ({
+  // The focus ring's width is always reserved (transparent when unfocused) so focusing a row never shifts layout.
+  const optionRowStyle = (active: boolean, focused: boolean, optionDisabled: boolean): ViewStyle => ({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: optionGap,
@@ -434,8 +410,8 @@ export function Listbox({
     paddingVertical: optionPaddingBlock,
     paddingHorizontal: optionPaddingInline,
     borderRadius: optionRadius,
-    backgroundColor: focused ? t.colorBackgroundSubtle : 'transparent',
-    borderWidth: focused ? t.borderWidthFocus : 0,
+    backgroundColor: active && !isDisabled ? t.colorBackgroundSubtle : 'transparent',
+    borderWidth: t.borderWidthFocus,
     borderColor: focused ? t.colorBorderFocus : 'transparent',
     opacity: optionDisabled && !isDisabled ? disabledOpacity : 1,
   });
@@ -457,16 +433,15 @@ export function Listbox({
     color: t.colorForegroundMuted,
   };
 
-  const optionTextColumnStyle: ViewStyle = { flexShrink: 1, flexDirection: 'column', gap: t.space1 };
-  const checkSlotStyle = (selected: boolean): ViewStyle => ({ opacity: selected ? 1 : 0 });
+  const optionTextColumnStyle: ViewStyle = { flexShrink: 1, flexDirection: 'column' };
   const emptyRowStyle: ViewStyle = { paddingVertical: optionPaddingBlock, paddingHorizontal: optionPaddingInline };
+  const errorRowStyle: ViewStyle = { paddingHorizontal: optionPaddingInline, paddingBottom: listPadding };
   const typographyOverrides = { fontFamily: overrides?.fontFamily, fontSize: overrides?.fontSize, lineHeight: overrides?.lineHeight };
 
-  const renderItem = ({ item, index }: ListRenderItemInfo<ListboxRow>): React.JSX.Element => {
-    const onLayout = index === 0 ? handleFirstRowLayout : undefined;
+  const renderItem = ({ item }: ListRenderItemInfo<ListboxRow>): React.JSX.Element => {
     if (item.kind === 'group') {
       return (
-        <View onLayout={onLayout} style={groupLabelRowStyle} testID="Listbox.groupLabel">
+        <View style={groupLabelRowStyle} testID="Listbox.groupLabel">
           <RNText style={groupLabelStyle}>{item.label}</RNText>
         </View>
       );
@@ -474,12 +449,11 @@ export function Listbox({
     const option = item.option;
     const selected = multiple ? selectedValues.includes(option.value) : option.value === selectedValue;
     const optionDisabled = isDisabled || option.disabled === true;
-    const focused = focusedValue === option.value;
     const accessibleLabel = option.description !== undefined ? `${option.label}. ${option.description}` : option.label;
 
     return (
       <Pressable
-        onLayout={onLayout}
+        onLayout={item.firstOption ? handleFirstOptionLayout : undefined}
         accessibilityRole="menuitem"
         accessibilityLabel={accessibleLabel}
         accessibilityState={{
@@ -490,23 +464,35 @@ export function Listbox({
         onPress={() => selectOption(option)}
         onFocus={() => handleFocusOption(option.value)}
         onBlur={() => handleBlurOption(option.value)}
-        style={optionRowStyle(focused, optionDisabled)}
+        onHoverIn={() => {
+          if (!optionDisabled) {
+            activate(option.value);
+          }
+        }}
+        style={optionRowStyle(activeValue === option.value, focusedValue === option.value, optionDisabled)}
         testID="Listbox.option"
       >
-        <View accessibilityElementsHidden importantForAccessibility="no" style={checkSlotStyle(selected)}>
-          <Icon name="check" size="sm" color={t.colorControlSelectedBackground} />
-        </View>
+        {multiple ? (
+          <View
+            accessibilityElementsHidden
+            importantForAccessibility="no"
+            style={{ opacity: selected ? 1 : 0 }}
+            testID="Listbox.optionCheck"
+          >
+            <Icon name="check" size="sm" color={t.colorControlSelectedBackground} />
+          </View>
+        ) : null}
         {option.icon !== undefined ? (
-          <View accessibilityElementsHidden importantForAccessibility="no">
+          <View accessibilityElementsHidden importantForAccessibility="no" testID="Listbox.optionIcon">
             <Icon name={option.icon} size="sm" color={t.colorForeground} />
           </View>
         ) : null}
         <View style={optionTextColumnStyle}>
-          <RNText numberOfLines={1} style={optionLabelStyle(selected)}>
+          <RNText numberOfLines={1} style={optionLabelStyle(selected)} testID="Listbox.optionLabel">
             {option.label}
           </RNText>
           {option.description !== undefined ? (
-            <RNText numberOfLines={1} style={optionDescriptionStyle}>
+            <RNText numberOfLines={1} style={optionDescriptionStyle} testID="Listbox.optionDescription">
               {option.description}
             </RNText>
           ) : null}
@@ -516,7 +502,7 @@ export function Listbox({
   };
 
   return (
-    <View testID="Listbox" style={containerStyle}>
+    <View ref={ref} testID="Listbox" style={containerStyle}>
       {hasOptions ? (
         <FlatList
           ref={listRef}
@@ -527,27 +513,35 @@ export function Listbox({
           accessibilityRole="list"
           accessibilityLabel={label}
           accessibilityState={{ disabled: isDisabled, busy: loading }}
-          accessibilityValue={multiple && selectedValues.length > 0 ? { text: COPY.selectedCount(selectedValues.length) } : undefined}
+          accessibilityValue={
+            multiple && selectedValues.length > 0
+              ? { text: COPY.selectedCount.replace('{count}', String(selectedValues.length)) }
+              : undefined
+          }
           testID="Listbox.list"
         />
       ) : (
         <View
           accessible
           accessibilityRole="list"
+          // `accessible` collapses the children, so the placeholder is folded into the label to stay announced.
           accessibilityLabel={`${label}. ${placeholderText}`}
-          accessibilityState={{ busy: loading }}
+          accessibilityState={{ disabled: isDisabled, busy: loading }}
           style={emptyRowStyle}
-          testID="Listbox.emptyState"
+          testID="Listbox.list"
         >
-          <Text tone="muted" overrides={typographyOverrides}>
-            {placeholderText}
-          </Text>
+          <View testID="Listbox.emptyState">
+            <Text tone="muted" overrides={typographyOverrides}>
+              {placeholderText}
+            </Text>
+          </View>
         </View>
       )}
       {displayedError !== undefined ? (
         <View
           accessibilityLiveRegion={summarised ? 'none' : 'assertive'}
-          style={{ paddingHorizontal: optionPaddingInline, paddingBottom: t.space1 }}
+          style={errorRowStyle}
+          testID="Listbox.errorMessage"
         >
           <Text size="sm" tone="danger">
             {displayedError}

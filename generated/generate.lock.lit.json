@@ -1,18 +1,18 @@
 {
   "Accordion.lit": {
-    "hash": "9e447ebc4b1fd032",
-    "lastAttemptHash": "9e447ebc4b1fd032",
-    "generatedAt": "2026-09-10T22:37:00+00:00",
-    "model": "sonnet",
+    "hash": "b9f3ec323c17a84f",
+    "lastAttemptHash": "b9f3ec323c17a84f",
+    "generatedAt": "2026-09-16T13:00:39+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.2895,
+    "costUsd": 2.3864,
     "files": [
       "packages/lit/src/Accordion.stories.ts",
-      "packages/lit/src/Accordion.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/Accordion.test.ts",
+      "packages/lit/src/Accordion.ts"
     ],
-    "gaps": 3,
+    "gaps": 14,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -251,19 +251,19 @@
     }
   },
   "Combobox.lit": {
-    "hash": "a8eef054a8d7a615",
-    "lastAttemptHash": "a8eef054a8d7a615",
-    "generatedAt": "2026-09-10T22:36:21+00:00",
-    "model": "sonnet",
+    "hash": "67bb2c434468885a",
+    "lastAttemptHash": "67bb2c434468885a",
+    "generatedAt": "2026-09-16T12:49:45+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.3935,
+    "costUsd": 3.8686,
     "files": [
       "packages/lit/src/Combobox.stories.ts",
-      "packages/lit/src/Combobox.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/Combobox.test.ts",
+      "packages/lit/src/Combobox.ts"
     ],
-    "gaps": 3,
+    "gaps": 14,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -626,18 +626,19 @@
     }
   },
   "Listbox.lit": {
-    "hash": "9c1ec240b3705daa",
-    "lastAttemptHash": "9c1ec240b3705daa",
-    "generatedAt": "2026-09-10T22:29:38+00:00",
-    "model": "sonnet",
+    "hash": "c9448590846f99a0",
+    "lastAttemptHash": "c9448590846f99a0",
+    "generatedAt": "2026-09-16T12:18:55+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.152,
+    "costUsd": 3.2814,
     "files": [
       "packages/lit/src/Listbox.stories.ts",
+      "packages/lit/src/Listbox.test.ts",
       "packages/lit/src/Listbox.ts"
     ],
-    "gaps": 5,
+    "gaps": 13,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -828,18 +829,19 @@
     }
   },
   "SegmentedControl.lit": {
-    "hash": "a41091d385e6998b",
-    "lastAttemptHash": "a41091d385e6998b",
-    "generatedAt": "2026-09-10T22:24:24+00:00",
-    "model": "sonnet",
+    "hash": "7a94de0c88ea0882",
+    "lastAttemptHash": "7a94de0c88ea0882",
+    "generatedAt": "2026-09-16T12:06:56+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.9417,
+    "costUsd": 1.4708,
     "files": [
       "packages/lit/src/SegmentedControl.stories.ts",
+      "packages/lit/src/SegmentedControl.test.ts",
       "packages/lit/src/SegmentedControl.ts"
     ],
-    "gaps": 1,
+    "gaps": 12,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -850,19 +852,19 @@
     }
   },
   "Select.lit": {
-    "hash": "ca83e3f866461880",
-    "lastAttemptHash": "ca83e3f866461880",
-    "generatedAt": "2026-09-10T22:35:41+00:00",
-    "model": "sonnet",
+    "hash": "3b9f4bcd9ef2fe4f",
+    "lastAttemptHash": "3b9f4bcd9ef2fe4f",
+    "generatedAt": "2026-09-16T12:33:31+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.4833,
+    "costUsd": 3.8841,
     "files": [
       "packages/lit/src/Select.stories.ts",
-      "packages/lit/src/Select.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/Select.test.ts",
+      "packages/lit/src/Select.ts"
     ],
-    "gaps": 3,
+    "gaps": 19,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1032,17 +1034,19 @@
     }
   },
   "Tabs.lit": {
-    "hash": "9147e7b572eaa7ab",
-    "lastAttemptHash": "9147e7b572eaa7ab",
-    "generatedAt": "2026-09-12T09:07:18+00:00",
-    "model": "sonnet",
+    "hash": "0e90ee0c66b32761",
+    "lastAttemptHash": "0e90ee0c66b32761",
+    "generatedAt": "2026-09-16T11:58:21+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.9013,
+    "costUsd": 1.5897,
     "files": [
+      "packages/lit/src/Tabs.stories.ts",
+      "packages/lit/src/Tabs.test.ts",
       "packages/lit/src/Tabs.ts"
     ],
-    "gaps": 3,
+    "gaps": 12,
     "gates": {
       "parse": true,
       "contrast": true,

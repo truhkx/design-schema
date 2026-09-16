@@ -9,21 +9,16 @@
   --ds-select-trigger-radius: var(--radius-md);
   --ds-select-trigger-padding-inline: var(--space-md);
   --ds-select-trigger-padding-block: var(--space-sm);
-  --ds-select-trigger-padding-block-sm: var(--space-1);
   --ds-select-trigger-gap: var(--layout-gap-normal);
   --ds-select-value-color: var(--color-foreground);
   --ds-select-placeholder-color: var(--color-foreground-muted);
   --ds-select-chevron: var(--color-foreground-muted);
   --ds-select-part-gap: var(--space-1);
-  --ds-select-label-weight: var(--font-weight-medium);
-  --ds-select-helper-size: var(--font-size-sm);
-  --ds-select-description-text: var(--color-foreground-muted);
-  --ds-select-error-text: var(--color-foreground-danger);
   --ds-select-font-family: var(--font-family-body);
   --ds-select-font-size: var(--font-size-md);
+  --ds-select-font-weight: var(--font-weight-regular);
   --ds-select-line-height: var(--font-line-height-normal);
   --ds-select-min-target: var(--size-target-comfortable);
-  --ds-select-min-target-sm: var(--size-target-min);
   --ds-select-focus-ring-width: var(--border-width-focus);
   --ds-select-disabled-opacity: var(--opacity-disabled);
   display: flex;
@@ -33,11 +28,11 @@
   font-family: var(--ds-select-font-family);
 }
 
-/* size: sm swaps paddingBlock/minTarget for their Sm bindings and fontSize to sm. */
+/* size: sm — triggerPaddingBlock by size, fontSize font.size.{size}, and the minTargetSm floor. */
 .ds-select--sm {
-  --ds-select-trigger-padding-block: var(--ds-select-trigger-padding-block-sm);
-  --ds-select-min-target: var(--ds-select-min-target-sm);
+  --ds-select-trigger-padding-block: var(--space-1);
   --ds-select-font-size: var(--font-size-sm);
+  --ds-select-min-target: var(--size-target-min);
 }
 
 .ds-select__label {
@@ -58,10 +53,6 @@
   border: 0;
 }
 
-.ds-select__required {
-  font-weight: var(--ds-select-label-weight);
-}
-
 .ds-select__trigger,
 .ds-select__native {
   box-sizing: border-box;
@@ -78,37 +69,28 @@
   border-radius: var(--ds-select-trigger-radius);
   background-color: var(--ds-select-trigger-background);
   color: var(--ds-select-value-color);
-  font: inherit;
   font-family: var(--ds-select-font-family);
   font-size: var(--ds-select-font-size);
+  font-weight: var(--ds-select-font-weight);
   line-height: var(--ds-select-line-height);
   cursor: pointer;
   -webkit-appearance: none;
   appearance: none;
 }
 
-.ds-select__native {
-  inline-size: 100%;
+.ds-select--invalid .ds-select__trigger,
+.ds-select--invalid .ds-select__native {
+  border-color: var(--ds-select-trigger-border-invalid);
 }
 
-.ds-select__native-wrap {
-  position: relative;
-  display: block;
-}
-
-/* focus-visible: never removed, only replaced by the token ring. */
-.ds-select__trigger:focus-visible,
-.ds-select__native:focus-visible {
+/* focus-visible: never removed, only replaced by the token ring; the padding shrinks by the difference. */
+.ds-select .ds-select__trigger:focus-visible,
+.ds-select .ds-select__native:focus-visible {
   outline: none;
   border-color: var(--ds-select-trigger-border-focus);
   border-width: var(--ds-select-focus-ring-width);
   padding-inline: calc(var(--ds-select-trigger-padding-inline) - (var(--ds-select-focus-ring-width) - var(--ds-select-trigger-border-width)));
   padding-block: calc(var(--ds-select-trigger-padding-block) - (var(--ds-select-focus-ring-width) - var(--ds-select-trigger-border-width)));
-}
-
-.ds-select--invalid .ds-select__trigger,
-.ds-select--invalid .ds-select__native {
-  border-color: var(--ds-select-trigger-border-invalid);
 }
 
 .ds-select--disabled .ds-select__trigger,
@@ -126,6 +108,15 @@
       padding-inline var(--motion-duration-fast) var(--motion-easing-standard),
       padding-block var(--motion-duration-fast) var(--motion-easing-standard);
   }
+}
+
+.ds-select__native-wrap {
+  position: relative;
+  display: block;
+}
+
+.ds-select__native-wrap .ds-select__native {
+  padding-inline-end: calc(var(--ds-select-trigger-padding-inline) + var(--ds-select-trigger-gap) + var(--ds-select-font-size)); /* inline Icon is one font-size wide */
 }
 
 .ds-select__value {
@@ -164,27 +155,23 @@
   --ds-select-popup-offset: var(--space-1);
   --ds-select-layer: var(--layer-dropdown);
   --ds-select-enter: var(--motion-duration-fast);
+  --ds-select-font-weight: var(--font-weight-regular);
   box-sizing: border-box;
   position: fixed;
-  min-inline-size: var(--ds-select-trigger-width, 0px);
+  min-inline-size: var(--ds-select-trigger-width, 0px); /* literal-ok: zero fallback before the first measurement */
   max-inline-size: calc(100vw - 2 * var(--layout-gutter));
-  max-block-size: calc(100vh - 2 * var(--layout-gutter));
+  overflow: auto;
   background-color: var(--ds-select-popup-surface);
   border: var(--border-width-thin) solid var(--ds-select-popup-border);
   border-radius: var(--ds-select-popup-radius);
   box-shadow: var(--ds-select-popup-shadow);
+  font-weight: var(--ds-select-font-weight);
   z-index: var(--ds-select-layer);
   opacity: 0;
-  /* Rises from `--ds-select-enter-offset`, set per `data-vertical` below. */
-  --ds-select-enter-offset: calc(-1 * var(--ds-select-popup-offset));
-  transform: translateY(var(--ds-select-enter-offset));
-  transition-property: opacity, transform;
-  transition-duration: var(--ds-select-enter);
-  transition-timing-function: var(--motion-easing-standard);
+  transition: opacity var(--ds-select-enter) var(--motion-easing-standard);
 }
 
-/* The composed Listbox renders `embedded`, so it draws no surface/border/radius of its own —
-   this wrapper owns them. */
+/* The composed Listbox renders `embedded`: this wrapper owns surface, border, radius and shadow. */
 .ds-select__popup > .ds-listbox {
   min-inline-size: 100%;
 }
@@ -195,14 +182,13 @@
 
 .ds-select__popup[data-vertical='top'] {
   margin-block-end: var(--ds-select-popup-offset);
-  --ds-select-enter-offset: var(--ds-select-popup-offset);
 }
 
 .ds-select__popup--entered {
   opacity: 1;
-  transform: translateY(0);
 }
 
+/* enter: popup fade; instant under reduced motion. */
 @media (prefers-reduced-motion: reduce) {
   .ds-select__popup {
     transition: none;

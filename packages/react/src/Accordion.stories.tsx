@@ -6,12 +6,7 @@ const ITEMS: AccordionItem[] = [
   {
     id: 'cancel',
     summary: 'What happens if I cancel?',
-    content: (
-      <Text>
-        You keep access until the end of the current billing period. Your data is kept for 30 days after that, then
-        deleted.
-      </Text>
-    ),
+    content: <Text>You keep access until the end of the billing period.</Text>,
   },
   {
     id: 'plans',
@@ -22,12 +17,6 @@ const ITEMS: AccordionItem[] = [
     id: 'refunds',
     summary: 'Do you offer refunds?',
     content: <Text>Within 14 days of a charge, in full.</Text>,
-  },
-  {
-    id: 'support',
-    summary: 'How do I contact support?',
-    content: <Text>Email support@example.com — a real product would link this.</Text>,
-    disabled: true,
   },
 ];
 
@@ -42,16 +31,10 @@ const meta: Meta<typeof Accordion> = {
     keepMounted: false,
   },
   argTypes: {
+    headingLevel: { control: 'select', options: ['2', '3', '4', '5', '6'] },
     onChange: { action: 'onChange' },
     onOpenChange: { action: 'onOpenChange' },
   },
-  decorators: [
-    (Story) => (
-      <div style={{ maxInlineSize: '32rem' }}>
-        <Story />
-      </div>
-    ),
-  ],
   tags: ['autodocs'],
 };
 
@@ -67,11 +50,58 @@ export const HeadingLevel4: Story = { args: { headingLevel: '4' } };
 export const HeadingLevel5: Story = { args: { headingLevel: '5' } };
 export const HeadingLevel6: Story = { args: { headingLevel: '6' } };
 
+/* examples */
+export const Faq: Story = {
+  args: {
+    items: [
+      { id: 'cancel', summary: 'What happens if I cancel?', content: 'You keep access until the end of the billing period.' },
+      { id: 'refunds', summary: 'Do you offer refunds?', content: 'Within 14 days of a charge, in full.' },
+    ],
+  },
+};
+
+export const OneOpenAtATime: Story = {
+  args: {
+    exclusive: true,
+    items: [
+      { id: 'free', summary: 'Free', content: 'One project and community support.' },
+      { id: 'pro', summary: 'Pro', content: 'Unlimited projects and email support.' },
+    ],
+  },
+};
+
+export const FormSections: Story = {
+  args: {
+    keepMounted: true,
+    headingLevel: '2',
+    items: [
+      { id: 'contact', summary: 'Contact details', content: 'Name and email fields.' },
+      { id: 'billing', summary: 'Billing address', content: 'Street and city fields.' },
+    ],
+  },
+};
+
+export const Undivided: Story = {
+  args: {
+    divided: false,
+    items: [
+      { id: 'shipping', summary: 'Shipping', content: 'Orders ship within two business days.' },
+      { id: 'returns', summary: 'Returns', content: 'Items can be returned within 30 days.' },
+    ],
+  },
+};
+
 /* notable states */
-export const Exclusive: Story = { args: { exclusive: true, defaultValue: 'cancel' } };
-export const NotDivided: Story = { args: { divided: false } };
-export const KeepMounted: Story = { args: { keepMounted: true } };
 export const Controlled: Story = { args: { value: ['cancel', 'plans'] } };
 
-/** Present with four triggers (three enabled), for the keyboard gate. */
-export const Keyboard: Story = { args: { defaultValue: 'cancel' } };
+export const DisabledItem: Story = {
+  args: {
+    items: [
+      ...ITEMS,
+      { id: 'support', summary: 'How do I contact support?', content: <Text>Write to the support team.</Text>, disabled: true },
+    ],
+  },
+};
+
+/** Present with three enabled triggers and nothing open, for the keyboard gate. */
+export const Keyboard: Story = { args: { items: ITEMS } };

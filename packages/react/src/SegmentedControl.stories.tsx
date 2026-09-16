@@ -4,20 +4,14 @@ import { SegmentedControl, type SegmentedControlOption } from './SegmentedContro
 const OPTIONS: SegmentedControlOption[] = [
   { value: 'day', label: 'Day' },
   { value: 'week', label: 'Week' },
-  { value: 'month', label: 'Month', disabled: true },
-];
-
-/* No dedicated list/grid glyphs exist yet; dash/ellipsis stand in for the doc's list/grid example. */
-const ICON_OPTIONS: SegmentedControlOption[] = [
-  { value: 'list', label: 'List view', icon: 'dash' },
-  { value: 'grid', label: 'Grid view', icon: 'ellipsis' },
+  { value: 'month', label: 'Month' },
 ];
 
 const meta: Meta<typeof SegmentedControl> = {
   title: 'SegmentedControl/React',
   component: SegmentedControl,
   args: {
-    label: 'View range',
+    label: 'Range',
     options: OPTIONS,
     iconOnly: false,
     size: 'md',
@@ -40,8 +34,47 @@ export const SizeMd: Story = { args: { size: 'md' } };
 
 /* notable states */
 export const Fill: Story = { args: { fill: true } };
-export const IconOnly: Story = { args: { label: 'View mode', options: ICON_OPTIONS, iconOnly: true } };
 export const Controlled: Story = { args: { value: 'week' } };
+export const DisabledSegment: Story = {
+  args: { options: [{ value: 'day', label: 'Day' }, { value: 'week', label: 'Week', disabled: true }, { value: 'month', label: 'Month' }] },
+};
 
-/** Present with its trigger-less radiogroup and three segments (two enabled), for the keyboard gate. */
+/* examples */
+export const ViewMode: Story = {
+  args: {
+    label: 'View mode',
+    options: [
+      { value: 'list', label: 'List' },
+      { value: 'grid', label: 'Grid' },
+    ],
+    defaultValue: 'list',
+  },
+};
+
+export const IconOnlyToolbar: Story = {
+  args: {
+    label: 'View mode',
+    options: [
+      { value: 'list', label: 'List view', icon: 'list' },
+      { value: 'grid', label: 'Grid view', icon: 'grid' },
+    ],
+    iconOnly: true,
+    size: 'sm',
+  },
+};
+
+export const FilledRangeSwitch: Story = {
+  args: {
+    label: 'Range',
+    options: [
+      { value: 'day', label: 'Day' },
+      { value: 'week', label: 'Week' },
+      { value: 'month', label: 'Month' },
+    ],
+    defaultValue: 'week',
+    fill: true,
+  },
+};
+
+/** Present with three enabled segments and no decorators, for the keyboard gate. */
 export const Keyboard: Story = {};

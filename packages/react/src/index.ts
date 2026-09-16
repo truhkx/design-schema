@@ -216,7 +216,6 @@ export type {
   AccordionItem,
   AccordionHeadingLevel,
   AccordionOpenChangeReason,
-  AccordionOpenChangeDetail,
   AccordionOverridableBinding,
 } from './Accordion';
 

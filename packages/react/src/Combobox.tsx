@@ -9,23 +9,28 @@ import {
   type ChangeEvent,
   type ComponentPropsWithoutRef,
   type CSSProperties,
+  type FocusEvent as ReactFocusEvent,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
-  type Ref, type ReactElement,
+  type Ref,
+  type ReactElement,
 } from 'react';
 import { createPortal } from 'react-dom';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
-import { Icon } from './Icon';
-import { Text, type TextOverridableBinding } from './Text';
 import { Button } from './Button';
+import { Icon } from './Icon';
 import { Listbox, type ListboxOption, type ListboxValue } from './Listbox';
+import { Text, type TextOverridableBinding } from './Text';
 import { useFormContext } from './FormContext';
 import './Combobox.css';
 
+declare const process: { env: { NODE_ENV?: string } };
+
+/** The selected value, or with `multiple` every selected value. */
 export type ComboboxValue = string | string[];
 export type ComboboxFilter = 'startsWith' | 'contains' | 'none' | 'async';
 
-/** copy.* — used verbatim; `{label}`/`{value}`/`{count}` are replaced as noted per string. */
+/** copy.* — used verbatim; `{label}`, `{value}` and `{count}` are the only interpolations. */
 const COPY = {
   empty: 'No matches',
   loading: 'Loading…',
@@ -33,22 +38,20 @@ const COPY = {
   clearLabel: 'Clear',
   toggleLabel: 'Show options',
   removeChip: 'Remove {label}',
-  resultCount: '{count} results available',
+  resultCount: { one: '{count} result available', other: '{count} results available' },
   required: '{label} is required.',
   invalid: '{label} is not valid.',
   requiredIndicator: ' (required)',
-};
+} as const;
 
-/** debounce for the live status region: `motion.duration.base` × 2 (the doc calls out ~500ms). Not itself a token. */
-const STATUS_DEBOUNCE_MS = 500;
+/** constant `statusDebounce`: motion.duration.base × 2, read from the token at run time. */
+const STATUS_DEBOUNCE = { token: '--motion-duration-base', multiply: 2 } as const;
 
-/**
- * Style bindings that can be overridden per instance; accessibility-bearing bindings are never in
- * this list. `labelWeight`/`helperSize` are forwarded to the composed `Text` label/description's
- * own `overrides`, since Text already owns those bindings.
- */
+/** The value of the synthetic `copy.addCustom` row; never a selected value. */
+const CUSTOM_ROW_VALUE = 'ds-combobox-custom';
+
+/** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
 export type ComboboxOverridableBinding =
-  | 'fieldBorderFocus'
   | 'fieldBorderInvalid'
   | 'fieldBorderWidth'
   | 'fieldRadius'
@@ -75,8 +78,8 @@ export type ComboboxOverridableBinding =
   | 'disabledOpacity'
   | 'enter';
 
-const ROOT_OVERRIDE_HOOK: Partial<Record<ComboboxOverridableBinding, string | undefined>> = {
-  fieldBorderFocus: '--ds-combobox-field-border-focus',
+/** Hooks on the root. `labelWeight` and `helperSize` are forwarded to the composed Text instead. */
+const ROOT_HOOK: Partial<Record<ComboboxOverridableBinding, string>> = {
   fieldBorderInvalid: '--ds-combobox-field-border-invalid',
   fieldBorderWidth: '--ds-combobox-field-border-width',
   fieldRadius: '--ds-combobox-field-radius',
@@ -95,9 +98,8 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<ComboboxOverridableBinding, string | un
   disabledOpacity: '--ds-combobox-disabled-opacity',
 };
 
-/** The popup is portaled, so its own bindings — and the ones its nested Listbox reads via the
- * sanctioned CSS custom-property escape hatch — are set on the popup node itself. */
-const POPUP_OVERRIDE_HOOK: Partial<Record<ComboboxOverridableBinding, string | undefined>> = {
+/** Hooks on the portaled popup, which does not inherit from the root. */
+const POPUP_HOOK: Partial<Record<ComboboxOverridableBinding, string>> = {
   popupSurface: '--ds-combobox-popup-surface',
   popupBorder: '--ds-combobox-popup-border',
   popupShadow: '--ds-combobox-popup-shadow',
@@ -107,52 +109,33 @@ const POPUP_OVERRIDE_HOOK: Partial<Record<ComboboxOverridableBinding, string | u
   enter: '--ds-combobox-enter',
 };
 
-function resolveOverrides(overrides: Partial<Record<ComboboxOverridableBinding, TokenRef | undefined>>): {
-  rootStyle: CSSProperties;
-  popupStyle: CSSProperties;
-  labelOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
-  descriptionOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
-} {
-  const rootStyle: Record<string, string> = {};
-  const popupStyle: Record<string, string> = {};
-  const labelOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
-  const descriptionOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
-  for (const binding of Object.keys(overrides) as ComboboxOverridableBinding[]) {
-    const ref = overrides[binding];
+type ResolvedOverrides = {
+  root: CSSProperties | undefined;
+  popup: CSSProperties | undefined;
+  label: Partial<Record<TextOverridableBinding, TokenRef | undefined>> | undefined;
+  helper: Partial<Record<TextOverridableBinding, TokenRef | undefined>> | undefined;
+};
+
+function resolveOverrides(overrides: Partial<Record<ComboboxOverridableBinding, TokenRef | undefined>> | undefined): ResolvedOverrides {
+  const root: Record<string, string> = {};
+  const popup: Record<string, string> = {};
+  let label: ResolvedOverrides['label'];
+  let helper: ResolvedOverrides['helper'];
+  for (const binding of Object.keys(overrides ?? {}) as ComboboxOverridableBinding[]) {
+    const ref = overrides?.[binding];
     if (!ref) continue;
-    if (binding === 'labelWeight') {
-      labelOverrides.fontWeight = ref;
-      continue;
-    }
-    if (binding === 'helperSize') {
-      descriptionOverrides.fontSize = ref;
-      continue;
-    }
-    const rootHook = ROOT_OVERRIDE_HOOK[binding];
-    if (rootHook) {
-      rootStyle[rootHook] = cssVar(ref);
-      continue;
-    }
-    const popupHook = POPUP_OVERRIDE_HOOK[binding];
-    if (popupHook) popupStyle[popupHook] = cssVar(ref);
+    // Locked bindings have no entry in either table, so they are ignored if passed.
+    if (binding === 'labelWeight') label = { fontWeight: ref };
+    else if (binding === 'helperSize') helper = { fontSize: ref };
+    else if (ROOT_HOOK[binding]) root[ROOT_HOOK[binding]] = cssVar(ref);
+    else if (POPUP_HOOK[binding]) popup[POPUP_HOOK[binding]] = cssVar(ref);
   }
   return {
-    rootStyle: rootStyle as CSSProperties,
-    popupStyle: popupStyle as CSSProperties,
-    labelOverrides,
-    descriptionOverrides,
+    root: Object.keys(root).length ? (root as CSSProperties) : undefined,
+    popup: Object.keys(popup).length ? (popup as CSSProperties) : undefined,
+    label,
+    helper,
   };
-}
-
-/* Only declared when the bundler defines it; never assumed. */
-declare const process: { env: Record<string, string | undefined> } | undefined;
-const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
-
-/** jsdom (and older browsers) have no `matchMedia`; treat that as "no preference". */
-function prefersReducedMotion(): boolean {
-  return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-    ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    : false;
 }
 
 type ComboboxRow = { value: string; label: string; disabled?: boolean | undefined };
@@ -161,7 +144,6 @@ function isGroup(option: ListboxOption): option is { group: string; options: Lis
   return 'group' in option;
 }
 
-/** Depth-first rows, dropping group wrappers — used to resolve a value to its label and to filter. */
 function flattenRows(options: ListboxOption[]): ComboboxRow[] {
   const result: ComboboxRow[] = [];
   for (const option of options) {
@@ -171,7 +153,7 @@ function flattenRows(options: ListboxOption[]): ComboboxRow[] {
   return result;
 }
 
-/** Filters a (possibly grouped) option tree by a row predicate, dropping groups left empty. */
+/** Keeps the rows matching `predicate`, dropping groups left empty. */
 function filterTree(options: ListboxOption[], predicate: (row: ComboboxRow) => boolean): ListboxOption[] {
   const result: ListboxOption[] = [];
   for (const option of options) {
@@ -185,58 +167,62 @@ function filterTree(options: ListboxOption[], predicate: (row: ComboboxRow) => b
   return result;
 }
 
-/** Case- and diacritic-insensitive comparison key. */
-const DIACRITIC_MARKS = new RegExp('[̀-ͯ]', 'g');
+const COMBINING_MARKS = /\p{M}/gu;
 
-function normalize(value: string): string {
-  return value.normalize('NFD').replace(DIACRITIC_MARKS, '').toLowerCase();
+/** Case- and diacritic-insensitive comparison key. */
+function normalize(text: string): string {
+  return text.normalize('NFD').replace(COMBINING_MARKS, '').toLowerCase();
 }
 
 function toArray(value: ComboboxValue | undefined): string[] {
-  return Array.isArray(value) ? value : [];
+  if (Array.isArray(value)) return value;
+  return value === undefined || value === '' ? [] : [value];
 }
 
-function labelFor(value: string, rows: ComboboxRow[]): string {
-  return rows.find((row) => row.value === value)?.label ?? value;
+/** A resolved CSS time (`320ms`, `0.32s`) in ms; `null` when it cannot be read. */
+function parseTime(value: string): number | null {
+  const match = /^(-?\d*\.?\d+)(ms|s)$/.exec(value.trim());
+  if (!match) return null;
+  const amount = Number(match[1]);
+  return match[2] === 's' ? amount * 1000 : amount;
 }
 
-const FOCUSABLE_SELECTOR = [
-  'a[href]',
-  'button:not([disabled])',
-  'input:not([disabled])',
-  'select:not([disabled])',
-  'textarea:not([disabled])',
-  '[contenteditable]:not([contenteditable="false"])',
-  '[tabindex]:not([tabindex="-1"])',
-].join(',');
+/** Which option becomes active when the Listbox is (re)mounted; resolved against the rows on screen. */
+type ActiveIntent = 'none' | 'selected' | 'selectedOrFirst' | 'selectedOrLast' | 'typeahead' | { value: string };
 
-/** Moves focus to the next (or previous) document-order tabbable element relative to `anchor`, ignoring `exclude`. */
-function focusAdjacent(anchor: HTMLElement | null, exclude: HTMLElement | null, direction: 1 | -1) {
-  if (!anchor) return;
-  const all = Array.from(document.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
-    (element) => !exclude || !exclude.contains(element),
-  );
-  const index = all.indexOf(anchor);
-  if (index === -1) return;
-  all[index + direction]?.focus();
-}
+type PopupPosition = {
+  vertical: 'top' | 'bottom';
+  left: number;
+  top: number | undefined;
+  bottom: number | undefined;
+  minInlineSize: number;
+};
 
-type ResolvedPosition = { style: CSSProperties; vertical: 'top' | 'bottom' };
-
-/** Positions the popup below (or above, on overflow) the field, left-aligned and at least as wide as it. */
-function computePosition(fieldRect: DOMRect, popupRect: DOMRect): ResolvedPosition {
+/** Below the field, flipped above when it would overflow and there is more room there; never past the inline edge. */
+function computePosition(field: DOMRect, popup: DOMRect): PopupPosition {
   const viewportHeight = window.innerHeight;
-  let vertical: 'top' | 'bottom' = 'bottom';
-  if (fieldRect.bottom + popupRect.height > viewportHeight && fieldRect.top - popupRect.height >= 0) {
-    vertical = 'top';
-  }
-  const style: Record<string, string | number> = {
-    left: fieldRect.left,
-    '--ds-combobox-field-width': `${fieldRect.width}px`,
+  const vertical =
+    field.bottom + popup.height > viewportHeight && field.top > viewportHeight - field.bottom ? 'top' : 'bottom';
+  const width = Math.max(popup.width, field.width);
+  const left = Math.max(0, Math.min(field.left, window.innerWidth - width));
+  return {
+    vertical,
+    left,
+    top: vertical === 'bottom' ? field.bottom : undefined,
+    bottom: vertical === 'top' ? viewportHeight - field.top : undefined,
+    minInlineSize: field.width,
   };
-  if (vertical === 'bottom') style.top = fieldRect.bottom;
-  else style.bottom = viewportHeight - fieldRect.top;
-  return { style: style as CSSProperties, vertical };
+}
+
+function samePosition(a: PopupPosition | null, b: PopupPosition): boolean {
+  return (
+    a !== null &&
+    a.vertical === b.vertical &&
+    a.left === b.left &&
+    a.top === b.top &&
+    a.bottom === b.bottom &&
+    a.minInlineSize === b.minInlineSize
+  );
 }
 
 export interface ComboboxProps
@@ -251,6 +237,11 @@ export interface ComboboxProps
     | 'disabled'
     | 'onChange'
     | 'children'
+    | 'className'
+    | 'style'
+    | 'role'
+    | 'autoComplete'
+    | 'aria-autocomplete'
     | 'aria-describedby'
     | 'aria-invalid'
     | 'aria-required'
@@ -258,7 +249,7 @@ export interface ComboboxProps
     | 'aria-expanded'
     | 'aria-controls'
     | 'aria-activedescendant'
-    | 'autoComplete'
+    | 'aria-disabled'
   > {
   /** Visible label. Always rendered. */
   label: string;
@@ -270,21 +261,27 @@ export interface ComboboxProps
   value?: ComboboxValue | undefined;
   /** Initial value(s). */
   defaultValue?: ComboboxValue | undefined;
-  /** Controlled text of the input. Usually uncontrolled; controlled by consumers driving `async` filtering. */
+  /** Controlled popup state, for programmatic use and for stories and tests. Omit for the typing-driven default. */
+  open?: boolean | undefined;
+  /** Controlled text of the input (what the user has typed). Usually uncontrolled; controlled by consumers driving `async` filtering. */
   inputValue?: string | undefined;
   /**
    * Pick many: selected options appear as chips before the input, each removable; the list stays
-   * open while toggling; Backspace in an empty input removes the last chip.
+   * open while toggling; Backspace in an empty input removes the last chip. Uses the same Listbox
+   * engine as Select.
    */
   multiple?: boolean | undefined;
   /**
-   * Typed text that matches no option can be committed as a value (tags, emails). Enter or a
-   * separator (comma) commits it; the list shows `copy.addCustom` as the first row.
+   * Typed text that matches no option can be committed as a value (tags, emails). Enter or a comma
+   * commits it; the list shows `copy.addCustom` as a synthetic first row, suppressed when the
+   * trimmed text already matches an existing option by either its `value` or its `label`.
    */
   allowCustom?: boolean | undefined;
   /**
    * How typing narrows `options`: by prefix, by substring (default), not at all (the list is a
-   * picker; typing only moves the active option), or by the consumer (`async`).
+   * picker; typing is type-ahead — it opens the list and moves the active option to the first label
+   * starting with the typed characters, without filtering), or by the consumer (`async`: the
+   * component shows `copy.loading` and the consumer updates `options` from `onInputChange`).
    */
   filter?: ComboboxFilter | undefined;
   /** Example input shown while empty. Never the only description. */
@@ -303,14 +300,14 @@ export interface ComboboxProps
   loading?: boolean | undefined;
   /** Show a clear button when there is a value or text. */
   clearable?: boolean | undefined;
-  /** Portal target for the popup's DOM node. Defaults to `document.body`. */
+  /** Portal target for the popup. Defaults to `document.body`. Platform prop; never affects semantics. */
   container?: HTMLElement | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<ComboboxOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the selected value(s) change (array with `multiple`; custom entries included when `allowCustom`). */
-  onChange?: ((value: ComboboxValue) => void) | undefined;
+  onChange?: ((value: string | string[]) => void) | undefined;
   /** Fired on every keystroke with the input text. The hook for `async` filtering. */
-  onInputChange?: ((text: string) => void) | undefined;
+  onInputChange?: ((value: string) => void) | undefined;
   /** Fired when the list opens or closes. */
   onOpenChange?: ((open: boolean) => void) | undefined;
 }
@@ -319,15 +316,7 @@ export interface ComboboxProps
  * Combobox — Design Schema, category: input.
  *
  * When to use:
- * Use a Combobox for long lists (fifty-plus: people, cities, products), for values that can be
- * typed faster than found (dates, codes), for `async` search against a server, and for multi-value
- * fields where chips make the selection legible (recipients, tags, filters). Use `allowCustom` when
- * new values are legitimate (tags, invitees by email) and never when the value must exist (a
- * customer id). Use `filter: none` when the list is short but chips are wanted.
- *
- * Do not use a Combobox for fewer than about ten options that never grow — use Select. Do not use
- * it as a search box that navigates to results. Do not use it to pick a date. Do not disable
- * typing to get a Select; use Select.
+ * Use a Combobox for long lists (fifty-plus: people, cities, products), for values that can be typed faster than found (dates, codes), for `async` search against a server, and for multi-value fields where chips make the selection legible (recipients, tags, filters). Use `allowCustom` when new values are legitimate (tags, invitees by email) and never when the value must exist (a customer id). Use `filter: none` when the list is short but chips are wanted.
  */
 export const Combobox = function Combobox({
   ref,
@@ -336,6 +325,7 @@ export const Combobox = function Combobox({
   options,
   value,
   defaultValue,
+  open: openProp,
   inputValue,
   multiple = false,
   allowCustom = false,
@@ -353,11 +343,11 @@ export const Combobox = function Combobox({
   onChange,
   onInputChange,
   onOpenChange,
-  id: idProp,
-  className,
-  style,
-  onFocus,
+  onKeyDown,
+  onClick,
   onBlur,
+  id: idProp,
+  readOnly,
   ...rest
 }: ComboboxProps & { ref?: Ref<HTMLInputElement> | undefined }): ReactElement {
   const form = useFormContext();
@@ -366,60 +356,145 @@ export const Combobox = function Combobox({
   const labelId = `${id}-label`;
   const descriptionId = `${id}-description`;
   const errorId = `${id}-error`;
-  const statusId = `${id}-status`;
   const listboxId = `${id}-listbox`;
+  const optionId = (optionValue: string) => `${listboxId}-option-${optionValue}`;
 
-  const inputRef = useRef<HTMLInputElement | null>(null);
-  useImperativeHandle(ref, () => inputRef.current as HTMLInputElement, []);
+  const rootRef = useRef<HTMLDivElement | null>(null);
   const fieldRef = useRef<HTMLDivElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const popupRef = useRef<HTMLDivElement | null>(null);
   const listboxRef = useRef<HTMLDivElement | null>(null);
-  const pendingForward = useRef<string | null>(null);
+  useImperativeHandle(ref, () => inputRef.current as HTMLInputElement, []);
 
-  const isControlled = value !== undefined;
-  const [internalValue, setInternalValue] = useState<ComboboxValue | undefined>(defaultValue ?? (multiple ? [] : undefined));
-  const selected = isControlled ? value : internalValue;
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'production' && !label) {
+      console.warn('Combobox: `label` is required; it is the visible label and the accessible name.');
+    }
+  }, [label]);
 
   const rows = useMemo(() => flattenRows(options), [options]);
+  const labelFor = (optionValue: string) => rows.find((row) => row.value === optionValue)?.label ?? optionValue;
 
+  // value ⇄ onChange
+  const isValueControlled = value !== undefined;
+  const [internalValue, setInternalValue] = useState<ComboboxValue | undefined>(defaultValue);
+  const selected = isValueControlled ? value : internalValue;
+  const selectedValues = toArray(selected);
+  const singleValue = multiple ? undefined : selectedValues[0];
+
+  // inputValue ⇄ onInputChange
   const isTextControlled = inputValue !== undefined;
   const [internalText, setInternalText] = useState<string>(() => {
-    if (multiple) return '';
-    const initial = typeof defaultValue === 'string' ? defaultValue : typeof value === 'string' ? value : undefined;
-    return initial ? labelFor(initial, rows) : '';
+    const initial = multiple ? undefined : toArray(value ?? defaultValue)[0];
+    return initial === undefined ? '' : labelFor(initial);
   });
-  const text = isTextControlled ? (inputValue as string) : internalText;
+  const text = isTextControlled ? inputValue : internalText;
+  const trimmedText = text.trim();
 
-  const [open, setOpen] = useState(false);
+  // open ⇄ onOpenChange
+  const isDisabled = disabled || (form?.disabled ?? false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isOpen = (openProp ?? internalOpen) && !isDisabled;
+
+  const [showAll, setShowAll] = useState(false);
   const [activeValue, setActiveValue] = useState<string | null>(null);
-  const [forceFullList, setForceFullList] = useState(false);
-  const [listboxGeneration, setListboxGeneration] = useState(0);
-  const [popupStyle, setPopupStyle] = useState<CSSProperties>();
-  const [vertical, setVertical] = useState<'top' | 'bottom'>('bottom');
-  const [entered, setEntered] = useState(false);
+  const [openIntent, setOpenIntent] = useState<ActiveIntent>('selectedOrFirst');
+  const [activeRequest, setActiveRequest] = useState<{ generation: number; intent: ActiveIntent }>({
+    generation: 0,
+    intent: 'selectedOrFirst',
+  });
+  const [seenOpen, setSeenOpen] = useState(isOpen);
+  const [position, setPosition] = useState<PopupPosition | null>(null);
   const [statusText, setStatusText] = useState('');
 
-  const isDisabled = disabled || (form?.disabled ?? false);
-  const resolvedError = error ?? form?.errors[name];
+  /** Remounts the Listbox with a new starting active option: the only way to reset its internal state. */
+  const requestActive = (intent: ActiveIntent) => {
+    setActiveValue(null);
+    setActiveRequest((request) => ({ generation: request.generation + 1, intent }));
+  };
+
+  // Opening from any source (typing, a key, the toggle, the `open` prop) starts a fresh list.
+  if (isOpen !== seenOpen) {
+    setSeenOpen(isOpen);
+    setActiveValue(null);
+    if (isOpen) {
+      setActiveRequest((request) => ({ generation: request.generation + 1, intent: openIntent }));
+      setOpenIntent('selectedOrFirst');
+    } else {
+      setShowAll(false);
+    }
+  }
+
+  const resolvedError =
+    error ?? form?.errors[name] ?? (invalid ? COPY.invalid.replace('{label}', label) : undefined);
   const isInvalid = invalid || resolvedError !== undefined;
   const isLoading = filter === 'async' && loading;
 
-  // Text-select fields mirror the current single selection's label whenever it changes from
-  // outside; while the popup is open and the user is typing, `selected` itself has not changed
-  // yet, so live filtering is never clobbered by this.
-  useEffect(() => {
-    if (isTextControlled || multiple) return;
-    if (typeof selected === 'string' && selected !== '') setInternalText(labelFor(selected, rows));
+  // What the Listbox shows: filtered rows, the synthetic custom row first, nothing while loading.
+  const query = showAll || filter === 'none' || filter === 'async' ? '' : normalize(trimmedText);
+  const filteredOptions = useMemo(() => {
+    if (query === '') return options;
+    return filterTree(options, (row) =>
+      filter === 'startsWith' ? normalize(row.label).startsWith(query) : normalize(row.label).includes(query),
+    );
+  }, [options, filter, query]);
+  const resultCount = useMemo(() => flattenRows(filteredOptions).length, [filteredOptions]);
+
+  const normalizedText = normalize(trimmedText);
+  const showCustomRow =
+    allowCustom &&
+    trimmedText !== '' &&
+    !rows.some((row) => normalize(row.value) === normalizedText || normalize(row.label) === normalizedText);
+  const listOptions: ListboxOption[] = useMemo(() => {
+    if (isLoading) return [];
+    return showCustomRow
+      ? [{ value: CUSTOM_ROW_VALUE, label: COPY.addCustom.replace('{value}', trimmedText) }, ...filteredOptions]
+      : filteredOptions;
+  }, [isLoading, showCustomRow, trimmedText, filteredOptions]);
+  const enabledRows = useMemo(() => flattenRows(listOptions).filter((row) => !row.disabled), [listOptions]);
+
+  const resolveIntent = (intent: ActiveIntent): string | undefined => {
+    const selectedRow = enabledRows.find((row) => selectedValues.includes(row.value))?.value;
+    if (intent === 'none') return undefined;
+    if (intent === 'selected') return selectedRow;
+    if (intent === 'selectedOrFirst') return selectedRow ?? enabledRows[0]?.value;
+    if (intent === 'selectedOrLast') return selectedRow ?? enabledRows[enabledRows.length - 1]?.value;
+    if (intent === 'typeahead') {
+      return normalizedText === ''
+        ? undefined
+        : enabledRows.find((row) => normalize(row.label).startsWith(normalizedText))?.value;
+    }
+    return enabledRows.some((row) => row.value === intent.value) ? intent.value : undefined;
+  };
+  const requestedActive = resolveIntent(activeRequest.intent);
+
+  // The Listbox takes its starting active option when it receives focus; signal that without moving DOM focus.
+  useLayoutEffect(() => {
+    if (!isOpen || requestedActive === undefined) return;
+    listboxRef.current?.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected]);
+  }, [isOpen, activeRequest.generation]);
 
-  if (isDev && !label) {
-    console.warn('Combobox: `label` is required and becomes the input’s accessible name.');
-  }
+  // New results (async pages, loading) replace the rows under the active option.
+  const rowSignature = `${isLoading}|${rows.map((row) => row.value).join(' ')}`;
+  const lastRowSignature = useRef(rowSignature);
+  useEffect(() => {
+    if (lastRowSignature.current === rowSignature) return;
+    lastRowSignature.current = rowSignature;
+    if (isOpen) requestActive('none');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rowSignature]);
 
-  const latest = useRef({ label, required, disabled: isDisabled, selected, multiple, invalid, error });
-  latest.current = { label, required, disabled: isDisabled, selected, multiple, invalid, error };
+  // A single selection that changes from outside shows its label.
+  useEffect(() => {
+    if (multiple || isTextControlled || singleValue === undefined) return;
+    setInternalText(labelFor(singleValue));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [singleValue]);
 
+  // Form registration.
+  const latest = useRef({ label, required, invalid, error, disabled: isDisabled, selected, multiple });
+  latest.current = { label, required, invalid, error, disabled: isDisabled, selected, multiple };
   useEffect(() => {
     if (!form) return undefined;
     return form.register({
@@ -428,287 +503,221 @@ export const Combobox = function Combobox({
       get label() {
         return latest.current.label;
       },
+      // form.valueType is string[]: every value with `multiple`, the value otherwise; no key when empty.
       getValue: () => {
-        const { selected: current, multiple: isMultiple } = latest.current;
-        if (isMultiple) {
-          const values = toArray(current);
-          return values.length > 0 ? values : undefined;
-        }
-        return typeof current === 'string' && current !== '' ? current : undefined;
+        const values = toArray(latest.current.selected);
+        if (values.length === 0) return undefined;
+        return latest.current.multiple ? values : values[0];
       },
       isDisabled: () => latest.current.disabled,
       validate: () => {
-        const { label: currentLabel, required: isRequired, selected: current, multiple: isMultiple, invalid: isInvalidProp, error: errorProp } =
-          latest.current;
-        if (errorProp !== undefined) return errorProp;
-        const hasSelection = isMultiple ? toArray(current).length > 0 : typeof current === 'string' && current !== '';
-        if (isRequired && !hasSelection) return COPY.required.replace('{label}', currentLabel);
-        if (isInvalidProp) return COPY.invalid.replace('{label}', currentLabel);
+        const current = latest.current;
+        if (current.error !== undefined) return current.error;
+        if (current.required && toArray(current.selected).length === 0) return COPY.required.replace('{label}', current.label);
+        if (current.invalid) return COPY.invalid.replace('{label}', current.label);
         return null;
       },
       focus: () => inputRef.current?.focus(),
     });
   }, [form, name, id]);
 
-  const commitValue = (next: ComboboxValue) => {
-    if (!isControlled) setInternalValue(next);
-    onChange?.(next);
-    if (form && form.validate === 'change') form.validateField(name);
-  };
-
-  const updateText = (next: string) => {
-    if (!isTextControlled) setInternalText(next);
-    onInputChange?.(next);
-  };
-
-  const changeOpen = (next: boolean) => {
-    setOpen(next);
-    onOpenChange?.(next);
-  };
-
-  const openList = () => {
-    if (open || isDisabled) return;
-    changeOpen(true);
-  };
-
-  const closeList = () => {
-    if (!open) return;
-    setActiveValue(null);
-    changeOpen(false);
-  };
-
-  // Filtered (and, for `allowCustom`, augmented) option tree handed to the Listbox.
-  const normalizedQuery = normalize((forceFullList || filter === 'none' ? '' : text).trim());
-  const filteredTree = useMemo(() => {
-    if (filter === 'async' || filter === 'none' || normalizedQuery === '') return options;
-    const predicate = (row: ComboboxRow) => {
-      const label = normalize(row.label);
-      return filter === 'startsWith' ? label.startsWith(normalizedQuery) : label.includes(normalizedQuery);
-    };
-    return filterTree(options, predicate);
-  }, [options, filter, normalizedQuery]);
-
-  const trimmedText = text.trim();
-  const showCustomRow =
-    allowCustom &&
-    trimmedText !== '' &&
-    !rows.some((row) => normalize(row.label) === normalize(trimmedText) || normalize(row.value) === normalize(trimmedText));
-
-  const displayOptions: ListboxOption[] = useMemo(() => {
-    const tree = showCustomRow
-      ? [{ value: trimmedText, label: COPY.addCustom.replace('{value}', trimmedText) }, ...filteredTree]
-      : filteredTree;
-    if (isLoading) return [{ value: '__loading__', label: COPY.loading, disabled: true }, ...tree];
-    return tree;
-  }, [filteredTree, showCustomRow, trimmedText, isLoading]);
-
-  const displayRowCount = useMemo(() => flattenRows(filteredTree).length, [filteredTree]);
-
-  // Live announcement of result count / loading / empty, debounced so it does not chatter per keystroke.
+  // Polite announcement of result count, loading and empty, after `statusDebounce`.
+  const statusMessage = isLoading
+    ? COPY.loading
+    : resultCount === 0
+      ? COPY.empty
+      : (new Intl.PluralRules(undefined).select(resultCount) === 'one' ? COPY.resultCount.one : COPY.resultCount.other).replace(
+          '{count}',
+          String(resultCount),
+        );
   useEffect(() => {
-    if (!open) {
+    if (!isOpen) {
       setStatusText('');
       return undefined;
     }
-    const timer = setTimeout(() => {
-      if (isLoading) setStatusText(COPY.loading);
-      else if (displayRowCount === 0) setStatusText(COPY.empty);
-      else setStatusText(COPY.resultCount.replace('{count}', String(displayRowCount)));
-    }, STATUS_DEBOUNCE_MS);
+    const base = rootRef.current ? parseTime(getComputedStyle(rootRef.current).getPropertyValue(STATUS_DEBOUNCE.token)) : null;
+    const timer = setTimeout(() => setStatusText(statusMessage), base === null ? 0 : base * STATUS_DEBOUNCE.multiply);
     return () => clearTimeout(timer);
-  }, [open, isLoading, displayRowCount]);
+  }, [isOpen, statusMessage]);
 
-  // Position the popup; reposition while scrolling or resizing.
+  // Anchor to the field; follow scrolling and resizing.
   useLayoutEffect(() => {
-    if (!open) {
-      setEntered(false);
-      return undefined;
-    }
-    const field = fieldRef.current;
-    const popup = popupRef.current;
-    if (!field || !popup) return undefined;
-
+    if (!isOpen) return undefined;
     const reposition = () => {
-      const fieldRect = field.getBoundingClientRect();
-      const popupRect = popup.getBoundingClientRect();
-      const result = computePosition(fieldRect, popupRect);
-      setPopupStyle(result.style);
-      setVertical(result.vertical);
+      const field = fieldRef.current;
+      const popup = popupRef.current;
+      if (!field || !popup) return;
+      const next = computePosition(field.getBoundingClientRect(), popup.getBoundingClientRect());
+      setPosition((previous) => (samePosition(previous, next) ? previous : next));
     };
     reposition();
-
-    if (pendingForward.current) {
-      const key = pendingForward.current;
-      pendingForward.current = null;
-      listboxRef.current?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
-    }
-
-    if (prefersReducedMotion()) setEntered(true);
-    else requestAnimationFrame(() => setEntered(true));
-
     window.addEventListener('scroll', reposition, true);
     window.addEventListener('resize', reposition);
     return () => {
       window.removeEventListener('scroll', reposition, true);
       window.removeEventListener('resize', reposition);
     };
-  }, [open, listboxGeneration]);
+  }, [isOpen, listOptions]);
 
-  // A pointer click or focus move outside, or the window losing focus, closes.
+  const setOpenState = (next: boolean) => {
+    if (next === isOpen || (next && isDisabled)) return;
+    if (openProp === undefined) setInternalOpen(next);
+    onOpenChange?.(next);
+  };
+
+  const openWith = (intent: ActiveIntent) => {
+    if (isOpen) {
+      requestActive(intent);
+      return;
+    }
+    setOpenIntent(intent);
+    setOpenState(true);
+  };
+
+  const close = () => setOpenState(false);
+  const closeRef = useRef(close);
+  closeRef.current = close;
+
+  // Outside pointerdown and focus moving outside close the list.
   useEffect(() => {
-    if (!open) return undefined;
-    const isOutside = (target: Node | null) =>
-      !target || (!popupRef.current?.contains(target) && !fieldRef.current?.contains(target));
+    if (!isOpen) return undefined;
+    const isOutside = (target: EventTarget | null) =>
+      !(target instanceof Node) || (!fieldRef.current?.contains(target) && !popupRef.current?.contains(target));
     const handlePointerDown = (event: PointerEvent) => {
-      if (isOutside(event.target as Node)) closeList();
+      if (isOutside(event.target)) closeRef.current();
     };
     const handleFocusOut = (event: FocusEvent) => {
-      if (isOutside(event.relatedTarget as Node | null)) closeList();
+      if (fieldRef.current?.contains(event.target as Node) && isOutside(event.relatedTarget)) closeRef.current();
     };
-    const handleWindowBlur = () => closeList();
     document.addEventListener('pointerdown', handlePointerDown);
     document.addEventListener('focusout', handleFocusOut);
-    window.addEventListener('blur', handleWindowBlur);
     return () => {
       document.removeEventListener('pointerdown', handlePointerDown);
       document.removeEventListener('focusout', handleFocusOut);
-      window.removeEventListener('blur', handleWindowBlur);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [isOpen]);
 
-  /** Dispatches a native, bubbling keydown at the Listbox root so its internal active-option state
-   * advances without DOM focus ever leaving the input; queued if the popup has not mounted yet. */
-  const dispatchToListbox = (key: string) => {
-    const target = listboxRef.current;
-    if (!target) {
-      pendingForward.current = key;
+  const commitValue = (next: ComboboxValue) => {
+    if (!isValueControlled) setInternalValue(next);
+    onChange?.(next);
+    if (form && form.validate === 'change') form.validateField(name);
+  };
+
+  const updateText = (next: string) => {
+    if (next === text) return;
+    if (!isTextControlled) setInternalText(next);
+    onInputChange?.(next);
+  };
+
+  const commitCustom = (raw: string) => {
+    if (raw === '') return;
+    if (multiple) {
+      if (!selectedValues.includes(raw)) commitValue([...selectedValues, raw]);
+      updateText('');
+      requestActive('none');
+    } else {
+      if (raw !== singleValue) commitValue(raw);
+      updateText(raw);
+      close();
+    }
+  };
+
+  /** Commits one row: single selects and closes; multiple toggles (selection order), clears the text and stays open. */
+  const commitRow = (rowValue: string) => {
+    if (rowValue === CUSTOM_ROW_VALUE) {
+      commitCustom(trimmedText);
       return;
     }
-    target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
-  };
-
-  const toggleChip = (optionValue: string) => {
-    const current = toArray(selected);
-    commitValue(current.includes(optionValue) ? current.filter((v) => v !== optionValue) : [...current, optionValue]);
-  };
-
-  const commitCustomValue = (raw: string) => {
     if (multiple) {
-      const current = toArray(selected);
-      if (!current.includes(raw)) commitValue([...current, raw]);
+      commitValue(
+        selectedValues.includes(rowValue) ? selectedValues.filter((v) => v !== rowValue) : [...selectedValues, rowValue],
+      );
       updateText('');
+      requestActive({ value: rowValue });
     } else {
-      commitValue(raw);
-      updateText(raw);
-      closeList();
+      if (rowValue !== singleValue) commitValue(rowValue);
+      updateText(labelFor(rowValue));
+      close();
     }
   };
 
   const handleListboxChange = (next: ListboxValue) => {
-    if (multiple) {
-      commitValue(next as ComboboxValue);
-      updateText('');
-      inputRef.current?.focus();
-    } else {
-      commitValue(next as ComboboxValue);
-      updateText(labelFor(next as string, rows));
-      closeList();
+    if (!Array.isArray(next)) {
+      commitRow(next);
+      return;
+    }
+    const toggled = next.find((v) => !selectedValues.includes(v)) ?? selectedValues.find((v) => !next.includes(v));
+    if (toggled !== undefined) commitRow(toggled);
+  };
+
+  const handlePopupClick = (event: ReactMouseEvent<HTMLDivElement>) => {
+    // Listbox reports no change when the already-selected option is pressed; single-select still closes.
+    if (multiple || singleValue === undefined) return;
+    const option = (event.target as Element).closest('[role="option"]');
+    if (option && option.id === optionId(singleValue) && option.getAttribute('aria-disabled') !== 'true') {
+      updateText(labelFor(singleValue));
+      close();
     }
   };
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const raw = event.target.value;
-    setForceFullList(false);
-    setActiveValue(null);
-    // `none` never filters, so the option set — and the Listbox's internal active-option state —
-    // has no reason to reset; every other mode narrows the set and reopens with no active option.
-    if (filter !== 'none') setListboxGeneration((g) => g + 1);
-    if (multiple && allowCustom && raw.includes(',')) {
-      const parts = raw.split(',');
-      const toCommit = parts
-        .slice(0, -1)
-        .map((part) => part.trim())
-        .filter(Boolean);
-      const remainder = parts[parts.length - 1];
-      if (toCommit.length > 0) {
-        const current = toArray(selected);
-        const next = [...current];
-        for (const part of toCommit) if (!next.includes(part)) next.push(part);
-        commitValue(next);
-      }
-      updateText(remainder!);
-    } else {
-      updateText(raw);
-    }
-    openList();
-  };
-
-  const handleInputClick = () => {
     if (isDisabled) return;
-    openList();
+    setShowAll(false);
+    updateText(event.target.value);
+    openWith(filter === 'none' ? 'typeahead' : 'none');
   };
 
-  const handleFieldMouseDown = (event: ReactMouseEvent<HTMLDivElement>) => {
-    if (event.target === event.currentTarget) inputRef.current?.focus();
+  const handleInputClick = (event: ReactMouseEvent<HTMLInputElement>) => {
+    onClick?.(event);
+    if (isDisabled || isOpen) return;
+    setShowAll(true);
+    openWith('selectedOrFirst');
   };
 
-  const handleClear = () => {
-    updateText('');
-    if (multiple) commitValue([]);
-    else commitValue('');
-    inputRef.current?.focus();
+  const handleInputBlur = (event: ReactFocusEvent<HTMLInputElement>) => {
+    onBlur?.(event);
+    if (form && (form.validate === 'blur' || form.validate === 'change')) form.validateField(name);
   };
 
-  const handleToggleClick = () => {
-    if (isDisabled) return;
-    if (open) {
-      closeList();
-      return;
-    }
-    setForceFullList(true);
-    setListboxGeneration((g) => g + 1);
-    openList();
-    inputRef.current?.focus();
-  };
-
-  const handleRemoveChip = (chipValue: string) => {
-    const current = toArray(selected);
-    commitValue(current.filter((v) => v !== chipValue));
-    inputRef.current?.focus();
+  const forwardToListbox = (key: string) => {
+    listboxRef.current?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
   };
 
   const handleKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+    onKeyDown?.(event);
+    if (event.defaultPrevented) return;
+    if (isDisabled) return;
     switch (event.key) {
-      case 'ArrowDown': {
-        // Shift is never forwarded: Listbox's own shift+arrow range-select is not part of this
-        // component's keyboard model, only plain ArrowDown/ArrowUp.
-        event.preventDefault();
-        openList();
-        if (!event.altKey) dispatchToListbox('ArrowDown');
-        break;
-      }
+      case 'ArrowDown':
       case 'ArrowUp': {
         event.preventDefault();
-        openList();
-        dispatchToListbox('ArrowUp');
-        break;
-      }
-      case 'Enter': {
-        if (!open) break;
-        event.preventDefault();
-        if (activeValue) {
-          if (multiple) toggleChip(activeValue);
-          else dispatchToListbox('Enter');
-        } else if (allowCustom && trimmedText !== '') {
-          commitCustomValue(trimmedText);
+        const down = event.key === 'ArrowDown';
+        if (down && event.altKey) {
+          if (!isOpen) openWith('selected');
+        } else if (!isOpen) {
+          openWith(down ? 'selectedOrFirst' : 'selectedOrLast');
+        } else {
+          forwardToListbox(event.key);
         }
         break;
       }
+      case 'Enter': {
+        if (!isOpen) break;
+        event.preventDefault();
+        if (activeValue !== null) commitRow(activeValue);
+        else if (allowCustom) commitCustom(trimmedText);
+        break;
+      }
+      case ',': {
+        if (!allowCustom) break;
+        event.preventDefault();
+        commitCustom(trimmedText);
+        break;
+      }
       case 'Escape': {
-        if (open) {
+        if (isOpen) {
           event.preventDefault();
-          closeList();
+          close();
         } else if (clearable && text !== '') {
           event.preventDefault();
           updateText('');
@@ -716,22 +725,14 @@ export const Combobox = function Combobox({
         break;
       }
       case 'Tab': {
-        if (open) {
-          event.preventDefault();
-          const anchor = inputRef.current;
-          const popup = popupRef.current;
-          closeList();
-          focusAdjacent(anchor, popup, event.shiftKey ? -1 : 1);
-        }
+        // Focus moves on natively; a highlighted option is not committed.
+        if (isOpen) close();
         break;
       }
       case 'Backspace': {
-        if (multiple && text === '') {
-          const current = toArray(selected);
-          if (current.length > 0) {
-            event.preventDefault();
-            commitValue(current.slice(0, -1));
-          }
+        if (multiple && text === '' && selectedValues.length > 0) {
+          event.preventDefault();
+          commitValue(selectedValues.slice(0, -1));
         }
         break;
       }
@@ -740,163 +741,179 @@ export const Combobox = function Combobox({
     }
   };
 
-  const resolved = overrides ? resolveOverrides(overrides) : undefined;
-  const mergedStyle = resolved?.rootStyle || style ? { ...resolved?.rootStyle, ...style } : undefined;
-  const mergedPopupStyle = { ...popupStyle, ...resolved?.popupStyle };
+  const handleClear = () => {
+    updateText('');
+    if (selectedValues.length > 0) commitValue(multiple ? [] : '');
+    inputRef.current?.focus();
+  };
 
-  const classes = [
-    'ds-combobox',
-    isInvalid ? 'ds-combobox--invalid' : null,
-    isDisabled ? 'ds-combobox--disabled' : null,
-    className ?? null,
-  ]
+  const handleToggle = () => {
+    if (isDisabled) return;
+    inputRef.current?.focus();
+    if (isOpen) {
+      close();
+      return;
+    }
+    setShowAll(true);
+    openWith('selectedOrFirst');
+  };
+
+  const handleRemoveChip = (chipValue: string) => {
+    commitValue(selectedValues.filter((v) => v !== chipValue));
+    inputRef.current?.focus();
+  };
+
+  const handleFieldMouseDown = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (event.target === event.currentTarget) {
+      event.preventDefault();
+      inputRef.current?.focus();
+    }
+  };
+
+  const resolved = resolveOverrides(overrides);
+  const describedBy = [description ? descriptionId : null, resolvedError !== undefined ? errorId : null]
+    .filter(Boolean)
+    .join(' ');
+  const showClear = clearable && !isDisabled && (selectedValues.length > 0 || text !== '');
+
+  const classes = ['ds-combobox', isInvalid ? 'ds-combobox--invalid' : null, isDisabled ? 'ds-combobox--disabled' : null]
     .filter(Boolean)
     .join(' ');
 
-  const describedBy = [description ? descriptionId : null, resolvedError ? errorId : null, statusId]
-    .filter(Boolean)
-    .join(' ');
-
-  const chips = multiple ? toArray(selected).map((v) => ({ value: v, label: labelFor(v, rows) })) : [];
-  const hasValue = multiple ? chips.length > 0 : typeof selected === 'string' && selected !== '';
-  const showClear = clearable && !isDisabled && (hasValue || text !== '');
-
-  const labelNode = (
-    <label htmlFor={id} id={labelId} className="ds-combobox__label" data-part="label">
-      <Text
-        element="span"
-        weight="medium"
-        overrides={Object.keys(resolved?.labelOverrides ?? {}).length ? resolved!.labelOverrides : undefined}
-      >
-        {label}
-        {required ? <span className="ds-combobox__required">{COPY.requiredIndicator}</span> : null}
-      </Text>
-    </label>
-  );
-
-  const descriptionNode = description ? (
-    <Text
-      element="p"
-      id={descriptionId}
-      size="sm"
-      tone="muted"
-      data-part="description"
-      overrides={Object.keys(resolved?.descriptionOverrides ?? {}).length ? resolved!.descriptionOverrides : undefined}
-    >
-      {description}
-    </Text>
-  ) : null;
-
-  const errorNode = resolvedError ? (
-    <Text element="span" id={errorId} role="alert" size="sm" tone="danger" data-part="errorMessage">
-      {resolvedError}
-    </Text>
-  ) : null;
-
-  const activeDescendant = open && activeValue ? `${listboxId}-option-${activeValue}` : undefined;
-  const popupClasses = ['ds-combobox__popup', entered ? 'ds-combobox__popup--entered' : null].filter(Boolean).join(' ');
+  const popupStyle: CSSProperties = {
+    ...resolved.popup,
+    ...(position
+      ? { left: position.left, top: position.top, bottom: position.bottom, minInlineSize: position.minInlineSize }
+      : null),
+  };
 
   return (
-    <div data-ds="Combobox" data-part="root" className={classes} style={mergedStyle}>
-      {labelNode}
-      {descriptionNode}
-      <div
-        ref={fieldRef}
-        className="ds-combobox__field"
-        data-part="field"
-        onMouseDown={handleFieldMouseDown}
-      >
-        {chips.map((chip) => (
-          <span key={chip.value} className="ds-combobox__chip" data-part="chip">
-            <span className="ds-combobox__chip-label">{chip.label}</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              iconOnly
-              label={COPY.removeChip.replace('{label}', chip.label)}
-              leadingIcon={<Icon name="close" inline />}
-              disabled={isDisabled}
-              data-part="chipRemove"
-              onClick={() => handleRemoveChip(chip.value)}
-            />
+    <div ref={rootRef} data-ds="Combobox" data-ds-field="" className={classes} style={resolved.root}>
+      <label htmlFor={id} id={labelId} className="ds-combobox__label" data-part="label">
+        <Text element="span" weight="medium" overrides={resolved.label}>
+          {label}
+          {required ? COPY.requiredIndicator : null}
+        </Text>
+      </label>
+      {description ? (
+        <Text element="p" id={descriptionId} size="sm" tone="muted" data-part="description" overrides={resolved.helper}>
+          {description}
+        </Text>
+      ) : null}
+      <div ref={fieldRef} className="ds-combobox__field" data-part="field" onMouseDown={handleFieldMouseDown}>
+        {multiple && selectedValues.length > 0 ? (
+          <span className="ds-combobox__chips" data-part="chips">
+            {selectedValues.map((chipValue) => {
+              const chipLabel = labelFor(chipValue);
+              return (
+                <span key={chipValue} className="ds-combobox__chip" data-part="chip">
+                  <span className="ds-combobox__chip-label">{chipLabel}</span>
+                  {/* Button owns its own data-part; the wrapper carries the anatomy name. */}
+                  <span className="ds-combobox__control" data-part="chipRemove">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      iconOnly
+                      label={COPY.removeChip.replace('{label}', chipLabel)}
+                      leadingIcon={<Icon name="close" inline overrides={{ color: 'color.foreground.muted' as TokenRef }} />}
+                      disabled={isDisabled}
+                      onClick={() => handleRemoveChip(chipValue)}
+                    />
+                  </span>
+                </span>
+              );
+            })}
           </span>
-        ))}
+        ) : null}
         <input
           {...rest}
           ref={inputRef}
           id={id}
+          type="text"
           role="combobox"
+          className="ds-combobox__input"
+          data-part="input"
+          value={text}
+          placeholder={placeholder}
+          readOnly={isDisabled || readOnly}
+          autoComplete="off"
           aria-autocomplete="list"
-          aria-expanded={open ? 'true' : 'false'}
-          aria-controls={open ? listboxId : undefined}
-          aria-activedescendant={activeDescendant}
           aria-haspopup="listbox"
+          aria-expanded={isOpen ? 'true' : 'false'}
+          aria-controls={listboxId}
+          aria-activedescendant={isOpen && activeValue !== null ? optionId(activeValue) : undefined}
           aria-describedby={describedBy || undefined}
           aria-invalid={isInvalid ? 'true' : undefined}
           aria-required={required ? 'true' : undefined}
           aria-disabled={isDisabled ? 'true' : undefined}
-          autoComplete="off"
-          data-part="input"
-          className="ds-combobox__input"
-          value={text}
-          placeholder={chips.length === 0 ? placeholder : undefined}
-          readOnly={isDisabled ? true : rest.readOnly}
           onChange={handleInputChange}
           onClick={handleInputClick}
           onKeyDown={handleKeyDown}
-          onFocus={onFocus}
-          onBlur={onBlur}
+          onBlur={handleInputBlur}
         />
         {showClear ? (
+          <span className="ds-combobox__control" data-part="clearButton">
+            <Button
+              variant="ghost"
+              size="sm"
+              iconOnly
+              label={COPY.clearLabel}
+              leadingIcon={<Icon name="close" inline overrides={{ color: 'color.foreground.muted' as TokenRef }} />}
+              onClick={handleClear}
+            />
+          </span>
+        ) : null}
+        <span className="ds-combobox__control" data-part="toggleButton">
           <Button
             variant="ghost"
             size="sm"
             iconOnly
-            label={COPY.clearLabel}
-            leadingIcon={<Icon name="close" inline overrides={{ color: 'color.foreground.muted' as TokenRef }} />}
-            data-part="clearButton"
-            onClick={handleClear}
+            label={COPY.toggleLabel}
+            leadingIcon={<Icon name="chevron-down" inline overrides={{ color: 'color.foreground.muted' as TokenRef }} />}
+            disabled={isDisabled}
+            tabIndex={-1}
+            onClick={handleToggle}
           />
-        ) : null}
-        <Button
-          variant="ghost"
-          size="sm"
-          iconOnly
-          label={COPY.toggleLabel}
-          leadingIcon={<Icon name="chevron-down" inline overrides={{ color: 'color.foreground.muted' as TokenRef }} />}
-          disabled={isDisabled}
-          data-part="toggleButton"
-          onClick={handleToggleClick}
-        />
+        </span>
       </div>
-      {multiple
-        ? chips.map((chip) => <input key={chip.value} type="hidden" name={name} value={chip.value} disabled={isDisabled} />)
-        : typeof selected === 'string' && selected !== ''
-          ? <input type="hidden" name={name} value={selected} disabled={isDisabled} />
-          : null}
-      {errorNode}
-      <div id={statusId} data-part="status" role="status" aria-live="polite" className="ds-combobox__status">
+      {resolvedError !== undefined ? (
+        <Text element="p" id={errorId} size="sm" tone="danger" data-part="errorMessage" overrides={resolved.helper}>
+          {resolvedError}
+        </Text>
+      ) : null}
+      <div role="status" aria-live="polite" className="ds-combobox__status" data-part="status">
         {statusText}
       </div>
-      {open
+      {selectedValues.map((hiddenValue) => (
+        <input key={hiddenValue} type="hidden" name={name} value={hiddenValue} disabled={isDisabled} />
+      ))}
+      {isOpen && typeof document !== 'undefined'
         ? createPortal(
-            <div ref={popupRef} data-part="popup" data-vertical={vertical} className={popupClasses} style={mergedPopupStyle}>
-              {/* Remounted on every narrowing keystroke: Listbox owns its active-option state
-                  internally with no external reset hook, so a fresh key is how "opens with no
-                  active option" (per the keyboard model) is guaranteed after each filter change. */}
+            <div
+              ref={popupRef}
+              className="ds-combobox__popup"
+              data-part="popup"
+              data-vertical={position?.vertical ?? 'bottom'}
+              style={popupStyle}
+              // DOM focus never leaves the input while an option is pressed.
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={handlePopupClick}
+            >
               <Listbox
-                key={listboxGeneration}
+                key={activeRequest.generation}
                 ref={listboxRef}
                 id={listboxId}
                 label={label}
                 labelledBy={labelId}
-                options={displayOptions}
+                options={listOptions}
                 multiple={multiple}
-                value={selected}
+                value={multiple ? selectedValues : singleValue}
                 selectionFollowsFocus={false}
-                disabled={isDisabled}
+                embedded
                 loading={isLoading}
-                emptyMessage={isLoading ? COPY.loading : COPY.empty}
+                disabled={isDisabled}
+                emptyMessage={COPY.empty}
+                initialActiveValue={requestedActive}
                 onChange={handleListboxChange}
                 onActiveChange={setActiveValue}
               />

@@ -25,35 +25,10 @@ interface SelectArgs {
 }
 
 const COUNTRY_OPTIONS: ListboxOption[] = [
-  { value: 'us', label: 'United States' },
   { value: 'ca', label: 'Canada' },
-  { value: 'mx', label: 'Mexico' },
   { value: 'fr', label: 'France' },
-  { value: 'de', label: 'Germany' },
-];
-
-const ROLE_OPTIONS: ListboxOption[] = [
-  { value: 'viewer', label: 'Viewer', description: 'Can view, not edit' },
-  { value: 'editor', label: 'Editor', description: 'Can view and edit' },
-  { value: 'admin', label: 'Admin', description: 'Full access, including billing' },
-];
-
-const GROUPED_OPTIONS: ListboxOption[] = [
-  {
-    group: 'North America',
-    options: [
-      { value: 'us', label: 'United States' },
-      { value: 'ca', label: 'Canada' },
-      { value: 'mx', label: 'Mexico' },
-    ],
-  },
-  {
-    group: 'Europe',
-    options: [
-      { value: 'fr', label: 'France' },
-      { value: 'de', label: 'Germany' },
-    ],
-  },
+  { value: 'jp', label: 'Japan' },
+  { value: 'us', label: 'United States' },
 ];
 
 const meta: Meta<SelectArgs> = {
@@ -63,30 +38,20 @@ const meta: Meta<SelectArgs> = {
     actions: { handles: ['change', 'open-change'] },
   },
   argTypes: {
-    native: { control: 'select', options: ['auto', 'always', 'never'] },
     size: { control: 'select', options: ['sm', 'md'] },
-    hideLabel: { control: 'boolean' },
-    multiple: { control: 'boolean' },
-    required: { control: 'boolean' },
-    disabled: { control: 'boolean' },
-    invalid: { control: 'boolean' },
+    native: { control: 'select', options: ['auto', 'always', 'never'] },
+    open: { control: 'boolean' },
   },
   args: {
     label: 'Country',
     name: 'country',
     options: COUNTRY_OPTIONS,
-    value: undefined,
-    defaultValue: undefined,
-    placeholder: undefined,
     hideLabel: false,
     size: 'md',
-    open: undefined,
     multiple: false,
-    description: undefined,
     required: false,
     disabled: false,
     invalid: false,
-    error: undefined,
     native: 'auto',
   },
   render: (args) => html`
@@ -99,7 +64,7 @@ const meta: Meta<SelectArgs> = {
       placeholder=${ifDefined(args.placeholder)}
       ?hide-label=${args.hideLabel}
       size=${args.size}
-      ?open=${args.open}
+      .open=${args.open}
       ?multiple=${args.multiple}
       description=${ifDefined(args.description)}
       ?required=${args.required}
@@ -116,59 +81,74 @@ type Story = StoryObj<SelectArgs>;
 
 export const Default: Story = {};
 
-/* native */
-export const NativeAuto: Story = { args: { native: 'auto' } };
-export const NativeAlways: Story = { args: { native: 'always', defaultValue: 'ca' } };
-export const NativeNever: Story = { args: { native: 'never' } };
-
 /* size */
 export const SizeSm: Story = { args: { size: 'sm' } };
 export const SizeMd: Story = { args: { size: 'md' } };
 
-/* boolean states */
-export const HideLabelTrue: Story = {
-  args: { hideLabel: true, defaultValue: 'us' },
-};
-export const MultipleTrue: Story = {
-  args: { multiple: true, options: ROLE_OPTIONS, label: 'Roles', name: 'roles', defaultValue: ['editor'] },
-};
-export const MultipleManySelected: Story = {
+/* native */
+export const NativeAuto: Story = { args: { native: 'auto' } };
+export const NativeAlways: Story = { args: { native: 'always' } };
+export const NativeNever: Story = { args: { native: 'never' } };
+
+/* states */
+export const Multiple: Story = { args: { multiple: true, defaultValue: ['ca', 'fr', 'jp'] } };
+export const WithDescription: Story = { args: { description: 'Where the account is registered.' } };
+export const Required: Story = { args: { required: true } };
+export const Disabled: Story = { args: { disabled: true, defaultValue: 'fr' } };
+export const Invalid: Story = { args: { invalid: true } };
+export const WithError: Story = { args: { error: 'Fix this before continuing.' } };
+
+/** Rendered open with its trigger and four options, for the keyboard gate. */
+export const Keyboard: Story = { args: { open: true } };
+
+/* examples */
+export const CountryPicker: Story = {
   args: {
+    label: 'Country',
+    name: 'country',
+    placeholder: 'Choose a country',
+    options: [
+      { value: 'ca', label: 'Canada' },
+      { value: 'fr', label: 'France' },
+      { value: 'jp', label: 'Japan' },
+    ],
+  },
+};
+
+export const MultiSelectRoles: Story = {
+  args: {
+    label: 'Roles',
+    name: 'roles',
     multiple: true,
-    options: GROUPED_OPTIONS,
-    label: 'Regions',
-    name: 'regions',
-    defaultValue: ['us', 'ca', 'mx', 'fr'],
+    options: [
+      { value: 'frontend', label: 'Frontend' },
+      { value: 'backend', label: 'Backend' },
+      { value: 'design', label: 'Design' },
+    ],
   },
 };
-export const RequiredTrue: Story = { args: { required: true } };
-export const DisabledTrue: Story = { args: { disabled: true, defaultValue: 'us' } };
 
-export const WithDescription: Story = {
+export const ForcedNativePicker: Story = {
   args: {
-    label: 'Role',
-    name: 'role',
-    options: ROLE_OPTIONS,
-    description: 'Controls what this member can see and change.',
-    defaultValue: 'viewer',
+    label: 'Country',
+    name: 'country',
+    native: 'always',
+    options: [
+      { value: 'ca', label: 'Canada' },
+      { value: 'us', label: 'United States' },
+    ],
   },
 };
 
-export const Grouped: Story = {
-  args: { label: 'Country', options: GROUPED_OPTIONS, defaultValue: 'fr' },
-};
-
-export const ErrorIdentified: Story = {
-  args: { required: true, error: 'Fix this before continuing.' },
-};
-
-/**
- * Renders open (via the controlled `open` prop) with its trigger and at
- * least three options so the keyboard gate can verify Enter/Space/arrow-to-
- * open, arrow navigation, Home/End, typeahead, Enter to commit, Escape and
- * Tab. Unlike the option list, real DOM focus stays on the trigger the whole
- * time the popup is open.
- */
-export const Keyboard: Story = {
-  args: { options: COUNTRY_OPTIONS, open: true },
+export const CompactPickerInAHeader: Story = {
+  args: {
+    label: 'Month',
+    name: 'month',
+    hideLabel: true,
+    size: 'sm',
+    options: [
+      { value: '1', label: 'January' },
+      { value: '2', label: 'February' },
+    ],
+  },
 };

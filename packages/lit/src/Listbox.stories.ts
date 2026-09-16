@@ -6,6 +6,7 @@ import type { ListboxMaxVisible, ListboxOption, ListboxValue } from './Listbox.j
 
 interface ListboxArgs {
   label: string;
+  labelledBy?: string | undefined;
   options: ListboxOption[];
   multiple: boolean;
   value?: ListboxValue | undefined;
@@ -15,49 +16,24 @@ interface ListboxArgs {
   invalid: boolean;
   error?: string | undefined;
   embedded: boolean;
+  initialActiveValue?: string | undefined;
+  loading: boolean;
   disabled: boolean;
-  name: string;
+  name?: string | undefined;
   emptyMessage?: string | undefined;
   maxVisible: ListboxMaxVisible;
-  defaultActiveValue?: string | undefined;
-  loading: boolean;
 }
 
 const FRUIT_OPTIONS: ListboxOption[] = [
   { value: 'apple', label: 'Apple' },
   { value: 'banana', label: 'Banana' },
   { value: 'cherry', label: 'Cherry' },
-  { value: 'date', label: 'Date' },
-  { value: 'elderberry', label: 'Elderberry' },
 ];
 
 const PLAN_OPTIONS: ListboxOption[] = [
   { value: 'starter', label: 'Starter', description: 'For individuals trying things out' },
   { value: 'team', label: 'Team', description: 'For small teams shipping together' },
   { value: 'enterprise', label: 'Enterprise', description: 'For organizations with custom needs', icon: 'info' },
-];
-
-const GROUPED_OPTIONS: ListboxOption[] = [
-  {
-    group: 'Fruit',
-    options: [
-      { value: 'apple', label: 'Apple' },
-      { value: 'banana', label: 'Banana' },
-    ],
-  },
-  {
-    group: 'Vegetables',
-    options: [
-      { value: 'carrot', label: 'Carrot' },
-      { value: 'daikon', label: 'Daikon' },
-    ],
-  },
-];
-
-const DISABLED_OPTION_LIST: ListboxOption[] = [
-  { value: 'apple', label: 'Apple' },
-  { value: 'banana', label: 'Banana', disabled: true },
-  { value: 'cherry', label: 'Cherry' },
 ];
 
 const MANY_OPTIONS: ListboxOption[] = Array.from({ length: 20 }, (_, index) => ({
@@ -73,50 +49,38 @@ const meta: Meta<ListboxArgs> = {
   },
   argTypes: {
     maxVisible: { control: 'select', options: ['5', '8', '12', 'all'] },
-    multiple: { control: 'boolean' },
-    selectionFollowsFocus: { control: 'boolean' },
-    required: { control: 'boolean' },
-    invalid: { control: 'boolean' },
-    embedded: { control: 'boolean' },
-    disabled: { control: 'boolean' },
-    loading: { control: 'boolean' },
   },
   args: {
-    label: 'Assignees',
+    label: 'Fruit',
     options: FRUIT_OPTIONS,
     multiple: false,
-    value: undefined,
-    defaultValue: undefined,
     selectionFollowsFocus: true,
     required: false,
     invalid: false,
-    error: undefined,
     embedded: false,
-    disabled: false,
-    name: 'fruit',
-    emptyMessage: undefined,
-    maxVisible: '8',
-    defaultActiveValue: undefined,
     loading: false,
+    disabled: false,
+    maxVisible: '8',
   },
   render: (args) => html`
     <ds-listbox
       label=${args.label}
+      labelledBy=${ifDefined(args.labelledBy)}
       .options=${args.options}
       ?multiple=${args.multiple}
       .value=${args.value}
       .defaultValue=${args.defaultValue}
-      ?no-selection-follows-focus=${!args.selectionFollowsFocus}
+      .selectionFollowsFocus=${args.selectionFollowsFocus}
       ?required=${args.required}
       ?invalid=${args.invalid}
       .error=${args.error}
       ?embedded=${args.embedded}
+      initial-active-value=${ifDefined(args.initialActiveValue)}
+      ?loading=${args.loading}
       ?disabled=${args.disabled}
-      name=${args.name}
+      name=${ifDefined(args.name)}
       empty-message=${ifDefined(args.emptyMessage)}
       max-visible=${args.maxVisible}
-      default-active-value=${ifDefined(args.defaultActiveValue)}
-      ?loading=${args.loading}
     ></ds-listbox>
   `,
 };
@@ -130,42 +94,87 @@ export const Default: Story = {};
 export const MaxVisible5: Story = { args: { options: MANY_OPTIONS, maxVisible: '5' } };
 export const MaxVisible8: Story = { args: { options: MANY_OPTIONS, maxVisible: '8' } };
 export const MaxVisible12: Story = { args: { options: MANY_OPTIONS, maxVisible: '12' } };
-export const MaxVisibleAll: Story = { args: { options: FRUIT_OPTIONS, maxVisible: 'all' } };
+export const MaxVisibleAll: Story = { args: { options: MANY_OPTIONS, maxVisible: 'all' } };
 
-/* boolean states */
-export const MultipleTrue: Story = {
-  args: { multiple: true, options: PLAN_OPTIONS, label: 'Add-ons', defaultValue: ['team'] },
+/* examples */
+export const SinglePicker: Story = {
+  args: {
+    label: 'Fruit',
+    options: [
+      { value: 'apple', label: 'Apple' },
+      { value: 'banana', label: 'Banana' },
+      { value: 'cherry', label: 'Cherry' },
+    ],
+  },
 };
-export const SelectionFollowsFocusFalse: Story = {
-  args: { selectionFollowsFocus: false, defaultValue: 'apple' },
+
+export const MultiSelectWithChecks: Story = {
+  args: {
+    label: 'Roles',
+    multiple: true,
+    defaultValue: ['frontend'],
+    options: [
+      { value: 'frontend', label: 'Frontend' },
+      { value: 'backend', label: 'Backend' },
+      { value: 'design', label: 'Design' },
+    ],
+  },
 };
-export const RequiredTrue: Story = { args: { required: true } };
-export const InvalidTrue: Story = { args: { invalid: true } };
+
+export const GroupedOptions: Story = {
+  args: {
+    label: 'Role',
+    options: [
+      {
+        group: 'Engineering',
+        options: [
+          { value: 'frontend', label: 'Frontend' },
+          { value: 'backend', label: 'Backend' },
+        ],
+      },
+      { group: 'Design', options: [{ value: 'product', label: 'Product design' }] },
+    ],
+  },
+};
+
+export const EmbeddedInAPopup: Story = {
+  args: {
+    label: 'Country',
+    embedded: true,
+    maxVisible: '5',
+    options: [
+      { value: 'ca', label: 'Canada' },
+      { value: 'fr', label: 'France' },
+      { value: 'jp', label: 'Japan' },
+    ],
+  },
+};
+
+/* notable states */
+export const SelectionFollowsFocusFalse: Story = { args: { selectionFollowsFocus: false, defaultValue: 'apple' } };
+export const WithDescriptionsAndIcons: Story = { args: { label: 'Plan', options: PLAN_OPTIONS, defaultValue: 'team' } };
+export const DisabledOption: Story = {
+  args: {
+    options: [
+      { value: 'apple', label: 'Apple', disabled: true },
+      { value: 'banana', label: 'Banana' },
+    ],
+  },
+};
+export const Required: Story = { args: { required: true, name: 'fruit' } };
+export const Invalid: Story = { args: { invalid: true } };
 export const ErrorMessage: Story = { args: { error: 'Fix this before continuing.' } };
-export const EmbeddedTrue: Story = { args: { embedded: true } };
-export const DisabledTrue: Story = { args: { disabled: true, defaultValue: 'apple' } };
-export const DisabledOption: Story = { args: { options: DISABLED_OPTION_LIST } };
-export const LoadingTrue: Story = { args: { loading: true, options: [] } };
-export const DefaultActiveValueSet: Story = { args: { defaultActiveValue: 'cherry' } };
-
-export const WithDescriptionsAndIcons: Story = {
-  args: { label: 'Plan', options: PLAN_OPTIONS, defaultValue: 'team' },
-};
-
-export const Grouped: Story = {
-  args: { label: 'Produce', options: GROUPED_OPTIONS, defaultValue: 'banana' },
-};
-
-export const EmptyState: Story = {
-  args: { options: [], emptyMessage: 'No matching people' },
-};
+export const Disabled: Story = { args: { disabled: true, defaultValue: 'banana' } };
+export const Empty: Story = { args: { options: [] } };
+export const EmptyCustomMessage: Story = { args: { options: [], emptyMessage: 'No fruit matches that.' } };
+export const Loading: Story = { args: { options: [], loading: true } };
+export const InitialActiveValue: Story = { args: { initialActiveValue: 'cherry' } };
 
 /**
- * Renders with at least three options so the keyboard gate can verify arrow
- * navigation, Home/End, PageUp/PageDown, Space/Enter and typeahead. Listbox
- * has no trigger and is a single tab stop — options move via
- * `aria-activedescendant`, not independent DOM focus.
+ * Keyboard gate: a single tab stop with at least three options; arrows, Home/End,
+ * PageUp/PageDown, Space/Enter and typeahead move `aria-activedescendant`. The
+ * `multiple` rules read `?args=multiple:!true` from the story URL.
  */
 export const Keyboard: Story = {
-  args: { options: FRUIT_OPTIONS },
+  args: { options: MANY_OPTIONS.slice(0, 8), label: 'Options' },
 };

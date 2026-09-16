@@ -25,3 +25,20 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Tablet/react-native-web popup Modal deliberately does not focus-trap (unlike Select/Menu/Dialog), since focus must stay in the text input per the APG combobox model.
 - Added a 'Done' copy string for the BottomSheet footer under multiple, not present in the schema's copy block (same addition Select's RN generation makes).
 - Result-count/loading/empty announcements use AccessibilityInfo.announceForAccessibility on both iOS and Android, unlike the iOS-only gating used elsewhere for error announcements, since the spec doesn't distinguish platforms here.
+
+## 2026-09-16 08:53 — round 1
+
+- Combobox: form.valueType is string[] but the rn FormFieldHandle.getValue only allows string | boolean; with multiple I submit the values comma-joined (safe because a comma always commits, so no custom value can contain one).
+- Combobox: copy.activeOption has no source of an 'active option' on touch; I announce it from Listbox's onActiveChange (focus/hover of a row), which may duplicate the screen reader's own row announcement.
+- Combobox: filter none says typing moves the active option to the first label starting with the text; Listbox only offers initialActiveValue, so I pass the type-ahead match there and don't know if Listbox re-applies it after mount.
+- Combobox: guidance says the toggle button 'opens the full, unfiltered list for that opening', but on phones there is no separate toggle Button (the summary Pressable is the toggle); I put the testID Combobox.toggleButton on the chevron inside the summary, hidden from accessibility.
+- Combobox: the phone breakpoint isn't given; I reused the package convention windowWidth <= t.layoutMaxWidthProse (as Select/Menu/Popover), so which layout the behavior tests hit depends on that token and Jest's default window.
+- Combobox: Button has no testID prop, so the parts clearButton, toggleButton and chipRemove get a wrapper View carrying the testID (the Alert/Toast pattern); tests press the Button inside by its label.
+- Combobox: guidance puts copy.done in the sheet footer 'committing closes the sheet (single) or updates the chips (multiple)' without saying whether single-select also shows Done; I show it in both modes as the visible close control.
+- Combobox: the status part is visually hidden on web; RN has no visually-hidden primitive, so I render the debounced status as small muted text in a polite live region (Android) and announce it on iOS only, to avoid double announcements.
+- Combobox: keyboard section for rn lists only Escape, Tab and Home/End, but the multiple/allowCustom prop descriptions require Backspace-removes-last-chip and comma-commits; I implemented both from the prop descriptions and nothing for ArrowDown/ArrowUp/Alt+ArrowDown.
+- Combobox: Enter without allowCustom has nothing to commit on native (no active option); with allowCustom, typed text that exactly matches an option's label or value commits that option's value rather than a custom string — the doc only says the add-custom row is suppressed in that case.
+- Combobox: the Escape keyboard rule says 'if closed and clearable, clears the input text' while the clear button 'empties value and text'; I made Escape clear only the text.
+- Combobox: fieldBorderFocus is locked and a focus width (focusRingWidth) exists, but how the thicker focus border reconciles with fieldBorderWidth isn't specified; I swap the border width on focus and shrink the padding by the difference so content doesn't shift.
+- Combobox: Listbox has both a loading prop and emptyMessage while guidance says the loading row comes 'through Listbox's single emptyMessage seam'; I pass loading={filter === 'async' && loading} and emptyMessage=copy.empty, since Listbox's loading already shows copy.loading in place of the empty message.
+- Combobox: Default story args aren't specified; tests need an 'apple' option with label 'Apple' for the chip scenarios, so Default uses the fruit-picker example's options.

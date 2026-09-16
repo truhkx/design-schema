@@ -96,7 +96,66 @@ export const Loading: Story = { args: { options: [], loading: true } };
 
 export const Embedded: Story = { args: { embedded: true } };
 
-export const DefaultActiveValue: Story = { args: { defaultValue: undefined, defaultActiveValue: 'jo' } };
+export const InitialActiveValue: Story = { args: { defaultValue: undefined, initialActiveValue: 'jo' } };
+
+// Examples from the component doc.
+
+/** The standalone visible picker. */
+export const SinglePicker: Story = {
+  args: {
+    label: 'Fruit',
+    options: [
+      { value: 'apple', label: 'Apple' },
+      { value: 'banana', label: 'Banana' },
+      { value: 'cherry', label: 'Cherry' },
+    ],
+  },
+};
+
+/** Any number of selections, each selected row carrying a check. */
+export const MultiSelectWithChecks: Story = {
+  args: {
+    label: 'Roles',
+    multiple: true,
+    defaultValue: ['frontend'],
+    options: [
+      { value: 'frontend', label: 'Frontend' },
+      { value: 'backend', label: 'Backend' },
+      { value: 'design', label: 'Design' },
+    ],
+  },
+};
+
+/** Options under group headings. */
+export const GroupedOptions: Story = {
+  args: {
+    label: 'Role',
+    options: [
+      {
+        group: 'Engineering',
+        options: [
+          { value: 'frontend', label: 'Frontend' },
+          { value: 'backend', label: 'Backend' },
+        ],
+      },
+      { group: 'Design', options: [{ value: 'product', label: 'Product design' }] },
+    ],
+  },
+};
+
+/** The same engine inside a Select or Combobox popup, which owns the surface, capped at five rows. */
+export const EmbeddedInAPopup: Story = {
+  args: {
+    label: 'Country',
+    embedded: true,
+    maxVisible: '5',
+    options: [
+      { value: 'ca', label: 'Canada' },
+      { value: 'fr', label: 'France' },
+      { value: 'jp', label: 'Japan' },
+    ],
+  },
+};
 
 /** At least three focusable rows, for the axe gate and manual keyboard checks on react-native-web. */
 export const Keyboard: Story = {

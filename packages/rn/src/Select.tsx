@@ -35,13 +35,11 @@ export type SelectSize = 'sm' | 'md';
 
 /** The style bindings a caller may replace with a different token; see the component's overrides contract. */
 export type SelectOverridableBinding =
-  | 'triggerBorderFocus'
   | 'triggerBorderInvalid'
   | 'triggerBorderWidth'
   | 'triggerRadius'
   | 'triggerPaddingInline'
   | 'triggerPaddingBlock'
-  | 'triggerPaddingBlockSm'
   | 'triggerGap'
   | 'partGap'
   | 'labelWeight'
@@ -54,8 +52,8 @@ export type SelectOverridableBinding =
   | 'layer'
   | 'fontFamily'
   | 'fontSize'
+  | 'fontWeight'
   | 'lineHeight'
-  | 'minTargetSm'
   | 'disabledOpacity'
   | 'enter';
 
@@ -70,7 +68,7 @@ export interface SelectProps {
   value?: SelectValue | undefined;
   /** Initial value (array with `multiple`). */
   defaultValue?: SelectValue | undefined;
-  /** Text shown in the trigger when nothing is selected. Defaults to `copy.placeholder`. */
+  /** Text shown in the trigger when nothing is selected. Defaults to `copy.placeholder`. Not a substitute for the label. */
   placeholder?: string | undefined;
   /** Visually hide the label (it remains the accessible name), for compact pickers such as DatePicker's month and year. */
   hideLabel?: boolean | undefined;
@@ -91,13 +89,15 @@ export interface SelectProps {
   /** Error message; implies invalid. */
   error?: string | undefined;
   /**
-   * `auto` (default): a `BottomSheet` on phone-width screens, the positioned popup on
-   * tablets and react-native-web. `always` and `never` both fall back to that same
-   * choice — see the doc comment for why.
+   * `auto` (default) and `always`: a `BottomSheet` on phone-width screens, the positioned
+   * popup on tablets and react-native-web. `never`: the popup everywhere. There is no OS
+   * picker to force without a dependency the package does not take.
    */
   native?: SelectNative | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<SelectOverridableBinding, TokenRef | undefined>> | undefined;
+  /** The root view. */
+  ref?: React.Ref<ViewInstance> | undefined;
   /** Fired when the value changes (array with `multiple`). */
   onChange?: ((value: SelectValue) => void) | undefined;
   /** Fired when the popup opens or closes. */
@@ -106,13 +106,11 @@ export interface SelectProps {
 
 const COPY = {
   placeholder: 'Select…',
-  selectedCount: (count: number): string => `${count} selected`,
-  required: (label: string): string => `${label} is required.`,
-  invalid: (label: string): string => `${label} is not valid.`,
-  requiredIndicator: ' (required)',
-  // Not in the schema's copy block; the BottomSheet footer for `multiple` needs a
-  // label and none was given. See the generation gap notes.
+  selectedCount: '{count} selected',
   done: 'Done',
+  required: '{label} is required.',
+  invalid: '{label} is not valid.',
+  requiredIndicator: ' (required)',
 } as const;
 
 function isGroup(item: ListboxItem): item is ListboxGroup {
@@ -137,37 +135,27 @@ type Rect = { x: number; y: number; width: number; height: number };
  * Select — the field for "one of these" (or "any of these") when the list is longer
  * than a RadioGroup should show and typing is not the natural way in.
  *
- * When to use: Use for a form field with about seven to fifty recognisable options —
- * country, role, status. Use `multiple` for tags or memberships. Use Combobox instead
- * when typing to filter is faster than scrolling, or free text is allowed. Do not use
- * it for two to six options (RadioGroup), for actions (Menu), or for on/off (Switch).
+ * When to use: a form field with about seven to fifty recognisable options — country,
+ * role, status. Use `multiple` for tags or memberships. Use Combobox instead when typing
+ * to filter is faster than scrolling, or free text is allowed. Do not use it for two to
+ * six options (RadioGroup), for actions (Menu), for modes (SegmentedControl), or for
+ * on/off (Switch).
  *
  * Renders a `Pressable` trigger (`accessibilityRole="combobox"`, `accessibilityLabel`,
  * `accessibilityHint`, `accessibilityState={{ expanded, disabled }}`,
- * `accessibilityValue={{ text }}` with the selected label(s)) showing the value or
- * `copy.placeholder`, and an `Icon` chevron. Activating it opens a `Listbox` in a
- * popup: a `BottomSheet` on phone-width screens, or a `Modal` positioned below (and
- * flipped above on overflow) the trigger, at least as wide as it, on `layer.dropdown`,
- * elsewhere. Escape (the Android back gesture) and an outside tap close the popup
- * without changing the value and move accessibility focus back to the trigger
- * (`AccessibilityInfo.setAccessibilityFocus`, since `FocusScope`'s own `restoreFocus`
- * only recaptures a `TextInput`, not a `Pressable` — the same limit `Popover`
- * documents). Selecting an option commits and, for a single select, closes the popup;
- * with `multiple` the popup stays open and the `BottomSheet` path gets a footer "Done"
- * button (the plain popup closes on outside tap or Escape instead). Validation,
- * `required`, `disabled` and `error` work as `Input`'s: precedence is `error` prop →
- * `required` → `invalid`, and the field registers `{ getValue, validate, focus }`
- * with the enclosing `FormContext` by `name` directly (no hidden input, and the
- * composed `Listbox` is not itself registered, so the value is not double-counted).
- * `native` only has one real branch point on this platform, since there is no native
- * OS picker without a banned community dependency: `never` always uses the popup;
- * `auto` and `always` both use the phone/tablet split described above. See the
- * generation gap notes for the web-only "native `<select>`" meaning of `always` that
- * has no native equivalent here. `size: sm` swaps the trigger's vertical padding and
- * target height for their `Sm` bindings and the trigger/label/Listbox text to
- * `font.size.sm`; `hideLabel` keeps the label as the trigger's `accessibilityLabel`
- * while dropping its visible `Text`. `open` is a controlled escape hatch for
- * programmatic opening (stories, tests); when omitted the trigger drives it.
+ * `accessibilityValue={{ text }}` with the selected label(s)) showing the value or the
+ * placeholder, and a `chevron-down` `Icon`. Activating it opens an `embedded` `Listbox`
+ * (given no `name`, `selectionFollowsFocus: false` for single, and the first selection
+ * as `initialActiveValue`): a `BottomSheet` on phone-width screens (`layout.maxWidth.prose`)
+ * with a `copy.done` footer button for `multiple`, or else a transparent `Modal` whose
+ * popup sits below the trigger (flipped above on overflow), at least as wide as it, on
+ * `layer.dropdown`, fading in over `enter`. Escape (the Android back gesture) and an
+ * outside tap close without changing the value; focus returns to the trigger by hand
+ * (`AccessibilityInfo.setAccessibilityFocus`), since `FocusScope`'s restore only
+ * recaptures a `TextInput`. Selecting an option commits and, for a single select,
+ * closes. Pressable sees no keys, so Enter-as-press is the only other keyboard rule.
+ * Validation works as `Input`'s: `error` prop → `required` → `invalid`, registered with
+ * the enclosing `FormContext` by `name`.
  */
 export function Select({
   label,
@@ -187,6 +175,7 @@ export function Select({
   error,
   native = 'auto',
   overrides,
+  ref,
   onChange,
   onOpenChange,
 }: SelectProps): React.JSX.Element {
@@ -214,9 +203,7 @@ export function Select({
   const isInvalid = invalid || displayedError !== undefined;
   const summarised = form !== null && form.errorSummary;
 
-  // No native OS picker is available without a community dependency the package
-  // conventions ban, so `always` (web's "force a real <select>") has no distinct
-  // native behaviour: it falls back to the same phone/tablet split as `auto`.
+  // `always` has no OS picker to force here, so only `never` leaves the phone/tablet split.
   const isPhoneWidth = windowWidth <= t.layoutMaxWidthProse;
   const usesSheet = native !== 'never' && isPhoneWidth;
 
@@ -226,8 +213,14 @@ export function Select({
     [flatOptions],
   );
 
-  const selectedValues: string[] = multiple && Array.isArray(currentValue) ? currentValue : [];
-  const selectedValue: string | undefined = !multiple && typeof currentValue === 'string' ? currentValue : undefined;
+  const selectedValues: string[] = multiple
+    ? Array.isArray(currentValue)
+      ? currentValue
+      : []
+    : typeof currentValue === 'string'
+      ? [currentValue]
+      : [];
+  const hasSelection = selectedValues.length > 0;
 
   const validateValue = React.useCallback(
     (candidate: SelectValue | undefined): string | null => {
@@ -235,20 +228,20 @@ export function Select({
         return error;
       }
       if (required) {
-        const empty = multiple ? !Array.isArray(candidate) || candidate.length === 0 : candidate === undefined;
+        const empty = Array.isArray(candidate) ? candidate.length === 0 : candidate === undefined || candidate === '';
         if (empty) {
-          return COPY.required(label);
+          return COPY.required.replace('{label}', label);
         }
       }
       if (invalid) {
-        return COPY.invalid(label);
+        return COPY.invalid.replace('{label}', label);
       }
       return null;
     },
-    [required, multiple, label, error, invalid],
+    [required, label, error, invalid],
   );
 
-  const focusTriggerA11y = React.useCallback((): void => {
+  const focusTrigger = React.useCallback((): void => {
     const node = triggerRef.current ? findNodeHandle(triggerRef.current) : null;
     if (node != null) {
       AccessibilityInfo.setAccessibilityFocus(node);
@@ -267,14 +260,15 @@ export function Select({
         return typeof current === 'string' ? current : undefined;
       },
       validate: () => latest.current.validateValue(latest.current.currentValue),
-      focus: focusTriggerA11y,
+      focus: focusTrigger,
     }),
-    [multiple, focusTriggerA11y],
+    [multiple, focusTrigger],
   );
 
   const register = form?.register;
   const unregister = form?.unregister;
   React.useEffect(() => {
+    // Disabled: not submitted.
     if (register === undefined || unregister === undefined || isDisabled) {
       return undefined;
     }
@@ -300,7 +294,7 @@ export function Select({
       return;
     }
     changeOpen(false);
-    focusTriggerA11y();
+    focusTrigger();
   };
 
   const handleTriggerPress = (): void => {
@@ -314,7 +308,7 @@ export function Select({
     changeOpen(true);
   };
 
-  const commit = (next: SelectValue): void => {
+  const handleListboxChange = (next: ListboxValue): void => {
     if (!isControlled) {
       setInternalValue(next);
     }
@@ -322,16 +316,16 @@ export function Select({
     if (form !== null && form.validateMode !== 'submit') {
       form.reportValidity(name, validateValue(next));
     }
-  };
-
-  const handleListboxChange = (next: ListboxValue): void => {
-    commit(next);
     if (!multiple) {
       closePopup();
     }
   };
 
-  // Popup-Modal path only (the BottomSheet manages its own mount/animation).
+  const token = <T,>(ref: TokenRef | undefined, fallback: T): T => (ref ? (resolveToken(t, ref) as T) : fallback);
+
+  const enterDuration = token(overrides?.enter, t.motionDurationFast);
+
+  // Popup-Modal path only (the BottomSheet manages its own mount and animation).
   React.useEffect(() => {
     if (open) {
       setPopupMounted(true);
@@ -343,15 +337,14 @@ export function Select({
       return undefined;
     }
     if (open) {
-      const node = triggerRef.current;
-      node?.measureInWindow((x, y, width, height) => setTriggerRect({ x, y, width, height }));
+      triggerRef.current?.measureInWindow((x, y, width, height) => setTriggerRect({ x, y, width, height }));
       if (reducedMotion) {
         progress.setValue(1);
         return undefined;
       }
       const animation = Animated.timing(progress, {
         toValue: 1,
-        duration: overrides?.enter ? (resolveToken(t, overrides.enter) as number) : t.motionDurationFast,
+        duration: enterDuration,
         easing: toEasing(t.motionEasingStandard),
         // react-native-web has no native animated module.
         useNativeDriver: false,
@@ -368,7 +361,7 @@ export function Select({
     }
     const animation = Animated.timing(progress, {
       toValue: 0,
-      duration: overrides?.enter ? (resolveToken(t, overrides.enter) as number) : t.motionDurationFast,
+      duration: enterDuration,
       easing: toEasing(t.motionEasingStandard),
       useNativeDriver: false,
     });
@@ -385,62 +378,34 @@ export function Select({
     setPopupHeight(event.nativeEvent.layout.height);
   };
 
-  const triggerBorderFocusColor = overrides?.triggerBorderFocus
-    ? (resolveToken(t, overrides.triggerBorderFocus) as string)
-    : t.colorBorderFocus;
-  const triggerBorderInvalidColor = overrides?.triggerBorderInvalid
-    ? (resolveToken(t, overrides.triggerBorderInvalid) as string)
-    : t.colorBorderDanger;
-  const triggerBorderWidth = overrides?.triggerBorderWidth
-    ? (resolveToken(t, overrides.triggerBorderWidth) as number)
-    : t.borderWidthThin;
-  const triggerRadius = overrides?.triggerRadius ? (resolveToken(t, overrides.triggerRadius) as number) : t.radiusMd;
-  const triggerPaddingInline = overrides?.triggerPaddingInline
-    ? (resolveToken(t, overrides.triggerPaddingInline) as number)
-    : t.spaceMd;
-  const triggerPaddingBlock =
-    size === 'sm'
-      ? overrides?.triggerPaddingBlockSm
-        ? (resolveToken(t, overrides.triggerPaddingBlockSm) as number)
-        : t.space1
-      : overrides?.triggerPaddingBlock
-        ? (resolveToken(t, overrides.triggerPaddingBlock) as number)
-        : t.spaceSm;
-  const triggerGap = overrides?.triggerGap ? (resolveToken(t, overrides.triggerGap) as number) : t.layoutGapNormal;
-  const partGap = overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.space1;
-  const labelWeight = overrides?.labelWeight ? (resolveToken(t, overrides.labelWeight) as number) : t.fontWeightMedium;
-  const popupSurface = overrides?.popupSurface ? (resolveToken(t, overrides.popupSurface) as string) : t.colorOverlaySurface;
-  const popupBorder = overrides?.popupBorder ? (resolveToken(t, overrides.popupBorder) as string) : t.colorBorder;
-  const popupShadow = overrides?.popupShadow ? (resolveToken(t, overrides.popupShadow) as typeof t.shadowOverlay) : t.shadowOverlay;
-  const popupRadius = overrides?.popupRadius ? (resolveToken(t, overrides.popupRadius) as number) : t.radiusMd;
-  const popupOffset = overrides?.popupOffset ? (resolveToken(t, overrides.popupOffset) as number) : t.space1;
-  const layer = overrides?.layer ? (resolveToken(t, overrides.layer) as number) : t.layerDropdown;
-  const minTarget =
-    size === 'sm'
-      ? overrides?.minTargetSm
-        ? (resolveToken(t, overrides.minTargetSm) as number)
-        : t.sizeTargetMin
-      : t.sizeTargetComfortable;
-  const disabledOpacity = overrides?.disabledOpacity ? (resolveToken(t, overrides.disabledOpacity) as number) : t.opacityDisabled;
+  const triggerBorderInvalid = token<string>(overrides?.triggerBorderInvalid, t.colorBorderDanger);
+  const triggerBorderWidth = token<number>(overrides?.triggerBorderWidth, t.borderWidthThin);
+  const triggerRadius = token<number>(overrides?.triggerRadius, t.radiusMd);
+  const triggerPaddingInline = token<number>(overrides?.triggerPaddingInline, t.spaceMd);
+  const triggerPaddingBlock = token<number>(overrides?.triggerPaddingBlock, size === 'sm' ? t.space1 : t.spaceSm);
+  const triggerGap = token<number>(overrides?.triggerGap, t.layoutGapNormal);
+  const partGap = token<number>(overrides?.partGap, t.space1);
+  const popupSurface = token<string>(overrides?.popupSurface, t.colorOverlaySurface);
+  const popupBorder = token<string>(overrides?.popupBorder, t.colorBorder);
+  const popupShadow = token<typeof t.shadowOverlay>(overrides?.popupShadow, t.shadowOverlay);
+  const popupRadius = token<number>(overrides?.popupRadius, t.radiusMd);
+  const popupOffset = token<number>(overrides?.popupOffset, t.space1);
+  const layer = token<number>(overrides?.layer, t.layerDropdown);
+  const disabledOpacity = token<number>(overrides?.disabledOpacity, t.opacityDisabled);
+  const minTarget = size === 'sm' ? t.sizeTargetMin : t.sizeTargetComfortable;
 
   const visibleLabel = required ? `${label}${COPY.requiredIndicator}` : label;
 
-  let valueText: string;
-  if (multiple) {
-    valueText =
-      selectedValues.length === 0
-        ? (placeholder ?? COPY.placeholder)
-        : selectedValues.length <= 2
-          ? selectedValues.map(labelFor).join(', ')
-          : COPY.selectedCount(selectedValues.length);
-  } else {
-    valueText = selectedValue !== undefined ? labelFor(selectedValue) : (placeholder ?? COPY.placeholder);
-  }
-  const hasSelection = multiple ? selectedValues.length > 0 : selectedValue !== undefined;
+  const valueText = !hasSelection
+    ? (placeholder ?? COPY.placeholder)
+    : selectedValues.length <= 2
+      ? selectedValues.map(labelFor).join(', ')
+      : COPY.selectedCount.replace('{count}', new Intl.NumberFormat().format(selectedValues.length));
 
-  const insetShrink = t.borderWidthFocus - triggerBorderWidth;
-  const activeTriggerBorderWidth = focused ? t.borderWidthFocus : triggerBorderWidth;
-  const triggerBorderColor = focused ? triggerBorderFocusColor : isInvalid ? triggerBorderInvalidColor : t.colorBorderStrong;
+  // The focus width replaces the border width; padding shrinks by the difference.
+  const borderWidth = focused ? t.borderWidthFocus : triggerBorderWidth;
+  const inset = triggerBorderWidth - borderWidth;
+  const triggerBorderColor = focused ? t.colorBorderFocus : isInvalid ? triggerBorderInvalid : t.colorBorderStrong;
 
   const containerStyle: ViewStyle = {
     flexDirection: 'column',
@@ -455,14 +420,19 @@ export function Select({
     gap: triggerGap,
     minHeight: minTarget,
     backgroundColor: t.colorBackground,
-    borderWidth: activeTriggerBorderWidth,
+    borderWidth,
     borderColor: triggerBorderColor,
     borderRadius: triggerRadius,
-    paddingHorizontal: triggerPaddingInline + insetShrink,
-    paddingVertical: triggerPaddingBlock + insetShrink,
+    paddingHorizontal: triggerPaddingInline + inset,
+    paddingVertical: triggerPaddingBlock + inset,
   };
 
-  const valueTextStyle = { fontFamily: overrides?.fontFamily, fontSize: overrides?.fontSize, lineHeight: overrides?.lineHeight };
+  const valueOverrides = {
+    fontFamily: overrides?.fontFamily,
+    fontSize: overrides?.fontSize,
+    fontWeight: overrides?.fontWeight,
+    lineHeight: overrides?.lineHeight,
+  };
   const labelOverrides = {
     fontFamily: overrides?.fontFamily,
     fontSize: overrides?.fontSize,
@@ -483,6 +453,8 @@ export function Select({
       options={options}
       multiple={multiple}
       value={currentValue}
+      selectionFollowsFocus={multiple ? undefined : false}
+      initialActiveValue={selectedValues[0]}
       disabled={isDisabled}
       embedded
       onChange={handleListboxChange}
@@ -495,17 +467,19 @@ export function Select({
   const measuredPopupHeight = popupHeight ?? 0;
   const flipAbove = triggerRect !== null && spaceBelow < measuredPopupHeight + popupOffset && spaceAbove > spaceBelow;
   const popupTop =
-    triggerRect === null ? 0 : flipAbove ? triggerRect.y - popupOffset - measuredPopupHeight : triggerRect.y + triggerRect.height + popupOffset;
-  const popupLeft = triggerRect?.x ?? 0;
-  const popupWidth = triggerRect?.width;
+    triggerRect === null
+      ? 0
+      : flipAbove
+        ? triggerRect.y - popupOffset - measuredPopupHeight
+        : triggerRect.y + triggerRect.height + popupOffset;
 
   const hostStyle: ViewStyle = { flex: 1 };
 
   const popupOuterStyle: Animated.WithAnimatedValue<ViewStyle> = {
     position: 'absolute',
     top: popupTop,
-    left: popupLeft,
-    width: popupWidth,
+    left: triggerRect?.x ?? 0,
+    minWidth: triggerRect?.width,
     borderRadius: popupRadius,
     zIndex: layer,
     opacity: progress,
@@ -521,7 +495,7 @@ export function Select({
   };
 
   return (
-    <View testID="Select" style={containerStyle}>
+    <View ref={ref} testID="Select" style={containerStyle}>
       {hideLabel ? null : (
         <Text size={size} weight="medium" overrides={labelOverrides}>
           {visibleLabel}
@@ -545,13 +519,13 @@ export function Select({
         style={triggerStyle}
         testID="Select.trigger"
       >
-        <Text size={size} tone={hasSelection ? 'default' : 'muted'} overrides={valueTextStyle}>
+        <Text size={size} tone={hasSelection ? 'default' : 'muted'} overrides={valueOverrides}>
           {valueText}
         </Text>
         <Icon name="chevron-down" size="sm" color={t.colorForegroundMuted} />
       </Pressable>
       {displayedError !== undefined ? (
-        <View accessibilityLiveRegion={summarised ? 'none' : 'assertive'}>
+        <View testID="Select.errorMessage" accessibilityLiveRegion={summarised ? 'none' : 'assertive'}>
           <Text size="sm" tone="danger" overrides={helperOverrides}>
             {displayedError}
           </Text>

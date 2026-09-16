@@ -17,7 +17,7 @@ interface SegmentedControlArgs {
 const OPTIONS: SegmentedControlOption[] = [
   { value: 'day', label: 'Day' },
   { value: 'week', label: 'Week' },
-  { value: 'month', label: 'Month', disabled: true },
+  { value: 'month', label: 'Month' },
 ];
 
 const KEYBOARD_OPTIONS: SegmentedControlOption[] = [
@@ -25,12 +25,6 @@ const KEYBOARD_OPTIONS: SegmentedControlOption[] = [
   { value: 'week', label: 'Week' },
   { value: 'month', label: 'Month' },
   { value: 'year', label: 'Year', disabled: true },
-];
-
-const ICON_OPTIONS: SegmentedControlOption[] = [
-  { value: 'previous', label: 'Previous', icon: 'chevron-left' },
-  { value: 'current', label: 'Current', icon: 'dash' },
-  { value: 'next', label: 'Next', icon: 'chevron-right' },
 ];
 
 const meta: Meta<SegmentedControlArgs> = {
@@ -45,7 +39,7 @@ const meta: Meta<SegmentedControlArgs> = {
     fill: { control: 'boolean' },
   },
   args: {
-    label: 'Time range',
+    label: 'Range',
     options: OPTIONS,
     value: undefined,
     defaultValue: undefined,
@@ -75,15 +69,46 @@ export const Default: Story = {};
 export const SizeSm: Story = { args: { size: 'sm' } };
 export const SizeMd: Story = { args: { size: 'md' } };
 
-export const Fill: Story = { args: { fill: true } };
+export const Controlled: Story = { args: { value: 'week' } };
 
-export const WithDefaultValue: Story = { args: { defaultValue: 'week' } };
+export const DisabledOption: Story = { args: { options: KEYBOARD_OPTIONS, defaultValue: 'week' } };
 
-export const IconOnly: Story = { args: { options: ICON_OPTIONS, iconOnly: true } };
-
-/**
- * Renders with its trigger-less group open and at least three focusable
- * (enabled) segments so the keyboard gate can verify arrow navigation,
- * wrapping, and Home/End selection.
- */
+/** Three enabled segments and a disabled one, for arrow wrapping, skipping and Home/End. */
 export const Keyboard: Story = { args: { options: KEYBOARD_OPTIONS } };
+
+/* examples */
+export const ViewMode: Story = {
+  args: {
+    label: 'View mode',
+    options: [
+      { value: 'list', label: 'List' },
+      { value: 'grid', label: 'Grid' },
+    ],
+    defaultValue: 'list',
+  },
+};
+
+export const IconOnlyToolbar: Story = {
+  args: {
+    label: 'View mode',
+    options: [
+      { value: 'list', label: 'List view', icon: 'list' },
+      { value: 'grid', label: 'Grid view', icon: 'grid' },
+    ],
+    iconOnly: true,
+    size: 'sm',
+  },
+};
+
+export const FilledRangeSwitch: Story = {
+  args: {
+    label: 'Range',
+    options: [
+      { value: 'day', label: 'Day' },
+      { value: 'week', label: 'Week' },
+      { value: 'month', label: 'Month' },
+    ],
+    defaultValue: 'week',
+    fill: true,
+  },
+};

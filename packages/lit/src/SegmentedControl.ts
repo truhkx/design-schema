@@ -64,17 +64,19 @@ const HOOKS: Record<SegmentedControlOverridableBinding, string> = {
  *
  * `<ds-segmented-control label="View mode" .options=${[...]} value="grid">`
  * renders a `role="radiogroup"` of native `<button role="radio">` in its
- * shadow root, one per entry of `options`. The list is one roving-tabindex
+ * shadow root, one per entry of `options`. The group is one roving-tabindex
  * stop: arrow keys move real focus *and* selection together (radio
- * semantics), wrapping and skipping disabled options; Home/End jump to the
- * first/last enabled option and select it too. The pill is an absolutely
- * positioned element measured from the selected segment's box and animated
- * with `transition`, removed under reduced motion. `iconOnly` wraps each
- * segment's button in a `<ds-tooltip>` (`describes="false"`) so the option's
- * label is both the accessible name and the visible hover/focus label.
+ * semantics), wrapping and skipping disabled options; Home/End do the same
+ * to the first/last enabled option. The pill (anatomy: indicator) is an
+ * absolutely positioned element measured from the selected segment's box and
+ * slid with `transition`, instant under reduced motion. `iconOnly` wraps each
+ * segment in a `<ds-tooltip no-describes>` so the option's label is both the
+ * accessible name and the visible hover/focus label.
+ *
  * Selecting a segment fires a composed `change` CustomEvent with `{ value }`.
- * Not form-associated: a segmented control has nothing to submit, it only
- * switches a mode.
+ * With `value` set the element is controlled: it reports the choice and shows
+ * it only once `value` changes. Not form-associated: a segmented control has
+ * nothing to submit, it only switches a mode.
  *
  * ## When to use
  *
@@ -90,15 +92,7 @@ const HOOKS: Record<SegmentedControlOverridableBinding, string> = {
  * five options or long labels (use Tabs or Select), and never with no
  * selection — a segmented control always has one.
  *
- * @fires change - Fired when the selection changes, with `{ value }` in `detail`.
- * @csspart group - The `role="radiogroup"` container (anatomy: group).
- * @csspart segment - Each `role="radio"` button (anatomy: segment).
- * @csspart segment-label - A segment's visible label (anatomy: segmentLabel).
- * @csspart segment-icon - A segment's `<ds-icon>` (anatomy: segmentIcon).
- * @csspart indicator - The pill tracking the selected segment (anatomy: indicator).
- *
- * With `iconOnly`, each segment (anatomy: tooltip) is wrapped in a `<ds-tooltip>`
- * showing the option's label; the tooltip has no part of its own to style.
+ * @fires change - Fired when the user changes the selection, with `{ value }` in `detail`.
  */
 @customElement('ds-segmented-control')
 export class DsSegmentedControl extends LitElement {
@@ -147,7 +141,7 @@ export class DsSegmentedControl extends LitElement {
     }
 
     /* groupBackground: color.background.strong, locked */
-    .group {
+    [data-part='group'] {
       position: relative;
       box-sizing: border-box;
       display: flex;
@@ -158,11 +152,11 @@ export class DsSegmentedControl extends LitElement {
       background: var(--color-background-strong);
     }
 
-    /* indicator: color.background, locked — the raised pill under the selected segment */
-    .indicator {
+    /* segmentSelectedBackground: color.background, locked; segmentShadow — the raised pill under the selected segment */
+    [data-part='indicator'] {
       position: absolute;
-      inset-inline-start: 0;
-      inset-block-start: 0;
+      left: 0;
+      top: 0;
       z-index: 0;
       box-sizing: border-box;
       background: var(--color-background);
@@ -176,14 +170,18 @@ export class DsSegmentedControl extends LitElement {
         block-size var(--ds-segmented-control-transition) var(--motion-easing-standard);
     }
 
+    /* The first placement jumps; only later selections slide. */
+    [data-part='indicator']:not([data-placed]) {
+      transition: none;
+    }
+
     @media (prefers-reduced-motion: reduce) {
-      .indicator,
-      .segment {
+      [data-part='indicator'] {
         transition: none;
       }
     }
 
-    .segment {
+    [data-part='segment'] {
       position: relative;
       z-index: 1;
       box-sizing: border-box;
@@ -192,6 +190,7 @@ export class DsSegmentedControl extends LitElement {
       align-items: center;
       justify-content: center;
       gap: var(--ds-segmented-control-segment-gap);
+      /* minTarget: size.target.min, locked */
       min-inline-size: var(--size-target-min);
       min-block-size: var(--size-target-min);
       margin: 0;
@@ -209,79 +208,78 @@ export class DsSegmentedControl extends LitElement {
       cursor: pointer;
       appearance: none;
       -webkit-appearance: none;
-      transition:
-        color var(--ds-segmented-control-transition) var(--motion-easing-standard),
-        font-weight var(--ds-segmented-control-transition) var(--motion-easing-standard);
     }
 
-    :host([fill]) .segment {
+    /* ds-tooltip is display: contents, so the button stays the flex item */
+    :host([fill]) [data-part='segment'] {
       flex: 1 1 0%;
     }
 
-    :host([size='sm']) .segment {
+    :host([size='sm']) [data-part='segment'] {
       padding-block: var(--ds-segmented-control-padding-block-sm);
     }
 
-    /* segmentSelectedColor: color.foreground.strong, locked; selectedWeight: font.weight.semibold marks the selection alongside the pill and checked state, not color alone */
-    .segment[aria-checked='true'] {
+    /* segmentSelectedColor: color.foreground.strong, locked; selectedWeight marks the selection alongside the pill and checked state, not color alone */
+    [data-part='segment'][aria-checked='true'] {
       color: var(--color-foreground-strong);
       font-weight: var(--ds-segmented-control-selected-weight);
     }
 
     /* focusRing / focusRingWidth: color.border.focus / border.width.focus, locked */
-    .segment:focus-visible {
+    [data-part='segment']:focus-visible {
       outline: var(--border-width-focus) solid var(--color-border-focus);
       outline-offset: calc(-1 * var(--border-width-focus));
     }
 
-    .segment:disabled {
+    [data-part='segment']:disabled {
       opacity: var(--ds-segmented-control-disabled-opacity);
       cursor: not-allowed;
     }
 
-    .segment-icon {
+    [data-part='segmentIcon'] {
       flex: none;
     }
 
-    .segment-label {
+    [data-part='segmentLabel'] {
       min-inline-size: 0;
     }
   `;
 
   /** Accessible name of the control ("View mode"). Not shown. */
-  @property() accessor label!: string;
+  @property() accessor label: string = '';
 
   /** Two to five options in display order. A property, not an attribute. */
   @property({ attribute: false }) accessor options: SegmentedControlOption[] = [];
 
   /** Controlled selected value. Omit for uncontrolled. */
-  @property({ reflect: true }) accessor value: string | undefined;
+  @property({ type: String, reflect: true }) accessor value: string | undefined;
 
   /** Initially selected value. Defaults to the first enabled option. */
   @property({ attribute: 'default-value' }) accessor defaultValue: string | undefined;
 
-  /** Show icons only; every option must have one. Labels become accessible names. */
+  /** Show icons only; every option must have one. Labels become accessible names and Tooltips. */
   @property({ type: Boolean, reflect: true, attribute: 'icon-only' }) accessor iconOnly = false;
 
   /** Toolbar (`sm`) or standard (`md`) height. */
-  @property({ reflect: true }) accessor size: SegmentedControlSize = 'md';
+  @property({ type: String, reflect: true }) accessor size: SegmentedControlSize = 'md';
 
   /** Stretch to the container width with equal segments. */
   @property({ type: Boolean, reflect: true }) accessor fill = false;
 
-  /** Per-instance style overrides: `{ segmentRadius: 'radius.md' }`. Locked bindings are ignored. */
+  /** Per-instance style overrides: `{ segmentRadius: 'radius.md' }`. Locked bindings are not in the type. */
   @property({ attribute: false }) accessor overrides: Partial<Record<SegmentedControlOverridableBinding, TokenRef | undefined>> | undefined;
 
-  /** Uncontrolled selection, seeded from `defaultValue` (or the first enabled option) on first update. */
+  /** Uncontrolled selection, seeded from `defaultValue` (or the first enabled option). */
   @state() private accessor internalValue: string | undefined;
 
-  /** The segment currently carrying the roving tabindex and (usually) real focus. */
-  @state() private accessor focusedValue: string | null = null;
+  /** The segment carrying the roving tabindex. */
+  @state() private accessor focusedValue: string | undefined;
 
-  @query('.group') private accessor groupEl!: HTMLElement | null;
-  @query('.indicator') private accessor indicatorEl!: HTMLElement | null;
+  @query('[data-part="group"]') private accessor groupEl!: HTMLElement | null;
+  @query('[data-part="indicator"]') private accessor indicatorEl!: HTMLElement | null;
 
-  private resizeObserver?: ResizeObserver | undefined;
+  private resizeObserver: ResizeObserver | undefined;
+  private warned = false;
 
   /** The currently selected value, controlled or not. */
   get currentValue(): string | null {
@@ -291,24 +289,26 @@ export class DsSegmentedControl extends LitElement {
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('data-ds', 'SegmentedControl');
+    if (this.hasUpdated && this.groupEl) {
+      this.observeGroup(this.groupEl);
+    }
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.resizeObserver?.disconnect();
+    this.resizeObserver = undefined;
   }
 
   protected override firstUpdated(): void {
     if (this.groupEl) {
-      this.resizeObserver = new ResizeObserver(() => this.updateIndicator());
-      this.resizeObserver.observe(this.groupEl);
+      this.observeGroup(this.groupEl);
     }
   }
 
   protected override willUpdate(changed: PropertyValues): void {
-    if (!this.hasUpdated) {
-      this.internalValue = this.defaultValue ?? this.options.find((option) => option.disabled !== true)?.value;
-      this.focusedValue = this.currentValue;
+    if (this.internalValue === undefined && this.options.length > 0) {
+      this.internalValue = this.defaultValue ?? this.firstEnabled()?.value;
     }
     if (changed.has('overrides')) {
       this.applyOverrides();
@@ -322,54 +322,67 @@ export class DsSegmentedControl extends LitElement {
 
   protected override render(): TemplateResult {
     const selected = this.currentValue;
+    const tabStop = this.tabStopValue();
     return html`
-      <div class="group" part="group" role="radiogroup" aria-label=${this.label} @keydown=${this.handleKeydown}>
-        <span class="indicator" part="indicator" aria-hidden="true"></span>
-        ${this.options.map((option) => this.renderSegment(option, option.value === selected))}
+      <div data-part="group" part="group" role="radiogroup" aria-label=${this.label} @keydown=${this.handleKeydown}>
+        <span data-part="indicator" part="indicator" aria-hidden="true"></span>
+        ${this.options.map((option) => this.renderSegment(option, option.value === selected, option.value === tabStop))}
       </div>
     `;
   }
 
-  private renderSegment(option: SegmentedControlOption, selected: boolean) {
-    const disabled = option.disabled === true;
-    const focused = (this.focusedValue ?? this.currentValue) === option.value;
+  private renderSegment(option: SegmentedControlOption, selected: boolean, tabStop: boolean): TemplateResult {
     const button = html`
       <button
         type="button"
-        class="segment"
+        data-part="segment"
         part="segment"
         role="radio"
         data-value=${option.value}
         aria-checked=${selected ? 'true' : 'false'}
         aria-label=${ifDefined(this.iconOnly ? option.label : undefined)}
-        tabindex=${focused ? 0 : -1}
-        ?disabled=${disabled}
+        tabindex=${tabStop ? 0 : -1}
+        ?disabled=${option.disabled === true}
         @click=${() => this.handleSegmentClick(option)}
       >
         ${option.icon
-          ? html`<ds-icon class="segment-icon" part="segment-icon" name=${option.icon}></ds-icon>`
+          ? html`<ds-icon data-part="segmentIcon" part="segmentIcon" name=${option.icon}></ds-icon>`
           : nothing}
-        ${!this.iconOnly ? html`<span class="segment-label" part="segment-label">${option.label}</span>` : nothing}
+        ${this.iconOnly
+          ? nothing
+          : html`<span data-part="segmentLabel" part="segmentLabel">${option.label}</span>`}
       </button>
     `;
     return this.iconOnly
-      ? html`<ds-tooltip content=${option.label} ?describes=${false}>${button}</ds-tooltip>`
+      ? html`<ds-tooltip data-part="tooltip" part="tooltip" content=${option.label} no-describes>${button}</ds-tooltip>`
       : button;
   }
 
   private readonly handleKeydown = (event: KeyboardEvent): void => {
-    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
-      event.preventDefault();
-      this.moveSelection(1);
-    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
-      event.preventDefault();
-      this.moveSelection(-1);
-    } else if (event.key === 'Home') {
-      event.preventDefault();
-      this.selectEdge('first');
-    } else if (event.key === 'End') {
-      event.preventDefault();
-      this.selectEdge('last');
+    switch (event.key) {
+      case 'ArrowRight':
+      case 'ArrowDown':
+        event.preventDefault();
+        this.moveSelection(1);
+        break;
+      case 'ArrowLeft':
+      case 'ArrowUp':
+        event.preventDefault();
+        this.moveSelection(-1);
+        break;
+      case 'Home': {
+        event.preventDefault();
+        const first = this.firstEnabled();
+        if (first) this.focusAndSelect(first.value);
+        break;
+      }
+      case 'End': {
+        event.preventDefault();
+        const items = this.enabledOptions();
+        const last = items[items.length - 1];
+        if (last) this.focusAndSelect(last.value);
+        break;
+      }
     }
   };
 
@@ -384,33 +397,36 @@ export class DsSegmentedControl extends LitElement {
     return this.options.filter((option) => option.disabled !== true);
   }
 
+  private firstEnabled(): SegmentedControlOption | undefined {
+    return this.options.find((option) => option.disabled !== true);
+  }
+
+  /** The focused segment if it is still enabled, else the selected one, else the first enabled. */
+  private tabStopValue(): string | undefined {
+    const items = this.enabledOptions();
+    const candidates = [this.focusedValue, this.currentValue ?? undefined];
+    for (const candidate of candidates) {
+      if (candidate !== undefined && items.some((option) => option.value === candidate)) {
+        return candidate;
+      }
+    }
+    return items[0]?.value;
+  }
+
   private moveSelection(delta: number): void {
     const items = this.enabledOptions();
     if (items.length === 0) {
       return;
     }
-    const currentIndex = items.findIndex((option) => option.value === (this.focusedValue ?? this.currentValue));
-    let nextIndex = currentIndex + delta;
-    if (nextIndex < 0) {
-      nextIndex = items.length - 1;
-    } else if (nextIndex >= items.length) {
-      nextIndex = 0;
-    }
+    const currentIndex = items.findIndex((option) => option.value === this.tabStopValue());
+    const nextIndex = (currentIndex + delta + items.length) % items.length;
     this.focusAndSelect(items[nextIndex]!.value);
-  }
-
-  private selectEdge(edge: 'first' | 'last'): void {
-    const items = this.enabledOptions();
-    if (items.length === 0) {
-      return;
-    }
-    this.focusAndSelect(edge === 'first' ? items[0]!.value : items[items.length - 1]!.value);
   }
 
   private focusAndSelect(value: string): void {
     this.select(value);
     void this.updateComplete.then(() => {
-      this.renderRoot.querySelector<HTMLElement>(`[data-value="${CSS.escape(value)}"]`)?.focus();
+      this.renderRoot.querySelector<HTMLElement>(`[data-part="segment"][data-value="${CSS.escape(value)}"]`)?.focus();
     });
   }
 
@@ -419,9 +435,7 @@ export class DsSegmentedControl extends LitElement {
     if (next === this.currentValue) {
       return;
     }
-    if (this.value !== undefined) {
-      this.value = next;
-    } else {
+    if (this.value === undefined) {
       this.internalValue = next;
     }
     this.dispatchEvent(
@@ -433,23 +447,37 @@ export class DsSegmentedControl extends LitElement {
     );
   }
 
+  private observeGroup(group: HTMLElement): void {
+    this.resizeObserver?.disconnect();
+    this.resizeObserver = new ResizeObserver(() => this.updateIndicator());
+    this.resizeObserver.observe(group);
+  }
+
   private updateIndicator(): void {
     const indicator = this.indicatorEl;
-    if (!indicator) {
+    const group = this.groupEl;
+    if (!indicator || !group) {
       return;
     }
     const selected = this.currentValue;
-    const segmentEl = selected
-      ? this.renderRoot.querySelector<HTMLElement>(`[data-value="${CSS.escape(selected)}"]`)
+    const segment = selected
+      ? this.renderRoot.querySelector<HTMLElement>(`[data-part="segment"][data-value="${CSS.escape(selected)}"]`)
       : null;
-    if (!segmentEl) {
+    if (!segment) {
       indicator.style.opacity = '0';
       return;
     }
+    const groupBox = group.getBoundingClientRect();
+    const segmentBox = segment.getBoundingClientRect();
+    const x = segmentBox.left - groupBox.left - group.clientLeft;
+    const y = segmentBox.top - groupBox.top - group.clientTop;
     indicator.style.opacity = '1';
-    indicator.style.transform = `translate(${segmentEl.offsetLeft}px, ${segmentEl.offsetTop}px)`;
-    indicator.style.inlineSize = `${segmentEl.offsetWidth}px`;
-    indicator.style.blockSize = `${segmentEl.offsetHeight}px`;
+    indicator.style.transform = `translate(${x}px, ${y}px)`;
+    indicator.style.inlineSize = `${segmentBox.width}px`;
+    indicator.style.blockSize = `${segmentBox.height}px`;
+    if (!indicator.hasAttribute('data-placed')) {
+      requestAnimationFrame(() => indicator.setAttribute('data-placed', ''));
+    }
   }
 
   private applyOverrides(): void {
@@ -465,16 +493,19 @@ export class DsSegmentedControl extends LitElement {
   }
 
   private warnInDev(): void {
-    if (!import.meta.env.DEV) {
+    if (!import.meta.env.DEV || this.warned) {
       return;
     }
     if (!this.label) {
+      this.warned = true;
       console.warn("<ds-segmented-control> requires a `label`, the group's accessible name.", this);
     }
-    if (!this.options || this.options.length < 2 || this.options.length > 5) {
+    if (this.options.length < 2 || this.options.length > 5) {
+      this.warned = true;
       console.warn('<ds-segmented-control> expects two to five entries in `options`.', this);
     }
-    if (this.iconOnly && this.options?.some((option) => option.icon === undefined)) {
+    if (this.iconOnly && this.options.some((option) => option.icon === undefined)) {
+      this.warned = true;
       console.warn('<ds-segmented-control> `iconOnly` requires every option to have an `icon`.', this);
     }
   }

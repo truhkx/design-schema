@@ -12,3 +12,18 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 ## 2026-09-10 18:24 — round 1
 
 - SegmentedControl: minTarget's description says 'on touch platforms the group height is size.target.comfortable so every segment reaches 44px', but CSS has no reliable 'is this a touch platform' query (only pointer:coarse, which also fires on hybrid laptops), and no other Lit component in this package gates size.target.comfortable behind a media query — they all use it unconditionally. Kept segments at the locked size.target.min (24px) unconditionally rather than guessing at a pointer-coarse media query; flagging since the touch-comfortable bump described in the schema isn't implemented.
+
+## 2026-09-16 08:06 — round 1
+
+- SegmentedControl: `form: { role: field, discovery: context }` contradicts platforms.lit.notes ('Not form-associated by design') and the web notes ('not a form field and has no name/value to submit'); there is also no `name` prop to submit under. Chose not form-associated and no `data-ds-field`; the form block should be removed or a `name` prop added.
+- SegmentedControl: the declared Keyboard section lists only the arrow rules, while the schema's keyboard block also has Home, End and the wrap-from-last rule. Implemented all of the schema's rules.
+- SegmentedControl: `segmentSelectedBackground` and `segmentShadow` name part `segment`, but the doc describes them as the sliding pill, which is the `indicator` anatomy part. Applied them (and `segmentRadius`) to `indicator`; the bindings should name part `indicator`.
+- SegmentedControl: `paddingBlockSm` says 'md uses paddingBlock', but there is no `paddingBlock` binding. Chose `segmentPaddingBlock` for md; the same token (space.1) makes the sizes differ only by font size.
+- SegmentedControl: `segmentSpacing` (between adjacent segments) names part `segment`, but spacing between siblings is never a margin here. Applied it as `gap` on `group`; the binding should name part `group`.
+- SegmentedControl: `selectedWeight`, `paddingBlockSm`, `fontFamily`, `fontSize`, `fontWeight`, `lineHeight`, `transition`, `disabledOpacity` and `minTarget` declare no `part`. Applied them to `segment` (transition to `indicator`).
+- SegmentedControl: `tooltip` is an anatomy part composed as Tooltip, but the doc gives no Tooltip props besides `describes: false` (in web prose only). Chose `content` = option label, `no-describes`, and default placement and delay; the size sm toolbar case might want `delay: none`.
+- SegmentedControl: with `iconOnly`, the doc doesn't say whether the segment's name comes from `aria-label` or from the Tooltip's aria-labelledby. Set both: `aria-label` for tests, with Tooltip `no-describes`.
+- SegmentedControl: `defaultValue` naming a disabled or missing option is unspecified. The value is taken as given (no segment checked if missing), and the tab stop falls back to the first enabled segment.
+- SegmentedControl: in controlled mode, the keyboard rules don't say where focus goes when the parent doesn't accept the change. Focus moves to the next segment while the checked state stays until `value` changes.
+- SegmentedControl: `label` is required with no default. The Lit property defaults to '' and warns in development when empty.
+- SegmentedControl: the `disabled-segment-is-not-selectable` scenario's description says arrow movement skips disabled segments, but its `when` is only a click, so skipping is implemented and not covered by a scenario.

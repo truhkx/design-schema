@@ -2,11 +2,10 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Combobox } from './Combobox';
 import { withTheme } from './decorators';
 
-const OPTIONS = [
-  { value: 'alex', label: 'Alex Kim', description: 'Design' },
-  { value: 'sam', label: 'Sam Patel', description: 'Engineering' },
-  { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },
-  { value: 'lee', label: 'Lee Chen', description: 'Product' },
+const FRUIT = [
+  { value: 'apple', label: 'Apple' },
+  { value: 'apricot', label: 'Apricot' },
+  { value: 'banana', label: 'Banana' },
 ];
 
 const meta: Meta<typeof Combobox> = {
@@ -14,9 +13,9 @@ const meta: Meta<typeof Combobox> = {
   component: Combobox,
   decorators: [withTheme()],
   args: {
-    label: 'Assignee',
-    name: 'assignee',
-    options: OPTIONS,
+    label: 'Fruit',
+    name: 'fruit',
+    options: FRUIT,
     filter: 'contains',
     multiple: false,
     allowCustom: false,
@@ -38,69 +37,81 @@ export const Default: Story = {};
 export const FilterStartsWith: Story = { args: { filter: 'startsWith' } };
 export const FilterContains: Story = { args: { filter: 'contains' } };
 export const FilterNone: Story = { args: { filter: 'none' } };
-export const FilterAsync: Story = { args: { filter: 'async', loading: false } };
+export const FilterAsync: Story = { args: { filter: 'async' } };
 
-// notable states
-export const Multiple: Story = {
+// examples
+export const FruitPicker: Story = {
+  args: { label: 'Fruit', name: 'fruit', options: FRUIT },
+};
+
+export const MultiSelectWithChips: Story = {
   args: {
-    label: 'Reviewers',
-    name: 'reviewers',
+    label: 'Roles',
+    name: 'roles',
     multiple: true,
-    defaultValue: ['sam', 'jo'],
+    defaultValue: ['frontend'],
+    options: [
+      { value: 'frontend', label: 'Frontend' },
+      { value: 'backend', label: 'Backend' },
+      { value: 'design', label: 'Design' },
+    ],
   },
 };
 
-export const AllowCustom: Story = {
+export const FreeTextTags: Story = {
   args: {
     label: 'Tags',
     name: 'tags',
+    multiple: true,
     allowCustom: true,
     options: [
-      { value: 'bug', label: 'Bug' },
-      { value: 'feature', label: 'Feature' },
+      { value: 'urgent', label: 'Urgent' },
+      { value: 'billing', label: 'Billing' },
     ],
   },
 };
 
+export const AsyncResults: Story = {
+  args: {
+    label: 'Customer',
+    name: 'customer',
+    filter: 'async',
+    loading: true,
+    options: [{ value: 'acme', label: 'Acme Ltd' }],
+  },
+};
+
+// notable states
 export const Grouped: Story = {
   args: {
     options: [
-      { group: 'Design', options: [{ value: 'alex', label: 'Alex Kim' }] },
+      { group: 'Pome', options: [{ value: 'apple', label: 'Apple' }] },
       {
-        group: 'Engineering',
+        group: 'Stone',
         options: [
-          { value: 'sam', label: 'Sam Patel' },
-          { value: 'jo', label: 'Jo Rivera' },
+          { value: 'apricot', label: 'Apricot' },
+          { value: 'cherry', label: 'Cherry' },
         ],
       },
-      { group: 'Product', options: [{ value: 'lee', label: 'Lee Chen' }] },
     ],
   },
 };
 
-export const Loading: Story = { args: { filter: 'async', loading: true, options: [] } };
-
 export const Empty: Story = { args: { options: [] } };
 
-export const ClearableFalse: Story = { args: { defaultValue: 'sam', clearable: false } };
+export const ClearableFalse: Story = { args: { defaultValue: 'apple', clearable: false } };
 
 export const Required: Story = { args: { required: true } };
 
-export const Disabled: Story = { args: { disabled: true, defaultValue: 'sam' } };
+export const Disabled: Story = { args: { disabled: true, defaultValue: 'apple' } };
 
 export const Invalid: Story = { args: { invalid: true } };
 
-export const WithError: Story = { args: { error: 'Choose an assignee.' } };
+export const WithError: Story = { args: { error: 'Choose a fruit.' } };
 
-export const WithDescription: Story = { args: { description: 'Searches everyone in the workspace.' } };
+export const WithDescription: Story = { args: { description: 'Pick the one you want delivered.', placeholder: 'Search fruit' } };
 
-/**
- * At least three focusable rows once opened, for the axe gate and manual keyboard
- * checks on react-native-web. Combobox has no `open`/`defaultOpen` prop (typing or
- * focusing the field opens it, matching the field's own behavior) — see the
- * generation gap notes for why this story cannot render pre-opened like Menu's or
- * Dialog's `open: true` stories do.
- */
+/** Rendered open with the input, the toggle button and three option rows, for the axe gate and manual keyboard checks on react-native-web. */
 export const Keyboard: Story = {
-  args: { options: OPTIONS },
+  args: { open: true, options: FRUIT },
 };

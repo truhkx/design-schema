@@ -7,6 +7,7 @@
   --ds-progress-bar-part-gap: var(--space-1);
   --ds-progress-bar-transition: var(--motion-duration-base);
   --ds-progress-bar-indeterminate-loop: var(--motion-duration-loop);
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--ds-progress-bar-part-gap);
@@ -21,17 +22,12 @@
   gap: var(--space-2);
 }
 
-.ds-progress-bar__label,
-.ds-progress-bar__value {
-  min-inline-size: 0;
-}
-
 /* tone → fill color; neutral is the selected-control color guaranteed 3:1 against the page. Locked: not consumer-overridable. */
 .ds-progress-bar--neutral { --ds-progress-bar-fill: var(--color-control-selected-background); }
 .ds-progress-bar--success { --ds-progress-bar-fill: var(--color-status-success-icon); }
 .ds-progress-bar--danger { --ds-progress-bar-fill: var(--color-status-danger-icon); }
 
-/* track: clips the fill to the rounded ends. Deliberately low-contrast; the text identifies the bar. */
+/* track: clips the fill to the rounded ends. */
 .ds-progress-bar__track {
   position: relative;
   overflow: hidden;
@@ -47,38 +43,44 @@
   background-color: var(--ds-progress-bar-fill);
 }
 
-/* determinate fill: width change with motion.easing.standard; instant under reduced motion. */
+/* transition: fill width change with motion.easing.standard; instant under reduced motion. */
 @media (prefers-reduced-motion: no-preference) {
   .ds-progress-bar__track[aria-valuenow] .ds-progress-bar__fill {
     transition: inline-size var(--ds-progress-bar-transition) var(--motion-easing-standard);
   }
 }
 
-/* indeterminate: a fill one third of the track width sweeps start to end and repeats. */
-.ds-progress-bar__track[aria-busy='true'] .ds-progress-bar__fill {
-  position: absolute;
-  inset-block: 0;
-  inline-size: 33.333%;
-}
-
+/* indeterminateLoop: a fill one third of the track width travelling start to end and repeating. */
 @media (prefers-reduced-motion: no-preference) {
   .ds-progress-bar__track[aria-busy='true'] .ds-progress-bar__fill {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+    inline-size: calc(100% / 3);
     animation: ds-progress-bar-sweep var(--ds-progress-bar-indeterminate-loop) var(--motion-easing-standard) infinite;
+  }
+
+  .ds-progress-bar__track[aria-busy='true']:dir(rtl) .ds-progress-bar__fill {
+    animation-name: ds-progress-bar-sweep-rtl;
   }
 }
 
-/* reduced motion: no sweep — a static, half-opacity track instead of a moving fill. */
+/* reduced motion: no sweep — the fill covers the whole track, static, at opacity.disabled. */
 @media (prefers-reduced-motion: reduce) {
   .ds-progress-bar__track[aria-busy='true'] .ds-progress-bar__fill {
-    position: static;
     inline-size: 100%;
     opacity: var(--opacity-disabled);
   }
 }
 
 @keyframes ds-progress-bar-sweep {
-  from { inset-inline-start: -33.333%; }
-  to { inset-inline-start: 100%; }
+  from { transform: translateX(-100%); }
+  to { transform: translateX(300%); }
+}
+
+@keyframes ds-progress-bar-sweep-rtl {
+  from { transform: translateX(100%); }
+  to { transform: translateX(-300%); }
 }
 
 /* visually hidden: clipped to a 1px box. Used for a hidden label (still the accessible name) and the live region. */
@@ -89,7 +91,6 @@
   margin: -1px;
   padding: 0;
   overflow: hidden;
-  clip: rect(0 0 0 0);
   clip-path: inset(50%);
   white-space: nowrap;
   border: 0;

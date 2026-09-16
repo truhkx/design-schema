@@ -43,6 +43,21 @@ export const Disabled: Story = { args: { disabled: true, defaultValue: '2026-09-
 
 export const WithError: Story = { args: { error: 'Date of birth is required.' } };
 
+// examples
+/** A single date in the past, typed or picked. */
+export const DateOfBirth: Story = { args: { label: 'Date of birth', name: 'dob', max: '2026-09-16' } };
+
+/** A start and an end date picked in one calendar, with two inputs in the field. */
+export const StayDates: Story = { args: { label: 'Stay', name: 'stay', range: true } };
+
+/** A bookable date no earlier than today, with the ISO week-number column shown. */
+export const AppointmentWithWeekNumbers: Story = {
+  args: { label: 'Appointment', name: 'appointment', min: '2026-09-16', showWeekNumbers: true },
+};
+
+/** A small field inside a grid cell, named by its column. */
+export const CompactCellEditor: Story = { args: { label: 'Due date', name: 'due', size: 'sm', hideLabel: true } };
+
 /**
  * At least three focusable elements with the calendar open, for the axe gate and
  * manual keyboard checks on react-native-web: the previous/next month buttons and the

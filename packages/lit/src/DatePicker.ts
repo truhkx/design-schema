@@ -12,6 +12,7 @@ import './Popover.js';
 import type { DsPopover, PopoverOpenChangeDetail } from './Popover.js';
 import type { SelectChangeDetail } from './Select.js';
 import type { ListboxOption } from './Listbox.js';
+import type { TextOverridableBinding } from './Text.js';
 
 /** `value`/`defaultValue` shape: an ISO calendar date, or `{ start, end }` of them with `range`. Never a `Date` — a calendar date has no time zone. */
 export type DatePickerValue = string | { start: string; end: string };
@@ -20,7 +21,7 @@ export type DatePickerSize = 'sm' | 'md';
 
 /** Detail carried by the `change` CustomEvent. `undefined` when the value is cleared. */
 export interface DatePickerChangeDetail {
-  value: DatePickerValue | undefined;
+  value: string | { start: string; end: string } | undefined;
 }
 
 /** Detail carried by the `open-change` CustomEvent. */
@@ -30,28 +31,24 @@ export interface DatePickerOpenChangeDetail {
 
 /**
  * Overridable style hooks; see the `overrides` property. `background`,
- * `foreground`, `placeholder`, `border`, `rangeSeparatorColor`,
- * `calendarSurface`, `daySelectedBackground`, `daySelectedForeground`,
- * `dayInRangeBackground`, `dayTodayBorder`, `dayOutsideMonthColor`,
- * `weekdayColor`, `descriptionText`, `errorText`, `minTarget` and
- * `focusRingWidth` are locked and excluded.
+ * `foreground`, `placeholder`, `border`, `borderFocus`,
+ * `rangeSeparatorColor`, `calendarSurface`, `daySize`,
+ * `daySelectedBackground`, `daySelectedForeground`, `dayInRangeBackground`,
+ * `dayTodayBorder`, `dayTodayBorderWidth`, `dayOutsideMonthColor`,
+ * `weekdayColor`, `descriptionText`, `errorText`, `minTarget`, `minTargetSm`,
+ * `focusRing` and `focusRingWidth` are locked and excluded.
  */
 export type DatePickerOverridableBinding =
-  | 'borderFocus'
   | 'borderInvalid'
   | 'borderWidth'
   | 'radius'
   | 'paddingInline'
   | 'paddingBlock'
-  | 'paddingBlockSm'
-  | 'paddingInlineSm'
   | 'calendarInset'
   | 'calendarGap'
-  | 'daySize'
   | 'dayGap'
   | 'dayRadius'
   | 'dayHover'
-  | 'dayTodayBorderWidth'
   | 'weekdaySize'
   | 'weekdayWeight'
   | 'monthTitleSize'
@@ -63,26 +60,20 @@ export type DatePickerOverridableBinding =
   | 'lineHeight'
   | 'labelWeight'
   | 'helperSize'
-  | 'minTargetSm'
   | 'disabledOpacity'
   | 'transition';
 
 const HOOKS: Record<DatePickerOverridableBinding, string> = {
-  borderFocus: '--ds-date-picker-border-focus',
   borderInvalid: '--ds-date-picker-border-invalid',
   borderWidth: '--ds-date-picker-border-width',
   radius: '--ds-date-picker-radius',
   paddingInline: '--ds-date-picker-padding-inline',
   paddingBlock: '--ds-date-picker-padding-block',
-  paddingBlockSm: '--ds-date-picker-padding-block-sm',
-  paddingInlineSm: '--ds-date-picker-padding-inline-sm',
   calendarInset: '--ds-date-picker-calendar-inset',
   calendarGap: '--ds-date-picker-calendar-gap',
-  daySize: '--ds-date-picker-day-size',
   dayGap: '--ds-date-picker-day-gap',
   dayRadius: '--ds-date-picker-day-radius',
   dayHover: '--ds-date-picker-day-hover',
-  dayTodayBorderWidth: '--ds-date-picker-day-today-border-width',
   weekdaySize: '--ds-date-picker-weekday-size',
   weekdayWeight: '--ds-date-picker-weekday-weight',
   monthTitleSize: '--ds-date-picker-month-title-size',
@@ -94,7 +85,6 @@ const HOOKS: Record<DatePickerOverridableBinding, string> = {
   lineHeight: '--ds-date-picker-line-height',
   labelWeight: '--ds-date-picker-label-weight',
   helperSize: '--ds-date-picker-helper-size',
-  minTargetSm: '--ds-date-picker-min-target-sm',
   disabledOpacity: '--ds-date-picker-disabled-opacity',
   transition: '--ds-date-picker-transition',
 };
@@ -148,10 +138,6 @@ function addMonths(iso: string, delta: number): string {
   return toISO(target.getUTCFullYear(), target.getUTCMonth(), Math.min(d, lastDay));
 }
 
-function addYears(iso: string, delta: number): string {
-  return addMonths(iso, delta * 12);
-}
-
 function clampDayIntoMonth(year: number, month: number, day: number): string {
   const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
   return toISO(year, month, Math.min(day, lastDay));
@@ -160,7 +146,7 @@ function clampDayIntoMonth(year: number, month: number, day: number): string {
 /** "Today" is the user's local wall-clock date, not a UTC one. */
 function todayISO(): string {
   const now = new Date();
-  return `${String(now.getFullYear()).padStart(4, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  return toISO(now.getFullYear(), now.getMonth(), now.getDate());
 }
 
 function weekdayOf(iso: string): number {
@@ -172,12 +158,9 @@ function weekdayOf(iso: string): number {
 function isoWeekNumber(iso: string): number {
   const { y, m, d } = parseISO(iso);
   const date = new Date(Date.UTC(y, m, d));
-  const dayIndex = (date.getUTCDay() + 6) % 7;
-  date.setUTCDate(date.getUTCDate() - dayIndex + 3);
-  const firstThursday = new Date(Date.UTC(date.getUTCFullYear(), 0, 4));
-  const firstThursdayIndex = (firstThursday.getUTCDay() + 6) % 7;
-  firstThursday.setUTCDate(firstThursday.getUTCDate() - firstThursdayIndex + 3);
-  return 1 + Math.round((date.getTime() - firstThursday.getTime()) / (7 * 86400000));
+  date.setUTCDate(date.getUTCDate() + 3 - ((date.getUTCDay() + 6) % 7));
+  const yearStart = Date.UTC(date.getUTCFullYear(), 0, 1);
+  return Math.floor((date.getTime() - yearStart) / 86400000 / 7) + 1;
 }
 
 /** 0 = Sunday … 6 = Saturday. `Intl.Locale.prototype.getWeekInfo` where supported, else Sunday. */
@@ -202,19 +185,16 @@ function monthName(locale: string | undefined, month: number): string {
 }
 
 /** `weekday` is 0 = Sunday … 6 = Saturday. 2023-01-01 (UTC) was a Sunday. */
-function weekdayShort(locale: string | undefined, weekday: number): string {
-  return new Intl.DateTimeFormat(locale, { weekday: 'short', timeZone: 'UTC' }).format(new Date(Date.UTC(2023, 0, 1 + weekday)));
+function weekdayName(locale: string | undefined, weekday: number, width: 'short' | 'long'): string {
+  return new Intl.DateTimeFormat(locale, { weekday: width, timeZone: 'UTC' }).format(new Date(Date.UTC(2023, 0, 1 + weekday)));
 }
 
-function weekdayLong(locale: string | undefined, weekday: number): string {
-  return new Intl.DateTimeFormat(locale, { weekday: 'long', timeZone: 'UTC' }).format(new Date(Date.UTC(2023, 0, 1 + weekday)));
-}
+const NUMERIC_OPTIONS: Intl.DateTimeFormatOptions = { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'UTC' };
 
-function formatDateForDisplay(iso: string, locale: string | undefined): string {
+/** The typed format: the locale's numeric date. */
+function formatNumeric(iso: string, locale: string | undefined): string {
   const { y, m, d } = parseISO(iso);
-  return new Intl.DateTimeFormat(locale, { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'UTC' }).format(
-    new Date(Date.UTC(y, m, d)),
-  );
+  return new Intl.DateTimeFormat(locale, NUMERIC_OPTIONS).format(new Date(Date.UTC(y, m, d)));
 }
 
 function formatFullDate(iso: string, locale: string | undefined): string {
@@ -224,55 +204,57 @@ function formatFullDate(iso: string, locale: string | undefined): string {
   );
 }
 
-/** The locale's numeric date field order, read from `Intl.DateTimeFormat().formatToParts`. */
-function dateFieldOrder(locale: string | undefined): Array<'day' | 'month' | 'year'> {
-  const dtf = new Intl.DateTimeFormat(locale, { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'UTC' });
-  const parts = dtf.formatToParts(new Date(Date.UTC(2030, 0, 5)));
-  const order: Array<'day' | 'month' | 'year'> = [];
-  for (const part of parts) {
-    if (part.type === 'day' || part.type === 'month' || part.type === 'year') {
-      order.push(part.type);
-    }
-  }
-  return order;
+function localeParts(locale: string | undefined): Intl.DateTimeFormatPart[] {
+  return new Intl.DateTimeFormat(locale, NUMERIC_OPTIONS).formatToParts(new Date(Date.UTC(2030, 0, 5)));
 }
 
-/** e.g. "MM/DD/YYYY" or "DD.MM.YYYY". */
+/** e.g. "MM/DD/YYYY" or "DD.MM.YYYY", from `formatToParts`. */
 function patternPlaceholder(locale: string | undefined): string {
-  const dtf = new Intl.DateTimeFormat(locale, { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'UTC' });
-  const parts = dtf.formatToParts(new Date(Date.UTC(2030, 0, 5)));
-  const map: Record<string, string> = { day: 'DD', month: 'MM', year: 'YYYY' };
-  return parts.map((part) => map[part.type] ?? part.value).join('');
+  const map: Partial<Record<string, string>> = { day: 'DD', month: 'MM', year: 'YYYY' };
+  return localeParts(locale)
+    .map((part) => map[part.type] ?? part.value)
+    .join('');
 }
 
-/** Lenient separators, a real calendar date, and a four-digit year (two-digit years are refused). */
+/** Lenient separators (optional), a real calendar date, and a four-digit year (two-digit years are refused). */
 function parseTypedDate(text: string, locale: string | undefined): string | null {
-  const groups = text.trim().split(/[^0-9]+/).filter(Boolean);
-  if (groups.length !== 3) {
+  const order = localeParts(locale)
+    .map((part) => part.type)
+    .filter((type): type is 'day' | 'month' | 'year' => type === 'day' || type === 'month' || type === 'year');
+  const trimmed = text.trim();
+  let groups = trimmed.split(/[^0-9]+/).filter(Boolean);
+  if (groups.length === 1 && /^[0-9]{8}$/.test(trimmed)) {
+    // No separators: split by the locale's field widths (2/2/4 in its order).
+    let offset = 0;
+    groups = order.map((type) => {
+      const width = type === 'year' ? 4 : 2;
+      const group = trimmed.slice(offset, offset + width);
+      offset += width;
+      return group;
+    });
+  }
+  if (groups.length !== 3 || order.length !== 3) {
     return null;
   }
-  const order = dateFieldOrder(locale);
-  const values: Partial<Record<'day' | 'month' | 'year', number | undefined>> = {};
+  const values: Partial<Record<'day' | 'month' | 'year', number>> = {};
   for (let i = 0; i < 3; i += 1) {
-    const raw = groups[i];
-    if (order[i] === 'year' && raw!.length !== 4) {
+    const raw = groups[i]!;
+    const type = order[i]!;
+    if (type === 'year' && raw.length !== 4) {
       return null;
     }
-    values[order[i]!] = Number(raw);
+    values[type] = Number(raw);
   }
   const { day, month, year } = values;
   if (!day || !month || !year || month < 1 || month > 12) {
     return null;
   }
   const iso = toISO(year, month - 1, day);
-  if (parseISO(iso).m !== month - 1) {
-    // The day overflowed into the next month (e.g. Feb 30) — not a real date.
-    return null;
-  }
-  return iso;
+  // A day that overflowed into the next month (Feb 30) is not a real date.
+  return parseISO(iso).m === month - 1 ? iso : null;
 }
 
-/** Every day cell for the visible month, in 7-day weeks, including the leading/trailing days of adjacent months needed to fill the grid. */
+/** Every day cell for the visible month in 7-day weeks, including the adjacent months' days that fill the grid. */
 function getCalendarWeeks(year: number, month: number, weekStart: number): string[][] {
   const firstOfMonth = toISO(year, month, 1);
   const offset = (weekdayOf(firstOfMonth) - weekStart + 7) % 7;
@@ -287,57 +269,36 @@ function getCalendarWeeks(year: number, month: number, weekStart: number): strin
 }
 
 /**
- * `<ds-date-picker>` — DatePicker (category: input, APG pattern: dialog-modal).
+ * `<ds-date-picker>` — DatePicker (category: input, APG pattern: grid).
  *
  * `<ds-date-picker label="Due date" name="due" min="2026-01-01">`. Input's
- * wrapper (label, description, error) around a
- * `<input type="text" inputmode="numeric" autocomplete="off">` (two, joined
- * by an en dash, when `range`), parsed leniently with the locale pattern from
- * `Intl.DateTimeFormat().formatToParts`; a ghost icon-only `<ds-button>`
- * opens a shadow `<ds-popover>` holding the header (prev/next `<ds-button>`s,
- * month/year `<ds-select>`s), a `<table role="grid">` with a roving-tabindex
- * day grid, and a footer of Today/Clear `<ds-button>`s. The element is
- * form-associated (`setFormValue`; two `FormData` entries, `name` and
- * `name-end`, for a range) and implements the `DsFormField` shape. Dates are
- * computed with plain `Date.UTC` arithmetic on `YYYY-MM-DD` parts, never `new
- * Date(string)`. Dispatches composed `change` (`{ value }`, `undefined` when
- * cleared) and `open-change` (`{ open }`) CustomEvents.
+ * wrapper (native `<label for>`, description and error `<ds-text>`) around a
+ * `<input type="text" inputmode="numeric" autocomplete="off">` (two, joined by
+ * an en dash, with `range`), parsed leniently with the locale pattern from
+ * `Intl.DateTimeFormat().formatToParts`. A ghost icon-only `<ds-button>` opens
+ * a non-modal `<ds-popover>` (bottom-start) holding the header (prev/next
+ * `<ds-button>`s, month/year `<ds-select>`s), a `<table role="grid">` of
+ * roving-tabindex day buttons, and a footer of Today/Clear `<ds-button>`s.
+ * Form-associated (`setFormValue`; two entries, `name` and `name-end`, for a
+ * range) and carries `data-ds-field` for `<ds-form>`. Dates are computed with
+ * `Date.UTC` arithmetic on `YYYY-MM-DD` parts, never `new Date(string)`.
  *
  * ## When to use
  *
- * Use a DatePicker for any date the user chooses: due dates, bookings, dates
- * of birth (typing is faster — the calendar is still there), report periods
- * (`range`). Set `min`/`max` and `isDateDisabled` whenever they apply.
+ * Any date the user chooses: due dates, bookings, dates of birth, report
+ * periods (`range`). Set `min`/`max` and `isDateDisabled` whenever they apply.
  *
  * ## When not to use
  *
- * Not for a date-and-time, a month/year alone (Select), or a relative choice
- * ("next 7 days": SegmentedControl/Select). Not a display-only Calendar view.
+ * Not for a date-and-time, a month or year alone (Select), a relative choice
+ * (SegmentedControl or Select), or a display-only calendar of events.
  *
- * @fires change - Fired when a complete valid date (or range) is typed or picked, with `{ value }` in `detail`; `value` is `undefined` when cleared.
- * @fires open-change - Fired when the calendar opens or closes, with `{ open }` in `detail`.
- * @csspart label - The visible label (anatomy: label).
- * @csspart description - The helper text under the label (anatomy: description).
- * @csspart field - The bordered wrapper around the input(s) and calendar button (anatomy: field).
- * @csspart input - Each date `<input>` (anatomy: input).
- * @csspart calendarButton - The `<ds-button>` that opens the calendar (anatomy: calendarButton).
- * @csspart popover - The composed `<ds-popover>` (anatomy: popover).
- * @csspart header - The month/year navigation row (anatomy: header).
- * @csspart prevMonthButton - The previous-month `<ds-button>` (anatomy: prevMonthButton).
- * @csspart nextMonthButton - The next-month `<ds-button>` (anatomy: nextMonthButton).
- * @csspart monthSelect - The composed month `<ds-select>` (anatomy: monthSelect).
- * @csspart yearSelect - The composed year `<ds-select>` (anatomy: yearSelect).
- * @csspart grid - The `role="grid"` `<table>` (anatomy: grid).
- * @csspart weekdayHeader - Each weekday `<th>` (anatomy: weekdayHeader).
- * @csspart day - Each day `<button>` (anatomy: day).
- * @csspart footer - The Today/Clear row (anatomy: footer).
- * @csspart todayButton - The Today `<ds-button>` (anatomy: todayButton).
- * @csspart clearButton - The Clear `<ds-button>` (anatomy: clearButton).
- * @csspart errorMessage - The `role="alert"` error message region (anatomy: errorMessage).
+ * @fires change - A complete valid date (or range) was typed or picked, or the value was cleared: `{ value }`, `undefined` when cleared.
+ * @fires open-change - The calendar opened or closed: `{ open }`.
  */
 @customElement('ds-date-picker')
 export class DsDatePicker extends LitElement {
-  static formAssociated = true;
+  static formAssociated: boolean = true;
 
   static override shadowRootOptions: ShadowRootInit = {
     ...LitElement.shadowRootOptions,
@@ -347,29 +308,22 @@ export class DsDatePicker extends LitElement {
   static override styles: CSSResult = css`
     :host {
       display: block;
-      font-family: var(--font-family-body);
-      --ds-date-picker-border-focus: var(--color-border-focus);
       --ds-date-picker-border-invalid: var(--color-border-danger);
       --ds-date-picker-border-width: var(--border-width-thin);
       --ds-date-picker-radius: var(--radius-md);
       --ds-date-picker-padding-inline: var(--space-md);
       --ds-date-picker-padding-block: var(--space-sm);
-      --ds-date-picker-padding-inline-sm: var(--space-2);
-      --ds-date-picker-padding-block-sm: var(--space-1);
-      --ds-date-picker-min-target-sm: var(--size-target-min);
-      --ds-date-picker-part-gap: var(--space-1);
-      --ds-date-picker-field-gap: var(--space-2);
       --ds-date-picker-calendar-inset: var(--layout-inset-md);
       --ds-date-picker-calendar-gap: var(--layout-gap-normal);
-      --ds-date-picker-day-size: var(--size-target-comfortable);
       --ds-date-picker-day-gap: var(--space-0);
       --ds-date-picker-day-radius: var(--radius-md);
       --ds-date-picker-day-hover: var(--color-action-ghost-background-hover);
-      --ds-date-picker-day-today-border-width: var(--border-width-focus);
       --ds-date-picker-weekday-size: var(--font-size-xs);
       --ds-date-picker-weekday-weight: var(--font-weight-medium);
       --ds-date-picker-month-title-size: var(--font-size-md);
       --ds-date-picker-month-title-weight: var(--font-weight-semibold);
+      --ds-date-picker-part-gap: var(--space-1);
+      --ds-date-picker-field-gap: var(--space-2);
       --ds-date-picker-day-font-size: var(--font-size-sm);
       --ds-date-picker-font-family: var(--font-family-body);
       --ds-date-picker-line-height: var(--font-line-height-normal);
@@ -383,115 +337,28 @@ export class DsDatePicker extends LitElement {
       display: none;
     }
 
-    .label {
-      display: block;
-      font-size: var(--font-size-md);
-      font-weight: var(--ds-date-picker-label-weight);
+    /* paddingInline / paddingBlock by size */
+    :host([size='sm']) {
+      --ds-date-picker-padding-inline: var(--space-2);
+      --ds-date-picker-padding-block: var(--space-1);
+    }
+    :host([size='md']) {
+      --ds-date-picker-padding-inline: var(--space-md);
+      --ds-date-picker-padding-block: var(--space-sm);
+    }
+
+    /* partGap: between label, description, field and error */
+    .group {
+      display: grid;
+      gap: var(--ds-date-picker-part-gap);
+      position: relative;
+      font-family: var(--ds-date-picker-font-family);
       line-height: var(--ds-date-picker-line-height);
     }
 
-    /* descriptionText: color.foreground.muted, locked (set on ds-text via tone="muted") */
-    .description {
-      margin-block-start: var(--ds-date-picker-part-gap);
-    }
-
-    /* background / foreground / border: color.background / color.foreground / color.border.strong, locked */
-    .field {
-      box-sizing: border-box;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: var(--ds-date-picker-field-gap);
-      inline-size: 100%;
-      min-block-size: var(--size-target-comfortable);
-      margin-block-start: var(--ds-date-picker-part-gap);
-      padding-block: var(--ds-date-picker-padding-block);
-      padding-inline: var(--ds-date-picker-padding-inline);
-      border: var(--ds-date-picker-border-width) solid var(--color-border-strong);
-      border-radius: var(--ds-date-picker-radius);
-      background: var(--color-background);
-      font-family: var(--ds-date-picker-font-family);
-      transition:
-        border-color var(--ds-date-picker-transition) var(--motion-easing-standard),
-        padding var(--ds-date-picker-transition) var(--motion-easing-standard);
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .field,
-      .day {
-        transition: none;
-      }
-    }
-
-    /*
-     * focusRingWidth (locked) replaces borderWidth while focused; padding
-     * shrinks by the difference (border-box sizing) so the field does not shift.
-     */
-    .field:focus-within {
-      border-color: var(--ds-date-picker-border-focus);
-      border-width: var(--border-width-focus);
-      padding-inline: calc(
-        var(--ds-date-picker-padding-inline) - (var(--border-width-focus) - var(--ds-date-picker-border-width))
-      );
-      padding-block: calc(
-        var(--ds-date-picker-padding-block) - (var(--border-width-focus) - var(--ds-date-picker-border-width))
-      );
-    }
-
-    :host([invalid]) .field {
-      border-color: var(--ds-date-picker-border-invalid);
-    }
-    :host([invalid]) .field:focus-within {
-      border-color: var(--ds-date-picker-border-invalid);
-    }
-
-    .field.disabled {
+    /* disabledOpacity: the whole field group dims */
+    .group.disabled {
       opacity: var(--ds-date-picker-disabled-opacity);
-    }
-    .field.disabled .input {
-      cursor: not-allowed;
-    }
-
-    /* paddingBlockSm / paddingInlineSm / minTargetSm replace the md bindings at size sm */
-    :host([size='sm']) .field {
-      min-block-size: var(--ds-date-picker-min-target-sm);
-      padding-block: var(--ds-date-picker-padding-block-sm);
-      padding-inline: var(--ds-date-picker-padding-inline-sm);
-    }
-
-    :host([size='sm']) .field:focus-within {
-      padding-inline: calc(
-        var(--ds-date-picker-padding-inline-sm) - (var(--border-width-focus) - var(--ds-date-picker-border-width))
-      );
-      padding-block: calc(
-        var(--ds-date-picker-padding-block-sm) - (var(--border-width-focus) - var(--ds-date-picker-border-width))
-      );
-    }
-
-    /* placeholder: color.foreground.muted, locked */
-    .input {
-      flex: 1 1 8ch;
-      min-inline-size: 8ch;
-      box-sizing: border-box;
-      border: none;
-      outline: none;
-      padding: 0;
-      margin: 0;
-      background: transparent;
-      font-family: var(--ds-date-picker-font-family);
-      font-size: var(--font-size-md);
-      line-height: var(--ds-date-picker-line-height);
-      color: var(--color-foreground);
-    }
-
-    .input::placeholder {
-      color: var(--color-foreground-muted);
-      opacity: 1;
-    }
-
-    /* rangeSeparatorColor: color.foreground.muted, locked */
-    .separator {
-      color: var(--color-foreground-muted);
     }
 
     .visually-hidden {
@@ -507,55 +374,131 @@ export class DsDatePicker extends LitElement {
       border: 0;
     }
 
+    /* labelWeight on the label part */
+    [data-part='label'] {
+      font-family: var(--ds-date-picker-font-family);
+      font-size: var(--font-size-md);
+      font-weight: var(--ds-date-picker-label-weight);
+      line-height: var(--ds-date-picker-line-height);
+      color: var(--color-foreground);
+    }
+
+    /* background / foreground / border (locked); minTarget, minTargetSm (locked); fieldGap */
+    [data-part='field'] {
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      gap: var(--ds-date-picker-field-gap);
+      inline-size: 100%;
+      min-block-size: var(--size-target-comfortable);
+      padding-block: var(--ds-date-picker-padding-block);
+      padding-inline: var(--ds-date-picker-padding-inline);
+      border: var(--ds-date-picker-border-width) solid var(--color-border-strong);
+      border-radius: var(--ds-date-picker-radius);
+      background: var(--color-background);
+      color: var(--color-foreground);
+    }
+    :host([size='sm']) [data-part='field'] {
+      min-block-size: var(--size-target-min);
+    }
+
+    /* borderFocus / focusRingWidth (locked): the ring follows focus in the typed input(s) only, not the calendar */
+    [data-part='field']:has([data-part='input']:focus-visible) {
+      outline: var(--border-width-focus) solid var(--color-border-focus);
+      outline-offset: calc(-1 * var(--ds-date-picker-border-width));
+    }
+
+    /* borderInvalid */
+    [data-part='field'].invalid {
+      border-color: var(--ds-date-picker-border-invalid);
+    }
+
+    /* placeholder (locked) */
+    [data-part='input'] {
+      flex: 1 1 8ch;
+      min-inline-size: 8ch;
+      box-sizing: border-box;
+      border: none;
+      outline: none;
+      padding: 0;
+      margin: 0;
+      background: transparent;
+      color: inherit;
+      font-family: var(--ds-date-picker-font-family);
+      font-size: var(--font-size-md);
+      line-height: var(--ds-date-picker-line-height);
+    }
+    :host([size='sm']) [data-part='input'] {
+      font-size: var(--font-size-sm);
+    }
+    [data-part='input']::placeholder {
+      color: var(--color-foreground-muted);
+      opacity: 1;
+    }
+    .group.disabled [data-part='input'] {
+      cursor: not-allowed;
+    }
+
+    /* rangeSeparatorColor (locked) */
+    .separator {
+      color: var(--color-foreground-muted);
+    }
+
+    /* calendarGap: between header, grid and footer */
     .calendar {
       display: flex;
       flex-direction: column;
       gap: var(--ds-date-picker-calendar-gap);
       font-family: var(--ds-date-picker-font-family);
+      line-height: var(--ds-date-picker-line-height);
+      color: var(--color-foreground);
     }
 
-    .header {
+    [data-part='header'],
+    [data-part='footer'] {
       display: flex;
       align-items: center;
       gap: var(--layout-gap-tight);
     }
-
-    .month-select,
-    .year-select {
-      flex: 1;
+    [data-part='footer'] {
+      justify-content: flex-end;
+    }
+    [data-part='monthSelect'],
+    [data-part='yearSelect'] {
+      flex: 1 1 auto;
       min-inline-size: 0;
-      font-size: var(--ds-date-picker-month-title-size);
-      font-weight: var(--ds-date-picker-month-title-weight);
     }
 
-    .grid {
-      inline-size: 100%;
+    /* dayGap: cells touch so a range reads as one bar */
+    [data-part='grid'] {
       border-collapse: separate;
       border-spacing: var(--ds-date-picker-day-gap);
     }
+    [data-part='grid'] td,
+    [data-part='grid'] th {
+      padding: 0;
+    }
 
-    .weekday {
+    /* weekdayColor (locked), weekdaySize, weekdayWeight */
+    [data-part='weekdayHeader'],
+    [data-part='weekNumber'] {
       font-size: var(--ds-date-picker-weekday-size);
       font-weight: var(--ds-date-picker-weekday-weight);
       color: var(--color-foreground-muted);
       text-align: center;
-      padding-block-end: var(--space-1);
     }
 
-    .week-number {
-      font-size: var(--ds-date-picker-weekday-size);
-      color: var(--color-foreground-muted);
-      text-align: center;
-    }
-
-    .day {
+    /* daySize, dayTodayBorderWidth (locked); dayRadius, dayFontSize; transition */
+    [data-part='day'] {
       box-sizing: border-box;
       display: flex;
       align-items: center;
       justify-content: center;
-      inline-size: var(--ds-date-picker-day-size);
-      block-size: var(--ds-date-picker-day-size);
-      border: none;
+      inline-size: var(--size-target-comfortable);
+      block-size: var(--size-target-comfortable);
+      margin: 0;
+      padding: 0;
+      border: var(--border-width-focus) solid transparent;
       border-radius: var(--ds-date-picker-day-radius);
       background: transparent;
       color: var(--color-foreground);
@@ -564,86 +507,75 @@ export class DsDatePicker extends LitElement {
       cursor: pointer;
       transition:
         background-color var(--ds-date-picker-transition) var(--motion-easing-standard),
+        color var(--ds-date-picker-transition) var(--motion-easing-standard),
         border-color var(--ds-date-picker-transition) var(--motion-easing-standard);
     }
 
-    .day:not(.disabled):hover {
+    /* dayHover */
+    [data-part='day']:hover:not([aria-disabled='true']) {
       background: var(--ds-date-picker-day-hover);
     }
 
-    .day:focus-visible {
+    /* focusRing / focusRingWidth (locked) */
+    [data-part='day']:focus-visible {
       outline: var(--border-width-focus) solid var(--color-border-focus);
       outline-offset: var(--border-width-focus);
     }
 
-    /* dayOutsideMonthColor: color.foreground.muted, locked */
-    .day.outside {
+    /* dayOutsideMonthColor (locked) */
+    [data-part='day'].outside {
       color: var(--color-foreground-muted);
     }
 
-    /* dayTodayBorder: color.control.selectedBackground, locked */
-    .day.today {
-      border: var(--ds-date-picker-day-today-border-width) solid var(--color-control-selected-background);
+    /* dayTodayBorder (locked): a ring, distinct in shape from the selected fill */
+    [data-part='day'][aria-current='date'] {
+      border-color: var(--color-control-selected-background);
     }
 
-    /* dayInRangeBackground: color.background.strong, locked */
-    .day.in-range {
+    /* dayInRangeBackground (locked) */
+    [data-part='day'].in-range {
       background: var(--color-background-strong);
       border-radius: 0;
     }
 
-    /* daySelectedBackground / daySelectedForeground: color.control.selectedBackground / selectedForeground, locked */
-    .day.selected {
+    /* daySelectedBackground / daySelectedForeground (locked) */
+    [data-part='day'].selected,
+    [data-part='day'].selected:hover {
       background: var(--color-control-selected-background);
       color: var(--color-control-selected-foreground);
     }
 
-    .day.disabled {
+    [data-part='day'][aria-disabled='true'] {
       opacity: var(--ds-date-picker-disabled-opacity);
       cursor: not-allowed;
     }
 
-    .footer {
-      display: flex;
-      justify-content: flex-end;
-      gap: var(--layout-gap-tight);
-    }
-
-    /* errorText: color.foreground.danger, locked */
-    .error {
-      font-size: var(--ds-date-picker-helper-size);
-      line-height: var(--ds-date-picker-line-height);
-      color: var(--color-foreground-danger);
-    }
-    .error:not(:empty) {
-      margin-block-start: var(--ds-date-picker-part-gap);
+    @media (prefers-reduced-motion: reduce) {
+      [data-part='day'] {
+        transition: none;
+      }
     }
   `;
 
-  /** Visible label. Always rendered. */
-  @property() accessor label!: string;
+  /** Visible label ("Start date", "Date of birth"). */
+  @property() accessor label: string = '';
 
   /** Field name for the Form. The value is an ISO date string, or (`range`) `{ start, end }` of them. */
-  @property() accessor name!: string;
+  @property() accessor name: string = '';
 
-  /** Controlled value (ISO date, or a range). Omit for uncontrolled. */
+  /** Controlled value (ISO date, or a range). */
   @property({ attribute: false }) accessor value: DatePickerValue | undefined;
 
-  /** Initial value for an uncontrolled field. */
+  /** Initial value. */
   @property({ attribute: false }) accessor defaultValue: DatePickerValue | undefined;
 
-  /**
-   * Controlled calendar state, for programmatic use and for stories and
-   * tests. Omit for the button-driven default. Not listed under this
-   * component's `platforms.lit.reflect`, but reflected anyway, matching
-   * Popover's `open`.
-   */
+  /** Controlled calendar state, for programmatic use and for stories and tests. Omit for the button-driven default. */
   @property({ type: Boolean, reflect: true }) accessor open: boolean | undefined;
 
   /** Pick a start and an end date in one calendar; two inputs in the field. */
   @property({ type: Boolean, reflect: true }) accessor range = false;
 
-  /** Earliest selectable date (ISO). Earlier days are disabled; the error uses `copy.tooEarly`. */
+  /** Earliest selectable date (ISO). Earlier days are disabled and the error uses `copy.tooEarly`. */
   @property() accessor min: string | undefined;
 
   /** Latest selectable date (ISO). */
@@ -652,7 +584,7 @@ export class DsDatePicker extends LitElement {
   /** Disable specific days (weekends, holidays, booked). Disabled days are shown, not hidden, and are skipped by keyboard movement. */
   @property({ attribute: false }) accessor isDateDisabled: ((isoDate: string) => boolean) | undefined;
 
-  /** BCP 47 locale for month/weekday names, the first day of the week, and the typed format. Defaults to the device locale. */
+  /** BCP 47 locale for month and weekday names, the first day of the week, and the typed format. Defaults to the document/device locale. */
   @property({ reflect: true }) accessor locale: string | undefined;
 
   /** An ISO week-number column at the start of each row. */
@@ -670,74 +602,50 @@ export class DsDatePicker extends LitElement {
   /** Visually hide the label (it remains the accessible name). Only for a field whose context already names it. */
   @property({ type: Boolean, attribute: 'hide-label' }) accessor hideLabel = false;
 
-  /**
-   * `sm` for fields inside grid cells and toolbars: minimum target height,
-   * tighter padding, small type. Not listed under this component's
-   * `platforms.lit.reflect`, but reflected anyway since the size variant is
-   * expressed as a CSS attribute selector, matching Input's `size`.
-   */
-  @property({ reflect: true }) accessor size: DatePickerSize = 'md';
+  /** sm for fields inside grid cells and toolbars: minimum target height, tighter padding, small type. */
+  @property({ type: String, reflect: true }) accessor size: DatePickerSize = 'md';
 
   /** Not editable, still readable. */
   @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
-  /** Marks the field invalid. Usually set by the Form. */
-  @property({ type: Boolean, reflect: true }) accessor invalid = false;
-
-  private errorValue?: string | undefined;
-
   /** Error message; implies invalid. */
-  get error(): string | undefined {
-    return this.errorValue;
-  }
-  @property()
-  set error(value: string | undefined) {
-    const old = this.errorValue;
-    this.errorValue = value;
-    // Setting `error` implies `invalid`, synchronously so `checkValidity()`
-    // right after an assignment is already correct.
-    this.invalid = Boolean(value);
-    this.requestUpdate('error', old);
-  }
+  @property() accessor error: string | undefined;
 
-  /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings are ignored. */
+  /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings are not accepted. */
   @property({ attribute: false }) accessor overrides: Partial<Record<DatePickerOverridableBinding, TokenRef | undefined>> | undefined;
 
-  /** Uncontrolled value / start (seeded from `value` ?? `defaultValue`, and re-seeded whenever a controlled `value` changes). */
+  /** The shown start (or single) date: the committed value, or a range's first pick before the end is chosen. */
   @state() private accessor internalStart: string | undefined;
 
-  /** Uncontrolled range end. Unused outside `range`. */
+  /** The shown range end. Unused outside `range`. */
   @state() private accessor internalEnd: string | undefined;
 
-  /** Raw typed text of the start (or single) input. */
+  /** Raw text of the start (or single) input. */
   @state() private accessor textStart = '';
 
-  /** Raw typed text of the end input. `range` only. */
+  /** Raw text of the end input (`range`). */
   @state() private accessor textEnd = '';
 
   /** Uncontrolled open state, used when `open` is omitted. */
   @state() private accessor internalOpen = false;
 
-  /** The visible month, 0-based. */
+  /** The visible month (0-based) and year. */
   @state() private accessor viewYear = new Date().getFullYear();
-
   @state() private accessor viewMonth = new Date().getMonth();
 
   /** The roving-tabindex day. Cleared on close so the next open recomputes it. */
   @state() private accessor focusedDate = '';
 
-  /** Disabled by an owning native form / fieldset (via `formDisabledCallback`). */
+  /** Disabled by an owning native form or fieldset. */
   @state() private accessor formDisabled = false;
 
   @query('#input') private accessor startInputEl!: HTMLInputElement | null;
-  @query('#input-end') private accessor endInputEl!: HTMLInputElement | null;
   @query('#popover') private accessor popoverEl!: DsPopover | null;
   @query('#calendar-button') private accessor calendarButtonEl!: HTMLElement | null;
 
   private wasOpen = false;
-  /** The last value a `change` event was fired for, so a no-op mutation never re-dispatches it. */
+  /** The last value a `change` reported (or the seed), so a no-op never re-dispatches. */
   private lastEmittedValue: DatePickerValue | null = null;
-
   private readonly internals: ElementInternals;
 
   constructor() {
@@ -745,84 +653,33 @@ export class DsDatePicker extends LitElement {
     this.internals = this.attachInternals();
   }
 
-  private get isDisabled(): boolean {
-    return this.disabled || this.formDisabled;
-  }
-
-  /** Whether the calendar is currently open, controlled or not. */
-  private get isOpen(): boolean {
-    return this.open ?? this.internalOpen;
-  }
-
-  /** Routes an open-state change through the controlled `open` prop or `internalOpen`, and fires `open-change` when it actually changes. */
-  private setOpen(next: boolean): void {
-    if (this.isOpen === next) {
-      return;
+  /**
+   * The committed value for `<ds-form>`: the ISO date, or with `range` the
+   * start date once both ends are set (the end submits natively as
+   * `name-end`); `null` when empty.
+   */
+  get currentValue(): string | null {
+    const value = this.committedValue;
+    if (value === null) {
+      return null;
     }
-    if (this.open !== undefined) {
-      this.open = next;
-    } else {
-      this.internalOpen = next;
-    }
-    this.dispatchEvent(
-      new CustomEvent<DatePickerOpenChangeDetail>('open-change', { detail: { open: next }, bubbles: true, composed: true }),
-    );
+    return typeof value === 'string' ? value : value.start;
   }
 
-  /** The committed value: the ISO date, `{ start, end }` once both are set (`range`), or `null`. */
-  get currentValue(): DatePickerValue | null {
-    if (this.range) {
-      return this.internalStart !== undefined && this.internalEnd !== undefined
-        ? { start: this.internalStart, end: this.internalEnd }
-        : null;
-    }
-    return this.internalStart ?? null;
-  }
-
-  /** The owning native form, if any (from `ElementInternals`). */
+  /** The owning native form, if any. */
   get form(): HTMLFormElement | null {
     return this.internals.form;
   }
 
+  get validity(): ValidityState {
+    this.syncInternals();
+    return this.internals.validity;
+  }
+
+  /** The field's own message by the doc's precedence; empty when valid. */
   get validationMessage(): string {
+    this.syncInternals();
     return this.internals.validationMessage;
-  }
-
-  private get monthOptions(): ListboxOption[] {
-    return Array.from({ length: 12 }, (_, m) => ({ value: String(m), label: monthName(this.locale, m) }));
-  }
-
-  private get yearRange(): [number, number] {
-    const currentYear = new Date().getFullYear();
-    const minYear = this.min ? parseISO(this.min).y : currentYear - 100;
-    const maxYear = this.max ? parseISO(this.max).y : currentYear + 10;
-    return [minYear, maxYear];
-  }
-
-  private get yearOptions(): ListboxOption[] {
-    const [minYear, maxYear] = this.yearRange;
-    const options: ListboxOption[] = [];
-    for (let y = minYear; y <= maxYear; y += 1) {
-      options.push({ value: String(y), label: String(y) });
-    }
-    return options;
-  }
-
-  private get weekdayLabels(): Array<{ short: string; full: string }> {
-    const start = firstDayOfWeek(this.locale);
-    return Array.from({ length: 7 }, (_, i) => {
-      const weekday = (start + i) % 7;
-      return { short: weekdayShort(this.locale, weekday), full: weekdayLong(this.locale, weekday) };
-    });
-  }
-
-  private get calendarWeeks(): string[][] {
-    return getCalendarWeeks(this.viewYear, this.viewMonth, firstDayOfWeek(this.locale));
-  }
-
-  override connectedCallback(): void {
-    super.connectedCallback();
-    this.setAttribute('data-ds', 'DatePicker');
   }
 
   checkValidity(): boolean {
@@ -840,291 +697,350 @@ export class DsDatePicker extends LitElement {
   }
 
   formResetCallback(): void {
-    this.value = undefined;
-    this.seedFromValue(this.defaultValue);
-    this.lastEmittedValue = this.currentValue;
-    if (this.open === undefined) {
-      this.internalOpen = false;
-    }
+    this.seedFromValue(this.value ?? this.defaultValue);
+    this.lastEmittedValue = this.committedValue;
   }
 
-  formStateRestoreCallback(state: File | string | FormData | null): void {
-    if (typeof state === 'string' && !this.range) {
-      this.internalStart = state;
-      this.textStart = formatDateForDisplay(state, this.locale);
+  formStateRestoreCallback(restored: File | string | FormData | null): void {
+    if (this.value !== undefined) {
+      return;
     }
+    if (typeof restored === 'string' && !this.range) {
+      this.seedFromValue(restored);
+    } else if (restored instanceof FormData && this.range) {
+      const start = restored.get(this.name);
+      const end = restored.get(`${this.name}-end`);
+      if (typeof start === 'string' && typeof end === 'string') {
+        this.seedFromValue({ start, end });
+      }
+    }
+    this.lastEmittedValue = this.committedValue;
   }
 
-  private seedFromValue(value: DatePickerValue | undefined): void {
+  override connectedCallback(): void {
+    super.connectedCallback();
+    this.setAttribute('data-ds', 'DatePicker');
+    this.setAttribute('data-ds-field', '');
+  }
+
+  private get isDisabled(): boolean {
+    return this.disabled || this.formDisabled;
+  }
+
+  private get isOpen(): boolean {
+    return this.open ?? this.internalOpen;
+  }
+
+  private get committedValue(): DatePickerValue | null {
     if (this.range) {
-      const obj = value && typeof value === 'object' ? value : undefined;
-      this.internalStart = obj?.start;
-      this.internalEnd = obj?.end;
-    } else {
-      this.internalStart = typeof value === 'string' ? value : undefined;
-      this.internalEnd = undefined;
+      return this.internalStart !== undefined && this.internalEnd !== undefined
+        ? { start: this.internalStart, end: this.internalEnd }
+        : null;
     }
-    this.textStart = this.internalStart ? formatDateForDisplay(this.internalStart, this.locale) : '';
-    this.textEnd = this.internalEnd ? formatDateForDisplay(this.internalEnd, this.locale) : '';
+    return this.internalStart ?? null;
   }
 
   protected override willUpdate(changed: PropertyValues): void {
     if (!this.hasUpdated) {
       this.seedFromValue(this.value ?? this.defaultValue);
-      this.lastEmittedValue = this.currentValue;
-      const anchor = this.internalStart ?? todayISO();
-      this.viewYear = parseISO(anchor).y;
-      this.viewMonth = parseISO(anchor).m;
-    } else if (changed.has('value') && this.value !== undefined) {
+      this.lastEmittedValue = this.committedValue;
+      const anchor = parseISO(this.internalStart ?? todayISO());
+      this.viewYear = anchor.y;
+      this.viewMonth = anchor.m;
+    } else if ((changed.has('value') || changed.has('range')) && this.value !== undefined) {
       this.seedFromValue(this.value);
+      this.lastEmittedValue = this.committedValue;
+    } else if (changed.has('locale')) {
+      this.textStart = this.internalStart ? formatNumeric(this.internalStart, this.locale) : this.textStart;
+      this.textEnd = this.internalEnd ? formatNumeric(this.internalEnd, this.locale) : this.textEnd;
     }
     if (changed.has('overrides')) {
       this.applyOverrides();
     }
   }
 
+  protected override firstUpdated(): void {
+    if (import.meta.env.DEV) {
+      if (!this.label) {
+        console.warn('<ds-date-picker> requires a `label`.', this);
+      }
+      if (!this.name) {
+        console.warn('<ds-date-picker> requires a `name`.', this);
+      }
+    }
+  }
+
   protected override updated(): void {
     this.syncInternals();
-    if (this.isOpen !== this.wasOpen) {
-      this.wasOpen = this.isOpen;
-      if (this.isOpen) {
+    const isOpen = this.isOpen;
+    if (isOpen !== this.wasOpen) {
+      this.wasOpen = isOpen;
+      if (isOpen) {
         void this.focusSelectedOrToday();
       } else {
         this.focusedDate = '';
       }
     }
-    this.warnInDev();
   }
 
   protected override render(): TemplateResult {
     const isDisabled = this.isDisabled;
-    const describedBy =
-      [this.description ? 'description' : '', this.error ? 'error-message' : '']
-        .filter((id) => id !== '')
-        .join(' ') || undefined;
-    const pattern = patternPlaceholder(this.locale);
-    const placeholder = this.placeholder || pattern;
-    const gridLabel = COPY_GRID_LABEL(this.label, monthName(this.locale, this.viewMonth), String(this.viewYear));
-    const weekdays = this.weekdayLabels;
+    const invalid = Boolean(this.error);
+    const describedBy = [this.description ? 'description' : '', invalid ? 'error' : ''].filter(Boolean).join(' ') || undefined;
+    const placeholder = this.placeholder || patternPlaceholder(this.locale);
+    const textOverrides = this.textOverrides;
 
     return html`
-      <ds-text
-        id="label"
-        part="label"
-        class=${classMap({ label: true, 'visually-hidden': this.hideLabel })}
-        element="p"
-        weight="medium"
-        >${this.label}${this.required
-          ? html`<span aria-hidden="true">${COPY_REQUIRED_INDICATOR}</span>`
-          : nothing}</ds-text
-      >
-      ${this.description
-        ? html`<ds-text id="description" part="description" class="description" element="p" tone="muted" size="sm"
-            >${this.description}</ds-text
-          >`
-        : nothing}
-      <div class=${classMap({ field: true, disabled: isDisabled })} part="field">
-        ${this.range ? html`<span id="start-label" class="visually-hidden">${COPY_START_LABEL}</span>` : nothing}
-        <input
-          id="input"
-          part="input"
-          class="input"
-          type="text"
-          inputmode="numeric"
-          autocomplete="off"
-          name=${this.name}
-          placeholder=${placeholder}
-          .value=${live(this.textStart)}
-          aria-labelledby=${this.range ? 'label start-label' : 'label'}
-          aria-describedby=${ifDefined(describedBy)}
-          aria-invalid=${ifDefined(this.invalid ? 'true' : undefined)}
-          aria-required=${ifDefined(this.required ? 'true' : undefined)}
-          aria-disabled=${ifDefined(isDisabled ? 'true' : undefined)}
-          ?readonly=${isDisabled}
-          @input=${(event: Event) => this.handleTextInput(event, 'start')}
-          @keydown=${(event: KeyboardEvent) => this.handleInputKeydown(event, 'start')}
-        />
-        ${this.range
-          ? html`
-              <span class="separator" part="separator" aria-hidden="true">–</span>
-              <span id="end-label" class="visually-hidden">${COPY_END_LABEL}</span>
-              <input
-                id="input-end"
-                part="input"
-                class="input"
-                type="text"
-                inputmode="numeric"
-                autocomplete="off"
-                name="${this.name}-end"
-                placeholder=${placeholder}
-                .value=${live(this.textEnd)}
-                aria-labelledby="label end-label"
-                aria-describedby=${ifDefined(describedBy)}
-                aria-invalid=${ifDefined(this.invalid ? 'true' : undefined)}
-                aria-disabled=${ifDefined(isDisabled ? 'true' : undefined)}
-                ?readonly=${isDisabled}
-                @input=${(event: Event) => this.handleTextInput(event, 'end')}
-                @keydown=${(event: KeyboardEvent) => this.handleInputKeydown(event, 'end')}
-              />
-            `
-          : nothing}
-        <ds-popover
-          id="popover"
-          part="popover"
-          placement="bottom-start"
-          no-dismiss
-          .open=${this.isOpen}
-          .overrides=${{ inset: this.overrides?.calendarInset }}
-          @open-change=${this.handlePopoverOpenChange}
+      <div class=${classMap({ group: true, disabled: isDisabled })}>
+        <label
+          id="label"
+          class=${classMap({ 'visually-hidden': this.hideLabel })}
+          part="label"
+          data-part="label"
+          for="input"
+          >${this.label}${this.required ? COPY_REQUIRED_INDICATOR : nothing}</label
         >
-          <ds-button
-            slot="trigger"
-            id="calendar-button"
-            part="calendarButton"
-            variant="ghost"
-            size=${this.size}
-            icon-only
-            label=${this.range ? COPY_OPEN_RANGE : COPY_OPEN}
-            ?disabled=${isDisabled}
-            @press=${(event: Event) => event.stopPropagation()}
+        ${this.description
+          ? html`<ds-text
+              id="description"
+              part="description"
+              data-part="description"
+              element="p"
+              size="sm"
+              tone="muted"
+              .overrides=${textOverrides}
+              >${this.description}</ds-text
+            >`
+          : nothing}
+        <div class=${classMap({ invalid })} part="field" data-part="field">
+          ${this.renderInput('start', placeholder, describedBy, invalid, isDisabled)}
+          ${this.range
+            ? html`<span class="separator" aria-hidden="true">–</span>
+                ${this.renderInput('end', placeholder, describedBy, invalid, isDisabled)}`
+            : nothing}
+          <ds-popover
+            id="popover"
+            part="popover"
+            data-part="popover"
+            placement="bottom-start"
+            no-dismiss
+            .open=${this.isOpen}
+            .overrides=${{ inset: this.overrides?.calendarInset ?? 'layout.inset.md' }}
+            @open-change=${this.handlePopoverOpenChange}
           >
-            <ds-icon slot="leading-icon" name="calendar"></ds-icon>
-          </ds-button>
-          <div class="calendar">
-            <div class="header" part="header">
-              <ds-button
-                part="prevMonthButton"
-                variant="ghost"
-                size="sm"
-                icon-only
-                label=${COPY_PREVIOUS_MONTH}
-                ?disabled=${isDisabled}
-                @press=${this.handlePrevMonthPress}
-              >
-                <ds-icon slot="leading-icon" name="chevron-left"></ds-icon>
-              </ds-button>
-              <ds-select
-                part="monthSelect"
-                class="month-select"
-                label=${COPY_MONTH}
-                name="month"
-                .options=${this.monthOptions}
-                .value=${String(this.viewMonth)}
-                ?disabled=${isDisabled}
-                @change=${this.handleMonthChange}
-              ></ds-select>
-              <ds-select
-                part="yearSelect"
-                class="year-select"
-                label=${COPY_YEAR}
-                name="year"
-                .options=${this.yearOptions}
-                .value=${String(this.viewYear)}
-                ?disabled=${isDisabled}
-                @change=${this.handleYearChange}
-              ></ds-select>
-              <ds-button
-                part="nextMonthButton"
-                variant="ghost"
-                size="sm"
-                icon-only
-                label=${COPY_NEXT_MONTH}
-                ?disabled=${isDisabled}
-                @press=${this.handleNextMonthPress}
-              >
-                <ds-icon slot="leading-icon" name="chevron-right"></ds-icon>
-              </ds-button>
-            </div>
-            <div id="grid-label" class="visually-hidden">${gridLabel}</div>
-            <table role="grid" part="grid" class="grid" aria-labelledby="grid-label" @keydown=${this.handleGridKeydown}>
-              <thead>
-                <tr>
-                  ${this.showWeekNumbers
-                    ? html`<th class="weekday" scope="col">${COPY_WEEK_NUMBER}</th>`
-                    : nothing}
-                  ${weekdays.map(
-                    (day) => html`<th class="weekday" part="weekdayHeader" scope="col" abbr=${day.full}>${day.short}</th>`,
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                ${this.calendarWeeks.map(
-                  (week) => html`
-                    <tr>
-                      ${this.showWeekNumbers ? html`<td class="week-number">${isoWeekNumber(week[0]!)}</td>` : nothing}
-                      ${week.map((iso) => this.renderDay(iso))}
-                    </tr>
-                  `,
-                )}
-              </tbody>
-            </table>
-            <div class="footer" part="footer">
-              <ds-button
-                part="todayButton"
-                variant="ghost"
-                size="sm"
-                label=${COPY_TODAY}
-                ?disabled=${isDisabled}
-                @press=${this.handleTodayPress}
-              ></ds-button>
-              <ds-button
-                part="clearButton"
-                variant="ghost"
-                size="sm"
-                label=${COPY_CLEAR}
-                ?disabled=${isDisabled}
-                @press=${this.handleClearPress}
-              ></ds-button>
-            </div>
-          </div>
-        </ds-popover>
+            <ds-button
+              slot="trigger"
+              id="calendar-button"
+              part="calendarButton"
+              data-part="calendarButton"
+              variant="ghost"
+              size=${this.size}
+              icon-only
+              label=${this.range ? COPY_OPEN_RANGE : COPY_OPEN}
+              ?disabled=${isDisabled}
+              @press=${this.stopPress}
+            >
+              <ds-icon slot="leading-icon" name="calendar"></ds-icon>
+            </ds-button>
+            ${this.renderCalendar(isDisabled)}
+          </ds-popover>
+        </div>
+        ${invalid
+          ? html`<ds-text
+              id="error"
+              role="alert"
+              part="errorMessage"
+              data-part="errorMessage"
+              element="p"
+              size="sm"
+              tone="danger"
+              .overrides=${textOverrides}
+              >${this.error}</ds-text
+            >`
+          : nothing}
       </div>
-      <div id="error-message" part="errorMessage" class="error" role="alert">${this.error ?? ''}</div>
     `;
   }
 
-  private renderDay(iso: string) {
-    const { m, d } = parseISO(iso);
-    const inMonth = m === this.viewMonth;
-    const isToday = iso === todayISO();
-    const isDayDisabledValue = this.isDayDisabled(iso);
-    const isSelected = iso === this.internalStart || iso === this.internalEnd;
-    const isInRange =
-      this.range &&
-      this.internalStart !== undefined &&
-      this.internalEnd !== undefined &&
-      iso > this.internalStart &&
-      iso < this.internalEnd;
-    const tabIndex = iso === this.focusedDate ? 0 : -1;
+  private renderInput(
+    which: 'start' | 'end',
+    placeholder: string,
+    describedBy: string | undefined,
+    invalid: boolean,
+    isDisabled: boolean,
+  ): TemplateResult {
+    const isStart = which === 'start';
+    return html`
+      ${this.range
+        ? html`<span id=${isStart ? 'start-label' : 'end-label'} class="visually-hidden"
+            >${isStart ? COPY_START_LABEL : COPY_END_LABEL}</span
+          >`
+        : nothing}
+      <input
+        id=${isStart ? 'input' : 'input-end'}
+        part="input"
+        data-part="input"
+        type="text"
+        inputmode="numeric"
+        autocomplete="off"
+        placeholder=${placeholder}
+        .value=${live(isStart ? this.textStart : this.textEnd)}
+        aria-labelledby=${ifDefined(this.range ? (isStart ? 'label start-label' : 'label end-label') : undefined)}
+        aria-describedby=${ifDefined(describedBy)}
+        aria-invalid=${ifDefined(invalid ? 'true' : undefined)}
+        aria-required=${ifDefined(this.required ? 'true' : undefined)}
+        aria-disabled=${ifDefined(isDisabled ? 'true' : undefined)}
+        ?readonly=${isDisabled}
+        @input=${(event: Event) => this.handleTextInput(event, which)}
+        @keydown=${(event: KeyboardEvent) => this.handleInputKeydown(event, which)}
+      />
+    `;
+  }
 
-    let label = formatFullDate(iso, this.locale);
-    if (isToday) {
-      label += ` ${COPY_TODAY_LABEL}`;
-    }
-    if (isSelected) {
-      label += ` ${COPY_SELECTED}`;
-    }
+  private renderCalendar(isDisabled: boolean): TemplateResult {
+    const locale = this.locale;
+    const weekStart = firstDayOfWeek(locale);
+    const today = todayISO();
+    const month = monthName(locale, this.viewMonth);
+    const year = String(this.viewYear);
+    const titleOverrides = {
+      fontSize: this.overrides?.monthTitleSize ?? 'font.size.md',
+      fontWeight: this.overrides?.monthTitleWeight ?? 'font.weight.semibold',
+    } satisfies Record<string, TokenRef>;
+    const weekdays = Array.from({ length: 7 }, (_, i) => (weekStart + i) % 7);
 
     return html`
-      <td role="gridcell">
+      <div class="calendar" @keydown=${this.handleCalendarKeydown}>
+        <div part="header" data-part="header">
+          <ds-button
+            part="prevMonthButton"
+            data-part="prevMonthButton"
+            variant="ghost"
+            size="sm"
+            icon-only
+            label=${COPY_PREVIOUS_MONTH}
+            ?disabled=${isDisabled}
+            @press=${this.handlePrevMonthPress}
+          >
+            <ds-icon slot="leading-icon" name="chevron-left"></ds-icon>
+          </ds-button>
+          <ds-select
+            part="monthSelect"
+            data-part="monthSelect"
+            label=${COPY_MONTH}
+            name="month"
+            hide-label
+            size="sm"
+            .options=${this.monthOptions}
+            .value=${String(this.viewMonth)}
+            .overrides=${titleOverrides}
+            ?disabled=${isDisabled}
+            @change=${this.handleMonthChange}
+          ></ds-select>
+          <ds-select
+            part="yearSelect"
+            data-part="yearSelect"
+            label=${COPY_YEAR}
+            name="year"
+            hide-label
+            size="sm"
+            .options=${this.yearOptions}
+            .value=${year}
+            .overrides=${titleOverrides}
+            ?disabled=${isDisabled}
+            @change=${this.handleYearChange}
+          ></ds-select>
+          <ds-button
+            part="nextMonthButton"
+            data-part="nextMonthButton"
+            variant="ghost"
+            size="sm"
+            icon-only
+            label=${COPY_NEXT_MONTH}
+            ?disabled=${isDisabled}
+            @press=${this.handleNextMonthPress}
+          >
+            <ds-icon slot="leading-icon" name="chevron-right"></ds-icon>
+          </ds-button>
+        </div>
+        <span id="grid-label" class="visually-hidden">${COPY_GRID_LABEL(this.label, month, year)}</span>
+        <table role="grid" part="grid" data-part="grid" aria-labelledby="grid-label" @keydown=${this.handleGridKeydown}>
+          <thead>
+            <tr>
+              ${this.showWeekNumbers
+                ? html`<th scope="col" part="weekNumber" data-part="weekNumber">${COPY_WEEK_NUMBER}</th>`
+                : nothing}
+              ${weekdays.map(
+                (weekday) =>
+                  html`<th scope="col" part="weekdayHeader" data-part="weekdayHeader" abbr=${weekdayName(locale, weekday, 'long')}>
+                    ${weekdayName(locale, weekday, 'short')}
+                  </th>`,
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            ${getCalendarWeeks(this.viewYear, this.viewMonth, weekStart).map(
+              (week) => html`
+                <tr>
+                  ${this.showWeekNumbers
+                    ? html`<th scope="row" part="weekNumber" data-part="weekNumber">${isoWeekNumber(week[0]!)}</th>`
+                    : nothing}
+                  ${week.map((iso) => this.renderDay(iso, today))}
+                </tr>
+              `,
+            )}
+          </tbody>
+        </table>
+        <div part="footer" data-part="footer">
+          <ds-button
+            part="todayButton"
+            data-part="todayButton"
+            variant="ghost"
+            size="sm"
+            label=${COPY_TODAY}
+            ?disabled=${isDisabled}
+            @press=${this.handleTodayPress}
+          ></ds-button>
+          <ds-button
+            part="clearButton"
+            data-part="clearButton"
+            variant="ghost"
+            size="sm"
+            label=${COPY_CLEAR}
+            ?disabled=${isDisabled}
+            @press=${this.handleClearPress}
+          ></ds-button>
+        </div>
+      </div>
+    `;
+  }
+
+  private renderDay(iso: string, today: string): TemplateResult {
+    const { m, d } = parseISO(iso);
+    const isToday = iso === today;
+    const dayDisabled = this.isDayDisabled(iso);
+    const start = this.internalStart;
+    const end = this.internalEnd;
+    const selected = iso === start || (this.range && iso === end);
+    const inRange = this.range && start !== undefined && end !== undefined && iso > start && iso < end;
+    const roving = this.focusedDate || this.defaultFocusDate;
+    const name = [formatFullDate(iso, this.locale), isToday ? COPY_TODAY_LABEL : '', selected ? COPY_SELECTED : '']
+      .filter(Boolean)
+      .join(', ');
+
+    return html`
+      <td role="gridcell" aria-selected=${selected ? 'true' : 'false'}>
         <button
           type="button"
           part="day"
-          class=${classMap({
-            day: true,
-            outside: !inMonth,
-            today: isToday,
-            selected: isSelected,
-            'in-range': isInRange,
-            disabled: isDayDisabledValue,
-          })}
+          data-part="day"
+          class=${classMap({ outside: m !== this.viewMonth, selected, 'in-range': inRange })}
           data-iso=${iso}
-          tabindex=${tabIndex}
-          aria-selected=${isSelected ? 'true' : 'false'}
-          aria-current=${isToday ? 'date' : nothing}
-          aria-disabled=${isDayDisabledValue ? 'true' : nothing}
-          aria-label=${label}
-          @click=${() => this.handleDayClick(iso)}
+          tabindex=${iso === roving ? 0 : -1}
+          aria-current=${ifDefined(isToday ? 'date' : undefined)}
+          aria-disabled=${ifDefined(dayDisabled ? 'true' : undefined)}
+          aria-label=${name}
+          @click=${() => this.selectDay(iso)}
           @focus=${() => {
             if (this.focusedDate !== iso) {
               this.focusedDate = iso;
@@ -1137,38 +1053,214 @@ export class DsDatePicker extends LitElement {
     `;
   }
 
-  private isDayDisabled(iso: string): boolean {
-    if (this.min && iso < this.min) {
-      return true;
+  /** The roving stop before any day has had focus: the selected day, else today, else the visible month's first day. */
+  private get defaultFocusDate(): string {
+    const inView = (iso: string | undefined): boolean => {
+      if (!iso) {
+        return false;
+      }
+      const { y, m } = parseISO(iso);
+      return y === this.viewYear && m === this.viewMonth;
+    };
+    if (inView(this.internalStart)) {
+      return this.internalStart!;
     }
-    if (this.max && iso > this.max) {
-      return true;
-    }
-    if (this.isDateDisabled?.(iso)) {
-      return true;
-    }
-    return false;
+    const today = todayISO();
+    return inView(today) ? today : toISO(this.viewYear, this.viewMonth, 1);
   }
 
-  private nextEnabledDate(iso: string, deltaDays: number): string {
-    let candidate = iso;
-    for (let i = 0; i < 366; i += 1) {
-      candidate = addDays(candidate, deltaDays);
-      if (!this.isDayDisabled(candidate)) {
-        return candidate;
+  private get monthOptions(): ListboxOption[] {
+    return Array.from({ length: 12 }, (_, m) => ({ value: String(m), label: monthName(this.locale, m) }));
+  }
+
+  /** The `min`/`max` years when given, else the current year − 100 to + 10; always includes the visible year. */
+  private get yearOptions(): ListboxOption[] {
+    const currentYear = new Date().getFullYear();
+    const first = Math.min(this.min ? parseISO(this.min).y : currentYear - 100, this.viewYear);
+    const last = Math.max(this.max ? parseISO(this.max).y : currentYear + 10, this.viewYear);
+    const options: ListboxOption[] = [];
+    for (let y = first; y <= last; y += 1) {
+      options.push({ value: String(y), label: String(y) });
+    }
+    return options;
+  }
+
+  /** helperSize, fontFamily and lineHeight forwarded to the description and error Text. */
+  private get textOverrides(): Partial<Record<TextOverridableBinding, TokenRef | undefined>> | undefined {
+    const o = this.overrides;
+    if (!o) {
+      return undefined;
+    }
+    return { fontSize: o.helperSize, fontFamily: o.fontFamily, lineHeight: o.lineHeight };
+  }
+
+  /* ---- value ---- */
+
+  private seedFromValue(value: DatePickerValue | undefined): void {
+    if (this.range) {
+      const pair = value !== undefined && typeof value === 'object' ? value : undefined;
+      this.internalStart = pair?.start;
+      this.internalEnd = pair?.end;
+    } else {
+      this.internalStart = typeof value === 'string' ? value : undefined;
+      this.internalEnd = undefined;
+    }
+    this.textStart = this.internalStart ? formatNumeric(this.internalStart, this.locale) : '';
+    this.textEnd = this.internalEnd ? formatNumeric(this.internalEnd, this.locale) : '';
+  }
+
+  private isDayDisabled(iso: string): boolean {
+    return Boolean((this.min && iso < this.min) || (this.max && iso > this.max) || this.isDateDisabled?.(iso));
+  }
+
+  /**
+   * Applies a new start/end and reports it when it is a complete value (a
+   * date, both ends of a range, or empty). Controlled: the element returns to
+   * `value` after reporting, and shows the change once the property follows.
+   */
+  private commit(start: string | undefined, end: string | undefined, force = false): void {
+    this.internalStart = start;
+    this.internalEnd = this.range ? end : undefined;
+    const complete = !this.range || (start !== undefined) === (end !== undefined);
+    if (!complete) {
+      return;
+    }
+    const next = this.committedValue;
+    if (!force && sameValue(next, this.lastEmittedValue)) {
+      return;
+    }
+    this.lastEmittedValue = next;
+    this.dispatchEvent(
+      new CustomEvent<DatePickerChangeDetail>('change', {
+        detail: { value: next ?? undefined },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+    if (this.value !== undefined) {
+      this.seedFromValue(this.value);
+      this.lastEmittedValue = this.committedValue;
+    }
+  }
+
+  private selectDay(iso: string): void {
+    if (this.isDisabled || this.isDayDisabled(iso)) {
+      return;
+    }
+    this.focusedDate = iso;
+    const text = formatNumeric(iso, this.locale);
+    if (!this.range) {
+      this.textStart = text;
+      this.commit(iso, undefined);
+      this.closeCalendar();
+      return;
+    }
+    const start = this.internalStart;
+    if (start !== undefined && this.internalEnd === undefined && iso >= start) {
+      this.textEnd = text;
+      this.commit(start, iso);
+      this.closeCalendar();
+    } else {
+      // First pick, a pick after a complete range, or a pick before the start: (re)starts the range.
+      this.textStart = text;
+      this.textEnd = '';
+      this.commit(iso, undefined);
+    }
+  }
+
+  private handleTextInput(event: Event, which: 'start' | 'end'): void {
+    if (this.isDisabled) {
+      return;
+    }
+    const text = (event.currentTarget as HTMLInputElement).value;
+    if (which === 'start') {
+      this.textStart = text;
+    } else {
+      this.textEnd = text;
+    }
+    let parsed: string | undefined;
+    if (text.trim() !== '') {
+      const result = parseTypedDate(text, this.locale);
+      if (result === null) {
+        // A partial or unparseable date changes nothing.
+        return;
+      }
+      parsed = result;
+      if (this.isOpen) {
+        this.moveViewTo(parsed);
       }
     }
-    return candidate;
+    if (which === 'start') {
+      this.commit(parsed, this.internalEnd);
+    } else {
+      this.commit(this.internalStart, parsed);
+    }
   }
 
-  private startOfWeek(iso: string): string {
-    const start = firstDayOfWeek(this.locale);
-    const dow = weekdayOf(iso);
-    return addDays(iso, -((dow - start + 7) % 7));
+  /* ---- open state ---- */
+
+  /** Uncontrolled: applies the change, then reports it. Controlled: reports it only. */
+  private requestOpen(next: boolean): void {
+    if (this.isOpen === next || (next && this.isDisabled)) {
+      return;
+    }
+    if (this.open === undefined) {
+      this.internalOpen = next;
+    }
+    this.dispatchEvent(
+      new CustomEvent<DatePickerOpenChangeDetail>('open-change', { detail: { open: next }, bubbles: true, composed: true }),
+    );
   }
 
-  private endOfWeek(iso: string): string {
-    return addDays(this.startOfWeek(iso), 6);
+  private closeCalendar(): void {
+    this.requestOpen(false);
+    void this.updateComplete.then(() => this.calendarButtonEl?.focus());
+  }
+
+  private async focusSelectedOrToday(): Promise<void> {
+    const target = this.focusedDate || this.internalStart || todayISO();
+    this.moveViewTo(target);
+    await this.updateComplete;
+    await this.popoverEl?.updateComplete;
+    // Popover moves focus to its first focusable once the slotted controls have updated; land on the day after that.
+    await new Promise<void>((resolve) => setTimeout(resolve));
+    if (this.isOpen) {
+      // Popover measures its panel when it opens, which can precede the calendar's first layout (open at
+      // creation); its window scroll listener (capture) repositions it against the rendered size. Dispatched
+      // on the host, since a non-composed event from inside the shadow root never reaches window.
+      this.dispatchEvent(new Event('scroll'));
+      this.dayButton(this.focusedDate || target)?.focus();
+    }
+  }
+
+  private readonly handlePopoverOpenChange = (event: CustomEvent<PopoverOpenChangeDetail>): void => {
+    // Popover's (and the month/year Selects') open-change stays inside; this element reports its own.
+    event.stopPropagation();
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+    this.requestOpen(event.detail.open);
+  };
+
+  private readonly stopPress = (event: Event): void => {
+    event.stopPropagation();
+  };
+
+  private handleInputKeydown(event: KeyboardEvent, which: 'start' | 'end'): void {
+    if (event.key !== 'ArrowDown' || this.isDisabled) {
+      return;
+    }
+    event.preventDefault();
+    // Opened from the end input, focus lands on the end date.
+    const anchor = (which === 'end' ? this.internalEnd : undefined) ?? this.internalStart ?? todayISO();
+    this.moveViewTo(anchor);
+    this.requestOpen(true);
+  }
+
+  /* ---- calendar navigation ---- */
+
+  private dayButton(iso: string): HTMLButtonElement | null {
+    return this.renderRoot.querySelector<HTMLButtonElement>(`[data-part="day"][data-iso="${iso}"]`);
   }
 
   private moveViewTo(iso: string): void {
@@ -1181,102 +1273,90 @@ export class DsDatePicker extends LitElement {
   private async moveFocusTo(iso: string): Promise<void> {
     this.moveViewTo(iso);
     await this.updateComplete;
-    this.renderRoot.querySelector<HTMLButtonElement>(`button[data-iso="${iso}"]`)?.focus();
+    this.dayButton(iso)?.focus();
+  }
+
+  /** Steps `delta` days at a time from `iso`, skipping disabled days; stays put when none is found within a year. */
+  private stepEnabled(iso: string, delta: number): string {
+    let candidate = iso;
+    for (let i = 0; i < 366; i += 1) {
+      candidate = addDays(candidate, delta);
+      if (!this.isDayDisabled(candidate)) {
+        return candidate;
+      }
+    }
+    return iso;
   }
 
   private readonly handleGridKeydown = (event: KeyboardEvent): void => {
-    if (this.isDisabled) {
+    if (!(event.target instanceof HTMLElement) || event.target.dataset.part !== 'day' || event.altKey || event.ctrlKey || event.metaKey) {
       return;
     }
-    const current = this.focusedDate || todayISO();
+    const current = this.focusedDate || this.defaultFocusDate;
+    const weekStart = firstDayOfWeek(this.locale);
+    let next: string | undefined;
     switch (event.key) {
       case 'ArrowRight':
-        event.preventDefault();
-        void this.moveFocusTo(this.nextEnabledDate(current, 1));
-        return;
+        next = this.stepEnabled(current, 1);
+        break;
       case 'ArrowLeft':
-        event.preventDefault();
-        void this.moveFocusTo(this.nextEnabledDate(current, -1));
-        return;
+        next = this.stepEnabled(current, -1);
+        break;
       case 'ArrowDown':
-        event.preventDefault();
-        void this.moveFocusTo(this.nextEnabledDate(current, 7));
-        return;
+        next = this.stepEnabled(current, 7);
+        break;
       case 'ArrowUp':
-        event.preventDefault();
-        void this.moveFocusTo(this.nextEnabledDate(current, -7));
-        return;
+        next = this.stepEnabled(current, -7);
+        break;
       case 'Home':
-        event.preventDefault();
-        void this.moveFocusTo(this.startOfWeek(current));
-        return;
+        next = addDays(current, -((weekdayOf(current) - weekStart + 7) % 7));
+        break;
       case 'End':
-        event.preventDefault();
-        void this.moveFocusTo(this.endOfWeek(current));
-        return;
+        next = addDays(current, 6 - ((weekdayOf(current) - weekStart + 7) % 7));
+        break;
       case 'PageUp':
-        event.preventDefault();
-        void this.moveFocusTo(event.shiftKey ? addYears(current, -1) : addMonths(current, -1));
-        return;
+        next = addMonths(current, event.shiftKey ? -12 : -1);
+        break;
       case 'PageDown':
-        event.preventDefault();
-        void this.moveFocusTo(event.shiftKey ? addYears(current, 1) : addMonths(current, 1));
-        return;
+        next = addMonths(current, event.shiftKey ? 12 : 1);
+        break;
       case 'Enter':
       case ' ':
         event.preventDefault();
-        this.handleDayClick(current);
+        this.selectDay(current);
         return;
       default:
         return;
     }
+    event.preventDefault();
+    void this.moveFocusTo(next);
   };
 
-  private handleDayClick(iso: string): void {
-    if (this.isDisabled || this.isDayDisabled(iso)) {
+  /** Tab cycles within the calendar: header controls, the grid's one stop, Today, Clear. */
+  private readonly handleCalendarKeydown = (event: KeyboardEvent): void => {
+    if (event.key !== 'Tab' || event.defaultPrevented) {
       return;
     }
-    this.focusedDate = iso;
-    if (!this.range) {
-      this.internalStart = iso;
-      this.textStart = formatDateForDisplay(iso, this.locale);
-      this.maybeEmitChange();
-      this.closeCalendar();
+    const root = this.renderRoot as ShadowRoot;
+    const stops = Array.from(
+      root.querySelectorAll<HTMLElement>(
+        '[data-part="prevMonthButton"], [data-part="monthSelect"], [data-part="yearSelect"], [data-part="nextMonthButton"], [data-part="day"][tabindex="0"], [data-part="todayButton"], [data-part="clearButton"]',
+      ),
+    ).filter((el) => !el.hasAttribute('disabled'));
+    const first = stops[0];
+    const last = stops[stops.length - 1];
+    if (!first || !last) {
       return;
     }
-    const start = this.internalStart;
-    if (start !== undefined && this.internalEnd === undefined && iso >= start) {
-      this.internalEnd = iso;
-      this.textEnd = formatDateForDisplay(iso, this.locale);
-      this.maybeEmitChange();
-      this.closeCalendar();
-    } else {
-      // First pick, or picking before the current start: (re)starts the range.
-      this.internalStart = iso;
-      this.internalEnd = undefined;
-      this.textStart = formatDateForDisplay(iso, this.locale);
-      this.textEnd = '';
-      this.maybeEmitChange();
+    const active = root.activeElement;
+    if (event.shiftKey && active === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && active === last) {
+      event.preventDefault();
+      first.focus();
     }
-  }
-
-  private closeCalendar(): void {
-    this.setOpen(false);
-    void this.focusCalendarButton();
-  }
-
-  private async focusCalendarButton(): Promise<void> {
-    await this.updateComplete;
-    this.calendarButtonEl?.focus();
-  }
-
-  private async focusSelectedOrToday(): Promise<void> {
-    const target = this.focusedDate !== '' ? this.focusedDate : (this.internalStart ?? this.internalEnd ?? todayISO());
-    this.moveViewTo(target);
-    await this.updateComplete;
-    await this.popoverEl?.updateComplete;
-    this.renderRoot.querySelector<HTMLButtonElement>(`button[data-iso="${target}"]`)?.focus();
-  }
+  };
 
   private readonly handlePrevMonthPress = (event: Event): void => {
     event.stopPropagation();
@@ -1288,34 +1368,29 @@ export class DsDatePicker extends LitElement {
     this.shiftView(1);
   };
 
+  /** A month change keeps the focused day number, clamped into the new month. */
   private shiftView(deltaMonths: number): void {
-    const next = addMonths(toISO(this.viewYear, this.viewMonth, 1), deltaMonths);
-    this.viewYear = parseISO(next).y;
-    this.viewMonth = parseISO(next).m;
+    const anchor = this.focusedDate || toISO(this.viewYear, this.viewMonth, 1);
+    this.moveViewTo(addMonths(anchor, deltaMonths));
   }
 
   private readonly handleMonthChange = (event: CustomEvent<SelectChangeDetail>): void => {
     event.stopPropagation();
-    const month = Number(event.detail.value);
     const anchor = this.focusedDate || toISO(this.viewYear, this.viewMonth, 1);
-    const next = clampDayIntoMonth(this.viewYear, month, parseISO(anchor).d);
-    this.moveViewTo(next);
+    this.moveViewTo(clampDayIntoMonth(this.viewYear, Number(event.detail.value), parseISO(anchor).d));
   };
 
   private readonly handleYearChange = (event: CustomEvent<SelectChangeDetail>): void => {
     event.stopPropagation();
-    const year = Number(event.detail.value);
     const anchor = this.focusedDate || toISO(this.viewYear, this.viewMonth, 1);
-    const next = clampDayIntoMonth(year, this.viewMonth, parseISO(anchor).d);
-    this.moveViewTo(next);
+    this.moveViewTo(clampDayIntoMonth(Number(event.detail.value), this.viewMonth, parseISO(anchor).d));
   };
 
   private readonly handleTodayPress = (event: Event): void => {
     event.stopPropagation();
-    if (this.isDisabled) {
-      return;
-    }
-    this.handleDayClick(todayISO());
+    const today = todayISO();
+    this.moveViewTo(today);
+    this.selectDay(today);
   };
 
   private readonly handleClearPress = (event: Event): void => {
@@ -1323,140 +1398,52 @@ export class DsDatePicker extends LitElement {
     if (this.isDisabled) {
       return;
     }
-    this.internalStart = undefined;
-    this.internalEnd = undefined;
+    const hadAnything =
+      this.internalStart !== undefined || this.internalEnd !== undefined || this.textStart !== '' || this.textEnd !== '';
     this.textStart = '';
     this.textEnd = '';
-    this.maybeEmitChange();
-    this.moveViewTo(todayISO());
+    this.commit(undefined, undefined, hadAnything);
   };
 
-  private handleTextInput(event: Event, which: 'start' | 'end'): void {
-    const text = (event.currentTarget as HTMLInputElement).value;
-    if (which === 'start') {
-      this.textStart = text;
-    } else {
-      this.textEnd = text;
-    }
-    if (text.trim() === '') {
-      if (which === 'start') {
-        this.internalStart = undefined;
-      } else {
-        this.internalEnd = undefined;
-      }
-      this.maybeEmitChange();
-      return;
-    }
-    const parsed = parseTypedDate(text, this.locale);
-    if (parsed === null) {
-      // Left incomplete/unparseable; the last committed value stands until this resolves to a real date.
-      return;
-    }
-    if (which === 'start') {
-      this.internalStart = parsed;
-    } else {
-      this.internalEnd = parsed;
-    }
-    if (this.isOpen) {
-      this.moveViewTo(parsed);
-    }
-    this.maybeEmitChange();
-  }
+  /* ---- form ---- */
 
-  private handleInputKeydown(event: KeyboardEvent, which: 'start' | 'end'): void {
-    if (this.isDisabled) {
-      return;
-    }
-    if (event.key === 'ArrowDown') {
-      event.preventDefault();
-      const anchor = (which === 'start' ? this.internalStart : this.internalEnd) ?? this.internalStart ?? todayISO();
-      this.moveViewTo(anchor);
-      this.setOpen(true);
-    }
-  }
-
-  private readonly handlePopoverOpenChange = (event: CustomEvent<PopoverOpenChangeDetail>): void => {
-    this.setOpen(event.detail.open);
-  };
-
-  private valuesEqual(a: DatePickerValue | null, b: DatePickerValue | null): boolean {
-    if (a === b) {
-      return true;
-    }
-    if (a === null || b === null) {
-      return false;
-    }
-    if (typeof a === 'string' || typeof b === 'string') {
-      return a === b;
-    }
-    return a.start === b.start && a.end === b.end;
-  }
-
-  private maybeEmitChange(): void {
-    const next = this.currentValue;
-    if (this.valuesEqual(next, this.lastEmittedValue)) {
-      return;
-    }
-    this.lastEmittedValue = next;
-    this.dispatchEvent(
-      new CustomEvent<DatePickerChangeDetail>('change', {
-        detail: { value: next ?? undefined },
-        bubbles: true,
-        composed: true,
-      }),
-    );
-  }
-
-  /** Mirrors value and validity into ElementInternals. */
+  /** Mirrors value and validity into ElementInternals. Precedence: error, required, invalid, tooEarly, tooLate, rangeOrder. */
   private syncInternals(): void {
-    const value = this.currentValue;
-    const isDisabled = this.isDisabled;
-
-    if (this.range) {
-      if (isDisabled || value === null) {
-        this.internals.setFormValue(null);
-      } else {
-        const range = value as { start: string; end: string };
-        const formData = new FormData();
-        formData.append(this.name, range.start);
-        formData.append(`${this.name}-end`, range.end);
-        this.internals.setFormValue(formData);
-      }
+    const value = this.committedValue;
+    if (this.isDisabled || value === null) {
+      this.internals.setFormValue(null);
+    } else if (typeof value === 'string') {
+      this.internals.setFormValue(value);
     } else {
-      this.internals.setFormValue(isDisabled || value === null ? null : (value as string));
+      const data = new FormData();
+      data.append(this.name, value.start);
+      data.append(`${this.name}-end`, value.end);
+      this.internals.setFormValue(data);
     }
 
-    if (isDisabled) {
+    if (this.isDisabled) {
       this.internals.setValidity({});
       return;
     }
-
-    const anchor = this.startInputEl;
-    const pattern = patternPlaceholder(this.locale);
-    const startText = this.textStart.trim();
-    const endText = this.textEnd.trim();
+    const anchor = this.startInputEl ?? undefined;
+    const label = this.label;
+    const locale = this.locale;
+    const unparseable = (text: string): boolean => text.trim() !== '' && parseTypedDate(text, locale) === null;
+    const start = this.internalStart;
+    const last = this.range ? this.internalEnd : start;
 
     if (this.error) {
-      this.internals.setValidity({ customError: true }, this.error, anchor!);
-    } else if (this.invalid) {
-      this.internals.setValidity({ customError: true }, COPY_INVALID(this.label, pattern), anchor!);
-    } else if (this.required && value === null) {
-      this.internals.setValidity({ valueMissing: true }, COPY_REQUIRED(this.label), anchor!);
-    } else if (startText !== '' && parseTypedDate(this.textStart, this.locale) === null) {
-      this.internals.setValidity({ customError: true }, COPY_INVALID(this.label, pattern), anchor!);
-    } else if (this.range && endText !== '' && parseTypedDate(this.textEnd, this.locale) === null) {
-      this.internals.setValidity({ customError: true }, COPY_INVALID(this.label, pattern), anchor!);
-    } else if (this.min && this.internalStart !== undefined && this.internalStart < this.min) {
-      this.internals.setValidity({ rangeUnderflow: true }, COPY_TOO_EARLY(this.label, this.min), anchor!);
-    } else if (this.max && ((this.range ? this.internalEnd : this.internalStart) ?? '') > this.max) {
-      this.internals.setValidity({ rangeOverflow: true }, COPY_TOO_LATE(this.label, this.max), anchor!);
-    } else if (
-      this.range &&
-      this.internalStart !== undefined &&
-      this.internalEnd !== undefined &&
-      this.internalEnd < this.internalStart
-    ) {
-      this.internals.setValidity({ customError: true }, COPY_RANGE_ORDER, anchor!);
+      this.internals.setValidity({ customError: true }, this.error, anchor);
+    } else if (this.required && value === null && !unparseable(this.textStart) && !unparseable(this.textEnd)) {
+      this.internals.setValidity({ valueMissing: true }, COPY_REQUIRED(label), anchor);
+    } else if (unparseable(this.textStart) || (this.range && unparseable(this.textEnd))) {
+      this.internals.setValidity({ badInput: true }, COPY_INVALID(label, patternPlaceholder(locale)), anchor);
+    } else if (this.min && start !== undefined && start < this.min) {
+      this.internals.setValidity({ rangeUnderflow: true }, COPY_TOO_EARLY(label, formatNumeric(this.min, locale)), anchor);
+    } else if (this.max && last !== undefined && last > this.max) {
+      this.internals.setValidity({ rangeOverflow: true }, COPY_TOO_LATE(label, formatNumeric(this.max, locale)), anchor);
+    } else if (this.range && start !== undefined && this.internalEnd !== undefined && this.internalEnd < start) {
+      this.internals.setValidity({ customError: true }, COPY_RANGE_ORDER, anchor);
     } else {
       this.internals.setValidity({});
     }
@@ -1473,18 +1460,13 @@ export class DsDatePicker extends LitElement {
       }
     }
   }
+}
 
-  private warnInDev(): void {
-    if (!import.meta.env.DEV) {
-      return;
-    }
-    if (!this.label) {
-      console.warn('<ds-date-picker> requires a `label`.', this);
-    }
-    if (!this.name) {
-      console.warn('<ds-date-picker> requires a `name`.', this);
-    }
+function sameValue(a: DatePickerValue | null, b: DatePickerValue | null): boolean {
+  if (a === null || b === null || typeof a === 'string' || typeof b === 'string') {
+    return a === b;
   }
+  return a.start === b.start && a.end === b.end;
 }
 
 declare global {

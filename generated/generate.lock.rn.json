@@ -318,19 +318,19 @@
     }
   },
   "DatePicker.rn": {
-    "hash": "d783df940e50ae53",
-    "lastAttemptHash": "d783df940e50ae53",
-    "generatedAt": "2026-09-10T23:38:24+00:00",
-    "model": "sonnet",
+    "hash": "83335cf0057aeb30",
+    "lastAttemptHash": "83335cf0057aeb30",
+    "generatedAt": "2026-09-16T14:25:34+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 3.1488,
+    "costUsd": 2.8323,
     "files": [
       "packages/rn/src/DatePicker.stories.tsx",
-      "packages/rn/src/DatePicker.tsx",
-      "packages/rn/src/index.ts"
+      "packages/rn/src/DatePicker.test.tsx",
+      "packages/rn/src/DatePicker.tsx"
     ],
-    "gaps": 11,
+    "gaps": 14,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -687,19 +687,19 @@
     }
   },
   "NumberInput.rn": {
-    "hash": "57c5ad8925b3900f",
-    "lastAttemptHash": "57c5ad8925b3900f",
-    "generatedAt": "2026-09-10T23:03:26+00:00",
-    "model": "sonnet",
+    "hash": "61c8e1dd7afd308a",
+    "lastAttemptHash": "61c8e1dd7afd308a",
+    "generatedAt": "2026-09-16T13:32:41+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.8753,
+    "costUsd": 2.0386,
     "files": [
       "packages/rn/src/NumberInput.stories.tsx",
-      "packages/rn/src/NumberInput.tsx",
-      "packages/rn/src/index.ts"
+      "packages/rn/src/NumberInput.test.tsx",
+      "packages/rn/src/NumberInput.tsx"
     ],
-    "gaps": 9,
+    "gaps": 11,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -755,19 +755,19 @@
     }
   },
   "ProgressBar.rn": {
-    "hash": "7949d1ab486bd9a2",
-    "lastAttemptHash": "7949d1ab486bd9a2",
-    "generatedAt": "2026-09-10T23:09:16+00:00",
-    "model": "sonnet",
+    "hash": "6daf7ada86de511c",
+    "lastAttemptHash": "6daf7ada86de511c",
+    "generatedAt": "2026-09-16T13:39:58+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.0398,
+    "costUsd": 1.1741,
     "files": [
       "packages/rn/src/ProgressBar.stories.tsx",
-      "packages/rn/src/ProgressBar.tsx",
-      "packages/rn/src/index.ts"
+      "packages/rn/src/ProgressBar.test.tsx",
+      "packages/rn/src/ProgressBar.tsx"
     ],
-    "gaps": 5,
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -801,19 +801,19 @@
     }
   },
   "Search.rn": {
-    "hash": "2c9d7d0a489b75f4",
-    "lastAttemptHash": "2c9d7d0a489b75f4",
-    "generatedAt": "2026-09-10T23:25:13+00:00",
-    "model": "sonnet",
+    "hash": "a132d397d4975183",
+    "lastAttemptHash": "a132d397d4975183",
+    "generatedAt": "2026-09-16T14:00:58+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.7355,
+    "costUsd": 2.182,
     "files": [
       "packages/rn/src/Search.stories.tsx",
-      "packages/rn/src/Search.tsx",
-      "packages/rn/src/index.ts"
+      "packages/rn/src/Search.test.tsx",
+      "packages/rn/src/Search.tsx"
     ],
-    "gaps": 6,
+    "gaps": 16,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -893,18 +893,19 @@
     }
   },
   "Slider.rn": {
-    "hash": "21397ca97758d7d1",
-    "lastAttemptHash": "21397ca97758d7d1",
-    "generatedAt": "2026-09-10T22:53:40+00:00",
-    "model": "sonnet",
+    "hash": "d9bd493ab5236e74",
+    "lastAttemptHash": "d9bd493ab5236e74",
+    "generatedAt": "2026-09-16T13:19:53+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.8455,
+    "costUsd": 1.9482,
     "files": [
       "packages/rn/src/Slider.stories.tsx",
+      "packages/rn/src/Slider.test.tsx",
       "packages/rn/src/Slider.tsx"
     ],
-    "gaps": 6,
+    "gaps": 12,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -960,19 +961,19 @@
     }
   },
   "Stepper.rn": {
-    "hash": "e4b0e245650fa658",
-    "lastAttemptHash": "e4b0e245650fa658",
-    "generatedAt": "2026-09-10T23:18:04+00:00",
-    "model": "sonnet",
+    "hash": "36d1109f02da2de6",
+    "lastAttemptHash": "36d1109f02da2de6",
+    "generatedAt": "2026-09-16T13:48:41+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.8913,
+    "costUsd": 1.4484,
     "files": [
       "packages/rn/src/Stepper.stories.tsx",
-      "packages/rn/src/Stepper.tsx",
-      "packages/rn/src/index.ts"
+      "packages/rn/src/Stepper.test.tsx",
+      "packages/rn/src/Stepper.tsx"
     ],
-    "gaps": 7,
+    "gaps": 13,
     "gates": {
       "parse": true,
       "contrast": true,

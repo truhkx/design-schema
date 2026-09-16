@@ -9,9 +9,10 @@ interface SliderArgs {
   name: string;
   min: number;
   max: number;
-  step: number;
+  step?: number | undefined;
   snapToMarks: boolean;
   required: boolean;
+  invalid: boolean;
   value?: SliderValue | undefined;
   defaultValue?: SliderValue | undefined;
   range: boolean;
@@ -21,12 +22,6 @@ interface SliderArgs {
   description?: string | undefined;
   error?: string | undefined;
 }
-
-const PRICE_MARKS: SliderMark[] = [
-  { value: 0, label: 'Min' },
-  { value: 250, label: '$250' },
-  { value: 500, label: 'Max' },
-];
 
 const meta: Meta<SliderArgs> = {
   title: 'Slider/Lit',
@@ -40,15 +35,17 @@ const meta: Meta<SliderArgs> = {
     disabled: { control: 'boolean' },
     snapToMarks: { control: 'boolean' },
     required: { control: 'boolean' },
+    invalid: { control: 'boolean' },
   },
   args: {
     label: 'Volume',
     name: 'volume',
     min: 0,
     max: 100,
-    step: 1,
+    step: undefined,
     snapToMarks: false,
     required: false,
+    invalid: false,
     value: undefined,
     defaultValue: undefined,
     range: false,
@@ -65,14 +62,15 @@ const meta: Meta<SliderArgs> = {
         name=${args.name}
         min=${args.min}
         max=${args.max}
-        step=${args.step}
-        ?snapToMarks=${args.snapToMarks}
+        step=${ifDefined(args.step)}
+        ?snap-to-marks=${args.snapToMarks}
         ?required=${args.required}
+        ?invalid=${args.invalid}
         .value=${args.value}
         .defaultValue=${args.defaultValue}
         ?range=${args.range}
         show-value=${args.showValue}
-        .marks=${args.marks ?? []}
+        .marks=${args.marks}
         ?disabled=${args.disabled}
         description=${ifDefined(args.description)}
         error=${ifDefined(args.error)}
@@ -87,76 +85,44 @@ type Story = StoryObj<SliderArgs>;
 export const Default: Story = {};
 
 /* showValue */
-export const ShowValueAlways: Story = { args: { showValue: 'always', defaultValue: 40 } };
-export const ShowValueHover: Story = { args: { showValue: 'hover', defaultValue: 40 } };
-export const ShowValueNever: Story = { args: { showValue: 'never', defaultValue: 40 } };
+export const ShowValueAlways: Story = { args: { showValue: 'always' } };
+export const ShowValueHover: Story = { args: { showValue: 'hover' } };
+export const ShowValueNever: Story = { args: { showValue: 'never' } };
 
-export const Range: Story = {
-  args: {
-    label: 'Price range',
-    name: 'price',
-    min: 0,
-    max: 500,
-    step: 10,
-    defaultValue: [100, 350],
-    range: true,
-  },
+/* examples */
+export const Volume: Story = { args: { label: 'Volume', name: 'volume', defaultValue: 30 } };
+
+export const PriceRange: Story = {
+  args: { label: 'Price range', name: 'price', range: true, defaultValue: [20, 80] },
 };
 
-export const Marks: Story = {
+export const EffortWithMarks: Story = {
   args: {
-    label: 'Price range',
-    name: 'price',
-    min: 0,
-    max: 500,
-    step: 10,
-    defaultValue: [100, 350],
-    range: true,
-    marks: PRICE_MARKS,
-  },
-};
-
-export const WithDescription: Story = {
-  args: { description: 'Drag or use arrow keys to adjust.', defaultValue: 30 },
-};
-
-export const Disabled: Story = { args: { disabled: true, defaultValue: 60 } };
-
-export const Required: Story = { args: { required: true } };
-
-export const SnapToMarksStory: Story = {
-  name: 'SnapToMarks',
-  args: {
-    label: 'Price range',
-    name: 'price',
-    min: 0,
-    max: 500,
-    step: 10,
-    defaultValue: [100, 350],
-    range: true,
-    marks: PRICE_MARKS,
+    label: 'Effort',
+    name: 'effort',
+    min: 1,
+    max: 5,
+    marks: [
+      { value: 1, label: 'Low' },
+      { value: 3, label: 'Medium' },
+      { value: 5, label: 'High' },
+    ],
     snapToMarks: true,
   },
 };
 
-export const ErrorState: Story = {
-  args: { error: 'Fix this before continuing.', defaultValue: 10 },
+export const PairedWithANumberInput: Story = {
+  args: { label: 'Zoom', name: 'zoom', min: 50, max: 200, step: 10, defaultValue: 100, showValue: 'never' },
 };
 
-/**
- * Renders a range slider (its maximum of two thumbs, each its own tab stop)
- * with marks, so the keyboard gate can verify arrows, Page Up/Down, Home/End
- * and Tab moving between thumbs.
- */
+/* states */
+export const WithDescription: Story = { args: { description: 'Applies to all devices.', defaultValue: 30 } };
+export const Disabled: Story = { args: { disabled: true, defaultValue: 50 } };
+export const Required: Story = { args: { required: true } };
+export const Invalid: Story = { args: { invalid: true } };
+export const ErrorState: Story = { args: { error: 'Fix this before continuing.', defaultValue: 10 } };
+
+/** The range form: two thumbs, each its own tab stop, are the whole keyboard model. */
 export const Keyboard: Story = {
-  args: {
-    label: 'Price range',
-    name: 'price',
-    min: 0,
-    max: 500,
-    step: 10,
-    defaultValue: [100, 350],
-    range: true,
-    marks: PRICE_MARKS,
-  },
+  args: { label: 'Price range', name: 'price', range: true, defaultValue: [20, 80] },
 };

@@ -1,8 +1,8 @@
-import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
+import { LitElement, css, html, nothing, type CSSResult, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
+import { classMap } from 'lit/directives/class-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { live } from 'lit/directives/live.js';
-import { classMap } from 'lit/directives/class-map.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Text.js';
 import type { TextOverridableBinding } from './Text.js';
@@ -10,29 +10,21 @@ import './Button.js';
 import './Icon.js';
 
 export type NumberInputFormat = 'decimal' | 'currency' | 'percent' | 'unit';
+export type NumberInputSize = 'sm' | 'md';
 
 /** Detail carried by the `change` CustomEvent. */
 export interface NumberInputChangeDetail {
+  /** The new numeric value; `undefined` when the field is empty. */
   value: number | undefined;
 }
 
-/** Negates a boolean attribute: `hide-steppers` present means `showSteppers` is `false`. */
-const NEGATED_BOOLEAN_CONVERTER = {
-  fromAttribute(value: string | null): boolean {
-    return value === null;
-  },
-  toAttribute(value: boolean): string | null {
-    return value ? null : '';
-  },
-};
-
 /**
  * Overridable style hooks; see the `overrides` property. `background`,
- * `foreground`, `placeholder`, `border`, `affixColor`, `descriptionText`,
- * `errorText`, `minTarget` and `focusRingWidth` are locked and excluded.
+ * `foreground`, `placeholder`, `border`, `borderFocus`, `affixColor`,
+ * `descriptionText`, `errorText`, `minTarget`, `minTargetSm` and
+ * `focusRingWidth` are locked and excluded.
  */
 export type NumberInputOverridableBinding =
-  | 'borderFocus'
   | 'borderInvalid'
   | 'borderWidth'
   | 'radius'
@@ -50,7 +42,6 @@ export type NumberInputOverridableBinding =
   | 'disabledOpacity';
 
 const HOOKS: Record<NumberInputOverridableBinding, string> = {
-  borderFocus: '--ds-number-input-border-focus',
   borderInvalid: '--ds-number-input-border-invalid',
   borderWidth: '--ds-number-input-border-width',
   radius: '--ds-number-input-radius',
@@ -68,68 +59,129 @@ const HOOKS: Record<NumberInputOverridableBinding, string> = {
   disabledOpacity: '--ds-number-input-disabled-opacity',
 };
 
-/** copy.increment */
-const COPY_INCREMENT = 'Increase';
-/** copy.decrement */
-const COPY_DECREMENT = 'Decrease';
-/** copy.required */
-const COPY_REQUIRED = (label: string): string => `${label} is required.`;
-/** copy.invalid */
-const COPY_INVALID = (label: string): string => `${label} must be a number.`;
-/** copy.outOfRange */
-const COPY_OUT_OF_RANGE = (label: string, min: number, max: number): string => `${label} must be between ${min} and ${max}.`;
-/** copy.requiredIndicator */
-const COPY_REQUIRED_INDICATOR = ' (required)';
-/** copy.currencyMissing */
-const COPY_CURRENCY_MISSING = 'format "currency" needs a currency code.';
+/** copy.* — used verbatim; `{label}`, `{min}` and `{max}` are the only interpolations. */
+const COPY = {
+  increment: 'Increase',
+  decrement: 'Decrease',
+  required: '{label} is required.',
+  invalid: '{label} must be a number.',
+  outOfRange: '{label} must be between {min} and {max}.',
+  outOfRangeMin: '{label} must be {min} or more.',
+  outOfRangeMax: '{label} must be {max} or less.',
+  currencyMissing: 'format "currency" needs a currency code.',
+  requiredIndicator: ' (required)',
+} as const;
 
-/** Keys handled by the keyboard model, all acting on the first (only) tab stop, the input itself. */
-const STEP_KEYS = new Set(['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown']);
+/** The environment locale's decimal and group separators. */
+function localeSeparators(): { decimal: string; group: string } {
+  const parts = new Intl.NumberFormat().formatToParts(12345.6);
+  return {
+    decimal: parts.find((p) => p.type === 'decimal')?.value ?? '.',
+    group: parts.find((p) => p.type === 'group')?.value ?? ',',
+  };
+}
 
-let idCounter = 0;
-function nextNumberInputId(): string {
-  idCounter += 1;
-  return `ds-number-input-${idCounter}`;
+/** Decimal places in `step` (`0.01` → 2), the default `precision`. */
+function decimalsInStep(step: number): number {
+  const str = String(step);
+  const exp = /e-(\d+)$/.exec(str);
+  if (exp) return Number(exp[1]);
+  const dot = str.indexOf('.');
+  return dot === -1 ? 0 : str.length - dot - 1;
+}
+
+function roundTo(num: number, digits: number): number {
+  const factor = 10 ** digits;
+  return Math.round(num * factor) / factor;
+}
+
+type Parsed = { kind: 'empty' } | { kind: 'invalid' } | { kind: 'number'; value: number };
+
+/**
+ * Lenient parse of what people type or what the field displays: group
+ * separators and any other character (currency symbol, percent sign, unit) are
+ * ignored; a leading minus and the locale's or a period decimal separator are
+ * kept. Text with no digits at all is `invalid`.
+ */
+function parseTyped(raw: string): Parsed {
+  const trimmed = raw.trim();
+  if (trimmed === '') return { kind: 'empty' };
+  const { decimal, group } = localeSeparators();
+  // Where "." is the locale's group separator (de-DE "1.234,5"), a "." is a
+  // decimal only when the locale's own decimal is absent from the text.
+  const periodIsDecimal = decimal === '.' || group !== '.' || !trimmed.includes(decimal);
+  let digits = '';
+  let negative = false;
+  let seenDecimal = false;
+  for (const ch of trimmed) {
+    if (ch >= '0' && ch <= '9') digits += ch;
+    else if (ch === '-' && digits === '' && !seenDecimal) negative = true;
+    else if ((ch === decimal || (ch === '.' && periodIsDecimal)) && !seenDecimal) {
+      seenDecimal = true;
+      digits += '.';
+    }
+  }
+  if (!/\d/.test(digits)) return { kind: 'invalid' };
+  const num = Number(`${negative ? '-' : ''}${digits.startsWith('.') ? `0${digits}` : digits}`);
+  return Number.isFinite(num) ? { kind: 'number', value: num } : { kind: 'invalid' };
+}
+
+/** Whether Intl knows `unit` as a unit identifier. */
+function isIntlUnit(unit: string): boolean {
+  try {
+    new Intl.NumberFormat(undefined, { style: 'unit', unit });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** A resolved CSS time (`200ms`, `0.2s`) in ms; `undefined` when it cannot be read. */
+function parseTime(value: string): number | undefined {
+  const match = /^(-?\d*\.?\d+)(ms|s)$/.exec(value.trim());
+  if (!match) return undefined;
+  const amount = Number(match[1]);
+  return match[2] === 's' ? amount * 1000 : amount;
+}
+
+/** A number property read from an attribute is `null` once the attribute is removed. */
+function finite(value: number | null | undefined): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
 /**
  * `<ds-number-input>` — NumberInput (category: input, APG pattern: spinbutton).
  *
- * `<ds-number-input label="Quantity" name="qty" min="1" max="99">` renders a
- * label, description, and a bordered field in its shadow root holding an
- * optional prefix, a single `<input type="text" inputmode="decimal"
- * role="spinbutton">`, an optional suffix, and (when `showSteppers`) two
- * `<ds-button ghost sm icon-only>` steppers separated from the field by a
- * hairline, `tabindex="-1"` and `aria-hidden` since the arrow keys on the
- * input do their job. Typing is sanitized to digits, a leading minus and one
- * decimal separator as it happens; the value is parsed on every keystroke and
- * re-formatted with `Intl.NumberFormat` (honoring `format`) on blur, after
- * rounding to `precision` and clamping to `min`/`max`. The element is
- * form-associated (`ElementInternals`) and implements `DsFormField`.
- * Dispatches a composed `change` CustomEvent carrying `{ value }` (a number or
- * `undefined`) in `detail`.
+ * `<ds-number-input label="Quantity" name="qty" min="1" max="99">` renders
+ * Input's wrapper in its shadow root — a native `<label for>`, the description
+ * Text, a bordered field and the error Text — around a single `<input
+ * type="text" inputmode="decimal" role="spinbutton" autocomplete="off">`
+ * carrying `aria-valuenow/min/max/text`. Optional leading/trailing text sits
+ * inside the field, and (unless `hide-steppers`) two `<ds-button variant="ghost"
+ * size="sm" icon-only>` steppers with minus/plus icons sit flush at its end,
+ * `tabindex="-1"` and `aria-hidden` because the arrow keys on the input do the
+ * same job. Typing is parsed leniently on every keystroke; on blur and Enter the
+ * value is rounded to `precision`, clamped to `min`/`max` (reporting the clamp
+ * with the out-of-range copy) and re-formatted with `Intl.NumberFormat`.
+ *
+ * The element is form-associated (`ElementInternals`, `setFormValue` with the
+ * plain number as a string) and implements `DsFormField`; `<ds-form>` discovers
+ * it by `data-ds-field` and submits on Enter after the commit. Dispatches a
+ * composed `change` CustomEvent carrying `{ value }` (a number or `undefined`).
  *
  * ## When to use
  *
  * Use a NumberInput for any exact numeric value: quantities, amounts,
  * measurements, ages, counts. Choose `format` so the field reads as the thing
- * it holds. Set `min`, `max` and `step` whenever they exist. Pair with a
- * Slider when a feel for the scale helps.
+ * it holds (`currency` with a code, `percent`, a `unit`). Set `min`, `max` and
+ * `step` whenever they exist. Pair with a Slider when a feel for the scale
+ * helps.
  *
- * @fires change - Fired on every valid keystroke, on each step, and on blur after clamping/rounding, with `{ value }` in `detail`.
- * @csspart label - The `<ds-text>` naming the quantity (anatomy: label).
- * @csspart description - The helper text (anatomy: description).
- * @csspart field - The bordered wrapper (anatomy: field).
- * @csspart input - The native `<input>` (anatomy: input).
- * @csspart prefix - Static text before the value (anatomy: prefix).
- * @csspart suffix - Static text after the value (anatomy: suffix).
- * @csspart decrementButton - The decrement `<ds-button>` (anatomy: decrementButton).
- * @csspart incrementButton - The increment `<ds-button>` (anatomy: incrementButton).
- * @csspart errorMessage - The `role="alert"` error message region (anatomy: errorMessage).
+ * @fires change - On each valid keystroke, each step, and on blur after clamping/rounding, with `{ value }` in `detail`.
  */
 @customElement('ds-number-input')
 export class DsNumberInput extends LitElement {
-  static formAssociated = true;
+  static formAssociated: boolean = true;
 
   static override shadowRootOptions: ShadowRootInit = {
     ...LitElement.shadowRootOptions,
@@ -139,8 +191,6 @@ export class DsNumberInput extends LitElement {
   static override styles: CSSResult = css`
     :host {
       display: block;
-      font-family: var(--ds-number-input-font-family);
-      --ds-number-input-border-focus: var(--color-border-focus);
       --ds-number-input-border-invalid: var(--color-border-danger);
       --ds-number-input-border-width: var(--border-width-thin);
       --ds-number-input-radius: var(--radius-md);
@@ -162,58 +212,102 @@ export class DsNumberInput extends LitElement {
       display: none;
     }
 
-    /* background: color.background, locked; border: color.border.strong, locked */
-    .field {
+    /* paddingInline / paddingBlock by size; fontSize: font.size.{size} */
+    :host([size='sm']) {
+      --ds-number-input-padding-inline: var(--space-2);
+      --ds-number-input-padding-block: var(--space-1);
+      --ds-number-input-font-size: var(--font-size-sm);
+    }
+    :host([size='md']) {
+      --ds-number-input-padding-inline: var(--space-md);
+      --ds-number-input-padding-block: var(--space-sm);
+      --ds-number-input-font-size: var(--font-size-md);
+    }
+
+    /* partGap: between label, description, field and error */
+    .group {
+      display: grid;
+      gap: var(--ds-number-input-part-gap);
+      position: relative;
+      font-family: var(--ds-number-input-font-family);
+    }
+
+    /* disabledOpacity: the whole field group dims */
+    .group.disabled {
+      opacity: var(--ds-number-input-disabled-opacity);
+    }
+
+    .visually-hidden {
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      margin: -1px;
+      padding: 0;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      clip-path: inset(50%);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* labelWeight: font.weight.medium on the label part */
+    [data-part='label'] {
+      font-family: var(--ds-number-input-font-family);
+      font-size: var(--ds-number-input-font-size);
+      font-weight: var(--ds-number-input-label-weight);
+      line-height: var(--ds-number-input-line-height);
+      color: var(--color-foreground);
+    }
+
+    /* background, border (locked); borderWidth, radius, paddingInline, affixGap */
+    [data-part='field'] {
       box-sizing: border-box;
       display: flex;
       align-items: stretch;
       inline-size: 100%;
-      margin-block-start: var(--ds-number-input-part-gap);
-      padding-inline-start: var(--ds-number-input-padding-inline);
+      min-block-size: var(--size-target-comfortable);
+      padding-inline: var(--ds-number-input-padding-inline);
+      gap: var(--ds-number-input-affix-gap);
       border: var(--ds-number-input-border-width) solid var(--color-border-strong);
       border-radius: var(--ds-number-input-radius);
       background: var(--color-background);
-      gap: var(--ds-number-input-affix-gap);
       transition: border-color var(--motion-duration-fast) var(--motion-easing-standard);
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .field {
+      [data-part='field'] {
         transition: none;
       }
     }
 
-    .field:not(.has-steppers) {
-      padding-inline-end: var(--ds-number-input-padding-inline);
+    /* minTargetSm: the field height floor at size sm */
+    :host([size='sm']) [data-part='field'] {
+      min-block-size: var(--size-target-min);
     }
 
-    /* focusRingWidth (locked) / borderFocus */
-    .field:focus-within {
-      border-color: var(--ds-number-input-border-focus);
-      outline: var(--border-width-focus) solid var(--ds-number-input-border-focus);
-      outline-offset: var(--border-width-focus);
+    /* The steppers sit flush at the end of the field. */
+    [data-part='field'].has-steppers {
+      padding-inline-end: 0;
     }
 
-    /* borderInvalid: color.border.danger */
-    :host([invalid]) .field {
+    /* borderFocus / focusRingWidth (locked): the field shows the input's focus-visible ring */
+    [data-part='field']:has([data-part='input']:focus-visible) {
+      border-color: var(--color-border-focus);
+      outline: var(--border-width-focus) solid var(--color-border-focus);
+      outline-offset: calc(-1 * var(--ds-number-input-border-width));
+    }
+
+    /* borderInvalid */
+    [data-part='field'].invalid,
+    [data-part='field'].invalid:has([data-part='input']:focus-visible) {
       border-color: var(--ds-number-input-border-invalid);
     }
-    :host([invalid]) .field:focus-within {
-      border-color: var(--ds-number-input-border-invalid);
-    }
 
-    /* disabledOpacity: opacity.disabled; the field stays focusable and readable (readonly, not disabled) */
-    .field.disabled {
-      opacity: var(--ds-number-input-disabled-opacity);
-      cursor: not-allowed;
-    }
-
-    /* foreground: color.foreground, locked */
-    .input {
+    /* foreground (locked); paddingBlock, fontSize, lineHeight */
+    [data-part='input'] {
       flex: 1 1 auto;
       min-inline-size: 0;
       box-sizing: border-box;
-      min-block-size: var(--size-target-comfortable);
       margin: 0;
       padding: 0;
       padding-block: var(--ds-number-input-padding-block);
@@ -228,18 +322,19 @@ export class DsNumberInput extends LitElement {
       -webkit-appearance: none;
     }
 
-    /* placeholder: color.foreground.muted, locked */
-    .input::placeholder {
+    /* placeholder: color.foreground.muted (locked) */
+    [data-part='input']::placeholder {
       color: var(--color-foreground-muted);
       opacity: 1;
     }
 
-    .field.disabled .input {
+    .group.disabled [data-part='input'] {
       cursor: not-allowed;
     }
 
-    /* affixColor: color.foreground.muted, locked */
-    .affix {
+    /* affixColor: color.foreground.muted (locked) */
+    [data-part='prefix'],
+    [data-part='suffix'] {
       display: inline-flex;
       align-items: center;
       color: var(--color-foreground-muted);
@@ -249,71 +344,57 @@ export class DsNumberInput extends LitElement {
       white-space: nowrap;
     }
 
-    /* stepperDivider: color.border; stepperGap: layout.gap.none between the two buttons */
+    /* stepperGap between the two Buttons; stepperDivider is the hairline before them */
     .steppers {
       display: flex;
-      align-items: stretch;
+      align-items: center;
       flex-shrink: 0;
       gap: var(--ds-number-input-stepper-gap);
-      border-inline-start: var(--border-width-thin) solid var(--ds-number-input-stepper-divider);
-    }
-
-    .stepper {
-      align-self: stretch;
-    }
-
-    /* errorText: color.foreground.danger, locked */
-    .error {
-      font-size: var(--ds-number-input-helper-size);
-      line-height: var(--ds-number-input-line-height);
-      color: var(--color-foreground-danger);
-    }
-    .error:not(:empty) {
-      margin-block-start: var(--ds-number-input-part-gap);
+      border-inline-start: var(--ds-number-input-border-width) solid var(--ds-number-input-stepper-divider);
     }
   `;
 
-  /** Visible label naming the quantity. Its accessible-name basis (via `aria-labelledby`; see class doc). */
+  /** Visible label (visually hidden with `hideLabel`); the accessible name. */
   @property() accessor label = '';
 
-  /** Field name for the Form. The collected value is a number, or undefined when empty. */
+  /** Field name for the Form. The collected value is the number, or nothing when empty. */
   @property() accessor name = '';
 
-  /** Lower bound. Clamps on blur/Enter; disables the decrement stepper at it. */
+  /** Controlled numeric value. `null` is a controlled empty field; `undefined` leaves the field uncontrolled. */
+  @property({ attribute: false }) accessor value: number | null | undefined;
+
+  /** Initial value. */
+  @property({ attribute: 'default-value', type: Number }) accessor defaultValue: number | undefined;
+
+  /** Lower bound; values are clamped on blur and the decrement button disables at it. */
   @property({ type: Number }) accessor min: number | undefined;
 
-  /** Upper bound. Clamps on blur/Enter; disables the increment stepper at it. */
+  /** Upper bound. */
   @property({ type: Number }) accessor max: number | undefined;
 
-  /** Increment for the steppers and arrow keys, and the rounding granularity when `precision` is omitted. */
+  /** Increment for the buttons and arrow keys. Also the rounding granularity when `precision` is omitted. */
   @property({ type: Number }) accessor step = 1;
 
-  /** Decimal places to keep and display. Defaults to the decimals in `step`. */
+  /** Decimal places to keep and display (a whole number). Defaults to the decimals in `step`. */
   @property({ type: Number }) accessor precision: number | undefined;
 
-  /** Locale formatting of the displayed value. The underlying value is always a plain number. */
-  @property({ reflect: true }) accessor format: NumberInputFormat = 'decimal';
+  /** Locale formatting of the displayed value via Intl.NumberFormat. The underlying value is always a plain number. */
+  @property({ type: String, reflect: true }) accessor format: NumberInputFormat = 'decimal';
 
-  /** ISO 4217 code for `format: currency`. */
+  /** ISO 4217 code for `format: currency` (e.g. USD). */
   @property() accessor currency: string | undefined;
 
-  /** Intl unit identifier for `format: unit`, or a literal shown as `suffix` when it is not one. */
+  /** Intl unit identifier for `format: unit` (e.g. kilogram, hour), or a literal shown as the suffix. */
   @property() accessor unit: string | undefined;
 
-  /**
-   * Static text before the value, for cases `format` cannot express. Typed
-   * `string | null` (not `| undefined`) because it collides with the native,
-   * readonly `Element.prefix` (namespace prefix) that `DsNumberInput`
-   * inherits; `null` means no prefix.
-   */
-  @property({ type: String }) accessor prefix: string | null = null;
+  /** Static text before the value inside the field ("$"), when `format` cannot express it. Ignored under `format: currency`. */
+  @property({ attribute: 'leading-text' }) accessor leadingText: string | undefined;
 
-  /** Static text after the value. */
-  @property() accessor suffix: string | undefined;
+  /** Static text after the value inside the field ("kg", "%"). */
+  @property({ attribute: 'trailing-text' }) accessor trailingText: string | undefined;
 
-  /** Shows the increment/decrement steppers. Arrow keys work regardless. Exposed as the negated `hide-steppers` attribute (a boolean attribute cannot express `false` for a prop that defaults `true`). */
-  @property({ attribute: 'hide-steppers', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
-  accessor showSteppers = true;
+  /** Hide the increment/decrement buttons. Arrow keys work regardless. */
+  @property({ type: Boolean, reflect: true, attribute: 'hide-steppers' }) accessor hideSteppers = false;
 
   /** Example value shown while empty. */
   @property() accessor placeholder: string | undefined;
@@ -321,24 +402,24 @@ export class DsNumberInput extends LitElement {
   /** Helper text. */
   @property() accessor description: string | undefined;
 
-  /** Controlled numeric value. `undefined` means empty. */
-  @property({ attribute: false }) accessor value: number | undefined;
-
-  /** Initial value for an uncontrolled field. */
-  @property({ attribute: false }) accessor defaultValue: number | undefined;
-
-  /** Must have a value to submit. Shown in the label, not only by color. */
+  /** Must have a value to submit. */
   @property({ type: Boolean, reflect: true }) accessor required = false;
+
+  /** Visually hide the label (it remains the accessible name). */
+  @property({ type: Boolean, attribute: 'hide-label' }) accessor hideLabel = false;
+
+  /** sm for fields inside grid cells and toolbars: minimum target height, tighter padding, small type. */
+  @property({ type: String, reflect: true }) accessor size: NumberInputSize = 'md';
 
   /** Not editable, not submitted, still readable. */
   @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
-  /** Marks the field invalid. Usually set by the Form; can be set directly. */
+  /** Marks the field invalid. */
   @property({ type: Boolean, reflect: true }) accessor invalid = false;
 
-  private errorValue?: string | undefined;
+  private errorValue: string | undefined;
 
-  /** Error message; implies `invalid`. */
+  /** Error message; implies invalid. */
   get error(): string | undefined {
     return this.errorValue;
   }
@@ -346,62 +427,78 @@ export class DsNumberInput extends LitElement {
   set error(value: string | undefined) {
     const old = this.errorValue;
     this.errorValue = value;
-    // Synchronous so that `checkValidity()` right after an assignment is already correct.
-    this.invalid = Boolean(value);
-    this.requestUpdate('error', old);
+    // Synchronous, so validity is correct right after the assignment.
+    if (value) {
+      this.invalid = true;
+    } else if (old) {
+      this.invalid = false;
+    }
+    this.syncInternals();
   }
 
   /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) accessor overrides: Partial<Record<NumberInputOverridableBinding, TokenRef | undefined>> | undefined;
+  @property({ attribute: false }) accessor overrides:
+    | Partial<Record<NumberInputOverridableBinding, TokenRef | undefined>>
+    | undefined;
 
-  /** Uncontrolled value, seeded from `defaultValue` through the `currentValue` fallback chain. */
+  /** The uncontrolled value, seeded from `defaultValue` on first render. */
   @state() private accessor internalValue: number | undefined;
 
-  /** Disabled by an owning native form / fieldset (via `formDisabledCallback`). */
+  /** The text in the input: formatted after a commit or step, what the user typed while typing. */
+  @state() private accessor text = '';
+
+  /** The typed text has no digits ("-", "."): copy.invalid. */
+  @state() private accessor textInvalid = false;
+
+  /** The out-of-range message from the last blur-time clamp; cleared by the next edit. */
+  @state() private accessor rangeMessage: string | undefined;
+
+  /** Which bound the last clamp hit, for the validity flag. */
+  private rangeSide: 'under' | 'over' | undefined;
+
+  /** Disabled by an owning native form / fieldset. */
   @state() private accessor formDisabled = false;
 
-  /** Whether the input currently has focus; drives raw-text vs. formatted display. */
-  @state() private accessor isFocused = false;
+  @query('#input') private accessor inputEl!: HTMLInputElement | null;
 
-  /** The uncommitted, sanitized text shown while focused. */
-  @state() private accessor rawText = '';
+  private readonly internals: ElementInternals = this.attachInternals();
 
-  private readonly instanceId = nextNumberInputId();
+  private seeded = false;
+  /** Set while the text on screen is what the user typed, so the echo of that number does not reformat it. */
+  private typing = false;
+  private lastSynced: { value: number | undefined; formatKey: string } | undefined;
+  private warnedCurrency = false;
 
-  private repeatTimeoutId?: number | undefined;
-  private repeatIntervalId?: number | undefined;
+  private repeatTimer: number | undefined;
+  private pointerStepped = false;
 
-  @query('#input') private accessor inputEl!: HTMLInputElement;
-
-  private readonly internals: ElementInternals;
-
-  constructor() {
-    super();
-    this.internals = this.attachInternals();
-  }
-
-  /** The current value, resolved from `value`, `internalValue`, then `defaultValue`. */
-  get currentValue(): number | undefined {
+  /** The committed number: `value` when controlled, the uncontrolled value otherwise. */
+  get valueAsNumber(): number | undefined {
     if (this.value !== undefined) {
-      return this.value;
+      return finite(this.value);
     }
-    if (this.internalValue !== undefined) {
-      return this.internalValue;
-    }
-    return this.defaultValue;
+    return this.seeded ? this.internalValue : finite(this.defaultValue);
   }
 
-  /** The owning native form, if any (from `ElementInternals`). */
+  /** The value `<ds-form>` collects: the plain number as a string, or `null` when empty. */
+  get currentValue(): string | null {
+    const num = this.valueAsNumber;
+    return num === undefined ? null : String(num);
+  }
+
+  /** The owning native form, if any. */
   get form(): HTMLFormElement | null {
     return this.internals.form;
   }
 
   get validity(): ValidityState {
+    this.syncInternals();
     return this.internals.validity;
   }
 
+  /** The field's own message, by validation order: error, required, invalid, range. */
   get validationMessage(): string {
-    return this.internals.validationMessage;
+    return this.message ?? '';
   }
 
   checkValidity(): boolean {
@@ -419,36 +516,44 @@ export class DsNumberInput extends LitElement {
   }
 
   formResetCallback(): void {
-    // Both cleared: `currentValue` falls back to `defaultValue`, matching a native reset.
-    this.value = undefined;
-    this.internalValue = undefined;
+    this.internalValue = finite(this.defaultValue);
+    this.textInvalid = false;
+    this.rangeMessage = undefined;
+    this.typing = false;
+    this.lastSynced = undefined;
   }
 
-  formStateRestoreCallback(state: File | string | FormData | null): void {
-    if (typeof state !== 'string' || state === '') {
-      return;
-    }
-    const restored = Number(state);
-    if (Number.isFinite(restored)) {
-      this.value = restored;
+  formStateRestoreCallback(restored: File | string | FormData | null): void {
+    if (typeof restored === 'string' && this.value === undefined) {
+      const parsed = parseTyped(restored);
+      this.internalValue = parsed.kind === 'number' ? parsed.value : undefined;
     }
   }
 
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('data-ds', 'NumberInput');
+    this.setAttribute('data-ds-field', '');
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
-    this.clearRepeat();
+    this.stopRepeat();
   }
 
   protected override willUpdate(changed: PropertyValues): void {
+    if (!this.seeded) {
+      this.seeded = true;
+      this.internalValue = finite(this.defaultValue);
+    }
     if (changed.has('overrides')) {
       this.applyOverrides();
     }
-    this.warnInDev(changed);
+    this.syncText();
+    if (import.meta.env.DEV && this.format === 'currency' && !this.currency && !this.warnedCurrency) {
+      this.warnedCurrency = true;
+      console.warn(`<ds-number-input> ${COPY.currencyMissing}`, this);
+    }
   }
 
   protected override updated(): void {
@@ -456,413 +561,413 @@ export class DsNumberInput extends LitElement {
   }
 
   protected override render(): TemplateResult {
-    const isDisabled = this.disabled || this.formDisabled;
-    const value = this.currentValue;
-    const displayText = this.isFocused ? this.rawText : value !== undefined ? this.formatDisplay(value) : '';
-    const valueText = value !== undefined ? this.formatDisplay(value) : undefined;
-    const describedBy =
-      [this.description ? 'description' : '', this.error ? 'error' : ''].filter((id) => id !== '').join(' ') ||
-      undefined;
+    const isDisabled = this.isDisabled;
+    const committed = this.valueAsNumber;
+    const message = this.displayedMessage;
+    const isInvalid = this.invalid || this.textInvalid || message !== undefined;
+    const describedBy = [this.description ? 'description' : '', message ? 'error' : ''].filter(Boolean).join(' ');
+    const leading = this.resolvedLeading;
+    const trailing = this.resolvedTrailing;
+    const valueText =
+      committed === undefined ? undefined : `${leading ?? ''}${this.display(committed)}${trailing ? ` ${trailing}` : ''}`;
+    const textOverrides = this.textOverrides;
+    const lo = finite(this.min);
+    const hi = finite(this.max);
 
     return html`
-      <ds-text id=${this.labelId} part="label" weight="medium" .overrides=${this.labelTextOverrides}
-        >${this.label}${this.required
-          ? html`<span aria-hidden="true">${COPY_REQUIRED_INDICATOR}</span>`
-          : nothing}</ds-text
-      >
-      ${this.description
-        ? html`<ds-text
-            id="description"
-            part="description"
-            size="sm"
-            tone="muted"
-            .overrides=${this.descriptionTextOverrides}
-            >${this.description}</ds-text
-          >`
-        : nothing}
-      <div class=${classMap({ field: true, disabled: isDisabled, 'has-steppers': this.showSteppers })} part="field">
-        ${this.prefix ? html`<span class="affix" part="prefix">${this.prefix}</span>` : nothing}
-        <input
-          id="input"
-          part="input"
-          class="input"
-          type="text"
-          inputmode="decimal"
-          role="spinbutton"
-          autocomplete="off"
-          name=${this.name}
-          .value=${live(displayText)}
-          placeholder=${ifDefined(this.placeholder)}
-          aria-labelledby=${this.labelId}
-          aria-describedby=${ifDefined(describedBy)}
-          aria-valuenow=${ifDefined(value)}
-          aria-valuemin=${ifDefined(this.min)}
-          aria-valuemax=${ifDefined(this.max)}
-          aria-valuetext=${ifDefined(valueText)}
-          aria-invalid=${ifDefined(this.invalid ? 'true' : undefined)}
-          aria-required=${ifDefined(this.required ? 'true' : undefined)}
-          aria-disabled=${ifDefined(isDisabled ? 'true' : undefined)}
-          ?readonly=${isDisabled}
-          @focus=${this.handleFocus}
-          @blur=${this.handleBlur}
-          @input=${this.handleInput}
-          @keydown=${this.handleKeydown}
-        />
-        ${this.suffix ? html`<span class="affix" part="suffix">${this.suffix}</span>` : nothing}
-        ${this.showSteppers
-          ? html`
-              <div class="steppers">
+      <div class=${classMap({ group: true, disabled: isDisabled })}>
+        <label
+          class=${classMap({ 'visually-hidden': this.hideLabel })}
+          part="label"
+          data-part="label"
+          for="input"
+          >${this.label}${this.required ? COPY.requiredIndicator : nothing}</label
+        >
+        ${this.description
+          ? html`<ds-text
+              id="description"
+              part="description"
+              data-part="description"
+              element="p"
+              size="sm"
+              tone="muted"
+              .overrides=${textOverrides}
+              >${this.description}</ds-text
+            >`
+          : nothing}
+        <div
+          class=${classMap({ 'has-steppers': !this.hideSteppers, invalid: isInvalid })}
+          part="field"
+          data-part="field"
+        >
+          ${leading
+            ? html`<span part="prefix" data-part="prefix" aria-hidden="true">${leading}</span>`
+            : nothing}
+          <input
+            id="input"
+            part="input"
+            data-part="input"
+            type="text"
+            inputmode="decimal"
+            role="spinbutton"
+            autocomplete="off"
+            name=${this.name}
+            .value=${live(this.text)}
+            placeholder=${ifDefined(this.placeholder)}
+            aria-valuenow=${ifDefined(committed)}
+            aria-valuemin=${ifDefined(lo)}
+            aria-valuemax=${ifDefined(hi)}
+            aria-valuetext=${ifDefined(valueText)}
+            aria-describedby=${ifDefined(describedBy || undefined)}
+            aria-invalid=${ifDefined(isInvalid ? 'true' : undefined)}
+            aria-required=${ifDefined(this.required ? 'true' : undefined)}
+            aria-disabled=${ifDefined(isDisabled ? 'true' : undefined)}
+            ?readonly=${isDisabled}
+            @input=${this.handleInput}
+            @keydown=${this.handleKeydown}
+            @blur=${this.handleBlur}
+          />
+          ${trailing
+            ? html`<span part="suffix" data-part="suffix" aria-hidden="true">${trailing}</span>`
+            : nothing}
+          ${this.hideSteppers
+            ? nothing
+            : html`<span class="steppers" aria-hidden="true">
                 <ds-button
-                  class="stepper"
                   part="decrementButton"
+                  data-part="decrementButton"
                   variant="ghost"
                   size="sm"
                   icon-only
-                  label=${COPY_DECREMENT}
+                  label=${COPY.decrement}
                   tabindex="-1"
-                  aria-hidden="true"
                   ?disabled=${isDisabled || this.atMin}
                   @pointerdown=${(event: PointerEvent) => this.handleStepperPointerDown(event, -1)}
+                  @pointerup=${this.stopRepeat}
+                  @pointerleave=${this.stopRepeat}
+                  @pointercancel=${this.stopRepeat}
+                  @click=${(event: MouseEvent) => this.handleStepperClick(event, -1)}
                   @press=${this.stopInnerPress}
-                >
-                  <ds-icon slot="leading-icon" name="minus" inline></ds-icon>
-                </ds-button>
+                  ><ds-icon slot="leading-icon" name="minus" inline></ds-icon
+                ></ds-button>
                 <ds-button
-                  class="stepper"
                   part="incrementButton"
+                  data-part="incrementButton"
                   variant="ghost"
                   size="sm"
                   icon-only
-                  label=${COPY_INCREMENT}
+                  label=${COPY.increment}
                   tabindex="-1"
-                  aria-hidden="true"
                   ?disabled=${isDisabled || this.atMax}
                   @pointerdown=${(event: PointerEvent) => this.handleStepperPointerDown(event, 1)}
+                  @pointerup=${this.stopRepeat}
+                  @pointerleave=${this.stopRepeat}
+                  @pointercancel=${this.stopRepeat}
+                  @click=${(event: MouseEvent) => this.handleStepperClick(event, 1)}
                   @press=${this.stopInnerPress}
-                >
-                  <ds-icon slot="leading-icon" name="plus" inline></ds-icon>
-                </ds-button>
-              </div>
-            `
+                  ><ds-icon slot="leading-icon" name="plus" inline></ds-icon
+                ></ds-button>
+              </span>`}
+        </div>
+        ${message
+          ? html`<ds-text
+              id="error"
+              role="alert"
+              part="errorMessage"
+              data-part="errorMessage"
+              element="p"
+              size="sm"
+              tone="danger"
+              .overrides=${textOverrides}
+              >${message}</ds-text
+            >`
           : nothing}
       </div>
-      <div id="error" class="error" part="errorMessage" role="alert">${this.error ?? ''}</div>
     `;
   }
 
-  private get labelId(): string {
-    return `${this.instanceId}-label`;
+  private get isDisabled(): boolean {
+    return this.disabled || this.formDisabled;
+  }
+
+  private get digits(): number {
+    const step = finite(this.step) ?? 1;
+    return Math.max(0, Math.trunc(finite(this.precision) ?? decimalsInStep(step)));
+  }
+
+  private get stepSize(): number {
+    const step = finite(this.step);
+    return step !== undefined && step > 0 ? step : 1;
+  }
+
+  private get unitKnown(): boolean {
+    return this.format === 'unit' && !!this.unit && isIntlUnit(this.unit);
+  }
+
+  /** currency draws its own symbol, so leadingText would show two. */
+  private get resolvedLeading(): string | undefined {
+    return this.format === 'currency' ? undefined : this.leadingText || undefined;
+  }
+
+  /** An unknown unit falls back to decimal formatting and shows the literal as trailingText. */
+  private get resolvedTrailing(): string | undefined {
+    if (this.trailingText) return this.trailingText;
+    return this.format === 'unit' && this.unit && !this.unitKnown ? this.unit : undefined;
   }
 
   private get atMin(): boolean {
-    return this.min !== undefined && this.currentValue !== undefined && this.currentValue <= this.min;
+    const lo = finite(this.min);
+    const current = this.valueAsNumber;
+    return lo !== undefined && current !== undefined && current <= lo;
   }
 
   private get atMax(): boolean {
-    return this.max !== undefined && this.currentValue !== undefined && this.currentValue >= this.max;
+    const hi = finite(this.max);
+    const current = this.valueAsNumber;
+    return hi !== undefined && current !== undefined && current >= hi;
   }
 
-  private get resolvedPrecision(): number {
-    if (this.precision !== undefined) {
-      return this.precision;
+  private display(num: number): string {
+    const base: Intl.NumberFormatOptions = { minimumFractionDigits: this.digits, maximumFractionDigits: this.digits };
+    if (this.format === 'currency') {
+      return new Intl.NumberFormat(undefined, { ...base, style: 'currency', currency: this.currency || 'USD' }).format(num);
     }
-    const text = String(this.step);
-    const dot = text.indexOf('.');
-    return dot === -1 ? 0 : text.length - dot - 1;
+    // percent stores the number as typed (25) and divides by 100 only for display.
+    if (this.format === 'percent') {
+      return new Intl.NumberFormat(undefined, { ...base, style: 'percent' }).format(num / 100);
+    }
+    if (this.unitKnown) {
+      return new Intl.NumberFormat(undefined, { ...base, style: 'unit', unit: this.unit! }).format(num);
+    }
+    return new Intl.NumberFormat(undefined, base).format(num);
   }
 
-  private readonly stopInnerPress = (event: Event): void => {
-    // The steppers are internal pointer conveniences; their `press` should not read as a
-    // consumer-facing event alongside the `change` this component already dispatches.
-    event.stopPropagation();
-  };
-
-  private handleFocus(): void {
-    this.isFocused = true;
-    const value = this.currentValue;
-    this.rawText = value !== undefined ? this.plainString(value) : '';
+  /** Reformat whenever the committed value or its formatting changes, except for the echo of the user's own typing. */
+  private syncText(): void {
+    const committed = this.valueAsNumber;
+    const formatKey = `${this.format}|${this.digits}|${this.currency ?? ''}|${this.unit ?? ''}`;
+    const prev = this.lastSynced;
+    if (prev && Object.is(prev.value, committed) && prev.formatKey === formatKey) return;
+    this.lastSynced = { value: committed, formatKey };
+    if (prev && this.typing && prev.formatKey === formatKey) {
+      const typed = parseTyped(this.text);
+      if (Object.is(typed.kind === 'number' ? typed.value : undefined, committed)) return;
+    }
+    this.typing = false;
+    this.text = committed === undefined ? '' : this.display(committed);
+    this.textInvalid = false;
   }
 
-  private handleBlur(): void {
-    this.commit();
-    this.isFocused = false;
+  /** The message by the doc's precedence: error, required, invalid, then a reported clamp. */
+  private get message(): string | undefined {
+    const withLabel = (copy: string): string => copy.replace('{label}', this.label);
+    if (this.error) return this.error;
+    if (this.required && this.valueAsNumber === undefined && !this.textInvalid) return withLabel(COPY.required);
+    if (this.invalid || this.textInvalid) return withLabel(COPY.invalid);
+    return this.rangeMessage;
   }
 
-  private handleInput(): void {
-    if (this.disabled || this.formDisabled) {
-      return;
-    }
-    this.rawText = this.sanitizeInput(this.inputEl.value);
-    this.commitValue(this.parseNumber(this.rawText));
+  /** The error text shown: every message except a required miss the user has not been told about yet. */
+  private get displayedMessage(): string | undefined {
+    const message = this.message;
+    if (message === undefined) return undefined;
+    if (this.error || this.invalid || this.textInvalid || this.rangeMessage) return message;
+    return undefined;
   }
 
-  private handleKeydown(event: KeyboardEvent): void {
-    if (this.disabled || this.formDisabled) {
-      return;
+  private rangeCopy(): string {
+    const lo = finite(this.min);
+    const hi = finite(this.max);
+    const withLabel = (copy: string): string => copy.replace('{label}', this.label);
+    if (lo !== undefined && hi !== undefined) {
+      return withLabel(COPY.outOfRange).replace('{min}', this.display(lo)).replace('{max}', this.display(hi));
     }
-    if (STEP_KEYS.has(event.key)) {
-      event.preventDefault();
-      const direction = event.key === 'ArrowUp' || event.key === 'PageUp' ? 1 : -1;
-      const multiplier = event.key === 'PageUp' || event.key === 'PageDown' ? 10 : 1;
-      this.adjustValue(direction, multiplier);
-      return;
-    }
-    if (event.key === 'Home' && this.min !== undefined) {
-      event.preventDefault();
-      this.commitAndSync(this.min);
-      return;
-    }
-    if (event.key === 'End' && this.max !== undefined) {
-      event.preventDefault();
-      this.commitAndSync(this.max);
-      return;
-    }
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      this.commit();
-      // Light-DOM ancestor: `<ds-form>` collects fields by querying its own subtree, so this
-      // reaches it directly without crossing a shadow boundary.
-      const form = this.closest('ds-form') as (HTMLElement & { submit?: (() => void) | undefined }) | null;
-      form?.submit?.();
-    }
+    if (lo !== undefined) return withLabel(COPY.outOfRangeMin).replace('{min}', this.display(lo));
+    return withLabel(COPY.outOfRangeMax).replace('{max}', hi === undefined ? '' : this.display(hi));
   }
 
-  private readonly handleStepperPointerDown = (event: PointerEvent, direction: 1 | -1): void => {
-    if (this.disabled || this.formDisabled) {
-      return;
-    }
-    // Keeps focus off the button, so the input stays the field's single tab stop.
-    event.preventDefault();
-    this.adjustValue(direction, 1);
-    this.clearRepeat();
-    this.repeatTimeoutId = window.setTimeout(() => {
-      this.repeatIntervalId = window.setInterval(
-        () => this.adjustValue(direction, 1),
-        this.durationMs('--motion-duration-fast', 120),
-      );
-    }, this.durationMs('--motion-duration-base', 200));
-    const stop = (): void => {
-      this.clearRepeat();
-      window.removeEventListener('pointerup', stop);
-      window.removeEventListener('pointercancel', stop);
-    };
-    window.addEventListener('pointerup', stop);
-    window.addEventListener('pointercancel', stop);
-  };
-
-  private clearRepeat(): void {
-    if (this.repeatTimeoutId !== undefined) {
-      window.clearTimeout(this.repeatTimeoutId);
-      this.repeatTimeoutId = undefined;
-    }
-    if (this.repeatIntervalId !== undefined) {
-      window.clearInterval(this.repeatIntervalId);
-      this.repeatIntervalId = undefined;
-    }
+  private clamp(num: number): number {
+    const lo = finite(this.min);
+    const hi = finite(this.max);
+    let next = num;
+    if (lo !== undefined && next < lo) next = lo;
+    if (hi !== undefined && next > hi) next = hi;
+    return next;
   }
 
-  private durationMs(varName: string, fallback: number): number {
-    const raw = getComputedStyle(this).getPropertyValue(varName).trim();
-    const parsed = Number.parseFloat(raw);
-    return Number.isNaN(parsed) ? fallback : parsed;
-  }
-
-  /** ArrowUp/Down and PageUp/Down by `step` (×10 for Page), and stepper presses. */
-  private adjustValue(direction: 1 | -1, multiplier: number): void {
-    const current = this.currentValue;
-    const next = current === undefined ? (direction === 1 ? (this.min ?? 0) : (this.max ?? 0)) : current + direction * this.step * multiplier;
-    const resolved = this.roundToPrecision(this.clampToBounds(next));
-    if (resolved === current) {
-      return;
-    }
-    this.commitValue(resolved);
-    this.rawText = this.plainString(resolved);
-  }
-
-  /** Home/End: jump straight to a defined bound. */
-  private commitAndSync(target: number): void {
-    const resolved = this.roundToPrecision(target);
-    this.commitValue(resolved);
-    this.rawText = this.plainString(resolved);
-  }
-
-  /** Rounds and clamps the typed value on blur/Enter, reporting `outOfRange` when required and clamped. */
-  private commit(): void {
-    const parsed = this.parseNumber(this.rawText);
-    if (parsed === undefined) {
-      this.commitValue(undefined);
-      return;
-    }
-    const rounded = this.roundToPrecision(parsed);
-    const clamped = this.clampToBounds(rounded);
-    if (this.required && this.min !== undefined && this.max !== undefined && clamped !== rounded) {
-      this.error = COPY_OUT_OF_RANGE(this.label, this.min, this.max);
-    }
-    this.commitValue(clamped);
-    this.rawText = this.plainString(clamped);
-  }
-
-  private commitValue(next: number | undefined): void {
-    if (this.value !== undefined) {
-      this.value = next;
-    } else {
+  /** Reports a changed value: uncontrolled fields show it at once, controlled ones once `value` is rebound. */
+  private report(next: number | undefined): void {
+    if (Object.is(next, this.valueAsNumber)) return;
+    if (this.value === undefined) {
       this.internalValue = next;
+    } else {
+      this.requestUpdate();
     }
     this.dispatchEvent(
       new CustomEvent<NumberInputChangeDetail>('change', { detail: { value: next }, bubbles: true, composed: true }),
     );
   }
 
-  private clampToBounds(value: number): number {
-    let result = value;
-    if (this.min !== undefined) {
-      result = Math.max(this.min, result);
-    }
-    if (this.max !== undefined) {
-      result = Math.min(this.max, result);
-    }
-    return result;
+  private stepBy(delta: number): void {
+    if (this.isDisabled) return;
+    const current = this.valueAsNumber;
+    const lo = finite(this.min);
+    const hi = finite(this.max);
+    // From empty, up goes to `min ?? 0` and down to `max ?? 0`.
+    const target = current === undefined ? (delta > 0 ? (lo ?? 0) : (hi ?? 0)) : current + delta;
+    this.typing = false;
+    this.textInvalid = false;
+    this.rangeMessage = undefined;
+    this.report(this.clamp(roundTo(target, this.digits)));
   }
 
-  private roundToPrecision(value: number): number {
-    const factor = 10 ** this.resolvedPrecision;
-    return Math.round(value * factor) / factor;
+  private setTo(target: number): void {
+    if (this.isDisabled) return;
+    this.typing = false;
+    this.textInvalid = false;
+    this.rangeMessage = undefined;
+    this.report(roundTo(target, this.digits));
   }
 
-  /** Keeps digits, a leading minus, and one decimal separator (the locale's, or a period). */
-  private sanitizeInput(raw: string): string {
-    const decimalSep = this.localeDecimalSeparator();
-    let out = '';
-    let seenDecimal = false;
-    for (const ch of raw) {
-      if (ch === '-' && out === '') {
-        out += ch;
-      } else if (ch >= '0' && ch <= '9') {
-        out += ch;
-      } else if (!seenDecimal && (ch === '.' || ch === decimalSep)) {
-        out += ch;
-        seenDecimal = true;
-      }
-    }
-    return out;
-  }
-
-  private parseNumber(text: string): number | undefined {
-    if (text === '' || text === '-') {
-      return undefined;
-    }
-    const decimalSep = this.localeDecimalSeparator();
-    const normalized = decimalSep === '.' ? text : text.replace(decimalSep, '.');
-    const parsed = Number(normalized);
-    return Number.isFinite(parsed) ? parsed : undefined;
-  }
-
-  private plainString(value: number): string {
-    const decimalSep = this.localeDecimalSeparator();
-    const fixed = value.toFixed(this.resolvedPrecision);
-    return decimalSep === '.' ? fixed : fixed.replace('.', decimalSep);
-  }
-
-  private localeDecimalSeparator(): string {
-    const part = new Intl.NumberFormat().formatToParts(1.1).find((entry) => entry.type === 'decimal');
-    return part?.value ?? '.';
-  }
-
-  private formatDisplay(value: number): string {
-    const precision = this.resolvedPrecision;
-    if (this.format === 'percent') {
-      return this.safeFormat({ style: 'percent' }, value / 100, value);
-    }
-    if (this.format === 'currency') {
-      return this.safeFormat({ style: 'currency', currency: this.currency ?? 'USD' }, value, value);
-    }
-    if (this.format === 'unit' && this.unit) {
-      try {
-        return new Intl.NumberFormat(undefined, {
-          style: 'unit',
-          unit: this.unit,
-          minimumFractionDigits: precision,
-          maximumFractionDigits: precision,
-        }).format(value);
-      } catch {
-        return `${this.plainFormat(value)} ${this.unit}`;
-      }
-    }
-    return this.plainFormat(value);
-  }
-
-  private plainFormat(value: number): string {
-    const precision = this.resolvedPrecision;
-    return new Intl.NumberFormat(undefined, {
-      minimumFractionDigits: precision,
-      maximumFractionDigits: precision,
-    }).format(value);
-  }
-
-  private safeFormat(options: Intl.NumberFormatOptions, formatValue: number, fallbackValue: number): string {
-    const precision = this.resolvedPrecision;
-    try {
-      return new Intl.NumberFormat(undefined, {
-        ...options,
-        minimumFractionDigits: precision,
-        maximumFractionDigits: precision,
-      }).format(formatValue);
-    } catch {
-      return this.plainFormat(fallbackValue);
-    }
-  }
-
-  private get labelTextOverrides(): Partial<Record<TextOverridableBinding, TokenRef | undefined>> {
-    const result: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
-    if (this.overrides?.fontFamily) {
-      result.fontFamily = this.overrides.fontFamily;
-    }
-    if (this.overrides?.fontSize) {
-      result.fontSize = this.overrides.fontSize;
-    }
-    if (this.overrides?.labelWeight) {
-      result.fontWeight = this.overrides.labelWeight;
-    }
-    return result;
-  }
-
-  private get descriptionTextOverrides(): Partial<Record<TextOverridableBinding, TokenRef | undefined>> {
-    const result: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
-    if (this.overrides?.fontFamily) {
-      result.fontFamily = this.overrides.fontFamily;
-    }
-    if (this.overrides?.helperSize) {
-      result.fontSize = this.overrides.helperSize;
-    }
-    return result;
-  }
-
-  /** Mirror value and validity into ElementInternals so an owning native form sees them. */
-  private syncInternals(): void {
-    const isDisabled = this.disabled || this.formDisabled;
-    if (isDisabled) {
-      this.internals.setFormValue(null);
-      this.internals.setValidity({});
+  /** Blur and Enter: round to precision, clamp, reformat, and report a clamp rather than hide it. */
+  private commit(): void {
+    this.typing = false;
+    const parsed = parseTyped(this.inputEl?.value ?? this.text);
+    if (parsed.kind !== 'number') {
+      this.textInvalid = parsed.kind === 'invalid';
+      this.rangeMessage = undefined;
+      this.report(undefined);
+      if (parsed.kind === 'empty') this.text = '';
       return;
     }
+    const rounded = roundTo(parsed.value, this.digits);
+    const next = this.clamp(rounded);
+    this.textInvalid = false;
+    this.rangeSide = next === rounded ? undefined : next > rounded ? 'under' : 'over';
+    this.rangeMessage = next === rounded ? undefined : this.rangeCopy();
+    this.report(next);
+    const shown = this.valueAsNumber;
+    this.text = shown === undefined ? '' : this.display(shown);
+  }
 
-    const value = this.currentValue;
-    this.internals.setFormValue(value === undefined ? null : String(value));
+  private handleInput(event: Event): void {
+    if (this.isDisabled) return;
+    const raw = (event.currentTarget as HTMLInputElement).value;
+    this.typing = true;
+    this.text = raw;
+    this.rangeMessage = undefined;
+    const parsed = parseTyped(raw);
+    // Keystrokes that do not yet form a number ("-", ".") are left alone until blur.
+    if (parsed.kind === 'invalid') return;
+    this.textInvalid = false;
+    this.report(parsed.kind === 'number' ? parsed.value : undefined);
+  }
 
-    const anchor = this.inputEl;
-    if (!anchor) {
+  private handleKeydown(event: KeyboardEvent): void {
+    if (this.isDisabled) return;
+    const step = this.stepSize;
+    switch (event.key) {
+      case 'ArrowUp':
+        event.preventDefault();
+        this.stepBy(step);
+        break;
+      case 'ArrowDown':
+        event.preventDefault();
+        this.stepBy(-step);
+        break;
+      case 'PageUp':
+        event.preventDefault();
+        this.stepBy(step * 10);
+        break;
+      case 'PageDown':
+        event.preventDefault();
+        this.stepBy(-step * 10);
+        break;
+      case 'Home': {
+        const lo = finite(this.min);
+        if (lo !== undefined) {
+          event.preventDefault();
+          this.setTo(lo);
+        }
+        break;
+      }
+      case 'End': {
+        const hi = finite(this.max);
+        if (hi !== undefined) {
+          event.preventDefault();
+          this.setTo(hi);
+        }
+        break;
+      }
+      case 'Enter':
+        // Commit only; the keydown bubbles on to an enclosing <ds-form>, which submits the committed number.
+        this.commit();
+        break;
+      default:
+        break;
+    }
+  }
+
+  private handleBlur(): void {
+    if (!this.isDisabled) this.commit();
+  }
+
+  private readonly stopInnerPress = (event: Event): void => {
+    // The steppers are internal; the composite reports `change`, not the Buttons' `press`.
+    event.stopPropagation();
+  };
+
+  private readonly stopRepeat = (): void => {
+    if (this.repeatTimer !== undefined) {
+      window.clearTimeout(this.repeatTimer);
+      this.repeatTimer = undefined;
+    }
+  };
+
+  /** Hold-to-repeat timings read from the resolved theme at pointerdown; `undefined` steps once. */
+  private repeatTimings(): { delay: number; interval: number } | undefined {
+    const style = getComputedStyle(this);
+    const delay = parseTime(style.getPropertyValue('--motion-duration-base'));
+    const interval = parseTime(style.getPropertyValue('--motion-duration-fast'));
+    return delay !== undefined && interval !== undefined && delay > 0 && interval > 0 ? { delay, interval } : undefined;
+  }
+
+  private handleStepperPointerDown(event: PointerEvent, direction: 1 | -1): void {
+    // Keep focus where it is: the input stays the single tab stop.
+    event.preventDefault();
+    this.stopRepeat();
+    this.pointerStepped = true;
+    if (this.isDisabled || (direction > 0 ? this.atMax : this.atMin)) return;
+    this.stepBy(direction * this.stepSize);
+    const timings = this.repeatTimings();
+    if (!timings) return;
+    const tick = (): void => {
+      if (this.isDisabled || (direction > 0 ? this.atMax : this.atMin)) {
+        this.stopRepeat();
+        return;
+      }
+      this.stepBy(direction * this.stepSize);
+      this.repeatTimer = window.setTimeout(tick, timings.interval);
+    };
+    this.repeatTimer = window.setTimeout(tick, timings.delay);
+  }
+
+  private handleStepperClick(event: MouseEvent, direction: 1 | -1): void {
+    // A pointer press already stepped; a click with no pointer (assistive tech, synthetic) steps here.
+    if (this.pointerStepped) {
+      this.pointerStepped = false;
       return;
     }
+    event.preventDefault();
+    if (this.isDisabled || (direction > 0 ? this.atMax : this.atMin)) return;
+    this.stepBy(direction * this.stepSize);
+  }
 
-    if (this.error) {
-      this.internals.setValidity({ customError: true }, this.error, anchor);
-    } else if (this.invalid) {
-      this.internals.setValidity({ customError: true }, COPY_INVALID(this.label), anchor);
-    } else if (this.required && value === undefined) {
-      this.internals.setValidity({ valueMissing: true }, COPY_REQUIRED(this.label), anchor);
-    } else {
-      this.internals.setValidity({});
-    }
+  /** helperSize, fontFamily and lineHeight forwarded to the description and error Text. */
+  private get textOverrides(): Partial<Record<TextOverridableBinding, TokenRef | undefined>> | undefined {
+    const o = this.overrides;
+    if (!o) return undefined;
+    return { fontSize: o.helperSize, fontFamily: o.fontFamily, lineHeight: o.lineHeight };
   }
 
   private applyOverrides(): void {
@@ -877,23 +982,25 @@ export class DsNumberInput extends LitElement {
     }
   }
 
-  private warnInDev(changed: PropertyValues): void {
-    if (!import.meta.env.DEV) {
+  /** Mirror value and validity into ElementInternals so an owning form sees them. */
+  private syncInternals(): void {
+    if (this.isDisabled) {
+      this.internals.setFormValue(null);
+      this.internals.setValidity({});
       return;
     }
-    if (
-      (changed.has('min') || changed.has('max')) &&
-      this.min !== undefined &&
-      this.max !== undefined &&
-      this.max < this.min
-    ) {
-      console.warn(`<ds-number-input> needs max (${this.max}) greater than or equal to min (${this.min}).`, this);
-    }
-    if (changed.has('format') && this.format === 'currency' && !this.currency) {
-      console.warn(`<ds-number-input> ${COPY_CURRENCY_MISSING} Defaulting to USD.`, this);
-    }
-    if (changed.has('format') && this.format === 'unit' && !this.unit) {
-      console.warn('<ds-number-input format="unit"> requires `unit` to format with Intl; it will show as plain.', this);
+    this.internals.setFormValue(this.currentValue);
+    const anchor = this.inputEl ?? undefined;
+    const message = this.message;
+    if (message === undefined) {
+      this.internals.setValidity({});
+    } else if (!this.error && this.required && this.valueAsNumber === undefined && !this.textInvalid) {
+      this.internals.setValidity({ valueMissing: true }, message, anchor);
+    } else if (!this.error && !this.invalid && !this.textInvalid && this.rangeMessage) {
+      const flags: ValidityStateFlags = this.rangeSide === 'under' ? { rangeUnderflow: true } : { rangeOverflow: true };
+      this.internals.setValidity(flags, message, anchor);
+    } else {
+      this.internals.setValidity({ customError: true }, message, anchor);
     }
   }
 }

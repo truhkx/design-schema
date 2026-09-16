@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { AccessibilityInfo, Animated, PanResponder, Platform, View, findNodeHandle } from 'react-native';
+import { AccessibilityInfo, Animated, PanResponder, Platform, StyleSheet, View, findNodeHandle } from 'react-native';
 import type { AccessibilityActionEvent, LayoutChangeEvent, ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
@@ -24,7 +24,6 @@ export type SliderOverridableBinding =
   | 'trackHeight'
   | 'trackRadius'
   | 'thumb'
-  | 'thumbBorderWidth'
   | 'thumbSize'
   | 'thumbShadow'
   | 'thumbActiveScale'
@@ -32,6 +31,7 @@ export type SliderOverridableBinding =
   | 'markSize'
   | 'markLabelSize'
   | 'valueSize'
+  | 'bubbleRadius'
   | 'labelWeight'
   | 'partGap'
   | 'trackPaddingBlock'
@@ -43,7 +43,7 @@ export type SliderOverridableBinding =
   | 'transition';
 
 export interface SliderProps {
-  /** Visible label naming the quantity ("Volume", "Price range"). Named by each thumb via `copy.minimumLabel`/`copy.maximumLabel` in a range. */
+  /** Visible label naming the quantity ("Volume", "Price range"). A range's thumbs are named via `copy.minimumLabel`/`copy.maximumLabel`. */
   label: string;
   /** Field name for the Form. A range contributes `[min, max]`. */
   name: string;
@@ -67,9 +67,9 @@ export interface SliderProps {
   range?: boolean | undefined;
   /** Renders the displayed and announced value ("$40", "3 h 20 min"). Defaults to the number. */
   formatValue?: ((value: number) => string) | undefined;
-  /** Where the value text appears: always beside the label, only while dragging (as a bubble above the thumb), or not at all. */
+  /** Where the value text appears: always beside the label, only while dragging or focused (as a bubble above the thumb), or not at all. */
   showValue?: SliderShowValue | undefined;
-  /** Tick marks on the track, optionally labelled. */
+  /** Tick marks on the track, optionally labelled. Values snap to marks when `step` is omitted. */
   marks?: SliderMark[] | undefined;
   /** Not adjustable, still readable. */
   disabled?: boolean | undefined;
@@ -83,6 +83,8 @@ export interface SliderProps {
   onValueChange?: ((value: SliderValue) => void) | undefined;
   /** Fired once when the interaction ends (drag release, accessibility action). Use for expensive effects. */
   onSlidingComplete?: ((value: SliderValue) => void) | undefined;
+  /** The root view. */
+  ref?: React.Ref<ViewInstance> | undefined;
 }
 
 const COPY = {
@@ -93,14 +95,22 @@ const COPY = {
   invalid: (label: string): string => `${label} is not valid.`,
 } as const;
 
+/**
+ * `increment`/`decrement` are the standard adjustable actions (VoiceOver swipe, TalkBack
+ * volume keys). The other four stand in for Home/End/PageUp/PageDown and live in the
+ * platform's Actions menu, which needs a label; the doc has no copy for them.
+ */
 const THUMB_ACTIONS = [
-  { name: 'increment', label: 'Increment' },
-  { name: 'decrement', label: 'Decrement' },
-  { name: 'home', label: 'Set to minimum' },
-  { name: 'end', label: 'Set to maximum' },
-  { name: 'pageup', label: 'Increase by ten steps' },
-  { name: 'pagedown', label: 'Decrease by ten steps' },
+  { name: 'increment' },
+  { name: 'decrement' },
+  { name: 'home', label: 'Home' },
+  { name: 'end', label: 'End' },
+  { name: 'pageup', label: 'Page Up' },
+  { name: 'pagedown', label: 'Page Down' },
 ] as const;
+
+/** PageUp/PageDown move by this many steps. */
+const PAGE_STEPS = 10;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -117,24 +127,19 @@ function isSameSliderValue(a: SliderValue, b: SliderValue): boolean {
   return Array.isArray(a) && Array.isArray(b) ? a[0] === b[0] && a[1] === b[1] : a === b;
 }
 
-/** Snaps a drag/click position: to the nearest mark when `snapToMarks` is set, otherwise to the step grid. */
-function snapValue(
-  raw: number,
-  min: number,
-  max: number,
-  step: number,
-  snapToMarks: boolean,
-  marks: readonly SliderMark[] | undefined,
-): number {
+/** Removes floating-point drift from step arithmetic (0.1 + 0.2) so values stay on the step grid. */
+function tidy(value: number): number {
+  return Math.round(value * 1e9) / 1e9; // literal-ok: float rounding precision, not a size
+}
+
+/** Snaps a drag position: to the nearest mark when marks snap, otherwise to the step grid. */
+function snapValue(raw: number, min: number, max: number, step: number, marks: readonly SliderMark[] | undefined): number {
   const clamped = clamp(raw, min, max);
-  if (snapToMarks && marks !== undefined && marks.length > 0) {
+  if (marks !== undefined && marks.length > 0) {
     let nearest = marks[0]!.value;
-    let nearestDistance = Math.abs(clamped - nearest);
     for (const mark of marks) {
-      const distance = Math.abs(clamped - mark.value);
-      if (distance < nearestDistance) {
+      if (Math.abs(clamped - mark.value) < Math.abs(clamped - nearest)) {
         nearest = mark.value;
-        nearestDistance = distance;
       }
     }
     return clamp(nearest, min, max);
@@ -142,30 +147,17 @@ function snapValue(
   if (step <= 0) {
     return clamped;
   }
-  return clamp(min + Math.round((clamped - min) / step) * step, min, max);
+  return clamp(tidy(min + Math.round((clamped - min) / step) * step), min, max);
 }
 
-/** One `step` in `direction` — keys (and the increment/decrement accessibility actions) always move by `step`, even when `snapToMarks` is set. */
-function steppedValue(current: number, direction: 1 | -1, min: number, max: number, step: number): number {
-  return clamp(current + direction * step, min, max);
-}
-
-/** Ten steps in `direction` (PageUp/PageDown), or to the next/previous mark when `snapToMarks` is set. */
-function pagedValue(
-  current: number,
-  direction: 1 | -1,
-  min: number,
-  max: number,
-  step: number,
-  snapToMarks: boolean,
-  marks: readonly SliderMark[] | undefined,
-): number {
-  if (snapToMarks && marks !== undefined && marks.length > 0) {
+/** Ten steps in `direction` (PageUp/PageDown), or to the next/previous mark when marks snap. */
+function pagedValue(current: number, direction: 1 | -1, min: number, max: number, step: number, marks: readonly SliderMark[] | undefined): number {
+  if (marks !== undefined && marks.length > 0) {
     const sorted = marks.map((mark) => mark.value).sort((a, b) => a - b);
     const candidates = direction > 0 ? sorted.filter((v) => v > current) : sorted.filter((v) => v < current).reverse();
     return clamp(candidates[0] ?? current, min, max);
   }
-  return clamp(current + direction * step * 10, min, max);
+  return clamp(tidy(current + direction * step * PAGE_STEPS), min, max);
 }
 
 type ThumbKind = 'single' | 'min' | 'max';
@@ -180,8 +172,13 @@ interface ThumbStyleTokens {
   haloInset: number;
   haloOpacity: number;
   minTarget: number;
+  focusRing: string;
+  focusRingWidth: number;
   bubbleSurface: string;
   bubbleText: string;
+  bubbleRadius: number;
+  bubblePaddingBlock: number;
+  bubblePaddingInline: number;
   motionEasingStandard: readonly number[];
   transitionDuration: number;
 }
@@ -189,66 +186,69 @@ interface ThumbStyleTokens {
 interface SliderThumbProps {
   kind: ThumbKind;
   value: number;
+  /** The live constraint: the other thumb's value bounds this one in a range. */
   min: number;
   max: number;
+  /** The slider's own bounds, which map a drag distance to a value. */
+  scaleMin: number;
+  scaleMax: number;
   step: number;
-  snapToMarks: boolean;
-  marks: readonly SliderMark[] | undefined;
+  snapMarks: readonly SliderMark[] | undefined;
+  pageMarks: readonly SliderMark[] | undefined;
   disabled: boolean;
   accessibilityLabel: string;
   formatValue: (value: number) => string;
   showBubble: boolean;
+  bubbleTypography: { fontFamily: TokenRef | undefined; fontSize: TokenRef | undefined };
   reducedMotion: boolean;
-  trackWidthRef: React.MutableRefObject<number>;
-  onDrag: (kind: ThumbKind, next: number) => void;
-  onDragEnd: () => void;
+  trackWidthRef: React.RefObject<number>;
+  onChange: (kind: ThumbKind, next: number) => void;
+  onEnd: () => void;
   styleTokens: ThumbStyleTokens;
+  ref?: React.Ref<ViewInstance> | undefined;
 }
 
 /**
  * One thumb: a `View` (not `Pressable`) carrying a `PanResponder`'s handlers directly,
- * since spreading `PanResponder.panHandlers` onto `Pressable` fights that component's
- * own gesture responder. `accessible`/`focusable` plus `accessibilityRole="adjustable"`,
- * `accessibilityValue` and the `accessibilityActions` are the non-gesture path:
- * `increment`/`decrement` reach the native swipe-up/down (VoiceOver) and volume-key
- * (TalkBack) gestures directly, while `home`/`end`/`pageup`/`pagedown` — standing in
- * for the keyboard's Home/End/PageUp/PageDown — surface in the platform's custom
- * actions menu (VoiceOver rotor "Actions", TalkBack local context menu). The drag
- * gesture is additive. A `latest` ref keeps the responder's closures current across
- * re-renders without recreating the `PanResponder` (which must stay stable for a
- * gesture in progress).
+ * since spreading `panHandlers` onto `Pressable` fights its own responder. The
+ * adjustable role and accessibility actions are the non-gesture path; the drag is
+ * additive. A `latest` ref keeps the responder's closures current without recreating
+ * the `PanResponder` mid-gesture.
  */
-const SliderThumb = React.forwardRef<ViewInstance, SliderThumbProps>(function SliderThumb(
-  {
-    kind,
-    value,
-    min,
-    max,
-    step,
-    snapToMarks,
-    marks,
-    disabled,
-    accessibilityLabel,
-    formatValue,
-    showBubble,
-    reducedMotion,
-    trackWidthRef,
-    onDrag,
-    onDragEnd,
-    styleTokens: st,
-  },
+function SliderThumb({
+  kind,
+  value,
+  min,
+  max,
+  scaleMin,
+  scaleMax,
+  step,
+  snapMarks,
+  pageMarks,
+  disabled,
+  accessibilityLabel,
+  formatValue,
+  showBubble,
+  bubbleTypography,
+  reducedMotion,
+  trackWidthRef,
+  onChange,
+  onEnd,
+  styleTokens: st,
   ref,
-) {
+}: SliderThumbProps): React.JSX.Element {
   const [dragging, setDragging] = React.useState(false);
+  const [focused, setFocused] = React.useState(false);
   const dragStartValue = React.useRef(value);
 
-  const latest = React.useRef({ value, min, max, step, snapToMarks, marks, disabled, onDrag, onDragEnd });
-  latest.current = { value, min, max, step, snapToMarks, marks, disabled, onDrag, onDragEnd };
+  const latest = React.useRef({ value, min, max, scaleMin, scaleMax, step, snapMarks, pageMarks, disabled, onChange, onEnd });
+  latest.current = { value, min, max, scaleMin, scaleMax, step, snapMarks, pageMarks, disabled, onChange, onEnd };
 
   const panResponder = React.useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => !latest.current.disabled,
-      onMoveShouldSetPanResponder: (_evt, gesture) => !latest.current.disabled && Math.abs(gesture.dx) > 2,
+      onMoveShouldSetPanResponder: () => !latest.current.disabled,
+      onPanResponderTerminationRequest: () => false,
       onPanResponderGrant: () => {
         dragStartValue.current = latest.current.value;
         setDragging(true);
@@ -258,71 +258,103 @@ const SliderThumb = React.forwardRef<ViewInstance, SliderThumbProps>(function Sl
         if (width <= 0) {
           return;
         }
-        const { min: curMin, max: curMax, step: curStep, snapToMarks: curSnapToMarks, marks: curMarks } = latest.current;
-        const raw = dragStartValue.current + (gesture.dx / width) * (curMax - curMin);
-        latest.current.onDrag(kind, snapValue(raw, curMin, curMax, curStep, curSnapToMarks, curMarks));
+        const cur = latest.current;
+        const raw = dragStartValue.current + (gesture.dx / width) * (cur.scaleMax - cur.scaleMin);
+        const next = clamp(snapValue(raw, cur.scaleMin, cur.scaleMax, cur.step, cur.snapMarks), cur.min, cur.max);
+        if (next !== cur.value) {
+          cur.onChange(kind, next);
+        }
       },
       onPanResponderRelease: () => {
         setDragging(false);
-        latest.current.onDragEnd();
+        latest.current.onEnd();
       },
       onPanResponderTerminate: () => {
         setDragging(false);
-        latest.current.onDragEnd();
+        latest.current.onEnd();
       },
     }),
   ).current;
 
   const handleAccessibilityAction = (event: AccessibilityActionEvent): void => {
-    const { disabled: curDisabled, value: curValue, min: curMin, max: curMax, step: curStep, snapToMarks: curSnapToMarks, marks: curMarks } =
-      latest.current;
-    if (curDisabled) {
+    const cur = latest.current;
+    if (cur.disabled) {
       return;
     }
     let next: number;
     switch (event.nativeEvent.actionName) {
       case 'increment':
-        next = steppedValue(curValue, 1, curMin, curMax, curStep);
+        next = clamp(tidy(cur.value + cur.step), cur.min, cur.max);
         break;
       case 'decrement':
-        next = steppedValue(curValue, -1, curMin, curMax, curStep);
+        next = clamp(tidy(cur.value - cur.step), cur.min, cur.max);
         break;
       case 'pageup':
-        next = pagedValue(curValue, 1, curMin, curMax, curStep, curSnapToMarks, curMarks);
+        next = clamp(pagedValue(cur.value, 1, cur.scaleMin, cur.scaleMax, cur.step, cur.pageMarks), cur.min, cur.max);
         break;
       case 'pagedown':
-        next = pagedValue(curValue, -1, curMin, curMax, curStep, curSnapToMarks, curMarks);
+        next = clamp(pagedValue(cur.value, -1, cur.scaleMin, cur.scaleMax, cur.step, cur.pageMarks), cur.min, cur.max);
         break;
       case 'home':
-        next = curMin;
+        next = cur.min;
         break;
       case 'end':
-        next = curMax;
+        next = cur.max;
         break;
       default:
         return;
     }
-    latest.current.onDrag(kind, next);
-    latest.current.onDragEnd();
-  };
-
-  const activeAnim = React.useRef(new Animated.Value(0)).current;
-  React.useEffect(() => {
-    const toValue = dragging ? 1 : 0;
-    if (reducedMotion) {
-      activeAnim.setValue(toValue);
+    if (next === cur.value) {
       return;
     }
-    Animated.timing(activeAnim, {
+    cur.onChange(kind, next);
+    cur.onEnd();
+  };
+
+  // Halo and bubble appearance follow the `transition` binding; the thumb itself tracks the finger with no transition.
+  const haloAnim = React.useRef(new Animated.Value(0)).current;
+  const haloTarget = React.useRef(0);
+  React.useEffect(() => {
+    const toValue = dragging ? 1 : 0;
+    if (toValue === haloTarget.current) {
+      return;
+    }
+    haloTarget.current = toValue;
+    if (reducedMotion) {
+      haloAnim.setValue(toValue);
+      return;
+    }
+    Animated.timing(haloAnim, {
       toValue,
       duration: st.transitionDuration,
       easing: toEasing(st.motionEasingStandard),
       useNativeDriver: false,
     }).start();
-  }, [dragging, reducedMotion, activeAnim, st.transitionDuration, st.motionEasingStandard]);
+  }, [dragging, reducedMotion, haloAnim, st.transitionDuration, st.motionEasingStandard]);
 
-  const percent = percentOf(value, min, max);
-  // The halo extends `haloInset` past the thumb on every side, per the schema.
+  const bubbleVisible = showBubble && (dragging || focused);
+  const bubbleAnim = React.useRef(new Animated.Value(0)).current;
+  const bubbleTarget = React.useRef(0);
+  React.useEffect(() => {
+    const toValue = bubbleVisible ? 1 : 0;
+    if (toValue === bubbleTarget.current) {
+      return;
+    }
+    bubbleTarget.current = toValue;
+    if (reducedMotion) {
+      bubbleAnim.setValue(toValue);
+      return;
+    }
+    Animated.timing(bubbleAnim, {
+      toValue,
+      duration: st.transitionDuration,
+      easing: toEasing(st.motionEasingStandard),
+      useNativeDriver: false,
+    }).start();
+  }, [bubbleVisible, reducedMotion, bubbleAnim, st.transitionDuration, st.motionEasingStandard]);
+
+  const percent = percentOf(value, scaleMin, scaleMax);
+  // The halo extends `space.2` past the thumb on every side.
   const haloSize = st.thumbSize + st.haloInset * 2;
 
   const hitStyle: ViewStyle = {
@@ -335,6 +367,9 @@ const SliderThumb = React.forwardRef<ViewInstance, SliderThumbProps>(function Sl
     marginTop: -(st.minTarget / 2),
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: st.minTarget / 2,
+    borderWidth: st.focusRingWidth,
+    borderColor: focused ? st.focusRing : 'transparent',
   };
 
   const haloStyle: Animated.WithAnimatedValue<ViewStyle> = {
@@ -343,7 +378,7 @@ const SliderThumb = React.forwardRef<ViewInstance, SliderThumbProps>(function Sl
     height: haloSize,
     borderRadius: haloSize / 2,
     backgroundColor: st.fillColor,
-    opacity: activeAnim.interpolate({ inputRange: [0, 1], outputRange: [0, st.haloOpacity] }),
+    opacity: haloAnim.interpolate({ inputRange: [0, 1], outputRange: [0, st.haloOpacity] }),
   };
 
   const thumbStyle: ViewStyle = {
@@ -356,13 +391,14 @@ const SliderThumb = React.forwardRef<ViewInstance, SliderThumbProps>(function Sl
     ...st.thumbShadow,
   };
 
-  const bubbleStyle: ViewStyle = {
+  const bubbleStyle: Animated.WithAnimatedValue<ViewStyle> = {
     position: 'absolute',
     bottom: st.minTarget,
-    paddingVertical: st.haloInset / 2,
-    paddingHorizontal: st.haloInset,
-    borderRadius: st.haloInset,
+    paddingVertical: st.bubblePaddingBlock,
+    paddingHorizontal: st.bubblePaddingInline,
+    borderRadius: st.bubbleRadius,
     backgroundColor: st.bubbleSurface,
+    opacity: bubbleAnim,
   };
 
   return (
@@ -370,77 +406,73 @@ const SliderThumb = React.forwardRef<ViewInstance, SliderThumbProps>(function Sl
       ref={ref}
       testID="Slider.thumb"
       accessible
-      focusable={!disabled}
+      focusable
       accessibilityRole="adjustable"
       accessibilityLabel={accessibilityLabel}
       accessibilityValue={{ min, max, now: value, text: formatValue(value) }}
       accessibilityState={{ disabled }}
       accessibilityActions={THUMB_ACTIONS}
       onAccessibilityAction={handleAccessibilityAction}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
       {...panResponder.panHandlers}
       style={hitStyle}
     >
-      {showBubble && dragging ? (
-        <View pointerEvents="none" style={bubbleStyle}>
-          {/* bubbleText: color.inverse.foreground, locked. Text's own `color` binding is locked
-              too, so the bubble provides its foreground to the subtree rather than forwarding a
-              color override to the composed Text. */}
+      {showBubble ? (
+        <Animated.View
+          testID="Slider.bubble"
+          pointerEvents="none"
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          style={bubbleStyle}
+        >
+          {/* bubbleText is locked to color.inverse.foreground; Text reads it from the surface context. */}
           <TextForegroundContext.Provider value={st.bubbleText}>
-            <Text size="sm">{formatValue(value)}</Text>
+            <Text size="sm" overrides={bubbleTypography}>
+              {formatValue(value)}
+            </Text>
           </TextForegroundContext.Provider>
-        </View>
+        </Animated.View>
       ) : null}
       <Animated.View pointerEvents="none" style={haloStyle} />
       <View pointerEvents="none" style={thumbStyle} />
     </View>
   );
-});
+}
 
 /**
- * Slider — lets people choose a bounded numeric value (or, with `range`, a minimum
- * and a maximum) by feel: the thumb sits on the value, the fill shows how much, and
- * every value the pointer can reach is also reachable by keys and accessibility
- * actions.
+ * Slider — a bounded numeric value (or, with `range`, a minimum and a maximum) chosen
+ * by feel: the thumb sits on the value, the fill shows how much, and every value the
+ * drag reaches is also reachable through the adjustable accessibility actions.
  *
- * When to use: Use a Slider for a bounded numeric value where approximate is fine
- * and the scale has meaning across its whole width — volume, brightness, a price
- * range. Use `range` for "between" filters. Add `marks` when a few values are
- * meaningful stops. Pair it with a NumberInput (`showValue: never`) when exact entry
- * also matters. Do not use it for a value that must be exact, for more than about a
- * hundred steps without marks, or for two or three discrete choices
- * (SegmentedControl).
+ * When to use: a bounded value where approximate is fine and the scale has meaning
+ * across its whole width — volume, brightness, a price range. Use `range` for
+ * "between" filters, `marks` for meaningful stops, and pair with a NumberInput
+ * (`showValue: never`) when exact entry also matters. Not for exact values, more than
+ * about a hundred steps without marks, or two or three discrete choices.
  *
- * Renders a label row, optional helper text, a track with a fill sized from the
- * value(s), optional tick marks, and one `SliderThumb` (two for `range`, each its
- * own tab stop via `accessibilityActions`). Dragging a thumb sets the value from
- * the pointer's horizontal offset, snapped to `step` or, with `snapToMarks`, to the
- * nearest mark (keys and the increment/decrement accessibility actions always move
- * by `step`); `onValueChange` fires on every change, `onSlidingComplete` once per
- * interaction (drag release or an accessibility action). A range's thumbs
- * cannot cross: each drag clamps against the other thumb's current value. The value
- * text shows beside the label (`showValue: always`), as a bubble above the active
- * thumb while dragging (`hover`), or not at all (`never`) — the accessible value
- * (`formatValue`-formatted) is always exposed regardless. `required` fails
- * validation while the value still equals its initial default; `invalid` fails it
- * unconditionally; `error` overrides both. `disabled` dims the whole control with
- * `disabledOpacity` and blocks both the gesture and the accessibility actions while
- * staying focusable and readable. Inside a Form the field registers as a single
- * entry: a single value as its string, a range as the `[min, max]` pair of strings
- * (`FormFieldValue` has no numeric variant).
+ * Each thumb is its own adjustable element: increment/decrement move by `step`,
+ * Home/End/PageUp/PageDown are custom actions. Drag snaps to `step`, or to the marks
+ * when `snapToMarks` is set or `step` is omitted. `onValueChange` fires on every
+ * change, `onSlidingComplete` once per interaction (drag release, or each accessibility
+ * action). A range's thumbs cannot cross; each thumb's `accessibilityValue` min/max is
+ * the live constraint from the other. `disabled` dims with `disabledOpacity` and stays
+ * focusable and readable but inert. Inside a Form the field registers once: its value
+ * as a string, or a range as the `[low, high]` pair of strings.
  */
 export function Slider({
   label,
   name,
   min = 0,
   max = 100,
-  step = 1,
+  step: stepProp,
   snapToMarks = false,
   required = false,
   invalid = false,
   value,
   defaultValue,
   range = false,
-  formatValue = (v) => String(v),
+  formatValue = String,
   showValue = 'always',
   marks,
   disabled = false,
@@ -449,36 +481,46 @@ export function Slider({
   overrides,
   onValueChange,
   onSlidingComplete,
+  ref,
 }: SliderProps): React.JSX.Element {
   const { tokens: t } = useTheme();
   const form = useFormContext();
   const reducedMotion = useReducedMotion();
 
-  const initialValue = React.useRef<SliderValue>(defaultValue ?? (range ? [min, max] : min)).current;
-  const [internalValue, setInternalValue] = React.useState<SliderValue>(initialValue);
+  const step = stepProp ?? 1;
+  const hasMarks = marks !== undefined && marks.length > 0;
+  // Drag snaps to marks with `snapToMarks`, or when `step` is omitted; PageUp/Down move by mark in the same cases.
+  const snapMarks = hasMarks && (snapToMarks || stepProp === undefined) ? marks : undefined;
+
+  const fallbackValue: SliderValue = range ? [min, max] : min;
+  const defaultRef = React.useRef<SliderValue>(defaultValue ?? fallbackValue);
+  const [internalValue, setInternalValue] = React.useState<SliderValue>(defaultRef.current);
 
   const isDisabled = disabled || (form?.disabled ?? false);
   const currentValue = value ?? internalValue;
 
-  const validRange = max > min;
   React.useEffect(() => {
-    if (__DEV__ && !validRange) {
+    if (__DEV__ && !(max > min)) {
       console.warn(`Slider: max (${max}) must be greater than min (${min}).`);
     }
-  }, [validRange, min, max]);
+  }, [min, max]);
 
   const singleValue = !range && typeof currentValue === 'number' ? clamp(currentValue, min, max) : min;
-  const [rangeMinRaw, rangeMaxRaw] = range && Array.isArray(currentValue) ? currentValue : [min, max];
-  const rangeMin = clamp(Math.min(rangeMinRaw, rangeMaxRaw), min, max);
-  const rangeMax = clamp(Math.max(rangeMinRaw, rangeMaxRaw), min, max);
+  const [rangeLowRaw, rangeHighRaw] = range && Array.isArray(currentValue) ? currentValue : [min, max];
+  const rangeLow = clamp(Math.min(rangeLowRaw, rangeHighRaw), min, max);
+  const rangeHigh = clamp(Math.max(rangeLowRaw, rangeHighRaw), min, max);
+  const normalized: SliderValue = range ? [rangeLow, rangeHigh] : singleValue;
+
+  // The value as last reported, so an interaction's end reports what its changes reported even before a re-render.
+  const reportedRef = React.useRef<SliderValue>(normalized);
+  reportedRef.current = normalized;
 
   const validateValue = React.useCallback(
     (candidate: SliderValue): string | null => {
-      // Precedence: `error` prop, then `required`, then `invalid`.
       if (error !== undefined && error !== '') {
         return error;
       }
-      if (required && isSameSliderValue(candidate, initialValue)) {
+      if (required && isSameSliderValue(candidate, defaultRef.current)) {
         return COPY.required(label);
       }
       if (invalid) {
@@ -486,36 +528,37 @@ export function Slider({
       }
       return null;
     },
-    [required, label, error, invalid, initialValue],
+    [required, label, error, invalid],
   );
 
-  const commit = (next: SliderValue, end: boolean): void => {
-    if (value === undefined) {
-      setInternalValue(next);
-    }
-    onValueChange?.(next);
-    if (end) {
-      onSlidingComplete?.(next);
-    }
-    if (form !== null && (form.validateMode === 'change' || (form.validateMode === 'blur' && end))) {
-      form.reportValidity(name, validateValue(next));
-    }
-  };
-
-  const handleDrag = (kind: ThumbKind, nextValue: number): void => {
-    if (range) {
-      if (kind === 'min') {
-        commit([Math.min(nextValue, rangeMax), rangeMax], false);
-      } else if (kind === 'max') {
-        commit([rangeMin, Math.max(nextValue, rangeMin)], false);
-      }
+  const handleChange = (kind: ThumbKind, next: number): void => {
+    const base = reportedRef.current;
+    let nextValue: SliderValue;
+    if (Array.isArray(base)) {
+      nextValue = kind === 'min' ? [Math.min(next, base[1]), base[1]] : [base[0], Math.max(next, base[0])];
     } else {
-      commit(nextValue, false);
+      nextValue = next;
+    }
+    if (isSameSliderValue(nextValue, base)) {
+      return;
+    }
+    reportedRef.current = nextValue;
+    if (value === undefined) {
+      setInternalValue(nextValue);
+    }
+    onValueChange?.(nextValue);
+    if (form !== null && form.validateMode === 'change') {
+      form.reportValidity(name, validateValue(nextValue));
     }
   };
 
-  const handleDragEnd = (): void => {
-    commit(range ? [rangeMin, rangeMax] : singleValue, true);
+  const handleEnd = (): void => {
+    const final = reportedRef.current;
+    onSlidingComplete?.(final);
+    // A pointer-driven control has no blur: `validate: blur` runs at the end of an interaction.
+    if (form !== null && form.validateMode === 'blur') {
+      form.reportValidity(name, validateValue(final));
+    }
   };
 
   const trackWidthRef = React.useRef(0);
@@ -523,36 +566,30 @@ export function Slider({
     trackWidthRef.current = event.nativeEvent.layout.width;
   };
 
-  const minThumbRef = React.useRef<ViewInstance>(null);
-  const maxThumbRef = React.useRef<ViewInstance>(null);
-  const singleThumbRef = React.useRef<ViewInstance>(null);
+  const firstThumbRef = React.useRef<ViewInstance>(null);
 
-  const formError = form?.errors[name];
-  const displayedError = error !== undefined && error !== '' ? error : formError;
-  const summarised = form !== null && form.errorSummary;
-
-  const latestForm = React.useRef({ singleValue, rangeMin, rangeMax, displayedError, validateValue });
-  latestForm.current = { singleValue, rangeMin, rangeMax, displayedError, validateValue };
+  const latestForm = React.useRef({ normalized, validateValue, label });
+  latestForm.current = { normalized, validateValue, label };
 
   const handle = React.useMemo<FormFieldHandle>(
     () => ({
-      getValue: () =>
-        range ? [String(latestForm.current.rangeMin), String(latestForm.current.rangeMax)] : String(latestForm.current.singleValue),
-      validate: () => {
-        const current: SliderValue = range
-          ? [latestForm.current.rangeMin, latestForm.current.rangeMax]
-          : latestForm.current.singleValue;
-        return latestForm.current.validateValue(current);
+      get label() {
+        return latestForm.current.label;
       },
+      getValue: () => {
+        const current = latestForm.current.normalized;
+        return Array.isArray(current) ? [String(current[0]), String(current[1])] : String(current);
+      },
+      validate: () => latestForm.current.validateValue(latestForm.current.normalized),
       focus: () => {
-        const node = range ? minThumbRef.current : singleThumbRef.current;
+        const node = firstThumbRef.current;
         const handleNode = node === null ? null : findNodeHandle(node);
         if (handleNode != null) {
           AccessibilityInfo.setAccessibilityFocus(handleNode);
         }
       },
     }),
-    [range],
+    [],
   );
 
   const register = form?.register;
@@ -565,6 +602,12 @@ export function Slider({
     return () => unregister(name);
   }, [register, unregister, name, handle, isDisabled]);
 
+  const formError = form?.errors[name];
+  // Precedence: `error` prop → the Form's validation result (required, invalid) → `invalid` on its own.
+  const displayedError =
+    error !== undefined && error !== '' ? error : formError !== undefined ? formError : invalid ? COPY.invalid(label) : undefined;
+  const summarised = form !== null && form.errorSummary;
+
   React.useEffect(() => {
     if (Platform.OS === 'ios' && !summarised && displayedError !== undefined) {
       AccessibilityInfo.announceForAccessibility(displayedError);
@@ -575,120 +618,84 @@ export function Slider({
   const trackHeight = overrides?.trackHeight ? (resolveToken(t, overrides.trackHeight) as number) : t.space1;
   const trackRadius = overrides?.trackRadius ? (resolveToken(t, overrides.trackRadius) as number) : t.radiusFull;
   const thumbColor = overrides?.thumb ? (resolveToken(t, overrides.thumb) as string) : t.colorControlBackground;
-  const thumbBorderWidth = overrides?.thumbBorderWidth ? (resolveToken(t, overrides.thumbBorderWidth) as number) : t.borderWidthFocus;
   const thumbSize = overrides?.thumbSize ? (resolveToken(t, overrides.thumbSize) as number) : t.space5;
   const thumbShadow = overrides?.thumbShadow ? (resolveToken(t, overrides.thumbShadow) as Tokens['shadowRaised']) : t.shadowRaised;
-  const thumbActiveScale = overrides?.thumbActiveScale ? (resolveToken(t, overrides.thumbActiveScale) as number) : t.opacityDisabled;
+  const haloOpacity = overrides?.thumbActiveScale ? (resolveToken(t, overrides.thumbActiveScale) as number) : t.opacityDisabled;
   const markColor = overrides?.mark ? (resolveToken(t, overrides.mark) as string) : t.colorBorderStrong;
   const markSize = overrides?.markSize ? (resolveToken(t, overrides.markSize) as number) : t.space1;
   const markLabelSize = overrides?.markLabelSize ? (resolveToken(t, overrides.markLabelSize) as number) : t.fontSizeXs;
+  const bubbleRadius = overrides?.bubbleRadius ? (resolveToken(t, overrides.bubbleRadius) as number) : t.radiusSm;
   const partGap = overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.space1;
   const trackPaddingBlock = overrides?.trackPaddingBlock ? (resolveToken(t, overrides.trackPaddingBlock) as number) : t.space3;
   const disabledOpacity = overrides?.disabledOpacity ? (resolveToken(t, overrides.disabledOpacity) as number) : t.opacityDisabled;
   const transitionDuration = overrides?.transition ? (resolveToken(t, overrides.transition) as number) : t.motionDurationFast;
-  // `fill` and `thumbBorder` are the same locked token: the thumb's ring matches the fill it sits at the edge of.
+  const errorColor = overrides?.errorText ? (resolveToken(t, overrides.errorText) as string) : undefined;
+  // `fill` and `thumbBorder` share the locked selected-control token.
   const controlSelected = t.colorControlSelectedBackground;
 
   const thumbStyleTokens: ThumbStyleTokens = {
     thumbSize,
-    thumbBorderWidth,
+    thumbBorderWidth: t.borderWidthFocus,
     thumbColor,
     thumbBorderColor: controlSelected,
     thumbShadow,
     fillColor: controlSelected,
     haloInset: t.space2,
-    haloOpacity: thumbActiveScale,
+    haloOpacity,
     minTarget: t.sizeTargetComfortable,
+    focusRing: t.colorBorderFocus,
+    focusRingWidth: t.borderWidthFocus,
     bubbleSurface: t.colorInverseSurface,
     bubbleText: t.colorInverseForeground,
+    bubbleRadius,
+    bubblePaddingBlock: t.space1,
+    bubblePaddingInline: t.space2,
     motionEasingStandard: t.motionEasingStandard,
     transitionDuration,
   };
 
-  const displayValueText = range ? COPY.rangeText(formatValue(rangeMin), formatValue(rangeMax)) : formatValue(singleValue);
+  const displayValueText = range ? COPY.rangeText(formatValue(rangeLow), formatValue(rangeHigh)) : formatValue(singleValue);
 
   const markList = marks ?? [];
   const markLabels = markList.filter((mark) => mark.label !== undefined);
 
-  const containerStyle: ViewStyle = {
-    flexDirection: 'column',
-    gap: partGap,
-    opacity: isDisabled ? disabledOpacity : 1,
+  const typography = { fontFamily: overrides?.fontFamily };
+  const helperTypography = { ...typography, fontSize: overrides?.helperSize };
+
+  const thumbShared = {
+    scaleMin: min,
+    scaleMax: max,
+    step,
+    snapMarks,
+    pageMarks: snapMarks,
+    disabled: isDisabled,
+    formatValue,
+    showBubble: showValue === 'hover',
+    bubbleTypography: { ...typography, fontSize: overrides?.valueSize },
+    reducedMotion,
+    trackWidthRef,
+    onChange: handleChange,
+    onEnd: handleEnd,
+    styleTokens: thumbStyleTokens,
   };
 
-  const labelRowStyle: ViewStyle = {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'baseline',
-    gap: t.space2,
-  };
-
-  const trackRowStyle: ViewStyle = {
-    position: 'relative',
-    justifyContent: 'center',
-    paddingVertical: trackPaddingBlock,
-  };
-
-  const trackStyle: ViewStyle = {
-    height: trackHeight,
-    borderRadius: trackRadius,
-    backgroundColor: trackColor,
-    overflow: 'hidden',
-  };
-
-  const fillStyle: ViewStyle = range
-    ? {
-        position: 'absolute',
-        left: `${percentOf(rangeMin, min, max) * 100}%`,
-        right: `${(1 - percentOf(rangeMax, min, max)) * 100}%`,
-        height: trackHeight,
-        borderRadius: trackRadius,
-        backgroundColor: controlSelected,
-      }
-    : {
-        position: 'absolute',
-        left: 0,
-        width: `${percentOf(singleValue, min, max) * 100}%`,
-        height: trackHeight,
-        borderRadius: trackRadius,
-        backgroundColor: controlSelected,
-      };
-
-  const markDotStyle = (markValue: number): ViewStyle => ({
-    position: 'absolute',
-    left: `${percentOf(markValue, min, max) * 100}%`,
-    top: '50%',
-    width: markSize,
-    height: markSize,
-    marginLeft: -(markSize / 2),
-    marginTop: -(markSize / 2),
-    borderRadius: markSize / 2,
-    backgroundColor: markColor,
-  });
-
-  const markLabelRowStyle: ViewStyle = {
-    position: 'relative',
-    minHeight: toLineHeight(markLabelSize, t.fontLineHeightNormal),
-  };
-
-  const markLabelStyle = (markValue: number): ViewStyle => ({
-    position: 'absolute',
-    left: `${percentOf(markValue, min, max) * 100}%`,
-    transform: [{ translateX: '-50%' }],
-  });
-
-  const typographyOverrides = { fontFamily: overrides?.fontFamily };
-  const helperOverrides = { ...typographyOverrides, fontSize: overrides?.helperSize };
+  const errorMessage = (
+    <Text size="sm" tone={errorColor === undefined ? 'danger' : 'default'} overrides={helperTypography}>
+      {displayedError}
+    </Text>
+  );
 
   return (
-    <View testID="Slider" style={containerStyle}>
-      <View style={labelRowStyle}>
-        <Text weight="medium" overrides={{ ...typographyOverrides, fontSize: overrides?.fontSize, fontWeight: overrides?.labelWeight }}>
-          {label}
-        </Text>
+    <View ref={ref} testID="Slider" style={{ flexDirection: 'column', gap: partGap, opacity: isDisabled ? disabledOpacity : 1 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: partGap }}>
+        <View testID="Slider.label">
+          <Text weight="medium" overrides={{ ...typography, fontSize: overrides?.fontSize, fontWeight: overrides?.labelWeight }}>
+            {label}
+          </Text>
+        </View>
         {showValue === 'always' ? (
-          <View testID="Slider.valueText">
-            <Text size="sm" overrides={{ ...typographyOverrides, fontSize: overrides?.valueSize }}>
+          <View testID="Slider.valueText" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+            <Text size="sm" overrides={{ ...typography, fontSize: overrides?.valueSize }}>
               {displayValueText}
             </Text>
           </View>
@@ -696,86 +703,87 @@ export function Slider({
       </View>
       {description !== undefined ? (
         <View testID="Slider.description">
-          <Text size="sm" tone="muted" overrides={helperOverrides}>
+          <Text size="sm" tone="muted" overrides={helperTypography}>
             {description}
           </Text>
         </View>
       ) : null}
-      <View style={trackRowStyle} onLayout={handleTrackLayout}>
-        <View testID="Slider.track" style={trackStyle}>
-          <View testID="Slider.fill" style={fillStyle} />
+      <View style={{ justifyContent: 'center', paddingVertical: trackPaddingBlock }} onLayout={handleTrackLayout}>
+        <View testID="Slider.track" style={{ height: trackHeight, borderRadius: trackRadius, backgroundColor: trackColor, overflow: 'hidden' }}>
+          <View
+            testID="Slider.fill"
+            style={{
+              position: 'absolute',
+              left: range ? `${percentOf(rangeLow, min, max) * 100}%` : 0,
+              width: `${(range ? percentOf(rangeHigh, min, max) - percentOf(rangeLow, min, max) : percentOf(singleValue, min, max)) * 100}%`,
+              height: trackHeight,
+              borderRadius: trackRadius,
+              backgroundColor: controlSelected,
+            }}
+          />
         </View>
-        {markList.map((mark) => (
-          <View key={mark.value} testID="Slider.tickMarks" pointerEvents="none" style={markDotStyle(mark.value)} />
-        ))}
+        {markList.length > 0 ? (
+          <View
+            testID="Slider.tickMarks"
+            pointerEvents="none"
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            style={StyleSheet.absoluteFill}
+          >
+            {markList.map((mark) => (
+              <View
+                key={mark.value}
+                style={{
+                  position: 'absolute',
+                  left: `${percentOf(mark.value, min, max) * 100}%`,
+                  top: '50%',
+                  width: markSize,
+                  height: markSize,
+                  marginLeft: -(markSize / 2),
+                  marginTop: -(markSize / 2),
+                  borderRadius: markSize / 2,
+                  backgroundColor: markColor,
+                }}
+              />
+            ))}
+          </View>
+        ) : null}
         {range ? (
           <>
             <SliderThumb
-              ref={minThumbRef}
+              {...thumbShared}
+              ref={firstThumbRef}
               kind="min"
-              value={rangeMin}
+              value={rangeLow}
               min={min}
-              max={max}
-              step={step}
-              snapToMarks={snapToMarks}
-              marks={marks}
-              disabled={isDisabled}
+              max={rangeHigh}
               accessibilityLabel={COPY.minimumLabel(label)}
-              formatValue={formatValue}
-              showBubble={showValue === 'hover'}
-              reducedMotion={reducedMotion}
-              trackWidthRef={trackWidthRef}
-              onDrag={handleDrag}
-              onDragEnd={handleDragEnd}
-              styleTokens={thumbStyleTokens}
             />
             <SliderThumb
-              ref={maxThumbRef}
+              {...thumbShared}
               kind="max"
-              value={rangeMax}
-              min={min}
+              value={rangeHigh}
+              min={rangeLow}
               max={max}
-              step={step}
-              snapToMarks={snapToMarks}
-              marks={marks}
-              disabled={isDisabled}
               accessibilityLabel={COPY.maximumLabel(label)}
-              formatValue={formatValue}
-              showBubble={showValue === 'hover'}
-              reducedMotion={reducedMotion}
-              trackWidthRef={trackWidthRef}
-              onDrag={handleDrag}
-              onDragEnd={handleDragEnd}
-              styleTokens={thumbStyleTokens}
             />
           </>
         ) : (
-          <SliderThumb
-            ref={singleThumbRef}
-            kind="single"
-            value={singleValue}
-            min={min}
-            max={max}
-            step={step}
-            snapToMarks={snapToMarks}
-            marks={marks}
-            disabled={isDisabled}
-            accessibilityLabel={label}
-            formatValue={formatValue}
-            showBubble={showValue === 'hover'}
-            reducedMotion={reducedMotion}
-            trackWidthRef={trackWidthRef}
-            onDrag={handleDrag}
-            onDragEnd={handleDragEnd}
-            styleTokens={thumbStyleTokens}
-          />
+          <SliderThumb {...thumbShared} ref={firstThumbRef} kind="single" value={singleValue} min={min} max={max} accessibilityLabel={label} />
         )}
       </View>
       {markLabels.length > 0 ? (
-        <View style={markLabelRowStyle}>
+        <View
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          style={{ minHeight: toLineHeight(markLabelSize, t.fontLineHeightNormal) }}
+        >
           {markLabels.map((mark) => (
-            <View key={mark.value} style={markLabelStyle(mark.value)}>
-              <Text size="xs" tone="muted" overrides={{ ...typographyOverrides, fontSize: overrides?.markLabelSize }}>
+            <View
+              key={mark.value}
+              style={{ position: 'absolute', left: `${percentOf(mark.value, min, max) * 100}%`, transform: [{ translateX: '-50%' }] }}
+            >
+              <Text size="xs" tone="muted" overrides={{ ...typography, fontSize: overrides?.markLabelSize }}>
                 {mark.label}
               </Text>
             </View>
@@ -784,12 +792,11 @@ export function Slider({
       ) : null}
       {displayedError !== undefined ? (
         <View testID="Slider.errorMessage" accessibilityLiveRegion={summarised ? 'none' : 'assertive'}>
-          {/* `overrides.errorText` has no forward: the message is a composed Text with
-              `tone="danger"`, whose `color` binding is locked (every tone is contrast-checked),
-              so Slider must not restyle it. Accepted and ignored, per the overrides contract. */}
-          <Text size="sm" tone="danger" overrides={helperOverrides}>
-            {displayedError}
-          </Text>
+          {errorColor === undefined ? (
+            errorMessage
+          ) : (
+            <TextForegroundContext.Provider value={errorColor}>{errorMessage}</TextForegroundContext.Provider>
+          )}
         </View>
       ) : null}
     </View>

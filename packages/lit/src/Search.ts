@@ -1,19 +1,19 @@
 import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
+import { classMap } from 'lit/directives/class-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { live } from 'lit/directives/live.js';
-import { classMap } from 'lit/directives/class-map.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Text.js';
 import './Icon.js';
 import './Button.js';
 import './Listbox.js';
-import './Landmark.js';
+import type { IconOverridableBinding, IconSize } from './Icon.js';
 import type { DsListbox, ListboxChangeDetail, ListboxItem } from './Listbox.js';
 
 export type SearchSize = 'md' | 'lg';
 
-/** A single suggestion (anatomy: suggestions). */
+/** One entry of `suggestions` (anatomy: suggestions). */
 export interface SearchSuggestion {
   value: string;
   label: string;
@@ -35,37 +35,52 @@ export type SearchClearDetail = void;
 
 /**
  * Overridable style hooks; see the `overrides` property. `background`,
- * `foreground`, `placeholder`, `iconColor`, `border`, `minTarget` and
- * `focusRingWidth` are locked and excluded.
+ * `foreground`, `placeholder`, `iconColor`, `border`, `borderFocus`,
+ * `minTarget` and `focusRingWidth` are locked and excluded.
  */
 export type SearchOverridableBinding =
-  | 'borderFocus'
   | 'borderWidth'
   | 'radius'
   | 'paddingInline'
   | 'paddingBlock'
-  | 'paddingBlockLg'
   | 'affixGap'
   | 'fontFamily'
   | 'fontSize'
   | 'lineHeight'
   | 'suggestionsOffset'
+  | 'popupSurface'
+  | 'popupBorder'
+  | 'popupRadius'
+  | 'popupShadow'
+  | 'partGap'
   | 'disabledOpacity';
 
 const HOOKS: Record<SearchOverridableBinding, string> = {
-  borderFocus: '--ds-search-border-focus',
   borderWidth: '--ds-search-border-width',
   radius: '--ds-search-radius',
   paddingInline: '--ds-search-padding-inline',
   paddingBlock: '--ds-search-padding-block',
-  paddingBlockLg: '--ds-search-padding-block-lg',
   affixGap: '--ds-search-affix-gap',
   fontFamily: '--ds-search-font-family', // literal-ok: CSS custom-property name, not a font stack
   fontSize: '--ds-search-font-size',
   lineHeight: '--ds-search-line-height',
   suggestionsOffset: '--ds-search-suggestions-offset',
+  popupSurface: '--ds-search-popup-surface',
+  popupBorder: '--ds-search-popup-border',
+  popupRadius: '--ds-search-popup-radius',
+  popupShadow: '--ds-search-popup-shadow',
+  partGap: '--ds-search-part-gap',
   disabledOpacity: '--ds-search-disabled-opacity',
 };
+
+/** Bindings drawn by the suggestions popup; no-ops while `suggestions` is undefined. */
+const POPUP_BINDINGS: ReadonlySet<SearchOverridableBinding> = new Set([
+  'suggestionsOffset',
+  'popupSurface',
+  'popupBorder',
+  'popupRadius',
+  'popupShadow',
+]);
 
 /** copy.clear */
 const COPY_CLEAR = 'Clear search';
@@ -73,66 +88,82 @@ const COPY_CLEAR = 'Clear search';
 const COPY_SUBMIT = 'Search';
 /** copy.loading */
 const COPY_LOADING = 'Loading suggestions';
-/** copy.suggestionsCount */
-const COPY_SUGGESTIONS_COUNT = (count: number): string => `${count} suggestions available`;
+/** copy.suggestionsCount (plural by `count`) */
+const COPY_SUGGESTIONS_COUNT_ONE = '{count} suggestion available';
+const COPY_SUGGESTIONS_COUNT_OTHER = '{count} suggestions available';
 /** copy.noSuggestions */
 const COPY_NO_SUGGESTIONS = 'No suggestions';
 
-/** How long the live-region status waits before announcing, so fast typing does not spam a screen reader. Not a design token — an interaction timing, not a motion one; mirrors `<ds-combobox>`. */
-const STATUS_DEBOUNCE_MS = 500;
+/** iconColor (locked): color.foreground.muted, forwarded to the composed Icons' `color` binding. */
+const ICON_OVERRIDES: Partial<Record<IconOverridableBinding, TokenRef | undefined>> = {
+  color: 'color.foreground.muted',
+};
+
+/** The glyph keeps its proportion to the text: `sm` at size md, `md` at size lg. */
+const GLYPH_SIZE: Record<SearchSize, IconSize> = { md: 'sm', lg: 'md' };
 
 /** Whether the running browser implements the Popover API. Evaluated once. */
 const POPOVER_SUPPORTED = typeof HTMLElement !== 'undefined' && typeof HTMLElement.prototype.showPopover === 'function';
 
-/** `input` or `internals.ariaActiveDescendantElement`-capable element, for the cross-shadow-root activedescendant reflection Chromium ships. */
-type ActiveDescendantHost = HTMLInputElement & { ariaActiveDescendantElement?: Element | null | undefined };
+/** Negates a boolean attribute: `no-landmark` present means `landmark` is `false`. */
+const NEGATED_BOOLEAN_CONVERTER = {
+  fromAttribute(value: string | null): boolean {
+    return value === null;
+  },
+  toAttribute(value: boolean): string | null {
+    return value ? null : '';
+  },
+};
 
 /**
  * `<ds-search>` — Search (category: input, APG pattern: combobox).
  *
- * `<ds-search label="Search products" name="q" action="/search">` renders a
- * `<form>` inside the shadow root, wrapped in a composed `<ds-landmark
- * role="search">` (named by `label`) when `landmark` is set, with a visually-hidden `<label>`, a
- * decorative "search" `Icon`, a `type="search"` `<input>`, a clear `Button`
- * shown once there is text, and a submit `Button`. Submitting dispatches a
- * composed `submit` CustomEvent with the trimmed query; when `action` is set
- * it also builds a light-DOM `<form method="get">` on demand and submits it,
- * since the shadow `<form>` never participates in page navigation. Passing
- * `suggestions` (even an empty array, once fetching starts) turns the field
- * into a combobox: the input takes `role="combobox"` with
- * `aria-activedescendant`, and a popup composing `<ds-listbox>` renders in
- * the same shadow root so activedescendant resolves; choosing a suggestion
- * fills the query and submits. The popup uses the Popover API when available,
- * a `position: fixed` fallback otherwise.
+ * `<ds-search label="Search products" action="/search">` renders a shadow
+ * `<form role="search">` (the landmark; `no-landmark` drops the role) with a
+ * native `<label for>` (visually hidden unless `show-label`), a pill field
+ * holding a decorative "search" `<ds-icon>`, an `<input type="search">`, the
+ * clear `<ds-button>` while there is text and the submit `<ds-button>`,
+ * always rendered.
+ *
+ * Enter, the submit button and a chosen suggestion dispatch a composed
+ * `submit` CustomEvent with the trimmed query; an empty query never submits.
+ * When `action` is set the element also submits a light-DOM
+ * `<form method="get">` it creates on demand, since the shadow form does not
+ * take part in page navigation.
+ *
+ * Setting `suggestions` at all (even `[]`) makes the input a combobox: an
+ * embedded `<ds-listbox>` in a popup under the field (Popover API, with a
+ * `position: fixed` fallback), arrow keys move the highlight while focus stays
+ * in the input, and a polite status region announces loading, no suggestions
+ * or the count. The option rows live in the Listbox's own shadow root, which
+ * an `aria-activedescendant` IDREF cannot reach, so the highlighted label is
+ * exposed through `aria-describedby` on a live element, as `<ds-combobox>`
+ * does.
+ *
+ * `value` is controlled when set (the element reports `change` and waits for
+ * the property), uncontrolled from `defaultValue` otherwise. The element is
+ * form-associated and carries `data-ds-field` for `<ds-form>`.
  *
  * ## When to use
  *
- * Use Search for free-text search over a site, an app, or a large dataset.
- * Add `suggestions` when the backend can offer completions or recent
- * queries; keep `landmark` on for the one primary search so screen-reader
- * users can jump to it.
+ * Free-text search over a site, an app, or a large dataset. Add `suggestions`
+ * when the backend can offer completions; keep `landmark` on for the one
+ * primary search.
  *
  * ## When not to use
  *
- * Not for a field that takes a specific value (Input), for choosing from a
- * known list (Select or Combobox), or for a filter that applies instantly to
- * a short list already on screen. Do not put two search landmarks on a page.
+ * Not for a specific value (Input), choosing from a known list (Select or
+ * Combobox), or an instant filter over a short list already on screen. Never
+ * two search landmarks on a page.
  *
- * @fires change - Fired on every keystroke with the query, with `{ value }` in `detail`.
- * @fires submit - Fired on Enter, the submit button, or choosing a suggestion, with the trimmed query in `{ value }`.
- * @fires clear - Fired when the field is emptied via the clear button or Escape.
- * @csspart landmark - The composed `<ds-landmark role="search">` wrapping the form (anatomy: landmark).
- * @csspart label - The visually-hidden-by-default `<label>` (anatomy: label).
- * @csspart field - The bordered pill wrapper around icon, input and buttons (anatomy: field).
- * @csspart icon - The decorative leading `<ds-icon>` (anatomy: icon).
- * @csspart input - The `type="search"` `<input>` (anatomy: input).
- * @csspart clearButton - The button that empties the field (anatomy: clearButton).
- * @csspart submitButton - The button that submits the query (anatomy: submitButton).
- * @csspart suggestions - The positioned popup composing `<ds-listbox>` (anatomy: suggestions).
- * @csspart status - The visually-hidden `role="status"` live region.
+ * @fires change - Every keystroke; `detail.value` is the query as typed.
+ * @fires submit - Enter, the submit button, or a chosen suggestion; `detail.value` is the submitted query.
+ * @fires clear - The field was emptied by the clear button or Escape.
  */
 @customElement('ds-search')
 export class DsSearch extends LitElement {
+  static formAssociated: boolean = true;
+
   static override shadowRootOptions: ShadowRootInit = {
     ...LitElement.shadowRootOptions,
     delegatesFocus: true,
@@ -140,25 +171,34 @@ export class DsSearch extends LitElement {
 
   static override styles: CSSResult = css`
     :host {
-      display: inline-block;
-      inline-size: 100%;
-      font-family: var(--font-family-body);
-      --ds-search-border-focus: var(--color-border-focus);
+      display: block;
       --ds-search-border-width: var(--border-width-thin);
       --ds-search-radius: var(--radius-full);
       --ds-search-padding-inline: var(--space-md);
       --ds-search-padding-block: var(--space-sm);
-      --ds-search-padding-block-lg: var(--space-md);
       --ds-search-affix-gap: var(--layout-gap-tight);
       --ds-search-font-family: var(--font-family-body);
       --ds-search-font-size: var(--font-size-md);
       --ds-search-line-height: var(--font-line-height-normal);
       --ds-search-suggestions-offset: var(--space-1);
+      --ds-search-popup-surface: var(--color-overlay-surface);
+      --ds-search-popup-border: var(--color-border);
+      --ds-search-popup-radius: var(--radius-md);
+      --ds-search-popup-shadow: var(--shadow-overlay);
+      --ds-search-part-gap: var(--space-1);
       --ds-search-disabled-opacity: var(--opacity-disabled);
+      font-family: var(--ds-search-font-family);
+      font-size: var(--ds-search-font-size);
+      line-height: var(--ds-search-line-height);
     }
 
     :host([hidden]) {
       display: none;
+    }
+
+    /* paddingBlock by size: lg → space.md */
+    :host([size='lg']) {
+      --ds-search-padding-block: var(--space-md);
     }
 
     /* fontSize: font.size.{size} */
@@ -166,19 +206,11 @@ export class DsSearch extends LitElement {
       --ds-search-font-size: var(--font-size-lg);
     }
 
-    form {
-      display: block;
+    [data-part='form'] {
+      display: flex;
+      flex-direction: column;
+      gap: var(--ds-search-part-gap);
       margin: 0;
-      padding: 0;
-    }
-
-    .label {
-      display: block;
-      margin-block-end: var(--space-1);
-      font-size: var(--ds-search-font-size);
-      font-weight: var(--font-weight-medium);
-      line-height: var(--ds-search-line-height);
-      color: var(--color-foreground);
     }
 
     .visually-hidden {
@@ -194,145 +226,124 @@ export class DsSearch extends LitElement {
       border: 0;
     }
 
-    /* background / border: color.control.background / color.border.strong, locked */
-    .field {
+    [data-part='label'] {
+      display: block;
+    }
+
+    /* background / border (locked): color.control.background / color.border.strong */
+    [data-part='field'] {
       box-sizing: border-box;
       display: flex;
       align-items: center;
       gap: var(--ds-search-affix-gap);
       inline-size: 100%;
+      /* minTarget (locked): size.target.comfortable */
       min-block-size: var(--size-target-comfortable);
       padding-block: var(--ds-search-padding-block);
       padding-inline: var(--ds-search-padding-inline);
-      border: var(--ds-search-border-width) solid var(--color-border-strong);
+      border-style: solid;
+      border-width: var(--ds-search-border-width);
+      border-color: var(--color-border-strong);
       border-radius: var(--ds-search-radius);
       background: var(--color-control-background);
-      transition:
-        border-color var(--motion-duration-fast) var(--motion-easing-standard),
-        padding var(--motion-duration-fast) var(--motion-easing-standard);
+      transition: border-color var(--motion-duration-fast) var(--motion-easing-standard);
     }
 
-    /* paddingBlockLg: space.md, vertical padding at size lg */
-    :host([size='lg']) .field {
-      padding-block: var(--ds-search-padding-block-lg);
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .field,
-      .popup {
-        transition: none;
-      }
-    }
-
-    /*
-     * focusRingWidth (locked) replaces borderWidth while focused; padding
-     * shrinks by the difference (border-box sizing) so the field does not shift.
-     */
-    .field:focus-within {
-      border-color: var(--ds-search-border-focus);
+    /* borderFocus + focusRingWidth (locked): the focus width replaces the border width; padding shrinks by the difference */
+    [data-part='field']:focus-within {
+      border-color: var(--color-border-focus);
       border-width: var(--border-width-focus);
+      padding-block: calc(var(--ds-search-padding-block) - (var(--border-width-focus) - var(--ds-search-border-width)));
       padding-inline: calc(
         var(--ds-search-padding-inline) - (var(--border-width-focus) - var(--ds-search-border-width))
       );
-      padding-block: calc(
-        var(--ds-search-padding-block) - (var(--border-width-focus) - var(--ds-search-border-width))
-      );
-    }
-    :host([size='lg']) .field:focus-within {
-      padding-block: calc(
-        var(--ds-search-padding-block-lg) - (var(--border-width-focus) - var(--ds-search-border-width))
-      );
     }
 
-    .field.disabled {
+    :host([disabled]) [data-part='field'] {
       opacity: var(--ds-search-disabled-opacity);
     }
-    .field.disabled .input {
+
+    [data-part='icon'],
+    [data-part='clearButton'],
+    [data-part='submitButton'] {
+      flex: none;
+    }
+
+    /* foreground (locked): color.foreground */
+    [data-part='input'] {
+      flex: 1;
+      box-sizing: border-box;
+      min-inline-size: 0;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      outline: none;
+      background: transparent;
+      color: var(--color-foreground);
+      font: inherit;
+      appearance: none;
+    }
+
+    :host([disabled]) [data-part='input'] {
       cursor: not-allowed;
     }
 
-    /* iconColor: color.foreground.muted, locked */
-    .icon {
-      flex: none;
-      color: var(--color-foreground-muted);
-    }
-
-    /* foreground / placeholder: color.foreground / color.foreground.muted, locked */
-    .input {
-      flex: 1 1 auto;
-      min-inline-size: 0;
-      box-sizing: border-box;
-      border: none;
-      outline: none;
-      padding: 0;
-      margin: 0;
-      background: transparent;
-      font-family: var(--ds-search-font-family);
-      font-size: var(--ds-search-font-size);
-      line-height: var(--ds-search-line-height);
-      color: var(--color-foreground);
-      appearance: none;
-      -webkit-appearance: none;
-    }
-
-    .input::placeholder {
+    /* placeholder (locked): color.foreground.muted */
+    [data-part='input']::placeholder {
       color: var(--color-foreground-muted);
       opacity: 1;
     }
 
-    /* The system's own clear Button replaces the native one (web platform notes). */
-    .input::-webkit-search-cancel-button {
+    /* The system clear Button replaces the browser's own. */
+    [data-part='input']::-webkit-search-cancel-button {
       display: none;
     }
 
-    .popup {
+    [data-part='suggestions'] {
       position: fixed;
       inset: auto;
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+      overflow: hidden;
       border-style: solid;
       border-width: var(--border-width-thin);
-      border-color: var(--color-border);
-      border-radius: var(--radius-md);
-      background: var(--color-overlay-surface);
-      box-shadow: var(--shadow-overlay);
+      border-color: var(--ds-search-popup-border);
+      border-radius: var(--ds-search-popup-radius);
+      background: var(--ds-search-popup-surface);
+      box-shadow: var(--ds-search-popup-shadow);
+      color: var(--color-foreground);
       z-index: var(--layer-dropdown);
-      max-block-size: calc(100vh - 2 * var(--layout-gutter));
-      overflow: auto;
       opacity: 1;
-      transform: translateY(0);
-      transition:
-        opacity var(--motion-duration-fast) var(--motion-easing-standard),
-        transform var(--motion-duration-fast) var(--motion-easing-standard);
+      transition: opacity var(--motion-duration-fast) var(--motion-easing-standard);
     }
 
-    .popup[hidden] {
+    [data-part='suggestions'][hidden] {
       display: none;
     }
 
     @starting-style {
-      .popup:popover-open {
+      [data-part='suggestions'] {
         opacity: 0;
-        transform: translateY(var(--space-1));
       }
     }
 
-    .status-text {
+    [data-part='listbox'] {
       display: block;
-      padding-block: var(--space-sm);
-      padding-inline: var(--space-md);
     }
 
-    .listbox {
-      display: block;
+    @media (prefers-reduced-motion: reduce) {
+      [data-part='field'],
+      [data-part='suggestions'] {
+        transition: none;
+      }
     }
   `;
 
-  /** Accessible name ("Search products"). Visually hidden unless `showLabel`. */
-  @property() accessor label!: string;
+  /** The accessible name ("Search products"). Visually hidden unless `showLabel`. */
+  @property() accessor label = '';
 
-  /** Show the label above the field, as in a search page rather than a header. */
+  /** Show the label above the field, as on a search page rather than in a header. */
   @property({ type: Boolean, reflect: true, attribute: 'show-label' }) accessor showLabel = false;
 
   /** Field name; the query key when the form submits to a URL. */
@@ -344,79 +355,91 @@ export class DsSearch extends LitElement {
   /** Initial query for an uncontrolled field. */
   @property({ attribute: 'default-value' }) accessor defaultValue: string | undefined;
 
-  /** Example query, not a label ("Try "invoices from March""). */
+  /** Example query, not a label. */
   @property() accessor placeholder: string | undefined;
 
-  /** URL to submit to with GET. When omitted, `submit` handles it and nothing navigates. */
+  /** URL to submit to with GET; when omitted, `submit` handles it and nothing navigates. */
   @property() accessor action: string | undefined;
 
   /**
-   * Suggestions for the current query, shown in a Listbox under the field.
-   * Omit entirely for a plain search field; pass an array (even empty, while
-   * fetching) to turn the field into a combobox. A property, not an
-   * attribute — provide it from `change` (debounced by the caller).
+   * Suggestions for the current query. Setting the property at all (an empty
+   * array included) turns the field into a combobox; undefined keeps a plain
+   * search field. A property, not an attribute.
    */
   @property({ attribute: false }) accessor suggestions: SearchSuggestion[] | undefined;
 
   /** Suggestions are being fetched; announced through `copy.loading`. */
   @property({ type: Boolean, reflect: true }) accessor loading = false;
 
-  /**
-   * Wrap in the `search` Landmark. Boolean attributes cannot express `false`
-   * while the default is `true`, so the attribute is the negation —
-   * `no-landmark` present means this is `false`.
-   */
-  @property({
-    attribute: 'no-landmark',
-    reflect: true,
-    converter: {
-      fromAttribute: (value: string | null): boolean => value === null,
-      toAttribute: (value: boolean): string | null => (value ? null : ''),
-    },
-  })
+  /** Give the form the `search` landmark role. Exposed as the negated attribute `no-landmark`. */
+  @property({ attribute: 'no-landmark', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
   accessor landmark = true;
 
   /** `lg` for a search page's hero field. */
-  @property({ reflect: true }) accessor size: SearchSize = 'md';
+  @property({ type: String, reflect: true }) accessor size: SearchSize = 'md';
 
   /** Not editable, still readable. */
   @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
-  /** Per-instance style overrides: `{ radius: 'radius.md' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) accessor overrides: Partial<Record<SearchOverridableBinding, TokenRef | undefined>> | undefined;
+  /** Per-instance style overrides: `{ radius: 'radius.md' }`. Locked bindings are not in the type. */
+  @property({ attribute: false }) accessor overrides:
+    | Partial<Record<SearchOverridableBinding, TokenRef | undefined>>
+    | undefined;
 
-  /** Whether the suggestions popup is open. Not exposed as a property — see the generator's gap notes. */
-  @state() private accessor isOpen = false;
+  /** Uncontrolled query, seeded from `defaultValue`. */
+  @state() private accessor internalValue = '';
 
-  /** Id (within the composed Listbox's own shadow root) of the active suggestion, mirrored onto the input's `aria-activedescendant`. */
-  @state() private accessor activeDescendantId: string | undefined;
+  /** Whether the suggestions popup is open. */
+  @state() private accessor open = false;
 
-  /** Debounced text for the `status` live region. */
-  @state() private accessor announcedStatus = '';
+  /** The highlighted suggestion's value, or null for none (focus is always the input). */
+  @state() private accessor activeValue: string | null = null;
 
-  @query('#input') private accessor inputEl!: HTMLInputElement | null;
-  @query('#listbox') private accessor listboxEl!: DsListbox | null;
-  @query('#popup') private accessor popupEl!: HTMLElement | null;
+  @query('[data-part=input]') private accessor inputEl!: HTMLInputElement | null;
+  @query('[data-part=field]') private accessor fieldEl!: HTMLElement | null;
+  @query('[data-part=suggestions]') private accessor popupEl!: HTMLElement | null;
+  @query('[data-part=listbox]') private accessor listboxEl!: DsListbox | null;
 
-  private readonly popoverSupported = POPOVER_SUPPORTED;
-  private wasOpen = false;
-  private activateFirstOnOpen = false;
-  private statusTimer?: ReturnType<typeof setTimeout> | undefined;
+  /** A shadow-DOM form never navigates the page, so `action` submits this light-DOM one. */
+  private navigationForm: HTMLFormElement | undefined;
+  private readonly internals: ElementInternals;
+  private shown = false;
+  private warned = false;
 
-  /** Light-DOM `<form>` this element creates on demand to navigate to `action` (a shadow-root form does not participate in the page). */
-  private navigationForm?: HTMLFormElement | undefined;
-
-  /** The current string value of the field. */
-  get currentValue(): string {
-    return this.value ?? this.defaultValue ?? '';
+  constructor() {
+    super();
+    this.internals = this.attachInternals();
   }
 
-  /** Whether `suggestions` turns this field into a combobox. */
-  private get hasSuggestionsFeature(): boolean {
+  /** The query, controlled or not. */
+  get currentValue(): string {
+    return this.value ?? this.internalValue;
+  }
+
+  /** Search has no required state; present for the `DsFormField` contract. */
+  get required(): boolean {
+    return false;
+  }
+
+  /** Search never fails validation; present for the `DsFormField` contract. */
+  get validationMessage(): string {
+    return '';
+  }
+
+  /** The owning native form, if any. */
+  get form(): HTMLFormElement | null {
+    return this.internals.form;
+  }
+
+  private get isCombobox(): boolean {
     return this.suggestions !== undefined;
   }
 
-  private get listboxOptions(): ListboxItem[] {
+  /** What the Listbox shows: nothing while loading, so its empty row carries `copy.loading`. */
+  private get listOptions(): ListboxItem[] {
+    if (this.loading) {
+      return [];
+    }
     return (this.suggestions ?? []).map((item) => ({
       value: item.value,
       label: item.label,
@@ -427,451 +450,424 @@ export class DsSearch extends LitElement {
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('data-ds', 'Search');
+    this.setAttribute('data-ds-field', '');
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.removeGlobalListeners();
-    clearTimeout(this.statusTimer);
+    this.shown = false;
+  }
+
+  override focus(options?: FocusOptions): void {
+    this.inputEl?.focus(options);
+  }
+
+  checkValidity(): boolean {
+    return this.internals.checkValidity();
+  }
+
+  reportValidity(): boolean {
+    return this.internals.reportValidity();
+  }
+
+  formResetCallback(): void {
+    this.internalValue = this.defaultValue ?? '';
   }
 
   protected override willUpdate(changed: PropertyValues): void {
-    if (changed.has('overrides')) {
+    if (!this.hasUpdated) {
+      this.internalValue = this.defaultValue ?? '';
+    }
+    if (changed.has('overrides') || changed.has('suggestions')) {
       this.applyOverrides();
     }
-    if (changed.has('suggestions') && !this.hasSuggestionsFeature) {
-      this.isOpen = false;
+    if (!this.isCombobox) {
+      this.open = false;
+    }
+    if (!this.open) {
+      this.activeValue = null;
+    } else if (this.activeValue !== null && !this.listOptions.some((item) => item.value === this.activeValue)) {
+      this.activeValue = null;
     }
   }
 
   protected override updated(): void {
-    if (this.isOpen !== this.wasOpen) {
-      this.wasOpen = this.isOpen;
-      if (this.isOpen) {
-        this.handleOpened();
-      } else {
-        this.handleClosed();
-      }
+    this.internals.setFormValue(this.currentValue);
+    if (this.open && !this.shown) {
+      this.shown = true;
+      this.showPopup();
+    } else if (!this.open && this.shown) {
+      this.shown = false;
+      this.hidePopup();
+    } else if (this.open) {
+      this.updatePosition();
     }
-    void this.syncActiveDescendant();
-    this.syncStatus();
-    this.warnInDev();
+    if (this.listboxEl && this.listboxEl.activeValue !== this.activeValue) {
+      this.listboxEl.activeValue = this.activeValue;
+    }
+    if (import.meta.env.DEV && !this.warned) {
+      this.warned = true;
+      if (!this.label) console.warn('<ds-search> requires a `label`.', this);
+    }
   }
 
   protected override render(): TemplateResult {
-    const isDisabled = this.disabled;
     const value = this.currentValue;
-    const showClear = value !== '';
-    const hasSuggestions = this.hasSuggestionsFeature;
-    const items = this.suggestions ?? [];
+    const combobox = this.isCombobox;
+    const activeLabel =
+      this.activeValue === null ? '' : (this.listOptions.find((item) => item.value === this.activeValue)?.label ?? '');
 
-    const form = html`
-      <form id="form" part="form" @submit=${this.handleFormSubmit}>
+    return html`
+      <form
+        data-part="form"
+        part="form"
+        role=${ifDefined(this.landmark ? 'search' : undefined)}
+        @submit=${this.handleFormSubmit}
+      >
         <label
           id="label"
+          data-part="label"
           part="label"
-          class=${classMap({ label: true, 'visually-hidden': !this.showLabel })}
+          class=${classMap({ 'visually-hidden': !this.showLabel })}
           for="input"
-          >${this.label}</label
+          ><ds-text>${this.label}</ds-text></label
         >
-        <div class=${classMap({ field: true, disabled: isDisabled })} part="field">
-          <ds-icon class="icon" part="icon" name="search"></ds-icon>
+        <div data-part="field" part="field">
+          <ds-icon
+            data-part="icon"
+            part="icon"
+            name="search"
+            size=${GLYPH_SIZE[this.size]}
+            .overrides=${ICON_OVERRIDES}
+          ></ds-icon>
           <input
             id="input"
+            data-part="input"
             part="input"
-            class="input"
             type="search"
             name=${this.name}
             enterkeyhint="search"
             autocomplete="off"
-            role=${hasSuggestions ? 'combobox' : 'searchbox'}
-            aria-autocomplete=${hasSuggestions ? 'list' : nothing}
-            aria-expanded=${hasSuggestions ? (this.isOpen ? 'true' : 'false') : nothing}
-            aria-controls=${hasSuggestions ? 'popup' : nothing}
-            aria-activedescendant=${ifDefined(this.activeDescendantId)}
-            aria-labelledby="label"
-            aria-disabled=${ifDefined(isDisabled ? 'true' : undefined)}
+            role=${combobox ? 'combobox' : 'searchbox'}
+            aria-autocomplete=${ifDefined(combobox ? 'list' : undefined)}
+            aria-expanded=${ifDefined(combobox ? String(this.open) : undefined)}
+            aria-controls=${ifDefined(combobox ? 'suggestions' : undefined)}
+            aria-describedby=${ifDefined(activeLabel ? 'active-option' : undefined)}
+            aria-disabled=${ifDefined(this.disabled ? 'true' : undefined)}
             placeholder=${ifDefined(this.placeholder)}
             .value=${live(value)}
-            ?readonly=${isDisabled}
+            ?readonly=${this.disabled}
             @input=${this.handleInput}
-            @keydown=${this.handleInputKeydown}
+            @keydown=${this.handleKeydown}
           />
-          ${showClear
-            ? html`
-                <ds-button
-                  id="clear-button"
-                  part="clearButton"
-                  variant="ghost"
-                  size="sm"
-                  icon-only
-                  label=${COPY_CLEAR}
-                  ?disabled=${isDisabled}
-                  @press=${this.handleClearPress}
-                  ><ds-icon slot="leading-icon" name="close"></ds-icon
-                ></ds-button>
-              `
+          ${value !== ''
+            ? html`<ds-button
+                data-part="clearButton"
+                part="clearButton"
+                variant="ghost"
+                size="sm"
+                icon-only
+                label=${COPY_CLEAR}
+                ?disabled=${this.disabled}
+                @press=${this.handleClearPress}
+                ><ds-icon slot="leading-icon" name="close" .overrides=${ICON_OVERRIDES}></ds-icon
+              ></ds-button>`
             : nothing}
           <ds-button
-            id="submit-button"
+            data-part="submitButton"
             part="submitButton"
             variant="ghost"
             size="sm"
             icon-only
-            type="submit"
             label=${COPY_SUBMIT}
-            ?disabled=${isDisabled}
-            ><ds-icon slot="leading-icon" name="arrow-right"></ds-icon
+            ?disabled=${this.disabled}
+            @press=${this.handleSubmitPress}
+            ><ds-icon slot="leading-icon" name="arrow-right" .overrides=${ICON_OVERRIDES}></ds-icon
           ></ds-button>
         </div>
-        ${hasSuggestions
-          ? html`
-              <div
-                id="popup"
-                class="popup"
-                part="suggestions"
-                popover=${this.popoverSupported ? 'manual' : nothing}
-                ?hidden=${this.popoverSupported ? false : !this.isOpen}
-              >
-                ${this.loading
-                  ? html`<ds-text class="status-text" element="p" tone="muted">${COPY_LOADING}</ds-text>`
-                  : items.length === 0
-                    ? html`<ds-text class="status-text" element="p" tone="muted">${COPY_NO_SUGGESTIONS}</ds-text>`
-                    : html`
-                        <ds-listbox
-                          id="listbox"
-                          part="listbox"
-                          class="listbox"
-                          labelledBy="label"
-                          embedded
-                          .options=${this.listboxOptions}
-                          .selectionFollowsFocus=${false}
-                          @change=${this.handleListboxChange}
-                          @active-change=${this.handleListboxActiveChange}
-                        ></ds-listbox>
-                      `}
-              </div>
-            `
-          : nothing}
-        <div id="status" part="status" class="visually-hidden" role="status" aria-live="polite">
-          ${this.announcedStatus}
+        <span id="active-option" class="visually-hidden" aria-live="polite">${activeLabel}</span>
+        <div id="status" data-part="status" class="visually-hidden" role="status" aria-live="polite">
+          ${this.statusText()}
         </div>
+        ${combobox
+          ? html`<div
+              id="suggestions"
+              data-part="suggestions"
+              part="suggestions"
+              popover=${ifDefined(POPOVER_SUPPORTED ? 'manual' : undefined)}
+              ?hidden=${!POPOVER_SUPPORTED && !this.open}
+            >
+              <ds-listbox
+                data-part="listbox"
+                embedded
+                labelledBy="label"
+                .options=${this.listOptions}
+                .selectionFollowsFocus=${false}
+                empty-message=${this.loading ? COPY_LOADING : COPY_NO_SUGGESTIONS}
+                @change=${this.handleListboxChange}
+                @active-change=${this.stopInternalEvent}
+              ></ds-listbox>
+            </div>`
+          : nothing}
       </form>
     `;
-
-    return this.landmark
-      ? html`<ds-landmark role="search" .label=${this.label} part="landmark">${form}</ds-landmark>`
-      : form;
   }
 
-  private readonly handleInput = (event: InputEvent): void => {
+  private readonly handleInput = (event: Event): void => {
     const next = (event.currentTarget as HTMLInputElement).value;
-    this.value = next;
-    if (this.hasSuggestionsFeature) {
-      this.isOpen = true;
+    if (this.value === undefined) {
+      this.internalValue = next;
+    } else {
+      // Controlled: the input shows the new text only once `value` changes.
+      this.requestUpdate();
+    }
+    if (this.isCombobox) {
+      this.open = true;
+      this.activeValue = null;
     }
     this.dispatchEvent(
       new CustomEvent<SearchChangeDetail>('change', { detail: { value: next }, bubbles: true, composed: true }),
     );
   };
 
-  private readonly handleInputKeydown = (event: KeyboardEvent): void => {
-    if (this.disabled) {
+  private readonly handleKeydown = (event: KeyboardEvent): void => {
+    if (this.disabled || event.ctrlKey || event.metaKey || event.altKey) {
       return;
     }
-    const key = event.key;
-
-    if (key === 'Enter') {
-      if (this.isOpen && this.listboxEl?.activeValue) {
+    switch (event.key) {
+      case 'Enter': {
         event.preventDefault();
-        this.commitSuggestion(this.listboxEl.activeValue);
+        const active = this.open ? this.activeItem() : undefined;
+        if (active) {
+          this.chooseSuggestion(active);
+        } else {
+          this.submitQuery(this.currentValue);
+        }
+        break;
       }
-      // Otherwise the native <input type="search"> inside the <form> submits
-      // implicitly, handled by `handleFormSubmit`.
-      return;
-    }
-    if (key === 'Escape') {
-      if (this.isOpen) {
+      case 'Escape':
+        if (this.open) {
+          event.preventDefault();
+          this.open = false;
+        } else if (this.currentValue !== '') {
+          event.preventDefault();
+          this.clearQuery();
+        }
+        break;
+      case 'ArrowDown': {
+        if (!this.isCombobox) {
+          return;
+        }
         event.preventDefault();
-        this.closeList(true);
-      } else if (this.currentValue !== '') {
+        const items = this.listOptions;
+        if (!this.open) {
+          this.open = true;
+          this.activeValue = items[0]?.value ?? null;
+          return;
+        }
+        const index = items.findIndex((item) => item.value === this.activeValue);
+        const next = items[Math.min(index + 1, items.length - 1)];
+        if (next) {
+          this.activeValue = next.value;
+        }
+        break;
+      }
+      case 'ArrowUp': {
+        if (!this.isCombobox || !this.open || this.activeValue === null) {
+          return;
+        }
         event.preventDefault();
-        this.clearQuery();
+        const items = this.listOptions;
+        const index = items.findIndex((item) => item.value === this.activeValue);
+        this.activeValue = index <= 0 ? null : (items[index - 1]?.value ?? null);
+        break;
       }
-      return;
-    }
-    if (key === 'ArrowDown' && this.hasSuggestionsFeature) {
-      event.preventDefault();
-      if (this.isOpen) {
-        this.moveActiveDown();
-      } else {
-        this.activateFirstOnOpen = true;
-        this.isOpen = true;
-      }
-      return;
-    }
-    if (key === 'ArrowUp' && this.hasSuggestionsFeature) {
-      if (!this.isOpen) {
-        return;
-      }
-      event.preventDefault();
-      this.moveActiveUp();
-      return;
-    }
-    if (key === 'Tab') {
-      if (this.isOpen) {
-        // Hide synchronously so the browser's own Tab traversal (computed right
-        // after this handler returns, ahead of Lit's async re-render) does not
-        // land inside the now-closing popup.
-        this.hidePopupImmediately();
-        this.isOpen = false;
-      }
+      case 'Tab':
+        if (this.open) {
+          this.open = false;
+        }
+        break;
     }
   };
 
   private readonly handleFormSubmit = (event: SubmitEvent): void => {
-    // The shadow-root `<form>` never navigates the page; `submitQuery` builds
-    // a light-DOM form for that when `action` is set.
     event.preventDefault();
     this.submitQuery(this.currentValue);
   };
 
-  private readonly handleClearPress = (event: CustomEvent): void => {
+  private readonly handleSubmitPress = (event: Event): void => {
+    event.stopPropagation();
+    if (!this.disabled) {
+      this.submitQuery(this.currentValue);
+    }
+  };
+
+  private readonly handleClearPress = (event: Event): void => {
     event.stopPropagation();
     this.clearQuery();
     this.inputEl?.focus();
   };
 
   private readonly handleListboxChange = (event: CustomEvent<ListboxChangeDetail>): void => {
-    // Internal to the composition; Search dispatches its own `submit`.
     event.stopPropagation();
-    const value = event.detail.value;
-    if (typeof value === 'string') {
-      this.commitSuggestion(value);
+    const item = this.listOptions.find((entry) => entry.value === event.detail.value);
+    if (item) {
+      this.chooseSuggestion(item);
     }
   };
 
-  private readonly handleListboxActiveChange = (event: Event): void => {
+  private readonly stopInternalEvent = (event: Event): void => {
     event.stopPropagation();
   };
 
   private readonly handleOutsidePointerDown = (event: PointerEvent): void => {
-    if (event.composedPath().includes(this)) {
-      return;
+    if (!event.composedPath().includes(this)) {
+      this.open = false;
     }
-    this.closeList(false);
   };
 
   private readonly handleReposition = (): void => {
-    if (this.isOpen) {
-      this.updatePosition();
-    }
+    this.updatePosition();
   };
 
-  private readonly handleWindowBlur = (): void => {
-    this.closeList(false);
-  };
+  private activeItem(): ListboxItem | undefined {
+    return this.activeValue === null ? undefined : this.listOptions.find((item) => item.value === this.activeValue);
+  }
+
+  /** Fills the query with the suggestion's label, what the user just read, and submits it. */
+  private chooseSuggestion(item: ListboxItem): void {
+    if (this.value === undefined) {
+      this.internalValue = item.label;
+    }
+    this.open = false;
+    this.inputEl?.focus();
+    this.submitQuery(item.label);
+  }
 
   private clearQuery(): void {
     if (this.currentValue === '') {
       return;
     }
-    this.value = '';
-    this.closeList(false);
+    if (this.value === undefined) {
+      this.internalValue = '';
+    }
+    this.open = false;
     this.dispatchEvent(new CustomEvent<SearchClearDetail>('clear', { bubbles: true, composed: true }));
   }
 
-  private commitSuggestion(value: string): void {
-    const item = (this.suggestions ?? []).find((candidate) => candidate.value === value);
-    if (!item) {
-      return;
-    }
-    this.value = item.label;
-    this.closeList(true);
-    this.submitQuery(item.label);
-  }
-
+  /** Dispatches `submit` with the trimmed query and, with `action`, submits the light-DOM GET form. Never an empty query. */
   private submitQuery(query: string): void {
     const trimmed = query.trim();
     if (trimmed === '') {
       return;
     }
+    this.open = false;
     this.dispatchEvent(
       new CustomEvent<SearchSubmitDetail>('submit', { detail: { value: trimmed }, bubbles: true, composed: true }),
     );
     if (this.action) {
-      this.navigateTo(trimmed);
+      this.submitNavigationForm(this.action, trimmed);
     }
   }
 
-  private navigateTo(query: string): void {
-    if (!this.navigationForm) {
-      const form = document.createElement('form');
+  private submitNavigationForm(action: string, query: string): void {
+    let form = this.navigationForm;
+    if (!form) {
+      form = document.createElement('form');
       form.method = 'get';
       form.hidden = true;
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      form.appendChild(input);
-      this.appendChild(form);
+      const field = document.createElement('input');
+      field.type = 'hidden';
+      form.append(field);
       this.navigationForm = form;
     }
-    const form = this.navigationForm;
-    form.action = this.action ?? '';
-    (form.firstElementChild as HTMLInputElement).name = this.name;
-    (form.firstElementChild as HTMLInputElement).value = query;
-    form.requestSubmit();
+    if (!form.isConnected) {
+      this.append(form);
+    }
+    form.action = action;
+    const field = form.firstElementChild as HTMLInputElement;
+    field.name = this.name;
+    field.value = query;
+    // `submit()` fires no native `submit` event, which would otherwise bubble through the host beside the CustomEvent.
+    form.submit();
   }
 
-  private closeList(restoreFocus: boolean): void {
-    if (!this.isOpen) {
+  /** Loading, no suggestions, or the plural count, while the list is open. */
+  private statusText(): string {
+    if (!this.open) {
+      return '';
+    }
+    if (this.loading) {
+      return COPY_LOADING;
+    }
+    const count = this.listOptions.length;
+    if (count === 0) {
+      return COPY_NO_SUGGESTIONS;
+    }
+    const locale = this.closest('[lang]')?.getAttribute('lang') || navigator.language;
+    const template = new Intl.PluralRules(locale).select(count) === 'one' ? COPY_SUGGESTIONS_COUNT_ONE : COPY_SUGGESTIONS_COUNT_OTHER;
+    return template.replace('{count}', String(count));
+  }
+
+  private showPopup(): void {
+    const popup = this.popupEl;
+    if (!popup) {
       return;
     }
-    this.isOpen = false;
-    if (restoreFocus) {
-      this.inputEl?.focus();
+    if (POPOVER_SUPPORTED && !popup.matches(':popover-open')) {
+      popup.showPopover();
     }
-  }
-
-  private moveActiveDown(): void {
-    if ((this.suggestions ?? []).length === 0) {
-      return;
-    }
-    this.listboxEl?.handleKey(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
-  }
-
-  /** From no active suggestion or the first, clears the highlight (back to the input); otherwise moves up one — never wraps to the last. */
-  private moveActiveUp(): void {
-    const items = this.suggestions ?? [];
-    const active = this.listboxEl?.activeValue ?? null;
-    const index = active !== null ? items.findIndex((item) => item.value === active) : -1;
-    if (this.listboxEl) {
-      this.listboxEl.activeValue = index <= 0 ? null : items[index - 1]!.value;
-    }
-  }
-
-  private handleOpened(): void {
-    if (this.popoverSupported) {
-      this.popupEl?.showPopover();
-    }
-    this.updatePosition();
-    this.addGlobalListeners();
-    if (this.activateFirstOnOpen && this.listboxEl) {
-      const first = (this.suggestions ?? [])[0];
-      this.listboxEl.activeValue = first ? first.value : null;
-    }
-    this.activateFirstOnOpen = false;
-  }
-
-  private handleClosed(): void {
-    this.removeGlobalListeners();
-    this.hidePopupImmediately();
-    this.activateFirstOnOpen = false;
-    if (this.listboxEl) {
-      this.listboxEl.activeValue = null;
-    }
-  }
-
-  private hidePopupImmediately(): void {
-    if (this.popoverSupported) {
-      if (this.popupEl?.matches(':popover-open')) {
-        this.popupEl.hidePopover();
-      }
-    } else if (this.popupEl) {
-      this.popupEl.hidden = true;
-    }
-  }
-
-  private addGlobalListeners(): void {
     document.addEventListener('pointerdown', this.handleOutsidePointerDown, true);
     window.addEventListener('scroll', this.handleReposition, true);
     window.addEventListener('resize', this.handleReposition);
-    window.addEventListener('blur', this.handleWindowBlur);
+    this.updatePosition();
+    void this.listboxEl?.updateComplete.then(() => this.updatePosition());
+  }
+
+  private hidePopup(): void {
+    this.removeGlobalListeners();
+    const popup = this.popupEl;
+    if (POPOVER_SUPPORTED && popup?.matches(':popover-open')) {
+      popup.hidePopover();
+    }
   }
 
   private removeGlobalListeners(): void {
     document.removeEventListener('pointerdown', this.handleOutsidePointerDown, true);
     window.removeEventListener('scroll', this.handleReposition, true);
     window.removeEventListener('resize', this.handleReposition);
-    window.removeEventListener('blur', this.handleWindowBlur);
   }
 
+  /** Anchors the popup under the field, flipping above it when it would overflow the viewport. */
   private updatePosition(): void {
-    const field = this.renderRoot.querySelector<HTMLElement>('.field');
+    const field = this.fieldEl;
     const popup = this.popupEl;
-    if (!field || !popup) {
+    if (!field || !popup || !this.shown) {
       return;
     }
     const fieldRect = field.getBoundingClientRect();
-    const popupRect = popup.getBoundingClientRect();
+    const popupHeight = popup.getBoundingClientRect().height;
     const viewportHeight = document.documentElement.clientHeight;
-    const gap = parseFloat(getComputedStyle(popup).getPropertyValue('--ds-search-suggestions-offset')) || 0;
+    const offset = parseFloat(getComputedStyle(this).getPropertyValue(HOOKS.suggestionsOffset)) || 0;
+    const above = fieldRect.bottom + offset + popupHeight > viewportHeight && fieldRect.top - offset - popupHeight >= 0;
 
-    const overflowsBelow = fieldRect.bottom + gap + popupRect.height > viewportHeight;
-    const opensUpward = overflowsBelow && fieldRect.top - gap - popupRect.height >= 0;
-
-    popup.style.top = opensUpward ? 'auto' : `${fieldRect.bottom + gap}px`;
-    popup.style.bottom = opensUpward ? `${viewportHeight - fieldRect.top + gap}px` : 'auto';
+    popup.style.top = above ? 'auto' : `${fieldRect.bottom + offset}px`;
+    popup.style.bottom = above ? `${viewportHeight - fieldRect.top + offset}px` : 'auto';
     popup.style.left = `${fieldRect.left}px`;
-    popup.style.minWidth = `${fieldRect.width}px`;
+    popup.style.minInlineSize = `${fieldRect.width}px`;
   }
 
-  /** Mirrors the active suggestion onto the input's `aria-activedescendant`, using the cross-shadow-root element reflection where the browser supports it (see the generator's gap notes). */
-  private async syncActiveDescendant(): Promise<void> {
-    await this.listboxEl?.updateComplete;
-    const active = this.listboxEl?.activeValue ?? null;
-    const optionEl =
-      active !== null ? this.listboxEl?.renderRoot.querySelector<HTMLElement>(`[data-value="${CSS.escape(active)}"]`) : null;
-    const id = optionEl?.id;
-    if (id !== this.activeDescendantId) {
-      this.activeDescendantId = id;
-    }
-    const input = this.inputEl as ActiveDescendantHost | undefined;
-    if (input && 'ariaActiveDescendantElement' in input) {
-      input.ariaActiveDescendantElement = optionEl ?? null;
-    }
-  }
-
-  private computeStatusText(): string {
-    if (!this.isOpen || !this.hasSuggestionsFeature) {
-      return '';
-    }
-    if (this.loading) {
-      return COPY_LOADING;
-    }
-    const count = (this.suggestions ?? []).length;
-    return count === 0 ? COPY_NO_SUGGESTIONS : COPY_SUGGESTIONS_COUNT(count);
-  }
-
-  /** Debounces the `status` live region so fast typing announces once it settles. */
-  private syncStatus(): void {
-    const next = this.computeStatusText();
-    if (next === this.announcedStatus) {
-      return;
-    }
-    clearTimeout(this.statusTimer);
-    this.statusTimer = setTimeout(() => {
-      this.announcedStatus = next;
-    }, STATUS_DEBOUNCE_MS);
-  }
-
+  /** Sets each overridden hook; popup bindings apply only while the popup exists. */
   private applyOverrides(): void {
     for (const binding of Object.keys(HOOKS) as SearchOverridableBinding[]) {
       const ref = this.overrides?.[binding];
       const hook = HOOKS[binding];
-      if (ref === undefined) {
+      if (ref === undefined || (!this.isCombobox && POPUP_BINDINGS.has(binding))) {
         this.style.removeProperty(hook);
       } else {
         this.style.setProperty(hook, cssVar(ref));
       }
-    }
-  }
-
-  private warnInDev(): void {
-    if (!import.meta.env.DEV) {
-      return;
-    }
-    if (!this.label) {
-      console.warn('<ds-search> requires a `label`.', this);
     }
   }
 }

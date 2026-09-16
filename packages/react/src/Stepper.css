@@ -3,11 +3,9 @@
 .ds-stepper {
   --ds-stepper-indicator-size: var(--space-6);
   --ds-stepper-indicator-background: var(--color-control-background);
-  --ds-stepper-indicator-border-width: var(--border-width-focus);
   --ds-stepper-indicator-font-size: var(--font-size-sm);
   --ds-stepper-indicator-font-weight: var(--font-weight-semibold);
   --ds-stepper-connector: var(--color-border);
-  --ds-stepper-connector-width: var(--border-width-focus);
   --ds-stepper-step-hover: var(--color-action-ghost-background-hover);
   --ds-stepper-step-radius: var(--radius-sm);
   --ds-stepper-step-gap: var(--layout-gap-normal);
@@ -15,7 +13,9 @@
   --ds-stepper-font-family: var(--font-family-body); /* literal-ok: CSS custom-property hook name, not a font stack */
   --ds-stepper-transition: var(--motion-duration-fast);
   /* locked: accessibility-bearing, never overridable */
+  --ds-stepper-indicator-color: var(--color-foreground);
   --ds-stepper-indicator-border: var(--color-border-strong);
+  --ds-stepper-indicator-border-width: var(--border-width-focus);
   --ds-stepper-indicator-complete-background: var(--color-control-selected-background);
   --ds-stepper-indicator-complete-foreground: var(--color-control-selected-foreground);
   --ds-stepper-indicator-current-border: var(--color-control-selected-background);
@@ -23,16 +23,16 @@
   --ds-stepper-indicator-error-foreground: var(--color-status-danger-foreground);
   --ds-stepper-indicator-error-border: var(--color-status-danger-icon);
   --ds-stepper-connector-complete: var(--color-control-selected-background);
-  --ds-stepper-label-color: var(--color-foreground);
-  --ds-stepper-label-upcoming-color: var(--color-foreground-muted);
-  --ds-stepper-description-color: var(--color-foreground-muted);
-  --ds-stepper-indicator-color: var(--color-foreground);
+  --ds-stepper-connector-width: var(--border-width-focus);
   --ds-stepper-min-target: var(--size-target-min);
   --ds-stepper-focus-ring: var(--color-border-focus);
   --ds-stepper-focus-ring-width: var(--border-width-focus);
   display: block;
   font-family: var(--ds-stepper-font-family);
 }
+
+/* Label and description colour, size and weight belong to the composed Text: labelColor/labelUpcomingColor/
+   descriptionColor are its `tone`, and labelSize/labelWeight/labelCurrentWeight/descriptionSize reach its `overrides`. */
 
 .ds-stepper__list {
   display: flex;
@@ -41,33 +41,29 @@
   list-style: none;
 }
 
-.ds-stepper__item {
+.ds-stepper__step {
   display: flex;
   min-inline-size: 0;
 }
 
 .ds-stepper__control {
   display: flex;
-  min-inline-size: 0;
-  flex: 1 1 auto;
-  background: none;
-  border: none;
+  align-items: center;
+  gap: var(--ds-stepper-part-gap);
+  min-block-size: var(--ds-stepper-min-target);
+  min-inline-size: var(--ds-stepper-min-target);
+  padding-inline: var(--ds-stepper-part-gap);
   margin: 0;
-  padding: 0;
-  text-align: inherit;
-  font: inherit;
-  color: inherit;
+  border: none;
   border-radius: var(--ds-stepper-step-radius);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
 }
 
 .ds-stepper__control--navigable {
   cursor: pointer;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .ds-stepper__control--navigable {
-    transition: background-color var(--ds-stepper-transition) var(--motion-easing-standard);
-  }
 }
 
 .ds-stepper__control--navigable:hover,
@@ -80,58 +76,37 @@
   outline-offset: var(--ds-stepper-focus-ring-width);
 }
 
-.ds-stepper__indicatorWrap {
-  display: flex;
-  flex: none;
-}
-
+/* The indicator has four discrete states and switches between them at once. */
 .ds-stepper__indicator {
   display: inline-flex;
   flex: none;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
   inline-size: var(--ds-stepper-indicator-size);
   block-size: var(--ds-stepper-indicator-size);
+  border: var(--ds-stepper-indicator-border-width) solid var(--ds-stepper-indicator-border);
   border-radius: var(--radius-full);
   background-color: var(--ds-stepper-indicator-background);
-  border: var(--ds-stepper-indicator-border-width) solid var(--ds-stepper-indicator-border);
   color: var(--ds-stepper-indicator-color);
   font-size: var(--ds-stepper-indicator-font-size);
   font-weight: var(--ds-stepper-indicator-font-weight);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .ds-stepper__indicator {
-    transition:
-      background-color var(--ds-stepper-transition) var(--motion-easing-standard),
-      border-color var(--ds-stepper-transition) var(--motion-easing-standard),
-      color var(--ds-stepper-transition) var(--motion-easing-standard);
-  }
-}
-
-.ds-stepper__item--current .ds-stepper__indicator {
+.ds-stepper__step--selected .ds-stepper__indicator {
   border-color: var(--ds-stepper-indicator-current-border);
 }
 
-.ds-stepper__item--complete .ds-stepper__indicator {
-  background-color: var(--ds-stepper-indicator-complete-background);
+.ds-stepper__step--complete .ds-stepper__indicator {
   border-color: var(--ds-stepper-indicator-complete-background);
+  background-color: var(--ds-stepper-indicator-complete-background);
   color: var(--ds-stepper-indicator-complete-foreground);
 }
 
-.ds-stepper__item--error .ds-stepper__indicator {
-  background-color: var(--ds-stepper-indicator-error-background);
+.ds-stepper__step--error .ds-stepper__indicator {
   border-color: var(--ds-stepper-indicator-error-border);
+  background-color: var(--ds-stepper-indicator-error-background);
   color: var(--ds-stepper-indicator-error-foreground);
-}
-
-.ds-stepper__connector {
-  flex: none;
-  background-color: var(--ds-stepper-connector);
-}
-
-.ds-stepper__connector--complete {
-  background-color: var(--ds-stepper-connector-complete);
 }
 
 .ds-stepper__content {
@@ -140,21 +115,20 @@
   min-inline-size: 0;
 }
 
-.ds-stepper__label {
-  color: var(--ds-stepper-label-color);
+/* The connector fills the gap between steps along the orientation axis. */
+.ds-stepper__connector {
+  flex: none;
+  background-color: var(--ds-stepper-connector);
 }
 
-.ds-stepper__item--upcoming .ds-stepper__label {
-  color: var(--ds-stepper-label-upcoming-color);
+@media (prefers-reduced-motion: no-preference) {
+  .ds-stepper__connector {
+    transition: background-color var(--ds-stepper-transition) var(--motion-easing-standard);
+  }
 }
 
-.ds-stepper__description {
-  color: var(--ds-stepper-description-color);
-}
-
-.ds-stepper__label,
-.ds-stepper__description {
-  min-inline-size: 0;
+.ds-stepper__connector--complete {
+  background-color: var(--ds-stepper-connector-complete);
 }
 
 /* visually hidden: clipped to a 1px box. Carries the status word for assistive technology. */
@@ -165,122 +139,95 @@
   margin: -1px;
   padding: 0;
   overflow: hidden;
-  clip: rect(0 0 0 0);
   clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
 }
 
-.ds-stepper__compactStatus {
+.ds-stepper__count {
   display: none;
 }
 
-/* horizontal: items in a row; the connector fills the gap between indicators. */
+/* horizontal */
 .ds-stepper--horizontal {
   container-type: inline-size;
 }
 
 .ds-stepper--horizontal .ds-stepper__list {
-  align-items: flex-start;
-}
-
-.ds-stepper--horizontal .ds-stepper__item {
-  flex: 1 1 0;
-}
-
-.ds-stepper--horizontal .ds-stepper__control {
-  flex-direction: column;
   align-items: center;
-  text-align: center;
-  inline-size: 100%;
-  min-block-size: var(--ds-stepper-min-target);
 }
 
-.ds-stepper--horizontal .ds-stepper__indicatorWrap {
-  inline-size: 100%;
+.ds-stepper--horizontal .ds-stepper__step {
+  flex: 1 1 auto;
   align-items: center;
+}
+
+.ds-stepper--horizontal .ds-stepper__step:last-child {
+  flex: none;
 }
 
 .ds-stepper--horizontal .ds-stepper__connector {
   flex: 1 1 auto;
+  min-inline-size: var(--ds-stepper-step-gap);
   block-size: var(--ds-stepper-connector-width);
-  margin-inline: var(--ds-stepper-part-gap);
 }
 
-.ds-stepper--horizontal .ds-stepper__content {
-  align-items: center;
-  margin-block-start: var(--ds-stepper-part-gap);
-}
-
-/* vertical: items in a column; the connector fills the gap below each indicator. */
+/* vertical: descriptions under each label; the connector runs down from the indicator's centre. */
 .ds-stepper--vertical .ds-stepper__list {
   flex-direction: column;
 }
 
-.ds-stepper--vertical .ds-stepper__item:not(:last-child) {
-  padding-block-end: var(--ds-stepper-step-gap);
+.ds-stepper--vertical .ds-stepper__step {
+  flex-direction: column;
+  align-items: stretch;
 }
 
 .ds-stepper--vertical .ds-stepper__control {
-  min-inline-size: var(--ds-stepper-min-target);
-}
-
-.ds-stepper--vertical .ds-stepper__indicatorWrap {
-  flex-direction: column;
-  align-items: center;
-  block-size: 100%;
+  align-items: flex-start;
+  padding-block: var(--ds-stepper-part-gap);
 }
 
 .ds-stepper--vertical .ds-stepper__connector {
-  flex: 1 1 auto;
+  align-self: flex-start;
   inline-size: var(--ds-stepper-connector-width);
-  min-block-size: var(--space-2);
+  min-block-size: var(--ds-stepper-step-gap);
+  margin-inline-start: calc(
+    var(--ds-stepper-part-gap) + (var(--ds-stepper-indicator-size) - var(--ds-stepper-connector-width)) / 2
+  );
 }
 
-.ds-stepper--vertical .ds-stepper__content {
-  margin-inline-start: var(--ds-stepper-part-gap);
-  padding-block-end: var(--ds-stepper-part-gap);
-}
-
-/* compact applies to horizontal steppers only: only the current step's label/description stay
-   reachable visually; the indicator row and the "Step n of m" count remain. The hidden content
-   stays in the accessibility tree (visually-hidden, not display:none) since compacting is a
-   viewport concern, not an information one. */
-.ds-stepper--horizontal.ds-stepper--compact .ds-stepper__item:not(.ds-stepper__item--current) .ds-stepper__content {
+/* compact (horizontal only): the indicators stay, only the current step's label shows, then "Step n of m".
+   Hidden labels are clipped, not removed, so they stay reachable by a screen reader. */
+.ds-stepper--horizontal.ds-stepper--compact .ds-stepper__step:not(.ds-stepper__step--selected) .ds-stepper__content {
   position: absolute;
   inline-size: 1px;
   block-size: 1px;
   margin: -1px;
   padding: 0;
   overflow: hidden;
-  clip: rect(0 0 0 0);
   clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
 }
 
-.ds-stepper--horizontal.ds-stepper--compact .ds-stepper__compactStatus {
-  display: inline;
-  margin-inline-start: var(--ds-stepper-part-gap);
+.ds-stepper--horizontal.ds-stepper--compact .ds-stepper__count {
+  display: block;
 }
 
 @container (max-width: 572px) { /* literal-ok: breakpoint from layout.maxWidth.prose */
-  /* visually hidden: the same clip pattern as .ds-stepper__visually-hidden above. */
-  .ds-stepper--horizontal .ds-stepper__item:not(.ds-stepper__item--current) .ds-stepper__content {
-    position: absolute;
-    inline-size: 1px;
-    block-size: 1px;
-    margin: -1px;
+  .ds-stepper--horizontal .ds-stepper__step:not(.ds-stepper__step--selected) .ds-stepper__content {
+    position: absolute; /* literal-ok: visually-hidden clip pattern */
+    inline-size: 1px; /* literal-ok: visually-hidden clip pattern */
+    block-size: 1px; /* literal-ok: visually-hidden clip pattern */
+    margin: -1px; /* literal-ok: visually-hidden clip pattern */
     padding: 0;
     overflow: hidden;
-    clip: rect(0 0 0 0);
     clip-path: inset(50%);
     white-space: nowrap;
     border: 0;
   }
 
-  .ds-stepper--horizontal .ds-stepper__compactStatus {
-    display: inline;
-    margin-inline-start: var(--ds-stepper-part-gap);
+  .ds-stepper--horizontal .ds-stepper__count {
+    display: block;
   }
 }

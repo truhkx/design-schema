@@ -34,25 +34,33 @@ export const Default: Story = {};
 export const SizeMd: Story = { args: { size: 'md' } };
 export const SizeLg: Story = { args: { size: 'lg' } };
 
+// examples
+export const HeaderSearch: Story = { args: { label: 'Search this site', placeholder: 'Search products and orders' } };
+
+export const SearchPageHero: Story = { args: { label: 'Search orders', showLabel: true, size: 'lg' } };
+
+export const WithSuggestions: Story = {
+  args: {
+    label: 'Search products',
+    suggestions: [
+      { value: 'invoices-march', label: 'Invoices from March' },
+      { value: 'invoices-april', label: 'Invoices from April' },
+    ],
+  },
+};
+
+export const FilterWithinAResultsPage: Story = { args: { label: 'Filter results', landmark: false, name: 'filter' } };
+
 // notable states
-export const ShowLabel: Story = { args: { showLabel: true } };
-
-export const WithSuggestions: Story = { args: { suggestions: SUGGESTIONS } };
-
 export const Loading: Story = { args: { suggestions: [], loading: true } };
 
 export const NoSuggestions: Story = { args: { suggestions: [] } };
 
-export const WithValue: Story = { args: { defaultValue: 'invoices' } };
-
 export const Disabled: Story = { args: { disabled: true, defaultValue: 'invoices' } };
 
 /**
- * At least three focusable elements once suggestions are open, for the axe gate and
- * manual keyboard checks on react-native-web. Search has no `open`/`defaultOpen`
- * prop — focusing the field opens its suggestions, matching the field's own
- * behavior — so this story cannot render pre-opened; see the generation gap notes.
+ * For the axe gate and manual keyboard checks on react-native-web: with a query the field
+ * holds three focusables (input, clear button, submit button). Search has no `open` prop —
+ * focusing the field opens its suggestions — so the list shows once the input is focused.
  */
-export const Keyboard: Story = {
-  args: { suggestions: SUGGESTIONS },
-};
+export const Keyboard: Story = { args: { defaultValue: 'invoices', suggestions: SUGGESTIONS } };

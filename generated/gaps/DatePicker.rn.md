@@ -15,3 +15,20 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - DatePicker: editing one side of an already-complete range down to an empty string (typing) does not clear the committed value when the other side is still filled — only the Clear button fully resets both ends; a gap in how 'a partial range changes nothing' interacts with retracting an existing complete value.
 - DatePicker: 'reopening focuses the start date's cell (the end's when opened from the end input)' is not implemented — there's no per-cell ref/imperative-focus wiring for the calendar grid on open; the sheet's `FocusScope` autofocuses its first focusable child instead.
 - DatePicker: `calendarSurface`'s doc says it is 'forwarded as [the Popover's] overrides.surface', but BottomSheet (used instead of Popover per the RN platform notes) has no `surface` override binding — moot since the binding is locked to `color.overlay.scrim`'s sibling `color.overlay.surface`, which is exactly what BottomSheet already hardcodes internally, but the literal forwarding described doesn't apply.
+
+## 2026-09-16 10:25 — round 1
+
+- DatePicker: Clear 'acts immediately' but the spec never says whether it closes the calendar; chose to leave it open (matching the web generator), while Today closes for a single date because it acts like pressing today's cell.
+- DatePicker: `size: sm` promises 'small type' but there is no font-size binding for the field text; used font.size.sm for sm and font.size.md for md with no override.
+- DatePicker: the paddingInline/paddingBlock overrides don't say whether they apply to one size or both; applied the override at both sizes.
+- DatePicker: `transition` covers day hover and selection, but the spec doesn't say which properties animate; chose a background-color fade per day cell (Animated, useNativeDriver false), skipped under reduced motion.
+- DatePicker: `focusRing`/`focusRingWidth` exist for the field, but no binding covers day-cell focus-visible or its clash with the today ring (dayTodayBorder); focus replaces the today ring with color.border.focus at border.width.focus while focused.
+- DatePicker: the RN guidance says `BottomSheet title={label}` while `gridLabel` is '{label}, {month} {year}'; the sheet heading uses `label`, and gridLabel goes on the grid view's accessibilityLabel and is announced when the month changes.
+- DatePicker: Button takes no testID, and parts calendarButton, prevMonthButton, nextMonthButton, monthSelect, yearSelect, todayButton, clearButton, label, description and popover had no hook of their own; each is wrapped in a View with `testID="DatePicker.<part>"`. `footer` has no testID because wrapping BottomSheet's footer children would defeat its footerGap.
+- DatePicker: the header row's gap between the prev/next Buttons and the Selects has no binding; used t.space1 without an override.
+- DatePicker: the week-number cells have no binding of their own; they reuse weekdaySize (and the muted tone of weekdayColor), without weekdayWeight.
+- DatePicker: error-identification on RN has no invalid state; the error text is added to the input's accessibilityHint after the description, plus an assertive live region and an announcement.
+- DatePicker: scenarios that click calendarButton/todayButton/clearButton press the Button by its copy label, and 'click: day' presses the 18th cell, since no cell is named.
+- DatePicker: the 'unparseable' check is ambiguous for a range where one input holds text and the other is empty; any non-empty input that doesn't parse reports copy.invalid, and a partial but valid range with `required` reports copy.required.
+- DatePicker: the year Select's span (min/max years, else current −100/+10) can exclude the displayed year after the prev/next buttons or a typed date; the span is widened to include the viewed year so the controlled Select always has a matching option.
+- DatePicker (package digest): the conventions list `toLineHeight(t.fontLineHeightNormal, t.fontSizeMd)` but theme.tsx's signature is `toLineHeight(fontSize, multiplier)`; followed the code.

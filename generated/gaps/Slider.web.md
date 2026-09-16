@@ -20,3 +20,21 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Slider: copy.rangeText was previously not used (the beside-label range text was hardcoded as `${low} – ${high}`); now built from COPY.rangeText.replace, matching the 'use copy.* verbatim' rule.
 - Slider: the file never called `form.validateField` on interaction, so `required`/`invalid` (and `error`) never re-validated live in `validate: 'change'`/`'blur'` Forms, only at submit. Added `validateField` calls on commit (change mode) and on interaction-end/onChangeEnd (blur or change mode), mirroring Input/NumberInput, since the spec's blur-note ('validate: blur means on-change for toggles') implies drag/key-release should count as the commit point for a non-typed control like Slider.
 - Slider: `snapToMarks` only affects pointer drag/click (per spec: 'keys still move by step, PageUp/Down by mark'); implemented as a separate snap function passed into `updateThumb`, defaulting to step-snapping for the keyboard path.
+
+## 2026-09-16 09:12 — round 1
+
+- Slider: `marks` says 'Values snap to marks when `step` is omitted', but `step` defaults to 1 and `snapToMarks` exists to turn mark snapping on. Chose: only `snapToMarks` switches drag/click snapping to marks; omitting `step` changes nothing.
+- Slider: the conventions say a field's label is a native `<label for>`, but the thumbs are `div role=slider`, and `<label for>` can't name a div. Chose: label is a Text `<span id>` referenced by each thumb's `aria-labelledby` (range thumbs use hidden minimumLabel/maximumLabel spans).
+- Slider: the Form value is described as a number or `[low, high]`, but FormFieldValue is `string | string[] | boolean | undefined`. Chose: getValue returns `String(value)` or `[String(low), String(high)]`; hidden inputs carry the same strings (two inputs with the same name for a range).
+- Slider: `showValue: hover` is named 'hover' but described as 'only while dragging or focused'. Chose the description: the bubble shows while the thumb is pressed or focused, not on plain pointer hover.
+- Slider: `trackPaddingBlock` is bound to part `track`, but padding the track would thicken the coloured rail. Chose: the padding goes on an unparted body wrapper around track and thumbs, which is also the pointer hit area.
+- Slider: `errorText` is overridable, but the error message is a composed Text with tone=danger whose color binding is locked, and the child may not be restyled. Chose: accepted and ignored (no-op).
+- Slider: `valueSize`/`fontFamily`/`fontSize`/`labelWeight`/`helperSize` have no part; they style composed Texts. Chose: forward to the label/value/description/error Text `overrides` (fontWeight/fontSize/fontFamily); `valueSize` and `fontFamily` are also root hooks read by the bubble and mark labels.
+- Slider: `mark`, `markSize`, `markLabelSize`, `markLabelColor` have no part, and 'label' on a mark has no anatomy name. Chose: dots live in `data-part=tickMarks`; mark labels are an unparted aria-hidden row under the track, spaced by space.2 (a token the spec doesn't name).
+- Slider: the spacing between the label and the value text in the header, and the bubble's padding and offset, have no binding. Chose space.2 gap, space.1/space.2 bubble padding, bubble flush above the 44px thumb hit box.
+- Slider: onChangeEnd 'once when the interaction ends' does not say whether an interaction that changed nothing (a click on the thumb, End at max) counts. Chose: onChange and onChangeEnd fire only when the value actually changed.
+- Slider: `validate: blur` for a pointer control is only defined in the RN notes. Chose the same on web: in blur mode the field validates when an interaction ends (pointer up / key up), not on thumb blur.
+- Slider: the halo 'thumbSize larger on each side (space.2)' is contradictory (thumbSize is space.5). Chose: halo = knob size + 2 × space.2, fill colour at thumbActiveScale opacity.
+- Slider: PageUp/PageDown 'to the next mark' does not say what happens past the last mark. Chose: move to max/min.
+- Slider: the behavior scenarios' `then: event: onChange` gives no expected payload. Tests also assert the value (55, 45, 60, 0, 100, onChangeEnd 51), derived from the keyboard table.
+- Slider: nothing says which element takes the `id`/registration id for a range. Chose: the low thumb (the first tab stop).

@@ -1,6 +1,9 @@
 /* DatePicker — styled only through Design Schema token custom properties. */
 
-.ds-date-picker {
+/* Every binding is a hook defaulting to its token. The calendar is portaled out of the root, so it
+   declares the same hooks; the component writes overrides inline on both. */
+.ds-date-picker,
+.ds-date-picker__calendar {
   --ds-date-picker-background: var(--color-background);
   --ds-date-picker-foreground: var(--color-foreground);
   --ds-date-picker-placeholder: var(--color-foreground-muted);
@@ -11,10 +14,6 @@
   --ds-date-picker-radius: var(--radius-md);
   --ds-date-picker-padding-inline: var(--space-md);
   --ds-date-picker-padding-block: var(--space-sm);
-  --ds-date-picker-padding-block-sm: var(--space-1);
-  --ds-date-picker-padding-inline-sm: var(--space-2);
-  --ds-date-picker-part-gap: var(--space-1);
-  --ds-date-picker-field-gap: var(--space-2);
   --ds-date-picker-range-separator-color: var(--color-foreground-muted);
   --ds-date-picker-calendar-surface: var(--color-overlay-surface);
   --ds-date-picker-calendar-inset: var(--layout-inset-md);
@@ -34,6 +33,8 @@
   --ds-date-picker-weekday-weight: var(--font-weight-medium);
   --ds-date-picker-month-title-size: var(--font-size-md);
   --ds-date-picker-month-title-weight: var(--font-weight-semibold);
+  --ds-date-picker-part-gap: var(--space-1);
+  --ds-date-picker-field-gap: var(--space-2);
   --ds-date-picker-day-font-size: var(--font-size-sm);
   --ds-date-picker-font-family: var(--font-family-body);
   --ds-date-picker-line-height: var(--font-line-height-normal);
@@ -47,29 +48,33 @@
   --ds-date-picker-focus-ring-width: var(--border-width-focus);
   --ds-date-picker-disabled-opacity: var(--opacity-disabled);
   --ds-date-picker-transition: var(--motion-duration-fast);
+  --ds-date-picker-font-size: var(--font-size-md);
+  font-family: var(--ds-date-picker-font-family);
+  line-height: var(--ds-date-picker-line-height);
+}
+
+.ds-date-picker {
   display: flex;
   flex-direction: column;
   gap: var(--ds-date-picker-part-gap);
-  inline-size: 100%;
-  font-family: var(--ds-date-picker-font-family);
+  color: var(--ds-date-picker-foreground);
 }
 
-/* size: sm swaps paddingInline/paddingBlock/minTarget for their Sm bindings; the calendar popup is unchanged. */
+/* size: sm — tighter padding, the minimum target height, small type. The calendar is unchanged. */
 .ds-date-picker--sm {
-  --ds-date-picker-padding-inline: var(--ds-date-picker-padding-inline-sm);
-  --ds-date-picker-padding-block: var(--ds-date-picker-padding-block-sm);
+  --ds-date-picker-padding-inline: var(--space-2);
+  --ds-date-picker-padding-block: var(--space-1);
   --ds-date-picker-min-target: var(--ds-date-picker-min-target-sm);
+  --ds-date-picker-font-size: var(--font-size-sm);
 }
 
 .ds-date-picker__label {
-  display: inline-block;
-}
-
-.ds-date-picker__required {
+  color: var(--ds-date-picker-foreground);
+  font-size: var(--ds-date-picker-font-size);
   font-weight: var(--ds-date-picker-label-weight);
 }
 
-/* visually hidden: clipped to a 1px box, off the normal flow — the standard sanctioned pixel literals */
+/* The standard clip pattern: the one sanctioned use of pixel literals. */
 .ds-date-picker__visually-hidden {
   position: absolute;
   inline-size: 1px;
@@ -77,7 +82,6 @@
   margin: -1px;
   padding: 0;
   overflow: hidden;
-  clip: rect(0 0 0 0);
   clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
@@ -94,10 +98,10 @@
 }
 
 .ds-date-picker__input {
-  box-sizing: border-box;
   flex: 1 1 auto;
   min-inline-size: 0;
   min-block-size: var(--ds-date-picker-min-target);
+  box-sizing: border-box;
   margin: 0;
   padding-inline: var(--ds-date-picker-padding-inline);
   padding-block: var(--ds-date-picker-padding-block);
@@ -105,11 +109,9 @@
   border-radius: var(--ds-date-picker-radius);
   background-color: var(--ds-date-picker-background);
   color: var(--ds-date-picker-foreground);
-  font: inherit;
   font-family: var(--ds-date-picker-font-family);
-  font-size: var(--font-size-md);
+  font-size: var(--ds-date-picker-font-size);
   line-height: var(--ds-date-picker-line-height);
-  -webkit-appearance: none;
   appearance: none;
 }
 
@@ -118,15 +120,18 @@
   opacity: 1;
 }
 
-.ds-date-picker__input:focus-visible {
-  border-color: var(--ds-date-picker-border-focus);
-  border-width: var(--ds-date-picker-focus-ring-width);
-  padding-inline: calc(var(--ds-date-picker-padding-inline) - (var(--ds-date-picker-focus-ring-width) - var(--ds-date-picker-border-width)));
-  padding-block: calc(var(--ds-date-picker-padding-block) - (var(--ds-date-picker-focus-ring-width) - var(--ds-date-picker-border-width)));
-}
-
 .ds-date-picker__input[aria-invalid='true'] {
   border-color: var(--ds-date-picker-border-invalid);
+}
+
+.ds-date-picker__input:focus-visible {
+  border-color: var(--ds-date-picker-border-focus);
+  outline: var(--ds-date-picker-focus-ring-width) solid var(--ds-date-picker-focus-ring);
+  outline-offset: 0;
+}
+
+.ds-date-picker__input[aria-disabled='true'] {
+  cursor: not-allowed;
 }
 
 .ds-date-picker__separator {
@@ -134,33 +139,25 @@
   color: var(--ds-date-picker-range-separator-color);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .ds-date-picker__input {
-    transition:
-      border-color var(--motion-duration-fast) var(--motion-easing-standard),
-      border-width var(--motion-duration-fast) var(--motion-easing-standard),
-      padding-inline var(--motion-duration-fast) var(--motion-easing-standard),
-      padding-block var(--motion-duration-fast) var(--motion-easing-standard);
-  }
+.ds-date-picker__calendar-button {
+  display: contents;
 }
 
-/* calendarSurface: realized on web by the composed Popover's own (locked) surface binding —
-   the calendar renders inside Popover's panel, so this wrapper stays transparent. */
+/* The surface (calendarSurface) and the inset (calendarInset) belong to the composed Popover's panel. */
 .ds-date-picker__calendar {
   display: flex;
   flex-direction: column;
   gap: var(--ds-date-picker-calendar-gap);
-  padding: var(--ds-date-picker-calendar-inset);
-  min-inline-size: max-content;
+  color: var(--ds-date-picker-foreground);
 }
 
 .ds-date-picker__header {
   display: flex;
   align-items: center;
-  gap: var(--layout-gap-tight);
+  gap: var(--ds-date-picker-field-gap);
 }
 
-.ds-date-picker__header-select {
+.ds-date-picker__select {
   flex: 1 1 auto;
   min-inline-size: 0;
 }
@@ -168,44 +165,42 @@
 .ds-date-picker__grid {
   border-collapse: separate;
   border-spacing: var(--ds-date-picker-day-gap);
-  table-layout: fixed;
 }
 
-.ds-date-picker__weekday {
+.ds-date-picker__weekday,
+.ds-date-picker__week-number {
   inline-size: var(--ds-date-picker-day-size);
-  padding-block: var(--space-1);
+  padding: 0;
   color: var(--ds-date-picker-weekday-color);
   font-size: var(--ds-date-picker-weekday-size);
   font-weight: var(--ds-date-picker-weekday-weight);
-  font-family: var(--ds-date-picker-font-family);
   text-align: center;
 }
 
-.ds-date-picker__week-number-header,
-.ds-date-picker__week-number {
-  inline-size: var(--ds-date-picker-day-size);
-  color: var(--ds-date-picker-weekday-color);
-  font-size: var(--ds-date-picker-weekday-size);
-  text-align: center;
+.ds-date-picker__grid td {
+  padding: 0;
 }
 
 .ds-date-picker__day {
-  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
   inline-size: var(--ds-date-picker-day-size);
   block-size: var(--ds-date-picker-day-size);
   margin: 0;
   padding: 0;
   border: 0;
   border-radius: var(--ds-date-picker-day-radius);
-  background: transparent;
+  background-color: transparent;
   color: var(--ds-date-picker-foreground);
-  font: inherit;
   font-family: var(--ds-date-picker-font-family);
   font-size: var(--ds-date-picker-day-font-size);
+  line-height: var(--ds-date-picker-line-height);
   cursor: pointer;
+  transition:
+    background-color var(--ds-date-picker-transition) var(--motion-easing-standard),
+    color var(--ds-date-picker-transition) var(--motion-easing-standard);
 }
 
 .ds-date-picker__day:hover:not([aria-disabled='true']) {
@@ -221,19 +216,20 @@
   color: var(--ds-date-picker-day-outside-month-color);
 }
 
-/* today: an inset ring so it never shifts the cell's box, styling with shape rather than color alone. */
+/* today: a ring (shape), selected: a fill — state never rests on color alone. */
 .ds-date-picker__day--today {
   box-shadow: inset 0 0 0 var(--ds-date-picker-day-today-border-width) var(--ds-date-picker-day-today-border);
 }
 
-/* in-range: no radius, so touching cells (dayGap: space.0) read as one continuous bar. */
-.ds-date-picker__day--in-range {
+/* Cells between the ends touch with no radius, so the range reads as one bar. */
+.ds-date-picker__day--in-range,
+.ds-date-picker__day--in-range:hover:not([aria-disabled='true']) {
   border-radius: 0;
   background-color: var(--ds-date-picker-day-in-range-background);
 }
 
-/* selected: the radius that gives the bar's ends their shape — fill and shape both carry the state, not color alone. */
-.ds-date-picker__day--selected {
+.ds-date-picker__day--selected,
+.ds-date-picker__day--selected:hover:not([aria-disabled='true']) {
   background-color: var(--ds-date-picker-day-selected-background);
   color: var(--ds-date-picker-day-selected-foreground);
 }
@@ -243,29 +239,12 @@
   cursor: not-allowed;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .ds-date-picker__grid tbody {
-    animation: ds-date-picker-month-fade var(--ds-date-picker-transition) var(--motion-easing-standard);
-  }
-}
-
-@keyframes ds-date-picker-month-fade {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
 .ds-date-picker__footer {
   display: flex;
 }
 
-.ds-date-picker__description {
-  margin: 0;
-}
-
-.ds-date-picker__error {
-  margin: 0;
+@media (prefers-reduced-motion: reduce) {
+  .ds-date-picker__day {
+    transition: none;
+  }
 }

@@ -4,6 +4,7 @@ import { ProgressBar } from './ProgressBar';
 const meta: Meta<typeof ProgressBar> = {
   title: 'ProgressBar/React',
   component: ProgressBar,
+  tags: ['autodocs'],
   args: {
     label: 'Uploading photos',
     value: 42,
@@ -14,13 +15,6 @@ const meta: Meta<typeof ProgressBar> = {
     tone: 'neutral',
     announce: 'complete',
   },
-  decorators: [
-    (Story) => (
-      <div style={{ maxInlineSize: '24rem' }}>
-        <Story />
-      </div>
-    ),
-  ],
 };
 
 export default meta;
@@ -30,18 +24,24 @@ export const Default: Story = {};
 
 /* tone */
 export const ToneNeutral: Story = { args: { tone: 'neutral' } };
-export const ToneSuccess: Story = { args: { tone: 'success', value: 100 } };
-export const ToneDanger: Story = { args: { tone: 'danger', value: 58 } };
+export const ToneSuccess: Story = { args: { tone: 'success' } };
+export const ToneDanger: Story = { args: { tone: 'danger' } };
 
 /* announce */
 export const AnnounceNone: Story = { args: { announce: 'none' } };
 export const AnnounceMilestones: Story = { args: { announce: 'milestones' } };
 export const AnnounceComplete: Story = { args: { announce: 'complete' } };
 
+/* examples */
+export const Upload: Story = { args: { label: 'Uploading photos', value: 42 } };
+export const LongImport: Story = { args: { label: 'Importing contacts', value: 10, announce: 'milestones' } };
+export const Finished: Story = { args: { label: 'Export', value: 100, tone: 'success' } };
+export const InACard: Story = { args: { label: 'Rendering preview', value: 60, hideLabel: true, showValue: false } };
+
 /* other states */
 export const Indeterminate: Story = { args: { value: undefined } };
-export const HiddenLabel: Story = { args: { hideLabel: true } };
-export const HiddenValue: Story = { args: { showValue: false } };
+export const HideLabel: Story = { args: { hideLabel: true } };
+export const ShowValueFalse: Story = { args: { showValue: false } };
 export const CustomFormatValue: Story = {
   args: {
     label: 'Importing contacts',
@@ -50,6 +50,4 @@ export const CustomFormatValue: Story = {
     formatValue: (value, _min, max) => `${value} of ${max} files`,
   },
 };
-export const CustomRange: Story = { args: { min: 0, max: 10, value: 7 } };
-export const Empty: Story = { args: { value: 0 } };
-export const Complete: Story = { args: { value: 100, tone: 'success' } };
+export const NonZeroMin: Story = { args: { min: 50, max: 150, value: 100 } };

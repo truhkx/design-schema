@@ -1,39 +1,31 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Stepper, type StepperStep } from './Stepper';
 
-const steps: StepperStep[] = [
+const checkoutSteps: StepperStep[] = [
   { id: 'shipping', label: 'Shipping address' },
   { id: 'payment', label: 'Payment' },
   { id: 'review', label: 'Review order' },
-  { id: 'confirm', label: 'Confirmation' },
-];
-
-const stepsWithDescriptions: StepperStep[] = [
-  { id: 'account', label: 'Create account', description: 'Takes about a minute.' },
-  { id: 'verify', label: 'Verify identity', description: 'Takes about 2 minutes.' },
-  { id: 'plan', label: 'Choose a plan', description: 'Compare features and pricing.' },
-  { id: 'done', label: 'Done', description: 'Review and confirm.' },
-];
-
-const stepsWithError: StepperStep[] = [
-  { id: 'shipping', label: 'Shipping address', status: 'complete' },
-  { id: 'payment', label: 'Payment', status: 'error' },
-  { id: 'review', label: 'Review order' },
-  { id: 'confirm', label: 'Confirmation' },
 ];
 
 const meta: Meta<typeof Stepper> = {
   title: 'Stepper/React',
   component: Stepper,
+  tags: ['autodocs'],
   args: {
-    steps,
+    steps: [
+      { id: 'shipping', label: 'Shipping address' },
+      { id: 'payment', label: 'Payment' },
+      { id: 'review', label: 'Review order' },
+      { id: 'confirm', label: 'Confirmation' },
+    ],
     current: 'payment',
     orientation: 'horizontal',
     navigable: 'completed',
     compact: false,
-    label: 'Progress',
   },
   argTypes: {
+    orientation: { control: 'inline-radio', options: ['horizontal', 'vertical'] },
+    navigable: { control: 'inline-radio', options: ['none', 'completed', 'all'] },
     onStepSelect: { action: 'onStepSelect' },
   },
 };
@@ -43,31 +35,59 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
-/* orientation */
 export const OrientationHorizontal: Story = { args: { orientation: 'horizontal' } };
-export const OrientationVertical: Story = {
-  args: { orientation: 'vertical', steps: stepsWithDescriptions, current: 'verify' },
-};
+export const OrientationVertical: Story = { args: { orientation: 'vertical' } };
 
-/* navigable */
 export const NavigableNone: Story = { args: { navigable: 'none' } };
 export const NavigableCompleted: Story = { args: { navigable: 'completed' } };
 export const NavigableAll: Story = { args: { navigable: 'all' } };
 
-/* compact */
 export const Compact: Story = { args: { compact: true } };
 
-/* other states */
-export const WithDescriptions: Story = {
-  args: { orientation: 'vertical', steps: stepsWithDescriptions, current: 'verify' },
+/** The current step also carries `status: 'error'`: the error indicator wins, the selection stays. */
+export const CurrentStepWithError: Story = {
+  args: {
+    current: 'payment',
+    steps: [
+      { id: 'shipping', label: 'Shipping address' },
+      { id: 'payment', label: 'Payment', status: 'error' },
+      { id: 'review', label: 'Review order' },
+    ],
+  },
 };
-export const WithError: Story = { args: { steps: stepsWithError, current: 'payment' } };
-export const CustomLabel: Story = { args: { label: 'Checkout progress' } };
 
-/**
- * Every step is navigable (navigable: 'all'), giving at least three focusable controls to tab
- * through and activate with Enter/Space, per the component's keyboard model.
- */
-export const Keyboard: Story = {
-  args: { navigable: 'all' },
+/* Examples from the doc — each has exactly its `given` as args. */
+
+/** The usual horizontal flow, where a completed step can be revisited. */
+export const Checkout: Story = { args: { current: 'payment', steps: checkoutSteps } };
+
+/** A vertical stepper whose steps each need a line of explanation. */
+export const OnboardingWithDescriptions: Story = {
+  args: {
+    orientation: 'vertical',
+    current: 'verify',
+    steps: [
+      { id: 'account', label: 'Create account', description: 'Takes about a minute.' },
+      { id: 'verify', label: 'Verify identity', description: 'Takes about 2 minutes.' },
+      { id: 'plan', label: 'Choose a plan', description: 'Compare features and pricing.' },
+    ],
+  },
 };
+
+/** A flow the user cannot jump around in. */
+export const DisplayOnly: Story = { args: { navigable: 'none', current: 'payment', steps: checkoutSteps } };
+
+/** Validation failed on a step the user has already left. */
+export const AStepWithAnError: Story = {
+  args: {
+    current: 'review',
+    steps: [
+      { id: 'shipping', label: 'Shipping address', status: 'complete' },
+      { id: 'payment', label: 'Payment', status: 'error' },
+      { id: 'review', label: 'Review order' },
+    ],
+  },
+};
+
+/** Tab moves between the navigable steps (four here, with `navigable: all`); Enter and Space select. */
+export const Keyboard: Story = { args: { navigable: 'all' } };

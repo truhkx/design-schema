@@ -15,3 +15,18 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - ProgressBar: schema's `formatValue` shape is `(value, min, max) => string` but the on-disk file typed it as `(value, max) => string` and computed the default percentage as value/max instead of the range-aware (value-min)/(max-min) used by the fill itself — fixed both to match the schema and to stay consistent with the fill's own `percent` getter.
 - ProgressBar: the Behavior section says the live region is `role="status"` on Lit (not ElementInternals) but the region lacked the role attribute — added `role="status"` alongside `aria-live="polite"`.
 - ProgressBar: the class doc explains role/aria-value* are set as plain host attributes rather than via ElementInternals, deviating from the platform note's literal wording ('ElementInternals role="progressbar" with ariaValueNow/Min/Max/Text on the host') because the accessible-name/value test tooling only reads real attributes — left as-is since it was already a deliberate, documented choice in the existing code, but flagging it since it reads as a contradiction with the platform notes section verbatim.
+
+## 2026-09-16 09:37 — round 1
+
+- ProgressBar: platforms.web wants aria-labelledby, but on Lit the progressbar role is on the host and the label is inside the shadow root, so aria-labelledby cannot cross the boundary. Chose aria-label on the host, mirrored from `label`.
+- ProgressBar: the Lit guidance prose says 'ElementInternals role and aria values on the host', which contradicts platforms.lit.notes (plain reflected attributes). Followed the notes.
+- ProgressBar: reduced-motion indeterminate treatment disagrees. styles.indeterminateLoop says the fill is replaced by a static half-opacity track; the Web and RN guidance say a full-width fill at opacity.disabled. Chose the schema: hide the fill and set the track to opacity.disabled.
+- ProgressBar: showValue defaults to true, so it is exposed as the negated `hide-value` attribute and reflected per package convention, but platforms.lit.reflect does not list it.
+- ProgressBar: no binding covers the gap between label and value text in the label row (partGap is only the row-to-track gap). Chose <ds-stack direction=horizontal justify=between gap=tight>.
+- ProgressBar: radius, valueColor, valueSize, fontFamily, lineHeight and partGap have no `part`. Chose: radius on track and fill, value* on valueText, fontFamily/lineHeight on the container and forwarded to both Text children, partGap on the container.
+- ProgressBar: it is unspecified whether a bar that mounts already past a milestone, complete, or indeterminate announces on first render. Chose to announce (a live region filled at insertion is usually silent anyway).
+- ProgressBar: 'milestones announce at 25/50/75/100' vs 'copy.complete at max'. Chose copy.progress for 25/50/75 and copy.complete (once) for 100. Several tiers crossed in one update produce a single announcement with the current value.
+- ProgressBar: with announce: none it is unspecified whether tiers keep being tracked, so switching to milestones mid-task could replay past tiers. Chose to keep tracking silently.
+- ProgressBar: `label` is required but has no fallback when empty. Chose to drop aria-label, so the bar is unnamed, with no dev warning.
+- ProgressBar: the indeterminate sweep direction in RTL is unspecified. Chose to mirror the keyframes under :host(:dir(rtl)).
+- ProgressBar: the the-bar-is-never-focusable scenario has no concrete assertion shape on Lit. Tested that host focus() does not move focus, tabIndex < 0, and the shadow root has no focusable descendants.

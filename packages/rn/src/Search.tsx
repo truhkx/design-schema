@@ -1,11 +1,12 @@
 import * as React from 'react';
-import { AccessibilityInfo, TextInput, View, findNodeHandle } from 'react-native';
-import type { TextInputInstance, TextInputKeyPressEvent, TextStyle, ViewStyle } from 'react-native';
+import { AccessibilityInfo, Platform, TextInput, View, findNodeHandle } from 'react-native';
+import type { TextInputInstance, TextInputKeyPressEvent, TextStyle, ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
+import { useFormContext } from './FormContext';
+import type { FormFieldHandle } from './FormContext';
 import { Icon } from './Icon';
-import { Landmark } from './Landmark';
 import { Listbox } from './Listbox';
 import type { ListboxValue } from './Listbox';
 import { Text } from './Text';
@@ -15,16 +16,14 @@ import type { Tokens } from './theme';
 export type SearchSize = 'md' | 'lg';
 
 /** One row offered under the field while typing. */
-export type SearchSuggestion = { value: string; label: string; description?: string | undefined };
+export type SearchSuggestion = { value: string; label: string; description?: string };
 
 /** The style bindings a caller may replace with a different token; see the component's overrides contract. */
 export type SearchOverridableBinding =
-  | 'borderFocus'
   | 'borderWidth'
   | 'radius'
   | 'paddingInline'
   | 'paddingBlock'
-  | 'paddingBlockLg'
   | 'affixGap'
   | 'fontFamily'
   | 'fontSize'
@@ -38,35 +37,36 @@ export type SearchOverridableBinding =
   | 'disabledOpacity';
 
 export interface SearchProps {
-  /** Accessible name ("Search products"). Visually hidden unless `showLabel`. */
+  /** The accessible name ("Search products", "Search this site"). Visually hidden by default — the glyph and placeholder are the visible cue. */
   label: string;
-  /** Show the label above the field, as on a search page rather than in a header. */
+  /** Show the label above the field, as in a search page rather than a header. */
   showLabel?: boolean | undefined;
   /**
-   * Field name; the query key a web form submits to `action`. Has no runtime effect
-   * on this platform, which has no navigable forms — kept for API parity.
+   * Field name; the query key when the form submits to a URL. Native has no URL forms,
+   * so this only names the value inside a Form.
    */
   name?: string | undefined;
   /** Controlled query. */
   value?: string | undefined;
   /** Initial query. */
   defaultValue?: string | undefined;
-  /** Example query, not a label. */
+  /** Example query, not a label ("Try "invoices from March""). */
   placeholder?: string | undefined;
   /**
-   * URL a web form submits to with GET. Has no runtime effect on this
-   * platform — there is no navigation to perform — kept for API parity.
+   * URL to submit to with GET (web). Native has no form navigation: accepted for parity,
+   * does nothing, and warns in development. Handle `onSubmitEditing` instead.
    */
   action?: string | undefined;
   /**
-   * Suggestions for the current query, shown in a Listbox under the field. Provide
-   * them from `onChange` (debounced by the caller). Setting this at all — even to an
-   * empty array — turns on suggestions mode.
+   * Suggestions for the current query, shown in a Listbox under the field; choosing one
+   * fills the query with the suggestion's `label` and submits. Provide them from
+   * `onChangeText` (debounced by the caller). Setting the prop at all — even to an empty
+   * array, which shows `copy.noSuggestions` — turns the field into a combobox.
    */
-  suggestions?: SearchSuggestion[] | undefined;
+  suggestions?: { value: string; label: string; description?: string }[] | undefined;
   /** Suggestions are being fetched; announced through `copy.loading`. */
   loading?: boolean | undefined;
-  /** Wrap in the `search` Landmark. Turn off when nested inside another search landmark. */
+  /** Give the field the `search` landmark. Turn off when the Search sits inside another search landmark. */
   landmark?: boolean | undefined;
   /** `lg` for a search page's hero field. */
   size?: SearchSize | undefined;
@@ -74,49 +74,60 @@ export interface SearchProps {
   disabled?: boolean | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<SearchOverridableBinding, TokenRef | undefined>> | undefined;
-  /** Fired on every keystroke with the query. */
-  onChange?: ((value: string) => void) | undefined;
+  /** The root view (the search landmark). */
+  ref?: React.Ref<ViewInstance> | undefined;
+  /** Fired on every keystroke with the query; the caller fetches suggestions here. */
+  onChangeText?: ((value: string) => void) | undefined;
   /** Fired on Enter, the submit button, or choosing a suggestion, with the trimmed query. Never fires for an empty query. */
-  onSubmit?: ((value: string) => void) | undefined;
-  /** Fired when the clear button, or an Escape that empties the field, clears the query. */
+  onSubmitEditing?: ((value: string) => void) | undefined;
+  /** Fired when the field is emptied — by the clear button, or by an Escape that clears it when no suggestions are open. */
   onClear?: (() => void) | undefined;
 }
 
+/** copy.* — used verbatim; `suggestionsCount` is selected by `Intl.PluralRules` on `count`. */
 const COPY = {
   clear: 'Clear search',
   submit: 'Search',
   loading: 'Loading suggestions',
-  suggestionsCount: (count: number): string => `${count} suggestions available`,
+  suggestionsCount: { one: '{count} suggestion available', other: '{count} suggestions available' },
   noSuggestions: 'No suggestions',
 } as const;
 
+function suggestionsCount(count: number): string {
+  const form = new Intl.PluralRules(undefined).select(count) === 'one' ? COPY.suggestionsCount.one : COPY.suggestionsCount.other;
+  return form.replace('{count}', String(count));
+}
+
 const FONT_SIZE_TOKEN = { md: 'fontSizeMd', lg: 'fontSizeLg' } as const satisfies Record<SearchSize, keyof Tokens>;
+const PADDING_BLOCK_TOKEN = { md: 'spaceSm', lg: 'spaceMd' } as const satisfies Record<SearchSize, keyof Tokens>;
+/** The glyph keeps its proportion to the text: `sm` at `md`, `md` at `lg`. */
 const ICON_SIZE = { md: 'sm', lg: 'md' } as const satisfies Record<SearchSize, 'sm' | 'md'>;
 
 /**
- * Search — a field shaped so nobody has to read a label: a magnifier glyph, a pill,
- * a clear button, and submission on Enter like every search field people have used.
+ * Search — the field people look for first: a magnifier glyph, a pill, a clear button,
+ * and submission on Enter like every search field they have used.
  *
- * When to use: Use for free-text search over a site, an app, or a large dataset.
- * Add `suggestions` when the backend can offer completions; keep `landmark` on for
- * the one primary search so screen-reader users can jump to it. Do not use it for a
- * field with a specific expected value (Input) or for choosing from a known list
+ * When to use: free-text search over a site, an app, or a large dataset. Add
+ * `suggestions` when the backend can offer completions; keep `landmark` on for the one
+ * primary search. Not for a specific value (Input) or choosing from a known list
  * (Select, Combobox).
  *
- * Renders a `TextInput` (`returnKeyType="search"`, `accessibilityRole="search"`)
- * preceded by a decorative `search` Icon, with the system clear `Button` shown once
- * there is text and a submit `Button` always rendered. `landmark` wraps the whole
- * field in the composed `Landmark` (`role="search"`) rather than a hand-rolled
- * `accessibilityRole`. Setting `suggestions` — even to an empty array — opens an
- * inline `Listbox` (`embedded`) below the field on focus (there is no overlay on a
- * phone: the list takes the space under the field); choosing a row fills the query
- * with its label and submits it. A debounced, doubly-announced (inline live region
- * for Android, `AccessibilityInfo.announceForAccessibility` for iOS) status reports
- * the suggestion count or `copy.loading`. Escape (reachable via a hardware keyboard
- * or react-native-web; on-screen keyboards do not emit it) closes the suggestions
- * when open, otherwise clears the field and fires `onClear`, matching the clear
- * button's own behavior. The query never submits empty. `disabled` dims the whole
- * group with `disabledOpacity` and blocks the field and both buttons.
+ * Renders a root `View` (`accessibilityRole="search"` when `landmark`) holding the
+ * optional visible label and a pill row: a decorative `search` Icon, a `TextInput`
+ * (`returnKeyType="search"`, `clearButtonMode="never"`), the system clear `Button`
+ * (ghost, sm, iconOnly, `close`) while there is text, and the submit `Button` (ghost,
+ * sm, iconOnly, `arrow-right`), always rendered. With `suggestions` set, an embedded
+ * `Listbox` renders inline below the field while it has focus (no overlay: on a phone
+ * the list takes the space under the field) and closes on blur; a tap fills the query
+ * with the row's label and submits it. Listbox rows are touch Pressables with no key
+ * events, so there is no arrow-key highlight and Enter always submits the typed query.
+ * The suggestion count, `copy.noSuggestions` or `copy.loading` is announced through a
+ * visually hidden live region (Android, react-native-web) and
+ * `AccessibilityInfo.announceForAccessibility` (iOS). Escape, where a hardware keyboard
+ * reports it, closes the list if open, otherwise clears the field and fires `onClear`.
+ * `name` and `action` have no native meaning; `action` warns under `__DEV__`. Inside a
+ * Form the query registers under `name`. `disabled` dims the whole field with
+ * `disabledOpacity`.
  */
 export function Search({
   label,
@@ -132,149 +143,171 @@ export function Search({
   size = 'md',
   disabled = false,
   overrides,
-  onChange,
-  onSubmit,
+  ref,
+  onChangeText,
+  onSubmitEditing,
   onClear,
 }: SearchProps): React.JSX.Element {
   const { tokens: t } = useTheme();
+  const form = useFormContext();
   const inputRef = React.useRef<TextInputInstance>(null);
+  /** True between a press starting in the list and its release, so the input's blur does not unmount the row being tapped. */
+  const pressingList = React.useRef(false);
 
   const [internalValue, setInternalValue] = React.useState<string>(defaultValue ?? '');
   const [open, setOpen] = React.useState(false);
   const [focused, setFocused] = React.useState(false);
 
-  const isValueControlled = value !== undefined;
-  const currentValue = isValueControlled ? (value as string) : internalValue;
-  const isDisabled = disabled;
+  const isControlled = value !== undefined;
+  const currentValue = isControlled ? value : internalValue;
+  const isDisabled = disabled || (form?.disabled ?? false);
   const hasSuggestions = suggestions !== undefined;
+  const showList = open && hasSuggestions && !isDisabled;
 
-  const commitValue = (next: string): void => {
-    if (!isValueControlled) {
+  const latest = React.useRef(currentValue);
+  latest.current = currentValue;
+
+  const setQuery = (next: string): void => {
+    latest.current = next;
+    if (!isControlled) {
       setInternalValue(next);
     }
-    onChange?.(next);
+    onChangeText?.(next);
   };
 
-  const commitSubmit = (raw: string): void => {
+  const submit = (raw: string): void => {
+    setOpen(false);
     const trimmed = raw.trim();
     if (trimmed === '') {
       return;
     }
-    onSubmit?.(trimmed);
+    onSubmitEditing?.(trimmed);
   };
 
-  const focusFieldA11y = (): void => {
-    const node = inputRef.current ? findNodeHandle(inputRef.current) : null;
-    if (node != null) {
-      AccessibilityInfo.setAccessibilityFocus(node);
-    }
+  const clear = (): void => {
+    setQuery('');
+    onClear?.();
   };
+
+  React.useEffect(() => {
+    if (__DEV__ && action !== undefined) {
+      console.warn('Search: `action` has no effect on React Native; handle `onSubmitEditing` instead.');
+    }
+  }, [action]);
+
+  const handle = React.useMemo<FormFieldHandle>(
+    () => ({
+      getValue: () => latest.current,
+      validate: () => null,
+      focus: () => {
+        const input = inputRef.current;
+        if (input === null) {
+          return;
+        }
+        input.focus();
+        const node = findNodeHandle(input);
+        if (node != null) {
+          AccessibilityInfo.setAccessibilityFocus(node);
+        }
+      },
+    }),
+    [],
+  );
+
+  const register = form?.register;
+  const unregister = form?.unregister;
+  React.useEffect(() => {
+    if (register === undefined || unregister === undefined || isDisabled) {
+      return undefined;
+    }
+    register(name, handle);
+    return () => unregister(name);
+  }, [register, unregister, name, handle, isDisabled]);
 
   const handleChangeText = (text: string): void => {
-    commitValue(text);
-    if (hasSuggestions) {
-      setOpen(true);
-    }
+    setQuery(text);
+    setOpen(true);
   };
 
   const handleFocus = (): void => {
     setFocused(true);
-    if (hasSuggestions) {
-      setOpen(true);
-    }
+    setOpen(true);
   };
 
   const handleBlur = (): void => {
     setFocused(false);
-    setOpen(false);
-  };
-
-  const handleSubmitEditing = (): void => {
-    commitSubmit(currentValue);
-    setOpen(false);
-  };
-
-  const handleSubmitPress = (): void => {
-    commitSubmit(currentValue);
-    setOpen(false);
-  };
-
-  const handleClear = (): void => {
-    if (isDisabled) {
-      return;
+    if (!pressingList.current) {
+      setOpen(false);
     }
-    commitValue('');
-    onClear?.();
-    inputRef.current?.focus();
   };
 
-  // Only reachable via a hardware keyboard or react-native-web; on-screen keyboards
-  // do not emit an Escape key.
+  const handleListPressStart = (): void => {
+    pressingList.current = true;
+  };
+
+  const handleListPressEnd = (): void => {
+    // The row's press handler runs after the release; close afterwards if focus did not come back.
+    setTimeout(() => {
+      pressingList.current = false;
+      if (inputRef.current?.isFocused() !== true) {
+        setOpen(false);
+      }
+    }, 0);
+  };
+
+  // Reported only where a hardware keyboard (or react-native-web) delivers Escape.
   const handleKeyPress = (event: TextInputKeyPressEvent): void => {
     if (event.nativeEvent.key !== 'Escape') {
       return;
     }
-    if (open) {
+    if (showList) {
       setOpen(false);
-      focusFieldA11y();
       return;
     }
-    if (currentValue !== '') {
-      commitValue('');
-      onClear?.();
+    if (latest.current !== '') {
+      clear();
     }
+  };
+
+  const handleClearPress = (): void => {
+    if (isDisabled) {
+      return;
+    }
+    clear();
+    inputRef.current?.focus();
   };
 
   const handleSuggestionChange = (next: ListboxValue): void => {
-    const raw = Array.isArray(next) ? next[0] : next;
-    if (raw === undefined) {
+    const picked = Array.isArray(next) ? next[0] : next;
+    const chosen = suggestions?.find((suggestion) => suggestion.value === picked);
+    if (chosen === undefined) {
       return;
     }
-    const chosen = suggestions?.find((suggestion) => suggestion.value === raw);
-    const nextValue = chosen?.label ?? raw;
-    commitValue(nextValue);
-    setOpen(false);
-    commitSubmit(nextValue);
+    pressingList.current = false;
+    setQuery(chosen.label);
+    submit(chosen.label);
   };
 
-  const resultCount = suggestions?.length ?? 0;
-  const statusText = loading ? COPY.loading : resultCount === 0 ? COPY.noSuggestions : COPY.suggestionsCount(resultCount);
+  const count = suggestions?.length ?? 0;
+  const statusText = !showList ? '' : loading ? COPY.loading : count === 0 ? COPY.noSuggestions : suggestionsCount(count);
 
-  // Debounced polite announcement of the suggestion count / loading state, matching
-  // the web model's ~500ms debounce (`motion.duration.base` × 2). The inline live
-  // region below covers Android; iOS ignores `accessibilityLiveRegion`.
+  // Debounced like Combobox (`motion.duration.base` × 2) so fast typing does not queue an announcement per keystroke.
   React.useEffect(() => {
-    if (!open || !hasSuggestions) {
+    if (Platform.OS !== 'ios' || statusText === '') {
       return undefined;
     }
-    const timeout = setTimeout(() => {
-      AccessibilityInfo.announceForAccessibility(statusText);
-    }, t.motionDurationBase * 2);
+    const timeout = setTimeout(() => AccessibilityInfo.announceForAccessibility(statusText), t.motionDurationBase * 2);
     return () => clearTimeout(timeout);
-  }, [open, hasSuggestions, statusText, t.motionDurationBase]);
+  }, [statusText, t.motionDurationBase]);
 
-  React.useEffect(() => {
-    if (__DEV__ && action !== undefined && action !== '') {
-      console.warn('Search: `action` has no effect on React Native; handle `onSubmit` instead.');
-    }
-  }, [action]);
-
-  const borderFocusColor = overrides?.borderFocus ? (resolveToken(t, overrides.borderFocus) as string) : t.colorBorderFocus;
   const borderWidth = overrides?.borderWidth ? (resolveToken(t, overrides.borderWidth) as number) : t.borderWidthThin;
   const radius = overrides?.radius ? (resolveToken(t, overrides.radius) as number) : t.radiusFull;
   const paddingInline = overrides?.paddingInline ? (resolveToken(t, overrides.paddingInline) as number) : t.spaceMd;
-  const paddingBlock =
-    size === 'lg'
-      ? overrides?.paddingBlockLg
-        ? (resolveToken(t, overrides.paddingBlockLg) as number)
-        : t.spaceMd
-      : overrides?.paddingBlock
-        ? (resolveToken(t, overrides.paddingBlock) as number)
-        : t.spaceSm;
+  const paddingBlock = overrides?.paddingBlock ? (resolveToken(t, overrides.paddingBlock) as number) : t[PADDING_BLOCK_TOKEN[size]];
   const affixGap = overrides?.affixGap ? (resolveToken(t, overrides.affixGap) as number) : t.layoutGapTight;
   const fontFamily = overrides?.fontFamily ? (resolveToken(t, overrides.fontFamily) as string) : t.fontFamilyBody;
   const fontSize = overrides?.fontSize ? (resolveToken(t, overrides.fontSize) as number) : t[FONT_SIZE_TOKEN[size]];
-  const lineHeightMultiplier = overrides?.lineHeight ? (resolveToken(t, overrides.lineHeight) as number) : t.fontLineHeightNormal;
+  const lineHeight = overrides?.lineHeight ? (resolveToken(t, overrides.lineHeight) as number) : t.fontLineHeightNormal;
   const suggestionsOffset = overrides?.suggestionsOffset ? (resolveToken(t, overrides.suggestionsOffset) as number) : t.space1;
   const popupSurface = overrides?.popupSurface ? (resolveToken(t, overrides.popupSurface) as string) : t.colorOverlaySurface;
   const popupBorder = overrides?.popupBorder ? (resolveToken(t, overrides.popupBorder) as string) : t.colorBorder;
@@ -283,42 +316,43 @@ export function Search({
   const partGap = overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.space1;
   const disabledOpacity = overrides?.disabledOpacity ? (resolveToken(t, overrides.disabledOpacity) as number) : t.opacityDisabled;
 
+  // The focus border is wider than the resting one; the padding gives the difference back so the text does not move.
   const activeBorderWidth = focused ? t.borderWidthFocus : borderWidth;
-  const inset = t.borderWidthFocus - borderWidth;
+  const borderCompensation = Math.max(0, Math.max(t.borderWidthFocus, borderWidth) - activeBorderWidth);
 
-  const showClear = !isDisabled && currentValue !== '';
-
-  const containerStyle: ViewStyle = {
+  const rootStyle: ViewStyle = {
     flexDirection: 'column',
     gap: partGap,
     opacity: isDisabled ? disabledOpacity : 1,
   };
 
-  const fieldRowStyle: ViewStyle = {
+  const fieldGroupStyle: ViewStyle = { flexDirection: 'column', gap: suggestionsOffset };
+
+  const fieldStyle: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
     gap: affixGap,
     minHeight: t.sizeTargetComfortable,
     backgroundColor: t.colorControlBackground,
     borderWidth: activeBorderWidth,
-    borderColor: focused ? borderFocusColor : t.colorBorderStrong,
+    borderColor: focused ? t.colorBorderFocus : t.colorBorderStrong,
     borderRadius: radius,
-    paddingHorizontal: paddingInline + inset,
-    paddingVertical: paddingBlock + inset,
+    paddingHorizontal: paddingInline + borderCompensation,
+    paddingVertical: paddingBlock + borderCompensation,
   };
 
-  const inputTextStyle: TextStyle = {
+  const inputStyle: TextStyle = {
     flexGrow: 1,
     flexShrink: 1,
     flexBasis: 0,
+    padding: 0,
     fontFamily,
     fontSize,
-    lineHeight: toLineHeight(fontSize, lineHeightMultiplier),
+    lineHeight: toLineHeight(fontSize, lineHeight),
     color: t.colorForeground,
   };
 
-  const popupOuterStyle: ViewStyle = {
-    marginTop: suggestionsOffset,
+  const suggestionsStyle: ViewStyle = {
     borderWidth: t.borderWidthThin,
     borderColor: popupBorder,
     borderRadius: popupRadius,
@@ -327,86 +361,88 @@ export function Search({
     ...popupShadow,
   };
 
-  const listboxOverrides = { fontFamily: overrides?.fontFamily, fontSize: overrides?.fontSize, lineHeight: overrides?.lineHeight, disabledOpacity: overrides?.disabledOpacity };
-  const labelOverrides = { fontFamily: overrides?.fontFamily, fontSize: overrides?.fontSize, lineHeight: overrides?.lineHeight };
+  const visuallyHidden: ViewStyle = { position: 'absolute', width: 1, height: 1, overflow: 'hidden' };
 
-  const content = (
-    <View testID="Search" style={containerStyle}>
+  return (
+    <View ref={ref} testID="Search" accessibilityRole={landmark ? 'search' : undefined} style={rootStyle}>
       {showLabel ? (
-        <Text weight="medium" overrides={labelOverrides}>
-          {label}
-        </Text>
+        <View testID="Search.label" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          <Text>{label}</Text>
+        </View>
       ) : null}
-      <View style={fieldRowStyle} testID="Search.field">
-        <Icon name="search" size={ICON_SIZE[size]} color={t.colorForegroundMuted} />
-        <TextInput
-          ref={inputRef}
-          accessibilityRole="search"
-          accessibilityLabel={label}
-          accessibilityState={{ disabled: isDisabled }}
-          editable={!isDisabled}
-          value={currentValue}
-          placeholder={placeholder}
-          placeholderTextColor={t.colorForegroundMuted}
-          returnKeyType="search"
-          autoCapitalize="none"
-          autoCorrect={false}
-          allowFontScaling
-          onChangeText={handleChangeText}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          onKeyPress={handleKeyPress}
-          onSubmitEditing={handleSubmitEditing}
-          style={inputTextStyle}
-          testID="Search.input"
-        />
-        {showClear ? (
-          <Button
-            label={COPY.clear}
-            variant="ghost"
-            size="sm"
-            iconOnly
-            leadingIcon={<Icon name="close" size="xs" color={t.colorForegroundMuted} />}
-            onPress={handleClear}
+      <View style={fieldGroupStyle}>
+        <View testID="Search.field" style={fieldStyle}>
+          <View testID="Search.icon" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+            <Icon name="search" size={ICON_SIZE[size]} color={t.colorForegroundMuted} />
+          </View>
+          <TextInput
+            ref={inputRef}
+            testID="Search.input"
+            accessibilityRole={Platform.OS === 'web' ? undefined : 'search'}
+            accessibilityLabel={label}
+            accessibilityState={{ disabled: isDisabled, expanded: hasSuggestions ? showList : undefined }}
+            editable={!isDisabled}
+            value={currentValue}
+            placeholder={placeholder}
+            placeholderTextColor={t.colorForegroundMuted}
+            returnKeyType="search"
+            clearButtonMode="never"
+            autoCapitalize="none"
+            autoCorrect={false}
+            onChangeText={handleChangeText}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            onKeyPress={handleKeyPress}
+            onSubmitEditing={() => submit(latest.current)}
+            style={inputStyle}
           />
+          {currentValue !== '' && !isDisabled ? (
+            <View testID="Search.clearButton">
+              <Button
+                label={COPY.clear}
+                variant="ghost"
+                size="sm"
+                iconOnly
+                leadingIcon={<Icon name="close" size="xs" color={t.colorForegroundMuted} />}
+                onPress={handleClearPress}
+              />
+            </View>
+          ) : null}
+          <View testID="Search.submitButton">
+            <Button
+              label={COPY.submit}
+              variant="ghost"
+              size="sm"
+              iconOnly
+              disabled={isDisabled}
+              leadingIcon={<Icon name="arrow-right" size="xs" color={t.colorForegroundMuted} />}
+              onPress={() => submit(latest.current)}
+            />
+          </View>
+        </View>
+        {showList ? (
+          <View
+            testID="Search.suggestions"
+            style={suggestionsStyle}
+            onTouchStart={handleListPressStart}
+            onTouchEnd={handleListPressEnd}
+            onPointerDown={handleListPressStart}
+            onPointerUp={handleListPressEnd}
+          >
+            <Listbox
+              label={label}
+              options={loading ? [] : (suggestions ?? [])}
+              value=""
+              embedded
+              emptyMessage={loading ? COPY.loading : COPY.noSuggestions}
+              onChange={handleSuggestionChange}
+            />
+          </View>
         ) : null}
-        <Button
-          label={COPY.submit}
-          variant="ghost"
-          size="sm"
-          iconOnly
-          disabled={isDisabled}
-          leadingIcon={<Icon name="search" size="xs" color={t.colorForegroundMuted} />}
-          onPress={handleSubmitPress}
-        />
       </View>
-      {open && hasSuggestions ? (
-        <View accessibilityLiveRegion="polite" importantForAccessibility="yes" testID="Search.status">
-          <Text size="xs" tone="muted">
-            {statusText}
-          </Text>
-        </View>
-      ) : null}
-      {open && hasSuggestions ? (
-        <View style={popupOuterStyle} testID="Search.suggestions">
-          <Listbox
-            label={`${label}: ${COPY.suggestionsCount(resultCount)}`}
-            options={loading ? [] : (suggestions ?? [])}
-            embedded
-            emptyMessage={loading ? COPY.loading : COPY.noSuggestions}
-            onChange={handleSuggestionChange}
-            overrides={listboxOverrides}
-          />
-        </View>
-      ) : null}
+      <View testID="Search.status" accessibilityLiveRegion="polite" style={visuallyHidden}>
+        <Text>{statusText}</Text>
+      </View>
     </View>
-  );
-
-  return landmark ? (
-    <Landmark role="search" label={label}>
-      {content}
-    </Landmark>
-  ) : (
-    content
   );
 }

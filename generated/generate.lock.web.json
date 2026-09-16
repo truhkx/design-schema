@@ -334,19 +334,21 @@
     }
   },
   "DatePicker.web": {
-    "hash": "98a60afe7a856ad9",
-    "lastAttemptHash": "98a60afe7a856ad9",
-    "generatedAt": "2026-09-10T23:08:56+00:00",
-    "model": "sonnet",
+    "hash": "1a5d2c7640bb9e3b",
+    "lastAttemptHash": "1a5d2c7640bb9e3b",
+    "generatedAt": "2026-09-16T14:08:33+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.7041,
+    "costUsd": 4.0017,
     "files": [
       "packages/react/src/DatePicker.css",
       "packages/react/src/DatePicker.stories.tsx",
-      "packages/react/src/DatePicker.tsx"
+      "packages/react/src/DatePicker.test.tsx",
+      "packages/react/src/DatePicker.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 3,
+    "gaps": 21,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -716,20 +718,20 @@
     }
   },
   "NumberInput.web": {
-    "hash": "3afa6e042c1f36b0",
-    "lastAttemptHash": "3afa6e042c1f36b0",
-    "generatedAt": "2026-09-10T22:53:10+00:00",
-    "model": "sonnet",
+    "hash": "2dc034005d73005a",
+    "lastAttemptHash": "2dc034005d73005a",
+    "generatedAt": "2026-09-16T13:24:16+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.3445,
+    "costUsd": 2.3717,
     "files": [
       "packages/react/src/NumberInput.css",
       "packages/react/src/NumberInput.stories.tsx",
-      "packages/react/src/NumberInput.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/NumberInput.test.tsx",
+      "packages/react/src/NumberInput.tsx"
     ],
-    "gaps": 7,
+    "gaps": 17,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -786,20 +788,20 @@
     }
   },
   "ProgressBar.web": {
-    "hash": "3c5d59b0788ffa74",
-    "lastAttemptHash": "3c5d59b0788ffa74",
-    "generatedAt": "2026-09-10T22:56:10+00:00",
-    "model": "sonnet",
+    "hash": "c436f2d548d1192c",
+    "lastAttemptHash": "c436f2d548d1192c",
+    "generatedAt": "2026-09-16T13:35:22+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.5912,
+    "costUsd": 1.3854,
     "files": [
       "packages/react/src/ProgressBar.css",
       "packages/react/src/ProgressBar.stories.tsx",
-      "packages/react/src/ProgressBar.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/ProgressBar.test.tsx",
+      "packages/react/src/ProgressBar.tsx"
     ],
-    "gaps": 1,
+    "gaps": 15,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -834,20 +836,20 @@
     }
   },
   "Search.web": {
-    "hash": "281f8595cf55e940",
-    "lastAttemptHash": "281f8595cf55e940",
-    "generatedAt": "2026-09-10T23:03:25+00:00",
-    "model": "sonnet",
+    "hash": "cf72b6362e5ffa0d",
+    "lastAttemptHash": "cf72b6362e5ffa0d",
+    "generatedAt": "2026-09-16T13:52:40+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.4981,
+    "costUsd": 2.1924,
     "files": [
       "packages/react/src/Search.css",
       "packages/react/src/Search.stories.tsx",
-      "packages/react/src/Search.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Search.test.tsx",
+      "packages/react/src/Search.tsx"
     ],
-    "gaps": 6,
+    "gaps": 15,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -929,18 +931,20 @@
     }
   },
   "Slider.web": {
-    "hash": "cc096e164d726ce5",
-    "lastAttemptHash": "cc096e164d726ce5",
-    "generatedAt": "2026-09-10T22:47:52+00:00",
-    "model": "sonnet",
+    "hash": "cfa6468a0db492d2",
+    "lastAttemptHash": "cfa6468a0db492d2",
+    "generatedAt": "2026-09-16T13:12:36+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.292,
+    "costUsd": 1.8298,
     "files": [
+      "packages/react/src/Slider.css",
       "packages/react/src/Slider.stories.tsx",
+      "packages/react/src/Slider.test.tsx",
       "packages/react/src/Slider.tsx"
     ],
-    "gaps": 5,
+    "gaps": 15,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -998,19 +1002,20 @@
     }
   },
   "Stepper.web": {
-    "hash": "30803f4258284090",
-    "lastAttemptHash": "30803f4258284090",
-    "generatedAt": "2026-09-10T23:01:39+00:00",
-    "model": "sonnet",
+    "hash": "a669608cb32e63a4",
+    "lastAttemptHash": "a669608cb32e63a4",
+    "generatedAt": "2026-09-16T13:43:08+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.0114,
+    "costUsd": 1.7787,
     "files": [
       "packages/react/src/Stepper.css",
       "packages/react/src/Stepper.stories.tsx",
+      "packages/react/src/Stepper.test.tsx",
       "packages/react/src/Stepper.tsx"
     ],
-    "gaps": 4,
+    "gaps": 11,
     "gates": {
       "parse": true,
       "contrast": true,

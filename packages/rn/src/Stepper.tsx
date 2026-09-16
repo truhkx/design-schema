@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { Animated, Pressable, Text as RNText, View, useWindowDimensions } from 'react-native';
-import type { PressableStateCallbackType, TextStyle, ViewStyle } from 'react-native';
+import type { TextStyle, ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Icon } from './Icon';
@@ -13,22 +13,15 @@ export type StepperNavigable = 'none' | 'completed' | 'all';
 export type StepperStepStatus = 'complete' | 'current' | 'upcoming' | 'error';
 
 /** One step. `status` is derived from `current` when omitted: before it complete, after it upcoming. */
-export type StepperStep = {
-  id: string;
-  label: string;
-  description?: string | undefined;
-  status?: StepperStepStatus | undefined;
-};
+export type StepperStep = { id: string; label: string; description?: string; status?: 'complete' | 'current' | 'upcoming' | 'error' };
 
 /** The style bindings a caller may replace with a different token; see the component's overrides contract. */
 export type StepperOverridableBinding =
   | 'indicatorSize'
   | 'indicatorBackground'
-  | 'indicatorBorderWidth'
   | 'indicatorFontSize'
   | 'indicatorFontWeight'
   | 'connector'
-  | 'connectorWidth'
   | 'labelWeight'
   | 'labelCurrentWeight'
   | 'labelSize'
@@ -41,118 +34,80 @@ export type StepperOverridableBinding =
   | 'transition';
 
 export interface StepperProps {
-  /** Accessible name of the navigation landmark. Defaults to `copy.navLabel`. */
+  /** Accessible name of the list. Defaults to `copy.navLabel`. */
   label?: string | undefined;
-  /** The steps in order. */
+  /** The steps in order. `status` is derived from `current` when omitted: before it complete, after it upcoming. */
   steps: StepperStep[];
   /** The id of the current step. */
   current: string;
   /** Vertical shows descriptions under each label and suits a side column; horizontal collapses to `compact` below the prose width. */
   orientation?: StepperOrientation | undefined;
-  /** Which steps are Pressables: `none` (display only), `completed` steps (the usual — you can go back, not skip ahead), or `all` (a settings-style flow where order does not matter). */
+  /**
+   * Which steps can be activated: `none` (display only), `completed` (every step before the current one by
+   * position, including one marked `error`), or `all` (a settings-style flow where order does not matter).
+   */
   navigable?: StepperNavigable | undefined;
-  /** Show only the current step's label and "Step 2 of 5"; the indicators stay. Automatic on narrow viewports for horizontal steppers. Has no effect on `vertical`. */
+  /**
+   * Show only the current step's label and "Step 2 of 5"; the indicators stay. Horizontal only, set by hand or
+   * automatically when the window is narrower than `layout.maxWidth.prose`; does nothing on a vertical stepper.
+   */
   compact?: boolean | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<StepperOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when a navigable step is chosen, with its id. The container changes `current`; the stepper never changes it itself. */
   onStepSelect?: ((id: string) => void) | undefined;
+  /** The root list view. */
+  ref?: React.Ref<ViewInstance> | undefined;
 }
 
 const COPY = {
   navLabel: 'Progress',
-  stepOf: (n: number, total: number): string => `Step ${n} of ${total}`,
+  stepOf: 'Step {current} of {total}',
   complete: 'completed',
   current: 'current step',
   error: 'has an error',
-  stepLabel: (n: number, stepLabelText: string): string => `Step ${n}: ${stepLabelText}`,
+  stepLabel: 'Step {n}: {label}',
 } as const;
 
-/** Resolves a step's displayed status: an explicit `status` wins, otherwise position relative to `currentIndex` decides. */
-function statusFor(step: StepperStep, index: number, currentIndex: number): StepperStepStatus {
-  if (step.status !== undefined) {
-    return step.status;
-  }
-  if (currentIndex === -1) {
-    return 'upcoming';
-  }
-  if (index < currentIndex) {
-    return 'complete';
-  }
-  if (index === currentIndex) {
-    return 'current';
-  }
-  return 'upcoming';
+function format(template: string, params: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (match, key: string) => (key in params ? String(params[key]) : match));
 }
 
-interface IndicatorColors {
-  background: string;
-  borderColor: string;
+/** An explicit `status` wins; otherwise position relative to `currentIndex` decides. */
+function statusFor(step: StepperProps['steps'][number], index: number, currentIndex: number): StepperStepStatus {
+  if (step.status !== undefined) return step.status;
+  if (currentIndex === -1 || index > currentIndex) return 'upcoming';
+  return index < currentIndex ? 'complete' : 'current';
 }
 
-function indicatorColorsFor(status: StepperStepStatus, t: Tokens, indicatorBackground: string): IndicatorColors {
-  switch (status) {
-    case 'complete':
-      return { background: t.colorControlSelectedBackground, borderColor: t.colorBorderStrong };
-    case 'current':
-      return { background: indicatorBackground, borderColor: t.colorControlSelectedBackground };
-    case 'error':
-      return { background: t.colorStatusDangerBackground, borderColor: t.colorStatusDangerIcon };
-    case 'upcoming':
-    default:
-      return { background: indicatorBackground, borderColor: t.colorBorderStrong };
-  }
-}
-
-interface StepStyleTokens {
+interface Resolved {
   indicatorSize: number;
   indicatorBackground: string;
-  indicatorBorderWidth: number;
   indicatorFontSize: number;
-  indicatorFontSizeRef?: TokenRef | undefined;
   indicatorFontWeight: number;
-  stepHoverColor: string;
+  connector: string;
+  stepHover: string;
   stepRadius: number;
+  stepGap: number;
   partGap: number;
   fontFamily: string;
-  fontFamilyRef?: TokenRef | undefined;
-  minTarget: number;
-  focusRingColor: string;
-  focusRingWidth: number;
-  labelWeightRef?: TokenRef | undefined;
-  labelCurrentWeightRef?: TokenRef | undefined;
-  labelSizeRef?: TokenRef | undefined;
-  descriptionSizeRef?: TokenRef | undefined;
+  transition: number;
 }
 
 /**
- * Stepper — a map of a journey with a "you are here". It sets expectations, shows
- * progress without a bar, and gives people a way back to a step they finished.
- * Navigation, not a form control.
+ * Stepper — a map of a journey with a "you are here". It sets expectations, shows progress without a bar, and
+ * gives people a way back to a step they finished. Navigation, not a form control (the number-stepping field is
+ * NumberInput).
  *
- * When to use: Use a Stepper for a flow with three to about seven ordered steps that
- * each fit on a screen: checkout, account setup, a report builder. Vertical with
- * descriptions for flows that need explanation; horizontal for short, familiar ones.
- * Leave `navigable="completed"` so people can correct earlier answers without losing
- * later ones. Do not use it for two steps, for more than about eight, as Tabs, or to
- * show task progress (ProgressBar).
+ * Use it for three to about seven ordered steps: vertical with descriptions for flows that need explanation,
+ * horizontal for short, familiar ones. Do not use it for two steps, for more than about eight, as Tabs, or to show
+ * task progress (ProgressBar).
  *
- * Renders a `View` with `accessibilityRole="list"` and `accessibilityLabel`. Each
- * step is its own `Pressable` (navigable) or `View` (inert) carrying an
- * `accessibilityLabel` built from `copy.stepLabel` plus the status word, and
- * `accessibilityState.selected` for the step whose id matches `current` — not
- * necessarily the one whose derived/overridden `status` is `"current"`, since an
- * explicit `status: "error"` on the current step still needs to read as "here" to
- * assistive technology while showing the danger indicator. Complete steps show the
- * system `Icon` (`check`), error steps show `danger`; both are decorative — the
- * meaning is carried by the accessible name and the visually-adjacent status word.
- * Connectors are separate decorative `View`s between steps that cross-fade from
- * `connector` to `connectorComplete` over `transition` with `motion.easing.standard`
- * (skipped under reduced motion) as the step before them completes; the indicator
- * itself switches instantly since it has four discrete states rather than one
- * progress value. `navigable="completed"` means every step before `current` by
- * position, including one marked `error`. Below `layout.maxWidth.prose` a horizontal
- * stepper automatically behaves as `compact`, same as the explicit prop.
+ * Renders a `View` with `accessibilityRole="list"` named by `label` (React Native has no `nav` landmark). Each step
+ * is a `Pressable` (navigable) or an `accessible` `View` whose `accessibilityLabel` is `copy.stepLabel` plus the
+ * status word, with `accessibilityState.selected` on the step `current` names. An explicit `status: "error"` wins
+ * for the indicator and the status word, while selection and the compact reveal still follow the id. The indicator
+ * switches between its four states at once; connectors cross-fade to `connectorComplete` over `transition`.
  */
 export function Stepper({
   label,
@@ -163,231 +118,208 @@ export function Stepper({
   compact = false,
   overrides,
   onStepSelect,
+  ref,
 }: StepperProps): React.JSX.Element {
   const { tokens: t } = useTheme();
   const reducedMotion = useReducedMotion();
   const { width: windowWidth } = useWindowDimensions();
 
+  const pick = <T extends number | string>(binding: StepperOverridableBinding, fallback: T): T => {
+    const ref_ = overrides?.[binding];
+    return ref_ ? (resolveToken(t, ref_) as T) : fallback;
+  };
+
+  const r: Resolved = {
+    indicatorSize: pick('indicatorSize', t.space6),
+    indicatorBackground: pick('indicatorBackground', t.colorControlBackground),
+    indicatorFontSize: pick('indicatorFontSize', t.fontSizeSm),
+    indicatorFontWeight: pick('indicatorFontWeight', t.fontWeightSemibold),
+    connector: pick('connector', t.colorBorder),
+    stepHover: pick('stepHover', t.colorActionGhostBackgroundHover),
+    stepRadius: pick('stepRadius', t.radiusSm),
+    stepGap: pick('stepGap', t.layoutGapNormal),
+    partGap: pick('partGap', t.space2),
+    fontFamily: pick('fontFamily', t.fontFamilyBody),
+    transition: pick('transition', t.motionDurationFast),
+  };
+
   const currentIndex = steps.findIndex((step) => step.id === current);
   const isHorizontal = orientation === 'horizontal';
   const isCompact = isHorizontal && (compact || windowWidth < t.layoutMaxWidthProse);
-  const total = steps.length;
-
-  const indicatorSize = overrides?.indicatorSize ? (resolveToken(t, overrides.indicatorSize) as number) : t.space6;
-  const indicatorBackground = overrides?.indicatorBackground
-    ? (resolveToken(t, overrides.indicatorBackground) as string)
-    : t.colorControlBackground;
-  const indicatorBorderWidth = overrides?.indicatorBorderWidth
-    ? (resolveToken(t, overrides.indicatorBorderWidth) as number)
-    : t.borderWidthFocus;
-  const indicatorFontSize = overrides?.indicatorFontSize ? (resolveToken(t, overrides.indicatorFontSize) as number) : t.fontSizeSm;
-  const indicatorFontWeight = overrides?.indicatorFontWeight
-    ? (resolveToken(t, overrides.indicatorFontWeight) as number)
-    : t.fontWeightSemibold;
-  const connectorColor = overrides?.connector ? (resolveToken(t, overrides.connector) as string) : t.colorBorder;
-  const connectorWidth = overrides?.connectorWidth ? (resolveToken(t, overrides.connectorWidth) as number) : t.borderWidthFocus;
-  const stepHoverColor = overrides?.stepHover ? (resolveToken(t, overrides.stepHover) as string) : t.colorActionGhostBackgroundHover;
-  const stepRadius = overrides?.stepRadius ? (resolveToken(t, overrides.stepRadius) as number) : t.radiusSm;
-  const stepGap = overrides?.stepGap ? (resolveToken(t, overrides.stepGap) as number) : t.layoutGapNormal;
-  const partGap = overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.space2;
-  const fontFamily = overrides?.fontFamily ? (resolveToken(t, overrides.fontFamily) as string) : t.fontFamilyBody;
-  const transitionDuration = overrides?.transition ? (resolveToken(t, overrides.transition) as number) : t.motionDurationFast;
-
-  const styleTokens: StepStyleTokens = {
-    indicatorSize,
-    indicatorBackground,
-    indicatorBorderWidth,
-    indicatorFontSize,
-    indicatorFontSizeRef: overrides?.indicatorFontSize,
-    indicatorFontWeight,
-    stepHoverColor,
-    stepRadius,
-    partGap,
-    fontFamily,
-    fontFamilyRef: overrides?.fontFamily,
-    minTarget: t.sizeTargetMin,
-    focusRingColor: t.colorBorderFocus,
-    focusRingWidth: t.borderWidthFocus,
-    labelWeightRef: overrides?.labelWeight,
-    labelCurrentWeightRef: overrides?.labelCurrentWeight,
-    labelSizeRef: overrides?.labelSize,
-    descriptionSizeRef: overrides?.descriptionSize,
-  };
-
-  const rootStyle: ViewStyle = isHorizontal ? { flexDirection: 'row', alignItems: 'flex-start' } : { flexDirection: 'column' };
 
   const nodes: React.ReactNode[] = [];
   steps.forEach((step, index) => {
-    const status = statusFor(step, index, currentIndex);
-    const isCurrentPosition = step.id === current;
-    const isNavigable = navigable === 'all' ? true : navigable === 'completed' ? index < currentIndex : false;
-
+    const isNavigable = navigable === 'all' || (navigable === 'completed' && currentIndex !== -1 && index < currentIndex);
     nodes.push(
       <StepControl
         key={step.id}
         step={step}
         index={index}
-        total={total}
-        status={status}
-        isCurrentPosition={isCurrentPosition}
+        total={steps.length}
+        status={statusFor(step, index, currentIndex)}
+        isCurrent={step.id === current}
         isNavigable={isNavigable}
         compact={isCompact}
         isHorizontal={isHorizontal}
         t={t}
-        s={styleTokens}
-        onSelect={(id) => onStepSelect?.(id)}
+        r={r}
+        overrides={overrides}
+        onStepSelect={onStepSelect}
       />,
     );
-
     if (index < steps.length - 1) {
       nodes.push(
         <Connector
           key={`connector-${step.id}`}
           isHorizontal={isHorizontal}
-          complete={status === 'complete'}
-          color={connectorColor}
-          completeColor={t.colorControlSelectedBackground}
-          width={connectorWidth}
-          gap={stepGap}
-          indicatorSize={indicatorSize}
+          complete={currentIndex !== -1 && index < currentIndex}
           reducedMotion={reducedMotion}
-          transitionDuration={transitionDuration}
           t={t}
+          r={r}
         />,
       );
     }
   });
 
   return (
-    <View testID="Stepper" accessibilityRole="list" accessibilityLabel={label ?? COPY.navLabel} style={rootStyle}>
+    <View
+      ref={ref}
+      testID="Stepper"
+      accessibilityRole="list"
+      accessibilityLabel={label ?? COPY.navLabel}
+      style={isHorizontal ? { flexDirection: 'row', alignItems: 'flex-start' } : { flexDirection: 'column' }}
+    >
       {nodes}
     </View>
   );
 }
 
 interface StepControlProps {
-  step: StepperStep;
+  step: StepperProps['steps'][number];
   index: number;
   total: number;
   status: StepperStepStatus;
-  isCurrentPosition: boolean;
+  isCurrent: boolean;
   isNavigable: boolean;
   compact: boolean;
   isHorizontal: boolean;
   t: Tokens;
-  s: StepStyleTokens;
-  onSelect: (id: string) => void;
+  r: Resolved;
+  overrides: StepperProps['overrides'];
+  onStepSelect: StepperProps['onStepSelect'];
 }
 
-/** One step's indicator, label and description. Its own component so focus/press state does not re-render the whole list. */
+/** One step's indicator, label and description; its own component so focus and hover state stay local. */
 function StepControl({
   step,
   index,
   total,
   status,
-  isCurrentPosition,
+  isCurrent,
   isNavigable,
   compact,
   isHorizontal,
   t,
-  s,
-  onSelect,
+  r,
+  overrides,
+  onStepSelect,
 }: StepControlProps): React.JSX.Element {
   const [focused, setFocused] = React.useState(false);
-  const colors = indicatorColorsFor(status, t, s.indicatorBackground);
-  const stepNumber = index + 1;
-  const stepName = COPY.stepLabel(stepNumber, step.label);
+  const [hovered, setHovered] = React.useState(false);
+  const n = index + 1;
+
   const statusWord =
-    status === 'error' ? COPY.error : isCurrentPosition ? COPY.current : status === 'complete' ? COPY.complete : undefined;
+    status === 'error'
+      ? COPY.error
+      : isCurrent || status === 'current'
+        ? COPY.current
+        : status === 'complete'
+          ? COPY.complete
+          : undefined;
+  const stepName = format(COPY.stepLabel, { n, label: step.label });
   const accessibleName = statusWord !== undefined ? `${stepName}, ${statusWord}` : stepName;
 
   const indicatorStyle: ViewStyle = {
-    width: s.indicatorSize,
-    height: s.indicatorSize,
-    borderRadius: s.indicatorSize / 2, // literal-ok: halves a token-derived size into a circle radius
-    borderWidth: s.indicatorBorderWidth,
-    borderColor: colors.borderColor,
-    backgroundColor: colors.background,
+    width: r.indicatorSize,
+    height: r.indicatorSize,
+    borderRadius: r.indicatorSize / 2, // literal-ok: half the indicator size makes the circle
+    borderWidth: t.borderWidthFocus,
+    borderColor:
+      status === 'error' ? t.colorStatusDangerIcon : status === 'current' ? t.colorControlSelectedBackground : t.colorBorderStrong,
+    backgroundColor:
+      status === 'error'
+        ? t.colorStatusDangerBackground
+        : status === 'complete'
+          ? t.colorControlSelectedBackground
+          : r.indicatorBackground,
     alignItems: 'center',
     justifyContent: 'center',
   };
-
   const numeralStyle: TextStyle = {
-    fontFamily: s.fontFamily,
-    fontSize: s.indicatorFontSize,
-    fontWeight: toFontWeight(s.indicatorFontWeight),
+    fontFamily: r.fontFamily,
+    fontSize: r.indicatorFontSize,
+    fontWeight: toFontWeight(r.indicatorFontWeight),
     color: t.colorForeground,
   };
+  const iconOverrides = overrides?.indicatorFontSize ? { size: overrides.indicatorFontSize } : undefined;
 
-  const indicatorContent =
-    status === 'complete' ? (
-      <Icon
-        name="check"
-        size="sm"
-        color={t.colorControlSelectedForeground}
-        overrides={s.indicatorFontSizeRef ? { size: s.indicatorFontSizeRef } : undefined}
-      />
-    ) : status === 'error' ? (
-      <Icon
-        name="danger"
-        size="sm"
-        color={t.colorStatusDangerForeground}
-        overrides={s.indicatorFontSizeRef ? { size: s.indicatorFontSizeRef } : undefined}
-      />
-    ) : (
-      <RNText allowFontScaling style={numeralStyle}>
-        {stepNumber}
-      </RNText>
-    );
+  const indicator = (
+    <View testID="Stepper.indicator" style={indicatorStyle} accessibilityElementsHidden importantForAccessibility="no">
+      {status === 'complete' ? (
+        <Icon name="check" size="sm" color={t.colorControlSelectedForeground} overrides={iconOverrides} />
+      ) : status === 'error' ? (
+        <Icon name="danger" size="sm" color={t.colorStatusDangerForeground} overrides={iconOverrides} />
+      ) : (
+        <RNText style={numeralStyle}>{n}</RNText>
+      )}
+    </View>
+  );
 
-  const showLabel = !compact || isCurrentPosition;
-  const labelWeight = isCurrentPosition ? 'semibold' : 'medium';
-  const labelWeightRef = isCurrentPosition ? s.labelCurrentWeightRef : s.labelWeightRef;
-  const labelTone = status === 'upcoming' ? 'muted' : 'default';
-  const textAlign = isHorizontal ? 'center' : 'start';
-
-  const textBlock = showLabel ? (
-    <View style={isHorizontal ? styles.textColumnHorizontal : styles.textColumnVertical}>
-      <Text
-        size="sm"
-        weight={labelWeight}
-        tone={labelTone}
-        align={textAlign}
-        overrides={{ fontSize: s.labelSizeRef, fontWeight: labelWeightRef, fontFamily: s.fontFamilyRef }}
-      >
-        {step.label}
-      </Text>
-      {compact && isCurrentPosition ? (
-        <Text size="xs" tone="muted" align={textAlign} overrides={{ fontFamily: s.fontFamilyRef }}>
-          {COPY.stepOf(stepNumber, total)}
+  const align = isHorizontal ? 'center' : 'start';
+  const showText = !compact || isCurrent;
+  const secondary = compact ? format(COPY.stepOf, { current: n, total }) : step.description;
+  const textBlock = showText ? (
+    <View style={isHorizontal ? { alignItems: 'center' } : { flex: 1 }}>
+      <View testID="Stepper.label">
+        <Text
+          size="sm"
+          weight={isCurrent ? 'semibold' : 'medium'}
+          tone={status === 'upcoming' ? 'muted' : 'default'}
+          align={align}
+          overrides={{
+            fontSize: overrides?.labelSize,
+            fontWeight: isCurrent ? overrides?.labelCurrentWeight : overrides?.labelWeight,
+            fontFamily: overrides?.fontFamily,
+          }}
+        >
+          {step.label}
         </Text>
-      ) : step.description !== undefined ? (
-        <Text size="xs" tone="muted" align={textAlign} overrides={{ fontSize: s.descriptionSizeRef, fontFamily: s.fontFamilyRef }}>
-          {step.description}
-        </Text>
+      </View>
+      {secondary !== undefined ? (
+        <View testID="Stepper.description">
+          <Text
+            size="xs"
+            tone="muted"
+            align={align}
+            overrides={{ fontSize: overrides?.descriptionSize, fontFamily: overrides?.fontFamily }}
+          >
+            {secondary}
+          </Text>
+        </View>
       ) : null}
     </View>
   ) : null;
 
-  const contentStyle: ViewStyle = isHorizontal
-    ? { alignItems: 'center', gap: s.partGap }
-    : { flexDirection: 'row', alignItems: 'flex-start', gap: s.partGap, flex: 1 };
-
-  const containerStyle = (pressed: boolean): ViewStyle => ({
-    ...contentStyle,
-    minWidth: s.minTarget,
-    minHeight: s.minTarget,
-    borderRadius: s.stepRadius,
-    backgroundColor: pressed ? s.stepHoverColor : 'transparent',
-    borderWidth: s.focusRingWidth,
-    borderColor: focused ? s.focusRingColor : 'transparent',
+  const containerStyle = (active: boolean): ViewStyle => ({
+    ...(isHorizontal ? { alignItems: 'center' } : { flexDirection: 'row', alignItems: 'flex-start' }),
+    gap: r.partGap,
+    minWidth: t.sizeTargetMin,
+    minHeight: t.sizeTargetMin,
+    borderRadius: r.stepRadius,
+    borderWidth: t.borderWidthFocus,
+    borderColor: focused ? t.colorBorderFocus : 'transparent',
+    backgroundColor: active ? r.stepHover : 'transparent',
   });
-
-  const indicator = (
-    <View style={indicatorStyle} accessibilityElementsHidden importantForAccessibility="no">
-      {indicatorContent}
-    </View>
-  );
 
   if (!isNavigable) {
     return (
@@ -395,7 +327,7 @@ function StepControl({
         testID="Stepper.step"
         accessible
         accessibilityLabel={accessibleName}
-        accessibilityState={{ selected: isCurrentPosition }}
+        accessibilityState={{ selected: isCurrent }}
         style={containerStyle(false)}
       >
         {indicator}
@@ -409,11 +341,13 @@ function StepControl({
       testID="Stepper.step"
       accessibilityRole="button"
       accessibilityLabel={accessibleName}
-      accessibilityState={{ selected: isCurrentPosition }}
-      onPress={() => onSelect(step.id)}
+      accessibilityState={{ selected: isCurrent }}
+      onPress={() => onStepSelect?.(step.id)}
       onFocus={() => setFocused(true)}
       onBlur={() => setFocused(false)}
-      style={({ pressed }: PressableStateCallbackType) => containerStyle(pressed)}
+      onHoverIn={() => setHovered(true)}
+      onHoverOut={() => setHovered(false)}
+      style={({ pressed }) => containerStyle(pressed || hovered)}
     >
       {indicator}
       {textBlock}
@@ -424,58 +358,48 @@ function StepControl({
 interface ConnectorProps {
   isHorizontal: boolean;
   complete: boolean;
-  color: string;
-  completeColor: string;
-  width: number;
-  gap: number;
-  indicatorSize: number;
   reducedMotion: boolean;
-  transitionDuration: number;
   t: Tokens;
+  r: Resolved;
 }
 
-/** The decorative line between two steps. Cross-fades to `connectorComplete` as the step before it completes. */
-function Connector({
-  isHorizontal,
-  complete,
-  color,
-  completeColor,
-  width,
-  gap,
-  indicatorSize,
-  reducedMotion,
-  transitionDuration,
-  t,
-}: ConnectorProps): React.JSX.Element {
+/** The decorative line filling `stepGap` between two steps; cross-fades to `connectorComplete` once the step before it is passed. */
+function Connector({ isHorizontal, complete, reducedMotion, t, r }: ConnectorProps): React.JSX.Element {
   const anim = React.useRef(new Animated.Value(complete ? 1 : 0)).current;
+  const previous = React.useRef(complete);
 
   React.useEffect(() => {
+    if (previous.current === complete) return;
+    previous.current = complete;
     const toValue = complete ? 1 : 0;
     if (reducedMotion) {
       anim.setValue(toValue);
       return;
     }
-    Animated.timing(anim, {
+    const animation = Animated.timing(anim, {
       toValue,
-      duration: transitionDuration,
+      duration: r.transition,
       easing: toEasing(t.motionEasingStandard),
       useNativeDriver: false,
-    }).start();
-  }, [complete, reducedMotion, transitionDuration, anim, t.motionEasingStandard]);
+    });
+    animation.start();
+    return () => animation.stop();
+  }, [complete, reducedMotion, r.transition, anim, t.motionEasingStandard]);
 
-  const backgroundColor = anim.interpolate({ inputRange: [0, 1], outputRange: [color, completeColor] });
+  const backgroundColor = anim.interpolate({ inputRange: [0, 1], outputRange: [r.connector, t.colorControlSelectedBackground] });
 
-  // Centers the line on the indicator's midpoint since the connector is a sibling, not a child, of the step it follows.
-  const offset = indicatorSize / 2 - width / 2; // literal-ok: geometry derived from token-based sizes, not a design literal
+  // The line is a sibling of the steps, so a track as tall (or wide) as the indicator, inset by the step's focus
+  // border, centres it on the indicator without a margin.
+  const track: ViewStyle = isHorizontal
+    ? { width: r.stepGap, height: r.indicatorSize, paddingTop: t.borderWidthFocus, boxSizing: 'content-box', justifyContent: 'center' }
+    : { width: r.indicatorSize, height: r.stepGap, paddingLeft: t.borderWidthFocus, boxSizing: 'content-box', alignItems: 'center' };
+  const line: Animated.WithAnimatedValue<ViewStyle> = isHorizontal
+    ? { alignSelf: 'stretch', height: t.borderWidthFocus, backgroundColor }
+    : { flex: 1, width: t.borderWidthFocus, backgroundColor };
 
-  const style: Animated.WithAnimatedValue<ViewStyle> = isHorizontal
-    ? { width: gap, height: width, backgroundColor, marginTop: offset }
-    : { width, height: gap, backgroundColor, marginLeft: offset };
-
-  return <Animated.View testID="Stepper.connector" accessibilityElementsHidden importantForAccessibility="no" style={style} />;
+  return (
+    <View testID="Stepper.connector" accessibilityElementsHidden importantForAccessibility="no" style={track}>
+      <Animated.View style={line} />
+    </View>
+  );
 }
-
-const styles = {
-  textColumnHorizontal: { alignItems: 'center' } as ViewStyle,
-  textColumnVertical: { flex: 1 } as ViewStyle,
-};

@@ -342,7 +342,12 @@ export type {
 } from './Slider.js';
 
 export { DsNumberInput } from './NumberInput.js';
-export type { NumberInputFormat, NumberInputChangeDetail, NumberInputOverridableBinding } from './NumberInput.js';
+export type {
+  NumberInputFormat,
+  NumberInputSize,
+  NumberInputChangeDetail,
+  NumberInputOverridableBinding,
+} from './NumberInput.js';
 
 export { DsProgressBar } from './ProgressBar.js';
 export type { ProgressBarTone, ProgressBarAnnounce, ProgressBarOverridableBinding } from './ProgressBar.js';

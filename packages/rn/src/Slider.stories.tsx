@@ -28,38 +28,37 @@ export const ShowValueAlways: Story = { args: { showValue: 'always' } };
 export const ShowValueHover: Story = { args: { showValue: 'hover' } };
 export const ShowValueNever: Story = { args: { showValue: 'never' } };
 
-export const Range: Story = {
-  args: {
-    label: 'Price range',
-    name: 'price',
-    min: 0,
-    max: 500,
-    step: 10,
-    defaultValue: [100, 350],
-    range: true,
-    formatValue: (v: number) => `$${v}`,
-  },
+// Examples from the doc: each renders exactly its `given`.
+export const Volume: Story = {
+  render: () => <Slider label="Volume" name="volume" defaultValue={30} />,
 };
 
-export const WithMarks: Story = {
-  args: {
-    label: 'Playback speed',
-    name: 'speed',
-    min: 0.5,
-    max: 2,
-    step: 0.5,
-    snapToMarks: true,
-    defaultValue: 1,
-    formatValue: (v: number) => `${v}×`,
-    marks: [
-      { value: 0.5, label: '0.5×' },
-      { value: 1, label: '1×' },
-      { value: 1.5, label: '1.5×' },
-      { value: 2, label: '2×' },
-    ],
-  },
+export const PriceRange: Story = {
+  render: () => <Slider label="Price range" name="price" range defaultValue={[20, 80]} />,
 };
 
+export const EffortWithMarks: Story = {
+  render: () => (
+    <Slider
+      label="Effort"
+      name="effort"
+      min={1}
+      max={5}
+      marks={[
+        { value: 1, label: 'Low' },
+        { value: 3, label: 'Medium' },
+        { value: 5, label: 'High' },
+      ]}
+      snapToMarks
+    />
+  ),
+};
+
+export const PairedWithANumberInput: Story = {
+  render: () => <Slider label="Zoom" name="zoom" min={50} max={200} step={10} defaultValue={100} showValue="never" />,
+};
+
+// States
 export const Disabled: Story = { args: { disabled: true, defaultValue: 65 } };
 
 export const WithDescription: Story = {
@@ -74,14 +73,7 @@ export const Required: Story = { args: { required: true } };
 
 export const Invalid: Story = { args: { invalid: true } };
 
-/**
- * Slider has no trigger/open state (the "Keyboard" convention for overlay components
- * doesn't map onto it); the docs call for rendering the range form here, whose two
- * thumbs are the whole keyboard/axe-check surface (the three-focusable-children rule
- * does not apply).
- */
+/** The range form: its two thumbs are the whole keyboard and axe surface (the three-focusable rule does not apply). */
 export const Keyboard: Story = {
-  render: () => (
-    <Slider label="Price range" name="price" min={0} max={500} step={10} defaultValue={[100, 350]} range formatValue={(v) => `$${v}`} />
-  ),
+  args: { label: 'Price range', name: 'price', range: true, defaultValue: [20, 80] },
 };

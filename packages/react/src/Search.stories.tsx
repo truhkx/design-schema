@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Search } from './Search';
-import type { SearchSuggestion } from './Search';
+import { Search, type SearchSuggestion } from './Search';
 
 const SUGGESTIONS: SearchSuggestion[] = [
-  { value: 'invoices from march', label: 'invoices from march' },
-  { value: 'invoices overdue', label: 'invoices overdue', description: '12 results' },
-  { value: 'invoice template', label: 'invoice template' },
+  { value: 'invoices-march', label: 'Invoices from March' },
+  { value: 'invoices-april', label: 'Invoices from April' },
+  { value: 'invoices-overdue', label: 'Overdue invoices', description: 'Past their due date' },
 ];
 
 const meta: Meta<typeof Search> = {
@@ -14,7 +13,6 @@ const meta: Meta<typeof Search> = {
   component: Search,
   args: {
     label: 'Search products',
-    name: 'q',
   },
   tags: ['autodocs'],
 };
@@ -28,54 +26,58 @@ export const Default: Story = {};
 export const SizeMd: Story = { args: { size: 'md' } };
 export const SizeLg: Story = { args: { size: 'lg' } };
 
-/* notable states */
-export const ShowLabel: Story = {
-  args: { showLabel: true, label: 'Search orders' },
+/* examples */
+export const HeaderSearch: Story = {
+  args: { label: 'Search this site', placeholder: 'Search products and orders' },
 };
 
-export const Placeholder: Story = {
-  args: { placeholder: 'Try "invoices from March"' },
+export const SearchPageHero: Story = {
+  args: { label: 'Search orders', showLabel: true, size: 'lg' },
 };
-
-export const WithValue: Story = { args: { defaultValue: 'invoices' } };
-
-export const WithAction: Story = { args: { action: '/search' } };
-
-export const Disabled: Story = { args: { disabled: true, defaultValue: 'invoices' } };
-
-export const NotLandmark: Story = { args: { landmark: false } };
 
 export const WithSuggestions: Story = {
-  args: { defaultValue: 'invoice', suggestions: SUGGESTIONS },
-  render: (args) => {
-    function SuggestionsDemo() {
-      const [suggestions, setSuggestions] = useState(args.suggestions);
-      return (
-        <Search
-          {...args}
-          suggestions={suggestions}
-          onChange={(text) =>
-            setSuggestions(text ? SUGGESTIONS.filter((s) => s.label.includes(text.toLowerCase())) : undefined)
-          }
-        />
-      );
-    }
-    return <SuggestionsDemo />;
+  args: {
+    label: 'Search products',
+    suggestions: [
+      { value: 'invoices-march', label: 'Invoices from March' },
+      { value: 'invoices-april', label: 'Invoices from April' },
+    ],
   },
 };
 
-export const Loading: Story = {
-  args: { defaultValue: 'invoice', suggestions: [], loading: true },
+export const FilterWithinAResultsPage: Story = {
+  args: { label: 'Filter results', landmark: false, name: 'filter' },
 };
 
-export const NoSuggestions: Story = {
-  args: { defaultValue: 'zzz', suggestions: [] },
+/* notable states */
+export const WithValue: Story = { args: { defaultValue: 'invoices' } };
+
+export const Disabled: Story = { args: { disabled: true, defaultValue: 'invoices' } };
+
+export const Loading: Story = { args: { defaultValue: 'invoices', suggestions: [], loading: true } };
+
+export const NoSuggestions: Story = { args: { defaultValue: 'zzz', suggestions: [] } };
+
+/** Suggestions supplied from `onChange`, the way a caller wires a fetch. */
+export const SuggestionsFromOnChange: Story = {
+  render: (args) => {
+    function Demo() {
+      const [suggestions, setSuggestions] = useState<SearchSuggestion[] | undefined>(undefined);
+      return (
+        <Search
+          {...args}
+          onChange={(query) => {
+            const needle = query.trim().toLowerCase();
+            setSuggestions(needle ? SUGGESTIONS.filter((s) => s.label.toLowerCase().includes(needle)) : undefined);
+          }}
+        />
+      );
+    }
+    return <Demo />;
+  },
 };
 
-/**
- * Open/present with its trigger, for the keyboard gate: the input, its clear button (there is
- * text) and its submit button (an `action` is set) are three real focus stops in the field alone.
- */
+/** For the keyboard gate: the input, the clear button (there is text) and the submit button are three focus stops. */
 export const Keyboard: Story = {
-  args: { defaultValue: 'invoice', action: '/search', suggestions: SUGGESTIONS },
+  args: { defaultValue: 'invoices', suggestions: SUGGESTIONS },
 };

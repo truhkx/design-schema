@@ -11,32 +11,39 @@
   --ds-search-radius: var(--radius-full);
   --ds-search-padding-inline: var(--space-md);
   --ds-search-padding-block: var(--space-sm);
-  --ds-search-padding-block-lg: var(--space-md);
   --ds-search-affix-gap: var(--layout-gap-tight);
   --ds-search-font-family: var(--font-family-body);
   --ds-search-font-size: var(--font-size-md);
   --ds-search-line-height: var(--font-line-height-normal);
+  --ds-search-part-gap: var(--space-1);
   --ds-search-min-target: var(--size-target-comfortable);
   --ds-search-focus-ring-width: var(--border-width-focus);
   --ds-search-disabled-opacity: var(--opacity-disabled);
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: var(--ds-search-part-gap);
   inline-size: 100%;
-  font-family: var(--ds-search-font-family);
+  margin: 0;
+}
+
+/* size: paddingBlock by size, fontSize from font.size.{size} */
+.ds-search--md {
+  --ds-search-padding-block: var(--space-sm);
+  --ds-search-font-size: var(--font-size-md);
 }
 
 .ds-search--lg {
+  --ds-search-padding-block: var(--space-md);
   --ds-search-font-size: var(--font-size-lg);
 }
 
 .ds-search__label {
-  display: inline-block;
-  cursor: default;
+  align-self: flex-start;
 }
 
-/* visually hidden: clipped to a 1px box, off the normal flow — the standard sanctioned pixel literals */
-.ds-search__visually-hidden {
+/* visually hidden: the standard clip pattern, the one sanctioned use of pixel literals */
+.ds-search__label--hidden,
+.ds-search__status {
   position: absolute;
   inline-size: 1px;
   block-size: 1px;
@@ -60,40 +67,18 @@
   border: var(--ds-search-border-width) solid var(--ds-search-border);
   border-radius: var(--ds-search-radius);
   background-color: var(--ds-search-background);
-  cursor: text;
+  color: var(--ds-search-foreground);
+  transition: border-color var(--motion-duration-fast) var(--motion-easing-standard);
 }
 
-.ds-search--lg .ds-search__field {
-  padding-block: var(--ds-search-padding-block-lg);
-}
-
-/* borderFocus + focusRingWidth: the border thickens and recolors as the focus indicator; padding
-   shrinks by the added width so the field's outer box does not shift. `:has(:focus-visible)`
-   (rather than `:focus-within`) since the focusable node is the nested <input>, not this wrapper. */
-.ds-search__field:has(:focus-visible) {
+/* The input is the focus target; the pill carries its ring so the outline follows the radius. */
+.ds-search__field:has(.ds-search__input:focus-visible) {
   border-color: var(--ds-search-border-focus);
-  border-width: var(--ds-search-focus-ring-width);
-  padding-inline: calc(var(--ds-search-padding-inline) - (var(--ds-search-focus-ring-width) - var(--ds-search-border-width)));
-  padding-block: calc(var(--ds-search-padding-block) - (var(--ds-search-focus-ring-width) - var(--ds-search-border-width)));
-}
-
-.ds-search--lg .ds-search__field:has(:focus-visible) {
-  padding-block: calc(var(--ds-search-padding-block-lg) - (var(--ds-search-focus-ring-width) - var(--ds-search-border-width)));
+  outline: var(--ds-search-focus-ring-width) solid var(--ds-search-border-focus);
 }
 
 .ds-search--disabled .ds-search__field {
   opacity: var(--ds-search-disabled-opacity);
-  cursor: not-allowed;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .ds-search__field {
-    transition:
-      border-color var(--motion-duration-fast) var(--motion-easing-standard),
-      border-width var(--motion-duration-fast) var(--motion-easing-standard),
-      padding-inline var(--motion-duration-fast) var(--motion-easing-standard),
-      padding-block var(--motion-duration-fast) var(--motion-easing-standard);
-  }
 }
 
 .ds-search__icon {
@@ -104,20 +89,22 @@
 
 .ds-search__input {
   flex: 1 1 auto;
-  min-inline-size: 3em;
+  min-inline-size: 0;
   box-sizing: border-box;
   margin: 0;
   padding: 0;
   border: 0;
   background: transparent;
   color: var(--ds-search-foreground);
-  font: inherit;
   font-family: var(--ds-search-font-family);
   font-size: var(--ds-search-font-size);
   line-height: var(--ds-search-line-height);
-  outline: none;
-  -webkit-appearance: none;
   appearance: none;
+}
+
+/* Replaced by the field's ring above. */
+.ds-search__input:focus-visible {
+  outline: none;
 }
 
 .ds-search__input::placeholder {
@@ -125,7 +112,7 @@
   opacity: 1;
 }
 
-/* The system's own clear Button replaces the browser's; the native one is suppressed. */
+/* The system clear Button replaces the browser's own. */
 .ds-search__input::-webkit-search-cancel-button {
   display: none;
 }
@@ -134,40 +121,25 @@
   cursor: not-allowed;
 }
 
-.ds-search__field .ds-button {
+.ds-search__control {
   flex: 0 0 auto;
-}
-
-.ds-search__field .ds-button svg {
-  color: var(--ds-search-icon-color);
-}
-
-.ds-search__status {
-  /* visually hidden: clipped to a 1px box, off the normal flow */
-  position: absolute;
-  inline-size: 1px;
-  block-size: 1px;
-  margin: -1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
+  display: inline-flex;
 }
 
 .ds-search__suggestions {
   --ds-search-suggestions-offset: var(--space-1);
+  --ds-search-popup-surface: var(--color-overlay-surface);
+  --ds-search-popup-border: var(--color-border);
+  --ds-search-popup-radius: var(--radius-md);
+  --ds-search-popup-shadow: var(--shadow-overlay);
   box-sizing: border-box;
   position: fixed;
-  min-inline-size: var(--ds-search-field-width, 0px);
-  max-inline-size: calc(100vw - 2 * var(--layout-gutter));
-  max-block-size: calc(100vh - 2 * var(--layout-gutter));
   z-index: var(--layer-dropdown);
-  opacity: 0;
-  /* Rises from `--ds-search-suggestions-enter-offset`, set per `data-vertical` below. */
-  --ds-search-suggestions-enter-offset: calc(-1 * var(--ds-search-suggestions-offset));
-  transform: translateY(var(--ds-search-suggestions-enter-offset));
-  transition-property: opacity, transform;
-  transition-duration: var(--motion-duration-fast);
-  transition-timing-function: var(--motion-easing-standard);
+  overflow: auto;
+  background-color: var(--ds-search-popup-surface);
+  border: var(--border-width-thin) solid var(--ds-search-popup-border);
+  border-radius: var(--ds-search-popup-radius);
+  box-shadow: var(--ds-search-popup-shadow);
 }
 
 .ds-search__suggestions[data-vertical='bottom'] {
@@ -176,16 +148,10 @@
 
 .ds-search__suggestions[data-vertical='top'] {
   margin-block-end: var(--ds-search-suggestions-offset);
-  --ds-search-suggestions-enter-offset: var(--ds-search-suggestions-offset);
-}
-
-.ds-search__suggestions--entered {
-  opacity: 1;
-  transform: translateY(0);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ds-search__suggestions {
+  .ds-search__field {
     transition: none;
   }
 }

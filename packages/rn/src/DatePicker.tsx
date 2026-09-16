@@ -1,18 +1,18 @@
 import * as React from 'react';
-import { AccessibilityInfo, Pressable, TextInput, View, findNodeHandle } from 'react-native';
-import type { TextInputInstance, TextInputKeyPressEvent, TextStyle, ViewStyle } from 'react-native';
+import { AccessibilityInfo, Animated, Pressable, TextInput, View, findNodeHandle } from 'react-native';
+import type { TextInputInstance, TextInputKeyPressEvent, TextStyle, ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { BottomSheet } from './BottomSheet';
 import { Button } from './Button';
-import { useFormContext } from './FormContext';
+import { FormContext, useFormContext } from './FormContext';
 import type { FormFieldHandle } from './FormContext';
 import { Icon } from './Icon';
 import { Select } from './Select';
 import type { ListboxItem, ListboxValue } from './Listbox';
 import { Stack } from './Stack';
 import { Text, TextForegroundContext } from './Text';
-import { toLineHeight, useTheme } from './theme';
+import { toEasing, toLineHeight, useReducedMotion, useTheme } from './theme';
 import type { Tokens } from './theme';
 
 export type DatePickerSize = 'sm' | 'md';
@@ -21,21 +21,16 @@ export type DatePickerValue = string | { start: string; end: string };
 
 /** The style bindings a caller may replace with a different token; see the component's overrides contract. */
 export type DatePickerOverridableBinding =
-  | 'borderFocus'
   | 'borderInvalid'
   | 'borderWidth'
   | 'radius'
   | 'paddingInline'
   | 'paddingBlock'
-  | 'paddingBlockSm'
-  | 'paddingInlineSm'
   | 'calendarInset'
   | 'calendarGap'
-  | 'daySize'
   | 'dayGap'
   | 'dayRadius'
   | 'dayHover'
-  | 'dayTodayBorderWidth'
   | 'weekdaySize'
   | 'weekdayWeight'
   | 'monthTitleSize'
@@ -47,14 +42,13 @@ export type DatePickerOverridableBinding =
   | 'lineHeight'
   | 'labelWeight'
   | 'helperSize'
-  | 'minTargetSm'
   | 'disabledOpacity'
   | 'transition';
 
 export interface DatePickerProps {
   /** Visible label ("Start date", "Date of birth"). Also the input's `accessibilityLabel`. */
   label: string;
-  /** Field name for the Form. A range registers two fields, `name` and `name-end`. */
+  /** Field name for the Form. The value is an ISO date string; a range registers two fields, `name` and `name-end`. */
   name: string;
   /** Controlled value (ISO date, or a range). */
   value?: DatePickerValue | undefined;
@@ -80,7 +74,7 @@ export interface DatePickerProps {
   description?: string | undefined;
   /** Must have a value to submit. */
   required?: boolean | undefined;
-  /** Visually hide the label (it remains the accessible name). */
+  /** Visually hide the label (it remains the accessible name). Only for a field whose context already names it. */
   hideLabel?: boolean | undefined;
   /** `sm` for fields inside grid cells and toolbars: minimum target height, tighter padding, small type. */
   size?: DatePickerSize | undefined;
@@ -90,6 +84,8 @@ export interface DatePickerProps {
   error?: string | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<DatePickerOverridableBinding, TokenRef | undefined>> | undefined;
+  /** The root view. */
+  ref?: React.Ref<ViewInstance> | undefined;
   /** Fired when a complete valid date (or range) is typed or picked, with the ISO value; with `undefined` when cleared. */
   onChange?: ((value: DatePickerValue | undefined) => void) | undefined;
   /** Fired when the calendar opens or closes. */
@@ -123,6 +119,8 @@ const WEEKDAYS_PER_ROW = 7;
 const GRID_ROWS = 6; // literal-ok: fixed month-grid size (6 weeks always covers a month)
 const MS_PER_DAY = 86400000; // literal-ok: fixed unit conversion, not a size/color token
 const MS_PER_WEEK = MS_PER_DAY * 7; // literal-ok: fixed unit conversion
+const YEARS_BACK = 100; // literal-ok: documented default year span (current − 100)
+const YEARS_AHEAD = 10; // literal-ok: documented default year span (current + 10)
 
 // ---- Plain-date helpers. Always Date.UTC on Y/M/D parts, never `new Date(string)`. ----
 
@@ -223,9 +221,9 @@ function getPatternOrder(locale: string | undefined): Array<'year' | 'month' | '
 }
 
 function getPatternPlaceholder(locale: string | undefined): string {
-  const tokens: Record<'year' | 'month' | 'day', string> = { year: 'YYYY', month: 'MM', day: 'DD' };
+  const names: Record<'year' | 'month' | 'day', string> = { year: 'YYYY', month: 'MM', day: 'DD' };
   return getPatternOrder(locale)
-    .map((part) => tokens[part])
+    .map((part) => names[part])
     .join('/');
 }
 
@@ -256,35 +254,166 @@ function parseTyped(text: string, locale: string | undefined): string | null {
 }
 
 const FONT_SIZE_TOKEN = { sm: 'fontSizeSm', md: 'fontSizeMd' } as const satisfies Record<DatePickerSize, keyof Tokens>;
+const PADDING_INLINE_TOKEN = { sm: 'space2', md: 'spaceMd' } as const satisfies Record<DatePickerSize, keyof Tokens>;
+const PADDING_BLOCK_TOKEN = { sm: 'space1', md: 'spaceSm' } as const satisfies Record<DatePickerSize, keyof Tokens>;
+const MIN_TARGET_TOKEN = { sm: 'sizeTargetMin', md: 'sizeTargetComfortable' } as const satisfies Record<DatePickerSize, keyof Tokens>;
+
+interface DayCell {
+  iso: string;
+  y: number;
+  m: number;
+  d: number;
+  outsideMonth: boolean;
+}
+
+interface DayButtonProps {
+  cell: DayCell;
+  label: string;
+  selected: boolean;
+  inRange: boolean;
+  today: boolean;
+  disabled: boolean;
+  size: number;
+  radius: number;
+  hoverColor: string;
+  fontSizeOverride: TokenRef | undefined;
+  disabledOpacity: number;
+  duration: number;
+  onSelect: (iso: string) => void;
+}
+
+/**
+ * One day. The fill cross-fades over the `transition` duration when the day's
+ * hover/selection state changes (instant under reduced motion). Hover and focus are
+ * tracked by hand; focus draws the `focusRing` border, today the `dayTodayBorder` ring.
+ */
+function DayButton({
+  cell,
+  label,
+  selected,
+  inRange,
+  today,
+  disabled,
+  size,
+  radius,
+  hoverColor,
+  fontSizeOverride,
+  disabledOpacity,
+  duration,
+  onSelect,
+}: DayButtonProps): React.JSX.Element {
+  const { tokens: t } = useTheme();
+  const reducedMotion = useReducedMotion();
+  const [hovered, setHovered] = React.useState(false);
+  const [focused, setFocused] = React.useState(false);
+
+  const fill = selected
+    ? t.colorControlSelectedBackground
+    : inRange
+      ? t.colorBackgroundStrong
+      : hovered && !disabled
+        ? hoverColor
+        : 'transparent';
+
+  const progress = React.useRef(new Animated.Value(1)).current;
+  const [colors, setColors] = React.useState<{ from: string; to: string }>({ from: fill, to: fill });
+  React.useEffect(() => {
+    if (fill === colors.to) {
+      return;
+    }
+    setColors({ from: colors.to, to: fill });
+    if (reducedMotion) {
+      progress.setValue(1);
+      return;
+    }
+    progress.setValue(0);
+    Animated.timing(progress, {
+      toValue: 1,
+      duration,
+      easing: toEasing(t.motionEasingStandard),
+      useNativeDriver: false,
+    }).start();
+    // Reacts to the target fill only; `colors` is read to find where the fade starts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fill]);
+
+  const backgroundColor = progress.interpolate({ inputRange: [0, 1], outputRange: [colors.from, colors.to] });
+
+  const slop = Math.max(0, Math.ceil((t.sizeTargetMin - size) / 2));
+  const ringWidth = focused ? t.borderWidthFocus : today && !selected ? t.borderWidthFocus : 0;
+  const ringColor = focused ? t.colorBorderFocus : t.colorControlSelectedBackground;
+
+  const surfaceStyle: Animated.WithAnimatedValue<ViewStyle> = {
+    width: size,
+    height: size,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius,
+    backgroundColor,
+    borderWidth: ringWidth,
+    borderColor: ringColor,
+    opacity: disabled ? disabledOpacity : 1,
+  };
+
+  const foreground = selected ? t.colorControlSelectedForeground : cell.outsideMonth ? t.colorForegroundMuted : undefined;
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ selected, disabled }}
+      hitSlop={{ top: slop, bottom: slop, left: slop, right: slop }}
+      onPress={() => {
+        if (!disabled) {
+          onSelect(cell.iso);
+        }
+      }}
+      onHoverIn={() => setHovered(true)}
+      onHoverOut={() => setHovered(false)}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      testID="DatePicker.day"
+    >
+      <Animated.View style={surfaceStyle}>
+        <TextForegroundContext.Provider value={foreground}>
+          <Text size="sm" overrides={{ fontSize: fontSizeOverride }}>
+            {cell.d}
+          </Text>
+        </TextForegroundContext.Provider>
+      </Animated.View>
+    </Pressable>
+  );
+}
 
 /**
  * DatePicker — two ways to say the same date: type it, or find it on a calendar.
  * Both produce a plain ISO date (or a `{ start, end }` range), never a timestamp.
  *
- * When to use: Use for any date the user chooses — due dates, bookings, dates of
- * birth, report periods (`range`). Set `min`/`max` and `isDateDisabled` whenever they
- * exist so the calendar shows what is possible instead of validating after the fact.
- * Do not use it for a date-and-time, a month/year alone (Select), or relative choices.
+ * When to use: any date the user chooses — due dates, bookings, dates of birth, report
+ * periods (`range`). Set `min`/`max` and `isDateDisabled` whenever they exist so the
+ * calendar shows what is possible instead of validating after the fact. Not for a
+ * date-and-time, a month/year alone (Select), or relative choices (SegmentedControl).
  *
- * Renders the `TextInput`(s) (locale pattern, `keyboardType="number-pad"`) and a
- * ghost, icon-only calendar `Button` that opens a `BottomSheet` (there is no core
- * native date picker) holding: a header of prev/next `Button`s and month/year
- * `Select`s (`hideLabel`, `size: sm`); a 7-column grid of day `Pressable`s
- * (`accessibilityRole="button"`, `accessibilityState={{ selected, disabled }}`,
- * `accessibilityLabel` from the full formatted date plus "today"/"selected"); and a
- * footer of Today/Clear `Button`s. The month is announced
- * (`AccessibilityInfo.announceForAccessibility`) when it changes. Typing parses the
- * locale pattern leniently and fires `onChange` only once a value is complete;
- * selecting a day closes the sheet for a single date, or sets the start then the end
- * for a range (picking before the start restarts). Escape and the Android back
- * gesture close the sheet without changing the value (`BottomSheet`'s own
- * `onRequestClose`/dismiss handling); `ArrowDown` opens the calendar from the input
- * when a hardware keyboard or react-native-web supplies key events — on-screen
- * keyboards do not. Validation follows `error` → `required` → unparseable
- * (`copy.invalid`) → `tooEarly` → `tooLate` → `rangeOrder`. `size: sm` swaps padding
- * and the target height floor for their `Sm` bindings and the field text to
- * `font.size.sm`; the calendar `Button` becomes `size: sm` too. `disabled` dims the
- * whole label/description/field/error group with `disabledOpacity`.
+ * Renders the `TextInput`(s) (locale pattern, `keyboardType="number-pad"`) and a ghost,
+ * icon-only calendar `Button` that opens a `BottomSheet` (`height="content"`; there is no
+ * core native date picker) holding: a header of prev/next `Button`s and month/year
+ * `Select`s (`hideLabel`, `size: sm`, outside any Form so they never register); a
+ * 7-column grid of day `Pressable`s (`accessibilityRole="button"`,
+ * `accessibilityState={{ selected, disabled }}`, `accessibilityLabel` from the full date
+ * plus "today"/"selected"); and a footer of Today/Clear `Button`s. The month is announced
+ * when it changes. Native has no grid role and no key events on `Pressable`, so there is
+ * no roving tabindex or arrow/Page/Home/End handling: every day is its own focus stop and
+ * the prev/next month Buttons stand in for PageUp/PageDown. Escape and the Android back
+ * gesture close the sheet without changing the value through BottomSheet, whose own
+ * FocusScope returns focus. ArrowDown (and Alt+ArrowDown, indistinguishable here) in the
+ * input opens the calendar when a hardware keyboard or react-native-web supplies it.
+ *
+ * Selecting a day closes for a single date; for a range the first pick sets the start
+ * (clearing the old range), the second sets the end and closes, and a pick before the
+ * start restarts. Today acts like pressing today's cell; Clear wipes the value (both
+ * ends) and leaves the sheet open. Validation: `error` → `required` → unparseable
+ * (`copy.invalid`) → `tooEarly` → `tooLate` → `rangeOrder`; a range reports its message
+ * only under `name`, while `name-end` always validates clean.
  */
 export function DatePicker({
   label,
@@ -306,6 +435,7 @@ export function DatePicker({
   disabled = false,
   error,
   overrides,
+  ref,
   onChange,
   onOpenChange,
 }: DatePickerProps): React.JSX.Element {
@@ -352,7 +482,7 @@ export function DatePicker({
   const [pendingStart, setPendingStart] = React.useState<string | undefined>(undefined);
 
   const anchorDate = (): { y: number; m: number } => {
-    const anchorIso = range ? (currentEnd ?? currentStart) : currentSingle;
+    const anchorIso = range ? currentStart : currentSingle;
     const parsed = anchorIso !== undefined ? parseISO(anchorIso) : null;
     return parsed ?? parseISO(todayISO())!;
   };
@@ -374,7 +504,7 @@ export function DatePicker({
   }, [isOpen]);
 
   const changeOpen = (next: boolean): void => {
-    if (isDisabled) {
+    if (isDisabled || next === isOpen) {
       return;
     }
     if (!isOpenControlled) {
@@ -397,22 +527,22 @@ export function DatePicker({
   );
 
   const validateValue = React.useCallback(
-    (candidate: DatePickerValue | undefined): string | null => {
+    (candidate: DatePickerValue | undefined, texts: readonly string[]): string | null => {
       if (error !== undefined && error !== '') {
         return error;
       }
-      if (required && candidate === undefined) {
+      const typedSomething = texts.some((text) => text !== '');
+      if (required && candidate === undefined && !typedSomething) {
         return COPY.required(label);
       }
+      // Text that does not parse to a real date (or a half-typed range end).
+      if (texts.some((text) => text !== '' && parseTyped(text, locale) === null)) {
+        return COPY.invalid(label, patternPlaceholder);
+      }
       if (candidate === undefined) {
-        return null;
+        return required ? COPY.required(label) : null;
       }
       const isos = typeof candidate === 'string' ? [candidate] : [candidate.start, candidate.end];
-      for (const iso of isos) {
-        if (parseISO(iso) === null) {
-          return COPY.invalid(label, patternPlaceholder);
-        }
-      }
       if (min !== undefined && isos.some((iso) => iso < min)) {
         return COPY.tooEarly(label, formatDisplay(min, locale));
       }
@@ -427,21 +557,23 @@ export function DatePicker({
     [error, required, label, min, max, locale, patternPlaceholder],
   );
 
-  const commitValue = (next: DatePickerValue | undefined): void => {
+  const texts = range ? [startText, endText] : [singleText];
+
+  const commitValue = (next: DatePickerValue | undefined, nextTexts: readonly string[]): void => {
     if (!isControlled) {
       setInternalValue(next);
     }
     onChange?.(next);
     if (form !== null && form.validateMode !== 'submit') {
-      form.reportValidity(name, validateValue(next));
+      form.reportValidity(name, validateValue(next, nextTexts));
     }
   };
 
-  const latest = React.useRef({ currentValue, currentSingle, currentStart, currentEnd, validateValue });
-  latest.current = { currentValue, currentSingle, currentStart, currentEnd, validateValue };
+  const latest = React.useRef({ currentValue, currentSingle, currentStart, currentEnd, texts, validateValue, label });
+  latest.current = { currentValue, currentSingle, currentStart, currentEnd, texts, validateValue, label };
 
-  const focusInput = (ref: { current: TextInputInstance | null }): void => {
-    const input = ref.current;
+  const focusInput = (inputRef: { current: TextInputInstance | null }): void => {
+    const input = inputRef.current;
     if (input === null) {
       return;
     }
@@ -454,25 +586,34 @@ export function DatePicker({
 
   const singleHandle = React.useMemo<FormFieldHandle>(
     () => ({
+      get label() {
+        return latest.current.label;
+      },
       getValue: () => latest.current.currentSingle,
-      validate: () => latest.current.validateValue(latest.current.currentValue),
+      validate: () => latest.current.validateValue(latest.current.currentValue, latest.current.texts),
       focus: () => focusInput(singleInputRef),
     }),
     [],
   );
   const startHandle = React.useMemo<FormFieldHandle>(
     () => ({
+      get label() {
+        return latest.current.label;
+      },
       getValue: () => latest.current.currentStart,
-      // The pair's combined message is reported once, under `name`; `name-end` only
-      // contributes its value (no schema guidance on splitting one message in two).
-      validate: () => latest.current.validateValue(latest.current.currentValue),
+      // The pair's combined message is reported once, under `name`.
+      validate: () => latest.current.validateValue(latest.current.currentValue, latest.current.texts),
       focus: () => focusInput(startInputRef),
     }),
     [],
   );
   const endHandle = React.useMemo<FormFieldHandle>(
     () => ({
+      get label() {
+        return latest.current.label;
+      },
       getValue: () => latest.current.currentEnd,
+      // Always clean: one message must not be read twice.
       validate: () => null,
       focus: () => focusInput(endInputRef),
     }),
@@ -503,111 +644,108 @@ export function DatePicker({
     }
   }, [displayedError, summarised]);
 
-  const handleSingleChangeText = (text: string): void => {
-    setSingleText(text);
-    if (text === '') {
-      commitValue(undefined);
-      return;
-    }
-    const parsed = parseTyped(text, locale);
-    if (parsed !== null) {
-      commitValue(parsed);
-      const anchor = parseISO(parsed)!;
+  const showMonthOf = (iso: string): void => {
+    const anchor = parseISO(iso);
+    if (anchor !== null) {
       setViewYear(anchor.y);
       setViewMonth(anchor.m);
     }
   };
 
-  const handleSingleBlur = (): void => {
-    setSingleFocused(false);
-    if (form !== null && form.validateMode === 'blur') {
-      form.reportValidity(name, validateValue(currentValue));
+  const handleSingleChangeText = (text: string): void => {
+    if (isDisabled) {
+      return;
     }
-  };
-
-  const handleStartChangeText = (text: string): void => {
-    setStartText(text);
+    setSingleText(text);
     if (text === '') {
-      if (currentEnd === undefined) {
-        commitValue(undefined);
+      if (currentSingle !== undefined) {
+        commitValue(undefined, [text]);
       }
       return;
     }
     const parsed = parseTyped(text, locale);
-    if (parsed === null) {
-      return;
-    }
-    if (currentEnd !== undefined) {
-      commitValue({ start: parsed, end: currentEnd });
+    if (parsed !== null && parsed !== currentSingle) {
+      commitValue(parsed, [text]);
+      showMonthOf(parsed);
     }
   };
 
-  const handleEndChangeText = (text: string): void => {
-    setEndText(text);
-    if (text === '') {
-      if (currentStart === undefined) {
-        commitValue(undefined);
+  const handleRangeChangeText = (which: 'start' | 'end', text: string): void => {
+    if (isDisabled) {
+      return;
+    }
+    const nextStartText = which === 'start' ? text : startText;
+    const nextEndText = which === 'end' ? text : endText;
+    if (which === 'start') {
+      setStartText(text);
+    } else {
+      setEndText(text);
+    }
+    if (nextStartText === '' && nextEndText === '') {
+      if (currentValue !== undefined) {
+        commitValue(undefined, [nextStartText, nextEndText]);
       }
       return;
     }
-    const parsed = parseTyped(text, locale);
-    if (parsed === null) {
-      return;
+    const start = parseTyped(nextStartText, locale);
+    const end = parseTyped(nextEndText, locale);
+    const typed = which === 'start' ? start : end;
+    if (typed !== null) {
+      showMonthOf(typed);
     }
-    if (currentStart !== undefined) {
-      commitValue({ start: currentStart, end: parsed });
+    // A partial range changes nothing.
+    if (start !== null && end !== null && (start !== currentStart || end !== currentEnd)) {
+      commitValue({ start, end }, [nextStartText, nextEndText]);
     }
   };
 
-  const handleRangeBlur = (): void => {
+  const handleBlur = (): void => {
     if (form !== null && form.validateMode === 'blur') {
-      form.reportValidity(name, validateValue(currentValue));
+      form.reportValidity(name, validateValue(currentValue, texts));
     }
   };
 
-  // ArrowDown is only reachable via a hardware keyboard or react-native-web; on-screen
-  // keyboards do not emit it, so opening the calendar from the field is otherwise done
-  // with the calendar button (see the platform notes' acknowledged limit).
+  // ArrowDown only arrives from a hardware keyboard or react-native-web; the event
+  // carries no modifier flags, so Alt+ArrowDown opens the calendar the same way.
   const handleInputKeyPress = (event: TextInputKeyPressEvent): void => {
     if (event.nativeEvent.key === 'ArrowDown') {
       changeOpen(true);
     }
   };
 
-  const handleSheetClose = (): void => {
-    changeOpen(false);
-  };
-
   const handleDaySelect = (iso: string): void => {
-    if (isDayDisabled(iso)) {
+    if (isDisabled || isDayDisabled(iso)) {
       return;
     }
     if (!range) {
-      commitValue(iso);
+      commitValue(iso, [formatDisplay(iso, locale)]);
       changeOpen(false);
       return;
     }
-    if (pendingStart === undefined) {
-      setPendingStart(iso);
-      return;
-    }
-    if (iso < pendingStart) {
+    if (pendingStart === undefined || iso < pendingStart) {
       setPendingStart(iso);
       return;
     }
     setPendingStart(undefined);
-    commitValue({ start: pendingStart, end: iso });
+    commitValue({ start: pendingStart, end: iso }, [formatDisplay(pendingStart, locale), formatDisplay(iso, locale)]);
     changeOpen(false);
   };
 
   const handleTodayPress = (): void => {
-    handleDaySelect(todayISO());
+    const today = todayISO();
+    showMonthOf(today);
+    handleDaySelect(today);
   };
 
   const handleClearPress = (): void => {
+    if (isDisabled) {
+      return;
+    }
     setPendingStart(undefined);
-    commitValue(undefined);
-    changeOpen(false);
+    setSingleText('');
+    setStartText('');
+    setEndText('');
+    commitValue(undefined, range ? ['', ''] : ['']);
   };
 
   const handlePrevMonth = (): void => {
@@ -641,16 +779,18 @@ export function DatePicker({
 
   const yearOptions: ListboxItem[] = React.useMemo(() => {
     const currentYear = new Date().getFullYear();
-    const minYear = min !== undefined ? (parseISO(min)?.y ?? currentYear - 100) : currentYear - 100;
-    const maxYear = max !== undefined ? (parseISO(max)?.y ?? currentYear + 10) : currentYear + 10;
-    return Array.from({ length: Math.max(1, maxYear - minYear + 1) }, (_, i) => {
-      const y = minYear + i;
+    const minYear = (min !== undefined ? parseISO(min)?.y : undefined) ?? currentYear - YEARS_BACK;
+    const maxYear = (max !== undefined ? parseISO(max)?.y : undefined) ?? currentYear + YEARS_AHEAD;
+    const first = Math.min(minYear, viewYear);
+    const last = Math.max(maxYear, viewYear);
+    return Array.from({ length: last - first + 1 }, (_, i) => {
+      const y = first + i;
       return { value: String(y), label: String(y) };
     });
-  }, [min, max]);
+  }, [min, max, viewYear]);
 
   const firstDay = React.useMemo(() => getLocaleFirstDay(locale), [locale]);
-  const gridDays = React.useMemo(() => {
+  const gridDays = React.useMemo<DayCell[]>(() => {
     const firstOfMonthWeekday = new Date(Date.UTC(viewYear, viewMonth - 1, 1)).getUTCDay();
     const leading = (firstOfMonthWeekday - firstDay + 7) % 7;
     const gridStart = Date.UTC(viewYear, viewMonth - 1, 1 - leading);
@@ -664,7 +804,7 @@ export function DatePicker({
   }, [viewYear, viewMonth, firstDay]);
 
   const weeks = React.useMemo(() => {
-    const rows: (typeof gridDays)[] = [];
+    const rows: DayCell[][] = [];
     for (let i = 0; i < gridDays.length; i += WEEKDAYS_PER_ROW) {
       rows.push(gridDays.slice(i, i + WEEKDAYS_PER_ROW));
     }
@@ -672,7 +812,11 @@ export function DatePicker({
   }, [gridDays]);
 
   const weekdayLabels = React.useMemo(
-    () => Array.from({ length: WEEKDAYS_PER_ROW }, (_, i) => weekdayName(locale, (firstDay + i) % 7, 'short')),
+    () =>
+      Array.from({ length: WEEKDAYS_PER_ROW }, (_, i) => ({
+        short: weekdayName(locale, (firstDay + i) % 7, 'short'),
+        long: weekdayName(locale, (firstDay + i) % 7, 'long'),
+      })),
     [locale, firstDay],
   );
 
@@ -706,55 +850,36 @@ export function DatePicker({
   }, [gridLabel, isOpen]);
 
   // ---- Tokens ----
-  const borderFocusColor = overrides?.borderFocus ? (resolveToken(t, overrides.borderFocus) as string) : t.colorBorderFocus;
   const borderInvalidColor = overrides?.borderInvalid ? (resolveToken(t, overrides.borderInvalid) as string) : t.colorBorderDanger;
   const borderWidth = overrides?.borderWidth ? (resolveToken(t, overrides.borderWidth) as number) : t.borderWidthThin;
   const radius = overrides?.radius ? (resolveToken(t, overrides.radius) as number) : t.radiusMd;
-  const paddingInline =
-    size === 'sm'
-      ? overrides?.paddingInlineSm
-        ? (resolveToken(t, overrides.paddingInlineSm) as number)
-        : t.space2
-      : overrides?.paddingInline
-        ? (resolveToken(t, overrides.paddingInline) as number)
-        : t.spaceMd;
-  const paddingBlock =
-    size === 'sm'
-      ? overrides?.paddingBlockSm
-        ? (resolveToken(t, overrides.paddingBlockSm) as number)
-        : t.space1
-      : overrides?.paddingBlock
-        ? (resolveToken(t, overrides.paddingBlock) as number)
-        : t.spaceSm;
-  const minTarget =
-    size === 'sm'
-      ? overrides?.minTargetSm
-        ? (resolveToken(t, overrides.minTargetSm) as number)
-        : t.sizeTargetMin
-      : t.sizeTargetComfortable;
+  const paddingInline = overrides?.paddingInline ? (resolveToken(t, overrides.paddingInline) as number) : t[PADDING_INLINE_TOKEN[size]];
+  const paddingBlock = overrides?.paddingBlock ? (resolveToken(t, overrides.paddingBlock) as number) : t[PADDING_BLOCK_TOKEN[size]];
+  const minTarget = t[MIN_TARGET_TOKEN[size]];
   const partGap = overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.space1;
   const fieldGap = overrides?.fieldGap ? (resolveToken(t, overrides.fieldGap) as number) : t.space2;
   const fontFamily = overrides?.fontFamily ? (resolveToken(t, overrides.fontFamily) as string) : t.fontFamilyBody;
   const fontSize = t[FONT_SIZE_TOKEN[size]];
   const lineHeightMultiplier = overrides?.lineHeight ? (resolveToken(t, overrides.lineHeight) as number) : t.fontLineHeightNormal;
   const disabledOpacity = overrides?.disabledOpacity ? (resolveToken(t, overrides.disabledOpacity) as number) : t.opacityDisabled;
-  const calendarInset = overrides?.calendarInset ?? ('layout.inset.md' as TokenRef);
-  const daySize = overrides?.daySize ? (resolveToken(t, overrides.daySize) as number) : t.sizeTargetComfortable;
+  const calendarInset: TokenRef = overrides?.calendarInset ?? 'layout.inset.md';
+  const monthTitleSize: TokenRef = overrides?.monthTitleSize ?? 'font.size.md';
+  const monthTitleWeight: TokenRef = overrides?.monthTitleWeight ?? 'font.weight.semibold';
   const dayGap = overrides?.dayGap ? (resolveToken(t, overrides.dayGap) as number) : t.space0;
   const dayRadius = overrides?.dayRadius ? (resolveToken(t, overrides.dayRadius) as number) : t.radiusMd;
   const dayHoverColor = overrides?.dayHover ? (resolveToken(t, overrides.dayHover) as string) : t.colorActionGhostBackgroundHover;
-  const dayTodayBorderWidth = overrides?.dayTodayBorderWidth ? (resolveToken(t, overrides.dayTodayBorderWidth) as number) : t.borderWidthFocus;
-
-  const daySlop = Math.max(0, Math.ceil((t.sizeTargetMin - daySize) / 2));
-  const dayHitSlop = { top: daySlop, bottom: daySlop, left: daySlop, right: daySlop };
+  const transitionDuration = overrides?.transition ? (resolveToken(t, overrides.transition) as number) : t.motionDurationFast;
+  const daySize = t.sizeTargetComfortable;
 
   const visibleLabel = required ? `${label}${COPY.requiredIndicator}` : label;
+  const invalid = displayedError !== undefined;
+  const hint = [description, displayedError].filter((part): part is string => part !== undefined && part !== '').join('. ');
 
   const containerStyle: ViewStyle = { flexDirection: 'column', gap: partGap, opacity: isDisabled ? disabledOpacity : 1 };
   const fieldRowStyle: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: fieldGap };
 
-  const fieldTextStyle = (focused: boolean, invalid: boolean): TextStyle => {
-    const activeBorderWidth = focused ? t.borderWidthFocus : borderWidth;
+  const fieldTextStyle = (focused: boolean): TextStyle => {
+    // The focus border is thicker; padding absorbs the difference so the text does not shift.
     const inset = t.borderWidthFocus - borderWidth;
     return {
       flexGrow: 1,
@@ -763,11 +888,11 @@ export function DatePicker({
       minHeight: minTarget,
       backgroundColor: t.colorBackground,
       color: t.colorForeground,
-      borderWidth: activeBorderWidth,
-      borderColor: focused ? borderFocusColor : invalid ? borderInvalidColor : t.colorBorderStrong,
+      borderWidth: focused ? t.borderWidthFocus : borderWidth,
+      borderColor: focused ? t.colorBorderFocus : invalid ? borderInvalidColor : t.colorBorderStrong,
       borderRadius: radius,
-      paddingHorizontal: paddingInline + inset,
-      paddingVertical: paddingBlock + inset,
+      paddingHorizontal: focused ? paddingInline : paddingInline + inset,
+      paddingVertical: focused ? paddingBlock : paddingBlock + inset,
       fontFamily,
       fontSize,
       lineHeight: toLineHeight(fontSize, lineHeightMultiplier),
@@ -775,140 +900,106 @@ export function DatePicker({
   };
 
   const helperOverrides = { fontFamily: overrides?.fontFamily, fontSize: overrides?.helperSize, lineHeight: overrides?.lineHeight };
-  const labelOverrides = {
-    fontFamily: overrides?.fontFamily,
-    fontWeight: overrides?.labelWeight,
-    lineHeight: overrides?.lineHeight,
-  };
+  const labelOverrides = { fontFamily: overrides?.fontFamily, fontWeight: overrides?.labelWeight, lineHeight: overrides?.lineHeight };
+  const weekdayOverrides = { fontSize: overrides?.weekdaySize, fontWeight: overrides?.weekdayWeight };
 
   const headerRowStyle: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space1 };
-  const weekdayRowStyle: ViewStyle = { flexDirection: 'row', gap: dayGap };
-  const weekRowStyle: ViewStyle = { flexDirection: 'row', gap: dayGap };
-  const weekCellStyle: ViewStyle = { width: daySize, alignItems: 'center', justifyContent: 'center' };
+  const rowStyle: ViewStyle = { flexDirection: 'row', gap: dayGap };
+  const gridStyle: ViewStyle = { flexDirection: 'column', gap: dayGap };
+  const headerCellStyle: ViewStyle = { width: daySize, alignItems: 'center', justifyContent: 'center' };
 
-  const dayCellStyle = (cell: (typeof gridDays)[number], pressed: boolean): ViewStyle => {
-    const selected = isSelected(cell.iso);
-    const inRange = isInRange(cell.iso);
-    const today = cell.iso === todayIso;
-    const dis = isDayDisabled(cell.iso);
-    return {
-      width: daySize,
-      height: daySize,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderRadius: dayRadius,
-      backgroundColor: selected ? t.colorControlSelectedBackground : inRange ? t.colorBackgroundStrong : pressed && !dis ? dayHoverColor : 'transparent',
-      borderWidth: today && !selected ? dayTodayBorderWidth : 0,
-      borderColor: t.colorControlSelectedBackground,
-      opacity: dis ? disabledOpacity : 1,
-    };
-  };
-
-  /**
-   * The day label's own locked foreground, provided to the composed Text through
-   * `TextForegroundContext`: Text's `color` binding is locked, so a selected day cannot hand it
-   * `color.control.selectedForeground` as an override. `undefined` leaves the tone in charge.
-   */
-  const dayTextColor = (cell: (typeof gridDays)[number]): string | undefined => {
-    if (isSelected(cell.iso)) {
-      return t.colorControlSelectedForeground;
-    }
-    if (cell.outsideMonth) {
-      return t.colorForegroundMuted;
-    }
-    return undefined;
-  };
+  const inputProps = {
+    accessibilityHint: hint !== '' ? hint : undefined,
+    accessibilityState: { disabled: isDisabled },
+    keyboardType: 'number-pad',
+    editable: !isDisabled,
+    placeholder: placeholder ?? patternPlaceholder,
+    placeholderTextColor: t.colorForegroundMuted,
+    onKeyPress: handleInputKeyPress,
+    testID: 'DatePicker.input',
+  } as const;
 
   const field = range ? (
     <>
       <TextInput
+        {...inputProps}
         ref={startInputRef}
         accessibilityLabel={`${visibleLabel}, ${COPY.startLabel}`}
-        accessibilityHint={description}
-        accessibilityState={{ disabled: isDisabled }}
-        keyboardType="number-pad"
-        editable={!isDisabled}
         value={startText}
-        placeholder={placeholder ?? patternPlaceholder}
-        placeholderTextColor={t.colorForegroundMuted}
-        onChangeText={handleStartChangeText}
+        onChangeText={(text) => handleRangeChangeText('start', text)}
         onFocus={() => setStartFocused(true)}
         onBlur={() => {
           setStartFocused(false);
-          handleRangeBlur();
+          handleBlur();
         }}
-        onKeyPress={handleInputKeyPress}
-        style={fieldTextStyle(startFocused, displayedError !== undefined)}
-        testID="DatePicker.input"
+        style={fieldTextStyle(startFocused)}
       />
-      <Text tone="muted">{'–'}</Text>
+      <View accessibilityElementsHidden importantForAccessibility="no">
+        <Text tone="muted">{'–'}</Text>
+      </View>
       <TextInput
+        {...inputProps}
         ref={endInputRef}
         accessibilityLabel={`${visibleLabel}, ${COPY.endLabel}`}
-        accessibilityHint={description}
-        accessibilityState={{ disabled: isDisabled }}
-        keyboardType="number-pad"
-        editable={!isDisabled}
         value={endText}
-        placeholder={placeholder ?? patternPlaceholder}
-        placeholderTextColor={t.colorForegroundMuted}
-        onChangeText={handleEndChangeText}
+        onChangeText={(text) => handleRangeChangeText('end', text)}
         onFocus={() => setEndFocused(true)}
         onBlur={() => {
           setEndFocused(false);
-          handleRangeBlur();
+          handleBlur();
         }}
-        onKeyPress={handleInputKeyPress}
-        style={fieldTextStyle(endFocused, displayedError !== undefined)}
-        testID="DatePicker.input"
+        style={fieldTextStyle(endFocused)}
       />
     </>
   ) : (
     <TextInput
+      {...inputProps}
       ref={singleInputRef}
       accessibilityLabel={visibleLabel}
-      accessibilityHint={description}
-      accessibilityState={{ disabled: isDisabled }}
-      keyboardType="number-pad"
-      editable={!isDisabled}
       value={singleText}
-      placeholder={placeholder ?? patternPlaceholder}
-      placeholderTextColor={t.colorForegroundMuted}
       onChangeText={handleSingleChangeText}
       onFocus={() => setSingleFocused(true)}
-      onBlur={handleSingleBlur}
-      onKeyPress={handleInputKeyPress}
-      style={fieldTextStyle(singleFocused, displayedError !== undefined)}
-      testID="DatePicker.input"
+      onBlur={() => {
+        setSingleFocused(false);
+        handleBlur();
+      }}
+      style={fieldTextStyle(singleFocused)}
     />
   );
 
   return (
-    <View style={containerStyle} testID="DatePicker">
+    <View ref={ref} style={containerStyle} testID="DatePicker">
       {hideLabel ? null : (
-        <Text weight="medium" overrides={labelOverrides}>
-          {visibleLabel}
-        </Text>
+        <View testID="DatePicker.label">
+          <Text weight="medium" overrides={labelOverrides}>
+            {visibleLabel}
+          </Text>
+        </View>
       )}
       {description !== undefined ? (
-        <Text size="sm" tone="muted" overrides={helperOverrides}>
-          {description}
-        </Text>
+        <View testID="DatePicker.description">
+          <Text size="sm" tone="muted" overrides={helperOverrides}>
+            {description}
+          </Text>
+        </View>
       ) : null}
       <View style={fieldRowStyle} testID="DatePicker.field">
         {field}
-        <Button
-          label={range ? COPY.openRange : COPY.open}
-          variant="ghost"
-          size={size}
-          iconOnly
-          disabled={isDisabled}
-          leadingIcon={<Icon name="calendar" color={t.colorActionGhostForeground} />}
-          onPress={() => changeOpen(!isOpen)}
-        />
+        <View testID="DatePicker.calendarButton">
+          <Button
+            label={range ? COPY.openRange : COPY.open}
+            variant="ghost"
+            size={size}
+            iconOnly
+            expanded={isOpen}
+            disabled={isDisabled}
+            leadingIcon={<Icon name="calendar" color={t.colorActionGhostForeground} />}
+            onPress={() => changeOpen(!isOpen)}
+          />
+        </View>
       </View>
-      {displayedError !== undefined ? (
-        <View accessibilityLiveRegion={summarised ? 'none' : 'assertive'}>
+      {invalid ? (
+        <View accessibilityLiveRegion={summarised ? 'none' : 'assertive'} testID="DatePicker.errorMessage">
           <Text size="sm" tone="danger" overrides={helperOverrides}>
             {displayedError}
           </Text>
@@ -916,104 +1007,124 @@ export function DatePicker({
       ) : null}
       <BottomSheet
         open={isOpen}
-        heading={gridLabel}
+        heading={label}
         height="content"
-        onClose={handleSheetClose}
+        onClose={() => changeOpen(false)}
         overrides={{ inset: calendarInset }}
         footer={
           <>
-            <Button label={COPY.today} variant="ghost" size="sm" onPress={handleTodayPress} />
-            <Button label={COPY.clear} variant="ghost" size="sm" onPress={handleClearPress} />
+            <View testID="DatePicker.todayButton">
+              <Button label={COPY.today} variant="ghost" size="sm" disabled={isDisabled} onPress={handleTodayPress} />
+            </View>
+            <View testID="DatePicker.clearButton">
+              <Button label={COPY.clear} variant="ghost" size="sm" disabled={isDisabled} onPress={handleClearPress} />
+            </View>
           </>
         }
       >
-        <Stack direction="vertical" gap="normal" overrides={{ gap: overrides?.calendarGap }}>
-          <View style={headerRowStyle} testID="DatePicker.header">
-            <Button
-              label={COPY.previousMonth}
-              variant="ghost"
-              size="sm"
-              iconOnly
-              leadingIcon={<Icon name="chevron-left" size="sm" color={t.colorActionGhostForeground} />}
-              onPress={handlePrevMonth}
-            />
-            <Select
-              label={COPY.month}
-              name={`${name}-month`}
-              hideLabel
-              size="sm"
-              options={monthOptions}
-              value={String(viewMonth)}
-              onChange={handleMonthChange}
-              overrides={{ fontSize: overrides?.monthTitleSize ?? ('font.size.md' as TokenRef) }}
-            />
-            <Select
-              label={COPY.year}
-              name={`${name}-year`}
-              hideLabel
-              size="sm"
-              options={yearOptions}
-              value={String(viewYear)}
-              onChange={handleYearChange}
-              overrides={{ fontSize: overrides?.monthTitleSize ?? ('font.size.md' as TokenRef) }}
-            />
-            <Button
-              label={COPY.nextMonth}
-              variant="ghost"
-              size="sm"
-              iconOnly
-              leadingIcon={<Icon name="chevron-right" size="sm" color={t.colorActionGhostForeground} />}
-              onPress={handleNextMonth}
-            />
-          </View>
-          <View testID="DatePicker.grid" accessibilityLabel={gridLabel}>
-            <View style={weekdayRowStyle} testID="DatePicker.weekdayHeader">
-              {showWeekNumbers ? (
-                <View style={weekCellStyle}>
-                  <Text size="xs" tone="muted" overrides={{ fontSize: overrides?.weekdaySize, fontWeight: overrides?.weekdayWeight }}>
-                    {COPY.weekNumber}
-                  </Text>
+        <View testID="DatePicker.popover">
+          <Stack direction="vertical" gap="normal" overrides={{ gap: overrides?.calendarGap }}>
+            <View style={headerRowStyle} testID="DatePicker.header">
+              <View testID="DatePicker.prevMonthButton">
+                <Button
+                  label={COPY.previousMonth}
+                  variant="ghost"
+                  size="sm"
+                  iconOnly
+                  leadingIcon={<Icon name="chevron-left" size="sm" color={t.colorActionGhostForeground} />}
+                  onPress={handlePrevMonth}
+                />
+              </View>
+              {/* Internal controls, not fields: kept out of the enclosing Form. */}
+              <FormContext.Provider value={null}>
+                <View testID="DatePicker.monthSelect">
+                  <Select
+                    label={COPY.month}
+                    name={`${name}-month`}
+                    hideLabel
+                    size="sm"
+                    options={monthOptions}
+                    value={String(viewMonth)}
+                    onChange={handleMonthChange}
+                    overrides={{ fontSize: monthTitleSize, fontWeight: monthTitleWeight }}
+                  />
                 </View>
-              ) : null}
-              {weekdayLabels.map((wd, i) => (
-                <View key={i} style={weekCellStyle}>
-                  <Text size="xs" tone="muted" overrides={{ fontSize: overrides?.weekdaySize, fontWeight: overrides?.weekdayWeight }}>
-                    {wd}
-                  </Text>
+                <View testID="DatePicker.yearSelect">
+                  <Select
+                    label={COPY.year}
+                    name={`${name}-year`}
+                    hideLabel
+                    size="sm"
+                    options={yearOptions}
+                    value={String(viewYear)}
+                    onChange={handleYearChange}
+                    overrides={{ fontSize: monthTitleSize, fontWeight: monthTitleWeight }}
+                  />
                 </View>
-              ))}
+              </FormContext.Provider>
+              <View testID="DatePicker.nextMonthButton">
+                <Button
+                  label={COPY.nextMonth}
+                  variant="ghost"
+                  size="sm"
+                  iconOnly
+                  leadingIcon={<Icon name="chevron-right" size="sm" color={t.colorActionGhostForeground} />}
+                  onPress={handleNextMonth}
+                />
+              </View>
             </View>
-            {weeks.map((week, wi) => (
-              <View key={wi} style={weekRowStyle}>
-                {showWeekNumbers && week[0] !== undefined ? (
-                  <View style={weekCellStyle} testID="DatePicker.weekNumber">
-                    <Text size="xs" tone="muted" overrides={{ fontSize: overrides?.weekdaySize }}>
-                      {getISOWeek(week[0].y, week[0].m, week[0].d)}
+            <View style={gridStyle} testID="DatePicker.grid" accessibilityLabel={gridLabel}>
+              <View style={rowStyle} testID="DatePicker.weekdayHeader">
+                {showWeekNumbers ? (
+                  <View style={headerCellStyle}>
+                    <Text size="xs" tone="muted" overrides={weekdayOverrides}>
+                      {COPY.weekNumber}
                     </Text>
                   </View>
                 ) : null}
-                {week.map((cell) => (
-                  <Pressable
-                    key={cell.iso}
-                    accessibilityRole="button"
-                    accessibilityLabel={dayAccessibilityLabel(cell.iso)}
-                    accessibilityState={{ selected: isSelected(cell.iso), disabled: isDayDisabled(cell.iso) }}
-                    hitSlop={dayHitSlop}
-                    onPress={() => handleDaySelect(cell.iso)}
-                    style={({ pressed }) => dayCellStyle(cell, pressed)}
-                    testID="DatePicker.day"
-                  >
-                    <TextForegroundContext.Provider value={dayTextColor(cell)}>
-                      <Text size="sm" overrides={{ fontSize: overrides?.dayFontSize }}>
-                        {cell.d}
-                      </Text>
-                    </TextForegroundContext.Provider>
-                  </Pressable>
+                {weekdayLabels.map((weekday) => (
+                  <View key={weekday.long} style={headerCellStyle} accessibilityLabel={weekday.long}>
+                    <Text size="xs" tone="muted" overrides={weekdayOverrides}>
+                      {weekday.short}
+                    </Text>
+                  </View>
                 ))}
               </View>
-            ))}
-          </View>
-        </Stack>
+              {weeks.map((week) => {
+                const first = week[0]!;
+                return (
+                  <View key={first.iso} style={rowStyle}>
+                    {showWeekNumbers ? (
+                      <View style={headerCellStyle} testID="DatePicker.weekNumber">
+                        <Text size="xs" tone="muted" overrides={{ fontSize: overrides?.weekdaySize }}>
+                          {getISOWeek(first.y, first.m, first.d)}
+                        </Text>
+                      </View>
+                    ) : null}
+                    {week.map((cell) => (
+                      <DayButton
+                        key={cell.iso}
+                        cell={cell}
+                        label={dayAccessibilityLabel(cell.iso)}
+                        selected={isSelected(cell.iso)}
+                        inRange={isInRange(cell.iso)}
+                        today={cell.iso === todayIso}
+                        disabled={isDisabled || isDayDisabled(cell.iso)}
+                        size={daySize}
+                        radius={dayRadius}
+                        hoverColor={dayHoverColor}
+                        fontSizeOverride={overrides?.dayFontSize}
+                        disabledOpacity={disabledOpacity}
+                        duration={transitionDuration}
+                        onSelect={handleDaySelect}
+                      />
+                    ))}
+                  </View>
+                );
+              })}
+            </View>
+          </Stack>
+        </View>
       </BottomSheet>
     </View>
   );

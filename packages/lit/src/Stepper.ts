@@ -10,57 +10,46 @@ export type StepperOrientation = 'horizontal' | 'vertical';
 export type StepperNavigable = 'none' | 'completed' | 'all';
 export type StepperStepStatus = 'complete' | 'current' | 'upcoming' | 'error';
 
-/** Shape of each entry in `steps`. */
+/** One step of the flow (`steps` shape). */
 export interface StepperStep {
   id: string;
   label: string;
   description?: string | undefined;
-  status?: StepperStepStatus | undefined;
+  status?: 'complete' | 'current' | 'upcoming' | 'error' | undefined;
 }
 
 /** Detail carried by the `step-select` CustomEvent. */
 export interface StepperStepSelectDetail {
+  /** The id of the chosen step. */
   id: string;
 }
 
-/** copy.stepOf */
-const COPY_STEP_OF = 'Step {current} of {total}';
-/** copy.complete */
-const COPY_COMPLETE = 'completed';
-/** copy.current */
-const COPY_CURRENT = 'current step';
-/** copy.error */
-const COPY_ERROR = 'has an error';
-/** copy.stepLabel */
-const COPY_STEP_LABEL = 'Step {n}: {label}';
+const COPY = {
+  navLabel: 'Progress',
+  stepOf: 'Step {current} of {total}',
+  complete: 'completed',
+  current: 'current step',
+  error: 'has an error',
+  stepLabel: 'Step {n}: {label}',
+} as const;
 
-/** Below this inline size a horizontal stepper switches to `compact`. layout.maxWidth.prose (572px); literal-ok: a container-query condition cannot reference a custom property. */
-const COMPACT_BREAKPOINT_PX = 572;
+const STATUS_WORD: Record<StepperStepStatus, string | undefined> = {
+  complete: COPY.complete,
+  current: COPY.current,
+  error: COPY.error,
+  upcoming: undefined,
+};
 
-function formatStepOf(current: number, total: number): string {
-  return COPY_STEP_OF.replace('{current}', String(current)).replace('{total}', String(total));
-}
+/** layout.maxWidth.prose: a container-query condition cannot read a custom property. */
+const PROSE_WIDTH_PX = 572; // literal-ok: breakpoint from layout.maxWidth.prose
 
-function formatStepLabel(n: number, label: string): string {
-  return COPY_STEP_LABEL.replace('{n}', String(n)).replace('{label}', label);
-}
-
-function statusWord(status: StepperStepStatus): string | undefined {
-  if (status === 'complete') return COPY_COMPLETE;
-  if (status === 'current') return COPY_CURRENT;
-  if (status === 'error') return COPY_ERROR;
-  return undefined;
-}
-
-/** Overridable style hooks; see the `overrides` property. `indicatorBorder`, `indicatorCompleteBackground`, `indicatorCompleteForeground`, `indicatorCurrentBorder`, `indicatorErrorBackground`, `indicatorErrorForeground`, `indicatorErrorBorder`, `connectorComplete`, `labelColor`, `labelUpcomingColor`, `descriptionColor`, `indicatorColor`, `minTarget`, `focusRing` and `focusRingWidth` are locked and excluded. */
+/** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
 export type StepperOverridableBinding =
   | 'indicatorSize'
   | 'indicatorBackground'
-  | 'indicatorBorderWidth'
   | 'indicatorFontSize'
   | 'indicatorFontWeight'
   | 'connector'
-  | 'connectorWidth'
   | 'labelWeight'
   | 'labelCurrentWeight'
   | 'labelSize'
@@ -72,64 +61,53 @@ export type StepperOverridableBinding =
   | 'fontFamily'
   | 'transition';
 
-const HOOKS: Record<StepperOverridableBinding, string> = {
+/** Hooks owned by the host. Label and description typography is forwarded to the composed `<ds-text>`'s `overrides`. */
+const HOOKS: Partial<Record<StepperOverridableBinding, string>> = {
   indicatorSize: '--ds-stepper-indicator-size',
   indicatorBackground: '--ds-stepper-indicator-background',
-  indicatorBorderWidth: '--ds-stepper-indicator-border-width',
   indicatorFontSize: '--ds-stepper-indicator-font-size',
   indicatorFontWeight: '--ds-stepper-indicator-font-weight',
   connector: '--ds-stepper-connector',
-  connectorWidth: '--ds-stepper-connector-width',
-  labelWeight: '--ds-stepper-label-weight',
-  labelCurrentWeight: '--ds-stepper-label-current-weight',
-  labelSize: '--ds-stepper-label-size',
-  descriptionSize: '--ds-stepper-description-size',
   stepHover: '--ds-stepper-step-hover',
   stepRadius: '--ds-stepper-step-radius',
   stepGap: '--ds-stepper-step-gap',
   partGap: '--ds-stepper-part-gap',
-  fontFamily: '--ds-stepper-font-family', // literal-ok: CSS custom-property name, not a font stack
+  fontFamily: '--ds-stepper-font-family', // literal-ok: CSS custom-property hook name, not a font stack
   transition: '--ds-stepper-transition',
 };
+
+type TextOverrides = Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
+
+function resolveStatus(step: StepperStep, index: number, currentIndex: number): StepperStepStatus {
+  if (step.status) return step.status;
+  if (currentIndex === -1 || index > currentIndex) return 'upcoming';
+  return index < currentIndex ? 'complete' : 'current';
+}
 
 /**
  * `<ds-stepper>` — Stepper (category: navigation).
  *
- * `<ds-stepper current="payment" .steps=${steps}>` renders a `<nav aria-label>`
- * wrapping an `<ol>` in its shadow root; each `<li>` holds an indicator
- * `<span aria-hidden>` (number, a check `<ds-icon>` when complete, or a danger
- * `<ds-icon>` on error), a connector `<span aria-hidden>` after all but the
- * last, and the label/description as `<ds-text>`. A step is a native `<button>`
- * when navigable (per `navigable`) or a plain `<div>` otherwise; either way it
- * carries `aria-current="step"` for the current step and an `aria-label` built
- * from `copy.stepLabel` plus the status word, so state is announced without
- * relying on the (decorative, `aria-hidden`) visible label text. Selecting a
- * navigable step fires a composed `step-select` CustomEvent with `{ id }` —
- * the stepper never changes `current` itself. Below `layout.maxWidth.prose` a
- * horizontal stepper switches to `compact` via a container query.
+ * `<ds-stepper current="payment" .steps=${steps}>` renders a shadow `<nav aria-label>` wrapping an
+ * `<ol>`. Each `<li>` holds a control — its own native `<button>` when the step is navigable, a `<div>`
+ * otherwise — containing the indicator (number, `check` or `danger` icon), the label and (vertical)
+ * description as `<ds-text>`, and a visually-hidden status word; a connector follows all but the last
+ * step. The current step's control carries `aria-current="step"`. Choosing a navigable step fires a
+ * composed `step-select` with `{ id }`; the stepper never changes `current` itself. Below
+ * `layout.maxWidth.prose` a horizontal stepper switches to `compact` through a container query on the host.
  *
  * ## When to use
  *
- * Use a Stepper for a flow with three to about seven ordered steps that each
- * fit on a screen: checkout, account setup, a report builder, a multi-part
- * application. Vertical with descriptions for flows that need explanation;
- * horizontal for short, familiar ones. Leave `navigable="completed"` so
- * people can correct earlier answers without losing later ones.
+ * A flow with three to about seven ordered steps that each fit on a screen: checkout, account setup, a
+ * report builder, a multi-part application. Vertical with descriptions for flows that need explanation;
+ * horizontal for short, familiar ones. Leave `navigable="completed"` so people can correct earlier
+ * answers without losing later ones.
  *
  * ## When not to use
  *
- * Not for two steps (a Button that says "Continue" is enough) or more than
- * about eight (group them). Not Tabs — steps have an order and a current
- * position. Not task progress (ProgressBar), not a jump-anywhere settings nav
- * (a `nav` of Links).
+ * Not for two steps (a Button that says "Continue" is enough) or more than about eight (group them). Not
+ * Tabs, not task progress (ProgressBar), not a jump-anywhere settings nav (a `nav` of Links).
  *
- * @fires step-select - Fired when a navigable step is chosen, with `{ id }` in `detail`. The container changes `current`; the stepper never changes it itself.
- * @csspart list - The `<ol>` (anatomy: list).
- * @csspart step - Each `<li>` (anatomy: step).
- * @csspart indicator - The step indicator (anatomy: indicator).
- * @csspart connector - The line between steps (anatomy: connector).
- * @csspart label - The step's label `<ds-text>` (anatomy: label).
- * @csspart description - The step's description `<ds-text>` (anatomy: description).
+ * @fires step-select - A navigable step was chosen; `detail.id` is its id.
  */
 @customElement('ds-stepper')
 export class DsStepper extends LitElement {
@@ -140,256 +118,253 @@ export class DsStepper extends LitElement {
 
   static override styles: CSSResult = css`
     :host {
-      display: block;
-      container-type: inline-size;
-      font-family: var(--ds-stepper-font-family);
       --ds-stepper-indicator-size: var(--space-6);
       --ds-stepper-indicator-background: var(--color-control-background);
-      --ds-stepper-indicator-border-width: var(--border-width-focus);
       --ds-stepper-indicator-font-size: var(--font-size-sm);
       --ds-stepper-indicator-font-weight: var(--font-weight-semibold);
       --ds-stepper-connector: var(--color-border);
-      --ds-stepper-connector-width: var(--border-width-focus);
-      --ds-stepper-label-weight: var(--font-weight-medium);
-      --ds-stepper-label-current-weight: var(--font-weight-semibold);
-      --ds-stepper-label-size: var(--font-size-sm);
-      --ds-stepper-description-size: var(--font-size-xs);
       --ds-stepper-step-hover: var(--color-action-ghost-background-hover);
       --ds-stepper-step-radius: var(--radius-sm);
       --ds-stepper-step-gap: var(--layout-gap-normal);
       --ds-stepper-part-gap: var(--space-2);
-      --ds-stepper-font-family: var(--font-family-body);
+      --ds-stepper-font-family: var(--font-family-body); /* literal-ok: hook name, not a font stack */
       --ds-stepper-transition: var(--motion-duration-fast);
+      display: block;
+      container-type: inline-size;
+      font-family: var(--ds-stepper-font-family);
     }
 
     :host([hidden]) {
       display: none;
     }
 
+    /* Label and description colour, size and weight belong to the composed Text: labelColor,
+       labelUpcomingColor and descriptionColor are its tone; the size and weight hooks reach its overrides. */
+
     ol {
       display: flex;
-      flex-direction: row;
-      align-items: flex-start;
-      gap: var(--ds-stepper-step-gap);
       margin: 0;
       padding: 0;
       list-style: none;
     }
 
-    :host([orientation='vertical']) ol {
-      flex-direction: column;
-    }
-
-    .step {
+    li {
       display: flex;
-      flex-direction: column;
-      align-items: center;
-      flex: 1 1 0%;
-      gap: var(--ds-stepper-part-gap);
-    }
-
-    :host([orientation='vertical']) .step {
-      flex-direction: row;
-      align-items: flex-start;
-      flex: none;
-    }
-
-    .indicator-row {
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      inline-size: 100%;
-    }
-
-    :host([orientation='vertical']) .indicator-row {
-      flex-direction: column;
-      align-items: center;
-      align-self: stretch;
-      inline-size: auto;
-    }
-
-    /* indicatorSize: space.6; indicatorBorder: color.border.strong, locked */
-    .indicator {
-      box-sizing: border-box;
-      flex: none;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      inline-size: var(--ds-stepper-indicator-size);
-      block-size: var(--ds-stepper-indicator-size);
-      border-radius: var(--radius-full);
-      border: var(--ds-stepper-indicator-border-width) solid var(--color-border-strong);
-      background: var(--ds-stepper-indicator-background);
-      color: var(--color-foreground);
-      font-size: var(--ds-stepper-indicator-font-size);
-      font-weight: var(--ds-stepper-indicator-font-weight);
-      line-height: 1;
-      transition:
-        background-color var(--ds-stepper-transition) var(--motion-easing-standard),
-        border-color var(--ds-stepper-transition) var(--motion-easing-standard),
-        color var(--ds-stepper-transition) var(--motion-easing-standard);
-    }
-
-    /* indicatorCurrentBorder: color.control.selectedBackground, locked */
-    .indicator[data-status='current'] {
-      border-color: var(--color-control-selected-background);
-    }
-
-    /* indicatorCompleteBackground / indicatorCompleteForeground: locked */
-    .indicator[data-status='complete'] {
-      background: var(--color-control-selected-background);
-      border-color: var(--color-control-selected-background);
-      color: var(--color-control-selected-foreground);
-    }
-
-    /* indicatorErrorBackground / indicatorErrorForeground / indicatorErrorBorder: locked; the ring is the 3:1-guaranteed piece */
-    .indicator[data-status='error'] {
-      background: var(--color-status-danger-background);
-      border-color: var(--color-status-danger-icon);
-      color: var(--color-status-danger-foreground);
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .indicator {
-        transition: none;
-      }
-    }
-
-    /* connector: color.border; connectorWidth: border.width.focus */
-    .connector {
-      flex: 1 1 auto;
-      align-self: center;
-      block-size: var(--ds-stepper-connector-width);
-      background: var(--ds-stepper-connector);
-      transition: background-color var(--ds-stepper-transition) var(--motion-easing-standard);
-    }
-
-    :host([orientation='vertical']) .connector {
-      inline-size: var(--ds-stepper-connector-width);
-      block-size: auto;
-      min-block-size: var(--ds-stepper-indicator-size);
-    }
-
-    /* connectorComplete: color.control.selectedBackground, locked */
-    .connector[data-complete] {
-      background: var(--color-control-selected-background);
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .connector {
-        transition: none;
-      }
+      min-inline-size: 0;
     }
 
     .control {
       box-sizing: border-box;
       display: flex;
-      flex-direction: column;
       align-items: center;
       gap: var(--ds-stepper-part-gap);
-      min-inline-size: var(--size-target-min);
       min-block-size: var(--size-target-min);
+      min-inline-size: var(--size-target-min);
+      padding-block: 0;
+      padding-inline: var(--ds-stepper-part-gap);
       margin: 0;
-      padding: 0;
-      border: 0;
+      border: none;
       border-radius: var(--ds-stepper-step-radius);
-      background: transparent;
+      background: none;
+      color: inherit;
       font: inherit;
+      text-align: start;
     }
 
-    :host([orientation='vertical']) .control {
-      align-items: flex-start;
-    }
-
-    /* stepHover: color.action.ghost.backgroundHover — hover and press background of a navigable step */
+    /* stepHover: hover and press background of a navigable step */
     button.control {
       cursor: pointer;
       appearance: none;
-      -webkit-appearance: none;
-      transition: background-color var(--ds-stepper-transition) var(--motion-easing-standard);
     }
 
     button.control:hover,
     button.control:active {
-      background: var(--ds-stepper-step-hover);
+      background-color: var(--ds-stepper-step-hover);
     }
 
-    @media (prefers-reduced-motion: reduce) {
-      button.control {
-        transition: none;
-      }
-    }
-
-    /* focusRing / focusRingWidth: color.border.focus / border.width.focus, locked */
+    /* focusRing / focusRingWidth, locked */
     button.control:focus-visible {
       outline: var(--border-width-focus) solid var(--color-border-focus);
       outline-offset: var(--border-width-focus);
     }
 
-    .label-wrap {
-      display: inline;
-    }
-
-    :host([compact]) .label-wrap {
-      display: none;
-    }
-    :host([compact]) .control[aria-current='step'] .label-wrap {
-      display: inline;
-    }
-
-    .description-wrap {
-      display: inline;
-    }
-    :host(:not([orientation='vertical'])) .description-wrap {
-      display: none;
-    }
-
-    .step-of {
-      display: none;
-      margin: 0;
-      padding-block-start: var(--ds-stepper-part-gap);
-      font-family: var(--ds-stepper-font-family);
-      font-size: var(--ds-stepper-label-size);
-      font-weight: var(--ds-stepper-label-current-weight);
+    /* The indicator has four discrete states and switches between them at once. */
+    [data-part='indicator'] {
+      box-sizing: border-box;
+      display: inline-flex;
+      flex: none;
+      align-items: center;
+      justify-content: center;
+      inline-size: var(--ds-stepper-indicator-size);
+      block-size: var(--ds-stepper-indicator-size);
+      border: var(--border-width-focus) solid var(--color-border-strong);
+      border-radius: var(--radius-full);
+      background-color: var(--ds-stepper-indicator-background);
       color: var(--color-foreground);
+      font-size: var(--ds-stepper-indicator-font-size);
+      font-weight: var(--ds-stepper-indicator-font-weight);
+      line-height: 1;
     }
 
-    :host([compact]) .step-of {
+    li[data-selected] [data-part='indicator'] {
+      border-color: var(--color-control-selected-background);
+    }
+
+    li[data-status='complete'] [data-part='indicator'] {
+      border-color: var(--color-control-selected-background);
+      background-color: var(--color-control-selected-background);
+      color: var(--color-control-selected-foreground);
+    }
+
+    li[data-status='error'] [data-part='indicator'] {
+      border-color: var(--color-status-danger-icon);
+      background-color: var(--color-status-danger-background);
+      color: var(--color-status-danger-foreground);
+    }
+
+    .content {
+      display: flex;
+      flex-direction: column;
+      min-inline-size: 0;
+    }
+
+    /* The connector fills the gap between steps along the orientation axis. */
+    [data-part='connector'] {
+      flex: none;
+      background-color: var(--ds-stepper-connector);
+    }
+
+    [data-part='connector'][data-complete] {
+      background-color: var(--color-control-selected-background);
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      [data-part='connector'] {
+        transition: background-color var(--ds-stepper-transition) var(--motion-easing-standard);
+      }
+    }
+
+    /* visually hidden: clip pattern, carries the status word */
+    .visually-hidden {
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      margin: -1px;
+      padding: 0;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .count {
+      display: none;
+    }
+
+    /* horizontal */
+    :host(:not([orientation='vertical'])) ol {
+      align-items: center;
+    }
+
+    :host(:not([orientation='vertical'])) li {
+      flex: 1 1 auto;
+      align-items: center;
+    }
+
+    :host(:not([orientation='vertical'])) li:last-child {
+      flex: none;
+    }
+
+    :host(:not([orientation='vertical'])) [data-part='connector'] {
+      flex: 1 1 auto;
+      min-inline-size: var(--ds-stepper-step-gap);
+      block-size: var(--border-width-focus);
+    }
+
+    /* vertical: descriptions under each label; the connector runs down from the indicator's centre */
+    :host([orientation='vertical']) ol {
+      flex-direction: column;
+    }
+
+    :host([orientation='vertical']) li {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    :host([orientation='vertical']) .control {
+      align-items: flex-start;
+      padding-block: var(--ds-stepper-part-gap);
+    }
+
+    :host([orientation='vertical']) [data-part='connector'] {
+      align-self: flex-start;
+      inline-size: var(--border-width-focus);
+      min-block-size: var(--ds-stepper-step-gap);
+      margin-inline-start: calc(
+        var(--ds-stepper-part-gap) + (var(--ds-stepper-indicator-size) - var(--border-width-focus)) / 2
+      );
+    }
+
+    /* compact (horizontal only): the indicators stay, only the current step's label shows, then the count.
+       Hidden labels are clipped (visually hidden), not removed, so a screen reader still reaches them. */
+    :host([compact]:not([orientation='vertical'])) li:not([data-selected]) .content {
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      margin: -1px;
+      padding: 0;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    :host([compact]:not([orientation='vertical'])) .count {
       display: block;
     }
 
-    @container (max-width: ${unsafeCSS(COMPACT_BREAKPOINT_PX)}px) {
-      :host([orientation='horizontal']) .label-wrap {
-        display: none;
+    @container (max-width: ${unsafeCSS(PROSE_WIDTH_PX)}px) { /* literal-ok: breakpoint from layout.maxWidth.prose */
+      /* visually hidden clip pattern, as compact */
+      :host(:not([orientation='vertical'])) li:not([data-selected]) .content {
+        position: absolute;
+        inline-size: 1px;
+        block-size: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+        border: 0;
       }
-      :host([orientation='horizontal']) .control[aria-current='step'] .label-wrap {
-        display: inline;
-      }
-      :host([orientation='horizontal']) .step-of {
+
+      :host(:not([orientation='vertical'])) .count {
         display: block;
       }
     }
   `;
 
-  /** The steps in order. A property, not an attribute. */
+  /** Accessible name of the navigation landmark. Defaults to `copy.navLabel`. */
+  @property() accessor label: string | undefined;
+
+  /** The steps in order. `status` is derived from `current` when omitted: before it complete, after it upcoming. */
   @property({ attribute: false }) accessor steps: StepperStep[] = [];
 
   /** The id of the current step. */
-  @property({ reflect: true }) accessor current = '';
+  @property({ type: String, reflect: true }) accessor current = '';
 
-  /** Vertical shows descriptions under each label; horizontal collapses to `compact` below the prose width. */
-  @property({ reflect: true }) accessor orientation: StepperOrientation = 'horizontal';
+  /** Vertical shows descriptions under each label and suits a side column; horizontal collapses to `compact` below the prose width. */
+  @property({ type: String, reflect: true }) accessor orientation: StepperOrientation = 'horizontal';
 
-  /** Which steps are focusable controls: `none`, `completed` (the usual — go back, not skip ahead), or `all`. */
-  @property({ reflect: true }) accessor navigable: StepperNavigable = 'completed';
+  /**
+   * Which steps can be activated: none (display only), completed (any step before the current one by
+   * position, including one marked `error`), or all.
+   */
+  @property({ type: String, reflect: true }) accessor navigable: StepperNavigable = 'completed';
 
-  /** Show only the current step's label and "Step n of m"; the indicators stay. Automatic on narrow horizontal steppers. */
+  /** Show only the current step's label and "Step n of m"; the indicators stay. Horizontal only. */
   @property({ type: Boolean, reflect: true }) accessor compact = false;
 
-  /** Accessible name of the navigation landmark. */
-  @property() accessor label = 'Progress';
-
-  /** Per-instance style overrides: `{ transition: 'motion.duration.slow' }`. Locked bindings are ignored. */
+  /** Per-instance style overrides: each entry sets the matching hook, or the composed Text's own override, to that token. */
   @property({ attribute: false }) accessor overrides: Partial<Record<StepperOverridableBinding, TokenRef | undefined>> | undefined;
 
   override connectedCallback(): void {
@@ -398,186 +373,139 @@ export class DsStepper extends LitElement {
   }
 
   protected override willUpdate(changed: PropertyValues): void {
-    if (changed.has('overrides')) {
-      this.applyOverrides();
+    if (changed.has('overrides')) this.applyOverrides();
+    if (import.meta.env.DEV && (changed.has('steps') || changed.has('current'))) {
+      if (this.current && !this.steps.some((step) => step.id === this.current)) {
+        console.warn(`<ds-stepper> \`current\` "${this.current}" does not match any step id.`, this);
+      }
     }
-  }
-
-  protected override updated(): void {
-    this.warnInDev();
   }
 
   protected override render(): TemplateResult {
     const steps = this.steps;
-    const total = steps.length;
     const currentIndex = steps.findIndex((step) => step.id === this.current);
+    const count = COPY.stepOf
+      .replace('{current}', String(Math.max(currentIndex, 0) + 1))
+      .replace('{total}', String(steps.length));
 
     return html`
-      <nav aria-label=${this.label}>
-        <ol part="list">${steps.map((step, index) => this.renderStep(step, index, currentIndex, total))}</ol>
-        <p class="step-of">${formatStepOf(currentIndex + 1, total)}</p>
+      <nav aria-label=${this.label || COPY.navLabel}>
+        <ol data-part="list" part="list">
+          ${steps.map((step, index) => this.renderStep(step, index, currentIndex))}
+        </ol>
+        <ds-text class="count" element="span" size="sm" tone="muted">${count}</ds-text>
       </nav>
     `;
   }
 
-  private renderStep(step: StepperStep, index: number, currentIndex: number, total: number) {
-    const status: StepperStepStatus =
-      step.status ?? (index < currentIndex ? 'complete' : index === currentIndex ? 'current' : 'upcoming');
-    const isCurrentStep = step.id === this.current;
-    const navigable = this.isNavigable(index, currentIndex);
-    const n = index + 1;
-    const word = statusWord(status);
-    const accessibleLabel = word ? `${formatStepLabel(n, step.label)}, ${word}` : formatStepLabel(n, step.label);
-    const hasDescription = step.description !== undefined && step.description !== '';
-    const descId = `${step.id}-description`;
-    const align = this.orientation === 'vertical' ? 'start' : 'center';
+  private renderStep(step: StepperStep, index: number, currentIndex: number): TemplateResult {
+    const status = resolveStatus(step, index, currentIndex);
+    // Selection and the compact reveal follow the id; the indicator and status word follow the status.
+    const isCurrent = step.id === this.current;
+    const isNavigable =
+      this.navigable === 'all' || (this.navigable === 'completed' && currentIndex !== -1 && index < currentIndex);
+    const word = isCurrent && status !== 'error' ? COPY.current : STATUS_WORD[status];
+    const descriptionId =
+      step.description && this.orientation === 'vertical' ? `step-${index}-description` : undefined;
+    const isLast = index === this.steps.length - 1;
 
     const content = html`
-      <span class="label-wrap">
+      <span data-part="indicator" part="indicator" aria-hidden="true">
+        ${status === 'complete'
+          ? html`<ds-icon name="check" inline></ds-icon>`
+          : status === 'error'
+            ? html`<ds-icon name="danger" inline></ds-icon>`
+            : String(index + 1)}
+      </span>
+      <span class="content">
         <ds-text
-          class="label"
+          data-part="label"
           part="label"
           element="span"
           size="sm"
-          align=${align}
-          weight=${isCurrentStep ? 'semibold' : 'medium'}
-          tone=${status === 'upcoming' ? 'muted' : 'default'}
-          .overrides=${this.textOverrides('label', isCurrentStep)}
+          weight=${isCurrent ? 'semibold' : 'medium'}
+          tone=${status === 'upcoming' && !isCurrent ? 'muted' : 'default'}
+          .overrides=${this.textOverrides(isCurrent ? 'currentLabel' : 'label')}
+          >${step.label}</ds-text
         >
-          ${step.label}
-        </ds-text>
-      </span>
-      ${hasDescription
-        ? html`<span class="description-wrap">
-            <ds-text
-              id=${descId}
-              class="description"
+        ${descriptionId
+          ? html`<ds-text
+              id=${descriptionId}
+              data-part="description"
               part="description"
               element="span"
               size="xs"
-              align=${align}
               tone="muted"
-              .overrides=${this.textOverrides('description', isCurrentStep)}
-            >
-              ${step.description}
-            </ds-text>
-          </span>`
-        : nothing}
+              .overrides=${this.textOverrides('description')}
+              >${step.description}</ds-text
+            >`
+          : nothing}
+        ${word ? html`<span class="visually-hidden">${word}</span>` : nothing}
+      </span>
     `;
 
-    const control = navigable
-      ? html`<button
-          type="button"
-          class="control"
-          aria-label=${accessibleLabel}
-          aria-describedby=${ifDefined(hasDescription ? descId : undefined)}
-          aria-current=${ifDefined(isCurrentStep ? 'step' : undefined)}
-          @click=${() => this.handleStepClick(step)}
-        >
-          ${content}
-        </button>`
-      : html`<div
-          class="control"
-          aria-label=${accessibleLabel}
-          aria-describedby=${ifDefined(hasDescription ? descId : undefined)}
-          aria-current=${ifDefined(isCurrentStep ? 'step' : undefined)}
-        >
-          ${content}
-        </div>`;
-
     return html`
-      <li class="step" part="step">
-        <span class="indicator-row">
-          <span class="indicator" part="indicator" data-status=${status} aria-hidden="true">
-            ${this.renderIndicator(status, n)}
-          </span>
-          ${index < total - 1
-            ? html`<span class="connector" part="connector" aria-hidden="true" ?data-complete=${status === 'complete'}></span>`
-            : nothing}
-        </span>
-        ${control}
+      <li
+        data-part="step"
+        part="step"
+        data-status=${status}
+        ?data-selected=${isCurrent}
+      >
+        ${isNavigable
+          ? html`<button
+              type="button"
+              class="control"
+              aria-current=${ifDefined(isCurrent ? 'step' : undefined)}
+              aria-describedby=${ifDefined(descriptionId)}
+              @click=${() => this.select(step.id)}
+            >
+              ${content}
+            </button>`
+          : html`<div class="control" aria-current=${ifDefined(isCurrent ? 'step' : undefined)}>${content}</div>`}
+        ${isLast
+          ? nothing
+          : html`<span
+              data-part="connector"
+              part="connector"
+              aria-hidden="true"
+              ?data-complete=${currentIndex !== -1 && index < currentIndex}
+            ></span>`}
       </li>
     `;
   }
 
-  private renderIndicator(status: StepperStepStatus, n: number) {
-    if (status === 'complete') {
-      return html`<ds-icon name="check" inline></ds-icon>`;
-    }
-    if (status === 'error') {
-      return html`<ds-icon name="danger" inline></ds-icon>`;
-    }
-    return `${n}`;
-  }
-
-  private isNavigable(index: number, currentIndex: number): boolean {
-    if (this.navigable === 'none') {
-      return false;
-    }
-    if (this.navigable === 'all') {
-      return true;
-    }
-    return index < currentIndex;
-  }
-
-  private handleStepClick(step: StepperStep): void {
+  private select(id: string): void {
     this.dispatchEvent(
       new CustomEvent<StepperStepSelectDetail>('step-select', {
-        detail: { id: step.id },
+        detail: { id },
         bubbles: true,
         composed: true,
       }),
     );
   }
 
-  /** Forwards this component's own overrides down to a composed `<ds-text>`'s `overrides` property. */
-  private textOverrides(
-    kind: 'label' | 'description',
-    isCurrentStep: boolean,
-  ): Partial<Record<TextOverridableBinding, TokenRef | undefined>> | undefined {
+  /** Forwards label and description typography overrides to the composed `<ds-text>`. */
+  private textOverrides(kind: 'label' | 'currentLabel' | 'description'): TextOverrides | undefined {
     const source = this.overrides;
-    if (!source) {
-      return undefined;
-    }
-    const result: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
-    if (source.fontFamily) {
-      result.fontFamily = source.fontFamily;
-    }
-    if (kind === 'label') {
-      const weightRef = isCurrentStep ? source.labelCurrentWeight : source.labelWeight;
-      if (weightRef) {
-        result.fontWeight = weightRef;
-      }
-      if (source.labelSize) {
-        result.fontSize = source.labelSize;
-      }
-    } else if (source.descriptionSize) {
-      result.fontSize = source.descriptionSize;
+    if (!source) return undefined;
+    const result: TextOverrides = {};
+    if (source.fontFamily) result.fontFamily = source.fontFamily;
+    if (kind === 'description') {
+      if (source.descriptionSize) result.fontSize = source.descriptionSize;
+    } else {
+      if (source.labelSize) result.fontSize = source.labelSize;
+      const weight = kind === 'currentLabel' ? source.labelCurrentWeight : source.labelWeight;
+      if (weight) result.fontWeight = weight;
     }
     return Object.keys(result).length > 0 ? result : undefined;
   }
 
   private applyOverrides(): void {
     for (const binding of Object.keys(HOOKS) as StepperOverridableBinding[]) {
+      const hook = HOOKS[binding]!;
       const ref = this.overrides?.[binding];
-      const hook = HOOKS[binding];
-      if (ref === undefined) {
-        this.style.removeProperty(hook);
-      } else {
-        this.style.setProperty(hook, cssVar(ref));
-      }
-    }
-  }
-
-  private warnInDev(): void {
-    if (!import.meta.env.DEV) {
-      return;
-    }
-    if (this.steps.length === 0) {
-      console.warn('<ds-stepper> requires at least one entry in `steps`.', this);
-    }
-    if (this.current && !this.steps.some((step) => step.id === this.current)) {
-      console.warn('<ds-stepper> `current` does not match any step id.', this);
+      if (ref === undefined) this.style.removeProperty(hook);
+      else this.style.setProperty(hook, cssVar(ref));
     }
   }
 }

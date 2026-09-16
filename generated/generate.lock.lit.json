@@ -320,19 +320,18 @@
     }
   },
   "DatePicker.lit": {
-    "hash": "f26eb1d824e93766",
-    "lastAttemptHash": "f26eb1d824e93766",
-    "generatedAt": "2026-09-10T22:54:40+00:00",
-    "model": "sonnet",
+    "hash": "30d598bbaf00d4f5",
+    "lastAttemptHash": "30d598bbaf00d4f5",
+    "generatedAt": "2026-09-16T14:20:46+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.955,
+    "costUsd": 6.6326,
     "files": [
       "packages/lit/src/DatePicker.stories.ts",
-      "packages/lit/src/DatePicker.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/DatePicker.ts"
     ],
-    "gaps": 4,
+    "gaps": 18,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -696,19 +695,20 @@
     }
   },
   "NumberInput.lit": {
-    "hash": "cb7a510102a9e4b0",
-    "lastAttemptHash": "cb7a510102a9e4b0",
-    "generatedAt": "2026-09-10T22:41:58+00:00",
-    "model": "sonnet",
+    "hash": "36c39023734d66d3",
+    "lastAttemptHash": "36c39023734d66d3",
+    "generatedAt": "2026-09-16T13:29:12+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.3947,
+    "costUsd": 3.1138,
     "files": [
       "packages/lit/src/NumberInput.stories.ts",
+      "packages/lit/src/NumberInput.test.ts",
       "packages/lit/src/NumberInput.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 9,
+    "gaps": 12,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -764,17 +764,19 @@
     }
   },
   "ProgressBar.lit": {
-    "hash": "579b29428b8358e5",
-    "lastAttemptHash": "579b29428b8358e5",
-    "generatedAt": "2026-09-10T22:43:47+00:00",
-    "model": "sonnet",
+    "hash": "c1604d3d0a2dc4ea",
+    "lastAttemptHash": "c1604d3d0a2dc4ea",
+    "generatedAt": "2026-09-16T13:37:59+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.4636,
+    "costUsd": 1.3298,
     "files": [
+      "packages/lit/src/ProgressBar.stories.ts",
+      "packages/lit/src/ProgressBar.test.ts",
       "packages/lit/src/ProgressBar.ts"
     ],
-    "gaps": 3,
+    "gaps": 12,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -808,17 +810,19 @@
     }
   },
   "Search.lit": {
-    "hash": "4d893a68f61f48aa",
-    "lastAttemptHash": "4d893a68f61f48aa",
-    "generatedAt": "2026-09-10T22:48:34+00:00",
-    "model": "sonnet",
+    "hash": "146b1a43a651d58f",
+    "lastAttemptHash": "146b1a43a651d58f",
+    "generatedAt": "2026-09-16T13:56:55+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.7365,
+    "costUsd": 2.516,
     "files": [
+      "packages/lit/src/Search.stories.ts",
+      "packages/lit/src/Search.test.ts",
       "packages/lit/src/Search.ts"
     ],
-    "gaps": 2,
+    "gaps": 12,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -898,18 +902,19 @@
     }
   },
   "Slider.lit": {
-    "hash": "4a9b570683a66fe1",
-    "lastAttemptHash": "4a9b570683a66fe1",
-    "generatedAt": "2026-09-10T22:40:34+00:00",
-    "model": "sonnet",
+    "hash": "8216058322889cdc",
+    "lastAttemptHash": "8216058322889cdc",
+    "generatedAt": "2026-09-16T13:16:33+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.7984,
+    "costUsd": 2.2318,
     "files": [
       "packages/lit/src/Slider.stories.ts",
+      "packages/lit/src/Slider.test.ts",
       "packages/lit/src/Slider.ts"
     ],
-    "gaps": 3,
+    "gaps": 13,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -966,18 +971,19 @@
     }
   },
   "Stepper.lit": {
-    "hash": "98291b020e091137",
-    "lastAttemptHash": "98291b020e091137",
-    "generatedAt": "2026-09-10T22:45:32+00:00",
-    "model": "sonnet",
+    "hash": "5973621f904d98ff",
+    "lastAttemptHash": "5973621f904d98ff",
+    "generatedAt": "2026-09-16T13:45:49+00:00",
+    "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.4594,
+    "costUsd": 1.8883,
     "files": [
       "packages/lit/src/Stepper.stories.ts",
+      "packages/lit/src/Stepper.test.ts",
       "packages/lit/src/Stepper.ts"
     ],
-    "gaps": 1,
+    "gaps": 13,
     "gates": {
       "parse": true,
       "contrast": true,

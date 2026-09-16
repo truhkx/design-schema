@@ -4,11 +4,14 @@ import { DatePicker } from './DatePicker';
 const meta: Meta<typeof DatePicker> = {
   title: 'DatePicker/React',
   component: DatePicker,
+  tags: ['autodocs'],
   args: {
     label: 'Due date',
-    name: 'due-date',
+    name: 'due',
   },
-  tags: ['autodocs'],
+  argTypes: {
+    size: { control: 'inline-radio', options: ['sm', 'md'] },
+  },
 };
 
 export default meta;
@@ -16,62 +19,55 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
-/* notable states */
-export const RangeTrue: Story = {
-  args: { label: 'Report period', name: 'report-period', range: true },
+export const SizeSm: Story = { args: { size: 'sm' } };
+
+export const SizeMd: Story = { args: { size: 'md' } };
+
+/* Examples from the component doc, with exactly their `given`. */
+
+export const DateOfBirth: Story = { args: { label: 'Date of birth', name: 'dob', max: '2026-09-16' } };
+
+export const StayDates: Story = { args: { label: 'Stay', name: 'stay', range: true } };
+
+export const AppointmentWithWeekNumbers: Story = {
+  args: { label: 'Appointment', name: 'appointment', min: '2026-09-16', showWeekNumbers: true },
 };
 
-export const WithDefaultValue: Story = {
-  args: { defaultValue: '2026-09-10' },
+export const CompactCellEditor: Story = { args: { label: 'Due date', name: 'due', size: 'sm', hideLabel: true } };
+
+/* Notable states. */
+
+export const WithValue: Story = { args: { defaultValue: '2026-09-10' } };
+
+export const RangeWithValue: Story = {
+  args: { label: 'Report period', name: 'period', range: true, defaultValue: { start: '2026-09-07', end: '2026-09-11' } },
 };
 
-export const WithDescription: Story = {
-  args: { description: 'The date the order must ship by.' },
-};
+export const Open: Story = { args: { open: true, defaultValue: '2026-09-10' } };
+
+export const WithDescription: Story = { args: { description: 'The day the order must ship by.' } };
 
 export const Required: Story = { args: { required: true } };
 
 export const Disabled: Story = { args: { disabled: true, defaultValue: '2026-09-10' } };
 
-export const WithError: Story = {
-  args: { error: 'Due date is required.' },
-};
+export const WithError: Story = { args: { error: 'Due date is required.' } };
 
-export const WithMinMax: Story = {
-  args: { min: '2026-09-01', max: '2026-09-30', description: 'Pick a day in September.' },
-};
-
-export const WithDisabledDates: Story = {
+export const WeekendsDisabled: Story = {
   args: {
-    description: 'Weekends are unavailable.',
+    description: 'Weekdays only.',
     isDateDisabled: (isoDate: string) => {
       const [year, month, day] = isoDate.split('-').map(Number);
-      const weekday = new Date(Date.UTC(year!, month! - 1, day!)).getUTCDay();
+      const weekday = new Date(Date.UTC(year ?? 0, (month ?? 1) - 1, day ?? 1)).getUTCDay();
       return weekday === 0 || weekday === 6;
     },
   },
 };
 
-export const ShowWeekNumbersTrue: Story = {
-  args: { showWeekNumbers: true },
-};
-
-export const WithLocale: Story = {
-  args: { label: 'Geburtsdatum', name: 'birth-date-de', locale: 'de-DE', defaultValue: '2026-09-10' },
-};
-
-export const SizeSm: Story = { args: { size: 'sm' } };
-
-export const SizeMd: Story = { args: { size: 'md' } };
-
-export const HideLabelTrue: Story = { args: { hideLabel: true } };
-
-export const OpenTrue: Story = { args: { open: true } };
+export const LocaleDe: Story = { args: { label: 'Fälligkeitsdatum', locale: 'de-DE', defaultValue: '2026-09-10' } };
 
 /**
- * Open/present with its trigger and the calendar's controls — month/year navigation, the day grid
- * (one roving tab stop), Today and Clear — for the keyboard gate.
+ * The calendar open with its trigger: month/year Selects and prev/next Buttons, the grid (one
+ * roving tab stop), Today and Clear.
  */
-export const Keyboard: Story = {
-  args: { label: 'Meeting date', name: 'meeting-date-keyboard', defaultValue: '2026-09-10', open: true },
-};
+export const Keyboard: Story = { args: { open: true, defaultValue: '2026-09-10' } };

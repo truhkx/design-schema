@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { AccessibilityInfo, Animated, Easing, View } from 'react-native';
-import type { LayoutChangeEvent, ViewStyle } from 'react-native';
+import type { LayoutChangeEvent, ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Text } from './Text';
@@ -33,7 +33,10 @@ export interface ProgressBarProps {
   min?: number | undefined;
   /** End of the range. */
   max?: number | undefined;
-  /** Renders the value text ("42%", "3 of 12 files"). Defaults to a percentage. */
+  /**
+   * Renders the value text ("42%", "3 of 12 files"). Defaults to a percentage over the whole range —
+   * `(value − min) / (max − min)`, the same arithmetic the fill uses.
+   */
   formatValue?: ((value: number, min: number, max: number) => string) | undefined;
   /** Show the value text beside the label. Ignored when indeterminate. */
   showValue?: boolean | undefined;
@@ -45,6 +48,8 @@ export interface ProgressBarProps {
   announce?: ProgressBarAnnounce | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<ProgressBarOverridableBinding, TokenRef | undefined>> | undefined;
+  /** The root `View`. */
+  ref?: React.Ref<ViewInstance> | undefined;
 }
 
 const FILL_TOKEN = {
@@ -59,7 +64,8 @@ const COPY = {
   indeterminate: (label: string): string => `${label}: in progress`,
 } as const;
 
-const MILESTONES = [25, 50, 75] as const;
+/** Milestone tiers are quarters of the range: 1–3 announce `copy.progress`, 4 is completion. */
+const TIERS = 4;
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -79,23 +85,23 @@ function defaultFormatValue(value: number, min: number, max: number): string {
  * overall completion. Not a measured quantity that can go up or down (Meter), not a
  * value the user sets (Slider).
  *
- * Renders a `View` with `accessibilityRole="progressbar"`, `accessibilityLabel`
- * (the accessible name even when `hideLabel` hides the visible label) and
- * `accessibilityValue={{ min, max, now, text }}` — `now`/`text` are omitted while
- * indeterminate, and `accessibilityState={{ busy: true }}` is set instead, mirroring
- * the web build's `aria-busy`. Inside: an optional label row (`Text` label and, when
- * determinate and `showValue`, a `Text` value) and a track `View` holding an
- * `Animated.View` fill. The fill's pixel width animates to the value's fraction of
- * the range over `transition` (`useNativeDriver: false`), snapping under reduced
- * motion. Indeterminate: a one-third-width fill sweeps the track on an `Animated.loop`
- * over `indeterminateLoop`; under reduced motion the sweep is replaced by a static,
- * full-width fill at `opacity.disabled`. `AccessibilityInfo.announceForAccessibility`
- * fires `copy.indeterminate` once on becoming indeterminate, `copy.progress` at each
- * 25/50/75% milestone when `announce="milestones"`, and `copy.complete` once on
- * reaching `max`, all gated on `announce !== 'none'`; the milestone and completion
- * state resets whenever the value moves backward, so a retried task announces again.
- * A non-finite `value` counts as `min`; if `max <= min` the track renders empty and a
- * warning is logged in development.
+ * Renders an `accessible` `View` with `accessibilityRole="progressbar"`,
+ * `accessibilityLabel` (the accessible name even when `hideLabel` hides the visible
+ * label) and `accessibilityValue={{ min, max, now, text }}` — an indeterminate bar
+ * carries `min` and `max` only and sets `accessibilityState={{ busy: true }}`. Inside:
+ * an optional label row (`Text` label and, when determinate and `showValue`, a muted
+ * `Text` value) and a track `View` holding an `Animated.View` fill. The fill's width
+ * animates to the value's fraction of the range over `transition`, snapping under
+ * reduced motion. Indeterminate: a one-third-width fill sweeps the track on a linear
+ * `Animated.loop` over `indeterminateLoop`, not started under reduced motion, where a
+ * static full-width fill at `opacity.disabled` replaces it.
+ *
+ * Announcements (`AccessibilityInfo.announceForAccessibility`, skipped for
+ * `announce="none"`): `copy.indeterminate` each time the bar becomes indeterminate,
+ * including on mount; `copy.progress` at 25/50/75% for `milestones` (only the highest
+ * tier crossed by one change); `copy.complete` once on reaching `max`. A value that
+ * moves backward resets the announced tiers to where it now is. The bar is never
+ * focusable. If `max <= min` the track renders empty and a development warning is logged.
  */
 export function ProgressBar({
   label,
@@ -108,6 +114,7 @@ export function ProgressBar({
   tone = 'neutral',
   announce = 'complete',
   overrides,
+  ref,
 }: ProgressBarProps): React.JSX.Element {
   const { tokens } = useTheme();
   const reducedMotion = useReducedMotion();
@@ -117,21 +124,21 @@ export function ProgressBar({
 
   React.useEffect(() => {
     if (__DEV__ && !validRange) {
-      console.warn(`ProgressBar: max (${max}) must be greater than min (${min}).`);
+      console.warn(`ProgressBar: max (${max}) must be greater than min (${min}); the bar renders empty.`);
     }
   }, [validRange, min, max]);
 
-  const safeValue = !indeterminate && Number.isFinite(value) ? (value as number) : min;
+  const safeValue = value !== undefined && Number.isFinite(value) ? value : min;
   const clamped = validRange ? clamp(safeValue, min, max) : min;
   const fraction = validRange ? (clamped - min) / (max - min) : 0;
-  const displayedValueText = formatValue(clamped, min, max);
+  const valueText = formatValue(clamped, min, max);
 
   const trackColor = overrides?.track ? (resolveToken(tokens, overrides.track) as string) : tokens.colorBackgroundStrong;
   const trackHeight = overrides?.trackHeight ? (resolveToken(tokens, overrides.trackHeight) as number) : tokens.space2;
   const radius = overrides?.radius ? (resolveToken(tokens, overrides.radius) as number) : tokens.radiusFull;
   const partGap = overrides?.partGap ? (resolveToken(tokens, overrides.partGap) as number) : tokens.space1;
   const transitionDuration = overrides?.transition ? (resolveToken(tokens, overrides.transition) as number) : tokens.motionDurationBase;
-  const indeterminateLoopDuration = overrides?.indeterminateLoop
+  const loopDuration = overrides?.indeterminateLoop
     ? (resolveToken(tokens, overrides.indeterminateLoop) as number)
     : tokens.motionDurationLoop;
 
@@ -151,22 +158,21 @@ export function ProgressBar({
     lineHeight: overrides?.lineHeight,
   };
 
-  // The determinate fill is animated on `width` in pixels (measured from the track)
-  // rather than a percentage string, which `Animated` cannot interpolate everywhere.
+  // The determinate fill animates `width` in pixels measured from the track;
+  // `Animated` cannot interpolate percentage strings on every platform.
   const [trackWidth, setTrackWidth] = React.useState(0);
   const fillWidth = React.useRef(new Animated.Value(0)).current;
-  const laidOutWidth = React.useRef(0);
+  const laidOutWidth = React.useRef<number | null>(null);
 
   React.useEffect(() => {
     if (indeterminate) {
       return;
     }
     const toValue = trackWidth * fraction;
-    // Only a change to `value` animates; the first layout and resizes snap so the
-    // bar never sweeps in on mount or on rotation.
+    // Only a change to `value` animates; the first layout and resizes snap.
     const resized = laidOutWidth.current !== trackWidth;
     laidOutWidth.current = trackWidth;
-    if (reducedMotion || resized) {
+    if (reducedMotion || resized || trackWidth <= 0) {
       fillWidth.setValue(toValue);
       return;
     }
@@ -179,17 +185,18 @@ export function ProgressBar({
   }, [indeterminate, fraction, trackWidth, reducedMotion, fillWidth, transitionDuration, tokens.motionEasingStandard]);
 
   const sweepX = React.useRef(new Animated.Value(0)).current;
+  const sweepWidth = trackWidth / 3; // literal-ok: one third of the track, per the indeterminate sweep spec
 
   React.useEffect(() => {
     if (!indeterminate || reducedMotion || trackWidth <= 0) {
       return undefined;
     }
-    const sweepWidth = trackWidth / 3; // literal-ok: one third of the track, per the indeterminate sweep spec
     sweepX.setValue(-sweepWidth);
+    // Linear easing so the restart of the loop has no visible seam.
     const animation = Animated.loop(
       Animated.timing(sweepX, {
         toValue: trackWidth,
-        duration: indeterminateLoopDuration,
+        duration: loopDuration,
         easing: Easing.linear,
         useNativeDriver: false,
       }),
@@ -198,75 +205,60 @@ export function ProgressBar({
     return () => {
       animation.stop();
     };
-  }, [indeterminate, reducedMotion, trackWidth, indeterminateLoopDuration, sweepX]);
+  }, [indeterminate, reducedMotion, trackWidth, sweepWidth, loopDuration, sweepX]);
 
   const handleTrackLayout = (event: LayoutChangeEvent): void => {
     const { width } = event.nativeEvent.layout;
     setTrackWidth((prev) => (prev === width ? prev : width));
   };
 
-  // Announcements: indeterminate once on entry, milestones at 25/50/75, completion
-  // once at 100 — all gated on `announce`, and reset on any backward movement so a
-  // retried task announces again.
-  const prevIndeterminateRef = React.useRef(indeterminate);
-  const prevPercentRef = React.useRef<number | null>(null);
-  const announcedMilestoneRef = React.useRef(0);
-  const completedAnnouncedRef = React.useRef(false);
+  // Announcement state is tracked whatever `announce` is, so switching it on later
+  // does not replay tiers the bar has already passed.
+  const wasIndeterminate = React.useRef<boolean | null>(null);
+  const previousFraction = React.useRef<number | null>(null);
+  const announcedTier = React.useRef(0);
 
   React.useEffect(() => {
-    if (announce === 'none') {
-      return;
-    }
-    const wasIndeterminate = prevIndeterminateRef.current;
-    prevIndeterminateRef.current = indeterminate;
+    const entered = indeterminate && wasIndeterminate.current !== true;
+    wasIndeterminate.current = indeterminate;
 
     if (indeterminate) {
-      if (!wasIndeterminate) {
-        announcedMilestoneRef.current = 0;
-        completedAnnouncedRef.current = false;
-        prevPercentRef.current = null;
+      previousFraction.current = null;
+      announcedTier.current = 0;
+      if (entered && announce !== 'none') {
         AccessibilityInfo.announceForAccessibility(COPY.indeterminate(label));
       }
       return;
     }
-
-    const percent = Math.round(fraction * 100);
-    const prevPercent = prevPercentRef.current;
-    if (prevPercent !== null && percent < prevPercent) {
-      announcedMilestoneRef.current = 0;
-      completedAnnouncedRef.current = false;
-    }
-    prevPercentRef.current = percent;
-
-    if (percent >= 100) {
-      if (!completedAnnouncedRef.current) {
-        completedAnnouncedRef.current = true;
-        announcedMilestoneRef.current = 100;
-        AccessibilityInfo.announceForAccessibility(COPY.complete(label));
-      }
+    if (!validRange) {
       return;
     }
 
-    if (announce === 'milestones') {
-      for (const milestone of MILESTONES) {
-        if (percent >= milestone && announcedMilestoneRef.current < milestone) {
-          announcedMilestoneRef.current = milestone;
-          AccessibilityInfo.announceForAccessibility(COPY.progress(label, formatValue(clamped, min, max)));
-        }
-      }
+    const tier = Math.floor(fraction * TIERS);
+    const previous = previousFraction.current;
+    previousFraction.current = fraction;
+    if (previous !== null && fraction < previous) {
+      announcedTier.current = tier;
+      return;
     }
-  }, [announce, indeterminate, fraction, label, formatValue, clamped, min, max]);
+    if (tier <= announcedTier.current) {
+      return;
+    }
+    announcedTier.current = tier;
 
-  const containerStyle: ViewStyle = {
-    flexDirection: 'column',
-    gap: partGap,
-  };
+    if (announce === 'none') {
+      return;
+    }
+    if (tier >= TIERS) {
+      AccessibilityInfo.announceForAccessibility(COPY.complete(label));
+    } else if (announce === 'milestones') {
+      AccessibilityInfo.announceForAccessibility(COPY.progress(label, valueText));
+    }
+  }, [announce, indeterminate, validRange, fraction, label, valueText]);
 
-  const labelRowStyle: ViewStyle = {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'baseline',
-  };
+  const containerStyle: ViewStyle = { flexDirection: 'column', gap: partGap };
+
+  const labelRowStyle: ViewStyle = { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' };
 
   const trackStyle: ViewStyle = {
     height: trackHeight,
@@ -277,40 +269,28 @@ export function ProgressBar({
 
   const fillStyle: Animated.WithAnimatedValue<ViewStyle> = indeterminate
     ? reducedMotion
-      ? {
-          height: trackHeight,
-          borderRadius: radius,
-          backgroundColor: fillColor,
-          width: '100%',
-          opacity: tokens.opacityDisabled,
-        }
+      ? { height: trackHeight, borderRadius: radius, backgroundColor: fillColor, width: '100%', opacity: tokens.opacityDisabled }
       : {
           height: trackHeight,
           borderRadius: radius,
           backgroundColor: fillColor,
-          width: trackWidth / 3, // literal-ok: one third of the track, per the indeterminate sweep spec
+          width: sweepWidth,
           transform: [{ translateX: sweepX }],
         }
-    : {
-        height: trackHeight,
-        borderRadius: radius,
-        backgroundColor: fillColor,
-        width: fillWidth,
-        // Start edge follows the writing direction under I18nManager because the
-        // fill is a normal flex child, not absolutely positioned.
-        alignSelf: 'flex-start',
-      };
+    : { height: trackHeight, borderRadius: radius, backgroundColor: fillColor, width: fillWidth, alignSelf: 'flex-start' };
 
   const showValueText = showValue && !indeterminate;
   const showLabelRow = !hideLabel || showValueText;
 
   return (
     <View
+      ref={ref}
       testID="ProgressBar"
       accessible
+      focusable={false}
       accessibilityRole="progressbar"
       accessibilityLabel={label}
-      accessibilityValue={indeterminate ? { min, max } : { min, max, now: clamped, text: displayedValueText }}
+      accessibilityValue={indeterminate ? { min, max } : { min, max, now: clamped, text: valueText }}
       accessibilityState={indeterminate ? { busy: true } : undefined}
       style={containerStyle}
     >
@@ -326,7 +306,7 @@ export function ProgressBar({
           {showValueText ? (
             <View testID="ProgressBar.valueText">
               <Text size="sm" tone="muted" overrides={valueTextOverrides}>
-                {displayedValueText}
+                {valueText}
               </Text>
             </View>
           ) : null}

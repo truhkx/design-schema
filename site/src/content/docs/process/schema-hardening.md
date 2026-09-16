@@ -51,7 +51,7 @@ Each job ends with `node logs/600-baseline.mjs --out <job>`, which writes `logs/
 | 0. Baseline | by hand | none | no | none |
 | 1. Make the schema true | 600 to 607 | Opus | only where wrong today | 601 flips all |
 | 2. New fields, optional | 610 to 625 | Opus | no | 625 flips all |
-| 3. Migrate the docs | 630 to 644 | Sonnet | all 51 | every doc |
+| 3. Migrate the docs | 630 to 644 | Opus | all 51 | every doc |
 | 4. Regenerate | `pnpm generate --stale` (Windows: `generate.ps1 -Stale`) | generator | no | resolves |
 | 5. After the regen | 650 onward | Sonnet | as the gap digest says | per doc |
 

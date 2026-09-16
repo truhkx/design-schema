@@ -30,5 +30,12 @@ regen phase list out of `regen.ps1` (700), no hardcoded session attribution in `
 cross-platform `regen` in Node with a dry run (702), and pnpm-first, cross-platform docs (703). Runs on
 any model; it shares the overnight queue with phase 2 only because `run-jobs.ps1` takes one model per run.
 
+Phase 3 is 630–644: one field migrated across all 51 component docs per job, each job flipping its own phase 2
+warning into an error as its gate, and the last four (641–644) authoring behavior scenarios and examples by
+component category. Run them in numeric order — each rewrites the corpus test that pinned its own warning
+list, so a job run out of order breaks a later job's still-pinned test. The plan's table says Sonnet; this
+queue runs on Opus, because the behavior jobs decide whether a doc promises a behavior or merely implies one,
+and an invented scenario parses green and then drives phase 4 code generation from a false premise.
+
 `run-jobs.ps1` runs jobs in file-name order, compared as text rather than numbers: keep every queued job's
 number three digits wide so the text order is the numeric order.

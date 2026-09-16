@@ -9649,10 +9649,14 @@
         "errorMessage"
       ],
       "composition": {
-        "label": "Text",
         "description": "Text",
         "calendarButton": "Button",
-        "popover": "Popover",
+        "popover": {
+          "component": "Popover",
+          "forwards": {
+            "calendarInset": "inset"
+          }
+        },
         "prevMonthButton": "Button",
         "nextMonthButton": "Button",
         "monthSelect": {
@@ -9682,12 +9686,12 @@
         "name": {
           "type": "string",
           "required": true,
-          "description": "Field name for the Form. The value is an ISO calendar date string (`2026-09-10`) or, for a range, `{ start, end }` of them. Never a Date object: a calendar date has no time zone."
+          "description": "Field name for the Form. The value is an ISO calendar date string (`2026-09-10`) or, for a range, `{ start, end }` of them in `value` and `onChange`. The Form holds strings only, so a range registers two fields, `name` (start) and `name-end` (end). Never a Date object: a calendar date has no time zone."
         },
         "value": {
           "type": "union",
           "shape": "string | { start: string; end: string }",
-          "description": "Controlled value (ISO date, or a range).",
+          "description": "Controlled value (ISO date, or a range). Pass `''` for a controlled empty field; `undefined` means uncontrolled. In a range the first pick is an internal draft shown only in the calendar: `value` and the inputs keep showing the old value until the end is picked, then onChange reports the range and the field returns to `value`.",
           "controls": {
             "event": "onChange",
             "default": "defaultValue"
@@ -9700,7 +9704,7 @@
         },
         "open": {
           "type": "boolean",
-          "description": "Controlled calendar state, for programmatic use and for stories and tests. Omit for the button-driven default.",
+          "description": "Controlled calendar state, for programmatic use and for stories and tests. Omit for the button-driven default. Every change to open, by the user or by the parent, aims the calendar at the value's month (or today's) and focuses the selected day (or today). Lit: a property only, not a reflected attribute, because an absent attribute cannot say controlled-closed; bind `.open`, and setting it to false keeps it controlled.",
           "controls": {
             "event": "onOpenChange",
             "state": "open"
@@ -9722,11 +9726,11 @@
         "isDateDisabled": {
           "type": "function",
           "shape": "(isoDate: string) => boolean",
-          "description": "Disable specific days (weekends, holidays, booked). Disabled days are shown, not hidden, and are skipped by keyboard movement."
+          "description": "Disable specific days (weekends, holidays, booked). Disabled days are shown, not hidden, and are skipped by the Arrow keys (moving on in the same direction to the next enabled day, turning pages, and staying put when none is left before min/max); Home, End, PageUp and PageDown land on the computed day even when it is disabled. A disabled day can take focus but not be selected."
         },
         "locale": {
           "type": "string",
-          "description": "BCP 47 locale for month and weekday names, the first day of the week, and the typed format. Defaults to the document/device locale."
+          "description": "BCP 47 locale for month and weekday names, the first day of the week, and the typed format. Defaults to `document.documentElement.lang` when set (web, lit), then the `Intl.DateTimeFormat().resolvedOptions().locale` default (the device locale on rn). The typed pattern comes from `formatToParts` with 2-digit month and day and a numeric year, so en-US is MM/DD/YYYY."
         },
         "showWeekNumbers": {
           "type": "boolean",
@@ -9749,7 +9753,7 @@
         "hideLabel": {
           "type": "boolean",
           "default": false,
-          "description": "Visually hide the label (it remains the accessible name). Only for a field whose context already names it: a DataGrid cell editor, a Search."
+          "description": "Visually hide the label (it remains the accessible name). Only for a field whose context already names it: a DataGrid cell editor, a Search. Hidden with the visually-hidden clip pattern, so it needs no binding."
         },
         "size": {
           "type": "enum",
@@ -9759,7 +9763,7 @@
             "md"
           ],
           "default": "md",
-          "description": "sm for fields inside grid cells and toolbars: minimum target height, tighter padding, small type."
+          "description": "sm for fields inside grid cells and toolbars: minimum target height, tighter padding, small type (`fontSize` at font.size.sm)."
         },
         "disabled": {
           "type": "boolean",
@@ -9773,7 +9777,7 @@
       },
       "events": {
         "onChange": {
-          "description": "Fired when a complete valid date (or range) is typed or picked, with the ISO value; with undefined when cleared.",
+          "description": "Fired when a complete valid date (or range) is typed or picked, with the ISO value; with undefined when cleared. Every pick fires, including re-picking the day already selected; typing text that parses to the current value does not. Clear fires undefined even when the field is already empty.",
           "platforms": {
             "web": "onChange",
             "lit": "change",
@@ -9921,7 +9925,7 @@
           "keys": [
             "Tab"
           ],
-          "action": "Cycles within the calendar: month/year controls, the grid (one tab stop, roving over days), Today, Clear.",
+          "action": "Cycles within the calendar: previous month, month Select, year Select, next month, the grid (one tab stop, roving over days), Today, Clear, and back (Shift+Tab reverses). DatePicker traps Tab itself, because the non-modal Popover would close on Tab-out; Tab inside an open Select popup belongs to the Select. In the grid, keys held with Alt, Ctrl or Meta are ignored.",
           "when": "open",
           "from": "inside",
           "expect": "manual"
@@ -9966,6 +9970,7 @@
           "values": {
             "sm": "space.2"
           },
+          "description": "The input's inline padding. An override replaces the value at both sizes.",
           "locked": false
         },
         "paddingBlock": {
@@ -9974,6 +9979,12 @@
           "values": {
             "sm": "space.1"
           },
+          "description": "The input's block padding. An override replaces the value at both sizes.",
+          "locked": false
+        },
+        "fontSize": {
+          "token": "font.size.{size}",
+          "description": "The field text and the label (font.size.md at md, font.size.sm at sm); description and error use helperSize.",
           "locked": false
         },
         "rangeSeparatorColor": {
@@ -9983,16 +9994,29 @@
         },
         "calendarSurface": {
           "token": "color.overlay.surface",
-          "description": "Realized by the composed Popover's surface, which is locked, so this binding records the value the calendar lands on rather than one the Popover can be given.",
+          "description": "Not forwarded: Popover's and BottomSheet's surface is locked to this same token, so the composed overlay's own surface realises it and an override has no effect.",
           "locked": true
         },
         "calendarInset": {
           "token": "layout.inset.md",
+          "description": "Forwarded to the composed Popover as `overrides.inset` (web, lit) and to the BottomSheet as `overrides.inset` (rn), so the sheet pads at this value rather than its own layout.inset.lg.",
           "locked": false
         },
         "calendarGap": {
           "token": "layout.gap.normal",
           "description": "Between header, grid and footer.",
+          "locked": false
+        },
+        "headerGap": {
+          "token": "layout.gap.tight",
+          "part": "header",
+          "description": "Between the prev/next Buttons and the month and year Selects in the header row.",
+          "locked": false
+        },
+        "footerGap": {
+          "token": "layout.gap.tight",
+          "part": "footer",
+          "description": "Between the Today and Clear Buttons.",
           "locked": false
         },
         "daySize": {
@@ -10036,6 +10060,7 @@
         "dayTodayBorder": {
           "token": "color.control.selectedBackground",
           "part": "day",
+          "description": "The today ring. On a selected or in-range today the ring stays and the selected (or in-range) fill takes the background; while the day has focus the focus ring replaces it.",
           "locked": true
         },
         "dayTodayBorderWidth": {
@@ -10058,6 +10083,12 @@
         },
         "weekdayWeight": {
           "token": "font.weight.medium",
+          "locked": false
+        },
+        "weekNumberSize": {
+          "token": "font.size.xs",
+          "part": "weekNumber",
+          "description": "Week-number cells, in weekdayColor at the regular weight.",
           "locked": false
         },
         "monthTitleSize": {
@@ -10123,6 +10154,7 @@
         },
         "focusRing": {
           "token": "color.border.focus",
+          "description": "The field's focus-visible ring and the focused day's ring, which replaces the today ring while that day has focus.",
           "locked": true
         },
         "focusRingWidth": {
@@ -10135,7 +10167,7 @@
         },
         "transition": {
           "token": "motion.duration.fast",
-          "description": "Day-cell hover and selection states; a month change is instant. Instant under reduced motion.",
+          "description": "Day-cell hover and selection states animate background-color, border-color and color (rn: background color only); a month change is instant. Instant under reduced motion.",
           "locked": false
         }
       },
@@ -10178,7 +10210,7 @@
         },
         "tooEarly": "{label} must be on or after {min}.",
         "tooLate": "{label} must be on or before {max}.",
-        "rangeOrder": "End date must be after the start date.",
+        "rangeOrder": "End date must be on or after the start date.",
         "requiredIndicator": " (required)"
       },
       "a11y": {
@@ -10280,7 +10312,7 @@
             "aria-current=date",
             "aria-disabled"
           ],
-          "notes": "The field is Input's wrapper with <input type=\"text\" inputmode=\"numeric\"> (not type=\"date\": its picker is unstyleable, its keyboard model differs per browser, and it cannot do ranges) parsed with the locale pattern from Intl.DateTimeFormat().formatToParts; a range shows two inputs joined by an en dash. The calendar Button (ghost, iconOnly, \"calendar\" Icon — add to Icon's glyph set) opens a Popover (non-modal, placement bottom-start, composes FocusScope) containing: header with prev/next Buttons and month/year Selects; a <table role=\"grid\" aria-labelledby> with <th scope=\"col\" abbr> weekday headers and <td role=\"gridcell\"> days — each a <button tabindex=-1|0> in a roving tabindex, aria-selected for selected days, aria-current=\"date\" for today, aria-disabled for min/max/isDateDisabled; a footer with Today and Clear. Days outside the month are rendered muted and selectable. Week starts from Intl.Locale.prototype.getWeekInfo() where available, else Sunday. Selecting a day writes the formatted text into the input and fires onChange with the ISO string; typing a complete valid date moves the calendar to it."
+          "notes": "The field is Input's wrapper with <input type=\"text\" inputmode=\"numeric\"> (not type=\"date\": its picker is unstyleable, its keyboard model differs per browser, and it cannot do ranges) parsed with the locale pattern from Intl.DateTimeFormat().formatToParts; a range shows two inputs joined by an en dash. The calendar Button (ghost, iconOnly, \"calendar\" Icon — add to Icon's glyph set) opens a Popover (non-modal, placement bottom-start; its own FocusScope is the only one, DatePicker adds none and traps Tab itself; outside click closes without change, like Escape) containing: header with prev/next Buttons and month/year Selects; a <table role=\"grid\" aria-labelledby> with <th scope=\"col\" abbr> weekday headers and <td role=\"gridcell\"> days — the <td> carries aria-selected (true for the selected day and, in a range, every day from start to end inclusive), and inside it a <button tabindex=-1|0> in a roving tabindex with aria-current=\"date\" for today, aria-disabled for min/max/isDateDisabled, and aria-label = the full date from Intl.DateTimeFormat(locale, { dateStyle: \"full\", timeZone: \"UTC\" }) followed by \", {copy.todayLabel}\" and/or \", {copy.selected}\"; a footer with Today and Clear. With showWeekNumbers the header row starts with <th scope=\"col\" abbr={copy.weekNumber}> holding visually hidden copy.weekNumber, and each row starts with <th scope=\"row\" data-part=\"weekNumber\"> (not focusable, not a gridcell). Days outside the month are rendered muted and selectable. Composed parts (calendarButton, prevMonthButton, nextMonthButton, monthSelect, yearSelect, todayButton, clearButton) carry their data-part on a <span> wrapper DatePicker owns, because Button and Select write their own data-part on their root; tests act on the control inside the wrapper. The Popover panel is portaled out of the root, so DatePicker declares the --ds-date-picker-* hook defaults and writes any overrides on the calendar content wrapper (data-part=\"popover\" content) as well as on the root. Form: FormContext holds no objects, so a single date registers `name` with the ISO string and a range registers two string fields, `name` (start ISO) and `name-end` (end ISO); a disabled field submits nothing. Week starts from Intl.Locale.prototype.getWeekInfo() where available, else Sunday. Selecting a day writes the formatted text into the input and fires onChange with the ISO string; typing a complete valid date moves the calendar to it."
         },
         "lit": {
           "tag": "ds-date-picker",
@@ -10290,10 +10322,9 @@
             "disabled",
             "show-week-numbers",
             "locale",
-            "size",
-            "open"
+            "size"
           ],
-          "notes": "Form-associated: setFormValue with the ISO string (two entries for a range, name and name-end). Implements DsFormField. Calendar in a <ds-popover> in the shadow root; grid as above. Composed `change` and `open-change`."
+          "notes": "Form-associated: setFormValue with the ISO string (a FormData with two entries for a range, name and name-end). Implements DsFormField for `name` (the start ISO string, or null until complete), and a range adds a second DsFormField entry for `name-end` (the end ISO string) that always validates clean; `name` reports the combined message. Calendar in a <ds-popover> in the shadow root; grid, week numbers, day labels and aria-selected placement as in web. Ids do not cross shadow roots, so the native <label for>, aria-describedby, aria-labelledby and the grid label all point at elements inside the same shadow root, and aria-invalid sits on the input(s). The month and year ds-selects live inside the shadow root, so ds-form never discovers them; they carry name=\"month\" and name=\"year\" only to satisfy ds-select. `open` is a property, not reflected (see the prop). The composed ds-popover focuses its first focusable on open, so DatePicker moves focus to the selected day (or today) after the popover has opened, and asks the popover to reposition once the grid has laid out. Composed `change` and `open-change`."
         },
         "rn": {
           "element": "TextInput",
@@ -10302,7 +10333,7 @@
             "accessibilityLabel",
             "accessibilityHint"
           ],
-          "notes": "No core date picker on RN, so the same calendar grid renders in a BottomSheet (height content) opened by the calendar Button; each day a Pressable with accessibilityRole=\"button\", accessibilityState={{ selected, disabled }}, accessibilityLabel from the full formatted date plus \"today\"/\"selected\". The header month is announced on change. Typing is supported in the TextInput with the locale pattern. The community datetimepicker is deliberately not used (decision 2026-09-10: react-native-svg is the only native dependency) because it cannot take tokens, so the calendar stays the system's own grid on every platform. Native has no grid or gridcell role and no key events on Pressable, so there is no roving tabindex and no arrow, Page, Home or End handling: every day is its own focus stop reached by swipe, and the prev/next month Buttons stand in for PageUp/PageDown. `TextInputKeyPressEventData` carries no modifier flags, so Alt+ArrowDown is indistinguishable from ArrowDown and both simply open the calendar. Focus on open lands on the sheet's first focusable element rather than the selected day, and focus on close returns through BottomSheet's own FocusScope, since Button exposes no node handle to focus by hand. `calendarSurface` is the BottomSheet's own locked surface here, not a value this component forwards."
+          "notes": "No core date picker on RN, so the same calendar grid renders in a BottomSheet (height content) opened by the calendar Button; each day a Pressable with accessibilityRole=\"button\", accessibilityState={{ selected, disabled }}, accessibilityLabel from the full formatted date plus \"today\"/\"selected\". The header month is announced on change. Typing is supported in the TextInput with the locale pattern. The community datetimepicker is deliberately not used (decision 2026-09-10: react-native-svg is the only native dependency) because it cannot take tokens, so the calendar stays the system's own grid on every platform. Native has no grid or gridcell role and no key events on Pressable, so there is no roving tabindex and no arrow, Page, Home or End handling: every day is its own focus stop reached by swipe, and the prev/next month Buttons stand in for PageUp/PageDown. `TextInputKeyPressEventData` carries no modifier flags, so Alt+ArrowDown is indistinguishable from ArrowDown and both simply open the calendar. Focus on open lands on the sheet's first focusable element rather than the selected day, and focus on close returns through BottomSheet's own FocusScope, since Button exposes no node handle to focus by hand. The popover part is the BottomSheet here, and `calendarSurface`/`calendarInset` are forwarded to its `surface`/`inset` overrides. The sheet's `title` is `label`; `copy.gridLabel` is the accessibilityLabel of the grid View and is announced (AccessibilityInfo) when the month changes. The label is a Text, since RN has no <label>. RN has no invalid state: the error text is appended to the input's accessibilityHint after the description, and is also rendered in an assertive live region (accessibilityLiveRegion=\"assertive\", with an announcement on iOS) when it appears. Button and Select take no testID, so composed parts (calendarButton, prevMonthButton, nextMonthButton, monthSelect, yearSelect, todayButton, clearButton) and label, description and popover are each wrapped in a View DatePicker owns with testID=\"DatePicker.<part>\"; the footer is one row View (testID=\"DatePicker.footer\", spaced by footerGap) passed as the BottomSheet footer's single child. Week-number cells are Text with accessibilityLabel \"{copy.weekNumber} {n}\"."
         },
         "swiftui": {
           "element": "TextField",
@@ -10547,10 +10578,10 @@
       "Overview": "A date picker gives two ways to say the same date: type it, or find it on a calendar. People who know the date type it; people who need to see the week pick it. Both produce a plain ISO date — `2026-09-10` — and never a timestamp, because a delivery date or a birthday has no time zone to get wrong.",
       "When to use": "Use a DatePicker for any date the user chooses: due dates, bookings, dates of birth (typing is faster — the calendar is still there), report periods (`range`). Set `min` and `max` whenever they exist and `isDateDisabled` for days that cannot be chosen, so the calendar shows what is possible instead of validating after the fact.",
       "When not to use": "Do not use it for a date-and-time (a DateTimePicker is planned; until then, pair with a Select of times), for a month or year alone (Select), or for relative choices (\"next 7 days\": SegmentedControl or Select). Do not use the calendar alone as a display of events; that is a Calendar view, not a picker.",
-      "Behavior": "Typing parses the locale pattern leniently (separators optional, two-digit years refused) and fires `onChange` once the date is complete and valid; the calendar, when open, follows the typed date. The calendar opens from its button or ArrowDown in the input on the selected month (or today's), with focus on the selected day (or today). Arrow keys move by day and week, PageUp/Down by month (with Shift, by year), Home/End to the week's ends; moving past the month's edge turns the page. Enter or click selects: for a single date it closes and returns focus to the calendar button; for a range the first pick sets the start (clearing any old range), the second sets the end and closes, and picking before the start restarts. Today and Clear act immediately. Escape closes without changes. Validation follows Input's precedence plus `tooEarly`, `tooLate` and `rangeOrder`. The month and year Selects are `hideLabel` and `size: sm`. The year Select spans the `min`/`max` years when given, else the current year − 100 to + 10. `onChange` fires only for a complete value (a date, or both ends of a range) and on Clear; a partial range or partial typed date changes nothing. In a range, Today acts like clicking today's cell and Clear wipes both ends; reopening focuses the start date's cell (the end's when opened from the end input). Validation order: `error`, `required`, unparseable (`copy.invalid`), `tooEarly`, `tooLate`, `rangeOrder` — there is no `invalid` prop on this field, so nothing sits between `error` and `required`; the `{min}`/`{max}` placeholders are formatted with the locale, not ISO. A range registers two Form fields, `name` and `name-end`, and only `name` reports the combined message — `name-end` always validates clean, since one message must not be read twice. Typed text that parses to a real date commits even when it falls outside `min`/`max` or on an `isDateDisabled` day: the range bounds then surface as `tooEarly`/`tooLate`, and a disabled day typed directly is accepted, because the field has no message for it. The month and year Selects inside the calendar are internal controls, not fields: render them outside the enclosing form's field context so they never register with a Form. The label is a native `<label for>`. The week-number column shows the ISO week of the row's first visible day.",
+      "Behavior": "Typing parses the locale pattern leniently (separators optional, two-digit years refused) and fires `onChange` once the date is complete and valid; the calendar, when open, follows the typed date. The calendar opens from its button or ArrowDown in the input on the selected month (or today's), with focus on the selected day (or today). Arrow keys move by day and week, PageUp/Down by month (with Shift, by year), Home/End to the week's ends; moving past the month's edge turns the page. Enter or click selects: for a single date it closes and returns focus to the calendar button; for a range the first pick sets the start (clearing any old range), the second sets the end and closes, and picking before the start restarts; picking the start day again as the end makes a one-day range. The first range pick is pending: it shows only in the calendar, the inputs, `value` and `onChange` are untouched until the second pick, and closing discards it. Today and Clear act immediately. Clear empties the value (both ends in a range), fires `onChange(undefined)` even when already empty, and leaves the calendar open with focus on Clear. Today acts exactly like picking today's cell (so it closes for a single date) and is disabled (aria-disabled on web/lit, accessibilityState disabled on rn) when today is before `min`, after `max` or `isDateDisabled(today)`. Escape closes without changes. Validation follows Input's precedence plus `tooEarly`, `tooLate` and `rangeOrder`. The month and year Selects are `hideLabel` and `size: sm`. The year Select spans from the `min` year (else the current year − 100) to the `max` year (else the current year + 10), each bound falling back on its own, and is always widened to include the displayed year so the controlled Select has a matching option. `onChange` fires only for a complete value (a date, or both ends of a range) and on Clear; a partial range or partial typed date changes nothing. In a range, Today acts like clicking today's cell and Clear wipes both ends; reopening focuses the start date's cell (the end's when opened from the end input). Validation order: `error`; `required` only when every input is empty; unparseable (`copy.invalid`) when any non-empty input does not parse; `required` for a range with one end empty (without `required`, a partial range reports nothing); `tooEarly`, `tooLate`, `rangeOrder` (only end before start; end equal to start is valid) — there is no `invalid` prop on this field. `valueType: date-range` covers a single date too, and the `range` validation reports through `copy.tooEarly`, `copy.tooLate` and `copy.rangeOrder`. The `{min}`/`{max}` placeholders are the dates in the input's own numeric locale pattern (the placeholder's format), not ISO. A range registers two Form fields, `name` and `name-end`, and only `name` reports the combined message — `name-end` always validates clean, since one message must not be read twice. Typed text that parses to a real date commits even when it falls outside `min`/`max` or on an `isDateDisabled` day: the range bounds then surface as `tooEarly`/`tooLate`, and a disabled day typed directly is accepted, because the field has no message for it. The month and year Selects inside the calendar are internal controls, not fields: render them outside the enclosing form's field context so they never register with a Form. The label is a native `<label for>` on web and lit (not a Text; rn uses a Text), and the input — a textbox — carries the accessible name and, on web and lit, `aria-invalid`; the root has role none. The week-number column shows the ISO week of the row's first visible day. In a range every day from start to end is selected (aria-selected, and `copy.selected` in its label), but only the two ends get the selected fill; days between get `dayInRangeBackground`.",
       "Content guidelines": "Labels name the date's meaning (\"Check-in\", \"Due date\"), not \"Date\". Use `description` for format or constraint hints when they are not obvious (\"Must be at least 18 years ago\"). The placeholder is the locale pattern; do not replace it with an example date that might be read as a default.",
       "Accessibility": "The input is labelled and described like Input (WCAG 1.3.1, 3.3.2), and typing is always available so nobody is forced into the grid (2.1.1). The calendar is a `grid` named with the month and year, using a roving tabindex so it is one tab stop, with the full APG date-picker key model (APG date picker dialog); each day's name is its full date plus \"today\" or \"selected\" (4.1.2). Selected and today states use both color and shape (fill vs ring) and are announced (1.4.1). Days are 44px targets (2.5.8). Focus returns to the calendar button on close (2.4.3), Escape always closes (2.1.2), and month changes respect reduced motion.",
-      "Platform notes": "### Web\nRender Input's wrapper (label, description, field, error) with the text input(s), the `Button variant=\"ghost\" iconOnly` calendar trigger (label from copy), and `Popover placement=\"bottom-start\"` whose panel contains the header (`Button`s prev/next with chevron Icons; `Select`s for month and year, `size: sm`), `<table role=\"grid\" aria-labelledby={gridLabelId}>` with `<thead>` of `<th scope=\"col\" abbr={fullName}>` and `<tbody>` rows of `<td role=\"gridcell\">` each containing a `<button>` with `tabIndex` roving, `aria-selected`, `aria-current=\"date\"`, `aria-disabled`, `aria-label={fullDate + status}`, and a footer `Stack` with Today and Clear `Button`s (`ghost`, `sm`). Keydown on the grid implements the table, moving the roving index and changing month when needed; focus follows. Dates are computed with plain `Date.UTC` arithmetic on `YYYY-MM-DD` parts; never `new Date(string)`.\n\n### Lit\n`<ds-date-picker label=\"Due date\" name=\"due\" min=\"2026-01-01\"></ds-date-picker>`; form-associated with ISO value; shadow `<ds-popover>` and grid; `DsFormField`; composed `change`, `open-change`.\n\n### React Native\n`TextInput` with the locale pattern and `keyboardType=\"number-pad\"`, the calendar `Button`, and a `BottomSheet` (`height=\"content\"`, `title={label}`) holding the same header, a 7-column grid of `Pressable` days (`daySize` squares), and the footer. Form registration as Input, returning the ISO string or `{ start, end }`.",
+      "Platform notes": "### Web\nRender Input's wrapper (label, description, field, error) with the text input(s), the `Button variant=\"ghost\" iconOnly` calendar trigger (label from copy), and `Popover placement=\"bottom-start\"` whose panel contains the header (`Button`s prev/next with chevron Icons; `Select`s for month and year, `size: sm`), `<table role=\"grid\" aria-labelledby={gridLabelId}>` with `<thead>` of `<th scope=\"col\" abbr={fullName}>` and `<tbody>` rows of `<td role=\"gridcell\">` (carrying `aria-selected`) each containing a `<button>` with `tabIndex` roving, `aria-current=\"date\"`, `aria-disabled`, `aria-label={fullDate + status}`, and a footer `Stack` with Today and Clear `Button`s (`ghost`, `sm`). Keydown on the grid implements the table, moving the roving index and changing month when needed; focus follows. Dates are computed with plain `Date.UTC` arithmetic on `YYYY-MM-DD` parts; never `new Date(string)`.\n\n### Lit\n`<ds-date-picker label=\"Due date\" name=\"due\" min=\"2026-01-01\"></ds-date-picker>`; form-associated with ISO value; shadow `<ds-popover>` and grid; `DsFormField`; composed `change`, `open-change`.\n\n### React Native\n`TextInput` with the locale pattern and `keyboardType=\"number-pad\"`, the calendar `Button`, and a `BottomSheet` (`height=\"content\"`, `title={label}`) holding the same header, a 7-column grid of `Pressable` days (`daySize` squares), and the footer. Form registration as Input with string values only: the ISO string for a single date; for a range two fields, `name` (start ISO) and `name-end` (end ISO), with `name` reporting the combined message.",
       "Related": "Input, Popover, Select, Button, BottomSheet, NumberInput."
     },
     "extensions": [],
@@ -18876,11 +18907,11 @@
         "name": {
           "type": "string",
           "required": true,
-          "description": "Field name for the Form. The collected value is a number (or undefined when empty)."
+          "description": "Field name for the Form. No platform's Form (web/rn FormContext, Lit DsFormField/ds-form) has a number type, so the value registers as its plain decimal string — String(value), \".\" decimal, no grouping, currency symbol, percent sign or affixes (\"1234.5\", \"25\" for 25%) — and an empty or disabled field registers nothing (undefined on web/rn, null currentValue on Lit). Consumers parse it back with Number()."
         },
         "value": {
           "type": "number",
-          "description": "Controlled numeric value. `null`/undefined means empty.",
+          "description": "Controlled numeric value, typed `number | null | undefined`: `null` is a controlled empty field, `undefined` means uncontrolled (defaultValue applies). While the input is focused it shows the raw typed text, so typing is never swallowed; the controlled value takes over the display on blur/Enter (re-formatted), on every step, and whenever the prop changes to a number different from the parsed typed text.",
           "controls": {
             "event": "onChange",
             "default": "defaultValue"
@@ -18901,7 +18932,7 @@
         "step": {
           "type": "number",
           "default": 1,
-          "description": "Increment for the buttons and arrow keys. Also the rounding granularity when `precision` is omitted."
+          "description": "Increment for the buttons and arrow keys. When `precision` is omitted, values round to the number of decimals in `step` (step 0.25 → 2 places); values never snap to multiples of `step`, so a typed 12 with step 5 stays 12."
         },
         "precision": {
           "type": "integer",
@@ -18924,7 +18955,7 @@
         },
         "unit": {
           "type": "string",
-          "description": "Intl unit identifier for `format: unit` (e.g. kilogram, hour), or a literal shown as `suffix`."
+          "description": "Intl unit identifier for `format: unit` (e.g. kilogram, hour). A string Intl does not know is shown as `trailingText` (the `suffix` part) when `trailingText` is not given, with plain decimal formatting."
         },
         "leadingText": {
           "type": "string",
@@ -19026,7 +19057,7 @@
             "PageUp",
             "PageDown"
           ],
-          "action": "Changes by ten steps.",
+          "action": "Changes by ten steps (10 × `step`, clamped); the 10 is a count, not a style value.",
           "from": "first",
           "expect": "manual"
         },
@@ -19035,10 +19066,9 @@
             "Home",
             "End"
           ],
-          "action": "Sets min / max when they are defined; otherwise the input's native caret movement.",
+          "action": "Sets min / max when they are defined (component code, not native: a text input cannot do this); otherwise the key is left to the input's native caret movement.",
           "from": "first",
-          "expect": "manual",
-          "native": true
+          "expect": "manual"
         },
         {
           "keys": [
@@ -19068,6 +19098,8 @@
         },
         "borderFocus": {
           "token": "color.border.focus",
+          "part": "field",
+          "description": "The focus ring is drawn on the bordered field part while the input matches :focus-visible; the input itself has no border.",
           "locked": true
         },
         "borderInvalid": {
@@ -19088,6 +19120,8 @@
           "values": {
             "sm": "space.2"
           },
+          "part": "field",
+          "description": "The field's inline-start padding; its inline-end padding only when the steppers are hidden, since the stepper Buttons sit flush at the end.",
           "locked": false
         },
         "paddingBlock": {
@@ -19114,6 +19148,11 @@
         },
         "stepperDivider": {
           "token": "color.border",
+          "locked": false
+        },
+        "stepperDividerWidth": {
+          "token": "border.width.thin",
+          "description": "Width of the hairline between the input and the steppers (the inline-start border of the element wrapping both stepper Buttons).",
           "locked": false
         },
         "partGap": {
@@ -19156,15 +19195,17 @@
         },
         "minTargetSm": {
           "token": "size.target.min",
-          "description": "The field height floor at size sm; the stepper buttons become Button size sm.",
+          "description": "The field height floor at size sm. The stepper Buttons are Button size sm at both field sizes.",
           "locked": true
         },
         "focusRingWidth": {
           "token": "border.width.focus",
+          "part": "field",
           "locked": true
         },
         "disabledOpacity": {
           "token": "opacity.disabled",
+          "description": "Applied to the label, description, input and affix parts of a disabled field, not to an element containing the steppers: the stepper Buttons receive `disabled` (at a bound, or when the field is disabled) and dim once through their own disabled style.",
           "locked": false
         }
       },
@@ -19248,7 +19289,7 @@
             "aria-required",
             "autocomplete=off"
           ],
-          "notes": "An <input type=\"text\" inputmode=\"decimal\" role=\"spinbutton\"> rather than type=\"number\": the native number input cannot format, drops leading zeros, scrolls its value on wheel, and its spin buttons are unstyleable and tiny. The value is parsed from the locale format on input (accepting both the locale's and \".\" decimal separators) and re-formatted on blur. aria-valuenow/text mirror the number. Steppers are the system Button (ghost, sm, iconOnly, plus/minus icons) with tabindex=\"-1\" — the input is the single tab stop and the arrows do the same job; the buttons are pointer conveniences and repeat while held."
+          "notes": "An <input type=\"text\" inputmode=\"decimal\" role=\"spinbutton\"> rather than type=\"number\": the native number input cannot format, drops leading zeros, scrolls its value on wheel, and its spin buttons are unstyleable and tiny. The value is parsed from the locale format on input (accepting both the locale's and \".\" decimal separators) and re-formatted on blur. aria-valuenow/text mirror the number. Steppers are the system Button (ghost, sm, iconOnly, plus/minus icons) with tabindex=\"-1\" — the input is the single tab stop and the arrows do the same job; the buttons are pointer conveniences and repeat while held. Web Button forces data-part=\"container\" on its root, so each Button sits in a <span> NumberInput owns carrying data-part=\"decrementButton\"/\"incrementButton\" and the pointer/click handlers; aria-hidden=\"true\" goes on the element wrapping both spans (not on the Buttons), and the Buttons get `disabled` at a bound or when the field is disabled. Parsing: \".\" is read as the decimal separator only when the locale's decimal separator is absent from the text (so de-DE \"1.234,5\" is 1234.5, and \"1.5\" is 1.5). There is no React FieldsetContext: Fieldset passes `disabled` to its direct child fields, and NumberInput uses only that prop; the legend is not used."
         },
         "lit": {
           "tag": "ds-number-input",
@@ -19260,7 +19301,7 @@
             "invalid",
             "hideSteppers"
           ],
-          "notes": "Form-associated; setFormValue with the plain number as a string. Implements DsFormField. Composed `change` with detail { value }."
+          "notes": "Form-associated; setFormValue with the plain number as a string. Implements DsFormField: currentValue is that decimal string, or null when empty; a public `valueAsNumber` getter returns the number (or undefined). Composed `change` with detail { value }. Carries data-ds-field, so ds-fieldset sets its `disabled` property (plus formDisabledCallback); the legend is not used. Steppers in the shadow root are ds-button (ghost, sm, iconOnly) with tabindex=\"-1\" inside an aria-hidden wrapper; each carries its data-part on a wrapper span as on web. The focus ring is drawn on the field part while the input matches :focus-visible."
         },
         "rn": {
           "element": "TextInput",
@@ -19271,7 +19312,7 @@
             "accessibilityValue",
             "accessibilityActions"
           ],
-          "notes": "TextInput with keyboardType=\"decimal-pad\" (numbers-and-punctuation on iOS for negatives), accessibilityRole=\"adjustable\" with increment/decrement accessibility actions so VoiceOver/TalkBack can step without the buttons, accessibilityValue text from the formatted value. Formatting uses Intl.NumberFormat (Hermes supports it). Use numbers-and-punctuation on iOS when negatives are possible — `min` absent or below zero — and decimal-pad otherwise. Steppers are system Buttons beside the input, accessibilityElementsHidden since the adjustable actions cover them; Button exposes only `onPress`, so they step once per tap and do not repeat while held — the adjustable actions are the way to step repeatedly here. An adjustable role and a directly typable field are in tension on this platform: screen readers favour swipe-to-adjust and may make double-tap-to-edit unreliable. That is the native trade, and the role stays, because stepping without the buttons matters more."
+          "notes": "TextInput with keyboardType=\"decimal-pad\" (numbers-and-punctuation on iOS for negatives), accessibilityRole=\"adjustable\" with increment/decrement accessibility actions so VoiceOver/TalkBack can step without the buttons, accessibilityValue text from the formatted value. Formatting uses Intl.NumberFormat (Hermes supports it). Use numbers-and-punctuation on iOS when negatives are possible — `min` absent or below zero — and decimal-pad otherwise. Steppers are system Buttons beside the input, accessibilityElementsHidden since the adjustable actions cover them; Button exposes only `onPress`, so they step once per tap and do not repeat while held — the adjustable actions are the way to step repeatedly here. An adjustable role and a directly typable field are in tension on this platform: screen readers favour swipe-to-adjust and may make double-tap-to-edit unreliable. That is the native trade, and the role stays, because stepping without the buttons matters more. Keys: ArrowUp/Down, PageUp/Down and Home/End are handled in TextInput onKeyPress, which delivers them on react-native-web and on hardware keyboards that report them; iOS onKeyPress generally does not deliver arrow, page or Home/End keys, so there the adjustable increment/decrement actions are the only stepping path, and jumping to min/max has no native equivalent (no accessibility action exists for it — a screen-reader user steps or types the bound). The steppers sit in a View with accessibilityElementsHidden and importantForAccessibility=\"no-hide-descendants\"; each Button is wrapped in a View carrying testID `NumberInput.decrementButton` / `NumberInput.incrementButton`, since Button takes no testID. Button has no way to leave the focus order, so on react-native-web the hidden steppers remain focusable Pressables — a known Button limitation, not a NumberInput choice. FieldsetContext is read: a Fieldset's `disabled` disables the field and its legend prefixes the accessibilityLabel (\"Shipping, Weight\"), as Input does. accessibilityValue.text is the same string as web aria-valuetext, affixes included."
         },
         "swiftui": {
           "element": "TextField",
@@ -19647,10 +19688,10 @@
       "Overview": "A number input is for numbers people type exactly — a quantity, a price, a weight — with step buttons and arrow keys for the small adjustments, and locale formatting so 1,234.5 reads the way the user expects. It is Input with a spinbutton's semantics and a parser that understands what people actually type.",
       "When to use": "Use a NumberInput for any exact numeric value: quantities, amounts, measurements, ages, counts. Choose `format` so the field reads as the thing it holds (`currency` with a code, `percent`, a `unit`). Set `min`, `max` and `step` whenever they exist; they drive the buttons, the arrow keys and the out-of-range message. Pair with a Slider when a feel for the scale helps.",
       "When not to use": "Do not use it for numbers that are really identifiers — phone numbers, postal codes, card numbers, IDs — which are strings with digits; use Input with the right `type`/`inputmode`. Do not use it for a value chosen from a few options (RadioGroup, SegmentedControl) or where approximate is fine and immediate feedback matters more than exactness (Slider).",
-      "Behavior": "Typing accepts digits, a leading minus, and the locale's or a period decimal separator; other characters are ignored rather than rejected loudly. `onChange` fires with the parsed number as it becomes valid. On blur or Enter the value is rounded to `precision`, clamped to `min`/`max`, and re-formatted. ArrowUp/Down step; PageUp/Down step by ten; Home/End go to the bounds when defined. The steppers repeat while held and disable at the bounds. Empty is a valid state (undefined) unless `required`. Validation precedence is Input's, plus an out-of-range message for a clamped value: the field clamps and reports, rather than silently changing the number. `percent` stores the number as typed (25, not 0.25) and divides by 100 only for display. `format: currency` without `currency` is a development warning and falls back to USD. From an empty field, ArrowUp/increment goes to `min ?? 0` and ArrowDown/decrement to `max ?? 0`. The out-of-range message is reported whenever a blur-time clamp changed what was typed, `required` or not: `copy.outOfRange` when both bounds are set, `copy.outOfRangeMin` or `copy.outOfRangeMax` when only one is — a clamp is never silent. `leadingText` is ignored under `format: currency`, which draws its own symbol, so a field never shows two. A `unit` string that Intl does not know falls back to plain decimal formatting with the unit shown as `trailingText` when none was given. NumberInput reads FieldsetContext as Input does, so a Fieldset's `disabled` and its legend prefix reach it too. Hold-to-repeat timings are read from the resolved theme at pointerdown (`motion.duration.base` delay, `motion.duration.fast` interval), never hardcoded. The label is a native `<label for>` (web/Lit) styled from this component's label bindings, not a Text. The Form value is a number.",
-      "Content guidelines": "Labels name the quantity with its unit when the field shows none (\"Weight (kg)\"), or use `unit`/`suffix` and keep the label plain. Placeholders show a realistic example (\"12.5\"). Use `precision` to show the decimals the domain uses (prices 2, weights 1, counts 0).",
+      "Behavior": "Typing accepts digits, a leading minus, and the locale's or a period decimal separator; other characters are ignored rather than rejected loudly. `onChange` fires with the parsed number as it becomes valid. On blur or Enter the value is rounded to `precision`, clamped to `min`/`max`, and re-formatted. ArrowUp/Down step; PageUp/Down step by ten; Home/End go to the bounds when defined. The steppers disable at the bounds; on web and Lit they repeat while held, on React Native they step once per tap (see its notes). Empty is a valid state (undefined) unless `required`. A keystroke that does not yet form a number (a lone \"-\" or \".\") fires no `onChange`. Validation precedence: the `error` prop, then a Form-supplied error, then `copy.required` (empty and `required`), then `copy.invalid` (the committed text — on blur, Enter or submit — contains no digits at all, e.g. \"-\" or \".\"; or `invalid` is set without `error`), then the out-of-range message. Non-numeric committed text reports `invalid`, never `required`. The field clamps and reports, rather than silently changing the number. `{min}` and `{max}` in the out-of-range copy are formatted with the field's own `format`/`precision` (\"$1.00\", \"10%\"), without `leadingText`/`trailingText`. Outside a Form (and inside one) the out-of-range message renders in the errorMessage part, sets aria-invalid, and makes the field fail validation (rangeUnderflow/rangeOverflow on Lit) until the next keystroke or step clears it — so a submit straight after a clamp fails once and the user sees the changed number. `percent` stores the number as typed (25, not 0.25) and divides by 100 only for display. `format: currency` without `currency` is a development warning and falls back to USD. From an empty field, ArrowUp/increment goes to `min ?? 0` and ArrowDown/decrement to `max ?? 0`. The out-of-range message is reported whenever a blur-time clamp changed what was typed, `required` or not: `copy.outOfRange` when both bounds are set, `copy.outOfRangeMin` or `copy.outOfRangeMax` when only one is — a clamp is never silent. `leadingText` is ignored under `format: currency`, which draws its own symbol, so a field never shows two. A `unit` string that Intl does not know falls back to plain decimal formatting with the unit shown as `trailingText` when none was given. A Fieldset's `disabled` reaches NumberInput on every platform (web: the `disabled` prop Fieldset passes to direct children; Lit: the `disabled` property ds-fieldset sets on data-ds-field children; React Native: FieldsetContext). The legend prefix exists only on React Native, where the legend prefixes the accessibilityLabel; web and Lit rely on the native fieldset/legend grouping. Hold-to-repeat timings (web/Lit) are read from the resolved theme at pointerdown (`motion.duration.base` delay, `motion.duration.fast` interval), never hardcoded; when either token cannot be read (no theme loaded, jsdom), a press steps once and does not repeat. The accessible value text (aria-valuetext, accessibilityValue.text) is `leadingText` + the formatted value + a space + `trailingText` when those are set (\"2 kg\"), so the affix parts themselves are hidden from assistive technology on native. The label is a native `<label for>` (web/Lit) styled from this component's label bindings, not a Text. The Form value is the number's plain decimal string (see `name`); an empty field submits nothing.",
+      "Content guidelines": "Labels name the quantity with its unit when the field shows none (\"Weight (kg)\"), or use `unit`/`trailingText` and keep the label plain. Placeholders show a realistic example (\"12.5\"). Use `precision` to show the decimals the domain uses (prices 2, weights 1, counts 0).",
       "Accessibility": "The input is a `spinbutton` with `aria-valuenow`, `aria-valuemin`, `aria-valuemax` and `aria-valuetext` carrying the formatted value (WCAG 4.1.2; APG spinbutton), labelled and described like Input (1.3.1, 3.3.2). Arrow keys give keyboard users the stepping the buttons give pointer users (2.1.1); the buttons are removed from the tab order so the field stays one stop. On native the `adjustable` role with increment/decrement actions covers screen-reader users. Out-of-range and invalid values produce text errors linked to the field (3.3.1, 3.3.3). Targets and contrast as Input.",
-      "Platform notes": "### Web\nRender Input's wrapper (label, description, field, error) with `<input type=\"text\" inputmode=\"decimal\" role=\"spinbutton\" autocomplete=\"off\" aria-valuenow aria-valuemin aria-valuemax aria-valuetext>` plus optional prefix/suffix `<span>`s and, when `showSteppers`, two system `Button`s (`ghost`, `sm`, `iconOnly`, `Icon name=\"minus\"` / `\"plus\"`, labels from copy, `tabIndex={-1}`, `aria-hidden` since the arrows duplicate them) separated from the input by a hairline. Parse with a small locale-aware routine (strip group separators, normalise the decimal separator) and format with `Intl.NumberFormat`. Keydown implements the table; hold-to-repeat with `motion.duration.base` initial delay and `motion.duration.fast` interval.\n\n### Lit\n`<ds-number-input label=\"Quantity\" name=\"qty\" min=\"1\" max=\"99\">`; form-associated; `DsFormField`; composed `change`.\n\n### React Native\n`TextInput` with `keyboardType=\"decimal-pad\"`, `accessibilityRole=\"adjustable\"`, `accessibilityValue={{ text }}`, `accessibilityActions` increment/decrement; steppers as system `Button`s (hidden from AT). Format with `Intl.NumberFormat`; parse as on web. Form registration as Input, returning a number.",
+      "Platform notes": "### Web\nRender Input's wrapper (label, description, field, error) with `<input type=\"text\" inputmode=\"decimal\" role=\"spinbutton\" autocomplete=\"off\" aria-valuenow aria-valuemin aria-valuemax aria-valuetext>` plus optional prefix/suffix `<span>`s and, unless `hideSteppers`, two system `Button`s (`ghost`, `sm` at both field sizes, `iconOnly`, `Icon name=\"minus\"` / `\"plus\"`, labels from copy, `tabIndex={-1}`) each in a span carrying its data-part, inside a wrapper with `aria-hidden` since the arrows duplicate them, separated from the input by a hairline (`stepperDivider`, `stepperDividerWidth`). Parse with a small locale-aware routine (strip group separators, normalise the decimal separator) and format with `Intl.NumberFormat`. Keydown implements the table; hold-to-repeat with `motion.duration.base` initial delay and `motion.duration.fast` interval.\n\n### Lit\n`<ds-number-input label=\"Quantity\" name=\"qty\" min=\"1\" max=\"99\">`; form-associated; `DsFormField`; composed `change`.\n\n### React Native\n`TextInput` with `keyboardType=\"decimal-pad\"`, `accessibilityRole=\"adjustable\"`, `accessibilityValue={{ text }}`, `accessibilityActions` increment/decrement; steppers as system `Button`s (hidden from AT, one step per tap). Format with `Intl.NumberFormat`; parse as on web. Form registration as Input, with the number's decimal string (undefined when empty). Arrow/Page/Home/End keys only where onKeyPress delivers them; not on iOS software or most iOS hardware keyboards, where the adjustable actions step and there is no jump to a bound.",
       "Related": "Input, Slider, Form, Button."
     },
     "extensions": [],
@@ -20334,25 +20375,52 @@
       "status": "review",
       "anatomy": [
         "container",
+        "header",
         "label",
         "valueText",
         "track",
         "fill"
       ],
       "composition": {
-        "label": "Text",
-        "valueText": "Text"
+        "label": {
+          "component": "Text",
+          "props": {
+            "element": "span",
+            "size": "sm",
+            "weight": "medium",
+            "tone": "default"
+          },
+          "forwards": {
+            "labelSize": "fontSize",
+            "labelWeight": "fontWeight",
+            "fontFamily": "fontFamily",
+            "lineHeight": "lineHeight"
+          }
+        },
+        "valueText": {
+          "component": "Text",
+          "props": {
+            "element": "span",
+            "size": "sm",
+            "tone": "muted"
+          },
+          "forwards": {
+            "valueSize": "fontSize",
+            "fontFamily": "fontFamily",
+            "lineHeight": "lineHeight"
+          }
+        }
       },
       "props": {
         "label": {
           "type": "string",
           "required": true,
           "description": "What is progressing (\"Uploading photos\", \"Importing contacts\"). Visible unless `hideLabel`.",
-          "a11y": "The accessible name (aria-labelledby / accessibilityLabel)."
+          "a11y": "The accessible name: aria-labelledby on web, aria-label on the Lit host (ids do not cross the shadow root), accessibilityLabel on React Native. An empty label leaves the bar unnamed, with no development warning."
         },
         "value": {
           "type": "number",
-          "description": "Progress so far, between `min` and `max`. Omit for an indeterminate bar (the end is unknown)."
+          "description": "Progress so far, between `min` and `max`. Omit (undefined or null) for an indeterminate bar (the end is unknown). Clamped to `min`…`max` for the fill, the accessible value, `formatValue`'s argument and the announcement tiers; a non-finite number (NaN, Infinity) is treated as `min`."
         },
         "min": {
           "type": "number",
@@ -20367,17 +20435,17 @@
         "formatValue": {
           "type": "function",
           "shape": "(value: number, min: number, max: number) => string",
-          "description": "Renders the value text (\"42%\", \"3 of 12 files\"). Defaults to a percentage over the whole range — `(value − min) / (max − min)` — the same arithmetic the fill uses, so a non-zero `min` reads correctly without a custom formatter. A `max` at or below `min` is not a range: the bar renders empty and warns in development."
+          "description": "Renders the value text (\"42%\", \"3 of 12 files\"). Defaults to a percentage over the whole range — `(value − min) / (max − min)` — the same arithmetic the fill uses, so a non-zero `min` reads correctly without a custom formatter, rounded to a whole number: `Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 0 })`, as Meter does (99.5% of the way shows \"100%\" before completion; completion is only the clamped value reaching `max`). Called with the clamped value. Rounding is for the text only; the fill uses the exact fraction. A `max` at or below `min` is not a range: the bar renders empty, exposes aria-valuenow / accessibilityValue.now = `min` with the given bounds, shows and exposes \"0%\" unless a custom formatter says otherwise, makes no progress or completion announcements, and warns in development."
         },
         "showValue": {
           "type": "boolean",
           "default": true,
-          "description": "Show the value text beside the label. Ignored when indeterminate."
+          "description": "Show the value text at the end of the label row. Ignored when indeterminate. Lit attribute is the negated boolean `hide-value` (reflected), since an attribute can only turn things on."
         },
         "hideLabel": {
           "type": "boolean",
           "default": false,
-          "description": "Visually hide the label (it remains the accessible name). For bars inside a Card whose heading already says what is happening."
+          "description": "Visually hide the label (it remains the accessible name). For bars inside a Card whose heading already says what is happening. The value text, when shown, stays at the end of the row; when there is no visible value text either, the label row takes no space and `partGap` is not applied."
         },
         "tone": {
           "type": "enum",
@@ -20398,7 +20466,7 @@
             "complete"
           ],
           "default": "complete",
-          "description": "What a screen reader hears without focusing the bar: nothing, every 25%, or only completion. Each announcement uses `copy.progress` / `copy.complete`, and `copy.indeterminate` is announced once each time the bar enters the indeterminate state. A value that moves backward resets the tiers already announced, so a retried task announces its progress again on the way up."
+          "description": "What a screen reader hears without focusing the bar: nothing, every 25%, or only completion. Each announcement uses `copy.progress` / `copy.complete`, and `copy.indeterminate` is announced once each time the bar enters the indeterminate state. A value that moves backward resets the tiers already announced, so a retried task announces its progress again on the way up. The full announcement rules are under Behavior."
         }
       },
       "events": {},
@@ -20431,52 +20499,80 @@
         },
         "radius": {
           "token": "radius.full",
+          "part": "track",
+          "description": "Rounds the track and the fill ends; the track clips the fill (overflow hidden).",
           "locked": false
         },
         "labelColor": {
           "token": "color.foreground",
           "part": "label",
+          "description": "Realised by the label Text's tone default; no hook of its own.",
           "locked": true
         },
         "labelSize": {
           "token": "font.size.sm",
           "part": "label",
+          "description": "Forwarded to the label Text's fontSize override.",
           "locked": false
         },
         "labelWeight": {
           "token": "font.weight.medium",
           "part": "label",
+          "description": "Forwarded to the label Text's fontWeight override.",
           "locked": false
         },
         "valueColor": {
           "token": "color.foreground.muted",
+          "part": "valueText",
+          "description": "Realised by the value Text's tone muted; no hook of its own.",
           "locked": true
         },
         "valueSize": {
           "token": "font.size.sm",
+          "part": "valueText",
+          "description": "Forwarded to the value Text's fontSize override.",
           "locked": false
         },
         "fontFamily": {
           "token": "font.family.body",
+          "part": "header",
+          "description": "Forwarded to both Texts' fontFamily overrides; never styles them directly.",
           "locked": false
         },
         "lineHeight": {
           "token": "font.lineHeight.normal",
+          "part": "header",
+          "description": "Forwarded to both Texts' lineHeight overrides; never styles them directly.",
           "locked": false
         },
         "partGap": {
           "token": "space.1",
-          "description": "Vertical gap between the label row and the track.",
+          "part": "container",
+          "description": "Vertical gap between the label row (header) and the track.",
+          "locked": false
+        },
+        "labelGap": {
+          "token": "space.2",
+          "part": "header",
+          "description": "Horizontal gap between the label and the value text in the header row.",
           "locked": false
         },
         "transition": {
           "token": "motion.duration.base",
-          "description": "Fill width change with motion.easing.standard; instant under reduced motion.",
+          "part": "fill",
+          "description": "Fill inline-size change with motion.easing.standard; instant under reduced motion.",
           "locked": false
         },
         "indeterminateLoop": {
           "token": "motion.duration.loop",
-          "description": "The indeterminate sweep: a fill one third of the track width travelling start to end and repeating. Under reduced motion the fill is replaced by a static, half-opacity track (opacity.disabled) — no motion at all.",
+          "part": "fill",
+          "description": "The indeterminate sweep: a fill one third of the track width travelling from the inline start to the inline end (right to left in RTL) and repeating, starting and ending wholly outside the track. Under reduced motion there is no sweep: the fill is drawn static and full-width at opacity.disabled, keeping its tone color.",
+          "locked": false
+        },
+        "sweepEasing": {
+          "token": "motion.easing.standard",
+          "part": "fill",
+          "description": "Easing of each indeterminate sweep on every platform. The fill is off the track at both ends of the loop, so the eased restart has no visible seam.",
           "locked": false
         }
       },
@@ -20536,16 +20632,20 @@
             "aria-labelledby",
             "aria-busy"
           ],
-          "notes": "A <div role=\"progressbar\"> with aria-valuenow/min/max and aria-valuetext from formatValue; an indeterminate bar omits aria-valuenow and sets aria-busy=\"true\" on itself. Announcements go through a visually-hidden `role=\"status\" aria-live=\"polite\"` region next to the bar, updated per `announce`. Not <progress>: it cannot be themed consistently and its indeterminate animation ignores reduced motion in some browsers."
+          "notes": "role=\"progressbar\" sits on the track <div>, with aria-labelledby (the label Text's id), aria-valuenow/min/max and aria-valuetext from formatValue; data-ds sits on the root wrapper, a plain container with no role — they are different elements. An indeterminate bar keeps aria-valuemin/max, omits aria-valuenow and aria-valuetext, and sets aria-busy=\"true\" on the track. The indeterminate sweep mirrors its keyframes under :dir(rtl). Announcements go through a visually-hidden `role=\"status\" aria-live=\"polite\"` region next to the bar, updated per `announce`. Not <progress>: it cannot be themed consistently and its indeterminate animation ignores reduced motion in some browsers."
         },
         "lit": {
           "tag": "ds-progress-bar",
           "reflect": [
             "tone",
             "hide-label",
+            {
+              "prop": "showValue",
+              "attribute": "hide-value"
+            },
             "announce"
           ],
-          "notes": "role=\"progressbar\" and aria-valuenow/min/max/text are plain reflected attributes on the host, not ElementInternals — the accessible-value tooling reads attributes, and real assistive technology treats the two identically. The live region is in the shadow root and carries role=\"status\" beside aria-live=\"polite\"; it is not an anatomy part and takes no `part`."
+          "notes": "role=\"progressbar\" and aria-valuenow/min/max/text are plain reflected attributes on the host, not ElementInternals — the accessible-value tooling reads attributes, and real assistive technology treats the two identically. The host is named by aria-label mirrored from `label` (aria-labelledby cannot reach the label inside the shadow root); an empty label removes aria-label. Indeterminate: aria-valuemin/max stay, aria-valuenow and aria-valuetext are removed, aria-busy=\"true\". `showValue` is the negated attribute `hide-value`. The sweep mirrors its keyframes under :host(:dir(rtl)). The live region is in the shadow root and carries role=\"status\" beside aria-live=\"polite\"; it is not an anatomy part and takes no `part`."
         },
         "rn": {
           "element": "View",
@@ -20554,7 +20654,7 @@
             "accessibilityLabel",
             "accessibilityValue"
           ],
-          "notes": "Drawn with Views (Animated.View width for the fill; the indeterminate sweep is an Animated loop that is not started under reduced motion, and eases linearly so the loop has no visible seam). accessibilityValue={{ min, max, now, text }} — an indeterminate bar carries min and max only, never a `now` or a `text` that would name a progress it does not know, and sets accessibilityState={{ busy: true }}, the native form of aria-busy. Announcements via AccessibilityInfo.announceForAccessibility per `announce`."
+          "notes": "Drawn with Views (Animated.View width for the fill; the indeterminate sweep is an Animated loop that is not started under reduced motion — the fill is then drawn full-width at opacity.disabled — and eases with `sweepEasing` via Easing.bezier; it runs toward the left when I18nManager.isRTL). No disabled state and no keyboard interaction: the bar is never focusable (focusable={false}), and screen-reader users learn progress from the announcements. accessibilityValue={{ min, max, now, text }} — an indeterminate bar carries min and max only, never a `now` or a `text` that would name a progress it does not know, and sets accessibilityState={{ busy: true }}, the native form of aria-busy. Announcements via AccessibilityInfo.announceForAccessibility per `announce`."
         },
         "swiftui": {
           "element": "ProgressView",
@@ -20566,7 +20666,7 @@
             "AccessibilityNotification",
             "TimelineView"
           ],
-          "notes": "`ProgressView(value:total:)` with a package `ProgressViewStyle` drawing the track and fill from the tokens (indeterminate when `value` is nil: a sweep driven by `TimelineView`, replaced by the static half-opacity track under reduced motion). VoiceOver gets the label and `.accessibilityValue(formatValue)` from the style's configuration; announcements per `announce` (milestones/complete/indeterminate copy) through `AccessibilityNotification.Announcement`. `tone` recolors the fill only."
+          "notes": "`ProgressView(value:total:)` with a package `ProgressViewStyle` drawing the track and fill from the tokens (indeterminate when `value` is nil: a sweep driven by `TimelineView`, replaced under reduced motion by the fill drawn static and full-width at opacity.disabled). VoiceOver gets the label and `.accessibilityValue(formatValue)` from the style's configuration; announcements per `announce` (milestones/complete/indeterminate copy) through `AccessibilityNotification.Announcement`. `tone` recolors the fill only."
         }
       },
       "behavior": [
@@ -20776,10 +20876,10 @@
       "Overview": "A progress bar answers \"how much longer\": it moves as the work moves, and it ends. If the value is a measurement that could go up or down — storage used, signal strength — it is a Meter, not a progress bar.",
       "When to use": "Use a ProgressBar for a task the interface started and can see through to the end: uploads, downloads, imports, multi-step processing, a wizard's overall completion. Give it a `value` whenever the total is known; use the indeterminate form only until the total is known, then switch. Set `announce: milestones` for long tasks the user may leave and come back to; `complete` (the default) is right for anything under a minute.",
       "When not to use": "Do not use it for a measured quantity (Meter), for a value the user sets (Slider), or for a brief wait of a second or two where a busy state on the Button that started it is enough. Do not use an indeterminate bar for longer than a few seconds without text saying what is happening. Do not stack several bars for one task; show the current step's bar and the overall step count in text.",
-      "Behavior": "The fill width follows `value` as a fraction of the range, animated over `transition`. Indeterminate bars sweep continuously and expose `aria-busy`. When `value` reaches `max` the bar stays full and, if `announce` is not `none`, `copy.complete` is announced once; milestones announce at 25/50/75/100. Changing `tone` to `success` or `danger` recolors the fill only — the containing view is responsible for the text that says the task finished or failed. The bar itself is never focusable. `copy.indeterminate` is announced once each time the bar becomes indeterminate. Milestone and completion announcements reset when the value moves backward (a retried task announces its milestones again). The live region is `role=\"status\"` (plain attributes on Lit, not ElementInternals) and is not an anatomy part.",
+      "Behavior": "The fill width follows the clamped `value` as a fraction of the range, animated over `transition`. Indeterminate bars sweep continuously (inline start to inline end, mirrored in RTL) and expose `aria-busy`. When `value` reaches `max` the bar stays full and, if `announce` is not `none`, `copy.complete` is announced once. Changing `tone` to `success` or `danger` recolors the fill only — the containing view is responsible for the text that says the task finished or failed. The bar itself is never focusable. The live region is `role=\"status\"` (plain attributes on Lit, not ElementInternals) and is not an anatomy part.\n\nThe label row (header) is a horizontal row with the label at the inline start and the value text at the inline end, `labelGap` apart. `hideLabel` hides the label visually but the value text stays at the end; with no visible label and no visible value text the row takes no space.\n\nAnnouncements follow these rules on every platform:\n\n- **Tiers.** The tier is `floor(fraction × 4)` of the clamped value (74.6% is tier 2, 75% is tier 3); tier 4 is `max`. Tiers are tracked for every `announce` value, including `none`, so switching `announce` mid-task never replays tiers already passed.\n- **Milestones.** With `milestones`, entering a higher tier 1–3 announces `copy.progress` once. An update that crosses several tiers makes one announcement for the highest, with the current value. Reaching `max` announces `copy.complete`, never `copy.progress` with \"100%\"; `complete` announces only that.\n- **`{value}`** is the formatted value text — `formatValue(clamped, min, max)`, the same string as aria-valuetext / accessibilityValue.text — not the raw number.\n- **Mount.** The tier and completion reached at mount are recorded silently: a bar that mounts at 60% or at `max` announces nothing. A bar that mounts indeterminate has entered that state, so `copy.indeterminate` is announced once after mount (unless `announce` is `none`), as it is each later time `value` becomes undefined.\n- **Backward.** A value that moves to a lower tier resets the record to the new value's tier: moving from 80% to 60% makes 75% and completion announceable again without re-announcing 50%. Dropping below `max` re-arms `copy.complete`.\n- **Repeats.** An announcement is spoken even when its text equals the previous one (indeterminate twice, a retried task completing again): web and Lit replace the live region's message node rather than setting the same text; React Native calls `announceForAccessibility` again.\n- **Invalid range.** With `max ≤ min` no progress or completion is announced; `copy.indeterminate` still is.",
       "Content guidelines": "Labels name the task in progress with a verb (\"Uploading 12 photos\"), and the value text says how far in the units people think in — files, steps, or percent — via `formatValue`. When the task fails, keep the bar (at `danger`) and put the error in an Alert beside it, not in the bar's label.",
       "Accessibility": "The bar is a `progressbar` with `aria-valuenow`, `aria-valuemin`, `aria-valuemax` and `aria-valuetext` (WCAG 4.1.2; APG progressbar), named by its label even when the label is visually hidden. Because the bar is not focusable, screen-reader users only learn about progress through the live region, which is why `announce` exists and defaults to completion (4.1.3). Motion is the fill's width change and the indeterminate sweep; both stop under reduced motion (2.3.3). Tone is reinforced by text elsewhere, never color alone (1.4.1); the fill meets 3:1 against the page (1.4.11).",
-      "Platform notes": "### Web\nRender the label row (`Text` with id; value `Text` when `showValue` and determinate), the track `<div>` and fill `<div>` with `inline-size` from the value, and the `role=\"progressbar\"` on the track with `aria-labelledby`, `aria-valuenow/min/max/text` (omit `aria-valuenow` and set `aria-busy=\"true\"` when indeterminate). A visually-hidden `<div aria-live=\"polite\">` receives `copy.progress` at milestones or `copy.complete`. The indeterminate sweep is a CSS keyframe on the fill (`translateX` from -100% to 300% over `indeterminateLoop`), replaced under `prefers-reduced-motion` by a static fill at `opacity.disabled` covering the whole track.\n\n### Lit\n`<ds-progress-bar label=\"Uploading\" value=\"42\"></ds-progress-bar>`; `ElementInternals` role and aria values on the host; live region in the shadow root; `tone` reflected for styling.\n\n### React Native\n`View` track with an `Animated.View` fill whose width animates to the fraction (`useNativeDriver: false` for width; duration from `transition`, zero under reduced motion). Indeterminate: an `Animated.loop` translating a one-third-width fill, not started when `useReducedMotion()`; instead the fill is drawn full-width at `opacity.disabled`. `accessibilityRole=\"progressbar\"`, `accessibilityValue`, and `AccessibilityInfo.announceForAccessibility` per `announce`.",
+      "Platform notes": "### Web\nRender a root wrapper (`data-ds`, no role, gap `partGap`) containing the header row (`data-part=\"header\"`, flex row, `justify-content: space-between`, gap `labelGap`) — a `Text element=\"span\" size=\"sm\" weight=\"medium\" tone=\"default\"` with id (visually hidden under `hideLabel`) and, when `showValue` and determinate, a `Text element=\"span\" size=\"sm\" tone=\"muted\"` with the value text, each receiving its forwarded overrides — then the track `<div>` and fill `<div>` with `inline-size` from the clamped fraction. `role=\"progressbar\"` sits on the track, never the root, with `aria-labelledby`, `aria-valuenow/min/max/text` (when indeterminate keep `aria-valuemin/max`, omit `aria-valuenow` and `aria-valuetext`, and set `aria-busy=\"true\"`). A visually-hidden `<div role=\"status\" aria-live=\"polite\">` beside the bar receives the announcements described under Behavior. The indeterminate sweep is a CSS keyframe on the fill (`translateX` from -100% to 300% over `indeterminateLoop` with `sweepEasing`, reversed under `:dir(rtl)`), replaced under `prefers-reduced-motion` by a static fill at `opacity.disabled` covering the whole track.\n\n### Lit\n`<ds-progress-bar label=\"Uploading\" value=\"42\"></ds-progress-bar>`; `role=\"progressbar\"`, `aria-label` (from `label`) and the aria values as plain attributes on the host, not `ElementInternals`; the same header, track and fill structure as web in the shadow root, with composed `ds-text` elements; live region in the shadow root; `tone`, `hide-label`, `hide-value` and `announce` reflected.\n\n### React Native\n`View` track with an `Animated.View` fill whose width animates to the fraction (`useNativeDriver: false` for width; duration from `transition`, zero under reduced motion). Header row: a `View` with `flexDirection: 'row'`, `justifyContent: 'space-between'` and gap `labelGap` holding the two `Text`s. Indeterminate: an `Animated.loop` translating a one-third-width fill with `sweepEasing`, not started when `useReducedMotion()`; instead the fill is drawn full-width at `opacity.disabled`. `accessibilityRole=\"progressbar\"`, `accessibilityValue`, and `AccessibilityInfo.announceForAccessibility` per `announce`.",
       "Related": "Meter, Alert, Button, Toast."
     },
     "extensions": [],
@@ -21528,10 +21628,37 @@
         "suggestions"
       ],
       "composition": {
-        "label": "Text",
-        "icon": "Icon",
-        "clearButton": "Button",
-        "submitButton": "Button",
+        "label": {
+          "component": "Text",
+          "forwards": {
+            "labelWeight": "fontWeight",
+            "fontSize": "fontSize"
+          }
+        },
+        "icon": {
+          "component": "Icon",
+          "forwards": {
+            "iconColor": "color"
+          }
+        },
+        "clearButton": {
+          "component": "Button",
+          "props": {
+            "variant": "ghost",
+            "size": "sm",
+            "iconOnly": true,
+            "leadingIcon": "close"
+          }
+        },
+        "submitButton": {
+          "component": "Button",
+          "props": {
+            "variant": "ghost",
+            "size": "sm",
+            "iconOnly": true,
+            "leadingIcon": "arrow-right"
+          }
+        },
         "suggestions": {
           "component": "Listbox",
           "props": {
@@ -21558,7 +21685,7 @@
         },
         "value": {
           "type": "string",
-          "description": "Controlled query.",
+          "description": "Controlled query. When set, it is the query everything reads: submit, a chosen suggestion, the clear button and the Form value all use this prop, never stale typed text; clearing reports onChange(\"\") and the field empties when the caller passes the new value.",
           "controls": {
             "event": "onChange",
             "default": "defaultValue"
@@ -21574,12 +21701,12 @@
         },
         "action": {
           "type": "string",
-          "description": "URL to submit to with GET (web); when omitted, `onSubmit` handles it and nothing navigates."
+          "description": "URL to submit to with GET (web and Lit); when omitted, `onSubmit` handles it and nothing navigates. The URL carries the same trimmed query `onSubmit` receives (the field value is trimmed before the native submit). Ignored, with a development warning, when Search sits inside a Form component: the enclosing Form owns submission."
         },
         "suggestions": {
           "type": "array",
           "shape": "{ value: string; label: string; description?: string }[]",
-          "description": "Suggestions for the current query, shown in a Listbox under the field; choosing one fills the query with the suggestion's `label` — what the user just read — and submits. Provide them from `onChange` (debounced by the caller). Setting the prop at all is what turns the field into a combobox, including an explicitly empty array after a fetch that found nothing, which shows `copy.noSuggestions`; leaving it undefined keeps a plain search field. With suggestions the field becomes a Combobox: same keys, `aria-activedescendant`."
+          "description": "Suggestions for the current query, shown in a Listbox under the field; choosing one fills the query with the suggestion's `label` — what the user just read — and submits. Provide them from `onChange` (debounced by the caller). Setting the prop at all is what turns the field into a combobox, including an explicitly empty array after a fetch that found nothing, which shows `copy.noSuggestions`; leaving it undefined keeps a plain search field. With suggestions the field becomes a Combobox: same keys, `aria-activedescendant` on web (Lit uses a live span instead; see platforms.lit). The composed Listbox gets `label` = Search's `label`, `embedded`, `value: \"\"` (no persistent selection after a choice), the suggestions as options and, while empty, `emptyMessage` = `copy.noSuggestions` (or `copy.loading` while `loading`); Listbox's own `loading` prop is never used. The list opens on typing (while `suggestions` is set) and on ArrowDown — never on focus alone, and a `suggestions` array arriving while the field is focused but untouched does not open it. It closes on Escape, Tab or blur, a pointer press outside the field and list, a chosen suggestion, clear, and submit. ArrowDown on the last suggestion stays there (no wrap), as ArrowUp never wraps."
         },
         "loading": {
           "type": "boolean",
@@ -21604,12 +21731,12 @@
         "disabled": {
           "type": "boolean",
           "default": false,
-          "description": "Not editable, still readable."
+          "description": "Not editable, still readable and focusable: the input is read-only with aria-disabled (accessibilityState disabled on native), both Buttons are disabled, every key in the keyboard table is inert, suggestions never open, no event fires, the whole component dims to `disabledOpacity`, and a disabled Search is not registered with (or submitted by) a Form."
         }
       },
       "events": {
         "onChange": {
-          "description": "Fired on every keystroke with the query; the caller fetches suggestions here.",
+          "description": "Fired on every keystroke with the query; the caller fetches suggestions here. Also fired whenever Search itself changes the text, so a controlled value can follow: with \"\" before `onClear` (clear button or Escape), and with the suggestion's `label` before `onSubmit` when one is chosen.",
           "platforms": {
             "web": "onChange",
             "lit": "change",
@@ -21639,7 +21766,7 @@
             {
               "name": "value",
               "type": "string",
-              "description": "The submitted query."
+              "description": "The submitted query, trimmed; for a chosen suggestion its trimmed `label`. Never empty: an empty trimmed query does not fire."
             }
           ],
           "fires": [
@@ -21719,6 +21846,7 @@
         "iconColor": {
           "token": "color.foreground.muted",
           "part": "icon",
+          "description": "The leading search glyph only, forwarded to that Icon's own `color` override. The clear and submit glyphs keep their ghost Buttons' own colors; nothing is forwarded into a Button.",
           "locked": true
         },
         "border": {
@@ -21727,6 +21855,7 @@
         },
         "borderFocus": {
           "token": "color.border.focus",
+          "description": "The field wrapper's border while the input itself has focus (web and Lit: `:has(input:focus-visible)`, not `:focus-within`, so a focused clear or submit Button shows only its own ring). The input draws no outline of its own.",
           "locked": true
         },
         "borderWidth": {
@@ -21780,6 +21909,10 @@
           "token": "color.border",
           "locked": false
         },
+        "popupBorderWidth": {
+          "token": "border.width.thin",
+          "locked": false
+        },
         "popupRadius": {
           "token": "radius.md",
           "locked": false
@@ -21788,9 +21921,20 @@
           "token": "shadow.overlay",
           "locked": false
         },
+        "layer": {
+          "token": "layer.dropdown",
+          "description": "Stacking of the suggestions popup on web and Lit, placed below the field and flipped above it when the viewport has no room, as Combobox. Unused on native, where the list is inline.",
+          "locked": false
+        },
         "partGap": {
           "token": "space.1",
           "description": "Between the visible label and the field.",
+          "locked": false
+        },
+        "labelWeight": {
+          "token": "font.weight.medium",
+          "part": "label",
+          "description": "Forwarded to the label Text's own `fontWeight` override; the label's size follows `fontSize`, forwarded as its `fontSize` override, so a shown label tracks `size` as Input's does.",
           "locked": false
         },
         "minTarget": {
@@ -21799,11 +21943,20 @@
         },
         "focusRingWidth": {
           "token": "border.width.focus",
+          "description": "Replaces borderWidth on the field wrapper while the input is focused (the field border, in borderFocus, is the focus ring, as Input and Combobox); paddingInline and paddingBlock shrink by the difference so the content does not shift. No separate outline.",
           "locked": true
         },
         "disabledOpacity": {
           "token": "opacity.disabled",
           "locked": false
+        }
+      },
+      "constants": {
+        "statusDebounce": {
+          "description": "How long the suggestion-count, loading and no-suggestions announcements wait before the live region updates (or, on native, before announcing), so the count settles while the caller refetches. Not motion: computed from the theme's standard `motion.duration.base` value, never from a reduced-motion override that zeroes the token.",
+          "token": "motion.duration.base",
+          "multiply": 2,
+          "unit": "ms"
         }
       },
       "copy": {
@@ -21877,7 +22030,7 @@
             "aria-expanded",
             "aria-activedescendant"
           ],
-          "notes": "A <form role=\"search\"> (the Landmark) with a visually-hidden <label>, a decorative Icon \"search\", <input type=\"search\" enterkeyhint=\"search\" autocomplete=\"off\"> with the browser's own clear button suppressed (::-webkit-search-cancel-button { display: none }) in favor of the system Button (ghost, sm, iconOnly, \"close\" Icon), and a submit Button (ghost, iconOnly, \"arrow-right\" Icon) — always rendered, on every platform, since Enter is not reachable from every on-screen keyboard and the Tab order names it. The glyph Icon is `size: sm` at `size: md` and `size: md` at `size: lg`, so it keeps its proportion to the text. With `suggestions` the input takes role=\"combobox\" aria-autocomplete=\"list\" and composes Listbox — `embedded`, so Search's own popup bindings own the surface, border, radius and shadow — with aria-activedescendant exactly as Combobox does; a visually-hidden live region announces the count. ArrowUp from the first suggestion, or before any has been highlighted, clears the highlight and leaves focus in the input rather than wrapping to the last. While suggestions are loading, Search passes no options and `emptyMessage: copy.loading`, so the verbatim string is what shows."
+          "notes": "A <form role=\"search\"> (the Landmark) with a visually-hidden <label>, a decorative Icon \"search\", <input type=\"search\" enterkeyhint=\"search\" autocomplete=\"off\"> with the browser's own clear button suppressed (::-webkit-search-cancel-button { display: none }) in favor of the system Button (ghost, sm, iconOnly, \"close\" Icon), and a submit Button (ghost, sm, iconOnly, \"arrow-right\" Icon) — always rendered, on every platform, since Enter is not reachable from every on-screen keyboard and the Tab order names it. On every platform the glyph Icon is `size: sm` at `size: md` and `size: md` at `size: lg`, so it keeps its proportion to the text. With `suggestions` the input takes role=\"combobox\" aria-autocomplete=\"list\" and composes Listbox — `embedded`, so Search's own popup bindings own the surface, border, radius and shadow — with aria-activedescendant exactly as Combobox does; a visually-hidden live region announces the count. ArrowUp from the first suggestion, or before any has been highlighted, clears the highlight and leaves focus in the input rather than wrapping to the last. While suggestions are loading, Search passes no options and `emptyMessage: copy.loading` (never Listbox's `loading` prop), so the verbatim string is what shows. The `landmark` and `form` parts are one element (the root <form>, carrying data-part=\"form\"); with `landmark` off it is a plain <form>. Inside a Form component (FormContext present) the root is a <div role=\"search\"> instead, so no <form> nests in a <form>: Search handles Enter itself, the submit Button is type=\"button\", `onSubmit` fires, `action` is ignored, and the enclosing Form is not submitted by Search. Form registration (React, Lit ds-form, React Native): the value is the trimmed query (\"\" when empty, never omitted), validation always passes (no required or invalid state), and a disabled Search is not registered."
         },
         "lit": {
           "tag": "ds-search",
@@ -21891,7 +22044,7 @@
             "disabled",
             "loading"
           ],
-          "notes": "The <form> lives in the shadow root; when `action` is set, submit navigates via a light-DOM form the element creates on demand (shadow forms do not participate in the page). Composed `submit`, `change`, `clear`. Suggestions in a Listbox inside the shadow root; aria-activedescendant works because input and listbox share the root."
+          "notes": "The <form> lives in the shadow root; when `action` is set, submit navigates via a light-DOM form the element creates on demand (shadow forms do not participate in the page). Composed `submit`, `change`, `clear`. Suggestions in a <ds-listbox> inside the shadow root, but its option rows render in ds-listbox's own shadow root, which neither an aria-activedescendant IDREF nor ariaActiveDescendantElement can reach; as ds-combobox does, the input carries no aria-activedescendant and the highlighted suggestion's label is written to a polite live span linked by aria-describedby. The shadow <form> is both the `landmark` and `form` part and never nests in a light-DOM form, but inside <ds-form> `action` is still ignored, as on web. For ds-form discovery the element exposes `required` (always false), `validationMessage` (always \"\") and `checkValidity()` (always true), and submits the trimmed query with setFormValue."
         },
         "rn": {
           "element": "TextInput",
@@ -21901,7 +22054,7 @@
             "accessibilityRole=search",
             "accessibilityLabel"
           ],
-          "notes": "TextInput with returnKeyType=\"search\" and onSubmitEditing; the system clear Button rather than clearButtonMode so it matches across platforms; a search glyph Icon before the input. Suggestions render as a Listbox below the field in a View (no overlay: on a phone the list takes the space under the field), shown while the field has focus and `suggestions` is set, and closed on blur. The container View has accessibilityRole=\"search\". `name` and `action` are a URL query key and a GET target — neither exists on native — so both are accepted for parity and do nothing, and `action` warns in development. Listbox rows are touch Pressables with no key events, so there is no arrow-key highlight: a tap chooses a suggestion and Enter always submits the typed query."
+          "notes": "TextInput with returnKeyType=\"search\" and onSubmitEditing; the system clear Button rather than clearButtonMode so it matches across platforms; a search glyph Icon before the input; the submit Button always rendered. Events map to native prop names with no aliases: `onChange` is the `onChangeText` prop, `onSubmit` is `onSubmitEditing`, `onClear` stays `onClear`; the old onChange/onSubmit prop names are not kept. Suggestions render as a Listbox below the field in a View (no overlay: on a phone the list takes the space under the field), opened by typing while the field has focus and `suggestions` is set, and closed on blur — except while a touch or pointer press is in progress inside the list (react-native-web blurs the input on pointerdown), after which it closes if focus did not return. keyboardShouldPersistTaps=\"handled\" belongs on the caller's ScrollView; Search has none of its own. accessibilityRole=\"search\" goes on the container View only when `landmark` is on (that View is both the `landmark` and `form` part; native has no form element), never on the TextInput, which on react-native-web would become a second search landmark. The label Text, when shown, is hidden from accessibility because the TextInput already carries accessibilityLabel. There is no visually-hidden primitive, so the count, loading and no-suggestions announcements have no element: they go through AccessibilityInfo.announceForAccessibility after `statusDebounce`. Escape arrives only from a hardware keyboard (or react-native-web) through onKeyPress; the clear Button is the accessible path. `name` and `action` are a URL query key and a GET target — neither exists on native — so both are accepted for parity and do nothing, and `action` warns in development. Listbox rows are touch Pressables with no key events, so there is no arrow-key highlight: a tap chooses a suggestion and Enter always submits the typed query."
         },
         "swiftui": {
           "element": "TextField",
@@ -22139,10 +22292,10 @@
       "Overview": "Search is the field people look for first. It is an Input shaped so nobody has to read a label — a magnifier glyph, a pill, a clear button — and it submits on Enter like every search field they have used.",
       "When to use": "Use Search for free-text search over a site, an app, or a large dataset: the header search, a search page's main field, a \"filter the list\" field over more than a couple of dozen rows. Add `suggestions` when the backend can offer completions or recent queries; keep `landmark` on for the one primary search so screen-reader users can jump to it.",
       "When not to use": "Do not use Search for a field that takes a specific value (an order number: Input), for choosing from a known list (Select or Combobox), or for a filter that applies instantly to a short list already on screen (an Input labelled \"Filter\" is honest about what it does). Do not put two search landmarks on a page.",
-      "Behavior": "Typing fires `onChange`; the clear button appears when there is text and empties the field, returns focus to it and fires `onClear`. Enter or the submit button fires `onSubmit` with the trimmed query (and navigates to `action` on web when set). With suggestions, ArrowDown opens the list and moves the highlight while focus stays in the input; Enter submits the highlighted suggestion's value; Escape closes the list first, then clears. `loading` shows nothing visually until suggestions arrive but is announced. The field never submits an empty query. Choosing a suggestion fills the query with its `label` (the display text). With `action`, submission is a native GET form submit (Enter, the submit button and a chosen suggestion all submit the same form), never a scripted navigation. The submit button is always rendered. Suggestions mode starts when the `suggestions` prop is set at all (an empty array shows the empty/loading row). `onClear` fires for the clear button and for an Escape that empties the field. ArrowUp with no highlight is a no-op. The landmark is the composed Landmark (`search`) named by `label`; the popup bindings style the wrapper and the Listbox is `embedded`.",
+      "Behavior": "Typing fires `onChange`; the clear button appears when there is text and empties the field, returns focus to it and fires `onClear`. Enter or the submit button fires `onSubmit` with the trimmed query (and navigates to `action` on web when set, carrying the same trimmed query). With suggestions, typing or ArrowDown opens the list (focus alone does not) and ArrowDown moves the highlight, stopping at the last, while focus stays in the input; Enter fills and submits the highlighted suggestion's `label`, exactly as clicking it does; Escape closes the list first, then clears. `loading` shows nothing visually until suggestions arrive but is announced. The field never submits an empty query. Choosing a suggestion fills the query with its `label` (the display text). With `action`, submission is a native GET form submit (Enter, the submit button and a chosen suggestion all submit the same form), never a scripted navigation. The submit button is always rendered. Suggestions mode starts when the `suggestions` prop is set at all (an empty array shows the empty/loading row). `onClear` fires for the clear button and for an Escape that empties the field. ArrowUp with no highlight is a no-op. Clearing fires `onChange(\"\")` then `onClear`; choosing a suggestion fires `onChange(label)` then `onSubmit`. A disabled Search is readable and focusable but inert. The landmark is `role=\"search\"` on Search's own root element (not a composed Landmark), needing no name beyond the field's label; the popup bindings style the wrapper and the Listbox is `embedded`.",
       "Content guidelines": "The label says what is searched (\"Search orders\"); the placeholder, if any, shows an example query rather than repeating the label. Suggestion labels show the completion with the typed part not highlighted (the system does not bold matches; the list is short enough to read). Keep suggestions to eight.",
       "Accessibility": "The form is the page's `search` landmark (WCAG 1.3.6; APG landmarks) and the input a `searchbox` with an associated label that is visually hidden but present (1.3.1, 2.4.6). With suggestions the field follows the combobox pattern with `aria-activedescendant`, so focus never leaves the input and the count is announced (4.1.2, 4.1.3). The clear and submit buttons are real Buttons with names from copy and 24px targets. Escape closes the list before clearing, so it never destroys typed text unexpectedly (2.1.2).",
-      "Platform notes": "### Web\nRender `<form role=\"search\" data-ds=\"Search\" onSubmit>` containing a visually-hidden `<label>`, the field wrapper (pill from `radius`, border, background) with `Icon name=\"search\"` (decorative), `<input type=\"search\" enterkeyhint=\"search\" autocomplete=\"off\">`, the clear `Button` when `value` is non-empty, and the submit `Button` when `action` is set. Suggestions: reuse Combobox's list rendering — `role=\"combobox\"`, `aria-expanded`, `aria-controls`, `aria-activedescendant`, `Listbox` in a portal positioned under the field on `layer.dropdown`. Suppress the native cancel button via the WebKit pseudo-element.\n\n### Lit\n`<ds-search label=\"Search products\" action=\"/search\"></ds-search>`; shadow `<form>`; for navigation create a light-DOM `<form method=\"get\" action>` with a hidden input and submit it; composed events; Listbox inside the shadow root.\n\n### React Native\n`View accessibilityRole=\"search\"` containing `Icon`, `TextInput` (`returnKeyType=\"search\"`, `onSubmitEditing`), and the clear `Button`. Suggestions: `Listbox` below the field, inline, `keyboardShouldPersistTaps=\"handled\"` so a tap on a suggestion is not swallowed by keyboard dismissal.",
+      "Platform notes": "### Web\nRender `<form role=\"search\" data-ds=\"Search\" onSubmit>` containing a visually-hidden `<label>`, the field wrapper (pill from `radius`, border, background) with `Icon name=\"search\"` (decorative), `<input type=\"search\" enterkeyhint=\"search\" autocomplete=\"off\">`, the clear `Button` when `value` is non-empty, and the submit `Button`, always. Suggestions: reuse Combobox's list rendering — `role=\"combobox\"`, `aria-expanded`, `aria-controls`, `aria-activedescendant`, `Listbox` in a portal positioned under the field on `layer.dropdown`. Suppress the native cancel button via the WebKit pseudo-element.\n\n### Lit\n`<ds-search label=\"Search products\" action=\"/search\"></ds-search>`; shadow `<form>`; for navigation create a light-DOM `<form method=\"get\" action>` with a hidden input and submit it; composed events; Listbox inside the shadow root.\n\n### React Native\n`View accessibilityRole=\"search\"` (when `landmark`) containing `Icon`, `TextInput` (`returnKeyType=\"search\"`, `onSubmitEditing`), the clear `Button` and the submit `Button`. Suggestions: `Listbox` below the field, inline. The caller's ScrollView needs `keyboardShouldPersistTaps=\"handled\"` so a tap on a suggestion is not swallowed by keyboard dismissal; Search has no ScrollView to set it on.",
       "Related": "Input, Combobox, Listbox, Landmark, Button."
     },
     "extensions": [],
@@ -24547,21 +24700,68 @@
         "errorMessage"
       ],
       "composition": {
-        "label": "Text",
-        "description": "Text",
-        "valueText": "Text"
+        "label": {
+          "component": "Text",
+          "props": {
+            "element": "span",
+            "size": "md",
+            "weight": "medium",
+            "tone": "default"
+          },
+          "forwards": {
+            "labelWeight": "fontWeight",
+            "fontSize": "fontSize",
+            "fontFamily": "fontFamily"
+          }
+        },
+        "description": {
+          "component": "Text",
+          "props": {
+            "element": "span",
+            "size": "sm",
+            "tone": "muted"
+          },
+          "forwards": {
+            "helperSize": "fontSize",
+            "fontFamily": "fontFamily"
+          }
+        },
+        "valueText": {
+          "component": "Text",
+          "props": {
+            "element": "span",
+            "size": "sm",
+            "tone": "default"
+          },
+          "forwards": {
+            "valueSize": "fontSize",
+            "fontFamily": "fontFamily"
+          }
+        },
+        "errorMessage": {
+          "component": "Text",
+          "props": {
+            "element": "span",
+            "size": "sm",
+            "tone": "danger"
+          },
+          "forwards": {
+            "helperSize": "fontSize",
+            "fontFamily": "fontFamily"
+          }
+        }
       },
       "props": {
         "label": {
           "type": "string",
           "required": true,
           "description": "Visible label naming the quantity (\"Volume\", \"Price range\").",
-          "a11y": "aria-labelledby on each thumb; a range slider's thumbs are named \"{label} minimum\" / \"{label} maximum\" via copy."
+          "a11y": "The label is a Text `<span>` with an id, not a native `<label for>` (which cannot name a `div role=slider`); a single thumb takes aria-labelledby pointing at it (on Lit the span is in the same shadow root, so the id reference holds). A range slider's thumbs are named with aria-label (accessibilityLabel on native) set to the resolved `copy.minimumLabel` / `copy.maximumLabel`, with no hidden spans."
         },
         "name": {
           "type": "string",
           "required": true,
-          "description": "Field name for the Form. A range contributes `[min, max]`."
+          "description": "Field name for the Form. The form value types (web/rn FormContext, Lit DsFormField) have no number, so a single value registers as its decimal string (`String(value)`) and a range as two strings `[String(low), String(high)]`; native form submission gets one hidden input (web) or FormData entry (Lit) per string, all under this name. The registration id and the Form's focus-on-error target is the thumb, the low thumb for a range (its first tab stop)."
         },
         "min": {
           "type": "number",
@@ -24581,12 +24781,12 @@
         "snapToMarks": {
           "type": "boolean",
           "default": false,
-          "description": "With `marks`, snap drag and click to the marks instead of `step` (keys still move by step, PageUp/Down by mark)."
+          "description": "With `marks`, snap drag and click to the marks instead of `step` (arrow keys still move by step; PageUp/Down go to the next mark, and past the last mark to `max`/`min`). This is the only switch for mark snapping: omitting `step` changes nothing, since it defaults to 1."
         },
         "required": {
           "type": "boolean",
           "default": false,
-          "description": "Must have a value other than the default to submit (`copy.required`). \"The default\" is `defaultValue` when set and otherwise what `value` itself falls back to — `min`, or `[min, max]` for a range — so required and value share one notion of it. The label takes no \"(required)\" suffix here: a slider always shows a value, so the suffix would say nothing about what is missing."
+          "description": "Must have a value other than the default to submit (`copy.required`). \"The default\" is `defaultValue` when set and otherwise what `value` itself falls back to — `min`, or `[min, max]` for a range — so required and value share one notion of it. The label takes no \"(required)\" suffix here: a slider always shows a value, so the suffix would say nothing about what is missing. Required is a validity flag (valueMissing, message `copy.required`) checked before invalid, but its message is not rendered standalone: the error region shows `error`, else the message a Form (or `validate`) has reported, else `copy.invalid` when `invalid`."
         },
         "invalid": {
           "type": "boolean",
@@ -24625,17 +24825,17 @@
             "never"
           ],
           "default": "always",
-          "description": "Where the value text appears: always beside the label, only while dragging or focused (as a bubble above the thumb), or not at all (when a NumberInput beside the slider shows it)."
+          "description": "Where the value text appears: always beside the label, only while dragging or focused (as a bubble above the thumb), or not at all (when a NumberInput beside the slider shows it). Despite its name, `hover` means pressed or focused: plain pointer hover does not show the bubble, and touch platforms behave identically."
         },
         "marks": {
           "type": "array",
-          "shape": "{ value: number; label?: string }[]",
-          "description": "Tick marks on the track, optionally labelled. Values snap to marks when `step` is omitted."
+          "shape": "{ value: number; label?: string | undefined }[]",
+          "description": "Tick marks on the track, optionally labelled. Values snap to marks only with `snapToMarks`. Generated code exports the entry type as `SliderMark`. Dots and labels both live in the `tickMarks` part (aria-hidden); each label is a Text (size xs, tone muted, element span) centred under its mark."
         },
         "disabled": {
           "type": "boolean",
           "default": false,
-          "description": "Not adjustable, still readable."
+          "description": "Not adjustable, still readable: thumbs stay focusable but pointer, keys and accessibility actions are ignored, and no value is submitted. A slider disabled by an enclosing Form or Fieldset (Lit formDisabledCallback) behaves the same. On React Native the thumb View keeps `accessible` and sets accessibilityState.disabled."
         },
         "description": {
           "type": "string",
@@ -24648,7 +24848,7 @@
       },
       "events": {
         "onChange": {
-          "description": "Fired on every value change while dragging or with keys (number or pair).",
+          "description": "Fired on every value change while dragging or with keys (number or pair); only when the value actually changed, so a key at a bound or a click on the thumb fires nothing.",
           "platforms": {
             "web": "onChange",
             "lit": "change",
@@ -24668,7 +24868,7 @@
           ]
         },
         "onChangeEnd": {
-          "description": "Fired once when the interaction ends (pointer up, key released). Use for expensive effects.",
+          "description": "Fired once when the interaction ends (pointer up, key released), and only if that interaction changed the value (End at max or a click on the thumb fires nothing). Use for expensive effects.",
           "platforms": {
             "web": "onChangeEnd",
             "lit": "change-end",
@@ -24715,7 +24915,7 @@
             "PageUp",
             "PageDown"
           ],
-          "action": "Changes by ten steps (or to the next mark).",
+          "action": "Changes by ten steps, clamped to the bounds (with `snapToMarks`, to the next mark, and to `max`/`min` past the last mark).",
           "from": "first",
           "expect": "manual"
         },
@@ -24794,31 +24994,55 @@
         "thumbActiveScale": {
           "token": "opacity.disabled",
           "part": "thumb",
-          "description": "Not a scale — the pressed thumb shows a halo of the fill color at this opacity, thumbSize larger on each side (space.2). No literal scale factor exists.",
+          "description": "Not a scale — the pressed thumb shows a circular halo of the fill color at this opacity, centred on the knob, with diameter thumbSize + 2 × haloSpread. No literal scale factor exists.",
+          "locked": false
+        },
+        "haloSpread": {
+          "token": "space.2",
+          "part": "thumb",
+          "description": "How far the pressed-thumb halo extends beyond the knob on each side.",
           "locked": false
         },
         "mark": {
           "token": "color.border.strong",
+          "part": "tickMarks",
+          "description": "Mark dot colour.",
           "locked": false
         },
         "markSize": {
           "token": "space.1",
+          "part": "tickMarks",
+          "description": "Mark dot diameter.",
           "locked": false
         },
         "markLabelColor": {
           "token": "color.foreground.muted",
+          "part": "tickMarks",
+          "description": "Realised by the mark label Text's tone muted; no hook of its own.",
           "locked": true
         },
         "markLabelSize": {
           "token": "font.size.xs",
+          "part": "tickMarks",
+          "description": "Forwarded to each mark label Text's fontSize override (fontFamily is forwarded too); never styles the Text directly.",
+          "locked": false
+        },
+        "markLabelGap": {
+          "token": "space.1",
+          "part": "tickMarks",
+          "description": "Gap between the bottom of the track area (after trackPaddingBlock) and the mark labels. The slider grows by the label line only when some mark has a label.",
           "locked": false
         },
         "valueColor": {
           "token": "color.foreground",
+          "part": "valueText",
+          "description": "Realised by the value Text's tone default; no hook of its own.",
           "locked": true
         },
         "valueSize": {
           "token": "font.size.sm",
+          "part": "valueText",
+          "description": "Forwarded to the value Text's fontSize override, and to the bubble's Text the same way.",
           "locked": false
         },
         "bubbleSurface": {
@@ -24830,70 +25054,110 @@
         "bubbleText": {
           "token": "color.inverse.foreground",
           "part": "bubble",
+          "description": "The bubble's value is a Text (size sm, tone default) with valueSize forwarded. Its colour is not forwarded (Text color is locked): web and Lit re-scope `--color-foreground` on the bubble, React Native provides TextForegroundContext, as Text's `color` binding describes.",
           "locked": true
+        },
+        "bubblePaddingBlock": {
+          "token": "space.1",
+          "part": "bubble",
+          "locked": false
+        },
+        "bubblePaddingInline": {
+          "token": "space.2",
+          "part": "bubble",
+          "locked": false
+        },
+        "bubbleOffset": {
+          "token": "space.1",
+          "part": "bubble",
+          "description": "Gap between the bubble's bottom edge and the top of the active thumb's hit area (minTarget); the bubble is centred horizontally on the thumb.",
+          "locked": false
         },
         "bubbleRadius": {
           "token": "radius.sm",
           "part": "bubble",
-          "description": "The bubble is its own part (not the valueText Text): an inverse-surface pill above the active thumb.",
+          "description": "The bubble's corners, the same shape as a Tooltip. The bubble is its own part (not the valueText Text): an inverse-surface pill above the active thumb.",
           "locked": false
         },
         "labelWeight": {
           "token": "font.weight.medium",
           "part": "label",
+          "description": "Forwarded to the label Text's fontWeight override.",
           "locked": false
         },
         "partGap": {
           "token": "space.1",
+          "description": "Vertical gap on the slider root between the label row, the track area, and the description/error message.",
+          "locked": false
+        },
+        "labelGap": {
+          "token": "space.2",
+          "part": "label",
+          "description": "Horizontal gap between the label and the value text in the label row.",
           "locked": false
         },
         "trackPaddingBlock": {
           "token": "space.3",
           "part": "track",
-          "description": "Vertical space around the track so the thumb and its halo have room and the touch target reaches the comfortable size.",
+          "description": "Vertical space around the track so the thumb and its halo have room and the touch target reaches the comfortable size. It pads the track area, an unparted wrapper around the track and thumbs that is also the pointer hit area, never the coloured rail itself (padding the rail would thicken it).",
           "locked": false
         },
         "fontFamily": {
           "token": "font.family.body",
+          "part": "label",
+          "description": "Forwarded to every composed Text's fontFamily override (label, value, bubble, mark labels, description, error); never styles them directly.",
           "locked": false
         },
         "fontSize": {
           "token": "font.size.md",
+          "part": "label",
+          "description": "Forwarded to the label Text's fontSize override.",
           "locked": false
         },
         "helperSize": {
           "token": "font.size.sm",
+          "part": "description",
+          "description": "Forwarded to the description and error message Texts' fontSize overrides.",
           "locked": false
         },
         "descriptionText": {
           "token": "color.foreground.muted",
           "part": "description",
+          "description": "Realised by the composed Text's `muted` tone; no hook of its own.",
           "locked": true
         },
         "errorText": {
           "token": "color.foreground.danger",
+          "part": "errorMessage",
+          "description": "Realised by the composed Text's `danger` tone; no hook of its own, since Text's colour is locked and a hook could not reach the child without restyling it (the same as Input). An override of it has no effect.",
           "locked": false
         },
         "minTarget": {
           "token": "size.target.comfortable",
-          "description": "The thumb's hit area.",
+          "part": "thumb",
+          "description": "The thumb's hit area, centred on the knob.",
           "locked": true
         },
         "focusRing": {
           "token": "color.border.focus",
+          "part": "thumb",
+          "description": "A circular ring around the visible knob (not the minTarget hit area), shown only while the thumb has keyboard focus.",
           "locked": true
         },
         "focusRingWidth": {
           "token": "border.width.focus",
+          "part": "thumb",
+          "description": "Ring thickness, drawn outside the knob's border and offset from it by the same width.",
           "locked": true
         },
         "disabledOpacity": {
           "token": "opacity.disabled",
+          "description": "Applied to the slider root (label row, track area, marks and messages) while disabled.",
           "locked": false
         },
         "transition": {
           "token": "motion.duration.fast",
-          "description": "Halo and bubble appearance; the thumb itself follows the pointer with no transition.",
+          "description": "Halo (part thumb) and bubble (part bubble) appearance; the thumb itself follows the pointer with no transition.",
           "locked": false
         }
       },
@@ -24914,7 +25178,11 @@
           }
         },
         "required": "{label} is required.",
-        "invalid": "{label} is not valid."
+        "invalid": "{label} is not valid.",
+        "pageUpAction": "Increase by a page",
+        "pageDownAction": "Decrease by a page",
+        "homeAction": "Set to minimum",
+        "endAction": "Set to maximum"
       },
       "a11y": {
         "role": "slider",
@@ -24986,7 +25254,7 @@
             "aria-invalid",
             "aria-required"
           ],
-          "notes": "Custom thumbs (<div role=\"slider\" tabindex=\"0\">) on a track rather than <input type=\"range\">, because a range slider needs two thumbs on one track and the native element cannot be themed consistently. Pointer Events with setPointerCapture on the track and thumbs; the track click moves the nearest thumb. aria-valuetext from formatValue. A hidden <input name> (two for a range) carries the value for native forms."
+          "notes": "Custom thumbs (<div role=\"slider\" tabindex=\"0\">) on a track rather than <input type=\"range\">, because a range slider needs two thumbs on one track and the native element cannot be themed consistently. Pointer Events with setPointerCapture on the track and thumbs; the track click moves the nearest thumb. aria-valuetext from formatValue. A hidden <input name> (two with the same name for a range) carries the decimal string(s) for native forms. The label, value, description and error Texts sit in wrappers the Slider owns, which carry their data-part."
         },
         "lit": {
           "tag": "ds-slider",
@@ -24998,7 +25266,7 @@
             "invalid",
             "snap-to-marks"
           ],
-          "notes": "Form-associated (FormData with two entries for a range). Composed `change` (detail { value }) and `change-end`. Thumbs are shadow elements with role=\"slider\"."
+          "notes": "Form-associated and implements DsFormField: `currentValue` is the decimal string, or `[low, high]` as two strings for a range, and setFormValue gets FormData with two entries of the same name for a range. Composed `change` (detail { value }, numbers) and `change-end`. Thumbs are shadow elements with role=\"slider\"; the label ds-text and its id live in the same shadow root, so aria-labelledby resolves, and range thumbs use aria-label from the copy. The error message is a ds-text tone=danger inside the role=alert errorMessage wrapper."
         },
         "rn": {
           "element": "View",
@@ -25009,7 +25277,7 @@
             "accessibilityActions",
             "onAccessibilityAction"
           ],
-          "notes": "Drawn with Views and a PanResponder per thumb (no new dependency; the community Slider has no range support and would not take tokens). accessibilityRole=\"adjustable\" with accessibilityActions increment/decrement handled in onAccessibilityAction (VoiceOver swipe up/down, TalkBack volume keys), accessibilityValue={{ min, max, now, text }}. A range renders two adjustable elements. The drag gesture is additive: the adjustable actions are the non-gesture path. PageUp, PageDown, Home and End have no native gesture, so they are custom accessibilityActions alongside increment and decrement; only those two get a direct swipe or volume-key binding, and the rest live in the platform's Actions menu. A pointer-driven control has no blur, so `validate: blur` commits at the end of an interaction (the drag release or the key-up), which is this field's equivalent."
+          "notes": "Drawn with Views and a PanResponder per thumb (no new dependency; the community Slider has no range support and would not take tokens). accessibilityRole=\"adjustable\" with accessibilityActions increment/decrement handled in onAccessibilityAction (VoiceOver swipe up/down, TalkBack volume keys), accessibilityValue={{ min, max, now, text }}. A range renders two adjustable elements. The drag gesture is additive: the adjustable actions are the non-gesture path. PageUp, PageDown, Home and End have no native gesture, so they are custom accessibilityActions alongside increment and decrement; only those two get a direct swipe or volume-key binding, and the rest live in the platform's Actions menu, labelled from `copy.pageUpAction`, `copy.pageDownAction`, `copy.homeAction` and `copy.endAction` (increment and decrement take no label; the platform names them). A press or drag on the track area moves the nearest thumb, as on web. Disabled thumbs stay `accessible` with accessibilityState.disabled, and gestures and actions are ignored. Form registration uses the decimal string, or two strings for a range. The composed Texts carry their testID on wrapper Views the Slider owns."
         },
         "swiftui": {
           "element": "ZStack",
@@ -25041,7 +25309,8 @@
           },
           "then": [
             {
-              "event": "onChange"
+              "event": "onChange",
+              "with": 55
             }
           ],
           "platforms": [
@@ -25060,7 +25329,8 @@
           },
           "then": [
             {
-              "event": "onChange"
+              "event": "onChange",
+              "with": 45
             }
           ],
           "platforms": [
@@ -25078,7 +25348,8 @@
           },
           "then": [
             {
-              "event": "onChange"
+              "event": "onChange",
+              "with": 60
             }
           ],
           "platforms": [
@@ -25098,7 +25369,8 @@
           },
           "then": [
             {
-              "event": "onChange"
+              "event": "onChange",
+              "with": 0
             }
           ],
           "platforms": [
@@ -25118,7 +25390,8 @@
           },
           "then": [
             {
-              "event": "onChange"
+              "event": "onChange",
+              "with": 100
             }
           ],
           "platforms": [
@@ -25137,7 +25410,8 @@
           },
           "then": [
             {
-              "event": "onChangeEnd"
+              "event": "onChangeEnd",
+              "with": 51
             }
           ],
           "platforms": [
@@ -25375,10 +25649,10 @@
       "Overview": "A slider is for values you feel rather than type: volume, brightness, a price range, a zoom level. Its thumb sits on the value, the fill shows how much, and arrow keys move it by exact steps so keyboard and screen-reader users get the same precision the pointer gets by drag.",
       "When to use": "Use a Slider for a bounded numeric value where approximate is fine and immediate feedback matters, and where the scale has meaning across its whole width. Use `range` for \"between\" filters (price, dates as numbers). Add `marks` when a few values are meaningful stops. Pair it with a NumberInput (`showValue: never`) when exact entry also matters.",
       "When not to use": "Do not use a Slider for a value that must be exact or is usually typed (quantity, age): use NumberInput. Do not use it for more than about a hundred steps without marks or a paired input — fine control by drag is poor. Do not use it for two or three discrete choices (SegmentedControl). Do not use a vertical slider unless the metaphor is vertical (volume in a mixer); horizontal is the default and the only orientation in this version.",
-      "Behavior": "Dragging a thumb, or clicking the track, sets the value snapped to `step` (or to marks); arrow keys move by `step`, PageUp/Down by ten steps, Home/End to the bounds. `onChange` fires continuously; `onChangeEnd` once per interaction. In a `range`, each thumb is its own tab stop, the thumbs cannot cross (the lower is clamped to the upper and vice versa), and the value is `[min, max]`. The value text shows per `showValue`; the drag bubble follows the active thumb. `disabled` sliders are readable and focusable but inert. A range's beside-label text is `copy.rangeText`; each thumb's `aria-valuemin`/`aria-valuemax` reflect the live constraint from the other thumb. Pointer math is logical (mirrored in right-to-left). The Keyboard story renders the range form (two thumbs are the whole model; the three-focusable rule does not apply). The Form value is a number, or `[low, high]` for a range.",
+      "Behavior": "Dragging a thumb, or clicking the track (every platform, including React Native), sets the value snapped to `step` (or to marks with `snapToMarks`); arrow keys move by `step`, PageUp/Down by ten steps (by mark with `snapToMarks`), Home/End to the bounds. `onChange` fires continuously; `onChangeEnd` once per interaction; neither fires when the value did not change. A pointer-driven control has no meaningful blur, so on every platform `validate: blur` validates when an interaction ends (pointer or drag release, key-up), not when a thumb loses focus. In a `range`, each thumb is its own tab stop, the thumbs cannot cross (the lower is clamped to the upper and vice versa), and the value is `[min, max]`. The value text shows per `showValue`; the drag bubble follows the active thumb. `disabled` sliders are readable and focusable but inert. A range's beside-label text is `copy.rangeText`; each thumb's `aria-valuemin`/`aria-valuemax` reflect the live constraint from the other thumb. Pointer math is logical (mirrored in right-to-left). The Keyboard story renders the range form with the `price-range` example's args (`range: true`, `defaultValue: [20, 80]`); two thumbs are the whole model, so the three-focusable rule does not apply. Events carry numbers, but the Form value is the decimal string, or `[low, high]` as two strings for a range (see `name`). The error region shows `error`, else a Form-reported message, else `copy.invalid` when `invalid`; `copy.required` appears only once validation reports it.",
       "Content guidelines": "The label names the quantity, not the control (\"Volume\", not \"Volume slider\"). `formatValue` should produce what a person would say, with units (\"$40\", \"70%\"). Mark labels are short (\"Min\", \"1 h\", \"Max\"). A range's thumbs are named from `copy.minimumLabel` / `copy.maximumLabel`.",
       "Accessibility": "Each thumb is a `slider` with `aria-valuenow`, `aria-valuemin`, `aria-valuemax`, and `aria-valuetext` from `formatValue`, named by the label (WCAG 4.1.2; APG slider and multi-thumb slider). Keyboard operation covers every value the pointer can reach (2.1.1), and on native the `adjustable` role with increment/decrement actions replaces the drag (2.5.1 gesture-alternative). Thumbs reach 44px (2.5.8) and the fill and thumb border meet 3:1 against the page (1.4.11). The fill is not checked against the track: the thumb position and the value text carry the state, and the track is a passive rail (the same 1.4.11 exemption Meter uses), so the fill-on-track ratio in dark mode (about 2.2:1) is acceptable. The value is always available as text, never as position alone (1.3.3). Motion is limited to the halo and bubble and respects reduced motion.",
-      "Platform notes": "### Web\nRender the label row (label `Text` with id, and the value `Text` when `showValue: always`), the track `<div>` with the fill `<div>` sized from the value(s), marks as `<span aria-hidden>` with optional labels, and one or two `<div role=\"slider\" tabindex=\"0\" aria-valuenow aria-valuemin aria-valuemax aria-valuetext aria-labelledby aria-orientation=\"horizontal\">` thumbs positioned by percentage. Pointer Events: `pointerdown` on the track picks the nearest thumb and captures the pointer; `pointermove` maps clientX to a snapped value. Keydown on a thumb implements the table. Hidden inputs carry the value(s). The bubble is a portal-free absolutely positioned element above the active thumb.\n\n### Lit\n`<ds-slider label=\"Price range\" name=\"price\" range min=\"0\" max=\"500\" step=\"10\">`; form-associated; thumbs in the shadow root; composed `change` and `change-end`.\n\n### React Native\n`View` track with `PanResponder` per thumb; each thumb `View` has `accessible`, `accessibilityRole=\"adjustable\"`, `accessibilityLabel`, `accessibilityValue={{ min, max, now, text }}`, `accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}` and `onAccessibilityAction` applying `step`. `onSlidingComplete` maps to `onChangeEnd`. The bubble is a `View` above the active thumb. Form registration as Input; a range registers one field with the pair.",
+      "Platform notes": "### Web\nRender the label row (label `Text` with id, and the value `Text` when `showValue: always`), the track `<div>` with the fill `<div>` sized from the value(s), marks as `<span aria-hidden>` with optional labels, and one or two `<div role=\"slider\" tabindex=\"0\" aria-valuenow aria-valuemin aria-valuemax aria-valuetext aria-labelledby aria-orientation=\"horizontal\">` thumbs positioned by percentage. Pointer Events: `pointerdown` on the track picks the nearest thumb and captures the pointer; `pointermove` maps clientX to a snapped value. Keydown on a thumb implements the table. Hidden inputs carry the value(s). The bubble is a portal-free absolutely positioned element above the active thumb.\n\n### Lit\n`<ds-slider label=\"Price range\" name=\"price\" range min=\"0\" max=\"500\" step=\"10\">`; form-associated; thumbs in the shadow root; composed `change` and `change-end`.\n\n### React Native\n`View` track with `PanResponder` per thumb; each thumb `View` has `accessible`, `accessibilityRole=\"adjustable\"`, `accessibilityLabel`, `accessibilityValue={{ min, max, now, text }}`, `accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}` and `onAccessibilityAction` applying `step`. `onSlidingComplete` maps to `onChangeEnd`. The bubble is a `View` above the active thumb. Form registration as Input, with the decimal string; a range registers one field with the two strings. PageUp/PageDown/Home/End are extra custom actions labelled from copy.",
       "Related": "NumberInput, Meter, Input, SegmentedControl."
     },
     "extensions": [],
@@ -26647,11 +26921,47 @@
         "indicator",
         "connector",
         "label",
-        "description"
+        "description",
+        "count"
       ],
       "composition": {
-        "label": "Text",
-        "description": "Text"
+        "label": {
+          "component": "Text",
+          "props": {
+            "element": "span",
+            "size": "sm"
+          },
+          "forwards": {
+            "labelSize": "fontSize",
+            "labelWeight": "fontWeight",
+            "labelCurrentWeight": "fontWeight",
+            "fontFamily": "fontFamily"
+          }
+        },
+        "description": {
+          "component": "Text",
+          "props": {
+            "element": "span",
+            "size": "xs",
+            "tone": "muted"
+          },
+          "forwards": {
+            "descriptionSize": "fontSize",
+            "fontFamily": "fontFamily"
+          }
+        },
+        "count": {
+          "component": "Text",
+          "props": {
+            "element": "span",
+            "size": "sm",
+            "tone": "muted"
+          },
+          "forwards": {
+            "countSize": "fontSize",
+            "fontFamily": "fontFamily"
+          }
+        }
       },
       "props": {
         "label": {
@@ -26662,12 +26972,12 @@
           "type": "array",
           "required": true,
           "shape": "{ id: string; label: string; description?: string; status?: \"complete\" | \"current\" | \"upcoming\" | \"error\" }[]",
-          "description": "The steps in order. `status` is derived from `current` when omitted: before it complete, after it upcoming."
+          "description": "The steps in order. `status` is derived from `current` when omitted: before it complete, the step it names current, after it upcoming. An explicit `status` sets only the indicator, its colours and the status word; position (not status) decides the selected state, navigability, the connector colour and the compact reveal."
         },
         "current": {
           "type": "string",
           "required": true,
-          "description": "The id of the current step."
+          "description": "The id of the current step. The step whose id matches is the selected one (`aria-current=\"step\"` / selected state) and the one compact reveals, whatever its `status`. When no id matches, nothing is selected, every step without an explicit status is upcoming, no step is navigable under `completed` (all still are under `all`), the count reads \"Step 1 of m\", and development builds log a warning."
         },
         "orientation": {
           "type": "enum",
@@ -26676,7 +26986,7 @@
             "vertical"
           ],
           "default": "horizontal",
-          "description": "Vertical shows descriptions under each label and suits a side column; horizontal collapses to `compact` below the prose width."
+          "description": "Vertical shows descriptions under each label and suits a side column; horizontal does not render descriptions at all (not clipped, and no aria-describedby) and collapses to `compact` below the prose width."
         },
         "navigable": {
           "type": "enum",
@@ -26691,7 +27001,7 @@
         "compact": {
           "type": "boolean",
           "default": false,
-          "description": "Show only the current step's label and \"Step 2 of 5\"; the indicators stay. Horizontal only, set by hand or automatically below the prose width — a vertical stepper has the room, so the prop does nothing there. Hidden labels are clipped, not removed, so they stay reachable by a screen reader."
+          "description": "Show only the current step's label and \"Step 2 of 5\"; the indicators stay. Horizontal only, set by hand or automatically below the prose width — a vertical stepper has the room, so the prop does nothing there. On web and Lit the labels of the other steps, with their status words, are visually clipped (the visually-hidden technique), not removed, so they stay reachable by a screen reader; on React Native they are not rendered, because each step's accessibilityLabel already carries the label and status. \"Step n of m\" (`copy.stepOf`) is the `count` part: one muted Text after the list, not in any step and not replacing a description, present only while compact is in effect (on web and Lit, where automatic compact is a container query, it is always rendered and `display: none` outside the query)."
         }
       },
       "events": {
@@ -26747,7 +27057,7 @@
         "indicatorColor": {
           "token": "color.foreground",
           "part": "indicator",
-          "description": "Numeral or glyph on current and upcoming steps.",
+          "description": "The numeral on an upcoming or current step; the complete and error states have their own foregrounds.",
           "locked": true
         },
         "indicatorBackground": {
@@ -26773,7 +27083,20 @@
         "indicatorCompleteForeground": {
           "token": "color.control.selectedForeground",
           "part": "indicator",
+          "description": "The check Icon on a complete step, passed as the Icon's color override.",
           "locked": true
+        },
+        "indicatorCompleteBorder": {
+          "token": "color.control.selectedBackground",
+          "part": "indicator",
+          "description": "The ring of a complete indicator, the same colour as its fill.",
+          "locked": true
+        },
+        "indicatorRadius": {
+          "token": "radius.full",
+          "part": "indicator",
+          "description": "Makes the indicator a circle.",
+          "locked": false
         },
         "indicatorCurrentBorder": {
           "token": "color.control.selectedBackground",
@@ -26799,6 +27122,7 @@
         "indicatorFontSize": {
           "token": "font.size.sm",
           "part": "indicator",
+          "description": "The numeral. The check and danger Icons take `size=\"sm\"` and receive this as their `size` override, so glyph and numeral match.",
           "locked": false
         },
         "indicatorFontWeight": {
@@ -26814,6 +27138,7 @@
         "connectorComplete": {
           "token": "color.control.selectedBackground",
           "part": "connector",
+          "description": "The connector after step i when step i is before the current step by position; explicit statuses (error included) do not change it. Every other connector uses `connector`.",
           "locked": true
         },
         "connectorWidth": {
@@ -26824,48 +27149,73 @@
         "labelColor": {
           "token": "color.foreground",
           "part": "label",
+          "description": "Realised by the label Text's tone default on every step that is not upcoming; no --ds-stepper-* hook.",
           "locked": true
         },
         "labelUpcomingColor": {
           "token": "color.foreground.muted",
           "part": "label",
+          "description": "Realised by the label Text's tone muted on an upcoming step; no --ds-stepper-* hook.",
           "locked": true
         },
         "labelWeight": {
           "token": "font.weight.medium",
           "part": "label",
+          "description": "Forwarded to the label Text's fontWeight override on every step but the current one.",
           "locked": false
         },
         "labelCurrentWeight": {
           "token": "font.weight.semibold",
           "part": "label",
+          "description": "Forwarded to the label Text's fontWeight override on the current step (the id match).",
           "locked": false
         },
         "labelSize": {
           "token": "font.size.sm",
           "part": "label",
+          "description": "Forwarded to the label Text's fontSize override.",
           "locked": false
         },
         "descriptionColor": {
           "token": "color.foreground.muted",
           "part": "description",
+          "description": "Realised by the description Text's tone muted; no --ds-stepper-* hook.",
           "locked": true
         },
         "descriptionSize": {
           "token": "font.size.xs",
           "part": "description",
+          "description": "Forwarded to the description Text's fontSize override.",
+          "locked": false
+        },
+        "countColor": {
+          "token": "color.foreground.muted",
+          "part": "count",
+          "description": "Realised by the count Text's tone muted; no --ds-stepper-* hook.",
+          "locked": true
+        },
+        "countSize": {
+          "token": "font.size.sm",
+          "part": "count",
+          "description": "Forwarded to the count Text's fontSize override.",
           "locked": false
         },
         "stepHover": {
           "token": "color.action.ghost.backgroundHover",
           "part": "step",
           "state": "hover",
-          "description": "Hover and press background of a navigable step.",
+          "description": "Hover and press background of a navigable step (on React Native while the Pressable is pressed or hovered).",
           "locked": false
         },
         "stepRadius": {
           "token": "radius.sm",
           "part": "step",
+          "locked": false
+        },
+        "stepPadding": {
+          "token": "space.2",
+          "part": "step",
+          "description": "Inline padding of a step control (block padding too when vertical), so the hover background has room around the indicator and label.",
           "locked": false
         },
         "stepGap": {
@@ -26876,27 +27226,37 @@
         },
         "partGap": {
           "token": "space.2",
-          "description": "Between the indicator and its label.",
+          "part": "step",
+          "description": "Inside the step control, between the indicator and its label (and between label and description). Not the control's padding; that is `stepPadding`.",
           "locked": false
         },
         "fontFamily": {
           "token": "font.family.body",
+          "part": "list",
+          "description": "Set on the root and forwarded to each composed Text's fontFamily override.",
           "locked": false
         },
         "minTarget": {
           "token": "size.target.min",
+          "part": "step",
+          "description": "Minimum block and inline size of a navigable step control.",
           "locked": true
         },
         "focusRing": {
           "token": "color.border.focus",
+          "part": "step",
+          "description": "Focus-visible ring on a navigable step control.",
           "locked": true
         },
         "focusRingWidth": {
           "token": "border.width.focus",
+          "part": "step",
+          "description": "Width of the focus-visible ring on a navigable step control.",
           "locked": true
         },
         "transition": {
           "token": "motion.duration.fast",
+          "part": "connector",
           "locked": false
         }
       },
@@ -26985,13 +27345,13 @@
       },
       "platforms": {
         "web": {
-          "element": "ol",
+          "element": "nav",
           "attributes": [
             "aria-label",
             "aria-current=step",
             "data-ds=Stepper"
           ],
-          "notes": "A <nav aria-label=\"Progress\"> wrapping an <ol>; each <li> holds either a Button (ghost, navigable) or a <div> with the same content. aria-current=\"step\" on the current item's control. The indicator shows the step number, a check Icon when complete, or the danger Icon on error, with a visually-hidden status word from copy so the state is not conveyed by color or shape alone. Below layout.maxWidth.prose the horizontal stepper switches to `compact` via a container query."
+          "notes": "The root is a <nav> carrying data-ds and aria-label (`label` ?? copy.navLabel), with the ref typed to it; the `list` part is the <ol> inside, followed by the `count` Text. Each <li> holds either Stepper's own native <button type=\"button\"> (navigable; not the Button component) or a <div> with the same content. aria-current=\"step\" on the current item's control. The control's accessible name is its content: the plain label plus a visually-hidden span reading \", \" and the status word (no aria-label; copy.stepLabel is not used on web, since the <ol> gives the ordinal). Upcoming steps have no status word. The indicator shows the step number, a check Icon when complete, or the danger Icon on error. The root has container-type: inline-size and a container query switches a horizontal stepper to `compact` below layout.maxWidth.prose; a container condition cannot read a custom property, so the generator emits the built (resolved) value of that token as the breakpoint, marked literal-ok."
         },
         "lit": {
           "tag": "ds-stepper",
@@ -27001,7 +27361,7 @@
             "compact",
             "current"
           ],
-          "notes": "`steps` as a property; shadow <nav><ol>; composed `step-select`. Container query on :host for the compact switch."
+          "notes": "`steps` as a property; shadow <nav aria-label><ol> then the `count` <ds-text>; composed `step-select`. Navigable steps are native <button>s in the shadow root, named exactly as on web (plain label plus visually-hidden \", \" and status word; copy.stepLabel unused); aria-describedby to a description only in vertical orientation, within the same shadow root. Label, description and count are <ds-text> with tone props and `overrides` (fontSize, fontWeight, fontFamily) from the forwards, not --ds-stepper-label-* hooks. The host has container-type: inline-size; the compact container query uses the built value of layout.maxWidth.prose emitted by the generator (literal-ok), as on web."
         },
         "rn": {
           "element": "View",
@@ -27009,7 +27369,7 @@
             "accessibilityRole=list",
             "accessibilityLabel"
           ],
-          "notes": "A View with accessibilityRole=\"list\"; each step a Pressable (navigable) or View with accessibilityState={{ selected: current }} and an accessibilityLabel built from copy.stepLabel plus the status word. Horizontal steppers use `compact` on phones; vertical is preferred for long flows."
+          "notes": "A View with accessibilityRole=\"list\"; each step a Pressable (navigable) or View with accessibilityState={{ selected: current }} and an accessibilityLabel of copy.stepLabel, then \", \" and the status word when the step has one (upcoming steps have none): \"Step 2: Payment, current step\". React Native has no navigation landmark role, so there is no landmark: `label` ?? copy.navLabel goes on the list View's accessibilityLabel instead. Composed Text takes no testID, so the label, description and count Texts are each wrapped in a View carrying the part's testID. `stepHover` applies while the Pressable is pressed or hovered (onHoverIn/onHoverOut). Automatic compact measures the stepper's own width with onLayout (not the window) against layout.maxWidth.prose, rendering non-compact until the first layout; in compact the other steps' label Texts are not rendered, since their accessibilityLabels still carry them. Horizontal steppers use `compact` on phones; vertical is preferred for long flows."
         },
         "swiftui": {
           "element": "VStack",
@@ -27404,10 +27764,10 @@
       "Overview": "A stepper is a map of a journey with a \"you are here\". It sets expectations (five steps, not fifteen), shows progress without a bar, and gives people a way back to a step they finished. It is navigation, not a form control; the number-stepping field is NumberInput.",
       "When to use": "Use a Stepper for a flow with three to about seven ordered steps that each fit on a screen: checkout, account setup, a report builder, a multi-part application. Vertical with descriptions for flows that need explanation (\"Verify your identity — takes about 2 minutes\"); horizontal for short, familiar ones. Leave `navigable: completed` so people can correct earlier answers without losing later ones (the container keeps the later steps' state).",
       "When not to use": "Do not use a Stepper for two steps (a Button that says \"Continue\" is enough) or for more than about eight (group them). Do not use it as Tabs — steps have an order and a current position, tabs do not. Do not use it to show task progress (ProgressBar) or to let users jump anywhere in a settings area (a `nav` of Links).",
-      "Behavior": "Steps before `current` render complete (check), the current one is marked, later ones are upcoming. A step can be marked `error` explicitly (validation failed on a step the user left). Navigable steps are Buttons that fire `onStepSelect`; the container decides whether to move. Non-navigable steps are inert text. Below the prose width a horizontal stepper shows only the current label and \"Step n of m\" (`compact`), keeping the row of indicators so the count is still visible. A navigable step is its own native `<button>` (Pressable on native) owned by Stepper — not the Button component, whose single-label API cannot hold an indicator, label and description — with the accessible name from `copy.stepLabel` plus the status word set as `aria-label`. Label and description colors are passed to the composed Text as `tone`/overrides. `navigable: completed` means every step before the current one, including one marked `error`. `compact` applies to horizontal steppers only. On web and Lit the list is an `<ol>`, which already announces \"item 2 of 5\", so the control shows its plain label and adds only the status word as visually hidden text; native has no list ordinal, so there the accessibility label is `copy.stepLabel` plus that word. When a step carries `status: 'error'` and is also the one `current` names, the error wins for the indicator, its colour and the status word, while the selected state and the compact reveal still follow the id — the user is on that step, and it has a problem. `transition` times the connector's cross-fade between `connector` and `connectorComplete`; the indicator has four discrete states and switches between them at once, as every other multi-state indicator here does.",
+      "Behavior": "Steps before `current` render complete (check), the current one is marked, later ones are upcoming. A step can be marked `error` explicitly (validation failed on a step the user left). Navigable steps are native buttons that fire `onStepSelect`; the container decides whether to move. Non-navigable steps are inert text. Below the prose width a horizontal stepper shows only the current label and \"Step n of m\" (`compact`), keeping the row of indicators; the count is the `count` part, one muted Text after the list. A navigable step is its own native `<button>` (Pressable on native) owned by Stepper — not the Button component, whose single-label API cannot hold an indicator, label and description. The status word always joins the name after \", \" (\"Payment, current step\"); upcoming steps have no status word. An explicit `status: 'current'` on a step `current` does not name gives that step the current indicator and the word `copy.current`, but not the selected state. Connectors take `connectorComplete` by position — the connector after each step before the current one — regardless of explicit statuses. Label and description colors are passed to the composed Text as `tone`/overrides. `navigable: completed` means every step before the current one, including one marked `error`. `compact` applies to horizontal steppers only. On web and Lit the list is an `<ol>`, which already announces \"item 2 of 5\", so the control shows its plain label and adds only the status word as visually hidden text, with no `aria-label` — `copy.stepLabel` is native-only (React Native and SwiftUI), where there is no list ordinal and the accessibility label is `copy.stepLabel` plus that word. When a step carries `status: 'error'` and is also the one `current` names, the error wins for the indicator, its colour and the status word, while the selected state and the compact reveal still follow the id — the user is on that step, and it has a problem. `transition` times the connector's cross-fade between `connector` and `connectorComplete`; the indicator has four discrete states and switches between them at once, as every other multi-state indicator here does.",
       "Content guidelines": "Labels are two or three words in sentence case naming the step's content (\"Shipping address\", \"Review order\"), parallel across the list. Descriptions, when used, say what happens or how long it takes. Number the steps only through the indicator; never write \"Step 1:\" in the label — the component adds it for assistive technology.",
-      "Accessibility": "The stepper is a `nav` (named \"Progress\" or by the flow) containing an ordered list, and the current step carries `aria-current=\"step\"` (WCAG 1.3.1, 4.1.2). Each step's name includes its number and status from copy, so a screen-reader user hears \"Step 2: Payment, current step\" (1.3.3). State is conveyed by the check/number/danger glyph and the status word, not by color alone (1.4.1), and the indicator ring meets 3:1 (1.4.11). Navigable steps are Buttons with visible focus and 24px targets; non-navigable ones are not focusable so Tab does not stop on decoration (2.4.3).",
-      "Platform notes": "### Web\nRender `<nav aria-label={label ?? \"Progress\"} data-ds=\"Stepper\"><ol>` with an `<li>` per step containing the indicator `<span aria-hidden>` (number, `Icon name=\"check\"`, or `Icon name=\"danger\"`), a connector `<span aria-hidden>` after all but the last, and the label/description `Text`s wrapped in a `Button variant=\"ghost\"` when navigable (with `aria-current=\"step\"` for the current step) or a `<div>` otherwise. A visually-hidden `<span>` inside the control adds the status word. `@container (max-width: <prose px>)` switches to compact for horizontal orientation (breakpoint read from the built token JSON, `literal-ok: breakpoint from layout.maxWidth.prose`).\n\n### Lit\n`<ds-stepper current=\"payment\" .steps=${steps}></ds-stepper>`; shadow `<nav><ol>`; `step-select` composed; `container-type: inline-size` on the host for the compact switch.\n\n### React Native\n`View` (`accessibilityRole=\"list\"`) laid out in a row or column; each step a `Pressable` (navigable) or `View` with `accessible`, `accessibilityLabel` from `copy.stepLabel` + status word, `accessibilityState.selected` for the current step. Connectors are `View`s with `connectorWidth`. Use `compact` on phones for horizontal steppers (decided by the screen width against `layout.maxWidth.prose`).",
+      "Accessibility": "The stepper is a `nav` (named \"Progress\" or by the flow) containing an ordered list, and the current step carries `aria-current=\"step\"` (WCAG 1.3.1, 4.1.2). Each step's name includes its status from copy and its position — from the list ordinal on web (\"Payment, current step\", item 2 of 5) and from `copy.stepLabel` on native (\"Step 2: Payment, current step\") (1.3.3). React Native has no navigation landmark, so there the list itself carries the name. State is conveyed by the check/number/danger glyph and the status word, not by color alone (1.4.1), and the indicator ring meets 3:1 (1.4.11). Navigable steps are native buttons with visible focus and 24px targets; non-navigable ones are not focusable so Tab does not stop on decoration (2.4.3).",
+      "Platform notes": "### Web\nRender `<nav aria-label={label ?? \"Progress\"} data-ds=\"Stepper\"><ol>` with an `<li>` per step containing the indicator `<span aria-hidden>` (number, `Icon name=\"check\"`, or `Icon name=\"danger\"`), a connector `<span aria-hidden>` after all but the last, and the label/description `Text`s wrapped in Stepper's own native `<button type=\"button\">` when navigable (with `aria-current=\"step\"` for the current step; not the Button component) or a `<div>` otherwise. A visually-hidden `<span>` inside the control adds \", \" and the status word; there is no `aria-label`. After the `<ol>`, the `count` Text renders `copy.stepOf`, shown only in compact. `@container (max-width: <prose px>)` switches to compact for horizontal orientation (the generator emits the built value of `layout.maxWidth.prose`, `literal-ok: breakpoint from layout.maxWidth.prose`, since a container condition cannot read a custom property).\n\n### Lit\n`<ds-stepper current=\"payment\" .steps=${steps}></ds-stepper>`; shadow `<nav><ol>`; `step-select` composed; `container-type: inline-size` on the host for the compact switch.\n\n### React Native\n`View` (`accessibilityRole=\"list\"`) laid out in a row or column; each step a `Pressable` (navigable) or `View` with `accessible`, `accessibilityLabel` from `copy.stepLabel` + status word, `accessibilityState.selected` for the current step. Connectors are `View`s with `connectorWidth`. Use `compact` on phones for horizontal steppers (decided by the stepper's own `onLayout` width against `layout.maxWidth.prose`, not the window). No landmark role exists, so the list View carries the name; label, description and count Texts sit in Views that carry their testIDs.",
       "Related": "ProgressBar, Tabs, Breadcrumb, Form, Button."
     },
     "extensions": [],

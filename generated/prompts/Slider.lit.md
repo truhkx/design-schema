@@ -67,20 +67,64 @@ component:
   - description
   - errorMessage
   composition:
-    label: Text
-    description: Text
-    valueText: Text
+    label:
+      component: Text
+      props:
+        element: span
+        size: md
+        weight: medium
+        tone: default
+      forwards:
+        labelWeight: fontWeight
+        fontSize: fontSize
+        fontFamily: fontFamily
+    description:
+      component: Text
+      props:
+        element: span
+        size: sm
+        tone: muted
+      forwards:
+        helperSize: fontSize
+        fontFamily: fontFamily
+    valueText:
+      component: Text
+      props:
+        element: span
+        size: sm
+        tone: default
+      forwards:
+        valueSize: fontSize
+        fontFamily: fontFamily
+    errorMessage:
+      component: Text
+      props:
+        element: span
+        size: sm
+        tone: danger
+      forwards:
+        helperSize: fontSize
+        fontFamily: fontFamily
   props:
     label:
       type: string
       required: true
       description: Visible label naming the quantity ("Volume", "Price range").
-      a11y: aria-labelledby on each thumb; a range slider's thumbs are named "{label}
-        minimum" / "{label} maximum" via copy.
+      a11y: The label is a Text `<span>` with an id, not a native `<label for>` (which
+        cannot name a `div role=slider`); a single thumb takes aria-labelledby pointing
+        at it (on Lit the span is in the same shadow root, so the id reference holds).
+        A range slider's thumbs are named with aria-label (accessibilityLabel on native)
+        set to the resolved `copy.minimumLabel` / `copy.maximumLabel`, with no hidden
+        spans.
     name:
       type: string
       required: true
-      description: Field name for the Form. A range contributes `[min, max]`.
+      description: Field name for the Form. The form value types (web/rn FormContext,
+        Lit DsFormField) have no number, so a single value registers as its decimal
+        string (`String(value)`) and a range as two strings `[String(low), String(high)]`;
+        native form submission gets one hidden input (web) or FormData entry (Lit)
+        per string, all under this name. The registration id and the Form's focus-on-error
+        target is the thumb, the low thumb for a range (its first tab stop).
     min:
       type: number
       default: 0
@@ -97,8 +141,10 @@ component:
     snapToMarks:
       type: boolean
       default: false
-      description: With `marks`, snap drag and click to the marks instead of `step`
-        (keys still move by step, PageUp/Down by mark).
+      description: 'With `marks`, snap drag and click to the marks instead of `step`
+        (arrow keys still move by step; PageUp/Down go to the next mark, and past
+        the last mark to `max`/`min`). This is the only switch for mark snapping:
+        omitting `step` changes nothing, since it defaults to 1.'
     required:
       type: boolean
       default: false
@@ -106,7 +152,11 @@ component:
         "The default" is `defaultValue` when set and otherwise what `value` itself
         falls back to — `min`, or `[min, max]` for a range — so required and value
         share one notion of it. The label takes no "(required)" suffix here: a slider
-        always shows a value, so the suffix would say nothing about what is missing.'
+        always shows a value, so the suffix would say nothing about what is missing.
+        Required is a validity flag (valueMissing, message `copy.required`) checked
+        before invalid, but its message is not rendered standalone: the error region
+        shows `error`, else the message a Form (or `validate`) has reported, else
+        `copy.invalid` when `invalid`.'
     invalid:
       type: boolean
       default: false
@@ -143,16 +193,22 @@ component:
       default: always
       description: 'Where the value text appears: always beside the label, only while
         dragging or focused (as a bubble above the thumb), or not at all (when a NumberInput
-        beside the slider shows it).'
+        beside the slider shows it). Despite its name, `hover` means pressed or focused:
+        plain pointer hover does not show the bubble, and touch platforms behave identically.'
     marks:
       type: array
-      shape: '{ value: number; label?: string }[]'
+      shape: '{ value: number; label?: string | undefined }[]'
       description: Tick marks on the track, optionally labelled. Values snap to marks
-        when `step` is omitted.
+        only with `snapToMarks`. Generated code exports the entry type as `SliderMark`.
+        Dots and labels both live in the `tickMarks` part (aria-hidden); each label
+        is a Text (size xs, tone muted, element span) centred under its mark.
     disabled:
       type: boolean
       default: false
-      description: Not adjustable, still readable.
+      description: 'Not adjustable, still readable: thumbs stay focusable but pointer,
+        keys and accessibility actions are ignored, and no value is submitted. A slider
+        disabled by an enclosing Form or Fieldset (Lit formDisabledCallback) behaves
+        the same. On React Native the thumb View keeps `accessible` and sets accessibilityState.disabled.'
     description:
       type: string
       description: Helper text.
@@ -162,7 +218,8 @@ component:
   events:
     onChange:
       description: Fired on every value change while dragging or with keys (number
-        or pair).
+        or pair); only when the value actually changed, so a key at a bound or a click
+        on the thumb fires nothing.
       platforms:
         web: onChange
         lit: change
@@ -176,8 +233,9 @@ component:
       fires:
       - user
     onChangeEnd:
-      description: Fired once when the interaction ends (pointer up, key released).
-        Use for expensive effects.
+      description: Fired once when the interaction ends (pointer up, key released),
+        and only if that interaction changed the value (End at max or a click on the
+        thumb fires nothing). Use for expensive effects.
       platforms:
         web: onChangeEnd
         lit: change-end
@@ -208,7 +266,8 @@ component:
   - keys:
     - PageUp
     - PageDown
-    action: Changes by ten steps (or to the next mark).
+    action: Changes by ten steps, clamped to the bounds (with `snapToMarks`, to the
+      next mark, and to `max`/`min` past the last mark).
     from: first
     expect: manual
   - keys:
@@ -267,27 +326,54 @@ component:
     thumbActiveScale:
       token: opacity.disabled
       part: thumb
-      description: Not a scale — the pressed thumb shows a halo of the fill color
-        at this opacity, thumbSize larger on each side (space.2). No literal scale
-        factor exists.
+      description: Not a scale — the pressed thumb shows a circular halo of the fill
+        color at this opacity, centred on the knob, with diameter thumbSize + 2 ×
+        haloSpread. No literal scale factor exists.
+      locked: false
+    haloSpread:
+      token: space.2
+      part: thumb
+      description: How far the pressed-thumb halo extends beyond the knob on each
+        side.
       locked: false
     mark:
       token: color.border.strong
+      part: tickMarks
+      description: Mark dot colour.
       locked: false
     markSize:
       token: space.1
+      part: tickMarks
+      description: Mark dot diameter.
       locked: false
     markLabelColor:
       token: color.foreground.muted
+      part: tickMarks
+      description: Realised by the mark label Text's tone muted; no hook of its own.
       locked: true
     markLabelSize:
       token: font.size.xs
+      part: tickMarks
+      description: Forwarded to each mark label Text's fontSize override (fontFamily
+        is forwarded too); never styles the Text directly.
+      locked: false
+    markLabelGap:
+      token: space.1
+      part: tickMarks
+      description: Gap between the bottom of the track area (after trackPaddingBlock)
+        and the mark labels. The slider grows by the label line only when some mark
+        has a label.
       locked: false
     valueColor:
       token: color.foreground
+      part: valueText
+      description: Realised by the value Text's tone default; no hook of its own.
       locked: true
     valueSize:
       token: font.size.sm
+      part: valueText
+      description: Forwarded to the value Text's fontSize override, and to the bubble's
+        Text the same way.
       locked: false
     bubbleSurface:
       token: color.inverse.surface
@@ -297,59 +383,111 @@ component:
     bubbleText:
       token: color.inverse.foreground
       part: bubble
+      description: 'The bubble''s value is a Text (size sm, tone default) with valueSize
+        forwarded. Its colour is not forwarded (Text color is locked): web and Lit
+        re-scope `--color-foreground` on the bubble, React Native provides TextForegroundContext,
+        as Text''s `color` binding describes.'
       locked: true
+    bubblePaddingBlock:
+      token: space.1
+      part: bubble
+      locked: false
+    bubblePaddingInline:
+      token: space.2
+      part: bubble
+      locked: false
+    bubbleOffset:
+      token: space.1
+      part: bubble
+      description: Gap between the bubble's bottom edge and the top of the active
+        thumb's hit area (minTarget); the bubble is centred horizontally on the thumb.
+      locked: false
     bubbleRadius:
       token: radius.sm
       part: bubble
-      description: 'The bubble is its own part (not the valueText Text): an inverse-surface
-        pill above the active thumb.'
+      description: 'The bubble''s corners, the same shape as a Tooltip. The bubble
+        is its own part (not the valueText Text): an inverse-surface pill above the
+        active thumb.'
       locked: false
     labelWeight:
       token: font.weight.medium
       part: label
+      description: Forwarded to the label Text's fontWeight override.
       locked: false
     partGap:
       token: space.1
+      description: Vertical gap on the slider root between the label row, the track
+        area, and the description/error message.
+      locked: false
+    labelGap:
+      token: space.2
+      part: label
+      description: Horizontal gap between the label and the value text in the label
+        row.
       locked: false
     trackPaddingBlock:
       token: space.3
       part: track
       description: Vertical space around the track so the thumb and its halo have
-        room and the touch target reaches the comfortable size.
+        room and the touch target reaches the comfortable size. It pads the track
+        area, an unparted wrapper around the track and thumbs that is also the pointer
+        hit area, never the coloured rail itself (padding the rail would thicken it).
       locked: false
     fontFamily:
       token: font.family.body
+      part: label
+      description: Forwarded to every composed Text's fontFamily override (label,
+        value, bubble, mark labels, description, error); never styles them directly.
       locked: false
     fontSize:
       token: font.size.md
+      part: label
+      description: Forwarded to the label Text's fontSize override.
       locked: false
     helperSize:
       token: font.size.sm
+      part: description
+      description: Forwarded to the description and error message Texts' fontSize
+        overrides.
       locked: false
     descriptionText:
       token: color.foreground.muted
       part: description
+      description: Realised by the composed Text's `muted` tone; no hook of its own.
       locked: true
     errorText:
       token: color.foreground.danger
+      part: errorMessage
+      description: Realised by the composed Text's `danger` tone; no hook of its own,
+        since Text's colour is locked and a hook could not reach the child without
+        restyling it (the same as Input). An override of it has no effect.
       locked: false
     minTarget:
       token: size.target.comfortable
-      description: The thumb's hit area.
+      part: thumb
+      description: The thumb's hit area, centred on the knob.
       locked: true
     focusRing:
       token: color.border.focus
+      part: thumb
+      description: A circular ring around the visible knob (not the minTarget hit
+        area), shown only while the thumb has keyboard focus.
       locked: true
     focusRingWidth:
       token: border.width.focus
+      part: thumb
+      description: Ring thickness, drawn outside the knob's border and offset from
+        it by the same width.
       locked: true
     disabledOpacity:
       token: opacity.disabled
+      description: Applied to the slider root (label row, track area, marks and messages)
+        while disabled.
       locked: false
     transition:
       token: motion.duration.fast
-      description: Halo and bubble appearance; the thumb itself follows the pointer
-        with no transition.
+      description: Halo (part thumb) and bubble (part bubble) appearance; the thumb
+        itself follows the pointer with no transition.
       locked: false
   copy:
     minimumLabel: '{label} minimum'
@@ -365,6 +503,10 @@ component:
           description: The upper thumb's value as formatValue renders it.
     required: '{label} is required.'
     invalid: '{label} is not valid.'
+    pageUpAction: Increase by a page
+    pageDownAction: Decrease by a page
+    homeAction: Set to minimum
+    endAction: Set to maximum
   a11y:
     role: slider
     requires:
@@ -424,8 +566,10 @@ component:
         <input type="range">, because a range slider needs two thumbs on one track
         and the native element cannot be themed consistently. Pointer Events with
         setPointerCapture on the track and thumbs; the track click moves the nearest
-        thumb. aria-valuetext from formatValue. A hidden <input name> (two for a range)
-        carries the value for native forms.
+        thumb. aria-valuetext from formatValue. A hidden <input name> (two with the
+        same name for a range) carries the decimal string(s) for native forms. The
+        label, value, description and error Texts sit in wrappers the Slider owns,
+        which carry their data-part.
     lit:
       tag: ds-slider
       reflect:
@@ -435,8 +579,14 @@ component:
       - required
       - invalid
       - snap-to-marks
-      notes: Form-associated (FormData with two entries for a range). Composed `change`
-        (detail { value }) and `change-end`. Thumbs are shadow elements with role="slider".
+      notes: 'Form-associated and implements DsFormField: `currentValue` is the decimal
+        string, or `[low, high]` as two strings for a range, and setFormValue gets
+        FormData with two entries of the same name for a range. Composed `change`
+        (detail { value }, numbers) and `change-end`. Thumbs are shadow elements with
+        role="slider"; the label ds-text and its id live in the same shadow root,
+        so aria-labelledby resolves, and range thumbs use aria-label from the copy.
+        The error message is a ds-text tone=danger inside the role=alert errorMessage
+        wrapper.'
     rn:
       element: View
       props:
@@ -453,9 +603,14 @@ component:
         is additive: the adjustable actions are the non-gesture path. PageUp, PageDown,
         Home and End have no native gesture, so they are custom accessibilityActions
         alongside increment and decrement; only those two get a direct swipe or volume-key
-        binding, and the rest live in the platform''s Actions menu. A pointer-driven
-        control has no blur, so `validate: blur` commits at the end of an interaction
-        (the drag release or the key-up), which is this field''s equivalent.'
+        binding, and the rest live in the platform''s Actions menu, labelled from
+        `copy.pageUpAction`, `copy.pageDownAction`, `copy.homeAction` and `copy.endAction`
+        (increment and decrement take no label; the platform names them). A press
+        or drag on the track area moves the nearest thumb, as on web. Disabled thumbs
+        stay `accessible` with accessibilityState.disabled, and gestures and actions
+        are ignored. Form registration uses the decimal string, or two strings for
+        a range. The composed Texts carry their testID on wrapper Views the Slider
+        owns.'
     swiftui:
       element: ZStack
       props:
@@ -489,6 +644,7 @@ component:
       key: ArrowRight
     then:
     - event: onChange
+      with: 55
     platforms:
     - web
     - lit
@@ -500,6 +656,7 @@ component:
       key: ArrowLeft
     then:
     - event: onChange
+      with: 45
     platforms:
     - web
     - lit
@@ -510,6 +667,7 @@ component:
       key: PageUp
     then:
     - event: onChange
+      with: 60
     platforms:
     - web
     - lit
@@ -522,6 +680,7 @@ component:
       key: Home
     then:
     - event: onChange
+      with: 0
     platforms:
     - web
     - lit
@@ -534,6 +693,7 @@ component:
       key: End
     then:
     - event: onChange
+      with: 100
     platforms:
     - web
     - lit
@@ -546,6 +706,7 @@ component:
       key: ArrowRight
     then:
     - event: onChangeEnd
+      with: 51
     platforms:
     - web
     - lit
@@ -651,6 +812,18 @@ component:
 
 - `value` is controlled when given, uncontrolled from `defaultValue` when omitted; changes reported by `onChange` (emit `change`)
 
+## Parts and slots
+
+- `label`: component `Text`; props `element` = "span", `size` = "md", `weight` = "medium", `tone` = "default"; forwards `labelWeight` → `overrides.fontWeight`, `fontSize` → `overrides.fontSize`, `fontFamily` → `overrides.fontFamily`
+- `track`: element
+- `fill`: element
+- `thumb`: element
+- `valueText`: component `Text`; props `element` = "span", `size` = "sm", `tone` = "default"; forwards `valueSize` → `overrides.fontSize`, `fontFamily` → `overrides.fontFamily`
+- `bubble`: element
+- `tickMarks`: element
+- `description`: component `Text`; props `element` = "span", `size` = "sm", `tone` = "muted"; forwards `helperSize` → `overrides.fontSize`, `fontFamily` → `overrides.fontFamily`
+- `errorMessage`: component `Text`; props `element` = "span", `size` = "sm", `tone` = "danger"; forwards `helperSize` → `overrides.fontSize`, `fontFamily` → `overrides.fontFamily`
+
 ## Style bindings
 
 - `track`: token `color.background.strong`; part `track`
@@ -663,12 +836,31 @@ component:
 - `thumbSize`: token `space.5`; part `thumb`
 - `thumbShadow`: token `shadow.raised`; part `thumb`
 - `thumbActiveScale`: token `opacity.disabled`; part `thumb`
+- `haloSpread`: token `space.2`; part `thumb`
+- `mark`: token `color.border.strong`; part `tickMarks`
+- `markSize`: token `space.1`; part `tickMarks`
+- `markLabelColor`: token `color.foreground.muted`; part `tickMarks`; locked
+- `markLabelSize`: token `font.size.xs`; part `tickMarks`
+- `markLabelGap`: token `space.1`; part `tickMarks`
+- `valueColor`: token `color.foreground`; part `valueText`; locked
+- `valueSize`: token `font.size.sm`; part `valueText`
 - `bubbleSurface`: token `color.inverse.surface`; part `bubble`; locked
 - `bubbleText`: token `color.inverse.foreground`; part `bubble`; locked
+- `bubblePaddingBlock`: token `space.1`; part `bubble`
+- `bubblePaddingInline`: token `space.2`; part `bubble`
+- `bubbleOffset`: token `space.1`; part `bubble`
 - `bubbleRadius`: token `radius.sm`; part `bubble`
 - `labelWeight`: token `font.weight.medium`; part `label`
+- `labelGap`: token `space.2`; part `label`
 - `trackPaddingBlock`: token `space.3`; part `track`
+- `fontFamily`: token `font.family.body`; part `label`
+- `fontSize`: token `font.size.md`; part `label`
+- `helperSize`: token `font.size.sm`; part `description`
 - `descriptionText`: token `color.foreground.muted`; part `description`; locked
+- `errorText`: token `color.foreground.danger`; part `errorMessage`
+- `minTarget`: token `size.target.comfortable`; part `thumb`; locked
+- `focusRing`: token `color.border.focus`; part `thumb`; locked
+- `focusRingWidth`: token `border.width.focus`; part `thumb`; locked
 
 ## Form and overlay
 
@@ -694,6 +886,10 @@ form:
 - `rangeText`: "{low} – {high}"; params `low` (string), `high` (string)
 - `required`: "{label} is required."
 - `invalid`: "{label} is not valid."
+- `pageUpAction`: "Increase by a page"
+- `pageDownAction`: "Decrease by a page"
+- `homeAction`: "Set to minimum"
+- `endAction`: "Set to maximum"
 
 ## Constants and examples
 
@@ -710,7 +906,7 @@ The element also has an `overrides` property (`attribute: false`, `Partial<Recor
 
 Overrides change values, never presence: a prop that turns a part off (`surface: none`, `border: false`, `radius: none`) makes the matching overrides no-ops; apply an override only where the binding is in effect.
 
-Overridable: `track`, `trackHeight`, `trackRadius`, `thumb`, `thumbSize`, `thumbShadow`, `thumbActiveScale`, `mark`, `markSize`, `markLabelSize`, `valueSize`, `bubbleRadius`, `labelWeight`, `partGap`, `trackPaddingBlock`, `fontFamily`, `fontSize`, `helperSize`, `errorText`, `disabledOpacity`, `transition`
+Overridable: `track`, `trackHeight`, `trackRadius`, `thumb`, `thumbSize`, `thumbShadow`, `thumbActiveScale`, `haloSpread`, `mark`, `markSize`, `markLabelSize`, `markLabelGap`, `valueSize`, `bubblePaddingBlock`, `bubblePaddingInline`, `bubbleOffset`, `bubbleRadius`, `labelWeight`, `partGap`, `labelGap`, `trackPaddingBlock`, `fontFamily`, `fontSize`, `helperSize`, `errorText`, `disabledOpacity`, `transition`
 Locked (accessibility-bearing, never overridable): `fill`, `thumbBorder`, `thumbBorderWidth`, `markLabelColor`, `valueColor`, `bubbleSurface`, `bubbleText`, `descriptionText`, `minTarget`, `focusRing`, `focusRingWidth`
 
 ## Behavior scenarios (16)
@@ -728,6 +924,7 @@ Each scenario below becomes one test. They are platform-neutral: `given` are pro
     key: ArrowRight
   then:
   - event: onChange
+    with: 55
   platforms:
   - web
   - lit
@@ -739,6 +936,7 @@ Each scenario below becomes one test. They are platform-neutral: `given` are pro
     key: ArrowLeft
   then:
   - event: onChange
+    with: 45
   platforms:
   - web
   - lit
@@ -749,6 +947,7 @@ Each scenario below becomes one test. They are platform-neutral: `given` are pro
     key: PageUp
   then:
   - event: onChange
+    with: 60
   platforms:
   - web
   - lit
@@ -761,6 +960,7 @@ Each scenario below becomes one test. They are platform-neutral: `given` are pro
     key: Home
   then:
   - event: onChange
+    with: 0
   platforms:
   - web
   - lit
@@ -773,6 +973,7 @@ Each scenario below becomes one test. They are platform-neutral: `given` are pro
     key: End
   then:
   - event: onChange
+    with: 100
   platforms:
   - web
   - lit
@@ -785,6 +986,7 @@ Each scenario below becomes one test. They are platform-neutral: `given` are pro
     key: ArrowRight
   then:
   - event: onChangeEnd
+    with: 51
   platforms:
   - web
   - lit
@@ -871,8 +1073,13 @@ reflect:
 - required
 - invalid
 - snap-to-marks
-notes: Form-associated (FormData with two entries for a range). Composed `change`
-  (detail { value }) and `change-end`. Thumbs are shadow elements with role="slider".
+notes: 'Form-associated and implements DsFormField: `currentValue` is the decimal
+  string, or `[low, high]` as two strings for a range, and setFormValue gets FormData
+  with two entries of the same name for a range. Composed `change` (detail { value
+  }, numbers) and `change-end`. Thumbs are shadow elements with role="slider"; the
+  label ds-text and its id live in the same shadow root, so aria-labelledby resolves,
+  and range thumbs use aria-label from the copy. The error message is a ds-text tone=danger
+  inside the role=alert errorMessage wrapper.'
 ```
 
 ## Guidance
@@ -891,7 +1098,7 @@ Do not use a Slider for a value that must be exact or is usually typed (quantity
 
 ## Behavior
 
-Dragging a thumb, or clicking the track, sets the value snapped to `step` (or to marks); arrow keys move by `step`, PageUp/Down by ten steps, Home/End to the bounds. `onChange` fires continuously; `onChangeEnd` once per interaction. In a `range`, each thumb is its own tab stop, the thumbs cannot cross (the lower is clamped to the upper and vice versa), and the value is `[min, max]`. The value text shows per `showValue`; the drag bubble follows the active thumb. `disabled` sliders are readable and focusable but inert. A range's beside-label text is `copy.rangeText`; each thumb's `aria-valuemin`/`aria-valuemax` reflect the live constraint from the other thumb. Pointer math is logical (mirrored in right-to-left). The Keyboard story renders the range form (two thumbs are the whole model; the three-focusable rule does not apply). The Form value is a number, or `[low, high]` for a range.
+Dragging a thumb, or clicking the track (every platform, including React Native), sets the value snapped to `step` (or to marks with `snapToMarks`); arrow keys move by `step`, PageUp/Down by ten steps (by mark with `snapToMarks`), Home/End to the bounds. `onChange` fires continuously; `onChangeEnd` once per interaction; neither fires when the value did not change. A pointer-driven control has no meaningful blur, so on every platform `validate: blur` validates when an interaction ends (pointer or drag release, key-up), not when a thumb loses focus. In a `range`, each thumb is its own tab stop, the thumbs cannot cross (the lower is clamped to the upper and vice versa), and the value is `[min, max]`. The value text shows per `showValue`; the drag bubble follows the active thumb. `disabled` sliders are readable and focusable but inert. A range's beside-label text is `copy.rangeText`; each thumb's `aria-valuemin`/`aria-valuemax` reflect the live constraint from the other thumb. Pointer math is logical (mirrored in right-to-left). The Keyboard story renders the range form with the `price-range` example's args (`range: true`, `defaultValue: [20, 80]`); two thumbs are the whole model, so the three-focusable rule does not apply. Events carry numbers, but the Form value is the decimal string, or `[low, high]` as two strings for a range (see `name`). The error region shows `error`, else a Form-reported message, else `copy.invalid` when `invalid`; `copy.required` appears only once validation reports it.
 
 ## Content guidelines
 
@@ -910,7 +1117,7 @@ Render the label row (label `Text` with id, and the value `Text` when `showValue
 `<ds-slider label="Price range" name="price" range min="0" max="500" step="10">`; form-associated; thumbs in the shadow root; composed `change` and `change-end`.
 
 ### React Native
-`View` track with `PanResponder` per thumb; each thumb `View` has `accessible`, `accessibilityRole="adjustable"`, `accessibilityLabel`, `accessibilityValue={{ min, max, now, text }}`, `accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}` and `onAccessibilityAction` applying `step`. `onSlidingComplete` maps to `onChangeEnd`. The bubble is a `View` above the active thumb. Form registration as Input; a range registers one field with the pair.
+`View` track with `PanResponder` per thumb; each thumb `View` has `accessible`, `accessibilityRole="adjustable"`, `accessibilityLabel`, `accessibilityValue={{ min, max, now, text }}`, `accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}` and `onAccessibilityAction` applying `step`. `onSlidingComplete` maps to `onChangeEnd`. The bubble is a `View` above the active thumb. Form registration as Input, with the decimal string; a range registers one field with the two strings. PageUp/PageDown/Home/End are extra custom actions labelled from copy.
 
 ## Related
 

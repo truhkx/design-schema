@@ -59,24 +59,49 @@ component:
   status: review
   anatomy:
   - container
+  - header
   - label
   - valueText
   - track
   - fill
   composition:
-    label: Text
-    valueText: Text
+    label:
+      component: Text
+      props:
+        element: span
+        size: sm
+        weight: medium
+        tone: default
+      forwards:
+        labelSize: fontSize
+        labelWeight: fontWeight
+        fontFamily: fontFamily
+        lineHeight: lineHeight
+    valueText:
+      component: Text
+      props:
+        element: span
+        size: sm
+        tone: muted
+      forwards:
+        valueSize: fontSize
+        fontFamily: fontFamily
+        lineHeight: lineHeight
   props:
     label:
       type: string
       required: true
       description: What is progressing ("Uploading photos", "Importing contacts").
         Visible unless `hideLabel`.
-      a11y: The accessible name (aria-labelledby / accessibilityLabel).
+      a11y: 'The accessible name: aria-labelledby on web, aria-label on the Lit host
+        (ids do not cross the shadow root), accessibilityLabel on React Native. An
+        empty label leaves the bar unnamed, with no development warning.'
     value:
       type: number
-      description: Progress so far, between `min` and `max`. Omit for an indeterminate
-        bar (the end is unknown).
+      description: Progress so far, between `min` and `max`. Omit (undefined or null)
+        for an indeterminate bar (the end is unknown). Clamped to `min`…`max` for
+        the fill, the accessible value, `formatValue`'s argument and the announcement
+        tiers; a non-finite number (NaN, Infinity) is treated as `min`.
     min:
       type: number
       default: 0
@@ -91,17 +116,27 @@ component:
       description: 'Renders the value text ("42%", "3 of 12 files"). Defaults to a
         percentage over the whole range — `(value − min) / (max − min)` — the same
         arithmetic the fill uses, so a non-zero `min` reads correctly without a custom
-        formatter. A `max` at or below `min` is not a range: the bar renders empty
-        and warns in development.'
+        formatter, rounded to a whole number: `Intl.NumberFormat(locale, { style:
+        ''percent'', maximumFractionDigits: 0 })`, as Meter does (99.5% of the way
+        shows "100%" before completion; completion is only the clamped value reaching
+        `max`). Called with the clamped value. Rounding is for the text only; the
+        fill uses the exact fraction. A `max` at or below `min` is not a range: the
+        bar renders empty, exposes aria-valuenow / accessibilityValue.now = `min`
+        with the given bounds, shows and exposes "0%" unless a custom formatter says
+        otherwise, makes no progress or completion announcements, and warns in development.'
     showValue:
       type: boolean
       default: true
-      description: Show the value text beside the label. Ignored when indeterminate.
+      description: Show the value text at the end of the label row. Ignored when indeterminate.
+        Lit attribute is the negated boolean `hide-value` (reflected), since an attribute
+        can only turn things on.
     hideLabel:
       type: boolean
       default: false
       description: Visually hide the label (it remains the accessible name). For bars
-        inside a Card whose heading already says what is happening.
+        inside a Card whose heading already says what is happening. The value text,
+        when shown, stays at the end of the row; when there is no visible value text
+        either, the label row takes no space and `partGap` is not applied.
     tone:
       type: enum
       enumRef: tone
@@ -124,7 +159,8 @@ component:
         every 25%, or only completion. Each announcement uses `copy.progress` / `copy.complete`,
         and `copy.indeterminate` is announced once each time the bar enters the indeterminate
         state. A value that moves backward resets the tiers already announced, so
-        a retried task announces its progress again on the way up.'
+        a retried task announces its progress again on the way up. The full announcement
+        rules are under Behavior.'
   events: {}
   styles:
     track:
@@ -151,45 +187,79 @@ component:
       locked: false
     radius:
       token: radius.full
+      part: track
+      description: Rounds the track and the fill ends; the track clips the fill (overflow
+        hidden).
       locked: false
     labelColor:
       token: color.foreground
       part: label
+      description: Realised by the label Text's tone default; no hook of its own.
       locked: true
     labelSize:
       token: font.size.sm
       part: label
+      description: Forwarded to the label Text's fontSize override.
       locked: false
     labelWeight:
       token: font.weight.medium
       part: label
+      description: Forwarded to the label Text's fontWeight override.
       locked: false
     valueColor:
       token: color.foreground.muted
+      part: valueText
+      description: Realised by the value Text's tone muted; no hook of its own.
       locked: true
     valueSize:
       token: font.size.sm
+      part: valueText
+      description: Forwarded to the value Text's fontSize override.
       locked: false
     fontFamily:
       token: font.family.body
+      part: header
+      description: Forwarded to both Texts' fontFamily overrides; never styles them
+        directly.
       locked: false
     lineHeight:
       token: font.lineHeight.normal
+      part: header
+      description: Forwarded to both Texts' lineHeight overrides; never styles them
+        directly.
       locked: false
     partGap:
       token: space.1
-      description: Vertical gap between the label row and the track.
+      part: container
+      description: Vertical gap between the label row (header) and the track.
+      locked: false
+    labelGap:
+      token: space.2
+      part: header
+      description: Horizontal gap between the label and the value text in the header
+        row.
       locked: false
     transition:
       token: motion.duration.base
-      description: Fill width change with motion.easing.standard; instant under reduced
-        motion.
+      part: fill
+      description: Fill inline-size change with motion.easing.standard; instant under
+        reduced motion.
       locked: false
     indeterminateLoop:
       token: motion.duration.loop
+      part: fill
       description: 'The indeterminate sweep: a fill one third of the track width travelling
-        start to end and repeating. Under reduced motion the fill is replaced by a
-        static, half-opacity track (opacity.disabled) — no motion at all.'
+        from the inline start to the inline end (right to left in RTL) and repeating,
+        starting and ending wholly outside the track. Under reduced motion there is
+        no sweep: the fill is drawn static and full-width at opacity.disabled, keeping
+        its tone color.'
+      locked: false
+    sweepEasing:
+      token: motion.easing.standard
+      part: fill
+      description: Easing of each indeterminate sweep on every platform. The fill
+        is off the track at both ends of the loop, so the eased restart has no visible
+        seam.
       locked: false
   copy:
     progress: '{label}: {value}'
@@ -232,23 +302,33 @@ component:
       - aria-valuetext
       - aria-labelledby
       - aria-busy
-      notes: 'A <div role="progressbar"> with aria-valuenow/min/max and aria-valuetext
-        from formatValue; an indeterminate bar omits aria-valuenow and sets aria-busy="true"
-        on itself. Announcements go through a visually-hidden `role="status" aria-live="polite"`
-        region next to the bar, updated per `announce`. Not <progress>: it cannot
-        be themed consistently and its indeterminate animation ignores reduced motion
-        in some browsers.'
+      notes: 'role="progressbar" sits on the track <div>, with aria-labelledby (the
+        label Text''s id), aria-valuenow/min/max and aria-valuetext from formatValue;
+        data-ds sits on the root wrapper, a plain container with no role — they are
+        different elements. An indeterminate bar keeps aria-valuemin/max, omits aria-valuenow
+        and aria-valuetext, and sets aria-busy="true" on the track. The indeterminate
+        sweep mirrors its keyframes under :dir(rtl). Announcements go through a visually-hidden
+        `role="status" aria-live="polite"` region next to the bar, updated per `announce`.
+        Not <progress>: it cannot be themed consistently and its indeterminate animation
+        ignores reduced motion in some browsers.'
     lit:
       tag: ds-progress-bar
       reflect:
       - tone
       - hide-label
+      - prop: showValue
+        attribute: hide-value
       - announce
-      notes: role="progressbar" and aria-valuenow/min/max/text are plain reflected
+      notes: 'role="progressbar" and aria-valuenow/min/max/text are plain reflected
         attributes on the host, not ElementInternals — the accessible-value tooling
         reads attributes, and real assistive technology treats the two identically.
-        The live region is in the shadow root and carries role="status" beside aria-live="polite";
-        it is not an anatomy part and takes no `part`.
+        The host is named by aria-label mirrored from `label` (aria-labelledby cannot
+        reach the label inside the shadow root); an empty label removes aria-label.
+        Indeterminate: aria-valuemin/max stay, aria-valuenow and aria-valuetext are
+        removed, aria-busy="true". `showValue` is the negated attribute `hide-value`.
+        The sweep mirrors its keyframes under :host(:dir(rtl)). The live region is
+        in the shadow root and carries role="status" beside aria-live="polite"; it
+        is not an anatomy part and takes no `part`.'
     rn:
       element: View
       props:
@@ -256,12 +336,15 @@ component:
       - accessibilityLabel
       - accessibilityValue
       notes: 'Drawn with Views (Animated.View width for the fill; the indeterminate
-        sweep is an Animated loop that is not started under reduced motion, and eases
-        linearly so the loop has no visible seam). accessibilityValue={{ min, max,
-        now, text }} — an indeterminate bar carries min and max only, never a `now`
-        or a `text` that would name a progress it does not know, and sets accessibilityState={{
-        busy: true }}, the native form of aria-busy. Announcements via AccessibilityInfo.announceForAccessibility
-        per `announce`.'
+        sweep is an Animated loop that is not started under reduced motion — the fill
+        is then drawn full-width at opacity.disabled — and eases with `sweepEasing`
+        via Easing.bezier; it runs toward the left when I18nManager.isRTL). No disabled
+        state and no keyboard interaction: the bar is never focusable (focusable={false}),
+        and screen-reader users learn progress from the announcements. accessibilityValue={{
+        min, max, now, text }} — an indeterminate bar carries min and max only, never
+        a `now` or a `text` that would name a progress it does not know, and sets
+        accessibilityState={{ busy: true }}, the native form of aria-busy. Announcements
+        via AccessibilityInfo.announceForAccessibility per `announce`.'
     swiftui:
       element: ProgressView
       props:
@@ -273,8 +356,8 @@ component:
       - TimelineView
       notes: '`ProgressView(value:total:)` with a package `ProgressViewStyle` drawing
         the track and fill from the tokens (indeterminate when `value` is nil: a sweep
-        driven by `TimelineView`, replaced by the static half-opacity track under
-        reduced motion). VoiceOver gets the label and `.accessibilityValue(formatValue)`
+        driven by `TimelineView`, replaced under reduced motion by the fill drawn
+        static and full-width at opacity.disabled). VoiceOver gets the label and `.accessibilityValue(formatValue)`
         from the style''s configuration; announcements per `announce` (milestones/complete/indeterminate
         copy) through `AccessibilityNotification.Announcement`. `tone` recolors the
         fill only.'
@@ -349,6 +432,15 @@ component:
       showValue: false
 ```
 
+## Parts and slots
+
+- `container`: element
+- `header`: element
+- `label`: component `Text`; props `element` = "span", `size` = "sm", `weight` = "medium", `tone` = "default"; forwards `labelSize` → `overrides.fontSize`, `labelWeight` → `overrides.fontWeight`, `fontFamily` → `overrides.fontFamily`, `lineHeight` → `overrides.lineHeight`
+- `valueText`: component `Text`; props `element` = "span", `size` = "sm", `tone` = "muted"; forwards `valueSize` → `overrides.fontSize`, `fontFamily` → `overrides.fontFamily`, `lineHeight` → `overrides.lineHeight`
+- `track`: element
+- `fill`: element
+
 ## Style bindings
 
 - `track`: token `color.background.strong`; part `track`
@@ -356,9 +448,19 @@ component:
 - `fillSuccess`: token `color.status.success.icon`; part `fill`; locked
 - `fillDanger`: token `color.status.danger.icon`; part `fill`; locked
 - `trackHeight`: token `space.2`; part `track`
+- `radius`: token `radius.full`; part `track`
 - `labelColor`: token `color.foreground`; part `label`; locked
 - `labelSize`: token `font.size.sm`; part `label`
 - `labelWeight`: token `font.weight.medium`; part `label`
+- `valueColor`: token `color.foreground.muted`; part `valueText`; locked
+- `valueSize`: token `font.size.sm`; part `valueText`
+- `fontFamily`: token `font.family.body`; part `header`
+- `lineHeight`: token `font.lineHeight.normal`; part `header`
+- `partGap`: token `space.1`; part `container`
+- `labelGap`: token `space.2`; part `header`
+- `transition`: token `motion.duration.base`; part `fill`
+- `indeterminateLoop`: token `motion.duration.loop`; part `fill`
+- `sweepEasing`: token `motion.easing.standard`; part `fill`
 
 ## Constants and examples
 
@@ -375,7 +477,7 @@ Overrides change values, never presence: a prop that turns a part off (`surface:
 
 The `platforms.rn.props` list names the native props the schema cares about; `overrides` and `testID` apply to every component regardless of whether that list mentions them.
 
-Overridable: `track`, `trackHeight`, `radius`, `labelSize`, `labelWeight`, `valueSize`, `fontFamily`, `lineHeight`, `partGap`, `transition`, `indeterminateLoop`
+Overridable: `track`, `trackHeight`, `radius`, `labelSize`, `labelWeight`, `valueSize`, `fontFamily`, `lineHeight`, `partGap`, `labelGap`, `transition`, `indeterminateLoop`, `sweepEasing`
 Locked (accessibility-bearing, never overridable): `fill`, `fillSuccess`, `fillDanger`, `labelColor`, `valueColor`
 
 ## Behavior scenarios (10)
@@ -454,11 +556,14 @@ props:
 - accessibilityLabel
 - accessibilityValue
 notes: "Drawn with Views (Animated.View width for the fill; the indeterminate sweep\
-  \ is an Animated loop that is not started under reduced motion, and eases linearly\
-  \ so the loop has no visible seam). accessibilityValue={{ min, max, now, text }}\
-  \ \u2014 an indeterminate bar carries min and max only, never a `now` or a `text`\
-  \ that would name a progress it does not know, and sets accessibilityState={{ busy:\
-  \ true }}, the native form of aria-busy. Announcements via AccessibilityInfo.announceForAccessibility\
+  \ is an Animated loop that is not started under reduced motion \u2014 the fill is\
+  \ then drawn full-width at opacity.disabled \u2014 and eases with `sweepEasing`\
+  \ via Easing.bezier; it runs toward the left when I18nManager.isRTL). No disabled\
+  \ state and no keyboard interaction: the bar is never focusable (focusable={false}),\
+  \ and screen-reader users learn progress from the announcements. accessibilityValue={{\
+  \ min, max, now, text }} \u2014 an indeterminate bar carries min and max only, never\
+  \ a `now` or a `text` that would name a progress it does not know, and sets accessibilityState={{\
+  \ busy: true }}, the native form of aria-busy. Announcements via AccessibilityInfo.announceForAccessibility\
   \ per `announce`."
 ```
 
@@ -478,7 +583,19 @@ Do not use it for a measured quantity (Meter), for a value the user sets (Slider
 
 ## Behavior
 
-The fill width follows `value` as a fraction of the range, animated over `transition`. Indeterminate bars sweep continuously and expose `aria-busy`. When `value` reaches `max` the bar stays full and, if `announce` is not `none`, `copy.complete` is announced once; milestones announce at 25/50/75/100. Changing `tone` to `success` or `danger` recolors the fill only — the containing view is responsible for the text that says the task finished or failed. The bar itself is never focusable. `copy.indeterminate` is announced once each time the bar becomes indeterminate. Milestone and completion announcements reset when the value moves backward (a retried task announces its milestones again). The live region is `role="status"` (plain attributes on Lit, not ElementInternals) and is not an anatomy part.
+The fill width follows the clamped `value` as a fraction of the range, animated over `transition`. Indeterminate bars sweep continuously (inline start to inline end, mirrored in RTL) and expose `aria-busy`. When `value` reaches `max` the bar stays full and, if `announce` is not `none`, `copy.complete` is announced once. Changing `tone` to `success` or `danger` recolors the fill only — the containing view is responsible for the text that says the task finished or failed. The bar itself is never focusable. The live region is `role="status"` (plain attributes on Lit, not ElementInternals) and is not an anatomy part.
+
+The label row (header) is a horizontal row with the label at the inline start and the value text at the inline end, `labelGap` apart. `hideLabel` hides the label visually but the value text stays at the end; with no visible label and no visible value text the row takes no space.
+
+Announcements follow these rules on every platform:
+
+- **Tiers.** The tier is `floor(fraction × 4)` of the clamped value (74.6% is tier 2, 75% is tier 3); tier 4 is `max`. Tiers are tracked for every `announce` value, including `none`, so switching `announce` mid-task never replays tiers already passed.
+- **Milestones.** With `milestones`, entering a higher tier 1–3 announces `copy.progress` once. An update that crosses several tiers makes one announcement for the highest, with the current value. Reaching `max` announces `copy.complete`, never `copy.progress` with "100%"; `complete` announces only that.
+- **`{value}`** is the formatted value text — `formatValue(clamped, min, max)`, the same string as aria-valuetext / accessibilityValue.text — not the raw number.
+- **Mount.** The tier and completion reached at mount are recorded silently: a bar that mounts at 60% or at `max` announces nothing. A bar that mounts indeterminate has entered that state, so `copy.indeterminate` is announced once after mount (unless `announce` is `none`), as it is each later time `value` becomes undefined.
+- **Backward.** A value that moves to a lower tier resets the record to the new value's tier: moving from 80% to 60% makes 75% and completion announceable again without re-announcing 50%. Dropping below `max` re-arms `copy.complete`.
+- **Repeats.** An announcement is spoken even when its text equals the previous one (indeterminate twice, a retried task completing again): web and Lit replace the live region's message node rather than setting the same text; React Native calls `announceForAccessibility` again.
+- **Invalid range.** With `max ≤ min` no progress or completion is announced; `copy.indeterminate` still is.
 
 ## Content guidelines
 
@@ -491,13 +608,13 @@ The bar is a `progressbar` with `aria-valuenow`, `aria-valuemin`, `aria-valuemax
 ## Platform notes
 
 ### Web
-Render the label row (`Text` with id; value `Text` when `showValue` and determinate), the track `<div>` and fill `<div>` with `inline-size` from the value, and the `role="progressbar"` on the track with `aria-labelledby`, `aria-valuenow/min/max/text` (omit `aria-valuenow` and set `aria-busy="true"` when indeterminate). A visually-hidden `<div aria-live="polite">` receives `copy.progress` at milestones or `copy.complete`. The indeterminate sweep is a CSS keyframe on the fill (`translateX` from -100% to 300% over `indeterminateLoop`), replaced under `prefers-reduced-motion` by a static fill at `opacity.disabled` covering the whole track.
+Render a root wrapper (`data-ds`, no role, gap `partGap`) containing the header row (`data-part="header"`, flex row, `justify-content: space-between`, gap `labelGap`) — a `Text element="span" size="sm" weight="medium" tone="default"` with id (visually hidden under `hideLabel`) and, when `showValue` and determinate, a `Text element="span" size="sm" tone="muted"` with the value text, each receiving its forwarded overrides — then the track `<div>` and fill `<div>` with `inline-size` from the clamped fraction. `role="progressbar"` sits on the track, never the root, with `aria-labelledby`, `aria-valuenow/min/max/text` (when indeterminate keep `aria-valuemin/max`, omit `aria-valuenow` and `aria-valuetext`, and set `aria-busy="true"`). A visually-hidden `<div role="status" aria-live="polite">` beside the bar receives the announcements described under Behavior. The indeterminate sweep is a CSS keyframe on the fill (`translateX` from -100% to 300% over `indeterminateLoop` with `sweepEasing`, reversed under `:dir(rtl)`), replaced under `prefers-reduced-motion` by a static fill at `opacity.disabled` covering the whole track.
 
 ### Lit
-`<ds-progress-bar label="Uploading" value="42"></ds-progress-bar>`; `ElementInternals` role and aria values on the host; live region in the shadow root; `tone` reflected for styling.
+`<ds-progress-bar label="Uploading" value="42"></ds-progress-bar>`; `role="progressbar"`, `aria-label` (from `label`) and the aria values as plain attributes on the host, not `ElementInternals`; the same header, track and fill structure as web in the shadow root, with composed `ds-text` elements; live region in the shadow root; `tone`, `hide-label`, `hide-value` and `announce` reflected.
 
 ### React Native
-`View` track with an `Animated.View` fill whose width animates to the fraction (`useNativeDriver: false` for width; duration from `transition`, zero under reduced motion). Indeterminate: an `Animated.loop` translating a one-third-width fill, not started when `useReducedMotion()`; instead the fill is drawn full-width at `opacity.disabled`. `accessibilityRole="progressbar"`, `accessibilityValue`, and `AccessibilityInfo.announceForAccessibility` per `announce`.
+`View` track with an `Animated.View` fill whose width animates to the fraction (`useNativeDriver: false` for width; duration from `transition`, zero under reduced motion). Header row: a `View` with `flexDirection: 'row'`, `justifyContent: 'space-between'` and gap `labelGap` holding the two `Text`s. Indeterminate: an `Animated.loop` translating a one-third-width fill with `sweepEasing`, not started when `useReducedMotion()`; instead the fill is drawn full-width at `opacity.disabled`. `accessibilityRole="progressbar"`, `accessibilityValue`, and `AccessibilityInfo.announceForAccessibility` per `announce`.
 
 ## Related
 

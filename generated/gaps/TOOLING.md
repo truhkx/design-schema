@@ -56,3 +56,17 @@ Gaps a fold cannot answer because they are about the tools, not the docs.
 - RN conventions summary shows `toLineHeight(t.fontLineHeightNormal, t.fontSizeMd)`, but theme.ts is `toLineHeight(fontSize, multiplier)` (Listbox, rn).
 - Keyboard story gate: unclear whether options reached via aria-activedescendant count toward the "three focusable children" (Select, web).
 - `copy.position` in tabs.md is the first copy entry to use `description`/`platforms`; confirm consumers honor them (Tabs; all).
+- Keyboard-story rule ("open with its trigger and at least three focusable children") doesn't fit single-tab-stop fields or components without `open` (NumberInput, Search; web, lit, rn).
+- Interaction scenarios limited to `platforms: [web, lit]` leave rn onKeyPress / accessibility-action paths untested (NumberInput, Slider, Search; rn).
+- Example stories must render exactly their given props, but meta args leak into args-only stories (Slider, rn).
+- Scenarios start from Default story args, so a given that depends on an omitted prop can't be exercised (Slider, rn).
+- Generator platform rule asks for a disabled accessibilityState and keyboard stories on components with neither (ProgressBar, rn).
+- `focusable: false` scenario has no concrete assertion shape on Lit (ProgressBar, lit).
+- `click: indicator` names no step, and the aria-hidden indicator needs `includeHiddenElements` on rn (Stepper, rn).
+- Story name for a boolean prop comes out as `CompactTrue`; keyboard block has no `given` for the Keyboard story (Stepper, rn).
+- `copy:` scenarios on visually hidden words read shadow textContent, and jsdom can't verify container queries (Stepper, lit).
+- tools/__tests__/composition-forwards.test.ts corpus counts go stale with the new Stepper/Slider/Search/ProgressBar composition forwards (all).
+- Derived `error-is-identified` scenario resolves to anatomy[0] (`label`) instead of the input; derived scenarios need a target (DatePicker, lit).
+- `has-accessible-name` is skipped when a11y.role is `none`; it can't target a child input (DatePicker, lit).
+- rn scenarios press Buttons by copy label and `click: day` resolves to the 18th cell because no cell is named (DatePicker, rn).
+- All DatePicker grid keyboard rules are `expect: manual`, so no generated test covers them (DatePicker, web).

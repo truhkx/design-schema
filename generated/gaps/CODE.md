@@ -45,3 +45,7 @@ Gaps where a sibling component's generated code is wrong. The docs are already r
 - Select.tsx (web): was changed to Listbox's `initialActiveValue` with no alias for the old `defaultActiveValue` (reported as a gap; it is a code change).
 - Combobox (lit): statusDebounce reads `--motion-duration-base`, which a reduced-motion theme zeroes; combobox.md now says it must not follow reduced motion.
 - Button: rn Button has no `testID` prop and web Button forces `data-part="container"`, so Combobox/Select wrap their Button parts. Text (rn): Select/Input pass `testID` to Text, which text.md doesn't list; check it passes through.
+- Button (rn): can't be removed from focus order, exposes only onPress (no hold-to-repeat), and always applies its own disabled opacity (found in NumberInput, rn).
+- Select (lit): warns without `name` and always sets data-ds-field, even for internal controls in a shadow root (found in DatePicker, lit).
+- Popover (lit): always focuses its first focusable with no initial-focus element, and doesn't re-measure when slotted content lays out after opening (found in DatePicker, lit).
+- Form (lit): one host carries one `data-ds-field`; a range field needs a way to register `name-end` as a second field (found in DatePicker, lit).

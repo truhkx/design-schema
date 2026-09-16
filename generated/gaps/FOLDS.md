@@ -1148,3 +1148,161 @@ One line per decision: `<date> <Component> <platform>: <gap> → <what the doc n
 2026-09-16 Combobox web: toggle button tab order → toggle tabIndex -1; clear and chip-remove stay tabbable
 2026-09-16 Combobox web,lit,rn: comma commit in single mode → same as Enter
 2026-09-16 Combobox web,lit,rn: count 0 with add-custom row → count excludes that row, announces copy.empty
+2026-09-16 Slider rn: Home/End/Page actions have no copy labels → new copy keys pageUpAction, pageDownAction, homeAction, endAction
+2026-09-16 Slider web,lit,rn: snap to marks "when step omitted" undetectable → only snapToMarks enables mark snapping
+2026-09-16 Slider web,lit,rn: PageUp/PageDown past the last mark → ten steps clamped; with snapToMarks next mark, then min/max
+2026-09-16 Slider rn,lit: required copy standalone, message order → required is valueMissing; region shows error, Form message, else copy.invalid
+2026-09-16 Slider web,lit,rn: errorText overridable but Text color locked → errorMessage composed Text tone danger; errorText has no hook, override no-op
+2026-09-16 Slider web,lit,rn: composed Text bindings lack forwards → composition lists label/description/valueText/errorMessage Text with forwards
+2026-09-16 Slider rn,lit: bubble text color/size don't reach its Text → bubble holds Text with valueSize forwarded; bubbleText re-scopes foreground
+2026-09-16 Slider web,lit,rn: bubble padding/offset and label-row gap unbound → bubblePaddingBlock, bubblePaddingInline, bubbleOffset, labelGap bindings
+2026-09-16 Slider rn: focus ring geometry unspecified → circle around the visible knob, keyboard focus only
+2026-09-16 Slider lit: sixteen bindings have no part → each binding names tickMarks, valueText, label, description, errorMessage, thumb or root
+2026-09-16 Slider web,lit: mark labels lack part and gap → labels live in tickMarks as Text xs muted; markLabelGap binding
+2026-09-16 Slider rn: tap-on-track has no RN counterpart → pressing the track moves the nearest thumb on every platform
+2026-09-16 Slider web,lit,rn: Form value types have no number → decimal string, range two strings under one name; events keep numbers
+2026-09-16 Slider rn,lit: disabled via prop, Form or Fieldset → thumbs focusable, input ignored, no value submitted, same for all sources
+2026-09-16 Slider lit: marks shape breaks exactOptionalPropertyTypes → label?: string | undefined, exported SliderMark
+2026-09-16 Slider web,lit: label for can't name div thumbs → Text span id + aria-labelledby; range thumbs aria-label from minimum/maximumLabel
+2026-09-16 Slider lit: label Text size unnamed → Text span size md weight medium with forwards
+2026-09-16 Slider web,lit: change-end when value unchanged → onChange/onChangeEnd fire only when the value changed
+2026-09-16 Slider lit: Keyboard story range args missing → price-range example args
+2026-09-16 Slider web: showValue hover name vs description → hover means pressed or focused, not pointer hover
+2026-09-16 Slider web: trackPaddingBlock would thicken the rail → pads an unparted track-area wrapper that is the hit area
+2026-09-16 Slider web: validate blur for pointer control → validates when an interaction ends, every platform
+2026-09-16 Slider web: halo size contradicts itself → haloSpread binding; diameter thumbSize + 2 × haloSpread
+2026-09-16 Slider web: onChange scenarios lack payloads → scenarios carry with: values
+2026-09-16 Slider web: which element takes the id for a range → the low thumb, also Form focus-on-error target
+2026-09-16 Slider web,rn: composed Text parts need a home → data-part/testID on wrappers Slider owns
+2026-09-16 NumberInput web,lit,rn: number valueType but Forms have no number → registers decimal string; empty/disabled registers nothing; Lit valueAsNumber getter
+2026-09-16 NumberInput web,lit,rn: Home/End marked native but needs code → native removed; jump to min/max is component code
+2026-09-16 NumberInput rn: arrow/page keys and bounds actions → onKeyPress where delivered; iOS uses adjustable actions only, no bound jump
+2026-09-16 NumberInput web,lit,rn: "ten steps" count unclear → 10 × step, clamped; a count, not a style value
+2026-09-16 NumberInput web,lit,rn: stepper Button size at md → Button size sm at both field sizes
+2026-09-16 NumberInput web,lit,rn: controlled value swallows typing while focused → raw text while focused; value takes over on blur, step, prop change
+2026-09-16 NumberInput web,lit,rn: null vs undefined value → number | null | undefined; null controlled empty, undefined uncontrolled
+2026-09-16 NumberInput web,lit,rn: validation precedence and invalid trigger → error > Form error > required > invalid > out-of-range; invalid = no digits
+2026-09-16 NumberInput web,lit,rn: {min}/{max} raw or formatted → formatted with field format, no affixes
+2026-09-16 NumberInput web,lit: clamp message location and submit blocking → errorMessage part, aria-invalid, fails validation until next edit
+2026-09-16 NumberInput rn: rounding without precision → decimals of step, never snaps to multiples
+2026-09-16 NumberInput web,rn: affixes in accessible value → leadingText + formatted value + space + trailingText
+2026-09-16 NumberInput rn: disabled steppers dimmed twice → disabledOpacity never on a stepper container
+2026-09-16 NumberInput web,lit,rn: hold-to-repeat platforms, token fallback → web/Lit only; unreadable tokens step once
+2026-09-16 NumberInput web,lit,rn: FieldsetContext and legend prefix undefined → per-platform: disabled on web/Lit, rn reads context and prefixes legend
+2026-09-16 NumberInput web,lit,rn: Button owns data-part, aria-hidden placement → wrapper span/View owns part/testID; aria-hidden on element around both
+2026-09-16 NumberInput web: "." group vs decimal separator → "." is decimal only when locale decimal absent
+2026-09-16 NumberInput web,lit: prose says suffix and showSteppers → trailingText and unless hideSteppers
+2026-09-16 NumberInput lit: which part gets focus ring → borderFocus/focusRingWidth part field
+2026-09-16 NumberInput web: stepper hairline width missing → stepperDividerWidth binding border.width.thin
+2026-09-16 NumberInput web: paddingInline vs steppers → part field; inline-end only when steppers hidden
+2026-09-16 ProgressBar web,lit,rn: announce on mount → reached tiers silent at mount; indeterminate mount announces once
+2026-09-16 ProgressBar web,lit,rn: tier boundaries and multi-tier jumps → floor(fraction × 4); one announcement for highest tier
+2026-09-16 ProgressBar web,lit,rn: backward reset target → resets to new value's tier; below max re-arms complete
+2026-09-16 ProgressBar web,lit: milestone 100 vs copy.complete → max always announces copy.complete
+2026-09-16 ProgressBar web,rn: {value} raw or formatted → formatValue(clamped, min, max), same as value text
+2026-09-16 ProgressBar lit: tier tracking under announce none → tracked always, switching never replays
+2026-09-16 ProgressBar web: identical message re-announcement → always spoken; web/Lit replace node, rn re-announces
+2026-09-16 ProgressBar web,rn: clamping and formatValue argument → clamped everywhere; non-finite counts as min
+2026-09-16 ProgressBar web: default percentage rounding → whole-number Intl percent, as Meter
+2026-09-16 ProgressBar web: invalid range max ≤ min → empty bar, now = min, 0%, no announcements, dev warning
+2026-09-16 ProgressBar web,lit,rn: indeterminate aria values → keep min/max, omit now/valuetext, busy true
+2026-09-16 ProgressBar web,lit,rn: reduced-motion indeterminate contradictory → static full-width fill at opacity.disabled everywhere
+2026-09-16 ProgressBar web,rn: sweep easing unspecified → sweepEasing binding motion.easing.standard
+2026-09-16 ProgressBar web,lit: RTL sweep direction → inline start to end, mirrored under dir rtl
+2026-09-16 ProgressBar web,lit: label-to-value gap unbound → labelGap binding space.2 on header
+2026-09-16 ProgressBar web: value position under hideLabel → header anatomy part, value at inline end
+2026-09-16 ProgressBar web,lit,rn: part-less typography and radius bindings → radius part track; Text forwards as Meter; partGap container
+2026-09-16 ProgressBar web: role on root or track → track; root is plain wrapper
+2026-09-16 ProgressBar lit: aria-labelledby can't cross shadow root → host aria-label mirrored from label
+2026-09-16 ProgressBar lit: empty label fallback → aria-label removed, no warning
+2026-09-16 ProgressBar lit: ElementInternals prose vs notes → plain host attributes
+2026-09-16 ProgressBar lit: hide-value missing from reflect → { prop: showValue, attribute: hide-value } reflected
+2026-09-16 ProgressBar rn: disabled/keyboard rules don't apply → rn notes: no disabled, no keyboard, never focusable
+2026-09-16 Stepper web,lit,rn: accessible name sentences contradict → web/Lit plain label + hidden status word; stepLabel native only
+2026-09-16 Stepper web,lit,rn: status word join unspecified → joined after ", "; upcoming gets none
+2026-09-16 Stepper web,lit: notes still say Button ghost → Stepper's own native button everywhere
+2026-09-16 Stepper web: element ol vs nav root → element nav; list part is the ol
+2026-09-16 Stepper rn: no nav role → no landmark; label on list View
+2026-09-16 Stepper web,lit: descriptions in horizontal orientation → not rendered in horizontal
+2026-09-16 Stepper web,lit,rn: connector-complete rule → by position before current, statuses ignored
+2026-09-16 Stepper lit,rn: explicit status current vs id match → status sets indicator/word; id sets selected, navigable, reveal
+2026-09-16 Stepper web,lit: current matches no id → nothing selected, none navigable under completed, Step 1 of m, dev warning
+2026-09-16 Stepper web,lit,rn: step count placement → count anatomy part after list, muted sm Text; countColor/countSize bindings
+2026-09-16 Stepper lit,rn: what compact clips → web/Lit clip other labels and words; rn omits them, accessibilityLabel suffices
+2026-09-16 Stepper rn: auto-compact reads window width → own width via onLayout
+2026-09-16 Stepper web,lit: container query can't read custom property → built layout.maxWidth.prose value, literal-ok
+2026-09-16 Stepper web,lit: Text bindings lack forwards → composition forwards size/weight/fontFamily; colors via Text tone
+2026-09-16 Stepper rn: check/danger Icon size → Icon sm with indicatorFontSize as size override
+2026-09-16 Stepper rn: complete indicator ring unbound → indicatorCompleteBorder binding
+2026-09-16 Stepper web: indicator radius literal → indicatorRadius binding radius.full
+2026-09-16 Stepper web: step padding reused partGap → stepPadding binding space.2
+2026-09-16 Stepper lit: part-less bindings → each names a part or target
+2026-09-16 Stepper rn: stepHover hover vs press → pressed or hovered
+2026-09-16 Stepper rn: composed Text takes no testID → wrapper View carries the part testID
+2026-09-16 Stepper all: indicatorColor defined twice → duplicate removed
+2026-09-16 Search web,lit,rn: prose says composed Landmark → role=search on Search's own root
+2026-09-16 Search web,lit,rn: submit only when action set → submit Button always rendered
+2026-09-16 Search web,lit: Enter submits value vs label → label for Enter, click and onSubmit
+2026-09-16 Search web,lit,rn: Button sizes and composed props → both ghost sm iconOnly with close/arrow-right
+2026-09-16 Search lit,rn: iconColor forward to Button glyphs → search Icon only; Buttons keep ghost colors
+2026-09-16 Search web,lit,rn: Icon size per Search size → sm at md, md at lg on every platform
+2026-09-16 Search lit,rn: label Text typography → labelWeight binding; fontSize forwarded
+2026-09-16 Search web,lit,rn: Listbox props unspecified → label, embedded, value "", emptyMessage for empty/loading
+2026-09-16 Search web,lit: what opens/closes suggestions → typing or ArrowDown; closes on Escape, blur, outside, choice, clear, submit
+2026-09-16 Search lit: ArrowDown at last suggestion → stops
+2026-09-16 Search web,rn: onChange on clear or fill → onChange("") before onClear, onChange(label) before onSubmit
+2026-09-16 Search lit: controlled value for submit/clear → value prop when set
+2026-09-16 Search lit: disabled behaviour → read-only focusable input, Buttons disabled, keys inert, not registered
+2026-09-16 Search web,rn: trimming vs native GET → field trimmed before GET; onSubmit trimmed
+2026-09-16 Search web,lit: nested form inside Form → root becomes div role=search, action ignored
+2026-09-16 Search web,lit,rn: form registration → trimmed query, always valid, disabled not registered
+2026-09-16 Search lit: DsFormField members missing → required false, validationMessage "", checkValidity true
+2026-09-16 Search lit: activedescendant can't reach listbox options → polite live span via aria-describedby
+2026-09-16 Search web,lit,rn: live-region count debounce → constants.statusDebounce motion.duration.base × 2
+2026-09-16 Search web,lit,rn: popup border width → popupBorderWidth binding
+2026-09-16 Search web,lit: layer and placement → layer binding layer.dropdown; below, flips above
+2026-09-16 Search web,rn: focus border geometry → focusRingWidth replaces borderWidth, padding shrinks
+2026-09-16 Search web: landmark and form separate parts → one root element
+2026-09-16 Search rn: role on TextInput vs container → container View only when landmark
+2026-09-16 Search rn: renamed events and aliases → mapping stated, no aliases
+2026-09-16 Search rn: list closes before row press → stays open during press; caller's ScrollView keyboardShouldPersistTaps
+2026-09-16 Search rn: no visually-hidden count → announceForAccessibility after statusDebounce
+2026-09-16 Search rn: shown label read twice → label Text hidden from accessibility
+2026-09-16 Search rn: Escape on native → hardware keyboard only; clear Button is the path
+2026-09-16 DatePicker web,rn: Clear closes, fires when empty → stays open, fires onChange(undefined) always
+2026-09-16 DatePicker web,rn: Today behaviour and disabled → like picking today's cell; disabled outside min/max or isDateDisabled
+2026-09-16 DatePicker web,lit,rn: sm/md field font size unbound → fontSize binding
+2026-09-16 DatePicker rn: padding overrides per size → override applies at both sizes
+2026-09-16 DatePicker rn: transition properties → background, border, color (rn background only)
+2026-09-16 DatePicker rn: day focus ring vs today ring → focus ring replaces today ring while focused
+2026-09-16 DatePicker lit: today ring vs selected fill → ring stays, fill takes background
+2026-09-16 DatePicker rn: sheet title vs gridLabel → title is label; gridLabel on grid View
+2026-09-16 DatePicker web,rn: composed parts lack data-part/testID → wrapper span/View DatePicker owns; rn footer row View
+2026-09-16 DatePicker rn,lit: header and footer gaps unbound → headerGap, footerGap bindings
+2026-09-16 DatePicker rn: week-number cells unbound → weekNumberSize binding
+2026-09-16 DatePicker web: week-number cell semantics → th scope col/row, not focusable
+2026-09-16 DatePicker rn: no invalid state → hint + assertive live region + announcement
+2026-09-16 DatePicker web,rn: unparseable vs required for partial ranges → explicit validation order written out
+2026-09-16 DatePicker lit,web: end equal start → allowed; rangeOrder copy "on or after"
+2026-09-16 DatePicker lit: tooEarly/tooLate messages and {min}/{max} format → range validation keys; numeric locale pattern
+2026-09-16 DatePicker rn,web: year Select span → each bound falls back alone; always includes shown year
+2026-09-16 DatePicker lit,web: composition label Text vs native label → label removed from composition; native label web/lit
+2026-09-16 DatePicker lit,web: range form value object → name and name-end strings; name reports message
+2026-09-16 DatePicker lit,web: aria-selected on role button → on the gridcell
+2026-09-16 DatePicker web: in-range days selected → aria-selected across range; ends get fill
+2026-09-16 DatePicker web: full-date label format → Intl dateStyle full UTC plus today/selected
+2026-09-16 DatePicker web: calendarInset target and portaled hooks → forwarded to Popover/BottomSheet inset; hooks declared on calendar wrapper
+2026-09-16 DatePicker web: calendarSurface forward → not forwarded; Popover/BottomSheet surface locked to same token
+2026-09-16 DatePicker web,lit: Tab cycle and trapping → prev, month, year, next, grid, Today, Clear; DatePicker traps Tab
+2026-09-16 DatePicker web: second FocusScope → no, Popover's is the only one
+2026-09-16 DatePicker lit: which keys skip disabled days → Arrow keys only
+2026-09-16 DatePicker web,lit: first range pick and controlled draft → calendar-only draft; closing discards
+2026-09-16 DatePicker web: re-picking same day fires → picks always fire; retyping same date doesn't
+2026-09-16 DatePicker lit: controlled empty → pass ''; undefined uncontrolled
+2026-09-16 DatePicker web: controlled open re-aims → every open aims at value's month and focuses that day
+2026-09-16 DatePicker web: locale source and pattern → document lang then Intl; formatToParts 2-digit
+2026-09-16 DatePicker lit: open reflect can't express closed → property only, removed from reflect
+2026-09-16 DatePicker lit: ids and Selects in shadow root → one shadow root; Selects named month/year, not discovered
+2026-09-16 DatePicker lit: what carries name and aria-invalid → the input(s)
+2026-09-16 DatePicker lit: Popover first-focus and re-measure → DatePicker focuses day after open, requests reposition
+2026-09-16 DatePicker lit: hideLabel binding → visually-hidden clip, none needed

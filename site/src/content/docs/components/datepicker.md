@@ -8,10 +8,9 @@ component:
   apg: grid
   anatomy: [label, description, field, input, calendarButton, popover, header, prevMonthButton, nextMonthButton, monthSelect, yearSelect, grid, weekdayHeader, weekNumber, day, footer, todayButton, clearButton, errorMessage]
   composition:
-    label: Text
     description: Text
     calendarButton: Button
-    popover: Popover
+    popover: { component: Popover, forwards: { calendarInset: inset } }
     prevMonthButton: Button
     nextMonthButton: Button
     monthSelect: { component: Select, forwards: { monthTitleSize: fontSize, monthTitleWeight: fontWeight } }
@@ -27,11 +26,11 @@ component:
     name:
       type: string
       required: true
-      description: 'Field name for the Form. The value is an ISO calendar date string (`2026-09-10`) or, for a range, `{ start, end }` of them. Never a Date object: a calendar date has no time zone.'
+      description: 'Field name for the Form. The value is an ISO calendar date string (`2026-09-10`) or, for a range, `{ start, end }` of them in `value` and `onChange`. The Form holds strings only, so a range registers two fields, `name` (start) and `name-end` (end). Never a Date object: a calendar date has no time zone.'
     value:
       type: union
       shape: 'string | { start: string; end: string }'
-      description: Controlled value (ISO date, or a range).
+      description: 'Controlled value (ISO date, or a range). Pass `''''` for a controlled empty field; `undefined` means uncontrolled. In a range the first pick is an internal draft shown only in the calendar: `value` and the inputs keep showing the old value until the end is picked, then onChange reports the range and the field returns to `value`.'
       controls:
         event: onChange
         default: defaultValue
@@ -41,7 +40,7 @@ component:
       description: Initial value.
     open:
       type: boolean
-      description: 'Controlled calendar state, for programmatic use and for stories and tests. Omit for the button-driven default.'
+      description: 'Controlled calendar state, for programmatic use and for stories and tests. Omit for the button-driven default. Every change to open, by the user or by the parent, aims the calendar at the value''s month (or today''s) and focuses the selected day (or today). Lit: a property only, not a reflected attribute, because an absent attribute cannot say controlled-closed; bind `.open`, and setting it to false keeps it controlled.'
       controls:
         event: onOpenChange
         state: open
@@ -58,10 +57,10 @@ component:
     isDateDisabled:
       type: function
       shape: '(isoDate: string) => boolean'
-      description: Disable specific days (weekends, holidays, booked). Disabled days are shown, not hidden, and are skipped by keyboard movement.
+      description: Disable specific days (weekends, holidays, booked). Disabled days are shown, not hidden, and are skipped by the Arrow keys (moving on in the same direction to the next enabled day, turning pages, and staying put when none is left before min/max); Home, End, PageUp and PageDown land on the computed day even when it is disabled. A disabled day can take focus but not be selected.
     locale:
       type: string
-      description: 'BCP 47 locale for month and weekday names, the first day of the week, and the typed format. Defaults to the document/device locale.'
+      description: 'BCP 47 locale for month and weekday names, the first day of the week, and the typed format. Defaults to `document.documentElement.lang` when set (web, lit), then the `Intl.DateTimeFormat().resolvedOptions().locale` default (the device locale on rn). The typed pattern comes from `formatToParts` with 2-digit month and day and a numeric year, so en-US is MM/DD/YYYY.'
     showWeekNumbers:
       type: boolean
       default: false
@@ -79,13 +78,13 @@ component:
     hideLabel:
       type: boolean
       default: false
-      description: 'Visually hide the label (it remains the accessible name). Only for a field whose context already names it: a DataGrid cell editor, a Search.'
+      description: 'Visually hide the label (it remains the accessible name). Only for a field whose context already names it: a DataGrid cell editor, a Search. Hidden with the visually-hidden clip pattern, so it needs no binding.'
     size:
       type: enum
       enumRef: size
       values: [sm, md]
       default: md
-      description: 'sm for fields inside grid cells and toolbars: minimum target height, tighter padding, small type.'
+      description: 'sm for fields inside grid cells and toolbars: minimum target height, tighter padding, small type (`fontSize` at font.size.sm).'
     disabled:
       type: boolean
       default: false
@@ -95,7 +94,7 @@ component:
       description: Error message; implies invalid.
   events:
     onChange:
-      description: Fired when a complete valid date (or range) is typed or picked, with the ISO value; with undefined when cleared.
+      description: 'Fired when a complete valid date (or range) is typed or picked, with the ISO value; with undefined when cleared. Every pick fires, including re-picking the day already selected; typing text that parses to the current value does not. Clear fires undefined even when the field is already empty.'
       platforms: { web: onChange, lit: change, rn: onChange, swiftui: onChange }
       payload:
         - { name: value, type: union, shape: 'string | { start: string; end: string } | undefined', description: 'The ISO date, or the ISO range with range; undefined when cleared.' }
@@ -118,7 +117,7 @@ component:
     - { keys: [End], action: Last day of the week., when: focus on a day, from: inside, expect: manual }
     - { keys: [PageUp], action: 'Same day, previous month (Shift: previous year).', when: focus on a day, from: inside, expect: manual }
     - { keys: [PageDown], action: 'Same day, next month (Shift: next year).', when: focus on a day, from: inside, expect: manual }
-    - { keys: [Tab], action: 'Cycles within the calendar: month/year controls, the grid (one tab stop, roving over days), Today, Clear.', when: open, from: inside, expect: manual }
+    - { keys: [Tab], action: 'Cycles within the calendar: previous month, month Select, year Select, next month, the grid (one tab stop, roving over days), Today, Clear, and back (Shift+Tab reverses). DatePicker traps Tab itself, because the non-modal Popover would close on Tab-out; Tab inside an open Select popup belongs to the Select. In the grid, keys held with Alt, Ctrl or Meta are ignored.', when: open, from: inside, expect: manual }
   styles:
     background: { token: color.background }
     foreground: { token: color.foreground }
@@ -128,12 +127,15 @@ component:
     borderInvalid: { token: color.border.danger }
     borderWidth: { token: border.width.thin }
     radius: { token: radius.md }
-    paddingInline: { token: space.md, by: size, values: { sm: space.2 } }
-    paddingBlock: { token: space.sm, by: size, values: { sm: space.1 } }
+    paddingInline: { token: space.md, by: size, values: { sm: space.2 }, description: 'The input''s inline padding. An override replaces the value at both sizes.' }
+    paddingBlock: { token: space.sm, by: size, values: { sm: space.1 }, description: 'The input''s block padding. An override replaces the value at both sizes.' }
+    fontSize: { token: 'font.size.{size}', description: 'The field text and the label (font.size.md at md, font.size.sm at sm); description and error use helperSize.' }
     rangeSeparatorColor: { token: color.foreground.muted, description: 'The en dash between start and end inputs.' }
-    calendarSurface: { token: color.overlay.surface, description: 'Realized by the composed Popover''s surface, which is locked, so this binding records the value the calendar lands on rather than one the Popover can be given.' }
-    calendarInset: { token: layout.inset.md }
+    calendarSurface: { token: color.overlay.surface, description: 'Not forwarded: Popover''s and BottomSheet''s surface is locked to this same token, so the composed overlay''s own surface realises it and an override has no effect.' }
+    calendarInset: { token: layout.inset.md, description: 'Forwarded to the composed Popover as `overrides.inset` (web, lit) and to the BottomSheet as `overrides.inset` (rn), so the sheet pads at this value rather than its own layout.inset.lg.' }
     calendarGap: { token: layout.gap.normal, description: 'Between header, grid and footer.' }
+    headerGap: { token: layout.gap.tight, part: header, description: 'Between the prev/next Buttons and the month and year Selects in the header row.' }
+    footerGap: { token: layout.gap.tight, part: footer, description: 'Between the Today and Clear Buttons.' }
     daySize: { token: size.target.comfortable, part: day, description: 'Every day cell is a comfortable square target.' }
     dayGap: { token: space.0, part: day, description: 'Cells touch, so a range reads as one bar; the selected day''s radius gives it shape.' }
     dayRadius: { token: radius.md, part: day }
@@ -141,12 +143,13 @@ component:
     daySelectedBackground: { token: color.control.selectedBackground, part: day }
     daySelectedForeground: { token: color.control.selectedForeground, part: day }
     dayInRangeBackground: { token: color.background.strong, part: day }
-    dayTodayBorder: { token: color.control.selectedBackground, part: day }
+    dayTodayBorder: { token: color.control.selectedBackground, part: day, description: 'The today ring. On a selected or in-range today the ring stays and the selected (or in-range) fill takes the background; while the day has focus the focus ring replaces it.' }
     dayTodayBorderWidth: { token: border.width.focus, part: day }
     dayOutsideMonthColor: { token: color.foreground.muted, part: day }
     weekdayColor: { token: color.foreground.muted }
     weekdaySize: { token: font.size.xs }
     weekdayWeight: { token: font.weight.medium }
+    weekNumberSize: { token: font.size.xs, part: weekNumber, description: 'Week-number cells, in weekdayColor at the regular weight.' }
     monthTitleSize: { token: font.size.md, description: 'Forwarded to the month and year Selects as `overrides.fontSize`.' }
     monthTitleWeight: { token: font.weight.semibold, description: 'Forwarded to the month and year Selects as `overrides.fontWeight`.' }
     partGap: { token: space.1, description: 'Between label, description, field and error.' }
@@ -160,10 +163,10 @@ component:
     errorText: { token: color.foreground.danger }
     minTarget: { token: size.target.comfortable }
     minTargetSm: { token: size.target.min, description: 'The field height floor at size sm; the calendar Button becomes size sm. The calendar popup is unchanged.' }
-    focusRing: { token: color.border.focus }
+    focusRing: { token: color.border.focus, description: 'The field''s focus-visible ring and the focused day''s ring, which replaces the today ring while that day has focus.' }
     focusRingWidth: { token: border.width.focus }
     disabledOpacity: { token: opacity.disabled }
-    transition: { token: motion.duration.fast, description: 'Day-cell hover and selection states; a month change is instant. Instant under reduced motion.' }
+    transition: { token: motion.duration.fast, description: 'Day-cell hover and selection states animate background-color, border-color and color (rn: background color only); a month change is instant. Instant under reduced motion.' }
   copy:
     open: Choose date
     openRange: Choose dates
@@ -190,7 +193,7 @@ component:
         pattern: { type: string, description: The locale's date pattern shown in the placeholder. }
     tooEarly: '{label} must be on or after {min}.'
     tooLate: '{label} must be on or before {max}.'
-    rangeOrder: 'End date must be after the start date.'
+    rangeOrder: 'End date must be on or after the start date.'
     requiredIndicator: ' (required)'
   a11y:
     role: none
@@ -217,15 +220,15 @@ component:
     web:
       element: input
       attributes: [type=text, inputmode=numeric, autocomplete=off, aria-describedby, aria-invalid, aria-required, role=grid, role=gridcell, aria-selected, aria-current=date, aria-disabled]
-      notes: 'The field is Input''s wrapper with <input type="text" inputmode="numeric"> (not type="date": its picker is unstyleable, its keyboard model differs per browser, and it cannot do ranges) parsed with the locale pattern from Intl.DateTimeFormat().formatToParts; a range shows two inputs joined by an en dash. The calendar Button (ghost, iconOnly, "calendar" Icon — add to Icon''s glyph set) opens a Popover (non-modal, placement bottom-start, composes FocusScope) containing: header with prev/next Buttons and month/year Selects; a <table role="grid" aria-labelledby> with <th scope="col" abbr> weekday headers and <td role="gridcell"> days — each a <button tabindex=-1|0> in a roving tabindex, aria-selected for selected days, aria-current="date" for today, aria-disabled for min/max/isDateDisabled; a footer with Today and Clear. Days outside the month are rendered muted and selectable. Week starts from Intl.Locale.prototype.getWeekInfo() where available, else Sunday. Selecting a day writes the formatted text into the input and fires onChange with the ISO string; typing a complete valid date moves the calendar to it.'
+      notes: 'The field is Input''s wrapper with <input type="text" inputmode="numeric"> (not type="date": its picker is unstyleable, its keyboard model differs per browser, and it cannot do ranges) parsed with the locale pattern from Intl.DateTimeFormat().formatToParts; a range shows two inputs joined by an en dash. The calendar Button (ghost, iconOnly, "calendar" Icon — add to Icon''s glyph set) opens a Popover (non-modal, placement bottom-start; its own FocusScope is the only one, DatePicker adds none and traps Tab itself; outside click closes without change, like Escape) containing: header with prev/next Buttons and month/year Selects; a <table role="grid" aria-labelledby> with <th scope="col" abbr> weekday headers and <td role="gridcell"> days — the <td> carries aria-selected (true for the selected day and, in a range, every day from start to end inclusive), and inside it a <button tabindex=-1|0> in a roving tabindex with aria-current="date" for today, aria-disabled for min/max/isDateDisabled, and aria-label = the full date from Intl.DateTimeFormat(locale, { dateStyle: "full", timeZone: "UTC" }) followed by ", {copy.todayLabel}" and/or ", {copy.selected}"; a footer with Today and Clear. With showWeekNumbers the header row starts with <th scope="col" abbr={copy.weekNumber}> holding visually hidden copy.weekNumber, and each row starts with <th scope="row" data-part="weekNumber"> (not focusable, not a gridcell). Days outside the month are rendered muted and selectable. Composed parts (calendarButton, prevMonthButton, nextMonthButton, monthSelect, yearSelect, todayButton, clearButton) carry their data-part on a <span> wrapper DatePicker owns, because Button and Select write their own data-part on their root; tests act on the control inside the wrapper. The Popover panel is portaled out of the root, so DatePicker declares the --ds-date-picker-* hook defaults and writes any overrides on the calendar content wrapper (data-part="popover" content) as well as on the root. Form: FormContext holds no objects, so a single date registers `name` with the ISO string and a range registers two string fields, `name` (start ISO) and `name-end` (end ISO); a disabled field submits nothing. Week starts from Intl.Locale.prototype.getWeekInfo() where available, else Sunday. Selecting a day writes the formatted text into the input and fires onChange with the ISO string; typing a complete valid date moves the calendar to it.'
     lit:
       tag: ds-date-picker
-      reflect: [range, required, disabled, show-week-numbers, locale, size, open]
-      notes: 'Form-associated: setFormValue with the ISO string (two entries for a range, name and name-end). Implements DsFormField. Calendar in a <ds-popover> in the shadow root; grid as above. Composed `change` and `open-change`.'
+      reflect: [range, required, disabled, show-week-numbers, locale, size]
+      notes: 'Form-associated: setFormValue with the ISO string (a FormData with two entries for a range, name and name-end). Implements DsFormField for `name` (the start ISO string, or null until complete), and a range adds a second DsFormField entry for `name-end` (the end ISO string) that always validates clean; `name` reports the combined message. Calendar in a <ds-popover> in the shadow root; grid, week numbers, day labels and aria-selected placement as in web. Ids do not cross shadow roots, so the native <label for>, aria-describedby, aria-labelledby and the grid label all point at elements inside the same shadow root, and aria-invalid sits on the input(s). The month and year ds-selects live inside the shadow root, so ds-form never discovers them; they carry name="month" and name="year" only to satisfy ds-select. `open` is a property, not reflected (see the prop). The composed ds-popover focuses its first focusable on open, so DatePicker moves focus to the selected day (or today) after the popover has opened, and asks the popover to reposition once the grid has laid out. Composed `change` and `open-change`.'
     rn:
       element: TextInput
       props: [keyboardType=number-pad, accessibilityLabel, accessibilityHint]
-      notes: 'No core date picker on RN, so the same calendar grid renders in a BottomSheet (height content) opened by the calendar Button; each day a Pressable with accessibilityRole="button", accessibilityState={{ selected, disabled }}, accessibilityLabel from the full formatted date plus "today"/"selected". The header month is announced on change. Typing is supported in the TextInput with the locale pattern. The community datetimepicker is deliberately not used (decision 2026-09-10: react-native-svg is the only native dependency) because it cannot take tokens, so the calendar stays the system''s own grid on every platform. Native has no grid or gridcell role and no key events on Pressable, so there is no roving tabindex and no arrow, Page, Home or End handling: every day is its own focus stop reached by swipe, and the prev/next month Buttons stand in for PageUp/PageDown. `TextInputKeyPressEventData` carries no modifier flags, so Alt+ArrowDown is indistinguishable from ArrowDown and both simply open the calendar. Focus on open lands on the sheet''s first focusable element rather than the selected day, and focus on close returns through BottomSheet''s own FocusScope, since Button exposes no node handle to focus by hand. `calendarSurface` is the BottomSheet''s own locked surface here, not a value this component forwards.'
+      notes: 'No core date picker on RN, so the same calendar grid renders in a BottomSheet (height content) opened by the calendar Button; each day a Pressable with accessibilityRole="button", accessibilityState={{ selected, disabled }}, accessibilityLabel from the full formatted date plus "today"/"selected". The header month is announced on change. Typing is supported in the TextInput with the locale pattern. The community datetimepicker is deliberately not used (decision 2026-09-10: react-native-svg is the only native dependency) because it cannot take tokens, so the calendar stays the system''s own grid on every platform. Native has no grid or gridcell role and no key events on Pressable, so there is no roving tabindex and no arrow, Page, Home or End handling: every day is its own focus stop reached by swipe, and the prev/next month Buttons stand in for PageUp/PageDown. `TextInputKeyPressEventData` carries no modifier flags, so Alt+ArrowDown is indistinguishable from ArrowDown and both simply open the calendar. Focus on open lands on the sheet''s first focusable element rather than the selected day, and focus on close returns through BottomSheet''s own FocusScope, since Button exposes no node handle to focus by hand. The popover part is the BottomSheet here, and `calendarSurface`/`calendarInset` are forwarded to its `surface`/`inset` overrides. The sheet''s `title` is `label`; `copy.gridLabel` is the accessibilityLabel of the grid View and is announced (AccessibilityInfo) when the month changes. The label is a Text, since RN has no <label>. RN has no invalid state: the error text is appended to the input''s accessibilityHint after the description, and is also rendered in an assertive live region (accessibilityLiveRegion="assertive", with an announcement on iOS) when it appears. Button and Select take no testID, so composed parts (calendarButton, prevMonthButton, nextMonthButton, monthSelect, yearSelect, todayButton, clearButton) and label, description and popover are each wrapped in a View DatePicker owns with testID="DatePicker.<part>"; the footer is one row View (testID="DatePicker.footer", spaced by footerGap) passed as the BottomSheet footer''s single child. Week-number cells are Text with accessibilityLabel "{copy.weekNumber} {n}".'
     swiftui:
       element: TextField
       props: [TextField, .keyboardType=numbersAndPunctuation, Button, .sheet, .popover, Grid, .accessibilityAddTraits=isSelected, .accessibilityValue, .onMoveCommand, '@FocusState', DateFormatter, Calendar]
@@ -301,7 +304,7 @@ Do not use it for a date-and-time (a DateTimePicker is planned; until then, pair
 
 ## Behavior
 
-Typing parses the locale pattern leniently (separators optional, two-digit years refused) and fires `onChange` once the date is complete and valid; the calendar, when open, follows the typed date. The calendar opens from its button or ArrowDown in the input on the selected month (or today's), with focus on the selected day (or today). Arrow keys move by day and week, PageUp/Down by month (with Shift, by year), Home/End to the week's ends; moving past the month's edge turns the page. Enter or click selects: for a single date it closes and returns focus to the calendar button; for a range the first pick sets the start (clearing any old range), the second sets the end and closes, and picking before the start restarts. Today and Clear act immediately. Escape closes without changes. Validation follows Input's precedence plus `tooEarly`, `tooLate` and `rangeOrder`. The month and year Selects are `hideLabel` and `size: sm`. The year Select spans the `min`/`max` years when given, else the current year − 100 to + 10. `onChange` fires only for a complete value (a date, or both ends of a range) and on Clear; a partial range or partial typed date changes nothing. In a range, Today acts like clicking today's cell and Clear wipes both ends; reopening focuses the start date's cell (the end's when opened from the end input). Validation order: `error`, `required`, unparseable (`copy.invalid`), `tooEarly`, `tooLate`, `rangeOrder` — there is no `invalid` prop on this field, so nothing sits between `error` and `required`; the `{min}`/`{max}` placeholders are formatted with the locale, not ISO. A range registers two Form fields, `name` and `name-end`, and only `name` reports the combined message — `name-end` always validates clean, since one message must not be read twice. Typed text that parses to a real date commits even when it falls outside `min`/`max` or on an `isDateDisabled` day: the range bounds then surface as `tooEarly`/`tooLate`, and a disabled day typed directly is accepted, because the field has no message for it. The month and year Selects inside the calendar are internal controls, not fields: render them outside the enclosing form's field context so they never register with a Form. The label is a native `<label for>`. The week-number column shows the ISO week of the row's first visible day.
+Typing parses the locale pattern leniently (separators optional, two-digit years refused) and fires `onChange` once the date is complete and valid; the calendar, when open, follows the typed date. The calendar opens from its button or ArrowDown in the input on the selected month (or today's), with focus on the selected day (or today). Arrow keys move by day and week, PageUp/Down by month (with Shift, by year), Home/End to the week's ends; moving past the month's edge turns the page. Enter or click selects: for a single date it closes and returns focus to the calendar button; for a range the first pick sets the start (clearing any old range), the second sets the end and closes, and picking before the start restarts; picking the start day again as the end makes a one-day range. The first range pick is pending: it shows only in the calendar, the inputs, `value` and `onChange` are untouched until the second pick, and closing discards it. Today and Clear act immediately. Clear empties the value (both ends in a range), fires `onChange(undefined)` even when already empty, and leaves the calendar open with focus on Clear. Today acts exactly like picking today's cell (so it closes for a single date) and is disabled (aria-disabled on web/lit, accessibilityState disabled on rn) when today is before `min`, after `max` or `isDateDisabled(today)`. Escape closes without changes. Validation follows Input's precedence plus `tooEarly`, `tooLate` and `rangeOrder`. The month and year Selects are `hideLabel` and `size: sm`. The year Select spans from the `min` year (else the current year − 100) to the `max` year (else the current year + 10), each bound falling back on its own, and is always widened to include the displayed year so the controlled Select has a matching option. `onChange` fires only for a complete value (a date, or both ends of a range) and on Clear; a partial range or partial typed date changes nothing. In a range, Today acts like clicking today's cell and Clear wipes both ends; reopening focuses the start date's cell (the end's when opened from the end input). Validation order: `error`; `required` only when every input is empty; unparseable (`copy.invalid`) when any non-empty input does not parse; `required` for a range with one end empty (without `required`, a partial range reports nothing); `tooEarly`, `tooLate`, `rangeOrder` (only end before start; end equal to start is valid) — there is no `invalid` prop on this field. `valueType: date-range` covers a single date too, and the `range` validation reports through `copy.tooEarly`, `copy.tooLate` and `copy.rangeOrder`. The `{min}`/`{max}` placeholders are the dates in the input's own numeric locale pattern (the placeholder's format), not ISO. A range registers two Form fields, `name` and `name-end`, and only `name` reports the combined message — `name-end` always validates clean, since one message must not be read twice. Typed text that parses to a real date commits even when it falls outside `min`/`max` or on an `isDateDisabled` day: the range bounds then surface as `tooEarly`/`tooLate`, and a disabled day typed directly is accepted, because the field has no message for it. The month and year Selects inside the calendar are internal controls, not fields: render them outside the enclosing form's field context so they never register with a Form. The label is a native `<label for>` on web and lit (not a Text; rn uses a Text), and the input — a textbox — carries the accessible name and, on web and lit, `aria-invalid`; the root has role none. The week-number column shows the ISO week of the row's first visible day. In a range every day from start to end is selected (aria-selected, and `copy.selected` in its label), but only the two ends get the selected fill; days between get `dayInRangeBackground`.
 
 ## Content guidelines
 
@@ -314,13 +317,13 @@ The input is labelled and described like Input (WCAG 1.3.1, 3.3.2), and typing i
 ## Platform notes
 
 ### Web
-Render Input's wrapper (label, description, field, error) with the text input(s), the `Button variant="ghost" iconOnly` calendar trigger (label from copy), and `Popover placement="bottom-start"` whose panel contains the header (`Button`s prev/next with chevron Icons; `Select`s for month and year, `size: sm`), `<table role="grid" aria-labelledby={gridLabelId}>` with `<thead>` of `<th scope="col" abbr={fullName}>` and `<tbody>` rows of `<td role="gridcell">` each containing a `<button>` with `tabIndex` roving, `aria-selected`, `aria-current="date"`, `aria-disabled`, `aria-label={fullDate + status}`, and a footer `Stack` with Today and Clear `Button`s (`ghost`, `sm`). Keydown on the grid implements the table, moving the roving index and changing month when needed; focus follows. Dates are computed with plain `Date.UTC` arithmetic on `YYYY-MM-DD` parts; never `new Date(string)`.
+Render Input's wrapper (label, description, field, error) with the text input(s), the `Button variant="ghost" iconOnly` calendar trigger (label from copy), and `Popover placement="bottom-start"` whose panel contains the header (`Button`s prev/next with chevron Icons; `Select`s for month and year, `size: sm`), `<table role="grid" aria-labelledby={gridLabelId}>` with `<thead>` of `<th scope="col" abbr={fullName}>` and `<tbody>` rows of `<td role="gridcell">` (carrying `aria-selected`) each containing a `<button>` with `tabIndex` roving, `aria-current="date"`, `aria-disabled`, `aria-label={fullDate + status}`, and a footer `Stack` with Today and Clear `Button`s (`ghost`, `sm`). Keydown on the grid implements the table, moving the roving index and changing month when needed; focus follows. Dates are computed with plain `Date.UTC` arithmetic on `YYYY-MM-DD` parts; never `new Date(string)`.
 
 ### Lit
 `<ds-date-picker label="Due date" name="due" min="2026-01-01"></ds-date-picker>`; form-associated with ISO value; shadow `<ds-popover>` and grid; `DsFormField`; composed `change`, `open-change`.
 
 ### React Native
-`TextInput` with the locale pattern and `keyboardType="number-pad"`, the calendar `Button`, and a `BottomSheet` (`height="content"`, `title={label}`) holding the same header, a 7-column grid of `Pressable` days (`daySize` squares), and the footer. Form registration as Input, returning the ISO string or `{ start, end }`.
+`TextInput` with the locale pattern and `keyboardType="number-pad"`, the calendar `Button`, and a `BottomSheet` (`height="content"`, `title={label}`) holding the same header, a 7-column grid of `Pressable` days (`daySize` squares), and the footer. Form registration as Input with string values only: the ISO string for a single date; for a range two fields, `name` (start ISO) and `name-end` (end ISO), with `name` reporting the combined message.
 
 ## Related
 

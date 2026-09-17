@@ -73,6 +73,8 @@ component:
   composition:
     label:
       component: Text
+      props:
+        element: span
       forwards:
         labelWeight: fontWeight
         fontSize: fontSize
@@ -133,9 +135,11 @@ component:
       type: string
       description: 'URL to submit to with GET (web and Lit); when omitted, `onSubmit`
         handles it and nothing navigates. The URL carries the same trimmed query `onSubmit`
-        receives (the field value is trimmed before the native submit). Ignored, with
-        a development warning, when Search sits inside a Form component: the enclosing
-        Form owns submission.'
+        receives (the field value is trimmed before the native submit): the visible
+        input carries no `name`; a hidden input named `name` is set to the trimmed
+        query (the controlled value or chosen label, never stale DOM text) in the
+        submit handler. Ignored, with a development warning, when Search sits inside
+        a Form component: the enclosing Form owns submission.'
     suggestions:
       type: array
       shape: '{ value: string; label: string; description?: string }[]'
@@ -150,12 +154,17 @@ component:
         gets `label` = Search''s `label`, `embedded`, `value: ""` (no persistent selection
         after a choice), the suggestions as options and, while empty, `emptyMessage`
         = `copy.noSuggestions` (or `copy.loading` while `loading`); Listbox''s own
-        `loading` prop is never used. The list opens on typing (while `suggestions`
-        is set) and on ArrowDown — never on focus alone, and a `suggestions` array
-        arriving while the field is focused but untouched does not open it. It closes
-        on Escape, Tab or blur, a pointer press outside the field and list, a chosen
-        suggestion, clear, and submit. ArrowDown on the last suggestion stays there
-        (no wrap), as ArrowUp never wraps.'
+        `loading` prop is never used. Wiring props the combobox pattern needs are
+        passed too and are not part of that list: an `id` for aria-controls and option
+        ids, `selectionFollowsFocus: false` so a highlight never selects, `onChange`/`onActiveChange`,
+        and a key that remounts it to clear the highlight; `labelledBy` is not used.
+        The list opens on typing (while `suggestions` is set) and on ArrowDown — never
+        on focus alone, and a `suggestions` array arriving while the field is focused
+        but untouched does not open it. It closes on Escape, Tab or blur to an element
+        outside Search (a blur with no new focus target, such as a window switch,
+        does not close it), a pointer press outside the field and list, a chosen suggestion,
+        clear, and submit. ArrowDown on the last suggestion stays there (no wrap),
+        as ArrowUp never wraps.'
     loading:
       type: boolean
       default: false
@@ -182,10 +191,13 @@ component:
       type: boolean
       default: false
       description: 'Not editable, still readable and focusable: the input is read-only
-        with aria-disabled (accessibilityState disabled on native), both Buttons are
-        disabled, every key in the keyboard table is inert, suggestions never open,
-        no event fires, the whole component dims to `disabledOpacity`, and a disabled
-        Search is not registered with (or submitted by) a Form.'
+        with aria-disabled (on native `editable={false}` with accessibilityState disabled,
+        which as Input is not focusable on iOS), both Buttons are disabled (the clear
+        Button still renders when there is text), every key in the keyboard table
+        is inert, suggestions never open and an open list closes, no event fires,
+        the component dims to `disabledOpacity`, and a disabled Search is not registered
+        with (or submitted by) a Form — on Lit ds-form skips it as disabled and it
+        sends setFormValue(null).'
   events:
     onChange:
       description: 'Fired on every keystroke with the query; the caller fetches suggestions
@@ -236,7 +248,8 @@ component:
     expect: manual
   - keys:
     - Escape
-    action: Closes suggestions if open; otherwise clears the field.
+    action: Closes suggestions if open; otherwise clears the field. On an already-empty
+      field with no list open it does nothing and fires no onClear.
     from: first
     expect: manual
   - keys:
@@ -317,6 +330,8 @@ component:
     suggestionsOffset:
       token: space.1
       part: suggestions
+      description: Gap between the field and the popup, applied as the fixed popup's
+        block margin on the side facing the field, as Combobox and Select.
       locked: false
     popupSurface:
       token: color.overlay.surface
@@ -348,7 +363,10 @@ component:
       part: label
       description: Forwarded to the label Text's own `fontWeight` override; the label's
         size follows `fontSize`, forwarded as its `fontSize` override, so a shown
-        label tracks `size` as Input's does.
+        label tracks `size` as Input's does. Both forwards always carry the binding's
+        token (`font.size.{size}` when not overridden). Forwarded bindings (this,
+        fontSize to the label, iconColor) reach the child only through its `overrides`;
+        they have no --ds-search-* CSS hook.
       locked: false
     minTarget:
       token: size.target.comfortable
@@ -362,6 +380,10 @@ component:
       locked: true
     disabledOpacity:
       token: opacity.disabled
+      description: Applied to the label, glyph and input of a disabled Search, not
+        to an element containing the Buttons, which receive `disabled` and dim once
+        through their own style (as NumberInput's steppers). The field frame (border,
+        background) is not dimmed.
       locked: false
   constants:
     statusDebounce:
@@ -369,7 +391,11 @@ component:
         wait before the live region updates (or, on native, before announcing), so
         the count settles while the caller refetches. Not motion: computed from the
         theme''s standard `motion.duration.base` value, never from a reduced-motion
-        override that zeroes the token.'
+        override that zeroes the token. Web and Lit read the computed `--motion-duration-base`
+        (token stylesheets never zero it; reduced motion is handled in component CSS),
+        and update at once when it cannot be read (no theme loaded, jsdom); React
+        Native reads the theme token, which is never zeroed (reduced motion is the
+        separate useReducedMotion), as Combobox.'
       token: motion.duration.base
       multiply: 2
       unit: ms
@@ -473,7 +499,12 @@ component:
         and never nests in a light-DOM form, but inside <ds-form> `action` is still
         ignored, as on web. For ds-form discovery the element exposes `required` (always
         false), `validationMessage` (always "") and `checkValidity()` (always true),
-        and submits the trimmed query with setFormValue.
+        and submits the trimmed query with setFormValue; `reportValidity()` is also
+        always true, and formResetCallback restores `defaultValue` without firing
+        `change` or `clear`. The label is a `<label for>` wrapping `<ds-text element="span">`;
+        data-part="label" goes on the ds-text and the visually-hidden class on the
+        `<label>`. Inside-a-Form detection walks up the composed tree (crossing shadow
+        roots through getRootNode().host) for a ds-form, not closest() alone.
     rn:
       element: TextInput
       props:
@@ -489,23 +520,29 @@ component:
         onChange/onSubmit prop names are not kept. Suggestions render as a Listbox
         below the field in a View (no overlay: on a phone the list takes the space
         under the field), opened by typing while the field has focus and `suggestions`
-        is set, and closed on blur — except while a touch or pointer press is in progress
-        inside the list (react-native-web blurs the input on pointerdown), after which
-        it closes if focus did not return. keyboardShouldPersistTaps="handled" belongs
-        on the caller''s ScrollView; Search has none of its own. accessibilityRole="search"
-        goes on the container View only when `landmark` is on (that View is both the
-        `landmark` and `form` part; native has no form element), never on the TextInput,
-        which on react-native-web would become a second search landmark. The label
-        Text, when shown, is hidden from accessibility because the TextInput already
-        carries accessibilityLabel. There is no visually-hidden primitive, so the
-        count, loading and no-suggestions announcements have no element: they go through
-        AccessibilityInfo.announceForAccessibility after `statusDebounce`. Escape
-        arrives only from a hardware keyboard (or react-native-web) through onKeyPress;
-        the clear Button is the accessible path. `name` and `action` are a URL query
-        key and a GET target — neither exists on native — so both are accepted for
-        parity and do nothing, and `action` warns in development. Listbox rows are
-        touch Pressables with no key events, so there is no arrow-key highlight: a
-        tap chooses a suggestion and Enter always submits the typed query.'
+        is set, or by ArrowDown from a hardware keyboard or react-native-web (onKeyPress;
+        no row is highlighted), and closed on blur — except while a touch or pointer
+        press is in progress inside the list (react-native-web blurs the input on
+        pointerdown), after which it closes if focus did not return. A press lasts
+        from touch start or pointerdown until its release plus one tick; a long press
+        or a scroll inside the list counts as in progress. The clear and submit Buttons
+        take `leadingIcon` as an `<Icon>` element at the Icon''s default size coloured
+        with the ghost Button''s foreground (color.action.ghost.foreground), as Dialog
+        does; the leading glyph takes iconColor through its `overrides.color`, not
+        the `color` prop. keyboardShouldPersistTaps="handled" belongs on the caller''s
+        ScrollView; Search has none of its own. accessibilityRole="search" goes on
+        the container View only when `landmark` is on (that View is both the `landmark`
+        and `form` part; native has no form element), never on the TextInput, which
+        on react-native-web would become a second search landmark. The label Text,
+        when shown, is hidden from accessibility because the TextInput already carries
+        accessibilityLabel. There is no visually-hidden primitive, so the count, loading
+        and no-suggestions announcements have no element: they go through AccessibilityInfo.announceForAccessibility
+        after `statusDebounce`. Escape arrives only from a hardware keyboard (or react-native-web)
+        through onKeyPress; the clear Button is the accessible path. `name` and `action`
+        are a URL query key and a GET target — neither exists on native — so both
+        are accepted for parity and do nothing, and `action` warns in development.
+        Listbox rows are touch Pressables with no key events, so there is no arrow-key
+        highlight: a tap chooses a suggestion and Enter always submits the typed query.'
     swiftui:
       element: TextField
       props:
@@ -644,7 +681,7 @@ component:
 
 - `landmark`: element
 - `form`: element
-- `label`: component `Text`; forwards `labelWeight` → `overrides.fontWeight`, `fontSize` → `overrides.fontSize`
+- `label`: component `Text`; props `element` = "span"; forwards `labelWeight` → `overrides.fontWeight`, `fontSize` → `overrides.fontSize`
 - `field`: element
 - `icon`: component `Icon`; forwards `iconColor` → `overrides.color`
 - `input`: element
@@ -852,7 +889,7 @@ Do not use Search for a field that takes a specific value (an order number: Inpu
 
 ## Behavior
 
-Typing fires `onChange`; the clear button appears when there is text and empties the field, returns focus to it and fires `onClear`. Enter or the submit button fires `onSubmit` with the trimmed query (and navigates to `action` on web when set, carrying the same trimmed query). With suggestions, typing or ArrowDown opens the list (focus alone does not) and ArrowDown moves the highlight, stopping at the last, while focus stays in the input; Enter fills and submits the highlighted suggestion's `label`, exactly as clicking it does; Escape closes the list first, then clears. `loading` shows nothing visually until suggestions arrive but is announced. The field never submits an empty query. Choosing a suggestion fills the query with its `label` (the display text). With `action`, submission is a native GET form submit (Enter, the submit button and a chosen suggestion all submit the same form), never a scripted navigation. The submit button is always rendered. Suggestions mode starts when the `suggestions` prop is set at all (an empty array shows the empty/loading row). `onClear` fires for the clear button and for an Escape that empties the field. ArrowUp with no highlight is a no-op. Clearing fires `onChange("")` then `onClear`; choosing a suggestion fires `onChange(label)` then `onSubmit`. A disabled Search is readable and focusable but inert. The landmark is `role="search"` on Search's own root element (not a composed Landmark), needing no name beyond the field's label; the popup bindings style the wrapper and the Listbox is `embedded`.
+Typing fires `onChange`; the clear button appears when there is text and empties the field, returns focus to it and fires `onClear`. Enter or the submit button fires `onSubmit` with the trimmed query (and navigates to `action` on web when set, carrying the same trimmed query). With suggestions, typing or ArrowDown opens the list (focus alone does not) and ArrowDown moves the highlight, stopping at the last, while focus stays in the input; Enter fills and submits the highlighted suggestion's `label`, exactly as clicking it does; Escape closes the list first, then clears. `loading` is announced, and while the list is open with no options its empty row shows `copy.loading`. The Keyboard story renders the closed field with a query and suggestions (there is no `open` prop, and focus alone never opens the list); the first ArrowDown in it opens the list. The field never submits an empty query. Choosing a suggestion fills the query with its `label` (the display text). With `action`, submission is a native GET form submit (Enter, the submit button and a chosen suggestion all submit the same form), never a scripted navigation. The submit button is always rendered. Suggestions mode starts when the `suggestions` prop is set at all (an empty array shows the empty/loading row). `onClear` fires for the clear button and for an Escape that empties the field. ArrowUp with no highlight is a no-op. Clearing fires `onChange("")` then `onClear`; choosing a suggestion fires `onChange(label)` then `onSubmit`. A disabled Search is readable and focusable but inert. The landmark is `role="search"` on Search's own root element (not a composed Landmark), needing no name beyond the field's label; the popup bindings style the wrapper and the Listbox is `embedded`.
 
 ## Content guidelines
 

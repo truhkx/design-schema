@@ -1,6 +1,6 @@
-# Gap digest — phase Selection
+# Gap digest — phase Numeric
 
-Generated 2026-09-17T12:06 by tools/gap_digest.ts. DOC lines belong in the named doc; fold them, run `pnpm parse`, and the affected targets become stale by prompt hash.
+Generated 2026-09-17T13:08 by tools/gap_digest.ts. DOC lines belong in the named doc; fold them, run `pnpm parse`, and the affected targets become stale by prompt hash.
 
 ## Accordion
 
@@ -1971,6 +1971,48 @@ Doc: `site/src/content/docs/components/datagrid.md`
 ## DatePicker
 
 Doc: `site/src/content/docs/components/datepicker.md`
+
+### 2026-09-17 13:08 — rn round 1
+
+- **DOC** DatePicker: rn notes say `calendarSurface` is forwarded to BottomSheet's `surface` override, but the binding is locked, its description says it is not forwarded, and BottomSheet locks `surface` (it is not in BottomSheetOverridableBinding); only `calendarInset` → `overrides.inset` is forwarded. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: rn notes say the sheet's `title` is `label`, but BottomSheet's prop is `heading`; used `heading={label}`. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: rn notes say week-number cells are Text with accessibilityLabel "{copy.weekNumber} {n}", but the package Text accepts no accessibilityLabel; the label sits on the wrapping `accessible` View (testID DatePicker.weekNumber). → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: the week-number header cell has no rn rule (web uses visually hidden copy.weekNumber); rendered the visible muted "Week" text at weekdaySize. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: `dayTodayBorder` and `daySelectedBackground` are the same token, so the today ring the doc keeps on a selected today is invisible against the selected fill; implemented as written. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: `fontSize` says it styles 'the field text and the label', but its token is font.size.{size} with no per-size rule for the label; the label now takes Text size={size} plus the fontSize override. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: 'Clear leaves the calendar open with focus on Clear' and 'reopening focuses the start date's cell (the end's when opened from the end input)' can't be done on rn (Button exposes no node handle, and focus on open lands on the sheet's first focusable); only the displayed month follows start/end. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: the ISO week number is computed with UTC Date arithmetic rather than the locale's calendar (SwiftUI uses Calendar.current), so rows in locales whose week starts on Sunday show the ISO week of that Sunday, per 'the row's first visible day'. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: `hideLabel` asks for the visually-hidden clip pattern; RN has none, so the label Text isn't rendered and the input's accessibilityLabel still carries the name. → `site/src/content/docs/components/datepicker.md`
+
+### 2026-09-17 13:05 — lit round 1
+
+- **DOC** DatePicker: form.discovery is 'context' and the lit notes say a range adds a second DsFormField entry for `name-end`, but ds-form only collects light-DOM descendants carrying data-ds-field, so one element cannot register two entries. Chose a hidden light-DOM child <ds-date-picker-end-field data-ds-field> that the picker appends while `range` is on; it reads name-end, the end ISO, required and disabled from the picker, always validates clean, and focus() moves to the end input. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: `helperSize` says the description and error use it, but the Parts section gives the `description` Text no forwards ('add no other'), so helperSize cannot reach the composed Text. The description is ds-text size=sm tone=muted with no overrides; helperSize styles only the errorMessage element. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: the digest says error text is Text, but the anatomy composition makes `errorMessage` an element. Chose a native <p data-part=errorMessage role=alert> styled from errorText and helperSize. role=alert is not specified anywhere. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: the Today button must be aria-disabled when today cannot be picked, but ds-button has no aria-disabled (focusable-while-disabled) mode. Used the `disabled` property, which also takes it out of the Tab cycle. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: the web note puts the composed parts' data-part on a <span> wrapper. The lit notes do not say, and in lit ds-button and ds-select write no data-part on their host, while ds-popover's trigger slot needs the button itself (it listens for click on, focuses and sets `expanded` on the slotted element). Chose data-part on the ds-button and ds-select hosts, with no wrapper. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: 'asks the popover to reposition once the grid has laid out', but ds-popover has no public reposition method. Dispatched a non-bubbling `scroll` Event on the host, which ds-popover's capture-phase window scroll listener picks up. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: isDateDisabled says Arrow keys stay put 'when none is left before min/max' but says nothing when there is no min or max. Capped the search at ten years (3660 days), after which focus stays put. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: tooEarly and tooLate do not say which end of a range they check. Chose either end below min (tooEarly) or above max (tooLate), checked only once the value is complete. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: the weekNumber part says 'weekdayColor at the regular weight' and names no weight binding. Used font.weight.regular directly. The header week cell (<th scope=col abbr>) carries no data-part, since the web note gives data-part=weekNumber only to the row cells. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: the Tab key rule says Tab inside an open Select popup belongs to the Select, but ds-select closes its popup on Tab before the event bubbles up, so the picker cannot tell it was open. Chose to never trap Tab whose path includes a ds-select; the Selects are never the first or last stop, so the cycle is unaffected. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: the keyboard model does not say what ArrowDown in the input does while the calendar is already open. Chose to move focus to the selected day (the draft start, else the value, else today). → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: the Keyboard story must render the calendar open, but there is no defaultOpen prop, and a controlled `open: true` would stop Escape from closing it (the rule expects closes then focus-trigger). Kept the story uncontrolled and opened it by clicking the calendar button in `play`. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: a controlled `value` says the element shows the new state only once the property changes, but not what happens to text typed into the input. Chose that when a typed date commits and the parent does not update `value`, the input text reverts to the formatted `value`. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: `requiredIndicator` copy does not say where it goes. Appended it to the visible label text when `required`, so it is also part of the input's accessible name. → `site/src/content/docs/components/datepicker.md`
+
+### 2026-09-17 12:58 — web round 1
+
+- **DOC** DatePicker: the web guidance says the footer is a `Stack` with Today and Clear, but the `footerGap` binding styles the footer part itself and no forward to Stack's `gap` is declared; I dropped the Stack and gave the footer div `gap: var(--ds-date-picker-footer-gap)`. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: `open` says every change to it aims the calendar at 'the value's month', but guidance also says 'typing a complete valid date moves the calendar to it'. A range with only one end typed has no value, so which month opens is undefined; I use the committed value (the end when ArrowDown comes from the end input), else today, and ignore uncommitted typed text. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: 'reopening focuses the end's cell when opened from the end input' is only defined for ArrowDown; I track only ArrowDown in the end input, so clicking the calendar button after focusing the end input opens on the start. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: the Arrow keys 'stay put when none is left before min/max', but with no min/max and an `isDateDisabled` that disables every day there is no stopping rule; I stop searching after 3660 days (about ten years) and stay put. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: `dayTodayBorder` and `daySelectedBackground` are the same token (`color.control.selectedBackground`), so on a selected today the ring the doc says 'stays' can't be seen against the fill; I kept the ring and noted that it has no visible effect. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: `weekNumberSize` says 'at the regular weight', but there is no binding for that weight; I used `var(--font-weight-regular)` directly (not overridable). → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: the `transition` binding lists `border-color`, but no day state changes a border (today is an inset ring); I added `border-color` to the transition list anyway, where it has no effect. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: the Escape keyboard rule expects 'closes, then focus-trigger', which a story with a fixed `open: true` can never show; I made the Keyboard story keep `open` in state and follow onOpenChange (as Select and Combobox do). The doc doesn't say a controlled-open Keyboard story needs this. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: `value: ''` is 'a controlled empty field', but the doc doesn't say what `{ start: '', end: '' }` means; I treat an empty start or end as missing. → `site/src/content/docs/components/datepicker.md`
+- **DOC** DatePicker: the doc doesn't say whether picking the day that's already selected, or Clear on a controlled field, should rewrite text the user typed and left unparsed; I rewrite the inputs from the (unchanged) value in that case, and otherwise wait for the controlled prop to change. → `site/src/content/docs/components/datepicker.md`
 
 ### 2026-09-16 10:25 — rn round 1
 
@@ -4010,6 +4052,39 @@ Doc: `site/src/content/docs/components/meter.md`
 
 Doc: `site/src/content/docs/components/numberinput.md`
 
+### 2026-09-17 12:31 — rn round 1
+
+- **DOC** NumberInput: keyboard says Enter 'inside a Form, submits', but Input on RN moves to the next field ('next') and submits only from the last one. I followed the spec (Enter always calls form.submit(), returnKeyType 'done'); the doc should say whether RN keeps Input's next-field chain. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: the label, errorMessage and prefix/suffix parts have style bindings (labelWeight, errorText, affixColor, helperSize) but no composition entry, while the Guidance says the label is 'not a Text' only for web/Lit. I drew them with core react-native Text from the component's own bindings and composed the system Text only for description; the doc should say whether RN label/error compose Text. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: disabledOpacity lists label, description, input and affix parts but not errorMessage or the field border/background. I left the error and the field frame undimmed; say so explicitly. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: paddingInline/stepperDividerWidth are described as inline-start/inline-end. I used paddingStart/paddingEnd and borderStartWidth/borderStartColor (RTL-aware). With steppers shown the inline-end padding is 0, so a trailingText suffix sits flush against the divider; the doc doesn't say whether the suffix should keep a gap there. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: after committing text with no digits ("-"), the doc says the display re-formats on blur, and an undefined value formats as empty. So the field goes blank while copy.invalid is shown, with nothing left to show what was invalid. I followed the doc; it should say whether the invalid text stays visible. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: `invalid: true` without `error` is listed in validation precedence as copy.invalid, but the doc doesn't say whether that message is shown in errorMessage outside a Form. I show it only through Form validation (border marks invalid), as Input does, and show committed non-numeric text and clamp messages in errorMessage. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: the controlled-display rule covers the prop changing 'to a number'. The doc says nothing about a controlled change to null while the user is typing. I keep the typed text in that case. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: the doc doesn't say whether a Home/End jump to a bound fires onChange when already at it, or whether it clears a clamp message. I treat it as a step (clears messages, fires only on change). → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: accessibilityValue.now is passed the raw number, which may be fractional (19.99); RN's accessibilityValue documents now/min/max as integers on Android. The doc should say whether to round now/min/max or omit them for fractional values and rely on text. → `site/src/content/docs/components/numberinput.md`
+
+### 2026-09-17 12:28 — lit round 1
+
+- **DOC** NumberInput: the validation order puts copy.required ('{label} is required.') before invalid and range, but never says when it becomes visible. Showing it on first render would put an error on every empty required field, so the element reports it through validity/validationMessage at once and only draws it in the errorMessage part once error/invalid/a clamp applies or a Form reports it. The doc should say whether required shows on blur, on submit, or immediately. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: the order includes 'a Form-supplied error', but Lit's DsFormField has no separate channel for one, so a ds-form error arrives through the `error` property and cannot rank below the component's own `error` prop. Treated as the same slot. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: the disabledOpacity binding lists label, description, input and affix, but not the bordered field part (background and border) or errorMessage. Left them undimmed as written; the doc should confirm. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: stepperDividerWidth describes the line as 'the inline-start border of the element wrapping both stepper Buttons', while stepperGap sits between the two Buttons. With the default layout.gap.none, nothing separates the two steppers. Rendered as written. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: a disabled field keeps its input focusable as readonly with aria-disabled, rather than natively disabled, so 'still readable' holds for keyboard and screen-reader users. The doc says 'Not editable, still readable' without saying whether the input stays focusable. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: the keyboard section asks for a Keyboard story with at least three focusable children, but NumberInput is a single tab stop and its steppers are tabindex -1. The Keyboard story renders just the one field with bounds (min 0, max 20) so Home and End can be tried. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: `hideLabel` is not in platforms.lit.reflect and its attribute name is not given. Used `hide-label`, not reflected. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: no attribute names are given for camelCase props. Used default-value, leading-text, trailing-text and hide-steppers, and made `value` property-only because it is typed number | null | undefined. → `site/src/content/docs/components/numberinput.md`
+
+### 2026-09-17 12:26 — web round 1
+
+- **DOC** NumberInput: the Keyboard-story rule asks for at least three focusable children, but NumberInput has exactly one tab stop (the steppers are tabindex=-1 inside aria-hidden by spec). Kept a single-field Keyboard story with bounds set so Home/End work. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: disabledOpacity applies to the description part, which is a composed Text. Dimming it means a class rule on the child (.ds-number-input__description), which conflicts with 'never restyle a child'. The spec does not say whether to wrap it or forward the opacity; chose the class selector, matching the margin reset the file already had. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: disabledOpacity lists label, description, input and affixes but not errorMessage or the field's border and background. Left those undimmed. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: the out-of-range copy is said to render outside a Form, but the spec never says whether copy.required or copy.invalid (text with no digits, or `invalid` without `error`) render in the errorMessage part outside a Form. Chose to render only `error`, a Form error, or the range message; the invalid state still sets aria-invalid. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: helperSize, fontFamily and lineHeight on description and error are forwarded to Text's fontSize/fontFamily/lineHeight overrides. The schema gives no forward mapping for them (no errorMessage entry in composition), so the child binding names are inferred. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: in controlled mode, when Enter or a step fires inside a Form with validate: change, the Form sees the old prop value until the parent re-renders. The spec does not say whether validation should see the pending value; chose the prop. → `site/src/content/docs/components/numberinput.md`
+- **DOC** NumberInput: the focus ring is drawn by swapping the field's border width to border.width.focus and shrinking padding-inline-start (as Input does). padding-block is not compensated, so the field can grow by the width difference on focus; the spec's 'focus ring on the field part' does not choose between border and outline. → `site/src/content/docs/components/numberinput.md`
+
 ### 2026-09-16 09:32 — rn round 1
 
 - **DOC** NumberInput: form.valueType is number, but the RN FormContext's FormFieldValue is string | boolean | string[] | undefined with no number variant; getValue returns String(value), or undefined when empty. → `site/src/content/docs/components/numberinput.md`
@@ -4343,6 +4418,42 @@ Doc: `site/src/content/docs/components/popover.md`
 
 Doc: `site/src/content/docs/components/progressbar.md`
 
+### 2026-09-17 12:37 — rn round 1
+
+- **DOC** ProgressBar: composition gives the label and valueText Texts `element: span`, but the RN Text has no `element` prop; I left it out. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: the RN Text takes no testID, so the `label` and `valueText` parts are wrapper Views carrying `ProgressBar.label` / `ProgressBar.valueText`. The doc doesn't say where a composed part's testID goes when the child can't take one. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: `hideLabel` on RN doesn't render the label Text at all; the root's accessibilityLabel stays the name. The doc says 'visually hide' but has no RN form for that (web uses a visually-hidden class). I chose not rendering it. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: the doc puts `role=progressbar` on the track on web but lists only `element: View` for rn. I put accessibilityRole/Label/Value/State on the root View (accessible, focusable={false}) so the name and value announce together, as Meter does. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: platforms.rn.props says `accessibilityRole=progressbar`, while the package digest prefers `role` where a Role exists (Meter uses role="meter"). I followed the component doc and kept accessibilityRole. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: with `hideLabel` and a visible value text, `justify-content: space-between` alone would put the lone value at the start. The doc says it stays at the inline end, so the header switches to flex-end. The doc should state that alignment. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: Behavior doesn't say whether passing through the indeterminate state resets the tier record. I keep the record through it, so going determinate again announces only tiers above the last recorded one. A bar that mounts indeterminate records tier 0, so its first determinate value announces normally rather than silently as a mount would. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: under invalid range (max <= min) the doc says no progress or completion is announced, but not whether tiers are recorded meanwhile. I record nothing, and a bar that mounts with an invalid range keeps tier 0. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: the one-third sweep width `trackWidth / 3` is a literal with no token (literal-ok comment). The doc could name it as a constant. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: in RTL the doc says the sweep 'runs toward the left' but not how the fill is anchored. I anchor it at the inline start (alignSelf flex-start) and translate from +width to -trackWidth when I18nManager.isRTL. That assumes react-native-web mirrors flex-start the same way, which is unverified. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: the default formatter's `Intl.NumberFormat(locale, …)` needs a locale, and the component has no locale prop or context. I pass `undefined` (device locale), as Meter does. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: the doc says 'Omit (undefined or null)' for value, but the prop type is `number`. I typed it `number | null | undefined`. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: behavior scenario `the-bar-is-never-focusable` is limited to web/lit, although rn notes require focusable={false}. It's implemented but has no rn test. → `site/src/content/docs/components/progressbar.md`
+
+### 2026-09-17 12:35 — lit round 1
+
+- **DOC** ProgressBar: the rules don't say what happens to the recorded tier when a bar leaves the indeterminate state (value goes from undefined to 60 with announce: milestones). I reset the record to tier 0 on entering indeterminate, so the first known value announces its tier (e.g. 'Importing contacts: 60%'); keeping the old record would stay silent instead. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: the forwarded bindings (labelSize, labelWeight, valueSize, fontFamily, lineHeight) only reach the child ds-text through its `overrides` property, so a CSS override of --ds-progress-bar-label-size etc. has no effect: nothing in the shadow root reads those hooks without restyling the child. I kept the hooks on :host for naming consistency and forward only through `overrides`; the doc should say whether a CSS hook exists for forwarded bindings. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: a hidden label with no visible value text must 'take no space' and skip partGap, but the doc doesn't say how on Lit. I make the whole header visually hidden (out of flex flow), which keeps the label in the shadow tree; the name itself comes from the host's aria-label. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: the default formatter's `Intl.NumberFormat(locale, …)` names no locale source on Lit. I use the runtime default (undefined), as Meter does. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: 'copy.indeterminate is announced once after mount' doesn't say how long after. Text already in a newly inserted live region is often not read, so Lit renders the region empty and sets the message on the next animation frame. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: `part` attributes are kept on container/header/label/valueText/track/fill because the anatomy names them, even though the package forbids ::part for styling; the doc could say whether Lit should expose `part` at all. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: non-finite `min`/`max` are not covered (only a non-finite `value` is). They pass through Number() unchanged into aria-valuemin/max. → `site/src/content/docs/components/progressbar.md`
+
+### 2026-09-17 12:33 — web round 1
+
+- **DOC** ProgressBar: when a bar goes from indeterminate to determinate, the spec doesn't say whether the tier it arrives at counts as silently recorded (like at mount) or as newly entered. I kept whatever tier the bar had last recorded, so a bar that mounts indeterminate and later reports 30% announces the 25% milestone under `milestones`. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: the spec doesn't say what happens when an invalid range (max ≤ min) becomes valid mid-task. I treat it like mount and record the tier and completion silently, so there is no burst of announcements. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: `value` is described as 'Omit (undefined or null)', but the schema type is `number`. I typed the prop `number | null | undefined`. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: the header's layout when `hideLabel` is set and the value text is visible isn't specified beyond 'stays at the end of the row'. I added a `ds-progress-bar__header--label-hidden` modifier with `justify-content: flex-end`, because the visually-hidden label is taken out of the flex flow. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: when there is no visible label and no visible value text, the spec says the row 'takes no space' but not how. I kept the header element, with `data-part="header"` and the label Text inside it so aria-labelledby still resolves, and applied the visually-hidden clip to it. Because the header is absolutely positioned, `partGap` no longer applies. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: the locale for the default `Intl.NumberFormat` isn't specified. I used the runtime default (`undefined`), as Meter does. → `site/src/content/docs/components/progressbar.md`
+- **DOC** ProgressBar: the `transition` binding describes the fill's size change using motion.easing.standard, while the indeterminate sweep has its own `sweepEasing` binding. I read the token directly for the size change (no hook) and put `sweepEasing` on its own hook. → `site/src/content/docs/components/progressbar.md`
+
 ### 2026-09-16 09:39 — rn round 1
 
 - **DOC** ProgressBar: `copy.indeterminate` is announced 'each time the bar enters the indeterminate state' — unclear whether mounting without a value counts as entering; chose yes (announced on mount), which may be noisy for bars that mount indeterminate. → `site/src/content/docs/components/progressbar.md`
@@ -4528,6 +4639,43 @@ Doc: `site/src/content/docs/components/radiogroup.md`
 ## Search
 
 Doc: `site/src/content/docs/components/search.md`
+
+### 2026-09-17 12:54 — rn round 1
+
+- **DOC** Search: the rn notes say the list opens 'by typing while the field has focus' and say nothing about ArrowDown, but the keyboard table says ArrowDown opens suggestions. I also open the list on ArrowDown from a hardware keyboard or react-native-web (onKeyPress), without highlighting a row, because Listbox rows have no key events. → `site/src/content/docs/components/search.md`
+- **DOC** Search: a component with a keyboard block needs a `Keyboard` story 'rendering it open', but Search has no `open` prop and must never open on focus alone. The story can only show the closed field with a query and suggestions; the list appears after typing. The spec doesn't say how an open-state story should work without an open prop. → `site/src/content/docs/components/search.md`
+- **DOC** Search: `statusDebounce` must come from the standard `motion.duration.base`, 'never from a reduced-motion override that zeroes the token'. On RN the theme tokens are never zeroed (reduced motion is a separate `useReducedMotion()`), so I read `t.motionDurationBase * 2`. Nothing says whether native needs a separate non-reduced token source. → `site/src/content/docs/components/search.md`
+- **DOC** Search: composition gives the Buttons `leadingIcon: close` / `arrow-right`, but the RN Button's `leadingIcon` is a ReactNode and the spec also says 'nothing is forwarded into a Button'. The glyph color and size are unspecified. I passed `<Icon name=… color={t.colorActionGhostForeground} />` at the Icon's default size, as Dialog does. The previous code used size `xs` and `color.foreground.muted`. → `site/src/content/docs/components/search.md`
+- **DOC** Search: `iconColor` is locked but also listed as forwarded to the Icon's `overrides.color`. I pass the fixed ref `'color.foreground.muted'` through `overrides` rather than the `color` prop. The spec doesn't say whether a locked forward should use `overrides` or RN Icon's `color` prop. → `site/src/content/docs/components/search.md`
+- **DOC** Search: the label `fontSize` forward uses Search's `fontSize` override when given, otherwise `font.size.{size}` as a TokenRef. The spec doesn't say whether the default is forwarded when there's no override or only a caller's override is. → `site/src/content/docs/components/search.md`
+- **DOC** Search: `disabled` says the input is 'read-only … still focusable'. RN has only `editable={false}`, which on iOS/Android may take the field out of text focus. I used `editable={false}` plus `accessibilityState.disabled` and noted nothing further. → `site/src/content/docs/components/search.md`
+- **DOC** Search: `platforms.rn.props` lists `accessibilityRole=search` as if it belongs on the TextInput element, but the notes say never on the TextInput, only on the container when `landmark`. I followed the notes. → `site/src/content/docs/components/search.md`
+- **DOC** Search: the disabled clear button — the web says it appears when there is text, and `disabled` says both Buttons are disabled. I render it when there is text, disabled. The previous version hid it while disabled. → `site/src/content/docs/components/search.md`
+- **DOC** Search: blur-close during a list press relies on onTouchStart/onPointerDown on the wrapper View plus a setTimeout(0) check. The spec describes the behavior but not how long 'a press in progress' lasts, or whether a long press or scroll inside the list counts. → `site/src/content/docs/components/search.md`
+
+### 2026-09-17 12:51 — lit round 1
+
+- **DOC** Search: `statusDebounce` must come from the theme's standard `motion.duration.base`, 'never from a reduced-motion override that zeroes the token', but the page only has the computed custom property. The token CSS has no reduced-motion block today, so I read the computed `--motion-duration-base` as ds-combobox does; if a theme ever zeroes it under reduced motion, no separate standard value can be read. → `site/src/content/docs/components/search.md`
+- **DOC** Search: the parts section says the composed Listbox receives exactly `embedded`, but the `suggestions` prop description also requires `label`, `value: ""`, `options` and `emptyMessage`. I passed all of them plus `selectionFollowsFocus=false` (as ds-combobox does, so a highlight never selects), which neither list names. → `site/src/content/docs/components/search.md`
+- **DOC** Search: the `label` part is composed as Text, and the digest says a field label is a native `<label for>`. I render `<label for=input>` wrapping `<ds-text element="span" data-part="label">` and put the visually-hidden class on the `<label>`; the doc doesn't say which element carries `data-part="label"`, or which Text `element` to use inside a label. → `site/src/content/docs/components/search.md`
+- **DOC** Search: `labelWeight` and `fontSize` are forwarded to Text's `overrides` as TokenRefs, so a consumer setting `--ds-search-label-weight` in CSS reaches the host variable but not the Text. The doc doesn't say whether the CSS variable must also flow into the child. → `site/src/content/docs/components/search.md`
+- **DOC** Search: the Lit notes ask for `required`, `validationMessage` and `checkValidity()`, but not `reportValidity()` or `formResetCallback`. I added both (always true; reset restores `defaultValue`), and nothing says whether a form reset should fire `change`/`clear` (it fires neither). → `site/src/content/docs/components/search.md`
+- **DOC** Search: 'closes on blur' has no rule for a blur with no `relatedTarget` (window switch, click on a non-focusable spot). I followed ds-combobox: only focus moving to a known element outside Search closes the list, and a pointer press outside is caught by the outside-pointerdown listener. → `site/src/content/docs/components/search.md`
+- **DOC** Search: 'Ignored, with a development warning, when Search sits inside a Form component' doesn't say how Lit detects that. I used `closest('ds-form')`, which misses a ds-form across a shadow boundary; the rest of the package discovers fields by `data-ds-field`, not by tag. → `site/src/content/docs/components/search.md`
+- **DOC** Search: the doc says a disabled Search is not registered with a Form. ds-form still discovers it by `data-ds-field` and skips it because `disabled` is true, and `setFormValue(null)` is sent while disabled; no per-field way to deregister is specified. → `site/src/content/docs/components/search.md`
+- **DOC** Search: `disabledOpacity` says 'the whole component dims', but doesn't say whether an open popup (in the top layer, outside the form's opacity) dims too. Disabling closes the popup, so the question never arises, but the doc doesn't say that either. → `site/src/content/docs/components/search.md`
+
+### 2026-09-17 12:48 — web round 1
+
+- **DOC** Search: `disabled` says the whole component dims to `disabledOpacity` and both Buttons are disabled, but a disabled Button also dims itself, so the buttons dim twice; chose the root opacity and accepted the compounding, because a child cannot be restyled. → `site/src/content/docs/components/search.md`
+- **DOC** Search: statusDebounce must come from the theme's standard `motion.duration.base`, 'never from a reduced-motion override that zeroes the token', but the web tokens have no reduced-motion override and there is no documented way to read the un-overridden value; chose getComputedStyle(root) `--motion-duration-base` × 2, which is 0 (update immediately) when tokens are not loaded. → `site/src/content/docs/components/search.md`
+- **DOC** Search: the Guidance says `loading` 'shows nothing visually until suggestions arrive', but platforms.web says Listbox gets `emptyMessage: copy.loading`, which is visible text; followed platforms.web. → `site/src/content/docs/components/search.md`
+- **DOC** Search: Escape on an already-empty field with no list open is not specified (the spec says Escape 'clears the field' and onClear fires); chose a no-op with no onClear, since nothing was emptied. → `site/src/content/docs/components/search.md`
+- **DOC** Search: how `action` + a chosen suggestion or a controlled value gets the trimmed query into the native GET is not specified (the input's DOM value may be stale or untrimmed at submit time); chose to keep `name` off the visible input and submit through a hidden input set to the trimmed query in the submit event. → `site/src/content/docs/components/search.md`
+- **DOC** Search: the composition says the suggestions Listbox gets exactly label/embedded/value/options/emptyMessage, but the combobox pattern also needs wiring props (`id` for aria-controls and option ids, `selectionFollowsFocus: false` so arrows do not choose, `onChange`/`onActiveChange`, a remount key to clear the highlight); added those as wiring and dropped `labelledBy`. → `site/src/content/docs/components/search.md`
+- **DOC** Search: `labelWeight` and `iconColor` are forwarded to Text/Icon overrides, but the overrides contract also says every binding is a `--ds-search-*` hook on the root; declared those hooks in CSS even though nothing reads them, and passed the token (or the labelWeight/fontSize override) straight to the child's `overrides`. → `site/src/content/docs/components/search.md`
+- **DOC** Search: the live region is not an anatomy part, so it has no data-part; the anatomy's `landmark` and `form` parts share one element, which carries only data-part="form". → `site/src/content/docs/components/search.md`
+- **DOC** Search: `suggestionsOffset` is applied as a margin on the fixed-position popup (the gap between the popup and the field it hangs from), which the 'spacing is never a margin' convention does not clearly cover; kept the margin. → `site/src/content/docs/components/search.md`
 
 ### 2026-09-16 10:00 — rn round 1
 
@@ -5046,6 +5194,44 @@ Doc: `site/src/content/docs/components/sidepanel.md`
 
 Doc: `site/src/content/docs/components/slider.md`
 
+### 2026-09-17 12:24 — rn round 1
+
+- **DOC** Slider: `errorText` is listed as overridable (locked: false) but its description says an override has no effect, since Text colour is locked; I kept it in the type and ignore it. The doc should either lock it or say what it does. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: the `tickMarks` part holds both the dots and the labels, but the dots sit inside the track area and the labels in a row below it, so no single View can carry both. `testID="Slider.tickMarks"` is on the dots layer and the label row has no testID. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: `markLabelGap` is measured from the bottom of the track area, while the root's `partGap` spaces the other rows. I wrapped the track area and the mark-label row in a column using `markLabelGap`. The doc doesn't say whether `partGap` also applies there. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: the mark-label row's height uses `toLineHeight(markLabelSize, font.lineHeight.normal)`. The doc doesn't name a line-height token for the reserved label line. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: the composition gives the Texts `element: span`, but the React Native Text has no `element` prop, so it is dropped. The other listed props (size, weight, tone) are passed. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: the keyboard table (arrows, PageUp/Down, Home/End) has no hardware-key hook on a core React Native View. Native covers it only through the accessibility actions, so there are no key handlers; the doc could say this outright for rn. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: the bubble should be centred horizontally on the thumb, but it lives inside the 44pt hit area, so its width is capped by that box and a long formatValue string may wrap. The doc doesn't say how the bubble should size or overflow on native. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: when both range thumbs sit at the same value, the doc doesn't say which thumb a track press picks. I give ties to the low thumb, or to the thumb on the side pressed when the press is outside the pair. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: `required` compares against 'the default' but doesn't say whether a `defaultValue` outside [min, max] is clamped before comparing. I compare the raw `defaultValue` against the clamped current value. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: the scenarios check copy, rendering, name and error text only. None exercises the native adjustable actions (increment, the page actions, home/end) or onSlidingComplete, so the actions have no rn test; the doc could add rn scenarios that fire accessibility actions. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: 'label-association' on native has no labelledby form beyond `accessibilityLabel`. The description and error aren't tied to the thumb (no accessibilityHint), since `platforms.rn.props` doesn't list it; the doc should say whether the thumb's hint should carry the description or error. → `site/src/content/docs/components/slider.md`
+
+### 2026-09-17 12:20 — lit round 1
+
+- **DOC** Slider: the error region should show 'the message a Form (or validate) has reported', but Lit ds-form keeps errors in its own summary and never sets a field's error or calls reportValidity(); chose to show the message from the field's own last reportValidity(), so a Form-reported copy.required never reaches the Slider's error region on Lit. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: Behavior says validate: blur validates when an interaction ends (pointer release, key-up), but ds-form only validates on focusout (or on every `change` for data-ds-field="change"); there is no change-end hook in the form contract. Kept data-ds-field="" (focusout validation). → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: errorText is listed as overridable yet described as 'an override of it has no effect'; kept the --ds-slider-error-text hook and type entry but it styles nothing. Either lock it or say how it reaches the danger Text. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: the error setter also sets invalid = Boolean(error) (the package's field convention and the error-is-identified test), so clearing `error` clears an `invalid` the consumer set separately; the doc does not say whether error and invalid are independent. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: the doc does not say whether the bubble (showValue: hover) is removed or only hidden when inactive; to let the `transition` binding animate its appearance it stays rendered (aria-hidden) at opacity 0 and fades in while the thumb is pressed or focused. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: markLabelGap measures from 'the bottom of the track area', but the dots must sit on the track centre line inside the same tickMarks part; chose a tickMarks block after the track area with the dots positioned back up by trackPaddingBlock + trackHeight/2 and the labels in flow below, padded by markLabelGap (matching web). → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: a controlled slider whose owner never updates `value` re-emits `change` with the same target on every pointermove and key repeat, because changes are compared against the displayed value; the doc's 'only when the value actually changed' is ambiguous for controlled mode. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: `currentValue` is null while disabled so Form submits nothing ('no value is submitted'); the doc does not say whether currentValue itself or only submission should be empty. → `site/src/content/docs/components/slider.md`
+
+### 2026-09-17 12:16 — web round 1
+
+- **DOC** Slider: the `name` description says the form value types have no number, but the web FormContext's FormFieldValue includes number and [number, number] (its JSDoc even says 'Slider a number'). I followed the Slider doc and register String(value) or [String(low), String(high)] (string[]); FormContext's JSDoc is now wrong about Slider. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: the tickMarks part must hold both the dots (on the track centre line) and the labels (below the track area, markLabelGap after trackPaddingBlock), and the slider grows only when a mark has a label. No layout is given. I made tickMarks an in-flow sibling after the track area: dots are absolutely positioned back up by trackPaddingBlock + trackHeight/2, and labels sit in a one-cell grid positioned by percentage. Pointer presses on the label line do not move a thumb. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: the web platform notes don't say whether the errorMessage wrapper is role=alert. The Lit notes say it is. I added no role on web. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: the description/error Text `element` for web is span per the composition; the previous file used p. I followed the composition. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: `copy.pageUpAction`/`pageDownAction`/`homeAction`/`endAction` are RN-only accessibility action labels. The rule says to use every copy string, but web has no place for them. They sit unused in the COPY constant. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: the `showValue: hover` bubble shows on 'pressed or focused'. The doc doesn't say whether focus means any focus or :focus-visible only. I show it on any focus of the thumb (including focus moved there by a pointer press). → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: errorText is overridable (not locked), yet its description says an override has no effect. It stays in SliderOverridableBinding and is ignored at runtime; the type offers a knob that does nothing. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: the Form's focus-on-error and registration id is the low thumb for a range. The id is also where the generated id lands, so the high thumb carries no id. The doc doesn't say whether a user-supplied `id` prop belongs on the root or the thumb; I put it on the (low) thumb. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: 'a controlled component shows the new state only once the prop changes', but during a drag or key-repeat the next step must diff against the value just emitted. I track the last emitted value internally until the next render resets it from the prop, so a parent that rejects a change still gets onChangeEnd with the rejected value. → `site/src/content/docs/components/slider.md`
+- **DOC** Slider: the behavior scenarios don't cover a range (Tab between thumbs, no crossing, live aria-valuemin/max), snapToMarks, pointer drag or the form value. Only the 17 listed scenarios are tested. → `site/src/content/docs/components/slider.md`
+
 ### 2026-09-16 09:19 — rn round 1
 
 - **DOC** Slider: the Home/End/PageUp/PageDown custom accessibility actions need a label for the platform Actions menu, but copy has no strings for them; I used the key names 'Home', 'End', 'Page Up', 'Page Down' (unlocalised, not from copy). increment/decrement take no label. → `site/src/content/docs/components/slider.md`
@@ -5363,6 +5549,39 @@ Doc: `site/src/content/docs/components/stack.md`
 ## Stepper
 
 Doc: `site/src/content/docs/components/stepper.md`
+
+### 2026-09-17 12:44 — rn round 1
+
+- **DOC** Stepper: composition gives the label/description/count Text `element: span`, but the RN Text has no `element` prop; omitted. → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: platforms.rn makes the root View the list, yet `count` is 'one muted Text after the list'. On RN there is no outer nav to hold it, so the count sits inside the root list View after an inner layout View holding the steps; the spec does not say where it goes or what spaces it from the steps — chose a `gap` of `stepGap` (layout.gap.normal). → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: 'A composed part receives exactly the listed props' drops Text `align`, so a wrapped label in a horizontal step is start-aligned inside a centred column; the spec does not say how a horizontal label aligns. → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: the label's `weight` is not in the composed props, only forwarded fontWeight overrides; the Text default weight is regular, so the forwards are passed with their binding tokens as defaults ('font.weight.medium' / 'font.weight.semibold') rather than only when overridden. → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: indicatorCompleteForeground/indicatorErrorForeground are 'passed as the Icon's color override', but the RN digest says pass the foreground to Icon's `color` prop; followed the spec (overrides.color with the token ref). → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: stepPadding is 'block padding too when vertical', but connectors fill only `stepGap`, so a vertical connector does not span the padding above and below each step; the spec does not say whether the line reaches the neighbouring indicators. → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: automatic compact measures the stepper's own width, but if a parent shrink-wraps the stepper (alignItems center) switching to compact narrows it further; the spec gives no hysteresis or width source for that case. → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: stepper-level `fontFamily` has no root style on RN (View takes no fontFamily); it resolves for the indicator numeral and is forwarded as the ref to each Text only when overridden, relying on Text's own default otherwise. → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: the dev warning's text for an unmatched `current` is not in copy; wrote a developer-only message. → `site/src/content/docs/components/stepper.md`
+
+### 2026-09-17 12:42 — lit round 1
+
+- **DOC** Stepper: Text's own weight scale has no default for font.weight.medium/semibold, so the labelWeight/labelCurrentWeight forwards are always sent to the label <ds-text> overrides (the token by default), not only when an override is set; the doc says 'forwarded' without saying whether a default is forwarded too. → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: indicatorCompleteForeground and indicatorErrorForeground are locked, yet they are realised as the composed Icon's `color` override (with indicatorFontSize as its `size`); the composition block lists no Icon part or forwards, so these Icon props/overrides are outside the declared 'exactly the listed props' contract. I followed the style-binding descriptions. → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: the `step` part carries stepHover, stepRadius, stepPadding, minTarget and focusRing, which style the inner control (button/div), but stepGap styles the space between <li>s. I kept data-part="step" on the <li> as web does and styled the control, so the step part is not one element for all its bindings. → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: labelCurrentWeight is described as applying to 'the current step (the id match)' while tone and status word follow the explicit status; for a step whose explicit status is 'current' but whose id is not `current`, the label keeps labelWeight. Chosen per the id wording. → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: the doc says a dev warning is logged 'when no id matches' but `current` is required with no default; the Lit property needs a default, so an element whose `current` is still '' warns in development too. → `site/src/content/docs/components/stepper.md`
+
+### 2026-09-17 12:40 — web round 1
+
+- **DOC** Stepper: composition lists only `element`/`size` for the label Text, yet labelColor/labelUpcomingColor say they are 'realised by the label Text's tone' — passed `tone` anyway; and labelWeight/labelCurrentWeight defaults (medium/semibold) have no listed Text prop, so the default tokens are always sent through `overrides.fontWeight` rather than Text's `weight` prop. → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: labelUpcomingColor says 'on an upcoming step' without saying whether that is by status or by position; chose resolved status (an explicit `status: upcoming` on the id-matched step is muted, an explicit `current` after it is not). → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: indicatorCurrentBorder does not say whether it follows the id match or the status; chose status `current` (per 'explicit status sets only the indicator, its colours'), so an error on the current step shows the error ring. → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: indicatorErrorForeground is not described as the danger Icon's color override the way indicatorCompleteForeground is for the check; passed it as the Icon's `color` override for symmetry. → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: the forwarded icon size override is fixed to the indicatorFontSize token, but the doc does not say what happens to the Icon's `color` override when a consumer overrides nothing — it is always sent (locked token). → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: web notes put the description Text inside the native <button>, so it becomes part of the accessible name, while the prop doc and Lit notes also ask for aria-describedby in vertical; kept both (description inside the control plus aria-describedby), which duplicates the description in some screen readers — the doc should say whether the description sits outside the control. → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: `label ?? copy.navLabel` in the notes would emit an empty aria-label for `label=""`, violating accessible-name; used `label || copy.navLabel`. → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: count Text needs `display: none` outside compact but composition allows no extra props; used Text's sanctioned layout-only `className` (ds-stepper__count). → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: the doc does not say where the visually-hidden ', status' span sits relative to the label/description; placed it after them inside the control's content, so in compact it is clipped along with the label. → `site/src/content/docs/components/stepper.md`
+- **DOC** Stepper: stepGap says 'the connector fills it' but gives no minimum connector length rule; horizontal connectors flex with min-inline-size stepGap, vertical ones min-block-size stepGap, aligned under the indicator centre via calc(stepPadding + (indicatorSize − connectorWidth)/2). → `site/src/content/docs/components/stepper.md`
 
 ### 2026-09-16 09:48 — rn round 1
 
@@ -6525,7 +6744,7 @@ Doc: `site/src/content/docs/components/treegrid.md`
 
 ## Totals
 
-DOC: 4241 · CODE: 93 · TOOLING: 2 · NOISE: 42
+DOC: 4406 · CODE: 93 · TOOLING: 2 · NOISE: 42
 
 ## Gates to fix
 

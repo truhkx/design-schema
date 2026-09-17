@@ -21,7 +21,7 @@ component:
     name:
       type: string
       required: true
-      description: 'Field name for the Form. The form value types (web/rn FormContext, Lit DsFormField) have no number, so a single value registers as its decimal string (`String(value)`) and a range as two strings `[String(low), String(high)]`; native form submission gets one hidden input (web) or FormData entry (Lit) per string, all under this name. The registration id and the Form''s focus-on-error target is the thumb, the low thumb for a range (its first tab stop).'
+      description: 'Field name for the Form. The form value types (web/rn FormContext, Lit DsFormField) have no number, so a single value registers as its decimal string (`String(value)`) and a range as two strings `[String(low), String(high)]`; native form submission gets one hidden input (web) or FormData entry (Lit) per string, all under this name. The registration id and the Form''s focus-on-error target is the thumb, the low thumb for a range (its first tab stop); a consumer-supplied `id` lands there too, and the high thumb carries no id.'
     min:
       type: number
       default: 0
@@ -41,11 +41,11 @@ component:
     required:
       type: boolean
       default: false
-      description: 'Must have a value other than the default to submit (`copy.required`). "The default" is `defaultValue` when set and otherwise what `value` itself falls back to — `min`, or `[min, max]` for a range — so required and value share one notion of it. The label takes no "(required)" suffix here: a slider always shows a value, so the suffix would say nothing about what is missing. Required is a validity flag (valueMissing, message `copy.required`) checked before invalid, but its message is not rendered standalone: the error region shows `error`, else the message a Form (or `validate`) has reported, else `copy.invalid` when `invalid`.'
+      description: 'Must have a value other than the default to submit (`copy.required`). "The default" is `defaultValue` when set and otherwise what `value` itself falls back to — `min`, or `[min, max]` for a range — clamped to [min, max] before comparing, so required and value share one notion of it. The label takes no "(required)" suffix here: a slider always shows a value, so the suffix would say nothing about what is missing. Required is a validity flag (valueMissing, message `copy.required`) checked before invalid, but its message is not rendered standalone: the error region shows `error`, else the message a Form (or `validate`) has reported, else `copy.invalid` when `invalid`.'
     invalid:
       type: boolean
       default: false
-      description: 'Marks the slider invalid (`copy.invalid` when no `error`). There is no invalid colour for the track: a slider has no text to recolour and no border of its own, so the state is carried by aria-invalid and the error message.'
+      description: 'Marks the slider invalid (`copy.invalid` when no `error`). There is no invalid colour for the track: a slider has no text to recolour and no border of its own, so the state is carried by aria-invalid and the error message. `invalid` and `error` are independent: aria-invalid is true when either is set, and setting or clearing `error` never changes the `invalid` prop.'
     value:
       type: union
       description: Controlled value; for a range, a two-number array.
@@ -69,15 +69,15 @@ component:
       type: enum
       values: [always, hover, never]
       default: always
-      description: 'Where the value text appears: always beside the label, only while dragging or focused (as a bubble above the thumb), or not at all (when a NumberInput beside the slider shows it). Despite its name, `hover` means pressed or focused: plain pointer hover does not show the bubble, and touch platforms behave identically.'
+      description: 'Where the value text appears: always beside the label, only while dragging or focused (as a bubble above the thumb), or not at all (when a NumberInput beside the slider shows it). Despite its name, `hover` means pressed or focused: plain pointer hover does not show the bubble, and touch platforms behave identically. Any focus counts (not only :focus-visible), including focus a pointer press moves to the thumb. The inactive bubble stays rendered (aria-hidden) at opacity 0 so `transition` can fade it. The bubble sizes to its content on one line, centred on the thumb; it is not constrained by the thumb''s hit area and may overflow it.'
     marks:
       type: array
       shape: '{ value: number; label?: string | undefined }[]'
-      description: 'Tick marks on the track, optionally labelled. Values snap to marks only with `snapToMarks`. Generated code exports the entry type as `SliderMark`. Dots and labels both live in the `tickMarks` part (aria-hidden); each label is a Text (size xs, tone muted, element span) centred under its mark.'
+      description: 'Tick marks on the track, optionally labelled. Values snap to marks only with `snapToMarks`. Generated code exports the entry type as `SliderMark`. The dots are the `tickMarks` part (aria-hidden): a layer on the track centre line inside the track area. The labels sit in an unparted aria-hidden row below the track area (see `markLabelGap`); each label is a Text (size xs, tone muted, element span) centred under its mark. Presses on the label row do not move a thumb.'
     disabled:
       type: boolean
       default: false
-      description: 'Not adjustable, still readable: thumbs stay focusable but pointer, keys and accessibility actions are ignored, and no value is submitted. A slider disabled by an enclosing Form or Fieldset (Lit formDisabledCallback) behaves the same. On React Native the thumb View keeps `accessible` and sets accessibilityState.disabled.'
+      description: 'Not adjustable, still readable: thumbs stay focusable but pointer, keys and accessibility actions are ignored, and no value is submitted (on Lit `currentValue` is null while disabled). A slider disabled by an enclosing Form or Fieldset (Lit formDisabledCallback) behaves the same. On React Native the thumb View keeps `accessible` and sets accessibilityState.disabled.'
     description:
       type: string
       description: Helper text.
@@ -86,7 +86,7 @@ component:
       description: Error message.
   events:
     onChange:
-      description: Fired on every value change while dragging or with keys (number or pair); only when the value actually changed, so a key at a bound or a click on the thumb fires nothing.
+      description: 'Fired on every value change while dragging or with keys (number or pair); only when the value actually changed, so a key at a bound or a click on the thumb fires nothing. Within one interaction the comparison is against the last value emitted, not the displayed value, so a controlled owner that never updates `value` gets each new target once; the displayed value resets from the prop on render.'
       platforms: { web: onChange, lit: change, rn: onValueChange, swiftui: onChange }
       payload:
         - { name: value, type: union, shape: 'number | [number, number]', description: 'The new value, or the low and high values of a range.' }
@@ -121,7 +121,7 @@ component:
     markSize: { token: space.1, part: tickMarks, description: 'Mark dot diameter.' }
     markLabelColor: { token: color.foreground.muted, part: tickMarks, description: 'Realised by the mark label Text''s tone muted; no hook of its own.' }
     markLabelSize: { token: font.size.xs, part: tickMarks, description: 'Forwarded to each mark label Text''s fontSize override (fontFamily is forwarded too); never styles the Text directly.' }
-    markLabelGap: { token: space.1, part: tickMarks, description: 'Gap between the bottom of the track area (after trackPaddingBlock) and the mark labels. The slider grows by the label line only when some mark has a label.' }
+    markLabelGap: { token: space.1, part: tickMarks, description: 'Gap between the bottom of the track area (after trackPaddingBlock) and the mark label row; `partGap` does not apply between them (on React Native, a column wraps the track area and the label row with this gap). The slider grows by the label line (markLabelSize × font.lineHeight.normal) only when some mark has a label.' }
     valueColor: { token: color.foreground, part: valueText, description: 'Realised by the value Text''s tone default; no hook of its own.' }
     valueSize: { token: font.size.sm, part: valueText, description: 'Forwarded to the value Text''s fontSize override, and to the bubble''s Text the same way.' }
     bubbleSurface: { token: color.inverse.surface, part: bubble, description: 'The hover/drag value bubble uses the inverse surface, like Tooltip.' }
@@ -138,7 +138,7 @@ component:
     fontSize: { token: font.size.md, part: label, description: 'Forwarded to the label Text''s fontSize override.' }
     helperSize: { token: font.size.sm, part: description, description: 'Forwarded to the description and error message Texts'' fontSize overrides.' }
     descriptionText: { token: color.foreground.muted, part: description, description: 'Realised by the composed Text''s `muted` tone; no hook of its own.' }
-    errorText: { token: color.foreground.danger, part: errorMessage, description: 'Realised by the composed Text''s `danger` tone; no hook of its own, since Text''s colour is locked and a hook could not reach the child without restyling it (the same as Input). An override of it has no effect.' }
+    errorText: { token: color.foreground.danger, part: errorMessage, locked: true, description: 'Realised by the composed Text''s `danger` tone; no hook of its own, since Text''s colour is locked and a hook could not reach the child without restyling it (the same as Input). An override of it has no effect.' }
     minTarget: { token: size.target.comfortable, part: thumb, description: 'The thumb''s hit area, centred on the knob.' }
     focusRing: { token: color.border.focus, part: thumb, description: 'A circular ring around the visible knob (not the minTarget hit area), shown only while the thumb has keyboard focus.' }
     focusRingWidth: { token: border.width.focus, part: thumb, description: 'Ring thickness, drawn outside the knob''s border and offset from it by the same width.' }
@@ -178,15 +178,15 @@ component:
     web:
       element: div
       attributes: [role=slider, tabindex=0, aria-valuenow, aria-valuemin, aria-valuemax, aria-valuetext, aria-labelledby, aria-describedby, aria-orientation, aria-disabled, aria-invalid, aria-required]
-      notes: 'Custom thumbs (<div role="slider" tabindex="0">) on a track rather than <input type="range">, because a range slider needs two thumbs on one track and the native element cannot be themed consistently. Pointer Events with setPointerCapture on the track and thumbs; the track click moves the nearest thumb. aria-valuetext from formatValue. A hidden <input name> (two with the same name for a range) carries the decimal string(s) for native forms. The label, value, description and error Texts sit in wrappers the Slider owns, which carry their data-part.'
+      notes: 'Custom thumbs (<div role="slider" tabindex="0">) on a track rather than <input type="range">, because a range slider needs two thumbs on one track and the native element cannot be themed consistently. Pointer Events with setPointerCapture on the track and thumbs; the track click moves the nearest thumb. aria-valuetext from formatValue. A hidden <input name> (two with the same name for a range) carries the decimal string(s) for native forms. The label, value, description and error Texts sit in wrappers the Slider owns, which carry their data-part; the errorMessage wrapper is role=alert, as on Lit. `copy.pageUpAction`, `pageDownAction`, `homeAction` and `endAction` are React Native action labels; web and Lit do not render them.'
     lit:
       tag: ds-slider
       reflect: [range, disabled, show-value, required, invalid, snap-to-marks]
-      notes: 'Form-associated and implements DsFormField: `currentValue` is the decimal string, or `[low, high]` as two strings for a range, and setFormValue gets FormData with two entries of the same name for a range. Composed `change` (detail { value }, numbers) and `change-end`. Thumbs are shadow elements with role="slider"; the label ds-text and its id live in the same shadow root, so aria-labelledby resolves, and range thumbs use aria-label from the copy. The error message is a ds-text tone=danger inside the role=alert errorMessage wrapper.'
+      notes: 'Form-associated and implements DsFormField: `currentValue` is the decimal string, or `[low, high]` as two strings for a range, and setFormValue gets FormData with two entries of the same name for a range. Composed `change` (detail { value }, numbers) and `change-end`. Thumbs are shadow elements with role="slider"; the label ds-text and its id live in the same shadow root, so aria-labelledby resolves, and range thumbs use aria-label from the copy. The error message is a ds-text tone=danger inside the role=alert errorMessage wrapper. The Lit form contract has no interaction-end hook, so under `validate: blur` ds-slider is a plain `data-ds-field` and validates on focusout, not on pointer release.'
     rn:
       element: View
-      props: [accessibilityRole=adjustable, accessibilityLabel, accessibilityValue, accessibilityActions, onAccessibilityAction]
-      notes: 'Drawn with Views and a PanResponder per thumb (no new dependency; the community Slider has no range support and would not take tokens). accessibilityRole="adjustable" with accessibilityActions increment/decrement handled in onAccessibilityAction (VoiceOver swipe up/down, TalkBack volume keys), accessibilityValue={{ min, max, now, text }}. A range renders two adjustable elements. The drag gesture is additive: the adjustable actions are the non-gesture path. PageUp, PageDown, Home and End have no native gesture, so they are custom accessibilityActions alongside increment and decrement; only those two get a direct swipe or volume-key binding, and the rest live in the platform''s Actions menu, labelled from `copy.pageUpAction`, `copy.pageDownAction`, `copy.homeAction` and `copy.endAction` (increment and decrement take no label; the platform names them). A press or drag on the track area moves the nearest thumb, as on web. Disabled thumbs stay `accessible` with accessibilityState.disabled, and gestures and actions are ignored. Form registration uses the decimal string, or two strings for a range. The composed Texts carry their testID on wrapper Views the Slider owns.'
+      props: [accessibilityRole=adjustable, accessibilityLabel, accessibilityHint, accessibilityValue, accessibilityActions, onAccessibilityAction]
+      notes: 'Drawn with Views and a PanResponder per thumb (no new dependency; the community Slider has no range support and would not take tokens). accessibilityRole="adjustable" with accessibilityActions increment/decrement handled in onAccessibilityAction (VoiceOver swipe up/down, TalkBack volume keys), accessibilityValue={{ min, max, now, text }}. A range renders two adjustable elements. The drag gesture is additive: the adjustable actions are the non-gesture path. PageUp, PageDown, Home and End have no native gesture, so they are custom accessibilityActions alongside increment and decrement (a core View has no hardware-key hook, so the keyboard table has no key handlers on native; the actions are its equivalent); only those two get a direct swipe or volume-key binding, and the rest live in the platform''s Actions menu, labelled from `copy.pageUpAction`, `copy.pageDownAction`, `copy.homeAction` and `copy.endAction` (increment and decrement take no label; the platform names them). A press or drag on the track area moves the nearest thumb, as on web; when both range thumbs share a value, a press before it moves the low thumb, after it the high thumb, and exactly on it the low thumb (every platform). Disabled thumbs stay `accessible` with accessibilityState.disabled, and gestures and actions are ignored. Form registration uses the decimal string, or two strings for a range. The composed Texts carry their testID on wrapper Views the Slider owns. Each thumb''s accessibilityHint is the error message when one shows, else the description, which ties them to the thumb (label-association).'
     swiftui:
       element: ZStack
       props: [GeometryReader, DragGesture, .accessibilityAdjustableAction, .accessibilityValue, .accessibilityElement, .focusable, .onMoveCommand, .onKeyPress, '@FocusState', Capsule]

@@ -69,7 +69,24 @@ component:
   - suffix
   - errorMessage
   composition:
-    description: Text
+    description:
+      component: Text
+      props:
+        size: sm
+        tone: muted
+      forwards:
+        helperSize: fontSize
+        fontFamily: fontFamily
+        lineHeight: lineHeight
+    errorMessage:
+      component: Text
+      props:
+        size: sm
+        tone: danger
+      forwards:
+        helperSize: fontSize
+        fontFamily: fontFamily
+        lineHeight: lineHeight
     decrementButton: Button
     incrementButton: Button
   props:
@@ -94,7 +111,10 @@ component:
         applies). While the input is focused it shows the raw typed text, so typing
         is never swallowed; the controlled value takes over the display on blur/Enter
         (re-formatted), on every step, and whenever the prop changes to a number different
-        from the parsed typed text.'
+        from the parsed typed text. A controlled change to `null` while the user is
+        typing keeps the typed text until blur/Enter. Inside a Form, validation reads
+        the prop value, so a step or Enter is validated against the new number only
+        once the owner re-renders.'
       controls:
         event: onChange
         default: defaultValue
@@ -176,7 +196,10 @@ component:
     disabled:
       type: boolean
       default: false
-      description: Not editable, not submitted, still readable.
+      description: Not editable, not submitted, still readable. On web and Lit the
+        input stays focusable as `readonly` with aria-disabled (not natively disabled);
+        on React Native it is `editable={false}` with accessibilityState.disabled,
+        as Input.
     invalid:
       type: boolean
       default: false
@@ -223,12 +246,14 @@ component:
     - End
     action: 'Sets min / max when they are defined (component code, not native: a text
       input cannot do this); otherwise the key is left to the input''s native caret
-      movement.'
+      movement. A jump is a step: it clears a clamp message and fires onChange only
+      when the value changes.'
     from: first
     expect: manual
   - keys:
     - Enter
-    action: Commits (rounds and clamps) the typed value; inside a Form, submits.
+    action: 'Commits (rounds and clamps) the typed value; inside a Form, submits (on
+      React Native too: returnKeyType done, no next-field chain).'
     from: first
     expect: manual
   styles:
@@ -248,7 +273,10 @@ component:
       token: color.border.focus
       part: field
       description: The focus ring is drawn on the bordered field part while the input
-        matches :focus-visible; the input itself has no border.
+        matches :focus-visible; the input itself has no border. As Input, the ring
+        is the field's border (width swapped to focusRingWidth, no outline), and both
+        paddingInline and paddingBlock shrink by the width difference so the field
+        does not grow or shift.
       locked: true
     borderInvalid:
       token: color.border.danger
@@ -280,11 +308,14 @@ component:
       locked: true
     affixGap:
       token: layout.gap.tight
+      description: Between an affix and the value; with steppers shown, the suffix
+        also keeps this gap before the stepper divider.
       locked: false
     stepperGap:
       token: layout.gap.none
       description: The two stepper Buttons sit flush at the end of the field, separated
-        from the input by a hairline.
+        from the input by a hairline. There is no divider between the two Buttons;
+        their icons separate them.
       locked: false
     stepperDivider:
       token: color.border
@@ -335,9 +366,11 @@ component:
     disabledOpacity:
       token: opacity.disabled
       description: 'Applied to the label, description, input and affix parts of a
-        disabled field, not to an element containing the steppers: the stepper Buttons
-        receive `disabled` (at a bound, or when the field is disabled) and dim once
-        through their own disabled style.'
+        disabled field (the description Text through a wrapper NumberInput owns, which
+        carries its data-part, never a rule on the Text); the field frame (border,
+        background) and the errorMessage are not dimmed. Not to an element containing
+        the steppers: the stepper Buttons receive `disabled` (at a bound, or when
+        the field is disabled) and dim once through their own disabled style.'
       locked: false
   copy:
     increment: Increase
@@ -436,7 +469,10 @@ component:
         property (plus formDisabledCallback); the legend is not used. Steppers in
         the shadow root are ds-button (ghost, sm, iconOnly) with tabindex="-1" inside
         an aria-hidden wrapper; each carries its data-part on a wrapper span as on
-        web. The focus ring is drawn on the field part while the input matches :focus-visible.'
+        web. The focus ring is drawn on the field part while the input matches :focus-visible.
+        Attributes are kebab-case and not reflected unless listed: default-value,
+        leading-text, trailing-text, hide-steppers, hide-label; `value` is property-only
+        (number | null | undefined).'
     rn:
       element: TextInput
       props:
@@ -471,7 +507,11 @@ component:
         known Button limitation, not a NumberInput choice. FieldsetContext is read:
         a Fieldset''s `disabled` disables the field and its legend prefixes the accessibilityLabel
         ("Shipping, Weight"), as Input does. accessibilityValue.text is the same string
-        as web aria-valuetext, affixes included.'
+        as web aria-valuetext, affixes included; accessibilityValue carries only `text`
+        (no min/max/now), since Android takes integers there and the value may be
+        fractional. As Input on native, the label and the error are composed Texts
+        (label: size by `size`, weight medium with labelWeight forwarded; error: size
+        sm, tone danger) in wrapper Views carrying the part testIDs.'
     swiftui:
       element: TextField
       props:
@@ -643,6 +683,18 @@ component:
 ## Controlled state
 
 - `value` is controlled when given, uncontrolled from `defaultValue` when omitted; changes reported by `onChange` (emit `onChangeText`)
+
+## Parts and slots
+
+- `label`: element
+- `description`: component `Text`; props `size` = "sm", `tone` = "muted"; forwards `helperSize` → `overrides.fontSize`, `fontFamily` → `overrides.fontFamily`, `lineHeight` → `overrides.lineHeight`
+- `field`: element
+- `input`: element
+- `decrementButton`: component `Button`
+- `incrementButton`: component `Button`
+- `prefix`: element
+- `suffix`: element
+- `errorMessage`: component `Text`; props `size` = "sm", `tone` = "danger"; forwards `helperSize` → `overrides.fontSize`, `fontFamily` → `overrides.fontFamily`, `lineHeight` → `overrides.lineHeight`
 
 ## Style bindings
 
@@ -824,7 +876,11 @@ notes: "TextInput with keyboardType=\"decimal-pad\" (numbers-and-punctuation on 
   \ Pressables \u2014 a known Button limitation, not a NumberInput choice. FieldsetContext\
   \ is read: a Fieldset's `disabled` disables the field and its legend prefixes the\
   \ accessibilityLabel (\"Shipping, Weight\"), as Input does. accessibilityValue.text\
-  \ is the same string as web aria-valuetext, affixes included."
+  \ is the same string as web aria-valuetext, affixes included; accessibilityValue\
+  \ carries only `text` (no min/max/now), since Android takes integers there and the\
+  \ value may be fractional. As Input on native, the label and the error are composed\
+  \ Texts (label: size by `size`, weight medium with labelWeight forwarded; error:\
+  \ size sm, tone danger) in wrapper Views carrying the part testIDs."
 ```
 
 ## Guidance
@@ -843,7 +899,7 @@ Do not use it for numbers that are really identifiers — phone numbers, postal 
 
 ## Behavior
 
-Typing accepts digits, a leading minus, and the locale's or a period decimal separator; other characters are ignored rather than rejected loudly. `onChange` fires with the parsed number as it becomes valid. On blur or Enter the value is rounded to `precision`, clamped to `min`/`max`, and re-formatted. ArrowUp/Down step; PageUp/Down step by ten; Home/End go to the bounds when defined. The steppers disable at the bounds; on web and Lit they repeat while held, on React Native they step once per tap (see its notes). Empty is a valid state (undefined) unless `required`. A keystroke that does not yet form a number (a lone "-" or ".") fires no `onChange`. Validation precedence: the `error` prop, then a Form-supplied error, then `copy.required` (empty and `required`), then `copy.invalid` (the committed text — on blur, Enter or submit — contains no digits at all, e.g. "-" or "."; or `invalid` is set without `error`), then the out-of-range message. Non-numeric committed text reports `invalid`, never `required`. The field clamps and reports, rather than silently changing the number. `{min}` and `{max}` in the out-of-range copy are formatted with the field's own `format`/`precision` ("$1.00", "10%"), without `leadingText`/`trailingText`. Outside a Form (and inside one) the out-of-range message renders in the errorMessage part, sets aria-invalid, and makes the field fail validation (rangeUnderflow/rangeOverflow on Lit) until the next keystroke or step clears it — so a submit straight after a clamp fails once and the user sees the changed number. `percent` stores the number as typed (25, not 0.25) and divides by 100 only for display. `format: currency` without `currency` is a development warning and falls back to USD. From an empty field, ArrowUp/increment goes to `min ?? 0` and ArrowDown/decrement to `max ?? 0`. The out-of-range message is reported whenever a blur-time clamp changed what was typed, `required` or not: `copy.outOfRange` when both bounds are set, `copy.outOfRangeMin` or `copy.outOfRangeMax` when only one is — a clamp is never silent. `leadingText` is ignored under `format: currency`, which draws its own symbol, so a field never shows two. A `unit` string that Intl does not know falls back to plain decimal formatting with the unit shown as `trailingText` when none was given. A Fieldset's `disabled` reaches NumberInput on every platform (web: the `disabled` prop Fieldset passes to direct children; Lit: the `disabled` property ds-fieldset sets on data-ds-field children; React Native: FieldsetContext). The legend prefix exists only on React Native, where the legend prefixes the accessibilityLabel; web and Lit rely on the native fieldset/legend grouping. Hold-to-repeat timings (web/Lit) are read from the resolved theme at pointerdown (`motion.duration.base` delay, `motion.duration.fast` interval), never hardcoded; when either token cannot be read (no theme loaded, jsdom), a press steps once and does not repeat. The accessible value text (aria-valuetext, accessibilityValue.text) is `leadingText` + the formatted value + a space + `trailingText` when those are set ("2 kg"), so the affix parts themselves are hidden from assistive technology on native. The label is a native `<label for>` (web/Lit) styled from this component's label bindings, not a Text. The Form value is the number's plain decimal string (see `name`); an empty field submits nothing.
+Typing accepts digits, a leading minus, and the locale's or a period decimal separator; other characters are ignored rather than rejected loudly. `onChange` fires with the parsed number as it becomes valid. On blur or Enter the value is rounded to `precision`, clamped to `min`/`max`, and re-formatted. ArrowUp/Down step; PageUp/Down step by ten; Home/End go to the bounds when defined. The steppers disable at the bounds; on web and Lit they repeat while held, on React Native they step once per tap (see its notes). Empty is a valid state (undefined) unless `required`. A keystroke that does not yet form a number (a lone "-" or ".") fires no `onChange`. Validation precedence: the `error` prop, then a Form-supplied error, then `copy.required` (empty and `required`), then `copy.invalid` (the committed text — on blur, Enter or submit — contains no digits at all, e.g. "-" or "."; or `invalid` is set without `error`), then the out-of-range message. Non-numeric committed text reports `invalid`, never `required`, and stays in the field as typed (it is not re-formatted to empty) until the next edit, so the user sees what was invalid. What the errorMessage part draws follows Input: `error` when set (a Form-supplied error included — on Lit ds-form delivers it through the same `error` property, so the two share one slot); otherwise a message only while `invalid` is true (set directly or by a Form): `copy.required` for an empty required field, else `copy.invalid`; plus, as below, committed non-numeric text (`copy.invalid`) and a clamp (the out-of-range message). An empty required field is never flagged on first render; validity/validationMessage always follow the full precedence. The field clamps and reports, rather than silently changing the number. `{min}` and `{max}` in the out-of-range copy are formatted with the field's own `format`/`precision` ("$1.00", "10%"), without `leadingText`/`trailingText`. Outside a Form (and inside one) the out-of-range message renders in the errorMessage part, sets aria-invalid, and makes the field fail validation (rangeUnderflow/rangeOverflow on Lit) until the next keystroke or step clears it — so a submit straight after a clamp fails once and the user sees the changed number. `percent` stores the number as typed (25, not 0.25) and divides by 100 only for display. `format: currency` without `currency` is a development warning and falls back to USD. From an empty field, ArrowUp/increment goes to `min ?? 0` and ArrowDown/decrement to `max ?? 0`. The out-of-range message is reported whenever a blur-time clamp changed what was typed, `required` or not: `copy.outOfRange` when both bounds are set, `copy.outOfRangeMin` or `copy.outOfRangeMax` when only one is — a clamp is never silent. `leadingText` is ignored under `format: currency`, which draws its own symbol, so a field never shows two. A `unit` string that Intl does not know falls back to plain decimal formatting with the unit shown as `trailingText` when none was given. A Fieldset's `disabled` reaches NumberInput on every platform (web: the `disabled` prop Fieldset passes to direct children; Lit: the `disabled` property ds-fieldset sets on data-ds-field children; React Native: FieldsetContext). The legend prefix exists only on React Native, where the legend prefixes the accessibilityLabel; web and Lit rely on the native fieldset/legend grouping. Hold-to-repeat timings (web/Lit) are read from the resolved theme at pointerdown (`motion.duration.base` delay, `motion.duration.fast` interval), never hardcoded; when either token cannot be read (no theme loaded, jsdom), a press steps once and does not repeat. The accessible value text (aria-valuetext, accessibilityValue.text) is `leadingText` + the formatted value + a space + `trailingText` when those are set ("2 kg"), so the affix parts themselves are hidden from assistive technology on native. The label is a native `<label for>` (web/Lit) styled from this component's label bindings, not a Text. The Form value is the number's plain decimal string (see `name`); an empty field submits nothing. The Keyboard story renders one field with `min: 0`, `max: 20` so Home and End can be tried; the field is a single tab stop, so the three-focusable rule does not apply.
 
 ## Content guidelines
 

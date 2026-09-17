@@ -97,7 +97,9 @@ component:
   props:
     label:
       type: string
-      description: Accessible name of the navigation landmark. Defaults to `copy.navLabel`.
+      description: Accessible name of the navigation landmark. Defaults to `copy.navLabel`,
+        which an empty string also falls back to (`label || copy.navLabel`), so the
+        landmark is never unnamed.
     steps:
       type: array
       required: true
@@ -111,12 +113,14 @@ component:
     current:
       type: string
       required: true
-      description: The id of the current step. The step whose id matches is the selected
+      description: 'The id of the current step. The step whose id matches is the selected
         one (`aria-current="step"` / selected state) and the one compact reveals,
         whatever its `status`. When no id matches, nothing is selected, every step
         without an explicit status is upcoming, no step is navigable under `completed`
         (all still are under `all`), the count reads "Step 1 of m", and development
-        builds log a warning.
+        builds log a warning (a developer-only English message, not copy). The warning
+        needs a non-empty `current`: an empty one (the Lit property''s initial `''''`)
+        is treated as not yet set and does not warn.'
     orientation:
       type: enum
       values:
@@ -153,7 +157,8 @@ component:
         is the `count` part: one muted Text after the list, not in any step and not
         replacing a description, present only while compact is in effect (on web and
         Lit, where automatic compact is a container query, it is always rendered and
-        `display: none` outside the query).'
+        `display: none` outside the query, applied through Text''s layout-only className).
+        The count follows the list, `stepGap` after it.'
   events:
     onStepSelect:
       description: Fired when a navigable step is chosen, with its id. The container
@@ -229,6 +234,8 @@ component:
     indicatorCurrentBorder:
       token: color.control.selectedBackground
       part: indicator
+      description: The ring of a step whose resolved status is `current`; an error
+        on the id-matched step shows the error ring instead.
       locked: true
     indicatorErrorBackground:
       token: color.status.danger.background
@@ -237,6 +244,8 @@ component:
     indicatorErrorForeground:
       token: color.status.danger.foreground
       part: indicator
+      description: The danger Icon on an error step, passed as the Icon's color override,
+        as indicatorCompleteForeground is for the check.
       locked: true
     indicatorErrorBorder:
       token: color.status.danger.icon
@@ -278,8 +287,10 @@ component:
     labelUpcomingColor:
       token: color.foreground.muted
       part: label
-      description: Realised by the label Text's tone muted on an upcoming step; no
-        --ds-stepper-* hook.
+      description: 'Realised by the label Text''s tone muted on a step whose resolved
+        status is upcoming (an explicit `status: upcoming` is muted, an explicit `current`
+        after the id match is not); no --ds-stepper-* hook. The label''s `tone` is
+        passed per step, alongside the listed props.'
       locked: true
     labelWeight:
       token: font.weight.medium
@@ -334,12 +345,19 @@ component:
       token: space.2
       part: step
       description: Inline padding of a step control (block padding too when vertical),
-        so the hover background has room around the indicator and label.
+        so the hover background has room around the indicator and label. The `step`
+        part is the list item (web/Lit `<li>`); stepHover, stepRadius, stepPadding,
+        minTarget and the focus ring style the control inside it.
       locked: false
     stepGap:
       token: layout.gap.normal
       part: step
       description: Between steps along the orientation axis (the connector fills it).
+        The connector grows with free space from a minimum of stepGap (inline size
+        when horizontal, block size when vertical), centred on the indicator's axis
+        — calc(stepPadding + (indicatorSize − connectorWidth) / 2) from the step's
+        edge; it does not extend into stepPadding, so the line stops short of the
+        neighbouring indicators.
       locked: false
     partGap:
       token: space.2
@@ -435,8 +453,9 @@ component:
       attributes:
       - aria-label
       - aria-current=step
+      - aria-describedby
       - data-ds=Stepper
-      notes: 'The root is a <nav> carrying data-ds and aria-label (`label` ?? copy.navLabel),
+      notes: 'The root is a <nav> carrying data-ds and aria-label (`label` || copy.navLabel),
         with the ref typed to it; the `list` part is the <ol> inside, followed by
         the `count` Text. Each <li> holds either Stepper''s own native <button type="button">
         (navigable; not the Button component) or a <div> with the same content. aria-current="step"
@@ -470,17 +489,21 @@ component:
       props:
       - accessibilityRole=list
       - accessibilityLabel
-      notes: 'A View with accessibilityRole="list"; each step a Pressable (navigable)
-        or View with accessibilityState={{ selected: current }} and an accessibilityLabel
-        of copy.stepLabel, then ", " and the status word when the step has one (upcoming
-        steps have none): "Step 2: Payment, current step". React Native has no navigation
-        landmark role, so there is no landmark: `label` ?? copy.navLabel goes on the
-        list View''s accessibilityLabel instead. Composed Text takes no testID, so
-        the label, description and count Texts are each wrapped in a View carrying
-        the part''s testID. `stepHover` applies while the Pressable is pressed or
-        hovered (onHoverIn/onHoverOut). Automatic compact measures the stepper''s
-        own width with onLayout (not the window) against layout.maxWidth.prose, rendering
-        non-compact until the first layout; in compact the other steps'' label Texts
+      notes: 'A plain root View holding the list View (accessibilityRole="list") and,
+        after it, the count Text spaced by `stepGap`, so the count is never inside
+        the list. Each step a Pressable (navigable) or View with accessibilityState={{
+        selected: current }} and an accessibilityLabel of copy.stepLabel, then ",
+        " and the status word when the step has one (upcoming steps have none): "Step
+        2: Payment, current step". React Native has no navigation landmark role, so
+        there is no landmark: `label` || copy.navLabel goes on the list View''s accessibilityLabel
+        instead. Composed Text takes no testID, so the label, description and count
+        Texts are each wrapped in a View carrying the part''s testID. `stepHover`
+        applies while the Pressable is pressed or hovered (onHoverIn/onHoverOut).
+        Automatic compact measures the stepper''s own width with onLayout (not the
+        window) against layout.maxWidth.prose, rendering non-compact until the first
+        layout; the root View stretches to its parent (alignSelf: stretch), so the
+        measured width is the space offered, not the content width, and switching
+        to compact cannot narrow it further; in compact the other steps'' label Texts
         are not rendered, since their accessibilityLabels still carry them. Horizontal
         steppers use `compact` on phones; vertical is preferred for long flows.'
     swiftui:
@@ -881,19 +904,22 @@ element: View
 props:
 - accessibilityRole=list
 - accessibilityLabel
-notes: 'A View with accessibilityRole="list"; each step a Pressable (navigable) or
-  View with accessibilityState={{ selected: current }} and an accessibilityLabel of
-  copy.stepLabel, then ", " and the status word when the step has one (upcoming steps
-  have none): "Step 2: Payment, current step". React Native has no navigation landmark
-  role, so there is no landmark: `label` ?? copy.navLabel goes on the list View''s
-  accessibilityLabel instead. Composed Text takes no testID, so the label, description
-  and count Texts are each wrapped in a View carrying the part''s testID. `stepHover`
-  applies while the Pressable is pressed or hovered (onHoverIn/onHoverOut). Automatic
-  compact measures the stepper''s own width with onLayout (not the window) against
-  layout.maxWidth.prose, rendering non-compact until the first layout; in compact
-  the other steps'' label Texts are not rendered, since their accessibilityLabels
-  still carry them. Horizontal steppers use `compact` on phones; vertical is preferred
-  for long flows.'
+notes: 'A plain root View holding the list View (accessibilityRole="list") and, after
+  it, the count Text spaced by `stepGap`, so the count is never inside the list. Each
+  step a Pressable (navigable) or View with accessibilityState={{ selected: current
+  }} and an accessibilityLabel of copy.stepLabel, then ", " and the status word when
+  the step has one (upcoming steps have none): "Step 2: Payment, current step". React
+  Native has no navigation landmark role, so there is no landmark: `label` || copy.navLabel
+  goes on the list View''s accessibilityLabel instead. Composed Text takes no testID,
+  so the label, description and count Texts are each wrapped in a View carrying the
+  part''s testID. `stepHover` applies while the Pressable is pressed or hovered (onHoverIn/onHoverOut).
+  Automatic compact measures the stepper''s own width with onLayout (not the window)
+  against layout.maxWidth.prose, rendering non-compact until the first layout; the
+  root View stretches to its parent (alignSelf: stretch), so the measured width is
+  the space offered, not the content width, and switching to compact cannot narrow
+  it further; in compact the other steps'' label Texts are not rendered, since their
+  accessibilityLabels still carry them. Horizontal steppers use `compact` on phones;
+  vertical is preferred for long flows.'
 ```
 
 ## Guidance
@@ -912,7 +938,7 @@ Do not use a Stepper for two steps (a Button that says "Continue" is enough) or 
 
 ## Behavior
 
-Steps before `current` render complete (check), the current one is marked, later ones are upcoming. A step can be marked `error` explicitly (validation failed on a step the user left). Navigable steps are native buttons that fire `onStepSelect`; the container decides whether to move. Non-navigable steps are inert text. Below the prose width a horizontal stepper shows only the current label and "Step n of m" (`compact`), keeping the row of indicators; the count is the `count` part, one muted Text after the list. A navigable step is its own native `<button>` (Pressable on native) owned by Stepper — not the Button component, whose single-label API cannot hold an indicator, label and description. The status word always joins the name after ", " ("Payment, current step"); upcoming steps have no status word. An explicit `status: 'current'` on a step `current` does not name gives that step the current indicator and the word `copy.current`, but not the selected state. Connectors take `connectorComplete` by position — the connector after each step before the current one — regardless of explicit statuses. Label and description colors are passed to the composed Text as `tone`/overrides. `navigable: completed` means every step before the current one, including one marked `error`. `compact` applies to horizontal steppers only. On web and Lit the list is an `<ol>`, which already announces "item 2 of 5", so the control shows its plain label and adds only the status word as visually hidden text, with no `aria-label` — `copy.stepLabel` is native-only (React Native and SwiftUI), where there is no list ordinal and the accessibility label is `copy.stepLabel` plus that word. When a step carries `status: 'error'` and is also the one `current` names, the error wins for the indicator, its colour and the status word, while the selected state and the compact reveal still follow the id — the user is on that step, and it has a problem. `transition` times the connector's cross-fade between `connector` and `connectorComplete`; the indicator has four discrete states and switches between them at once, as every other multi-state indicator here does.
+Steps before `current` render complete (check), the current one is marked, later ones are upcoming. A step can be marked `error` explicitly (validation failed on a step the user left). Navigable steps are native buttons that fire `onStepSelect`; the container decides whether to move. Non-navigable steps are inert text. Below the prose width a horizontal stepper shows only the current label and "Step n of m" (`compact`), keeping the row of indicators; the count is the `count` part, one muted Text after the list. A navigable step is its own native `<button>` (Pressable on native) owned by Stepper — not the Button component, whose single-label API cannot hold an indicator, label and description. The status word always joins the name after ", " ("Payment, current step"); upcoming steps have no status word. An explicit `status: 'current'` on a step `current` does not name gives that step the current indicator and the word `copy.current`, but not the selected state. Connectors take `connectorComplete` by position — the connector after each step before the current one — regardless of explicit statuses. Label and description colors are passed to the composed Text as `tone`/overrides. Every forward (labelWeight, labelCurrentWeight, labelSize, fontFamily and the rest) always carries its binding's token, overridden or not, because the Text's own `weight` prop is not set; the check and danger Icons (size sm) always receive their `size` and `color` overrides the same way. In a horizontal stepper each step is a column (indicator above label) and the label Text is passed `align: center`; vertical labels are start-aligned. In vertical orientation the description sits inside the control but is aria-hidden there and referenced by the control's aria-describedby (web and Lit), so it is not read twice; the visually-hidden status span follows the label directly, and in compact it is clipped with it. `navigable: completed` means every step before the current one, including one marked `error`. `compact` applies to horizontal steppers only. On web and Lit the list is an `<ol>`, which already announces "item 2 of 5", so the control shows its plain label and adds only the status word as visually hidden text, with no `aria-label` — `copy.stepLabel` is native-only (React Native and SwiftUI), where there is no list ordinal and the accessibility label is `copy.stepLabel` plus that word. When a step carries `status: 'error'` and is also the one `current` names, the error wins for the indicator, its colour and the status word, while the selected state and the compact reveal still follow the id — the user is on that step, and it has a problem. `transition` times the connector's cross-fade between `connector` and `connectorComplete`; the indicator has four discrete states and switches between them at once, as every other multi-state indicator here does.
 
 ## Content guidelines
 
@@ -931,7 +957,7 @@ Render `<nav aria-label={label ?? "Progress"} data-ds="Stepper"><ol>` with an `<
 `<ds-stepper current="payment" .steps=${steps}></ds-stepper>`; shadow `<nav><ol>`; `step-select` composed; `container-type: inline-size` on the host for the compact switch.
 
 ### React Native
-`View` (`accessibilityRole="list"`) laid out in a row or column; each step a `Pressable` (navigable) or `View` with `accessible`, `accessibilityLabel` from `copy.stepLabel` + status word, `accessibilityState.selected` for the current step. Connectors are `View`s with `connectorWidth`. Use `compact` on phones for horizontal steppers (decided by the stepper's own `onLayout` width against `layout.maxWidth.prose`, not the window). No landmark role exists, so the list View carries the name; label, description and count Texts sit in Views that carry their testIDs.
+A root `View` holding the list `View` (`accessibilityRole="list"`, laid out in a row or column) and the count; each step a `Pressable` (navigable) or `View` with `accessible`, `accessibilityLabel` from `copy.stepLabel` + status word, `accessibilityState.selected` for the current step. Connectors are `View`s with `connectorWidth`. Use `compact` on phones for horizontal steppers (decided by the stepper's own `onLayout` width against `layout.maxWidth.prose`, not the window). No landmark role exists, so the list View carries the name; label, description and count Texts sit in Views that carry their testIDs.
 
 ## Related
 

@@ -128,3 +128,8 @@ Gaps a fold cannot answer because they are about the tools, not the docs.
 - The resolved Keyboard section the parser renders drops the Home/End rows the schema's keyboard block declares, so generators see two conflicting keyboard lists (SegmentedControl, web and lit).
 - The rn package digest documents `toLineHeight(t.fontLineHeightNormal, t.fontSizeMd)`, but theme.tsx takes `toLineHeight(fontSize, multiplier)`; the digest example has the arguments reversed (Combobox, rn).
 - CSF3 merges meta default args into every story, while the example rule says a story's args are "exactly its given"; the rule should say "given on top of the meta defaults" (Tabs, lit).
+- The generic Keyboard-story rule ("at least three focusable children", "render it open") does not fit single-stop fields or components without an `open` prop; docs now state their story, but the rule should defer to the doc (NumberInput web/lit, Slider, Search rn).
+- Lit anatomy parts carry `part` attributes although the package forbids ::part styling; the Lit rules should say whether `part` is emitted at all (ProgressBar, lit).
+- The rn package digest says to pass an Icon foreground through the `color` prop, while docs forward locked colours to `overrides.color`; the digest should match (Stepper, Search; rn).
+- Scenario coverage gaps the scenario vocabulary cannot express: range sliders (two role=slider elements), rn accessibility actions (increment, custom actions), and `focusable: false` on rn (Slider, ProgressBar; rn/web).
+- A fold session could not run `node logs/fold-latest-rounds.mjs` or a `grep` with alternation through Bash (approval required); latest rounds were found with the Grep tool (fold, Numeric phase).

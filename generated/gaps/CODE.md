@@ -69,3 +69,5 @@ Gaps where a sibling component's generated code is wrong. The docs are already r
 - packages/lit ds-form never sets `invalid` on a failing field and sends no message back, so copy.required never shows from Form validation alone (found in RadioGroup, Checkbox; lit).
 - Dialog, AlertDialog, BottomSheet, ActionSheet, Popover, SidePanel (web) pass `data-part="focusScope"` to FocusScope, whose own `data-part="scope"` wins, so the overlays' focusScope part is missing until they put it on an element they own (found in FocusScope, web).
 - packages/lit ds-button, ds-link and ds-input do not forward a host `aria-label`/`aria-description` to their inner control, which tooltip.md relies on for custom-element triggers (found in Tooltip, lit).
+- packages/web FormContext's FormFieldValue JSDoc says "Slider a number", but slider.md registers decimal strings; the JSDoc (and the unused number members) are stale (found in Slider, web).
+- packages/lit ds-popover has no public reposition method, so DatePicker dispatches a synthetic `scroll` event to make it re-measure (found in DatePicker, lit).

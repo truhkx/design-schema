@@ -99,31 +99,35 @@ component:
     value:
       type: number
       description: Progress so far, between `min` and `max`. Omit (undefined or null)
-        for an indeterminate bar (the end is unknown). Clamped to `min`…`max` for
-        the fill, the accessible value, `formatValue`'s argument and the announcement
-        tiers; a non-finite number (NaN, Infinity) is treated as `min`.
+        for an indeterminate bar (the end is unknown); generated code types it `number
+        | null | undefined`. Clamped to `min`…`max` for the fill, the accessible value,
+        `formatValue`'s argument and the announcement tiers; a non-finite number (NaN,
+        Infinity) is treated as `min`.
     min:
       type: number
       default: 0
-      description: Start of the range.
+      description: Start of the range. A non-finite number is treated as the default,
+        0.
     max:
       type: number
       default: 100
-      description: End of the range.
+      description: End of the range. A non-finite number is treated as the default,
+        100.
     formatValue:
       type: function
       shape: '(value: number, min: number, max: number) => string'
       description: 'Renders the value text ("42%", "3 of 12 files"). Defaults to a
         percentage over the whole range — `(value − min) / (max − min)` — the same
         arithmetic the fill uses, so a non-zero `min` reads correctly without a custom
-        formatter, rounded to a whole number: `Intl.NumberFormat(locale, { style:
-        ''percent'', maximumFractionDigits: 0 })`, as Meter does (99.5% of the way
-        shows "100%" before completion; completion is only the clamped value reaching
-        `max`). Called with the clamped value. Rounding is for the text only; the
-        fill uses the exact fraction. A `max` at or below `min` is not a range: the
-        bar renders empty, exposes aria-valuenow / accessibilityValue.now = `min`
-        with the given bounds, shows and exposes "0%" unless a custom formatter says
-        otherwise, makes no progress or completion announcements, and warns in development.'
+        formatter, rounded to a whole number: `Intl.NumberFormat(undefined, { style:
+        ''percent'', maximumFractionDigits: 0 })` (the runtime or device default locale;
+        there is no locale prop), as Meter does (99.5% of the way shows "100%" before
+        completion; completion is only the clamped value reaching `max`). Called with
+        the clamped value. Rounding is for the text only; the fill uses the exact
+        fraction. A `max` at or below `min` is not a range: the bar renders empty,
+        exposes aria-valuenow / accessibilityValue.now = `min` with the given bounds,
+        shows and exposes "0%" unless a custom formatter says otherwise, makes no
+        progress or completion announcements, and warns in development.'
     showValue:
       type: boolean
       default: true
@@ -133,10 +137,16 @@ component:
     hideLabel:
       type: boolean
       default: false
-      description: Visually hide the label (it remains the accessible name). For bars
-        inside a Card whose heading already says what is happening. The value text,
-        when shown, stays at the end of the row; when there is no visible value text
-        either, the label row takes no space and `partGap` is not applied.
+      description: 'Visually hide the label (it remains the accessible name). For
+        bars inside a Card whose heading already says what is happening. The value
+        text, when shown, stays at the inline end of the row (the header switches
+        to end alignment, since the hidden label leaves the flow). When there is no
+        visible value text either, the label row takes no space and `partGap` is not
+        applied: on web and Lit the header element stays, with its data-part and the
+        label inside it, and is itself visually hidden (out of flow), so web''s aria-labelledby
+        still resolves. On React Native a hidden label is not rendered at all; the
+        name lives in accessibilityLabel and the `label` part has no native home while
+        hidden, as Input.'
     tone:
       type: enum
       enumRef: tone
@@ -243,12 +253,14 @@ component:
       token: motion.duration.base
       part: fill
       description: Fill inline-size change with motion.easing.standard; instant under
-        reduced motion.
+        reduced motion. An override changes the duration only; the easing is read
+        from the token and has no hook (the sweep's easing is `sweepEasing`).
       locked: false
     indeterminateLoop:
       token: motion.duration.loop
       part: fill
-      description: 'The indeterminate sweep: a fill one third of the track width travelling
+      description: 'The indeterminate sweep: a fill one third of the track width (the
+        one-third ratio is geometry, not a token; a literal is allowed for it) travelling
         from the inline start to the inline end (right to left in RTL) and repeating,
         starting and ending wholly outside the track. Under reduced motion there is
         no sweep: the fill is drawn static and full-width at opacity.disabled, keeping
@@ -328,7 +340,11 @@ component:
         removed, aria-busy="true". `showValue` is the negated attribute `hide-value`.
         The sweep mirrors its keyframes under :host(:dir(rtl)). The live region is
         in the shadow root and carries role="status" beside aria-live="polite"; it
-        is not an anatomy part and takes no `part`.'
+        is not an anatomy part and takes no `part`. The forwarded bindings (labelSize,
+        labelWeight, valueSize, fontFamily, lineHeight) reach the ds-text children
+        only through their `overrides` property; they have no --ds-progress-bar-*
+        CSS hook, since nothing in the shadow root could read one without restyling
+        the child.'
     rn:
       element: View
       props:
@@ -344,7 +360,12 @@ component:
         min, max, now, text }} — an indeterminate bar carries min and max only, never
         a `now` or a `text` that would name a progress it does not know, and sets
         accessibilityState={{ busy: true }}, the native form of aria-busy. Announcements
-        via AccessibilityInfo.announceForAccessibility per `announce`.'
+        via AccessibilityInfo.announceForAccessibility per `announce`. The accessibility
+        props (accessible, focusable={false}, accessibilityRole, Label, Value, State)
+        sit on the root View, so the name and value announce together, as Meter. The
+        label and valueText Texts carry their testIDs (`ProgressBar.label`, `ProgressBar.valueText`)
+        on wrapper Views, since Text takes none. The sweeping fill is anchored at
+        the inline start and translates toward the inline end, negative x when I18nManager.isRTL.'
     swiftui:
       element: ProgressView
       props:
@@ -564,7 +585,12 @@ notes: "Drawn with Views (Animated.View width for the fill; the indeterminate sw
   \ min, max, now, text }} \u2014 an indeterminate bar carries min and max only, never\
   \ a `now` or a `text` that would name a progress it does not know, and sets accessibilityState={{\
   \ busy: true }}, the native form of aria-busy. Announcements via AccessibilityInfo.announceForAccessibility\
-  \ per `announce`."
+  \ per `announce`. The accessibility props (accessible, focusable={false}, accessibilityRole,\
+  \ Label, Value, State) sit on the root View, so the name and value announce together,\
+  \ as Meter. The label and valueText Texts carry their testIDs (`ProgressBar.label`,\
+  \ `ProgressBar.valueText`) on wrapper Views, since Text takes none. The sweeping\
+  \ fill is anchored at the inline start and translates toward the inline end, negative\
+  \ x when I18nManager.isRTL."
 ```
 
 ## Guidance
@@ -595,7 +621,8 @@ Announcements follow these rules on every platform:
 - **Mount.** The tier and completion reached at mount are recorded silently: a bar that mounts at 60% or at `max` announces nothing. A bar that mounts indeterminate has entered that state, so `copy.indeterminate` is announced once after mount (unless `announce` is `none`), as it is each later time `value` becomes undefined.
 - **Backward.** A value that moves to a lower tier resets the record to the new value's tier: moving from 80% to 60% makes 75% and completion announceable again without re-announcing 50%. Dropping below `max` re-arms `copy.complete`.
 - **Repeats.** An announcement is spoken even when its text equals the previous one (indeterminate twice, a retried task completing again): web and Lit replace the live region's message node rather than setting the same text; React Native calls `announceForAccessibility` again.
-- **Invalid range.** With `max ≤ min` no progress or completion is announced; `copy.indeterminate` still is.
+- **Indeterminate.** Entering the indeterminate state resets the record to tier 0 and re-arms `copy.complete`, so the first known value afterwards announces its tier under `milestones`. "Announced once after mount" means once the live region has rendered empty: web and Lit set the message on the next animation frame, since text already in a newly inserted region is often not read.
+- **Invalid range.** With `max ≤ min` no progress or completion is announced and no tier is recorded; `copy.indeterminate` still is. When the range becomes valid, the tier and completion it arrives at are recorded silently, as at mount.
 
 ## Content guidelines
 

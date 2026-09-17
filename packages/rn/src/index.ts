@@ -219,6 +219,7 @@ export type {
 
 export { DataGrid } from './DataGrid';
 export type {
+  DataGridCaptionLevel,
   DataGridCellSelection,
   DataGridCellValue,
   DataGridColumn,
@@ -241,6 +242,7 @@ export type {
 
 export { TreeGrid } from './TreeGrid';
 export type {
+  TreeGridCaptionLevel,
   TreeGridCellSelection,
   TreeGridCellValue,
   TreeGridDensity,

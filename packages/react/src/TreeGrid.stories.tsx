@@ -4,23 +4,26 @@ import { TreeGrid, type TreeGridRow } from './TreeGrid';
 
 const COLUMNS: DataGridColumn[] = [
   { key: 'account', header: 'Account', isRowHeader: true, width: 240 },
-  { key: 'balance', header: 'Balance', align: 'end', sortable: true, editable: true, editor: 'number' },
+  { key: 'code', header: 'Code', width: 100 },
+  { key: 'balance', header: 'Balance', align: 'end', sortable: true },
 ];
 
 const DATA: TreeGridRow[] = [
   {
     id: 'assets',
     account: 'Assets',
+    code: '1000',
     balance: 1400,
     children: [
-      { id: 'cash', account: 'Cash', balance: 400 },
+      { id: 'cash', account: 'Cash', code: '1010', balance: 400 },
       {
         id: 'stock',
         account: 'Stock',
+        code: '1020',
         balance: 1000,
         children: [
-          { id: 'raw', account: 'Raw materials', balance: 600 },
-          { id: 'finished', account: 'Finished goods', balance: 400 },
+          { id: 'raw', account: 'Raw materials', code: '1021', balance: 600 },
+          { id: 'finished', account: 'Finished goods', code: '1022', balance: 400 },
         ],
       },
     ],
@@ -28,10 +31,11 @@ const DATA: TreeGridRow[] = [
   {
     id: 'liabilities',
     account: 'Liabilities',
-    balance: 0,
-    children: [{ id: 'payable', account: 'Accounts payable', balance: 0 }],
+    code: '2000',
+    balance: 300,
+    children: [{ id: 'payable', account: 'Accounts payable', code: '2010', balance: 300 }],
   },
-  { id: 'equity', account: 'Equity', balance: 1400 },
+  { id: 'equity', account: 'Equity', code: '3000', balance: 1100 },
 ];
 
 const meta: Meta<typeof TreeGrid> = {
@@ -51,6 +55,11 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
 
+/* captionLevel */
+export const CaptionLevel2: Story = { args: { captionLevel: '2' } };
+export const CaptionLevel3: Story = { args: { captionLevel: '3' } };
+export const CaptionLevel4: Story = { args: { captionLevel: '4' } };
+
 /* selectable */
 export const SelectableNone: Story = { args: { selectable: 'none' } };
 export const SelectableRow: Story = { args: { selectable: 'row' } };
@@ -66,6 +75,8 @@ export const HeightViewport: Story = { args: { height: 'viewport' } };
 export const HeightFixed: Story = { args: { height: 'fixed' } };
 
 /* examples */
+
+/** Nested accounts with their balances, the top level expanded. */
 export const ChartOfAccounts: Story = {
   args: {
     caption: 'Chart of accounts',
@@ -89,6 +100,7 @@ export const ChartOfAccounts: Story = {
   },
 };
 
+/** A deep tree whose children are fetched the first time a row is expanded. */
 export const LazyFolders: Story = {
   args: {
     caption: 'Files',
@@ -103,6 +115,7 @@ export const LazyFolders: Story = {
   },
 };
 
+/** Selection that means "this row and everything in it", with indeterminate parents. */
 export const CascadingSelection: Story = {
   args: {
     caption: 'Bill of materials',
@@ -117,6 +130,7 @@ export const CascadingSelection: Story = {
   },
 };
 
+/** A nested grid that is worked in, where the quantity column takes a number editor. */
 export const EditableQuantities: Story = {
   args: {
     caption: 'Bill of materials',
@@ -134,20 +148,18 @@ export const EditableQuantities: Story = {
 export const HideCaption: Story = { args: { hideCaption: true } };
 export const Collapsed: Story = { args: { defaultExpanded: [] } };
 export const ExpandAll: Story = { args: { defaultExpanded: ['*'] } };
-export const LazyLoading: Story = {
-  args: { data: [{ id: 'assets', account: 'Assets', balance: 1400, children: 'lazy' }], defaultExpanded: ['assets'] },
-};
 export const Loading: Story = { args: { loading: true } };
 export const Empty: Story = { args: { data: [] } };
-export const EmptyMessage: Story = { args: { data: [], emptyMessage: 'No accounts yet.' } };
+export const EmptyMessage: Story = { args: { data: [], emptyMessage: 'No accounts loaded.' } };
 export const DefaultSort: Story = { args: { defaultSort: { column: 'balance', direction: 'descending' } } };
 export const Editable: Story = { args: { editable: true } };
 export const NoStatusBar: Story = { args: { showStatusBar: false } };
-export const NoStickyHeader: Story = { args: { height: 'content', stickyHeader: false } };
+export const NoStickyHeader: Story = { args: { stickyHeader: false } };
+export const SelectChildren: Story = { args: { selectable: 'row', selectChildren: true, defaultExpanded: ['*'] } };
 
 /**
- * The tree grid present and expanded, with a sortable header, the select-all Checkbox and one Checkbox per
- * visible row — well over three focusable children — for the keyboard gate. No decorators.
+ * The tree grid present with expanded rows, a sortable header, the select-all Checkbox and one Checkbox
+ * per row — well over three focusable children — for the keyboard gate. No decorators.
  */
 export const Keyboard: Story = {
   args: {

@@ -71,6 +71,7 @@ export type TreeOverridableBinding =
   | 'guideLineWidth'
   | 'checkboxGap'
   | 'checkboxSize'
+  | 'checkboxBorderWidth'
   | 'checkboxBackground'
   | 'checkboxRadius'
   | 'fontFamily'
@@ -91,6 +92,7 @@ const OVERRIDE_HOOK: Record<RootHookBinding, string> = {
   guideLineWidth: '--ds-tree-guide-line-width',
   checkboxGap: '--ds-tree-checkbox-gap',
   checkboxSize: '--ds-tree-checkbox-size',
+  checkboxBorderWidth: '--ds-tree-checkbox-border-width',
   checkboxBackground: '--ds-tree-checkbox-background',
   checkboxRadius: '--ds-tree-checkbox-radius',
   fontFamily: '--ds-tree-font-family', // literal-ok: CSS custom-property hook name, not a font stack
@@ -371,7 +373,8 @@ export function Tree({
     if (node.disabled) return;
     if (selectable === 'single') selectOnly(node.id);
     if (node.href) {
-      itemRefs.current.get(node.id)?.querySelector<HTMLAnchorElement>('[data-ds="Link"]')?.click();
+      // The link part is a span the tree owns; the anchor Link renders inside it.
+      itemRefs.current.get(node.id)?.querySelector<HTMLAnchorElement>('[data-part="link"] a')?.click();
     } else {
       onActivate?.(node.id);
     }
@@ -405,7 +408,8 @@ export function Tree({
     const { node } = current;
     const multiple = selectable === 'multiple';
 
-    if (event.ctrlKey && !event.altKey && !event.metaKey && event.code === 'KeyA') {
+    // Control or Meta (Cmd on macOS), bound by key code so a non-QWERTY layout still reaches it.
+    if ((event.ctrlKey || event.metaKey) && !event.altKey && event.code === 'KeyA') {
       if (!multiple) return;
       event.preventDefault();
       const next = new Set(selectedIds);
@@ -464,12 +468,17 @@ export function Tree({
         return;
       case '*': {
         event.preventDefault();
-        const openable = current.siblings.filter((sibling) => hasChildren(sibling) && !expandedSet.has(sibling.id));
+        // Every enabled sibling, the focused node included; a lazy sibling opens and fires onExpand.
+        const openable = current.siblings.filter(
+          (sibling) => !sibling.disabled && hasChildren(sibling) && !expandedSet.has(sibling.id),
+        );
         if (openable.length > 0) commitExpanded([...expandedIds, ...openable.map((sibling) => sibling.id)]);
         return;
       }
       default:
-        if (/^[a-z]$/i.test(event.key) && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        // Type-ahead takes any printable character — letters, digits, punctuation.
+        if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+          event.preventDefault();
           handleTypeahead(event.key, index);
         }
     }
@@ -484,6 +493,12 @@ export function Tree({
   const labelWeight: TokenRef = overrides?.labelSelectedWeight ?? 'font.weight.medium';
   const badgeSize: TokenRef = overrides?.badgeSize ?? 'font.size.xs';
   const headingSize: TokenRef = overrides?.headingSize ?? 'font.size.md';
+  /** fontFamily / fontSize / lineHeight reach the label through the composed Text's own overrides. */
+  const labelTextOverrides = {
+    fontFamily: overrides?.fontFamily ?? 'font.family.body',
+    fontSize: overrides?.fontSize ?? 'font.size.sm',
+    lineHeight: overrides?.lineHeight ?? 'font.lineHeight.normal',
+  } satisfies Partial<Record<'fontFamily' | 'fontSize' | 'lineHeight', TokenRef>>;
 
   const renderNode = (node: TreeNode, level: number, posinset: number, setsize: number): ReactNode => {
     const parent = hasChildren(node);
@@ -528,9 +543,11 @@ export function Tree({
           onMouseDown={(event: ReactMouseEvent) => {
             if (node.disabled) event.preventDefault();
           }}
-          onClick={() => {
+          onClick={(event: ReactMouseEvent) => {
             if (node.disabled) return;
             focusNode(node.id);
+            // A double-click toggles once, then activates: the second click does not toggle again.
+            if (event.detail >= 2) return;
             selectAction(node);
           }}
           onDoubleClick={() => activate(node)}
@@ -544,8 +561,10 @@ export function Tree({
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={(event) => {
                   event.stopPropagation();
+                  // A disabled parent stays closed; the chevron only expands, never selects.
+                  if (node.disabled) return;
                   toggleExpanded(node.id);
-                  if (!node.disabled) focusNode(node.id);
+                  focusNode(node.id);
                 }}
                 onDoubleClick={(event) => event.stopPropagation()}
               >
@@ -559,6 +578,7 @@ export function Tree({
                       <Icon name="chevron-right" inline />
                     </span>
                   }
+                  disabled={node.disabled ?? false}
                   aria-hidden="true"
                   tabIndex={-1}
                 />
@@ -578,23 +598,34 @@ export function Tree({
               ) : null}
               <span className="ds-tree__body">
                 {node.icon ? (
-                  <span className="ds-tree__icon" data-part="icon" aria-hidden="true">
-                    <Icon name={node.icon} inline />
+                  <span className="ds-tree__icon" aria-hidden="true">
+                    {/* iconColor is locked, so it always reaches the composed Icon as its own override. */}
+                    <Icon data-part="icon" name={node.icon} inline overrides={{ color: 'color.foreground.muted' }} />
                   </span>
                 ) : null}
                 <span className="ds-tree__label">
-                  {node.href ? (
-                    <Link data-part="link" href={node.href} label={node.label} tone="inherit" tabIndex={-1} />
-                  ) : (
-                    <Text
-                      data-part="label"
-                      element="span"
-                      truncate
-                      overrides={isSelected ? { fontWeight: labelWeight } : undefined}
-                    >
-                      {node.label}
-                    </Text>
-                  )}
+                  {/*
+                    The label is always the composed Text (the `label` part). An `href` node nests a
+                    `tone="inherit"` Link inside it — through the tree-owned `link` span, since Link
+                    keeps its own data-part="anchor" — so the link takes the label's font and colour.
+                    labelSelectedWeight is not forwarded then: the row marks a selected navigation node.
+                  */}
+                  <Text
+                    data-part="label"
+                    element="span"
+                    truncate
+                    overrides={
+                      isSelected && node.href === undefined ? { ...labelTextOverrides, fontWeight: labelWeight } : labelTextOverrides
+                    }
+                  >
+                    {node.href ? (
+                      <span className="ds-tree__link" data-part="link">
+                        <Link href={node.href} label={node.label} tone="inherit" tabIndex={-1} />
+                      </span>
+                    ) : (
+                      node.label
+                    )}
+                  </Text>
                 </span>
               </span>
             </span>

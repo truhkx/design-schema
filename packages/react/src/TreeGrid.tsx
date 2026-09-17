@@ -30,9 +30,11 @@ import './TreeGrid.css';
 export type TreeGridSelectable = 'none' | 'row' | 'cell';
 export type TreeGridDensity = 'compact' | 'comfortable';
 export type TreeGridHeight = 'content' | 'viewport' | 'fixed';
+/** Heading level of the caption. Accepts the schema's string values and their numeric equivalents. */
+export type TreeGridCaptionLevel = '2' | '3' | '4' | 2 | 3 | 4;
 export type TreeGridSortDirection = 'ascending' | 'descending';
 
-/** A row's children: a loaded subtree, or `"lazy"` (loaded on first expand through `onExpand`). */
+/** A row's children: a loaded subtree, or `"lazy"` (loaded on expand through `onExpand`). */
 export type TreeGridChildren = TreeGridRow[] | 'lazy';
 
 /** `TreeRow = { id: string; children?: TreeRow[] | "lazy"; [key: string]: unknown }` */
@@ -55,18 +57,32 @@ export type TreeGridSelection = string[] | TreeGridCellRef;
 export type TreeGridCellValue = string | number | boolean;
 
 /** Style bindings that can be overridden per instance; accessibility-bearing bindings are locked. */
-export type TreeGridOverridableBinding = 'indent' | 'expandGap' | 'guideLine' | 'guideLineWidth' | 'parentWeight' | 'transition';
+export type TreeGridOverridableBinding =
+  | 'indent'
+  | 'expandGap'
+  | 'guideLine'
+  | 'cellPaddingInline'
+  | 'fixedHeight'
+  | 'guideLineWidth'
+  | 'parentWeight'
+  | 'transition';
 
+/** Root CSS hooks, one per overridable binding. DataGrid's own bindings (header, grid lines, row height,
+ * status bar, caption, resize handle, resizeStep) apply at DataGrid's default tokens and are not
+ * overridable here — only cellPaddingInline and fixedHeight are. */
 const OVERRIDE_HOOKS: Record<TreeGridOverridableBinding, string> = {
   indent: '--ds-tree-grid-indent',
   expandGap: '--ds-tree-grid-expand-gap',
   guideLine: '--ds-tree-grid-guide-line',
+  cellPaddingInline: '--ds-tree-grid-cell-padding-inline',
+  fixedHeight: '--ds-tree-grid-fixed-height',
   guideLineWidth: '--ds-tree-grid-guide-line-width',
   parentWeight: '--ds-tree-grid-parent-weight',
   transition: '--ds-tree-grid-transition',
 };
 
-/** copy.* — verbatim. */
+/** copy.* — verbatim. `level`, `childCount`, `expandAll` and `collapseAll` are native-only: the web
+ * conveys depth through aria-level / aria-setsize / aria-posinset and expand-all through the `*` key. */
 const COPY = {
   expand: 'Expand {rowName}',
   collapse: 'Collapse {rowName}',
@@ -86,8 +102,8 @@ const COPY = {
   scrollHint: 'Scroll sideways to see more columns',
 } as const;
 
-/** The column width when `width` is omitted (DataGrid's schema default). */
-const DEFAULT_COLUMN_WIDTH = 160; // literal-ok: schema default column width, in CSS pixels
+/** The width of a column that sets no `width`: DataGrid's columnWidth binding at its default token. */
+const DEFAULT_COLUMN_SIZE = 'var(--ds-tree-grid-column-size)';
 /** Rows rendered before one row has been measured (a row count, not a size). */
 const UNMEASURED_ROW_LIMIT = 50;
 /** The selection column: a minimum target plus the cell's own inline padding on both sides. */
@@ -98,8 +114,11 @@ const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 /** Interactive content a cell's `render` may hold, whatever its tabindex. */
 const CONTROL_SELECTOR = 'a[href], button, input, select, textarea, [contenteditable="true"]';
-const NAVIGATION_KEYS = new Set(['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp', 'Home', 'End']);
+const NAVIGATION_KEYS = new Set(['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp', 'Home', 'End', 'PageDown', 'PageUp']);
+/** The key of the placeholder row rendered under a `"lazy"` row while its children load. */
 const PLACEHOLDER_PREFIX = 'ds-tree-grid-loading:';
+/** `defaultExpanded: ["*"]` — every row whose `children` is a non-empty array, now or once loaded. */
+const EXPAND_ALL = '*';
 
 declare const process: { env: Record<string, string | undefined> } | undefined;
 const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
@@ -124,9 +143,9 @@ function textOf(value: unknown): string {
   return value === undefined || value === null ? '' : String(value);
 }
 
-function toCellValue(value: unknown): TreeGridCellValue {
+function toCellValue(value: unknown): TreeGridCellValue | undefined {
   if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return value;
-  return value === undefined || value === null ? '' : String(value);
+  return value === undefined || value === null ? undefined : String(value);
 }
 
 function joinClasses(...parts: (string | false | null | undefined)[]): string {
@@ -138,7 +157,7 @@ function hasChildren(row: TreeGridRow): boolean {
   return row.children === 'lazy' || (Array.isArray(row.children) && row.children.length > 0);
 }
 
-/** Every loaded descendant id (a `"lazy"` subtree contributes nothing). O(subtree). */
+/** Every loaded descendant id (a `"lazy"` subtree contributes nothing). An O(subtree) walk. */
 function descendantIds(row: TreeGridRow): string[] {
   if (!Array.isArray(row.children)) return [];
   const ids: string[] = [];
@@ -150,22 +169,6 @@ function descendantIds(row: TreeGridRow): string[] {
   };
   walk(row.children);
   return ids;
-}
-
-/** `["*"]` stands for every loaded row that has loaded children. */
-function resolveExpanded(ids: string[], data: TreeGridRow[]): string[] {
-  if (!ids.includes('*')) return ids;
-  const resolved = ids.filter((id) => id !== '*');
-  const walk = (list: TreeGridRow[]): void => {
-    for (const row of list) {
-      if (Array.isArray(row.children) && row.children.length > 0) {
-        if (!resolved.includes(row.id)) resolved.push(row.id);
-        walk(row.children);
-      }
-    }
-  };
-  walk(data);
-  return resolved;
 }
 
 type VisibleRow = {
@@ -182,32 +185,40 @@ type VisibleRow = {
 export interface TreeGridProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children' | 'className' | 'style'> {
   /** What the tree grid holds ("Chart of accounts"). The accessible name. */
   caption: string;
+  /** As DataGrid: the caption's heading level in the page outline; its size does not change with it. */
+  captionLevel?: TreeGridCaptionLevel | undefined;
   /** Visually hide the caption; it remains the accessible name. */
   hideCaption?: boolean | undefined;
   /** DataGrid's column model. The `isRowHeader` column is required here: it carries the indent and the expand
    * button, so it must exist and come first after the selection column. */
   columns: DataGridColumn[];
-  /** Nested rows. `children: "lazy"` marks a row whose children are loaded on first expand through `onExpand`;
-   * the row shows the expand button and a loading state until `data` is updated. */
+  /** Nested rows. `children: "lazy"` marks a row whose children are loaded on expand through `onExpand`; the row
+   * shows the expand button and a loading state until `data` is updated. `children: []` is a leaf (no expand
+   * button, no aria-expanded). */
   data: TreeGridRow[];
   /** Controlled ids of expanded rows. */
   expanded?: string[] | undefined;
-  /** Initially expanded ids. `["*"]` expands every loaded row. */
+  /** Initially expanded ids. `["*"]` expands every row whose `children` is a non-empty array, including rows
+   * loaded later, and never a `"lazy"` row (that would fire onExpand without a user act); `"*"` is honoured the
+   * same way in controlled `expanded`, and the first user toggle resolves it to concrete ids, which is what
+   * onExpandChange reports. A lazy id listed explicitly stays collapsed until the user opens it. */
   defaultExpanded?: string[] | undefined;
   /** Sort applies within each level; siblings are ordered, hierarchy is kept. */
   sort?: TreeGridSortState | undefined;
   /** As DataGrid. */
   defaultSort?: TreeGridSortState | undefined;
   /** As DataGrid without `range` (rectangles across levels are not meaningful). `row` selection of a parent does
-   * not select its children unless `selectChildren`. */
+   * not select its children unless `selectChildren`. Select-all covers every loaded row at every level. */
   selectable?: TreeGridSelectable | undefined;
   /** As DataGrid. */
   selected?: string[] | undefined;
   /** Initially selected row ids. */
   defaultSelected?: string[] | undefined;
   /** Toggling a parent row sets or clears its own id and every loaded descendant; a parent's shown state is
-   * derived from its loaded descendants (checked when all, indeterminate when some, else its own id). A `"lazy"`
-   * subtree contributes nothing until loaded. Select-all covers every loaded row at every level. */
+   * derived from its loaded descendants (checked when all, even if its own id is absent; indeterminate when
+   * some; else its own id), and an indeterminate row reports aria-selected="false". Space, Enter on the select
+   * cell, a click on its Checkbox and Ctrl/Cmd+click all cascade; only Shift+Space and Shift+click ranges do
+   * not. A `"lazy"` subtree contributes nothing until loaded. */
   selectChildren?: boolean | undefined;
   /** As DataGrid. */
   editable?: boolean | undefined;
@@ -230,14 +241,17 @@ export interface TreeGridProps extends Omit<ComponentPropsWithoutRef<'div'>, 'ch
   /** Fired with the new array of expanded ids (the bare array, as Tree; not wrapped in an object). */
   onExpandChange?: ((ids: string[]) => void) | undefined;
   /** Fired with its id (bare string) each time a row whose `children` is still `"lazy"` is expanded, so a failed
-   * load can retry; once the caller replaces `children` it never fires again for that row. */
+   * load can retry; once the caller replaces `children` it never fires again for that row. It fires before the
+   * onExpandChange of the same act. */
   onExpand?: ((id: string) => void) | undefined;
   /** As DataGrid. */
   onSortChange?: ((column: string, direction: TreeGridSortDirection) => void) | undefined;
   /** As DataGrid (row ids or one cell). */
   onSelectionChange?: ((selection: TreeGridSelection) => void) | undefined;
-  /** As DataGrid. */
-  onCellChange?: ((rowId: string, column: string, value: TreeGridCellValue, previous: TreeGridCellValue) => void) | undefined;
+  /** As DataGrid. The caller updates `data`; the grid shows the old value until it does. */
+  onCellChange?:
+    | ((rowId: string, column: string, value: TreeGridCellValue | undefined, previous: TreeGridCellValue | undefined) => void)
+    | undefined;
   /** As DataGrid; return false to refuse editing that cell. */
   onEditStart?: ((rowId: string, column: string) => boolean | void) | undefined;
   /** As DataGrid. */
@@ -245,7 +259,7 @@ export interface TreeGridProps extends Omit<ComponentPropsWithoutRef<'div'>, 'ch
 }
 
 type Active = { key: string | null; col: number };
-type Editing = { rowId: string; column: string };
+type Editing = { rowId: string; column: string; seed: string | undefined };
 
 /**
  * TreeGrid — Design Schema, category: data. APG treegrid built on DataGrid's structure.
@@ -258,6 +272,7 @@ type Editing = { rowId: string; column: string };
 export function TreeGrid({
   ref,
   caption,
+  captionLevel = '2',
   hideCaption = false,
   columns,
   data,
@@ -295,6 +310,7 @@ export function TreeGrid({
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const gridRef = useRef<HTMLDivElement | null>(null);
+  const stepSizerRef = useRef<HTMLSpanElement | null>(null);
   const targetSizerRef = useRef<HTMLSpanElement | null>(null);
   const editorRef = useRef<HTMLDivElement | null>(null);
 
@@ -317,22 +333,33 @@ export function TreeGrid({
   const rowHeaderCol = rowHeaderIndex < 0 ? -1 : rowHeaderIndex + colOffset;
 
   const [resizedWidths, setResizedWidths] = useState<Record<string, number>>({});
-  const widthOf = (column: DataGridColumn): number => resizedWidths[column.key] ?? column.width ?? DEFAULT_COLUMN_WIDTH;
-  const gridTemplateColumns = [hasSelectColumn ? SELECT_COLUMN_SIZE : null, ...columns.map((column) => `${widthOf(column)}px`)]
+  /** The column's width in pixels, or undefined while it takes DataGrid's columnWidth default. */
+  const widthOf = (column: DataGridColumn): number | undefined => resizedWidths[column.key] ?? column.width;
+  const widthCss = (column: DataGridColumn): string => {
+    const width = widthOf(column);
+    return width === undefined ? DEFAULT_COLUMN_SIZE : `${width}px`;
+  };
+  /** The width of `columns[from..to)` as one CSS length: the pixel widths plus the default columns. */
+  const widthSpan = (from: number, to: number): string => {
+    let pixels = 0;
+    let defaults = 0;
+    for (let i = from; i < to; i += 1) {
+      const width = widthOf(columns[i]!);
+      if (width === undefined) defaults += 1;
+      else pixels += width;
+    }
+    return defaults === 0 ? `${pixels}px` : `calc(${pixels}px + ${defaults} * ${DEFAULT_COLUMN_SIZE})`;
+  };
+  const gridTemplateColumns = [hasSelectColumn ? SELECT_COLUMN_SIZE : null, ...columns.map(widthCss)]
     .filter(Boolean)
     .join(' ');
 
   const pinnedStyle = (column: DataGridColumn, index: number): CSSProperties | undefined => {
     if (column.pinned === 'start') {
-      let before = 0;
-      for (let i = 0; i < index; i += 1) before += widthOf(columns[i]!);
-      return { insetInlineStart: hasSelectColumn ? `calc(${SELECT_COLUMN_SIZE} + ${before}px)` : `${before}px` };
+      const before = widthSpan(0, index);
+      return { insetInlineStart: hasSelectColumn ? `calc(${SELECT_COLUMN_SIZE} + ${before})` : before };
     }
-    if (column.pinned === 'end') {
-      let after = 0;
-      for (let i = index + 1; i < columns.length; i += 1) after += widthOf(columns[i]!);
-      return { insetInlineEnd: `${after}px` };
-    }
+    if (column.pinned === 'end') return { insetInlineEnd: widthSpan(index + 1, columns.length) };
     return undefined;
   };
 
@@ -358,11 +385,37 @@ export function TreeGrid({
 
   /* ---------- expansion ---------- */
   const expandedControlled = expanded !== undefined;
-  const [internalExpanded, setInternalExpanded] = useState<string[]>(() => resolveExpanded(defaultExpanded ?? [], data));
-  const expandedIds = useMemo(
-    () => (expandedControlled ? resolveExpanded(expanded, data) : internalExpanded),
-    [expandedControlled, expanded, data, internalExpanded],
-  );
+  const [internalExpanded, setInternalExpanded] = useState<string[]>(defaultExpanded ?? []);
+  /** Lazy rows a user has opened: a lazy id listed in `expanded` alone never opens on its own. */
+  const [openedLazy, setOpenedLazy] = useState<string[]>([]);
+  const rawExpanded = expandedControlled ? expanded : internalExpanded;
+
+  const expandedIds = useMemo(() => {
+    const opened = new Set(openedLazy);
+    const seen = new Set<string>();
+    const out: string[] = [];
+    const add = (id: string): void => {
+      if (seen.has(id)) return;
+      seen.add(id);
+      out.push(id);
+    };
+    for (const id of rawExpanded) {
+      if (id === EXPAND_ALL) continue;
+      if (rowById.get(id)?.children === 'lazy' && !opened.has(id)) continue;
+      add(id);
+    }
+    if (rawExpanded.includes(EXPAND_ALL)) {
+      const walk = (list: TreeGridRow[]): void => {
+        for (const row of list) {
+          if (!Array.isArray(row.children) || row.children.length === 0) continue;
+          add(row.id);
+          walk(row.children);
+        }
+      };
+      walk(data);
+    }
+    return out;
+  }, [rawExpanded, openedLazy, rowById, data]);
   const expandedSet = useMemo(() => new Set(expandedIds), [expandedIds]);
 
   /* ---------- sort ---------- */
@@ -390,7 +443,16 @@ export function TreeGrid({
         : rows;
       siblings.forEach((row, index) => {
         const parent = hasChildren(row);
-        list.push({ key: row.id, row, level, posinset: index + 1, setsize: siblings.length, hasChildren: parent, parentId, placeholder: false });
+        list.push({
+          key: row.id,
+          row,
+          level,
+          posinset: index + 1,
+          setsize: siblings.length,
+          hasChildren: parent,
+          parentId,
+          placeholder: false,
+        });
         if (!parent || !expandedSet.has(row.id)) return;
         if (row.children === 'lazy') {
           list.push({
@@ -432,27 +494,30 @@ export function TreeGrid({
 
   const commitExpanded = (next: string[], opened: string[]): void => {
     if (!expandedControlled) setInternalExpanded(next);
-    for (const id of opened) if (rowById.get(id)?.children === 'lazy') onExpand?.(id);
+    const lazy = opened.filter((id) => rowById.get(id)?.children === 'lazy');
+    if (lazy.length > 0) setOpenedLazy((prev) => [...prev, ...lazy.filter((id) => !prev.includes(id))]);
+    for (const id of lazy) onExpand?.(id);
     onExpandChange?.(next);
   };
 
   const toggleExpand = (id: string): void => {
-    if (expandedSet.has(id)) {
-      // Focus inside the collapsing subtree moves up to the collapsed row.
-      let current = active.key;
-      while (current !== null && current !== id) {
-        current = current.startsWith(PLACEHOLDER_PREFIX) ? current.slice(PLACEHOLDER_PREFIX.length) : (parentById.get(current) ?? null);
-      }
-      if (current === id && active.key !== id) setActiveState({ key: id, col: active.col });
-      commitExpanded(
-        expandedIds.filter((existing) => existing !== id),
-        [],
-      );
-    } else {
+    if (!expandedSet.has(id)) {
       commitExpanded([...expandedIds, id], [id]);
+      return;
     }
+    // Focus inside the collapsing subtree moves up to the collapsed row.
+    let current = active.key;
+    while (current !== null && current !== id) {
+      current = current.startsWith(PLACEHOLDER_PREFIX) ? current.slice(PLACEHOLDER_PREFIX.length) : (parentById.get(current) ?? null);
+    }
+    if (current === id && active.key !== id) setActiveState({ key: id, col: active.col });
+    commitExpanded(
+      expandedIds.filter((existing) => existing !== id),
+      [],
+    );
   };
 
+  /** `*`: every row at the focused row's level under the same parent, the focused row included. */
   const expandLevel = (entry: VisibleRow): void => {
     const siblings = entry.parentId === null ? data : rowById.get(entry.parentId)?.children;
     if (!Array.isArray(siblings)) return;
@@ -467,6 +532,7 @@ export function TreeGrid({
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const rowAnchorRef = useRef<string | null>(null);
 
+  /** What a row's checkbox shows: derived from its loaded descendants under `selectChildren`. */
   const shownState = (row: TreeGridRow): 'checked' | 'mixed' | 'unchecked' => {
     if (selectChildren) {
       const descendants = descendantIds(row);
@@ -599,15 +665,23 @@ export function TreeGrid({
   const pickerOpenRef = useRef(false);
   const [editError, setEditError] = useState<string | undefined>(undefined);
 
-  const openEditor = (rowIndex: number, col: number): boolean => {
+  const openEditor = (rowIndex: number, col: number, seed?: string): boolean => {
     const column = dataColumnAt(col);
     const entry = visible[rowIndex];
     if (!editable || !column?.editable || !entry || entry.placeholder) return false;
     if (onEditStart?.(entry.key, column.key) === false) return false;
-    editValueRef.current = entry.row[column.key];
+    const kind = column.editor ?? 'text';
+    const seeded = seed !== undefined && (kind === 'text' || kind === 'number');
+    editValueRef.current = seeded
+      ? kind === 'number'
+        ? Number.isFinite(Number(seed))
+          ? Number(seed)
+          : undefined
+        : seed
+      : entry.row[column.key];
     pickerOpenRef.current = false;
     setActiveState({ key: entry.key, col });
-    setEditing({ rowId: entry.key, column: column.key });
+    setEditing({ rowId: entry.key, column: column.key, seed: seeded ? seed : undefined });
     setEditError(undefined);
     setAnnouncement(interpolate(COPY.editing, { column: column.header }));
     return true;
@@ -648,6 +722,22 @@ export function TreeGrid({
   };
 
   const editableCols = (): number[] => columns.flatMap((column, i) => (column.editable ? [i + colOffset] : []));
+
+  /** Delete / Backspace: clear the editable cells the selection covers. */
+  const clearSelection = (): boolean => {
+    const targets: [TreeGridRow, DataGridColumn][] = [];
+    if (selectable === 'row') {
+      for (const id of loadedIds) {
+        const row = selectedSet.has(id) ? rowById.get(id) : undefined;
+        if (row) for (const column of columns) if (column.editable) targets.push([row, column]);
+      }
+    } else if (selectable === 'cell') {
+      const column = dataColumnAt(activeCol);
+      if (activeEntry && !activeEntry.placeholder && column?.editable) targets.push([activeEntry.row, column]);
+    }
+    for (const [row, column] of targets) onCellChange?.(row.id, column.key, undefined, toCellValue(row[column.key]));
+    return targets.length > 0;
+  };
 
   const handleEditorKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>, column: DataGridColumn): void => {
     const kind = column.editor ?? 'text';
@@ -693,7 +783,15 @@ export function TreeGrid({
 
   useEffect(() => {
     if (!editing) return;
-    editorRef.current?.querySelector<HTMLElement>('input, button, select, textarea, [tabindex]')?.focus();
+    const target = editorRef.current?.querySelector<HTMLElement>('input, button, select, textarea, [tabindex]');
+    target?.focus();
+    if (target instanceof HTMLInputElement && editing.seed !== undefined) {
+      try {
+        target.setSelectionRange(target.value.length, target.value.length);
+      } catch {
+        // number inputs do not support selection ranges
+      }
+    }
   }, [editing]);
 
   /* ---------- keep controls inside cells out of the tab order (the grid is one tab stop) ---------- */
@@ -706,20 +804,30 @@ export function TreeGrid({
     }
   });
 
-  /* ---------- column resize (pointer) ---------- */
-  const minWidthOf = (column: DataGridColumn): number => column.minWidth ?? targetSizerRef.current?.getBoundingClientRect().width ?? 0;
+  /* ---------- column resize ---------- */
+  const pendingResizeRef = useRef<{ column: string; width: number } | null>(null);
+  /** The floor for both resize paths: the column's own `minWidth`, never below size.target.min. */
+  const minWidthOf = (column: DataGridColumn): number =>
+    Math.max(column.minWidth ?? 0, targetSizerRef.current?.getBoundingClientRect().width ?? 0);
+  /** Where a resize starts from: the set width, or the rendered width of a default-width column. */
+  const currentWidth = (column: DataGridColumn, index: number): number => {
+    const width = widthOf(column);
+    if (width !== undefined) return width;
+    const header = typeof document !== 'undefined' ? document.getElementById(cellId(-1, index + colOffset)) : null;
+    return header ? header.getBoundingClientRect().width : 0;
+  };
   const resizeTo = (column: DataGridColumn, width: number): number => {
     const next = Math.round(Math.max(minWidthOf(column), width));
     setResizedWidths((prev) => (prev[column.key] === next ? prev : { ...prev, [column.key]: next }));
     return next;
   };
 
-  const startPointerResize = (event: ReactPointerEvent<HTMLDivElement>, column: DataGridColumn): void => {
+  const startPointerResize = (event: ReactPointerEvent<HTMLDivElement>, column: DataGridColumn, index: number): void => {
     event.preventDefault();
     event.stopPropagation();
     const handle = event.currentTarget;
     const startX = event.clientX;
-    const startWidth = widthOf(column);
+    const startWidth = currentWidth(column, index);
     const rtl = typeof getComputedStyle === 'function' && getComputedStyle(handle).direction === 'rtl';
     let width = startWidth;
     handle.setPointerCapture?.(event.pointerId);
@@ -766,12 +874,22 @@ export function TreeGrid({
 
     switch (event.key) {
       case 'ArrowRight':
-        event.preventDefault();
-        if (onRowHeader && entry.hasChildren && !expandedSet.has(entry.key)) toggleExpand(entry.key);
-        else moveTo(row, col + 1);
-        return;
       case 'ArrowLeft': {
         event.preventDefault();
+        const delta = event.key === 'ArrowRight' ? 1 : -1;
+        // On the header row, Shift+arrow resizes a resizable column instead of navigating.
+        if (event.shiftKey && row === -1 && column?.resizable) {
+          const step = stepSizerRef.current?.getBoundingClientRect().width ?? 0;
+          const rtl = getComputedStyle(grid).direction === 'rtl';
+          const width = resizeTo(column, currentWidth(column, col - colOffset) + (rtl ? -delta : delta) * step);
+          pendingResizeRef.current = { column: column.key, width };
+          return;
+        }
+        if (delta === 1) {
+          if (onRowHeader && entry.hasChildren && !expandedSet.has(entry.key)) toggleExpand(entry.key);
+          else moveTo(row, col + 1);
+          return;
+        }
         if (onRowHeader && entry.hasChildren && expandedSet.has(entry.key)) {
           toggleExpand(entry.key);
           return;
@@ -779,6 +897,7 @@ export function TreeGrid({
         if (entry && (onRowHeader || entry.placeholder)) {
           const parent = entry.parentId !== null ? indexByKey.get(entry.parentId) : undefined;
           if (parent !== undefined) moveTo(parent, rowHeaderCol);
+          else moveTo(row, col - 1);
           return;
         }
         moveTo(row, col - 1);
@@ -794,11 +913,19 @@ export function TreeGrid({
         return;
       case 'Home':
         event.preventDefault();
-        moveTo(ctrl ? Math.min(0, visibleCount - 1) : row, 0);
+        moveTo(ctrl ? -1 : row, 0);
         return;
       case 'End':
         event.preventDefault();
         moveTo(ctrl ? visibleCount - 1 : row, colCount - 1);
+        return;
+      case 'PageDown':
+        event.preventDefault();
+        moveTo(row + pageSize, col);
+        return;
+      case 'PageUp':
+        event.preventDefault();
+        moveTo(row < 0 ? row : Math.max(0, row - pageSize), col);
         return;
       case 'Enter': {
         event.preventDefault();
@@ -840,13 +967,29 @@ export function TreeGrid({
         else toggleRow(entry.row);
         return;
       }
+      case 'Delete':
+      case 'Backspace':
+        if (editable && clearSelection()) event.preventDefault();
+        return;
       default:
     }
 
-    if (ctrl && event.key.toLowerCase() === 'a' && selectable === 'row') {
+    if (ctrl && event.code === 'KeyA' && selectable === 'row') {
       event.preventDefault();
       commitRows(loadedIds);
+      return;
     }
+    // Typing a printable character opens the editor with it as the value. Space is never an edit trigger.
+    if (event.key.length === 1 && event.key !== ' ' && !ctrl && !event.altKey && row >= 0 && openEditor(row, col, event.key)) {
+      event.preventDefault();
+    }
+  };
+
+  const handleKeyUp = (event: ReactKeyboardEvent<HTMLDivElement>): void => {
+    if (event.key !== 'Shift' || !pendingResizeRef.current) return;
+    const { column, width } = pendingResizeRef.current;
+    pendingResizeRef.current = null;
+    onColumnResize?.(column, width);
   };
 
   /* ---------- pointer ---------- */
@@ -909,7 +1052,7 @@ export function TreeGrid({
   };
 
   /* ---------- render: editors ---------- */
-  const renderEditor = (column: DataGridColumn, row: TreeGridRow): ReactElement => {
+  const renderEditor = (column: DataGridColumn, row: TreeGridRow, cell: Editing): ReactElement => {
     const name = `${baseId}-editor`;
     const current = row[column.key];
     const setValue = (value: unknown): void => {
@@ -928,7 +1071,9 @@ export function TreeGrid({
             hideLabel
             size="sm"
             name={name}
-            defaultValue={typeof current === 'number' ? current : undefined}
+            defaultValue={
+              cell.seed !== undefined ? (editValueRef.current as number | undefined) : typeof current === 'number' ? current : undefined
+            }
             overrides={zeroInset}
             onChange={setValue}
           />
@@ -970,7 +1115,15 @@ export function TreeGrid({
         return <Checkbox label={column.header} hideLabel name={name} checked={Boolean(current)} onChange={commitOnChange} />;
       default:
         return (
-          <Input label={column.header} hideLabel size="sm" name={name} defaultValue={textOf(current)} overrides={zeroInset} onChange={setValue} />
+          <Input
+            label={column.header}
+            hideLabel
+            size="sm"
+            name={name}
+            defaultValue={cell.seed ?? textOf(current)}
+            overrides={zeroInset}
+            onChange={setValue}
+          />
         );
     }
   };
@@ -1027,7 +1180,7 @@ export function TreeGrid({
             aria-valuemin={column.minWidth}
             aria-label={interpolate(COPY.resize, { column: column.header })}
             className="ds-tree-grid__resize-handle"
-            onPointerDown={(event) => startPointerResize(event, column)}
+            onPointerDown={(event) => startPointerResize(event, column, index)}
           />
         ) : null}
       </div>
@@ -1042,17 +1195,17 @@ export function TreeGrid({
         <span aria-hidden="true" className="ds-tree-grid__indent" data-part="indent" />
         <span className="ds-tree-grid__row-header">
           {entry.hasChildren ? (
-            <span className="ds-tree-grid__expand" data-part="expandButton" onClick={() => toggleExpand(entry.key)}>
+            <span
+              className={joinClasses('ds-tree-grid__expand', isExpanded && 'ds-tree-grid__expand--expanded')}
+              data-part="expandButton"
+              onClick={() => toggleExpand(entry.key)}
+            >
               <Button
                 variant="ghost"
                 size="sm"
                 iconOnly
                 label={interpolate(isExpanded ? COPY.collapse : COPY.expand, { rowName: name })}
-                leadingIcon={
-                  <span className={joinClasses('ds-tree-grid__chevron', isExpanded && 'ds-tree-grid__chevron--expanded')}>
-                    <Icon name="chevron-right" inline />
-                  </span>
-                }
+                leadingIcon={<Icon name="chevron-right" inline />}
                 overrides={{ paddingInline: 'space.0', paddingBlock: 'space.0' }}
                 tabIndex={-1}
                 aria-hidden="true"
@@ -1106,7 +1259,7 @@ export function TreeGrid({
             onKeyDown={(event) => handleEditorKeyDown(event, column)}
             onBlur={(event) => handleEditorBlur(event, editing)}
           >
-            {renderEditor(column, entry.row)}
+            {renderEditor(column, entry.row, editing)}
           </div>
         ) : column.isRowHeader ? (
           rowHeaderContent(entry, column, name)
@@ -1124,6 +1277,7 @@ export function TreeGrid({
     if (virtualize) style.transform = `translateY(calc(${rowIndex} * ${ROW_SIZE}))`;
     const rowClass = joinClasses('ds-tree-grid__row', entry.level > 1 && 'ds-tree-grid__row--nested');
 
+    // The lazy placeholder: a navigable row at level + 1, neither selectable nor editable.
     if (entry.placeholder) {
       return (
         <div
@@ -1142,7 +1296,11 @@ export function TreeGrid({
             role="gridcell"
             aria-colindex={1}
             tabIndex={-1}
-            className={joinClasses('ds-tree-grid__cell', 'ds-tree-grid__cell--placeholder', activeRow === rowIndex && 'ds-tree-grid__cell--active')}
+            className={joinClasses(
+              'ds-tree-grid__cell',
+              'ds-tree-grid__cell--placeholder',
+              activeRow === rowIndex && 'ds-tree-grid__cell--active',
+            )}
             style={{ gridColumn: '1 / -1' }}
           >
             {hasSelectColumn ? <span aria-hidden="true" className="ds-tree-grid__select-spacer" /> : null}
@@ -1248,9 +1406,10 @@ export function TreeGrid({
       )}
       style={rootStyle as CSSProperties}
     >
-      <span ref={targetSizerRef} aria-hidden="true" className="ds-tree-grid__sizer" />
+      <span ref={stepSizerRef} aria-hidden="true" className="ds-tree-grid__sizer ds-tree-grid__sizer--step" />
+      <span ref={targetSizerRef} aria-hidden="true" className="ds-tree-grid__sizer ds-tree-grid__sizer--target" />
       <div data-part="caption" className={hideCaption ? 'ds-tree-grid__visually-hidden' : 'ds-tree-grid__caption'}>
-        <Heading id={captionId} level={2} size="md" overrides={{ marginBlockEnd: 'space.0' }}>
+        <Heading id={captionId} level={captionLevel} size="md" overrides={{ marginBlockEnd: 'space.0' }}>
           {caption}
         </Heading>
       </div>
@@ -1270,6 +1429,7 @@ export function TreeGrid({
           aria-busy={loading ? true : undefined}
           aria-activedescendant={activeDescendant}
           onKeyDown={handleKeyDown}
+          onKeyUp={handleKeyUp}
           onMouseDown={handleMouseDown}
           onPointerDown={handlePointerDown}
           onDoubleClick={handleDoubleClick}

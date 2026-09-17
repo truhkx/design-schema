@@ -15,6 +15,7 @@ import './Input.js';
 import './NumberInput.js';
 import './Select.js';
 import './Text.js';
+import type { ButtonOverridableBinding } from './Button.js';
 import type { CheckboxChangeDetail, DsCheckbox } from './Checkbox.js';
 import type { DatePickerOverridableBinding, DsDatePicker } from './DatePicker.js';
 import type { DsInput, InputOverridableBinding } from './Input.js';
@@ -69,6 +70,8 @@ export interface DataGridSort {
 export type DataGridSelectable = 'none' | 'row' | 'cell' | 'range';
 export type DataGridDensity = 'compact' | 'comfortable';
 export type DataGridHeight = 'content' | 'viewport' | 'fixed';
+/** Heading level of the caption in the page outline; its size stays `captionSize` regardless. */
+export type DataGridCaptionLevel = '2' | '3' | '4';
 
 export interface DataGridCellRef {
   rowId: string;
@@ -147,8 +150,14 @@ const COPY_LOADING = 'Loading';
 const COPY_EMPTY = 'Nothing to show.';
 const COPY_SCROLL_HINT = 'Scroll sideways to see more columns';
 
-/** The documented column width when `width` is omitted (literal-ok: the doc's pixel default, a multiple of space.1). */
+/**
+ * The `columnWidth` binding before the probe has been measured (literal-ok: the doc's pixel default, a multiple of
+ * space.1). The live value is read from `.probe-column`, so an override of the hook changes it.
+ */
 const DEFAULT_COLUMN_WIDTH = 160;
+
+/** Rows rendered before one has been measured; they are positioned from the row-size token (literal-ok: the doc's cap). */
+const UNMEASURED_ROW_CAP = 50;
 
 /** Selects `one`/`other` with the document locale's plural rules. */
 function pluralForm(count: number): 'one' | 'other' {
@@ -180,12 +189,14 @@ export type DataGridOverridableBinding =
   | 'gridLineWidth'
   | 'rowHover'
   | 'cellPaddingInline'
+  | 'columnWidth'
   | 'pinnedShadow'
   | 'resizeHandle'
   | 'resizeHandleWidth'
   | 'resizeStep'
   | 'statusBarSize'
   | 'statusBarPadding'
+  | 'statusBarGap'
   | 'captionSize'
   | 'captionWeight'
   | 'captionGap'
@@ -206,12 +217,14 @@ const HOOKS: Record<DataGridOverridableBinding, string> = {
   gridLineWidth: '--ds-data-grid-grid-line-width',
   rowHover: '--ds-data-grid-row-hover',
   cellPaddingInline: '--ds-data-grid-cell-padding-inline',
+  columnWidth: '--ds-data-grid-column-width',
   pinnedShadow: '--ds-data-grid-pinned-shadow',
   resizeHandle: '--ds-data-grid-resize-handle',
   resizeHandleWidth: '--ds-data-grid-resize-handle-width',
   resizeStep: '--ds-data-grid-resize-step',
   statusBarSize: '--ds-data-grid-status-bar-size',
   statusBarPadding: '--ds-data-grid-status-bar-padding',
+  statusBarGap: '--ds-data-grid-status-bar-gap',
   captionSize: '--ds-data-grid-caption-size',
   captionWeight: '--ds-data-grid-caption-weight',
   captionGap: '--ds-data-grid-caption-gap',
@@ -238,6 +251,10 @@ const SELECT_INSET: Partial<Record<SelectOverridableBinding, TokenRef | undefine
 };
 const DATE_INSET: Partial<Record<DatePickerOverridableBinding, TokenRef | undefined>> = {
   paddingBlock: 'space.0',
+  paddingInline: 'space.0',
+};
+/** The sort Button's text lines up with the cells; `headerWeight`/`headerSize` reach it through its own hooks. */
+const SORT_BUTTON_INSET: Partial<Record<ButtonOverridableBinding, TokenRef | undefined>> = {
   paddingInline: 'space.0',
 };
 
@@ -329,12 +346,14 @@ export class DsDataGrid extends LitElement {
       --ds-data-grid-grid-line-width: var(--border-width-thin);
       --ds-data-grid-row-hover: var(--color-action-ghost-background-hover);
       --ds-data-grid-cell-padding-inline: var(--space-2);
+      --ds-data-grid-column-width: var(--space-20);
       --ds-data-grid-pinned-shadow: var(--shadow-raised);
       --ds-data-grid-resize-handle: var(--color-border-strong);
       --ds-data-grid-resize-handle-width: var(--space-1);
       --ds-data-grid-resize-step: var(--space-4);
       --ds-data-grid-status-bar-size: var(--font-size-xs);
       --ds-data-grid-status-bar-padding: var(--space-2);
+      --ds-data-grid-status-bar-gap: var(--space-2);
       --ds-data-grid-caption-size: var(--font-size-md);
       --ds-data-grid-caption-weight: var(--font-weight-semibold);
       --ds-data-grid-caption-gap: var(--space-2);
@@ -344,11 +363,17 @@ export class DsDataGrid extends LitElement {
       --ds-data-grid-line-height: var(--font-line-height-tight);
       --ds-data-grid-numeric-font: var(--font-family-mono);
       --ds-data-grid-transition: var(--motion-duration-fast);
+      /* rowHeight (locked); rowHeightComfortable below. Virtualization measures a rendered row instead. */
+      --ds-data-grid-row-size: var(--size-target-min);
       font-family: var(--ds-data-grid-font-family);
       font-size: var(--ds-data-grid-font-size);
       line-height: var(--ds-data-grid-line-height);
       /* cellColor (locked) */
       color: var(--color-foreground);
+    }
+
+    :host([density='comfortable']) {
+      --ds-data-grid-row-size: var(--size-target-comfortable);
     }
 
     :host([hidden]) {
@@ -371,6 +396,21 @@ export class DsDataGrid extends LitElement {
     [data-part='container'] {
       position: relative;
     }
+    /*
+     * viewport and fixed size the whole component; the scroll region takes what the caption and status bar leave,
+     * so the grid scrolls rather than the page.
+     */
+    :host([height='viewport']) [data-part='container'],
+    :host([height='fixed']) [data-part='container'] {
+      display: flex;
+      flex-direction: column;
+    }
+    :host([height='viewport']) [data-part='container'] {
+      block-size: calc(100vh - 2 * var(--layout-gap-section));
+    }
+    :host([height='fixed']) [data-part='container'] {
+      block-size: var(--ds-data-grid-fixed-height);
+    }
 
     /* captionSize / captionWeight reach the composed Heading through its documented hooks; captionGap separates it. */
     [data-part='caption'] {
@@ -389,11 +429,10 @@ export class DsDataGrid extends LitElement {
       background: var(--color-background);
       border: var(--ds-data-grid-grid-line-width) solid var(--ds-data-grid-grid-line);
     }
-    :host([height='viewport']) [data-part='scrollRegion'] {
-      block-size: calc(100vh - 2 * var(--layout-gap-section));
-    }
+    :host([height='viewport']) [data-part='scrollRegion'],
     :host([height='fixed']) [data-part='scrollRegion'] {
-      block-size: var(--ds-data-grid-fixed-height);
+      flex: 1 1 auto;
+      min-block-size: 0;
     }
     /* focusRing / focusRingWidth (locked): the grid is the tab stop */
     [data-part='scrollRegion']:has([data-part='grid']:focus-visible) {
@@ -426,11 +465,7 @@ export class DsDataGrid extends LitElement {
     /* rowHeight / rowHeightComfortable (locked) */
     [data-part='headerRow'],
     [data-part='row'] {
-      block-size: var(--size-target-min);
-    }
-    :host([density='comfortable']) [data-part='headerRow'],
-    :host([density='comfortable']) [data-part='row'] {
-      block-size: var(--size-target-comfortable);
+      block-size: var(--ds-data-grid-row-size);
     }
 
     [data-part='body'] {
@@ -484,19 +519,24 @@ export class DsDataGrid extends LitElement {
 
     /* headerSurface / headerColor (locked); headerWeight / headerSize / headerBorder / headerBorderWidth */
     [data-part='columnHeader'],
-    [data-part='selectAllCell'] {
+    .select-all-cell {
       background: var(--color-background-subtle);
       color: var(--color-foreground);
       font-weight: var(--ds-data-grid-header-weight);
       font-size: var(--ds-data-grid-header-size);
       border-block-end: var(--ds-data-grid-header-border-width) solid var(--ds-data-grid-header-border);
     }
+    /* headerWeight / headerSize forwarded to the composed sort Button through its own hooks */
+    [data-part='sortButton'] {
+      --ds-button-font-weight: var(--ds-data-grid-header-weight);
+      --ds-button-font-size: var(--ds-data-grid-header-size);
+    }
 
     [data-part='rowHeader'],
     [data-part='cell'] {
       color: var(--color-foreground);
     }
-    /* cellMutedColor (locked): a cell with no value */
+    /* cellMutedColor (locked): existing rows stay while loading, but read as stale */
     .cell.muted {
       color: var(--color-foreground-muted);
     }
@@ -513,9 +553,9 @@ export class DsDataGrid extends LitElement {
       text-align: center;
     }
 
-    /* minTarget (locked) */
-    [data-part='selectCell'],
-    [data-part='selectAllCell'] {
+    /* selectColumnWidth / minTarget (locked) */
+    .select-cell,
+    .select-all-cell {
       justify-content: center;
       padding-inline: 0;
       min-inline-size: var(--size-target-min);
@@ -529,7 +569,7 @@ export class DsDataGrid extends LitElement {
     }
     [data-part='columnHeader'].pinned-start,
     [data-part='columnHeader'].pinned-end,
-    [data-part='selectAllCell'].pinned-start {
+    .select-all-cell.pinned-start {
       z-index: 4;
       background: var(--color-background-subtle);
     }
@@ -555,11 +595,16 @@ export class DsDataGrid extends LitElement {
       padding-inline: 0;
       transition: background-color var(--ds-data-grid-transition) var(--motion-easing-standard);
     }
-    /* cellInvalidBorder / cellInvalidBackground / cellInvalidForeground (locked) */
+    /* cellInvalidBackground / cellInvalidBorder (locked): the cell holds the untouched editor and nothing else */
     .cell.invalid {
       background: var(--color-status-danger-background);
-      color: var(--color-status-danger-foreground);
       box-shadow: inset 0 0 0 var(--border-width-focus) var(--color-border-danger);
+    }
+    /* cellInvalidForeground (locked): the status-bar message re-scopes the foreground around a default-tone Text */
+    .invalid-message {
+      display: inline-flex;
+      background: var(--color-status-danger-background);
+      --color-foreground: var(--color-status-danger-foreground);
     }
     .editor-frame {
       display: flex;
@@ -605,11 +650,13 @@ export class DsDataGrid extends LitElement {
       padding-inline: var(--ds-data-grid-cell-padding-inline);
     }
 
-    /* statusBarSurface / statusBarColor (locked); statusBarSize / statusBarPadding */
+    /* statusBarSurface / statusBarColor (locked); statusBarSize / statusBarPadding / statusBarGap */
     .status-bar {
       display: flex;
-      justify-content: space-between;
-      gap: var(--space-2);
+      flex-wrap: wrap;
+      align-items: baseline;
+      /* statusBarGap: between items; no separator characters */
+      gap: var(--ds-data-grid-status-bar-gap);
       padding: var(--ds-data-grid-status-bar-padding);
       background: var(--color-background-subtle);
       border: var(--ds-data-grid-grid-line-width) solid var(--ds-data-grid-grid-line);
@@ -618,13 +665,26 @@ export class DsDataGrid extends LitElement {
     .status-bar ds-text {
       --ds-text-font-size: var(--ds-data-grid-status-bar-size);
     }
+    /* The position sits at the trailing edge; everything else reads from the start. */
+    .status-bar .trailing {
+      margin-inline-start: auto;
+    }
 
+    /* minTarget (locked) and the overridable resizeStep / columnWidth read as lengths, never as numbers in code. */
     .probe {
       position: absolute;
       visibility: hidden;
       pointer-events: none;
-      inline-size: var(--ds-data-grid-resize-step);
       block-size: var(--size-target-min);
+    }
+    .probe-step {
+      display: block;
+      inline-size: var(--ds-data-grid-resize-step);
+    }
+    /* columnWidth: an override replaces the base; the × 2 stays in the rule. */
+    .probe-column {
+      display: block;
+      inline-size: calc(var(--ds-data-grid-column-width) * 2);
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -637,6 +697,10 @@ export class DsDataGrid extends LitElement {
 
   /** What the grid holds ("Price list"). The accessible name; visually hidden with `hideCaption`. */
   @property() accessor caption = '';
+
+  /** Heading level of the caption in the page outline; its size is `captionSize` regardless, as Table. */
+  @property({ type: String, reflect: true, attribute: 'caption-level' })
+  accessor captionLevel: DataGridCaptionLevel = '2';
 
   /** Visually hide the caption; it remains the accessible name. */
   @property({ type: Boolean, reflect: true, attribute: 'hide-caption' }) accessor hideCaption = false;
@@ -696,6 +760,8 @@ export class DsDataGrid extends LitElement {
   @state() private accessor activeRow = -1;
   @state() private accessor activeCol = 0;
   @state() private accessor range: RangeState | null = null;
+  /** The range anchor survives Escape: with the range cleared, plain navigation keys only move it. */
+  @state() private accessor rangeAnchor: CellPos | null = null;
   @state() private accessor editing: EditingState | undefined;
   @state() private accessor columnWidths: Record<string, number> = {};
   @state() private accessor message = '';
@@ -710,6 +776,8 @@ export class DsDataGrid extends LitElement {
   @query('[data-part="scrollRegion"]') private accessor scrollEl!: HTMLElement | null;
   @query('[data-part="grid"]') private accessor gridEl!: HTMLElement | null;
   @query('.probe') private accessor probeEl!: HTMLElement | null;
+  @query('.probe-step') private accessor probeStepEl!: HTMLElement | null;
+  @query('.probe-column') private accessor probeColumnEl!: HTMLElement | null;
 
   private sortCache: { data: DataGridRow[]; sort: DataGridSort; rows: DataGridRow[] } | undefined;
   private rowAnchorId: string | undefined;
@@ -751,6 +819,7 @@ export class DsDataGrid extends LitElement {
       this.activeCol = clamp(this.activeCol, 0, Math.max(0, this.colCount - 1));
       if (changed.has('selectable') || changed.has('columns')) {
         this.range = null;
+        this.rangeAnchor = null;
       }
     }
   }
@@ -779,15 +848,21 @@ export class DsDataGrid extends LitElement {
     const total = this.rowCount ?? rows.length;
     const virtual = this.height !== 'content';
     const rowH = this.rowHeightPx;
+    /* The spacer sets the scroll height for the whole set; before a row is measured it falls back to the token. */
     const bodyStyle: Record<string, string | undefined> = {
-      blockSize: virtual && rows.length > 0 && rowH ? `${total * rowH}px` : undefined,
+      blockSize:
+        virtual && rows.length > 0
+          ? rowH
+            ? `${total * rowH}px`
+            : `calc(${Math.min(total, UNMEASURED_ROW_CAP)} * var(--ds-data-grid-row-size))`
+          : undefined,
     };
     const layout = this.rowLayout();
 
     return html`
       <div data-part="container">
         <div data-part="caption" class=${classMap({ 'visually-hidden': this.hideCaption })}>
-          <ds-heading id="caption" level="2" size="md">${this.caption}</ds-heading>
+          <ds-heading id="caption" level=${this.captionLevel} size="md">${this.caption}</ds-heading>
         </div>
         <div
           data-part="scrollRegion"
@@ -800,7 +875,7 @@ export class DsDataGrid extends LitElement {
             tabindex="0"
             style=${styleMap({ inlineSize: `max(100%, ${layout.width})` })}
             aria-labelledby="caption"
-            aria-describedby=${ifDefined(this.overflowX ? 'scroll-hint' : undefined)}
+            aria-describedby=${ifDefined(this.overflowX && !this.scrolledX ? 'scroll-hint' : undefined)}
             aria-rowcount=${total + 1}
             aria-colcount=${this.colCount}
             aria-multiselectable=${ifDefined(
@@ -829,16 +904,10 @@ export class DsDataGrid extends LitElement {
             </div>
           </div>
         </div>
-        <div class=${classMap({ 'status-bar': true, 'visually-hidden': !this.showStatusBar })}>
-          <ds-text id="status" data-part="statusBar" role="status" element="span" size="xs" tone="muted"
-            >${this.statusText(rows, total)}</ds-text
-          >
-          ${this.showStatusBar && this.positionText()
-            ? html`<ds-text element="span" size="xs" tone="muted">${this.positionText()}</ds-text>`
-            : nothing}
-        </div>
-        <span id="scroll-hint" class="visually-hidden">${COPY_SCROLL_HINT}</span>
-        <span class="probe" aria-hidden="true"></span>
+        ${this.renderStatusBar(rows, total)}
+        <span class="probe" aria-hidden="true">
+          <span class="probe-step"></span><span class="probe-column"></span>
+        </span>
       </div>
     `;
   }
@@ -873,15 +942,15 @@ export class DsDataGrid extends LitElement {
     return html`<div
       role="columnheader"
       id="h-0"
-      data-part="selectAllCell"
       data-row="-1"
       data-col="0"
       tabindex="-1"
       aria-colindex="1"
-      class=${classMap({ cell: true, 'pinned-start': true, active: this.isActive(-1, 0) })}
+      class=${classMap({ cell: true, 'select-all-cell': true, 'pinned-start': true, active: this.isActive(-1, 0) })}
       style=${styleMap({ insetInlineStart: '0' })}
     >
       <ds-checkbox
+        data-part="selectAllCell"
         tabindex="-1"
         label=${COPY_SELECT_ALL}
         hide-label
@@ -912,7 +981,6 @@ export class DsDataGrid extends LitElement {
       tabindex="-1"
       aria-colindex=${col + 1}
       aria-sort=${ifDefined(column.sortable ? (sorted ?? 'none') : undefined)}
-      aria-label=${ifDefined(column.abbr && !column.sortable ? column.abbr : undefined)}
       class=${classMap({ ...this.cellClasses(column), active: this.isActive(-1, col) })}
       style=${styleMap(this.pinStyle(column))}
     >
@@ -924,6 +992,7 @@ export class DsDataGrid extends LitElement {
             size="sm"
             label=${column.header}
             accessible-name=${next === 'ascending' ? COPY_SORT_ASCENDING(column.header) : COPY_SORT_DESCENDING(column.header)}
+            .overrides=${SORT_BUTTON_INSET}
             @press=${(event: Event) => {
               event.stopPropagation();
               this.activeRow = -1;
@@ -936,7 +1005,11 @@ export class DsDataGrid extends LitElement {
               ? html`<ds-icon slot="trailing-icon" name=${sorted === 'ascending' ? 'chevron-up' : 'chevron-down'} inline></ds-icon>`
               : nothing}
           </ds-button>`
-        : html`<span data-part="cellContent">${column.header}</span>`}
+        : column.abbr
+          ? // The visible header is aria-hidden beside the spoken `abbr`.
+            html`<span data-part="cellContent" aria-hidden="true">${column.header}</span>
+              <span class="visually-hidden">${column.abbr}</span>`
+          : html`<span data-part="cellContent">${column.header}</span>`}
       ${column.resizable
         ? html`<div
             class=${classMap({ 'resize-handle': true, dragging: this.draggingColumn === column.key })}
@@ -956,9 +1029,7 @@ export class DsDataGrid extends LitElement {
   private renderEmpty(): TemplateResult {
     return html`<div role="row" aria-rowindex="2" class="empty-row">
       <div role="gridcell" aria-colindex="1">
-        <ds-text data-part="emptyState" element="p" tone="muted"
-          >${this.loading ? COPY_LOADING : (this.emptyMessage ?? COPY_EMPTY)}</ds-text
-        >
+        <ds-text data-part="emptyState" element="p" tone="muted">${this.emptyMessage ?? COPY_EMPTY}</ds-text>
       </div>
     </div>`;
   }
@@ -976,7 +1047,12 @@ export class DsDataGrid extends LitElement {
       style=${styleMap({
         gridTemplateColumns: layout.columns,
         inlineSize: layout.width,
-        transform: virtual ? `translateY(${index * this.rowHeightPx}px)` : undefined,
+        /* Until a row has been measured, offsets come from the row-size token. */
+        transform: virtual
+          ? this.rowHeightPx
+            ? `translateY(${index * this.rowHeightPx}px)`
+            : `translateY(calc(${index} * var(--ds-data-grid-row-size)))`
+          : undefined,
       })}
     >
       ${rowMode ? this.renderSelectCell(row, index, isSelected) : nothing}
@@ -988,15 +1064,15 @@ export class DsDataGrid extends LitElement {
     return html`<div
       role="gridcell"
       id=${this.cellId(row.id, 0)}
-      data-part="selectCell"
       data-row=${index}
       data-col="0"
       tabindex="-1"
       aria-colindex="1"
-      class=${classMap({ cell: true, 'pinned-start': true, active: this.isActive(index, 0) })}
+      class=${classMap({ cell: true, 'select-cell': true, 'pinned-start': true, active: this.isActive(index, 0) })}
       style=${styleMap({ insetInlineStart: '0' })}
     >
       <ds-checkbox
+        data-part="selectCell"
         tabindex="-1"
         label=${COPY_SELECT_ROW(this.rowName(row))}
         hide-label
@@ -1036,8 +1112,8 @@ export class DsDataGrid extends LitElement {
       class=${classMap({
         ...this.cellClasses(column),
         active: this.isActive(index, col),
-        muted: !column.render && (raw === undefined || raw === null || raw === ''),
-        numeric: typeof raw === 'number',
+        muted: this.loading,
+        numeric: typeof raw === 'number' && !column.render,
         editing: editing !== undefined,
         invalid: Boolean(editing?.error),
       })}
@@ -1163,6 +1239,39 @@ export class DsDataGrid extends LitElement {
     ></div>`;
   }
 
+  /**
+   * The visible counterpart of the live region. Only the leading span is `role="status"`, so the row count, the
+   * selection count, `copy.scrollHint` and `copy.position` are shown but never announced — `aria-rowindex` and
+   * `aria-colindex` already carry position, and a polite region on every arrow press would be noise.
+   */
+  private renderStatusBar(rows: DataGridRow[], total: number): TemplateResult {
+    const error = this.editing?.error;
+    const live = html`<ds-text
+      id="status"
+      data-part="statusBar"
+      role="status"
+      element="span"
+      size="xs"
+      tone=${error ? 'default' : 'muted'}
+      >${this.announcement()}</ds-text
+    >`;
+    const selection = this.selectionText(rows, total);
+    const position = this.positionText();
+    return html`<div class=${classMap({ 'status-bar': true, 'visually-hidden': !this.showStatusBar })}>
+      ${error ? html`<span class="invalid-message">${live}</span>` : live}
+      ${this.showStatusBar
+        ? html`<ds-text element="span" size="xs" tone="muted">${COPY_ROW_COUNT[pluralForm(total)](total)}</ds-text>
+            ${selection ? html`<ds-text element="span" size="xs" tone="muted">${selection}</ds-text>` : nothing}`
+        : nothing}
+      ${this.overflowX && !this.scrolledX
+        ? html`<ds-text id="scroll-hint" element="span" size="xs" tone="muted">${COPY_SCROLL_HINT}</ds-text>`
+        : nothing}
+      ${this.showStatusBar && position
+        ? html`<ds-text class="trailing" element="span" size="xs" tone="muted">${position}</ds-text>`
+        : nothing}
+    </div>`;
+  }
+
   /* ---------- model ---------- */
 
   private get hasSelectColumn(): boolean {
@@ -1206,10 +1315,16 @@ export class DsDataGrid extends LitElement {
   }
 
   private widthOf(column: DataGridColumn): number {
-    const width = this.columnWidths[column.key] ?? column.width ?? DEFAULT_COLUMN_WIDTH;
+    const width = this.columnWidths[column.key] ?? column.width ?? this.defaultColumnWidth;
     return Math.max(width, this.minWidthOf(column));
   }
 
+  /** The `columnWidth` binding as a length, so an override of its hook changes it. */
+  private get defaultColumnWidth(): number {
+    return this.probeColumnEl?.offsetWidth || DEFAULT_COLUMN_WIDTH;
+  }
+
+  /** The floor for both resize paths: never below `size.target.min`, which is also the default. */
   private minWidthOf(column: DataGridColumn): number {
     return Math.max(column.minWidth ?? 0, this.probeEl?.offsetHeight ?? 0);
   }
@@ -1314,7 +1429,7 @@ export class DsDataGrid extends LitElement {
     }
     const rowH = this.rowHeightPx;
     let start = 0;
-    let end = 1;
+    let end = Math.min(count, UNMEASURED_ROW_CAP);
     if (rowH) {
       const page = this.pageRows();
       const first = Math.floor(this.bodyScrollTop / rowH);
@@ -1349,7 +1464,8 @@ export class DsDataGrid extends LitElement {
     return rect !== undefined && row >= rect.rowStart && row <= rect.rowEnd && col >= rect.colStart && col <= rect.colEnd;
   }
 
-  private statusText(rows: DataGridRow[], total: number): string {
+  /** The live region's text: loading, invalid, sort, selection, copy and editing announcements only. */
+  private announcement(): string {
     if (this.editing?.error) {
       return COPY_INVALID(this.editing.error);
     }
@@ -1359,9 +1475,11 @@ export class DsDataGrid extends LitElement {
     if (this.loading) {
       return COPY_LOADING;
     }
-    if (this.message) {
-      return this.message;
-    }
+    return this.message;
+  }
+
+  /** The shown selection count; empty when nothing is selected. */
+  private selectionText(rows: DataGridRow[], total: number): string {
     if (this.selectable === 'row' && this.currentSelected.length > 0) {
       return COPY_SELECTED_ROWS(this.currentSelected.length, total);
     }
@@ -1369,7 +1487,7 @@ export class DsDataGrid extends LitElement {
     if (this.selectable === 'range' && rect && rows.length > 0) {
       return COPY_SELECTED_RANGE(rect.rowEnd - rect.rowStart + 1, rect.colEnd - rect.colStart + 1);
     }
-    return COPY_ROW_COUNT[pluralForm(total)](total);
+    return '';
   }
 
   /** `copy.position` for the active body cell; shown, never announced. */
@@ -1445,10 +1563,22 @@ export class DsDataGrid extends LitElement {
     return row && column ? { rowId: row.id, column: column.key } : undefined;
   }
 
+  /** Sets the range and reports it, but only when the selected rectangle actually changed. */
   private setRange(range: RangeState): void {
+    const before = this.rangeRect();
     this.range = range;
+    this.rangeAnchor = range.anchor;
     const rect = this.rangeRect()!;
     this.message = COPY_SELECTED_RANGE(rect.rowEnd - rect.rowStart + 1, rect.colEnd - rect.colStart + 1);
+    if (
+      before &&
+      before.rowStart === rect.rowStart &&
+      before.rowEnd === rect.rowEnd &&
+      before.colStart === rect.colStart &&
+      before.colEnd === rect.colEnd
+    ) {
+      return;
+    }
     const from = this.cellRef(range.anchor);
     const to = this.cellRef(range.focus);
     if (from && to) {
@@ -1542,7 +1672,8 @@ export class DsDataGrid extends LitElement {
     const previous = cellValue(row[column.key]);
     this.editing = undefined;
     this.message = '';
-    if (value !== previous) {
+    /* Reported only when the committed value differs; `validate` still ran on an unchanged commit. */
+    if (!Object.is(value, previous)) {
       this.emit<DataGridCellChangeDetail>('cell-change', { rowId: row.id, column: column.key, value, previous });
     }
     return true;
@@ -1645,7 +1776,9 @@ export class DsDataGrid extends LitElement {
     const rows = this.rows;
     const lastRow = rows.length - 1;
     const lastCol = this.colCount - 1;
-    const { key, shiftKey, ctrlKey, altKey, metaKey } = event;
+    const { key, shiftKey, altKey, metaKey } = event;
+    /* Control in every chord of the keyboard table means Control or Meta (Cmd on macOS). */
+    const ctrlKey = event.ctrlKey || metaKey;
     const inBody = this.activeRow >= 0;
     const column = this.columnAt(this.activeCol);
     let handled = true;
@@ -1674,16 +1807,16 @@ export class DsDataGrid extends LitElement {
         break;
       }
       case 'Home':
-        this.moveTo(ctrlKey ? -1 : this.activeRow, 0);
+        this.arrowTo(ctrlKey ? -1 : this.activeRow, 0);
         break;
       case 'End':
-        this.moveTo(ctrlKey ? lastRow : this.activeRow, lastCol);
+        this.arrowTo(ctrlKey ? lastRow : this.activeRow, lastCol);
         break;
       case 'PageDown':
-        this.moveTo(Math.min(lastRow, this.activeRow + this.pageRows()), this.activeCol);
+        this.arrowTo(Math.min(lastRow, this.activeRow + this.pageRows()), this.activeCol);
         break;
       case 'PageUp':
-        this.moveTo(inBody ? Math.max(0, this.activeRow - this.pageRows()) : -1, this.activeCol);
+        this.arrowTo(inBody ? Math.max(0, this.activeRow - this.pageRows()) : -1, this.activeCol);
         break;
       case 'Enter':
         this.activateCell();
@@ -1695,6 +1828,8 @@ export class DsDataGrid extends LitElement {
         break;
       case 'Escape':
         if (this.range) {
+          /* Clearing a range reports nothing: the selection union has no empty range. */
+          this.rangeAnchor = this.range.focus;
           this.range = null;
           this.message = '';
         } else {
@@ -1751,17 +1886,25 @@ export class DsDataGrid extends LitElement {
     }
   }
 
-  /** A plain arrow; in range mode it collapses the range to the newly focused body cell. */
+  /**
+   * A plain navigation key (arrows, Home/End, Page keys). In range mode it collapses the range to the newly focused
+   * body cell and makes it the anchor; once Escape has cleared the range, it only moves the anchor.
+   */
   private arrowTo(row: number, col: number): void {
     this.moveTo(row, col);
-    if (this.selectable === 'range' && this.activeRow >= 0) {
-      const pos = { row: this.activeRow, col: this.activeCol };
+    if (this.selectable !== 'range' || this.activeRow < 0) {
+      return;
+    }
+    const pos = { row: this.activeRow, col: this.activeCol };
+    if (this.range) {
       this.setRange({ anchor: pos, focus: pos });
+    } else {
+      this.rangeAnchor = pos;
     }
   }
 
   private extendRange(rowStep: number, colStep: number): void {
-    const anchor = this.range?.anchor ?? { row: this.activeRow, col: this.activeCol };
+    const anchor = this.range?.anchor ?? this.rangeAnchor ?? { row: this.activeRow, col: this.activeCol };
     this.moveTo(clamp(this.activeRow + rowStep, 0, this.rows.length - 1), this.activeCol + colStep);
     this.setRange({ anchor, focus: { row: this.activeRow, col: this.activeCol } });
   }
@@ -1949,7 +2092,7 @@ export class DsDataGrid extends LitElement {
     const body = pos.row >= 0;
     if (this.selectable === 'range' && body) {
       event.preventDefault();
-      const anchor = event.shiftKey && this.range ? this.range.anchor : pos;
+      const anchor = event.shiftKey ? (this.range?.anchor ?? this.rangeAnchor ?? pos) : pos;
       this.setRange({ anchor, focus: pos });
       this.rangeDragging = true;
       this.rangeDragMoved = false;
@@ -2056,7 +2199,7 @@ export class DsDataGrid extends LitElement {
   };
 
   private resizeByKey(column: DataGridColumn, step: number): void {
-    const resizeStep = this.probeEl?.offsetWidth ?? 0;
+    const resizeStep = this.probeStepEl?.offsetWidth ?? 0;
     const width = Math.max(this.minWidthOf(column), this.widthOf(column) + step * resizeStep);
     this.columnWidths = { ...this.columnWidths, [column.key]: width };
     this.keyboardResize = column.key;
@@ -2101,7 +2244,11 @@ export class DsDataGrid extends LitElement {
     if (index < loaded - page) {
       return;
     }
-    const end = Math.min(total - 1, Math.max(index, loaded) + page);
+    /* One visible page: start = data.length, end = min(rowCount − 1, data.length + rowsPerPage − 1). */
+    const end = Math.min(total - 1, loaded + page - 1);
+    if (end < loaded) {
+      return;
+    }
     if (this.requestedEnds.has(end)) {
       return;
     }

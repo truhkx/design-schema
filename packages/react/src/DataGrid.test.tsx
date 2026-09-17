@@ -105,6 +105,18 @@ describe('DataGrid', () => {
     expect(setup().grid()).toBeInTheDocument();
   });
 
+  it('renders-caption-level-2', () => {
+    expect(setup({ captionLevel: '2' }).grid()).toBeInTheDocument();
+  });
+
+  it('renders-caption-level-3', () => {
+    expect(setup({ captionLevel: '3' }).grid()).toBeInTheDocument();
+  });
+
+  it('renders-caption-level-4', () => {
+    expect(setup({ captionLevel: '4' }).grid()).toBeInTheDocument();
+  });
+
   it('renders-selectable-none', () => {
     expect(setup({ selectable: 'none' }).grid()).toBeInTheDocument();
   });

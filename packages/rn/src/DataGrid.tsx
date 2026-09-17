@@ -22,7 +22,7 @@ import { Icon } from './Icon';
 import { Input } from './Input';
 import { NumberInput } from './NumberInput';
 import { Select } from './Select';
-import { Text } from './Text';
+import { Text, TextForegroundContext } from './Text';
 import { toEasing, useReducedMotion, useTheme } from './theme';
 import type { Tokens } from './theme';
 
@@ -33,6 +33,8 @@ export type DataGridSortDirection = 'ascending' | 'descending';
 export type DataGridSelectable = 'none' | 'row' | 'cell' | 'range';
 export type DataGridDensity = 'compact' | 'comfortable';
 export type DataGridHeight = 'content' | 'viewport' | 'fixed';
+/** Position of the caption in the page outline. The schema declares the values as strings; numbers are accepted too. */
+export type DataGridCaptionLevel = '2' | '3' | '4' | 2 | 3 | 4;
 
 /** A single record. `id` must be stable; it is what selection and keys use. */
 export type DataGridRow = { id: string; [key: string]: unknown };
@@ -87,12 +89,14 @@ export type DataGridOverridableBinding =
   | 'gridLineWidth'
   | 'rowHover'
   | 'cellPaddingInline'
+  | 'columnWidth'
   | 'pinnedShadow'
   | 'resizeHandle'
   | 'resizeHandleWidth'
   | 'resizeStep'
   | 'statusBarSize'
   | 'statusBarPadding'
+  | 'statusBarGap'
   | 'captionSize'
   | 'captionWeight'
   | 'captionGap'
@@ -106,9 +110,11 @@ export type DataGridOverridableBinding =
 export interface DataGridProps {
   /** What the grid holds ("Price list"). The accessible name; visually hidden with `hideCaption`. */
   caption: string;
+  /** Heading level of the caption in the page outline; its size is `captionSize` regardless, as Table. */
+  captionLevel?: DataGridCaptionLevel | undefined;
   /** Visually hide the caption; it remains the accessible name. */
   hideCaption?: boolean | undefined;
-  /** Column model. `width` is pixels (160 when omitted); exactly one column may be `isRowHeader`. */
+  /** Column model. `width` is pixels (the `columnWidth` binding when omitted); exactly one column may be `isRowHeader`. */
   columns: DataGridColumn[];
   /** The rows. `id` must be stable. Only visible rows are rendered. */
   data: DataGridRow[];
@@ -130,7 +136,7 @@ export interface DataGridProps {
   stickyHeader?: boolean | undefined;
   /** `viewport`: window height minus twice the section gap; `content`: grows with rows; `fixed`: `overrides.fixedHeight`. */
   height?: DataGridHeight | undefined;
-  /** Marks the grid busy and shows `copy.loading` in the status bar; existing rows stay. */
+  /** Marks the grid busy and shows `copy.loading` in the status bar; existing rows stay, their text muted. */
   loading?: boolean | undefined;
   /** Shown when `data` is empty. Defaults to `copy.empty`. */
   emptyMessage?: string | undefined;
@@ -173,17 +179,18 @@ const COPY = {
   loading: 'Loading',
   empty: 'Nothing to show.',
   scrollHint: 'Scroll sideways to see more columns',
+  cellLabel: (column: string, value: string): string => `${column}: ${value}`,
+  editHint: 'Double tap to edit',
 } as const;
-
-/** Schema default for a column without `width`. */
-const DEFAULT_COLUMN_WIDTH = 160; // literal-ok: the column model's documented default width
 
 const JUSTIFY = { start: 'flex-start', center: 'center', end: 'flex-end' } as const;
 
-/** Clips content to one point while keeping it in the accessibility tree (hidden caption, live regions). */
+/** Clips content to one point while keeping it in the accessibility tree (hidden caption, the live region when the bar is off). */
 const HIDDEN_STYLE: ViewStyle = { position: 'absolute', width: 1, height: 1, overflow: 'hidden' };
 
 const HEADER_WEIGHT: TokenRef = 'font.weight.semibold';
+const HEADER_SIZE: TokenRef = 'font.size.sm';
+const CAPTION_SIZE: TokenRef = 'font.size.md';
 const CAPTION_WEIGHT: TokenRef = 'font.weight.semibold';
 const CAPTION_GAP: TokenRef = 'space.2';
 const LINE_HEIGHT: TokenRef = 'font.lineHeight.tight';
@@ -259,7 +266,6 @@ function CellRing({ color, width }: { color: string; width: number }): React.JSX
 interface ResizeHandleProps {
   width: number;
   minWidth: number;
-  visible: boolean;
   color: string;
   handleWidth: number;
   hitSlop: number;
@@ -267,12 +273,15 @@ interface ResizeHandleProps {
   onResizeEnd: (width: number) => void;
 }
 
-/** The draggable edge of a resizable header cell, on core `PanResponder`. Callbacks go through refs so the responder is created once. */
-function ResizeHandle({ width, minWidth, visible, color, handleWidth, hitSlop, onResize, onResizeEnd }: ResizeHandleProps): React.JSX.Element {
+/**
+ * The draggable edge of a resizable header cell, on core `PanResponder`. Native has no hover,
+ * so it is always visible and hit-slopped out to `size.target.min`. Callbacks go through refs
+ * so the responder is created once.
+ */
+function ResizeHandle({ width, minWidth, color, handleWidth, hitSlop, onResize, onResizeEnd }: ResizeHandleProps): React.JSX.Element {
   const latest = React.useRef({ width, minWidth, onResize, onResizeEnd });
   latest.current = { width, minWidth, onResize, onResizeEnd };
   const startWidth = React.useRef(width);
-  const [dragging, setDragging] = React.useState(false);
 
   const responder = React.useRef(
     PanResponder.create({
@@ -281,17 +290,14 @@ function ResizeHandle({ width, minWidth, visible, color, handleWidth, hitSlop, o
       onPanResponderTerminationRequest: () => false,
       onPanResponderGrant: () => {
         startWidth.current = latest.current.width;
-        setDragging(true);
       },
       onPanResponderMove: (_event, gesture) => {
         latest.current.onResize(Math.max(latest.current.minWidth, Math.round(startWidth.current + gesture.dx)));
       },
       onPanResponderRelease: () => {
-        setDragging(false);
         latest.current.onResizeEnd(latest.current.width);
       },
       onPanResponderTerminate: () => {
-        setDragging(false);
         latest.current.onResizeEnd(latest.current.width);
       },
     }),
@@ -304,7 +310,7 @@ function ResizeHandle({ width, minWidth, visible, color, handleWidth, hitSlop, o
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
       hitSlop={{ left: hitSlop, right: hitSlop }}
-      style={{ width: handleWidth, alignSelf: 'stretch', backgroundColor: visible || dragging ? color : 'transparent' }}
+      style={{ width: handleWidth, alignSelf: 'stretch', backgroundColor: color }}
     />
   );
 }
@@ -318,36 +324,39 @@ function ResizeHandle({ width, minWidth, visible, color, handleWidth, hitSlop, o
  * acted on by row (Table), a handful of fields (Form), or phone-first screens (Table with
  * `responsive: stack`).
  *
- * There is no grid element on native. The caption is a `Heading` (level 2; visually hidden
- * with `hideCaption`). A horizontal `ScrollView` (the scroll region, hinted with
- * `copy.scrollHint`) holds a `FlatList` with `role="grid"`, the caption as its
- * `accessibilityLabel`, and a fixed `getItemLayout` from the density's row height, so rows
- * virtualize; the header row (`role="rowgroup"` > `row` > `columnheader`) is its sticky list
- * header, sharing the horizontal scroll with the body and casting `headerShadow` once the
- * body scrolls beneath it. Rows are `role="row"` Views of fixed-width `role="cell"` /
- * `"rowheader"` Pressables named "{column}: {value}". Pinned columns keep their place in
- * `columns` and scroll with the rest (native has no `position: sticky`), casting
- * `pinnedShadow` once the region has moved sideways.
+ * There is no grid element on native. The caption is a `Heading` at `captionLevel` (visually
+ * hidden with `hideCaption`). A horizontal `ScrollView` (the scroll region) holds a `FlatList`
+ * with `role="grid"`, the caption as its `accessibilityLabel`, and a fixed `getItemLayout`
+ * from the density's row height, so rows virtualize; the header row (`role="rowgroup"` >
+ * `row` > `columnheader`) is its sticky list header, sharing the horizontal scroll with the
+ * body and casting `headerShadow` once the body scrolls beneath it. `FlatList` gives the body
+ * rows no wrapper, so the `body` rowgroup part has no element here. Rows are `role="row"`
+ * Views of fixed-width `role="cell"` / `"rowheader"` Pressables named `copy.cellLabel`.
+ * Pinned columns keep their place in `columns` and scroll with the rest (native has no
+ * `position: sticky`), casting `pinnedShadow` once the region has moved sideways.
  *
  * The web keyboard model has no equivalent in core React Native (View and Pressable have no
  * key events), so touch replaces it: a sortable header is a `Button`; `selectable="row"`
  * (and `range`, which degrades to it with a `__DEV__` warning) adds `Checkbox` cells and a
  * select-all Checkbox that stands in for Ctrl+A; `cell` selects the tapped cell. An editable
- * cell opens its editor on tap (hint "double tap to edit"), after `onEditStart` allows it:
- * `Input` (commits on blur), `NumberInput` and `DatePicker` (commit when another cell is
- * tapped, or through the cell's `activate` accessibility action), `Select` (opens at once and
- * commits on change; closing it cancels) and `Checkbox` (commits on change). The `escape`
+ * cell opens its editor on tap (`copy.editHint`), after `onEditStart` allows it: `Input`
+ * (commits on blur), `NumberInput` and `DatePicker` (commit when another cell or a sort header
+ * is pressed, or through the cell's `activate` accessibility action), `Select` (opens at once
+ * and commits on change; closing it cancels) and `Checkbox` (commits on change). The `escape`
  * accessibility action cancels. A failing `validate` keeps the editor open with the cell in
  * cellInvalid* and the message in the status bar. Column resize is a `PanResponder` drag on
- * the header edge plus increment/decrement accessibility actions on the header cell by
- * `resizeStep`. Copying (Ctrl+C) is not offered: core RN has no clipboard API.
+ * the always-visible header edge plus increment/decrement accessibility actions on the header
+ * cell by `resizeStep`. Copying (Ctrl+C) is not offered: core RN has no clipboard API.
  *
- * The status bar is the polite live region (loading, validation, editing, selection count,
- * the tapped cell's position, row count); sort changes use their own hidden region, and iOS
- * gets `AccessibilityInfo.announceForAccessibility` for all but position.
+ * The status bar holds one polite live region (loading, validation, editing, sort and
+ * selection announcements, with `AccessibilityInfo.announceForAccessibility` on iOS) beside
+ * the row count, the selection count, `copy.scrollHint` while columns overflow unscrolled, and
+ * `copy.position` for the active cell — which is shown but never announced. With
+ * `showStatusBar` false the bar is visually hidden and keeps only the live region.
  */
 export function DataGrid({
   caption,
+  captionLevel = '2',
   hideCaption = false,
   columns,
   data,
@@ -386,15 +395,15 @@ export function DataGrid({
   const [activeCell, setActiveCell] = React.useState<DataGridCellSelection | null>(null);
   const [focusedCell, setFocusedCell] = React.useState<string | null>(null);
   const [hoveredRow, setHoveredRow] = React.useState<string | null>(null);
-  const [activeHeader, setActiveHeader] = React.useState<string | null>(null);
   const [editing, setEditing] = React.useState<DataGridCellSelection | null>(null);
   const [draft, setDraft] = React.useState<DataGridCellValue>(undefined);
   const [editError, setEditError] = React.useState<string | undefined>(undefined);
   const [widths, setWidths] = React.useState<Record<string, number>>({});
   const [headerScrolled, setHeaderScrolled] = React.useState(false);
   const [scrolledX, setScrolledX] = React.useState(false);
+  const [regionWidth, setRegionWidth] = React.useState<number | null>(null);
   const [listHeight, setListHeight] = React.useState<number | null>(null);
-  const [sortAnnouncement, setSortAnnouncement] = React.useState('');
+  const [announcement, setAnnouncement] = React.useState('');
 
   React.useEffect(() => {
     if (!__DEV__) {
@@ -408,7 +417,9 @@ export function DataGrid({
     }
   }, [selectable, columns]);
 
+  /** Puts a message in the status bar's live region, and speaks it on iOS, which has no live regions. */
   const announce = (message: string): void => {
+    setAnnouncement(message);
     if (Platform.OS === 'ios') {
       AccessibilityInfo.announceForAccessibility(message);
     }
@@ -423,9 +434,7 @@ export function DataGrid({
     }
     lastSortKey.current = sortKey;
     const header = columns.find((column) => column.key === activeSort.column)?.header ?? activeSort.column;
-    const message = COPY.sortedAnnouncement(header, activeSort.direction);
-    setSortAnnouncement(message);
-    announce(message);
+    announce(COPY.sortedAnnouncement(header, activeSort.direction));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortKey]);
 
@@ -440,6 +449,7 @@ export function DataGrid({
 
   // Bindings
   const headerWeight = overrides?.headerWeight ?? HEADER_WEIGHT;
+  const headerSize = overrides?.headerSize ?? HEADER_SIZE;
   const headerBorder = tokenOr<string>(t, overrides?.headerBorder, t.colorBorderStrong);
   const headerBorderWidth = tokenOr<number>(t, overrides?.headerBorderWidth, t.borderWidthThin);
   const headerShadow = tokenOr<Shadow>(t, overrides?.headerShadow, t.shadowRaised);
@@ -447,21 +457,27 @@ export function DataGrid({
   const gridLineWidth = tokenOr<number>(t, overrides?.gridLineWidth, t.borderWidthThin);
   const rowHover = tokenOr<string>(t, overrides?.rowHover, t.colorActionGhostBackgroundHover);
   const cellPaddingInline = tokenOr<number>(t, overrides?.cellPaddingInline, t.space2);
+  // The × 2 stays in the rule: an override replaces the base token, not the doubling.
+  const columnWidth = tokenOr<number>(t, overrides?.columnWidth, t.space20) * 2;
   const pinnedShadow = tokenOr<Shadow>(t, overrides?.pinnedShadow, t.shadowRaised);
   const resizeHandle = tokenOr<string>(t, overrides?.resizeHandle, t.colorBorderStrong);
   const resizeHandleWidth = tokenOr<number>(t, overrides?.resizeHandleWidth, t.space1);
   const resizeStep = tokenOr<number>(t, overrides?.resizeStep, t.space4);
   const statusBarPadding = tokenOr<number>(t, overrides?.statusBarPadding, t.space2);
+  const statusBarGap = tokenOr<number>(t, overrides?.statusBarGap, t.space2);
   const fixedHeight = tokenOr<number>(t, overrides?.fixedHeight, t.space20);
   const transition = tokenOr<number>(t, overrides?.transition, t.motionDurationFast);
   const rowHeight = density === 'comfortable' ? t.sizeTargetComfortable : t.sizeTargetMin;
+  // selectColumnWidth plus the cell's own inline padding on both sides.
+  const selectColumnWidth = t.sizeTargetMin + 2 * cellPaddingInline;
 
   const bodyText = { fontFamily: overrides?.fontFamily, fontSize: overrides?.fontSize, lineHeight: overrides?.lineHeight ?? LINE_HEIGHT };
   const numericText = { ...bodyText, fontFamily: overrides?.numericFont ?? NUMERIC_FONT };
-  const headerText = { fontFamily: overrides?.fontFamily, lineHeight: overrides?.lineHeight ?? LINE_HEIGHT, fontSize: overrides?.headerSize, fontWeight: headerWeight };
+  const headerText = { fontFamily: overrides?.fontFamily, lineHeight: overrides?.lineHeight ?? LINE_HEIGHT, fontSize: headerSize, fontWeight: headerWeight };
+  const statusBarText = { fontFamily: overrides?.fontFamily, lineHeight: overrides?.lineHeight ?? LINE_HEIGHT, fontSize: overrides?.statusBarSize };
   const editorInset = { paddingInline: INSET_ZERO, paddingBlock: INSET_ZERO };
 
-  const widthFor = (column: DataGridColumn): number => widths[column.key] ?? column.width ?? DEFAULT_COLUMN_WIDTH;
+  const widthFor = (column: DataGridColumn): number => widths[column.key] ?? column.width ?? columnWidth;
   const minWidthFor = (column: DataGridColumn): number => column.minWidth ?? t.sizeTargetMin;
 
   // ---- Sorting ----
@@ -503,6 +519,7 @@ export function DataGrid({
   };
 
   const commitEdit = (row: DataGridRow, column: DataGridColumn, value: DataGridCellValue): boolean => {
+    // `validate` runs on every commit, unchanged ones included; only the report is skipped.
     const message = column.validate?.(value, row);
     if (message !== undefined) {
       setEditError(message);
@@ -511,7 +528,7 @@ export function DataGrid({
     }
     const previous = cellValue(row, column.key);
     closeEditor();
-    if (value !== previous) {
+    if (!Object.is(value, previous)) {
       onCellChange?.(row.id, column.key, value, previous);
     }
     return true;
@@ -547,7 +564,7 @@ export function DataGrid({
   const editorFor = (row: DataGridRow, column: DataGridColumn): React.ReactNode => {
     const label = column.header;
     const name = `${baseId}-${row.id}-${column.key}`;
-    const error = editError;
+    // Editors are never told about validity: the cell carries cellInvalid* and the status bar the message.
     switch (column.editor) {
       case 'number':
         return (
@@ -557,7 +574,6 @@ export function DataGrid({
             name={name}
             size="sm"
             value={typeof draft === 'number' ? draft : draft === undefined || draft === '' ? undefined : Number(draft)}
-            error={error}
             overrides={editorInset}
             onChangeText={(value) => setDraft(value)}
           />
@@ -572,7 +588,6 @@ export function DataGrid({
             open
             options={column.options ?? []}
             value={typeof draft === 'string' ? draft : undefined}
-            error={error}
             overrides={{ triggerPaddingInline: INSET_ZERO, triggerPaddingBlock: INSET_ZERO }}
             onChange={(value) => commitEdit(row, column, Array.isArray(value) ? value[0] : value)}
             onOpenChange={(open) => {
@@ -590,20 +605,13 @@ export function DataGrid({
             name={name}
             size="sm"
             value={typeof draft === 'string' && draft !== '' ? draft : undefined}
-            error={error}
             overrides={editorInset}
             onChange={(value) => setDraft(typeof value === 'string' ? value : undefined)}
           />
         );
       case 'checkbox':
         return (
-          <Checkbox
-            label={label}
-            hideLabel
-            name={name}
-            checked={draft === true}
-            onChange={(checked) => commitEdit(row, column, checked)}
-          />
+          <Checkbox label={label} hideLabel name={name} checked={draft === true} onChange={(checked) => commitEdit(row, column, checked)} />
         );
       default:
         return (
@@ -613,7 +621,6 @@ export function DataGrid({
             name={name}
             size="sm"
             value={draft === undefined ? '' : String(draft)}
-            error={error}
             overrides={editorInset}
             onChange={(value) => setDraft(value)}
             onBlur={() => commitEdit(row, column, draft)}
@@ -624,7 +631,7 @@ export function DataGrid({
 
   // ---- Header ----
 
-  const selectColumnStyle: ViewStyle = { width: t.sizeTargetComfortable, alignItems: 'center', justifyContent: 'center' };
+  const selectColumnStyle: ViewStyle = { width: selectColumnWidth, alignItems: 'center', justifyContent: 'center' };
   const pinnedCellStyle = (column: DataGridColumn | null): ViewStyle | null =>
     scrolledX && (column === null || column.pinned !== undefined) ? { zIndex: 1, ...pinnedShadow } : null;
 
@@ -636,7 +643,7 @@ export function DataGrid({
     <View
       testID="DataGrid.header"
       role="rowgroup"
-      style={{ backgroundColor: t.colorBackgroundSubtle, ...(stickyHeader || height !== 'content' ? (headerScrolled ? headerShadow : null) : null) }}
+      style={{ backgroundColor: t.colorBackgroundSubtle, ...(headerScrolled ? headerShadow : null) }}
     >
       <View
         testID="DataGrid.headerRow"
@@ -644,14 +651,28 @@ export function DataGrid({
         style={{ flexDirection: 'row', alignItems: 'stretch', minHeight: rowHeight, borderBottomWidth: headerBorderWidth, borderBottomColor: headerBorder }}
       >
         {mode === 'row' ? (
-          <View testID="DataGrid.selectAllCell" role="columnheader" style={[selectColumnStyle, { backgroundColor: t.colorBackgroundSubtle, borderEndWidth: gridLineWidth, borderEndColor: gridLine }, pinnedCellStyle(null)]}>
+          <View
+            testID="DataGrid.selectAllCell"
+            role="columnheader"
+            style={[
+              selectColumnStyle,
+              { backgroundColor: t.colorBackgroundSubtle, borderEndWidth: gridLineWidth, borderEndColor: gridLine },
+              pinnedCellStyle(null),
+            ]}
+          >
             <Checkbox label={COPY.selectAll} hideLabel name={`${baseId}-all`} checked={allSelected} indeterminate={someSelected} onChange={toggleAll} />
           </View>
         ) : null}
         {columns.map((column) => {
           const width = widthFor(column);
           const sorted = activeSort?.column === column.key;
-          const resizeActions = column.resizable === true ? [{ name: 'increment', label: COPY.resize(column.header) }, { name: 'decrement', label: COPY.resize(column.header) }] : undefined;
+          const resizeActions =
+            column.resizable === true
+              ? [
+                  { name: 'increment', label: COPY.resize(column.header) },
+                  { name: 'decrement', label: COPY.resize(column.header) },
+                ]
+              : undefined;
           const handleAction = (event: AccessibilityActionEvent): void => {
             const delta = event.nativeEvent.actionName === 'increment' ? resizeStep : event.nativeEvent.actionName === 'decrement' ? -resizeStep : 0;
             if (delta === 0) {
@@ -668,8 +689,6 @@ export function DataGrid({
               role="columnheader"
               accessibilityActions={resizeActions}
               onAccessibilityAction={resizeActions !== undefined ? handleAction : undefined}
-              onPointerEnter={() => setActiveHeader(column.key)}
-              onPointerLeave={() => setActiveHeader((current) => (current === column.key ? null : current))}
               style={[
                 {
                   width,
@@ -693,14 +712,17 @@ export function DataGrid({
                       accessibleName={sorted && activeSort.direction === 'ascending' ? COPY.sortDescending(column.header) : COPY.sortAscending(column.header)}
                       variant="ghost"
                       size="sm"
-                      trailingIcon={sorted ? <Icon name={activeSort.direction === 'ascending' ? 'chevron-up' : 'chevron-down'} inline color={t.colorActionGhostForeground} /> : undefined}
-                      overrides={{ fontWeight: headerWeight, fontSize: overrides?.headerSize }}
-                      onFocus={() => setActiveHeader(column.key)}
-                      onBlur={() => setActiveHeader((current) => (current === column.key ? null : current))}
+                      trailingIcon={
+                        sorted ? (
+                          <Icon name={activeSort.direction === 'ascending' ? 'chevron-up' : 'chevron-down'} inline color={t.colorActionGhostForeground} />
+                        ) : undefined
+                      }
+                      overrides={{ fontWeight: headerWeight, fontSize: headerSize, paddingInline: INSET_ZERO }}
                       onPress={() => handleSortPress(column.key)}
                     />
                   </View>
                 ) : (
+                  // `abbr` is the spoken name; the visible header is hidden behind it, as on web.
                   <View accessible accessibilityLabel={column.abbr ?? column.header}>
                     <Text size="sm" weight="semibold" align={column.align ?? 'start'} overrides={headerText}>
                       {column.header}
@@ -712,7 +734,6 @@ export function DataGrid({
                 <ResizeHandle
                   width={width}
                   minWidth={minWidthFor(column)}
-                  visible={activeHeader === column.key}
                   color={resizeHandle}
                   handleWidth={resizeHandleWidth}
                   hitSlop={(t.sizeTargetMin - resizeHandleWidth) / 2}
@@ -750,12 +771,20 @@ export function DataGrid({
       >
         <RowTint visible={hoveredRow === row.id} color={rowHover} duration={transition} />
         {mode === 'row' ? (
-          <View testID="DataGrid.selectCell" role="cell" style={[selectColumnStyle, { backgroundColor: background, borderEndWidth: gridLineWidth, borderEndColor: gridLine }, pinnedCellStyle(null)]}>
+          <View
+            testID="DataGrid.selectCell"
+            role="cell"
+            style={[
+              selectColumnStyle,
+              { backgroundColor: background, borderEndWidth: gridLineWidth, borderEndColor: gridLine },
+              pinnedCellStyle(null),
+            ]}
+          >
             <Checkbox label={COPY.selectRow(rowName(row))} hideLabel name={`${baseId}-${row.id}`} checked={rowSelected} onChange={() => toggleRow(row.id)} />
           </View>
         ) : null}
         {columns.map((column) => {
-          const key = `${row.id} ${column.key}`;
+          const key = `${row.id} ${column.key}`;
           const isRowHeader = column === rowHeaderColumn;
           const role: Role = isRowHeader ? 'rowheader' : 'cell';
           const canEdit = editable && column.editable === true;
@@ -788,7 +817,7 @@ export function DataGrid({
             <CellRing color={t.colorBorderDanger} width={t.borderWidthFocus} />
           ) : isEditing ? (
             <CellRing color={t.colorBorderFocus} width={t.borderWidthFocus} />
-          ) : focusedCell === key ? (
+          ) : focusedCell === key || cellSelected ? (
             <CellRing color={t.colorBorderFocus} width={t.borderWidthFocus} />
           ) : null;
 
@@ -816,11 +845,18 @@ export function DataGrid({
           }
 
           const value = cellText(row, column.key);
+          const numeric = typeof row[column.key] === 'number';
           const content =
             column.render !== undefined ? (
               column.render(row)
             ) : (
-              <Text size="sm" align={column.align ?? 'start'} truncate overrides={column.align === 'end' ? numericText : bodyText}>
+              <Text
+                size="sm"
+                align={column.align ?? 'start'}
+                tone={loading ? 'muted' : 'default'}
+                truncate
+                overrides={numeric ? numericText : bodyText}
+              >
                 {value}
               </Text>
             );
@@ -830,8 +866,8 @@ export function DataGrid({
               key={column.key}
               testID={isRowHeader ? 'DataGrid.rowHeader' : 'DataGrid.cell'}
               role={role}
-              accessibilityLabel={`${column.header}: ${value}`}
-              accessibilityHint={canEdit ? 'double tap to edit' : undefined}
+              accessibilityLabel={COPY.cellLabel(column.header, value)}
+              accessibilityHint={canEdit ? COPY.editHint : undefined}
               accessibilityState={mode === 'cell' ? { selected: cellSelected } : undefined}
               onPress={
                 interactive
@@ -887,9 +923,10 @@ export function DataGrid({
 
   // ---- Layout ----
 
-  const listHeightStyle: ViewStyle | undefined =
-    height === 'viewport' ? { height: viewport.height - 2 * t.layoutGapSection } : height === 'fixed' ? { height: fixedHeight } : undefined;
-  const contentWidth = columns.reduce((sum, column) => sum + widthFor(column), mode === 'row' ? t.sizeTargetComfortable : 0) + t.borderWidthFocus;
+  const contentWidth = columns.reduce((sum, column) => sum + widthFor(column), mode === 'row' ? selectColumnWidth : 0) + t.borderWidthFocus;
+  const overflows = regionWidth !== null && contentWidth > regionWidth;
+  const bounded = height !== 'content';
+  const flexStyle: ViewStyle = { flexGrow: 1, flexShrink: 1 };
 
   const emptyState = (
     <View testID="DataGrid.emptyState" style={{ paddingHorizontal: cellPaddingInline, minHeight: rowHeight, justifyContent: 'center' }}>
@@ -899,21 +936,15 @@ export function DataGrid({
     </View>
   );
 
-  let status: string;
-  if (loading) {
-    status = COPY.loading;
-  } else if (editError !== undefined) {
-    status = COPY.invalid(editError);
-  } else if (editing !== null) {
-    status = COPY.editing(columnByKey.get(editing.column)?.header ?? editing.column);
-  } else if (mode === 'row' && selectedIds.length > 0) {
-    status = COPY.selectedRows(selectedIds.length, total);
-  } else if (mode === 'cell' && activeCell !== null) {
-    const index = rows.findIndex((row) => row.id === activeCell.rowId);
-    status = COPY.position(index + 1, columnByKey.get(activeCell.column)?.header ?? activeCell.column);
-  } else {
-    status = COPY.rowCount(total);
-  }
+  // The one live message: the state that most needs saying, in the order the doc lists it.
+  const live = loading
+    ? COPY.loading
+    : editError !== undefined
+      ? COPY.invalid(editError)
+      : editing !== null
+        ? COPY.editing(columnByKey.get(editing.column)?.header ?? editing.column)
+        : announcement;
+  const activeIndex = activeCell === null ? -1 : rows.findIndex((row) => row.id === activeCell.rowId);
 
   const list = (
     <FlatList
@@ -922,33 +953,41 @@ export function DataGrid({
       accessibilityLabel={caption}
       accessibilityState={{ busy: loading }}
       data={rows}
-      extraData={[selectedIds, activeSort, activeCell, focusedCell, hoveredRow, activeHeader, editing, draft, editError, widths, scrolledX, density]}
+      extraData={[selectedIds, activeSort, activeCell, focusedCell, hoveredRow, editing, draft, editError, widths, scrolledX, density, loading]}
       keyExtractor={(row) => row.id}
       renderItem={renderRow}
       getItemLayout={(_items, index) => ({ length: rowHeight, offset: rowHeight * index, index })}
       ListHeaderComponent={headerRow}
       ListEmptyComponent={emptyState}
-      stickyHeaderIndices={height !== 'content' || stickyHeader ? [0] : undefined}
-      scrollEnabled={height !== 'content'}
-      initialNumToRender={height === 'content' ? data.length : undefined}
+      stickyHeaderIndices={stickyHeader || bounded ? [0] : undefined}
+      scrollEnabled={bounded}
+      initialNumToRender={bounded ? undefined : data.length}
       onScroll={(event) => setHeaderScrolled(event.nativeEvent.contentOffset.y > 0)}
-      scrollEventThrottle={16}
+      scrollEventThrottle={16} // literal-ok: one frame between the header shadow and the scroll position
       onEndReached={rowCount !== undefined ? handleEndReached : undefined}
       onEndReachedThreshold={1}
       onLayout={(event: LayoutChangeEvent) => setListHeight(event.nativeEvent.layout.height)}
-      style={listHeightStyle}
+      style={bounded ? flexStyle : undefined}
     />
   );
 
   return (
-    <View ref={ref} testID="DataGrid" style={{ backgroundColor: t.colorBackground }}>
+    <View
+      ref={ref}
+      testID="DataGrid"
+      style={{
+        backgroundColor: t.colorBackground,
+        // `viewport` sizes the whole component; the scroll region takes what the caption and status bar leave.
+        ...(height === 'viewport' ? { height: viewport.height - 2 * t.layoutGapSection } : null),
+      }}
+    >
       <View testID="DataGrid.caption" style={hideCaption ? HIDDEN_STYLE : undefined}>
         <Heading
-          level="2"
+          level={captionLevel}
           size="md"
           overrides={{
             fontFamily: overrides?.fontFamily,
-            fontSize: overrides?.captionSize,
+            fontSize: overrides?.captionSize ?? CAPTION_SIZE,
             fontWeight: overrides?.captionWeight ?? CAPTION_WEIGHT,
             marginBlockEnd: overrides?.captionGap ?? CAPTION_GAP,
           }}
@@ -956,30 +995,81 @@ export function DataGrid({
           {caption}
         </Heading>
       </View>
-      <View testID="DataGrid.container" style={{ borderStartWidth: gridLineWidth, borderTopWidth: gridLineWidth, borderColor: gridLine }}>
+      <View
+        testID="DataGrid.container"
+        style={{
+          borderStartWidth: gridLineWidth,
+          borderTopWidth: gridLineWidth,
+          borderColor: gridLine,
+          ...(height === 'viewport' ? flexStyle : height === 'fixed' ? { height: fixedHeight } : null),
+        }}
+      >
         <ScrollView
           testID="DataGrid.scrollRegion"
           horizontal
           accessibilityHint={COPY.scrollHint}
           onScroll={(event) => setScrolledX(event.nativeEvent.contentOffset.x > 0)}
-          scrollEventThrottle={16}
+          scrollEventThrottle={16} // literal-ok: one frame between the pinned shadow and the scroll position
+          onLayout={(event: LayoutChangeEvent) => setRegionWidth(event.nativeEvent.layout.width)}
           contentContainerStyle={{ minWidth: contentWidth, flexGrow: 1 }}
+          style={bounded ? flexStyle : undefined}
         >
-          <View style={{ width: contentWidth }}>{list}</View>
+          <View style={[{ width: contentWidth }, bounded ? flexStyle : null]}>{list}</View>
         </ScrollView>
-      </View>
-      <View accessibilityLiveRegion="polite" style={HIDDEN_STYLE}>
-        <Text size="sm">{sortAnnouncement}</Text>
       </View>
       <View
         testID="DataGrid.statusBar"
-        role="status"
-        accessibilityLiveRegion="polite"
-        style={showStatusBar ? { padding: statusBarPadding, backgroundColor: t.colorBackgroundSubtle } : HIDDEN_STYLE}
+        style={
+          showStatusBar
+            ? {
+                flexDirection: 'row',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                gap: statusBarGap,
+                padding: statusBarPadding,
+                backgroundColor: t.colorBackgroundSubtle,
+              }
+            : HIDDEN_STYLE
+        }
       >
-        <Text size="xs" tone="muted" overrides={{ fontFamily: overrides?.fontFamily, lineHeight: overrides?.lineHeight ?? LINE_HEIGHT, fontSize: overrides?.statusBarSize }}>
-          {status}
-        </Text>
+        {/* The live region: what a screen reader hears. Everything beside it is shown, never announced. */}
+        <View role="status" accessibilityLiveRegion="polite">
+          {editError !== undefined && !loading ? (
+            <View style={{ backgroundColor: t.colorStatusDangerBackground }}>
+              <TextForegroundContext.Provider value={t.colorStatusDangerForeground}>
+                <Text size="xs" overrides={statusBarText}>
+                  {live}
+                </Text>
+              </TextForegroundContext.Provider>
+            </View>
+          ) : (
+            <Text size="xs" tone="muted" overrides={statusBarText}>
+              {live}
+            </Text>
+          )}
+        </View>
+        {showStatusBar ? (
+          <>
+            <Text size="xs" tone="muted" overrides={statusBarText}>
+              {COPY.rowCount(total)}
+            </Text>
+            {mode === 'row' && selectedIds.length > 0 ? (
+              <Text size="xs" tone="muted" overrides={statusBarText}>
+                {COPY.selectedRows(selectedIds.length, total)}
+              </Text>
+            ) : null}
+            {overflows && !scrolledX ? (
+              <Text size="xs" tone="muted" overrides={statusBarText}>
+                {COPY.scrollHint}
+              </Text>
+            ) : null}
+            {activeIndex >= 0 && activeCell !== null ? (
+              <Text size="xs" tone="muted" overrides={statusBarText}>
+                {COPY.position(activeIndex + 1, columnByKey.get(activeCell.column)?.header ?? activeCell.column)}
+              </Text>
+            ) : null}
+          </>
+        ) : null}
       </View>
     </View>
   );

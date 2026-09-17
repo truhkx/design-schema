@@ -20,6 +20,7 @@ const meta: Meta<typeof DataGrid> = {
   decorators: [withTheme()],
   args: {
     caption: 'Price list',
+    captionLevel: '2',
     hideCaption: false,
     columns,
     data,
@@ -38,6 +39,11 @@ export default meta;
 type Story = StoryObj<typeof DataGrid>;
 
 export const Default: Story = {};
+
+// captionLevel
+export const CaptionLevel2: Story = { args: { captionLevel: '2' } };
+export const CaptionLevel3: Story = { args: { captionLevel: '3' } };
+export const CaptionLevel4: Story = { args: { captionLevel: '4' } };
 
 // selectable
 export const SelectableNone: Story = { args: { selectable: 'none' } };

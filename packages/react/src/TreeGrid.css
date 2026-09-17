@@ -4,12 +4,15 @@
   --ds-tree-grid-indent: var(--space-5);
   --ds-tree-grid-expand-gap: var(--layout-gap-tight);
   --ds-tree-grid-guide-line: var(--color-border);
+  --ds-tree-grid-cell-padding-inline: var(--space-2);
+  --ds-tree-grid-fixed-height: var(--space-20);
   --ds-tree-grid-guide-line-width: var(--border-width-thin);
   --ds-tree-grid-parent-weight: var(--font-weight-medium);
   --ds-tree-grid-transition: var(--motion-duration-fast);
-  /* Internal, not override hooks: DataGrid's cell padding and the locked row height for the density. */
-  --ds-tree-grid-cell-padding-inline: var(--space-2);
+  /* Internal, not override hooks: DataGrid's own bindings at DataGrid's default tokens. */
   --ds-tree-grid-row-size: var(--size-target-min);
+  --ds-tree-grid-column-size: calc(var(--space-20) * 2);
+  --ds-tree-grid-resize-step: var(--space-4);
   /* Internal: where the row-header column starts inside a row (after the selection column). */
   --ds-tree-grid-guide-start: 0px; /* literal-ok: zero offset, a length so calc() can add to it */
   position: relative;
@@ -46,31 +49,45 @@
   border: 0;
 }
 
-/* Measurement probe for minTarget (the resize floor), read on demand. */
+/* Measurement probes for resizeStep and minTarget, read on demand. */
 .ds-tree-grid__sizer {
   position: absolute;
   inset-block-start: 0;
   inset-inline-start: 0;
   block-size: 0;
-  /* minTarget: locked */
-  inline-size: var(--size-target-min);
   visibility: hidden;
   pointer-events: none;
+}
+.ds-tree-grid__sizer--step {
+  inline-size: var(--ds-tree-grid-resize-step);
+}
+.ds-tree-grid__sizer--target {
+  /* minTarget: locked */
+  inline-size: var(--size-target-min);
 }
 
 .ds-tree-grid__scroll-region {
   position: relative;
   overflow: auto;
   border: var(--border-width-thin) solid var(--color-border);
+  /* Cells scrolled into view clear the sticky header row. */
   scroll-padding-block-start: var(--ds-tree-grid-row-size);
 }
 
-.ds-tree-grid--height-viewport .ds-tree-grid__scroll-region {
+/* `viewport` and `fixed` size the whole component; the scroll region takes what the caption
+   and the status bar leave, so the grid scrolls and the page does not. */
+.ds-tree-grid--height-viewport {
   block-size: calc(100vh - 2 * var(--layout-gap-section));
 }
 
+.ds-tree-grid--height-fixed {
+  block-size: var(--ds-tree-grid-fixed-height);
+}
+
+.ds-tree-grid--height-viewport .ds-tree-grid__scroll-region,
 .ds-tree-grid--height-fixed .ds-tree-grid__scroll-region {
-  block-size: var(--space-20);
+  flex: 1 1 auto;
+  min-block-size: 0;
 }
 
 .ds-tree-grid__grid {
@@ -141,8 +158,10 @@
   z-index: calc(var(--layer-raised) + 1);
 }
 
-/* guideLine / guideLineWidth: one vertical line per ancestor level, the full row height, centred on that
-   ancestor's expand button (indent guides — no elbows). Decorative. */
+/* guideLine / guideLineWidth: one vertical line per ancestor level, drawn the full height of every
+   descendant row and centred on that ancestor's expand button — indent guides, no elbows and no
+   termination at the last child. Decorative; drawn inside the row header cell's inline flow, at
+   cellPaddingInline + indent × (ancestor level − 1) + expandButtonSize / 2 from the cell's start. */
 .ds-tree-grid__row--nested::before {
   content: '';
   position: absolute;
@@ -247,6 +266,11 @@
   outline-color: var(--color-border-danger);
 }
 
+/* loadingColor: locked — the lazy-loading placeholder row. */
+.ds-tree-grid__cell--placeholder {
+  color: var(--color-foreground-muted);
+}
+
 .ds-tree-grid__editor {
   inline-size: 100%;
 }
@@ -259,6 +283,7 @@
   inline-size: calc(var(--ds-tree-grid-indent) * var(--ds-tree-grid-depth, 0));
 }
 
+/* expandGap: between the expand button and the row header text. */
 .ds-tree-grid__row-header {
   display: flex;
   align-items: center;
@@ -266,7 +291,8 @@
   min-inline-size: 0;
 }
 
-/* expandButtonSize: locked. Leaves reserve the same inline size so names align. */
+/* expandButtonSize: locked; the guide lines align to its centre. Leaves reserve the same inline size
+   so names align. The rotation is on this span, which TreeGrid owns, never on the Icon. */
 .ds-tree-grid__expand {
   flex: none;
   display: inline-flex;
@@ -276,17 +302,16 @@
   min-block-size: var(--size-target-min);
 }
 
-.ds-tree-grid__chevron {
-  display: inline-flex;
-}
-.ds-tree-grid__chevron--expanded {
+.ds-tree-grid__expand--expanded {
   transform: rotate(90deg);
 }
-.ds-tree-grid__cell:dir(rtl) .ds-tree-grid__chevron:not(.ds-tree-grid__chevron--expanded) {
+/* In RTL the collapsed chevron is mirrored. */
+.ds-tree-grid__cell:dir(rtl) .ds-tree-grid__expand:not(.ds-tree-grid__expand--expanded) {
   transform: scaleX(-1);
 }
+
 @media (prefers-reduced-motion: no-preference) {
-  .ds-tree-grid__chevron {
+  .ds-tree-grid__expand {
     transition: transform var(--ds-tree-grid-transition) var(--motion-easing-standard);
   }
 }

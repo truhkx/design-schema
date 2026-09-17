@@ -1,6 +1,8 @@
 /**
  * TreeGrid — behavior scenarios from the component doc, one test each, in the doc's order.
  * The aria-expanded and aria-selected scenarios are web only (the parser narrows them). A click is a `press`.
+ * The expand control is hidden from assistive technology on this platform (the row header's
+ * accessibility actions are the screen-reader path), so its queries opt hidden elements back in.
  */
 import * as React from 'react';
 import { fireEvent, render, screen, within } from '@testing-library/react-native';
@@ -18,6 +20,12 @@ function setup(given: Partial<TreeGridProps> = {}) {
     </ThemeProvider>,
   );
   return { ...utils, props };
+}
+
+/** The expand control of the row at `index`, reached through the accessibility-hidden part. */
+function pressExpandButton(index: number): void {
+  const part = screen.getAllByTestId('TreeGrid.expandButton', { includeHiddenElements: true })[index]!;
+  fireEvent.press(within(part).getByRole('button', { includeHiddenElements: true }));
 }
 
 let warn: jest.SpyInstance;
@@ -40,8 +48,7 @@ describe('TreeGrid', () => {
       data: [{ id: 'assets', account: 'Assets', balance: 100, children: [{ id: 'cash', account: 'Cash', balance: 40 }] }],
       onExpandChange,
     });
-    const expandButton = screen.getAllByTestId('TreeGrid.expandButton')[0]!;
-    fireEvent.press(within(expandButton).getByRole('button'));
+    pressExpandButton(0);
     expect(onExpandChange).toHaveBeenCalledWith(['assets']);
   });
 
@@ -55,10 +62,11 @@ describe('TreeGrid', () => {
       onExpand,
       onExpandChange,
     });
-    const expandButton = screen.getAllByTestId('TreeGrid.expandButton')[0]!;
-    fireEvent.press(within(expandButton).getByRole('button'));
+    pressExpandButton(0);
     expect(onExpand).toHaveBeenCalledWith('assets');
     expect(onExpandChange).toHaveBeenCalledWith(['assets']);
+    // The placeholder child stands in until `children` arrives.
+    expect(screen.getByText('Loading')).toBeTruthy();
   });
 
   it('activating-a-sortable-header-reports-the-sort', () => {
@@ -103,6 +111,24 @@ describe('TreeGrid', () => {
   /* derived */
   it('renders', () => {
     const s = setup();
+    expect(s.toJSON()).not.toBeNull();
+  });
+
+  /* derived */
+  it('renders-caption-level-2', () => {
+    const s = setup({ captionLevel: '2' });
+    expect(s.toJSON()).not.toBeNull();
+  });
+
+  /* derived */
+  it('renders-caption-level-3', () => {
+    const s = setup({ captionLevel: '3' });
+    expect(s.toJSON()).not.toBeNull();
+  });
+
+  /* derived */
+  it('renders-caption-level-4', () => {
+    const s = setup({ captionLevel: '4' });
     expect(s.toJSON()).not.toBeNull();
   });
 

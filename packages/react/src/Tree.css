@@ -10,6 +10,7 @@
   --ds-tree-guide-line-width: var(--border-width-thin);
   --ds-tree-checkbox-gap: var(--layout-gap-tight);
   --ds-tree-checkbox-size: var(--space-4);
+  --ds-tree-checkbox-border-width: var(--border-width-thin);
   --ds-tree-checkbox-background: var(--color-control-background);
   --ds-tree-checkbox-radius: var(--radius-sm);
   --ds-tree-font-family: var(--font-family-body);
@@ -165,8 +166,8 @@
   place-items: center;
   inline-size: var(--ds-tree-checkbox-size);
   block-size: var(--ds-tree-checkbox-size);
-  /* checkboxBorder: locked */
-  border: var(--border-width-thin) solid var(--color-control-border);
+  /* checkboxBorder: locked; checkboxBorderWidth: overridable */
+  border: var(--ds-tree-checkbox-border-width) solid var(--color-control-border);
   border-radius: var(--ds-tree-checkbox-radius);
   background-color: var(--ds-tree-checkbox-background);
   /* checkboxMark: locked */
@@ -179,16 +180,20 @@
   background-color: var(--color-control-selected-background);
 }
 
+/* iconColor is forwarded to the composed Icon's own `overrides`, never applied as CSS on the child. */
 .ds-tree__icon {
   flex: none;
   display: inline-flex;
-  /* iconColor: color.foreground.muted, locked */
-  color: var(--color-foreground-muted);
 }
 
 .ds-tree__label {
   flex: 1;
   min-inline-size: 0;
+}
+
+/* The `link` part the tree owns around the composed Link; the Link inherits the label's font and colour. */
+.ds-tree__link {
+  display: inline;
 }
 
 @media (prefers-reduced-motion: no-preference) {

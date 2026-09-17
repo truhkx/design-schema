@@ -34,6 +34,7 @@ export type TreeOverridableBinding =
   | 'guideLineWidth'
   | 'checkboxGap'
   | 'checkboxSize'
+  | 'checkboxBorderWidth'
   | 'checkboxBackground'
   | 'checkboxRadius'
   | 'fontFamily'
@@ -53,7 +54,7 @@ export interface TreeProps {
   nodes: TreeNode[];
   /** Controlled expanded ids. */
   expanded?: string[] | undefined;
-  /** Initially expanded ids; `["*"]` for all. */
+  /** Initially expanded ids. `["*"]` opens every node whose `children` is a non-empty array and never a `"lazy"` node; a lazy id listed explicitly stays closed until the user opens it. */
   defaultExpanded?: string[] | undefined;
   /** `single`: one current node. `multiple`: checkbox-like selection, cascading with `selectChildren`. `none`: expand/collapse only. */
   selectable?: TreeSelectable | undefined;
@@ -61,7 +62,7 @@ export interface TreeProps {
   selected?: string[] | undefined;
   /** Initially selected ids. */
   defaultSelected?: string[] | undefined;
-  /** With `multiple`, selecting a parent selects its descendants and parents show indeterminate. */
+  /** With `multiple`, selecting a parent selects its enabled loaded descendants and parents show indeterminate. */
   selectChildren?: boolean | undefined;
   /** With `single`, focus reaching a node (hardware keyboard, assistive technology) also selects it. */
   selectOnFocus?: boolean | undefined;
@@ -69,11 +70,11 @@ export interface TreeProps {
   showGuides?: boolean | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<TreeOverridableBinding, TokenRef | undefined>> | undefined;
-  /** Fired with every selected id, as a bare array. */
+  /** Fired with every selected id in tree order, as a bare array, and only when the set changes. */
   onSelectionChange?: ((ids: string[]) => void) | undefined;
-  /** Fired with every expanded id, as a bare array. */
+  /** Fired with every expanded id, in the order they were opened, as a bare array. */
   onExpandChange?: ((ids: string[]) => void) | undefined;
-  /** Fired when a lazy node is expanded for the first time, with its id. */
+  /** Fired with its id each time a node whose `children` is still `"lazy"` is opened, so a failed load can retry. It precedes the `onExpandChange` of the same act. */
   onExpand?: ((id: string) => void) | undefined;
   /** Fired when a node is activated, with its id. Nodes with `href` navigate instead. */
   onActivate?: ((id: string) => void) | undefined;
@@ -127,7 +128,7 @@ function flattenNodes(nodes: TreeNode[], expanded: Set<string>, level: number, o
   return out;
 }
 
-/** Every loaded parent, at any depth — what `["*"]` expands. */
+/** Every loaded parent, at any depth — what `["*"]` expands; never a `"lazy"` node. */
 function expandableIds(nodes: TreeNode[], out: string[] = []): string[] {
   for (const node of nodes) {
     if (Array.isArray(node.children) && node.children.length > 0) {
@@ -138,7 +139,19 @@ function expandableIds(nodes: TreeNode[], out: string[] = []): string[] {
   return out;
 }
 
-/** Every loaded, enabled descendant id. */
+/** Every node whose children are still `"lazy"`, at any depth: those open on a user act only, so `onExpand` never fires for a caller's id. */
+function lazyIds(nodes: TreeNode[], out: string[] = []): string[] {
+  for (const node of nodes) {
+    if (node.children === 'lazy') {
+      out.push(node.id);
+    } else if (Array.isArray(node.children)) {
+      lazyIds(node.children, out);
+    }
+  }
+  return out;
+}
+
+/** Every loaded, enabled descendant id — the reach of a `selectChildren` cascade. A `"lazy"` subtree contributes nothing until it loads. */
 function descendantIds(node: TreeNode, out: string[] = []): string[] {
   if (Array.isArray(node.children)) {
     for (const child of node.children) {
@@ -146,6 +159,23 @@ function descendantIds(node: TreeNode, out: string[] = []): string[] {
         out.push(child.id);
       }
       descendantIds(child, out);
+    }
+  }
+  return out;
+}
+
+/** Every node by id, with its parent and its position in tree (document) order. */
+interface NodeEntry {
+  node: TreeNode;
+  parent: string | undefined;
+  order: number;
+}
+
+function indexNodes(nodes: TreeNode[], parent: string | undefined, out: Map<string, NodeEntry>): Map<string, NodeEntry> {
+  for (const node of nodes) {
+    out.set(node.id, { node, parent, order: out.size });
+    if (Array.isArray(node.children)) {
+      indexNodes(node.children, node.id, out);
     }
   }
   return out;
@@ -200,9 +230,12 @@ function Chevron({ expanded, color, duration }: { expanded: boolean; color: stri
  * and, in `single`, selects. In `multiple` a tap toggles selection and a long press
  * activates; the row carries the standard `longpress` accessibility action so a
  * screen reader can still reach activation. `selectOnFocus` selects from the
- * Pressable's `onFocus`. Selection changes in `multiple` announce
- * `copy.selectedCount` (iOS `announceForAccessibility`, an Android live region).
- * No arrow keys, `*` or type-ahead on this platform.
+ * Pressable's `onFocus`. Selection is reported in tree order and only when the set
+ * changes; in `multiple` it announces `copy.selectedCount` (iOS
+ * `announceForAccessibility`, an Android live region). A `"lazy"` node opens on a
+ * user act only — firing `onExpand` every time it opens while still lazy, so a
+ * failed load can retry — and shows a `copy.loading` placeholder while its parent
+ * reports busy. No arrow keys, `*` or type-ahead on this platform.
  */
 export function Tree({
   label,
@@ -241,6 +274,7 @@ export function Tree({
   const guideLineWidth = tokenOr<number>(t, overrides?.guideLineWidth, t.borderWidthThin);
   const checkboxGap = tokenOr<number>(t, overrides?.checkboxGap, t.layoutGapTight);
   const checkboxSize = tokenOr<number>(t, overrides?.checkboxSize, t.space4);
+  const checkboxBorderWidth = tokenOr<number>(t, overrides?.checkboxBorderWidth, t.borderWidthThin);
   const checkboxBackground = tokenOr<string>(t, overrides?.checkboxBackground, t.colorControlBackground);
   const checkboxRadius = tokenOr<number>(t, overrides?.checkboxRadius, t.radiusSm);
   const disabledOpacity = tokenOr<number>(t, overrides?.disabledOpacity, t.opacityDisabled);
@@ -251,11 +285,19 @@ export function Tree({
   // fontFamily/fontSize/lineHeight have no part of their own; they reach the label Text only when overridden.
   const labelTypography = { fontFamily: overrides?.fontFamily, fontSize: overrides?.fontSize, lineHeight: overrides?.lineHeight };
 
+  /** Parent and tree order for every node, loaded subtrees included. */
+  const index = React.useMemo(() => indexNodes(nodes, undefined, new Map<string, NodeEntry>()), [nodes]);
+
   // ---- Expansion ----
   const [internalExpanded, setInternalExpanded] = React.useState<string[]>(() => (defaultExpanded?.includes('*') ? expandableIds(nodes) : (defaultExpanded ?? [])));
   const expandedIds = expanded ?? internalExpanded;
-  const expandedSet = React.useMemo(() => new Set(expandedIds), [expandedIds]);
-  const lazyRequested = React.useRef(new Set<string>());
+  const [openedLazy, setOpenedLazy] = React.useState<string[]>([]);
+  const lazySet = React.useMemo(() => new Set(lazyIds(nodes)), [nodes]);
+  /** What is actually open: a still-lazy id the caller listed stays shut until the user opens it, so `onExpand` follows a user act. */
+  const expandedSet = React.useMemo(
+    () => new Set(expandedIds.filter((id) => !lazySet.has(id) || openedLazy.includes(id))),
+    [expandedIds, lazySet, openedLazy],
+  );
 
   const commitExpanded = (next: string[]): void => {
     if (expanded === undefined) {
@@ -265,15 +307,18 @@ export function Tree({
   };
 
   const toggleExpand = (node: TreeNode): void => {
+    if (node.disabled === true) {
+      return;
+    }
     if (expandedSet.has(node.id)) {
       commitExpanded(expandedIds.filter((id) => id !== node.id));
       return;
     }
-    if (node.children === 'lazy' && !lazyRequested.current.has(node.id)) {
-      lazyRequested.current.add(node.id);
+    if (node.children === 'lazy') {
+      setOpenedLazy((prev) => (prev.includes(node.id) ? prev : [...prev, node.id]));
       onExpand?.(node.id);
     }
-    commitExpanded([...expandedIds, node.id]);
+    commitExpanded(expandedIds.includes(node.id) ? expandedIds : [...expandedIds, node.id]);
   };
 
   const visible = React.useMemo(() => flattenNodes(nodes, expandedSet, 1), [nodes, expandedSet]);
@@ -284,7 +329,14 @@ export function Tree({
   const selectedSet = React.useMemo(() => new Set(selectedIds), [selectedIds]);
   const [announcement, setAnnouncement] = React.useState('');
 
+  /** Selected ids as the event reports them: tree (document) order, unknown ids last. */
+  const inTreeOrder = (ids: Iterable<string>): string[] =>
+    Array.from(ids).sort((a, b) => (index.get(a)?.order ?? Number.MAX_SAFE_INTEGER) - (index.get(b)?.order ?? Number.MAX_SAFE_INTEGER));
+
   const commitSelection = (next: string[]): void => {
+    if (next.length === selectedIds.length && next.every((id) => selectedSet.has(id))) {
+      return; // The set did not change: selecting the current node again fires nothing.
+    }
     if (selected === undefined) {
       setInternalSelected(next);
     }
@@ -314,19 +366,45 @@ export function Tree({
     return count > 0 || own ? 'mixed' : 'unchecked';
   };
 
-  const selectNode = (node: TreeNode): void => {
-    if (selectedIds.length === 1 && selectedIds[0] === node.id) {
-      return;
+  /** A cascading parent's id is in the selection exactly when every enabled loaded descendant is. */
+  const syncAncestors = (id: string, next: Set<string>): void => {
+    let parent = index.get(id)?.parent;
+    while (parent !== undefined) {
+      const entry = index.get(parent);
+      if (entry === undefined) {
+        return;
+      }
+      const reach = descendantIds(entry.node);
+      if (reach.length > 0) {
+        if (reach.every((child) => next.has(child))) {
+          next.add(parent);
+        } else {
+          next.delete(parent);
+        }
+      }
+      parent = entry.parent;
     }
+  };
+
+  const selectNode = (node: TreeNode): void => {
     commitSelection([node.id]);
   };
 
   const toggleNode = (node: TreeNode): void => {
+    const check = checkStateOf(node) !== 'checked';
     const ids = selectChildren ? [node.id, ...descendantIds(node)] : [node.id];
-    const clear = checkStateOf(node) === 'checked';
     const next = new Set(selectedSet);
-    ids.forEach((id) => (clear ? next.delete(id) : next.add(id)));
-    commitSelection(Array.from(next));
+    for (const id of ids) {
+      if (check) {
+        next.add(id);
+      } else {
+        next.delete(id);
+      }
+    }
+    if (selectChildren) {
+      syncAncestors(node.id, next);
+    }
+    commitSelection(inTreeOrder(next));
   };
 
   // ---- Activation ----
@@ -400,7 +478,7 @@ export function Tree({
         width: checkboxSize,
         height: checkboxSize,
         borderRadius: checkboxRadius,
-        borderWidth: t.borderWidthThin,
+        borderWidth: checkboxBorderWidth,
         borderColor: state === 'unchecked' ? t.colorControlBorder : t.colorControlSelectedBackground,
         backgroundColor: state === 'unchecked' ? checkboxBackground : t.colorControlSelectedBackground,
         alignItems: 'center',
@@ -438,7 +516,7 @@ export function Tree({
     const highlighted = !disabled && hoveredId === node.id;
 
     const actions: { name: string; label?: string }[] = [];
-    if (parent) {
+    if (parent && !disabled) {
       actions.push({ name: 'expand', label: COPY.expand(node.label) }, { name: 'collapse', label: COPY.collapse(node.label) });
     }
     if (selectable === 'multiple' && !disabled) {
@@ -480,6 +558,7 @@ export function Tree({
               size="sm"
               iconOnly
               expanded={isExpanded}
+              disabled={disabled}
               leadingIcon={<Chevron expanded={isExpanded} color={t.colorForeground} duration={transition} />}
               onPress={() => toggleExpand(node)}
             />
@@ -572,7 +651,7 @@ export function Tree({
         accessibilityRole="list"
         accessibilityLabel={label}
         data={visible}
-        extraData={[selectedIds, focusedId, hoveredId, selectable, selectChildren, showGuides]}
+        extraData={[selectedIds, expandedIds, focusedId, hoveredId, selectable, selectChildren, showGuides]}
         keyExtractor={(item) => item.key}
         renderItem={renderNode}
         ListEmptyComponent={

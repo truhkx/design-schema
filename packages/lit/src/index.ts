@@ -422,6 +422,7 @@ export type {
 export { DsDataGrid } from './DataGrid.js';
 export type {
   DataGridRow,
+  DataGridCaptionLevel,
   DataGridColumnAlign,
   DataGridColumnPinned,
   DataGridEditorKind,
@@ -448,6 +449,7 @@ export type {
 export { DsTreeGrid } from './TreeGrid.js';
 export type {
   TreeGridRow,
+  TreeGridCaptionLevel,
   TreeGridSortDirection,
   TreeGridSort,
   TreeGridSelectable,

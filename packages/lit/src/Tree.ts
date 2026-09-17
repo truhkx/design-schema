@@ -4,15 +4,19 @@ import { ifDefined } from 'lit/directives/if-defined.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Button.js';
-import './Icon.js';
-import './Text.js';
-import './Link.js';
 import './Heading.js';
+import './Icon.js';
+import './Link.js';
+import './Text.js';
 import type { IconName } from './Icon.js';
 import type { TextOverridableBinding } from './Text.js';
 
-/** A node in the hierarchy. `href` makes the node's label a Link (navigation trees); `icon` is an Icon glyph;
-    `badge` is a short trailing count or status; `children: "lazy"` loads on first expand through `expand`. */
+/**
+ * A node in the hierarchy. `href` makes the node's label a Link with `tone="inherit"` nested inside the label
+ * Text, so it takes the label's font and color (navigation trees); `icon` is an Icon glyph (`folder` and `file`
+ * exist for the usual case); `badge` is a short trailing count or status; `children: "lazy"` loads on first
+ * expand through the `expand` event.
+ */
 export interface TreeNode {
   id: string;
   label: string;
@@ -27,13 +31,13 @@ export type TreeHeadingLevel = '2' | '3' | '4';
 
 export type TreeSelectable = 'none' | 'single' | 'multiple';
 
-/** `selection-change` detail: every selected id, as a bare array. */
+/** `selection-change` detail: every selected id, in tree (document) order, as a bare array. */
 export type TreeSelectionChangeDetail = string[];
 
-/** `expand-change` detail: every expanded id, as a bare array. */
+/** `expand-change` detail: every expanded id, in the order they were opened, as a bare array. */
 export type TreeExpandChangeDetail = string[];
 
-/** `expand` detail: the lazy node expanded for the first time. */
+/** `expand` detail: the id of the still-`"lazy"` node that was opened. */
 export type TreeExpandDetail = string;
 
 /** `activate` detail: the id of the activated node. */
@@ -46,7 +50,7 @@ const COPY_SELECTED_COUNT = (count: number): string => `${count} selected`;
 const COPY_LOADING = 'Loading';
 const COPY_EMPTY = 'Nothing here.';
 
-/** constants.typeaheadReset — literal-ok, as Listbox. */
+/** constants.typeaheadReset — how long typed characters accumulate (literal-ok, as Listbox). */
 const TYPEAHEAD_RESET_MS = 500;
 
 /** `showGuides` defaults true, so its attribute is the negated `hide-guides`. */
@@ -59,9 +63,11 @@ const NEGATED_BOOLEAN = {
   },
 };
 
-/** Overridable style bindings. Locked (never overridable): rowHeight, rowSelected, rowSelectedBorder,
-    rowSelectedBorderWidth, labelColor, iconColor, badgeColor, expandButtonSize, checkboxBorder, checkboxSelected,
-    checkboxMark, minTarget, focusRing, focusRingWidth. */
+/**
+ * Overridable style bindings. Locked (accessibility-bearing, never overridable): rowHeight, rowSelected,
+ * rowSelectedBorder, rowSelectedBorderWidth, labelColor, iconColor, badgeColor, expandButtonSize,
+ * checkboxBorder, checkboxSelected, checkboxMark, minTarget, focusRing, focusRingWidth.
+ */
 export type TreeOverridableBinding =
   | 'indent'
   | 'rowPaddingInline'
@@ -75,6 +81,7 @@ export type TreeOverridableBinding =
   | 'guideLineWidth'
   | 'checkboxGap'
   | 'checkboxSize'
+  | 'checkboxBorderWidth'
   | 'checkboxBackground'
   | 'checkboxRadius'
   | 'fontFamily'
@@ -96,6 +103,7 @@ const HOOKS: Record<TreeOverridableBinding, string> = {
   guideLineWidth: '--ds-tree-guide-line-width',
   checkboxGap: '--ds-tree-checkbox-gap',
   checkboxSize: '--ds-tree-checkbox-size',
+  checkboxBorderWidth: '--ds-tree-checkbox-border-width',
   checkboxBackground: '--ds-tree-checkbox-background',
   checkboxRadius: '--ds-tree-checkbox-radius',
   fontFamily: '--ds-tree-font-family',
@@ -105,14 +113,23 @@ const HOOKS: Record<TreeOverridableBinding, string> = {
   transition: '--ds-tree-transition',
 };
 
-/** Default tokens of the bindings forwarded to composed children's `overrides`. */
+/**
+ * Defaults of the bindings forwarded to a composed child's `overrides`. A forwarded binding reaches the child
+ * that way only, so a consumer's CSS on the matching `--ds-tree-*` hook does not reach it — override it through
+ * the `overrides` property instead.
+ */
 const LABEL_SELECTED_WEIGHT: TokenRef = 'font.weight.medium';
 const HEADING_SIZE: TokenRef = 'font.size.md';
 const BADGE_SIZE: TokenRef = 'font.size.xs';
+const FONT_FAMILY: TokenRef = 'font.family.body';
 const FONT_SIZE: TokenRef = 'font.size.sm';
+const LINE_HEIGHT: TokenRef = 'font.lineHeight.normal';
+/** iconColor (locked) — the glyph tone, forwarded so the Icon does not fall back to currentColor. */
+const ICON_COLOR: Partial<Record<'color', TokenRef>> = { color: 'color.foreground.muted' };
 
 let idCounter = 0;
 
+/** One visible node in the flattened list the keyboard moves over. */
 interface VisibleEntry {
   node: TreeNode;
   level: number;
@@ -130,11 +147,11 @@ function hasChildrenOf(node: TreeNode): boolean {
  *
  * `<ds-tree label="Folders" .nodes=${nodes} selectable="multiple" select-children></ds-tree>` renders a
  * `role="tree"` list of `role="treeitem"` nodes with nested `role="group"` lists. One tab stop with a roving
- * tabindex on the treeitems.
+ * tabindex on the treeitems; arrows move, Enter activates, Space selects.
  *
- * @fires selection-change - Every selected id, as a bare array.
- * @fires expand-change - Every expanded id, as a bare array.
- * @fires expand - A lazy node expanded for the first time, with its id.
+ * @fires selection-change - Every selected id, in tree order, as a bare array.
+ * @fires expand-change - Every expanded id, in the order they were opened, as a bare array.
+ * @fires expand - A still-`"lazy"` node was opened, with its id; fires before `expand-change`.
  * @fires activate - Enter or double-click on a node without `href`, with its id.
  */
 @customElement('ds-tree')
@@ -156,6 +173,7 @@ export class DsTree extends LitElement {
       --ds-tree-guide-line-width: var(--border-width-thin);
       --ds-tree-checkbox-gap: var(--layout-gap-tight);
       --ds-tree-checkbox-size: var(--space-4);
+      --ds-tree-checkbox-border-width: var(--border-width-thin);
       --ds-tree-checkbox-background: var(--color-control-background);
       --ds-tree-checkbox-radius: var(--radius-sm);
       --ds-tree-font-family: var(--font-family-body);
@@ -173,7 +191,7 @@ export class DsTree extends LitElement {
       font-family: var(--ds-tree-font-family);
       font-size: var(--ds-tree-font-size);
       line-height: var(--ds-tree-line-height);
-      /* labelColor: locked */
+      /* labelColor (locked): the tree's own foreground; the label Text takes its default tone */
       color: var(--color-foreground);
     }
 
@@ -202,7 +220,7 @@ export class DsTree extends LitElement {
     }
 
     [data-part='node']:focus-visible > [data-part='nodeRow'] {
-      /* focusRing / focusRingWidth: locked */
+      /* focusRing / focusRingWidth (locked) */
       outline: var(--border-width-focus) solid var(--color-border-focus);
       outline-offset: calc(-1 * var(--border-width-focus));
     }
@@ -212,7 +230,7 @@ export class DsTree extends LitElement {
       display: flex;
       align-items: center;
       gap: var(--ds-tree-row-gap);
-      /* rowHeight / minTarget: locked */
+      /* rowHeight / minTarget (locked) */
       min-block-size: var(--size-target-min);
       padding-inline: var(--ds-tree-row-padding-inline);
       border-radius: var(--ds-tree-row-radius);
@@ -224,15 +242,15 @@ export class DsTree extends LitElement {
       background: var(--ds-tree-row-hover);
     }
 
+    /* rowSelected (locked): the fill stays under the hover fill on a selected row */
     [data-part='node'][aria-selected='true'] > [data-part='nodeRow'],
     [data-part='node'][aria-checked='true'] > [data-part='nodeRow'] {
-      /* rowSelected: locked */
       background: var(--color-background-strong);
     }
 
+    /* rowSelectedBorder / rowSelectedBorderWidth (locked): drawn over the row, so selecting shifts nothing */
     [data-part='node'][aria-selected='true'] > [data-part='nodeRow']::before,
     [data-part='node'][aria-checked='true'] > [data-part='nodeRow']::before {
-      /* rowSelectedBorder / rowSelectedBorderWidth: locked */
       content: '';
       position: absolute;
       inset-block: 0;
@@ -250,19 +268,30 @@ export class DsTree extends LitElement {
       flex: none;
     }
 
-    [data-part='expandButton'],
+    /* expandButtonSize (locked): the square the tree reserves around an unmodified ghost Button */
+    [data-part='expandButton'] {
+      flex: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      inline-size: var(--size-target-min);
+      block-size: var(--size-target-min);
+    }
+
     .expand-spacer {
       flex: none;
-      /* expandButtonSize: locked */
-      min-inline-size: var(--size-target-min);
+      inline-size: var(--size-target-min);
     }
 
     .chevron {
       transition: transform var(--ds-tree-transition) var(--motion-easing-standard);
     }
+
     .chevron[data-expanded] {
       transform: rotate(90deg);
     }
+
+    /* The collapsed chevron is mirrored in RTL. */
     :host(:dir(rtl)) .chevron:not([data-expanded]) {
       transform: scaleX(-1);
     }
@@ -275,27 +304,24 @@ export class DsTree extends LitElement {
       box-sizing: border-box;
       inline-size: var(--ds-tree-checkbox-size);
       block-size: var(--ds-tree-checkbox-size);
+      /* checkboxGap: the row gap already sits after the checkbox, so only the difference is added */
       margin-inline-end: calc(var(--ds-tree-checkbox-gap) - var(--ds-tree-row-gap));
-      /* checkboxBorder: locked */
-      border: var(--border-width-thin) solid var(--color-control-border);
+      /* checkboxBorder (locked) */
+      border: var(--ds-tree-checkbox-border-width) solid var(--color-control-border);
       border-radius: var(--ds-tree-checkbox-radius);
       background: var(--ds-tree-checkbox-background);
-      /* checkboxMark: locked */
+      /* checkboxMark (locked): the check or dash Icon takes this as currentColor */
       color: var(--color-control-selected-foreground);
     }
+
+    /* checkboxSelected (locked): checked or mixed takes the fill on both border and background */
     [data-part='checkbox'][data-state='checked'],
     [data-part='checkbox'][data-state='mixed'] {
-      /* checkboxSelected: locked */
       background: var(--color-control-selected-background);
       border-color: var(--color-control-selected-background);
     }
 
-    [data-part='icon'] {
-      flex: none;
-      /* iconColor: locked */
-      color: var(--color-foreground-muted);
-    }
-
+    [data-part='icon'],
     [data-part='badge'] {
       flex: none;
     }
@@ -303,6 +329,8 @@ export class DsTree extends LitElement {
     [data-part='group'] {
       position: relative;
     }
+
+    /* guideLine / guideLineWidth: a vertical line under the open parent, aligned to its chevron */
     [data-part='group']::before {
       content: '';
       position: absolute;
@@ -311,6 +339,7 @@ export class DsTree extends LitElement {
       border-inline-start: var(--ds-tree-guide-line-width) solid var(--ds-tree-guide-line);
       pointer-events: none;
     }
+
     :host([hide-guides]) [data-part='group']::before {
       display: none;
     }
@@ -319,8 +348,6 @@ export class DsTree extends LitElement {
       display: flex;
       align-items: center;
       min-block-size: var(--size-target-min);
-      /* badgeColor-equivalent muted text for the placeholder */
-      color: var(--color-foreground-muted);
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -334,10 +361,10 @@ export class DsTree extends LitElement {
   /** What the tree lists ("Folders", "Categories"). The tree's accessible name; visible only with `showLabel`. */
   @property() accessor label = '';
 
-  /** Show the label as a Heading above the tree (then the tree is aria-labelledby it). */
+  /** Show the label as a Heading above the tree (the tree is then `aria-labelledby` it instead of `aria-label`). */
   @property({ type: Boolean, reflect: true, attribute: 'show-label' }) accessor showLabel = false;
 
-  /** Heading level of the visible label; its size is headingSize regardless. */
+  /** Heading level of the visible label in the page outline; its size is `headingSize` regardless. */
   @property({ type: String, reflect: true, attribute: 'heading-level' }) accessor headingLevel: TreeHeadingLevel = '2';
 
   /** The hierarchy. */
@@ -346,29 +373,31 @@ export class DsTree extends LitElement {
   /** Controlled expanded ids. */
   @property({ attribute: false }) accessor expanded: string[] | undefined;
 
-  /** Initially expanded ids; `["*"]` for all. */
+  /** Initially expanded ids. `["*"]` opens every node whose `children` is a non-empty array, never a lazy one. */
   @property({ attribute: false }) accessor defaultExpanded: string[] | undefined;
 
   /** `single`: one current node. `multiple`: checkbox-like selection. `none`: expand/collapse only. */
   @property({ type: String, reflect: true }) accessor selectable: TreeSelectable = 'single';
 
-  /** Controlled selected ids. Always an array, even in `single` mode. */
+  /** Controlled selected ids. Always an array, even in `single` mode (zero or one element). */
   @property({ attribute: false }) accessor selected: string[] | undefined;
 
   /** Initially selected ids. */
   @property({ attribute: false }) accessor defaultSelected: string[] | undefined;
 
-  /** With `multiple`, selecting a parent selects its descendants and parents show indeterminate. */
+  /** With `multiple`, selecting a parent selects its loaded, enabled descendants and parents show indeterminate. */
   @property({ type: Boolean, reflect: true, attribute: 'select-children' }) accessor selectChildren = false;
 
-  /** With `single`, moving focus also selects. */
+  /** With `single`, moving focus also selects. Off by default: focus moves, Enter or Space selects. */
   @property({ type: Boolean, reflect: true, attribute: 'select-on-focus' }) accessor selectOnFocus = false;
 
-  /** Vertical guide lines under open parents. Attribute: the negated `hide-guides`. */
+  /** Vertical guide lines under open parents. The attribute is the negated `hide-guides`. */
   @property({ attribute: 'hide-guides', reflect: true, converter: NEGATED_BOOLEAN }) accessor showGuides = true;
 
   /** Per-instance style overrides: `{ indent: 'space.6' }`. Locked bindings are not in the type. */
-  @property({ attribute: false }) accessor overrides: Partial<Record<TreeOverridableBinding, TokenRef | undefined>> | undefined;
+  @property({ attribute: false }) accessor overrides:
+    | Partial<Record<TreeOverridableBinding, TokenRef | undefined>>
+    | undefined;
 
   @state() private accessor internalExpanded: string[] = [];
   @state() private accessor internalSelected: string[] = [];
@@ -377,8 +406,10 @@ export class DsTree extends LitElement {
   @state() private accessor liveMessage = '';
 
   private readonly instanceId = `ds-tree-${++idCounter}`;
+  /** Lazy nodes already asked for: `expand` fires once per node until the caller replaces `children`. */
   private readonly requestedLazy = new Set<string>();
   private focusWithin = false;
+  private followingHref = false;
   private typeahead = '';
   private typeaheadTimer: ReturnType<typeof setTimeout> | undefined;
   private warnedLabel = false;
@@ -403,9 +434,7 @@ export class DsTree extends LitElement {
 
   protected override willUpdate(changed: PropertyValues): void {
     if (!this.hasUpdated) {
-      this.internalExpanded = this.defaultExpanded?.includes('*')
-        ? this.allParentIds(this.nodes)
-        : [...(this.defaultExpanded ?? [])];
+      this.internalExpanded = this.initialExpanded();
       this.internalSelected = [...(this.defaultSelected ?? [])];
     }
     if (changed.has('overrides')) {
@@ -415,16 +444,16 @@ export class DsTree extends LitElement {
   }
 
   protected override updated(): void {
+    void this.demoteComposedControls();
     if (import.meta.env.DEV && !this.label && !this.warnedLabel) {
       this.warnedLabel = true;
-      console.warn('<ds-tree> requires a `label`.', this);
+      console.warn('<ds-tree> requires a `label`: it names the tree for assistive technology.', this);
     }
   }
 
   /** Tab lands on the selected node, else the first; while focus is inside, the focused node keeps the stop. */
   private syncRovingStop(): void {
-    const items = this.navigable();
-    const ids = items.map((entry) => entry.node.id);
+    const ids = this.navigable().map((entry) => entry.node.id);
     if (!this.focusWithin) {
       const selected = ids.find((id) => this.currentSelected.includes(id));
       if (selected !== undefined) {
@@ -442,14 +471,13 @@ export class DsTree extends LitElement {
     return html`
       <div data-part="container" part="container">
         ${this.showLabel
-          ? html`<ds-heading
-              id=${headingId}
-              data-part="heading"
-              part="heading"
-              level=${this.headingLevel}
-              .overrides=${{ fontSize: this.overrides?.headingSize ?? HEADING_SIZE }}
-              >${this.label}</ds-heading
-            >`
+          ? html`<div id=${headingId} data-part="heading" part="heading">
+              <ds-heading
+                level=${this.headingLevel}
+                .overrides=${{ fontSize: this.overrides?.headingSize ?? HEADING_SIZE }}
+                >${this.label}</ds-heading
+              >
+            </div>`
           : nothing}
         <ul
           role="tree"
@@ -462,8 +490,12 @@ export class DsTree extends LitElement {
         >
           ${this.nodes.map((node, index) => this.renderNode(node, 1, index + 1, this.nodes.length))}
         </ul>
-        ${this.nodes.length === 0 ? html`<ds-text data-part="emptyState" part="emptyState">${COPY_EMPTY}</ds-text>` : nothing}
-        <span class="visually-hidden" role="status">${this.liveMessage}</span>
+        ${this.nodes.length === 0
+          ? html`<ds-text data-part="emptyState" part="emptyState" tone="muted">${COPY_EMPTY}</ds-text>`
+          : nothing}
+        ${this.selectable === 'multiple'
+          ? html`<span class="visually-hidden" role="status">${this.liveMessage}</span>`
+          : nothing}
       </div>
     `;
   }
@@ -475,9 +507,12 @@ export class DsTree extends LitElement {
     const disabled = node.disabled === true;
     const selected = this.selectable === 'single' && this.currentSelected.includes(node.id);
     const checked = this.selectable === 'multiple' ? this.checkedState(node) : undefined;
-    const marked = selected || checked === 'true';
+    // A node with `href` is marked by the row alone, so the heavier label weight is not forwarded to its Text.
+    const marked = (selected || checked === 'true') && node.href === undefined;
     const labelOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {
+      fontFamily: this.overrides?.fontFamily ?? FONT_FAMILY,
       fontSize: this.overrides?.fontSize ?? FONT_SIZE,
+      lineHeight: this.overrides?.lineHeight ?? LINE_HEIGHT,
       ...(marked ? { fontWeight: this.overrides?.labelSelectedWeight ?? LABEL_SELECTED_WEIGHT } : {}),
     };
 
@@ -510,32 +545,37 @@ export class DsTree extends LitElement {
             style=${styleMap({ inlineSize: `calc(${level - 1} * var(--ds-tree-indent))` })}
           ></span>
           ${hasChildren
-            ? html`<ds-button
+            ? html`<span
                 data-part="expandButton"
                 part="expandButton"
-                variant="ghost"
-                size="sm"
-                icon-only
-                tabindex="-1"
                 aria-hidden="true"
-                ?disabled=${disabled}
-                label=${expanded ? COPY_COLLAPSE(node.label) : COPY_EXPAND(node.label)}
-                @press=${(event: Event) => {
-                  event.stopPropagation();
-                  this.toggleExpand(node);
-                  this.focusEntry(node.id, false);
-                }}
+                @click=${(event: MouseEvent) => this.handleChevronClick(event, node)}
+                @press=${(event: Event) => event.stopPropagation()}
               >
-                <ds-icon
-                  slot="leading-icon"
-                  class="chevron"
-                  data-expanded=${ifDefined(expanded ? '' : undefined)}
-                  name="chevron-right"
-                ></ds-icon>
-              </ds-button>`
+                <ds-button
+                  variant="ghost"
+                  size="sm"
+                  icon-only
+                  tabindex="-1"
+                  ?disabled=${disabled}
+                  label=${expanded ? COPY_COLLAPSE(node.label) : COPY_EXPAND(node.label)}
+                >
+                  <ds-icon
+                    slot="leading-icon"
+                    class="chevron"
+                    data-expanded=${ifDefined(expanded ? '' : undefined)}
+                    name="chevron-right"
+                  ></ds-icon>
+                </ds-button>
+              </span>`
             : html`<span class="expand-spacer" aria-hidden="true"></span>`}
           ${checked !== undefined
-            ? html`<span data-part="checkbox" part="checkbox" aria-hidden="true" data-state=${checked === 'true' ? 'checked' : checked}>
+            ? html`<span
+                data-part="checkbox"
+                part="checkbox"
+                aria-hidden="true"
+                data-state=${checked === 'true' ? 'checked' : checked}
+              >
                 ${checked === 'true'
                   ? html`<ds-icon name="check"></ds-icon>`
                   : checked === 'mixed'
@@ -543,10 +583,16 @@ export class DsTree extends LitElement {
                     : nothing}
               </span>`
             : nothing}
-          ${node.icon ? html`<ds-icon data-part="icon" part="icon" name=${node.icon}></ds-icon>` : nothing}
-          ${node.href
-            ? html`<ds-link data-part="link" part="link" tabindex="-1" href=${node.href} label=${node.label}></ds-link>`
-            : html`<ds-text data-part="label" part="label" element="span" .overrides=${labelOverrides}>${node.label}</ds-text>`}
+          ${node.icon !== undefined
+            ? html`<ds-icon data-part="icon" part="icon" name=${node.icon} .overrides=${ICON_COLOR}></ds-icon>`
+            : nothing}
+          <ds-text data-part="label" part="label" element="span" .overrides=${labelOverrides}
+            >${node.href !== undefined
+              ? html`<span data-part="link" part="link"
+                  ><ds-link tone="inherit" tabindex="-1" href=${node.href} label=${node.label}></ds-link
+                ></span>`
+              : node.label}</ds-text
+          >
           ${node.badge !== undefined
             ? html`<ds-text
                 data-part="badge"
@@ -569,21 +615,33 @@ export class DsTree extends LitElement {
             >
               ${Array.isArray(node.children)
                 ? node.children.map((child, index, list) => this.renderNode(child, level + 1, index + 1, list.length))
-                : html`<li role="none" class="loading" style=${styleMap({ paddingInlineStart: `calc(var(--ds-tree-row-padding-inline) + ${level} * var(--ds-tree-indent) + var(--size-target-min))` })}>
-                    ${COPY_LOADING}
-                  </li>`}
+                : this.renderLoading(level + 1)}
             </ul>`
           : nothing}
       </li>
     `;
   }
 
+  /** The lazy placeholder: a treeitem the arrows never land on, under an `aria-busy` parent. */
+  private renderLoading(level: number): TemplateResult {
+    return html`<li
+      role="treeitem"
+      aria-level=${level}
+      aria-disabled="true"
+      class="loading"
+      style=${styleMap({
+        paddingInlineStart: `calc(var(--ds-tree-row-padding-inline) + ${level - 1} * var(--ds-tree-indent) + var(--size-target-min))`,
+      })}
+    >
+      <ds-text element="span" tone="muted">${COPY_LOADING}</ds-text>
+    </li>`;
+  }
+
   /* ---------- hierarchy ---------- */
 
   private flatten(nodes: TreeNode[], level: number, parentId: string | undefined, out: VisibleEntry[]): VisibleEntry[] {
     for (const node of nodes) {
-      const lazy = node.children === 'lazy';
-      out.push({ node, level, parentId, hasChildren: hasChildrenOf(node), lazy });
+      out.push({ node, level, parentId, hasChildren: hasChildrenOf(node), lazy: node.children === 'lazy' });
       if (Array.isArray(node.children) && this.currentExpanded.includes(node.id)) {
         this.flatten(node.children, level + 1, node.id, out);
       }
@@ -595,33 +653,44 @@ export class DsTree extends LitElement {
     return this.flatten(this.nodes, 1, undefined, []);
   }
 
-  /** Visible, enabled nodes: what arrows, Home/End, type-ahead and Ctrl+A move across. */
+  /** Visible, enabled nodes: what the arrows, Home/End, type-ahead and Control+A move across. */
   private navigable(): VisibleEntry[] {
     return this.visible().filter((entry) => entry.node.disabled !== true);
   }
 
   private entry(id: string | null): VisibleEntry | undefined {
-    return id === null ? undefined : this.visible().find((e) => e.node.id === id);
+    return id === null ? undefined : this.visible().find((candidate) => candidate.node.id === id);
   }
 
-  private allParentIds(nodes: TreeNode[]): string[] {
-    const ids: string[] = [];
+  /**
+   * The initial expansion. `["*"]` opens every node whose `children` is a non-empty array and never a lazy one;
+   * a lazy id listed explicitly stays closed until the user opens it, since `expand` only fires for user acts.
+   */
+  private initialExpanded(): string[] {
+    const lazyIds = new Set<string>();
+    const loadedParents: string[] = [];
     const walk = (list: TreeNode[]): void => {
       for (const node of list) {
-        if (hasChildrenOf(node)) ids.push(node.id);
-        if (Array.isArray(node.children)) walk(node.children);
+        if (node.children === 'lazy') {
+          lazyIds.add(node.id);
+        } else if (Array.isArray(node.children) && node.children.length > 0) {
+          loadedParents.push(node.id);
+          walk(node.children);
+        }
       }
     };
-    walk(nodes);
-    return ids;
+    walk(this.nodes);
+    const wanted = this.defaultExpanded ?? [];
+    return wanted.includes('*') ? loadedParents : wanted.filter((id) => !lazyIds.has(id));
   }
 
-  private descendantIds(node: TreeNode): string[] {
+  /** Loaded, enabled descendants: what `selectChildren` cascades over (a lazy subtree contributes nothing). */
+  private cascadeIds(node: TreeNode): string[] {
     const ids: string[] = [];
     const walk = (children: TreeNode[] | 'lazy' | undefined): void => {
       if (!Array.isArray(children)) return;
       for (const child of children) {
-        ids.push(child.id);
+        if (child.disabled !== true) ids.push(child.id);
         walk(child.children);
       }
     };
@@ -647,12 +716,27 @@ export class DsTree extends LitElement {
     return path.reverse();
   }
 
+  /** `selection-change` reports its ids in tree (document) order. */
+  private inTreeOrder(ids: string[]): string[] {
+    const pending = new Set(ids);
+    const ordered: string[] = [];
+    const walk = (list: TreeNode[]): void => {
+      for (const node of list) {
+        if (pending.delete(node.id)) ordered.push(node.id);
+        if (Array.isArray(node.children)) walk(node.children);
+      }
+    };
+    walk(this.nodes);
+    return [...ordered, ...ids.filter((id) => pending.has(id))];
+  }
+
   private itemId(id: string): string {
     return `${this.instanceId}-item-${id}`;
   }
 
   /* ---------- expansion ---------- */
 
+  /** `expand` fires before the `expand-change` of the same act, once per still-lazy node. */
   private commitExpanded(next: string[], lazyOpened: string[]): void {
     for (const id of lazyOpened) {
       this.requestedLazy.add(id);
@@ -661,7 +745,9 @@ export class DsTree extends LitElement {
     if (this.expanded === undefined) {
       this.internalExpanded = next;
     }
-    this.dispatchEvent(new CustomEvent<TreeExpandChangeDetail>('expand-change', { detail: next, bubbles: true, composed: true }));
+    this.dispatchEvent(
+      new CustomEvent<TreeExpandChangeDetail>('expand-change', { detail: next, bubbles: true, composed: true }),
+    );
   }
 
   private toggleExpand(node: TreeNode): void {
@@ -672,21 +758,29 @@ export class DsTree extends LitElement {
     this.commitExpanded(next, lazyOpened);
   }
 
+  /** `*`: opens every enabled sibling of the focused node, the focused node included. */
   private expandSiblings(entry: VisibleEntry): void {
     const current = this.currentExpanded;
     const closed = this.visible().filter(
-      (e) => e.parentId === entry.parentId && e.hasChildren && e.node.disabled !== true && !current.includes(e.node.id),
+      (candidate) =>
+        candidate.parentId === entry.parentId &&
+        candidate.hasChildren &&
+        candidate.node.disabled !== true &&
+        !current.includes(candidate.node.id),
     );
     if (closed.length === 0) return;
-    const lazyOpened = closed.filter((e) => e.lazy && !this.requestedLazy.has(e.node.id)).map((e) => e.node.id);
-    this.commitExpanded([...current, ...closed.map((e) => e.node.id)], lazyOpened);
+    const lazyOpened = closed
+      .filter((candidate) => candidate.lazy && !this.requestedLazy.has(candidate.node.id))
+      .map((candidate) => candidate.node.id);
+    this.commitExpanded([...current, ...closed.map((candidate) => candidate.node.id)], lazyOpened);
   }
 
   /* ---------- selection ---------- */
 
+  /** A cascading parent's state is derived from its loaded, enabled descendants. */
   private checkedState(node: TreeNode): 'true' | 'false' | 'mixed' {
     const selected = this.currentSelected;
-    const descendants = this.selectChildren ? this.descendantIds(node) : [];
+    const descendants = this.selectChildren ? this.cascadeIds(node) : [];
     if (descendants.length === 0) {
       return selected.includes(node.id) ? 'true' : 'false';
     }
@@ -695,38 +789,53 @@ export class DsTree extends LitElement {
     return count === 0 ? 'false' : 'mixed';
   }
 
+  /** Fires only when the set actually changes, with the ids in tree order. */
   private commitSelected(next: string[]): void {
+    const ordered = this.inTreeOrder(next);
     const current = this.currentSelected;
-    if (next.length === current.length && next.every((id) => current.includes(id))) return;
+    if (ordered.length === current.length && ordered.every((id) => current.includes(id))) return;
     if (this.selected === undefined) {
-      this.internalSelected = next;
+      this.internalSelected = ordered;
     }
     if (this.selectable === 'multiple') {
-      this.liveMessage = COPY_SELECTED_COUNT(next.length);
+      this.liveMessage = COPY_SELECTED_COUNT(ordered.length);
     }
-    this.dispatchEvent(new CustomEvent<TreeSelectionChangeDetail>('selection-change', { detail: next, bubbles: true, composed: true }));
+    this.dispatchEvent(
+      new CustomEvent<TreeSelectionChangeDetail>('selection-change', {
+        detail: ordered,
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+
+  /**
+   * The cascade: a node's id is in the selection exactly when all its enabled loaded descendants are, and
+   * unselecting it removes every ancestor id too.
+   */
+  private cascade(node: TreeNode, select: boolean, into: Set<string>): void {
+    const ids = [node.id, ...this.cascadeIds(node)];
+    if (select) {
+      for (const id of ids) into.add(id);
+      for (const ancestor of this.ancestors(node.id)) {
+        if (this.cascadeIds(ancestor).every((id) => into.has(id))) into.add(ancestor.id);
+      }
+      return;
+    }
+    for (const id of ids) into.delete(id);
+    for (const ancestor of this.ancestors(node.id)) into.delete(ancestor.id);
   }
 
   private toggleMultiple(node: TreeNode): void {
-    const current = new Set(this.currentSelected);
-    if (!this.selectChildren) {
-      if (current.has(node.id)) current.delete(node.id);
-      else current.add(node.id);
-      this.commitSelected([...current]);
-      return;
-    }
-    const ids = [node.id, ...this.descendantIds(node)];
-    const ancestors = this.ancestors(node.id);
-    if (this.checkedState(node) === 'true') {
-      for (const id of ids) current.delete(id);
-      for (const ancestor of ancestors) current.delete(ancestor.id);
+    const next = new Set(this.currentSelected);
+    if (this.selectChildren) {
+      this.cascade(node, this.checkedState(node) !== 'true', next);
+    } else if (next.has(node.id)) {
+      next.delete(node.id);
     } else {
-      for (const id of ids) current.add(id);
-      for (const ancestor of ancestors) {
-        if (this.descendantIds(ancestor).every((id) => current.has(id))) current.add(ancestor.id);
-      }
+      next.add(node.id);
     }
-    this.commitSelected([...current]);
+    this.commitSelected([...next]);
   }
 
   /** Space and click: select in `single`, toggle in `multiple`. */
@@ -736,8 +845,12 @@ export class DsTree extends LitElement {
     else if (this.selectable === 'multiple') this.toggleMultiple(node);
   }
 
-  private addToSelection(id: string): void {
-    if (!this.currentSelected.includes(id)) this.commitSelected([...this.currentSelected, id]);
+  /** Shift+ArrowDown/Up adds the node it lands on, cascading like Space when `selectChildren`. */
+  private extendSelection(node: TreeNode): void {
+    const next = new Set(this.currentSelected);
+    if (this.selectChildren) this.cascade(node, true, next);
+    else next.add(node.id);
+    this.commitSelected([...next]);
   }
 
   /* ---------- activation ---------- */
@@ -745,28 +858,43 @@ export class DsTree extends LitElement {
   private activate(node: TreeNode): void {
     if (node.disabled === true) return;
     if (this.selectable === 'single') this.commitSelected([node.id]);
-    if (node.href) {
-      const link = this.renderRoot.querySelector(`#${CSS.escape(this.itemId(node.id))} > [data-part="nodeRow"] ds-link`);
+    if (node.href !== undefined) {
+      // An href node is followed by clicking its composed link, so the page's click routing sees it, and
+      // fires no `activate`. The flag keeps that synthetic click from re-entering the row handler.
+      const link = this.renderRoot.querySelector<HTMLElement>(
+        `#${CSS.escape(this.itemId(node.id))} [data-part="link"] ds-link`,
+      );
+      this.followingHref = true;
       link?.shadowRoot?.querySelector('a')?.click();
+      this.followingHref = false;
       return;
     }
-    this.dispatchEvent(new CustomEvent<TreeActivateDetail>('activate', { detail: node.id, bubbles: true, composed: true }));
+    this.dispatchEvent(
+      new CustomEvent<TreeActivateDetail>('activate', { detail: node.id, bubbles: true, composed: true }),
+    );
   }
 
   /* ---------- pointer ---------- */
 
-  private fromExpandButton(event: Event): boolean {
-    return (event.target as Element | null)?.closest('[data-part="expandButton"]') != null;
+  /** The chevron toggles expansion and focuses the node, without changing the selection. */
+  private handleChevronClick(event: MouseEvent, node: TreeNode): void {
+    event.stopPropagation();
+    if (node.disabled === true) return;
+    this.toggleExpand(node);
+    this.focusEntry(node.id, false);
   }
 
   private handleRowClick(event: MouseEvent, node: TreeNode): void {
-    if (node.disabled === true || this.fromExpandButton(event)) return;
+    if (this.followingHref || node.disabled === true) return;
+    // A double-click toggles once, then activates: the second click must not toggle again.
+    if (event.detail >= 2) return;
     this.focusEntry(node.id, false);
     this.selectNode(node);
   }
 
   private handleRowDblClick(event: MouseEvent, node: TreeNode): void {
-    if (node.disabled === true || this.fromExpandButton(event)) return;
+    if (this.followingHref || node.disabled === true) return;
+    event.preventDefault();
     this.activate(node);
   }
 
@@ -774,7 +902,9 @@ export class DsTree extends LitElement {
 
   private readonly handleFocusIn = (event: FocusEvent): void => {
     this.focusWithin = true;
-    const item = event.composedPath().find((target): target is HTMLElement => target instanceof HTMLElement && target.getAttribute('role') === 'treeitem');
+    const item = event
+      .composedPath()
+      .find((target): target is HTMLElement => target instanceof HTMLElement && target.getAttribute('role') === 'treeitem');
     const id = item ? this.nodeIdOf(item) : undefined;
     if (id !== undefined && id !== this.focusedId) this.focusedId = id;
   };
@@ -789,8 +919,9 @@ export class DsTree extends LitElement {
     return item.id.startsWith(prefix) ? item.id.slice(prefix.length) : undefined;
   }
 
-  /** Moves the roving stop and DOM focus; keyboard moves pass `viaKeyboard` so `selectOnFocus` can select. */
+  /** Moves the roving stop and DOM focus; keyboard moves pass `viaKeyboard`, so `selectOnFocus` can select. */
   private focusEntry(id: string, viaKeyboard: boolean): void {
+    this.focusWithin = true;
     this.focusedId = id;
     if (viaKeyboard && this.selectOnFocus && this.selectable === 'single') {
       this.commitSelected([id]);
@@ -802,21 +933,22 @@ export class DsTree extends LitElement {
 
   private moveBy(delta: number): VisibleEntry | undefined {
     const items = this.navigable();
-    const index = items.findIndex((e) => e.node.id === this.focusedId);
+    const index = items.findIndex((entry) => entry.node.id === this.focusedId);
     const target = items[index + delta];
     if (index === -1 || !target) return undefined;
     this.focusEntry(target.node.id, true);
     return target;
   }
 
+  /** Any printable character moves to the next visible node whose label starts with the buffer. */
   private handleTypeahead(char: string): void {
     clearTimeout(this.typeaheadTimer);
     this.typeahead += char.toLowerCase();
     const items = this.navigable();
-    const index = items.findIndex((e) => e.node.id === this.focusedId);
+    const index = items.findIndex((entry) => entry.node.id === this.focusedId);
     const start = this.typeahead.length === 1 ? index + 1 : Math.max(index, 0);
     const ordered = [...items.slice(start), ...items.slice(0, start)];
-    const match = ordered.find((e) => e.node.label.toLowerCase().startsWith(this.typeahead));
+    const match = ordered.find((entry) => entry.node.label.toLowerCase().startsWith(this.typeahead));
     if (match && match.node.id !== this.focusedId) this.focusEntry(match.node.id, true);
     this.typeaheadTimer = setTimeout(() => {
       this.typeahead = '';
@@ -828,10 +960,11 @@ export class DsTree extends LitElement {
     if (!current) return;
     const multiple = this.selectable === 'multiple';
 
-    if (event.ctrlKey && event.code === 'KeyA') {
+    // Control+A (Cmd on macOS), bound by key code so a non-QWERTY layout still reaches it.
+    if (event.code === 'KeyA' && (event.ctrlKey || event.metaKey)) {
       if (!multiple) return;
       event.preventDefault();
-      this.commitSelected(this.navigable().map((e) => e.node.id));
+      this.commitSelected(this.navigable().map((entry) => entry.node.id));
       return;
     }
 
@@ -840,7 +973,7 @@ export class DsTree extends LitElement {
       case 'ArrowUp': {
         event.preventDefault();
         const target = this.moveBy(event.key === 'ArrowDown' ? 1 : -1);
-        if (target && event.shiftKey && multiple) this.addToSelection(target.node.id);
+        if (target && event.shiftKey && multiple) this.extendSelection(target.node);
         return;
       }
       case 'ArrowRight': {
@@ -850,7 +983,7 @@ export class DsTree extends LitElement {
           this.toggleExpand(current.node);
           return;
         }
-        const child = this.navigable().find((e) => e.parentId === current.node.id);
+        const child = this.navigable().find((entry) => entry.parentId === current.node.id);
         if (child) this.focusEntry(child.node.id, true);
         return;
       }
@@ -886,12 +1019,29 @@ export class DsTree extends LitElement {
         this.expandSiblings(current);
         return;
       default:
-        if (/^[a-z]$/i.test(event.key) && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
           event.preventDefault();
           this.handleTypeahead(event.key);
         }
     }
   };
+
+  /**
+   * The tree is one tab stop, so the composed chevron Buttons and node Links are reachable by the arrows and
+   * Enter, not by Tab. A same-value write still queues a mutation record, so the attribute is compared first.
+   */
+  private async demoteComposedControls(): Promise<void> {
+    const hosts = [
+      ...this.renderRoot.querySelectorAll<LitElement>('[data-part="expandButton"] ds-button, [data-part="link"] ds-link'),
+    ];
+    await Promise.all(hosts.map((host) => host.updateComplete));
+    for (const host of hosts) {
+      const control = host.shadowRoot?.querySelector('button, a');
+      if (control && control.getAttribute('tabindex') !== '-1') {
+        control.setAttribute('tabindex', '-1');
+      }
+    }
+  }
 
   /* ---------- overrides ---------- */
 

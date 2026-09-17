@@ -30,6 +30,8 @@ import './DataGrid.css';
 export type DataGridSelectable = 'none' | 'row' | 'cell' | 'range';
 export type DataGridDensity = 'compact' | 'comfortable';
 export type DataGridHeight = 'content' | 'viewport' | 'fixed';
+/** Heading level of the caption. Accepts the schema's string values and their numeric equivalents. */
+export type DataGridCaptionLevel = '2' | '3' | '4' | 2 | 3 | 4;
 export type DataGridSortDirection = 'ascending' | 'descending';
 export type DataGridColumnAlign = 'start' | 'end' | 'center';
 export type DataGridColumnPinned = 'start' | 'end';
@@ -86,12 +88,14 @@ export type DataGridOverridableBinding =
   | 'gridLineWidth'
   | 'rowHover'
   | 'cellPaddingInline'
+  | 'columnWidth'
   | 'pinnedShadow'
   | 'resizeHandle'
   | 'resizeHandleWidth'
   | 'resizeStep'
   | 'statusBarSize'
   | 'statusBarPadding'
+  | 'statusBarGap'
   | 'captionSize'
   | 'captionWeight'
   | 'captionGap'
@@ -102,9 +106,10 @@ export type DataGridOverridableBinding =
   | 'numericFont'
   | 'transition';
 
-/** Root CSS hooks. `captionSize`/`captionWeight` go to the caption Heading's overrides, `statusBarSize`
- * to the status bar Text's, and `headerSize`/`headerWeight` also to the sort Button's. */
-const OVERRIDE_HOOKS: Partial<Record<DataGridOverridableBinding, string>> = {
+/** Root CSS hooks, one per overridable binding. The bindings a composed child draws are also
+ * forwarded to its own `overrides`: `captionSize`/`captionWeight` to the caption Heading,
+ * `statusBarSize` to the status bar Texts, `headerSize`/`headerWeight` to the sort Button. */
+const OVERRIDE_HOOKS: Record<DataGridOverridableBinding, string> = {
   headerWeight: '--ds-data-grid-header-weight',
   headerSize: '--ds-data-grid-header-size',
   headerBorder: '--ds-data-grid-header-border',
@@ -114,11 +119,16 @@ const OVERRIDE_HOOKS: Partial<Record<DataGridOverridableBinding, string>> = {
   gridLineWidth: '--ds-data-grid-grid-line-width',
   rowHover: '--ds-data-grid-row-hover',
   cellPaddingInline: '--ds-data-grid-cell-padding-inline',
+  columnWidth: '--ds-data-grid-column-width',
   pinnedShadow: '--ds-data-grid-pinned-shadow',
   resizeHandle: '--ds-data-grid-resize-handle',
   resizeHandleWidth: '--ds-data-grid-resize-handle-width',
   resizeStep: '--ds-data-grid-resize-step',
+  statusBarSize: '--ds-data-grid-status-bar-size',
   statusBarPadding: '--ds-data-grid-status-bar-padding',
+  statusBarGap: '--ds-data-grid-status-bar-gap',
+  captionSize: '--ds-data-grid-caption-size',
+  captionWeight: '--ds-data-grid-caption-weight',
   captionGap: '--ds-data-grid-caption-gap',
   fixedHeight: '--ds-data-grid-fixed-height',
   fontFamily: '--ds-data-grid-font-family', // literal-ok: custom-property hook name, not a font stack
@@ -148,8 +158,8 @@ const COPY = {
   scrollHint: 'Scroll sideways to see more columns',
 } as const;
 
-/** The column width when `width` is omitted (the schema's default, a multiple of space.1). */
-const DEFAULT_COLUMN_WIDTH = 160; // literal-ok: schema default column width, in CSS pixels
+/** The width of a column that sets no `width`: the columnWidth binding, `calc(hook * 2)` in the rule. */
+const DEFAULT_COLUMN_SIZE = 'var(--ds-data-grid-column-size)';
 /** Rows rendered before one row has been measured (a row count, not a size). */
 const UNMEASURED_ROW_LIMIT = 50;
 /** The selection column: a minimum target plus the cell's own inline padding on both sides. */
@@ -197,9 +207,11 @@ function joinClasses(...parts: (string | false | null | undefined)[]): string {
 export interface DataGridProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children' | 'className' | 'style'> {
   /** What the grid holds ("Price list"). The accessible name; visually hidden with `hideCaption`. */
   caption: string;
+  /** Heading level of the caption in the page outline; its size is captionSize regardless, as Table. */
+  captionLevel?: DataGridCaptionLevel | undefined;
   /** Visually hide the caption; it remains the accessible name. */
   hideCaption?: boolean | undefined;
-  /** Table's column model plus grid concerns: pixel `width` (160 when omitted), `resizable`, `pinned`
+  /** Table's column model plus grid concerns: pixel `width` (the columnWidth binding when omitted), `resizable`, `pinned`
    * columns (contiguous at the start or end), `editable` with an `editor` kind and `validate`. Exactly
    * one column may be `isRowHeader`. */
   columns: DataGridColumn[];
@@ -267,6 +279,7 @@ type Editing = { rowId: string; column: string; seed: string | undefined };
 export function DataGrid({
   ref,
   caption,
+  captionLevel = '2',
   hideCaption = false,
   columns,
   data,
@@ -327,22 +340,33 @@ export function DataGrid({
   const rowHeaderColumn = columns.find((column) => column.isRowHeader);
 
   const [resizedWidths, setResizedWidths] = useState<Record<string, number>>({});
-  const widthOf = (column: DataGridColumn): number => resizedWidths[column.key] ?? column.width ?? DEFAULT_COLUMN_WIDTH;
-  const gridTemplateColumns = [hasSelectColumn ? SELECT_COLUMN_SIZE : null, ...columns.map((column) => `${widthOf(column)}px`)]
+  /** The column's width in pixels, or undefined while it takes the columnWidth binding. */
+  const widthOf = (column: DataGridColumn): number | undefined => resizedWidths[column.key] ?? column.width;
+  const widthCss = (column: DataGridColumn): string => {
+    const width = widthOf(column);
+    return width === undefined ? DEFAULT_COLUMN_SIZE : `${width}px`;
+  };
+  /** The width of `columns[from..to)` as one CSS length: the pixel widths plus the default columns. */
+  const widthSpan = (from: number, to: number): string => {
+    let pixels = 0;
+    let defaults = 0;
+    for (let i = from; i < to; i += 1) {
+      const width = widthOf(columns[i]!);
+      if (width === undefined) defaults += 1;
+      else pixels += width;
+    }
+    return defaults === 0 ? `${pixels}px` : `calc(${pixels}px + ${defaults} * ${DEFAULT_COLUMN_SIZE})`;
+  };
+  const gridTemplateColumns = [hasSelectColumn ? SELECT_COLUMN_SIZE : null, ...columns.map(widthCss)]
     .filter(Boolean)
     .join(' ');
 
   const pinnedStyle = (column: DataGridColumn, index: number): CSSProperties | undefined => {
     if (column.pinned === 'start') {
-      let before = 0;
-      for (let i = 0; i < index; i += 1) before += widthOf(columns[i]!);
-      return { insetInlineStart: hasSelectColumn ? `calc(${SELECT_COLUMN_SIZE} + ${before}px)` : `${before}px` };
+      const before = widthSpan(0, index);
+      return { insetInlineStart: hasSelectColumn ? `calc(${SELECT_COLUMN_SIZE} + ${before})` : before };
     }
-    if (column.pinned === 'end') {
-      let after = 0;
-      for (let i = index + 1; i < columns.length; i += 1) after += widthOf(columns[i]!);
-      return { insetInlineEnd: `${after}px` };
-    }
+    if (column.pinned === 'end') return { insetInlineEnd: widthSpan(index + 1, columns.length) };
     return undefined;
   };
 
@@ -668,20 +692,28 @@ export function DataGrid({
 
   /* ---------- column resize ---------- */
   const pendingResizeRef = useRef<{ column: string; width: number } | null>(null);
+  /** The floor for both resize paths: the column's own `minWidth`, never below size.target.min. */
   const minWidthOf = (column: DataGridColumn): number =>
-    column.minWidth ?? targetSizerRef.current?.getBoundingClientRect().width ?? 0;
+    Math.max(column.minWidth ?? 0, targetSizerRef.current?.getBoundingClientRect().width ?? 0);
+  /** Where a resize starts from: the set width, or the rendered width of a default-width column. */
+  const currentWidth = (column: DataGridColumn, index: number): number => {
+    const width = widthOf(column);
+    if (width !== undefined) return width;
+    const header = typeof document !== 'undefined' ? document.getElementById(cellId(-1, index + colOffset)) : null;
+    return header ? header.getBoundingClientRect().width : 0;
+  };
   const resizeTo = (column: DataGridColumn, width: number): number => {
     const next = Math.round(Math.max(minWidthOf(column), width));
     setResizedWidths((prev) => (prev[column.key] === next ? prev : { ...prev, [column.key]: next }));
     return next;
   };
 
-  const startPointerResize = (event: ReactPointerEvent<HTMLDivElement>, column: DataGridColumn): void => {
+  const startPointerResize = (event: ReactPointerEvent<HTMLDivElement>, column: DataGridColumn, index: number): void => {
     event.preventDefault();
     event.stopPropagation();
     const handle = event.currentTarget;
     const startX = event.clientX;
-    const startWidth = widthOf(column);
+    const startWidth = currentWidth(column, index);
     const rtl = typeof getComputedStyle === 'function' && getComputedStyle(handle).direction === 'rtl';
     let width = startWidth;
     handle.setPointerCapture?.(event.pointerId);
@@ -770,7 +802,7 @@ export function DataGrid({
         if (event.shiftKey && row === -1 && column?.resizable) {
           const step = stepSizerRef.current?.getBoundingClientRect().width ?? 0;
           const rtl = getComputedStyle(grid).direction === 'rtl';
-          const width = resizeTo(column, widthOf(column) + (rtl ? -delta : delta) * step);
+          const width = resizeTo(column, currentWidth(column, col - colOffset) + (rtl ? -delta : delta) * step);
           pendingResizeRef.current = { column: column.key, width };
           return;
         }
@@ -881,7 +913,8 @@ export function DataGrid({
       copyRange();
       return;
     }
-    if (event.key.length === 1 && !ctrl && !event.altKey && row >= 0 && openEditor(row, col, event.key)) {
+    // Typing a printable character opens the editor with it as the value. Space is never an edit trigger.
+    if (event.key.length === 1 && event.key !== ' ' && !ctrl && !event.altKey && row >= 0 && openEditor(row, col, event.key)) {
       event.preventDefault();
     }
   };
@@ -901,7 +934,8 @@ export function DataGrid({
     return { row: r === 'h' ? -1 : Number(r), col: Number(c) };
   };
   const draggingRef = useRef(false);
-  const lastDragRef = useRef('');
+  /** The cell the drag last extended to, so a move within one cell does not re-fire the selection. */
+  const lastDragRef = useRef<DataGridCellRef | null>(null);
 
   const handleMouseDown = (event: ReactMouseEvent<HTMLDivElement>): void => {
     const target = event.target as Element;
@@ -932,7 +966,7 @@ export function DataGrid({
       if (!(event.shiftKey && anchorRef.current)) anchorRef.current = ref;
       commitRange({ from: anchorRef.current!, to: ref });
       draggingRef.current = true;
-      lastDragRef.current = `${ref.rowId} ${ref.column}`;
+      lastDragRef.current = ref;
       gridRef.current?.setPointerCapture?.(event.pointerId);
     }
   };
@@ -943,9 +977,9 @@ export function DataGrid({
     const column = pos ? dataColumnAt(pos.col) : undefined;
     const row = pos && pos.row >= 0 ? rows[pos.row] : undefined;
     if (!pos || !row || !column) return;
-    const key = `${row.id} ${column.key}`;
-    if (key === lastDragRef.current) return;
-    lastDragRef.current = key;
+    const last = lastDragRef.current;
+    if (last && last.rowId === row.id && last.column === column.key) return;
+    lastDragRef.current = { rowId: row.id, column: column.key };
     setActive(pos);
     commitRange({ from: anchorRef.current, to: { rowId: row.id, column: column.key } });
   };
@@ -1101,8 +1135,9 @@ export function DataGrid({
             aria-valuenow={width}
             aria-valuemin={column.minWidth}
             aria-label={interpolate(COPY.resize, { column: column.header })}
+            data-part="resizeHandle"
             className="ds-data-grid__resize-handle"
-            onPointerDown={(event) => startPointerResize(event, column)}
+            onPointerDown={(event) => startPointerResize(event, column, index)}
           />
         ) : null}
       </div>
@@ -1217,15 +1252,11 @@ export function DataGrid({
     const top = Math.max(bounds.top, windowStart);
     const bottom = Math.min(bounds.bottom, windowEnd);
     if (top <= bottom) {
-      let left = 0;
-      for (let i = 0; i < bounds.left; i += 1) left += widthOf(columns[i]!);
-      let width = 0;
-      for (let i = bounds.left; i <= bounds.right; i += 1) width += widthOf(columns[i]!);
       const rect: CSSProperties = {
         insetBlockStart: `calc(${top} * ${ROW_SIZE})`,
         blockSize: `calc(${bottom - top + 1} * ${ROW_SIZE})`,
-        insetInlineStart: `${left}px`,
-        inlineSize: `${width}px`,
+        insetInlineStart: widthSpan(0, bounds.left),
+        inlineSize: widthSpan(bounds.left, bounds.right + 1),
       };
       overlay = (
         <div aria-hidden="true" className="ds-data-grid__range-overlay" data-part="rangeOverlay">
@@ -1274,7 +1305,7 @@ export function DataGrid({
       <div data-part="caption" className={hideCaption ? 'ds-data-grid__visually-hidden' : 'ds-data-grid__caption'}>
         <Heading
           id={captionId}
-          level={2}
+          level={captionLevel}
           size="md"
           overrides={{
             marginBlockEnd: 'space.0',

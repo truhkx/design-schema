@@ -56,6 +56,7 @@ export const SelectableMultiple: Story = { args: { selectable: 'multiple', defau
 
 // notable states
 export const HiddenGuides: Story = { args: { showGuides: false, defaultExpanded: ['docs'] } };
+/** A lazy node the caller lists stays closed until the user opens it: press Media's chevron to fire `onExpand` and reveal the `Loading` placeholder. */
 export const LazyLoading: Story = { args: { defaultExpanded: ['media'] } };
 export const Empty: Story = { args: { nodes: [] } };
 

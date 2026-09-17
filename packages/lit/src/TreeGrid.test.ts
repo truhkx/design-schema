@@ -16,7 +16,15 @@ import meta from './TreeGrid.stories.js';
 type Given = Partial<
   Pick<
     DsTreeGrid,
-    'caption' | 'columns' | 'data' | 'defaultExpanded' | 'selectable' | 'selected' | 'density' | 'height'
+    | 'caption'
+    | 'captionLevel'
+    | 'columns'
+    | 'data'
+    | 'defaultExpanded'
+    | 'selectable'
+    | 'selected'
+    | 'density'
+    | 'height'
   >
 >;
 
@@ -127,7 +135,7 @@ describe('ds-tree-grid', () => {
         { id: 'equity', account: 'Equity' },
       ],
     });
-    s.parts('selectCell')[0]!.querySelector('ds-checkbox')!.shadowRoot!.querySelector('input')!.click();
+    s.parts('selectCell')[0]!.shadowRoot!.querySelector('input')!.click();
     await s.el.updateComplete;
     expect(s.selectionChange).toHaveBeenCalledTimes(1);
     expect(s.selectionChange.mock.calls[0]![0].detail).toEqual({ selection: ['assets'] });
@@ -147,6 +155,25 @@ describe('ds-tree-grid', () => {
     expect(s.el).toHaveAttribute('data-ds', 'TreeGrid');
     expect(s.part('grid')).toHaveAttribute('role', 'treegrid');
     expect(s.parts('row').length).toBeGreaterThan(0);
+  });
+
+  /* derived: props.captionLevel */
+  it('renders-caption-level-2', async () => {
+    const s = await setup({ captionLevel: '2' });
+    expect(s.el).toHaveAttribute('caption-level', '2');
+    expect(s.part('caption')!.querySelector('ds-heading')!.shadowRoot!.querySelector('h2')).not.toBeNull();
+  });
+
+  it('renders-caption-level-3', async () => {
+    const s = await setup({ captionLevel: '3' });
+    expect(s.el).toHaveAttribute('caption-level', '3');
+    expect(s.part('caption')!.querySelector('ds-heading')!.shadowRoot!.querySelector('h3')).not.toBeNull();
+  });
+
+  it('renders-caption-level-4', async () => {
+    const s = await setup({ captionLevel: '4' });
+    expect(s.el).toHaveAttribute('caption-level', '4');
+    expect(s.part('caption')!.querySelector('ds-heading')!.shadowRoot!.querySelector('h4')).not.toBeNull();
   });
 
   /* derived: props.selectable */

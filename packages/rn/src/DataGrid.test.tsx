@@ -81,6 +81,24 @@ describe('DataGrid', () => {
   });
 
   /* derived */
+  it('renders-caption-level-2', () => {
+    const s = setup({ captionLevel: '2' });
+    expect(s.toJSON()).not.toBeNull();
+  });
+
+  /* derived */
+  it('renders-caption-level-3', () => {
+    const s = setup({ captionLevel: '3' });
+    expect(s.toJSON()).not.toBeNull();
+  });
+
+  /* derived */
+  it('renders-caption-level-4', () => {
+    const s = setup({ captionLevel: '4' });
+    expect(s.toJSON()).not.toBeNull();
+  });
+
+  /* derived */
   it('renders-selectable-none', () => {
     const s = setup({ selectable: 'none' });
     expect(s.toJSON()).not.toBeNull();

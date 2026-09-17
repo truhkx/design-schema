@@ -29,6 +29,7 @@ const meta: Meta<typeof TreeGrid> = {
   decorators: [withTheme()],
   args: {
     caption: 'Chart of accounts',
+    captionLevel: '2',
     hideCaption: false,
     columns,
     data,
@@ -50,6 +51,11 @@ type Story = StoryObj<typeof TreeGrid>;
 
 export const Default: Story = {};
 
+// captionLevel
+export const CaptionLevel2: Story = { args: { captionLevel: '2' } };
+export const CaptionLevel3: Story = { args: { captionLevel: '3' } };
+export const CaptionLevel4: Story = { args: { captionLevel: '4' } };
+
 // selectable
 export const SelectableNone: Story = { args: { selectable: 'none' } };
 export const SelectableRow: Story = { args: { selectable: 'row' } };
@@ -68,6 +74,8 @@ export const HeightFixed: Story = { args: { height: 'fixed' } };
 export const Loading: Story = { args: { loading: true } };
 export const Empty: Story = { args: { data: [] } };
 export const HiddenCaption: Story = { args: { hideCaption: true } };
+export const NoStatusBar: Story = { args: { showStatusBar: false } };
+export const ExpandedAll: Story = { args: { defaultExpanded: ['*'] } };
 export const Resizable: Story = { args: { columns: columns.map((column) => ({ ...column, resizable: true })) } };
 export const WithOverrides: Story = { args: { overrides: { guideLine: 'color.border.strong', parentWeight: 'font.weight.semibold' } } };
 

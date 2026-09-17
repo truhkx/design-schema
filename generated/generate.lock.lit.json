@@ -297,20 +297,20 @@
     }
   },
   "DataGrid.lit": {
-    "hash": "050cb6bee9422aa6",
-    "lastAttemptHash": "050cb6bee9422aa6",
-    "generatedAt": "2026-09-16T15:51:48+00:00",
+    "hash": "f1afc34f2400e8d2",
+    "lastAttemptHash": "f1afc34f2400e8d2",
+    "generatedAt": "2026-09-17T18:20:18+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 7.1516,
+    "costUsd": 3.2644,
     "files": [
       "packages/lit/src/DataGrid.stories.ts",
       "packages/lit/src/DataGrid.test.ts",
       "packages/lit/src/DataGrid.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 19,
+    "gaps": 16,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1145,19 +1145,19 @@
     }
   },
   "Tree.lit": {
-    "hash": "91c67ac316228c0c",
-    "lastAttemptHash": "91c67ac316228c0c",
-    "generatedAt": "2026-09-16T16:27:08+00:00",
+    "hash": "925e6a9bb90be1ff",
+    "lastAttemptHash": "925e6a9bb90be1ff",
+    "generatedAt": "2026-09-17T19:25:31+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.6261,
+    "costUsd": 6.118,
     "files": [
       "packages/lit/src/Tree.stories.ts",
       "packages/lit/src/Tree.test.ts",
       "packages/lit/src/Tree.ts"
     ],
-    "gaps": 18,
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1168,20 +1168,20 @@
     }
   },
   "TreeGrid.lit": {
-    "hash": "cb5b8c61762c70c0",
-    "lastAttemptHash": "cb5b8c61762c70c0",
-    "generatedAt": "2026-09-16T16:12:22+00:00",
+    "hash": "6a83b2dd4f88f03e",
+    "lastAttemptHash": "6a83b2dd4f88f03e",
+    "generatedAt": "2026-09-17T18:51:07+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 4.2492,
+    "costUsd": 8.4415,
     "files": [
       "packages/lit/src/TreeGrid.stories.ts",
       "packages/lit/src/TreeGrid.test.ts",
       "packages/lit/src/TreeGrid.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 16,
+    "gaps": 12,
     "gates": {
       "parse": true,
       "contrast": true,

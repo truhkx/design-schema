@@ -10,12 +10,17 @@
   --ds-data-grid-grid-line-width: var(--border-width-thin);
   --ds-data-grid-row-hover: var(--color-action-ghost-background-hover);
   --ds-data-grid-cell-padding-inline: var(--space-2);
+  --ds-data-grid-column-width: var(--space-20);
   --ds-data-grid-pinned-shadow: var(--shadow-raised);
   --ds-data-grid-resize-handle: var(--color-border-strong);
   --ds-data-grid-resize-handle-width: var(--space-1);
   --ds-data-grid-resize-step: var(--space-4);
   --ds-data-grid-status-bar-size: var(--font-size-xs);
   --ds-data-grid-status-bar-padding: var(--space-2);
+  --ds-data-grid-status-bar-gap: var(--space-2);
+  /* captionSize / captionWeight are forwarded to the caption Heading's own overrides. */
+  --ds-data-grid-caption-size: var(--font-size-md);
+  --ds-data-grid-caption-weight: var(--font-weight-semibold);
   --ds-data-grid-caption-gap: var(--space-2);
   --ds-data-grid-fixed-height: var(--space-20);
   --ds-data-grid-font-family: var(--font-family-body);
@@ -25,6 +30,8 @@
   --ds-data-grid-transition: var(--motion-duration-fast);
   /* Internal, not an override hook: the locked rowHeight / rowHeightComfortable binding for the density. */
   --ds-data-grid-row-size: var(--size-target-min);
+  /* Internal: the columnWidth binding as the rule uses it — an override replaces the base, the × 2 stays. */
+  --ds-data-grid-column-size: calc(var(--ds-data-grid-column-width) * 2);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -81,12 +88,20 @@
   scroll-padding-block-start: var(--ds-data-grid-row-size);
 }
 
-.ds-data-grid--height-viewport .ds-data-grid__scroll-region {
+/* `viewport` and `fixed` size the whole component; the scroll region takes what the caption
+   and the status bar leave, so the grid scrolls and the page does not. */
+.ds-data-grid--height-viewport {
   block-size: calc(100vh - 2 * var(--layout-gap-section));
 }
 
-.ds-data-grid--height-fixed .ds-data-grid__scroll-region {
+.ds-data-grid--height-fixed {
   block-size: var(--ds-data-grid-fixed-height);
+}
+
+.ds-data-grid--height-viewport .ds-data-grid__scroll-region,
+.ds-data-grid--height-fixed .ds-data-grid__scroll-region {
+  flex: 1 1 auto;
+  min-block-size: 0;
 }
 
 .ds-data-grid__grid {
@@ -304,7 +319,7 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: var(--ds-data-grid-status-bar-padding);
+  gap: var(--ds-data-grid-status-bar-gap);
   padding: var(--ds-data-grid-status-bar-padding);
   background-color: var(--color-background-subtle);
   color: var(--color-foreground-muted);
@@ -313,8 +328,9 @@
   border-block-start: 0;
 }
 
+/* statusBarGap: between status bar items, with no separator characters. */
 .ds-data-grid__status-group {
   display: inline-flex;
   flex-wrap: wrap;
-  gap: var(--ds-data-grid-status-bar-padding);
+  gap: var(--ds-data-grid-status-bar-gap);
 }

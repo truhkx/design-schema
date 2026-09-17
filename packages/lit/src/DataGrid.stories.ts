@@ -3,6 +3,7 @@ import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './DataGrid.js';
 import type {
+  DataGridCaptionLevel,
   DataGridColumn,
   DataGridDensity,
   DataGridHeight,
@@ -13,6 +14,7 @@ import type {
 
 interface DataGridArgs {
   caption: string;
+  captionLevel?: DataGridCaptionLevel | undefined;
   hideCaption?: boolean | undefined;
   columns: DataGridColumn[];
   data: DataGridRow[];
@@ -75,6 +77,7 @@ const meta: Meta<DataGridArgs> = {
     },
   },
   argTypes: {
+    captionLevel: { control: 'select', options: ['2', '3', '4'] },
     selectable: { control: 'select', options: ['none', 'row', 'cell', 'range'] },
     density: { control: 'select', options: ['compact', 'comfortable'] },
     height: { control: 'select', options: ['content', 'viewport', 'fixed'] },
@@ -87,6 +90,7 @@ const meta: Meta<DataGridArgs> = {
   render: (args) => html`
     <ds-data-grid
       caption=${args.caption}
+      caption-level=${args.captionLevel ?? '2'}
       ?hide-caption=${args.hideCaption ?? false}
       .columns=${args.columns}
       .data=${args.data}
@@ -110,6 +114,11 @@ export default meta;
 type Story = StoryObj<DataGridArgs>;
 
 export const Default: Story = {};
+
+/* captionLevel */
+export const CaptionLevel2: Story = { args: { captionLevel: '2' } };
+export const CaptionLevel3: Story = { args: { captionLevel: '3' } };
+export const CaptionLevel4: Story = { args: { captionLevel: '4' } };
 
 /* selectable */
 export const SelectableNone: Story = { args: { selectable: 'none' } };

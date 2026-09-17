@@ -32,7 +32,7 @@ describe('TreeGrid', () => {
     });
     expect(part('expandButton')).not.toBeNull();
     fireEvent.click(part('expandButton')!);
-    expect(onExpandChange).toHaveBeenCalled();
+    expect(onExpandChange).toHaveBeenCalledWith(['assets']);
   });
 
   it('expanding-a-lazy-row-asks-for-its-children', () => {
@@ -47,8 +47,8 @@ describe('TreeGrid', () => {
     });
     expect(part('expandButton')).not.toBeNull();
     fireEvent.click(part('expandButton')!);
-    expect(onExpand).toHaveBeenCalled();
-    expect(onExpandChange).toHaveBeenCalled();
+    expect(onExpand).toHaveBeenCalledWith('assets');
+    expect(onExpandChange).toHaveBeenCalledWith(['assets']);
   });
 
   it('a-collapsed-parent-row-reports-it', () => {
@@ -84,7 +84,7 @@ describe('TreeGrid', () => {
     });
     expect(part('sortButton')).not.toBeNull();
     fireEvent.click(part('sortButton')!);
-    expect(onSortChange).toHaveBeenCalled();
+    expect(onSortChange).toHaveBeenCalledWith('balance', 'ascending');
   });
 
   it('selecting-a-row-reports-the-selection', () => {
@@ -100,7 +100,7 @@ describe('TreeGrid', () => {
     });
     expect(part('selectCell')).not.toBeNull();
     fireEvent.click(part('selectCell')!);
-    expect(onSelectionChange).toHaveBeenCalled();
+    expect(onSelectionChange).toHaveBeenCalledWith(['assets']);
   });
 
   it('a-selected-row-is-marked-selected', () => {
@@ -124,6 +124,18 @@ describe('TreeGrid', () => {
   /* derived */
   it('renders', () => {
     expect(setup().grid()).toBeInTheDocument();
+  });
+
+  it('renders-caption-level-2', () => {
+    expect(setup({ captionLevel: '2' }).grid()).toBeInTheDocument();
+  });
+
+  it('renders-caption-level-3', () => {
+    expect(setup({ captionLevel: '3' }).grid()).toBeInTheDocument();
+  });
+
+  it('renders-caption-level-4', () => {
+    expect(setup({ captionLevel: '4' }).grid()).toBeInTheDocument();
   });
 
   it('renders-selectable-none', () => {

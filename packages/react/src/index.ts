@@ -300,6 +300,7 @@ export type {
 export { DataGrid } from './DataGrid';
 export type {
   DataGridProps,
+  DataGridCaptionLevel,
   DataGridRow,
   DataGridColumn,
   DataGridColumnOption,
@@ -321,6 +322,7 @@ export type {
 export { TreeGrid } from './TreeGrid';
 export type {
   TreeGridProps,
+  TreeGridCaptionLevel,
   TreeGridRow,
   TreeGridChildren,
   TreeGridSelectable,

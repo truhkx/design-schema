@@ -9,7 +9,19 @@ import type { DataGridSelectionChangeDetail, DataGridSortChangeDetail, DsDataGri
 import meta from './DataGrid.stories.js';
 
 type Given = Partial<
-  Pick<DsDataGrid, 'caption' | 'columns' | 'data' | 'selectable' | 'selected' | 'density' | 'height' | 'emptyMessage' | 'loading'>
+  Pick<
+    DsDataGrid,
+    | 'caption'
+    | 'captionLevel'
+    | 'columns'
+    | 'data'
+    | 'selectable'
+    | 'selected'
+    | 'density'
+    | 'height'
+    | 'emptyMessage'
+    | 'loading'
+  >
 >;
 
 type Updatable = HTMLElement & { updateComplete: Promise<boolean> };
@@ -91,7 +103,7 @@ describe('ds-data-grid', () => {
         { id: 'b', sku: 'B-2' },
       ],
     });
-    s.parts('selectCell')[0]!.querySelector('ds-checkbox')!.shadowRoot!.querySelector('input')!.click();
+    s.parts('selectCell')[0]!.shadowRoot!.querySelector('input')!.click();
     await s.el.updateComplete;
     expect(s.selectionChange).toHaveBeenCalledTimes(1);
     expect(s.selectionChange.mock.calls[0]![0].detail).toEqual({ selection: ['a'] });
@@ -120,6 +132,25 @@ describe('ds-data-grid', () => {
     expect(s.el).toHaveAttribute('data-ds', 'DataGrid');
     expect(s.part('grid')).toHaveAttribute('role', 'grid');
     expect(s.parts('row').length).toBeGreaterThan(0);
+  });
+
+  /* derived: props.captionLevel */
+  it('renders-caption-level-2', async () => {
+    const s = await setup({ captionLevel: '2' });
+    expect(s.el).toHaveAttribute('caption-level', '2');
+    expect(s.part('caption')!.querySelector('ds-heading')!.shadowRoot!.querySelector('h2')).not.toBeNull();
+  });
+
+  it('renders-caption-level-3', async () => {
+    const s = await setup({ captionLevel: '3' });
+    expect(s.el).toHaveAttribute('caption-level', '3');
+    expect(s.part('caption')!.querySelector('ds-heading')!.shadowRoot!.querySelector('h3')).not.toBeNull();
+  });
+
+  it('renders-caption-level-4', async () => {
+    const s = await setup({ captionLevel: '4' });
+    expect(s.el).toHaveAttribute('caption-level', '4');
+    expect(s.part('caption')!.querySelector('ds-heading')!.shadowRoot!.querySelector('h4')).not.toBeNull();
   });
 
   /* derived: props.selectable */

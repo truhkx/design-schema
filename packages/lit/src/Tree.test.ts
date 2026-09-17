@@ -45,9 +45,14 @@ async function setup(given: Given = {}) {
   await el.updateComplete;
   const root = el.shadowRoot!;
   await Promise.all(
-    [...root.querySelectorAll<Updatable>('ds-button, ds-heading, ds-text, ds-link')].map((child) => child.updateComplete),
+    [...root.querySelectorAll<Updatable>('ds-button, ds-heading, ds-icon, ds-text, ds-link')].map(
+      (child) => child.updateComplete,
+    ),
   );
   const part = <T extends Element = HTMLElement>(name: string): T | null => root.querySelector<T>(`[data-part="${name}"]`);
+  /** The chevron's native button, inside the Button the `expandButton` wrapper owns. */
+  const chevron = (): HTMLButtonElement =>
+    part('expandButton')!.querySelector('ds-button')!.shadowRoot!.querySelector('button')!;
   /** Focuses the first treeitem and dispatches one keydown on it. */
   const press = async (key: string): Promise<void> => {
     const item = part('node')!;
@@ -55,7 +60,7 @@ async function setup(given: Given = {}) {
     item.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, composed: true, cancelable: true }));
     await el.updateComplete;
   };
-  return { el, props, root, order, expandChange, expand, selectionChange, activate, part, press };
+  return { el, props, root, order, expandChange, expand, selectionChange, activate, part, chevron, press };
 }
 
 beforeEach(() => {
@@ -68,7 +73,7 @@ describe('ds-tree', () => {
       defaultExpanded: [],
       nodes: [{ id: 'docs', label: 'Documents', children: [{ id: 'invoices', label: 'Invoices' }] }],
     });
-    s.part('expandButton')!.shadowRoot!.querySelector('button')!.click();
+    s.chevron().click();
     await s.el.updateComplete;
     expect(s.expandChange).toHaveBeenCalledTimes(1);
     expect(s.expandChange.mock.calls[0]![0].detail).toEqual(['docs']);
@@ -77,12 +82,14 @@ describe('ds-tree', () => {
 
   it('expanding-a-lazy-node-asks-for-its-children', async () => {
     const s = await setup({ defaultExpanded: [], nodes: [{ id: 'docs', label: 'Documents', children: 'lazy' }] });
-    s.part('expandButton')!.shadowRoot!.querySelector('button')!.click();
+    s.chevron().click();
     await s.el.updateComplete;
     expect(s.expand).toHaveBeenCalledTimes(1);
     expect(s.expand.mock.calls[0]![0].detail).toBe('docs');
     expect(s.expandChange).toHaveBeenCalledTimes(1);
     expect(s.expandChange.mock.calls[0]![0].detail).toEqual(['docs']);
+    // `expand` fires before the `expand-change` of the same act.
+    expect(s.order).toEqual(['expand', 'expand-change']);
   });
 
   it('clicking-a-node-selects-it', async () => {
@@ -156,6 +163,7 @@ describe('ds-tree', () => {
     expect(s.part('emptyState')).toHaveTextContent('Nothing here.');
   });
 
+  /* derived */
   it('renders', async () => {
     const s = await setup();
     expect(s.el).toHaveAttribute('data-ds', 'Tree');
@@ -163,6 +171,7 @@ describe('ds-tree', () => {
     expect(s.part('node')).not.toBeNull();
   });
 
+  /* derived: props.headingLevel */
   it('renders-heading-level-2', async () => {
     const s = await setup({ headingLevel: '2' });
     expect(s.el).toHaveAttribute('heading-level', '2');
@@ -178,10 +187,12 @@ describe('ds-tree', () => {
     expect(s.el).toHaveAttribute('heading-level', '4');
   });
 
+  /* derived: props.selectable */
   it('renders-selectable-none', async () => {
     const s = await setup({ selectable: 'none' });
     expect(s.el).toHaveAttribute('selectable', 'none');
     expect(s.part('node')).not.toHaveAttribute('aria-selected');
+    expect(s.part('node')).not.toHaveAttribute('aria-checked');
   });
 
   it('renders-selectable-single', async () => {
@@ -194,9 +205,11 @@ describe('ds-tree', () => {
     const s = await setup({ selectable: 'multiple' });
     expect(s.el).toHaveAttribute('selectable', 'multiple');
     expect(s.root.querySelector('[role="tree"]')).toHaveAttribute('aria-multiselectable', 'true');
+    expect(s.part('node')).toHaveAttribute('aria-checked', 'false');
     expect(s.part('checkbox')).not.toBeNull();
   });
 
+  /* derived: a11y.requires accessible-name */
   it('has-accessible-name', async () => {
     const s = await setup();
     expect(s.root.querySelector('[role="tree"]')).toHaveAccessibleName(s.props.label);

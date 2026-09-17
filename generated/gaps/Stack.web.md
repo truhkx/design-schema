@@ -35,3 +35,14 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Stack: `wrap`'s description scopes it to horizontal stacks, but nothing says what it does on a vertical one. Applied `flex-wrap: wrap` regardless of direction (it is inert on a column that is not height-constrained) rather than silently ignoring the prop.
 - Stack: the swiftui platform notes reference `direction: responsive` and a `divider: true` prop, neither of which exists in `props`. Treated them as stale notes and generated nothing for them, but they read as a spec for props the schema is missing.
 - Stack: `justify` omits `around`/`evenly`, which flexbox has and which the docs do not mention as a deliberate exclusion. Generated only the four listed values.
+
+## 2026-09-17 03:59 — round 1
+
+- Stack: the generic rules say quoted-digit enums like 'Stack gap' accept numbers, but Stack gap's values are none/tight/normal/loose/section — no digit strings, so gap takes only the string union. The rule's example is stale.
+- Stack: the platform notes say Stack merges consumer className/style, while the package convention says `...rest` never forwards style/className and the override contract is the only per-instance styling. I followed the component notes (merged, with `overrides` hooks applied first and consumer style after); the ordering between the two isn't specified.
+- Stack: examples give `children` as prose ('The form fields', 'A submit Button and a Cancel Button', 'A row of filters') rather than values, so 'exactly its given as args' can't be literal. I realised them as arrays of Input/Button/Text elements.
+- Stack: WrappingFilters needs a narrow container to show wrapping; the example has no width, so the story keeps a decorator with an inline maxInlineSize (story-only, not in args).
+- Stack: `wrap` is a boolean, so it doesn't fit the one-story-per-enum-value rule. The story is named `Wrap` rather than `WrapTrue`; the doc doesn't name it.
+- Stack: `ref` is typed Ref<HTMLElement> because the root tag varies with `element` (div/section/nav/ul/ol); the spec doesn't say whether the type should narrow per element.
+- Stack: `element` is web/lit only, but the doc doesn't say whether a consumer `role` on a ul/ol Stack should win over the forced role="list". The list role wins; for other elements a consumer role passes through.
+- Stack: the doc says 'one li per child as the platform counts children' but not how null/boolean children count. React.Children.map skips them (no empty li), which I kept.

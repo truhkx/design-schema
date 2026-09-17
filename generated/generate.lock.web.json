@@ -121,20 +121,20 @@
     }
   },
   "Box.web": {
-    "hash": "1a57fecfd6935e73",
-    "lastAttemptHash": "1a57fecfd6935e73",
-    "generatedAt": "2026-09-16T06:41:01+00:00",
+    "hash": "85fadaee02502a83",
+    "lastAttemptHash": "85fadaee02502a83",
+    "generatedAt": "2026-09-17T08:03:33+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 3.0941,
+    "costUsd": 0.8235,
     "files": [
       "packages/react/src/Box.css",
       "packages/react/src/Box.stories.tsx",
       "packages/react/src/Box.test.tsx",
       "packages/react/src/Box.tsx"
     ],
-    "gaps": 9,
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -531,19 +531,20 @@
     }
   },
   "Heading.web": {
-    "hash": "28929ec46fdb5fb4",
-    "lastAttemptHash": "28929ec46fdb5fb4",
-    "generatedAt": "2026-09-16T06:12:25+00:00",
+    "hash": "7e2a8844553daf28",
+    "lastAttemptHash": "7e2a8844553daf28",
+    "generatedAt": "2026-09-17T07:56:39+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.581,
+    "costUsd": 0.82,
     "files": [
+      "packages/react/src/Heading.css",
       "packages/react/src/Heading.stories.tsx",
       "packages/react/src/Heading.test.tsx",
       "packages/react/src/Heading.tsx"
     ],
-    "gaps": 8,
+    "gaps": 6,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -554,20 +555,21 @@
     }
   },
   "Icon.web": {
-    "hash": "47e0b01f5a7a8d52",
-    "lastAttemptHash": "47e0b01f5a7a8d52",
-    "generatedAt": "2026-09-16T05:21:15+00:00",
+    "hash": "7a3aa90d5110c636",
+    "lastAttemptHash": "7a3aa90d5110c636",
+    "generatedAt": "2026-09-17T07:50:03+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.3847,
+    "costUsd": 1.0257,
     "files": [
       "packages/react/src/Icon.css",
       "packages/react/src/Icon.stories.tsx",
       "packages/react/src/Icon.test.tsx",
-      "packages/react/src/Icon.tsx"
+      "packages/react/src/Icon.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 7,
+    "gaps": 6,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -983,19 +985,20 @@
     }
   },
   "Stack.web": {
-    "hash": "a85ad38076e9f1f8",
-    "lastAttemptHash": "a85ad38076e9f1f8",
-    "generatedAt": "2026-09-16T06:23:59+00:00",
+    "hash": "e69294b90b42a39d",
+    "lastAttemptHash": "e69294b90b42a39d",
+    "generatedAt": "2026-09-17T07:59:50+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.7408,
+    "costUsd": 0.843,
     "files": [
+      "packages/react/src/Stack.css",
       "packages/react/src/Stack.stories.tsx",
       "packages/react/src/Stack.test.tsx",
       "packages/react/src/Stack.tsx"
     ],
-    "gaps": 10,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1102,22 +1105,19 @@
     }
   },
   "Text.web": {
-    "hash": "949a60c88d7c3174",
-    "lastAttemptHash": "949a60c88d7c3174",
-    "generatedAt": "2026-09-16T05:52:00+00:00",
+    "hash": "fe1f48275a8be129",
+    "lastAttemptHash": "fe1f48275a8be129",
+    "generatedAt": "2026-09-17T07:53:24+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 5.0857,
+    "costUsd": 0.7175,
     "files": [
-      "packages/react/src/Slider.tsx",
+      "packages/react/src/Text.css",
       "packages/react/src/Text.stories.tsx",
-      "packages/react/src/Text.test.tsx",
-      "packages/react/src/Text.tsx",
-      "packages/react/src/Toast.css",
-      "packages/react/src/Toast.tsx"
+      "packages/react/src/Text.tsx"
     ],
-    "gaps": 9,
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,

@@ -124,7 +124,7 @@ export const FormFields: Story = {
 
 /** A row of actions at the end of a form or card, tightly spaced and pushed to the end. */
 export const ButtonRow: Story = {
-  args: { direction: 'horizontal', gap: 'tight', justify: 'end', align: 'center' },
+  args: { direction: 'horizontal', gap: 'tight', justify: 'end' },
   render: (args) =>
     renderStack(
       args,
@@ -151,7 +151,7 @@ export const PageSections: Story = {
 
 /** A horizontal group that reflows onto new lines on narrow viewports instead of overflowing. */
 export const WrappingFilters: Story = {
-  args: { direction: 'horizontal', gap: 'tight', wrap: true, align: 'center' },
+  args: { direction: 'horizontal', gap: 'tight', wrap: true },
   render: (args) => html`
     <div style="max-inline-size: 16rem">
       ${renderStack(

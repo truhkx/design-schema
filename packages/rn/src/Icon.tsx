@@ -29,7 +29,11 @@ export interface IconProps {
   name: IconName;
   /** Rendered size, from the font-size scale so icons line up with text of the same size. */
   size?: IconSize | undefined;
-  /** Size the glyph at 1em of the surrounding text and align it to the text baseline, ignoring `size`. For icons inside Text, Link and Button labels. */
+  /**
+   * Size the glyph at 1em of the surrounding text and align it to the text baseline,
+   * ignoring `size`. For icons inside Text, Link and Button labels. With no enclosing
+   * Text the glyph falls back to `font.size.md`, still ignoring `size`.
+   */
   inline?: boolean | undefined;
   /**
    * Accessible name. When set (non-empty), the icon is meaningful and exposed as an
@@ -79,8 +83,12 @@ const GRID = 16; // literal-ok: the glyph grid's coordinate space, not a size va
  * that Text's own resolved color through `TextStyleContext`, and (with `inline`) its
  * font size too, so it matches the surrounding copy exactly.
  *
- * `size` is ignored (a no-op) while `inline` is set, since the size then comes from
- * the text context instead. Decorative (no `label`): `accessibilityElementsHidden`
+ * `size` and `overrides.size` are ignored while `inline` is set: the size comes from
+ * the enclosing Text, or `font.size.md` when there is none. An Svg inside a Text is
+ * centred by the text renderer with no baseline control, so an inline glyph sits
+ * slightly higher than on web — a platform limit. The root is react-native-svg's
+ * `Svg`, whose ref is a class instance, so Icon exposes no ref and no part hook
+ * beyond `testID="Icon"`. Decorative (no `label`): `accessibilityElementsHidden`
  * and `importantForAccessibility="no"`. Labelled: `accessibilityRole="image"` and
  * `accessibilityLabel`. No interaction, no focus, no animation.
  */
@@ -113,21 +121,44 @@ export function Icon({ name, size = 'md', inline = false, label, color, override
 
   const glyph = paths[name];
 
+  const a11y = {
+    accessibilityRole: decorative ? undefined : ('image' as const),
+    accessibilityLabel: decorative ? undefined : label,
+    accessibilityElementsHidden: decorative,
+    importantForAccessibility: decorative ? ('no' as const) : ('auto' as const),
+  };
+
+  // Unreachable from TypeScript, possible from JavaScript: an empty glyph and a
+  // warning on every render, with no dedupe.
   if (glyph === undefined) {
     if (__DEV__) {
       console.warn(`Icon: unknown name "${name}"`);
     }
-    return <Svg testID="Icon" width={dimension} height={dimension} viewBox="0 0 16 16" />;
+    return (
+      <Svg
+        testID="Icon"
+        width={dimension}
+        height={dimension}
+        viewBox="0 0 16 16"
+        fill="none"
+        accessibilityRole={a11y.accessibilityRole!}
+        accessibilityLabel={a11y.accessibilityLabel!}
+        accessibilityElementsHidden={a11y.accessibilityElementsHidden}
+        importantForAccessibility={a11y.importantForAccessibility}
+      />
+    );
   }
 
   // `border.width.focus` is a screen-pixel thickness. react-native-web honors
-  // `vector-effect="non-scaling-stroke"` and keeps it there; native ignores the hint
-  // and reads strokeWidth in grid units, so convert it at the rendered size — the
-  // stroke is then the same thickness at every size, which is the point at `xs`.
-  // Filled glyphs draw no stroke at all.
+  // `vector-effect="non-scaling-stroke"`, so web passes the raw token with the hint;
+  // native reads strokeWidth in grid units, so it gets the token scaled into the grid
+  // at the rendered size and no hint (were the hint honored there too, the scaled
+  // value would be applied twice). Either way the stroke is the same thickness at
+  // every size, which is the point at `xs`. Filled glyphs draw no stroke at all.
+  const web = Platform.OS === 'web';
   const strokeWidth = glyph.filled
     ? undefined
-    : Platform.OS === 'web'
+    : web
       ? t.borderWidthFocus
       : t.borderWidthFocus * (GRID / dimension);
 
@@ -142,15 +173,17 @@ export function Icon({ name, size = 'md', inline = false, label, color, override
       strokeWidth={strokeWidth!}
       strokeLinecap="round"
       strokeLinejoin="round"
-      accessibilityRole={decorative ? undefined : 'image'}
-      accessibilityLabel={(decorative ? undefined : label)!}
-      accessibilityElementsHidden={decorative}
-      importantForAccessibility={decorative ? 'no' : 'auto'}
+      accessibilityRole={a11y.accessibilityRole!}
+      accessibilityLabel={a11y.accessibilityLabel!}
+      accessibilityElementsHidden={a11y.accessibilityElementsHidden}
+      importantForAccessibility={a11y.importantForAccessibility}
     >
       {glyph.filled ? (
-        <Path testID="Icon.glyph" d={glyph.d} fill={resolvedColor} stroke="none" fillRule="evenodd" />
+        <Path d={glyph.d} fill={resolvedColor} stroke="none" fillRule="evenodd" />
+      ) : web ? (
+        <Path d={glyph.d} vectorEffect="non-scaling-stroke" />
       ) : (
-        <Path testID="Icon.glyph" d={glyph.d} vectorEffect="non-scaling-stroke" />
+        <Path d={glyph.d} />
       )}
     </Svg>
   );

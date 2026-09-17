@@ -4,7 +4,8 @@ import {
   type CSSProperties,
   type ElementType,
   type ReactNode,
-  type Ref, type ReactElement,
+  type Ref,
+  type ReactElement,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Stack.css';
@@ -36,17 +37,30 @@ export interface StackProps extends Omit<ComponentPropsWithoutRef<'div'>, 'child
   children: ReactNode;
   /** Main axis. `horizontal` follows writing direction (start→end), not left→right. */
   direction?: StackDirection | undefined;
-  /** Space between children, from the layout rhythm (`layout.gap.*`), not the raw spacing scale: tight
+  /**
+   * Space between children, from the layout rhythm (`layout.gap.*`), not the raw spacing scale: tight
    * for related controls, normal for fields in a form, loose for groups, section between page sections.
-   * The only way to set spacing between siblings. */
+   * The only way to set spacing between siblings.
+   */
   gap?: StackGap | undefined;
   /** Cross-axis alignment. */
   align?: StackAlign | undefined;
-  /** Main-axis distribution. */
+  /**
+   * Main-axis distribution. It only shows where the main axis is larger than the content — a vertical
+   * Stack needs a bounded height for it to mean anything, and Stack has no size of its own, so that is
+   * the caller's to give.
+   */
   justify?: StackJustify | undefined;
-  /** Allow horizontal stacks to wrap onto new lines instead of overflowing. */
+  /**
+   * Allow horizontal stacks to wrap onto new lines instead of overflowing. It is set whatever the
+   * direction — on a column it is inert unless the block size is bounded.
+   */
   wrap?: boolean | undefined;
-  /** Landmark or list semantics when the group has meaning. For `ul`/`ol`, each child is wrapped in an `li`. */
+  /**
+   * Landmark or list semantics when the group has meaning. For `ul`/`ol`, each child is wrapped in an
+   * `li` that is `display: contents`, so the children stay the flex items and the gap is unchanged. One
+   * `li` per child as React counts children: a fragment holding two elements is one child, so pass an array.
+   */
   element?: StackElement | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<StackOverridableBinding, TokenRef | undefined>> | undefined;
@@ -56,12 +70,12 @@ export interface StackProps extends Omit<ComponentPropsWithoutRef<'div'>, 'child
  * Stack — Design Schema, category: layout.
  *
  * When to use:
- * Use Stack for any group of siblings that should be evenly spaced: form fields, a row of
- * buttons, a list of cards, label-plus-control pairs. Reach for it before writing any layout CSS.
- * Choose `element` when the group has meaning — `nav` for navigation, `ul` for a list of like
- * items — so the structure is exposed to assistive technology.
+ * Use Stack for any group of siblings that should be evenly spaced: form fields, a row of buttons, a
+ * list of cards, label-plus-control pairs. Reach for it before writing any layout CSS. Choose `element`
+ * when the group has meaning — `nav` for navigation, `ul` for a list of like items — so the structure is
+ * exposed to assistive technology.
  */
-export const Stack = function Stack({
+export function Stack({
   ref,
   children,
   direction = 'vertical',
@@ -91,16 +105,17 @@ export const Stack = function Stack({
     .filter(Boolean)
     .join(' ');
 
+  // Stack merges a consumer `className` and `style` onto the root: composites give it layout-only classes.
   const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
   const mergedStyle = overrideStyle || style ? { ...overrideStyle, ...style } : undefined;
 
-  // Removing list styling can drop list semantics in some browsers; `role="list"` restores it.
+  // Removing list styling can drop list semantics in some browsers; the explicit roles restore them.
   const role = isList ? 'list' : rest.role;
 
   return (
     <Tag
       {...rest}
-      ref={ref as Ref<HTMLElement>}
+      ref={ref}
       role={role}
       data-ds="Stack"
       data-part="container"
@@ -110,10 +125,12 @@ export const Stack = function Stack({
       {isList
         ? Children.map(children, (child) =>
             child === null || child === undefined || typeof child === 'boolean' ? null : (
-              <li className="ds-stack__item">{child}</li>
+              <li role="listitem" data-part="item" className="ds-stack__item">
+                {child}
+              </li>
             ),
           )
         : children}
     </Tag>
   );
-};
+}

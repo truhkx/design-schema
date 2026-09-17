@@ -22,9 +22,12 @@ export interface BoxProps {
   children: React.ReactNode;
   /** Padding on all sides, from the layout inset presets. Use `insetBlock`/`insetInline` when the axes differ. */
   inset?: BoxInset | undefined;
-  /** Vertical padding, overriding `inset` on that axis. Defaults to `inset`. */
+  /**
+   * Vertical padding, overriding `inset` on that axis. It has no default: unset means
+   * `inset` applies, which keeps an explicit `none` distinct from an absent value.
+   */
   insetBlock?: BoxInset | undefined;
-  /** Horizontal padding, overriding `inset` on that axis. Defaults to `inset`. */
+  /** Horizontal padding, overriding `inset` on that axis. Unset means `inset` applies, as with insetBlock. */
   insetInline?: BoxInset | undefined;
   /**
    * Background. `none` is transparent; `default` is the page background (use to lift

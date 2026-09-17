@@ -30,9 +30,19 @@ export interface StackProps {
   gap?: StackGap | undefined;
   /** Cross-axis alignment. */
   align?: StackAlign | undefined;
-  /** Main-axis distribution. */
+  /**
+   * Main-axis distribution. It only shows where the main axis is larger than the content —
+   * a vertical Stack needs a bounded height for it to mean anything, and Stack has no size
+   * of its own, so that is the caller's to give. `around` and `evenly` are deliberately
+   * left out.
+   */
   justify?: StackJustify | undefined;
-  /** Allow horizontal stacks to wrap onto new lines instead of overflowing. */
+  /**
+   * Allow horizontal stacks to wrap onto new lines instead of overflowing. It is set
+   * whatever the direction — on a column it is inert unless the height is bounded — rather
+   * than being silently ignored on a vertical Stack. Prefer wrapping over horizontal
+   * scrolling, so a wrapped row still fits when the platform's text size is turned up.
+   */
   wrap?: boolean | undefined;
   /**
    * Replace individual style bindings with a different token from the theme. The only
@@ -98,7 +108,7 @@ export function Stack({
   const style = React.useMemo<ViewStyle>(
     () => ({
       flexDirection: direction === 'horizontal' ? 'row' : 'column',
-      // `gap: none` renders no gap, so the override has nothing to replace.
+      // `gap: none` still reads its token (`layout.gap.none`, zero) and makes the override a no-op.
       gap: gap !== 'none' && overrides?.gap ? (resolveToken(t, overrides.gap) as number) : t[GAP_TOKEN[gap]],
       alignItems: ALIGN[align],
       justifyContent: JUSTIFY[justify],

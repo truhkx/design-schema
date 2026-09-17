@@ -10,12 +10,14 @@ export type BoxElement = 'div' | 'section' | 'article' | 'aside' | 'header' | 'f
 /** Overridable style hooks; see the `overrides` property. `background` is locked and excluded. */
 export type BoxOverridableBinding = 'paddingBlock' | 'paddingInline' | 'border' | 'borderWidth' | 'radius';
 
-/** Sectioning `element` values and the implicit role each maps to. `div`/`section` set no role. */
+/**
+ * `element` values whose implicit role does not depend on ancestry, and that role.
+ * `div`, `section`, `header` and `footer` set none: a native `<header>`/`<footer>` is only
+ * a banner/contentinfo outside sectioning content, which the element cannot see.
+ */
 const SECTIONING_ROLES: Partial<Record<BoxElement, string>> = {
   article: 'article',
   aside: 'complementary',
-  header: 'banner',
-  footer: 'contentinfo',
   main: 'main',
   nav: 'navigation',
 };
@@ -38,8 +40,9 @@ const HOOKS: Record<BoxOverridableBinding, string> = {
  * from reflected attributes on `:host`, so nothing but the slot renders in the
  * shadow root. `element` swaps nothing there: the host is the element, so the
  * prop exists for API parity and sets a role through `ElementInternals` for the
- * sectioning values only (`article`, `aside`, `header`, `footer`, `main`,
- * `nav`); `div` and `section` carry no role. Prefer Landmark for page regions.
+ * values whose implicit role is unconditional (`article`, `aside`, `main`,
+ * `nav`); `div`, `section`, `header` and `footer` carry no role. Prefer
+ * Landmark for page regions.
  *
  * ## When to use
  *
@@ -69,8 +72,10 @@ export class DsBox extends LitElement {
       --ds-box-border: var(--color-border);
       --ds-box-border-width: var(--border-width-thin);
       --ds-box-radius: var(--radius-none);
+      --ds-box-background: transparent;
       padding-block: var(--ds-box-padding-block);
       padding-inline: var(--ds-box-padding-inline);
+      background: var(--ds-box-background);
       border-style: solid;
       border-width: 0;
       border-color: var(--ds-box-border);
@@ -137,16 +142,19 @@ export class DsBox extends LitElement {
       --ds-box-padding-inline: var(--layout-inset-xl);
     }
 
-    /* background: color.background.{surface}, locked — no override hook.
-       surface="none" matches no rule, so the parent's background shows through. */
+    /* background: color.background.{surface}, locked — keeps its hook (the CSS escape hatch) but is
+       not in the overrides type. surface="none" is the literal transparent, so the parent's shows through. */
+    :host([surface='none']) {
+      --ds-box-background: transparent;
+    }
     :host([surface='default']) {
-      background: var(--color-background);
+      --ds-box-background: var(--color-background);
     }
     :host([surface='subtle']) {
-      background: var(--color-background-subtle);
+      --ds-box-background: var(--color-background-subtle);
     }
     :host([surface='strong']) {
-      background: var(--color-background-strong);
+      --ds-box-background: var(--color-background-strong);
     }
 
     /* border / borderWidth: color.border, border.width.thin — a thin default border, only when asked for. */
@@ -173,34 +181,37 @@ export class DsBox extends LitElement {
   `;
 
   /** Padding on all sides, from the layout inset presets. Use `insetBlock`/`insetInline` when the axes differ. */
-  @property({ reflect: true }) accessor inset: BoxInset = 'none';
+  @property({ type: String, reflect: true }) accessor inset: BoxInset = 'none';
 
-  /** Vertical padding, overriding `inset` on that axis. Defaults to `inset`. */
-  @property({ reflect: true, attribute: 'inset-block' }) accessor insetBlock: BoxInset | undefined;
+  /**
+   * Vertical padding, overriding `inset` on that axis. No default: unset means `inset`
+   * applies, which keeps an explicit `none` distinct from an absent value.
+   */
+  @property({ type: String, reflect: true, attribute: 'inset-block' }) accessor insetBlock: BoxInset | undefined;
 
-  /** Horizontal padding, overriding `inset` on that axis. Defaults to `inset`. */
-  @property({ reflect: true, attribute: 'inset-inline' }) accessor insetInline: BoxInset | undefined;
+  /** Horizontal padding, overriding `inset` on that axis. Unset means `inset` applies. */
+  @property({ type: String, reflect: true, attribute: 'inset-inline' }) accessor insetInline: BoxInset | undefined;
 
   /**
    * Background. `none` is transparent; `default` is the page background (use to
    * lift content off a subtle parent); `subtle` and `strong` step up.
    */
-  @property({ reflect: true }) accessor surface: BoxSurface = 'none';
+  @property({ type: String, reflect: true }) accessor surface: BoxSurface = 'none';
 
   /** A thin default border. */
   @property({ type: Boolean, reflect: true }) accessor border = false;
 
   /** Corner radius from the theme's presets. */
-  @property({ reflect: true }) accessor radius: BoxRadius = 'none';
+  @property({ type: String, reflect: true }) accessor radius: BoxRadius = 'none';
 
   /**
    * Element to render. The host is always the element in the DOM, so this swaps
-   * nothing in the shadow root; sectioning values (`article`, `aside`, `header`,
-   * `footer`, `main`, `nav`) set the matching implicit role on the host through
-   * `ElementInternals`, and `div`/`section` set none. Sectioning values only
-   * when the box is a semantic region; prefer Landmark for page regions.
+   * nothing in the shadow root; `article`, `aside`, `main` and `nav` set their
+   * implicit role on the host through `ElementInternals`, and `div`, `section`,
+   * `header` and `footer` set none. Sectioning values only when the box is a
+   * semantic region; prefer Landmark for page regions.
    */
-  @property() accessor element: BoxElement = 'div';
+  @property({ type: String }) accessor element: BoxElement = 'div';
 
   /** Per-instance style overrides: `{ radius: 'radius.lg' }`. The locked `background` is ignored. */
   @property({ attribute: false })

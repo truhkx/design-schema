@@ -89,7 +89,7 @@ export class DsHeading extends LitElement {
       display: none;
     }
 
-    .heading {
+    [data-part='text'] {
       /* marginBlockEnd: space.sm — the one margin the system allows, because a
          heading owns the gap to its own first paragraph. */
       margin-block: 0 var(--ds-heading-margin-block-end);
@@ -143,13 +143,13 @@ export class DsHeading extends LitElement {
       --ds-heading-font-size: var(--font-size-md);
     }
 
-    :host([align='start']) .heading {
+    :host([align='start']) [data-part='text'] {
       text-align: start;
     }
-    :host([align='center']) .heading {
+    :host([align='center']) [data-part='text'] {
       text-align: center;
     }
-    :host([align='end']) .heading {
+    :host([align='end']) [data-part='text'] {
       text-align: end;
     }
   `;
@@ -187,21 +187,21 @@ export class DsHeading extends LitElement {
     if (changed.has('overrides')) {
       this.applyOverrides();
     }
-    if (import.meta.env.DEV && changed.has('level') && normalizeLevel(this.level) === undefined) {
-      if (!this.warnedMissingLevel) {
-        this.warnedMissingLevel = true;
-        console.warn(
-          `<ds-heading> needs a level from 1 to 6 to sit in the document outline; got ${String(
-            this.level,
-          )}. Rendering <h${FALLBACK_LEVEL}>.`,
-        );
-      }
+    // Checked on every update, not only when `level` changed: an absent level has
+    // no initial value, so it never appears in `changed` on the first render.
+    if (import.meta.env.DEV && !this.warnedMissingLevel && normalizeLevel(this.level) === undefined) {
+      this.warnedMissingLevel = true;
+      console.warn(
+        `<ds-heading> needs a level from 1 to 6 to sit in the document outline; got ${String(
+          this.level,
+        )}. Rendering <h${FALLBACK_LEVEL}>.`,
+      );
     }
   }
 
   protected override render(): TemplateResult {
     const tag = TAGS[normalizeLevel(this.level) ?? FALLBACK_LEVEL];
-    return html`<${tag} class="heading" part="text" data-part="text"><slot></slot></${tag}>`;
+    return html`<${tag} part="text" data-part="text"><slot></slot></${tag}>`;
   }
 
   private applyOverrides(): void {

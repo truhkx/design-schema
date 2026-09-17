@@ -8,13 +8,13 @@ interface HeadingArgs {
   level: HeadingLevel;
   size?: HeadingSize | undefined;
   align: HeadingAlign;
-  text: string;
+  children: string;
 }
 
 function renderHeading(args: HeadingArgs): TemplateResult {
   return html`
     <ds-heading level=${args.level} size=${ifDefined(args.size)} align=${args.align}
-      >${args.text}</ds-heading
+      >${args.children}</ds-heading
     >
   `;
 }
@@ -31,7 +31,7 @@ const meta: Meta<HeadingArgs> = {
     level: '2',
     size: undefined,
     align: 'start',
-    text: 'Account settings',
+    children: 'Account settings',
   },
   render: renderHeading,
 };
@@ -66,15 +66,15 @@ export const AlignEnd: Story = { args: { align: 'end' } };
 
 /** The one level-1 heading on a page, at its default size. */
 export const PageTitle: Story = {
-  args: { level: '1', text: 'Account settings' },
+  args: { level: '1', children: 'Account settings' },
 };
 
 /** A major section of the page, one level below the title. */
 export const SectionHeading: Story = {
-  args: { level: '2', text: 'Billing' },
+  args: { level: '2', children: 'Billing' },
 };
 
 /** A level-4 heading given a larger size so it still reads as a section start in a wide layout. */
 export const SubsectionSizedUp: Story = {
-  args: { level: '4', size: 'xl', text: 'Payment methods' },
+  args: { level: '4', size: 'xl', children: 'Payment methods' },
 };

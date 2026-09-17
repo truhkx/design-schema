@@ -19,3 +19,12 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Heading: `a11y.requires` lists `contrast-aaa`, which is a token-choice guarantee with nothing to implement in code beyond keeping `color` locked to `color.foreground.strong`. It reads as an implementation requirement in the generation rules; it should be marked as checked by the contrast gate instead.
 - Heading: the overrides contract types every entry as `TokenRef`, so `overrides.fontSize` may name a color token. I cast `resolveToken` results to `number`/`string` per binding without validating, like every other component in the package — a per-binding TokenRef subtype would make this checkable.
 - Heading: `level` accepts both '1' and 1 per the rules, but the schema does not say which form the docs, stories or a naming/extension layer should treat as canonical beyond a prose 'Canonical values are strings'. I used strings in the stories and accept both in the type.
+
+## 2026-09-17 03:58 — round 1
+
+- Heading: the rule says a component exposing its root declares `ref?: Ref<ViewInstance>`, but the rn element is `Text`, so the ref is typed `React.Ref<TextInstance>`; the rule should say 'the root's instance type' without naming ViewInstance.
+- Heading: the package digest shows `toLineHeight(t.fontLineHeightNormal, t.fontSizeMd)`, but the helper's real signature is `toLineHeight(fontSize, multiplier)`; the code follows the helper, and the digest's argument order is wrong.
+- Heading: the rn notes say Heading does not compose the system Text, but nothing says whether it should provide `TextStyleContext` so inline children (Icon, Link) match heading typography; the code provides it with the heading's fontSize/color and nested: true.
+- Heading: the spec does not say what happens at runtime when `level` is missing or invalid on RN (Lit falls back to h2 and warns); `level` is required in the TypeScript type, so an untyped caller gets `LEVEL_SIZE[undefined]` and no size. There is no fallback or __DEV__ warning.
+- Heading: both doc behavior scenarios (`level-puts-the-heading-in-the-outline`, `size-does-not-change-the-outline`) are web-only `role: heading` checks, so RN has no test that `accessibilityRole="header"` is set on every level/size; only derived `renders` tests exist.
+- Heading: the Default story args (`level: '2'`, `children: 'Account settings'`) are not given by the spec; the scenarios build on Default's args, so the doc should declare them.

@@ -1,12 +1,12 @@
 /* Heading — styled only through Design Schema token custom properties. */
 
 .ds-heading {
-  margin-block-start: 0;
   --ds-heading-font-family: var(--font-family-heading);
   --ds-heading-font-weight: var(--font-weight-semibold);
   --ds-heading-line-height: var(--font-line-height-tight);
   --ds-heading-color: var(--color-foreground-strong);
   --ds-heading-margin-block-end: var(--space-sm);
+  margin-block-start: 0;
   font-family: var(--ds-heading-font-family);
   font-size: var(--ds-heading-font-size);
   font-weight: var(--ds-heading-font-weight);
@@ -15,7 +15,7 @@
   margin-block-end: var(--ds-heading-margin-block-end);
 }
 
-/* size → font.size.{size} */
+/* size → font.size.{size}; the level default resolves to one of these classes */
 .ds-heading--size-4xl { --ds-heading-font-size: var(--font-size-4xl); }
 .ds-heading--size-3xl { --ds-heading-font-size: var(--font-size-3xl); }
 .ds-heading--size-2xl { --ds-heading-font-size: var(--font-size-2xl); }
@@ -23,6 +23,7 @@
 .ds-heading--size-lg { --ds-heading-font-size: var(--font-size-lg); }
 .ds-heading--size-md { --ds-heading-font-size: var(--font-size-md); }
 
+/* align has no style binding: it maps straight to text-align */
 .ds-heading--align-start { text-align: start; }
 .ds-heading--align-center { text-align: center; }
 .ds-heading--align-end { text-align: end; }

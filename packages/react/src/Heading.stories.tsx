@@ -4,6 +4,7 @@ import { Heading } from './Heading';
 const meta: Meta<typeof Heading> = {
   title: 'Heading/React',
   component: Heading,
+  tags: ['autodocs'],
   args: {
     level: '2',
     children: 'Account settings',

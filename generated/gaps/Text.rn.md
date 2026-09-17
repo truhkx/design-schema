@@ -22,3 +22,13 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Text: `font.weight.*` tokens are numbers and RN wants a string union, so `toFontWeight` snaps to the nearest hundred; `font.lineHeight.normal` × fontSize is rounded to a whole pixel by `toLineHeight`. Neither rounding rule is in the doc — a theme with a weight like 550 or a fractional line height silently changes.
 - Text: `tone: onAction` is only contrast-checked against 'action backgrounds' without naming one, so the `ToneOnAction` story picks `color.action.primary.background`. If the intended background is a different action surface, the story is checking the wrong pair.
 - Text: `TextStyleContext` has no documented value outside a Text — chose `{ fontSize: 0, color: '', nested: false }`, so every consumer (Icon, Link) must branch on `nested` rather than use the numbers. The platform note defines the nested case only.
+
+## 2026-09-17 03:55 — round 1
+
+- Text: the Rules say to import tokens from `@design-schema/tokens/<theme-id>/rn/light` and `/dark`, but the package conventions (and every existing component) read them from `useTheme()`; kept `useTheme()`.
+- Text: the Refs rule says a component exposing its root declares `ref?: Ref<ViewInstance>`, but Text's root is RN `Text`, whose instance type is `TextInstance`; kept `React.Ref<TextInstance>`. The rule should say 'the root's instance type (TextInstance for Text)'.
+- Text: the digest's helper example `toLineHeight(t.fontLineHeightNormal, t.fontSizeMd)` has the arguments in the wrong order; the real signature is `toLineHeight(fontSize, multiplier)`, which is what Text calls.
+- Text: the only doc behavior (`truncated-text-keeps-the-full-string-reachable`) is web-only and RN has no `title`, so there is no RN test for it; the TruncatedCell story's comment and the `truncate` JSDoc record that there is no sighted affordance.
+- Text: `ToneOnAction` needs an action-coloured background to make sense, and the spec doesn't say where it comes from; the story wraps Text in a View painted with `colorActionPrimaryBackground`, padded with `spaceMd`/`spaceSm` and rounded with `radiusMd`. The `ToneDanger` story swaps in the error wording from the web-only `inline-error-wording` example so danger is never shown on neutral text.
+- Text: `TextForegroundContext` is named in the `styles.color` description but has no RN export guidance beyond 'package-internal'; kept it exported from Text.tsx for sibling components but not re-exported from index.ts.
+- Text: behavior scenario name `renders-tone-on-action` kebab-cases the enum value `onAction`; the existing test used `renders-tone-onAction`, now renamed to match the doc.

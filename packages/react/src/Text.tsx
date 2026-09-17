@@ -39,13 +39,20 @@ export interface TextProps extends Omit<ComponentPropsWithoutRef<'p'>, 'children
   size?: TextSize | undefined;
   /** Emphasis without changing size. Prefer weight over color for hierarchy. */
   weight?: TextWeight | undefined;
-  /** Semantic color. `onAction` is only for text placed on an action background. */
+  /**
+   * Semantic color. `onAction` is only for text placed on an action background. There is no `inverse`
+   * tone: an inverse surface re-scopes `--color-foreground` on its own container, which the tone resolves through.
+   */
   tone?: TextTone | undefined;
   /** Horizontal alignment. `start`/`end` follow writing direction. */
   align?: TextAlign | undefined;
-  /** Clip to one line with an ellipsis. The full text is exposed via `title` when children is a plain string; otherwise the consumer passes `title`. */
+  /**
+   * Clip to one line with an ellipsis. The full text is exposed via `title` when children is a plain
+   * string; otherwise the consumer passes `title`. With `element: span` the clipped box is
+   * `display: inline-block; max-inline-size: 100%`, so the width comes from the parent.
+   */
   truncate?: boolean | undefined;
-  /** The HTML element to render — `p` for a block, `span` for inline. Labels and legends are rendered by Input and (planned) Fieldset, which own the association. */
+  /** The HTML element to render — `p` for a block, `span` for inline. Labels and legends are native elements rendered by Input and Fieldset, which own the association; Text never renders one. */
   element?: TextElement | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<TextOverridableBinding, TokenRef | undefined>> | undefined;
@@ -69,7 +76,7 @@ const TONE_CLASS: Record<TextTone, string> = {
  * information, `danger` for errors, `strong` when a phrase must stand out from surrounding body
  * copy. Use `weight` to create hierarchy inside a size; it is calmer than jumping sizes.
  */
-export const Text = function Text({
+export function Text({
   ref,
   children,
   size = 'md',
@@ -95,6 +102,7 @@ export const Text = function Text({
     TONE_CLASS[tone],
     `ds-text--align-${align}`,
     truncate ? 'ds-text--truncate' : null,
+    truncate && element === 'span' ? 'ds-text--truncate-inline' : null,
     // Composing components pass a layout-only class (`.ds-input__description { margin: 0 }`); they
     // never restyle Text's own typography, which stays on the token hooks below.
     className ?? null,
@@ -110,4 +118,4 @@ export const Text = function Text({
       {children}
     </Tag>
   );
-};
+}

@@ -1,21 +1,18 @@
 /* Stack — styled only through Design Schema token custom properties. */
 
 .ds-stack {
-  --ds-stack-gap: var(--layout-gap-normal);
   display: flex;
   margin: 0;
   padding: 0;
   min-inline-size: 0;
-  /* literal here, not var(--ds-stack-gap): the hook is only read by the value classes below,
-     so overrides.gap is a no-op while gap: none, per the presence rule. */
-  gap: 0;
 }
 
 .ds-stack--vertical { flex-direction: column; }
 .ds-stack--horizontal { flex-direction: row; }
 
-/* gap → layout.gap.{gap}; `none` renders no gap and makes overrides.gap a no-op. */
-.ds-stack--gap-none { gap: 0; }
+/* gap → layout.gap.{gap}. `none` reads its token directly rather than the hook, so overrides.gap
+   is a no-op there, per the presence rule; it is still a token, never a bare 0. */
+.ds-stack--gap-none { gap: var(--layout-gap-none); }
 .ds-stack--gap-tight { --ds-stack-gap: var(--layout-gap-tight); gap: var(--ds-stack-gap); }
 .ds-stack--gap-normal { --ds-stack-gap: var(--layout-gap-normal); gap: var(--ds-stack-gap); }
 .ds-stack--gap-loose { --ds-stack-gap: var(--layout-gap-loose); gap: var(--ds-stack-gap); }
@@ -38,7 +35,7 @@
   list-style: none;
 }
 
+/* The `item` part: `display: contents`, so the children stay the flex items and the gap is unchanged. */
 .ds-stack__item {
-  display: block;
-  min-inline-size: 0;
+  display: contents;
 }

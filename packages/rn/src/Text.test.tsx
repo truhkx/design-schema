@@ -96,7 +96,7 @@ describe('Text', () => {
     expect(s.toJSON()).not.toBeNull();
   });
 
-  it('renders-tone-onAction', () => {
+  it('renders-tone-on-action', () => {
     const s = setup({ tone: 'onAction' });
     expect(s.toJSON()).not.toBeNull();
   });

@@ -233,14 +233,16 @@ export class DsIcon extends LitElement {
   /**
    * Size the glyph at 1em of the surrounding text and align it to the text
    * baseline, ignoring `size`. For icons inside Text, Link and Button labels.
+   * With no surrounding Text the glyph takes whatever font size it inherits,
+   * and still ignores `size`.
    */
   @property({ type: Boolean, reflect: true }) accessor inline = false;
 
   /**
    * Accessible name. When set (non-empty), the icon is meaningful and exposed as
    * an image with this name; when omitted or empty, it is decorative and hidden
-   * from assistive technology. Most icons sit next to text and should have no
-   * label.
+   * from assistive technology — an empty string is the decorative case, not an
+   * authoring error. Most icons sit next to text and should have no label.
    */
   @property({ type: String }) accessor label: string | undefined;
 
@@ -274,6 +276,7 @@ export class DsIcon extends LitElement {
 
   protected override render(): TemplateResult {
     const glyph: TemplateResult | undefined = GLYPHS[this.name];
+    /* Unreachable from TypeScript, possible from JavaScript: warn on every render, no dedupe. */
     if (import.meta.env.DEV && glyph === undefined) {
       console.warn(
         `<ds-icon> ${this.name === undefined ? 'requires a `name`' : `has no glyph named "${this.name}"`} — no glyph in the table, so an empty svg is drawn.`,

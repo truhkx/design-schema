@@ -30,7 +30,7 @@ beforeEach(() => {
 describe('ds-stack', () => {
   it('nav-element-is-a-navigation-landmark', async () => {
     const { el } = await setup({ element: 'nav' });
-    expect(el.shadowRoot!.querySelector('[role="navigation"]')).not.toBeNull();
+    /* a native <nav> is the navigation landmark; no role attribute is needed */
     expect(el.shadowRoot!.querySelector('nav')).not.toBeNull();
   });
 
@@ -42,7 +42,7 @@ describe('ds-stack', () => {
     await el.updateComplete;
     expect(el.shadowRoot!.querySelector('[role="list"]')).not.toBeNull();
     /* each child is wrapped in an li, so assistive technology counts the items */
-    expect(el.shadowRoot!.querySelectorAll('li')).toHaveLength(2);
+    expect(el.shadowRoot!.querySelectorAll('li[role="listitem"][part="item"]')).toHaveLength(2);
   });
 
   /* derived: a11y.role */
@@ -138,21 +138,21 @@ describe('ds-stack', () => {
 
   it('renders-element-section', async () => {
     const { el } = await setup({ element: 'section' });
-    expect(el.shadowRoot!.querySelector('section[part="container"]')).not.toBeNull();
+    expect(el.shadowRoot!.querySelector('section')).not.toBeNull();
   });
 
   it('renders-element-nav', async () => {
     const { el } = await setup({ element: 'nav' });
-    expect(el.shadowRoot!.querySelector('nav[part="container"]')).not.toBeNull();
+    expect(el.shadowRoot!.querySelector('nav')).not.toBeNull();
   });
 
   it('renders-element-ul', async () => {
     const { el } = await setup({ element: 'ul' });
-    expect(el.shadowRoot!.querySelector('ul[part="container"]')).not.toBeNull();
+    expect(el.shadowRoot!.querySelector('ul[role="list"]')).not.toBeNull();
   });
 
   it('renders-element-ol', async () => {
     const { el } = await setup({ element: 'ol' });
-    expect(el.shadowRoot!.querySelector('ol[part="container"]')).not.toBeNull();
+    expect(el.shadowRoot!.querySelector('ol[role="list"]')).not.toBeNull();
   });
 });

@@ -7,15 +7,19 @@ import './Box.js';
 import type { DsBox } from './Box.js';
 import meta from './Box.stories.js';
 
-type Given = Partial<Pick<DsBox, 'inset' | 'insetBlock' | 'insetInline' | 'surface' | 'border' | 'radius' | 'element'>>;
+type Given = Partial<Pick<DsBox, 'inset' | 'insetBlock' | 'insetInline' | 'surface' | 'border' | 'radius' | 'element'>> & {
+  children?: string;
+};
 
 /** The Default story's args plus the scenario's `given`, as properties on a fresh element. */
 async function setup(given: Given = {}) {
   const el = document.createElement('ds-box');
-  const props = { ...meta.args, ...given };
+  const { children, ...props } = { ...meta.args, ...given };
   for (const [key, value] of Object.entries(props)) {
     if (value !== undefined) (el as unknown as Record<string, unknown>)[key] = value;
   }
+  /* `children` is slotted content (HTMLElement.children is read-only), so it goes in as text. */
+  if (children !== undefined) el.textContent = children;
   document.body.append(el);
   await el.updateComplete;
   return { el };
@@ -59,53 +63,53 @@ describe('ds-box', () => {
   });
 
   /* derived: props.insetBlock */
-  it('renders-insetblock-none', async () => {
+  it('renders-inset-block-none', async () => {
     const { el } = await setup({ insetBlock: 'none' });
     expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
   });
 
-  it('renders-insetblock-sm', async () => {
+  it('renders-inset-block-sm', async () => {
     const { el } = await setup({ insetBlock: 'sm' });
     expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
   });
 
-  it('renders-insetblock-md', async () => {
+  it('renders-inset-block-md', async () => {
     const { el } = await setup({ insetBlock: 'md' });
     expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
   });
 
-  it('renders-insetblock-lg', async () => {
+  it('renders-inset-block-lg', async () => {
     const { el } = await setup({ insetBlock: 'lg' });
     expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
   });
 
-  it('renders-insetblock-xl', async () => {
+  it('renders-inset-block-xl', async () => {
     const { el } = await setup({ insetBlock: 'xl' });
     expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
   });
 
   /* derived: props.insetInline */
-  it('renders-insetinline-none', async () => {
+  it('renders-inset-inline-none', async () => {
     const { el } = await setup({ insetInline: 'none' });
     expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
   });
 
-  it('renders-insetinline-sm', async () => {
+  it('renders-inset-inline-sm', async () => {
     const { el } = await setup({ insetInline: 'sm' });
     expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
   });
 
-  it('renders-insetinline-md', async () => {
+  it('renders-inset-inline-md', async () => {
     const { el } = await setup({ insetInline: 'md' });
     expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
   });
 
-  it('renders-insetinline-lg', async () => {
+  it('renders-inset-inline-lg', async () => {
     const { el } = await setup({ insetInline: 'lg' });
     expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
   });
 
-  it('renders-insetinline-xl', async () => {
+  it('renders-inset-inline-xl', async () => {
     const { el } = await setup({ insetInline: 'xl' });
     expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
   });

@@ -3,14 +3,15 @@
  * The doc (site/src/content/docs/components/heading.md) is the source of truth; the tests
  * gate runs this file after every generation round. See generated/prompts/Heading.web.md.
  */
+import type { ComponentProps } from 'react';
 import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { Heading, type HeadingProps } from './Heading';
+import { render, screen, type RenderResult } from '@testing-library/react';
+import { Heading } from './Heading';
 import meta from './Heading.stories';
 
 /** The Default story's args plus the scenario's `given`. */
-function setup(given: Partial<HeadingProps> = {}) {
-  const props = { ...meta.args, ...given } as HeadingProps;
+function setup(given: Partial<ComponentProps<typeof Heading>> = {}): RenderResult {
+  const props = { ...meta.args, ...given } as ComponentProps<typeof Heading>;
   return render(<Heading {...props} />);
 }
 

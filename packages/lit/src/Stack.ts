@@ -24,11 +24,13 @@ function isRenderable(node: Node): node is Element | Text {
  * `<ds-stack>` — Stack (category: layout, role: none).
  *
  * `<ds-stack direction="horizontal" gap="tight">`. The host itself is the
- * flex container (`:host { display: flex }`); children are slotted light-DOM
- * nodes, so their semantics are untouched. `element="ul"`/`"ol"` renders the
- * slot inside a `<ul role="list">` and wraps each child in an `<li>` using
- * manual slot assignment (`slotAssignment: 'manual'`), so the light DOM is
- * never modified. `nav` and `section` render the matching wrapper.
+ * flex container (`:host { display: flex }`) and the `container` part; it
+ * carries no `part` attribute, since a host cannot. Children are slotted
+ * light-DOM nodes, so their semantics are untouched. `element="ul"`/`"ol"`
+ * renders a `<ul role="list">` with one `<li role="listitem" part="item">` per
+ * child, each `display: contents`, using manual slot assignment
+ * (`slotAssignment: 'manual'`) rebuilt from a childList observer, so the light
+ * DOM is never moved. `nav` and `section` render the matching wrapper.
  *
  * ## When to use
  *
@@ -45,7 +47,7 @@ function isRenderable(node: Node): node is Element | Text {
  * between children with margins on the children.
  *
  * @slot - Any components. Stack does not style its children; it only positions them.
- * @csspart container - The semantic wrapper when `element` is not `div`; for `div` the host is the container.
+ * @csspart item - The `display: contents` `<li>` wrapping each child when `element` is `ul` or `ol`.
  */
 @customElement('ds-stack')
 export class DsStack extends LitElement {
@@ -136,22 +138,22 @@ export class DsStack extends LitElement {
   `;
 
   /** Main axis. `horizontal` follows writing direction (start→end), not left→right. */
-  @property({ reflect: true }) accessor direction: StackDirection = 'vertical';
+  @property({ type: String, reflect: true }) accessor direction: StackDirection = 'vertical';
 
   /** Space between children, from the layout rhythm. The only way to set spacing between siblings. */
-  @property({ reflect: true }) accessor gap: StackGap = 'normal';
+  @property({ type: String, reflect: true }) accessor gap: StackGap = 'normal';
 
   /** Cross-axis alignment. */
-  @property({ reflect: true }) accessor align: StackAlign = 'stretch';
+  @property({ type: String, reflect: true }) accessor align: StackAlign = 'stretch';
 
   /** Main-axis distribution. */
-  @property({ reflect: true }) accessor justify: StackJustify = 'start';
+  @property({ type: String, reflect: true }) accessor justify: StackJustify = 'start';
 
   /** Allow horizontal stacks to wrap onto new lines instead of overflowing. */
   @property({ type: Boolean, reflect: true }) accessor wrap = false;
 
   /** Landmark or list semantics when the group has meaning. For `ul`/`ol`, each child is wrapped in an `li`. */
-  @property() accessor element: StackElement = 'div';
+  @property({ type: String }) accessor element: StackElement = 'div';
 
   /** Per-instance style overrides: `{ gap: 'layout.gap.loose' }`. */
   @property({ attribute: false })
@@ -188,17 +190,17 @@ export class DsStack extends LitElement {
   protected override render(): TemplateResult {
     switch (this.element) {
       case 'ul':
-        return html`<ul part="container" role="list">
-          ${this.items.map(() => html`<li role="listitem"><slot></slot></li>`)}
+        return html`<ul role="list">
+          ${this.items.map(() => html`<li role="listitem" part="item" data-part="item"><slot></slot></li>`)}
         </ul>`;
       case 'ol':
-        return html`<ol part="container" role="list">
-          ${this.items.map(() => html`<li role="listitem"><slot></slot></li>`)}
+        return html`<ol role="list">
+          ${this.items.map(() => html`<li role="listitem" part="item" data-part="item"><slot></slot></li>`)}
         </ol>`;
       case 'nav':
-        return html`<nav part="container" role="navigation"><slot></slot></nav>`;
+        return html`<nav><slot></slot></nav>`;
       case 'section':
-        return html`<section part="container"><slot></slot></section>`;
+        return html`<section><slot></slot></section>`;
       default:
         return html`<slot></slot>`;
     }

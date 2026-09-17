@@ -7,12 +7,12 @@ import * as React from 'react';
 import { render } from '@testing-library/react-native';
 import { Box } from './Box';
 import type { BoxProps } from './Box';
-import meta from './Box.stories';
+import meta, { Default } from './Box.stories';
 import { ThemeProvider } from './theme';
 
 /** The Default story's args plus the scenario's `given`. */
 function setup(given: Partial<BoxProps> = {}) {
-  const props: BoxProps = { ...(meta.args as BoxProps), ...given };
+  const props: BoxProps = { ...(meta.args as BoxProps), ...(Default.args as Partial<BoxProps>), ...given };
   const utils = render(
     <ThemeProvider mode="light">
       <Box {...props} />

@@ -14,10 +14,10 @@ async function setup(given: Given = {}) {
   const el = document.createElement('ds-heading');
   const props = { ...meta.args, ...given };
   for (const [key, value] of Object.entries(props)) {
-    if (key === 'text' || value === undefined) continue;
+    if (key === 'children' || value === undefined) continue;
     (el as unknown as Record<string, unknown>)[key] = value;
   }
-  el.textContent = String(meta.args?.text ?? '');
+  el.textContent = String(meta.args?.children ?? '');
   document.body.append(el);
   await el.updateComplete;
   return { el };

@@ -59,6 +59,28 @@ export const AlignEnd: Story = { args: { align: 'end' } };
 export const ElementP: Story = { args: { element: 'p' } };
 export const ElementSpan: Story = { args: { element: 'span' } };
 
+/* truncate */
+export const Truncate: Story = {
+  args: { truncate: true, children: 'A sentence long enough to be clipped by its column.' },
+  decorators: [
+    (Story) => (
+      <div style={{ maxInlineSize: '24ch' }}>
+        <Story />
+      </div>
+    ),
+  ],
+};
+export const TruncateInline: Story = {
+  args: { truncate: true, element: 'span', children: 'A sentence long enough to be clipped by its column.' },
+  decorators: [
+    (Story) => (
+      <div style={{ maxInlineSize: '24ch' }}>
+        <Story />
+      </div>
+    ),
+  ],
+};
+
 /* examples from the component doc */
 
 /** The default paragraph - body size, regular weight, default tone. */

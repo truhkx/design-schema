@@ -16,6 +16,7 @@ export type BoxElement = 'div' | 'section' | 'article' | 'aside' | 'header' | 'f
 /**
  * Style bindings that can be overridden per instance; accessibility-bearing bindings are never in
  * this list. `background` is locked: the surface colours are the pairs the contrast gate checks.
+ * It keeps its `--ds-box-background` hook for the consumer's own CSS.
  */
 export type BoxOverridableBinding = 'paddingBlock' | 'paddingInline' | 'border' | 'borderWidth' | 'radius';
 
@@ -43,9 +44,12 @@ export interface BoxProps extends Omit<ComponentPropsWithoutRef<'div'>, 'childre
   children: ReactNode;
   /** Padding on all sides, from the layout inset presets. Use `insetBlock`/`insetInline` when the axes differ. */
   inset?: BoxInset | undefined;
-  /** Vertical padding, overriding `inset` on that axis. Defaults to `inset`. */
+  /**
+   * Vertical padding, overriding `inset` on that axis. It has no default: unset means `inset`
+   * applies, which keeps an explicit `none` distinct from an absent value.
+   */
   insetBlock?: BoxInset | undefined;
-  /** Horizontal padding, overriding `inset` on that axis. Defaults to `inset`. */
+  /** Horizontal padding, overriding `inset` on that axis. Unset means `inset` applies, as with insetBlock. */
   insetInline?: BoxInset | undefined;
   /** Background. `none` is transparent; `default` is the page background (use to lift content off a subtle parent); `subtle` and `strong` step up. */
   surface?: BoxSurface | undefined;
@@ -53,7 +57,11 @@ export interface BoxProps extends Omit<ComponentPropsWithoutRef<'div'>, 'childre
   border?: boolean | undefined;
   /** Corner radius from the theme's presets. */
   radius?: BoxRadius | undefined;
-  /** Element to render. Sectioning elements only when the box is a semantic region; prefer Landmark for page regions. */
+  /**
+   * Element to render. Sectioning elements only when the box is a semantic region; prefer Landmark
+   * for page regions. There is no native counterpart, so a screen that ports to React Native uses
+   * Landmark for the region instead of this prop.
+   */
   element?: BoxElement | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<BoxOverridableBinding, TokenRef | undefined>> | undefined;
@@ -70,9 +78,10 @@ export interface BoxProps extends Omit<ComponentPropsWithoutRef<'div'>, 'childre
  * rhythm decide the numbers.
  *
  * Box adds no role of its own; when `element` is a sectioning element the native element carries
- * the semantics (`nav` → navigation, `article` → article). It never carries margin.
+ * the semantics (`nav` → navigation, `article` → article). It never scrolls, never clips and never
+ * carries margin.
  */
-export const Box = function Box({
+export function Box({
   ref,
   children,
   inset = 'none',
@@ -87,16 +96,18 @@ export const Box = function Box({
   style,
   ...rest
 }: BoxProps & { ref?: Ref<HTMLElement> | undefined }): ReactElement {
+  // Props are typed against `div` for every value; Box is not polymorphic.
   const Tag = element as ElementType;
 
   const classes = [
     'ds-box',
     `ds-box--inset-${inset}`,
-    insetBlock ? `ds-box--inset-block-${insetBlock}` : null,
-    insetInline ? `ds-box--inset-inline-${insetInline}` : null,
-    surface !== 'none' ? `ds-box--surface-${surface}` : null,
+    // Unset axes fall back to `inset`; an explicit `none` still writes its modifier.
+    insetBlock !== undefined ? `ds-box--inset-block-${insetBlock}` : null,
+    insetInline !== undefined ? `ds-box--inset-inline-${insetInline}` : null,
+    `ds-box--surface-${surface}`,
     border ? 'ds-box--border' : null,
-    radius !== 'none' ? `ds-box--radius-${radius}` : null,
+    `ds-box--radius-${radius}`,
     // Composing components (Popover, BottomSheet) pass a layout-only class for their own body
     // part; they never restyle the box itself, which stays on the token hooks in Box.css.
     className ?? null,
@@ -109,8 +120,8 @@ export const Box = function Box({
 
   return (
     // `data-part` precedes the spread so a composing parent can name the part it is standing in for.
-    <Tag data-part="surface" {...rest} ref={ref as Ref<HTMLElement>} data-ds="Box" className={classes} style={mergedStyle}>
+    <Tag data-part="surface" {...rest} ref={ref} data-ds="Box" className={classes} style={mergedStyle}>
       {children}
     </Tag>
   );
-};
+}

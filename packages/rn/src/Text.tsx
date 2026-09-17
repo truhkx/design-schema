@@ -25,11 +25,23 @@ export interface TextProps {
   size?: TextSize | undefined;
   /** Emphasis without changing size. Prefer weight over color for hierarchy. */
   weight?: TextWeight | undefined;
-  /** Semantic color. `onAction` is only for text placed on an action background. */
+  /**
+   * Semantic color. `onAction` is only for text placed on an action background. There is no
+   * `inverse` tone: a surface with its own foreground provides `TextForegroundContext`, which
+   * applies only while `tone` is `default`.
+   */
   tone?: TextTone | undefined;
-  /** Horizontal alignment. `start`/`end` follow writing direction. */
+  /**
+   * Horizontal alignment. `start`/`end` follow writing direction, resolved through
+   * `I18nManager.isRTL` at render; a direction change mid-session does not re-align text
+   * already on screen.
+   */
   align?: TextAlign | undefined;
-  /** Clip to one line with an ellipsis. Screen readers still read the full text. */
+  /**
+   * Clip to one line with an ellipsis (`numberOfLines={1}`, `ellipsizeMode="tail"`). Screen
+   * readers still read the full text; native has no affordance that reveals the rest to
+   * sighted users — a known gap.
+   */
   truncate?: boolean | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<TextOverridableBinding, TokenRef | undefined>> | undefined;

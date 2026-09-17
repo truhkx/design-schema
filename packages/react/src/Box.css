@@ -3,7 +3,6 @@
 .ds-box {
   --ds-box-padding-block: var(--layout-inset-none);
   --ds-box-padding-inline: var(--layout-inset-none);
-  --ds-box-background: transparent;
   --ds-box-border: var(--color-border);
   --ds-box-border-width: var(--border-width-thin);
   --ds-box-radius: var(--radius-none);
@@ -12,16 +11,16 @@
   margin: 0;
   padding-block: var(--ds-box-padding-block);
   padding-inline: var(--ds-box-padding-inline);
-  /* background/radius stay literal here so an override is a no-op while surface is `none` /
-     radius is `none` — the hook is only read once the matching modifier class is applied. */
-  background-color: transparent;
+  /* Presence is decided by modifiers: the border hook recolours a border but width stays 0
+     until `ds-box--border`, and the background hook is read only by the non-`none` surfaces. */
   border-style: solid;
   border-width: 0;
   border-color: var(--ds-box-border);
-  border-radius: 0;
+  border-radius: var(--ds-box-radius);
 }
 
-/* inset → layout.inset.{value}, both axes. */
+/* inset → layout.inset.{value}, both axes. `layout.inset.none` is a real token, so an override
+   applies at every value. */
 .ds-box--inset-none { --ds-box-padding-block: var(--layout-inset-none); --ds-box-padding-inline: var(--layout-inset-none); }
 .ds-box--inset-sm { --ds-box-padding-block: var(--layout-inset-sm); --ds-box-padding-inline: var(--layout-inset-sm); }
 .ds-box--inset-md { --ds-box-padding-block: var(--layout-inset-md); --ds-box-padding-inline: var(--layout-inset-md); }
@@ -41,8 +40,9 @@
 .ds-box--inset-inline-lg { --ds-box-padding-inline: var(--layout-inset-lg); }
 .ds-box--inset-inline-xl { --ds-box-padding-inline: var(--layout-inset-xl); }
 
-/* surface → color.background.{surface} (locked, so the hook is set here and never from `overrides`);
-   `none` sets no background, leaving the parent's showing through. */
+/* surface → color.background.{surface} (locked: the hook is set here, never from `overrides`).
+   `none` renders the literal transparent, so the parent's background shows through. */
+.ds-box--surface-none { background-color: transparent; }
 .ds-box--surface-default { --ds-box-background: var(--color-background); background-color: var(--ds-box-background); }
 .ds-box--surface-subtle { --ds-box-background: var(--color-background-subtle); background-color: var(--ds-box-background); }
 .ds-box--surface-strong { --ds-box-background: var(--color-background-strong); background-color: var(--ds-box-background); }
@@ -50,8 +50,10 @@
 /* border: a thin default border, off unless requested. Decorative only. */
 .ds-box--border { border-width: var(--ds-box-border-width); }
 
-/* radius → radius.{radius}; `none` applies no rounding. */
-.ds-box--radius-sm { --ds-box-radius: var(--radius-sm); border-radius: var(--ds-box-radius); }
-.ds-box--radius-md { --ds-box-radius: var(--radius-md); border-radius: var(--ds-box-radius); }
-.ds-box--radius-lg { --ds-box-radius: var(--radius-lg); border-radius: var(--ds-box-radius); }
-.ds-box--radius-full { --ds-box-radius: var(--radius-full); border-radius: var(--ds-box-radius); }
+/* radius → radius.{radius}; `none` resolves `radius.none` and is written out like the others.
+   Radius never implies overflow clipping. */
+.ds-box--radius-none { --ds-box-radius: var(--radius-none); }
+.ds-box--radius-sm { --ds-box-radius: var(--radius-sm); }
+.ds-box--radius-md { --ds-box-radius: var(--radius-md); }
+.ds-box--radius-lg { --ds-box-radius: var(--radius-lg); }
+.ds-box--radius-full { --ds-box-radius: var(--radius-full); }

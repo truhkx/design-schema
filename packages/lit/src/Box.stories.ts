@@ -6,6 +6,8 @@ import './Text.js';
 import type { BoxElement, BoxInset, BoxRadius, BoxSurface } from './Box.js';
 
 interface BoxArgs {
+  /** Slotted as text inside a `<ds-text>`; not an element property. */
+  children: string;
   inset: BoxInset;
   insetBlock?: BoxInset | undefined;
   insetInline?: BoxInset | undefined;
@@ -20,8 +22,8 @@ const SURFACES: BoxSurface[] = ['none', 'default', 'subtle', 'strong'];
 const RADII: BoxRadius[] = ['none', 'sm', 'md', 'lg', 'full'];
 const ELEMENTS: BoxElement[] = ['div', 'section', 'article', 'aside', 'header', 'footer', 'main', 'nav'];
 
-/** Box slots its children, so the content is part of the render, never an arg. */
-function renderBox(args: BoxArgs, content: TemplateResult): TemplateResult {
+/** Box slots its children: the `children` arg is rendered into the default slot. */
+function renderBox(args: BoxArgs): TemplateResult {
   return html`
     <ds-box
       inset=${args.inset}
@@ -32,7 +34,7 @@ function renderBox(args: BoxArgs, content: TemplateResult): TemplateResult {
       radius=${args.radius}
       element=${args.element}
     >
-      ${content}
+      <ds-text>${args.children}</ds-text>
     </ds-box>
   `;
 }
@@ -41,6 +43,7 @@ const meta: Meta<BoxArgs> = {
   title: 'Box/Lit',
   tags: ['autodocs'],
   argTypes: {
+    children: { control: 'text' },
     inset: { control: 'select', options: INSETS },
     insetBlock: { control: 'select', options: [undefined, ...INSETS] },
     insetInline: { control: 'select', options: [undefined, ...INSETS] },
@@ -50,6 +53,7 @@ const meta: Meta<BoxArgs> = {
     element: { control: 'select', options: ELEMENTS },
   },
   args: {
+    children: 'Box content',
     inset: 'none',
     insetBlock: undefined,
     insetInline: undefined,
@@ -58,7 +62,7 @@ const meta: Meta<BoxArgs> = {
     radius: 'none',
     element: 'div',
   },
-  render: (args) => renderBox(args, html`<ds-text>Box content</ds-text>`),
+  render: (args) => renderBox(args),
 };
 
 export default meta;
@@ -123,24 +127,20 @@ export const ElementNav: Story = elementStory('nav');
 
 /** A panel lifted off the page with a tinted surface, rounded corners and the usual inset. */
 export const HighlightedPanel: Story = {
-  args: { inset: 'md', surface: 'subtle', radius: 'md' },
-  render: (args) => renderBox(args, html`<ds-text>A panel of settings</ds-text>`),
+  args: { children: 'A panel of settings', inset: 'md', surface: 'subtle', radius: 'md' },
 };
 
 /** A dense row bounded by a thin border rather than a fill. */
 export const BorderedRow: Story = {
-  args: { inset: 'sm', border: true },
-  render: (args) => renderBox(args, html`<ds-text>A row of data</ds-text>`),
+  args: { children: 'A row of data', inset: 'sm', border: true },
 };
 
 /** A full-width band with more vertical than horizontal padding, on the strongest surface. */
 export const HeroBand: Story = {
-  args: { insetBlock: 'xl', insetInline: 'lg', surface: 'strong' },
-  render: (args) => renderBox(args, html`<ds-text>A hero band</ds-text>`),
+  args: { children: 'A hero band', insetBlock: 'xl', insetInline: 'lg', surface: 'strong' },
 };
 
 /** A padded region whose element makes it a navigation landmark on web. */
 export const NavigationRegion: Story = {
-  args: { element: 'nav', inset: 'md' },
-  render: (args) => renderBox(args, html`<ds-text>The sidebar links</ds-text>`),
+  args: { children: 'The sidebar links', element: 'nav', inset: 'md' },
 };

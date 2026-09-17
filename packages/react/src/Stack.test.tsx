@@ -10,7 +10,7 @@ import meta from './Stack.stories';
 import type { ComponentProps } from 'react';
 
 /** The Default story's args plus the scenario's `given`. */
-function setup(given: Partial<StackProps> = {}) {
+function setup(given: Partial<StackProps> = {}): ReturnType<typeof render> {
   const props = { ...meta.args, ...given };
   return render(<Stack {...(props as ComponentProps<typeof Stack>)} />);
 }
@@ -25,7 +25,9 @@ describe('Stack', () => {
     const { getByRole, getAllByRole } = setup({ element: 'ul' });
     expect(getByRole('list').getAttribute('data-ds')).toBe('Stack');
     // each child is wrapped in an `li`, so assistive technology counts the items
-    expect(getAllByRole('listitem')).toHaveLength(3);
+    const items = getAllByRole('listitem');
+    expect(items).toHaveLength(3);
+    for (const item of items) expect(item.getAttribute('data-part')).toBe('item');
   });
 
   /* derived: a11y.role */

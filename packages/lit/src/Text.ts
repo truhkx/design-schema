@@ -65,6 +65,11 @@ export class DsText extends LitElement {
       --ds-text-line-height: var(--font-line-height-normal);
     }
 
+    /* A span-like host gets out of the way so the inline run joins its surrounding line. */
+    :host([element='span']) {
+      display: contents;
+    }
+
     .text {
       margin: 0;
       padding: 0;
@@ -168,16 +173,22 @@ export class DsText extends LitElement {
   /** Emphasis without changing size. Prefer weight over color for hierarchy. */
   @property({ type: String, reflect: true }) accessor weight: TextWeight = 'regular';
 
-  /** Semantic color. `onAction` is only for text placed on an action background. */
+  /**
+   * Semantic color. `onAction` is only for text placed on an action background.
+   * There is no `inverse` tone: an inverse surface re-scopes `--color-foreground`
+   * on its own container, which the `default` tone resolves through.
+   */
   @property({ type: String, reflect: true }) accessor tone: TextTone = 'default';
 
   /** Horizontal alignment. `start`/`end` follow writing direction. */
   @property({ type: String, reflect: true }) accessor align: TextAlign = 'start';
 
   /**
-   * Clip to one line with an ellipsis. The full text is exposed via `title`
-   * when the slotted content is plain text; otherwise the consumer sets `title`
-   * on the host. Screen readers still read the whole string.
+   * Clip to one line with an ellipsis. The full text is exposed via `title`,
+   * taken from the host's flattened, whitespace-collapsed textContent and
+   * omitted when that is empty. With `element="span"` the clipped box is
+   * `inline-block` with `max-inline-size: 100%`, so the width comes from the
+   * parent. Screen readers still read the whole string.
    */
   @property({ type: Boolean, reflect: true }) accessor truncate = false;
 
@@ -185,7 +196,7 @@ export class DsText extends LitElement {
    * The HTML element to render — `p` for a block, `span` for inline. Labels and
    * legends are rendered by Input and Fieldset, which own the association.
    */
-  @property({ type: String }) accessor element: TextElement = 'p';
+  @property({ type: String, reflect: true }) accessor element: TextElement = 'p';
 
   /** Per-instance style overrides: `{ fontSize: 'font.size.lg' }`. `color` is locked and ignored. */
   @property({ attribute: false }) accessor overrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> | undefined;
@@ -193,22 +204,26 @@ export class DsText extends LitElement {
   /** Plain-text content of the default slot, used for `title` when truncated. */
   @state() private accessor fullText = '';
 
+  /** Text edits inside existing nodes do not fire `slotchange`; this keeps `title` current. */
+  private textObserver: MutationObserver | undefined;
+
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('data-ds', 'Text');
+    this.syncFullText();
+    this.textObserver ??= new MutationObserver(() => this.syncFullText());
+    // Observes only; the callback writes reactive state, never the observed DOM.
+    this.textObserver.observe(this, { childList: true, characterData: true, subtree: true });
+  }
+
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this.textObserver?.disconnect();
   }
 
   protected override willUpdate(changed: PropertyValues): void {
     if (changed.has('overrides')) {
       this.applyOverrides();
-    }
-    if (changed.has('element')) {
-      // `span` hosts get out of the way so the inline run joins its surrounding line.
-      if (this.element === 'span') {
-        this.style.setProperty('display', 'contents');
-      } else {
-        this.style.removeProperty('display');
-      }
     }
   }
 
@@ -216,12 +231,14 @@ export class DsText extends LitElement {
     const tag = isTextElement(this.element) ? TAGS[this.element] : TAGS.p;
     const title = this.truncate && this.fullText !== '' ? this.fullText : undefined;
     return html`<${tag} class="text" part="text" title=${ifDefined(title)}
-      ><slot @slotchange=${this.handleSlotChange}></slot></${tag}
+      ><slot @slotchange=${this.syncFullText}></slot></${tag}
     >`;
   }
 
-  private handleSlotChange(): void {
-    this.fullText = (this.textContent ?? '').replace(/\s+/g, ' ').trim();
+  /** The host's flattened, whitespace-collapsed textContent; `title` is omitted when it is empty. */
+  private syncFullText(): void {
+    const next = (this.textContent ?? '').replace(/\s+/g, ' ').trim();
+    if (next !== this.fullText) this.fullText = next;
   }
 
   private applyOverrides(): void {

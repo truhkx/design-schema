@@ -21,7 +21,7 @@ function renderText(args: TextArgs): TemplateResult {
       tone=${args.tone}
       align=${args.align}
       ?truncate=${args.truncate}
-      .element=${args.element}
+      element=${args.element}
       >${args.text}</ds-text
     >
   `;

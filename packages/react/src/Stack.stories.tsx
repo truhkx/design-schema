@@ -95,7 +95,6 @@ export const ButtonRow: Story = {
     direction: 'horizontal',
     gap: 'tight',
     justify: 'end',
-    align: 'center',
     children: [
       <Button key="cancel" label="Cancel" variant="secondary" />,
       <Button key="submit" label="Submit" type="submit" />,
@@ -122,7 +121,6 @@ export const WrappingFilters: Story = {
     direction: 'horizontal',
     gap: 'tight',
     wrap: true,
-    align: 'center',
     children: [
       <Button key="all" label="All" variant="secondary" size="sm" />,
       <Button key="open" label="Open" variant="ghost" size="sm" />,

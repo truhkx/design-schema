@@ -35,12 +35,16 @@ export const ToneInherit: Story = {
   ),
 };
 
+/* states */
+export const External: Story = { args: { external: true } };
+export const Download: Story = { args: { download: true } };
+
 /* examples */
 export const InlineInAParagraph: Story = {
   args: { href: '/billing/history', label: 'View the billing history' },
   render: (args) => (
     <Text>
-      Your plan renews on 1 October. <Link {...args} /> to see previous charges.
+      Invoices from the last twelve months are kept. <Link {...args} />.
     </Text>
   ),
 };
@@ -53,7 +57,7 @@ export const InsideMutedText: Story = {
   args: { href: '/help/billing', label: 'the billing guide', tone: 'inherit' },
   render: (args) => (
     <Text tone="muted">
-      For invoices and refunds, read <Link {...args} />.
+      For how charges are calculated, read <Link {...args} />.
     </Text>
   ),
 };

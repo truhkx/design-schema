@@ -70,7 +70,7 @@ describe('Button', () => {
     const s = setup({ track: 'signup', label: 'Sign up' });
     fireEvent.press(s.container());
     expect(s.onTrack).toHaveBeenCalledTimes(1);
-    expect(s.onTrack).toHaveBeenCalledWith({ name: 'signup', label: 'Sign up' });
+    expect(s.onTrack).toHaveBeenCalledWith('signup', 'Sign up');
     expect(trackPressMock).toHaveBeenCalledTimes(1);
     expect(trackPressMock).toHaveBeenCalledWith('signup', 'Sign up');
   });

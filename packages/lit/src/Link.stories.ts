@@ -56,7 +56,7 @@ export const ToneInherit: Story = {
 /* examples */
 export const InlineInAParagraph: Story = {
   args: { href: '/billing/history', label: 'View the billing history' },
-  render: (args) => html`<ds-text>Invoices from the last year are listed. ${link(args)}.</ds-text>`,
+  render: (args) => html`<ds-text>Invoices from the last twelve months are kept. ${link(args)}.</ds-text>`,
 };
 
 export const ExternalDestination: Story = {
@@ -65,7 +65,7 @@ export const ExternalDestination: Story = {
 
 export const InsideMutedText: Story = {
   args: { href: '/help/billing', label: 'the billing guide', tone: 'inherit' },
-  render: (args) => html`<ds-text tone="muted">For details, read ${link(args)}.</ds-text>`,
+  render: (args) => html`<ds-text tone="muted">For how charges are calculated, read ${link(args)}.</ds-text>`,
 };
 
 export const DownloadableFile: Story = {

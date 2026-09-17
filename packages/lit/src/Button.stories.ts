@@ -15,6 +15,9 @@ interface ButtonArgs {
   loading: boolean;
   inverse: boolean;
   track: string;
+  accessibleName?: string | undefined;
+  overflowLabel?: string | undefined;
+  expanded?: boolean | undefined;
 }
 
 /** The base render; `extra` is slotted into the button (the decorative icon slots). */
@@ -25,6 +28,9 @@ const renderButton = (args: ButtonArgs, extra: TemplateResult | typeof nothing =
     size=${args.size}
     type=${args.type}
     track=${ifDefined(args.track === '' ? undefined : args.track)}
+    accessible-name=${ifDefined(args.accessibleName || undefined)}
+    overflow-label=${ifDefined(args.overflowLabel || undefined)}
+    .expanded=${args.expanded}
     ?disabled=${args.disabled}
     ?icon-only=${args.iconOnly}
     ?loading=${args.loading}
@@ -48,6 +54,9 @@ const meta: Meta<ButtonArgs> = {
     loading: { control: 'boolean' },
     inverse: { control: 'boolean' },
     track: { control: 'text' },
+    accessibleName: { control: 'text' },
+    overflowLabel: { control: 'text' },
+    expanded: { control: 'boolean' },
   },
   args: {
     label: 'Save changes',
@@ -121,30 +130,12 @@ export const Tracked: Story = { args: { track: 'signup', label: 'Sign up' } };
 
 /** accessibleName: says more than the visible label, which stays part of the name (WCAG 2.5.3). */
 export const AccessibleName: Story = {
-  args: { label: 'Amount', variant: 'ghost' },
-  render: (args) => html`
-    <ds-button
-      label=${args.label}
-      variant=${args.variant}
-      size=${args.size}
-      type=${args.type}
-      accessible-name="Sort by Amount, ascending"
-    ></ds-button>
-  `,
+  args: { label: 'Amount', variant: 'ghost', accessibleName: 'Sort by Amount, ascending' },
 };
 
 /** expanded: set by a disclosing parent (Menu, Popover, SidePanel, Disclosure) as a property. */
 export const Expanded: Story = {
-  args: { label: 'Options', variant: 'secondary' },
-  render: (args) => html`
-    <ds-button
-      label=${args.label}
-      variant=${args.variant}
-      size=${args.size}
-      type=${args.type}
-      .expanded=${true}
-    ></ds-button>
-  `,
+  args: { label: 'Options', variant: 'secondary', expanded: true },
 };
 
 /* examples from the doc */

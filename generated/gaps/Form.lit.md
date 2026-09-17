@@ -32,3 +32,15 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Form: the four examples give `children`/`actions` as prose ('An email Input and a password Input'), which cannot be story args; I passed the scalar givens as args and built the described content in each story's render.
 - Form: the behavior scenario `label-names-the-form-landmark` is web-only, so there is no Lit test for it, though the host does carry role=form and aria-label.
 - Form: the error summary's internal padding, radius, border width and item spacing have no style bindings; I used space.md padding, radius.md, border-width.thin, layout.gap.tight between items and space.sm/space.lg list padding.
+
+## 2026-09-17 04:31 — round 1
+
+- Form: the package digest types `DsFormField.currentValue` as `string | boolean | null`, but the doc's Lit notes say it uses the full onSubmit value contract; I widened it to `string | number | boolean | string[] | [number, number] | null` (null = contributes no key). The digest should be updated.
+- Form: 'an empty field contributes no key' does not define empty for a field; Form omits `null` and `''` but not an empty array, so an empty multi-select Listbox would submit `[]`. Chose field-reported null plus the empty string.
+- Form: `errorSummaryGap` is 'gap between the heading and the list and between list items' with the list as a Stack, but Stack's gap is an enum and its override lives in Stack; I forwarded it by setting Stack's `--ds-stack-gap` hook from `--ds-form-error-summary-gap` on the composed `ds-stack`s. The doc should say which forwarding mechanism is sanctioned (the child's `overrides` property or its hook).
+- Form: the summary's outer arrangement (heading + list) is not named as a part or element; I used a `<ds-stack gap=tight>` inside the `errorSummary` div.
+- Form: `role="alert"`, `tabindex="-1"` and the Link `href` for summary items are given only in the Web notes; Lit reuses them (`href="#<field id>"`, with the click default prevented so the hash never changes). If there is no field id, the href is `#`.
+- Form: in `validate: change` mode the doc does not say whether fields also validate on blur; I validate only on change (plus blur and change after a failed submission).
+- Form: the doc gives no text for an item whose field has an empty message AND an empty `label`; I fall back to the field `name`.
+- Form: the behavior scenario `label-names-the-form-landmark` is checked through host `role`/`aria-label` attributes rather than a computed accessible name; the lit tests have no accessible-name helper.
+- Form: example `long-form-validated-on-blur` names the fields but not input types (phone/email); stories use the default Input type for them, following the `given` literally.

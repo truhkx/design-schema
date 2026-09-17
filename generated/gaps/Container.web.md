@@ -55,3 +55,11 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Container: the example `given.children` values are prose descriptions ('A Stack of page regions') and not content; the stories pass them verbatim as string children, so ApplicationScreen shows no real Stack.
 - Container: the `main-element-is-the-page-landmark` scenario says 'there must be exactly one', but a component can't enforce that across the page and the spec asks for no dev warning; the test only checks that one main role renders, and no warning is added.
 - Container: the SwiftUI notes say gutters shrink below the *prose* width, while the web/RN notes key off the content and page widths; this is a cross-platform inconsistency I didn't act on for web.
+
+## 2026-09-17 04:34 — round 1
+
+- Container: the rule 'every example is a story with exactly its given as args' conflicts with the children description (a string children renders inside a Text); followed the children description and wrapped each example string in <Text element="p">, which makes the args differ from the literal given.
+- Container: the spec doesn't say which Text element or variant should hold illustrative children; chose Text element="p" with defaults.
+- Container: the 'renders' scenarios don't say what to assert on web; the tests check that the root element exists and nothing about styles (jsdom can't evaluate the media queries or custom properties).
+- Container: the spec names no Default-story children; kept a single Text paragraph 'Container content.' as the Default arg, which isn't schema copy.
+- Container: the spec doesn't say whether an override on gutter: default should also replace the value inside the media queries; the hook is set inline, which beats the class rules at every viewport, so it replaces the whole responsive gutter as the paddingInline description requires.

@@ -4,13 +4,26 @@
  * jsdom does not implement. See generated/prompts/Button.lit.md.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { userEvent } from '@vitest/browser/context';
+import { userEvent } from 'vitest/browser';
 import './Button.js';
 import type { ButtonPressDetail, ButtonTrackDetail, DsButton } from './Button.js';
 import meta from './Button.stories.js';
 
 type Given = Partial<
-  Pick<DsButton, 'label' | 'variant' | 'size' | 'type' | 'disabled' | 'iconOnly' | 'loading' | 'inverse' | 'track'>
+  Pick<
+    DsButton,
+    | 'label'
+    | 'variant'
+    | 'size'
+    | 'type'
+    | 'disabled'
+    | 'iconOnly'
+    | 'loading'
+    | 'inverse'
+    | 'track'
+    | 'expanded'
+    | 'accessibleName'
+  >
 >;
 
 /** The Default story's args plus the scenario's `given`, as properties on a fresh element. */
@@ -32,7 +45,7 @@ async function setup(given: Given = {}) {
     press,
     track,
     props,
-    container: () => root.querySelector<HTMLButtonElement>('[part=container]')!,
+    container: () => root.querySelector<HTMLButtonElement>('[data-part=container]')!,
   };
 }
 
@@ -41,6 +54,58 @@ beforeEach(() => {
 });
 
 describe('ds-button', () => {
+  it('click-fires-on-press', async () => {
+    const b = await setup();
+    await userEvent.click(b.container());
+    expect(b.press).toHaveBeenCalledTimes(1);
+  });
+
+  it('enter-activates', async () => {
+    const b = await setup();
+    b.el.focus();
+    await userEvent.keyboard('{Enter}');
+    expect(b.press).toHaveBeenCalledTimes(1);
+  });
+
+  it('space-activates', async () => {
+    const b = await setup();
+    b.el.focus();
+    await userEvent.keyboard(' ');
+    expect(b.press).toHaveBeenCalledTimes(1);
+  });
+
+  it('disabled-does-not-fire', async () => {
+    const b = await setup({ disabled: true });
+    // Playwright's actionability check treats aria-disabled as not enabled; the click must still land.
+    await userEvent.click(b.container(), { force: true });
+    expect(b.press).not.toHaveBeenCalled();
+    expect(b.container().getAttribute('aria-disabled')).toBe('true');
+  });
+
+  it('disabled-stays-focusable', async () => {
+    const b = await setup({ disabled: true });
+    b.el.focus();
+    expect(document.activeElement).toBe(b.el);
+    expect(b.el.shadowRoot!.activeElement).toBe(b.container());
+  });
+
+  it('loading-announces-busy-and-ignores-activation', async () => {
+    const b = await setup({ loading: true });
+    await userEvent.click(b.container());
+    expect(b.press).not.toHaveBeenCalled();
+    expect(b.container().getAttribute('aria-busy')).toBe('true');
+  });
+
+  it('expanded-is-reported', async () => {
+    const b = await setup({ expanded: true });
+    expect(b.container().getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('icon-only-keeps-its-name', async () => {
+    const b = await setup({ iconOnly: true, accessibleName: 'Open menu' });
+    expect(b.container()).toHaveAccessibleName('Open menu');
+  });
+
   it('press-tracks', async () => {
     const b = await setup({ track: 'signup', label: 'Sign up' });
     await userEvent.click(b.container());

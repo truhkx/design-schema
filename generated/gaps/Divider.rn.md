@@ -26,3 +26,13 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Divider: how often the dev warnings fire isn't specified. I raise them in a useEffect keyed on the relevant props, not on every render.
 - Divider: the label is `Text size="sm" tone="muted"`, which gives the locked `labelColor` (color.foreground.muted) and the `labelSize` default. The rn notes only say "render the label as Text"; I took the size and tone from the web section.
 - Divider: the `label-is-read-and-makes-the-divider-semantic` scenario can only check the text on rn, because the separator expectation is web-only. The test checks that `or` is rendered and nothing more.
+
+## 2026-09-17 04:47 — round 1
+
+- Divider: composition gives the label Text `element: span`, but the RN Text has no `element` prop; I left it out.
+- Divider: the testability hook asks for `testID="Divider.label"` on the label part, but the RN Text takes no `testID` prop (it always renders `testID="Text"`); the label has no part testID.
+- Divider: the RN notes don't say how `spacing` pads a labelled divider; I used paddingVertical on the labelled row, the same as the unlabelled horizontal one.
+- Divider: the labelled row's line pieces need a width and the notes don't give one; I used `flex: 1` on each (web says flex-grow).
+- Divider: the notes say a vertical line stretches to the row height but don't say how the padded root does; the root is a row with `alignSelf: 'stretch'` and the inner line also uses `alignSelf: 'stretch'`.
+- Divider: the second semantic warning's trigger isn't keyed like the label warning's; I keyed it on `semantic` and whether a label is in effect, so it also fires for `semantic` on a vertical divider with an ignored label.
+- Divider: the section-boundary example (`semantic: true`, no label) is described as a boundary 'a screen-reader user should hear', but on RN it is silent by design and warns; the example description contradicts the RN platform notes.

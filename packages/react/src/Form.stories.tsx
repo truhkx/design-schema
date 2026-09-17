@@ -5,25 +5,16 @@ import { Button } from './Button';
 import { Stack } from './Stack';
 import { Heading } from './Heading';
 
+/** A required Input name=email label=Email type=email and a required Input name=password label=Password type=password, in a Stack. */
 const signInFields = (
   <Stack gap="normal">
-    <Input label="Email address" name="email" type="email" required autocomplete="email" />
-    <Input
-      label="Password"
-      name="password"
-      type="password"
-      required
-      autocomplete="current-password"
-      description="At least 8 characters."
-    />
+    <Input label="Email" name="email" type="email" required />
+    <Input label="Password" name="password" type="password" required />
   </Stack>
 );
 
-const signInActions = (
-  <Stack direction="horizontal" gap="tight" align="start">
-    <Button label="Sign in" type="submit" />
-  </Stack>
-);
+/** A submit Button labelled Sign in. */
+const signInActions = <Button label="Sign in" type="submit" />;
 
 const meta: Meta<typeof Form> = {
   title: 'Form/React',
@@ -32,13 +23,11 @@ const meta: Meta<typeof Form> = {
   args: {
     name: 'sign-in',
     label: 'Sign in',
-    validate: 'submit',
-    disabled: false,
-    errorSummary: true,
     children: signInFields,
     actions: signInActions,
   },
   argTypes: {
+    validate: { control: 'inline-radio', options: ['submit', 'blur', 'change'] },
     onSubmit: { action: 'onSubmit' },
     onInvalid: { action: 'onInvalid' },
   },
@@ -66,17 +55,13 @@ export const LongFormValidatedOnBlur: Story = {
     validate: 'blur',
     children: (
       <Stack gap="normal">
-        <Input label="Full name" name="fullName" required autocomplete="name" />
-        <Input label="Email address" name="email" type="email" required autocomplete="email" />
-        <Input label="Phone number" name="phone" type="tel" autocomplete="tel" />
-        <Input label="City" name="city" autocomplete="address-level2" />
+        <Input label="Full name" name="fullName" required />
+        <Input label="Email" name="email" required />
+        <Input label="Phone" name="phone" required />
+        <Input label="City" name="city" required />
       </Stack>
     ),
-    actions: (
-      <Stack direction="horizontal" gap="tight" align="start">
-        <Button label="Save profile" type="submit" />
-      </Stack>
-    ),
+    actions: <Button label="Save profile" type="submit" />,
   },
 };
 
@@ -89,18 +74,14 @@ export const WithoutASummary: Story = {
     name: 'rename',
     label: 'Rename file',
     errorSummary: false,
-    children: <Input label="Name" name="name" required />,
-    actions: (
-      <Stack direction="horizontal" gap="tight" align="start">
-        <Button label="Rename" type="submit" />
-      </Stack>
-    ),
+    children: <Input label="File name" name="fileName" required />,
+    actions: <Button label="Rename" type="submit" />,
   },
 };
 
 /* labelledBy wins over label when both are set */
 export const LabelledBy: Story = {
-  args: { label: undefined, labelledBy: 'form-labelled-by-heading' },
+  args: { labelledBy: 'form-labelled-by-heading' },
   render: (args) => (
     <Stack gap="normal">
       <Heading id="form-labelled-by-heading" level="2">

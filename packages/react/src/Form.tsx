@@ -18,7 +18,6 @@ import {
   FormContext,
   type FormContextValue,
   type FormFieldRegistration,
-  type FormFieldValue,
   type FormValidateMode,
 } from './FormContext';
 import { Link } from './Link';
@@ -28,12 +27,20 @@ import './Form.css';
 
 export type { FormValidateMode, FormFieldValue } from './FormContext';
 
-/** Collected values keyed by field `name`. Strings from Input and RadioGroup, a boolean from Switch, `value` from a checked Checkbox. */
-export type FormValues = Record<string, Exclude<FormFieldValue, undefined>>;
+/**
+ * Collected values keyed by field `name`: Input and RadioGroup contribute strings, Switch a boolean,
+ * Checkbox its `value` when checked, NumberInput and Slider a number, multi-select Listbox, Select and
+ * Combobox a string array, a range Slider or DatePicker a pair. Empty, unchecked, unselected and
+ * disabled fields contribute no key.
+ */
+export type FormValues = Record<string, string | number | boolean | string[] | [number, number]>;
 /** Error messages keyed by field `name`. */
 export type FormErrors = Record<string, string>;
 
-/** copy.* — used verbatim. `summaryHeading` is selected by `Intl.PluralRules` on `count`. */
+/**
+ * copy.* — used verbatim. `summaryHeading` is selected by `Intl.PluralRules` on `count`;
+ * `summaryHeadingOne` and `invalidSummary` are not rendered on web.
+ */
 const COPY = {
   summaryHeading: {
     one: '1 problem with this form',
@@ -43,24 +50,40 @@ const COPY = {
   invalidSummary: 'This form has errors.',
 } as const;
 
-function summaryHeading(count: number): string {
-  const form = new Intl.PluralRules(undefined).select(count) === 'one' ? COPY.summaryHeading.one : COPY.summaryHeading.other;
+function summaryHeading(count: number, locale: string | undefined): string {
+  let rules: Intl.PluralRules;
+  try {
+    rules = new Intl.PluralRules(locale);
+  } catch {
+    rules = new Intl.PluralRules();
+  }
+  const form = rules.select(count) === 'one' ? COPY.summaryHeading.one : COPY.summaryHeading.other;
   return form.replace('{count}', String(count));
 }
 
 /** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
-export type FormOverridableBinding = 'gap' | 'errorSummaryBorder';
+export type FormOverridableBinding =
+  | 'gap'
+  | 'errorSummaryBorder'
+  | 'errorSummaryBorderWidth'
+  | 'errorSummaryRadius'
+  | 'errorSummaryPadding'
+  | 'errorSummaryGap';
 
-const OVERRIDE_HOOK: Record<FormOverridableBinding, string> = {
+/** CSS hooks written inline. `errorSummaryGap` is absent: it is forwarded to the summary's Stack `gap`. */
+const OVERRIDE_HOOK: Record<Exclude<FormOverridableBinding, 'errorSummaryGap'>, string> = {
   gap: '--ds-form-gap',
   errorSummaryBorder: '--ds-form-error-summary-border',
+  errorSummaryBorderWidth: '--ds-form-error-summary-border-width',
+  errorSummaryRadius: '--ds-form-error-summary-radius',
+  errorSummaryPadding: '--ds-form-error-summary-padding',
 };
 
 function overridesToStyle(
   overrides: Partial<Record<FormOverridableBinding, TokenRef | undefined>>,
 ): CSSProperties | undefined {
   const style: Record<string, string> = {};
-  for (const binding of Object.keys(OVERRIDE_HOOK) as FormOverridableBinding[]) {
+  for (const binding of Object.keys(OVERRIDE_HOOK) as (keyof typeof OVERRIDE_HOOK)[]) {
     const ref = overrides[binding];
     if (ref) style[OVERRIDE_HOOK[binding]] = cssVar(ref);
   }
@@ -78,6 +101,7 @@ export interface FormProps
     | 'action'
     | 'aria-label'
     | 'aria-labelledby'
+    | 'aria-disabled'
     | 'style'
     | 'className'
   > {
@@ -87,15 +111,15 @@ export interface FormProps
   actions: ReactNode;
   /** Identifier for the form, used for analytics and as the base of generated ids. */
   name?: string | undefined;
-  /** Accessible name for the form landmark, e.g. "Sign in". Required when a page has more than one form and `labelledBy` is not set. */
+  /** Accessible name for the form landmark, e.g. "Sign in". Required when a page has more than one form and `labelledBy` is not set. Nothing enforces this at runtime and no dev warning is emitted. */
   label?: string | undefined;
   /** Id of a visible Heading that names the form. Wins over `label` when both are set. */
   labelledBy?: string | undefined;
   /** When field-level validation runs. `submit` is the least noisy; `blur` is the usual choice for longer forms. */
   validate?: FormValidateMode | undefined;
-  /** Disables every field and action inside. Use while submitting. */
+  /** Disables every field and action inside. Use while submitting. Each field and action dims itself; the Form applies no opacity of its own and only exposes the disabled state. */
   disabled?: boolean | undefined;
-  /** When submission fails validation, render a summary of errors above the fields that links to each field. Each item reads "Label: message". */
+  /** When submission fails validation, render a summary of errors above the fields that links to each field. Each item's text is the field's own message verbatim; a field invalid with an empty message shows its `label` instead. */
   errorSummary?: boolean | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<FormOverridableBinding, TokenRef | undefined>> | undefined;
@@ -146,6 +170,8 @@ export function Form({
   // After a failed submission, fields re-validate on blur and change even under `validate: submit`.
   const submittedRef = useRef(false);
   const [failedSubmissions, setFailedSubmissions] = useState(0);
+  // Plural locale for the summary heading: the nearest `lang` ancestor, read when submission fails.
+  const [locale, setLocale] = useState<string | undefined>(undefined);
   const summaryRef = useRef<HTMLDivElement | null>(null);
 
   const register = useCallback((field: FormFieldRegistration) => {
@@ -155,18 +181,25 @@ export function Form({
     };
   }, []);
 
-  /** Registered fields in document order, so the first invalid field is the first one on the page. */
+  /**
+   * Registered fields in document order, sorted by the position of each field's `data-ds-field`
+   * element. Fields whose element is not found keep their registration order at the end.
+   */
   const orderedFields = (): FormFieldRegistration[] => {
     const fields = [...fieldsRef.current.values()];
     const root = formRef.current;
     if (!root) return fields;
-    const position = new Map<FormFieldRegistration, Element | null>();
-    for (const field of fields) position.set(field, root.ownerDocument.getElementById(field.id));
+    const hosts = [...root.querySelectorAll('[data-ds-field]')];
+    const position = new Map<FormFieldRegistration, number>();
+    for (const field of fields) {
+      const host = root.ownerDocument.getElementById(field.id)?.closest('[data-ds-field]');
+      const index = host ? hosts.indexOf(host) : -1;
+      position.set(field, index === -1 ? Number.POSITIVE_INFINITY : index);
+    }
     return fields.sort((a, b) => {
-      const elA = position.get(a);
-      const elB = position.get(b);
-      if (!elA || !elB || elA === elB) return 0;
-      return elA.compareDocumentPosition(elB) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1;
+      const pa = position.get(a)!;
+      const pb = position.get(b)!;
+      return pa === pb ? 0 : pa < pb ? -1 : 1;
     });
   };
 
@@ -216,10 +249,16 @@ export function Form({
 
     if (firstInvalid !== null) {
       onInvalid?.(nextErrors);
-      if (errorSummary) setFailedSubmissions((count) => count + 1);
-      else firstInvalid.focus();
+      if (errorSummary) {
+        const lang = formRef.current?.closest('[lang]')?.getAttribute('lang');
+        setLocale(lang ? lang : undefined);
+        setFailedSubmissions((count) => count + 1);
+      } else {
+        firstInvalid.focus();
+      }
       return;
     }
+    setFailedSubmissions(0);
     onSubmit?.(values);
   };
 
@@ -234,7 +273,10 @@ export function Form({
   );
 
   const errorEntries = Object.entries(errors);
-  const showSummary = errorSummary && errorEntries.length > 0;
+  const showSummary = errorSummary && failedSubmissions > 0 && errorEntries.length > 0;
+  const summaryGap: Partial<Record<'gap', TokenRef | undefined>> | undefined = overrides?.errorSummaryGap
+    ? { gap: overrides.errorSummaryGap }
+    : undefined;
 
   return (
     <FormContext.Provider value={contextValue}>
@@ -249,6 +291,7 @@ export function Form({
         noValidate
         aria-label={labelledBy ? undefined : label}
         aria-labelledby={labelledBy}
+        aria-disabled={disabled ? 'true' : undefined}
         onSubmit={handleSubmit}
       >
         {showSummary ? (
@@ -260,19 +303,20 @@ export function Form({
             role="alert"
             tabIndex={-1}
           >
-            <Stack gap="tight">
+            <Stack gap="tight" overrides={summaryGap}>
               <Text element="p" weight="semibold" tone="danger">
-                {summaryHeading(errorEntries.length)}
+                {summaryHeading(errorEntries.length, locale)}
               </Text>
-              <Stack element="ul" gap="tight">
+              <Stack element="ul" gap="tight" overrides={summaryGap}>
                 {errorEntries.map(([fieldName, message]) => {
                   const field = fieldsRef.current.get(fieldName);
+                  const text = message !== '' ? message : (field?.label ?? fieldName);
                   return (
                     <li key={fieldName}>
                       {field ? (
                         <Link
                           href={`#${field.id}`}
-                          label={`${field.label}: ${message}`}
+                          label={text}
                           tone="inherit"
                           onClick={() => {
                             field.focus();
@@ -281,7 +325,7 @@ export function Form({
                         />
                       ) : (
                         <Text element="span" tone="danger">
-                          {message}
+                          {text}
                         </Text>
                       )}
                     </li>

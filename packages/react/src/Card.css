@@ -82,42 +82,49 @@
 }
 
 /*
- * interactive: the card extends its single link/button child's hit area over its own geometry.
- * The card always reserves border.width.focus, transparent until focused, so the ring never
- * shifts the layout; borderWidth overrides therefore only change non-interactive cards.
+ * interactive: the card extends its single top-level link/button child's hit area over its own
+ * geometry. The card always reserves border.width.focus so the ring never shifts the layout; at rest
+ * it is `border` on surface default and transparent on subtle. borderWidth overrides therefore only
+ * change non-interactive cards.
  */
 .ds-card--interactive {
   position: relative;
   border-width: var(--ds-card-focus-ring-width);
+  transition:
+    background-color var(--ds-card-transition) var(--motion-easing-standard),
+    border-color var(--ds-card-transition) var(--motion-easing-standard);
+}
+.ds-card--interactive.ds-card--surface-subtle {
   border-color: transparent;
 }
 
-.ds-card--interactive .ds-card__target::after {
+.ds-card--interactive [data-ds-card-target]::after {
   content: '';
   position: absolute;
   inset: 0;
 }
 
-/* hoverBackground (locked): interactive cards only, on pointer hover. */
-.ds-card--interactive:hover {
+/* headerActions and footer controls sit above the hit area and keep their own targets. */
+.ds-card--interactive .ds-card__header-actions,
+.ds-card--interactive .ds-card__footer {
+  position: relative;
+  z-index: 1;
+}
+
+/* hoverBackground (locked): interactive cards only, on pointer hover; a disabled target disables the card. */
+.ds-card--interactive:hover:not(:has([data-ds-card-target]:is([aria-disabled='true'], :disabled))) {
   background-color: var(--ds-card-hover-background);
 }
 
-/* focus-visible: the ring is drawn on the card while its child target has focus. */
-.ds-card--interactive:focus-within {
+/* focus-visible: the ring is drawn on the card only while its target has keyboard focus. */
+.ds-card--interactive:has([data-ds-card-target]:focus-visible) {
   border-color: var(--ds-card-focus-ring);
 }
 
-/* focusable: scripted focus (Feed PageUp/PageDown) draws the ring on the card itself. */
+/* focusable: scripted focus (Feed PageUp/PageDown) draws the ring on the card itself; no reserved border. */
 .ds-card--focusable:focus-visible {
   outline: var(--ds-card-focus-ring-width) solid var(--ds-card-focus-ring);
-}
-
-/* transition: interactive hover, with motion.easing.standard; removed under reduced motion. */
-.ds-card--interactive {
-  transition:
-    background-color var(--ds-card-transition) var(--motion-easing-standard),
-    border-color var(--ds-card-transition) var(--motion-easing-standard);
+  outline-offset: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {

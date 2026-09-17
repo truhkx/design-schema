@@ -45,11 +45,22 @@ describe('ds-card', () => {
     expect(el.shadowRoot!.textContent).toContain('Team plan');
   });
 
+  it('a-card-with-a-heading-is-an-article', async () => {
+    const { el } = await setup({ heading: 'Team plan' });
+    expect(el.getAttribute('role')).toBe('article');
+    expect(el.getAttribute('aria-label')).toBe('Team plan');
+  });
+
   it('interactive-adds-no-focus-stop', async () => {
     const { el } = await setup({ interactive: true });
     expect(el.hasAttribute('tabindex')).toBe(false);
     el.focus();
     expect(document.activeElement).not.toBe(el);
+  });
+
+  it('focusable-takes-scripted-focus-only', async () => {
+    const { el } = await setup({ focusable: true });
+    expect(el.getAttribute('tabindex')).toBe('-1');
   });
 
   /* derived */

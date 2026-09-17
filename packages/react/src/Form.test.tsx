@@ -3,15 +3,16 @@
  * The doc (site/src/content/docs/components/form.md) is the source of truth; the tests
  * gate runs this file after every generation round. See generated/prompts/Form.web.md.
  */
+import type { ComponentProps } from 'react';
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { Form, type FormProps } from './Form';
+import { Form } from './Form';
 import meta from './Form.stories';
 
 /** The Default story's args plus the scenario's `given`. */
-function setup(given: Partial<FormProps> = {}) {
-  const props = { ...meta.args, ...given } as FormProps;
-  return { ...render(<Form {...props} />), props };
+function setup(given: Partial<ComponentProps<typeof Form>> = {}): ReturnType<typeof render> {
+  const props = { ...meta.args, ...given } as ComponentProps<typeof Form>;
+  return render(<Form {...props} />);
 }
 
 describe('Form', () => {

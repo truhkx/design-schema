@@ -59,6 +59,7 @@ export const SectionBoundary: Story = {
 
 // notable states
 export const Label: Story = { args: { label: 'Earlier today' } };
+export const SemanticLabelled: Story = { args: { semantic: true, label: 'or' } };
 export const WithOverrides: Story = {
   args: {
     label: 'or',

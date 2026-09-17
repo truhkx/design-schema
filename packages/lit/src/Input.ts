@@ -34,7 +34,8 @@ export type InputOverridableBinding =
   | 'labelWeight'
   | 'helperSize'
   | 'lineHeight'
-  | 'disabledOpacity';
+  | 'disabledOpacity'
+  | 'transition';
 
 const HOOKS: Record<InputOverridableBinding, string> = {
   borderInvalid: '--ds-input-border-invalid',
@@ -49,6 +50,7 @@ const HOOKS: Record<InputOverridableBinding, string> = {
   helperSize: '--ds-input-helper-size',
   lineHeight: '--ds-input-line-height',
   disabledOpacity: '--ds-input-disabled-opacity',
+  transition: '--ds-input-transition',
 };
 
 /** copy.required */
@@ -106,6 +108,7 @@ export class DsInput extends LitElement {
       --ds-input-helper-size: var(--font-size-sm);
       --ds-input-line-height: var(--font-line-height-normal);
       --ds-input-disabled-opacity: var(--opacity-disabled);
+      --ds-input-transition: var(--motion-duration-fast);
     }
 
     :host([hidden]) {
@@ -177,7 +180,8 @@ export class DsInput extends LitElement {
       background: var(--color-background);
       appearance: none;
       -webkit-appearance: none;
-      transition: border-color var(--motion-duration-fast) var(--motion-easing-standard);
+      /* transition: border color only; border width and padding change instantly */
+      transition: border-color var(--ds-input-transition) var(--motion-easing-standard);
     }
 
     @media (prefers-reduced-motion: reduce) {

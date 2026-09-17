@@ -20,7 +20,8 @@ const HOOKS: Record<ContainerOverridableBinding, string> = {
  *
  * `<ds-container width="content" gutter="default" align="center">`. The host
  * is the capped column itself (`:host { display: block }`); children stay in
- * the light DOM behind a default slot. `maxWidth` and `paddingInline` are
+ * the light DOM behind a default slot, and the host carries
+ * `data-part="column"`. `maxWidth` and `paddingInline` are
  * reflected-attribute-driven CSS custom properties on `:host`. `element:
  * main` sets the page's main landmark role on the host through
  * `ElementInternals`; `div` and `section` carry no role, since a custom
@@ -130,6 +131,7 @@ export class DsContainer extends LitElement {
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('data-ds', 'Container');
+    this.setAttribute('data-part', 'column');
   }
 
   protected override willUpdate(changed: PropertyValues): void {

@@ -18,3 +18,13 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Link: `tone: inherit` makes visited and hover inherit too, so an inherited link has no visited or hover color change. The doc implies this ('the underline alone marks it') but doesn't say it outright.
 - Link: externalIcon's color isn't bound; it follows the anchor's currentColor, which gives it the hover and visited colors. The RN notes say the icon uses the link color, but nothing is declared for Lit or web.
 - Link: onPress lists `fires: [user]` and cancelable, but on Lit it is the native click, which a script calling `.click()` also fires; there is no way to limit it to user clicks, so none was attempted.
+
+## 2026-09-17 04:21 — round 1
+
+- Link: the Overrides section says 'No ::part is exposed for styling' while the package convention says 'part and data-part values are the anatomy names verbatim'; kept part="anchor"/"label"/"externalIcon" alongside data-part, which does technically expose ::part to consumers.
+- Link: `label` is in the anatomy but no style binding or platform note says what element carries it; rendered a <span data-part="label"> inside the anchor.
+- Link: the focus ring's outline-offset has no binding (focusRing, focusRingWidth, focusRingRadius cover color, width, radius only); used var(--border-width-focus) as the offset.
+- Link: focusRingRadius is described as applying to the ring, but a radius on an inline anchor also rounds its background/hit area at rest; applied border-radius only under :focus-visible.
+- Link: the doc asks for one story per enum value plus notable states, but external and download are booleans with only example stories (ExternalDestination, DownloadableFile) covering them; did not add separate External/Download stories.
+- Link: the web note's visually hidden pattern lists 'absolute, 1px box, clip-path inset 50%, white-space nowrap' but not margin/overflow/border; kept the standard margin:-1px, overflow:hidden, border:0 and dropped the legacy clip:rect.
+- Link: the `renders`/`renders-tone-*` derived scenarios say only `renders: true` with no observable to assert for tone; the tests check the anchor part exists, which cannot distinguish tones.

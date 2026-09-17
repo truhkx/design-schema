@@ -37,6 +37,7 @@ describe('Input', () => {
     const s = setup();
     fireEvent(s.field(), 'focus', { nativeEvent: {} });
     expect(s.onFocus).toHaveBeenCalledTimes(1);
+    expect(s.onFocus).toHaveBeenCalledWith();
   });
 
   it('required-is-shown-in-the-label', () => {

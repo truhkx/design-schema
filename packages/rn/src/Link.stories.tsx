@@ -9,7 +9,7 @@ const meta: Meta<typeof Link> = {
   component: Link,
   decorators: [withTheme({ fit: true })],
   args: {
-    href: 'https://example.com/billing',
+    href: '/billing/history',
     label: 'View the billing history',
     external: false,
     tone: 'default',
@@ -28,7 +28,7 @@ export const ToneInherit: Story = {
   args: { tone: 'inherit' },
   render: (args) => (
     <Text tone="muted">
-      Read the <Link {...args} label="terms of service" /> before you continue.
+      <Link {...args} />.
     </Text>
   ),
 };
@@ -40,7 +40,7 @@ export const InlineInAParagraph: Story = {
   args: { href: '/billing/history', label: 'View the billing history' },
   render: (args) => (
     <Text>
-      Your plan renews on 1 October. <Link {...args} /> to see past invoices.
+      Invoices from the last twelve months are kept. <Link {...args} />.
     </Text>
   ),
 };
@@ -55,7 +55,7 @@ export const InsideMutedText: Story = {
   args: { href: '/help/billing', label: 'the billing guide', tone: 'inherit' },
   render: (args) => (
     <Text tone="muted">
-      For refunds, read <Link {...args} /> first.
+      For how charges are calculated, read <Link {...args} />.
     </Text>
   ),
 };

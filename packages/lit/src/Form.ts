@@ -4,12 +4,13 @@ import { ifDefined } from 'lit/directives/if-defined.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Text.js';
 import './Link.js';
+import './Stack.js';
 
 export type FormValidate = 'submit' | 'blur' | 'change';
 
 /** Detail carried by the `submit` CustomEvent. */
 export interface FormSubmitDetail {
-  values: Record<string, string | boolean>;
+  values: Record<string, string | number | boolean | string[] | [number, number]>;
 }
 
 /** Detail carried by the `invalid` CustomEvent. */
@@ -23,6 +24,8 @@ export interface FormInvalidDetail {
  * never by tag, so any element that sets it and implements this interface is
  * collected. `error` and `validationMessage` are optional: a field that never
  * validates (Switch) omits them, and Form treats absence as valid.
+ * `currentValue` is `null` when the field contributes no key (empty, unchecked,
+ * unselected).
  */
 export interface DsFormField extends HTMLElement {
   name: string;
@@ -30,7 +33,7 @@ export interface DsFormField extends HTMLElement {
   required: boolean;
   disabled: boolean;
   error?: string | undefined;
-  readonly currentValue: string | boolean | null;
+  readonly currentValue: string | number | boolean | string[] | [number, number] | null;
   id: string;
   focus(): void;
   checkValidity(): boolean;
@@ -38,16 +41,28 @@ export interface DsFormField extends HTMLElement {
 }
 
 /** Overridable style hooks; see the `overrides` property. `errorSummaryText` and `errorSummaryBackground` are locked and excluded. */
-export type FormOverridableBinding = 'gap' | 'errorSummaryBorder';
+export type FormOverridableBinding =
+  | 'gap'
+  | 'errorSummaryBorder'
+  | 'errorSummaryBorderWidth'
+  | 'errorSummaryRadius'
+  | 'errorSummaryPadding'
+  | 'errorSummaryGap';
 
 const HOOKS: Record<FormOverridableBinding, string> = {
   gap: '--ds-form-gap',
   errorSummaryBorder: '--ds-form-error-summary-border',
+  errorSummaryBorderWidth: '--ds-form-error-summary-border-width',
+  errorSummaryRadius: '--ds-form-error-summary-radius',
+  errorSummaryPadding: '--ds-form-error-summary-padding',
+  errorSummaryGap: '--ds-form-error-summary-gap',
 };
 
-/** copy.summaryHeading (plural by `count`); the `one` form is copy.summaryHeadingOne. */
-const COPY_SUMMARY_HEADING_ONE = '1 problem with this form';
-const COPY_SUMMARY_HEADING_OTHER = '{count} problems with this form';
+/** copy.summaryHeading, plural by `count`. */
+const COPY_SUMMARY_HEADING: Record<'one' | 'other', string> = {
+  one: '1 problem with this form',
+  other: '{count} problems with this form',
+};
 
 /** Every field component sets this attribute on its host; Form discovers fields by it alone. */
 const FIELD_SELECTOR = '[data-ds-field]';
@@ -64,6 +79,8 @@ const NEGATED_BOOLEAN_CONVERTER = {
 
 let formInstanceCount = 0;
 
+type Disableable = HTMLElement & { disabled: boolean };
+
 /**
  * `<ds-form>` — Form (category: container).
  *
@@ -74,15 +91,15 @@ let formInstanceCount = 0;
  * Instead it collects light-DOM descendants carrying `data-ds-field` that have
  * a `name` and implement `DsFormField` (skipping any inside a closed
  * `ds-disclosure` without `keep-mounted`), submits on a composed `press` from
- * a `ds-button[type=submit]` and on Enter in any field (a `keydown` listener,
- * never a CustomEvent named after a native event), and propagates `disabled`
- * to the fields it found and to `ds-button` descendants, remembering which
- * ones it disabled so it never re-enables one already disabled on its own.
- * The host carries `role="form"` and `aria-label` / `aria-labelledby`
- * (`labelledBy` winning over `label`) as plain attributes, so the landmark
- * lives in the light DOM tree. Dispatches composed `submit` (`{ values }`) and
- * `invalid` (`{ errors }`) CustomEvents; never navigates. Never nest inside a
- * native form or another `<ds-form>`.
+ * a `ds-button[type=submit]` and on Enter in any field (a `keydown` listener on
+ * the host, never a CustomEvent named after a native event), and propagates
+ * `disabled` to the fields it found and to every `ds-button` slotted into
+ * `actions`, remembering which ones it disabled so it never re-enables one
+ * already disabled on its own. The host carries `role="form"` and
+ * `aria-label` / `aria-labelledby` (`labelledBy` winning over `label`) as plain
+ * attributes, so the landmark lives in the light DOM tree. Dispatches composed
+ * `submit` (`{ values }`) and `invalid` (`{ errors }`) CustomEvents; never
+ * navigates. Never nest inside a native form or another `<ds-form>`.
  *
  * ## When to use
  *
@@ -106,9 +123,12 @@ export class DsForm extends LitElement {
   static override styles: CSSResult = css`
     :host {
       display: block;
-      font-family: var(--font-family-body);
       --ds-form-gap: var(--layout-gap-loose);
       --ds-form-error-summary-border: var(--color-border-danger);
+      --ds-form-error-summary-border-width: var(--border-width-thin);
+      --ds-form-error-summary-radius: var(--radius-md);
+      --ds-form-error-summary-padding: var(--space-md);
+      --ds-form-error-summary-gap: var(--layout-gap-tight);
     }
 
     :host([hidden]) {
@@ -126,9 +146,9 @@ export class DsForm extends LitElement {
     /* errorSummaryBackground / errorSummaryText: color.background.subtle / color.foreground.danger, locked */
     [data-part='errorSummary'] {
       box-sizing: border-box;
-      padding: var(--space-md);
-      border: var(--border-width-thin) solid var(--ds-form-error-summary-border);
-      border-radius: var(--radius-md);
+      padding: var(--ds-form-error-summary-padding);
+      border: var(--ds-form-error-summary-border-width) solid var(--ds-form-error-summary-border);
+      border-radius: var(--ds-form-error-summary-radius);
       background: var(--color-background-subtle);
       color: var(--color-foreground-danger);
     }
@@ -138,17 +158,9 @@ export class DsForm extends LitElement {
       outline-offset: var(--border-width-focus);
     }
 
-    .list {
-      display: flex;
-      flex-direction: column;
-      gap: var(--layout-gap-tight);
-      margin: 0;
-      padding: 0;
-      padding-block-start: var(--space-sm);
-      padding-inline-start: var(--space-lg);
-      font-family: var(--font-family-body);
-      font-size: var(--font-size-sm);
-      line-height: var(--font-line-height-normal);
+    /* errorSummaryGap reaches the composed Stacks through their documented hook. */
+    [data-part='errorSummary'] ds-stack {
+      --ds-stack-gap: var(--ds-form-error-summary-gap);
     }
   `;
 
@@ -164,7 +176,7 @@ export class DsForm extends LitElement {
   /** When field-level validation runs. `submit` is the least noisy; `blur` is the usual choice for longer forms. */
   @property() accessor validate: FormValidate = 'submit';
 
-  /** Disables every field and action inside. Use while submitting. */
+  /** Disables every field and action inside. Use while submitting. The container applies no opacity of its own. */
   @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
   /**
@@ -178,14 +190,14 @@ export class DsForm extends LitElement {
   /** Per-instance style overrides: `{ gap: 'layout.gap.normal' }`. Locked bindings (errorSummaryText, errorSummaryBackground) are ignored. */
   @property({ attribute: false }) accessor overrides: Partial<Record<FormOverridableBinding, TokenRef | undefined>> | undefined;
 
-  /** Field name -> message, for fields that have failed validation. */
+  /** Field name -> message, for fields that have failed validation, in document order. */
   @state() private accessor errors: Record<string, string> = {};
 
   /** Once a submission has failed, fields re-validate on blur/change even in `submit` mode. */
   private hasFailedSubmission = false;
 
   /** Fields and actions this Form disabled itself, so re-enabling never touches one already disabled by the consumer. */
-  private readonly disabledByForm = new WeakSet<HTMLElement>();
+  private readonly disabledByForm = new Set<Disableable>();
 
   /** Re-syncs disabled propagation when fields are added or removed; observes `childList` only, never the attributes it writes. */
   private readonly mutationObserver = new MutationObserver(() => {
@@ -196,6 +208,14 @@ export class DsForm extends LitElement {
   private pendingSummaryFocus = false;
 
   private readonly instanceId = `ds-form-${++formInstanceCount}`;
+
+  constructor() {
+    super();
+    this.addEventListener('keydown', (event) => this.handleKeydown(event));
+    this.addEventListener('press', (event) => this.handlePress(event));
+    this.addEventListener('change', (event) => this.handleFieldChange(event));
+    this.addEventListener('focusout', (event) => this.handleFieldFocusOut(event));
+  }
 
   private get idBase(): string {
     return this.name || this.instanceId;
@@ -245,10 +265,6 @@ export class DsForm extends LitElement {
         data-part="container"
         novalidate
         name=${ifDefined(this.name || undefined)}
-        @keydown=${this.handleKeydown}
-        @change=${this.handleFieldChange}
-        @focusout=${this.handleFieldFocusOut}
-        @press=${this.handlePress}
         @submit=${this.handleNativeSubmit}
       >
         ${showSummary ? this.renderSummary(errorEntries) : nothing}
@@ -261,33 +277,33 @@ export class DsForm extends LitElement {
   private renderSummary(errorEntries: [string, string][]): TemplateResult {
     const fieldsByName = new Map(this.queryFields().map((field) => [field.name, field] as const));
     return html`
-      <div data-part="errorSummary" role="alert" tabindex="-1">
-        <ds-text element="p" weight="semibold" tone="danger">${this.summaryHeading(errorEntries.length)}</ds-text>
-        <ul class="list">
-          ${errorEntries.map(([name, message]) => {
-            const field = fieldsByName.get(name);
-            const text = field?.label ? `${field.label}: ${message}` : message;
-            return html`
-              <li>
+      <div part="errorSummary" data-part="errorSummary" role="alert" tabindex="-1">
+        <ds-stack gap="tight">
+          <ds-text element="p" weight="semibold" tone="danger">${this.summaryHeading(errorEntries.length)}</ds-text>
+          <ds-stack element="ul" gap="tight">
+            ${errorEntries.map(([name, message]) => {
+              const field = fieldsByName.get(name);
+              // The field's own message verbatim; its label only when the message is empty.
+              const text = message || field?.label || name;
+              return html`
                 <ds-link
                   tone="inherit"
                   href=${field?.id ? `#${field.id}` : '#'}
                   label=${text}
                   @click=${(event: MouseEvent) => this.handleSummaryLinkClick(event, name)}
                 ></ds-link>
-              </li>
-            `;
-          })}
-        </ul>
+              `;
+            })}
+          </ds-stack>
+        </ds-stack>
       </div>
     `;
   }
 
   private summaryHeading(count: number): string {
-    const locale = this.closest('[lang]')?.getAttribute('lang') || navigator.language;
-    return new Intl.PluralRules(locale).select(count) === 'one'
-      ? COPY_SUMMARY_HEADING_ONE
-      : COPY_SUMMARY_HEADING_OTHER.replace('{count}', String(count));
+    const locale = this.closest('[lang]')?.getAttribute('lang') || undefined;
+    const form = new Intl.PluralRules(locale).select(count) === 'one' ? 'one' : 'other';
+    return COPY_SUMMARY_HEADING[form].replace('{count}', String(count));
   }
 
   /** Validate every field and, only if all pass, dispatch `submit` with the collected values. */
@@ -299,7 +315,7 @@ export class DsForm extends LitElement {
     this.assignFieldIds(fields);
 
     const errors: Record<string, string> = {};
-    const values: Record<string, string | boolean> = {};
+    const values: FormSubmitDetail['values'] = {};
     let firstInvalid: DsFormField | undefined;
 
     for (const field of fields) {
@@ -308,7 +324,7 @@ export class DsForm extends LitElement {
       }
       if (field.checkValidity()) {
         const value = field.currentValue;
-        if (value !== null && value !== undefined) {
+        if (value !== null && value !== undefined && value !== '') {
           values[field.name] = value;
         }
       } else {
@@ -346,13 +362,16 @@ export class DsForm extends LitElement {
     if (event.key !== 'Enter' || event.defaultPrevented || event.isComposing) {
       return;
     }
-    const field = this.fieldFor(event.target);
-    if (field === null) {
+    if (this.fieldFor(event.target) === null) {
       return;
     }
-    // Enter in a multi-line control inserts a line break; on a native button or link it activates it.
+    // Enter in a multi-line control inserts a line break; on a button or link it activates it.
     const origin = event.composedPath()[0];
-    if (origin instanceof HTMLTextAreaElement || origin instanceof HTMLButtonElement || origin instanceof HTMLAnchorElement) {
+    if (
+      origin instanceof HTMLTextAreaElement ||
+      origin instanceof HTMLButtonElement ||
+      origin instanceof HTMLAnchorElement
+    ) {
       return;
     }
     event.preventDefault();
@@ -360,8 +379,11 @@ export class DsForm extends LitElement {
   }
 
   private handlePress(event: Event): void {
-    const target = event.target as HTMLElement & { type?: string | undefined };
-    if (target.tagName !== 'DS-BUTTON' || target.type !== 'submit') {
+    const target = event.target;
+    if (!(target instanceof HTMLElement) || target.tagName !== 'DS-BUTTON') {
+      return;
+    }
+    if ((target as HTMLElement & { type?: string | undefined }).type !== 'submit') {
       return;
     }
     this.submit();
@@ -374,8 +396,8 @@ export class DsForm extends LitElement {
     }
     const shouldValidate =
       this.validate === 'change' ||
-      (this.validate === 'blur' && this.hasNoBlurMoment(event)) ||
-      (this.validate === 'submit' && this.hasFailedSubmission);
+      (this.validate === 'blur' && this.validatesOnChange(field)) ||
+      this.hasFailedSubmission;
     if (shouldValidate) {
       this.validateField(field);
     }
@@ -383,7 +405,7 @@ export class DsForm extends LitElement {
 
   private handleFieldFocusOut(event: FocusEvent): void {
     const field = this.fieldFor(event.target);
-    if (field === null || this.hasNoBlurMoment(event)) {
+    if (field === null) {
       return;
     }
     const related = event.relatedTarget;
@@ -391,22 +413,20 @@ export class DsForm extends LitElement {
       // Focus moved within the same field (two radios in one group), not out of it.
       return;
     }
-    const shouldValidate = this.validate === 'blur' || (this.validate === 'submit' && this.hasFailedSubmission);
+    const shouldValidate =
+      (this.validate === 'blur' && !this.validatesOnChange(field)) || this.hasFailedSubmission;
     if (shouldValidate) {
       this.validateField(field);
     }
   }
 
-  /** Checkbox and Switch controls have no useful blur moment; under `blur` they validate on change instead. */
-  private hasNoBlurMoment(event: Event): boolean {
-    const origin = event.composedPath()[0];
-    return (
-      (origin instanceof HTMLInputElement && origin.type === 'checkbox') ||
-      (origin instanceof Element && origin.getAttribute('role') === 'switch')
-    );
+  /** A field with no useful blur moment (Checkbox, Switch) declares `data-ds-field="change"`. */
+  private validatesOnChange(field: DsFormField): boolean {
+    return field.getAttribute('data-ds-field') === 'change';
   }
 
   private handleSummaryLinkClick(event: MouseEvent, name: string): void {
+    // Moves focus to the field; never navigates or changes the URL hash.
     event.preventDefault();
     this.queryFields()
       .find((candidate) => candidate.name === name)
@@ -414,11 +434,15 @@ export class DsForm extends LitElement {
   }
 
   private validateField(field: DsFormField): void {
-    const next = { ...this.errors };
-    if (field.disabled || field.checkValidity()) {
-      delete next[field.name];
-    } else {
-      next[field.name] = field.validationMessage ?? '';
+    const next: Record<string, string> = {};
+    const invalid = !field.disabled && !field.checkValidity();
+    // Rebuild in document order so the summary lists fields as they appear.
+    for (const candidate of this.queryFields()) {
+      if (candidate === field) {
+        if (invalid) next[field.name] = field.validationMessage ?? '';
+      } else if (candidate.name in this.errors) {
+        next[candidate.name] = this.errors[candidate.name] ?? '';
+      }
     }
     this.errors = next;
   }
@@ -436,7 +460,7 @@ export class DsForm extends LitElement {
     return field.name && !this.isInsideClosedDisclosure(el) ? field : null;
   }
 
-  /** Fields with a `name`, not inside a closed `ds-disclosure` without `keep-mounted`. */
+  /** Fields with a `name`, in document order, not inside a closed `ds-disclosure` without `keep-mounted`. */
   private queryFields(): DsFormField[] {
     return Array.from(this.querySelectorAll<HTMLElement>(FIELD_SELECTOR)).filter(
       (el): el is DsFormField => Boolean((el as DsFormField).name) && !this.isInsideClosedDisclosure(el),
@@ -466,22 +490,32 @@ export class DsForm extends LitElement {
     }
   }
 
-  /** Disables every found field and `ds-button` inside, remembering which it disabled so re-enabling is exact. */
+  /** Every `ds-button` slotted into `actions`, including the slotted element itself. */
+  private queryActionButtons(): Disableable[] {
+    const buttons: Disableable[] = [];
+    for (const child of Array.from(this.children)) {
+      if (child.getAttribute('slot') !== 'actions') continue;
+      if (child.tagName === 'DS-BUTTON') buttons.push(child as Disableable);
+      buttons.push(...Array.from(child.querySelectorAll<Disableable>('ds-button')));
+    }
+    return buttons;
+  }
+
+  /** Disables every found field and action button, remembering which it disabled so re-enabling is exact. */
   private syncDisabled(): void {
-    const controls = Array.from(
-      this.querySelectorAll<HTMLElement & { disabled: boolean }>(`${FIELD_SELECTOR}, ds-button`),
-    );
-    for (const control of controls) {
-      if (this.disabled) {
+    if (this.disabled) {
+      for (const control of [...this.queryFields(), ...this.queryActionButtons()] as Disableable[]) {
         if (!control.disabled) {
           this.disabledByForm.add(control);
           control.disabled = true;
         }
-      } else if (this.disabledByForm.has(control)) {
-        control.disabled = false;
-        this.disabledByForm.delete(control);
       }
+      return;
     }
+    for (const control of this.disabledByForm) {
+      if (control.disabled) control.disabled = false;
+    }
+    this.disabledByForm.clear();
   }
 
   /** Accessible name as plain host attributes, `labelledBy` winning over `label`. */

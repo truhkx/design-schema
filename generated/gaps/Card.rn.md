@@ -58,3 +58,15 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Card: example children are prose strings ('A Link to the invoice', 'What the plan includes'). I rendered them as a Link and as Text, since a bare string can't sit in a View on RN.
 - Card: the spec gives `actionsGap` no `part` (only headerGap/footerGap name one). I applied it to the headerActions row view.
 - Card: the `transition` binding has no runtime effect on RN (per its own description). I accept it in overrides but don't read it.
+
+## 2026-09-17 04:43 — round 1
+
+- Card: The rules say `disabled` sets accessibilityState plus the `disabled` prop, but the package conventions say never pass `disabled` to Pressable (it removes focus). I followed the package: accessibilityState.disabled plus a press guard.
+- Card: `focusable` is a no-op when `interactive` is set, but the spec doesn't say what happens when `interactive` finds zero or several targets and the card falls back to non-interactive. I let `focusable` apply then, since the card has no target. The warning still fires whenever both props are set.
+- Card: 'top-level children' is not defined for React Fragments. A Link inside a top-level `<>...</>` is not found (only arrays are looked into).
+- Card: the spec wraps a plain string body in Text but doesn't say what happens to strings in an array body. I wrap each top-level string or number too.
+- Card: the notes say the card takes the child's accessibilityRole and accessibilityLabel but don't say which of Button's label sources wins (`accessibleName`, `accessibilityLabel`, `label`), or whether pressing the card runs Button's `track`/`onTrack`, `type=submit` and `loading` handling. I copied Button's own order and press handler, including the form's disabled state.
+- Card: the heading part has no testID (the guidance says it keeps its own hook), and neither the anatomy nor the rn notes give the surface a `Card.surface` hook. The root keeps `testID="Card"`.
+- Card: the `dense-grid-card` example's `given` has no heading, but the Default args set one. 'Exactly its given as args' cannot hold without clearing it, so the story sets `heading: undefined`.
+- Card: the `transition` binding is overridable but has no runtime effect on native (the pressed style swaps instantly), so the override is accepted and ignored.
+- Card: no rn behavior scenario covers interactive or focusable (those scenarios are web/lit only), so the new target logic has no test on this platform.

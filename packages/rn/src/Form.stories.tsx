@@ -46,10 +46,10 @@ export const ValidateChange: Story = { args: { validate: 'change' } };
 
 // examples — `children` and `actions` are described in prose by the doc, so each renders them.
 const signInFields = (
-  <>
+  <Stack gap="loose">
     <Input label="Email" name="email" type="email" required />
     <Input label="Password" name="password" type="password" required />
-  </>
+  </Stack>
 );
 
 /** The smallest real form - two fields and one submit action, validated on submit. */
@@ -68,11 +68,10 @@ export const LongFormValidatedOnBlur: Story = {
   render: (args) => (
     <Form {...args} actions={<Button label="Save profile" type="submit" />}>
       <Stack gap="loose">
-        <Input label="Full name" name="name" required />
-        <Input label="Display name" name="displayName" />
-        <Input label="Email address" name="email" type="email" required />
-        <Input label="Phone" name="phone" type="tel" />
-        <Input label="Website" name="website" type="url" />
+        <Input label="Full name" name="fullName" required />
+        <Input label="Email" name="email" required />
+        <Input label="Phone" name="phone" required />
+        <Input label="City" name="city" required />
       </Stack>
     </Form>
   ),
@@ -93,7 +92,7 @@ export const WithoutASummary: Story = {
   args: { name: 'rename', label: 'Rename file', errorSummary: false },
   render: (args) => (
     <Form {...args} actions={<Button label="Rename" type="submit" />}>
-      <Input label="Name" name="name" required />
+      <Input label="File name" name="fileName" required />
     </Form>
   ),
 };

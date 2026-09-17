@@ -1,5 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Divider } from './Divider';
+import { Stack } from './Stack';
+import { Text } from './Text';
 
 const meta: Meta<typeof Divider> = {
   title: 'Divider/React',
@@ -15,12 +17,14 @@ const meta: Meta<typeof Divider> = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/* A vertical divider stretches to its row, so it needs a flex row with a height to show. */
+/* A vertical divider stretches to its row, so it sits in a horizontal Stack with align stretch whose siblings give the row its height. */
 const inRow: NonNullable<Story['decorators']> = [
   (Story) => (
-    <div style={{ display: 'flex', blockSize: '3rem' }}>
+    <Stack direction="horizontal" align="stretch" gap="tight">
+      <Text>Bold Italic</Text>
       <Story />
-    </div>
+      <Text>Align left</Text>
+    </Stack>
   ),
 ];
 

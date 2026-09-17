@@ -19,6 +19,7 @@
   --ds-input-min-target-sm: var(--size-target-min);
   --ds-input-focus-ring-width: var(--border-width-focus);
   --ds-input-disabled-opacity: var(--opacity-disabled);
+  --ds-input-transition: var(--motion-duration-fast);
   display: flex;
   flex-direction: column;
   gap: var(--ds-input-part-gap);
@@ -66,11 +67,6 @@
   border: 0;
 }
 
-.ds-input__description,
-.ds-input__error {
-  margin: 0;
-}
-
 .ds-input__field {
   box-sizing: border-box;
   inline-size: 100%;
@@ -87,7 +83,8 @@
   font-size: var(--ds-input-font-size);
   line-height: var(--ds-input-line-height);
   appearance: none;
-  transition: border-color var(--motion-duration-fast) var(--motion-easing-standard);
+  /* transition: border color only; border width and padding change instantly. */
+  transition: border-color var(--ds-input-transition) var(--motion-easing-standard);
 }
 
 /* minTargetSm */

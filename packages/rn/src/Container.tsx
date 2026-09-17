@@ -20,7 +20,7 @@ export interface ContainerProps {
   width?: ContainerWidth | undefined;
   /** Horizontal padding at the viewport edge. Responsive: `default` uses the narrow gutter under the content width and the wide gutter above the page width. `none` for a nested container inside a padded parent. */
   gutter?: ContainerGutter | undefined;
-  /** Where the capped column sits in a wider viewport. `start` sits the column at the start edge with no margin on either side. */
+  /** Where the capped column sits in a wider viewport. `center` maps to `alignSelf: 'center'`, `start` to `alignSelf: 'flex-start'` (there is no margin on native). */
   align?: ContainerAlign | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. An override is a no-op where its binding renders nothing (`width: full`, `gutter: none`). */
   overrides?: Partial<Record<ContainerOverridableBinding, TokenRef | undefined>> | undefined;

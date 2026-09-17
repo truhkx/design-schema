@@ -5,9 +5,13 @@ import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
 import type { ButtonProps } from './Button';
+import { trackPress } from './custom/analytics';
+import { useFormContext } from './FormContext';
+import type { FormContextValue } from './FormContext';
 import { Heading } from './Heading';
 import { Link, LINK_EXTERNAL_SUFFIX } from './Link';
 import type { LinkProps } from './Link';
+import { Text } from './Text';
 import { useTheme } from './theme';
 import type { Tokens } from './theme';
 
@@ -30,9 +34,16 @@ export type CardOverridableBinding =
   | 'transition';
 
 export interface CardProps {
-  /** The body. Usually a Stack of Text and controls. */
+  /**
+   * The body. Usually a Stack of Text and controls; a plain string is rendered inside
+   * the system Text (a bare string cannot sit in a native View).
+   */
   children: React.ReactNode;
-  /** The card's title, rendered as a Heading at the card's level. Omit for cards that are a single piece of content. */
+  /**
+   * The card's title, rendered as the system Heading at the card's level and at
+   * `size: lg`, so a card heading reads smaller than a page heading. Omit for cards
+   * that are a single piece of content; an empty string counts as omitted.
+   */
   heading?: string | undefined;
   /**
    * Heading level for `heading`, so cards fit the page outline. Cards in a list share
@@ -49,9 +60,13 @@ export interface CardProps {
   /** `default` is the page background with a border — the calm option; `subtle` is a tinted surface without a border. */
   surface?: CardSurface | undefined;
   /**
-   * The whole card is one link or button target. Requires exactly one interactive
-   * child (a Link or Button) in `children`, whose action, role and name move onto a
-   * wrapping Pressable — the card's single target and single focus stop.
+   * The whole card is one link or button target. Requires exactly one Link or Button
+   * among the top-level children of the body (controls nested in a wrapper such as a
+   * Stack are not searched); its action, role and name move onto a wrapping Pressable —
+   * the card's single target and single focus stop. With zero or several such children
+   * the card stays non-interactive and warns once in development. A disabled child
+   * disables the card with it. Controls in `headerActions` and `footer` are never the
+   * target.
    */
   interactive?: boolean | undefined;
   /**
@@ -59,11 +74,12 @@ export interface CardProps {
    * script through `ref`, and draws its own focus ring when focused that way. Not a
    * tab stop; not for making cards clickable (`interactive`). With `interactive` also
    * set, `interactive` wins, this is a no-op, and a development warning says so.
+   * A react-native-web capability: on iOS and Android no container can focus a View by script.
    */
   focusable?: boolean | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<CardOverridableBinding, TokenRef | undefined>> | undefined;
-  /** The root view: the surface `View`, or the wrapping `Pressable` when `interactive`. */
+  /** The root view: the surface `View`, or the wrapping `Pressable` when the card is interactive. */
   ref?: React.Ref<ViewInstance> | undefined;
 }
 
@@ -72,11 +88,6 @@ interface InteractiveTarget {
   role: 'button' | 'link';
   label: string;
   disabled: boolean;
-}
-
-interface InteractiveScan {
-  target: InteractiveTarget | null;
-  count: number;
 }
 
 const INSET = {
@@ -107,45 +118,45 @@ type FocusableViewProps = React.ComponentProps<typeof View> & {
 };
 const FocusableView = View as unknown as React.ComponentType<FocusableViewProps>;
 
-function wrapInert(element: React.ReactNode): React.JSX.Element {
-  return (
-    <View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no">
-      {element}
-    </View>
-  );
+/** A bare string or number cannot sit in a native View: it goes inside the system Text. */
+function wrapText(node: React.ReactNode, key?: number): React.ReactNode {
+  return typeof node === 'string' || typeof node === 'number' ? <Text key={key}>{node}</Text> : node;
 }
 
-/**
- * Walks `children` (only `children`: header actions and footer keep their own
- * targets), neutralises every `Button`/`Link` it finds and records how to activate
- * the last one. The count lets the card warn when there is not exactly one.
- */
-function collapseInteractiveChild(node: React.ReactNode, scan: InteractiveScan): React.ReactNode {
-  if (Array.isArray(node)) {
-    return node.map((child, index) => (
-      <React.Fragment key={index}>{collapseInteractiveChild(child, scan)}</React.Fragment>
-    ));
-  }
-  if (!React.isValidElement(node)) {
-    return node;
-  }
+function renderBody(children: React.ReactNode): React.ReactNode {
+  return Array.isArray(children) ? children.map((child, index) => wrapText(child, index)) : wrapText(children);
+}
 
+function targetOf(node: React.ReactNode, form: FormContextValue | null): InteractiveTarget | null {
+  if (!React.isValidElement(node)) {
+    return null;
+  }
   if (node.type === Button) {
     const props = node.props as ButtonProps;
-    scan.count += 1;
-    scan.target = {
-      activate: () => props.onPress?.(),
+    const disabled = (props.disabled ?? false) || (form?.disabled ?? false);
+    return {
+      // Same action as Button's own press handler.
+      activate: () => {
+        if (disabled || props.loading) {
+          return;
+        }
+        props.onPress?.();
+        if (props.track !== undefined) {
+          trackPress(props.track, props.label);
+          props.onTrack?.(props.track, props.label);
+        }
+        if (props.type === 'submit') {
+          form?.submit();
+        }
+      },
       role: 'button',
-      label: props.label,
-      disabled: props.disabled ?? false,
+      label: props.accessibleName ?? props.accessibilityLabel ?? props.label,
+      disabled,
     };
-    return wrapInert(node);
   }
-
   if (node.type === Link) {
     const props = node.props as LinkProps;
-    scan.count += 1;
-    scan.target = {
+    return {
       // Same default action as Link: cancelable onPress, then Linking when Link would use it.
       activate: () => {
         if (props.onPress?.(props.href) === false) {
@@ -159,18 +170,44 @@ function collapseInteractiveChild(node: React.ReactNode, scan: InteractiveScan):
       label: props.external ? `${props.label}${LINK_EXTERNAL_SUFFIX}` : props.label,
       disabled: false,
     };
-    return wrapInert(node);
   }
+  return null;
+}
 
-  const childProps = node.props as { children?: React.ReactNode };
-  if (childProps.children === undefined) {
-    return node;
+/**
+ * Looks for the single Link or Button among the top-level children of the body only
+ * (header actions, footer and nested wrappers keep their own targets). With exactly
+ * one, returns the body with that child made inert and hidden from assistive
+ * technology, so the wrapping Pressable is the one target and focus stop.
+ */
+function scanTopLevel(
+  children: React.ReactNode,
+  form: FormContextValue | null,
+): { content: React.ReactNode; target: InteractiveTarget | null; count: number } {
+  const items = Array.isArray(children) ? (children as React.ReactNode[]) : [children];
+  let target: InteractiveTarget | null = null;
+  let index = -1;
+  let count = 0;
+  for (const [i, item] of items.entries()) {
+    const found = targetOf(item, form);
+    if (found !== null) {
+      count += 1;
+      target = found;
+      index = i;
+    }
   }
-  return React.cloneElement(
-    node as React.ReactElement<{ children?: React.ReactNode }>,
-    undefined,
-    collapseInteractiveChild(childProps.children, scan),
+  if (count !== 1) {
+    return { content: renderBody(children), target: null, count };
+  }
+  const inert = (element: React.ReactNode, key?: number): React.JSX.Element => (
+    <View key={key} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no">
+      {element}
+    </View>
   );
+  const content = Array.isArray(children)
+    ? items.map((item, i) => (i === index ? inert(item, i) : wrapText(item, i)))
+    : inert(children);
+  return { content, target, count };
 }
 
 /**
@@ -184,15 +221,18 @@ function collapseInteractiveChild(node: React.ReactNode, scan: InteractiveScan):
  *
  * A `View` with padding, background, border and radius from tokens. The header
  * (`heading` or `headerActions`) and footer are Card's own row Views styled from its
- * gap bindings, not Stack, so they stay overridable per instance.
+ * gap bindings, not Stack, so they stay overridable per instance. The Heading gets
+ * `marginBlockEnd: space.0` so its own margin adds no space inside the header row.
  *
- * `interactive` wraps the content in a `Pressable` that takes the single child's
- * role, accessible name and action; the child is made inert and hidden from assistive
- * technology, so the Pressable is exactly one target and one focus stop. The ring's
- * width (`border.width.focus`) is always reserved, transparent until focused (or the
- * border color on `surface: default`), so focus never shifts the layout. Hover and
- * press show `hoverBackground` instantly; native has no continuous hover to animate,
- * so `transition` has no runtime effect.
+ * `interactive` wraps the content in a `Pressable` that takes the single top-level
+ * child's role, accessible name and action; the child is made inert and hidden from
+ * assistive technology, so the Pressable is exactly one target and one focus stop. A
+ * disabled child reports the Pressable disabled, ignores presses and shows no hover
+ * background. With zero or several candidates the card renders as a plain View. The
+ * ring's width (`border.width.focus`) is always reserved, colored `border` on
+ * `surface: default` and transparent on `subtle` until focused, so focus never shifts
+ * the layout. Hover and press show `hoverBackground` instantly; native has no
+ * continuous hover to animate, so `transition` has no runtime effect.
  *
  * `focusable` sets `tabIndex={-1}` (scriptable, not a tab stop under react-native-web;
  * on native Android `-1` means not focusable) and draws the ring on focus.
@@ -211,15 +251,10 @@ export function Card({
   ref,
 }: CardProps): React.JSX.Element {
   const { tokens: t } = useTheme();
+  const form = useFormContext();
   const [focused, setFocused] = React.useState(false);
   const [hovered, setHovered] = React.useState(false);
   const [pressed, setPressed] = React.useState(false);
-
-  const warnedFocusable = React.useRef(false);
-  if (__DEV__ && interactive && focusable && !warnedFocusable.current) {
-    warnedFocusable.current = true;
-    console.warn('Card: `focusable` has no effect while `interactive` is set; the card already has a target.');
-  }
 
   const token = <V,>(override: TokenRef | undefined, fallback: V): V =>
     override ? (resolveToken(t, override) as V) : fallback;
@@ -236,26 +271,47 @@ export function Card({
   const background = t[BACKGROUND[surface]];
   const hoverBackground = t[HOVER_BACKGROUND[surface]];
 
-  const scanned = React.useMemo((): { content: React.ReactNode; target: InteractiveTarget | null } => {
-    if (!interactive) {
-      return { content: children, target: null };
-    }
-    const scan: InteractiveScan = { target: null, count: 0 };
-    const content = collapseInteractiveChild(children, scan);
-    if (__DEV__ && scan.count !== 1) {
-      console.warn(`Card: \`interactive\` requires exactly one Link or Button in children; found ${scan.count}.`);
-    }
-    return { content, target: scan.count === 1 ? scan.target : null };
-  }, [interactive, children]);
+  const scanned = React.useMemo(
+    () => (interactive ? scanTopLevel(children, form) : { content: renderBody(children), target: null, count: 1 }),
+    [interactive, children, form],
+  );
+  const target = scanned.target;
+  const isInteractive = target !== null;
+  const targetDisabled = target?.disabled ?? false;
 
-  const ringReserved = interactive || focusable;
+  const warnedCount = React.useRef(false);
+  const warnedFocusable = React.useRef(false);
+  React.useEffect(() => {
+    if (!__DEV__) {
+      return;
+    }
+    if (interactive && scanned.count !== 1 && !warnedCount.current) {
+      warnedCount.current = true;
+      console.warn(
+        `Card: \`interactive\` requires exactly one Link or Button among the top-level children; found ${scanned.count}. The card stays non-interactive.`,
+      );
+    }
+    if (interactive && focusable && !warnedFocusable.current) {
+      warnedFocusable.current = true;
+      console.warn('Card: `focusable` has no effect while `interactive` is set; the card already has a target.');
+    }
+  }, [interactive, focusable, scanned.count]);
+
+  const hasHeading = heading !== undefined && heading !== '';
+  const hasHeaderActions = headerActions !== undefined && headerActions !== null;
+  const hasFooter = footer !== undefined && footer !== null;
+
+  // `interactive` wins over `focusable` only when the card actually has a target.
+  const scriptFocusable = focusable && !isInteractive;
+  const ringReserved = isInteractive || scriptFocusable;
   const restingBorder = surface === 'default' ? borderColor : 'transparent';
+  const showHover = isInteractive && !targetDisabled && (hovered || pressed);
   const surfaceStyle: ViewStyle = {
     paddingVertical: paddingBlock,
     paddingHorizontal: paddingInline,
     gap: partGap,
     borderRadius: radius,
-    backgroundColor: interactive && (hovered || pressed) ? hoverBackground : background,
+    backgroundColor: showHover ? hoverBackground : background,
     ...(ringReserved
       ? { borderWidth: t.borderWidthFocus, borderColor: focused ? t.colorBorderFocus : restingBorder }
       : surface === 'default'
@@ -266,7 +322,7 @@ export function Card({
   const headerStyle: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: heading !== undefined ? 'space-between' : 'flex-end',
+    justifyContent: hasHeading ? 'space-between' : 'flex-end',
     gap: headerGap,
   };
   const actionsStyle: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: actionsGap };
@@ -274,16 +330,16 @@ export function Card({
 
   const content = (
     <>
-      {heading !== undefined || headerActions !== undefined ? (
+      {hasHeading || hasHeaderActions ? (
         <View style={headerStyle} testID="Card.header">
-          {heading !== undefined ? (
-            <View style={{ flexShrink: 1 }} testID="Card.heading">
-              <Heading level={headingLevel} size="lg">
+          {hasHeading ? (
+            <View style={{ flexShrink: 1 }}>
+              <Heading level={headingLevel} size="lg" overrides={{ marginBlockEnd: 'space.0' }}>
                 {heading}
               </Heading>
             </View>
           ) : null}
-          {headerActions !== undefined ? (
+          {hasHeaderActions ? (
             <View style={actionsStyle} testID="Card.headerActions">
               {headerActions}
             </View>
@@ -291,7 +347,7 @@ export function Card({
         </View>
       ) : null}
       <View testID="Card.body">{scanned.content}</View>
-      {footer !== undefined ? (
+      {hasFooter ? (
         <View style={footerStyle} testID="Card.footer">
           {footer}
         </View>
@@ -299,13 +355,13 @@ export function Card({
     </>
   );
 
-  if (!interactive) {
+  if (target === null) {
     return (
       <FocusableView
         ref={ref}
         style={surfaceStyle}
         testID="Card"
-        {...(focusable
+        {...(scriptFocusable
           ? { tabIndex: -1 as const, onFocus: () => setFocused(true), onBlur: () => setFocused(false) }
           : {})}
       >
@@ -314,15 +370,14 @@ export function Card({
     );
   }
 
-  const target = scanned.target;
   return (
     <Pressable
       ref={ref}
-      accessibilityRole={target?.role}
-      accessibilityLabel={target?.label}
-      accessibilityState={{ disabled: target?.disabled ?? false }}
+      accessibilityRole={target.role}
+      accessibilityLabel={target.label}
+      accessibilityState={{ disabled: target.disabled }}
       onPress={() => {
-        if (target !== null && !target.disabled) {
+        if (!target.disabled) {
           target.activate();
         }
       }}

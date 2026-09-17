@@ -34,3 +34,14 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Input: no `transition` binding is declared; I used motion.duration.fast on border-color only (not border-width/padding, to avoid animating layout), removed under prefers-reduced-motion.
 - Input: disabled — the doc says 'aria-disabled + readOnly on web'; a consumer `readOnly` is honoured when not disabled. Not stated whether readOnly (non-disabled) fields are submitted/validated by Form; they are, as before.
 - Input: `invalid: true` without `error` sets aria-invalid and the danger border but renders no message (copy.invalid only appears through Form validation). The doc should say whether a directly-set `invalid` renders copy.invalid in the error slot.
+
+## 2026-09-17 04:24 — round 1
+
+- Input: Behavior says 'The Form marks a failing field by setting its `invalid`', but the React FormContext hands errors down as `errors[name]` strings and has no per-field `invalid` channel. Kept the context contract: a Form-held error shows like `error`, and a directly set `invalid` shows copy.required/copy.invalid.
+- Input: 'required' is never defined for whitespace-only text. The old code trimmed; I switched to native parity (only '' counts as empty), so '   ' passes required.
+- Input: 'validationMessage/validity always follow the full precedence' doesn't say how on web. I used setCustomValidity with the copy message (cleared when disabled). Because a custom error makes validity.valid false, the type check reads the specific flags (typeMismatch, badInput, pattern/range/step/length) instead of validity.valid.
+- Input: the error-area message for `invalid` checks for an empty required field using the rendered value (controlled or uncontrolled state), while Form validation reads the live DOM value. These only differ for a controlled field whose parent hasn't re-rendered yet.
+- Input: the spec says Fieldset disables the field 'through the `disabled` prop Fieldset passes to its children', but the package also exports FieldsetContext. I didn't read it, so a Fieldset that only sets context wouldn't disable Input. Worth confirming which one Fieldset actually uses.
+- Input: the constant longPressDelay is native-only and has no web meaning, so nothing reads it on web.
+- Input: the `helperSize` override is forwarded as Text `fontSize`, and `fontFamily`/`lineHeight` go both to the root hooks (label, input) and to Text overrides. The spec says fontFamily and lineHeight are 'forwarded the same way' but doesn't say whether the root hooks remain too; I kept both.
+- Input: `readOnly` is not a schema prop but is accepted from the native input props (the Behavior text mentions a read-only field). Disabled forces readOnly on, per 'aria-disabled + readOnly on web'.

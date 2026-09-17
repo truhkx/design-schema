@@ -49,4 +49,5 @@ export const DenseGridEditor: Story = {
 /* states */
 export const Disabled: Story = { args: { disabled: true, defaultValue: 'name@example.com' } };
 export const Invalid: Story = { args: { invalid: true } };
+export const InvalidRequiredEmpty: Story = { args: { invalid: true, required: true } };
 export const WithPlaceholder: Story = { args: { placeholder: 'name@example.com' } };

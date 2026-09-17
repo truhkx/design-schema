@@ -36,3 +36,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Container: the `children` example values are strings ('A Stack of page regions'), but the prop is `content`. The stories render them as text inside ds-text rather than building a real Stack of regions, and the test puts them in as slotted text because `children` can't be set as a property on an HTMLElement.
 - Container: the scenarios for element div/main/section only check that the element renders; nothing checks that `section` adds no role and `div` adds nothing, so the rule that a section is a region only when named isn't tested.
 - Container: the doc's 'Overrides change values, never presence' rule plus 'full renders the literal none with no hook' means an override set at width=full is silently ignored. I implemented it that way (hook bypassed for full and gutter none), but the doc doesn't say whether a dev warning should fire.
+
+## 2026-09-17 04:35 — round 1
+
+- Container: the package conventions ('Names tests can read') say a role the tests must observe goes on the host as a plain attribute, but the Lit platform notes say the `main` role stays on ElementInternals with no `role` attribute. I followed the platform notes, so no Lit test can check `element: main`. The renders-element-* scenarios only confirm the element renders, and the main-landmark scenario is web-only.
+- Container: `element` is missing from `platforms.lit.reflect`, so `element` is a property that doesn't reflect. The doc doesn't say whether it should reflect for attribute selectors or debugging.
+- Container: the doc gives no host rule for when the `width`/`gutter` attributes are absent before the first update. The `:host` defaults use the content max-width and the narrow gutter, which matches the prop defaults until reflection adds the attributes, but the doc doesn't specify this.
+- Container: the scenarios are all `renders: true`, with nothing about how max-width or padding should be checked. The tests check the reflected attributes and the shadow slot, not the computed styles, so the breakpoint and override rules in the styles descriptions aren't tested.

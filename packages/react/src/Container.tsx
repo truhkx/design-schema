@@ -48,7 +48,9 @@ export interface ContainerProps extends Omit<ComponentPropsWithoutRef<'div'>, 'c
   /** Where the capped column sits in a wider viewport. `start` sets `margin-inline: 0` on both sides,
    * not just the start side, so the column never picks up an asymmetric margin. */
   align?: ContainerAlign | undefined;
-  /** Use `main` for the page's main column when no Landmark wraps it. */
+  /** Use `main` for the page's main column when no Landmark wraps it. A page has exactly one `main`;
+   * that is the author's responsibility, since the component cannot see the rest of the page, so it
+   * neither enforces it nor warns. */
   element?: ContainerElement | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<ContainerOverridableBinding, TokenRef | undefined>> | undefined;
@@ -67,7 +69,7 @@ export interface ContainerProps extends Omit<ComponentPropsWithoutRef<'div'>, 'c
  * Container adds no semantics unless `element: main` is chosen, in which case it is the page's main
  * landmark and there must be exactly one.
  */
-export const Container = function Container({
+export function Container({
   ref,
   children,
   width = 'content',
@@ -95,4 +97,4 @@ export const Container = function Container({
       {children}
     </Tag>
   );
-};
+}

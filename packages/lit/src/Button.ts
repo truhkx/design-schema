@@ -19,12 +19,11 @@ export interface ButtonTrackDetail {
 
 /**
  * Overridable style hooks; see the `overrides` property. The accessibility-bearing
- * bindings — `background`, `foreground`, `focusRing`, `focusRingWidth`,
- * `inverseForeground`, `inverseFocusRing`, `minTarget` and `spinnerStroke` — are
- * locked and excluded.
+ * bindings — `background`, `backgroundHover`, `foreground`, `focusRing`,
+ * `focusRingWidth`, `inverseForeground`, `inverseFocusRing`, `minTarget` and
+ * `spinnerStroke` — are locked and excluded (they keep their CSS hooks).
  */
 export type ButtonOverridableBinding =
-  | 'backgroundHover'
   | 'iconGap'
   | 'paddingInline'
   | 'paddingBlock'
@@ -32,12 +31,14 @@ export type ButtonOverridableBinding =
   | 'fontFamily'
   | 'fontWeight'
   | 'fontSize'
+  | 'inverseBackgroundHover'
+  | 'inverseHoverOpacity'
   | 'disabledOpacity'
   | 'transition'
-  | 'loadingSpin';
+  | 'loadingSpin'
+  | 'spinnerSize';
 
 const HOOKS: Record<ButtonOverridableBinding, string> = {
-  backgroundHover: '--ds-button-background-hover',
   iconGap: '--ds-button-icon-gap',
   paddingInline: '--ds-button-padding-inline',
   paddingBlock: '--ds-button-padding-block',
@@ -45,12 +46,15 @@ const HOOKS: Record<ButtonOverridableBinding, string> = {
   fontFamily: '--ds-button-font-family',
   fontWeight: '--ds-button-font-weight',
   fontSize: '--ds-button-font-size',
+  inverseBackgroundHover: '--ds-button-inverse-background-hover',
+  inverseHoverOpacity: '--ds-button-inverse-hover-opacity',
   disabledOpacity: '--ds-button-disabled-opacity',
   transition: '--ds-button-transition',
   loadingSpin: '--ds-button-loading-spin',
+  spinnerSize: '--ds-button-spinner-size',
 };
 
-/** copy.loading — announced beside the label while `loading` is true. */
+/** copy.loading — announced as the button's description while `loading` is true. */
 const COPY_LOADING = 'Loading';
 
 /**
@@ -59,10 +63,10 @@ const COPY_LOADING = 'Loading';
  * Wraps a native `<button>` in a shadow root created with `delegatesFocus`, so
  * focusing the host focuses the inner button. Activation dispatches a composed,
  * bubbling `press` CustomEvent. A `type="submit"` button submits the enclosing
- * `<ds-form>` (which listens for `press`) or, when placed directly inside a
- * native `<form>`, calls `requestSubmit()` on it. When `track` is set, a press
- * also calls the hand-written `trackPress` analytics module and then fires a
- * composed `track` CustomEvent with `{ name, label }`.
+ * `<ds-form>` (which listens for `press`) or, only when no `ds-form` encloses it,
+ * calls `requestSubmit()` on the closest native `<form>`. When `track` is set, a
+ * press also calls the hand-written `trackPress` analytics module and then fires
+ * a composed `track` CustomEvent with `{ name, label }`.
  *
  * `ds-button` is deliberately *not* form-associated: a form-associated custom
  * element with a reflected `disabled` attribute becomes truly disabled and
@@ -101,7 +105,9 @@ export class DsButton extends LitElement {
     :host {
       display: inline-flex;
       vertical-align: middle;
+      --ds-button-background: var(--color-action-primary-background);
       --ds-button-background-hover: var(--color-action-primary-background-hover);
+      --ds-button-foreground: var(--color-action-primary-foreground);
       --ds-button-icon-gap: var(--space-2);
       --ds-button-padding-inline: var(--space-md);
       --ds-button-padding-block: var(--space-sm);
@@ -109,25 +115,34 @@ export class DsButton extends LitElement {
       --ds-button-font-family: var(--font-family-body);
       --ds-button-font-weight: var(--font-weight-medium);
       --ds-button-font-size: var(--font-size-md);
+      --ds-button-focus-ring: var(--color-border-focus);
+      --ds-button-focus-ring-width: var(--border-width-focus);
+      --ds-button-inverse-foreground: var(--color-inverse-link);
+      --ds-button-inverse-focus-ring: var(--color-inverse-focus);
+      --ds-button-inverse-background-hover: var(--color-inverse-foreground);
+      --ds-button-inverse-hover-opacity: calc(var(--opacity-disabled) * 0.25);
+      --ds-button-min-target: var(--size-target-min);
       --ds-button-disabled-opacity: var(--opacity-disabled);
       --ds-button-transition: var(--motion-duration-fast);
       --ds-button-loading-spin: var(--motion-duration-loop);
+      --ds-button-spinner-size: var(--font-size-md);
+      --ds-button-spinner-stroke: var(--border-width-focus);
     }
 
     :host([hidden]) {
       display: none;
     }
 
-    button {
+    [data-part='container'] {
       position: relative;
       box-sizing: border-box;
       display: inline-flex;
       align-items: center;
       justify-content: center;
       inline-size: 100%;
-      /* minTarget: locked — 24px CSS minimum at every size (WCAG 2.5.8) */
-      min-inline-size: var(--size-target-min);
-      min-block-size: var(--size-target-min);
+      /* minTarget: locked; the floor at every size (WCAG 2.5.8) */
+      min-inline-size: var(--ds-button-min-target);
+      min-block-size: var(--ds-button-min-target);
       margin: 0;
       padding-block: var(--ds-button-padding-block);
       padding-inline: var(--ds-button-padding-inline);
@@ -136,43 +151,36 @@ export class DsButton extends LitElement {
       font-family: var(--ds-button-font-family);
       font-size: var(--ds-button-font-size);
       font-weight: var(--ds-button-font-weight);
-      color: var(--color-action-primary-foreground);
-      background: var(--color-action-primary-background);
+      color: var(--ds-button-foreground);
+      background: var(--ds-button-background);
       cursor: pointer;
       appearance: none;
       -webkit-appearance: none;
-      /* transition: motion.duration.fast with motion.easing.standard */
-      transition:
-        background-color var(--ds-button-transition) var(--motion-easing-standard),
-        color var(--ds-button-transition) var(--motion-easing-standard);
+      /* transition: only the background animates, with motion.easing.standard */
+      transition: background-color var(--ds-button-transition) var(--motion-easing-standard);
     }
 
     @media (prefers-reduced-motion: reduce) {
-      button {
+      [data-part='container'] {
         transition: none;
       }
     }
 
-    /* paddingInline: space.{size} */
+    /* paddingInline: space.{size}; fontSize and spinnerSize: font.size.{size} */
     :host([size='sm']) {
       --ds-button-padding-inline: var(--space-sm);
+      --ds-button-font-size: var(--font-size-sm);
+      --ds-button-spinner-size: var(--font-size-sm);
     }
     :host([size='md']) {
       --ds-button-padding-inline: var(--space-md);
+      --ds-button-font-size: var(--font-size-md);
+      --ds-button-spinner-size: var(--font-size-md);
     }
     :host([size='lg']) {
       --ds-button-padding-inline: var(--space-lg);
-    }
-
-    /* fontSize: font.size.{size} */
-    :host([size='sm']) {
-      --ds-button-font-size: var(--font-size-sm);
-    }
-    :host([size='md']) {
-      --ds-button-font-size: var(--font-size-md);
-    }
-    :host([size='lg']) {
       --ds-button-font-size: var(--font-size-lg);
+      --ds-button-spinner-size: var(--font-size-lg);
     }
 
     /* iconOnly: equal padding on all sides (space.sm), regardless of size */
@@ -181,66 +189,63 @@ export class DsButton extends LitElement {
       --ds-button-padding-block: var(--space-sm);
     }
 
-    /* background / foreground: color.action.{variant}.*, locked */
-    :host([variant='primary']) button {
-      color: var(--color-action-primary-foreground);
-      background: var(--color-action-primary-background);
-    }
+    /* background / backgroundHover / foreground: color.action.{variant}.*, locked */
     :host([variant='primary']) {
+      --ds-button-background: var(--color-action-primary-background);
       --ds-button-background-hover: var(--color-action-primary-background-hover);
-    }
-    :host([variant='secondary']) button {
-      color: var(--color-action-secondary-foreground);
-      background: var(--color-action-secondary-background);
+      --ds-button-foreground: var(--color-action-primary-foreground);
     }
     :host([variant='secondary']) {
+      --ds-button-background: var(--color-action-secondary-background);
       --ds-button-background-hover: var(--color-action-secondary-background-hover);
-    }
-    :host([variant='ghost']) button {
-      color: var(--color-action-ghost-foreground);
-      background: var(--color-action-ghost-background);
+      --ds-button-foreground: var(--color-action-secondary-foreground);
     }
     :host([variant='ghost']) {
+      --ds-button-background: var(--color-action-ghost-background);
       --ds-button-background-hover: var(--color-action-ghost-background-hover);
-    }
-    :host([variant='danger']) button {
-      color: var(--color-action-danger-foreground);
-      background: var(--color-action-danger-background);
+      --ds-button-foreground: var(--color-action-ghost-foreground);
     }
     :host([variant='danger']) {
+      --ds-button-background: var(--color-action-danger-background);
       --ds-button-background-hover: var(--color-action-danger-background-hover);
+      --ds-button-foreground: var(--color-action-danger-foreground);
     }
 
     /* backgroundHover: pointer hover and pressed state */
-    :host(:not([disabled]):not([loading])) button:is(:hover, :active) {
+    :host(:not([disabled]):not([loading])) [data-part='container']:is(:hover, :active) {
       background: var(--ds-button-background-hover);
     }
 
     /*
-     * inverse: only the ghost variant changes its fill on an inverse surface
-     * (Toast, Tooltip-like panels) — the sanctioned color-mix of two tokens.
-     * Other variants keep their own fills.
+     * inverse: only ghost changes on an inverse surface. Its text is
+     * inverseForeground, and its hover fill is inverseBackgroundHover at
+     * inverseHoverOpacity (the sanctioned color-mix of tokens). Other variants
+     * keep their own fills.
      */
-    :host([inverse][variant='ghost']) button {
-      color: var(--color-inverse-link);
+    :host([inverse][variant='ghost']) [data-part='container'] {
+      color: var(--ds-button-inverse-foreground);
     }
-    :host([inverse][variant='ghost']:not([disabled]):not([loading])) button:is(:hover, :active) {
-      background: color-mix(in srgb, var(--color-inverse-foreground) 12%, transparent);
+    :host([inverse][variant='ghost']:not([disabled]):not([loading])) [data-part='container']:is(:hover, :active) {
+      background: color-mix(
+        in srgb,
+        var(--ds-button-inverse-background-hover) calc(var(--ds-button-inverse-hover-opacity) * 100%),
+        transparent
+      );
     }
 
-    /* focus-visible: color.border.focus at border.width.focus, locked */
-    button:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
+    /* focusRing / focusRingWidth: color.border.focus at border.width.focus, locked */
+    [data-part='container']:focus-visible {
+      outline: var(--ds-button-focus-ring-width) solid var(--ds-button-focus-ring);
+      outline-offset: var(--ds-button-focus-ring-width);
     }
 
     /* inverseFocusRing: the ring must read against the inverse surface, for every variant */
-    :host([inverse]) button:focus-visible {
-      outline-color: var(--color-inverse-focus);
+    :host([inverse]) [data-part='container']:focus-visible {
+      outline-color: var(--ds-button-inverse-focus-ring);
     }
 
-    /* disabledOpacity: applied to the whole button; colors are unchanged so the contrast math still holds */
-    :host([disabled]) button {
+    /* disabledOpacity: the whole button; colors are unchanged so the contrast math still holds */
+    :host([disabled]) [data-part='container'] {
       opacity: var(--ds-button-disabled-opacity);
       cursor: not-allowed;
     }
@@ -253,35 +258,24 @@ export class DsButton extends LitElement {
     }
 
     /* iconOnly: hide the visible label; the accessible name moves to aria-label */
-    :host([icon-only]) .label {
+    :host([icon-only]) [data-part='label'] {
       display: none;
     }
 
-    /*
-     * loading: the spinner takes the leading-icon spot (replacing the sole glyph
-     * when iconOnly), the trailing icon hides, and the label stays visible, so the
-     * layout does not shift.
-     */
-    :host([loading]) button {
+    :host([loading]) [data-part='container'] {
       cursor: progress;
     }
-    :host([loading]) slot[name='leading-icon'],
-    :host([loading]) slot[name='trailing-icon'] {
-      display: none;
-    }
+
+    /* loading: a ring spinnerSize across, spinnerStroke thick, one quarter transparent, in currentColor */
     .spinner {
-      display: none;
+      display: inline-block;
       box-sizing: border-box;
-      inline-size: 1em;
-      block-size: 1em;
-      /* spinnerStroke: border.width.focus, locked */
-      border: var(--border-width-focus) solid currentColor;
+      inline-size: var(--ds-button-spinner-size);
+      block-size: var(--ds-button-spinner-size);
+      border: var(--ds-button-spinner-stroke) solid currentColor;
       border-inline-end-color: transparent;
       border-radius: var(--radius-full);
       animation: ds-button-spin var(--ds-button-loading-spin) linear infinite;
-    }
-    :host([loading]) .spinner {
-      display: inline-block;
     }
     @keyframes ds-button-spin {
       to {
@@ -294,7 +288,6 @@ export class DsButton extends LitElement {
       }
     }
 
-    /* visually-hidden: clipped off-screen but still part of the accessible name */
     .visually-hidden {
       position: absolute;
       inline-size: 1px;
@@ -325,25 +318,28 @@ export class DsButton extends LitElement {
    * Set by a parent that the button discloses (Menu, Popover, SidePanel,
    * Disclosure): rendered as `aria-expanded` on the inner button. A JS property
    * only, and tri-state — `undefined` (the default) means this button discloses
-   * nothing, so no `aria-expanded` is rendered at all. Consumers rarely set it
-   * directly; a raw `aria-expanded` attribute on the host does not reach the
-   * inner button.
+   * nothing, so no `aria-expanded` is rendered at all. A raw `aria-expanded`
+   * attribute on the host does not reach the inner button.
    */
-  @property({ type: Boolean, attribute: false }) accessor expanded: boolean | undefined;
+  @property({ attribute: false }) accessor expanded: boolean | undefined;
 
-  /** Prevents activation. The button stays in the tab order and is announced as disabled. */
+  /**
+   * Prevents activation. The button stays in the tab order and is announced as
+   * disabled. Inside a disabled `ds-form` the form sets this for you.
+   */
   @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
   /**
-   * Hides the visible label and shows only `leadingIcon`. `label` is still
-   * required and becomes the accessible name. Padding becomes equal on all sides.
+   * Hides the visible label and shows only `leadingIcon`; `trailingIcon` is not
+   * rendered either. `label` is still required and becomes the accessible name.
+   * Padding becomes equal on all sides (`space.sm`).
    */
   @property({ type: Boolean, reflect: true, attribute: 'icon-only' }) accessor iconOnly = false;
 
   /**
-   * Shows a 1em ring spinner in `currentColor` in the leading icon slot, hides
-   * `trailingIcon`, keeps the label visible and the layout unchanged, and blocks
-   * repeat activation while an action is pending.
+   * Shows a ring spinner in the leading icon position, hides `trailingIcon`,
+   * keeps the label visible and the layout unchanged, and blocks repeat
+   * activation while an action is pending. `copy.loading` is the description.
    */
   @property({ type: Boolean, reflect: true }) accessor loading = false;
 
@@ -356,16 +352,18 @@ export class DsButton extends LitElement {
 
   /**
    * Overrides the accessible name when it must say more than the visible label
-   * ("Sort by Amount, ascending" on a header that shows "Amount"). The visible
-   * label must be part of it (WCAG 2.5.3 label-in-name). Maps to `aria-label`.
+   * ("Sort by Amount, ascending" on a header that shows "Amount"). The name must
+   * contain the visible label (WCAG 2.5.3 label-in-name). Maps to `aria-label`.
    */
   @property({ type: String, attribute: 'accessible-name' }) accessor accessibleName: string | undefined;
 
   /**
    * Text used for this button when a Toolbar collapses it into its overflow
-   * Menu. Read by Toolbar only; it has no effect on the button's own rendering.
+   * Menu. Read by Toolbar from the host attribute; the button never renders it.
    */
-  @property({ type: String, attribute: 'overflow-label' }) accessor overflowLabel: string | undefined;
+  @property({ type: String, reflect: true, attribute: 'overflow-label' }) accessor overflowLabel:
+    | string
+    | undefined;
 
   /** An event name sent to analytics when the button is pressed. Omit for no tracking. */
   @property({ type: String }) accessor track: string | undefined;
@@ -390,20 +388,27 @@ export class DsButton extends LitElement {
     return html`
       <button
         part="container"
+        data-part="container"
         type=${this.type}
         aria-disabled=${ifDefined(this.disabled ? 'true' : undefined)}
         aria-busy=${ifDefined(this.loading ? 'true' : undefined)}
         aria-expanded=${ifDefined(this.expanded === undefined ? undefined : String(this.expanded))}
         aria-label=${ifDefined(this.accessibleName ?? (this.iconOnly ? this.label : undefined))}
+        aria-describedby=${ifDefined(this.loading ? 'loading-description' : undefined)}
         @click=${this.handleClick}
       >
         <span class="content">
-          <span class="spinner" aria-hidden="true"></span>
-          <slot name="leading-icon" part="leadingIcon"></slot>
-          <span class="label" part="label">${this.label}</span>
-          <slot name="trailing-icon" part="trailingIcon"></slot>
-          ${this.loading ? html`<span class="visually-hidden">${COPY_LOADING}</span>` : nothing}
+          ${this.loading
+            ? html`<span class="spinner" aria-hidden="true"></span>`
+            : html`<slot name="leading-icon" part="leadingIcon" data-part="leadingIcon"></slot>`}
+          <span class="label" part="label" data-part="label">${this.label}</span>
+          ${this.iconOnly || this.loading
+            ? nothing
+            : html`<slot name="trailing-icon" part="trailingIcon" data-part="trailingIcon"></slot>`}
         </span>
+        ${this.loading
+          ? html`<span id="loading-description" class="visually-hidden">${COPY_LOADING}</span>`
+          : nothing}
       </button>
     `;
   }
@@ -432,12 +437,11 @@ export class DsButton extends LitElement {
       );
     }
 
-    if (this.type === 'submit') {
+    if (this.type === 'submit' && !this.closest('ds-form')) {
       // The inner <button> has no form owner (it lives in the shadow root), so a
-      // directly enclosing native <form> is submitted explicitly. Inside a
-      // <ds-form> this is null and the form reacts to the `press` event instead.
-      const form = this.closest('form');
-      form?.requestSubmit();
+      // native <form> is submitted explicitly. Inside a ds-form the form reacts
+      // to `press` instead, so a ds-form nested in a native form submits once.
+      this.closest('form')?.requestSubmit();
     }
   }
 

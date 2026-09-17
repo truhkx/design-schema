@@ -55,3 +55,14 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Card: the example given 'children: A Link to the invoice' is prose describing content, not a value. I render children as a ds-link label when interactive is true, and as ds-text otherwise.
 - Card: the behavior scenario 'a-card-with-a-heading-is-an-article' and the tabindex half of 'focusable-takes-scripted-focus-only' are marked web-only, so they aren't in the Lit list. The element still implements both (role='article' plus aria-label, and tabindex='-1').
 - Card: the React guidance says aria attributes passed through ...rest (role, aria-posinset…) land on the root, but for Lit the doc doesn't say how a consumer's role interacts with the card's own role='article'. I set role only when the consumer hasn't set one, and remove only a role the card itself wrote.
+
+## 2026-09-17 04:41 — round 1
+
+- Card: `interactive` says a disabled child disables the card, but not what counts as disabled on Lit (ds-link has no `disabled`, a raw a[href] cannot be disabled). Chose: a `disabled` attribute or aria-disabled="true" on the target, watched by a MutationObserver that writes nothing back.
+- Card: the lit notes name only the `target-focus` custom state; the 'no hover background without a single target' and 'disabled target' rules need a selector too. Chose: extra custom states `has-target` and `target-disabled` for the hover rules.
+- Card: 'warns once in development' for zero/several interactive children doesn't say when to judge 'zero' if the body is added after connection. Chose: no warning on the first update; the check runs again, with a warning, on the body's slotchange and when `interactive` changes later.
+- Card: `focusable` says 'draws its ring as an outline … no offset' but not on which element; the host has no radius. Chose: outline on the surface part while the host matches :focus-visible, with the host's own outline removed.
+- Card: the Behavior section says aria attributes passed through `...rest` land on the root, and the lit notes protect a consumer's role; neither says whether a consumer's aria-label survives a heading. Chose: the card writes and removes only an aria-label it set itself.
+- Card: the lit notes put header-actions/footer rows at position: relative; z-index: 1 without saying whether that's only for interactive cards (the web notes tie it to the hit area). Chose: only under [interactive], to avoid a stacking context on plain cards.
+- Card: the scenario `a-card-with-a-heading-is-an-article` expects role article 'labelled by that heading', but on Lit the name is aria-label (ids don't cross the shadow root). Test checks role="article" plus aria-label equal to the heading text.
+- Card: the anatomy lists `heading` as a part but Behavior says it keeps the Heading's own hook and carries no data-part; the prior Lit output put data-part="heading" on ds-heading. Chose the Behavior rule (no data-part on the heading).

@@ -3,9 +3,10 @@ import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Icon } from './Icon';
 import './Link.css';
 
+/** `default` uses the link colors; `inherit` takes the surrounding text color. */
 export type LinkTone = 'default' | 'inherit';
 
-/** Copy strings from the schema, used verbatim. */
+/** Copy strings from the schema, used verbatim. `copy.external` is the SwiftUI accessibility label and unused on web. */
 const COPY = {
   externalSuffix: ' (opens in new tab)',
 } as const;
@@ -37,7 +38,7 @@ function overridesToStyle(
 export interface LinkProps
   extends Omit<
     ComponentPropsWithoutRef<'a'>,
-    'href' | 'children' | 'target' | 'rel' | 'download' | 'aria-label' | 'onClick' | 'style'
+    'href' | 'children' | 'target' | 'rel' | 'download' | 'aria-label' | 'onClick' | 'style' | 'className'
   > {
   /** The destination. A URL on web; a URL or app route on native, resolved by `onPress` when the consumer provides it. */
   href: string;
@@ -45,7 +46,10 @@ export interface LinkProps
   label: string;
   /** Opens the destination in a new tab or the system browser and appends `copy.externalSuffix` to the accessible name, with a decorative trailing icon. */
   external?: boolean | undefined;
-  /** `default` uses the link colors. `inherit` takes the surrounding text color and relies on the underline alone — for links inside muted or on-action text. */
+  /**
+   * `default` uses the link colors. `inherit` takes the surrounding text color and relies on the
+   * underline alone — for links inside muted or on-action text.
+   */
   tone?: LinkTone | undefined;
   /** Downloads the resource instead of navigating, under the server's file name (a custom file name is out of scope). Web only. */
   download?: boolean | undefined;
@@ -76,14 +80,9 @@ export function Link({
   download = false,
   overrides,
   onClick,
-  className,
   ...rest
 }: LinkProps & { ref?: Ref<HTMLAnchorElement> | undefined }): ReactElement {
-  // `className` is still accepted because Tree passes one (a pre-existing restyle of this child);
-  // new callers use `overrides`, which is the per-instance styling contract.
-  const classes = ['ds-link', `ds-link--tone-${tone}`, external ? 'ds-link--external' : null, className ?? null]
-    .filter(Boolean)
-    .join(' ');
+  const classes = ['ds-link', `ds-link--tone-${tone}`, external ? 'ds-link--external' : null].filter(Boolean).join(' ');
 
   const handleClick = (event: MouseEvent<HTMLAnchorElement>): void => {
     if (onClick?.(event) === false) event.preventDefault();
@@ -91,11 +90,12 @@ export function Link({
 
   return (
     <a
-      data-part="anchor"
       {...rest}
       ref={ref}
       href={href}
+      // Link's own hooks win over anything a parent passes: a parent's part goes on a wrapper it owns.
       data-ds="Link"
+      data-part="anchor"
       className={classes}
       style={overrides ? overridesToStyle(overrides, external) : undefined}
       target={external ? '_blank' : undefined}

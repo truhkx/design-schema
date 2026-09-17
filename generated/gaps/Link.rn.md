@@ -28,3 +28,14 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Link: the rules say a component that exposes its root declares a `ref` prop, but the schema doesn't say whether Link exposes its Text root (Tooltip attaches through the forwarded handlers instead). I added no `ref` prop.
 - Link: the has-accessible-name scenario only works for the default (non-external) args; the external name scenario is narrowed to web, so native never tests that the accessibilityLabel includes copy.externalSuffix.
 - Link: `copy.externalSuffix` reads '(opens in new tab)', which is wrong on native, where the link opens the system browser. I used it verbatim as instructed; `copy.external` is unused on rn.
+
+## 2026-09-17 04:23 — round 1
+
+- Link: `tone: inherit` on native standalone (not inside a system Text) has no color to inherit; the spec only says Icon falls back to color.foreground, leaving the label's own color unstated (RN's default text color would differ from the icon). Chose color.foreground on the label as well.
+- Link: `tone: inherit` says the underline follows the inherited color; nested in a system Text, Link sets no textDecorationColor and relies on RN inheriting color into the decoration. Not stated how that should be done explicitly.
+- Link: no `given` story args for the ToneInherit story's surrounding text; the spec names the muted-text wrapper only for the InsideMutedText example. Chose to wrap ToneInherit in a muted Text too, so the inherited color is visible.
+- Link: the rn package digest writes `toLineHeight(t.fontLineHeightNormal, t.fontSizeMd)`, but theme.tsx's signature is `toLineHeight(fontSize, multiplier)`; followed the source.
+- Link: the digest says Text provides `TextNestingContext`; the component doc correctly says `TextStyleContext` (`nested` field) — the digest is stale.
+- Link: the spec says Link forwards `onFocus`, `onBlur`, `onHoverIn` and `onHoverOut` to Text, but RN 0.87's strict Text types do not declare them; passed them through an untyped props bag, as the previous file did.
+- Link: the Default story args are not given by the spec; chose the inline-in-a-paragraph example's href/label.
+- Link: the pressed color crossfades with Animated, which makes the press test log React act() warnings under Jest (tests still pass); the doc does not say whether the test should use fake timers or reduced motion.

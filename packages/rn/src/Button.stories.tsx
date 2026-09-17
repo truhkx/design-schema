@@ -113,7 +113,9 @@ export const PrimarySave: Story = { args: { label: 'Save changes', variant: 'pri
 export const DestructiveConfirm: Story = { args: { label: 'Delete file', variant: 'danger' } };
 
 /** A low-emphasis icon-only control in dense UI, whose label says what it does rather than what the icon depicts. */
-export const IconOnlyInAToolbar: Story = { args: { label: 'Close', iconOnly: true, variant: 'ghost', size: 'sm' } };
+export const IconOnlyInAToolbar: Story = {
+  args: { label: 'Close', iconOnly: true, leadingIcon: <GlyphIcon name="close" variant="ghost" />, variant: 'ghost', size: 'sm' },
+};
 
 /** The submit button of a form while the request is in flight — busy, and ignoring repeat activation. */
 export const PendingSubmit: Story = { args: { label: 'Create account', type: 'submit', loading: true } };

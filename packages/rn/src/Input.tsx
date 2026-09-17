@@ -4,7 +4,6 @@ import type {
   GestureResponderEvent,
   KeyboardTypeOptions,
   ReturnKeyTypeOptions,
-  TextInputFocusEvent,
   TextInputInstance,
   TextInputProps,
   TextStyle,
@@ -36,7 +35,8 @@ export type InputOverridableBinding =
   | 'labelWeight'
   | 'helperSize'
   | 'lineHeight'
-  | 'disabledOpacity';
+  | 'disabledOpacity'
+  | 'transition';
 
 export interface InputProps {
   /** Visible label (visually hidden with `hideLabel`). Never replaced by a placeholder. Also the field's `accessibilityLabel`. */
@@ -75,10 +75,10 @@ export interface InputProps {
   accessibilityLabel?: string | undefined;
   /** Fired on every value change with the new string value. */
   onChange?: ((value: string) => void) | undefined;
-  /** Fired when the field receives focus. */
-  onFocus?: ((event: TextInputFocusEvent) => void) | undefined;
-  /** Fired when the field loses focus. The usual moment to validate. */
-  onBlur?: ((event: TextInputFocusEvent) => void) | undefined;
+  /** Fired when the field receives focus. No payload. */
+  onFocus?: (() => void) | undefined;
+  /** Fired when the field loses focus. The usual moment to validate. No payload. */
+  onBlur?: (() => void) | undefined;
   /** Forwarded to the field (pointer enter; react-native-web pointer only) so Tooltip can attach to it. */
   onHoverIn?: TextInputProps['onPointerEnter'];
   /** Forwarded to the field (pointer leave; react-native-web pointer only) so Tooltip can attach to it. */
@@ -117,8 +117,8 @@ const PADDING_INLINE_TOKEN = { sm: 'space2', md: 'spaceMd' } as const satisfies 
 const PADDING_BLOCK_TOKEN = { sm: 'space1', md: 'spaceSm' } as const satisfies Record<InputSize, keyof Tokens>;
 const MIN_TARGET_TOKEN = { sm: 'sizeTargetMin', md: 'sizeTargetComfortable' } as const satisfies Record<InputSize, keyof Tokens>;
 
-/** TextInput has no long-press event; this matches Pressable's default `delayLongPress`. */
-const LONG_PRESS_DELAY_MS = 500; // literal-ok: React Native's own long-press threshold, not a design token
+/** The `longPressDelay` constant: TextInput has no long-press event; this matches Pressable's default `delayLongPress`. */
+const LONG_PRESS_DELAY_MS = 500; // literal-ok: schema constant longPressDelay (React Native's own threshold, not a design token)
 
 const COPY = {
   required: (label: string): string => `${label} is required.`,
@@ -190,7 +190,10 @@ export function Input({
   const currentValue = value ?? internalValue;
   const isDisabled = disabled || (form?.disabled ?? false) || (fieldset?.disabled ?? false);
   const formError = form?.errors[name];
-  const displayedError = error !== undefined && error !== '' ? error : formError;
+  // The error slot shows `error` when set, then the Form's message; otherwise a message
+  // only while `invalid` is true: copy.required for an empty required field, else copy.invalid.
+  const invalidMessage = invalid ? (required && currentValue.trim() === '' ? COPY.required(label) : COPY.invalid(label)) : undefined;
+  const displayedError = error !== undefined && error !== '' ? error : (formError ?? invalidMessage);
   const isInvalid = invalid || displayedError !== undefined;
   const summarised = form !== null && form.errorSummary;
 
@@ -270,14 +273,14 @@ export function Input({
     }
   };
 
-  const handleFocus = (event: TextInputFocusEvent): void => {
+  const handleFocus = (): void => {
     setFocused(true);
-    onFocus?.(event);
+    onFocus?.();
   };
 
-  const handleBlur = (event: TextInputFocusEvent): void => {
+  const handleBlur = (): void => {
     setFocused(false);
-    onBlur?.(event);
+    onBlur?.();
     if (form !== null && form.validateMode === 'blur') {
       form.reportValidity(name, validateValue(currentValue));
     }
@@ -336,7 +339,8 @@ export function Input({
 
   // The border is the focus ring: focus widens it to the locked `focusRingWidth` and
   // padding shrinks by the difference so the field never shifts. An invalid field keeps
-  // its danger color while focused, so focus never hides the error.
+  // its danger color while focused, so focus never hides the error. Border color swaps
+  // instantly on native, so the `transition` binding (and its override) has no effect here.
   const activeBorderWidth = focused ? t.borderWidthFocus : borderWidth;
   const inset = activeBorderWidth - borderWidth;
   const borderColor = isInvalid ? borderInvalidColor : focused ? t.colorBorderFocus : t.colorBorderStrong;

@@ -33,3 +33,11 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Input: locked bindings (border, borderFocus, placeholder, minTarget, minTargetSm, focusRingWidth, errorText, descriptionText) get no `--ds-input-*` hook, since 'every style binding becomes a hook' contradicts 'locked bindings excluded'; they read their tokens directly.
 - Input: the Overview/Guidance mention FieldsetContext (a group's `disabled` applies to the field); Lit has no such context in the spec, so only the native `formDisabledCallback` (form/fieldset ancestor) is honoured.
 - Input: anatomy has no root part, but disabledOpacity applies to 'the whole field group'; added an unnamed wrapper div (the grid carrying partGap), with no part name.
+
+## 2026-09-17 04:25 — round 1
+
+- Input: the `transition` binding became overridable, but its description doesn't say whether an override changes the duration only or the easing too; chose duration only (`--ds-input-transition` defaults to motion.duration.fast, easing stays motion.easing.standard).
+- Input: setting `error` implies `invalid`, and clearing `error` 'removes the invalid state', but the doc doesn't say what happens when the Form had set `invalid` separately before `error` was set and cleared; chose to clear `invalid` whenever a non-empty `error` is cleared, relying on the Form to set it again on its next validation.
+- Input: the constant `longPressDelay` is native-only and has no meaning on Lit; not used.
+- Input: `formResetCallback` isn't specified beyond the Forms convention; chose to restore the uncontrolled value to `defaultValue` and leave `invalid`/`error` untouched (the Form owns `invalid`, the consumer owns `error`).
+- Input: the scenario `disabled-stays-focusable-and-is-announced` expects `state: disabled` to be true but doesn't say which observable carries it on Lit; the test checks `aria-disabled="true"` on the inner input, plus that it has no native `disabled` attribute.

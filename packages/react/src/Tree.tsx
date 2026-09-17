@@ -371,7 +371,7 @@ export function Tree({
     if (node.disabled) return;
     if (selectable === 'single') selectOnly(node.id);
     if (node.href) {
-      itemRefs.current.get(node.id)?.querySelector<HTMLAnchorElement>('[data-part="link"]')?.click();
+      itemRefs.current.get(node.id)?.querySelector<HTMLAnchorElement>('[data-ds="Link"]')?.click();
     } else {
       onActivate?.(node.id);
     }

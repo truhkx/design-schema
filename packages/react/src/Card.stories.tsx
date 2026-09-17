@@ -73,6 +73,29 @@ export const InteractiveSubtle: Story = {
   args: { ...Interactive.args, surface: 'subtle' },
 };
 
+/* The target is found among the body's top-level children, so a Link beside Text still extends. */
+export const InteractiveWithText: Story = {
+  args: {
+    heading: 'September invoice',
+    interactive: true,
+    children: [
+      <Text key="summary" element="p" tone="muted">
+        Due 30 September.
+      </Text>,
+      <Link key="link" href="#" label="View the September invoice" />,
+    ],
+    headerActions: <Button label="Download" variant="ghost" size="sm" />,
+  },
+};
+
+export const InteractiveDisabledButton: Story = {
+  args: {
+    heading: 'Archived plan',
+    interactive: true,
+    children: <Button label="Choose plan" variant="secondary" disabled />,
+  },
+};
+
 /* examples */
 export const PlanCard: Story = {
   args: { heading: 'Team plan', headingLevel: '3', children: 'What the plan includes' },

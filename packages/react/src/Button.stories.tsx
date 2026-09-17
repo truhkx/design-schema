@@ -47,6 +47,10 @@ export const Disabled: Story = { args: { disabled: true } };
 
 export const Loading: Story = { args: { loading: true, label: 'Saving' } };
 
+export const LoadingIconOnly: Story = {
+  args: { loading: true, iconOnly: true, label: 'Close', variant: 'ghost', leadingIcon: <Icon name="close" inline /> },
+};
+
 export const WithIcons: Story = {
   args: {
     label: 'Add item',
@@ -97,8 +101,14 @@ export const DestructiveConfirm: Story = { args: { label: 'Delete file', variant
 
 /** A low-emphasis icon-only control in dense UI, whose label says what it does rather than what the icon depicts. */
 export const IconOnlyInAToolbar: Story = {
-  args: { label: 'Close', iconOnly: true, variant: 'ghost', size: 'sm' },
+  args: {
+    label: 'Close',
+    iconOnly: true,
+    leadingIcon: <Icon name="close" inline />,
+    variant: 'ghost',
+    size: 'sm',
+  },
 };
 
-/** The submit button of a form while the request is in flight — busy, and ignoring repeat activation. */
+/** The submit button of a form while the request is in flight - busy, and ignoring repeat activation. */
 export const PendingSubmit: Story = { args: { label: 'Create account', type: 'submit', loading: true } };

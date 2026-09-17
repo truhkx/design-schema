@@ -25,3 +25,12 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Divider: 'block-size: 100% / align-self stretch' for vertical leaves display unspecified; chose inline-block with both block-size: 100% and align-self: stretch so it works in flex rows and in inline flow with a sized parent.
 - Divider: the dev warning for an ignored vertical label doesn't say 'once'; chose a useEffect keyed on the ignored state so it warns per change rather than per render.
 - Divider: ToolbarGroups/OrientationVertical stories need a sized flex row to show a vertical line; the spec gives no demo wrapper, so the stories use a decorator with an inline flex row style (blockSize: '3rem').
+
+## 2026-09-17 04:44 — round 1
+
+- Divider: the composition says the label Text receives exactly `size`, `tone`, `element` (plus forwards), but the web platform notes also require an `id` on it for `aria-labelledby` and `data-part="label"`; I pass `id` and `data-part` as platform necessities.
+- Divider: the `toolbar-groups` example says to show the divider in a horizontal Stack with align stretch, but it doesn't say what the siblings are or what gives the row its height; I used two `Text` siblings ('Bold Italic', 'Align left') and gap `tight`, and applied the same wrapper to `OrientationVertical`.
+- Divider: the label scenario only checks the text and the separator role, not that the separator's accessible name is the label, which is the point of the `aria-labelledby` note; the test doesn't check the name.
+- Divider: the spec doesn't say which element the root `ref` is typed to when the root switches between `<hr>` and `<div>`; I typed it `Ref<HTMLElement>`.
+- Divider: `...rest` takes div attributes but a decorative divider renders an `<hr>`; the spec doesn't say which attributes belong on the decorative root. I forward the same rest to both.
+- Divider: the spec never says whether a labelled horizontal divider's lines should be vertically centered on the label or sit on the text baseline; I used `align-items: center`.

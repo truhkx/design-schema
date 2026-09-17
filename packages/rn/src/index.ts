@@ -2,7 +2,7 @@ export { ThemeProvider, useTheme, toFontWeight, toLineHeight, toEasing, useReduc
 export type { Theme, ThemeMode, ThemeModeSetting, ThemeProviderProps, Tokens } from './theme';
 
 export { Button } from './Button';
-export type { ButtonOverridableBinding, ButtonProps, ButtonSize, ButtonTrackEvent, ButtonType, ButtonVariant } from './Button';
+export type { ButtonOverridableBinding, ButtonProps, ButtonSize, ButtonType, ButtonVariant } from './Button';
 
 export { Heading } from './Heading';
 export type { HeadingLevel, HeadingOverridableBinding, HeadingProps, HeadingSize } from './Heading';

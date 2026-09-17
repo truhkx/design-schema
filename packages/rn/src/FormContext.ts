@@ -5,18 +5,19 @@ export type FormValidateMode = 'submit' | 'blur' | 'change';
 
 /**
  * What one field contributes on submit: a string (Input, RadioGroup, a checked
- * Checkbox's `value`), a boolean (Switch), an array of strings (a `multiple`
- * Listbox), or `undefined` for an unchecked Checkbox or an empty Listbox selection,
- * which is then left out of the collected values.
+ * Checkbox's `value`), a number (NumberInput, Slider), a boolean (Switch), an array
+ * of strings (a multi-select Listbox, Select or Combobox), a number pair (a range
+ * Slider or DatePicker), or `undefined` for an unchecked Checkbox, an unselected
+ * RadioGroup, an empty or a disabled field, which is then left out of the collected values.
  */
-export type FormFieldValue = string | boolean | string[] | undefined;
+export type FormFieldValue = string | number | boolean | string[] | [number, number] | undefined;
 
 /** The values `onSubmit` receives, keyed by field name. */
 export type FormValues = Record<string, Exclude<FormFieldValue, undefined>>;
 
 /** What a field (Input, Checkbox, Switch, RadioGroup) registers with the enclosing Form. */
 export interface FormFieldHandle {
-  /** The field's visible label, so the error summary can read "Label: message". */
+  /** The field's visible label, which the error summary shows when the field is invalid with an empty message. */
   label?: string | undefined;
   /** Current value of the field. `undefined` means "contributes nothing". */
   getValue(): FormFieldValue;

@@ -1,7 +1,7 @@
 /**
  * Link — behavior scenarios from the component doc, one test each, in the doc's order.
- * The external-name, new-tab and download scenarios are web/Lit only (the parser narrows
- * them); on native a press is `fireEvent.press`.
+ * The new-tab and download scenarios are web/Lit only (the parser narrows them); on
+ * native a press is `fireEvent.press` and the external name is the accessibilityLabel.
  */
 import * as React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react-native';
@@ -28,6 +28,11 @@ describe('Link', () => {
     fireEvent.press(s.container());
     expect(s.onPress).toHaveBeenCalledTimes(1);
     expect(s.onPress).toHaveBeenCalledWith(s.props.href);
+  });
+
+  it('external-link-announces-that-it-leaves', () => {
+    const s = setup({ external: true, label: 'View the billing history' });
+    expect(s.container()).toHaveAccessibleName('View the billing history (opens in new tab)');
   });
 
   it('renders', () => {

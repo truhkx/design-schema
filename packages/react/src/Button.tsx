@@ -21,7 +21,6 @@ const COPY: { loading: string } = { loading: 'Loading' };
 
 /** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
 export type ButtonOverridableBinding =
-  | 'backgroundHover'
   | 'iconGap'
   | 'paddingInline'
   | 'paddingBlock'
@@ -29,12 +28,14 @@ export type ButtonOverridableBinding =
   | 'fontFamily'
   | 'fontWeight'
   | 'fontSize'
+  | 'inverseBackgroundHover'
+  | 'inverseHoverOpacity'
   | 'disabledOpacity'
   | 'transition'
-  | 'loadingSpin';
+  | 'loadingSpin'
+  | 'spinnerSize';
 
 const OVERRIDE_HOOK: Record<ButtonOverridableBinding, string> = {
-  backgroundHover: '--ds-button-background-hover',
   iconGap: '--ds-button-icon-gap',
   paddingInline: '--ds-button-padding-inline',
   paddingBlock: '--ds-button-padding-block',
@@ -42,22 +43,27 @@ const OVERRIDE_HOOK: Record<ButtonOverridableBinding, string> = {
   fontFamily: '--ds-button-font-family', // literal-ok: CSS custom-property hook name, not a font stack
   fontWeight: '--ds-button-font-weight',
   fontSize: '--ds-button-font-size',
+  inverseBackgroundHover: '--ds-button-inverse-background-hover',
+  inverseHoverOpacity: '--ds-button-inverse-hover-opacity',
   disabledOpacity: '--ds-button-disabled-opacity',
   transition: '--ds-button-transition',
   loadingSpin: '--ds-button-loading-spin',
+  spinnerSize: '--ds-button-spinner-size',
 };
 
 function overridesToStyle(overrides: Partial<Record<ButtonOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as ButtonOverridableBinding[]) {
+    const hook = OVERRIDE_HOOK[binding];
     const ref = overrides[binding];
-    if (ref) style[OVERRIDE_HOOK[binding]] = cssVar(ref);
+    // Locked bindings are not in the type; one passed anyway has no hook and is ignored.
+    if (hook && ref) style[hook] = cssVar(ref);
   }
   return style as CSSProperties;
 }
 
 export interface ButtonProps
-  extends Omit<ComponentPropsWithoutRef<'button'>, 'type' | 'disabled' | 'children' | 'aria-label'> {
+  extends Omit<ComponentPropsWithoutRef<'button'>, 'type' | 'disabled' | 'children' | 'aria-label' | 'onClick'> {
   /** The button's text. Also its accessible name. */
   label: string;
   /**
@@ -69,47 +75,56 @@ export interface ButtonProps
   /** Controls horizontal padding and font size. Touch targets never drop below the minimum regardless of size. */
   size?: ButtonSize | undefined;
   /** Icon before the label. Decorative — hidden from assistive technology; the label carries the meaning. */
-  leadingIcon?: ReactNode;
+  leadingIcon?: ReactNode | undefined;
   /** Icon after the label. Decorative, like leadingIcon. */
-  trailingIcon?: ReactNode;
+  trailingIcon?: ReactNode | undefined;
   /** `submit` submits the enclosing Form. Everything else is `button`. */
   type?: ButtonType | undefined;
   /**
-   * Set by a parent that the button discloses (Menu, Popover, SidePanel, Disclosure): `aria-expanded`
-   * on web. Consumers rarely set it directly — a disclosing parent usually passes the native
-   * `aria-expanded` through `...rest` instead, and this prop wins when both are given.
+   * Set by a parent that the button discloses (Menu, Popover, SidePanel, Disclosure): aria-expanded
+   * on web. Consumers rarely set it directly. No default, and tri-state: undefined means the button
+   * discloses nothing, so no expanded state is reported at all — though an `aria-expanded` arriving
+   * through `...rest` still applies.
    */
   expanded?: boolean | undefined;
-  /** Prevents activation. The button stays in the tab order and is announced as disabled. */
+  /**
+   * Prevents activation. The button stays in the tab order and is announced as disabled. A press
+   * blocked by `disabled` or `loading` is not a press: onPress does not fire and nothing chained from
+   * it (an extension's tracking) runs. Inside a disabled Form the button is disabled whatever this
+   * prop says.
+   */
   disabled?: boolean | undefined;
   /**
-   * Overrides the accessible name when it must say more than the visible label ("Sort by
-   * Amount, ascending" on a header that shows "Amount"). The visible label must be the start of
-   * it (WCAG 2.5.3 label-in-name). Maps to aria-label.
+   * Overrides the accessible name when it must say more than the visible label ("Sort by Amount,
+   * ascending" on a header that shows "Amount"). The name must contain the visible label (WCAG 2.5.3
+   * label-in-name); starting with it is preferred but not required. Maps to aria-label.
    */
   accessibleName?: string | undefined;
   /**
    * Text used for this button when a Toolbar collapses it into its overflow Menu. Only Buttons
-   * collapse; other controls stay visible.
+   * collapse; other controls stay visible. Button itself never renders it: Toolbar reads it from the
+   * Button element's props (it never reaches the DOM).
    */
   overflowLabel?: string | undefined;
   /**
-   * Hides the visible label and shows only `leadingIcon`. `label` is still required and becomes
-   * the accessible name. Padding becomes equal on all sides (`space.sm`).
+   * Hides the visible label and shows only `leadingIcon`; `trailingIcon` is not rendered either.
+   * `label` is still required and becomes the accessible name. Padding becomes equal on all sides
+   * (`space.sm`).
    */
   iconOnly?: boolean | undefined;
   /**
-   * Shows a 1em ring spinner in `currentColor` in the leading icon slot (whether or not
-   * `leadingIcon` is set; for `iconOnly` it replaces the sole glyph), hides `trailingIcon`, keeps
-   * the label visible and the layout unchanged, and blocks repeat activation while an action is
-   * pending.
+   * Shows a ring spinner (spinnerSize across, spinnerStroke thick, in `currentColor`) in the leading
+   * icon slot (whether or not `leadingIcon` is set; for `iconOnly` it replaces the sole glyph), hides
+   * `trailingIcon`, keeps the label visible and the layout unchanged, and blocks repeat activation
+   * while an action is pending. `copy.loading` is announced as a description, never as part of the
+   * name.
    */
   loading?: boolean | undefined;
   /**
    * The button sits on an inverse surface (Toast, Tooltip-like panels): `ghost` text uses
-   * color.inverse.link and hover uses color.inverse.foreground at 12% over the surface; the focus
-   * ring uses color.inverse.focus for every variant while `inverse` is true, since the ring must
-   * read against the inverse surface. Only `ghost` changes its fill on inverse surfaces; other
+   * color.inverse.link and hover uses inverseBackgroundHover at inverseHoverOpacity over the surface;
+   * the focus ring uses color.inverse.focus for every variant while `inverse` is true, since the ring
+   * must read against the inverse surface. Only `ghost` changes its fill on inverse surfaces; other
    * variants keep their own fills.
    */
   inverse?: boolean | undefined;
@@ -133,11 +148,8 @@ export interface ButtonProps
  * Use the `primary` variant for the single most important action in a view. Use `secondary` for
  * the alternatives beside it, `ghost` for low-emphasis actions in dense UI such as toolbars, and
  * `danger` only for destructive, hard-to-undo actions.
- *
- * `expanded` is not a separate React prop: the native `aria-expanded` arrives through `...rest`,
- * which is how Menu, Popover, Disclosure, SidePanel, Combobox and Search already set it.
  */
-export const Button = function Button({
+export function Button({
   ref,
   label,
   variant = 'primary',
@@ -158,17 +170,16 @@ export const Button = function Button({
   onTrack,
   'aria-expanded': ariaExpanded,
   'aria-describedby': describedBy,
-  className,
-  style,
+  className: _className,
+  style: _style,
   ...rest
 }: ButtonProps & { ref?: Ref<HTMLButtonElement> | undefined }): ReactElement {
   const form = useFormContext();
-  const generatedId = useId();
-  const loadingId = `ds-button${generatedId}-loading`;
+  const loadingId = `ds-button${useId()}-loading`;
   const isDisabled = disabled || (form?.disabled ?? false);
   const blocked = isDisabled || loading;
 
-  const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
+  const handleClick = (event: MouseEvent<HTMLButtonElement>): void => {
     if (blocked) {
       // aria-disabled does not stop native activation (including form submission), so we do.
       event.preventDefault();
@@ -188,17 +199,16 @@ export const Button = function Button({
     `ds-button--${size}`,
     iconOnly ? 'ds-button--icon-only' : null,
     inverse ? 'ds-button--inverse' : null,
-    className ?? null,
   ]
     .filter(Boolean)
     .join(' ');
 
-  const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
-  const mergedStyle = overrideStyle || style ? { ...overrideStyle, ...style } : undefined;
-
   // copy.loading is the button's description while busy, never part of its accessible name: the
   // node is aria-hidden, which an aria-describedby reference still resolves through.
   const describedByValue = loading ? [describedBy, loadingId].filter(Boolean).join(' ') : describedBy;
+
+  const hasLeading = leadingIcon !== undefined && leadingIcon !== null;
+  const hasTrailing = trailingIcon !== undefined && trailingIcon !== null;
 
   return (
     <button
@@ -208,7 +218,7 @@ export const Button = function Button({
       data-ds="Button"
       data-part="container"
       className={classes}
-      style={mergedStyle}
+      style={overrides ? overridesToStyle(overrides) : undefined}
       aria-disabled={isDisabled ? 'true' : undefined}
       aria-busy={loading ? 'true' : undefined}
       aria-label={accessibleName ?? (iconOnly ? label : undefined)}
@@ -218,7 +228,7 @@ export const Button = function Button({
     >
       {loading ? (
         <span className="ds-button__spinner" aria-hidden="true" />
-      ) : leadingIcon !== undefined && leadingIcon !== null ? (
+      ) : hasLeading ? (
         <span className="ds-button__icon" data-part="leadingIcon" aria-hidden="true">
           {leadingIcon}
         </span>
@@ -228,7 +238,7 @@ export const Button = function Button({
           {label}
         </span>
       )}
-      {!loading && trailingIcon !== undefined && trailingIcon !== null ? (
+      {!loading && !iconOnly && hasTrailing ? (
         <span className="ds-button__icon" data-part="trailingIcon" aria-hidden="true">
           {trailingIcon}
         </span>
@@ -240,4 +250,4 @@ export const Button = function Button({
       ) : null}
     </button>
   );
-};
+}

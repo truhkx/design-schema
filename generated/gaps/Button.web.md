@@ -40,3 +40,15 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Button: `inverse` specifies ghost hover as "color.inverse.foreground at 12% over the surface" but 12% is a bare literal with no token behind it. Used `color-mix(in srgb, var(--color-inverse-foreground) 12%, var(--color-inverse-surface))` under the sanctioned color-mix exception; a `color.inverse.backgroundHover` token would remove the literal.
 - Button: a11y.requires lists target-24px (size.target.min) but the guidance also asks for 44x44 on touch platforms, and web declares no `minTargetComfortable` binding. Applied only `--size-target-min` to min-inline-size/min-block-size; the web doc never says when the comfortable target applies.
 - Button: `overflowLabel` has no web-side contract — it is accepted and deliberately unused (destructured out so it never reaches the DOM), with no statement of how Toolbar reads it off a React element (props inspection? a data attribute?). Toolbar's overflow collapse cannot currently see it.
+
+## 2026-09-17 04:14 — round 1
+
+- Button: onPress says 'No payload', but the web name is `onClick`, and callers such as Menu and Popover triggers expect React's native signature. I kept `onClick(event: MouseEvent<HTMLButtonElement>)` rather than a no-argument handler.
+- Button: inverseHoverOpacity has `computed: times 0.25`, but the overrides contract says an entry sets the hook to `var(--token)`. It doesn't say whether the multiplier applies before or after an override. I made the hook hold the base token (`--ds-button-inverse-hover-opacity: var(--opacity-disabled)`) and apply `* 0.25` where the rule reads it, so an override also gets the multiplier.
+- Button: the inverseHoverOpacity opacity is a 0–1 number, but color-mix needs a percentage. The spec gives no conversion, so I wrote `calc(calc(var(--hook) * 0.25) * 100%)`.
+- Button: the conventions say `...rest` never forwards `className`/`style`, but ButtonProps still extends button props that include them. I drop them silently rather than removing them from the type, which could break callers; there's no dev warning either. The doc should say which.
+- Button: a disabled parent Form disables the button through `useFormContext().disabled`. That field isn't in the Form contract the digest gives (`{ name, label, id, getValue, validate, focus }`); I used the existing field.
+- Button: the spinner 'takes the leadingIcon position' but 'carries no part name'. I rendered it without a data-part, in place of the leadingIcon wrapper, so there's no leadingIcon part while loading.
+- Button: the `icon-only-in-a-toolbar` example gives `leadingIcon: "The close Icon"` as prose. The story renders `<Icon name="close" inline />`.
+- Button: there's no `Keyboard` story because Button has no `keyboard` block; activation is native, as the scenarios say.
+- Button: demo-brand/src/CtaButton.tsx still lists `backgroundHover` as overridable, which the schema now locks. I didn't touch it; `pnpm demo:naming` may need a rerun.

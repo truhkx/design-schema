@@ -39,3 +39,11 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Container: align: start's description is in CSS terms (`margin-inline: 0` on both sides); the rn note maps it to alignSelf flex-start, which has no margin concept. Followed the rn note.
 - Container: the rn platform section doesn't say whether Container exposes a ref to its root View; added `ref?: React.Ref<ViewInstance>` per the package convention (as in Box).
 - Container: the behavior scenario main-element-is-the-page-landmark is web-only and `element` is absent on rn, so it has no rn test; all 11 rn scenarios are render-only and cannot check maxWidth or the responsive gutter.
+
+## 2026-09-17 04:36 — round 1
+
+- Container: anatomy names one part, `column`, and web/Lit mark it with data-part="column", but the rn notes don't say whether the root should also carry `testID="Container.column"`. The root is the part and a View takes only one testID, so I kept `testID="Container"` and added no part testID, as Box does for `surface`.
+- Container: the paddingInline description says the responsive `default` gutter measures the viewport. On native, useWindowDimensions gives the window width, not the width of the parent, while SwiftUI measures the container's own width with GeometryReader. So a nested `gutter: default` Container inside a narrower parent picks its gutter from the window width on RN but from its own width on SwiftUI. I used the window width, as the rn notes say.
+- Container: the rn notes say `width: 100%` together with alignSelf, but not what happens inside a row-direction parent, where a 100% width combined with alignSelf crosses axes. I applied both as written.
+- Container: the Default story's `children` isn't given. The spec says string children are drawn inside a Text but gives no Default text, so I used `<Text>Container content</Text>`.
+- Container: all 11 scenarios only check that it renders. None checks maxWidth, alignSelf or the gutter breakpoints, so the style contract isn't covered by tests on native.

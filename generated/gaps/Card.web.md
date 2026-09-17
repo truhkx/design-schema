@@ -51,3 +51,13 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Card: tabIndex isn't a schema prop, but Feed passes tabIndex={-1} to Card. A caller's tabIndex now passes through `...rest` unless `focusable` sets -1. The docs should say whether rest tabIndex is allowed.
 - Card: examples say 'exactly its given as args', but the scenarios run on the Default story's args. Put a minimal `children` in meta.args and the full demo content in Default.args; the test merges meta.args + Default.args + given.
 - Card: interactive with an empty or falsy `heading` — treated heading '' as absent (renders a <div>, no aria-labelledby).
+
+## 2026-09-17 04:38 — round 1
+
+- Card: web notes say Card marks the child by cloning it with an extra class because 'both Link and Button merge a passed className by contract', but in the package Link overwrites className (it comes after the ...rest spread) and Button destructures and drops it, so a class never reaches the DOM. I chose a cloned `data-ds-card-target` attribute, which both pass through ...rest, and the CSS matches on it. The doc should either name the attribute or make Link and Button actually merge className.
+- Card: 'If the child is disabled the card is disabled with it: no hover background, pressing does nothing' doesn't say how web tells the child is disabled (Button's `disabled` prop, a disabled Form, a native :disabled button). I used CSS `:has([data-ds-card-target]:is([aria-disabled='true'], :disabled))`, so every source counts. Pressing is already blocked by Button's own handler or by native :disabled, so the pseudo-element is left in place.
+- Card: `focusable` with `interactive` is a no-op, but the spec doesn't say whether that still holds when `interactive` fell back to non-interactive (zero or several targets). I kept it a no-op whenever `interactive` is set.
+- Card: 'a plain string is rendered inside the system Text' doesn't say which Text element or size. I used Text's defaults and wrap numbers as well as strings.
+- Card: the interactive-adds-no-focus-stop scenario runs on the Default story, whose body is a Stack with no top-level Link, so the card falls back to non-interactive and the test never covers a real interactive card. The scenario's given should include a top-level Link child.
+- Card: 'warns once in development' doesn't say once per instance or once per page. I chose once per mounted card.
+- Card: hoverBackground says 'on pointer hover' without saying whether to add `@media (hover: hover)`. I used a plain `:hover`.

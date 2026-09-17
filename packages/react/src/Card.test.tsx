@@ -4,6 +4,7 @@
  * gate runs this file after every generation round. See generated/prompts/Card.web.md.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { ComponentProps } from 'react';
 import { render, screen } from '@testing-library/react';
 import { Card, type CardProps } from './Card';
 import meta, { Default } from './Card.stories';
@@ -15,7 +16,7 @@ afterEach(() => {
 /** The Default story's args plus the scenario's `given`. */
 function setup(given: Partial<CardProps> = {}) {
   vi.spyOn(console, 'warn').mockImplementation(() => {});
-  const props = { ...meta.args, ...Default.args, ...given } as CardProps;
+  const props = { ...meta.args, ...Default.args, ...given } as ComponentProps<typeof Card>;
   const utils = render(<Card {...props} />);
   const root = () => utils.container.querySelector<HTMLElement>('[data-ds="Card"]')!;
   return { ...utils, props, root };

@@ -4,6 +4,7 @@ import {
   isValidElement,
   useEffect,
   useId,
+  useRef,
   type ComponentPropsWithoutRef,
   type CSSProperties,
   type ElementType,
@@ -15,6 +16,7 @@ import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Heading, type HeadingLevel } from './Heading';
 import { Button } from './Button';
 import { Link } from './Link';
+import { Text } from './Text';
 import './Card.css';
 
 /** Accepts the schema's string values and their numeric equivalents. */
@@ -65,9 +67,16 @@ const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'produc
 
 export interface CardProps
   extends Omit<ComponentPropsWithoutRef<'article'>, 'children' | 'aria-labelledby' | 'className' | 'style'> {
-  /** The body. Usually a Stack of Text and controls. */
+  /**
+   * The body. Usually a Stack of Text and controls; a plain string is rendered inside the system
+   * Text (a bare string cannot sit in a native View).
+   */
   children: ReactNode;
-  /** The card's title, rendered as a Heading at the card's level. Omit for cards that are a single piece of content. */
+  /**
+   * The card's title, rendered as the system Heading at the card's level and at `size: lg` on every
+   * platform, so a card heading reads smaller than a page heading. Omit for cards that are a single
+   * piece of content; an empty string counts as omitted (no article, no label).
+   */
   heading?: string | undefined;
   /** Heading level for `heading`, so cards fit the page outline. Cards in a list share a level. */
   headingLevel?: CardHeadingLevel | undefined;
@@ -75,16 +84,21 @@ export interface CardProps
    * Controls at the end of the header row — a ghost icon-only Button, a Link. At most two: a
    * content guideline, not a runtime check, as with every other soft content limit here.
    */
-  headerActions?: ReactNode;
+  headerActions?: ReactNode | undefined;
   /** The action row. Buttons in a row, primary first, following Form's action-order rule. */
-  footer?: ReactNode;
+  footer?: ReactNode | undefined;
   /** Padding inside the card from the layout inset presets. `sm` for dense grids, `lg` for a single featured card. */
   inset?: CardInset | undefined;
   /** `default` is the page background with a border — the calm option; `subtle` is a tinted surface without a border. */
   surface?: CardSurface | undefined;
   /**
-   * The whole card is one link or button target. Requires exactly one interactive child (a Link
-   * or Button) whose action the card extends to its full area; the card itself is not focusable.
+   * The whole card is one link or button target. Requires exactly one interactive child (a Link or
+   * Button) whose action the card extends to its full area; the card itself is not focusable. The
+   * child is looked for among the top-level children of the body only (a native a[href] or button
+   * is accepted too); controls nested inside a wrapper such as a Stack are not searched. With zero
+   * or several such children the card stays non-interactive and warns once in development. If the
+   * child is disabled the card is disabled with it. Controls in `headerActions` and `footer` are
+   * never the target; they sit above the hit area and keep their own targets.
    */
   interactive?: boolean | undefined;
   /**
@@ -98,17 +112,17 @@ export interface CardProps
   overrides?: Partial<Record<CardOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
-const TARGET_CLASS = 'ds-card__target';
+/**
+ * Marks the one child an interactive card extends. Link and Button forward data attributes through
+ * `...rest` but replace a passed className with their own, so the mark is an attribute.
+ */
+const TARGET_ATTRIBUTE = 'data-ds-card-target';
 
-/** The single Link, Button, `<a href>` or `<button>` an interactive card extends, or null. */
-function findTarget(children: ReactNode): ReactElement<{ className?: string | undefined }> | null {
-  if (Children.count(children) !== 1 || !isValidElement<{ className?: string | undefined; href?: unknown }>(children)) {
-    return null;
-  }
-  const { type } = children;
-  if (type === Link || type === Button || type === 'button') return children;
-  if (type === 'a' && children.props.href !== undefined) return children;
-  return null;
+function isTarget(node: ReactNode): node is ReactElement<Record<string, unknown>> {
+  if (!isValidElement<{ href?: unknown }>(node)) return false;
+  const { type } = node;
+  if (type === Link || type === Button || type === 'button') return true;
+  return type === 'a' && node.props.href !== undefined;
 }
 
 /**
@@ -117,7 +131,7 @@ function findTarget(children: ReactNode): ReactElement<{ className?: string | un
  * When to use:
  * Use Cards for collections of like items where each needs its own boundary, and for a single panel that groups a heading, content and actions. Give the card a `heading` when it is a unit in a list (the heading is what a screen reader jumps to) and set `headingLevel` to fit the page. Use `interactive` when the entire card leads somewhere and it contains exactly one Link or Button.
  */
-export const Card = function Card({
+export function Card({
   ref,
   children,
   heading,
@@ -134,22 +148,36 @@ export const Card = function Card({
   const headingId = useId();
   const hasHeading = heading !== undefined && heading !== '';
 
-  const target = interactive ? findTarget(children) : null;
-  const isInteractive = target !== null;
+  let body: ReactNode = typeof children === 'string' || typeof children === 'number' ? <Text>{children}</Text> : children;
+  let isInteractive = false;
+  if (interactive) {
+    // Top-level children of the body only; a Link inside a Stack is not searched.
+    const items = Children.toArray(children);
+    const targets = items.filter(isTarget);
+    const target = targets.length === 1 ? targets[0]! : null;
+    if (target !== null) {
+      isInteractive = true;
+      body = items.map((item) => (item === target ? cloneElement(target, { [TARGET_ATTRIBUTE]: '' }) : item));
+    }
+  }
   // `interactive` wins: the card already has a target, so it takes no scripted focus of its own.
   const isFocusable = focusable && !interactive;
 
+  const warnedNoTarget = useRef(false);
+  const warnedBoth = useRef(false);
   const warnNoTarget = isDev && interactive && !isInteractive;
   const warnBoth = isDev && interactive && focusable;
   useEffect(() => {
-    if (warnNoTarget) {
+    if (warnNoTarget && !warnedNoTarget.current) {
+      warnedNoTarget.current = true;
       console.warn(
-        'Card: `interactive` requires exactly one interactive child (a Link or Button); the card stays non-interactive.',
+        'Card: `interactive` requires exactly one Link or Button among the top-level children; the card stays non-interactive.',
       );
     }
   }, [warnNoTarget]);
   useEffect(() => {
-    if (warnBoth) {
+    if (warnBoth && !warnedBoth.current) {
+      warnedBoth.current = true;
       console.warn('Card: `focusable` has no effect with `interactive`; the child link or button is the target.');
     }
   }, [warnBoth]);
@@ -166,15 +194,8 @@ export const Card = function Card({
     .filter(Boolean)
     .join(' ');
 
-  const body =
-    target !== null
-      ? cloneElement(target, {
-          className: [target.props.className, TARGET_CLASS].filter(Boolean).join(' '),
-        })
-      : children;
-
-  const showHeader = hasHeading || (headerActions !== undefined && headerActions !== null);
-  const showFooter = footer !== undefined && footer !== null;
+  const hasHeaderActions = headerActions !== undefined && headerActions !== null && headerActions !== false;
+  const hasFooter = footer !== undefined && footer !== null && footer !== false;
 
   return (
     <Tag
@@ -187,19 +208,14 @@ export const Card = function Card({
       aria-labelledby={hasHeading ? headingId : undefined}
       tabIndex={isFocusable ? -1 : rest.tabIndex}
     >
-      {showHeader ? (
+      {hasHeading || hasHeaderActions ? (
         <div className="ds-card__header" data-part="header">
           {hasHeading ? (
-            <Heading
-              id={headingId}
-              level={headingLevel as HeadingLevel}
-              size="lg"
-              overrides={{ marginBlockEnd: 'space.0' }}
-            >
+            <Heading id={headingId} level={headingLevel as HeadingLevel} size="lg" overrides={{ marginBlockEnd: 'space.0' }}>
               {heading}
             </Heading>
           ) : null}
-          {headerActions !== undefined && headerActions !== null ? (
+          {hasHeaderActions ? (
             <div className="ds-card__header-actions" data-part="headerActions">
               {headerActions}
             </div>
@@ -209,11 +225,11 @@ export const Card = function Card({
       <div className="ds-card__body" data-part="body">
         {body}
       </div>
-      {showFooter ? (
+      {hasFooter ? (
         <div className="ds-card__footer" data-part="footer">
           {footer}
         </div>
       ) : null}
     </Tag>
   );
-};
+}

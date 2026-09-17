@@ -28,6 +28,9 @@ const HOOKS: Record<LinkOverridableBinding, string> = {
  * client-side call `preventDefault()` on it there. The host is `display: inline`
  * so a link can sit inside a `<ds-text>` paragraph.
  *
+ * `href` and `label` are required but start as `''`; an empty href is the
+ * consumer's authoring error (render Text instead), and Link does not warn.
+ *
  * ## When to use
  *
  * Use a Link for any navigation: another page, a screen, an anchor, an
@@ -64,7 +67,6 @@ export class DsLink extends LitElement {
       text-decoration-line: underline;
       text-decoration-thickness: var(--ds-link-underline-thickness);
       text-underline-offset: var(--ds-link-underline-offset);
-      border-radius: var(--radius-sm);
       cursor: pointer;
       transition: color var(--ds-link-transition) var(--motion-easing-standard);
     }
@@ -80,12 +82,12 @@ export class DsLink extends LitElement {
       color: var(--color-link-visited);
     }
 
-    /* colorHover */
+    /* colorHover: pointer hover only, not :active */
     [data-part='anchor']:hover {
       color: var(--color-link-hover);
     }
 
-    /* tone=inherit: the surrounding text color; the underline alone marks the link */
+    /* tone=inherit: color, colorHover and colorVisited are not applied; the underline and icon follow currentColor */
     :host([tone='inherit']) [data-part='anchor'],
     :host([tone='inherit']) [data-part='anchor']:visited,
     :host([tone='inherit']) [data-part='anchor']:hover {
@@ -99,7 +101,7 @@ export class DsLink extends LitElement {
       border-radius: var(--radius-sm);
     }
 
-    /* externalIconGap; the icon itself is 1em of the surrounding font (ds-icon inline) */
+    /* externalIconGap, on Link's own wrapper; the icon inside is 1em of the surrounding font (ds-icon inline) */
     [data-part='externalIcon'] {
       margin-inline-start: var(--ds-link-external-icon-gap);
     }
@@ -111,14 +113,13 @@ export class DsLink extends LitElement {
       margin: -1px;
       padding: 0;
       overflow: hidden;
-      clip: rect(0 0 0 0);
       clip-path: inset(50%);
       white-space: nowrap;
       border: 0;
     }
   `;
 
-  /** The destination. */
+  /** The destination. A URL. */
   @property() accessor href = '';
 
   /** The link text. Also the accessible name. Says where the link goes, not "click here". */
@@ -157,7 +158,7 @@ export class DsLink extends LitElement {
       ?download=${this.download}
       ><span part="label" data-part="label">${this.label}</span>${this.external
         ? html`<span class="visually-hidden">${EXTERNAL_SUFFIX}</span
-            ><ds-icon part="externalIcon" data-part="externalIcon" name="external" inline></ds-icon>`
+            ><span part="externalIcon" data-part="externalIcon"><ds-icon name="external" inline></ds-icon></span>`
         : nothing}</a
     >`;
   }

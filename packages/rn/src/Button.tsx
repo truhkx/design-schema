@@ -14,7 +14,6 @@ export type ButtonType = 'button' | 'submit';
 
 /** The style bindings a caller may replace with a different token; see the component's overrides contract. */
 export type ButtonOverridableBinding =
-  | 'backgroundHover'
   | 'iconGap'
   | 'paddingInline'
   | 'paddingBlock'
@@ -22,15 +21,12 @@ export type ButtonOverridableBinding =
   | 'fontFamily'
   | 'fontWeight'
   | 'fontSize'
+  | 'inverseBackgroundHover'
+  | 'inverseHoverOpacity'
   | 'disabledOpacity'
   | 'transition'
-  | 'loadingSpin';
-
-/** The pair sent to `onTrack` after a tracked press. */
-export interface ButtonTrackEvent {
-  name: string;
-  label: string;
-}
+  | 'loadingSpin'
+  | 'spinnerSize';
 
 export interface ButtonProps {
   /** The button's text. Also its accessible name. */
@@ -56,20 +52,26 @@ export interface ButtonProps {
   trailingIcon?: React.ReactNode;
   /** Hides the visible label and shows only `leadingIcon`. `label` is still required and becomes the accessible name. Padding becomes equal on all sides (`space.sm`). */
   iconOnly?: boolean | undefined;
-  /** Replaces the icon slot with a ring spinner, keeps the label in place, and blocks repeat activation while an action is pending. */
+  /**
+   * Shows a ring spinner in the leading icon slot (whether or not `leadingIcon` is set;
+   * for `iconOnly` it replaces the sole glyph), hides `trailingIcon`, keeps the label
+   * visible, and blocks repeat activation while an action is pending. `copy.loading` is
+   * announced as the accessibility value beside `busy`, never as part of the name.
+   */
   loading?: boolean | undefined;
   /**
    * The button sits on an inverse surface (Toast, tooltip-like panels). Only `ghost`
    * changes its fill there: its text switches to `color.inverse.link` and its pressed
-   * fill to `color.inverse.foreground` at 12%. Every variant's focus ring switches to
-   * `color.inverse.focus`, since that ring must read against the inverse surface
-   * regardless of the button's own fill.
+   * fill to `color.inverse.foreground` at `opacity.disabled × 0.25`. Every variant's
+   * focus ring switches to `color.inverse.focus`, since that ring must read against the
+   * inverse surface regardless of the button's own fill.
    */
   inverse?: boolean | undefined;
   /**
    * Overrides the accessible name when it must say more than the visible label ("Sort
-   * by Amount, ascending" on a header that shows "Amount"). The visible label must be
-   * the start of it (WCAG 2.5.3 label-in-name). Maps to `accessibilityLabel`.
+   * by Amount, ascending" on a header that shows "Amount"). The name must contain the
+   * visible label (WCAG 2.5.3 label-in-name); starting with it is preferred. Maps to
+   * `accessibilityLabel`.
    */
   accessibleName?: string | undefined;
   /**
@@ -90,7 +92,7 @@ export interface ButtonProps {
   /** Fired when the button is activated by touch, keyboard, or assistive technology. */
   onPress?: (() => void) | undefined;
   /** Fired after `onPress` with the `track` name and the button's label, only when `track` is set. */
-  onTrack?: ((event: ButtonTrackEvent) => void) | undefined;
+  onTrack?: ((name: string, label: string) => void) | undefined;
   /** Forwarded to the root so Tooltip can attach to the button; the button's own pressed state is kept alongside. */
   onPressOut?: PressableProps['onPressOut'];
   /** Forwarded to the root so Tooltip can open on long press. */
@@ -143,8 +145,8 @@ const FONT_SIZE_TOKEN = {
   lg: 'fontSizeLg',
 } as const satisfies Record<ButtonSize, keyof Tokens>;
 
-/** The share of `color.inverse.foreground` a ghost button's pressed fill shows on an inverse surface. */
-const INVERSE_PRESSED_ALPHA = 0.12; // literal-ok: the doc states 12%; there is no token for this mix
+/** `inverseHoverOpacity` is `opacity.disabled` times this factor (the binding's `computed`). */
+const INVERSE_HOVER_OPACITY_FACTOR = 0.25; // literal-ok: the doc's computed multiplier on a token
 
 /**
  * `color` at `alpha`. The doc's inverse ghost fill is a mix of a token with the surface;
@@ -183,14 +185,15 @@ function withAlpha(color: string, alpha: number): string {
  * `transition`, eased with `motion.easing.standard`, skipped under reduced motion); the
  * focus ring is a border drawn in `color.border.focus` (or `color.inverse.focus` when
  * `inverse`) that is transparent, not absent, so focusing never shifts layout.
- * `loading` replaces the leading icon slot with a ring spinner that rotates
+ * `loading` puts a `spinnerSize` ring spinner in the leading icon slot that rotates
  * continuously over `loadingSpin` (frozen under reduced motion), hides `trailingIcon`,
  * keeps the label visible, announces `copy.loading` as the button's accessibility
  * value, and blocks repeat activation alongside `disabled`. `inverse` changes only
- * `ghost`'s foreground and pressed fill; other variants keep their own fills.
+ * `ghost`'s foreground and pressed fill (`inverseBackgroundHover` at
+ * `inverseHoverOpacity`, an alpha of the resolved color); other variants keep their own fills.
  * `type="submit"` calls `submit()` on the nearest Form context, since there is no
  * native form. `track`, when set, calls the hand-written `trackPress(name, label)`
- * after `onPress` and before `onTrack` fires with the same pair. When the measured
+ * after `onPress` and before `onTrack(name, label)` fires with the same pair. When the measured
  * footprint is smaller than the comfortable target, `hitSlop` makes up the difference.
  * `accessibilityHint`, `accessibilityLabel`, `onHoverIn`, `onHoverOut`, `onFocus`,
  * `onBlur`, `onLongPress` and `onPressOut` are forwarded to the root so Tooltip can
@@ -238,11 +241,16 @@ export function Button({
   const isInverseGhost = variant === 'ghost' && inverse;
 
   const background = t[colors.background];
-  const backgroundHover = overrides?.backgroundHover
-    ? (resolveToken(t, overrides.backgroundHover) as string)
-    : isInverseGhost
-      ? withAlpha(t.colorInverseForeground, INVERSE_PRESSED_ALPHA)
-      : t[colors.backgroundHover];
+  // `backgroundHover` is locked; only the inverse ghost fill and its alpha are overridable.
+  const inverseBackgroundHover = overrides?.inverseBackgroundHover
+    ? (resolveToken(t, overrides.inverseBackgroundHover) as string)
+    : t.colorInverseForeground;
+  const inverseHoverOpacity =
+    (overrides?.inverseHoverOpacity ? (resolveToken(t, overrides.inverseHoverOpacity) as number) : t.opacityDisabled) *
+    INVERSE_HOVER_OPACITY_FACTOR;
+  const backgroundHover = isInverseGhost
+    ? withAlpha(inverseBackgroundHover, inverseHoverOpacity)
+    : t[colors.backgroundHover];
   // Only `ghost` is meaningful on an inverse surface; other variants keep their own fills.
   const foreground = isInverseGhost ? t.colorInverseLink : t[colors.foreground];
   const focusRingColor = inverse ? t.colorInverseFocus : t.colorBorderFocus;
@@ -267,7 +275,11 @@ export function Button({
   const loadingSpinDuration = overrides?.loadingSpin
     ? (resolveToken(t, overrides.loadingSpin) as number)
     : t.motionDurationLoop;
-  // `spinnerStroke` is locked: the ring has to stay legible at its 1em size.
+  // RN has no em: the ring is `font.size.{size}` across by default, independent of a `fontSize` override.
+  const spinnerSize = overrides?.spinnerSize
+    ? (resolveToken(t, overrides.spinnerSize) as number)
+    : t[FONT_SIZE_TOKEN[size]];
+  // `spinnerStroke` is locked: border.width.focus is a focus token.
   const spinnerStroke = t.borderWidthFocus;
 
   // Background transitions between rest and pressed since there is no hover on touch.
@@ -332,7 +344,7 @@ export function Button({
     onPress?.();
     if (track !== undefined) {
       trackPress(track, label);
-      onTrack?.({ name: track, label });
+      onTrack?.(track, label);
     }
     if (type === 'submit') {
       form?.submit();
@@ -379,12 +391,12 @@ export function Button({
     justifyContent: 'center',
   };
 
-  // A 1em ring: a circle stroked in the foreground color with one side transparent,
-  // rotating to read as a spinner.
+  // A spinnerSize ring: a circle stroked in the foreground color with one quarter
+  // transparent, rotating to read as a spinner.
   const spinnerStyle: Animated.WithAnimatedValue<ViewStyle> = {
-    width: fontSize,
-    height: fontSize,
-    borderRadius: fontSize / 2, // literal-ok: halves a token-derived size into a radius
+    width: spinnerSize,
+    height: spinnerSize,
+    borderRadius: spinnerSize / 2, // literal-ok: halves a token-derived size into a radius
     borderWidth: spinnerStroke,
     borderColor: foreground,
     borderTopColor: 'transparent',

@@ -18,8 +18,8 @@ interface FormArgs {
 
 const signInFields = html`
   <ds-stack gap="normal">
-    <ds-input label="Email address" name="email" type="email" required autocomplete="email"></ds-input>
-    <ds-input label="Password" name="password" type="password" required autocomplete="current-password"></ds-input>
+    <ds-input label="Email" name="email" type="email" required></ds-input>
+    <ds-input label="Password" name="password" type="password" required></ds-input>
   </ds-stack>
 `;
 
@@ -73,6 +73,10 @@ export const ValidateSubmit: Story = { args: { validate: 'submit' } };
 export const ValidateBlur: Story = { args: { validate: 'blur' } };
 export const ValidateChange: Story = { args: { validate: 'change' } };
 
+/* states */
+export const Disabled: Story = { args: { disabled: true } };
+export const NoErrorSummary: Story = { args: { errorSummary: false } };
+
 /* examples */
 
 /** The smallest real form - two fields and one submit action, validated on submit. */
@@ -89,10 +93,10 @@ export const LongFormValidatedOnBlur: Story = {
       args,
       html`
         <ds-stack gap="normal">
-          <ds-input label="Full name" name="fullName" required autocomplete="name"></ds-input>
-          <ds-input label="Email address" name="email" type="email" required autocomplete="email"></ds-input>
-          <ds-input label="Phone number" name="phone" type="tel" autocomplete="tel"></ds-input>
-          <ds-input label="Job title" name="jobTitle" autocomplete="organization-title"></ds-input>
+          <ds-input label="Full name" name="fullName" required></ds-input>
+          <ds-input label="Email" name="email" required></ds-input>
+          <ds-input label="Phone" name="phone" required></ds-input>
+          <ds-input label="City" name="city" required></ds-input>
         </ds-stack>
       `,
       submitAction('Save profile'),
@@ -109,5 +113,5 @@ export const Submitting: Story = {
 export const WithoutASummary: Story = {
   args: { name: 'rename', label: 'Rename file', errorSummary: false },
   render: (args) =>
-    renderForm(args, html`<ds-input label="Name" name="name" required></ds-input>`, submitAction('Rename')),
+    renderForm(args, html`<ds-input label="File name" name="fileName" required></ds-input>`, submitAction('Rename')),
 };

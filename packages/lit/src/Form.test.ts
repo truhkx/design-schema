@@ -31,6 +31,13 @@ beforeEach(() => {
 });
 
 describe('ds-form', () => {
+  it('label-names-the-form-landmark', async () => {
+    const f = await setup({ label: 'Sign in' });
+    expect(f.el.getAttribute('role')).toBe('form');
+    expect(f.el.getAttribute('aria-label')).toBe('Sign in');
+    expect(f.el.hasAttribute('aria-labelledby')).toBe(false);
+  });
+
   it('renders', async () => {
     const f = await setup();
     expect(f.el.isConnected).toBe(true);

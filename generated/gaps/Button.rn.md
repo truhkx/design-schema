@@ -40,3 +40,15 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Button: the events contract gives `onPress` no arguments, but rn's Pressable hands its handler a `GestureResponderEvent`. Typed it `() => void` and dropped the event, so a consumer cannot read the touch position or modifiers. Confirm that is intended cross-platform rather than an artifact of the web signature.
 - Button: `styles.transition` describes 'Background/foreground transitions', but no variant changes its foreground between rest and pressed, so only the background animates. Either drop foreground from the description or name the state that changes it.
 - Button: `backgroundHover` is overridable while `background` and `foreground` are locked, so an override can put an arbitrary token behind the locked foreground and break the AA pair `a11y.contrast` proves. If the pressed fill is meant to stay provable, it belongs in the locked set.
+
+## 2026-09-17 04:18 — round 1
+
+- Button: `loading` says the spinner takes the leading icon slot whether or not `leadingIcon` is set, and also that the layout stays unchanged. Without a leadingIcon, adding the spinner (plus iconGap) makes the button wider. I followed the slot rule, so the layout shifts in that case.
+- Button: `inverseHoverOpacity` is overridable and has `computed: times 0.25`. The spec doesn't say whether the ×0.25 applies to an overriding token too. I multiply the resolved override by 0.25 as well.
+- Button: `spinnerSize` defaults to font.size.{size}, but the spec doesn't say whether a `fontSize` override should move it. I kept them independent: the spinner follows only its own binding.
+- Button: `onTrack` changed from an object to positional (name, label). That breaks the exported `ButtonTrackEvent` type. I removed it from index.ts, and there were no other users in packages/rn.
+- Button: the generic rule says `disabled` sets accessibilityState in addition to passing `disabled`. The rn notes say never pass `disabled` to Pressable. I followed the notes: a press guard plus accessibilityState.disabled.
+- Button: the React Native guidance says callers color icons through Icon's `overrides.color`, but the package digest says Icon takes a `color` prop. The stories keep using `color`.
+- Button: the `icon-only-in-a-toolbar` example gives `leadingIcon: "The close Icon"` as prose, not a value. I rendered `<Icon name="close">` colored with the ghost foreground.
+- Button: `loadingSpin` gives the rotation length but no easing, and motion.easing.standard is specified for `transition` only. The continuous spin uses Easing.linear.
+- Button: `backgroundHover` is now locked, and the spec gives no replacement override for the non-inverse pressed fill. Feed only overrides fontFamily, so nothing broke.

@@ -70,11 +70,13 @@ export function Divider({
   const showLabel = Boolean(label) && orientation === 'horizontal';
   const isSemantic = semantic || showLabel;
 
+  // Keyed on `label` and `orientation`: warns when the ignored combination appears or changes, not per render.
   useEffect(() => {
     if (isDev && labelIgnored) {
       console.warn('Divider: `label` is ignored on a vertical divider — a vertical line has no room for centered text.');
     }
-  }, [labelIgnored]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [label, orientation]);
 
   const rootStyle: Record<string, string> = {};
   const textOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
@@ -131,7 +133,7 @@ export function Divider({
     >
       {showLabel ? (
         <>
-          <span className="ds-divider__line" data-part="line" />
+          <span className="ds-divider__line" data-part="line" aria-hidden="true" />
           <Text
             id={labelId}
             element="span"
@@ -142,7 +144,7 @@ export function Divider({
           >
             {label}
           </Text>
-          <span className="ds-divider__line" data-part="line" />
+          <span className="ds-divider__line" data-part="line" aria-hidden="true" />
         </>
       ) : null}
     </div>

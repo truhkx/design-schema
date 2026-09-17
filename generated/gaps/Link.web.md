@@ -23,3 +23,13 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Link: the scenario `external-link-announces-that-it-leaves` has an expectation `copy: externalSuffix` with no matcher. I tested it as the anchor's textContent containing the suffix, alongside the accessible-name check.
 - Link: examples `inline-in-a-paragraph` and `inside-muted-text` describe the link inside body or muted text, but `given` has only Link args. The stories wrap the link in <Text> / <Text tone="muted"> with filler sentence text that isn't schema copy, because the examples don't specify the surrounding content.
 - Link: colorHover's description says 'Pointer hover and active state', but the binding's state is only `hover`. I applied it to :hover and :active.
+
+## 2026-09-17 04:20 — round 1
+
+- Link: web notes say Link's `data-part="anchor"` wins over a parent's, but Breadcrumb (`data-part="link"`) and Tree (`data-part="link"`, and Tree.tsx activated its link with `querySelector('[data-part="link"]')`) both stamp a part onto Link's root. I made Link's hooks win and changed Tree's lookup to `[data-ds="Link"]`; the Breadcrumb and Tree docs should name a wrapper element for their `link` part, or drop it.
+- Link: web notes say Link accepts no `className`, but the old code kept `className` with a comment saying Tree passed one. Tree no longer does, so I removed it from the props type (`Omit`).
+- Link: `colorHover` says 'pointer hover only (not :active)'. I used a plain `:hover` rule with no `@media (hover: hover)` guard, so touch browsers that apply sticky `:hover` after a tap will show the hover color. The doc doesn't say whether that guard is wanted.
+- Link: `focusRingRadius` is a border radius on an inline anchor, but the doc gives no `outline-offset` for the ring. I used `outline-offset: var(--border-width-focus)`, the same token as the ring width.
+- Link: `copy.external` ('opens in new tab') is only used on SwiftUI. On web it is kept only as a comment, and the doc doesn't say that web leaves it unused.
+- Link: the Default story args are not given anywhere. I used the `inline-in-a-paragraph` values (href `/billing/history`, label `View the billing history`), so the has-accessible-name and renders scenarios run against those.
+- Link: the `external` and `download` booleans get no story from the 'one story per enum value' rule. I added `External` and `Download` state stories alongside the `ExternalDestination` and `DownloadableFile` example stories, which cover the same states.

@@ -47,23 +47,24 @@ export const SurfaceSubtle: Story = { args: { surface: 'subtle' } };
 
 // examples
 export const PlanCard: Story = {
-  args: { heading: 'Team plan', headingLevel: '3', children: <Text>What the plan includes</Text> },
+  args: { heading: 'Team plan', headingLevel: '3', children: 'What the plan includes' },
 };
 
+// `heading: undefined` clears the Default args' heading; the example has none.
 export const DenseGridCard: Story = {
-  args: { heading: undefined, children: <Text>A search result</Text>, inset: 'sm', surface: 'subtle' },
+  args: { heading: undefined, children: 'A search result', inset: 'sm', surface: 'subtle' },
 };
 
 export const WholeCardIsALink: Story = {
   args: {
     heading: 'September invoice',
-    children: <Link href="/invoices/september" label="A Link to the invoice" />,
+    children: <Link href="#" label="A Link to the invoice" />,
     interactive: true,
   },
 };
 
 export const CardFocusedByAFeed: Story = {
-  args: { heading: 'New comment', children: <Text>The comment body</Text>, focusable: true },
+  args: { heading: 'New comment', children: 'The comment body', focusable: true },
 };
 
 // notable states
@@ -83,6 +84,22 @@ export const WithFooter: Story = {
         <Button label="Cancel" variant="secondary" />
       </>
     ),
+  },
+};
+
+export const InteractiveWithButton: Story = {
+  args: {
+    heading: 'Workspace',
+    children: [<Text key="text">Three members</Text>, <Button key="button" label="Open workspace" variant="ghost" />],
+    interactive: true,
+  },
+};
+
+export const InteractiveDisabledChild: Story = {
+  args: {
+    heading: 'Archived workspace',
+    children: <Button label="Open workspace" variant="ghost" disabled />,
+    interactive: true,
   },
 };
 

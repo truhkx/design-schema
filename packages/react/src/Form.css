@@ -5,6 +5,9 @@
   --ds-form-error-summary-border: var(--color-border-danger);
   --ds-form-error-summary-text: var(--color-foreground-danger);
   --ds-form-error-summary-background: var(--color-background-subtle);
+  --ds-form-error-summary-border-width: var(--border-width-thin);
+  --ds-form-error-summary-radius: var(--radius-md);
+  --ds-form-error-summary-padding: var(--space-md);
   display: flex;
   flex-direction: column;
   gap: var(--ds-form-gap);
@@ -20,12 +23,13 @@
   display: contents;
 }
 
-/* errorSummary: a focusable alert region that links to each invalid field. Text and background are locked. */
+/* errorSummary: a focusable alert region that links to each invalid field. Text and background are locked.
+   errorSummaryGap reaches the summary's Stacks through their `gap` override, not through CSS here. */
 .ds-form__error-summary {
   box-sizing: border-box;
-  padding: var(--space-md);
-  border: var(--border-width-thin) solid var(--ds-form-error-summary-border);
-  border-radius: var(--radius-md);
+  padding: var(--ds-form-error-summary-padding);
+  border: var(--ds-form-error-summary-border-width) solid var(--ds-form-error-summary-border);
+  border-radius: var(--ds-form-error-summary-radius);
   background-color: var(--ds-form-error-summary-background);
   color: var(--ds-form-error-summary-text);
 }

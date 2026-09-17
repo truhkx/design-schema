@@ -28,3 +28,16 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Form: scenario 'label-names-the-form-landmark' only checks role and name; label vs labelledBy precedence and the submit/invalid flow have no scenarios, so they're only covered by stories.
 - Form: the example `given` values (children/actions) are prose descriptions, not args; turned each into concrete Input/Button content (e.g. the 'profile fields' were made up: full name, email, phone, city).
 - Form: `label` and `labelledBy` are both optional, so nothing stops a form with no accessible name; no dev warning is specified, so none was added.
+
+## 2026-09-17 04:29 — round 1
+
+- Form: `disabled` says the container 'only exposes the disabled state' (accessibilityState.disabled on RN) but names no web attribute; chose aria-disabled="true" on the <form>, which ARIA 1.2 deprecates as a global on non-widget roles.
+- Form: `errorSummaryGap` says the list is a Stack, but a composed child's binding must be forwarded to its `overrides`, so the CSS hook `--ds-form-error-summary-gap` has nothing to read; chose to forward `overrides.errorSummaryGap` to both summary Stacks' `gap` (heading↔list and between items) and emit no CSS hook, so a consumer setting the hook from their own CSS has no effect for this binding.
+- Form: `errorSummary` says 'when submission fails validation, render a summary', but under validate: blur/change errors exist before any submit; chose to show the summary only after a failed submit (it then shrinks as fields are fixed and is reset on a successful submit).
+- Form: the plural locale comes from 'the nearest lang ancestor' but no timing is given; chose to read it at failed submit time (closest('[lang]') from the form), falling back to the runtime default if Intl.PluralRules rejects the tag.
+- Form: summary item order is unspecified; items follow document order at submit, and errors added later by blur/change validation are appended to the end.
+- Form: the doc says a field inside a closed Disclosure isn't collected unless `keepMounted`; on web this relies on the unmounted field having unregistered, and Form does no Disclosure check of its own.
+- Form: the web platform note says `data-ds-field` sorts fields into document order, but the registration carries the control's `id`, not the field root; chose getElementById(id).closest('[data-ds-field]') and put fields with no such host last, in registration order.
+- Form: the value contract widens FormFieldValue to number and [number, number]; this lives in FormContext.ts (shared with fields), which the Form spec doesn't name as an output file.
+- Form: examples give children/actions as prose ('A submit Button labelled Sign in'); rendered the actions as a bare Button with no wrapping Stack, although 'When to use' says to place actions in a Stack.
+- Form: `name` is 'the base of generated ids' but only the summary id uses it; an unnamed form falls back to useId(), and two forms with the same name would produce duplicate summary ids.

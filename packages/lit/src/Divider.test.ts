@@ -1,7 +1,7 @@
 /**
  * <ds-divider> — behavior scenarios from the component doc, one test each, in the doc's order.
- * Divider is not interactive: the label scenario asserts the text that gets read, and every
- * derived scenario asserts render.
+ * Divider is not interactive: the doc scenarios assert the accessibility attributes on the host
+ * and the text that gets read, and every derived scenario asserts render.
  * Runs in headless Chromium (Vitest browser mode). See generated/prompts/Divider.lit.md.
  */
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -28,9 +28,21 @@ beforeEach(() => {
 });
 
 describe('ds-divider', () => {
+  it('decorative-divider-is-hidden-from-assistive-technology', async () => {
+    const { el } = await setup();
+    expect(el).toHaveAttribute('aria-hidden', 'true');
+  });
+
+  it('semantic-divider-is-a-separator', async () => {
+    const { el } = await setup({ semantic: true });
+    expect(el).toHaveRole('separator');
+    expect(el).toHaveAttribute('aria-orientation', 'horizontal');
+  });
+
   it('label-is-read-and-makes-the-divider-semantic', async () => {
     const { el } = await setup({ label: 'or' });
     expect(el.shadowRoot!.textContent).toContain('or');
+    expect(el).toHaveRole('separator');
   });
 
   /* derived: a11y.role */

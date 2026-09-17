@@ -2,6 +2,7 @@ import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, ty
 import { customElement, property, state } from 'lit/decorators.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Heading.js';
+import type { HeadingOverridableBinding } from './Heading.js';
 
 export type CardHeadingLevel = '2' | '3' | '4' | '5' | '6';
 export type CardInset = 'sm' | 'md' | 'lg';
@@ -33,6 +34,9 @@ const HOOKS: Record<CardOverridableBinding, string> = {
   transition: '--ds-card-transition',
 };
 
+/** The Heading's own bottom margin adds no space inside the header row. */
+const HEADING_OVERRIDES: Partial<Record<HeadingOverridableBinding, TokenRef>> = { marginBlockEnd: 'space.0' };
+
 /** Elements an interactive Card treats as its single action target. */
 const HIT_AREA_SELECTOR = 'ds-link, ds-button, a[href], button';
 /** Marks the light-DOM link/button whose hit area extends across the whole card. */
@@ -63,6 +67,9 @@ function ensureHitAreaStyle(root: Node): void {
   target.appendChild(style);
 }
 
+const isDisabled = (element: Element): boolean =>
+  element.hasAttribute('disabled') || element.getAttribute('aria-disabled') === 'true';
+
 /**
  * `<ds-card>` — Card (category: container).
  *
@@ -74,11 +81,12 @@ function ensureHitAreaStyle(root: Node): void {
  * the body, and the footer row (shown when footer content is slotted). The
  * rows are the card's own flex rows so their gaps stay overridable.
  *
- * `interactive` extends the single slotted `ds-link`/`ds-button` (or raw
- * `a[href]`/`button`) in the default slot across the whole card and draws the
- * ring on the card via `:focus-within`; the card is never a focus stop.
- * `focusable` gives the host `tabindex="-1"` for scripted focus (Feed) and
- * draws the ring on `:focus-visible`; with `interactive` it is a no-op.
+ * `interactive` extends the single `ds-link`/`ds-button` (or raw
+ * `a[href]`/`button`) among the default slot's top-level assigned elements
+ * across the whole card, and draws the ring on the card while that target has
+ * keyboard focus (`:host(:state(target-focus))`); the card is never a focus
+ * stop. `focusable` gives the host `tabindex="-1"` for scripted focus (Feed)
+ * and draws the ring on `:focus-visible`; with `interactive` it is a no-op.
  *
  * @slot - The body. Usually a Stack of Text and controls.
  * @slot header-actions - Controls at the end of the header row — a ghost icon-only Button, a Link. At most two.
@@ -182,17 +190,21 @@ export class DsCard extends LitElement {
 
     /*
      * interactive: position context for the slotted target's ::after. The card always reserves
-     * border.width.focus, transparent until focused, so the ring never shifts the layout.
+     * border.width.focus so the ring never shifts the layout; at rest that border is the card's
+     * border on surface default and transparent on subtle.
      */
     :host([interactive]) {
       position: relative;
     }
     :host([interactive]) [data-part='surface'] {
       border-width: var(--border-width-focus);
-      border-color: transparent;
+      border-color: var(--ds-card-border);
       transition:
         background-color var(--ds-card-transition) var(--motion-easing-standard),
         border-color var(--ds-card-transition) var(--motion-easing-standard);
+    }
+    :host([interactive][surface='subtle']) [data-part='surface'] {
+      border-color: transparent;
     }
     /* Header actions and footer controls keep their own targets above the extended hit area. */
     :host([interactive]) [data-part='headerActions'],
@@ -201,24 +213,25 @@ export class DsCard extends LitElement {
       z-index: 1;
     }
 
-    /* hoverBackground: color.background.subtle, locked; subtle cards use color.background.strong */
-    :host([interactive]:hover) [data-part='surface'] {
+    /* hoverBackground: color.background.subtle, locked; subtle cards use color.background.strong. Only with a live target. */
+    :host([interactive]:state(has-target):not(:state(target-disabled)):hover) [data-part='surface'] {
       background-color: var(--color-background-subtle);
     }
-    :host([interactive][surface='subtle']:hover) [data-part='surface'] {
+    :host([interactive][surface='subtle']:state(has-target):not(:state(target-disabled)):hover) [data-part='surface'] {
       background-color: var(--color-background-strong);
     }
 
-    /* focusRing / focusRingWidth: locked; drawn on the card while its target has focus */
-    :host([interactive]:focus-within) [data-part='surface'] {
+    /* focusRing: locked; drawn on the card only while its target has keyboard focus */
+    :host([interactive]:state(target-focus)) [data-part='surface'] {
       border-color: var(--color-border-focus);
     }
 
-    /* focusable: scripted focus only; the card draws its own ring */
+    /* focusable: scripted focus only; an outline of focusRingWidth in focusRing, no offset */
     :host([focusable]:not([interactive])) {
       outline: none;
     }
     :host([focusable]:not([interactive]):focus-visible) [data-part='surface'] {
+      /* no outline-offset: the ring sits on the card's edge */
       outline: var(--border-width-focus) solid var(--color-border-focus);
     }
 
@@ -229,7 +242,7 @@ export class DsCard extends LitElement {
     }
   `;
 
-  /** The card's title, rendered as a Heading at the card's level. Omit for cards that are a single piece of content. */
+  /** The card's title, rendered as a Heading at the card's level. Omit for cards that are a single piece of content; an empty string counts as omitted. */
   @property() accessor heading: string | undefined;
 
   /** Heading level for `heading`, so cards fit the page outline. Cards in a list share a level. */
@@ -243,8 +256,8 @@ export class DsCard extends LitElement {
 
   /**
    * The whole card is one link or button target. Requires exactly one
-   * interactive child (a Link or Button) whose action the card extends to its
-   * full area; the card itself is not focusable.
+   * interactive child (a Link or Button) at the top level of the body whose
+   * action the card extends to its full area; the card itself is not focusable.
    */
   @property({ type: Boolean, reflect: true }) accessor interactive = false;
 
@@ -261,14 +274,22 @@ export class DsCard extends LitElement {
   @state() private accessor hasHeaderActions = false;
   @state() private accessor hasFooter = false;
 
+  private readonly internals: ElementInternals;
   private hitAreaTarget: Element | null = null;
-  /** Host attributes this element wrote, so a consumer's own `role`/`tabindex` is never removed. */
+  private readonly targetObserver: MutationObserver = new MutationObserver(() => this.syncTargetDisabled());
+  /** Host attributes this element wrote, so a consumer's own `role`/`aria-label`/`tabindex` is never removed. */
   private ownsRole = false;
+  private ownsLabel = false;
   private ownsTabindex = false;
+  private warnedTarget = false;
+  private warnedFocusable = false;
 
   constructor() {
     super();
+    this.internals = this.attachInternals();
     this.addEventListener('click', this.handleHostClick);
+    this.addEventListener('focusin', this.handleFocusIn);
+    this.addEventListener('focusout', this.handleFocusOut);
   }
 
   override connectedCallback(): void {
@@ -276,6 +297,15 @@ export class DsCard extends LitElement {
     this.setAttribute('data-ds', 'Card');
     this.hasHeaderActions = this.querySelector(':scope > [slot="header-actions"]') !== null;
     this.hasFooter = this.querySelector(':scope > [slot="footer"]') !== null;
+    if (this.hitAreaTarget !== null) {
+      this.targetObserver.observe(this.hitAreaTarget, { attributes: true, attributeFilter: ['disabled', 'aria-disabled'] });
+    }
+  }
+
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this.targetObserver.disconnect();
+    this.setCustomState('target-focus', false);
   }
 
   protected override willUpdate(changed: PropertyValues): void {
@@ -296,17 +326,17 @@ export class DsCard extends LitElement {
       <div part="surface" data-part="surface">
         <div part="header" data-part="header" ?hidden=${!hasHeading && !this.hasHeaderActions}>
           ${hasHeading
-            ? html`<ds-heading part="heading" data-part="heading" level=${this.headingLevel} size="lg"
+            ? html`<ds-heading level=${this.headingLevel} size="lg" .overrides=${HEADING_OVERRIDES}
                 >${this.heading}</ds-heading
               >`
             : nothing}
-          <slot
-            name="header-actions"
-            data-part="headerActions"
-            @slotchange=${this.handleHeaderActionsSlotChange}
-          ></slot>
+          <div part="headerActions" data-part="headerActions" ?hidden=${!this.hasHeaderActions}>
+            <slot name="header-actions" @slotchange=${this.handleHeaderActionsSlotChange}></slot>
+          </div>
         </div>
-        <slot data-part="body" @slotchange=${this.handleBodySlotChange}></slot>
+        <div part="body" data-part="body">
+          <slot @slotchange=${this.handleBodySlotChange}></slot>
+        </div>
         <div part="footer" data-part="footer" ?hidden=${!this.hasFooter}>
           <slot name="footer" @slotchange=${this.handleFooterSlotChange}></slot>
         </div>
@@ -316,7 +346,8 @@ export class DsCard extends LitElement {
 
   protected override updated(changed: PropertyValues): void {
     if (changed.has('interactive')) {
-      this.syncHitArea();
+      // On the first update the body may still be filled in later; its slotchange re-checks and warns.
+      this.syncHitArea(changed.get('interactive') !== undefined);
     }
   }
 
@@ -331,30 +362,51 @@ export class DsCard extends LitElement {
   }
 
   private handleBodySlotChange(): void {
-    this.syncHitArea();
+    this.syncHitArea(true);
   }
 
-  /** Finds the single interactive child in the body and marks it as the card's extended hit area. */
-  private syncHitArea(): void {
+  /** Finds the single interactive child among the body's top-level elements and marks it as the card's extended hit area. */
+  private syncHitArea(warn: boolean): void {
     const slot = this.renderRoot.querySelector<HTMLSlotElement>('slot:not([name])');
     const candidates = this.interactive && slot !== null
-      ? slot.assignedElements({ flatten: true }).flatMap((element) =>
-          element.matches(HIT_AREA_SELECTOR) ? [element] : Array.from(element.querySelectorAll(HIT_AREA_SELECTOR)),
-        )
+      ? slot.assignedElements({ flatten: true }).filter((element) => element.matches(HIT_AREA_SELECTOR))
       : [];
     const [target, ...rest] = candidates;
     const next = target !== undefined && rest.length === 0 ? target : null;
-    if (this.hitAreaTarget !== null && this.hitAreaTarget !== next) {
-      this.hitAreaTarget.classList.remove(HIT_AREA_CLASS);
+    if (this.hitAreaTarget !== next) {
+      if (this.hitAreaTarget !== null) this.hitAreaTarget.classList.remove(HIT_AREA_CLASS);
+      this.targetObserver.disconnect();
+      this.hitAreaTarget = next;
+      if (next !== null) {
+        this.targetObserver.observe(next, { attributes: true, attributeFilter: ['disabled', 'aria-disabled'] });
+      }
     }
-    this.hitAreaTarget = next;
     if (next !== null) {
       ensureHitAreaStyle(next.getRootNode());
       if (!next.classList.contains(HIT_AREA_CLASS)) next.classList.add(HIT_AREA_CLASS);
-    } else if (this.interactive && import.meta.env.DEV) {
-      console.warn(
-        `<ds-card interactive> requires exactly one interactive child (a ds-link or ds-button); found ${candidates.length}. The card stays non-interactive.`,
-      );
+    } else {
+      this.setCustomState('target-focus', false);
+      if (this.interactive && warn && !this.warnedTarget && import.meta.env.DEV) {
+        this.warnedTarget = true;
+        console.warn(
+          `<ds-card interactive> requires exactly one interactive child (a ds-link or ds-button) at the top level of the body; found ${candidates.length}. The card stays non-interactive.`,
+        );
+      }
+    }
+    this.setCustomState('has-target', next !== null);
+    this.syncTargetDisabled();
+  }
+
+  private syncTargetDisabled(): void {
+    this.setCustomState('target-disabled', this.hitAreaTarget !== null && isDisabled(this.hitAreaTarget));
+  }
+
+  private setCustomState(name: string, on: boolean): void {
+    if (this.internals.states.has(name) === on) return;
+    if (on) {
+      this.internals.states.add(name);
+    } else {
+      this.internals.states.delete(name);
     }
   }
 
@@ -364,11 +416,32 @@ export class DsCard extends LitElement {
    */
   private readonly handleHostClick = (event: MouseEvent): void => {
     const target = this.hitAreaTarget;
-    if (target === null || !this.interactive || event.composedPath()[0] !== target || target.shadowRoot === null) {
+    if (
+      target === null ||
+      !this.interactive ||
+      isDisabled(target) ||
+      event.composedPath()[0] !== target ||
+      target.shadowRoot === null
+    ) {
       return;
     }
     const control = target.shadowRoot.querySelector<HTMLElement>('a[href], button');
     control?.click();
+  };
+
+  /** The ring shows only while the target itself has keyboard focus, never for a header-actions or footer control. */
+  private readonly handleFocusIn = (event: FocusEvent): void => {
+    const target = this.hitAreaTarget;
+    const path = event.composedPath();
+    const focused = path[0];
+    this.setCustomState(
+      'target-focus',
+      this.interactive && target !== null && path.includes(target) && focused instanceof Element && focused.matches(':focus-visible'),
+    );
+  };
+
+  private readonly handleFocusOut = (): void => {
+    this.setCustomState('target-focus', false);
   };
 
   /** `role="article"` named by `aria-label` when a heading is set; plain attributes so accessible-name tests see them. */
@@ -378,18 +451,25 @@ export class DsCard extends LitElement {
         if (this.getAttribute('role') !== 'article') this.setAttribute('role', 'article');
         this.ownsRole = true;
       }
-      if (this.getAttribute('aria-label') !== this.heading) this.setAttribute('aria-label', this.heading);
+      if (!this.hasAttribute('aria-label') || this.ownsLabel) {
+        if (this.getAttribute('aria-label') !== this.heading) this.setAttribute('aria-label', this.heading);
+        this.ownsLabel = true;
+      }
     } else {
       if (this.ownsRole) {
         this.removeAttribute('role');
         this.ownsRole = false;
       }
-      this.removeAttribute('aria-label');
+      if (this.ownsLabel) {
+        this.removeAttribute('aria-label');
+        this.ownsLabel = false;
+      }
     }
   }
 
   private syncTabindex(): void {
-    if (this.focusable && this.interactive && import.meta.env.DEV) {
+    if (this.focusable && this.interactive && !this.warnedFocusable && import.meta.env.DEV) {
+      this.warnedFocusable = true;
       console.warn('<ds-card>: `focusable` has no effect with `interactive`; the card already has a target.');
     }
     if (this.focusable && !this.interactive) {

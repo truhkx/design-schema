@@ -98,10 +98,13 @@ component:
     perView:
       type: integer
       default: 1
-      description: How many slides are visible at once at the widest layout. The page
-        size is `perView` while the viewport's own width is above `layout.maxWidth.prose`
+      description: 'How many slides are visible at once at the widest layout. The
+        page size is `perView` while the viewport''s own width is above `layout.maxWidth.prose`
         and 1 at or below it, measured on the viewport (ResizeObserver on web and
         Lit, onLayout on React Native); `perView` applies until the first measurement.
+        The comparison needs the token as a number: web and Lit read it from its built
+        custom property on the viewport (px and rem both parsed), React Native from
+        the theme; when it cannot be read, `perView` stands as given.'
     loop:
       type: boolean
       default: false
@@ -142,8 +145,11 @@ component:
         are autoplay and a swipe settling; a change of a controlled `activeIndex`
         never fires it. A scroll counts as `swipe` only when the user started it (web
         and Lit: after pointerdown, touchstart or wheel on the viewport; React Native:
-        between onScrollBeginDrag and onMomentumScrollEnd) — a scroll started by an
-        arrow, the picker or autoplay reports its own reason once.'
+        between onScrollBeginDrag and onMomentumScrollEnd, or onScrollEndDrag when
+        no momentum follows, as iOS does) — a scroll started by an arrow, the picker
+        or autoplay reports its own reason once. A swipe settles on the viewport''s
+        `scrollend` event where the engine has it and on the next IntersectionObserver
+        delivery otherwise, never on a timer.'
       platforms:
         web: onChange
         lit: change
@@ -258,6 +264,12 @@ component:
       token: size.target.min
       description: Each dot's hit area; the dot itself is small.
       locked: true
+    dotRadius:
+      token: radius.full
+      part: pickerItem
+      description: Dots are round; a tab has no radius. A picker item's focus ring
+        follows this radius, so it is round on dots and square on tabs.
+      locked: false
     radius:
       token: radius.md
       description: Applied to the viewport so slide edges match the theme.
@@ -280,6 +292,11 @@ component:
       part: pickerItem
       description: The same weight selected or not, so selection never shifts the
         row.
+      locked: false
+    tabLineHeight:
+      token: font.lineHeight.normal
+      part: pickerItem
+      description: The tab label's line height, so a tabs picker keeps the row's rhythm.
       locked: false
     tabPaddingBlock:
       token: space.sm
@@ -307,8 +324,9 @@ component:
       locked: false
     minTarget:
       token: size.target.comfortable
-      description: The hit area of each arrow's controlSurface and the minimum block
-        size of each tab; dots use `dotTarget`.
+      description: The hit area of each arrow's controlSurface — the part wrapper
+        inside it stretches to fill that surface — and the minimum block size of each
+        tab, whose inline size comes from `tabPaddingInline` alone; dots use `dotTarget`.
       locked: true
     focusRing:
       token: color.border.focus
@@ -406,13 +424,14 @@ component:
         aria-hidden="true". Only the visually hidden liveRegion part carries aria-live:
         "off" while rotating, "polite" otherwise (the APG rule: do not announce automatic
         changes); the track has none, since a live track would read out slide content.
-        Picker `dots`: buttons with aria-label from copy.goTo and aria-current="true"
-        on every slide of the current page; `tabs`: a Tabs-style tablist controlling
-        the slides as tabpanels, aria-selected on the current slide''s tab only; either
-        picker is named by copy.pickerLabel. Hover, focus and touch pause autoplay
-        only while they last (pointerenter from touch is not hover; touch ends on
-        touchend/touchcancel); the pause button stops it; pressing play clears those
-        pauses, so rotation resumes at once.'
+        Picker `dots`: buttons with aria-label from copy.goTo, aria-controls to the
+        slide they choose (as tabs have) and aria-current="true" on every slide of
+        the current page; `tabs`: a Tabs-style tablist controlling the slides as tabpanels,
+        aria-selected on the current slide''s tab only; either picker is named by
+        copy.pickerLabel. Hover, focus and touch pause autoplay only while they last
+        (pointerenter from touch is not hover; touch ends on touchend/touchcancel);
+        the pause button stops it; pressing play clears those pauses, so rotation
+        resumes at once.'
     lit:
       tag: ds-carousel
       reflect:
@@ -438,20 +457,32 @@ component:
       - decelerationRate=fast
       - accessibilityRole=adjustable
       - accessibilityActions
-      notes: A horizontal FlatList with pagingEnabled (perView 1) or snapToInterval
-        (more) and onViewableItemsChanged for the index (honoured only during a user
-        drag). Each visible slide View is the accessible element with accessibilityRole="adjustable"
-        and increment/decrement accessibility actions mapped to next/previous, labelled
-        copy.next and copy.previous (VoiceOver swipe up/down), so the swipe gesture
-        has an alternative that VoiceOver can reach — a non-accessible region View
-        would not be an element on iOS. Slides not visible have accessibilityElementsHidden.
-        Autoplay uses setInterval, never started under reduced motion, paused while
-        a touch lasts (onTouchStart until onTouchEnd/onTouchCancel) and while an arrow,
-        the play button or a picker item has focus (Button forwards onFocus/onBlur);
-        only the pause button, or reaching the end without loop, stops it. The liveRegion
+      notes: 'A horizontal FlatList with pagingEnabled only when the page is one slide
+        and `slideGap` resolves to 0 — otherwise a slide plus its gap is wider than
+        the viewport and native paging drifts by one gap a page — and snapToInterval
+        (slide width plus gap) in every other case, with onViewableItemsChanged for
+        the index (honoured only during a user drag). Each visible slide View is the
+        accessible element with accessibilityRole="adjustable" and increment/decrement
+        accessibility actions mapped to next/previous, labelled copy.next and copy.previous
+        (VoiceOver swipe up/down), so the swipe gesture has an alternative that VoiceOver
+        can reach — a non-accessible region View would not be an element on iOS. Those
+        actions stay listed at either end without loop and do nothing there, since
+        an accessibility action has no disabled form. Native limit: making the visible
+        slide the accessible element also makes it one VoiceOver stop, so controls
+        inside a slide are not reached one by one on iOS — put a slide''s own actions
+        in the arrows, the picker or below the carousel on native. Slides not visible
+        have accessibilityElementsHidden. Autoplay uses setInterval, never started
+        under reduced motion, paused while a touch lasts (onTouchStart until onTouchEnd/onTouchCancel)
+        and while an arrow, the play button or a picker item has focus (Button forwards
+        onFocus/onBlur); only the pause button, or reaching the end without loop,
+        stops it. Pressing play clears the touch and focus pauses as on web, so rotation
+        resumes at once although the play control now has focus; the next focus change
+        pauses again. The picker row is accessibilityRole "group" (dots) or "tablist"
+        (tabs) labelled copy.pickerLabel, and a dot carries accessibilityState.selected
+        on every slide of the current page, native''s form of aria-current. The liveRegion
         View has accessibilityLiveRegion "none" while rotating and "polite" otherwise,
         and user-initiated changes also call AccessibilityInfo.announceForAccessibility
-        on iOS.
+        on iOS.'
     swiftui:
       element: ScrollView
       props:
@@ -578,10 +609,12 @@ component:
 - `slideGap`: token `layout.gap.normal`; part `slide`
 - `pickerGap`: token `layout.gap.tight`; part `picker`
 - `pickerOffset`: token `space.3`; part `picker`
+- `dotRadius`: token `radius.full`; part `pickerItem`
 - `tabColor`: token `color.foreground.muted`; part `pickerItem`; locked
 - `tabSelectedColor`: token `color.foreground.strong`; part `pickerItem`; locked
 - `tabFontSize`: token `font.size.sm`; part `pickerItem`
 - `tabFontWeight`: token `font.weight.medium`; part `pickerItem`
+- `tabLineHeight`: token `font.lineHeight.normal`; part `pickerItem`
 - `tabPaddingBlock`: token `space.sm`; part `pickerItem`
 - `tabPaddingInline`: token `space.md`; part `pickerItem`
 - `tabIndicatorThickness`: token `border.width.focus`; part `pickerItem`; locked
@@ -618,7 +651,7 @@ The element also has an `overrides` property (`attribute: false`, `Partial<Recor
 
 Overrides change values, never presence: a prop that turns a part off (`surface: none`, `border: false`, `radius: none`) makes the matching overrides no-ops; apply an override only where the binding is in effect.
 
-Overridable: `slideGap`, `controlOffset`, `controlRadius`, `controlShadow`, `pickerGap`, `pickerOffset`, `dotSize`, `radius`, `tabFontSize`, `tabFontWeight`, `tabPaddingBlock`, `tabPaddingInline`, `fontFamily`, `transition`
+Overridable: `slideGap`, `controlOffset`, `controlRadius`, `controlShadow`, `pickerGap`, `pickerOffset`, `dotSize`, `dotRadius`, `radius`, `tabFontSize`, `tabFontWeight`, `tabLineHeight`, `tabPaddingBlock`, `tabPaddingInline`, `fontFamily`, `transition`
 Locked (accessibility-bearing, never overridable): `controlBackground`, `dot`, `dotActive`, `dotTarget`, `tabColor`, `tabSelectedColor`, `tabIndicatorThickness`, `minTarget`, `focusRing`, `focusRingWidth`
 
 ## Behavior scenarios (9)
@@ -722,7 +755,7 @@ Do not use a Carousel to hide important content behind slide two; if users must 
 
 ## Behavior
 
-Previous and Next move one page — `perView` slides — disabled at the ends unless `loop`. The picker jumps directly. Swipe on touch and horizontal scroll on trackpads work through scroll-snap, and the active index follows what is visible. `autoplay` advances every `interval`, pauses on hover, focus or touch, and stops for good when the user presses pause; it never starts under reduced motion. `onChange` reports each change with its reason so analytics can distinguish user paging from rotation. Hidden slides are inert: their links and buttons are not in the tab order and not announced. Hover, focus and touch pause rotation only while they last; the pause button stops it until play is pressed. Without `loop`, autoplay stops at the last slide and does not wrap: the ambient case that wants continuous rotation sets `loop`. Paging, with `page` the current page size (see `perView`): the current index is the first visible slide; Next goes to `min(current + page, total − page)` and Previous to `max(current − page, 0)`; with `loop`, Next from `total − page` goes to 0 and Previous from 0 to `total − page`; both arrows are disabled when `total ≤ page`. A picker choice past `total − page` scrolls as far as it can and the index becomes `total − page` (that is what onChange reports), and a dots picker marks every slide on the current page as current. Reaching the last slide without `loop` counts as stopped: the control shows `copy.play` and announcements return; pressing play there restarts rotation from the first slide. A controlled carousel whose parent keeps `activeIndex` after a swipe scrolls back to `activeIndex`. The play/pause control sits in its own row above the viewport at the inline start; order is play/pause, previous, next, picker, then the slides (the picker is placed below the viewport by layout, not by order). `CarouselSlide` (`label: string`, required, and `children`), exported alongside Carousel, takes a `label` (its name in the tabs picker) on every platform — a missing one falls back to `copy.goTo` as the tab text with a development warning — it is a plain string, not read from the slide's rendered content, and the slide repeats it visibly in its own heading. Picker items are Carousel's own buttons on every platform, not the Button component, because the dot and tab tokens are Carousel's own and no Button variant carries them. Below `layout.maxWidth.prose` `perView` collapses to one; a container query cannot read a custom property, so that one breakpoint is duplicated as a literal in CSS, as Table already does for `hideBelow`. Under reduced motion the play/pause control is not rendered, since rotation can never start. Button writes its own part hook, so prevButton, nextButton and playButton each sit in a wrapper carrying the part (web: a `span` with `data-part` that passes a click through to its Button; React Native: a `View` with testID `Carousel.<part>`); for the arrows that wrapper is inside the controlSurface wrapper.
+Previous and Next move one page — `perView` slides — disabled at the ends unless `loop`. The picker jumps directly. Swipe on touch and horizontal scroll on trackpads work through scroll-snap, and the active index follows what is visible. `autoplay` advances every `interval`, pauses on hover, focus or touch, and stops for good when the user presses pause; it never starts under reduced motion. `onChange` reports each change with its reason so analytics can distinguish user paging from rotation. Hidden slides are inert: their links and buttons are not in the tab order and not announced. Hover, focus and touch pause rotation only while they last; the pause button stops it until play is pressed. Without `loop`, autoplay stops at the last slide and does not wrap: the ambient case that wants continuous rotation sets `loop`. Paging, with `page` the current page size (see `perView`): the current index is the first visible slide; Next goes to `min(current + page, total − page)` and Previous to `max(current − page, 0)`; with `loop`, Next from `total − page` goes to 0 and Previous from 0 to `total − page`; both arrows are disabled when `total ≤ page`. A picker choice past `total − page` scrolls as far as it can and the index becomes `total − page` (that is what onChange reports), and a dots picker marks every slide on the current page as current. Arrow keys in the picker move one item at a time through every slide, so past `total − page` focus moves on while the index stays capped there; the roving tab stop is the focused item while it is on the current page and the current slide's item otherwise. Reaching the last page without `loop` counts as stopped however it was reached — an autoplay tick, an arrow, the picker or a swipe, as long as rotation was on: the control shows `copy.play` and announcements return; pressing play there restarts rotation from the first slide, reported as `autoplay` and not announced. A hover, focus or touch pause is not the same as stopped: rotation is still on, so the control keeps `copy.pause`, but the live region is `polite` for as long as the pause lasts, so a change the user makes during it is announced. A controlled carousel whose parent keeps `activeIndex` after a swipe scrolls back to `activeIndex`. The play/pause control sits in its own row above the viewport at the inline start; order is play/pause, previous, next, picker, then the slides (the picker is placed below the viewport by layout, not by order). `CarouselSlide` (`label: string`, required, and `children`), exported alongside Carousel, takes a `label` (its name in the tabs picker) on every platform — a missing one falls back to `copy.goTo` as the tab text with a development warning — it is a plain string, not read from the slide's rendered content, and the slide repeats it visibly in its own heading; renaming a slide updates the picker (Lit observes the `label` attribute of its assigned slides). Picker items are Carousel's own buttons on every platform, not the Button component, because the dot and tab tokens are Carousel's own and no Button variant carries them. Below `layout.maxWidth.prose` `perView` collapses to one; a container query cannot read a custom property, so that one breakpoint is duplicated as a literal in CSS, as Table already does for `hideBelow`. Under reduced motion the play/pause control is not rendered, since rotation can never start. Button writes its own part hook, so prevButton, nextButton and playButton each sit in a wrapper carrying the part (web: a `span` with `data-part` that passes a click through to its Button; React Native: a `View` with testID `Carousel.<part>`); for the arrows that wrapper is inside the controlSurface wrapper. A click that lands on the wrapper itself runs the same action the Button runs — the wrapper never reaches into the Button. The Default story is the four slides of the featured-products example, and the Keyboard story is those slides with `picker: tabs`.
 
 ## Content guidelines
 

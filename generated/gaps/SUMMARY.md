@@ -1,6 +1,6 @@
-# Gap digest — phase Numeric
+# Gap digest — phase Rows
 
-Generated 2026-09-17T13:08 by tools/gap_digest.ts. DOC lines belong in the named doc; fold them, run `pnpm parse`, and the affected targets become stale by prompt hash.
+Generated 2026-09-17T13:45 by tools/gap_digest.ts. DOC lines belong in the named doc; fold them, run `pnpm parse`, and the affected targets become stale by prompt hash.
 
 ## Accordion
 
@@ -1288,6 +1288,46 @@ Doc: `site/src/content/docs/components/card.md`
 ## Carousel
 
 Doc: `site/src/content/docs/components/carousel.md`
+
+### 2026-09-17 13:36 — rn round 1
+
+- **DOC** Carousel: the RN notes say pagingEnabled at perView 1, but with slideGap > 0 each slide plus gap is wider than the viewport, so native paging drifts by one gap per page; chose pagingEnabled only when the page is 1 and the gap is 0, and snapToInterval (itemWidth + gap) otherwise. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: pressing play on the last slide without loop 'restarts rotation from the first slide', but the doc gives no onChange reason for that move; chose 'autoplay' (so it is not announced). → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: the web notes say pressing play clears hover/focus/touch pauses, but the RN notes say rotation pauses while the play button has focus, which on react-native-web would block rotation right after a keyboard press of play; chose to clear the touch and focus pauses on play (the next focus change pauses again). → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: 'reaching the last slide without loop counts as stopped' doesn't say whether that covers the arrows or a swipe reaching the end while autoplay is paused, or only an autoplay step; chose any arrival at the last page while playing. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: an RN picker item's focus ring has no radius binding (dotTarget/minTarget/focusRing give size and colour only); chose a square ring (no radius) rather than borrowing a token. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: the tabs picker's label has no lineHeight binding, so none is set (platform default); the doc doesn't say whether it should follow font.lineHeight.normal. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: dots have no RN equivalent of aria-current; chose accessibilityState.selected on every dot of the current page, and the picker row is role='group' (dots) or 'tablist' (tabs) labelled copy.pickerLabel. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: the doc doesn't say whether a slide's increment/decrement actions should stay listed at an end without loop; they stay and do nothing, since the Button-style disabled state has no per-action equivalent. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: accessible={visible} on each slide makes the visible slide one VoiceOver element, so its inner focusable content (e.g. a Card's Button) is no longer reachable one by one on iOS; the doc asks for the slide as the adjustable element and doesn't address its interactive content. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: onMomentumScrollEnd doesn't fire on iOS when a drag ends without momentum, so the swipe window (onScrollBeginDrag → onMomentumScrollEnd) can stay open; the doc names only those two events, so no onScrollEndDrag fallback was added. → `site/src/content/docs/components/carousel.md`
+- **DOC** rn conventions digest: toLineHeight is documented as (lineHeight, fontSize), but theme.tsx declares toLineHeight(fontSize, multiplier). → `site/src/content/docs/components/carousel.md`
+
+### 2026-09-17 13:33 — lit round 1
+
+- **DOC** Carousel: pressing play at the last slide without loop 'restarts rotation from the first slide', but the move to slide 0 is not a listed onChange reason (none of next/prev/picker/swipe/autoplay is 'play'); chose reason `autoplay` and did not announce it. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: 'Reaching the last slide without loop counts as stopped' does not say whether a user reaching it with Next (not autoplay) also stops rotation; implemented it for autoplay ticks only (a later tick with no next target also sets stopped). → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: aria-live is 'off while rotating, polite otherwise', but it is unspecified whether a temporary hover/focus/touch pause counts as rotating; chose not rotating (polite while paused), so arrow presses made while focus is inside are announced. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: the play/pause Button has no `playButton` props beyond variant, yet the doc says the wrapper 'passes a click through to its Button'; implemented as the wrapper invoking the same action when the click lands on the wrapper itself, not by calling into the Button's shadow root. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: layout.maxWidth.prose is compared as `width > prose` using the token's computed value parsed as px; the doc does not say what to do when the token is in rem or absent, so it falls back to the built 572px literal. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: the settle signal for a user swipe is `scrollend`; the doc names no fallback for engines without it, so a scroll-debounce constant (150 ms, not a token) is used there. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: the dot's round shape (radius.full) and the pickerItem/dot corner radius are not style bindings; used radius.full for dots and no radius for tabs. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: a slide's `label` changed after first render does not notify the carousel (no event is specified), so the tabs picker text only refreshes on the next render or slotchange. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: the tabs picker cannot carry aria-controls to slotted slides (doc acknowledges this); tabs are named by the slide label and pairing is conveyed by aria-selected only. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: the Keyboard story has no `given`; kept `picker: tabs` so previous, next and three tabs make at least three focusable children, though the tabs picker is one tab stop. → `site/src/content/docs/components/carousel.md`
+
+### 2026-09-17 13:28 — web round 1
+
+- **DOC** Carousel: pressing play while stopped at the last slide (no loop) restarts from the first slide, but the spec gives no onChange reason for that move; none of next/prev/picker/swipe/autoplay fits a user pressing play. Chose `autoplay` (not announced). → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: picker ArrowRight/ArrowLeft move 'one slide, not one page', but with perView > 1 the index is capped at total − page, so arrowing past total − page leaves the selection where it is while focus moves on. Chose: focus goes to the target item, the index is capped, and the roving tab stop follows the focused item while it is on the current page, otherwise the current slide's item. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: aria-live is 'off while rotating', but the spec doesn't say whether a hover/focus/touch pause counts as rotating. Chose: any of those pauses, the pause button or stopping at the end makes the live region polite. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: the spec doesn't say when the play control shows copy.pause vs copy.play during a hover/focus pause. Chose: pause while rotation is on and not stopped (hover/focus pauses don't change the label); play once stopped or at the end without loop. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: layout.maxWidth.prose has to be read in JS to work out the page size; there's no helper for resolving a token to pixels. Chose getComputedStyle(viewport).getPropertyValue('--layout-max-width-prose'), handling px and rem; perView stays in effect if the value can't be parsed. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: the spec says 'a swipe settling' but not how to detect it on web. Chose the viewport's `scrollend` event where supported and each IntersectionObserver delivery otherwise. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: the spec says the controlSurface wrapper has hit area minTarget, but the platform notes also put a prevButton/nextButton part wrapper inside it. Chose to put minTarget's min-inline/block-size on the inner part wrapper, which fills the surface. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: dots have no specified aria-controls; kept aria-controls to each slide id, mirroring tabs. → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: tabs get minTarget only as a minimum block size; the spec gives no minimum inline size, so none is set (padding keeps it above 24px). → `site/src/content/docs/components/carousel.md`
+- **DOC** Carousel: the behavior scenario loop-wraps-backwards doesn't say the target index; it depends on the Default story's slide count (now four, following the featured-products example, so 3). Default args aren't specified anywhere. → `site/src/content/docs/components/carousel.md`
 
 ### 2026-09-16 11:02 — rn round 1
 
@@ -5780,6 +5820,45 @@ Doc: `site/src/content/docs/components/tooling.md`
 
 Doc: `site/src/content/docs/components/table.md`
 
+### 2026-09-17 13:45 — rn round 1
+
+- **DOC** Table: `rowSelectedBorder` says React Native 'always reserves a start border ... coloured as the row background when unselected', but `stackedBlockGap` says each stacked block is outlined with `rowBorder`/`rowBorderWidth`. Colouring the start edge as the background would leave a visible gap in that outline. I colour the start border `rowBorder` on unselected stacked blocks and the row background on unselected column-layout rows. → `site/src/content/docs/components/table.md`
+- **DOC** Table: `stickyColumnShadow` and `headerShadow` are shadow tokens spread into a style object, so they land on the same View that also sets `overflow: 'hidden'`/`backgroundColor`. The doc never says whether a shadow on native should be an elevation-bearing wrapper; I spread the token object directly and accept that Android elevation may clip against the scroll region. → `site/src/content/docs/components/table.md`
+- **DOC** Table: the schema lists `body` and `table` as separate anatomy parts, but a FlatList is both the scroll container and the body. I put `testID="Table.table"` on the FlatList and ship no `Table.body` hook; a part test looking for `body` on rn will find nothing. → `site/src/content/docs/components/table.md`
+- **DOC** Table: `maxHeight: viewport` is 'the viewport height minus two layout.gap.section', but on native the component cannot know how much chrome sits above it, so the cap is measured against `useWindowDimensions().height`, not the space the table actually has. In `responsive: scroll` the vertical cap is applied to the list inside the horizontal ScrollView rather than to the scroll region itself, which the doc names as the frame. → `site/src/content/docs/components/table.md`
+- **DOC** Table: `stickyHeader` maps to `stickyHeaderIndices={[0]}`, which only has an effect when the list scrolls itself — i.e. `maxHeight: viewport`. With `maxHeight: none` the page scrolls and the header does not stick, on every `responsive` value and not just `scroll` as the prop text says. → `site/src/content/docs/components/table.md`
+- **DOC** Table: `width: auto` and `min` both size to `space.20` per the guidance, so a `min` column that should shrink to its content instead gets the same fixed width as `auto`; there is no token or rule given for a content-sized native column. → `site/src/content/docs/components/table.md`
+- **DOC** Table: `copy.rowCount` is the list's `accessibilityHint` and is selected with `new Intl.PluralRules()` at the runtime default locale — the doc names `document.documentElement.lang` for web but gives React Native no locale source, and the package has no locale context. → `site/src/content/docs/components/table.md`
+- **DOC** Table: the sort Toolbar in the stacked layout has no declared density or size mapping; I pass Table's `density` straight through to Toolbar's `density`, which happens to share the compact/comfortable values but is not stated anywhere. → `site/src/content/docs/components/table.md`
+- **DOC** Table: the arrow-key rule for the scroll region cannot be expressed on native (ScrollView has no key events), so no test covers it; the scroll region is reachable by swipe and by react-native-web's own scrolling only. → `site/src/content/docs/components/table.md`
+- **DOC** Table: `sortToolbarLabel` names the stacked Toolbar and `scrollHint` the scroll region, but nothing says what names the stacked sort Toolbar when the select-all checkbox is its only content, nor whether `scrollHint` should also be announced when the region has nothing hidden past its edges. I always set the hint. → `site/src/content/docs/components/table.md`
+
+### 2026-09-17 13:42 — lit round 1
+
+- **DOC** Table: `pressable-rows` appears only in the onRowPress description and the Lit notes, not in props or platforms.lit.reflect, so its property name is unstated; I chose a reflected boolean property `pressableRows` on attribute `pressable-rows`. → `site/src/content/docs/components/table.md`
+- **DOC** Table: the forwards to Heading/Button `overrides` (captionSize/captionWeight/captionGap, headerWeight/cellGap) are inline styles on the child, so a consumer's CSS override of `--ds-table-caption-size`, `--ds-table-header-weight` or `--ds-table-cell-gap` never reaches the child; only the `overrides` property does. The doc should say whether forwarded bindings are CSS-hook overridable. → `site/src/content/docs/components/table.md`
+- **DOC** Table: the `caption` part is a composed Heading, but the doc doesn't say whether `hideCaption` visually hides the Heading element itself or a wrapper; I put data-part=caption and the visually-hidden class on the ds-heading host, dropped the wrapper, and gave the Heading no `size` because composition lists no props (its size comes from the fontSize forward). → `site/src/content/docs/components/table.md`
+- **DOC** Table: the container-query breakpoints can't read custom properties, so layout.maxWidth.prose (572) and layout.maxWidth.content (960) are hard-coded from the calm-precise build; warm-sleek's content width is 1040, so the numbers are theme-specific and the doc doesn't say which theme's values a package bakes in. → `site/src/content/docs/components/table.md`
+- **DOC** Table: the doc says select-all and sortable headers 'stay visible as a wrapping row' when stacked but gives no binding for that row's gap or whether it keeps the header border; I used stackedRowGap and kept the header cell styles. Sticky header when stacked sticks the whole thead, which the doc does not describe. → `site/src/content/docs/components/table.md`
+- **DOC** Table: scrollFade 'fades an edge only while columns are hidden past it', but the mask also fades the scroll region's inset focus ring at those edges; the doc doesn't say whether the ring should sit outside the mask. → `site/src/content/docs/components/table.md`
+- **DOC** Table: loading-marks-the-table-busy is scoped to `platforms: [web]`, yet the Lit notes specify aria-busy on the shadow table; I kept its test in Table.test.ts (20 tests for 19 listed scenarios). → `site/src/content/docs/components/table.md`
+- **DOC** Table: `footer` is type content with a note that a string footer renders in Text with the font bindings; Lit exposes it only as a `footer` slot, so the string form has no Lit equivalent and slotted content brings its own typography. → `site/src/content/docs/components/table.md`
+- **DOC** Table: the loading-with-rows live region and the sort/selection announcement region are separate polite regions; the doc doesn't say whether they should share one. → `site/src/content/docs/components/table.md`
+
+### 2026-09-17 13:39 — web round 1
+
+- **DOC** Table: the web platform notes say `element: table` but the guidance and notes put the root on a `<div data-ds="Table">` container with the Heading as a sibling of the table; kept the div root (`Ref<HTMLDivElement>`), with aria-busy/aria-rowcount/aria-colcount on the inner `<table role="table">`. → `site/src/content/docs/components/table.md`
+- **DOC** Table: the web guidance still says `<caption id>` inside the table, contradicting the platform notes (Heading as a sibling referenced by aria-labelledby); followed the platform notes. → `site/src/content/docs/components/table.md`
+- **DOC** Table: rowHover applies to rows with 'a Link in the row header', but a `render` function's output cannot be inspected; used CSS `:has(> rowHeader a[href]):hover` without the pointer cursor or row click that onRowPress rows get. → `site/src/content/docs/components/table.md`
+- **DOC** Table: scrollFade 'an edge fades only while columns are hidden past it' has no stated measurement; used scrollLeft vs scrollWidth-clientWidth with 1px tolerance, re-measured on scroll and ResizeObserver (region + table), with the mask direction flipped under RTL. → `site/src/content/docs/components/table.md`
+- **DOC** Table: stickyHeader in `responsive: scroll` without `maxHeight: viewport` 'has no effect' — chose not to run the header-shadow IntersectionObserver there at all. → `site/src/content/docs/components/table.md`
+- **DOC** Table: the loading Text shown with rows has no size in the spec; used Text size sm, tone muted, matching the table's fontSize binding. → `site/src/content/docs/components/table.md`
+- **DOC** Table: a string `footer` renders in Text, but the element is unspecified; used `<p>`. `false` is treated like absent. → `site/src/content/docs/components/table.md`
+- **DOC** Table: `hideCaption` sends `space.0` for the Heading's marginBlockEnd instead of captionGap so a hidden caption leaves no gap; the spec does not say whether captionGap still applies when hidden. → `site/src/content/docs/components/table.md`
+- **DOC** Table: `width: fill` has no web recipe (only `min` does); used `inline-size: 100%`. → `site/src/content/docs/components/table.md`
+- **DOC** Table: container-query breakpoints read layout.maxWidth.prose/content as built numbers (572px/960px, calm-precise) with literal-ok, so another theme with a different content width (warm-friendly 1040px) needs a CSS rebuild — the spec does not say how per-theme breakpoints reach the stylesheet. → `site/src/content/docs/components/table.md`
+- **DOC** Table: arrow-key scrolling reads `--space-10` via getComputedStyle and parseFloat, which assumes the token builds to px. → `site/src/content/docs/components/table.md`
+
 ### 2026-09-16 11:19 — rn round 1
 
 - **DOC** Table: platforms.rn.notes says phones are 'always the stacked form' and scroll only happens on tablets, but the responsive prop, the dense-data-table-that-scrolls example and the guidance ('the region is present whenever responsive: scroll') say scroll keeps the columns on narrow screens. Chose the prop: scroll gets a horizontal scroll region at every width; stack becomes stacked below layout.maxWidth.prose. → `site/src/content/docs/components/table.md`
@@ -6252,6 +6331,38 @@ Doc: `site/src/content/docs/components/toast.md`
 ## Toolbar
 
 Doc: `site/src/content/docs/components/toolbar.md`
+
+### 2026-09-17 13:24 — rn round 1
+
+- **DOC** Toolbar: `size` accepts sm|md but Search's size union is md|lg — the spec lists Search as a sized child without saying what `sm` maps to; chose to pass `md` through and leave Search at its own default when the toolbar is `sm` (web clones `sm` onto Search regardless). → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: ToolbarGroup's props on React Native are not specified beyond `label` and `children` (no ref, no testID, no role) — chose `ref?: Ref<ViewInstance>`, `role="group"` and the part hook `testID="Toolbar.group"`; the rn notes say only 'accessibilityLabel from label'. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: ToolbarGroup's orientation, wrapping and itemGap come from the parent Toolbar, but the spec doesn't say how the group reads them — chose a private context carrying the group style, with a __DEV__ warning when a ToolbarGroup renders outside a Toolbar; it is also unstated whether a group nested inside a fragment or another wrapper counts (fragments are expanded; any other wrapper is treated as a bare control). → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: the rn notes say only an explicitly passed `overflow="menu"` warns, while the `overflow` description says a vertical toolbar treats `menu` as `scroll` on every platform — it is unclear whether an explicit `menu` on a vertical toolbar should still warn on native; chose to warn for any explicit `menu`, following the rn note literally. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: example `compact-actions-with-overflow` says 'each with the same overflowLabel' — ambiguous between one shared string and each Button's overflowLabel matching its own label; chose overflowLabel equal to each Button's label. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: example `scrolling-filter-row` doesn't say whether the Selects' labels are visible; chose `hideLabel` to keep the row at toolbar height. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: behavior scenarios are all render/name checks; there is no scenario for the separator appearing only between adjacent groups, for groupGap's clamped padding, or for size by identity, so none of the new grouping contract is tested on React Native. → `site/src/content/docs/components/toolbar.md`
+
+### 2026-09-17 13:22 — lit round 1
+
+- **DOC** Toolbar: styles.groupGap declares `part: group`, but its description applies it as padding on the separator wrapper (groupGap − itemGap); the declared part and where the binding takes effect disagree. Chose the description: the separator part carries it and ToolbarGroup does not read it. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: styles.separatorLength says the separator wrapper 'carries the part hook' but does not name the wrapper element or how Lit styles a light-DOM wrapper it inserts. Chose a light-DOM `<div data-ds-toolbar-separator data-part="separator">` styled from the toolbar's shadow root with `::slotted(...)`, with no `part` attribute. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: the fadeWidth description says 'a gradient from the toolbar background to transparent', while the web notes say 'masked edges' (mask-image). Chose a mask-image gradient: it fades the content into whatever is behind it without a second painted layer. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: fadeWidth describes horizontal scrolling only, but overflow says a vertical toolbar treats `menu` as `scroll`. Chose vertical scrolling for vertical `scroll`/`menu`, with the fades on the top and bottom edges. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: the compact-actions-with-overflow example says 'each with the same overflowLabel', which reads as either one shared string or an overflowLabel equal to each button's label. Chose overflow-label equal to each button's own label. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: the text-entry rule (an input, textarea or Search keeps ArrowLeft/ArrowRight/Home/End) does not list which input types count as text entry. Chose every input type except button, checkbox, color, file, hidden, image, radio, range, reset and submit, plus textarea and contenteditable, judged by the event's innermost composed-path target. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: the Lit notes say the roving list is 'rebuilt on slotchange', but a control added inside an existing ToolbarGroup is assigned to the group's slot and the toolbar's slotchange never fires. Kept a childList-only subtree MutationObserver instead. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: the Keyboard story needs at least three focusable children, but the spec does not say what Default's `children` are (only the examples have them). Default and Keyboard use two labelled groups of three ghost Buttons, so a separator shows. → `site/src/content/docs/components/toolbar.md`
+
+### 2026-09-17 13:18 — web round 1
+
+- **DOC** Toolbar: the overflowLabel fallback chain ends in 'the Button's text content', but React Button has no children (label is required), so the chain stops at `label`. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: 'warn once per control' has no stable control identity in React (elements are recreated each render); keyed the warning by the toolbar entry key (group key + index for grouped Buttons), stored per Toolbar instance. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: example compact-actions-with-overflow says 'each with the same overflowLabel' — read as each Button's overflowLabel equal to its own label (identical labels on all four would make the Menu unusable). → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: 'focusing a control scrolls it into view' is left to the browser's native focus scrolling; no explicit scrollIntoView call. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: edge-fade direction under RTL is not specified; the mask uses `to right` / `to bottom` and measures Math.abs(scrollLeft), so the start fade is drawn on the physical left in RTL. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: text-entry controls keep ArrowLeft/ArrowRight/Home/End, but the doc is silent on ArrowUp/ArrowDown from an input in a vertical toolbar; the toolbar still moves focus on those. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: which input types count as 'text-entry' is not listed; treated every input except button, checkbox, color, file, image, radio, range, reset and submit (plus textarea and contenteditable) as text entry. → `site/src/content/docs/components/toolbar.md`
+- **DOC** Toolbar: the overflowMenu hook — passed data-part="overflowMenu" through Menu's rest props, which land on Menu's root wrapper rather than its portaled popup; the doc does not say which Menu element carries the part. → `site/src/content/docs/components/toolbar.md`
 
 ### 2026-09-16 10:47 — rn round 1
 
@@ -6744,7 +6855,7 @@ Doc: `site/src/content/docs/components/treegrid.md`
 
 ## Totals
 
-DOC: 4406 · CODE: 93 · TOOLING: 2 · NOISE: 42
+DOC: 4490 · CODE: 93 · TOOLING: 2 · NOISE: 42
 
 ## Gates to fix
 

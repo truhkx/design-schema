@@ -133,3 +133,6 @@ Gaps a fold cannot answer because they are about the tools, not the docs.
 - The rn package digest says to pass an Icon foreground through the `color` prop, while docs forward locked colours to `overrides.color`; the digest should match (Stepper, Search; rn).
 - Scenario coverage gaps the scenario vocabulary cannot express: range sliders (two role=slider elements), rn accessibility actions (increment, custom actions), and `focusable: false` on rn (Slider, ProgressBar; rn/web).
 - A fold session could not run `node logs/fold-latest-rounds.mjs` or a `grep` with alternation through Bash (approval required); latest rounds were found with the Grep tool (fold, Numeric phase).
+- More scenario coverage the vocabulary cannot express: the separator appearing only between two adjacent groups, groupGap's clamped separator padding, and `size` applied by child identity — all three are counts or style values, and `then` has no clause for either (Toolbar, rn).
+- The rn digest's reversed `toLineHeight` arguments (recorded above for Combobox) hit a second generation (Carousel, rn).
+- A fold session still cannot run `node logs/*.mjs` (approval required); gap-file mtimes were listed with `Get-ChildItem -Path generated/gaps -Filter *.md` instead (fold, Rows phase).

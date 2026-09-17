@@ -60,7 +60,7 @@ export const Disabled: Story = { args: { disabled: true, defaultValue: 'invoices
 
 /**
  * For the axe gate and manual keyboard checks on react-native-web: with a query the field
- * holds three focusables (input, clear button, submit button). Search has no `open` prop —
- * focusing the field opens its suggestions — so the list shows once the input is focused.
+ * holds three focusables (input, clear button, submit button). Search has no `open` prop and
+ * focus alone never opens the list: type in the field (or press ArrowDown) to show it.
  */
 export const Keyboard: Story = { args: { defaultValue: 'invoices', suggestions: SUGGESTIONS } };

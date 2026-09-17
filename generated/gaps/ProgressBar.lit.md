@@ -30,3 +30,13 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - ProgressBar: `label` is required but has no fallback when empty. Chose to drop aria-label, so the bar is unnamed, with no dev warning.
 - ProgressBar: the indeterminate sweep direction in RTL is unspecified. Chose to mirror the keyframes under :host(:dir(rtl)).
 - ProgressBar: the the-bar-is-never-focusable scenario has no concrete assertion shape on Lit. Tested that host focus() does not move focus, tabIndex < 0, and the shadow root has no focusable descendants.
+
+## 2026-09-17 12:35 — round 1
+
+- ProgressBar: the rules don't say what happens to the recorded tier when a bar leaves the indeterminate state (value goes from undefined to 60 with announce: milestones). I reset the record to tier 0 on entering indeterminate, so the first known value announces its tier (e.g. 'Importing contacts: 60%'); keeping the old record would stay silent instead.
+- ProgressBar: the forwarded bindings (labelSize, labelWeight, valueSize, fontFamily, lineHeight) only reach the child ds-text through its `overrides` property, so a CSS override of --ds-progress-bar-label-size etc. has no effect: nothing in the shadow root reads those hooks without restyling the child. I kept the hooks on :host for naming consistency and forward only through `overrides`; the doc should say whether a CSS hook exists for forwarded bindings.
+- ProgressBar: a hidden label with no visible value text must 'take no space' and skip partGap, but the doc doesn't say how on Lit. I make the whole header visually hidden (out of flex flow), which keeps the label in the shadow tree; the name itself comes from the host's aria-label.
+- ProgressBar: the default formatter's `Intl.NumberFormat(locale, …)` names no locale source on Lit. I use the runtime default (undefined), as Meter does.
+- ProgressBar: 'copy.indeterminate is announced once after mount' doesn't say how long after. Text already in a newly inserted live region is often not read, so Lit renders the region empty and sets the message on the next animation frame.
+- ProgressBar: `part` attributes are kept on container/header/label/valueText/track/fill because the anatomy names them, even though the package forbids ::part for styling; the doc could say whether Lit should expose `part` at all.
+- ProgressBar: non-finite `min`/`max` are not covered (only a non-finite `value` is). They pass through Number() unchanged into aria-valuemin/max.

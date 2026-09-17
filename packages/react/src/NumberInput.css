@@ -15,6 +15,7 @@
   --ds-number-input-affix-gap: var(--layout-gap-tight);
   --ds-number-input-stepper-gap: var(--layout-gap-none);
   --ds-number-input-stepper-divider: var(--color-border);
+  --ds-number-input-stepper-divider-width: var(--border-width-thin);
   --ds-number-input-part-gap: var(--space-1);
   --ds-number-input-label-weight: var(--font-weight-medium);
   --ds-number-input-font-family: var(--font-family-body);
@@ -44,8 +45,12 @@
   --ds-number-input-font-size: var(--font-size-sm);
 }
 
-/* disabledOpacity: the whole field group dims, as Input does. */
-.ds-number-input--disabled {
+/* disabledOpacity: label, description, input and affixes dim; the stepper Buttons are `disabled`
+   and dim once through their own style, so no element containing them dims. */
+.ds-number-input--disabled .ds-number-input__label,
+.ds-number-input--disabled .ds-number-input__description,
+.ds-number-input--disabled .ds-number-input__input,
+.ds-number-input--disabled .ds-number-input__affix {
   opacity: var(--ds-number-input-disabled-opacity);
 }
 
@@ -157,15 +162,15 @@
   user-select: none;
 }
 
-/* stepperGap / stepperDivider: the two Buttons sit flush at the end of the field, a hairline away
-   from the input — positioned by this wrapper, never restyled. */
+/* stepperGap / stepperDivider / stepperDividerWidth: the two Buttons sit flush at the end of the
+   field, a hairline away from the input — positioned by this wrapper, never restyled. */
 .ds-number-input__steppers {
   display: flex;
   align-self: stretch;
   align-items: center;
   flex: 0 0 auto;
   gap: var(--ds-number-input-stepper-gap);
-  border-inline-start: var(--ds-number-input-border-width) solid var(--ds-number-input-stepper-divider);
+  border-inline-start: var(--ds-number-input-stepper-divider-width) solid var(--ds-number-input-stepper-divider);
 }
 
 .ds-number-input__stepper {

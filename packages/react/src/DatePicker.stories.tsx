@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { DatePicker } from './DatePicker';
 
@@ -68,6 +69,21 @@ export const LocaleDe: Story = { args: { label: 'Fälligkeitsdatum', locale: 'de
 
 /**
  * The calendar open with its trigger: month/year Selects and prev/next Buttons, the grid (one
- * roving tab stop), Today and Clear.
+ * roving tab stop), Today and Clear. `open` follows onOpenChange, so Escape closes it.
  */
-export const Keyboard: Story = { args: { open: true, defaultValue: '2026-09-10' } };
+export const Keyboard: Story = {
+  args: { open: true, defaultValue: '2026-09-10' },
+  render: function KeyboardStory(args) {
+    const [open, setOpen] = useState(args.open ?? true);
+    return (
+      <DatePicker
+        {...args}
+        open={open}
+        onOpenChange={(next) => {
+          setOpen(next);
+          args.onOpenChange?.(next);
+        }}
+      />
+    );
+  },
+};

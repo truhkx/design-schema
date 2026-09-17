@@ -33,6 +33,7 @@ export type NumberInputOverridableBinding =
   | 'affixGap'
   | 'stepperGap'
   | 'stepperDivider'
+  | 'stepperDividerWidth'
   | 'partGap'
   | 'labelWeight'
   | 'helperSize'
@@ -50,6 +51,7 @@ const HOOKS: Record<NumberInputOverridableBinding, string> = {
   affixGap: '--ds-number-input-affix-gap',
   stepperGap: '--ds-number-input-stepper-gap',
   stepperDivider: '--ds-number-input-stepper-divider',
+  stepperDividerWidth: '--ds-number-input-stepper-divider-width',
   partGap: '--ds-number-input-part-gap',
   labelWeight: '--ds-number-input-label-weight',
   helperSize: '--ds-number-input-helper-size',
@@ -106,10 +108,10 @@ type Parsed = { kind: 'empty' } | { kind: 'invalid' } | { kind: 'number'; value:
 function parseTyped(raw: string): Parsed {
   const trimmed = raw.trim();
   if (trimmed === '') return { kind: 'empty' };
-  const { decimal, group } = localeSeparators();
-  // Where "." is the locale's group separator (de-DE "1.234,5"), a "." is a
-  // decimal only when the locale's own decimal is absent from the text.
-  const periodIsDecimal = decimal === '.' || group !== '.' || !trimmed.includes(decimal);
+  const { decimal } = localeSeparators();
+  // "." is a decimal only when the locale's own decimal is absent from the text:
+  // de-DE "1.234,5" is 1234.5, and "1.5" is 1.5.
+  const periodIsDecimal = decimal === '.' || !trimmed.includes(decimal);
   let digits = '';
   let negative = false;
   let seenDecimal = false;
@@ -199,6 +201,7 @@ export class DsNumberInput extends LitElement {
       --ds-number-input-affix-gap: var(--layout-gap-tight);
       --ds-number-input-stepper-gap: var(--layout-gap-none);
       --ds-number-input-stepper-divider: var(--color-border);
+      --ds-number-input-stepper-divider-width: var(--border-width-thin);
       --ds-number-input-part-gap: var(--space-1);
       --ds-number-input-label-weight: var(--font-weight-medium);
       --ds-number-input-helper-size: var(--font-size-sm);
@@ -232,8 +235,15 @@ export class DsNumberInput extends LitElement {
       font-family: var(--ds-number-input-font-family);
     }
 
-    /* disabledOpacity: the whole field group dims */
-    .group.disabled {
+    /*
+     * disabledOpacity: the label, description, input and affix parts dim; the
+     * stepper Buttons receive disabled and dim once through their own style.
+     */
+    .group.disabled [data-part='label'],
+    .group.disabled [data-part='description'],
+    .group.disabled [data-part='input'],
+    .group.disabled [data-part='prefix'],
+    .group.disabled [data-part='suffix'] {
       opacity: var(--ds-number-input-disabled-opacity);
     }
 
@@ -344,13 +354,18 @@ export class DsNumberInput extends LitElement {
       white-space: nowrap;
     }
 
-    /* stepperGap between the two Buttons; stepperDivider is the hairline before them */
+    /* stepperGap between the two Buttons; stepperDivider / stepperDividerWidth is the hairline before them */
     .steppers {
       display: flex;
       align-items: center;
       flex-shrink: 0;
       gap: var(--ds-number-input-stepper-gap);
-      border-inline-start: var(--ds-number-input-border-width) solid var(--ds-number-input-stepper-divider);
+      border-inline-start: var(--ds-number-input-stepper-divider-width) solid var(--ds-number-input-stepper-divider);
+    }
+
+    [data-part='decrementButton'],
+    [data-part='incrementButton'] {
+      display: inline-flex;
     }
   `;
 
@@ -633,40 +648,42 @@ export class DsNumberInput extends LitElement {
           ${this.hideSteppers
             ? nothing
             : html`<span class="steppers" aria-hidden="true">
-                <ds-button
+                <span
                   part="decrementButton"
                   data-part="decrementButton"
-                  variant="ghost"
-                  size="sm"
-                  icon-only
-                  label=${COPY.decrement}
-                  tabindex="-1"
-                  ?disabled=${isDisabled || this.atMin}
                   @pointerdown=${(event: PointerEvent) => this.handleStepperPointerDown(event, -1)}
                   @pointerup=${this.stopRepeat}
                   @pointerleave=${this.stopRepeat}
                   @pointercancel=${this.stopRepeat}
                   @click=${(event: MouseEvent) => this.handleStepperClick(event, -1)}
                   @press=${this.stopInnerPress}
-                  ><ds-icon slot="leading-icon" name="minus" inline></ds-icon
-                ></ds-button>
-                <ds-button
+                  ><ds-button
+                    variant="ghost"
+                    size="sm"
+                    icon-only
+                    label=${COPY.decrement}
+                    tabindex="-1"
+                    ?disabled=${isDisabled || this.atMin}
+                    ><ds-icon slot="leading-icon" name="minus" inline></ds-icon></ds-button
+                ></span>
+                <span
                   part="incrementButton"
                   data-part="incrementButton"
-                  variant="ghost"
-                  size="sm"
-                  icon-only
-                  label=${COPY.increment}
-                  tabindex="-1"
-                  ?disabled=${isDisabled || this.atMax}
                   @pointerdown=${(event: PointerEvent) => this.handleStepperPointerDown(event, 1)}
                   @pointerup=${this.stopRepeat}
                   @pointerleave=${this.stopRepeat}
                   @pointercancel=${this.stopRepeat}
                   @click=${(event: MouseEvent) => this.handleStepperClick(event, 1)}
                   @press=${this.stopInnerPress}
-                  ><ds-icon slot="leading-icon" name="plus" inline></ds-icon
-                ></ds-button>
+                  ><ds-button
+                    variant="ghost"
+                    size="sm"
+                    icon-only
+                    label=${COPY.increment}
+                    tabindex="-1"
+                    ?disabled=${isDisabled || this.atMax}
+                    ><ds-icon slot="leading-icon" name="plus" inline></ds-icon></ds-button
+                ></span>
               </span>`}
         </div>
         ${message

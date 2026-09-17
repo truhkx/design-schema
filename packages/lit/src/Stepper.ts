@@ -4,6 +4,7 @@ import { ifDefined } from 'lit/directives/if-defined.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Icon.js';
 import './Text.js';
+import type { IconOverridableBinding } from './Icon.js';
 import type { TextOverridableBinding } from './Text.js';
 
 export type StepperOrientation = 'horizontal' | 'vertical';
@@ -47,6 +48,7 @@ const PROSE_WIDTH_PX = 572; // literal-ok: breakpoint from layout.maxWidth.prose
 export type StepperOverridableBinding =
   | 'indicatorSize'
   | 'indicatorBackground'
+  | 'indicatorRadius'
   | 'indicatorFontSize'
   | 'indicatorFontWeight'
   | 'connector'
@@ -54,22 +56,26 @@ export type StepperOverridableBinding =
   | 'labelCurrentWeight'
   | 'labelSize'
   | 'descriptionSize'
+  | 'countSize'
   | 'stepHover'
   | 'stepRadius'
+  | 'stepPadding'
   | 'stepGap'
   | 'partGap'
   | 'fontFamily'
   | 'transition';
 
-/** Hooks owned by the host. Label and description typography is forwarded to the composed `<ds-text>`'s `overrides`. */
+/** Hooks owned by the host. Label, description and count typography is forwarded to the composed `<ds-text>`'s `overrides`. */
 const HOOKS: Partial<Record<StepperOverridableBinding, string>> = {
   indicatorSize: '--ds-stepper-indicator-size',
   indicatorBackground: '--ds-stepper-indicator-background',
+  indicatorRadius: '--ds-stepper-indicator-radius',
   indicatorFontSize: '--ds-stepper-indicator-font-size',
   indicatorFontWeight: '--ds-stepper-indicator-font-weight',
   connector: '--ds-stepper-connector',
   stepHover: '--ds-stepper-step-hover',
   stepRadius: '--ds-stepper-step-radius',
+  stepPadding: '--ds-stepper-step-padding',
   stepGap: '--ds-stepper-step-gap',
   partGap: '--ds-stepper-part-gap',
   fontFamily: '--ds-stepper-font-family', // literal-ok: CSS custom-property hook name, not a font stack
@@ -77,6 +83,16 @@ const HOOKS: Partial<Record<StepperOverridableBinding, string>> = {
 };
 
 type TextOverrides = Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
+type IconOverrides = Partial<Record<IconOverridableBinding, TokenRef | undefined>>;
+
+/** Binding defaults the composed children need as tokens (Text's own weight scale has no default for these). */
+const DEFAULT_TOKEN = {
+  labelWeight: 'font.weight.medium',
+  labelCurrentWeight: 'font.weight.semibold',
+  indicatorFontSize: 'font.size.sm',
+  indicatorCompleteForeground: 'color.control.selectedForeground',
+  indicatorErrorForeground: 'color.status.danger.foreground',
+} as const satisfies Record<string, TokenRef>;
 
 function resolveStatus(step: StepperStep, index: number, currentIndex: number): StepperStepStatus {
   if (step.status) return step.status;
@@ -88,12 +104,13 @@ function resolveStatus(step: StepperStep, index: number, currentIndex: number): 
  * `<ds-stepper>` — Stepper (category: navigation).
  *
  * `<ds-stepper current="payment" .steps=${steps}>` renders a shadow `<nav aria-label>` wrapping an
- * `<ol>`. Each `<li>` holds a control — its own native `<button>` when the step is navigable, a `<div>`
- * otherwise — containing the indicator (number, `check` or `danger` icon), the label and (vertical)
- * description as `<ds-text>`, and a visually-hidden status word; a connector follows all but the last
- * step. The current step's control carries `aria-current="step"`. Choosing a navigable step fires a
- * composed `step-select` with `{ id }`; the stepper never changes `current` itself. Below
- * `layout.maxWidth.prose` a horizontal stepper switches to `compact` through a container query on the host.
+ * `<ol>`, followed by the `count` `<ds-text>`. Each `<li>` holds a control — its own native `<button>`
+ * when the step is navigable, a `<div>` otherwise — containing the indicator (number, `check` or `danger`
+ * icon), the label and (vertical only) description as `<ds-text>`, and a visually-hidden ", " plus status
+ * word; a connector follows all but the last step. The current step's control carries
+ * `aria-current="step"`. Choosing a navigable step fires a composed `step-select` with `{ id }`; the
+ * stepper never changes `current` itself. Below `layout.maxWidth.prose` a horizontal stepper switches to
+ * `compact` through a container query on the host.
  *
  * ## When to use
  *
@@ -120,11 +137,13 @@ export class DsStepper extends LitElement {
     :host {
       --ds-stepper-indicator-size: var(--space-6);
       --ds-stepper-indicator-background: var(--color-control-background);
+      --ds-stepper-indicator-radius: var(--radius-full);
       --ds-stepper-indicator-font-size: var(--font-size-sm);
       --ds-stepper-indicator-font-weight: var(--font-weight-semibold);
       --ds-stepper-connector: var(--color-border);
       --ds-stepper-step-hover: var(--color-action-ghost-background-hover);
       --ds-stepper-step-radius: var(--radius-sm);
+      --ds-stepper-step-padding: var(--space-2);
       --ds-stepper-step-gap: var(--layout-gap-normal);
       --ds-stepper-part-gap: var(--space-2);
       --ds-stepper-font-family: var(--font-family-body); /* literal-ok: hook name, not a font stack */
@@ -138,8 +157,8 @@ export class DsStepper extends LitElement {
       display: none;
     }
 
-    /* Label and description colour, size and weight belong to the composed Text: labelColor,
-       labelUpcomingColor and descriptionColor are its tone; the size and weight hooks reach its overrides. */
+    /* Label, description and count colour, size and weight belong to the composed Text: labelColor,
+       labelUpcomingColor, descriptionColor and countColor are its tone; sizes and weights reach its overrides. */
 
     ol {
       display: flex;
@@ -161,7 +180,7 @@ export class DsStepper extends LitElement {
       min-block-size: var(--size-target-min);
       min-inline-size: var(--size-target-min);
       padding-block: 0;
-      padding-inline: var(--ds-stepper-part-gap);
+      padding-inline: var(--ds-stepper-step-padding);
       margin: 0;
       border: none;
       border-radius: var(--ds-stepper-step-radius);
@@ -198,7 +217,7 @@ export class DsStepper extends LitElement {
       inline-size: var(--ds-stepper-indicator-size);
       block-size: var(--ds-stepper-indicator-size);
       border: var(--border-width-focus) solid var(--color-border-strong);
-      border-radius: var(--radius-full);
+      border-radius: var(--ds-stepper-indicator-radius);
       background-color: var(--ds-stepper-indicator-background);
       color: var(--color-foreground);
       font-size: var(--ds-stepper-indicator-font-size);
@@ -206,7 +225,7 @@ export class DsStepper extends LitElement {
       line-height: 1;
     }
 
-    li[data-selected] [data-part='indicator'] {
+    li[data-status='current'] [data-part='indicator'] {
       border-color: var(--color-control-selected-background);
     }
 
@@ -293,7 +312,7 @@ export class DsStepper extends LitElement {
 
     :host([orientation='vertical']) .control {
       align-items: flex-start;
-      padding-block: var(--ds-stepper-part-gap);
+      padding-block: var(--ds-stepper-step-padding);
     }
 
     :host([orientation='vertical']) [data-part='connector'] {
@@ -301,7 +320,7 @@ export class DsStepper extends LitElement {
       inline-size: var(--border-width-focus);
       min-block-size: var(--ds-stepper-step-gap);
       margin-inline-start: calc(
-        var(--ds-stepper-part-gap) + (var(--ds-stepper-indicator-size) - var(--border-width-focus)) / 2
+        var(--ds-stepper-step-padding) + (var(--ds-stepper-indicator-size) - var(--border-width-focus)) / 2
       );
     }
 
@@ -346,13 +365,26 @@ export class DsStepper extends LitElement {
   /** Accessible name of the navigation landmark. Defaults to `copy.navLabel`. */
   @property() accessor label: string | undefined;
 
-  /** The steps in order. `status` is derived from `current` when omitted: before it complete, after it upcoming. */
+  /**
+   * The steps in order. `status` is derived from `current` when omitted: before it complete, the step it
+   * names current, after it upcoming. An explicit `status` sets only the indicator, its colours and the
+   * status word; position (not status) decides the selected state, navigability, the connector colour and
+   * the compact reveal.
+   */
   @property({ attribute: false }) accessor steps: StepperStep[] = [];
 
-  /** The id of the current step. */
+  /**
+   * The id of the current step. The step whose id matches is the selected one (`aria-current="step"`) and
+   * the one compact reveals, whatever its `status`. When no id matches, nothing is selected, every step
+   * without an explicit status is upcoming, no step is navigable under `completed`, the count reads
+   * "Step 1 of m", and development builds log a warning.
+   */
   @property({ type: String, reflect: true }) accessor current = '';
 
-  /** Vertical shows descriptions under each label and suits a side column; horizontal collapses to `compact` below the prose width. */
+  /**
+   * Vertical shows descriptions under each label and suits a side column; horizontal does not render
+   * descriptions at all and collapses to `compact` below the prose width.
+   */
   @property({ type: String, reflect: true }) accessor orientation: StepperOrientation = 'horizontal';
 
   /**
@@ -364,7 +396,7 @@ export class DsStepper extends LitElement {
   /** Show only the current step's label and "Step n of m"; the indicators stay. Horizontal only. */
   @property({ type: Boolean, reflect: true }) accessor compact = false;
 
-  /** Per-instance style overrides: each entry sets the matching hook, or the composed Text's own override, to that token. */
+  /** Per-instance style overrides: each entry sets the matching hook, or the composed Text's or Icon's own override, to that token. */
   @property({ attribute: false }) accessor overrides: Partial<Record<StepperOverridableBinding, TokenRef | undefined>> | undefined;
 
   override connectedCallback(): void {
@@ -375,8 +407,8 @@ export class DsStepper extends LitElement {
   protected override willUpdate(changed: PropertyValues): void {
     if (changed.has('overrides')) this.applyOverrides();
     if (import.meta.env.DEV && (changed.has('steps') || changed.has('current'))) {
-      if (this.current && !this.steps.some((step) => step.id === this.current)) {
-        console.warn(`<ds-stepper> \`current\` "${this.current}" does not match any step id.`, this);
+      if (!this.steps.some((step) => step.id === this.current)) {
+        console.warn(`<ds-stepper> \`current\` "${this.current}" matches no step id — nothing is selected.`, this);
       }
     }
   }
@@ -393,18 +425,28 @@ export class DsStepper extends LitElement {
         <ol data-part="list" part="list">
           ${steps.map((step, index) => this.renderStep(step, index, currentIndex))}
         </ol>
-        <ds-text class="count" element="span" size="sm" tone="muted">${count}</ds-text>
+        <ds-text
+          class="count"
+          data-part="count"
+          part="count"
+          element="span"
+          size="sm"
+          tone="muted"
+          .overrides=${this.textOverrides('count')}
+          >${count}</ds-text
+        >
       </nav>
     `;
   }
 
   private renderStep(step: StepperStep, index: number, currentIndex: number): TemplateResult {
     const status = resolveStatus(step, index, currentIndex);
-    // Selection and the compact reveal follow the id; the indicator and status word follow the status.
-    const isCurrent = step.id === this.current;
-    const isNavigable =
-      this.navigable === 'all' || (this.navigable === 'completed' && currentIndex !== -1 && index < currentIndex);
-    const word = isCurrent && status !== 'error' ? COPY.current : STATUS_WORD[status];
+    // Selection, navigability, connector and the compact reveal follow position; the indicator, its
+    // colours and the status word follow the status.
+    const isCurrent = index === currentIndex;
+    const isBefore = currentIndex !== -1 && index < currentIndex;
+    const isNavigable = this.navigable === 'all' || (this.navigable === 'completed' && isBefore);
+    const word = STATUS_WORD[status];
     const descriptionId =
       step.description && this.orientation === 'vertical' ? `step-${index}-description` : undefined;
     const isLast = index === this.steps.length - 1;
@@ -412,9 +454,17 @@ export class DsStepper extends LitElement {
     const content = html`
       <span data-part="indicator" part="indicator" aria-hidden="true">
         ${status === 'complete'
-          ? html`<ds-icon name="check" inline></ds-icon>`
+          ? html`<ds-icon
+              name="check"
+              size="sm"
+              .overrides=${this.iconOverrides(DEFAULT_TOKEN.indicatorCompleteForeground)}
+            ></ds-icon>`
           : status === 'error'
-            ? html`<ds-icon name="danger" inline></ds-icon>`
+            ? html`<ds-icon
+                name="danger"
+                size="sm"
+                .overrides=${this.iconOverrides(DEFAULT_TOKEN.indicatorErrorForeground)}
+              ></ds-icon>`
             : String(index + 1)}
       </span>
       <span class="content">
@@ -423,8 +473,7 @@ export class DsStepper extends LitElement {
           part="label"
           element="span"
           size="sm"
-          weight=${isCurrent ? 'semibold' : 'medium'}
-          tone=${status === 'upcoming' && !isCurrent ? 'muted' : 'default'}
+          tone=${status === 'upcoming' ? 'muted' : 'default'}
           .overrides=${this.textOverrides(isCurrent ? 'currentLabel' : 'label')}
           >${step.label}</ds-text
         >
@@ -440,7 +489,7 @@ export class DsStepper extends LitElement {
               >${step.description}</ds-text
             >`
           : nothing}
-        ${word ? html`<span class="visually-hidden">${word}</span>` : nothing}
+        ${word ? html`<span class="visually-hidden">${`, ${word}`}</span>` : nothing}
       </span>
     `;
 
@@ -468,7 +517,7 @@ export class DsStepper extends LitElement {
               data-part="connector"
               part="connector"
               aria-hidden="true"
-              ?data-complete=${currentIndex !== -1 && index < currentIndex}
+              ?data-complete=${isBefore}
             ></span>`}
       </li>
     `;
@@ -484,20 +533,28 @@ export class DsStepper extends LitElement {
     );
   }
 
-  /** Forwards label and description typography overrides to the composed `<ds-text>`. */
-  private textOverrides(kind: 'label' | 'currentLabel' | 'description'): TextOverrides | undefined {
-    const source = this.overrides;
-    if (!source) return undefined;
+  /** Forwards typography to a composed `<ds-text>`: the label weights always (Text has no token default for them), the rest when overridden. */
+  private textOverrides(kind: 'label' | 'currentLabel' | 'description' | 'count'): TextOverrides | undefined {
+    const source = this.overrides ?? {};
     const result: TextOverrides = {};
     if (source.fontFamily) result.fontFamily = source.fontFamily;
     if (kind === 'description') {
       if (source.descriptionSize) result.fontSize = source.descriptionSize;
+    } else if (kind === 'count') {
+      if (source.countSize) result.fontSize = source.countSize;
     } else {
       if (source.labelSize) result.fontSize = source.labelSize;
-      const weight = kind === 'currentLabel' ? source.labelCurrentWeight : source.labelWeight;
-      if (weight) result.fontWeight = weight;
+      result.fontWeight =
+        kind === 'currentLabel'
+          ? (source.labelCurrentWeight ?? DEFAULT_TOKEN.labelCurrentWeight)
+          : (source.labelWeight ?? DEFAULT_TOKEN.labelWeight);
     }
     return Object.keys(result).length > 0 ? result : undefined;
+  }
+
+  /** The check and danger Icons match the numeral: `indicatorFontSize` is their size override. */
+  private iconOverrides(color: TokenRef): IconOverrides {
+    return { size: this.overrides?.indicatorFontSize ?? DEFAULT_TOKEN.indicatorFontSize, color };
   }
 
   private applyOverrides(): void {

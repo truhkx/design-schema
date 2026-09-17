@@ -37,7 +37,7 @@ const COPY_INVALID = (label: string): string => `${label} is not valid.`;
 /** Keys handled by the keyboard model; their `keyup` ends the interaction. */
 const NAV_KEYS = new Set(['ArrowRight', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End']);
 
-/** Keyboard table: PageUp/PageDown move by this many steps when there are no marks. */
+/** Keyboard table: PageUp/PageDown change by ten steps (without `snapToMarks`). */
 const PAGE_STEPS = 10;
 
 /**
@@ -54,13 +54,19 @@ export type SliderOverridableBinding =
   | 'thumbSize'
   | 'thumbShadow'
   | 'thumbActiveScale'
+  | 'haloSpread'
   | 'mark'
   | 'markSize'
   | 'markLabelSize'
+  | 'markLabelGap'
   | 'valueSize'
+  | 'bubblePaddingBlock'
+  | 'bubblePaddingInline'
+  | 'bubbleOffset'
   | 'bubbleRadius'
   | 'labelWeight'
   | 'partGap'
+  | 'labelGap'
   | 'trackPaddingBlock'
   | 'fontFamily'
   | 'fontSize'
@@ -77,13 +83,19 @@ const HOOKS: Record<SliderOverridableBinding, string> = {
   thumbSize: '--ds-slider-thumb-size',
   thumbShadow: '--ds-slider-thumb-shadow',
   thumbActiveScale: '--ds-slider-thumb-active-scale',
+  haloSpread: '--ds-slider-halo-spread',
   mark: '--ds-slider-mark',
   markSize: '--ds-slider-mark-size',
   markLabelSize: '--ds-slider-mark-label-size',
+  markLabelGap: '--ds-slider-mark-label-gap',
   valueSize: '--ds-slider-value-size',
+  bubblePaddingBlock: '--ds-slider-bubble-padding-block',
+  bubblePaddingInline: '--ds-slider-bubble-padding-inline',
+  bubbleOffset: '--ds-slider-bubble-offset',
   bubbleRadius: '--ds-slider-bubble-radius',
   labelWeight: '--ds-slider-label-weight',
   partGap: '--ds-slider-part-gap',
+  labelGap: '--ds-slider-label-gap',
   trackPaddingBlock: '--ds-slider-track-padding-block',
   fontFamily: '--ds-slider-font-family', // literal-ok: CSS custom-property name, not a font stack
   fontSize: '--ds-slider-font-size',
@@ -97,21 +109,23 @@ const HOOKS: Record<SliderOverridableBinding, string> = {
  * `<ds-slider>` — Slider (category: input, APG pattern: slider-multithumb).
  *
  * `<ds-slider label="Price range" name="price" range min="0" max="500" step="10">`
- * renders a label row, a track with a fill and tick marks, and one
- * `<div role="slider" tabindex="0">` thumb per value in its shadow root (two
- * for `range`, each its own tab stop). Pointer Events with `setPointerCapture`
- * on the track drive dragging and track clicks (the nearest thumb moves); the
- * keyboard table (arrows, Page Up/Down, Home/End) is implemented on each thumb.
- * The element is form-associated (`ElementInternals`; a range submits two
- * entries under `name`) and dispatches composed `change` (`{ value }`, on every
- * change) and `change-end` (`{ value }`, once per interaction) CustomEvents.
+ * renders a label row, a track area (the pointer hit area) holding the track,
+ * its fill and one `<div role="slider" tabindex="0">` thumb per value (two for
+ * `range`, each its own tab stop), and the tick marks below it, all in the
+ * shadow root. Pointer Events with `setPointerCapture` on the track area drive
+ * dragging and track clicks (the nearest thumb moves); the keyboard table
+ * (arrows, Page Up/Down, Home/End) is implemented on each thumb. The element is
+ * form-associated (`ElementInternals`; a range submits two entries under
+ * `name`) and dispatches composed `change` (`{ value }`, on every change) and
+ * `change-end` (`{ value }`, once per interaction that changed the value)
+ * CustomEvents.
  *
  * `value` is controlled: when it is set, the element reports `change` and shows
  * the new value only once the property is updated. Otherwise the element keeps
  * its own value, seeded from `defaultValue`.
  *
  * @fires change - Every value change while dragging or with keys, `{ value }` in `detail`.
- * @fires change-end - Once when the interaction ends (pointer up, key released), `{ value }` in `detail`.
+ * @fires change-end - Once when an interaction that changed the value ends (pointer up, key released).
  */
 @customElement('ds-slider')
 export class DsSlider extends LitElement {
@@ -125,7 +139,6 @@ export class DsSlider extends LitElement {
   static override styles: CSSResult = css`
     :host {
       display: block;
-      font-family: var(--ds-slider-font-family);
       --ds-slider-track: var(--color-background-strong);
       --ds-slider-track-height: var(--space-1);
       --ds-slider-track-radius: var(--radius-full);
@@ -133,13 +146,19 @@ export class DsSlider extends LitElement {
       --ds-slider-thumb-size: var(--space-5);
       --ds-slider-thumb-shadow: var(--shadow-raised);
       --ds-slider-thumb-active-scale: var(--opacity-disabled);
+      --ds-slider-halo-spread: var(--space-2);
       --ds-slider-mark: var(--color-border-strong);
       --ds-slider-mark-size: var(--space-1);
       --ds-slider-mark-label-size: var(--font-size-xs);
+      --ds-slider-mark-label-gap: var(--space-1);
       --ds-slider-value-size: var(--font-size-sm);
+      --ds-slider-bubble-padding-block: var(--space-1);
+      --ds-slider-bubble-padding-inline: var(--space-2);
+      --ds-slider-bubble-offset: var(--space-1);
       --ds-slider-bubble-radius: var(--radius-sm);
       --ds-slider-label-weight: var(--font-weight-medium);
       --ds-slider-part-gap: var(--space-1);
+      --ds-slider-label-gap: var(--space-2);
       --ds-slider-track-padding-block: var(--space-3);
       --ds-slider-font-family: var(--font-family-body);
       --ds-slider-font-size: var(--font-size-md);
@@ -153,34 +172,31 @@ export class DsSlider extends LitElement {
       display: none;
     }
 
+    /* partGap: vertical gap between the label row, the track area and the messages */
+    .root {
+      display: flex;
+      flex-direction: column;
+      gap: var(--ds-slider-part-gap);
+    }
+
+    /* disabledOpacity: the whole slider (label row, track area, marks, messages) */
+    .root.is-disabled {
+      opacity: var(--ds-slider-disabled-opacity);
+    }
+
+    /* labelGap: between the label and the value text */
     .row {
       display: flex;
       align-items: baseline;
       justify-content: space-between;
-      gap: var(--ds-slider-part-gap);
+      gap: var(--ds-slider-label-gap);
     }
 
-    .visually-hidden {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      margin: -1px;
-      padding: 0;
-      overflow: hidden;
-      clip: rect(0 0 0 0);
-      clip-path: inset(50%);
-      white-space: nowrap;
-      border: 0;
-    }
-
-    /* trackPaddingBlock: room for the thumb, its halo and the minTarget hit area */
+    /* trackPaddingBlock: the unparted track area around track and thumbs, also the pointer hit area */
     .track-area {
       box-sizing: border-box;
       padding-block: var(--ds-slider-track-padding-block);
-    }
-
-    :host([disabled]) .track-area {
-      opacity: var(--ds-slider-disabled-opacity);
+      touch-action: none;
     }
 
     /* track, trackHeight, trackRadius */
@@ -189,7 +205,6 @@ export class DsSlider extends LitElement {
       block-size: var(--ds-slider-track-height);
       border-radius: var(--ds-slider-track-radius);
       background: var(--ds-slider-track);
-      touch-action: none;
     }
 
     /* fill: color.control.selectedBackground, locked */
@@ -201,38 +216,48 @@ export class DsSlider extends LitElement {
       pointer-events: none;
     }
 
-    /* mark, markSize */
+    /* tickMarks: dots drawn back up on the track centre line; labels on their own line below the track area */
     [data-part='tickMarks'] {
+      position: relative;
+      pointer-events: none;
+    }
+    [data-part='tickMarks'].has-labels {
+      padding-block-start: var(--ds-slider-mark-label-gap);
+    }
+
+    /* mark, markSize */
+    .mark {
       position: absolute;
-      inset-block-start: 50%;
+      inset-block-start: calc(-1 * var(--ds-slider-track-padding-block) - var(--ds-slider-track-height) / 2);
       inline-size: var(--ds-slider-mark-size);
       block-size: var(--ds-slider-mark-size);
       border-radius: var(--radius-full);
       background: var(--ds-slider-mark);
       transform: translate(-50%, -50%);
-      pointer-events: none;
     }
-    :host(:dir(rtl)) [data-part='tickMarks'] {
+    :host(:dir(rtl)) .mark {
       transform: translate(50%, -50%);
     }
 
-    /* markLabelColor: color.foreground.muted, locked; markLabelSize */
-    .mark-label {
-      position: absolute;
-      inset-block-start: calc(var(--ds-slider-mark-size) + var(--ds-slider-track-padding-block));
-      inset-inline-start: 50%;
-      transform: translateX(-50%);
-      font-size: var(--ds-slider-mark-label-size);
-      color: var(--color-foreground-muted);
-      white-space: nowrap;
+    /* mark labels share one grid cell, each centred under its mark */
+    .mark-labels {
+      display: grid;
     }
-    :host([has-mark-labels]) .track-area {
-      padding-block-end: calc(var(--ds-slider-track-padding-block) * 2 + var(--ds-slider-mark-label-size));
+    .mark-label {
+      grid-area: 1 / 1;
+      justify-self: start;
+      position: relative;
+      white-space: nowrap;
+      transform: translateX(-50%);
+    }
+    :host(:dir(rtl)) .mark-label {
+      transform: translateX(50%);
     }
 
-    /* minTarget: size.target.comfortable hit area, locked; the visible thumb is thumbSize */
+    /* minTarget: size.target.comfortable hit area centred on the knob, locked */
     [data-part='thumb'] {
       position: absolute;
+      z-index: 1;
       inset-block-start: 50%;
       inline-size: var(--size-target-comfortable);
       block-size: var(--size-target-comfortable);
@@ -241,19 +266,18 @@ export class DsSlider extends LitElement {
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      touch-action: none;
       outline: none;
     }
     :host(:dir(rtl)) [data-part='thumb'] {
       transform: translate(50%, -50%);
     }
 
-    :host([disabled]) [data-part='thumb'] {
+    .root.is-disabled [data-part='thumb'] {
       cursor: not-allowed;
     }
 
     /* thumb, thumbSize, thumbShadow; thumbBorder + thumbBorderWidth locked */
-    .thumb-visual {
+    .knob {
       position: relative;
       box-sizing: border-box;
       inline-size: var(--ds-slider-thumb-size);
@@ -264,43 +288,53 @@ export class DsSlider extends LitElement {
       box-shadow: var(--ds-slider-thumb-shadow);
     }
 
-    /* thumbActiveScale: a halo of the fill color at this opacity, space.2 larger on each side */
+    /* thumbActiveScale + haloSpread: a halo of the fill colour at this opacity, haloSpread beyond the knob */
     .halo {
       position: absolute;
-      inset: calc(-1 * var(--space-2));
-      z-index: -1;
+      inset-block-start: 50%;
+      inset-inline-start: 50%;
+      inline-size: calc(var(--ds-slider-thumb-size) + 2 * var(--ds-slider-halo-spread));
+      block-size: calc(var(--ds-slider-thumb-size) + 2 * var(--ds-slider-halo-spread));
+      transform: translate(-50%, -50%);
       border-radius: var(--radius-full);
       background: var(--color-control-selected-background);
       opacity: 0;
       pointer-events: none;
       transition: opacity var(--ds-slider-transition) var(--motion-easing-standard);
     }
-    .is-active .halo {
+    [data-part='thumb'].is-active .halo {
       opacity: var(--ds-slider-thumb-active-scale);
     }
 
-    /* focusRing / focusRingWidth, both locked */
-    [data-part='thumb']:focus-visible .thumb-visual {
+    /* focusRing / focusRingWidth, both locked: around the knob, offset by the same width */
+    [data-part='thumb']:focus-visible .knob {
       outline: var(--border-width-focus) solid var(--color-border-focus);
       outline-offset: var(--border-width-focus);
     }
 
-    /* bubbleSurface / bubbleText (locked), bubbleRadius. The composed ds-text reads
-       color.foreground, so the bubble scopes that token to the inverse foreground. */
+    /* bubbleSurface / bubbleText (locked), padding, offset, radius. The composed ds-text (tone default)
+       reads color.foreground, so the bubble re-scopes that token to the inverse foreground. */
     [data-part='bubble'] {
       --color-foreground: var(--color-inverse-foreground);
       position: absolute;
-      inset-block-end: calc(50% + var(--ds-slider-thumb-size));
+      inset-block-end: calc(100% + var(--ds-slider-bubble-offset));
       inset-inline-start: 50%;
       transform: translateX(-50%);
       box-sizing: border-box;
-      padding-block: var(--space-1);
-      padding-inline: var(--space-2);
+      padding-block: var(--ds-slider-bubble-padding-block);
+      padding-inline: var(--ds-slider-bubble-padding-inline);
       border-radius: var(--ds-slider-bubble-radius);
       background: var(--color-inverse-surface);
       white-space: nowrap;
       pointer-events: none;
+      opacity: 0;
       transition: opacity var(--ds-slider-transition) var(--motion-easing-standard);
+    }
+    :host(:dir(rtl)) [data-part='bubble'] {
+      transform: translateX(50%);
+    }
+    [data-part='bubble'].is-shown {
+      opacity: 1;
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -310,10 +344,6 @@ export class DsSlider extends LitElement {
       }
     }
 
-    /* errorText: the composed ds-text (tone danger) reads color.foreground.danger */
-    [data-part='errorMessage'] {
-      --color-foreground-danger: var(--ds-slider-error-text);
-    }
     [data-part='errorMessage']:empty {
       display: none;
     }
@@ -322,7 +352,7 @@ export class DsSlider extends LitElement {
   /** Visible label naming the quantity ("Volume", "Price range"). */
   @property() accessor label = '';
 
-  /** Field name for the Form. A range contributes `[min, max]`. */
+  /** Field name for the Form. A range submits two entries under this name. */
   @property() accessor name = '';
 
   /** Lower bound. */
@@ -331,20 +361,10 @@ export class DsSlider extends LitElement {
   /** Upper bound. */
   @property({ type: Number }) accessor max = 100;
 
-  private stepValue: number | undefined;
+  /** Arrow-key increment and snapping granularity for drag, click and keys. */
+  @property({ type: Number }) accessor step = 1;
 
-  /** Arrow-key increment and snapping granularity for drag, click and keys. Defaults to 1. */
-  get step(): number {
-    return this.stepValue ?? 1;
-  }
-  @property({ type: Number })
-  set step(value: number | undefined) {
-    const old = this.stepValue;
-    this.stepValue = value === undefined || Number.isNaN(Number(value)) ? undefined : Number(value);
-    this.requestUpdate('step', old);
-  }
-
-  /** With `marks`, snap drag and click to the marks instead of `step` (keys still move by step, PageUp/Down by mark). */
+  /** With `marks`, snap drag and click to the marks instead of `step`; PageUp/Down go to the next mark. */
   @property({ type: Boolean, reflect: true, attribute: 'snap-to-marks' }) accessor snapToMarks = false;
 
   /** Must have a value other than the default to submit (`copy.required`). */
@@ -362,13 +382,13 @@ export class DsSlider extends LitElement {
   /** Renders the displayed and announced value ("$40", "3 h 20 min"). Defaults to the number. */
   @property({ attribute: false }) accessor formatValue: ((value: number) => string) | undefined;
 
-  /** Where the value text appears: beside the label, as a bubble while dragging or focused, or not at all. */
+  /** Where the value text appears: beside the label, as a bubble while pressed or focused, or not at all. */
   @property({ reflect: true, attribute: 'show-value' }) accessor showValue: SliderShowValue = 'always';
 
   /** Tick marks on the track, optionally labelled. */
   @property({ attribute: false }) accessor marks: SliderMark[] | undefined;
 
-  /** Not adjustable, still readable (and focusable). */
+  /** Not adjustable, still readable (and focusable); no value is submitted. */
   @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
   /** Helper text. */
@@ -388,7 +408,7 @@ export class DsSlider extends LitElement {
   @property()
   set error(value: string | undefined) {
     const old = this.errorValue;
-    this.errorValue = value ?? undefined;
+    this.errorValue = value || undefined;
     // Synchronous, so `checkValidity()` right after the assignment is already correct.
     this.invalid = Boolean(value);
     this.syncValidity();
@@ -404,16 +424,27 @@ export class DsSlider extends LitElement {
   /** Disabled by an owning fieldset or form. */
   @state() private accessor formDisabled = false;
 
-  /** Thumb being dragged (halo and bubble). */
+  /** Thumb being pressed or dragged (halo and bubble). */
   @state() private accessor draggingIndex: number | null = null;
 
   /** Thumb holding focus (bubble in `showValue: hover`). */
   @state() private accessor focusedIndex: number | null = null;
 
-  /** Set by a handled `keydown` so the matching `keyup` fires `change-end`. */
-  private pendingKeyEnd: number | null = null;
+  /** The message `reportValidity()` last reported; cleared once the field is valid again. */
+  @state() private accessor reportedMessage = '';
+
+  /** Value when the current pointer or key interaction began; `null` outside one. */
+  private interactionStart: SliderValue | null = null;
+
+  /** Last value reported by `change` in the current interaction. */
+  private interactionLast: SliderValue | null = null;
+
+  /** Thumb whose handled `keydown` awaits its `keyup`. */
+  private pendingKeyIndex: number | null = null;
 
   @query('[data-part="track"]') private accessor trackEl!: HTMLDivElement | null;
+
+  @query('.track-area') private accessor trackAreaEl!: HTMLDivElement | null;
 
   private readonly internals: ElementInternals;
 
@@ -422,11 +453,11 @@ export class DsSlider extends LitElement {
     this.internals = this.attachInternals();
   }
 
-  /** The value shown: `value` when controlled, otherwise the internal value, `defaultValue`, then the bounds. */
-  get currentValue(): SliderValue {
-    if (this.value !== undefined) return this.value;
-    if (this.internalValue !== undefined) return this.internalValue;
-    return this.fallbackValue;
+  /** DsFormField: the decimal string, or `[low, high]` as two strings for a range; `null` while disabled. */
+  get currentValue(): string | [string, string] | null {
+    if (this.isDisabled) return null;
+    const value = this.resolvedValue;
+    return Array.isArray(value) ? [String(value[0]), String(value[1])] : String(value);
   }
 
   get form(): HTMLFormElement | null {
@@ -437,7 +468,7 @@ export class DsSlider extends LitElement {
     return this.internals.validity;
   }
 
-  /** The field's own copy: `error`, `copy.invalid` or `copy.required`; empty when valid. */
+  /** The field's own copy: `copy.required`, then `error` / `copy.invalid`; empty when valid. */
   get validationMessage(): string {
     return this.messageFor();
   }
@@ -449,6 +480,7 @@ export class DsSlider extends LitElement {
 
   reportValidity(): boolean {
     this.syncValidity();
+    this.reportedMessage = this.messageFor();
     return this.internals.reportValidity();
   }
 
@@ -458,6 +490,7 @@ export class DsSlider extends LitElement {
 
   formResetCallback(): void {
     this.internalValue = undefined;
+    this.reportedMessage = '';
   }
 
   formStateRestoreCallback(restored: File | string | FormData | null): void {
@@ -480,7 +513,7 @@ export class DsSlider extends LitElement {
 
   protected override willUpdate(changed: PropertyValues): void {
     if (changed.has('overrides')) this.applyOverrides();
-    if (changed.has('marks')) this.toggleAttribute('has-mark-labels', (this.marks ?? []).some((m) => Boolean(m.label)));
+    if (this.reportedMessage && !this.messageFor()) this.reportedMessage = '';
     this.warnInDev(changed);
   }
 
@@ -490,7 +523,7 @@ export class DsSlider extends LitElement {
   }
 
   protected override render(): TemplateResult {
-    const value = this.currentValue;
+    const value = this.resolvedValue;
     const [lo, hi] = this.range ? this.pairValue() : [Number(this.min), this.singleValue()];
     const loPercent = this.range ? this.percentFor(lo) : 0;
     const hiPercent = this.percentFor(hi);
@@ -500,73 +533,96 @@ export class DsSlider extends LitElement {
       : this.formatOne(value);
 
     return html`
-      <div class="row">
-        <ds-text
-          id="label"
-          part="label"
-          data-part="label"
-          element="span"
-          size="md"
-          weight="medium"
-          .overrides=${this.labelOverrides}
-          >${this.label}</ds-text
-        >
-        ${this.showValue === 'always'
+      <div class=${classMap({ root: true, 'is-disabled': this.isDisabled })}>
+        <div class="row">
+          <ds-text
+            id="label"
+            part="label" data-part="label"
+            element="span"
+            size="md"
+            weight="medium"
+            tone="default"
+            .overrides=${this.labelOverrides}
+            >${this.label}</ds-text
+          >
+          ${this.showValue === 'always'
+            ? html`<ds-text
+                part="valueText" data-part="valueText"
+                element="span"
+                size="sm"
+                tone="default"
+                aria-hidden="true"
+                .overrides=${this.valueOverrides}
+                >${valueText}</ds-text
+              >`
+            : nothing}
+        </div>
+        <div>
+          <div
+            class="track-area"
+            @pointerdown=${this.handlePointerDown}
+            @pointermove=${this.handlePointerMove}
+            @pointerup=${this.handlePointerUp}
+            @pointercancel=${this.handlePointerUp}
+          >
+            <div part="track" data-part="track">
+              <div
+                part="fill" data-part="fill"
+                style=${styleMap({ insetInlineStart: `${loPercent}%`, inlineSize: `${hiPercent - loPercent}%` })}
+              ></div>
+              ${this.renderThumb(0)} ${this.range ? this.renderThumb(1) : nothing}
+            </div>
+          </div>
+          ${this.renderTickMarks()}
+        </div>
+        ${this.description
           ? html`<ds-text
-              part="valueText"
-              data-part="valueText"
+              id="description"
+              part="description" data-part="description"
               element="span"
               size="sm"
-              aria-hidden="true"
-              .overrides=${this.valueOverrides}
-              >${valueText}</ds-text
+              tone="muted"
+              .overrides=${this.helperOverrides}
+              >${this.description}</ds-text
             >`
           : nothing}
+        <div id="error" part="errorMessage" data-part="errorMessage" role="alert">${message
+          ? html`<ds-text element="span" size="sm" tone="danger" .overrides=${this.helperOverrides}
+              >${message}</ds-text
+            >`
+          : nothing}</div>
       </div>
-      ${this.range
-        ? html`<span id="minimum-label" class="visually-hidden">${COPY_MINIMUM(this.label)}</span>
-            <span id="maximum-label" class="visually-hidden">${COPY_MAXIMUM(this.label)}</span>`
-        : nothing}
-      <div class="track-area">
-        <div
-          part="track"
-          data-part="track"
-          @pointerdown=${this.handlePointerDown}
-          @pointermove=${this.handlePointerMove}
-          @pointerup=${this.handlePointerUp}
-          @pointercancel=${this.handlePointerUp}
-        >
-          <div
-            part="fill"
-            data-part="fill"
-            style=${styleMap({ insetInlineStart: `${loPercent}%`, inlineSize: `${hiPercent - loPercent}%` })}
-          ></div>
-          ${(this.marks ?? []).map(
-            (mark) => html`<span
-              part="tickMarks"
-              data-part="tickMarks"
-              aria-hidden="true"
-              style=${styleMap({ insetInlineStart: `${this.percentFor(mark.value)}%` })}
-              >${mark.label ? html`<span class="mark-label">${mark.label}</span>` : nothing}</span
-            >`,
-          )}
-          ${this.renderThumb(0)} ${this.range ? this.renderThumb(1) : nothing}
-        </div>
+    `;
+  }
+
+  private renderTickMarks(): TemplateResult | typeof nothing {
+    const marks = this.marks ?? [];
+    if (marks.length === 0) return nothing;
+    const labelled = marks.filter((mark) => Boolean(mark.label));
+    return html`
+      <div
+        part="tickMarks" data-part="tickMarks"
+        class=${classMap({ 'has-labels': labelled.length > 0 })}
+        aria-hidden="true"
+      >
+        ${marks.map(
+          (mark) =>
+            html`<span class="mark" style=${styleMap({ insetInlineStart: `${this.percentFor(mark.value)}%` })}></span>`,
+        )}
+        ${labelled.length > 0
+          ? html`<div class="mark-labels">
+              ${labelled.map(
+                (mark) => html`<span
+                  class="mark-label"
+                  style=${styleMap({ insetInlineStart: `${this.percentFor(mark.value)}%` })}
+                  ><ds-text element="span" size="xs" tone="muted" .overrides=${this.markLabelOverrides}
+                    >${mark.label}</ds-text
+                  ></span
+                >`,
+              )}
+            </div>`
+          : nothing}
       </div>
-      ${this.description
-        ? html`<ds-text
-            id="description"
-            part="description"
-            data-part="description"
-            size="sm"
-            tone="muted"
-            .overrides=${this.helperOverrides}
-            >${this.description}</ds-text
-          >`
-        : nothing}
-      <div id="error" part="errorMessage" data-part="errorMessage" role="alert">${message
-        ? html`<ds-text size="sm" tone="danger" .overrides=${this.helperOverrides}>${message}</ds-text>`
-        : nothing}</div>
     `;
   }
 
@@ -577,25 +633,24 @@ export class DsSlider extends LitElement {
     // A range thumb's bounds are the live constraint from the other thumb.
     const valueMin = this.range && index === 1 ? lo : Number(this.min);
     const valueMax = this.range && index === 0 ? hi : Number(this.max);
-    const labelledBy = this.range ? (index === 0 ? 'minimum-label' : 'maximum-label') : 'label';
+    const ariaLabel = this.range ? (index === 0 ? COPY_MINIMUM(this.label) : COPY_MAXIMUM(this.label)) : undefined;
     const describedBy =
       [this.description ? 'description' : '', this.visibleMessage() ? 'error' : ''].filter(Boolean).join(' ') ||
       undefined;
-    const showBubble =
-      this.showValue === 'hover' && (this.draggingIndex === index || this.focusedIndex === index);
+    const bubbleShown = this.draggingIndex === index || this.focusedIndex === index;
 
     return html`
       <div
         class=${classMap({ 'is-active': this.draggingIndex === index })}
-        part="thumb"
-        data-part="thumb"
+        part="thumb" data-part="thumb"
         role="slider"
         tabindex="0"
         aria-valuenow=${thumbValue}
         aria-valuemin=${valueMin}
         aria-valuemax=${valueMax}
         aria-valuetext=${text}
-        aria-labelledby=${labelledBy}
+        aria-label=${ifDefined(ariaLabel)}
+        aria-labelledby=${ifDefined(this.range ? undefined : 'label')}
         aria-describedby=${ifDefined(describedBy)}
         aria-orientation="horizontal"
         aria-disabled=${ifDefined(this.isDisabled ? 'true' : undefined)}
@@ -611,10 +666,10 @@ export class DsSlider extends LitElement {
           if (this.focusedIndex === index) this.focusedIndex = null;
         }}
       >
-        <div class="thumb-visual"><div class="halo"></div></div>
-        ${showBubble
-          ? html`<div part="bubble" data-part="bubble" aria-hidden="true">
-              <ds-text size="sm" element="span" .overrides=${this.valueOverrides}>${text}</ds-text>
+        <div class="knob"><div class="halo"></div></div>
+        ${this.showValue === 'hover'
+          ? html`<div part="bubble" data-part="bubble" class=${classMap({ 'is-shown': bubbleShown })} aria-hidden="true">
+              <ds-text element="span" size="sm" tone="default" .overrides=${this.valueOverrides}>${text}</ds-text>
             </div>`
           : nothing}
       </div>
@@ -625,6 +680,13 @@ export class DsSlider extends LitElement {
     return this.disabled || this.formDisabled;
   }
 
+  /** `value` when controlled, otherwise the internal value, then the default. */
+  private get resolvedValue(): SliderValue {
+    if (this.value !== undefined) return this.value;
+    if (this.internalValue !== undefined) return this.internalValue;
+    return this.fallbackValue;
+  }
+
   /** What `value` falls back to: `defaultValue`, else `min` (or `[min, max]`). Also the `required` baseline. */
   private get fallbackValue(): SliderValue {
     if (this.defaultValue !== undefined) return this.defaultValue;
@@ -632,12 +694,12 @@ export class DsSlider extends LitElement {
   }
 
   private pairValue(): [number, number] {
-    const value = this.currentValue;
+    const value = this.resolvedValue;
     return Array.isArray(value) ? value : [Number(this.min), Number(this.max)];
   }
 
   private singleValue(): number {
-    const value = this.currentValue;
+    const value = this.resolvedValue;
     return Array.isArray(value) ? value[0] : value;
   }
 
@@ -660,23 +722,32 @@ export class DsSlider extends LitElement {
     return Math.min(Number(this.max), Math.max(Number(this.min), value));
   }
 
+  private get stepSize(): number {
+    const step = Number(this.step);
+    return step > 0 ? step : 1;
+  }
+
   /** Nearest multiple of `step` from `min`, clamped to the bounds. */
   private snapToStep(value: number): number {
     const min = Number(this.min);
-    const step = this.step > 0 ? this.step : 1;
+    const step = this.stepSize;
     const snapped = min + Math.round((value - min) / step) * step;
     // Drop floating-point residue from fractional steps (0.1 * 3).
     const decimals = (String(step).split('.')[1] ?? '').length;
     return this.clamp(Number(snapped.toFixed(decimals)));
   }
 
-  /** Drag and click snap to marks with `snapToMarks`, or when `step` is omitted; otherwise to `step`. */
+  private get markValues(): number[] {
+    return (this.marks ?? []).map((mark) => mark.value).sort((a, b) => a - b);
+  }
+
+  /** Drag and click snap to the marks only with `snapToMarks`; otherwise to `step`. */
   private snapPointerValue(value: number): number {
-    const marks = this.marks ?? [];
-    if (marks.length > 0 && (this.snapToMarks || this.stepValue === undefined)) {
-      let nearest = marks[0]!.value;
+    const marks = this.markValues;
+    if (this.snapToMarks && marks.length > 0) {
+      let nearest = marks[0]!;
       for (const mark of marks) {
-        if (Math.abs(mark.value - value) < Math.abs(nearest - value)) nearest = mark.value;
+        if (Math.abs(mark - value) < Math.abs(nearest - value)) nearest = mark;
       }
       return this.clamp(nearest);
     }
@@ -704,8 +775,9 @@ export class DsSlider extends LitElement {
       // A tie (coincident thumbs) goes to the thumb on the side of the press.
       index = toLo < toHi || (toLo === toHi && raw < lo) ? 0 : 1;
     }
+    this.beginInteraction();
     this.draggingIndex = index;
-    this.trackEl?.setPointerCapture(event.pointerId);
+    this.trackAreaEl?.setPointerCapture(event.pointerId);
     this.moveThumb(index, this.snapPointerValue(raw));
     this.renderRoot.querySelectorAll<HTMLElement>('[role="slider"]')[index]?.focus();
   };
@@ -717,9 +789,9 @@ export class DsSlider extends LitElement {
 
   private readonly handlePointerUp = (event: PointerEvent): void => {
     if (this.draggingIndex === null) return;
-    if (this.trackEl?.hasPointerCapture(event.pointerId)) this.trackEl.releasePointerCapture(event.pointerId);
+    if (this.trackAreaEl?.hasPointerCapture(event.pointerId)) this.trackAreaEl.releasePointerCapture(event.pointerId);
     this.draggingIndex = null;
-    this.dispatchChangeEnd();
+    this.endInteraction();
   };
 
   private handleKeydown(event: KeyboardEvent, index: number): void {
@@ -727,16 +799,17 @@ export class DsSlider extends LitElement {
     // Disabled: still focusable and readable, but the keys do nothing (and are not swallowed).
     if (this.isDisabled) return;
     event.preventDefault();
+    if (this.pendingKeyIndex !== index) this.beginInteraction();
+    this.pendingKeyIndex = index;
     const current = this.thumbValue(index);
-    const step = this.step > 0 ? this.step : 1;
     switch (event.key) {
       case 'ArrowRight':
       case 'ArrowUp':
-        this.moveThumb(index, this.snapToStep(current + step));
+        this.moveThumb(index, this.snapToStep(current + this.stepSize));
         break;
       case 'ArrowLeft':
       case 'ArrowDown':
-        this.moveThumb(index, this.snapToStep(current - step));
+        this.moveThumb(index, this.snapToStep(current - this.stepSize));
         break;
       case 'PageUp':
         this.moveThumb(index, this.pageTarget(current, 1));
@@ -751,24 +824,22 @@ export class DsSlider extends LitElement {
         this.moveThumb(index, Number(this.max));
         break;
     }
-    this.pendingKeyEnd = index;
   }
 
   private handleKeyup(event: KeyboardEvent, index: number): void {
-    if (this.pendingKeyEnd !== index || !NAV_KEYS.has(event.key)) return;
-    this.pendingKeyEnd = null;
-    this.dispatchChangeEnd();
+    if (this.pendingKeyIndex !== index || !NAV_KEYS.has(event.key)) return;
+    this.pendingKeyIndex = null;
+    this.endInteraction();
   }
 
-  /** PageUp/PageDown: to the next mark in that direction when there are marks, otherwise ten steps. */
+  /** PageUp/PageDown: ten steps; with `snapToMarks`, the next mark, and past the last mark the bound. */
   private pageTarget(current: number, direction: 1 | -1): number {
-    const marks = (this.marks ?? []).map((mark) => mark.value).sort((a, b) => a - b);
-    if (marks.length > 0) {
-      const next =
-        direction === 1 ? marks.find((v) => v > current) : [...marks].reverse().find((v) => v < current);
+    const marks = this.markValues;
+    if (this.snapToMarks && marks.length > 0) {
+      const next = direction === 1 ? marks.find((v) => v > current) : [...marks].reverse().find((v) => v < current);
       return this.clamp(next ?? (direction === 1 ? Number(this.max) : Number(this.min)));
     }
-    return this.snapToStep(current + direction * PAGE_STEPS * (this.step > 0 ? this.step : 1));
+    return this.snapToStep(current + direction * PAGE_STEPS * this.stepSize);
   }
 
   /** Moves one thumb to an already-snapped value, keeping a range's thumbs from crossing. */
@@ -783,6 +854,7 @@ export class DsSlider extends LitElement {
       if (target === this.singleValue()) return;
       next = target;
     }
+    this.interactionLast = next;
     // Controlled: report only; the element shows the new value once `value` changes.
     if (this.value === undefined) this.internalValue = next;
     this.dispatchEvent(
@@ -790,13 +862,20 @@ export class DsSlider extends LitElement {
     );
   }
 
-  private dispatchChangeEnd(): void {
+  private beginInteraction(): void {
+    this.interactionStart = this.resolvedValue;
+    this.interactionLast = null;
+  }
+
+  /** `change-end` once per interaction, only when it changed the value. */
+  private endInteraction(): void {
+    const start = this.interactionStart;
+    const last = this.interactionLast;
+    this.interactionStart = null;
+    this.interactionLast = null;
+    if (start === null || last === null || sameValue(start, last)) return;
     this.dispatchEvent(
-      new CustomEvent<SliderChangeDetail>('change-end', {
-        detail: { value: this.currentValue },
-        bubbles: true,
-        composed: true,
-      }),
+      new CustomEvent<SliderChangeDetail>('change-end', { detail: { value: last }, bubbles: true, composed: true }),
     );
   }
 
@@ -812,13 +891,18 @@ export class DsSlider extends LitElement {
     return { fontFamily: this.overrides?.fontFamily, fontSize: this.overrides?.valueSize };
   }
 
+  private get markLabelOverrides(): Partial<Record<TextOverridableBinding, TokenRef | undefined>> {
+    return { fontFamily: this.overrides?.fontFamily, fontSize: this.overrides?.markLabelSize };
+  }
+
   private get helperOverrides(): Partial<Record<TextOverridableBinding, TokenRef | undefined>> {
     return { fontFamily: this.overrides?.fontFamily, fontSize: this.overrides?.helperSize };
   }
 
-  /** The message the error region shows: `error`, else `copy.invalid` while `invalid`. */
+  /** The error region: `error`, else the reported validation message, else `copy.invalid` while `invalid`. */
   private visibleMessage(): string {
     if (this.error) return this.error;
+    if (this.reportedMessage) return this.reportedMessage;
     return this.invalid ? COPY_INVALID(this.label) : '';
   }
 
@@ -826,16 +910,12 @@ export class DsSlider extends LitElement {
   private messageFor(): string {
     if (this.isDisabled) return '';
     if (this.required && this.isAtDefault) return COPY_REQUIRED(this.label);
-    return this.visibleMessage();
+    if (this.error) return this.error;
+    return this.invalid ? COPY_INVALID(this.label) : '';
   }
 
   private get isAtDefault(): boolean {
-    const initial = this.fallbackValue;
-    const current = this.currentValue;
-    if (Array.isArray(initial) || Array.isArray(current)) {
-      return Array.isArray(initial) && Array.isArray(current) && initial[0] === current[0] && initial[1] === current[1];
-    }
-    return initial === current;
+    return sameValue(this.fallbackValue, this.resolvedValue);
   }
 
   private syncFormValue(): void {
@@ -843,7 +923,7 @@ export class DsSlider extends LitElement {
       this.internals.setFormValue(null);
       return;
     }
-    const value = this.currentValue;
+    const value = this.resolvedValue;
     if (Array.isArray(value)) {
       const data = new FormData();
       data.append(this.name, String(value[0]));
@@ -856,10 +936,11 @@ export class DsSlider extends LitElement {
 
   private syncValidity(): void {
     const message = this.messageFor();
+    // The registration and focus-on-error target is the (low) thumb.
     const anchor = this.renderRoot?.querySelector<HTMLElement>('[role="slider"]') ?? undefined;
     if (!message) {
       this.internals.setValidity({});
-    } else if (this.required && this.isAtDefault && !this.isDisabled) {
+    } else if (this.required && this.isAtDefault) {
       this.internals.setValidity({ valueMissing: true }, message, anchor);
     } else {
       this.internals.setValidity({ customError: true }, message, anchor);
@@ -889,6 +970,13 @@ export class DsSlider extends LitElement {
       }
     }
   }
+}
+
+function sameValue(a: SliderValue, b: SliderValue): boolean {
+  if (Array.isArray(a) || Array.isArray(b)) {
+    return Array.isArray(a) && Array.isArray(b) && a[0] === b[0] && a[1] === b[1];
+  }
+  return a === b;
 }
 
 declare global {

@@ -3,11 +3,13 @@
 .ds-stepper {
   --ds-stepper-indicator-size: var(--space-6);
   --ds-stepper-indicator-background: var(--color-control-background);
+  --ds-stepper-indicator-radius: var(--radius-full);
   --ds-stepper-indicator-font-size: var(--font-size-sm);
   --ds-stepper-indicator-font-weight: var(--font-weight-semibold);
   --ds-stepper-connector: var(--color-border);
   --ds-stepper-step-hover: var(--color-action-ghost-background-hover);
   --ds-stepper-step-radius: var(--radius-sm);
+  --ds-stepper-step-padding: var(--space-2);
   --ds-stepper-step-gap: var(--layout-gap-normal);
   --ds-stepper-part-gap: var(--space-2);
   --ds-stepper-font-family: var(--font-family-body); /* literal-ok: CSS custom-property hook name, not a font stack */
@@ -18,6 +20,7 @@
   --ds-stepper-indicator-border-width: var(--border-width-focus);
   --ds-stepper-indicator-complete-background: var(--color-control-selected-background);
   --ds-stepper-indicator-complete-foreground: var(--color-control-selected-foreground);
+  --ds-stepper-indicator-complete-border: var(--color-control-selected-background);
   --ds-stepper-indicator-current-border: var(--color-control-selected-background);
   --ds-stepper-indicator-error-background: var(--color-status-danger-background);
   --ds-stepper-indicator-error-foreground: var(--color-status-danger-foreground);
@@ -28,11 +31,13 @@
   --ds-stepper-focus-ring: var(--color-border-focus);
   --ds-stepper-focus-ring-width: var(--border-width-focus);
   display: block;
+  container-type: inline-size;
   font-family: var(--ds-stepper-font-family);
 }
 
-/* Label and description colour, size and weight belong to the composed Text: labelColor/labelUpcomingColor/
-   descriptionColor are its `tone`, and labelSize/labelWeight/labelCurrentWeight/descriptionSize reach its `overrides`. */
+/* Label, description and count colour, size and weight belong to the composed Text: labelColor/labelUpcomingColor/
+   descriptionColor/countColor are its `tone`, and labelSize/labelWeight/labelCurrentWeight/descriptionSize/countSize
+   reach its `overrides`. */
 
 .ds-stepper__list {
   display: flex;
@@ -52,7 +57,8 @@
   gap: var(--ds-stepper-part-gap);
   min-block-size: var(--ds-stepper-min-target);
   min-inline-size: var(--ds-stepper-min-target);
-  padding-inline: var(--ds-stepper-part-gap);
+  padding-block: 0;
+  padding-inline: var(--ds-stepper-step-padding);
   margin: 0;
   border: none;
   border-radius: var(--ds-stepper-step-radius);
@@ -86,19 +92,19 @@
   inline-size: var(--ds-stepper-indicator-size);
   block-size: var(--ds-stepper-indicator-size);
   border: var(--ds-stepper-indicator-border-width) solid var(--ds-stepper-indicator-border);
-  border-radius: var(--radius-full);
+  border-radius: var(--ds-stepper-indicator-radius);
   background-color: var(--ds-stepper-indicator-background);
   color: var(--ds-stepper-indicator-color);
   font-size: var(--ds-stepper-indicator-font-size);
   font-weight: var(--ds-stepper-indicator-font-weight);
 }
 
-.ds-stepper__step--selected .ds-stepper__indicator {
+.ds-stepper__step--current .ds-stepper__indicator {
   border-color: var(--ds-stepper-indicator-current-border);
 }
 
 .ds-stepper__step--complete .ds-stepper__indicator {
-  border-color: var(--ds-stepper-indicator-complete-background);
+  border-color: var(--ds-stepper-indicator-complete-border);
   background-color: var(--ds-stepper-indicator-complete-background);
   color: var(--ds-stepper-indicator-complete-foreground);
 }
@@ -112,6 +118,7 @@
 .ds-stepper__content {
   display: flex;
   flex-direction: column;
+  gap: var(--ds-stepper-part-gap);
   min-inline-size: 0;
 }
 
@@ -131,7 +138,7 @@
   background-color: var(--ds-stepper-connector-complete);
 }
 
-/* visually hidden: clipped to a 1px box. Carries the status word for assistive technology. */
+/* visually hidden: clipped to a 1px box. Carries ", " and the status word for assistive technology. */
 .ds-stepper__visually-hidden {
   position: absolute;
   inline-size: 1px;
@@ -144,15 +151,12 @@
   border: 0;
 }
 
+/* Layout only: the count is rendered always and shown while compact is in effect. */
 .ds-stepper__count {
   display: none;
 }
 
 /* horizontal */
-.ds-stepper--horizontal {
-  container-type: inline-size;
-}
-
 .ds-stepper--horizontal .ds-stepper__list {
   align-items: center;
 }
@@ -184,7 +188,7 @@
 
 .ds-stepper--vertical .ds-stepper__control {
   align-items: flex-start;
-  padding-block: var(--ds-stepper-part-gap);
+  padding-block: var(--ds-stepper-step-padding);
 }
 
 .ds-stepper--vertical .ds-stepper__connector {
@@ -192,7 +196,7 @@
   inline-size: var(--ds-stepper-connector-width);
   min-block-size: var(--ds-stepper-step-gap);
   margin-inline-start: calc(
-    var(--ds-stepper-part-gap) + (var(--ds-stepper-indicator-size) - var(--ds-stepper-connector-width)) / 2
+    var(--ds-stepper-step-padding) + (var(--ds-stepper-indicator-size) - var(--ds-stepper-connector-width)) / 2
   );
 }
 

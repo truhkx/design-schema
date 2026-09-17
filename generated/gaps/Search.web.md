@@ -37,3 +37,15 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Search: no `layer` binding, though the Guidance says the list sits on layer.dropdown. Used `var(--layer-dropdown)` directly, not overridable.
 - Search: focus-visible for a pill field — the input is the focused node. The field wrapper draws `focusRingWidth` outline plus `borderFocus` border via :has(.ds-search__input:focus-visible); the input's own outline is removed in favor of it.
 - Search: the loading row — platforms.web.notes say pass no options and emptyMessage copy.loading. Did that without Listbox's own `loading` prop (which would show Listbox's 'Loading…' copy instead).
+
+## 2026-09-17 12:48 — round 1
+
+- Search: `disabled` says the whole component dims to `disabledOpacity` and both Buttons are disabled, but a disabled Button also dims itself, so the buttons dim twice; chose the root opacity and accepted the compounding, because a child cannot be restyled.
+- Search: statusDebounce must come from the theme's standard `motion.duration.base`, 'never from a reduced-motion override that zeroes the token', but the web tokens have no reduced-motion override and there is no documented way to read the un-overridden value; chose getComputedStyle(root) `--motion-duration-base` × 2, which is 0 (update immediately) when tokens are not loaded.
+- Search: the Guidance says `loading` 'shows nothing visually until suggestions arrive', but platforms.web says Listbox gets `emptyMessage: copy.loading`, which is visible text; followed platforms.web.
+- Search: Escape on an already-empty field with no list open is not specified (the spec says Escape 'clears the field' and onClear fires); chose a no-op with no onClear, since nothing was emptied.
+- Search: how `action` + a chosen suggestion or a controlled value gets the trimmed query into the native GET is not specified (the input's DOM value may be stale or untrimmed at submit time); chose to keep `name` off the visible input and submit through a hidden input set to the trimmed query in the submit event.
+- Search: the composition says the suggestions Listbox gets exactly label/embedded/value/options/emptyMessage, but the combobox pattern also needs wiring props (`id` for aria-controls and option ids, `selectionFollowsFocus: false` so arrows do not choose, `onChange`/`onActiveChange`, a remount key to clear the highlight); added those as wiring and dropped `labelledBy`.
+- Search: `labelWeight` and `iconColor` are forwarded to Text/Icon overrides, but the overrides contract also says every binding is a `--ds-search-*` hook on the root; declared those hooks in CSS even though nothing reads them, and passed the token (or the labelWeight/fontSize override) straight to the child's `overrides`.
+- Search: the live region is not an anatomy part, so it has no data-part; the anatomy's `landmark` and `form` parts share one element, which carries only data-part="form".
+- Search: `suggestionsOffset` is applied as a margin on the fixed-position popup (the gap between the popup and the field it hangs from), which the 'spacing is never a margin' convention does not clearly cover; kept the margin.

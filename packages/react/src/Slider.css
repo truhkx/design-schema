@@ -1,6 +1,6 @@
 /* Slider — styled only through Design Schema token custom properties.
-   labelWeight, fontSize and helperSize style the composed Text parts and are forwarded to their
-   `overrides`; valueSize and fontFamily are forwarded too and also read here by the bubble and marks. */
+   labelWeight, fontSize, fontFamily, valueSize, markLabelSize and helperSize style composed Texts and
+   are forwarded to their `overrides`; the hooks below are the ones this file reads. */
 
 .ds-slider {
   --ds-slider-track: var(--color-background-strong);
@@ -13,17 +13,19 @@
   --ds-slider-thumb-size: var(--space-5);
   --ds-slider-thumb-shadow: var(--shadow-raised);
   --ds-slider-thumb-active-scale: var(--opacity-disabled);
+  --ds-slider-halo-spread: var(--space-2);
   --ds-slider-mark: var(--color-border-strong);
   --ds-slider-mark-size: var(--space-1);
-  --ds-slider-mark-label-color: var(--color-foreground-muted);
-  --ds-slider-mark-label-size: var(--font-size-xs);
-  --ds-slider-value-size: var(--font-size-sm);
+  --ds-slider-mark-label-gap: var(--space-1);
   --ds-slider-bubble-surface: var(--color-inverse-surface);
   --ds-slider-bubble-text: var(--color-inverse-foreground);
+  --ds-slider-bubble-padding-block: var(--space-1);
+  --ds-slider-bubble-padding-inline: var(--space-2);
+  --ds-slider-bubble-offset: var(--space-1);
   --ds-slider-bubble-radius: var(--radius-sm);
   --ds-slider-part-gap: var(--space-1);
+  --ds-slider-label-gap: var(--space-2);
   --ds-slider-track-padding-block: var(--space-3);
-  --ds-slider-font-family: var(--font-family-body);
   --ds-slider-min-target: var(--size-target-comfortable);
   --ds-slider-focus-ring: var(--color-border-focus);
   --ds-slider-focus-ring-width: var(--border-width-focus);
@@ -33,19 +35,25 @@
   flex-direction: column;
   gap: var(--ds-slider-part-gap);
   inline-size: 100%;
-  font-family: var(--ds-slider-font-family);
 }
 
+/* label row: label and value text */
 .ds-slider__header {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: var(--space-2);
+  gap: var(--ds-slider-label-gap);
 }
 
-/* body: the padded hit region. trackPaddingBlock gives the thumb, its halo and the 44px target room
-   above and below the thin rail; a press anywhere in it moves the nearest thumb. */
-.ds-slider__body {
+/* control: the track area and the tick marks, with no part gap between them */
+.ds-slider__control {
+  display: flex;
+  flex-direction: column;
+}
+
+/* track area: unparted wrapper and pointer hit area; trackPaddingBlock gives the thumb, its halo and the
+   comfortable target room above and below the thin rail. */
+.ds-slider__area {
   padding-block: var(--ds-slider-track-padding-block);
   touch-action: none;
 }
@@ -69,35 +77,44 @@
   background-color: var(--ds-slider-fill);
 }
 
+/* tickMarks: dots drawn back up on the track centre line, labels in their own line below the track area */
 .ds-slider__tick-marks {
-  position: absolute;
-  inset: 0;
+  position: relative;
   pointer-events: none;
+}
+
+.ds-slider__tick-marks--labelled {
+  padding-block-start: var(--ds-slider-mark-label-gap);
 }
 
 .ds-slider__mark {
   position: absolute;
-  inset-block-start: 50%;
+  inset-block-end: calc(100% + var(--ds-slider-track-padding-block) + var(--ds-slider-track-height) / 2);
   inline-size: var(--ds-slider-mark-size);
   block-size: var(--ds-slider-mark-size);
   border-radius: var(--radius-full);
   background-color: var(--ds-slider-mark);
-  translate: -50% -50%;
+  translate: -50% 50%;
+}
+
+.ds-slider__mark:dir(rtl) {
+  translate: 50% 50%;
 }
 
 .ds-slider__mark-labels {
-  position: relative;
-  block-size: 1lh;
-  padding-block-start: var(--space-2);
-  font-size: var(--ds-slider-mark-label-size);
-  pointer-events: none;
+  display: grid;
 }
 
 .ds-slider__mark-label {
-  position: absolute;
-  color: var(--ds-slider-mark-label-color);
+  grid-area: 1 / 1;
+  justify-self: start;
+  position: relative;
   white-space: nowrap;
   translate: -50% 0;
+}
+
+.ds-slider__mark-label:dir(rtl) {
+  translate: 50% 0;
 }
 
 /* thumb: a minTarget hit box centred on the value; the visible knob is a child. */
@@ -114,13 +131,8 @@
   touch-action: none;
 }
 
-.ds-slider__mark:dir(rtl),
 .ds-slider__thumb:dir(rtl) {
   translate: 50% -50%;
-}
-
-.ds-slider__mark-label:dir(rtl) {
-  translate: 50% 0;
 }
 
 .ds-slider__thumb[aria-disabled='true'] {
@@ -138,23 +150,27 @@
   box-shadow: var(--ds-slider-thumb-shadow);
 }
 
-/* thumbActiveScale: not a scale — a halo of the fill colour at this opacity, space.2 larger than the
-   knob on each side, shown while the thumb is pressed. Painted behind the knob. */
+/* thumbActiveScale: not a scale — a halo of the fill colour at this opacity, haloSpread larger than the
+   knob on each side and centred on it, shown while the thumb is pressed. Painted behind the knob. */
 .ds-slider__thumb::before {
   content: '';
   position: absolute;
-  inline-size: calc(var(--ds-slider-thumb-size) + 2 * var(--space-2));
-  block-size: calc(var(--ds-slider-thumb-size) + 2 * var(--space-2));
+  inset: 0;
+  margin: auto;
+  inline-size: calc(var(--ds-slider-thumb-size) + 2 * var(--ds-slider-halo-spread));
+  block-size: calc(var(--ds-slider-thumb-size) + 2 * var(--ds-slider-halo-spread));
   border-radius: var(--radius-full);
   background-color: var(--ds-slider-fill);
   opacity: 0;
   pointer-events: none;
+  transition: opacity var(--ds-slider-transition) var(--motion-easing-standard);
 }
 
 .ds-slider__thumb--active::before {
   opacity: var(--ds-slider-thumb-active-scale);
 }
 
+/* focusRing: around the visible knob, not the hit area, offset by its own width */
 .ds-slider__thumb:focus-visible {
   outline: none;
 }
@@ -164,21 +180,22 @@
   outline-offset: var(--ds-slider-focus-ring-width);
 }
 
-/* bubble: the inverse-surface pill above the active thumb (showValue: hover), like Tooltip. */
+/* bubble: the inverse-surface pill above the active thumb's hit area (showValue: hover), like Tooltip.
+   The value Text keeps tone default; the bubble re-scopes the foreground it reads. */
 .ds-slider__bubble {
+  --color-foreground: var(--ds-slider-bubble-text);
   position: absolute;
-  inset-block-end: 100%;
+  inset-block-end: calc(100% + var(--ds-slider-bubble-offset));
   inset-inline-start: 50%;
-  padding-block: var(--space-1);
-  padding-inline: var(--space-2);
+  padding-block: var(--ds-slider-bubble-padding-block);
+  padding-inline: var(--ds-slider-bubble-padding-inline);
   border-radius: var(--ds-slider-bubble-radius);
   background-color: var(--ds-slider-bubble-surface);
-  color: var(--ds-slider-bubble-text);
-  font-size: var(--ds-slider-value-size);
   white-space: nowrap;
   translate: -50% 0;
   opacity: 0;
   pointer-events: none;
+  transition: opacity var(--ds-slider-transition) var(--motion-easing-standard);
 }
 
 .ds-slider__bubble:dir(rtl) {
@@ -189,27 +206,14 @@
   opacity: 1;
 }
 
-/* disabled: the control dims; label, value and helper text stay readable. */
-.ds-slider--disabled .ds-slider__body {
+/* disabled: the whole slider dims (label row, track area, marks and messages) */
+.ds-slider--disabled {
   opacity: var(--ds-slider-disabled-opacity);
 }
 
-.ds-slider__visually-hidden {
-  position: absolute;
-  inline-size: 1px;
-  block-size: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-  border: 0;
-}
-
-/* transition: halo and bubble appearance only; the thumb follows the pointer with no transition. */
-@media (prefers-reduced-motion: no-preference) {
+@media (prefers-reduced-motion: reduce) {
   .ds-slider__thumb::before,
   .ds-slider__bubble {
-    transition: opacity var(--ds-slider-transition) var(--motion-easing-standard);
+    transition: none;
   }
 }

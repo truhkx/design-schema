@@ -31,3 +31,11 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Stepper: the doc never says whether descriptions render in horizontal orientation (orientation says vertical shows them). Chose to render descriptions only when vertical.
 - Stepper: the connector-complete condition is unspecified (by position before current, or by the step's status). Chose by position (index < current index), matching 'completed means visited'.
 - Stepper: behavior scenario `compact-shows-the-step-count` only checks text; the Lit test also asserts the count is visible. The `copy:` scenarios are checked against shadow-root textContent because the words are visually hidden.
+
+## 2026-09-17 12:42 — round 1
+
+- Stepper: Text's own weight scale has no default for font.weight.medium/semibold, so the labelWeight/labelCurrentWeight forwards are always sent to the label <ds-text> overrides (the token by default), not only when an override is set; the doc says 'forwarded' without saying whether a default is forwarded too.
+- Stepper: indicatorCompleteForeground and indicatorErrorForeground are locked, yet they are realised as the composed Icon's `color` override (with indicatorFontSize as its `size`); the composition block lists no Icon part or forwards, so these Icon props/overrides are outside the declared 'exactly the listed props' contract. I followed the style-binding descriptions.
+- Stepper: the `step` part carries stepHover, stepRadius, stepPadding, minTarget and focusRing, which style the inner control (button/div), but stepGap styles the space between <li>s. I kept data-part="step" on the <li> as web does and styled the control, so the step part is not one element for all its bindings.
+- Stepper: labelCurrentWeight is described as applying to 'the current step (the id match)' while tone and status word follow the explicit status; for a step whose explicit status is 'current' but whose id is not `current`, the label keeps labelWeight. Chosen per the id wording.
+- Stepper: the doc says a dev warning is logged 'when no id matches' but `current` is required with no default; the Lit property needs a default, so an element whose `current` is still '' warns in development too.

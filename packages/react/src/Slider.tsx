@@ -20,7 +20,7 @@ export type SliderShowValue = 'always' | 'hover' | 'never';
 /** A single value, or the low and high values of a range. */
 export type SliderValue = number | [number, number];
 /** One tick mark on the track, optionally labelled. */
-export type SliderMark = { value: number; label?: string };
+export type SliderMark = { value: number; label?: string | undefined };
 
 /** copy.* — used verbatim; `{label}`, `{low}` and `{high}` are the only interpolations. */
 const COPY = {
@@ -29,6 +29,10 @@ const COPY = {
   rangeText: '{low} – {high}',
   required: '{label} is required.',
   invalid: '{label} is not valid.',
+  pageUpAction: 'Increase by a page',
+  pageDownAction: 'Decrease by a page',
+  homeAction: 'Set to minimum',
+  endAction: 'Set to maximum',
 };
 
 /** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
@@ -40,13 +44,19 @@ export type SliderOverridableBinding =
   | 'thumbSize'
   | 'thumbShadow'
   | 'thumbActiveScale'
+  | 'haloSpread'
   | 'mark'
   | 'markSize'
   | 'markLabelSize'
+  | 'markLabelGap'
   | 'valueSize'
+  | 'bubblePaddingBlock'
+  | 'bubblePaddingInline'
+  | 'bubbleOffset'
   | 'bubbleRadius'
   | 'labelWeight'
   | 'partGap'
+  | 'labelGap'
   | 'trackPaddingBlock'
   | 'fontFamily'
   | 'fontSize'
@@ -57,7 +67,7 @@ export type SliderOverridableBinding =
 
 type TextOverrides = Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
 
-/** Hooks the Slider's own CSS reads. Bindings that style a composed Text are forwarded to it below. */
+/** Hooks the Slider's own CSS reads. Bindings that style a composed Text are forwarded to it instead. */
 const ROOT_OVERRIDE_HOOK: Partial<Record<SliderOverridableBinding, string>> = {
   track: '--ds-slider-track',
   trackHeight: '--ds-slider-track-height',
@@ -66,14 +76,17 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<SliderOverridableBinding, string>> = {
   thumbSize: '--ds-slider-thumb-size',
   thumbShadow: '--ds-slider-thumb-shadow',
   thumbActiveScale: '--ds-slider-thumb-active-scale',
+  haloSpread: '--ds-slider-halo-spread',
   mark: '--ds-slider-mark',
   markSize: '--ds-slider-mark-size',
-  markLabelSize: '--ds-slider-mark-label-size',
-  valueSize: '--ds-slider-value-size',
+  markLabelGap: '--ds-slider-mark-label-gap',
+  bubblePaddingBlock: '--ds-slider-bubble-padding-block',
+  bubblePaddingInline: '--ds-slider-bubble-padding-inline',
+  bubbleOffset: '--ds-slider-bubble-offset',
   bubbleRadius: '--ds-slider-bubble-radius',
   partGap: '--ds-slider-part-gap',
+  labelGap: '--ds-slider-label-gap',
   trackPaddingBlock: '--ds-slider-track-padding-block',
-  fontFamily: '--ds-slider-font-family',
   disabledOpacity: '--ds-slider-disabled-opacity',
   transition: '--ds-slider-transition',
 };
@@ -82,14 +95,16 @@ interface ResolvedOverrides {
   rootStyle: CSSProperties | undefined;
   label: TextOverrides | undefined;
   value: TextOverrides | undefined;
+  markLabel: TextOverrides | undefined;
   helper: TextOverrides | undefined;
 }
 
 function resolveOverrides(overrides: Partial<Record<SliderOverridableBinding, TokenRef | undefined>> | undefined): ResolvedOverrides {
-  if (!overrides) return { rootStyle: undefined, label: undefined, value: undefined, helper: undefined };
+  if (!overrides) return { rootStyle: undefined, label: undefined, value: undefined, markLabel: undefined, helper: undefined };
   const rootStyle: Record<string, string> = {};
   const label: TextOverrides = {};
   const value: TextOverrides = {};
+  const markLabel: TextOverrides = {};
   const helper: TextOverrides = {};
   for (const binding of Object.keys(overrides) as SliderOverridableBinding[]) {
     const ref = overrides[binding];
@@ -100,6 +115,7 @@ function resolveOverrides(overrides: Partial<Record<SliderOverridableBinding, To
       case 'fontFamily':
         label.fontFamily = ref;
         value.fontFamily = ref;
+        markLabel.fontFamily = ref;
         helper.fontFamily = ref;
         break;
       case 'fontSize':
@@ -111,23 +127,25 @@ function resolveOverrides(overrides: Partial<Record<SliderOverridableBinding, To
       case 'valueSize':
         value.fontSize = ref;
         break;
+      case 'markLabelSize':
+        markLabel.fontSize = ref;
+        break;
       case 'helperSize':
         helper.fontSize = ref;
         break;
-      // errorText: the error message is a Text with tone="danger", whose color binding is locked,
-      // so there is nothing to forward; accepted and ignored rather than restyling the child.
+      // errorText: realised by the error Text's `danger` tone, whose colour is locked; accepted and ignored.
       default:
         break;
     }
   }
-  return { rootStyle: rootStyle as CSSProperties, label, value, helper };
+  return { rootStyle: rootStyle as CSSProperties, label, value, markLabel, helper };
 }
 
 export interface SliderProps
   extends Omit<ComponentPropsWithoutRef<'div'>, 'children' | 'defaultValue' | 'onChange' | 'className' | 'style'> {
   /** Visible label naming the quantity ("Volume", "Price range"). */
   label: string;
-  /** Field name for the Form. A range contributes `[min, max]`. */
+  /** Field name for the Form. A single value registers as its decimal string, a range as two strings. */
   name: string;
   /** Lower bound. */
   min?: number | undefined;
@@ -135,16 +153,16 @@ export interface SliderProps
   max?: number | undefined;
   /** Arrow-key increment and snapping granularity for drag, click and keys. */
   step?: number | undefined;
-  /** With `marks`, snap drag and click to the marks instead of `step` (keys still move by step, PageUp/Down by mark). */
+  /** With `marks`, snap drag and click to the marks instead of `step` (arrow keys still move by step; PageUp/Down go to the next mark, and past the last mark to `max`/`min`). */
   snapToMarks?: boolean | undefined;
   /** Must have a value other than the default to submit (`copy.required`). */
   required?: boolean | undefined;
   /** Marks the slider invalid (`copy.invalid` when no `error`). */
   invalid?: boolean | undefined;
   /** Controlled value; for a range, a two-number array. */
-  value?: SliderValue | undefined;
+  value?: number | [number, number] | undefined;
   /** Initial value (or pair). Defaults to `min` (or `[min, max]`). */
-  defaultValue?: SliderValue | undefined;
+  defaultValue?: number | [number, number] | undefined;
   /** Two thumbs choosing a minimum and a maximum; the thumbs cannot cross. */
   range?: boolean | undefined;
   /** Renders the displayed and announced value ("$40", "3 h 20 min"). Defaults to the number. */
@@ -152,18 +170,18 @@ export interface SliderProps
   /** Where the value text appears: always beside the label, only while dragging or focused (as a bubble above the thumb), or not at all (when a NumberInput beside the slider shows it). */
   showValue?: SliderShowValue | undefined;
   /** Tick marks on the track, optionally labelled. */
-  marks?: { value: number; label?: string }[] | undefined;
-  /** Not adjustable, still readable. */
+  marks?: { value: number; label?: string | undefined }[] | undefined;
+  /** Not adjustable, still readable: thumbs stay focusable but pointer and keys are ignored, and no value is submitted. */
   disabled?: boolean | undefined;
   /** Helper text. */
   description?: string | undefined;
   /** Error message. */
   error?: string | undefined;
-  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
+  /** Per-instance style overrides: each entry sets the matching CSS hook (or composed Text override) to that token. */
   overrides?: Partial<Record<SliderOverridableBinding, TokenRef | undefined>> | undefined;
-  /** Fired on every value change while dragging or with keys (number or pair). */
+  /** Fired on every value change while dragging or with keys (number or pair); only when the value actually changed. */
   onChange?: ((value: number | [number, number]) => void) | undefined;
-  /** Fired once when the interaction ends (pointer up, key released). Use for expensive effects. */
+  /** Fired once when the interaction ends (pointer up, key released), and only if that interaction changed the value. */
   onChangeEnd?: ((value: number | [number, number]) => void) | undefined;
 }
 
@@ -178,7 +196,6 @@ interface Thumb {
   value: number;
   ariaMin: number;
   ariaMax: number;
-  labelledBy: string;
 }
 
 function decimalsOf(n: number): number {
@@ -191,6 +208,8 @@ function sameValue(a: SliderValue, b: SliderValue): boolean {
   if (Array.isArray(a) && Array.isArray(b)) return a[0] === b[0] && a[1] === b[1];
   return a === b;
 }
+
+const clamp = (v: number, lo: number, hi: number): number => Math.min(Math.max(v, lo), hi);
 
 /**
  * Slider — a bounded numeric value, or a range, chosen by dragging a thumb or with the keyboard.
@@ -227,8 +246,6 @@ export function Slider({
   const generatedId = useId();
   const controlId = idProp ?? (form?.idBase ? `${form.idBase}-${name}` : `ds-slider${generatedId}`);
   const labelId = `${controlId}-label`;
-  const minLabelId = `${controlId}-min-label`;
-  const maxLabelId = `${controlId}-max-label`;
   const descriptionId = `${controlId}-description`;
   const errorId = `${controlId}-error`;
 
@@ -237,6 +254,7 @@ export function Slider({
     if (isDev && !validBounds) console.warn(`Slider: \`max\` (${max}) must be greater than \`min\` (${min}).`);
   }, [validBounds, min, max]);
 
+  // "The default": defaultValue when set, otherwise what value falls back to. Shared by state and `required`.
   const fallback: SliderValue = defaultValue ?? (range ? [min, max] : min);
   const [internalValue, setInternalValue] = useState<SliderValue>(fallback);
   const current: SliderValue = value !== undefined ? value : internalValue;
@@ -284,7 +302,6 @@ export function Slider({
   }, [form, name, controlId]);
 
   const precision = Math.max(decimalsOf(step), decimalsOf(min));
-  const clamp = (v: number, lo: number, hi: number): number => Math.min(Math.max(v, lo), hi);
 
   function snapToStep(raw: number): number {
     const clamped = clamp(raw, min, max);
@@ -294,6 +311,7 @@ export function Slider({
   }
 
   const markValues = (marks ?? []).map((m) => m.value).sort((a, b) => a - b);
+  const marksSnap = snapToMarks && markValues.length > 0;
 
   function snapToNearestMark(raw: number): number {
     let nearest = markValues[0];
@@ -304,19 +322,15 @@ export function Slider({
     return nearest;
   }
 
-  const snapPointer = (raw: number): number => (snapToMarks ? snapToNearestMark(raw) : snapToStep(raw));
+  const snapPointer = (raw: number): number => (marksSnap ? snapToNearestMark(raw) : snapToStep(raw));
 
   function pageFrom(from: number, direction: 1 | -1): number {
-    if (markValues.length === 0) return snapToStep(from + direction * step * 10);
+    if (!marksSnap) return snapToStep(from + direction * step * 10);
     if (direction === 1) return markValues.find((v) => v > from) ?? max;
     return [...markValues].reverse().find((v) => v < from) ?? min;
   }
 
-  const [low, high]: [number, number] = range
-    ? Array.isArray(current)
-      ? current
-      : [min, max]
-    : [min, max];
+  const [low, high]: [number, number] = range && Array.isArray(current) ? current : [min, max];
   const single = !range && typeof current === 'number' ? current : min;
 
   function commit(index: 0 | 1 | null, next: number): void {
@@ -340,7 +354,7 @@ export function Slider({
     if (!changedInInteraction.current) return;
     changedInInteraction.current = false;
     onChangeEnd?.(latestValue.current);
-    // A pointer-driven control has no meaningful blur, so `validate: blur` commits at the end of an interaction.
+    // A pointer-driven control has no meaningful blur, so `validate: blur` runs when an interaction ends.
     if (form?.validate === 'blur') form.validateField(name);
   }
 
@@ -421,10 +435,10 @@ export function Slider({
 
   const thumbs: Thumb[] = range
     ? [
-        { key: 'min', index: 0, value: low, ariaMin: min, ariaMax: high, labelledBy: minLabelId },
-        { key: 'max', index: 1, value: high, ariaMin: low, ariaMax: max, labelledBy: maxLabelId },
+        { key: 'min', index: 0, value: low, ariaMin: min, ariaMax: high },
+        { key: 'max', index: 1, value: high, ariaMin: low, ariaMax: max },
       ]
-    : [{ key: 'single', index: null, value: single, ariaMin: min, ariaMax: max, labelledBy: labelId }];
+    : [{ key: 'single', index: null, value: single, ariaMin: min, ariaMax: max }];
 
   const fillStart = range ? percent(low) : 0;
   const fillEnd = range ? percent(high) : percent(single);
@@ -437,101 +451,112 @@ export function Slider({
     .join(' ');
 
   return (
-    <div {...rest} ref={ref} data-ds="Slider" data-ds-fieldclassName={classes} style={resolved.rootStyle}>
+    <div {...rest} ref={ref} data-ds="Slider" data-ds-field className={classes} style={resolved.rootStyle}>
       <div className="ds-slider__header">
-        <Text element="span" id={labelId} data-part="label" weight="medium" overrides={resolved.label}>
-          {label}
-        </Text>
-        {showValue === 'always' ? (
-          <Text element="span" data-part="valueText" size="sm" overrides={resolved.value}>
-            {range ? COPY.rangeText.replace('{low}', format(low)).replace('{high}', format(high)) : format(single)}
+        <span className="ds-slider__label" data-part="label">
+          <Text element="span" id={labelId} size="md" weight="medium" tone="default" overrides={resolved.label}>
+            {label}
           </Text>
+        </span>
+        {showValue === 'always' ? (
+          <span className="ds-slider__value" data-part="valueText">
+            <Text element="span" size="sm" tone="default" overrides={resolved.value}>
+              {range ? COPY.rangeText.replace('{low}', format(low)).replace('{high}', format(high)) : format(single)}
+            </Text>
+          </span>
         ) : null}
       </div>
-      {range ? (
-        <>
-          <span id={minLabelId} className="ds-slider__visually-hidden">
-            {COPY.minimumLabel.replace('{label}', label)}
-          </span>
-          <span id={maxLabelId} className="ds-slider__visually-hidden">
-            {COPY.maximumLabel.replace('{label}', label)}
-          </span>
-        </>
-      ) : null}
-      <div
-        className="ds-slider__body"
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-      >
-        <div className="ds-slider__rail">
-          <div ref={trackRef} className="ds-slider__track" data-part="track">
-            <div
-              className="ds-slider__fill"
-              data-part="fill"
-              style={{ insetInlineStart: `${fillStart}%`, inlineSize: `${fillEnd - fillStart}%` }}
-            />
-          </div>
-          {marks && marks.length > 0 ? (
-            <div className="ds-slider__tick-marks" data-part="tickMarks" aria-hidden="true">
-              {marks.map((mark) => (
-                <span key={mark.value} className="ds-slider__mark" style={{ insetInlineStart: `${percent(mark.value)}%` }} />
-              ))}
-            </div>
-          ) : null}
-          {thumbs.map((thumb) => {
-            const bubbleVisible = activeKey === thumb.key || focusedKey === thumb.key;
-            return (
+      <div className="ds-slider__control">
+        <div
+          className="ds-slider__area"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+        >
+          <div className="ds-slider__rail">
+            <div ref={trackRef} className="ds-slider__track" data-part="track">
               <div
-                key={thumb.key}
-                ref={(el) => {
-                  thumbRefs.current[thumb.key] = el;
-                }}
-                id={thumb.index === 1 ? undefined : controlId}
-                role="slider"
-                tabIndex={0}
-                data-part="thumb"
-                className={['ds-slider__thumb', activeKey === thumb.key ? 'ds-slider__thumb--active' : null].filter(Boolean).join(' ')}
-                style={{ insetInlineStart: `${percent(thumb.value)}%` }}
-                aria-valuenow={thumb.value}
-                aria-valuemin={thumb.ariaMin}
-                aria-valuemax={thumb.ariaMax}
-                aria-valuetext={format(thumb.value)}
-                aria-labelledby={thumb.labelledBy}
-                aria-describedby={describedBy}
-                aria-orientation="horizontal"
-                aria-disabled={isDisabled ? 'true' : undefined}
-                aria-invalid={isInvalid ? 'true' : undefined}
-                aria-required={required ? 'true' : undefined}
-                onKeyDown={handleKeyDown(thumb)}
-                onKeyUp={endInteraction}
-                onFocus={() => setFocusedKey(thumb.key)}
-                onBlur={() => setFocusedKey(null)}
-              >
-                <span className="ds-slider__knob" aria-hidden="true" />
-                {showValue === 'hover' ? (
-                  <span
-                    className={['ds-slider__bubble', bubbleVisible ? 'ds-slider__bubble--visible' : null].filter(Boolean).join(' ')}
-                    data-part="bubble"
-                    aria-hidden="true"
-                  >
-                    {format(thumb.value)}
-                  </span>
-                ) : null}
-              </div>
-            );
-          })}
+                className="ds-slider__fill"
+                data-part="fill"
+                style={{ insetInlineStart: `${fillStart}%`, inlineSize: `${fillEnd - fillStart}%` }}
+              />
+            </div>
+            {thumbs.map((thumb) => {
+              const bubbleVisible = activeKey === thumb.key || focusedKey === thumb.key;
+              return (
+                <div
+                  key={thumb.key}
+                  ref={(el) => {
+                    thumbRefs.current[thumb.key] = el;
+                  }}
+                  id={thumb.index === 1 ? undefined : controlId}
+                  role="slider"
+                  tabIndex={0}
+                  data-part="thumb"
+                  className={['ds-slider__thumb', activeKey === thumb.key ? 'ds-slider__thumb--active' : null].filter(Boolean).join(' ')}
+                  style={{ insetInlineStart: `${percent(thumb.value)}%` }}
+                  aria-valuenow={thumb.value}
+                  aria-valuemin={thumb.ariaMin}
+                  aria-valuemax={thumb.ariaMax}
+                  aria-valuetext={format(thumb.value)}
+                  aria-labelledby={thumb.index === null ? labelId : undefined}
+                  aria-label={
+                    thumb.index === 0
+                      ? COPY.minimumLabel.replace('{label}', label)
+                      : thumb.index === 1
+                        ? COPY.maximumLabel.replace('{label}', label)
+                        : undefined
+                  }
+                  aria-describedby={describedBy}
+                  aria-orientation="horizontal"
+                  aria-disabled={isDisabled ? 'true' : undefined}
+                  aria-invalid={isInvalid ? 'true' : undefined}
+                  aria-required={required ? 'true' : undefined}
+                  onKeyDown={handleKeyDown(thumb)}
+                  onKeyUp={endInteraction}
+                  onFocus={() => setFocusedKey(thumb.key)}
+                  onBlur={() => setFocusedKey(null)}
+                >
+                  <span className="ds-slider__knob" aria-hidden="true" />
+                  {showValue === 'hover' ? (
+                    <span
+                      className={['ds-slider__bubble', bubbleVisible ? 'ds-slider__bubble--visible' : null].filter(Boolean).join(' ')}
+                      data-part="bubble"
+                      aria-hidden="true"
+                    >
+                      <Text element="span" size="sm" tone="default" overrides={resolved.value}>
+                        {format(thumb.value)}
+                      </Text>
+                    </span>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
         </div>
-        {labelledMarks ? (
-          <div className="ds-slider__mark-labels" aria-hidden="true">
-            {(marks ?? []).map((mark) =>
-              mark.label ? (
-                <span key={mark.value} className="ds-slider__mark-label" style={{ insetInlineStart: `${percent(mark.value)}%` }}>
-                  {mark.label}
-                </span>
-              ) : null,
-            )}
+        {marks && marks.length > 0 ? (
+          <div
+            className={['ds-slider__tick-marks', labelledMarks ? 'ds-slider__tick-marks--labelled' : null].filter(Boolean).join(' ')}
+            data-part="tickMarks"
+            aria-hidden="true"
+          >
+            {marks.map((mark) => (
+              <span key={`dot-${mark.value}`} className="ds-slider__mark" style={{ insetInlineStart: `${percent(mark.value)}%` }} />
+            ))}
+            {labelledMarks ? (
+              <div className="ds-slider__mark-labels">
+                {marks.map((mark) =>
+                  mark.label ? (
+                    <span key={`label-${mark.value}`} className="ds-slider__mark-label" style={{ insetInlineStart: `${percent(mark.value)}%` }}>
+                      <Text element="span" size="xs" tone="muted" overrides={resolved.markLabel}>
+                        {mark.label}
+                      </Text>
+                    </span>
+                  ) : null,
+                )}
+              </div>
+            ) : null}
           </div>
         ) : null}
       </div>
@@ -544,14 +569,18 @@ export function Slider({
         <input type="hidden" name={name} value={String(single)} disabled={isDisabled} />
       )}
       {description ? (
-        <Text element="p" id={descriptionId} data-part="description" size="sm" tone="muted" overrides={resolved.helper}>
-          {description}
-        </Text>
+        <span className="ds-slider__description" data-part="description">
+          <Text element="span" id={descriptionId} size="sm" tone="muted" overrides={resolved.helper}>
+            {description}
+          </Text>
+        </span>
       ) : null}
       {errorMessage ? (
-        <Text element="p" id={errorId} data-part="errorMessage" size="sm" tone="danger" overrides={resolved.helper}>
-          {errorMessage}
-        </Text>
+        <span className="ds-slider__error" data-part="errorMessage">
+          <Text element="span" id={errorId} size="sm" tone="danger" overrides={resolved.helper}>
+            {errorMessage}
+          </Text>
+        </span>
       ) : null}
     </div>
   );

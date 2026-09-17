@@ -13,7 +13,7 @@ import {
   type Ref,
   type ReactElement,
 } from 'react';
-import { createPortal, flushSync } from 'react-dom';
+import { createPortal } from 'react-dom';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
 import { Icon } from './Icon';
@@ -55,12 +55,15 @@ export type SearchOverridableBinding =
   | 'suggestionsOffset'
   | 'popupSurface'
   | 'popupBorder'
+  | 'popupBorderWidth'
   | 'popupRadius'
   | 'popupShadow'
+  | 'layer'
   | 'partGap'
+  | 'labelWeight'
   | 'disabledOpacity';
 
-/** Hooks on the root. */
+/** Hooks on the root. `labelWeight` has none: it is forwarded to the label Text. */
 const ROOT_HOOK: Partial<Record<SearchOverridableBinding, string>> = {
   borderWidth: '--ds-search-border-width',
   radius: '--ds-search-radius',
@@ -79,8 +82,10 @@ const POPUP_HOOK: Partial<Record<SearchOverridableBinding, string>> = {
   suggestionsOffset: '--ds-search-suggestions-offset',
   popupSurface: '--ds-search-popup-surface',
   popupBorder: '--ds-search-popup-border',
+  popupBorderWidth: '--ds-search-popup-border-width',
   popupRadius: '--ds-search-popup-radius',
   popupShadow: '--ds-search-popup-shadow',
+  layer: '--ds-search-layer',
 };
 
 function resolveOverrides(overrides: Partial<Record<SearchOverridableBinding, TokenRef | undefined>> | undefined): {
@@ -93,13 +98,29 @@ function resolveOverrides(overrides: Partial<Record<SearchOverridableBinding, To
     const ref = overrides?.[binding];
     if (!ref) continue;
     // Locked bindings have no entry in either table, so they are ignored if passed.
-    if (ROOT_HOOK[binding]) root[ROOT_HOOK[binding]] = cssVar(ref);
-    else if (POPUP_HOOK[binding]) popup[POPUP_HOOK[binding]] = cssVar(ref);
+    const rootHook = ROOT_HOOK[binding];
+    const popupHook = POPUP_HOOK[binding];
+    if (rootHook) root[rootHook] = cssVar(ref);
+    else if (popupHook) popup[popupHook] = cssVar(ref);
   }
   return {
     root: Object.keys(root).length ? (root as CSSProperties) : undefined,
     popup: Object.keys(popup).length ? (popup as CSSProperties) : undefined,
   };
+}
+
+/** A CSS time (`200ms`, `0.2s`) in milliseconds; 0 when it cannot be read (no stylesheet loaded). */
+function parseTime(raw: string): number {
+  const match = /^(-?[\d.]+)(ms|s)$/.exec(raw.trim());
+  if (!match) return 0;
+  const amount = Number(match[1]);
+  return match[2] === 's' ? amount * 1000 : amount;
+}
+
+/** Constant `statusDebounce`: motion.duration.base × 2, in ms, read from the theme on `el`. */
+function statusDebounce(el: Element | null): number {
+  if (!el || typeof getComputedStyle === 'undefined') return 0;
+  return parseTime(getComputedStyle(el).getPropertyValue('--motion-duration-base')) * 2;
 }
 
 type PopupPosition = {
@@ -147,6 +168,7 @@ export interface SearchProps
     | 'defaultValue'
     | 'placeholder'
     | 'disabled'
+    | 'readOnly'
     | 'onChange'
     | 'onSubmit'
     | 'children'
@@ -167,21 +189,31 @@ export interface SearchProps
   showLabel?: boolean | undefined;
   /** Field name; the query key when the form submits to a URL. */
   name?: string | undefined;
-  /** Controlled query. */
+  /**
+   * Controlled query. When set, it is the query everything reads: submit, a chosen suggestion, the
+   * clear button and the Form value all use this prop, never stale typed text; clearing reports
+   * onChange("") and the field empties when the caller passes the new value.
+   */
   value?: string | undefined;
   /** Initial query. */
   defaultValue?: string | undefined;
   /** Example query, not a label ("Try "invoices from March""). */
   placeholder?: string | undefined;
-  /** URL to submit to with GET (web); when omitted, `onSubmit` handles it and nothing navigates. */
+  /**
+   * URL to submit to with GET (web and Lit); when omitted, `onSubmit` handles it and nothing
+   * navigates. The URL carries the same trimmed query `onSubmit` receives (the field value is
+   * trimmed before the native submit). Ignored, with a development warning, when Search sits inside
+   * a Form component: the enclosing Form owns submission.
+   */
   action?: string | undefined;
   /**
    * Suggestions for the current query, shown in a Listbox under the field; choosing one fills the
    * query with the suggestion's `label` — what the user just read — and submits. Provide them from
    * `onChange` (debounced by the caller). Setting the prop at all is what turns the field into a
    * combobox, including an explicitly empty array after a fetch that found nothing, which shows
-   * `copy.noSuggestions`; leaving it undefined keeps a plain search field. With suggestions the
-   * field becomes a Combobox: same keys, `aria-activedescendant`.
+   * `copy.noSuggestions`; leaving it undefined keeps a plain search field. The list opens on typing
+   * and on ArrowDown — never on focus alone — and closes on Escape, Tab or blur, a pointer press
+   * outside the field and list, a chosen suggestion, clear, and submit.
    */
   suggestions?: SearchSuggestion[] | undefined;
   /** Suggestions are being fetched; announced through `copy.loading`. */
@@ -194,15 +226,24 @@ export interface SearchProps
   landmark?: boolean | undefined;
   /** lg for a search page's hero field. */
   size?: SearchSize | undefined;
-  /** Not editable, still readable. */
+  /**
+   * Not editable, still readable and focusable: the input is read-only with aria-disabled, both
+   * Buttons are disabled, every key in the keyboard table is inert, suggestions never open, no event
+   * fires, the whole component dims to `disabledOpacity`, and a disabled Search is not registered
+   * with (or submitted by) a Form.
+   */
   disabled?: boolean | undefined;
   /** Portal target for the suggestions popup. Defaults to `document.body`. Platform prop; never affects semantics. */
   container?: HTMLElement | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<SearchOverridableBinding, TokenRef | undefined>> | undefined;
-  /** Fired on every keystroke with the query; the caller fetches suggestions here. */
+  /**
+   * Fired on every keystroke with the query; the caller fetches suggestions here. Also fired whenever
+   * Search itself changes the text: with "" before `onClear`, and with the suggestion's `label` before
+   * `onSubmit` when one is chosen.
+   */
   onChange?: ((value: string) => void) | undefined;
-  /** Fired on Enter, the submit button, or choosing a suggestion, with the query. */
+  /** Fired on Enter, the submit button, or choosing a suggestion, with the trimmed query. Never with an empty query. */
   onSubmit?: ((value: string) => void) | undefined;
   /** Fired when the field is emptied — by the clear button, or by the Escape that clears it when no suggestions are open. */
   onClear?: (() => void) | undefined;
@@ -213,8 +254,11 @@ export interface SearchProps
  *
  * When to use:
  * Use Search for free-text search over a site, an app, or a large dataset: the header search, a search page's main field, a "filter the list" field over more than a couple of dozen rows. Add `suggestions` when the backend can offer completions or recent queries; keep `landmark` on for the one primary search so screen-reader users can jump to it.
+ *
+ * The root is a `<form>` (role="search" while `landmark`); inside a Form component it is a `<div>`
+ * so no form nests in a form, and Search handles Enter and its submit Button itself.
  */
-export const Search = function Search({
+export function Search({
   ref,
   label,
   showLabel = false,
@@ -235,29 +279,36 @@ export const Search = function Search({
   onClear,
   onKeyDown,
   id: idProp,
-  readOnly,
   ...rest
-}: SearchProps & { ref?: Ref<HTMLFormElement> | undefined }): ReactElement {
+}: SearchProps & { ref?: Ref<HTMLElement> | undefined }): ReactElement {
   const form = useFormContext();
+  const inForm = form !== null;
   const generatedId = useId();
   const id = idProp ?? (form?.idBase ? `${form.idBase}-${name}` : `ds-search${generatedId}`);
   const labelId = `${id}-label`;
   const listboxId = `${id}-listbox`;
 
-  const formRef = useRef<HTMLFormElement | null>(null);
+  const rootRef = useRef<HTMLElement | null>(null);
   const fieldRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const queryRef = useRef<HTMLInputElement | null>(null);
   const popupRef = useRef<HTMLDivElement | null>(null);
   const listboxRef = useRef<HTMLDivElement | null>(null);
   const pendingForward = useRef<string | null>(null);
   const pendingQuery = useRef<string | null>(null);
-  useImperativeHandle(ref, () => formRef.current as HTMLFormElement, []);
+  useImperativeHandle(ref, () => rootRef.current as HTMLElement, []);
 
   useEffect(() => {
     if (process.env.NODE_ENV !== 'production' && !label) {
       console.warn('Search: `label` is required; it is the accessible name of the field.');
     }
   }, [label]);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'production' && inForm && action !== undefined) {
+      console.warn('Search: `action` is ignored inside a Form; the enclosing Form owns submission.');
+    }
+  }, [inForm, action]);
 
   // value ⇄ onChange
   const isControlled = value !== undefined;
@@ -279,7 +330,7 @@ export const Search = function Search({
   };
 
   // A new result set (or loading) starts the highlight over.
-  const signature = `${loading}|${(suggestions ?? []).map((row) => row.value).join(' ')}`;
+  const signature = `${loading}|${(suggestions ?? []).map((row) => row.value).join(' ')}`;
   const lastSignature = useRef(signature);
   useEffect(() => {
     if (lastSignature.current === signature) return;
@@ -288,26 +339,23 @@ export const Search = function Search({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signature]);
 
-  // Form registration: the query under `name`, omitted when empty.
-  const latest = useRef({ label, text, disabled: isDisabled });
-  latest.current = { label, text, disabled: isDisabled };
+  // Form registration: the trimmed query under `name` ("" when empty, never omitted); always valid; a disabled Search is not registered.
+  const latest = useRef({ label, text });
+  latest.current = { label, text };
   useEffect(() => {
-    if (!form) return undefined;
+    if (!form || isDisabled) return undefined;
     return form.register({
       name,
       id,
       get label() {
         return latest.current.label;
       },
-      getValue: () => {
-        const query = latest.current.text.trim();
-        return query === '' ? undefined : query;
-      },
-      isDisabled: () => latest.current.disabled,
+      getValue: () => latest.current.text.trim(),
+      isDisabled: () => false,
       validate: () => null,
       focus: () => inputRef.current?.focus(),
     });
-  }, [form, name, id]);
+  }, [form, name, id, isDisabled]);
 
   // Anchor to the field; follow scrolling and resizing; forward a queued arrow once the list mounts.
   useLayoutEffect(() => {
@@ -363,14 +411,48 @@ export const Search = function Search({
     };
   }, [showPopup]);
 
+  // Live region: count, loading or no-suggestions, settled for `statusDebounce` before it updates.
+  const count = loading ? 0 : (suggestions?.length ?? 0);
+  const statusText = !showPopup
+    ? ''
+    : loading
+      ? COPY.loading
+      : count === 0
+        ? COPY.noSuggestions
+        : COPY.suggestionsCount[new Intl.PluralRules(undefined).select(count) === 'one' ? 'one' : 'other'].replace(
+            '{count}',
+            String(count),
+          );
+  const [announced, setAnnounced] = useState('');
+  useEffect(() => {
+    if (statusText === '') {
+      setAnnounced('');
+      return undefined;
+    }
+    const timer = setTimeout(() => setAnnounced(statusText), statusDebounce(rootRef.current));
+    return () => clearTimeout(timer);
+  }, [statusText]);
+
   const updateText = (next: string) => {
     if (!isControlled) setInternalValue(next);
     onChange?.(next);
   };
 
-  /** Every submission goes through the form, so `action` is always a native GET submit. */
-  const requestSubmit = () => {
-    formRef.current?.requestSubmit();
+  /**
+   * Submits `raw`. Outside a Form every route goes through the native form, so with `action` it is a
+   * GET submit; inside a Form Search fires `onSubmit` itself and never submits the enclosing Form.
+   */
+  const submit = (raw: string) => {
+    if (isDisabled) return;
+    if (inForm) {
+      const query = raw.trim();
+      if (query === '') return;
+      closeList();
+      onSubmit?.(query);
+      return;
+    }
+    pendingQuery.current = raw;
+    (rootRef.current as HTMLFormElement | null)?.requestSubmit();
   };
 
   const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -383,10 +465,13 @@ export const Search = function Search({
     }
     closeList();
     onSubmit?.(query);
-    if (!action) event.preventDefault();
+    // The form data set is built after this event: the URL carries the trimmed query.
+    if (action && queryRef.current) queryRef.current.value = query;
+    else event.preventDefault();
   };
 
   const clear = () => {
+    if (isDisabled) return;
     updateText('');
     closeList();
     onClear?.();
@@ -396,17 +481,15 @@ export const Search = function Search({
   const choose = (rowValue: string) => {
     const row = suggestions?.find((candidate) => candidate.value === rowValue);
     if (!row || isDisabled) return;
-    // Fill the query with what the user read, committed before the native submit reads the input.
-    flushSync(() => updateText(row.label));
-    pendingQuery.current = row.label;
+    updateText(row.label);
     closeList();
     inputRef.current?.focus();
-    requestSubmit();
+    submit(row.label);
   };
 
   const handleListboxChange = (next: ListboxValue) => {
     const chosen = Array.isArray(next) ? next[0] : next;
-    if (chosen !== undefined) choose(chosen);
+    if (chosen !== undefined && chosen !== '') choose(chosen);
   };
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -430,31 +513,38 @@ export const Search = function Search({
   const handleKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
     onKeyDown?.(event);
     if (event.defaultPrevented) return;
+    if (isDisabled) {
+      // Every key in the keyboard table is inert; Enter must not submit natively either.
+      if (event.key === 'Enter' || event.key === 'Escape' || event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+      }
+      return;
+    }
     switch (event.key) {
       case 'Enter': {
         event.preventDefault();
-        if (isDisabled) break;
         if (showPopup && activeValue !== null) choose(activeValue);
-        else requestSubmit();
+        else submit(text);
         break;
       }
       case 'Escape': {
         if (showPopup) {
           event.preventDefault();
           closeList();
-        } else if (text !== '' && !isDisabled) {
+        } else if (text !== '') {
           event.preventDefault();
           clear();
         }
         break;
       }
       case 'ArrowDown': {
-        if (!hasSuggestions || isDisabled) break;
+        if (!hasSuggestions) break;
         event.preventDefault();
         if (!showPopup) {
           pendingForward.current = 'ArrowDown';
           setOpen(true);
         } else {
+          // Listbox clamps at the last option, so ArrowDown never wraps.
           forwardToListbox('ArrowDown');
         }
         break;
@@ -463,7 +553,7 @@ export const Search = function Search({
         // With no highlight, ArrowUp is a no-op; from the first suggestion it returns to the input.
         if (!showPopup || activeValue === null) break;
         event.preventDefault();
-        if (activeValue === suggestions?.[0]?.value) resetHighlight();
+        if (activeValue === (loading ? undefined : suggestions?.[0]?.value)) resetHighlight();
         else forwardToListbox('ArrowUp');
         break;
       }
@@ -477,17 +567,6 @@ export const Search = function Search({
   };
 
   const resolved = resolveOverrides(overrides);
-  const count = loading ? 0 : (suggestions?.length ?? 0);
-  const statusText = !showPopup
-    ? ''
-    : loading
-      ? COPY.loading
-      : count === 0
-        ? COPY.noSuggestions
-        : COPY.suggestionsCount[new Intl.PluralRules(undefined).select(count) === 'one' ? 'one' : 'other'].replace(
-            '{count}',
-            String(count),
-          );
 
   const listOptions: ListboxOption[] = loading
     ? []
@@ -497,7 +576,6 @@ export const Search = function Search({
     .filter(Boolean)
     .join(' ');
   const labelClasses = ['ds-search__label', showLabel ? null : 'ds-search__label--hidden'].filter(Boolean).join(' ');
-  const muted = { color: 'color.foreground.muted' as TokenRef };
 
   const popupStyle: CSSProperties = {
     ...resolved.popup,
@@ -506,34 +584,27 @@ export const Search = function Search({
       : null),
   };
 
-  return (
-    <form
-      ref={formRef}
-      data-ds="Search"
-      data-ds-field=""
-      data-part="form"
-      role={landmark ? 'search' : undefined}
-      className={classes}
-      style={resolved.root}
-      method={action ? 'get' : undefined}
-      action={action}
-      noValidate
-      onSubmit={handleFormSubmit}
-    >
+  const content = (
+    <>
       <label htmlFor={id} id={labelId} className={labelClasses} data-part="label">
-        <Text element="span" weight="medium">
+        <Text
+          element="span"
+          overrides={{
+            fontWeight: overrides?.labelWeight ?? 'font.weight.medium',
+            fontSize: overrides?.fontSize ?? (`font.size.${size}` as TokenRef),
+          }}
+        >
           {label}
         </Text>
       </label>
       <div ref={fieldRef} className="ds-search__field" data-part="field">
         <span className="ds-search__icon" data-part="icon">
-          <Icon name="search" size={size === 'lg' ? 'md' : 'sm'} overrides={muted} />
+          <Icon name="search" size={size === 'lg' ? 'md' : 'sm'} overrides={{ color: 'color.foreground.muted' }} />
         </span>
         <input
           {...rest}
           ref={inputRef}
           id={id}
-          name={name}
           type="search"
           enterKeyHint="search"
           autoComplete="off"
@@ -541,7 +612,7 @@ export const Search = function Search({
           data-part="input"
           value={text}
           placeholder={placeholder}
-          readOnly={isDisabled || readOnly}
+          readOnly={isDisabled}
           role={hasSuggestions ? 'combobox' : undefined}
           aria-autocomplete={hasSuggestions ? 'list' : undefined}
           aria-expanded={hasSuggestions ? (showPopup ? 'true' : 'false') : undefined}
@@ -551,7 +622,7 @@ export const Search = function Search({
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
         />
-        {text !== '' && !isDisabled ? (
+        {text !== '' ? (
           <span className="ds-search__control" data-part="clearButton">
             <Button
               type="button"
@@ -559,25 +630,28 @@ export const Search = function Search({
               size="sm"
               iconOnly
               label={COPY.clear}
-              leadingIcon={<Icon name="close" inline overrides={muted} />}
+              leadingIcon={<Icon name="close" inline />}
+              disabled={isDisabled}
               onClick={clear}
             />
           </span>
         ) : null}
         <span className="ds-search__control" data-part="submitButton">
           <Button
-            type="submit"
+            type={inForm ? 'button' : 'submit'}
             variant="ghost"
             size="sm"
             iconOnly
             label={COPY.submit}
-            leadingIcon={<Icon name="arrow-right" inline overrides={muted} />}
+            leadingIcon={<Icon name="arrow-right" inline />}
             disabled={isDisabled}
+            onClick={inForm ? () => submit(text) : undefined}
           />
         </span>
       </div>
-      <div role="status" aria-live="polite" className="ds-search__status" data-part="status">
-        {statusText}
+      {action && !inForm ? <input ref={queryRef} type="hidden" name={name} /> : null}
+      <div role="status" aria-live="polite" className="ds-search__status">
+        {announced}
       </div>
       {showPopup && typeof document !== 'undefined'
         ? createPortal(
@@ -595,11 +669,11 @@ export const Search = function Search({
                 ref={listboxRef}
                 id={listboxId}
                 label={label}
-                labelledBy={labelId}
+                embedded
+                value=""
                 options={listOptions}
                 selectionFollowsFocus={false}
-                embedded
-                emptyMessage={loading ? COPY.loading : COPY.noSuggestions}
+                emptyMessage={listOptions.length === 0 ? (loading ? COPY.loading : COPY.noSuggestions) : undefined}
                 onChange={handleListboxChange}
                 onActiveChange={setActiveValue}
               />
@@ -607,6 +681,40 @@ export const Search = function Search({
             container ?? document.body,
           )
         : null}
+    </>
+  );
+
+  if (inForm) {
+    return (
+      <div
+        ref={rootRef as Ref<HTMLDivElement>}
+        data-ds="Search"
+        data-ds-field=""
+        data-part="form"
+        role={landmark ? 'search' : undefined}
+        className={classes}
+        style={resolved.root}
+      >
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <form
+      ref={rootRef as Ref<HTMLFormElement>}
+      data-ds="Search"
+      data-ds-field=""
+      data-part="form"
+      role={landmark ? 'search' : undefined}
+      className={classes}
+      style={resolved.root}
+      method={action ? 'get' : undefined}
+      action={action}
+      noValidate
+      onSubmit={handleFormSubmit}
+    >
+      {content}
     </form>
   );
-};
+}

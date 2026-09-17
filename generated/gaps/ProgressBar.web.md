@@ -30,3 +30,13 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - ProgressBar: hideLabel with showValue true leaves the value text as the only visible item in the label row, and it sits at the start, not the end; the doc doesn't say where it goes.
 - ProgressBar: valueSize/fontFamily/lineHeight/valueColor have no part; applied them to the composed valueText (and label for fontFamily/lineHeight) through Text's overrides, as Meter does.
 - ProgressBar: the live region re-reading an identical message (e.g. indeterminate twice) needs the node replaced; implemented by keying the message span, not specified in the doc.
+
+## 2026-09-17 12:33 — round 1
+
+- ProgressBar: when a bar goes from indeterminate to determinate, the spec doesn't say whether the tier it arrives at counts as silently recorded (like at mount) or as newly entered. I kept whatever tier the bar had last recorded, so a bar that mounts indeterminate and later reports 30% announces the 25% milestone under `milestones`.
+- ProgressBar: the spec doesn't say what happens when an invalid range (max ≤ min) becomes valid mid-task. I treat it like mount and record the tier and completion silently, so there is no burst of announcements.
+- ProgressBar: `value` is described as 'Omit (undefined or null)', but the schema type is `number`. I typed the prop `number | null | undefined`.
+- ProgressBar: the header's layout when `hideLabel` is set and the value text is visible isn't specified beyond 'stays at the end of the row'. I added a `ds-progress-bar__header--label-hidden` modifier with `justify-content: flex-end`, because the visually-hidden label is taken out of the flex flow.
+- ProgressBar: when there is no visible label and no visible value text, the spec says the row 'takes no space' but not how. I kept the header element, with `data-part="header"` and the label Text inside it so aria-labelledby still resolves, and applied the visually-hidden clip to it. Because the header is absolutely positioned, `partGap` no longer applies.
+- ProgressBar: the locale for the default `Intl.NumberFormat` isn't specified. I used the runtime default (`undefined`), as Meter does.
+- ProgressBar: the `transition` binding describes the fill's size change using motion.easing.standard, while the indeterminate sweep has its own `sweepEasing` binding. I read the token directly for the size change (no hook) and put `sweepEasing` on its own hook.

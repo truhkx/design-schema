@@ -54,8 +54,9 @@ describe('Stepper', () => {
   /* The status is carried by a word from copy, not by color or glyph alone. */
   it('step-status-is-said-in-words', () => {
     setup({ navigable: 'none', current: 'payment', steps: three });
-    expect(screen.getByText('completed')).toBeTruthy();
-    expect(screen.getByText('current step')).toBeTruthy();
+    // The status word joins the plain label after ", " as visually-hidden text.
+    expect(screen.getByText(', completed')).toBeTruthy();
+    expect(screen.getByText(', current step')).toBeTruthy();
   });
 
   /* A step marked error is named with copy.error, so the danger glyph is not the only signal. */
@@ -69,7 +70,7 @@ describe('Stepper', () => {
         { id: 'review', label: 'Review order' },
       ],
     });
-    expect(screen.getByText('has an error')).toBeTruthy();
+    expect(screen.getByText(', has an error')).toBeTruthy();
   });
 
   /* Below the prose width the stepper shows only the current label and "Step n of m". */

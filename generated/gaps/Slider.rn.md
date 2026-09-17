@@ -25,3 +25,17 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Slider: `disabled` is described as 'readable and focusable but inert'; the generic rule 'disabled sets accessibilityState in addition to disabled' doesn't apply to a View thumb, so the thumb stays focusable with accessibilityState.disabled and the gesture and actions are ignored.
 - Slider: example stories must render 'exactly its given', but the meta args (label Volume, defaultValue 40, step 1) would leak into an args-only story, so the four example stories use render functions with exactly their given props.
 - Slider: all behavior scenarios with interactions are web/lit only, so no RN test covers onValueChange/onSlidingComplete via accessibility actions or the range no-cross clamp; the 7 RN scenarios are render/copy/name checks only.
+
+## 2026-09-17 12:24 — round 1
+
+- Slider: `errorText` is listed as overridable (locked: false) but its description says an override has no effect, since Text colour is locked; I kept it in the type and ignore it. The doc should either lock it or say what it does.
+- Slider: the `tickMarks` part holds both the dots and the labels, but the dots sit inside the track area and the labels in a row below it, so no single View can carry both. `testID="Slider.tickMarks"` is on the dots layer and the label row has no testID.
+- Slider: `markLabelGap` is measured from the bottom of the track area, while the root's `partGap` spaces the other rows. I wrapped the track area and the mark-label row in a column using `markLabelGap`. The doc doesn't say whether `partGap` also applies there.
+- Slider: the mark-label row's height uses `toLineHeight(markLabelSize, font.lineHeight.normal)`. The doc doesn't name a line-height token for the reserved label line.
+- Slider: the composition gives the Texts `element: span`, but the React Native Text has no `element` prop, so it is dropped. The other listed props (size, weight, tone) are passed.
+- Slider: the keyboard table (arrows, PageUp/Down, Home/End) has no hardware-key hook on a core React Native View. Native covers it only through the accessibility actions, so there are no key handlers; the doc could say this outright for rn.
+- Slider: the bubble should be centred horizontally on the thumb, but it lives inside the 44pt hit area, so its width is capped by that box and a long formatValue string may wrap. The doc doesn't say how the bubble should size or overflow on native.
+- Slider: when both range thumbs sit at the same value, the doc doesn't say which thumb a track press picks. I give ties to the low thumb, or to the thumb on the side pressed when the press is outside the pair.
+- Slider: `required` compares against 'the default' but doesn't say whether a `defaultValue` outside [min, max] is clamped before comparing. I compare the raw `defaultValue` against the clamped current value.
+- Slider: the scenarios check copy, rendering, name and error text only. None exercises the native adjustable actions (increment, the page actions, home/end) or onSlidingComplete, so the actions have no rn test; the doc could add rn scenarios that fire accessibility actions.
+- Slider: 'label-association' on native has no labelledby form beyond `accessibilityLabel`. The description and error aren't tied to the thumb (no accessibilityHint), since `platforms.rn.props` doesn't list it; the doc should say whether the thumb's hint should carry the description or error.

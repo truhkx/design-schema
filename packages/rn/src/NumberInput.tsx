@@ -1,9 +1,8 @@
 import * as React from 'react';
-import { AccessibilityInfo, Platform, TextInput, View, findNodeHandle } from 'react-native';
+import { AccessibilityInfo, Text as NativeText, Platform, TextInput, View, findNodeHandle } from 'react-native';
 import type {
   AccessibilityActionEvent,
   KeyboardTypeOptions,
-  ReturnKeyTypeOptions,
   TextInputInstance,
   TextInputKeyPressEvent,
   TextStyle,
@@ -18,7 +17,7 @@ import { useFormContext } from './FormContext';
 import type { FormFieldHandle } from './FormContext';
 import { Icon } from './Icon';
 import { Text } from './Text';
-import { toLineHeight, useTheme } from './theme';
+import { toFontWeight, toLineHeight, useTheme } from './theme';
 import type { Tokens } from './theme';
 
 export type NumberInputFormat = 'decimal' | 'currency' | 'percent' | 'unit';
@@ -34,6 +33,7 @@ export type NumberInputOverridableBinding =
   | 'affixGap'
   | 'stepperGap'
   | 'stepperDivider'
+  | 'stepperDividerWidth'
   | 'partGap'
   | 'labelWeight'
   | 'helperSize'
@@ -45,17 +45,20 @@ export type NumberInputOverridableBinding =
 export interface NumberInputProps {
   /** Visible label. Also the field's `accessibilityLabel`. */
   label: string;
-  /** Field name for the Form. The collected value is the number, stringified (the Form's value type has no numeric variant), or nothing when empty. */
+  /**
+   * Field name for the Form. The value registers as its plain decimal string (`String(value)`: "." decimal,
+   * no grouping, symbol or affixes); an empty or disabled field registers nothing. Parse it back with `Number()`.
+   */
   name: string;
-  /** Controlled numeric value. `undefined` means empty. */
-  value?: number | undefined;
+  /** Controlled numeric value: `null` is a controlled empty field, `undefined` means uncontrolled (`defaultValue` applies). */
+  value?: number | null | undefined;
   /** Initial value. */
   defaultValue?: number | undefined;
   /** Lower bound; values are clamped on blur and the decrement button disables at it. */
   min?: number | undefined;
   /** Upper bound. */
   max?: number | undefined;
-  /** Increment for the buttons, arrow keys and accessibility actions. Also the rounding granularity when `precision` is omitted. */
+  /** Increment for the buttons, arrow keys and accessibility actions. Values never snap to multiples of it. */
   step?: number | undefined;
   /** Decimal places to keep and display (a whole number). Defaults to the decimals in `step`. */
   precision?: number | undefined;
@@ -63,7 +66,7 @@ export interface NumberInputProps {
   format?: NumberInputFormat | undefined;
   /** ISO 4217 code for `format: currency` (e.g. USD). */
   currency?: string | undefined;
-  /** Intl unit identifier for `format: unit` (e.g. kilogram, hour), or a literal shown as the suffix. */
+  /** Intl unit identifier for `format: unit` (e.g. kilogram, hour). An unknown unit is shown as `trailingText` when none is given. */
   unit?: string | undefined;
   /** Static text before the value inside the field ("$"), when `format` cannot express it. Ignored under `format: currency`. */
   leadingText?: string | undefined;
@@ -101,7 +104,7 @@ const PADDING_BLOCK_TOKEN = { sm: 'space1', md: 'spaceSm' } as const satisfies R
 const MIN_TARGET_TOKEN = { sm: 'sizeTargetMin', md: 'sizeTargetComfortable' } as const satisfies Record<NumberInputSize, keyof Tokens>;
 
 /** PageUp/PageDown move by this many steps. */
-const PAGE_STEPS = 10; // literal-ok: the keyboard contract's "ten steps", not a design token
+const PAGE_STEPS = 10; // literal-ok: the keyboard contract's "ten steps", a count, not a design token
 
 const COPY = {
   increment: 'Increase',
@@ -152,14 +155,19 @@ function clampValue(value: number, min: number | undefined, max: number | undefi
   return v;
 }
 
-/** Keeps a leading minus, digits and one decimal separator (the locale's or "."), dropping everything else rather than rejecting it loudly. */
+/**
+ * Keeps a leading minus, digits and one decimal separator, dropping everything else rather than
+ * rejecting it loudly. "." counts as the decimal only when the locale's separator is absent from the
+ * text, so a grouped "1.234,5" reads as 1234.5 in a comma-decimal locale.
+ */
 function sanitizeTyped(raw: string): string {
+  const decimal = LOCALE_DECIMAL !== '.' && raw.includes(LOCALE_DECIMAL) ? LOCALE_DECIMAL : '.';
   let out = '';
   let seenDecimal = false;
   for (const ch of raw) {
     if (ch === '-' && out === '') {
       out += ch;
-    } else if ((ch === '.' || ch === LOCALE_DECIMAL) && !seenDecimal) {
+    } else if (ch === decimal && !seenDecimal) {
       seenDecimal = true;
       out += '.';
     } else if (ch >= '0' && ch <= '9') {
@@ -169,8 +177,13 @@ function sanitizeTyped(raw: string): string {
   return out;
 }
 
+function hasDigit(text: string): boolean {
+  return /[0-9]/.test(text);
+}
+
+/** A number once the text forms one; a lone "-" or "." is not yet a number. */
 function parseTyped(text: string): number | undefined {
-  if (text === '' || text === '-' || text === '.' || text === '-.') {
+  if (!hasDigit(text)) {
     return undefined;
   }
   const n = Number(text);
@@ -198,20 +211,24 @@ function isValidUnit(unit: string): boolean {
  *
  * Renders Input's group (label, description, field, error) where the field is a
  * bordered row: optional leading text, a `TextInput`, optional trailing text and,
- * unless `hideSteppers`, two system `Button`s (ghost, iconOnly, minus/plus) behind a
- * hairline. The `TextInput` has `accessibilityRole="adjustable"`,
- * `accessibilityValue` with the formatted text, and increment/decrement accessibility
- * actions, so the steppers are hidden from assistive technology; they step once per
- * tap and disable at the bounds. While focused the field shows what was typed; on
- * blur or Enter the value is rounded to `precision`, clamped to `min`/`max` (reporting
- * `copy.outOfRange`, `outOfRangeMin` or `outOfRangeMax` when the clamp changed it) and
- * shown through `Intl.NumberFormat`. On a hardware keyboard that reports them,
- * ArrowUp/Down step and PageUp/Down step by ten. `format: percent` stores the number as
- * typed and divides by 100 for display; `format: currency` without `currency` warns
- * under `__DEV__` and uses USD, and ignores `leadingText`; an unknown `unit` formats
- * as a plain decimal with the unit shown as trailing text. Inside a Form the field
- * registers the number (stringified); inside a Fieldset the group's `disabled` and
- * legend apply. `disabled` dims the whole group with `disabledOpacity`.
+ * unless `hideSteppers`, two system `Button`s (ghost, sm, iconOnly, minus/plus) behind a
+ * hairline. The `TextInput` has `accessibilityRole="adjustable"`, `accessibilityValue`
+ * whose text is the formatted value with its affixes ("2 kg"), and increment/decrement
+ * accessibility actions, so the steppers and affixes are hidden from assistive
+ * technology; the steppers step once per tap and disable at the bounds. While focused the
+ * field shows what was typed; on blur or Enter the value is rounded to `precision`,
+ * clamped to `min`/`max` (reporting `copy.outOfRange`, `outOfRangeMin` or `outOfRangeMax`
+ * until the next keystroke or step when the clamp changed it) and shown through
+ * `Intl.NumberFormat`. Committed text with no digits ("-") reports `copy.invalid`. On a
+ * hardware keyboard that reports them (and on react-native-web), ArrowUp/Down step,
+ * PageUp/Down step by ten and Home/End jump to a defined bound; iOS generally delivers
+ * none of these, and the adjustable actions are the stepping path there. Enter inside a
+ * Form submits it. `format: percent` stores the number as typed and divides by 100 for
+ * display; `format: currency` without `currency` warns under `__DEV__` and uses USD, and
+ * ignores `leadingText`; an unknown `unit` formats as a plain decimal with the unit shown
+ * as trailing text. Inside a Fieldset the group's `disabled` and legend apply.
+ * `disabled` dims the label, description, input and affixes with `disabledOpacity`; the
+ * stepper Buttons dim through their own disabled style.
  */
 export function NumberInput({
   label,
@@ -246,12 +263,23 @@ export function NumberInput({
   const inputRef = React.useRef<TextInputInstance>(null);
 
   const [internalValue, setInternalValue] = React.useState<number | undefined>(defaultValue);
-  const [rawText, setRawText] = React.useState<string>('');
+  // The typed text while focused; `null` means the display follows the value.
+  const [rawText, setRawTextState] = React.useState<string | null>(null);
+  const rawRef = React.useRef<string | null>(null);
+  // True once a keystroke has changed the text since the last commit.
+  const dirtyRef = React.useRef(false);
   const [focused, setFocused] = React.useState(false);
   const [clampMessage, setClampMessage] = React.useState<string | null>(null);
+  const [textInvalid, setTextInvalid] = React.useState(false);
+
+  const setRawText = (next: string | null): void => {
+    rawRef.current = next;
+    setRawTextState(next);
+  };
 
   const isDisabled = disabled || (form?.disabled ?? false) || (fieldset?.disabled ?? false);
-  const currentValue = value !== undefined ? value : internalValue;
+  const controlled = value !== undefined;
+  const currentValue = controlled ? (value ?? undefined) : internalValue;
   const resolvedPrecision = Math.max(0, Math.round(precision ?? decimalPlaces(step)));
 
   const currencyMissing = format === 'currency' && (currency === undefined || currency === '');
@@ -279,18 +307,29 @@ export function NumberInput({
   }, [format, currency, currencyMissing, unit, unitValid, resolvedPrecision]);
   const formatNumber = (num: number): string => formatter.format(format === 'percent' ? num / 100 : num);
 
-  const prefixText = format === 'currency' ? undefined : leadingText;
-  const suffixText = trailingText ?? (unitFallback ? unit : undefined);
+  const prefixText = format === 'currency' || leadingText === '' ? undefined : leadingText;
+  const suffixText = trailingText !== undefined && trailingText !== '' ? trailingText : unitFallback ? unit : undefined;
 
-  const validateValue = (candidate: number | undefined, rangeMessage: string | null): string | null => {
-    // Precedence: `error` prop, then `required`, then `invalid`, then the out-of-range clamp.
+  // A controlled value that moves away from what is typed takes over the display.
+  React.useEffect(() => {
+    if (typeof value !== 'number') {
+      return;
+    }
+    const raw = rawRef.current;
+    if (raw !== null && parseTyped(raw) !== value) {
+      setRawText(null);
+    }
+  }, [value]);
+
+  const validateValue = (candidate: number | undefined, nonNumeric: boolean, rangeMessage: string | null): string | null => {
+    // Precedence: `error` prop, then `required`, then `invalid` (prop or committed text with no digits), then the clamp.
     if (error !== undefined && error !== '') {
       return error;
     }
-    if (required && candidate === undefined) {
+    if (required && candidate === undefined && !nonNumeric) {
       return COPY.required(label);
     }
-    if (invalid) {
+    if (invalid || nonNumeric) {
       return COPY.invalid(label);
     }
     return rangeMessage;
@@ -298,8 +337,9 @@ export function NumberInput({
 
   // Read by the stable Form handle and by Enter-then-submit in the same call stack,
   // so it is written synchronously on every commit as well as every render.
-  const latest = React.useRef({ value: currentValue, clampMessage, validateValue });
+  const latest = React.useRef({ value: currentValue, textInvalid, clampMessage, validateValue });
   latest.current.value = currentValue;
+  latest.current.textInvalid = textInvalid;
   latest.current.clampMessage = clampMessage;
   latest.current.validateValue = validateValue;
 
@@ -307,7 +347,7 @@ export function NumberInput({
     () => ({
       label,
       getValue: () => (latest.current.value === undefined ? undefined : String(latest.current.value)),
-      validate: () => latest.current.validateValue(latest.current.value, latest.current.clampMessage),
+      validate: () => latest.current.validateValue(latest.current.value, latest.current.textInvalid, latest.current.clampMessage),
       focus: () => {
         const input = inputRef.current;
         if (input === null) {
@@ -334,7 +374,8 @@ export function NumberInput({
   }, [register, unregister, name, handle, isDisabled]);
 
   const formError = form?.errors[name];
-  const displayedError = error !== undefined && error !== '' ? error : (formError ?? clampMessage ?? undefined);
+  const commitMessage = textInvalid ? COPY.invalid(label) : clampMessage;
+  const displayedError = error !== undefined && error !== '' ? error : (formError ?? commitMessage ?? undefined);
   const isInvalid = invalid || displayedError !== undefined;
   const summarised = form !== null && form.errorSummary;
 
@@ -344,39 +385,48 @@ export function NumberInput({
     }
   }, [displayedError, summarised]);
 
-  const setNumber = (next: number | undefined, rangeMessage: string | null): void => {
+  const setNumber = (next: number | undefined, nonNumeric: boolean, rangeMessage: string | null): void => {
     const previous = latest.current.value;
     latest.current.value = next;
+    latest.current.textInvalid = nonNumeric;
     latest.current.clampMessage = rangeMessage;
-    if (value === undefined) {
+    if (!controlled) {
       setInternalValue(next);
     }
+    setTextInvalid(nonNumeric);
     setClampMessage(rangeMessage);
     if (next !== previous) {
       onChangeText?.(next);
     }
     if (form !== null && form.validateMode === 'change') {
-      form.reportValidity(name, validateValue(next, rangeMessage));
+      form.reportValidity(name, validateValue(next, nonNumeric, rangeMessage));
     }
   };
 
-  /** One step (or `multiplier` steps) in `direction`; from empty, up goes to `min ?? 0` and down to `max ?? 0`. */
-  const stepBy = (direction: 1 | -1, multiplier = 1): void => {
+  /** Moves to `target` (rounded and clamped); the display then follows the value. */
+  const stepTo = (target: number): void => {
     if (isDisabled) {
       return;
     }
+    dirtyRef.current = false;
+    setNumber(clampValue(roundToPrecision(target, resolvedPrecision), min, max), false, null);
+    setRawText(null);
+  };
+
+  /** `count` steps in `direction`; from empty, up goes to `min ?? 0` and down to `max ?? 0`. */
+  const stepBy = (direction: 1 | -1, count = 1): void => {
     const from = latest.current.value;
-    const target = from === undefined ? (direction === 1 ? (min ?? 0) : (max ?? 0)) : from + step * multiplier * direction;
-    const next = clampValue(roundToPrecision(target, resolvedPrecision), min, max);
-    setNumber(next, null);
-    if (focused) {
-      setRawText(String(next));
-    }
+    stepTo(from === undefined ? (direction === 1 ? (min ?? 0) : (max ?? 0)) : from + step * count * direction);
   };
 
   /** Rounds and clamps what was typed; a clamp that changed it is reported, never silent. */
-  const commitTyped = (): string | null => {
-    const parsed = parseTyped(rawText);
+  const commitTyped = (): void => {
+    if (!dirtyRef.current) {
+      return;
+    }
+    dirtyRef.current = false;
+    const raw = rawRef.current ?? '';
+    const parsed = parseTyped(raw);
     let final: number | undefined;
     let rangeMessage: string | null = null;
     if (parsed !== undefined) {
@@ -392,48 +442,50 @@ export function NumberInput({
         }
       }
     }
-    setNumber(final, rangeMessage);
-    setRawText(final === undefined ? '' : String(final));
-    return validateValue(final, rangeMessage);
+    setNumber(final, raw !== '' && parsed === undefined, rangeMessage);
+    setRawText(null);
   };
 
-  const handleChangeText = (raw: string): void => {
-    const sanitized = sanitizeTyped(raw);
+  const currentMessage = (): string | null =>
+    latest.current.validateValue(latest.current.value, latest.current.textInvalid, latest.current.clampMessage);
+
+  const handleChangeText = (text: string): void => {
+    const sanitized = sanitizeTyped(text);
+    dirtyRef.current = true;
     setRawText(sanitized);
     const parsed = parseTyped(sanitized);
-    // An in-progress entry ("-", "1.") keeps the last valid number rather than reporting empty.
+    // An in-progress entry ("-", ".") keeps the last valid number and fires nothing.
     if (parsed === undefined && sanitized !== '') {
       return;
     }
-    setNumber(parsed, null);
+    setNumber(parsed, false, null);
   };
 
   const handleFocus = (): void => {
     setFocused(true);
-    setRawText(currentValue === undefined ? '' : String(currentValue));
   };
 
   const handleBlur = (): void => {
     setFocused(false);
-    const message = commitTyped();
+    commitTyped();
     if (form !== null && form.validateMode === 'blur') {
-      form.reportValidity(name, message);
+      form.reportValidity(name, currentMessage());
     }
   };
 
   const handleKeyPress = (event: TextInputKeyPressEvent): void => {
     const key = event.nativeEvent.key;
-    const move =
-      key === 'ArrowUp' ? ([1, 1] as const)
-      : key === 'ArrowDown' ? ([-1, 1] as const)
-      : key === 'PageUp' ? ([1, PAGE_STEPS] as const)
-      : key === 'PageDown' ? ([-1, PAGE_STEPS] as const)
-      : null;
-    if (move === null) {
+    if (key === 'ArrowUp' || key === 'ArrowDown' || key === 'PageUp' || key === 'PageDown') {
+      event.preventDefault();
+      stepBy(key === 'ArrowUp' || key === 'PageUp' ? 1 : -1, key === 'PageUp' || key === 'PageDown' ? PAGE_STEPS : 1);
       return;
     }
-    event.preventDefault();
-    stepBy(move[0], move[1]);
+    // Home/End jump to a defined bound; otherwise the key stays with the caret.
+    const bound = key === 'Home' ? min : key === 'End' ? max : undefined;
+    if (bound !== undefined) {
+      event.preventDefault();
+      stepTo(bound);
+    }
   };
 
   const handleAccessibilityAction = (event: AccessibilityActionEvent): void => {
@@ -444,21 +496,9 @@ export function NumberInput({
     }
   };
 
-  const position = form === null ? -1 : form.order.indexOf(name);
-  const isLast = form !== null && position !== -1 && position === form.order.length - 1;
-  const nextName = form !== null && position !== -1 ? form.order[position + 1] : undefined;
-  const returnKeyType: ReturnKeyTypeOptions | undefined = form === null ? undefined : isLast ? 'done' : 'next';
-
   const handleSubmitEditing = (): void => {
     commitTyped();
-    if (form === null) {
-      return;
-    }
-    if (isLast) {
-      form.submit();
-    } else if (nextName !== undefined) {
-      form.focusField(nextName);
-    }
+    form?.submit();
   };
 
   const visibleLabel = required ? `${label}${COPY.requiredIndicator}` : label;
@@ -472,11 +512,17 @@ export function NumberInput({
   const affixGap = overrides?.affixGap ? (resolveToken(t, overrides.affixGap) as number) : t.layoutGapTight;
   const stepperGap = overrides?.stepperGap ? (resolveToken(t, overrides.stepperGap) as number) : t.layoutGapNone;
   const stepperDividerColor = overrides?.stepperDivider ? (resolveToken(t, overrides.stepperDivider) as string) : t.colorBorder;
+  const stepperDividerWidth = overrides?.stepperDividerWidth
+    ? (resolveToken(t, overrides.stepperDividerWidth) as number)
+    : t.borderWidthThin;
   const partGap = overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.space1;
+  const labelWeight = overrides?.labelWeight ? (resolveToken(t, overrides.labelWeight) as number) : t.fontWeightMedium;
+  const helperSize = overrides?.helperSize ? (resolveToken(t, overrides.helperSize) as number) : t.fontSizeSm;
   const fontFamily = overrides?.fontFamily ? (resolveToken(t, overrides.fontFamily) as string) : t.fontFamilyBody;
   const fontSize = overrides?.fontSize ? (resolveToken(t, overrides.fontSize) as number) : t[FONT_SIZE_TOKEN[size]];
   const lineHeightMultiplier = overrides?.lineHeight ? (resolveToken(t, overrides.lineHeight) as number) : t.fontLineHeightNormal;
   const disabledOpacity = overrides?.disabledOpacity ? (resolveToken(t, overrides.disabledOpacity) as number) : t.opacityDisabled;
+  const partOpacity = isDisabled ? disabledOpacity : 1;
 
   // The border is the focus ring: focus widens it to the locked `focusRingWidth` and the
   // padding shrinks by the difference so nothing shifts. Invalid keeps its color while focused.
@@ -491,9 +537,11 @@ export function NumberInput({
   const atMax = currentValue !== undefined && max !== undefined && currentValue >= max;
 
   const formattedValue = currentValue === undefined ? undefined : formatNumber(currentValue);
-  const displayValue = focused ? rawText : (formattedValue ?? '');
+  const valueText =
+    formattedValue === undefined ? undefined : `${prefixText ?? ''}${formattedValue}${suffixText !== undefined ? ` ${suffixText}` : ''}`;
+  const displayValue = focused ? (rawText ?? (currentValue === undefined ? '' : String(currentValue))) : (formattedValue ?? '');
 
-  const containerStyle: ViewStyle = { flexDirection: 'column', gap: partGap, opacity: isDisabled ? disabledOpacity : 1 };
+  const containerStyle: ViewStyle = { flexDirection: 'column', gap: partGap };
 
   const fieldStyle: ViewStyle = {
     flexDirection: 'row',
@@ -506,13 +554,35 @@ export function NumberInput({
     overflow: 'hidden',
   };
 
+  // The stepper Buttons sit flush at the end, so the inline-end padding applies only without them.
   const contentStyle: ViewStyle = {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: affixGap,
-    paddingHorizontal: Math.max(0, paddingInline - inset),
+    paddingStart: Math.max(0, paddingInline - inset),
+    paddingEnd: hideSteppers ? Math.max(0, paddingInline - inset) : 0,
     paddingVertical: Math.max(0, paddingBlock - inset),
+    opacity: partOpacity,
+  };
+
+  const lineHeight = toLineHeight(fontSize, lineHeightMultiplier);
+
+  const labelStyle: TextStyle = {
+    color: t.colorForeground,
+    fontFamily,
+    fontSize,
+    lineHeight,
+    fontWeight: toFontWeight(labelWeight),
+  };
+
+  const affixStyle: TextStyle = { color: t.colorForegroundMuted, fontFamily, fontSize, lineHeight };
+
+  const errorStyle: TextStyle = {
+    color: t.colorForegroundDanger,
+    fontFamily,
+    fontSize: helperSize,
+    lineHeight: toLineHeight(helperSize, lineHeightMultiplier),
   };
 
   const inputStyle: TextStyle = {
@@ -521,31 +591,28 @@ export function NumberInput({
     color: t.colorForeground,
     fontFamily,
     fontSize,
-    lineHeight: toLineHeight(fontSize, lineHeightMultiplier),
+    lineHeight,
   };
 
   const steppersStyle: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'stretch',
     gap: stepperGap,
-    borderLeftWidth: borderWidth,
-    borderLeftColor: stepperDividerColor,
+    borderStartWidth: stepperDividerWidth,
+    borderStartColor: stepperDividerColor,
   };
 
-  const textOverrides = { fontFamily: overrides?.fontFamily, fontSize: overrides?.fontSize, lineHeight: overrides?.lineHeight };
   const helperOverrides = { fontFamily: overrides?.fontFamily, fontSize: overrides?.helperSize, lineHeight: overrides?.lineHeight };
 
   return (
     <View ref={ref} style={containerStyle} testID="NumberInput">
       {hideLabel ? null : (
-        <View testID="NumberInput.label">
-          <Text size={size} weight="medium" overrides={{ ...textOverrides, fontWeight: overrides?.labelWeight }}>
-            {visibleLabel}
-          </Text>
-        </View>
+        <NativeText testID="NumberInput.label" style={[labelStyle, { opacity: partOpacity }]}>
+          {visibleLabel}
+        </NativeText>
       )}
       {description !== undefined && description !== '' ? (
-        <View testID="NumberInput.description">
+        <View testID="NumberInput.description" style={{ opacity: partOpacity }}>
           <Text size="sm" tone="muted" overrides={helperOverrides}>
             {description}
           </Text>
@@ -553,12 +620,10 @@ export function NumberInput({
       ) : null}
       <View style={fieldStyle} testID="NumberInput.field">
         <View style={contentStyle}>
-          {prefixText !== undefined && prefixText !== '' ? (
-            <View testID="NumberInput.prefix" accessibilityElementsHidden importantForAccessibility="no">
-              <Text size={size} tone="muted" overrides={textOverrides}>
-                {prefixText}
-              </Text>
-            </View>
+          {prefixText !== undefined ? (
+            <NativeText testID="NumberInput.prefix" style={affixStyle} accessibilityElementsHidden importantForAccessibility="no">
+              {prefixText}
+            </NativeText>
           ) : null}
           <TextInput
             ref={inputRef}
@@ -567,7 +632,7 @@ export function NumberInput({
             accessibilityLabel={accessibleName}
             accessibilityHint={description}
             accessibilityState={{ disabled: isDisabled }}
-            accessibilityValue={{ min, max, now: currentValue, text: formattedValue }}
+            accessibilityValue={{ min, max, now: currentValue, text: valueText }}
             accessibilityActions={STEP_ACTIONS}
             onAccessibilityAction={handleAccessibilityAction}
             keyboardType={keyboardType}
@@ -578,8 +643,8 @@ export function NumberInput({
             value={displayValue}
             placeholder={placeholder}
             placeholderTextColor={t.colorForegroundMuted}
-            returnKeyType={returnKeyType}
-            submitBehavior={isLast ? 'blurAndSubmit' : 'submit'}
+            returnKeyType={form === null ? undefined : 'done'}
+            submitBehavior={form === null ? 'submit' : 'blurAndSubmit'}
             onSubmitEditing={handleSubmitEditing}
             onChangeText={handleChangeText}
             onKeyPress={handleKeyPress}
@@ -587,12 +652,10 @@ export function NumberInput({
             onBlur={handleBlur}
             style={inputStyle}
           />
-          {suffixText !== undefined && suffixText !== '' ? (
-            <View testID="NumberInput.suffix" accessibilityElementsHidden importantForAccessibility="no">
-              <Text size={size} tone="muted" overrides={textOverrides}>
-                {suffixText}
-              </Text>
-            </View>
+          {suffixText !== undefined ? (
+            <NativeText testID="NumberInput.suffix" style={affixStyle} accessibilityElementsHidden importantForAccessibility="no">
+              {suffixText}
+            </NativeText>
           ) : null}
         </View>
         {hideSteppers ? null : (
@@ -623,11 +686,9 @@ export function NumberInput({
         )}
       </View>
       {displayedError !== undefined ? (
-        <View testID="NumberInput.errorMessage" accessibilityLiveRegion={summarised ? 'none' : 'assertive'}>
-          <Text size="sm" tone="danger" overrides={helperOverrides}>
-            {displayedError}
-          </Text>
-        </View>
+        <NativeText testID="NumberInput.errorMessage" style={errorStyle} accessibilityLiveRegion={summarised ? 'none' : 'assertive'}>
+          {displayedError}
+        </NativeText>
       ) : null}
     </View>
   );

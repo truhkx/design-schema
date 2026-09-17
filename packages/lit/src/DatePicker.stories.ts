@@ -13,6 +13,7 @@ interface DatePickerArgs {
   range: boolean;
   min?: string | undefined;
   max?: string | undefined;
+  isDateDisabled?: ((isoDate: string) => boolean) | undefined;
   locale?: string | undefined;
   showWeekNumbers: boolean;
   placeholder?: string | undefined;
@@ -59,6 +60,7 @@ const meta: Meta<DatePickerArgs> = {
       ?range=${args.range}
       min=${ifDefined(args.min)}
       max=${ifDefined(args.max)}
+      .isDateDisabled=${args.isDateDisabled}
       locale=${ifDefined(args.locale)}
       ?show-week-numbers=${args.showWeekNumbers}
       placeholder=${ifDefined(args.placeholder)}
@@ -89,6 +91,17 @@ export const WithDescription: Story = { args: { label: 'Date of birth', name: 'd
 export const Disabled: Story = { args: { disabled: true, defaultValue: '2026-09-10' } };
 export const Open: Story = { args: { open: true, defaultValue: '2026-09-10' } };
 export const ErrorIdentified: Story = { args: { required: true, error: 'Fix this before continuing.' } };
+export const WeekendsDisabled: Story = {
+  args: {
+    label: 'Delivery date',
+    name: 'delivery',
+    isDateDisabled: (isoDate: string) => {
+      const [y, m, d] = isoDate.split('-').map(Number);
+      const weekday = new Date(Date.UTC(y!, m! - 1, d!)).getUTCDay();
+      return weekday === 0 || weekday === 6;
+    },
+  },
+};
 
 /* examples */
 export const DateOfBirth: Story = { args: { label: 'Date of birth', name: 'dob', max: '2026-09-16' } };

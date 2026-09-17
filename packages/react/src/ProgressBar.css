@@ -5,8 +5,10 @@
   --ds-progress-bar-track-height: var(--space-2);
   --ds-progress-bar-radius: var(--radius-full);
   --ds-progress-bar-part-gap: var(--space-1);
+  --ds-progress-bar-label-gap: var(--space-2);
   --ds-progress-bar-transition: var(--motion-duration-base);
   --ds-progress-bar-indeterminate-loop: var(--motion-duration-loop);
+  --ds-progress-bar-sweep-easing: var(--motion-easing-standard);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -14,20 +16,25 @@
   min-inline-size: 0;
 }
 
-/* label row: label at the start, value text at the end. */
+/* labelGap: label row with the label at the inline start and the value text at the inline end. */
 .ds-progress-bar__header {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: var(--space-2);
+  gap: var(--ds-progress-bar-label-gap);
 }
 
-/* tone → fill color; neutral is the selected-control color guaranteed 3:1 against the page. Locked: not consumer-overridable. */
+/* hideLabel with visible value text: the hidden label leaves the flow, the value text stays at the end. */
+.ds-progress-bar__header--label-hidden {
+  justify-content: flex-end;
+}
+
+/* tone → fill color; neutral is the selected-control color guaranteed 3:1 against the page. Locked: no hook. */
 .ds-progress-bar--neutral { --ds-progress-bar-fill: var(--color-control-selected-background); }
 .ds-progress-bar--success { --ds-progress-bar-fill: var(--color-status-success-icon); }
 .ds-progress-bar--danger { --ds-progress-bar-fill: var(--color-status-danger-icon); }
 
-/* track: clips the fill to the rounded ends. */
+/* track + radius: the track clips the fill to its rounded ends. */
 .ds-progress-bar__track {
   position: relative;
   overflow: hidden;
@@ -43,21 +50,21 @@
   background-color: var(--ds-progress-bar-fill);
 }
 
-/* transition: fill width change with motion.easing.standard; instant under reduced motion. */
+/* transition: fill inline-size change with motion.easing.standard; instant under reduced motion. */
 @media (prefers-reduced-motion: no-preference) {
   .ds-progress-bar__track[aria-valuenow] .ds-progress-bar__fill {
     transition: inline-size var(--ds-progress-bar-transition) var(--motion-easing-standard);
   }
 }
 
-/* indeterminateLoop: a fill one third of the track width travelling start to end and repeating. */
+/* indeterminateLoop + sweepEasing: a one-third fill travelling from wholly before the track to wholly after it. */
 @media (prefers-reduced-motion: no-preference) {
   .ds-progress-bar__track[aria-busy='true'] .ds-progress-bar__fill {
     position: absolute;
     inset-block: 0;
     inset-inline-start: 0;
     inline-size: calc(100% / 3);
-    animation: ds-progress-bar-sweep var(--ds-progress-bar-indeterminate-loop) var(--motion-easing-standard) infinite;
+    animation: ds-progress-bar-sweep var(--ds-progress-bar-indeterminate-loop) var(--ds-progress-bar-sweep-easing) infinite;
   }
 
   .ds-progress-bar__track[aria-busy='true']:dir(rtl) .ds-progress-bar__fill {
@@ -65,7 +72,7 @@
   }
 }
 
-/* reduced motion: no sweep — the fill covers the whole track, static, at opacity.disabled. */
+/* reduced motion: no sweep — the fill covers the whole track, static, at opacity.disabled, keeping its tone. */
 @media (prefers-reduced-motion: reduce) {
   .ds-progress-bar__track[aria-busy='true'] .ds-progress-bar__fill {
     inline-size: 100%;
@@ -83,7 +90,7 @@
   to { transform: translateX(-300%); }
 }
 
-/* visually hidden: clipped to a 1px box. Used for a hidden label (still the accessible name) and the live region. */
+/* visually hidden: clipped to a 1px box. Hidden label (still the accessible name), empty header, live region. */
 .ds-progress-bar__visually-hidden {
   position: absolute;
   inline-size: 1px;

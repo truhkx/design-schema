@@ -18,7 +18,6 @@ import { Icon } from './Icon';
 import type { ListboxOption } from './Listbox';
 import { Popover, type PopoverOverridableBinding } from './Popover';
 import { Select, type SelectOverridableBinding } from './Select';
-import { Stack } from './Stack';
 import { Text, type TextOverridableBinding } from './Text';
 import './DatePicker.css';
 
@@ -48,7 +47,7 @@ const COPY = {
   invalid: '{label} must be a valid date ({pattern}).',
   tooEarly: '{label} must be on or after {min}.',
   tooLate: '{label} must be on or before {max}.',
-  rangeOrder: 'End date must be after the start date.',
+  rangeOrder: 'End date must be on or after the start date.',
   requiredIndicator: ' (required)',
 };
 
@@ -67,13 +66,17 @@ export type DatePickerOverridableBinding =
   | 'radius'
   | 'paddingInline'
   | 'paddingBlock'
+  | 'fontSize'
   | 'calendarInset'
   | 'calendarGap'
+  | 'headerGap'
+  | 'footerGap'
   | 'dayGap'
   | 'dayRadius'
   | 'dayHover'
   | 'weekdaySize'
   | 'weekdayWeight'
+  | 'weekNumberSize'
   | 'monthTitleSize'
   | 'monthTitleWeight'
   | 'partGap'
@@ -98,12 +101,16 @@ const OVERRIDE_HOOK: Partial<Record<DatePickerOverridableBinding, string>> = {
   radius: '--ds-date-picker-radius',
   paddingInline: '--ds-date-picker-padding-inline',
   paddingBlock: '--ds-date-picker-padding-block',
+  fontSize: '--ds-date-picker-font-size',
   calendarGap: '--ds-date-picker-calendar-gap',
+  headerGap: '--ds-date-picker-header-gap',
+  footerGap: '--ds-date-picker-footer-gap',
   dayGap: '--ds-date-picker-day-gap',
   dayRadius: '--ds-date-picker-day-radius',
   dayHover: '--ds-date-picker-day-hover',
   weekdaySize: '--ds-date-picker-weekday-size',
   weekdayWeight: '--ds-date-picker-weekday-weight',
+  weekNumberSize: '--ds-date-picker-week-number-size',
   partGap: '--ds-date-picker-part-gap',
   fieldGap: '--ds-date-picker-field-gap',
   dayFontSize: '--ds-date-picker-day-font-size',
@@ -281,12 +288,17 @@ function parseTyped(raw: string, pattern: Pattern): string | undefined {
   return parsed ? toISO(parsed.year, parsed.month, parsed.day) : undefined;
 }
 
+/** `''` is a controlled empty field: no date. */
 function startOf(value: DatePickerValue | undefined): string | undefined {
-  return value === undefined ? undefined : typeof value === 'string' ? value : value.start;
+  return value === undefined || value === '' ? undefined : typeof value === 'string' ? value : value.start || undefined;
 }
 
 function endOf(value: DatePickerValue | undefined): string | undefined {
-  return value !== undefined && typeof value !== 'string' ? value.end : undefined;
+  return value !== undefined && typeof value !== 'string' ? value.end || undefined : undefined;
+}
+
+function sameValue(a: DatePickerValue | undefined, b: DatePickerValue | undefined): boolean {
+  return startOf(a) === startOf(b) && endOf(a) === endOf(b);
 }
 
 export interface DatePickerProps
@@ -318,14 +330,25 @@ export interface DatePickerProps
   label: string;
   /**
    * Field name for the Form. The value is an ISO calendar date string (`2026-09-10`) or, for a
-   * range, `{ start, end }` of them. Never a Date object: a calendar date has no time zone.
+   * range, `{ start, end }` of them in `value` and `onChange`. The Form holds strings only, so a
+   * range registers two fields, `name` (start) and `name-end` (end). Never a Date object: a
+   * calendar date has no time zone.
    */
   name: string;
-  /** Controlled value (ISO date, or a range). */
+  /**
+   * Controlled value (ISO date, or a range). Pass `''` for a controlled empty field; `undefined`
+   * means uncontrolled. In a range the first pick is an internal draft shown only in the calendar:
+   * `value` and the inputs keep showing the old value until the end is picked, then onChange
+   * reports the range and the field returns to `value`.
+   */
   value?: DatePickerValue | undefined;
   /** Initial value. */
   defaultValue?: DatePickerValue | undefined;
-  /** Controlled calendar state, for programmatic use and for stories and tests. Omit for the button-driven default. */
+  /**
+   * Controlled calendar state, for programmatic use and for stories and tests. Omit for the
+   * button-driven default. Every change to open, by the user or by the parent, aims the calendar at
+   * the value's month (or today's) and focuses the selected day (or today).
+   */
   open?: boolean | undefined;
   /** Pick a start and an end date in one calendar; two inputs in the field. */
   range?: boolean | undefined;
@@ -333,9 +356,19 @@ export interface DatePickerProps
   min?: string | undefined;
   /** Latest selectable date (ISO). */
   max?: string | undefined;
-  /** Disable specific days (weekends, holidays, booked). Disabled days are shown, not hidden, and are skipped by keyboard movement. */
+  /**
+   * Disable specific days (weekends, holidays, booked). Disabled days are shown, not hidden, and are
+   * skipped by the Arrow keys (moving on in the same direction to the next enabled day, turning
+   * pages, and staying put when none is left before min/max); Home, End, PageUp and PageDown land on
+   * the computed day even when it is disabled. A disabled day can take focus but not be selected.
+   */
   isDateDisabled?: ((isoDate: string) => boolean) | undefined;
-  /** BCP 47 locale for month and weekday names, the first day of the week, and the typed format. Defaults to the document/device locale. */
+  /**
+   * BCP 47 locale for month and weekday names, the first day of the week, and the typed format.
+   * Defaults to `document.documentElement.lang` when set, then the
+   * `Intl.DateTimeFormat().resolvedOptions().locale` default. The typed pattern comes from
+   * `formatToParts` with 2-digit month and day and a numeric year, so en-US is MM/DD/YYYY.
+   */
   locale?: string | undefined;
   /** An ISO week-number column at the start of each row. */
   showWeekNumbers?: boolean | undefined;
@@ -345,9 +378,12 @@ export interface DatePickerProps
   description?: string | undefined;
   /** Must have a value to submit. */
   required?: boolean | undefined;
-  /** Visually hide the label (it remains the accessible name). Only for a field whose context already names it: a DataGrid cell editor, a Search. */
+  /**
+   * Visually hide the label (it remains the accessible name). Only for a field whose context already
+   * names it: a DataGrid cell editor, a Search. Hidden with the visually-hidden clip pattern.
+   */
   hideLabel?: boolean | undefined;
-  /** sm for fields inside grid cells and toolbars: minimum target height, tighter padding, small type. */
+  /** sm for fields inside grid cells and toolbars: minimum target height, tighter padding, small type (`fontSize` at font.size.sm). */
   size?: DatePickerSize | undefined;
   /** Not editable, still readable. */
   disabled?: boolean | undefined;
@@ -467,7 +503,22 @@ export function DatePicker({
   const [focusedDate, setFocusedDate] = useState<string>(initialFocus);
   /** The first pick of a range, until the second completes it. Not a value: nothing is reported. */
   const [pendingStart, setPendingStart] = useState<string | undefined>(undefined);
+  /** Set by ArrowDown in the end input, so the calendar opens on the end date; reset after use. */
   const openedFrom = useRef<'start' | 'end'>('start');
+
+  // Every change to `open`, by the user or by the parent, aims the calendar at the value's month (or
+  // today's) and discards a pending range pick. Adjusted during render, so the first open frame is right.
+  const [previousOpen, setPreviousOpen] = useState(open);
+  if (previousOpen !== open) {
+    setPreviousOpen(open);
+    setPendingStart(undefined);
+    const fromEnd = range && openedFrom.current === 'end';
+    openedFrom.current = 'start';
+    const target = (fromEnd ? committedEnd : undefined) ?? committedStart ?? todayISO();
+    const p = partsOf(target);
+    setView((prev) => (prev.year === p.year && prev.month === p.month ? prev : { year: p.year, month: p.month }));
+    setFocusedDate(target);
+  }
 
   const calendarRef = useRef<HTMLDivElement | null>(null);
   const focusDayPending = useRef(false);
@@ -495,17 +546,18 @@ export function DatePicker({
   }
 
   function requestOpen(next: boolean): void {
-    if (next === open) return;
-    if (next) {
-      const texts = textsRef.current;
-      const fromEnd = range && openedFrom.current === 'end';
-      const target =
-        (fromEnd ? parseTyped(texts.end, pattern) : undefined) ?? parseTyped(texts.start, pattern) ?? todayISO();
-      showDate(target);
-    }
-    setPendingStart(undefined);
+    if (next === open || (next && isDisabled)) return;
     if (!isOpenControlled) setInternalOpen(next);
     onOpenChange?.(next);
+  }
+
+  /** A pick, Today or Clear: reports, and rewrites the inputs even when the value is unchanged. */
+  function commitPick(next: DatePickerValue | undefined): void {
+    if (!isValueControlled || sameValue(next, valueRef.current)) {
+      setStartText(formatField(startOf(next), locale));
+      setEndText(formatField(endOf(next), locale));
+    }
+    report(next);
   }
 
   function showMonth(year: number, month: number): void {
@@ -516,26 +568,26 @@ export function DatePicker({
   function selectDay(iso: string): void {
     if (isDisabled || dayDisabled(iso)) return;
     if (!range) {
-      report(iso);
+      commitPick(iso);
       requestOpen(false);
       return;
     }
+    // The first pick (or a pick before the pending start) starts a new range; the end may equal the start.
     if (pendingStart === undefined || iso < pendingStart) {
       setPendingStart(iso);
       moveFocusTo(iso);
       return;
     }
-    report({ start: pendingStart, end: iso });
+    commitPick({ start: pendingStart, end: iso });
     setPendingStart(undefined);
     requestOpen(false);
   }
 
+  /** Empties the value (both ends), fires onChange(undefined) even when already empty, and stays open. */
   function clear(): void {
     if (isDisabled) return;
     setPendingStart(undefined);
-    setStartText('');
-    setEndText('');
-    report(undefined);
+    commitPick(undefined);
   }
 
   /* --- Typing ----------------------------------------------------------------------------------- */
@@ -581,7 +633,7 @@ export function DatePicker({
     onKeyDown?.(event);
     if (event.defaultPrevented || isDisabled || event.key !== 'ArrowDown') return;
     event.preventDefault();
-    openedFrom.current = which;
+    openedFrom.current = open ? 'start' : which;
     requestOpen(true);
   }
 
@@ -593,18 +645,18 @@ export function DatePicker({
   /* --- Calendar keyboard ------------------------------------------------------------------------ */
   const weekStart = firstDayOfWeek(locale);
 
-  /** Steps from `from` by `delta` days until an enabled day, within `limit` steps; `undefined` if none. */
-  function stepEnabled(from: string, delta: number, limit: number): string | undefined {
+  /**
+   * Arrow movement: steps by `delta` days until an enabled day, turning pages as needed. `undefined`
+   * (stay put) once the step passes min or max; without bounds, after ten years of disabled days.
+   */
+  function stepEnabled(from: string, delta: number): string | undefined {
     let candidate = from;
-    for (let i = 0; i < limit; i += 1) {
+    for (let i = 0; i < 3660; i += 1) {
       candidate = addDays(candidate, delta);
+      if ((min !== undefined && candidate < min) || (max !== undefined && candidate > max)) return undefined;
       if (!dayDisabled(candidate)) return candidate;
     }
     return undefined;
-  }
-
-  function nearestEnabled(target: string, direction: 1 | -1, limit: number): string | undefined {
-    return dayDisabled(target) ? stepEnabled(target, direction, limit) : target;
   }
 
   function handleGridKeyDown(event: ReactKeyboardEvent<HTMLTableElement>): void {
@@ -614,28 +666,29 @@ export function DatePicker({
     let next: string | undefined;
     switch (event.key) {
       case 'ArrowRight':
-        next = stepEnabled(iso, 1, 366);
+        next = stepEnabled(iso, 1);
         break;
       case 'ArrowLeft':
-        next = stepEnabled(iso, -1, 366);
+        next = stepEnabled(iso, -1);
         break;
       case 'ArrowDown':
-        next = stepEnabled(iso, 7, 53);
+        next = stepEnabled(iso, 7);
         break;
       case 'ArrowUp':
-        next = stepEnabled(iso, -7, 53);
+        next = stepEnabled(iso, -7);
         break;
+      // Home, End, PageUp and PageDown land on the computed day, even a disabled one.
       case 'Home':
-        next = nearestEnabled(addDays(iso, -offset), 1, offset);
+        next = addDays(iso, -offset);
         break;
       case 'End':
-        next = nearestEnabled(addDays(iso, 6 - offset), -1, 6 - offset);
+        next = addDays(iso, 6 - offset);
         break;
       case 'PageUp':
-        next = nearestEnabled(addMonths(iso, event.shiftKey ? -12 : -1), -1, 366);
+        next = addMonths(iso, event.shiftKey ? -12 : -1);
         break;
       case 'PageDown':
-        next = nearestEnabled(addMonths(iso, event.shiftKey ? 12 : 1), 1, 366);
+        next = addMonths(iso, event.shiftKey ? 12 : 1);
         break;
       default:
         return;
@@ -685,17 +738,20 @@ export function DatePicker({
       getValue: () => (latest.current.disabled ? undefined : startOf(valueRef.current)),
       isDisabled: () => latest.current.disabled,
       // Only `name` reports the message, range included: one message must not be read twice.
+      // error → required (every input empty) → invalid (any non-empty input unparseable) → required
+      // (a range with one end empty; without `required` a partial range reports nothing) → tooEarly,
+      // tooLate, rangeOrder. {min}/{max} are shown in the input's own pattern.
       validate: () => {
         const c = latest.current;
         if (c.error !== undefined && c.error !== '') return c.error;
         const texts = c.range ? [textsRef.current.start, textsRef.current.end] : [textsRef.current.start];
-        const typed = texts.some((text) => text.trim() !== '');
-        const current = valueRef.current;
-        if (c.required && current === undefined && !typed) return interpolate(COPY.required, { label: c.label });
-        if (texts.some((text) => text.trim() !== '' && parseTyped(text, c.pattern) === undefined)) {
+        const empty = texts.map((text) => text.trim() === '');
+        if (empty.every(Boolean)) return c.required ? interpolate(COPY.required, { label: c.label }) : null;
+        if (texts.some((text, i) => !empty[i] && parseTyped(text, c.pattern) === undefined)) {
           return interpolate(COPY.invalid, { label: c.label, pattern: c.pattern.text });
         }
-        if (c.required && current === undefined) return interpolate(COPY.required, { label: c.label });
+        if (empty.some(Boolean)) return c.required ? interpolate(COPY.required, { label: c.label }) : null;
+        const current = valueRef.current;
         const start = startOf(current);
         const end = endOf(current);
         if (c.min !== undefined && ((start !== undefined && start < c.min) || (end !== undefined && end < c.min))) {
@@ -847,10 +903,6 @@ export function DatePicker({
               aria-labelledby={`${labelId} ${startLabelId}`}
               onChange={(event) => handleTextChange('start', event)}
               onKeyDown={(event) => handleInputKeyDown('start', event)}
-              onFocus={(event) => {
-                openedFrom.current = 'start';
-                rest.onFocus?.(event);
-              }}
             />
             <span className="ds-date-picker__separator" aria-hidden="true">
               –
@@ -866,9 +918,6 @@ export function DatePicker({
               aria-labelledby={`${labelId} ${endLabelId}`}
               onChange={(event) => handleTextChange('end', event)}
               onKeyDown={(event) => handleInputKeyDown('end', event)}
-              onFocus={() => {
-                openedFrom.current = 'end';
-              }}
             />
           </>
         ) : (
@@ -1036,20 +1085,18 @@ export function DatePicker({
                   </tbody>
                 </table>
                 <div className="ds-date-picker__footer" data-part="footer">
-                  <Stack direction="horizontal" gap="tight">
-                    <span data-part="todayButton">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        label={COPY.today}
-                        disabled={dayDisabled(today)}
-                        onClick={() => selectDay(today)}
-                      />
-                    </span>
-                    <span data-part="clearButton">
-                      <Button variant="ghost" size="sm" label={COPY.clear} onClick={clear} />
-                    </span>
-                  </Stack>
+                  <span data-part="todayButton">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      label={COPY.today}
+                      disabled={dayDisabled(today)}
+                      onClick={() => selectDay(today)}
+                    />
+                  </span>
+                  <span data-part="clearButton">
+                    <Button variant="ghost" size="sm" label={COPY.clear} onClick={clear} />
+                  </span>
                 </div>
               </div>
             </FormContext.Provider>

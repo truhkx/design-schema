@@ -322,18 +322,19 @@
     }
   },
   "DatePicker.lit": {
-    "hash": "30d598bbaf00d4f5",
-    "lastAttemptHash": "30d598bbaf00d4f5",
-    "generatedAt": "2026-09-16T14:20:46+00:00",
+    "hash": "84d98277cf9eb475",
+    "lastAttemptHash": "84d98277cf9eb475",
+    "generatedAt": "2026-09-17T17:06:08+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 6.6326,
+    "costUsd": 4.0313,
     "files": [
       "packages/lit/src/DatePicker.stories.ts",
+      "packages/lit/src/DatePicker.test.ts",
       "packages/lit/src/DatePicker.ts"
     ],
-    "gaps": 18,
+    "gaps": 14,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -690,20 +691,20 @@
     }
   },
   "NumberInput.lit": {
-    "hash": "36c39023734d66d3",
-    "lastAttemptHash": "36c39023734d66d3",
-    "generatedAt": "2026-09-16T13:29:12+00:00",
+    "hash": "8e7cfcde86bcd507",
+    "lastAttemptHash": "8e7cfcde86bcd507",
+    "generatedAt": "2026-09-17T16:28:25+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 3.1138,
+    "costUsd": 1.2394,
     "files": [
       "packages/lit/src/NumberInput.stories.ts",
       "packages/lit/src/NumberInput.test.ts",
       "packages/lit/src/NumberInput.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 12,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -759,19 +760,17 @@
     }
   },
   "ProgressBar.lit": {
-    "hash": "c1604d3d0a2dc4ea",
-    "lastAttemptHash": "c1604d3d0a2dc4ea",
-    "generatedAt": "2026-09-16T13:37:59+00:00",
+    "hash": "de3b1758066f00af",
+    "lastAttemptHash": "de3b1758066f00af",
+    "generatedAt": "2026-09-17T16:35:24+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.3298,
+    "costUsd": 1.1418,
     "files": [
-      "packages/lit/src/ProgressBar.stories.ts",
-      "packages/lit/src/ProgressBar.test.ts",
       "packages/lit/src/ProgressBar.ts"
     ],
-    "gaps": 12,
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -803,19 +802,18 @@
     }
   },
   "Search.lit": {
-    "hash": "146b1a43a651d58f",
-    "lastAttemptHash": "146b1a43a651d58f",
-    "generatedAt": "2026-09-16T13:56:55+00:00",
+    "hash": "e236c28d5f34c873",
+    "lastAttemptHash": "e236c28d5f34c873",
+    "generatedAt": "2026-09-17T16:51:57+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.516,
+    "costUsd": 2.2054,
     "files": [
-      "packages/lit/src/Search.stories.ts",
       "packages/lit/src/Search.test.ts",
       "packages/lit/src/Search.ts"
     ],
-    "gaps": 12,
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -894,19 +892,20 @@
     }
   },
   "Slider.lit": {
-    "hash": "8216058322889cdc",
-    "lastAttemptHash": "8216058322889cdc",
-    "generatedAt": "2026-09-16T13:16:33+00:00",
+    "hash": "b71ae6a3d470a6f0",
+    "lastAttemptHash": "b71ae6a3d470a6f0",
+    "generatedAt": "2026-09-17T16:20:38+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.2318,
+    "costUsd": 2.4026,
     "files": [
       "packages/lit/src/Slider.stories.ts",
       "packages/lit/src/Slider.test.ts",
-      "packages/lit/src/Slider.ts"
+      "packages/lit/src/Slider.ts",
+      "packages/lit/src/index.ts"
     ],
-    "gaps": 13,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -963,19 +962,17 @@
     }
   },
   "Stepper.lit": {
-    "hash": "5973621f904d98ff",
-    "lastAttemptHash": "5973621f904d98ff",
-    "generatedAt": "2026-09-16T13:45:49+00:00",
+    "hash": "30a367984d2e2535",
+    "lastAttemptHash": "30a367984d2e2535",
+    "generatedAt": "2026-09-17T16:42:29+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.8883,
+    "costUsd": 1.6591,
     "files": [
-      "packages/lit/src/Stepper.stories.ts",
-      "packages/lit/src/Stepper.test.ts",
       "packages/lit/src/Stepper.ts"
     ],
-    "gaps": 13,
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,

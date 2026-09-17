@@ -21,3 +21,19 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - ProgressBar: whether `formatValue` receives the raw or the clamped value is unspecified; chose the clamped value (and `min` for a non-finite value), consistent with accessibilityValue.now.
 - ProgressBar: the rn notes say the indeterminate fill under reduced motion is 'a static, half-opacity track' in the style description but 'the fill drawn full-width at opacity.disabled' in guidance; implemented the latter.
 - ProgressBar: the platform rule says 'disabled sets accessibilityState' and 'keyboard' stories, neither applies; the scenario `the-bar-is-never-focusable` is web/lit only, but focusable={false} is set on the rn root anyway.
+
+## 2026-09-17 12:37 — round 1
+
+- ProgressBar: composition gives the label and valueText Texts `element: span`, but the RN Text has no `element` prop; I left it out.
+- ProgressBar: the RN Text takes no testID, so the `label` and `valueText` parts are wrapper Views carrying `ProgressBar.label` / `ProgressBar.valueText`. The doc doesn't say where a composed part's testID goes when the child can't take one.
+- ProgressBar: `hideLabel` on RN doesn't render the label Text at all; the root's accessibilityLabel stays the name. The doc says 'visually hide' but has no RN form for that (web uses a visually-hidden class). I chose not rendering it.
+- ProgressBar: the doc puts `role=progressbar` on the track on web but lists only `element: View` for rn. I put accessibilityRole/Label/Value/State on the root View (accessible, focusable={false}) so the name and value announce together, as Meter does.
+- ProgressBar: platforms.rn.props says `accessibilityRole=progressbar`, while the package digest prefers `role` where a Role exists (Meter uses role="meter"). I followed the component doc and kept accessibilityRole.
+- ProgressBar: with `hideLabel` and a visible value text, `justify-content: space-between` alone would put the lone value at the start. The doc says it stays at the inline end, so the header switches to flex-end. The doc should state that alignment.
+- ProgressBar: Behavior doesn't say whether passing through the indeterminate state resets the tier record. I keep the record through it, so going determinate again announces only tiers above the last recorded one. A bar that mounts indeterminate records tier 0, so its first determinate value announces normally rather than silently as a mount would.
+- ProgressBar: under invalid range (max <= min) the doc says no progress or completion is announced, but not whether tiers are recorded meanwhile. I record nothing, and a bar that mounts with an invalid range keeps tier 0.
+- ProgressBar: the one-third sweep width `trackWidth / 3` is a literal with no token (literal-ok comment). The doc could name it as a constant.
+- ProgressBar: in RTL the doc says the sweep 'runs toward the left' but not how the fill is anchored. I anchor it at the inline start (alignSelf flex-start) and translate from +width to -trackWidth when I18nManager.isRTL. That assumes react-native-web mirrors flex-start the same way, which is unverified.
+- ProgressBar: the default formatter's `Intl.NumberFormat(locale, …)` needs a locale, and the component has no locale prop or context. I pass `undefined` (device locale), as Meter does.
+- ProgressBar: the doc says 'Omit (undefined or null)' for value, but the prop type is `number`. I typed it `number | null | undefined`.
+- ProgressBar: behavior scenario `the-bar-is-never-focusable` is limited to web/lit, although rn notes require focusable={false}. It's implemented but has no rn test.

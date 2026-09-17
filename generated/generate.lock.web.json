@@ -335,13 +335,13 @@
     }
   },
   "DatePicker.web": {
-    "hash": "1a5d2c7640bb9e3b",
-    "lastAttemptHash": "1a5d2c7640bb9e3b",
-    "generatedAt": "2026-09-16T14:08:33+00:00",
+    "hash": "0e453ee8dc90925e",
+    "lastAttemptHash": "0e453ee8dc90925e",
+    "generatedAt": "2026-09-17T16:58:18+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 4.0017,
+    "costUsd": 2.4806,
     "files": [
       "packages/react/src/DatePicker.css",
       "packages/react/src/DatePicker.stories.tsx",
@@ -349,7 +349,7 @@
       "packages/react/src/DatePicker.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 21,
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -723,20 +723,21 @@
     }
   },
   "NumberInput.web": {
-    "hash": "2dc034005d73005a",
-    "lastAttemptHash": "2dc034005d73005a",
-    "generatedAt": "2026-09-16T13:24:16+00:00",
+    "hash": "07fa24c156f58200",
+    "lastAttemptHash": "07fa24c156f58200",
+    "generatedAt": "2026-09-17T16:26:53+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.3717,
+    "costUsd": 1.2984,
     "files": [
       "packages/react/src/NumberInput.css",
       "packages/react/src/NumberInput.stories.tsx",
       "packages/react/src/NumberInput.test.tsx",
-      "packages/react/src/NumberInput.tsx"
+      "packages/react/src/NumberInput.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 17,
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -793,20 +794,21 @@
     }
   },
   "ProgressBar.web": {
-    "hash": "c436f2d548d1192c",
-    "lastAttemptHash": "c436f2d548d1192c",
-    "generatedAt": "2026-09-16T13:35:22+00:00",
+    "hash": "4efa19075b4fbe1a",
+    "lastAttemptHash": "4efa19075b4fbe1a",
+    "generatedAt": "2026-09-17T16:33:22+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.3854,
+    "costUsd": 1.1538,
     "files": [
       "packages/react/src/ProgressBar.css",
       "packages/react/src/ProgressBar.stories.tsx",
       "packages/react/src/ProgressBar.test.tsx",
-      "packages/react/src/ProgressBar.tsx"
+      "packages/react/src/ProgressBar.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 15,
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -839,20 +841,21 @@
     }
   },
   "Search.web": {
-    "hash": "cf72b6362e5ffa0d",
-    "lastAttemptHash": "cf72b6362e5ffa0d",
-    "generatedAt": "2026-09-16T13:52:40+00:00",
+    "hash": "f0799f97d5e2ee24",
+    "lastAttemptHash": "f0799f97d5e2ee24",
+    "generatedAt": "2026-09-17T16:48:29+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.1924,
+    "costUsd": 2.3758,
     "files": [
       "packages/react/src/Search.css",
       "packages/react/src/Search.stories.tsx",
       "packages/react/src/Search.test.tsx",
-      "packages/react/src/Search.tsx"
+      "packages/react/src/Search.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 15,
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -933,20 +936,18 @@
     }
   },
   "Slider.web": {
-    "hash": "cfa6468a0db492d2",
-    "lastAttemptHash": "cfa6468a0db492d2",
-    "generatedAt": "2026-09-16T13:12:36+00:00",
+    "hash": "66be73a4672305e4",
+    "lastAttemptHash": "66be73a4672305e4",
+    "generatedAt": "2026-09-17T16:16:39+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.8298,
+    "costUsd": 1.638,
     "files": [
       "packages/react/src/Slider.css",
-      "packages/react/src/Slider.stories.tsx",
-      "packages/react/src/Slider.test.tsx",
       "packages/react/src/Slider.tsx"
     ],
-    "gaps": 15,
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1005,20 +1006,20 @@
     }
   },
   "Stepper.web": {
-    "hash": "a669608cb32e63a4",
-    "lastAttemptHash": "a669608cb32e63a4",
-    "generatedAt": "2026-09-16T13:43:08+00:00",
+    "hash": "51ed11867cca62c1",
+    "lastAttemptHash": "51ed11867cca62c1",
+    "generatedAt": "2026-09-17T16:40:08+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.7787,
+    "costUsd": 1.673,
     "files": [
       "packages/react/src/Stepper.css",
       "packages/react/src/Stepper.stories.tsx",
       "packages/react/src/Stepper.test.tsx",
       "packages/react/src/Stepper.tsx"
     ],
-    "gaps": 11,
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,

@@ -27,3 +27,15 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Stepper: `stepHover` has state `hover` only, but its description says 'Hover and press'. I apply it on Pressable pressed or hovered (onHoverIn/onHoverOut).
 - Stepper: the behavior scenario says `click: indicator` without saying which step's indicator. The tests press the first indicator; since it is aria-hidden, the query needs `includeHiddenElements: true`, and the press bubbles up to the step's Pressable.
 - Stepper: `compact` is a boolean, and naming stories `<Prop><Value>` gives `CompactTrue`; I kept the existing name. The Keyboard story uses navigable all / current review so four steps can take focus, because the keyboard block gives no `given`.
+
+## 2026-09-17 12:44 — round 1
+
+- Stepper: composition gives the label/description/count Text `element: span`, but the RN Text has no `element` prop; omitted.
+- Stepper: platforms.rn makes the root View the list, yet `count` is 'one muted Text after the list'. On RN there is no outer nav to hold it, so the count sits inside the root list View after an inner layout View holding the steps; the spec does not say where it goes or what spaces it from the steps — chose a `gap` of `stepGap` (layout.gap.normal).
+- Stepper: 'A composed part receives exactly the listed props' drops Text `align`, so a wrapped label in a horizontal step is start-aligned inside a centred column; the spec does not say how a horizontal label aligns.
+- Stepper: the label's `weight` is not in the composed props, only forwarded fontWeight overrides; the Text default weight is regular, so the forwards are passed with their binding tokens as defaults ('font.weight.medium' / 'font.weight.semibold') rather than only when overridden.
+- Stepper: indicatorCompleteForeground/indicatorErrorForeground are 'passed as the Icon's color override', but the RN digest says pass the foreground to Icon's `color` prop; followed the spec (overrides.color with the token ref).
+- Stepper: stepPadding is 'block padding too when vertical', but connectors fill only `stepGap`, so a vertical connector does not span the padding above and below each step; the spec does not say whether the line reaches the neighbouring indicators.
+- Stepper: automatic compact measures the stepper's own width, but if a parent shrink-wraps the stepper (alignItems center) switching to compact narrows it further; the spec gives no hysteresis or width source for that case.
+- Stepper: stepper-level `fontFamily` has no root style on RN (View takes no fontFamily); it resolves for the indicator numeral and is forwarded as the ref to each Text only when overridden, relying on Text's own default otherwise.
+- Stepper: the dev warning's text for an unmatched `current` is not in copy; wrote a developer-only message.

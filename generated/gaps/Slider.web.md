@@ -38,3 +38,16 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Slider: PageUp/PageDown 'to the next mark' does not say what happens past the last mark. Chose: move to max/min.
 - Slider: the behavior scenarios' `then: event: onChange` gives no expected payload. Tests also assert the value (55, 45, 60, 0, 100, onChangeEnd 51), derived from the keyboard table.
 - Slider: nothing says which element takes the `id`/registration id for a range. Chose: the low thumb (the first tab stop).
+
+## 2026-09-17 12:16 — round 1
+
+- Slider: the `name` description says the form value types have no number, but the web FormContext's FormFieldValue includes number and [number, number] (its JSDoc even says 'Slider a number'). I followed the Slider doc and register String(value) or [String(low), String(high)] (string[]); FormContext's JSDoc is now wrong about Slider.
+- Slider: the tickMarks part must hold both the dots (on the track centre line) and the labels (below the track area, markLabelGap after trackPaddingBlock), and the slider grows only when a mark has a label. No layout is given. I made tickMarks an in-flow sibling after the track area: dots are absolutely positioned back up by trackPaddingBlock + trackHeight/2, and labels sit in a one-cell grid positioned by percentage. Pointer presses on the label line do not move a thumb.
+- Slider: the web platform notes don't say whether the errorMessage wrapper is role=alert. The Lit notes say it is. I added no role on web.
+- Slider: the description/error Text `element` for web is span per the composition; the previous file used p. I followed the composition.
+- Slider: `copy.pageUpAction`/`pageDownAction`/`homeAction`/`endAction` are RN-only accessibility action labels. The rule says to use every copy string, but web has no place for them. They sit unused in the COPY constant.
+- Slider: the `showValue: hover` bubble shows on 'pressed or focused'. The doc doesn't say whether focus means any focus or :focus-visible only. I show it on any focus of the thumb (including focus moved there by a pointer press).
+- Slider: errorText is overridable (not locked), yet its description says an override has no effect. It stays in SliderOverridableBinding and is ignored at runtime; the type offers a knob that does nothing.
+- Slider: the Form's focus-on-error and registration id is the low thumb for a range. The id is also where the generated id lands, so the high thumb carries no id. The doc doesn't say whether a user-supplied `id` prop belongs on the root or the thumb; I put it on the (low) thumb.
+- Slider: 'a controlled component shows the new state only once the prop changes', but during a drag or key-repeat the next step must diff against the value just emitted. I track the last emitted value internally until the next render resets it from the prop, so a parent that rejects a change still gets onChangeEnd with the rejected value.
+- Slider: the behavior scenarios don't cover a range (Tab between thumbs, no crossing, live aria-valuemin/max), snapToMarks, pointer drag or the form value. Only the 17 listed scenarios are tested.

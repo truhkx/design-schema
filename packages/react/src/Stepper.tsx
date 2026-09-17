@@ -1,7 +1,7 @@
 import { useId, type ComponentPropsWithoutRef, type CSSProperties, type Ref, type ReactElement } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Text, type TextOverridableBinding } from './Text';
-import { Icon } from './Icon';
+import { Icon, type IconOverridableBinding } from './Icon';
 import './Stepper.css';
 
 export type StepperStepStatus = 'complete' | 'current' | 'upcoming' | 'error';
@@ -23,13 +23,19 @@ const COPY = {
   complete: 'completed',
   current: 'current step',
   error: 'has an error',
+  // Native-only (React Native, SwiftUI): on web the <ol> gives the ordinal.
   stepLabel: 'Step {n}: {label}',
 } as const;
+
+/* Only declared when the bundler defines it; never assumed. */
+declare const process: { env: Record<string, string | undefined> } | undefined;
+const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
 
 /** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
 export type StepperOverridableBinding =
   | 'indicatorSize'
   | 'indicatorBackground'
+  | 'indicatorRadius'
   | 'indicatorFontSize'
   | 'indicatorFontWeight'
   | 'connector'
@@ -37,50 +43,68 @@ export type StepperOverridableBinding =
   | 'labelCurrentWeight'
   | 'labelSize'
   | 'descriptionSize'
+  | 'countSize'
   | 'stepHover'
   | 'stepRadius'
+  | 'stepPadding'
   | 'stepGap'
   | 'partGap'
   | 'fontFamily'
   | 'transition';
 
-/** Hooks owned by the root. Label and description typography is forwarded to the composed Text's `overrides`. */
+/** Hooks owned by the root. Label, description and count typography is forwarded to the composed Text's `overrides`. */
 const ROOT_OVERRIDE_HOOK: Partial<Record<StepperOverridableBinding, string>> = {
   indicatorSize: '--ds-stepper-indicator-size',
   indicatorBackground: '--ds-stepper-indicator-background',
+  indicatorRadius: '--ds-stepper-indicator-radius',
   indicatorFontSize: '--ds-stepper-indicator-font-size',
   indicatorFontWeight: '--ds-stepper-indicator-font-weight',
   connector: '--ds-stepper-connector',
   stepHover: '--ds-stepper-step-hover',
   stepRadius: '--ds-stepper-step-radius',
+  stepPadding: '--ds-stepper-step-padding',
   stepGap: '--ds-stepper-step-gap',
   partGap: '--ds-stepper-part-gap',
   fontFamily: '--ds-stepper-font-family', // literal-ok: CSS custom-property hook name, not a font stack
   transition: '--ds-stepper-transition',
 };
 
+/** Binding defaults the composed children need as tokens (Text's own weight scale has no default for these). */
+const DEFAULT_TOKEN = {
+  labelWeight: 'font.weight.medium',
+  labelCurrentWeight: 'font.weight.semibold',
+  indicatorFontSize: 'font.size.sm',
+  indicatorCompleteForeground: 'color.control.selectedForeground',
+  indicatorErrorForeground: 'color.status.danger.foreground',
+} as const satisfies Record<string, TokenRef>;
+
 type TextOverrides = Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
+type IconOverrides = Partial<Record<IconOverridableBinding, TokenRef | undefined>>;
 
 interface ResolvedOverrides {
   rootStyle: CSSProperties | undefined;
-  label: TextOverrides | undefined;
-  currentLabel: TextOverrides | undefined;
+  label: TextOverrides;
+  currentLabel: TextOverrides;
   description: TextOverrides | undefined;
+  count: TextOverrides | undefined;
+  indicatorFontSize: TokenRef;
 }
 
 function resolveOverrides(
   overrides: Partial<Record<StepperOverridableBinding, TokenRef | undefined>> | undefined,
 ): ResolvedOverrides {
-  if (!overrides) return { rootStyle: undefined, label: undefined, currentLabel: undefined, description: undefined };
   const rootStyle: Record<string, string> = {};
-  const label: TextOverrides = {};
-  const currentLabel: TextOverrides = {};
+  const label: TextOverrides = { fontWeight: DEFAULT_TOKEN.labelWeight };
+  const currentLabel: TextOverrides = { fontWeight: DEFAULT_TOKEN.labelCurrentWeight };
   const description: TextOverrides = {};
+  const count: TextOverrides = {};
+  let indicatorFontSize: TokenRef = DEFAULT_TOKEN.indicatorFontSize;
 
-  for (const binding of Object.keys(overrides) as StepperOverridableBinding[]) {
-    const ref = overrides[binding];
-    if (!ref) continue;
+  for (const binding of Object.keys(overrides ?? {}) as StepperOverridableBinding[]) {
+    const ref = overrides?.[binding];
+    // Locked bindings passed from JavaScript have no hook here and are ignored.
     const hook = ROOT_OVERRIDE_HOOK[binding];
+    if (!ref) continue;
     if (hook) rootStyle[hook] = cssVar(ref);
     switch (binding) {
       case 'labelSize':
@@ -96,27 +120,54 @@ function resolveOverrides(
       case 'descriptionSize':
         description.fontSize = ref;
         break;
+      case 'countSize':
+        count.fontSize = ref;
+        break;
+      case 'indicatorFontSize':
+        indicatorFontSize = ref;
+        break;
       case 'fontFamily':
         label.fontFamily = ref;
         currentLabel.fontFamily = ref;
         description.fontFamily = ref;
+        count.fontFamily = ref;
         break;
       default:
         break;
     }
   }
-  return { rootStyle: rootStyle as CSSProperties, label, currentLabel, description };
+  return {
+    rootStyle: Object.keys(rootStyle).length > 0 ? (rootStyle as CSSProperties) : undefined,
+    label,
+    currentLabel,
+    description: Object.keys(description).length > 0 ? description : undefined,
+    count: Object.keys(count).length > 0 ? count : undefined,
+    indicatorFontSize,
+  };
 }
 
 export interface StepperProps
   extends Omit<ComponentPropsWithoutRef<'nav'>, 'children' | 'aria-label' | 'className' | 'style'> {
   /** Accessible name of the navigation landmark. Defaults to `copy.navLabel`. */
   label?: string | undefined;
-  /** The steps in order. `status` is derived from `current` when omitted: before it complete, after it upcoming. */
+  /**
+   * The steps in order. `status` is derived from `current` when omitted: before it complete, the step it
+   * names current, after it upcoming. An explicit `status` sets only the indicator, its colours and the
+   * status word; position (not status) decides the selected state, navigability, the connector colour and
+   * the compact reveal.
+   */
   steps: { id: string; label: string; description?: string; status?: "complete" | "current" | "upcoming" | "error" }[];
-  /** The id of the current step. */
+  /**
+   * The id of the current step. The step whose id matches is the selected one (`aria-current="step"`) and
+   * the one compact reveals, whatever its `status`. When no id matches, nothing is selected, every step
+   * without an explicit status is upcoming, no step is navigable under `completed` (all still are under
+   * `all`), the count reads "Step 1 of m", and development builds log a warning.
+   */
   current: string;
-  /** Vertical shows descriptions under each label and suits a side column; horizontal collapses to `compact` below the prose width. */
+  /**
+   * Vertical shows descriptions under each label and suits a side column; horizontal does not render
+   * descriptions at all (not clipped, and no aria-describedby) and collapses to `compact` below the prose width.
+   */
   orientation?: StepperOrientation | undefined;
   /**
    * Which steps can be activated: none (display only), completed steps (the usual — you can go back,
@@ -126,10 +177,14 @@ export interface StepperProps
   navigable?: StepperNavigable | undefined;
   /**
    * Show only the current step's label and "Step 2 of 5"; the indicators stay. Horizontal only, set by
-   * hand or automatically below the prose width — a vertical stepper has the room, so the prop does nothing there.
+   * hand or automatically below the prose width — a vertical stepper has the room, so the prop does nothing
+   * there. The other steps' labels, with their status words, are visually clipped, not removed.
    */
   compact?: boolean | undefined;
-  /** Per-instance style overrides: each entry sets the matching CSS hook, or the composed Text's own override, to that token. */
+  /**
+   * Per-instance style overrides: each entry sets the matching `--ds-stepper-*` hook, or the composed
+   * Text's or Icon's own override, to that token. Consumers may also set the hooks from their own CSS.
+   */
   overrides?: Partial<Record<StepperOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when a navigable step is chosen, with its id. The container changes `current`; the stepper never changes it itself. */
   onStepSelect?: ((id: string) => void) | undefined;
@@ -152,11 +207,7 @@ const STATUS_WORD: Record<StepperStepStatus, string | undefined> = {
  * Stepper — Design Schema, category: navigation.
  *
  * When to use:
- * Use a Stepper for a flow with three to about seven ordered steps that each fit on a screen: checkout,
- * account setup, a report builder, a multi-part application. Vertical with descriptions for flows that
- * need explanation ("Verify your identity — takes about 2 minutes"); horizontal for short, familiar ones.
- * Leave `navigable: completed` so people can correct earlier answers without losing later ones (the
- * container keeps the later steps' state).
+ * Use a Stepper for a flow with three to about seven ordered steps that each fit on a screen: checkout, account setup, a report builder, a multi-part application. Vertical with descriptions for flows that need explanation ("Verify your identity — takes about 2 minutes"); horizontal for short, familiar ones. Leave `navigable: completed` so people can correct earlier answers without losing later ones (the container keeps the later steps' state).
  */
 export function Stepper({
   ref,
@@ -173,6 +224,10 @@ export function Stepper({
   const baseId = useId();
   const currentIndex = steps.findIndex((step) => step.id === current);
   const resolved = resolveOverrides(overrides);
+
+  if (isDev && currentIndex === -1) {
+    console.warn(`Stepper: current "${current}" matches no step id — nothing is selected.`);
+  }
 
   const classes = [
     'ds-stepper',
@@ -198,21 +253,25 @@ export function Stepper({
       <ol className="ds-stepper__list" data-part="list">
         {steps.map((step, index) => {
           const status = resolveStatus(step, index, currentIndex);
-          // Selection and the compact reveal follow the id; the indicator and status word follow the status.
-          const isCurrent = step.id === current;
-          const isNavigable =
-            navigable === 'all' || (navigable === 'completed' && currentIndex !== -1 && index < currentIndex);
-          const statusWord = isCurrent && status !== 'error' ? COPY.current : STATUS_WORD[status];
-          const descriptionId = step.description && orientation === 'vertical' ? `${baseId}-d${index}` : undefined;
+          // Selection, navigability, connector and the compact reveal follow position; the indicator,
+          // its colours and the status word follow the status.
+          const isCurrent = index === currentIndex;
+          const isBefore = currentIndex !== -1 && index < currentIndex;
+          const isNavigable = navigable === 'all' || (navigable === 'completed' && isBefore);
+          const statusWord = STATUS_WORD[status];
+          const hasDescription = orientation === 'vertical' && step.description !== undefined && step.description !== '';
+          const descriptionId = hasDescription ? `${baseId}-d${index}` : undefined;
           const isLast = index === steps.length - 1;
+
+          const iconOverrides = (color: TokenRef): IconOverrides => ({ size: resolved.indicatorFontSize, color });
 
           const content = (
             <>
               <span className="ds-stepper__indicator" data-part="indicator" aria-hidden="true">
                 {status === 'complete' ? (
-                  <Icon name="check" inline />
+                  <Icon name="check" size="sm" overrides={iconOverrides(DEFAULT_TOKEN.indicatorCompleteForeground)} />
                 ) : status === 'error' ? (
-                  <Icon name="danger" inline />
+                  <Icon name="danger" size="sm" overrides={iconOverrides(DEFAULT_TOKEN.indicatorErrorForeground)} />
                 ) : (
                   index + 1
                 )}
@@ -220,29 +279,26 @@ export function Stepper({
               <span className="ds-stepper__content">
                 <Text
                   element="span"
-                  data-part="label"
-                  className="ds-stepper__label"
                   size="sm"
-                  weight={isCurrent ? 'semibold' : 'medium'}
-                  tone={status === 'upcoming' && !isCurrent ? 'muted' : 'default'}
+                  tone={status === 'upcoming' ? 'muted' : 'default'}
+                  data-part="label"
                   overrides={isCurrent ? resolved.currentLabel : resolved.label}
                 >
                   {step.label}
                 </Text>
-                {descriptionId ? (
+                {hasDescription ? (
                   <Text
                     element="span"
-                    id={descriptionId}
-                    data-part="description"
-                    className="ds-stepper__description"
                     size="xs"
                     tone="muted"
+                    id={descriptionId}
+                    data-part="description"
                     overrides={resolved.description}
                   >
                     {step.description}
                   </Text>
                 ) : null}
-                {statusWord ? <span className="ds-stepper__visually-hidden">{statusWord}</span> : null}
+                {statusWord ? <span className="ds-stepper__visually-hidden">{`, ${statusWord}`}</span> : null}
               </span>
             </>
           );
@@ -276,9 +332,7 @@ export function Stepper({
               )}
               {isLast ? null : (
                 <span
-                  className={`ds-stepper__connector${
-                    currentIndex !== -1 && index < currentIndex ? ' ds-stepper__connector--complete' : ''
-                  }`}
+                  className={`ds-stepper__connector${isBefore ? ' ds-stepper__connector--complete' : ''}`}
                   data-part="connector"
                   aria-hidden="true"
                 />
@@ -287,7 +341,7 @@ export function Stepper({
           );
         })}
       </ol>
-      <Text element="span" className="ds-stepper__count" size="sm" tone="muted">
+      <Text element="span" size="sm" tone="muted" className="ds-stepper__count" data-part="count" overrides={resolved.count}>
         {stepOf}
       </Text>
     </nav>

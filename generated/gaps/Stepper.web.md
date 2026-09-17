@@ -31,3 +31,16 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Stepper: `compact` is described as horizontal-only, but the doc doesn't place the 'Step n of m' text. I render it once after the <ol> as muted sm Text, hidden unless compact or the container is under layout.maxWidth.prose (572px, hard-coded with literal-ok). The compact-shows-the-step-count scenario only checks text, so jsdom can't verify the container query.
 - Stepper: when `current` matches no step id, nothing is current or navigable under `completed` and the count reads 'Step 1 of n'. The doc doesn't cover this case.
 - Stepper: the Keyboard contract excludes the Tab rule, which is covered natively because non-navigable steps render as <div>. The Keyboard story uses navigable: all for four focusable steps; no `given` URL args were needed.
+
+## 2026-09-17 12:40 — round 1
+
+- Stepper: composition lists only `element`/`size` for the label Text, yet labelColor/labelUpcomingColor say they are 'realised by the label Text's tone' — passed `tone` anyway; and labelWeight/labelCurrentWeight defaults (medium/semibold) have no listed Text prop, so the default tokens are always sent through `overrides.fontWeight` rather than Text's `weight` prop.
+- Stepper: labelUpcomingColor says 'on an upcoming step' without saying whether that is by status or by position; chose resolved status (an explicit `status: upcoming` on the id-matched step is muted, an explicit `current` after it is not).
+- Stepper: indicatorCurrentBorder does not say whether it follows the id match or the status; chose status `current` (per 'explicit status sets only the indicator, its colours'), so an error on the current step shows the error ring.
+- Stepper: indicatorErrorForeground is not described as the danger Icon's color override the way indicatorCompleteForeground is for the check; passed it as the Icon's `color` override for symmetry.
+- Stepper: the forwarded icon size override is fixed to the indicatorFontSize token, but the doc does not say what happens to the Icon's `color` override when a consumer overrides nothing — it is always sent (locked token).
+- Stepper: web notes put the description Text inside the native <button>, so it becomes part of the accessible name, while the prop doc and Lit notes also ask for aria-describedby in vertical; kept both (description inside the control plus aria-describedby), which duplicates the description in some screen readers — the doc should say whether the description sits outside the control.
+- Stepper: `label ?? copy.navLabel` in the notes would emit an empty aria-label for `label=""`, violating accessible-name; used `label || copy.navLabel`.
+- Stepper: count Text needs `display: none` outside compact but composition allows no extra props; used Text's sanctioned layout-only `className` (ds-stepper__count).
+- Stepper: the doc does not say where the visually-hidden ', status' span sits relative to the label/description; placed it after them inside the control's content, so in compact it is clipped along with the label.
+- Stepper: stepGap says 'the connector fills it' but gives no minimum connector length rule; horizontal connectors flex with min-inline-size stepGap, vertical ones min-block-size stepGap, aligned under the indicator centre via calc(stepPadding + (indicatorSize − connectorWidth)/2).

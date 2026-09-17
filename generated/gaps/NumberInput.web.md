@@ -44,3 +44,13 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - NumberInput: a controlled `value` is described as '`null`/undefined means empty' but the prop is `type: number`; typed `number | null | undefined`.
 - NumberInput: the stepperGap/stepperDivider bindings say the steppers sit 'separated from the input by a hairline' but give no width; the divider uses the borderWidth hook.
 - NumberInput: there's no binding for how paddingInline relates to the steppers; the field's inline-start padding uses it, and the inline-end padding applies only when the steppers are hidden, so the Buttons sit flush at the end.
+
+## 2026-09-17 12:26 — round 1
+
+- NumberInput: the Keyboard-story rule asks for at least three focusable children, but NumberInput has exactly one tab stop (the steppers are tabindex=-1 inside aria-hidden by spec). Kept a single-field Keyboard story with bounds set so Home/End work.
+- NumberInput: disabledOpacity applies to the description part, which is a composed Text. Dimming it means a class rule on the child (.ds-number-input__description), which conflicts with 'never restyle a child'. The spec does not say whether to wrap it or forward the opacity; chose the class selector, matching the margin reset the file already had.
+- NumberInput: disabledOpacity lists label, description, input and affixes but not errorMessage or the field's border and background. Left those undimmed.
+- NumberInput: the out-of-range copy is said to render outside a Form, but the spec never says whether copy.required or copy.invalid (text with no digits, or `invalid` without `error`) render in the errorMessage part outside a Form. Chose to render only `error`, a Form error, or the range message; the invalid state still sets aria-invalid.
+- NumberInput: helperSize, fontFamily and lineHeight on description and error are forwarded to Text's fontSize/fontFamily/lineHeight overrides. The schema gives no forward mapping for them (no errorMessage entry in composition), so the child binding names are inferred.
+- NumberInput: in controlled mode, when Enter or a step fires inside a Form with validate: change, the Form sees the old prop value until the parent re-renders. The spec does not say whether validation should see the pending value; chose the prop.
+- NumberInput: the focus ring is drawn by swapping the field's border width to border.width.focus and shrinking padding-inline-start (as Input does). padding-block is not compensated, so the field can grow by the width difference on focus; the spec's 'focus ring on the field part' does not choose between border and outline.

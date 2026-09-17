@@ -83,6 +83,8 @@ describe('ds-search', () => {
     await userEvent.click(s.part('clearButton'));
     await s.el.updateComplete;
     expect(s.clear).toHaveBeenCalledTimes(1);
+    expect(s.change.mock.calls.at(-1)?.[0].detail).toEqual({ value: '' });
+    expect(s.change.mock.invocationCallOrder.at(-1)!).toBeLessThan(s.clear.mock.invocationCallOrder[0]!);
     expect(s.input()).toHaveValue('');
   });
 

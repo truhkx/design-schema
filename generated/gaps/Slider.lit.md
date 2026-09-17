@@ -35,3 +35,14 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Slider: 'disabled sliders are readable and focusable but inert' is not stated for a slider disabled by a form or fieldset (formDisabledCallback); treated both the same and submit no value while disabled.
 - Slider: whether change-end fires when a key or drag leaves the value unchanged (at a bound) is not stated; it fires once per interaction regardless.
 - Slider: the Keyboard story's Tab rule targets a range, but the doc gives no range args for it; used the price-range example's args (range, defaultValue [20, 80]).
+
+## 2026-09-17 12:20 — round 1
+
+- Slider: the error region should show 'the message a Form (or validate) has reported', but Lit ds-form keeps errors in its own summary and never sets a field's error or calls reportValidity(); chose to show the message from the field's own last reportValidity(), so a Form-reported copy.required never reaches the Slider's error region on Lit.
+- Slider: Behavior says validate: blur validates when an interaction ends (pointer release, key-up), but ds-form only validates on focusout (or on every `change` for data-ds-field="change"); there is no change-end hook in the form contract. Kept data-ds-field="" (focusout validation).
+- Slider: errorText is listed as overridable yet described as 'an override of it has no effect'; kept the --ds-slider-error-text hook and type entry but it styles nothing. Either lock it or say how it reaches the danger Text.
+- Slider: the error setter also sets invalid = Boolean(error) (the package's field convention and the error-is-identified test), so clearing `error` clears an `invalid` the consumer set separately; the doc does not say whether error and invalid are independent.
+- Slider: the doc does not say whether the bubble (showValue: hover) is removed or only hidden when inactive; to let the `transition` binding animate its appearance it stays rendered (aria-hidden) at opacity 0 and fades in while the thumb is pressed or focused.
+- Slider: markLabelGap measures from 'the bottom of the track area', but the dots must sit on the track centre line inside the same tickMarks part; chose a tickMarks block after the track area with the dots positioned back up by trackPaddingBlock + trackHeight/2 and the labels in flow below, padded by markLabelGap (matching web).
+- Slider: a controlled slider whose owner never updates `value` re-emits `change` with the same target on every pointermove and key repeat, because changes are compared against the displayed value; the doc's 'only when the value actually changed' is ambiguous for controlled mode.
+- Slider: `currentValue` is null while disabled so Form submits nothing ('no value is submitted'); the doc does not say whether currentValue itself or only submission should be empty.

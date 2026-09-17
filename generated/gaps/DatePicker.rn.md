@@ -32,3 +32,15 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - DatePicker: the 'unparseable' check is ambiguous for a range where one input holds text and the other is empty; any non-empty input that doesn't parse reports copy.invalid, and a partial but valid range with `required` reports copy.required.
 - DatePicker: the year Select's span (min/max years, else current −100/+10) can exclude the displayed year after the prev/next buttons or a typed date; the span is widened to include the viewed year so the controlled Select always has a matching option.
 - DatePicker (package digest): the conventions list `toLineHeight(t.fontLineHeightNormal, t.fontSizeMd)` but theme.tsx's signature is `toLineHeight(fontSize, multiplier)`; followed the code.
+
+## 2026-09-17 13:08 — round 1
+
+- DatePicker: rn notes say `calendarSurface` is forwarded to BottomSheet's `surface` override, but the binding is locked, its description says it is not forwarded, and BottomSheet locks `surface` (it is not in BottomSheetOverridableBinding); only `calendarInset` → `overrides.inset` is forwarded.
+- DatePicker: rn notes say the sheet's `title` is `label`, but BottomSheet's prop is `heading`; used `heading={label}`.
+- DatePicker: rn notes say week-number cells are Text with accessibilityLabel "{copy.weekNumber} {n}", but the package Text accepts no accessibilityLabel; the label sits on the wrapping `accessible` View (testID DatePicker.weekNumber).
+- DatePicker: the week-number header cell has no rn rule (web uses visually hidden copy.weekNumber); rendered the visible muted "Week" text at weekdaySize.
+- DatePicker: `dayTodayBorder` and `daySelectedBackground` are the same token, so the today ring the doc keeps on a selected today is invisible against the selected fill; implemented as written.
+- DatePicker: `fontSize` says it styles 'the field text and the label', but its token is font.size.{size} with no per-size rule for the label; the label now takes Text size={size} plus the fontSize override.
+- DatePicker: 'Clear leaves the calendar open with focus on Clear' and 'reopening focuses the start date's cell (the end's when opened from the end input)' can't be done on rn (Button exposes no node handle, and focus on open lands on the sheet's first focusable); only the displayed month follows start/end.
+- DatePicker: the ISO week number is computed with UTC Date arithmetic rather than the locale's calendar (SwiftUI uses Calendar.current), so rows in locales whose week starts on Sunday show the ISO week of that Sunday, per 'the row's first visible day'.
+- DatePicker: `hideLabel` asks for the visually-hidden clip pattern; RN has none, so the label Text isn't rendered and the input's accessibilityLabel still carries the name.

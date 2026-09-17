@@ -47,3 +47,16 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - DatePicker: the web notes and Guidance give no Form value shape for web ('valueType: date-range', and 'Form registration as Input, returning the ISO string or { start, end }' is written for RN). FormFieldValue cannot hold an object, so a range registers two string fields, name and name-end. Disabled fields submit nothing.
 - DatePicker: a controlled `open` that the parent flips to true without a user action does not re-aim the calendar at the value (the month is chosen only on a user open or at mount). Focus still moves to the roving day.
 - DatePicker: the 'focus on a day' keyboard rules are all 'expect: manual', so no test covers Arrow, Page, Home, End or Tab cycling. Keys held with Alt, Ctrl or Meta in the grid are ignored.
+
+## 2026-09-17 12:58 — round 1
+
+- DatePicker: the web guidance says the footer is a `Stack` with Today and Clear, but the `footerGap` binding styles the footer part itself and no forward to Stack's `gap` is declared; I dropped the Stack and gave the footer div `gap: var(--ds-date-picker-footer-gap)`.
+- DatePicker: `open` says every change to it aims the calendar at 'the value's month', but guidance also says 'typing a complete valid date moves the calendar to it'. A range with only one end typed has no value, so which month opens is undefined; I use the committed value (the end when ArrowDown comes from the end input), else today, and ignore uncommitted typed text.
+- DatePicker: 'reopening focuses the end's cell when opened from the end input' is only defined for ArrowDown; I track only ArrowDown in the end input, so clicking the calendar button after focusing the end input opens on the start.
+- DatePicker: the Arrow keys 'stay put when none is left before min/max', but with no min/max and an `isDateDisabled` that disables every day there is no stopping rule; I stop searching after 3660 days (about ten years) and stay put.
+- DatePicker: `dayTodayBorder` and `daySelectedBackground` are the same token (`color.control.selectedBackground`), so on a selected today the ring the doc says 'stays' can't be seen against the fill; I kept the ring and noted that it has no visible effect.
+- DatePicker: `weekNumberSize` says 'at the regular weight', but there is no binding for that weight; I used `var(--font-weight-regular)` directly (not overridable).
+- DatePicker: the `transition` binding lists `border-color`, but no day state changes a border (today is an inset ring); I added `border-color` to the transition list anyway, where it has no effect.
+- DatePicker: the Escape keyboard rule expects 'closes, then focus-trigger', which a story with a fixed `open: true` can never show; I made the Keyboard story keep `open` in state and follow onOpenChange (as Select and Combobox do). The doc doesn't say a controlled-open Keyboard story needs this.
+- DatePicker: `value: ''` is 'a controlled empty field', but the doc doesn't say what `{ start: '', end: '' }` means; I treat an empty start or end as missing.
+- DatePicker: the doc doesn't say whether picking the day that's already selected, or Clear on a controlled field, should rewrite text the user typed and left unparsed; I rewrite the inputs from the (unchanged) value in that case, and otherwise wait for the controlled prop to change.

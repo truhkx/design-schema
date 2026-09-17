@@ -16,9 +16,11 @@
   --ds-search-font-size: var(--font-size-md);
   --ds-search-line-height: var(--font-line-height-normal);
   --ds-search-part-gap: var(--space-1);
+  --ds-search-label-weight: var(--font-weight-medium);
   --ds-search-min-target: var(--size-target-comfortable);
   --ds-search-focus-ring-width: var(--border-width-focus);
   --ds-search-disabled-opacity: var(--opacity-disabled);
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--ds-search-part-gap);
@@ -35,6 +37,11 @@
 .ds-search--lg {
   --ds-search-padding-block: var(--space-md);
   --ds-search-font-size: var(--font-size-lg);
+}
+
+/* The whole component dims once. */
+.ds-search--disabled {
+  opacity: var(--ds-search-disabled-opacity);
 }
 
 .ds-search__label {
@@ -71,20 +78,25 @@
   transition: border-color var(--motion-duration-fast) var(--motion-easing-standard);
 }
 
-/* The input is the focus target; the pill carries its ring so the outline follows the radius. */
+/*
+ * The field border is the focus ring while the input itself has focus: focusRingWidth replaces
+ * borderWidth and the padding shrinks by the difference so the content does not shift. A focused
+ * clear or submit Button shows only its own ring.
+ */
 .ds-search__field:has(.ds-search__input:focus-visible) {
   border-color: var(--ds-search-border-focus);
-  outline: var(--ds-search-focus-ring-width) solid var(--ds-search-border-focus);
-}
-
-.ds-search--disabled .ds-search__field {
-  opacity: var(--ds-search-disabled-opacity);
+  border-width: var(--ds-search-focus-ring-width);
+  padding-inline: calc(
+    var(--ds-search-padding-inline) - (var(--ds-search-focus-ring-width) - var(--ds-search-border-width))
+  );
+  padding-block: calc(
+    var(--ds-search-padding-block) - (var(--ds-search-focus-ring-width) - var(--ds-search-border-width))
+  );
 }
 
 .ds-search__icon {
   flex: 0 0 auto;
   display: inline-flex;
-  color: var(--ds-search-icon-color);
 }
 
 .ds-search__input {
@@ -102,7 +114,7 @@
   appearance: none;
 }
 
-/* Replaced by the field's ring above. */
+/* Replaced by the field border above (borderFocus + focusRingWidth); the input draws no outline of its own. */
 .ds-search__input:focus-visible {
   outline: none;
 }
@@ -130,14 +142,16 @@
   --ds-search-suggestions-offset: var(--space-1);
   --ds-search-popup-surface: var(--color-overlay-surface);
   --ds-search-popup-border: var(--color-border);
+  --ds-search-popup-border-width: var(--border-width-thin);
   --ds-search-popup-radius: var(--radius-md);
   --ds-search-popup-shadow: var(--shadow-overlay);
+  --ds-search-layer: var(--layer-dropdown);
   box-sizing: border-box;
   position: fixed;
-  z-index: var(--layer-dropdown);
+  z-index: var(--ds-search-layer);
   overflow: auto;
   background-color: var(--ds-search-popup-surface);
-  border: var(--border-width-thin) solid var(--ds-search-popup-border);
+  border: var(--ds-search-popup-border-width) solid var(--ds-search-popup-border);
   border-radius: var(--ds-search-popup-radius);
   box-shadow: var(--ds-search-popup-shadow);
 }

@@ -9,7 +9,7 @@ interface SliderArgs {
   name: string;
   min: number;
   max: number;
-  step?: number | undefined;
+  step: number;
   snapToMarks: boolean;
   required: boolean;
   invalid: boolean;
@@ -42,7 +42,7 @@ const meta: Meta<SliderArgs> = {
     name: 'volume',
     min: 0,
     max: 100,
-    step: undefined,
+    step: 1,
     snapToMarks: false,
     required: false,
     invalid: false,
@@ -62,7 +62,7 @@ const meta: Meta<SliderArgs> = {
         name=${args.name}
         min=${args.min}
         max=${args.max}
-        step=${ifDefined(args.step)}
+        step=${args.step}
         ?snap-to-marks=${args.snapToMarks}
         ?required=${args.required}
         ?invalid=${args.invalid}
@@ -121,6 +121,12 @@ export const Disabled: Story = { args: { disabled: true, defaultValue: 50 } };
 export const Required: Story = { args: { required: true } };
 export const Invalid: Story = { args: { invalid: true } };
 export const ErrorState: Story = { args: { error: 'Fix this before continuing.', defaultValue: 10 } };
+export const WithMarks: Story = {
+  args: {
+    defaultValue: 50,
+    marks: [{ value: 0, label: 'Min' }, { value: 25 }, { value: 50, label: 'Half' }, { value: 75 }, { value: 100, label: 'Max' }],
+  },
+};
 
 /** The range form: two thumbs, each its own tab stop, are the whole keyboard model. */
 export const Keyboard: Story = {

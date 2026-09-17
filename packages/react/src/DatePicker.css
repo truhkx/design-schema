@@ -18,6 +18,9 @@
   --ds-date-picker-calendar-surface: var(--color-overlay-surface);
   --ds-date-picker-calendar-inset: var(--layout-inset-md);
   --ds-date-picker-calendar-gap: var(--layout-gap-normal);
+  --ds-date-picker-header-gap: var(--layout-gap-tight);
+  --ds-date-picker-footer-gap: var(--layout-gap-tight);
+  --ds-date-picker-week-number-size: var(--font-size-xs);
   --ds-date-picker-day-size: var(--size-target-comfortable);
   --ds-date-picker-day-gap: var(--space-0);
   --ds-date-picker-day-radius: var(--radius-md);
@@ -154,7 +157,7 @@
 .ds-date-picker__header {
   display: flex;
   align-items: center;
-  gap: var(--ds-date-picker-field-gap);
+  gap: var(--ds-date-picker-header-gap);
 }
 
 .ds-date-picker__select {
@@ -175,6 +178,12 @@
   font-size: var(--ds-date-picker-weekday-size);
   font-weight: var(--ds-date-picker-weekday-weight);
   text-align: center;
+}
+
+/* Week numbers: weekdayColor at the regular weight. */
+.ds-date-picker__week-number {
+  font-size: var(--ds-date-picker-week-number-size);
+  font-weight: var(--font-weight-regular);
 }
 
 .ds-date-picker__grid td {
@@ -200,6 +209,7 @@
   cursor: pointer;
   transition:
     background-color var(--ds-date-picker-transition) var(--motion-easing-standard),
+    border-color var(--ds-date-picker-transition) var(--motion-easing-standard),
     color var(--ds-date-picker-transition) var(--motion-easing-standard);
 }
 
@@ -239,8 +249,14 @@
   cursor: not-allowed;
 }
 
+/* While a day has focus, the focus ring replaces the today ring. */
+.ds-date-picker__day--today:focus-visible {
+  box-shadow: none;
+}
+
 .ds-date-picker__footer {
   display: flex;
+  gap: var(--ds-date-picker-footer-gap);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -51,7 +51,7 @@ export const WithDescription: Story = { args: { description: 'Up to 99 per order
 export const HideSteppers: Story = { args: { hideSteppers: true, defaultValue: 5 } };
 export const WithAffixes: Story = { args: { label: 'Amount', name: 'amount', leadingText: '$', trailingText: 'kg', defaultValue: 2 } };
 
-/** The input and both steppers: ArrowUp/Down and PageUp/Down on a hardware keyboard, Enter commits. */
+/** The input and both steppers: ArrowUp/Down, PageUp/Down and Home/End (to the bounds) on a hardware keyboard, Enter commits. */
 export const Keyboard: Story = {
   args: { min: 0, max: 99, defaultValue: 5 },
   render: (args) => (

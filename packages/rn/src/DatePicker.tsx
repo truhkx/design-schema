@@ -26,13 +26,17 @@ export type DatePickerOverridableBinding =
   | 'radius'
   | 'paddingInline'
   | 'paddingBlock'
+  | 'fontSize'
   | 'calendarInset'
   | 'calendarGap'
+  | 'headerGap'
+  | 'footerGap'
   | 'dayGap'
   | 'dayRadius'
   | 'dayHover'
   | 'weekdaySize'
   | 'weekdayWeight'
+  | 'weekNumberSize'
   | 'monthTitleSize'
   | 'monthTitleWeight'
   | 'partGap'
@@ -111,7 +115,7 @@ const COPY = {
   invalid: (label: string, pattern: string): string => `${label} must be a valid date (${pattern}).`,
   tooEarly: (label: string, min: string): string => `${label} must be on or after ${min}.`,
   tooLate: (label: string, max: string): string => `${label} must be on or before ${max}.`,
-  rangeOrder: 'End date must be after the start date.',
+  rangeOrder: 'End date must be on or after the start date.',
   requiredIndicator: ' (required)',
 } as const;
 
@@ -269,7 +273,10 @@ interface DayCell {
 interface DayButtonProps {
   cell: DayCell;
   label: string;
+  /** Announced as selected: the day, or in a range every day from start to end. */
   selected: boolean;
+  /** Carries the selected fill: the day, or in a range only its two ends. */
+  rangeEnd: boolean;
   inRange: boolean;
   today: boolean;
   disabled: boolean;
@@ -291,6 +298,7 @@ function DayButton({
   cell,
   label,
   selected,
+  rangeEnd,
   inRange,
   today,
   disabled,
@@ -307,7 +315,7 @@ function DayButton({
   const [hovered, setHovered] = React.useState(false);
   const [focused, setFocused] = React.useState(false);
 
-  const fill = selected
+  const fill = rangeEnd
     ? t.colorControlSelectedBackground
     : inRange
       ? t.colorBackgroundStrong
@@ -340,7 +348,8 @@ function DayButton({
   const backgroundColor = progress.interpolate({ inputRange: [0, 1], outputRange: [colors.from, colors.to] });
 
   const slop = Math.max(0, Math.ceil((t.sizeTargetMin - size) / 2));
-  const ringWidth = focused ? t.borderWidthFocus : today && !selected ? t.borderWidthFocus : 0;
+  // The today ring stays on a selected or in-range today; focus replaces it.
+  const ringWidth = focused || today ? t.borderWidthFocus : 0;
   const ringColor = focused ? t.colorBorderFocus : t.colorControlSelectedBackground;
 
   const surfaceStyle: Animated.WithAnimatedValue<ViewStyle> = {
@@ -355,7 +364,7 @@ function DayButton({
     opacity: disabled ? disabledOpacity : 1,
   };
 
-  const foreground = selected ? t.colorControlSelectedForeground : cell.outsideMonth ? t.colorForegroundMuted : undefined;
+  const foreground = rangeEnd ? t.colorControlSelectedForeground : cell.outsideMonth ? t.colorForegroundMuted : undefined;
 
   return (
     <Pressable
@@ -481,8 +490,10 @@ export function DatePicker({
   const isOpen = isOpenControlled ? openProp : internalOpen;
   const [pendingStart, setPendingStart] = React.useState<string | undefined>(undefined);
 
+  // Reopening a range aims at the start date, or the end's when opened from the end input.
+  const openedFromEndRef = React.useRef(false);
   const anchorDate = (): { y: number; m: number } => {
-    const anchorIso = range ? currentStart : currentSingle;
+    const anchorIso = range ? (openedFromEndRef.current ? (currentEnd ?? currentStart) : currentStart) : currentSingle;
     const parsed = anchorIso !== undefined ? parseISO(anchorIso) : null;
     return parsed ?? parseISO(todayISO())!;
   };
@@ -531,16 +542,20 @@ export function DatePicker({
       if (error !== undefined && error !== '') {
         return error;
       }
-      const typedSomething = texts.some((text) => text !== '');
-      if (required && candidate === undefined && !typedSomething) {
-        return COPY.required(label);
+      // `required` only when every input is empty.
+      if (texts.every((text) => text === '')) {
+        return required ? COPY.required(label) : null;
       }
-      // Text that does not parse to a real date (or a half-typed range end).
+      // Any non-empty input that does not parse to a real date.
       if (texts.some((text) => text !== '' && parseTyped(text, locale) === null)) {
         return COPY.invalid(label, patternPlaceholder);
       }
-      if (candidate === undefined) {
+      // A range with one end empty: `required` reports it; otherwise a partial range reports nothing.
+      if (texts.some((text) => text === '')) {
         return required ? COPY.required(label) : null;
+      }
+      if (candidate === undefined) {
+        return null;
       }
       const isos = typeof candidate === 'string' ? [candidate] : [candidate.start, candidate.end];
       if (min !== undefined && isos.some((iso) => iso < min)) {
@@ -707,8 +722,9 @@ export function DatePicker({
 
   // ArrowDown only arrives from a hardware keyboard or react-native-web; the event
   // carries no modifier flags, so Alt+ArrowDown opens the calendar the same way.
-  const handleInputKeyPress = (event: TextInputKeyPressEvent): void => {
+  const handleInputKeyPress = (event: TextInputKeyPressEvent, fromEnd = false): void => {
     if (event.nativeEvent.key === 'ArrowDown') {
+      openedFromEndRef.current = fromEnd;
       changeOpen(true);
     }
   };
@@ -823,10 +839,13 @@ export function DatePicker({
   const todayIso = todayISO();
   const displayStart = range ? (pendingStart ?? currentStart) : undefined;
   const displayEnd = range ? (pendingStart !== undefined ? undefined : currentEnd) : undefined;
+  const todayDisabled = isDisabled || isDayDisabled(todayIso);
 
-  const isSelected = (iso: string): boolean => (range ? iso === displayStart || iso === displayEnd : iso === currentSingle);
+  // Only the ends carry the selected fill; in a range every day from start to end is selected.
+  const isRangeEnd = (iso: string): boolean => (range ? iso === displayStart || iso === displayEnd : iso === currentSingle);
   const isInRange = (iso: string): boolean =>
     range && displayStart !== undefined && displayEnd !== undefined ? iso > displayStart && iso < displayEnd : false;
+  const isSelected = (iso: string): boolean => isRangeEnd(iso) || isInRange(iso);
 
   const dayAccessibilityLabel = (iso: string): string => {
     const bits = [formatFull(iso, locale)];
@@ -859,7 +878,9 @@ export function DatePicker({
   const partGap = overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.space1;
   const fieldGap = overrides?.fieldGap ? (resolveToken(t, overrides.fieldGap) as number) : t.space2;
   const fontFamily = overrides?.fontFamily ? (resolveToken(t, overrides.fontFamily) as string) : t.fontFamilyBody;
-  const fontSize = t[FONT_SIZE_TOKEN[size]];
+  const fontSize = overrides?.fontSize ? (resolveToken(t, overrides.fontSize) as number) : t[FONT_SIZE_TOKEN[size]];
+  const headerGap = overrides?.headerGap ? (resolveToken(t, overrides.headerGap) as number) : t.layoutGapTight;
+  const footerGap = overrides?.footerGap ? (resolveToken(t, overrides.footerGap) as number) : t.layoutGapTight;
   const lineHeightMultiplier = overrides?.lineHeight ? (resolveToken(t, overrides.lineHeight) as number) : t.fontLineHeightNormal;
   const disabledOpacity = overrides?.disabledOpacity ? (resolveToken(t, overrides.disabledOpacity) as number) : t.opacityDisabled;
   const calendarInset: TokenRef = overrides?.calendarInset ?? 'layout.inset.md';
@@ -900,10 +921,16 @@ export function DatePicker({
   };
 
   const helperOverrides = { fontFamily: overrides?.fontFamily, fontSize: overrides?.helperSize, lineHeight: overrides?.lineHeight };
-  const labelOverrides = { fontFamily: overrides?.fontFamily, fontWeight: overrides?.labelWeight, lineHeight: overrides?.lineHeight };
+  const labelOverrides = {
+    fontFamily: overrides?.fontFamily,
+    fontSize: overrides?.fontSize,
+    fontWeight: overrides?.labelWeight,
+    lineHeight: overrides?.lineHeight,
+  };
   const weekdayOverrides = { fontSize: overrides?.weekdaySize, fontWeight: overrides?.weekdayWeight };
 
-  const headerRowStyle: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space1 };
+  const headerRowStyle: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: headerGap };
+  const footerRowStyle: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: footerGap };
   const rowStyle: ViewStyle = { flexDirection: 'row', gap: dayGap };
   const gridStyle: ViewStyle = { flexDirection: 'column', gap: dayGap };
   const headerCellStyle: ViewStyle = { width: daySize, alignItems: 'center', justifyContent: 'center' };
@@ -942,6 +969,7 @@ export function DatePicker({
         ref={endInputRef}
         accessibilityLabel={`${visibleLabel}, ${COPY.endLabel}`}
         value={endText}
+        onKeyPress={(event) => handleInputKeyPress(event, true)}
         onChangeText={(text) => handleRangeChangeText('end', text)}
         onFocus={() => setEndFocused(true)}
         onBlur={() => {
@@ -971,7 +999,7 @@ export function DatePicker({
     <View ref={ref} style={containerStyle} testID="DatePicker">
       {hideLabel ? null : (
         <View testID="DatePicker.label">
-          <Text weight="medium" overrides={labelOverrides}>
+          <Text size={size} weight="medium" overrides={labelOverrides}>
             {visibleLabel}
           </Text>
         </View>
@@ -1012,14 +1040,14 @@ export function DatePicker({
         onClose={() => changeOpen(false)}
         overrides={{ inset: calendarInset }}
         footer={
-          <>
+          <View style={footerRowStyle} testID="DatePicker.footer">
             <View testID="DatePicker.todayButton">
-              <Button label={COPY.today} variant="ghost" size="sm" disabled={isDisabled} onPress={handleTodayPress} />
+              <Button label={COPY.today} variant="ghost" size="sm" disabled={todayDisabled} onPress={handleTodayPress} />
             </View>
             <View testID="DatePicker.clearButton">
               <Button label={COPY.clear} variant="ghost" size="sm" disabled={isDisabled} onPress={handleClearPress} />
             </View>
-          </>
+          </View>
         }
       >
         <View testID="DatePicker.popover">
@@ -1092,12 +1120,18 @@ export function DatePicker({
               </View>
               {weeks.map((week) => {
                 const first = week[0]!;
+                const weekNumber = getISOWeek(first.y, first.m, first.d);
                 return (
                   <View key={first.iso} style={rowStyle}>
                     {showWeekNumbers ? (
-                      <View style={headerCellStyle} testID="DatePicker.weekNumber">
-                        <Text size="xs" tone="muted" overrides={{ fontSize: overrides?.weekdaySize }}>
-                          {getISOWeek(first.y, first.m, first.d)}
+                      <View
+                        style={headerCellStyle}
+                        accessible
+                        accessibilityLabel={`${COPY.weekNumber} ${weekNumber}`}
+                        testID="DatePicker.weekNumber"
+                      >
+                        <Text size="xs" tone="muted" overrides={{ fontSize: overrides?.weekNumberSize }}>
+                          {weekNumber}
                         </Text>
                       </View>
                     ) : null}
@@ -1107,6 +1141,7 @@ export function DatePicker({
                         cell={cell}
                         label={dayAccessibilityLabel(cell.iso)}
                         selected={isSelected(cell.iso)}
+                        rangeEnd={isRangeEnd(cell.iso)}
                         inRange={isInRange(cell.iso)}
                         today={cell.iso === todayIso}
                         disabled={isDisabled || isDayDisabled(cell.iso)}

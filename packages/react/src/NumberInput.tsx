@@ -51,6 +51,7 @@ export type NumberInputOverridableBinding =
   | 'affixGap'
   | 'stepperGap'
   | 'stepperDivider'
+  | 'stepperDividerWidth'
   | 'partGap'
   | 'labelWeight'
   | 'helperSize'
@@ -71,6 +72,7 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<NumberInputOverridableBinding, string>>
   affixGap: '--ds-number-input-affix-gap',
   stepperGap: '--ds-number-input-stepper-gap',
   stepperDivider: '--ds-number-input-stepper-divider',
+  stepperDividerWidth: '--ds-number-input-stepper-divider-width',
   partGap: '--ds-number-input-part-gap',
   labelWeight: '--ds-number-input-label-weight',
   fontFamily: '--ds-number-input-font-family', // literal-ok: CSS custom-property hook name, not a font stack
@@ -135,10 +137,10 @@ type Parsed = { kind: 'empty' } | { kind: 'invalid' } | { kind: 'number'; value:
 function parseTyped(raw: string): Parsed {
   const trimmed = raw.trim();
   if (trimmed === '') return { kind: 'empty' };
-  const { decimal, group } = localeSeparators();
-  // When the locale's decimal is not "." but "." is its group separator (de-DE "1.234,5"), a "."
-  // is a decimal only if the locale's own decimal is absent from the text.
-  const periodIsDecimal = decimal === '.' || group !== '.' || !trimmed.includes(decimal);
+  const { decimal } = localeSeparators();
+  // "." is a decimal only when the locale's own decimal is absent from the text (de-DE "1.234,5"
+  // is 1234.5, "1.5" is 1.5).
+  const periodIsDecimal = decimal === '.' || !trimmed.includes(decimal);
   let digits = '';
   let negative = false;
   let seenDecimal = false;
@@ -233,9 +235,12 @@ export interface NumberInputProps
   > {
   /** Visible label. */
   label: string;
-  /** Field name for the Form. The collected value is a number (or undefined when empty). */
+  /** Field name for the Form. The value registers as its plain decimal string (`String(value)`);
+   * an empty or disabled field registers nothing. Consumers parse it back with `Number()`. */
   name: string;
-  /** Controlled numeric value. `null`/undefined means empty. */
+  /** Controlled numeric value: `null` is a controlled empty field, `undefined` means uncontrolled
+   * (defaultValue applies). While focused the input shows the raw typed text; the value takes over
+   * the display on blur/Enter, on every step, and when the prop changes to a different number. */
   value?: number | null | undefined;
   /** Initial value. */
   defaultValue?: number | undefined;
@@ -243,7 +248,8 @@ export interface NumberInputProps
   min?: number | undefined;
   /** Upper bound. */
   max?: number | undefined;
-  /** Increment for the buttons and arrow keys. Also the rounding granularity when `precision` is omitted. */
+  /** Increment for the buttons and arrow keys. When `precision` is omitted, values round to the
+   * number of decimals in `step`; values never snap to multiples of `step`. */
   step?: number | undefined;
   /** Decimal places to keep and display. Defaults to the decimals in `step`. */
   precision?: number | undefined;
@@ -252,7 +258,8 @@ export interface NumberInputProps
   format?: NumberInputFormat | undefined;
   /** ISO 4217 code for `format: currency` (e.g. USD). */
   currency?: string | undefined;
-  /** Intl unit identifier for `format: unit` (e.g. kilogram, hour), or a literal shown as `suffix`. */
+  /** Intl unit identifier for `format: unit` (e.g. kilogram, hour). A string Intl does not know is
+   * shown as `trailingText` (the `suffix` part) when `trailingText` is not given, with plain decimal formatting. */
   unit?: string | undefined;
   /** Static text before the value inside the field ("$"), when `format` cannot express it. (Not
    * `prefix`: that name is a native Element member.) */
@@ -417,8 +424,11 @@ export function NumberInput({
 
   function report(next: number | undefined): void {
     if (Object.is(next, valueRef.current)) return;
-    valueRef.current = next;
-    if (!isControlled) setInternalValue(next);
+    // A controlled field keeps the prop until it changes; the render re-syncs valueRef from it.
+    if (!isControlled) {
+      valueRef.current = next;
+      setInternalValue(next);
+    }
     onChange?.(next);
     if (form && form.validate === 'change') form.validateField(name);
   }

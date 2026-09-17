@@ -40,3 +40,14 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - NumberInput: hold-to-repeat reads motion.duration.base and motion.duration.fast from computed style, but the doc gives no behavior for when tokens aren't loaded. When either can't be read, a press steps once and doesn't repeat.
 - NumberInput: the doc says the unit literal shows 'as `suffix`', but the prop is `trailingText` (the anatomy part is still named `suffix`). I show it as the trailingText suffix part, only when trailingText is not given.
 - NumberInput: the focus-visible binding doesn't say which part gets the focus ring; the input has no border of its own, and the field is the bordered part. I draw the border.focus ring on the field while the input matches :focus-visible.
+
+## 2026-09-17 12:28 — round 1
+
+- NumberInput: the validation order puts copy.required ('{label} is required.') before invalid and range, but never says when it becomes visible. Showing it on first render would put an error on every empty required field, so the element reports it through validity/validationMessage at once and only draws it in the errorMessage part once error/invalid/a clamp applies or a Form reports it. The doc should say whether required shows on blur, on submit, or immediately.
+- NumberInput: the order includes 'a Form-supplied error', but Lit's DsFormField has no separate channel for one, so a ds-form error arrives through the `error` property and cannot rank below the component's own `error` prop. Treated as the same slot.
+- NumberInput: the disabledOpacity binding lists label, description, input and affix, but not the bordered field part (background and border) or errorMessage. Left them undimmed as written; the doc should confirm.
+- NumberInput: stepperDividerWidth describes the line as 'the inline-start border of the element wrapping both stepper Buttons', while stepperGap sits between the two Buttons. With the default layout.gap.none, nothing separates the two steppers. Rendered as written.
+- NumberInput: a disabled field keeps its input focusable as readonly with aria-disabled, rather than natively disabled, so 'still readable' holds for keyboard and screen-reader users. The doc says 'Not editable, still readable' without saying whether the input stays focusable.
+- NumberInput: the keyboard section asks for a Keyboard story with at least three focusable children, but NumberInput is a single tab stop and its steppers are tabindex -1. The Keyboard story renders just the one field with bounds (min 0, max 20) so Home and End can be tried.
+- NumberInput: `hideLabel` is not in platforms.lit.reflect and its attribute name is not given. Used `hide-label`, not reflected.
+- NumberInput: no attribute names are given for camelCase props. Used default-value, leading-text, trailing-text and hide-steppers, and made `value` property-only because it is typed number | null | undefined.

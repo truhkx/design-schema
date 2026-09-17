@@ -1,6 +1,6 @@
-# Gap digest — phase final
+# Gap digest — phase Primitives
 
-Generated 2026-09-16T13:15 by tools/gap_digest.ts. DOC lines belong in the named doc; fold them, run `pnpm parse`, and the affected targets become stale by prompt hash.
+Generated 2026-09-17T04:05 by tools/gap_digest.ts. DOC lines belong in the named doc; fold them, run `pnpm parse`, and the affected targets become stale by prompt hash.
 
 ## Accordion
 
@@ -530,6 +530,31 @@ Doc: `site/src/content/docs/components/bottomsheet.md`
 ## Box
 
 Doc: `site/src/content/docs/components/box.md`
+
+### 2026-09-17 04:05 — lit round 1
+
+- **DOC** Box: the lit platform note says `element` sets the role through ElementInternals, but the package convention says roles that tests must read go on the host as plain attributes, because dom-accessibility-api doesn't read ElementInternals.role. I followed the platform note, so a test of accessible roles for `nav`/`article` would not see navigation/article on Lit. The doc should say which rule wins for Box. → `site/src/content/docs/components/box.md`
+- **DOC** Box: the behavior prose says `section`, `article`, `aside` and `nav` carry their semantics natively, but the lit note leaves `section` without a role and adds `main`. I followed the lit note: article, aside→complementary, main, nav→navigation. → `site/src/content/docs/components/box.md`
+- **DOC** Box: web and Lit say `surface: none` sets no background, but the background style description says `none` renders the literal `transparent`. I wrote `--ds-box-background: transparent` so every binding is set explicitly. The two statements should agree. → `site/src/content/docs/components/box.md`
+- **DOC** Box: examples pass `children` as a string, but on Lit that is slotted content and `HTMLElement.children` is read-only. The stories render it inside `<ds-text>` and the test sets it as textContent. The doc doesn't say whether that text should be wrapped in Text on Lit. → `site/src/content/docs/components/box.md`
+- **DOC** Box: `element` isn't in `platforms.lit.reflect`, so I didn't reflect it and it is a plain String property. The doc doesn't say whether a consumer can set it by attribute alone; it works because Lit maps the attribute to the property. → `site/src/content/docs/components/box.md`
+- **DOC** Box: overrides don't apply when `radius` is `none` (overrides change values, not presence), but the paddingBlock description says padding overrides do apply at `none`. The doc doesn't say whether `radius: none` also counts as a real token that an override should restyle. I treated radius `none` as absent, so the radius override is ignored there. → `site/src/content/docs/components/box.md`
+
+### 2026-09-17 04:05 — rn round 1
+
+- **DOC** Box: the examples set `children` to a bare string, and the rn note says native needs it inside a Text; the stories wrap it in the package `Text`, so their args are not literally the example's `given`. → `site/src/content/docs/components/box.md`
+- **DOC** Box: `radius: none` is written out as `radius.none`, but overrides turn it into a no-op because `none` turns the part off; the spec gives both rules without saying they combine, and I kept the token value and ignored the `radius` override when the prop is `none`. → `site/src/content/docs/components/box.md`
+- **DOC** Box: `paddingBlock`/`paddingInline` overrides apply even when `inset` or the axis prop is `none` (the style description says so); the general 'overrides change values, never presence' paragraph lists `surface`, `border` and `radius` but not inset, so I followed the style description. → `site/src/content/docs/components/box.md`
+- **DOC** Box: every behavior scenario is a `renders: true` check, so no test checks the resolved padding, background, border or radius, or the override precedence; the two `element` scenarios are web-only and have no rn test. → `site/src/content/docs/components/box.md`
+- **DOC** Box: `resolveToken` returns a general token value, so the resolved override is cast to `number` for padding, width and radius and to `string` for the border colour; the spec doesn't say what type an override resolves to on rn. → `site/src/content/docs/components/box.md`
+
+### 2026-09-17 04:03 — web round 1
+
+- **DOC** Box: the overrides section says `radius: none` turns the radius part off and makes its override a no-op, but the schema's radius binding says `radius: none` resolves `radius.none` and is written out with no cascade. I followed the binding: `ds-box--radius-none` sets the hook to `var(--radius-none)` and a radius override applies at every value. The doc should drop `radius: none` from the presence-gating example. → `site/src/content/docs/components/box.md`
+- **DOC** Box: the web notes list `ds-box--surface-{value}` for every value and also say `surface: none` sets no background, while the background binding says `none` renders the literal transparent. I emit `ds-box--surface-none { background-color: transparent }` and only the other three values read `--ds-box-background`, so setting that hook from the consumer's own CSS cannot paint a `none` box. It's unstated whether that escape hatch should work on `none`. → `site/src/content/docs/components/box.md`
+- **DOC** Box: the spec doesn't say what the `Default` story's args are. The existing story uses inset md, surface subtle, radius md and a Text child rather than the schema defaults (none, none, none), and the scenarios layer their `given` on top of those args. I kept them; the doc could say whether Default should show the schema defaults. → `site/src/content/docs/components/box.md`
+- **DOC** Box: `border: true` has one story, named `Border`. The story-naming rule only covers enum values (`<Prop><Value>`) and says nothing about boolean props. → `site/src/content/docs/components/box.md`
+- **DOC** Box: `element` swaps the tag while the props stay typed against `div` (as the notes require), so the ref is typed `Ref<HTMLElement>`. The generic rule asks for the root element's own type (`Ref<HTMLDivElement>`), which would be wrong for `nav` or `section`. I used `HTMLElement`. → `site/src/content/docs/components/box.md`
 
 ### 2026-09-16 02:48 — rn round 1
 
@@ -2429,6 +2454,33 @@ Doc: `site/src/content/docs/components/form.md`
 
 Doc: `site/src/content/docs/components/heading.md`
 
+### 2026-09-17 03:58 — rn round 1
+
+- **DOC** Heading: the rule says a component exposing its root declares `ref?: Ref<ViewInstance>`, but the rn element is `Text`, so the ref is typed `React.Ref<TextInstance>`; the rule should say 'the root's instance type' without naming ViewInstance. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: the package digest shows `toLineHeight(t.fontLineHeightNormal, t.fontSizeMd)`, but the helper's real signature is `toLineHeight(fontSize, multiplier)`; the code follows the helper, and the digest's argument order is wrong. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: the rn notes say Heading does not compose the system Text, but nothing says whether it should provide `TextStyleContext` so inline children (Icon, Link) match heading typography; the code provides it with the heading's fontSize/color and nested: true. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: the spec does not say what happens at runtime when `level` is missing or invalid on RN (Lit falls back to h2 and warns); `level` is required in the TypeScript type, so an untyped caller gets `LEVEL_SIZE[undefined]` and no size. There is no fallback or __DEV__ warning. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: both doc behavior scenarios (`level-puts-the-heading-in-the-outline`, `size-does-not-change-the-outline`) are web-only `role: heading` checks, so RN has no test that `accessibilityRole="header"` is set on every level/size; only derived `renders` tests exist. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: the Default story args (`level: '2'`, `children: 'Account settings'`) are not given by the spec; the scenarios build on Default's args, so the doc should declare them. → `site/src/content/docs/components/heading.md`
+
+### 2026-09-17 03:57 — lit round 1
+
+- **DOC** Heading: the Lit guidance section says `part="heading"` may remain on the inner element, but platforms.lit.notes says the inner element carries `part="text"`/`data-part="text"` — the anatomy name, not `heading`; followed the platform notes (`part="text"`), the guidance prose should be corrected. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: the Web guidance says `size` maps to font.size.* 'via a class or inline custom property', while the Lit contract is attribute selectors on reflected `level`/`size` setting `--ds-heading-font-size`; chose the attribute-selector hooks, with an explicit `[size]` rule declared after the `[level]` defaults so size wins at equal specificity. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: the doc says a missing `level` falls back to <h2> but says nothing about an out-of-range or non-numeric value (`level="7"`, `level="x"`); treated it like a missing level (renders <h2>, 3xl default size, one dev warning). → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: the Lit notes say to warn once 'with the attribute absent', but don't say whether setting a valid level later and then removing it should warn again; chose once per element for the element's lifetime. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: `level` is `required` with no default, but TS `isolatedDeclarations` + accessors need a declared type; typed it `HeadingLevel | 1 | 2 | 3 | 4 | 5 | 6` with a definite-assignment `!` so the number form the doc says is accepted type-checks — the doc doesn't say whether the exported `HeadingLevel` type itself should include the numbers. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: behavior scenarios `level-puts-the-heading-in-the-outline` and `size-does-not-change-the-outline` are marked `platforms: [web]` only, although the Lit element renders a real <h1>–<h6> and could assert role=heading in its shadow root; they are not in the Lit scenario list, so no Lit test asserts the heading role. → `site/src/content/docs/components/heading.md`
+
+### 2026-09-17 03:56 — web round 1
+
+- **DOC** Heading: the spec says the resolved default size 'is never written back to the `size` attribute, so `[size]` selectors match only explicit sizes', but a React h1–h6 has no `size` attribute; I applied the level default only as a `ds-heading--size-*` class and wrote no attribute, so there is nothing for a web `[size]` selector to match. The web note should say whether web must expose explicit size (e.g. `data-size`) or whether this sentence is Lit-only. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: the web platform gives no fallback for a `level` outside 1–6 (Lit has 'falls back to <h2> and warns once'); I relied on the required, typed prop and added no runtime fallback or dev warning. An untyped invalid level renders an undefined element. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: `color` is locked, but the overrides section says every style binding gets a hook; I kept `--ds-heading-color` as a CSS hook on the root (consumer CSS can still set it) and left it out of the `overrides` type. The spec should say whether locked bindings get a hook at all, since a hook lets consumer CSS break the AAA pair. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: the spec has no binding for margin-block-start, and the browser's default h1–h6 top margin would add a margin the system doesn't allow; I reset it with `margin-block-start: 0`, which is not a token. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: the stories list names Default plus one story per enum value; I used `Level1`…`Level6` and `Size4xl`/`Size3xl`/`Size2xl`/`SizeXl`/`SizeLg`/`SizeMd`. PascalCase for values that start with a digit ('4xl') isn't specified. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: the Default story's args aren't given by the spec (level is required); I kept level '2', children 'Account settings', align 'start'. → `site/src/content/docs/components/heading.md`
+
 ### 2026-09-16 02:19 — rn round 1
 
 - **DOC** Heading: Related names Text and the rules say compose it, but the package's Text cannot carry `accessibilityRole="header"`, has no 4xl/3xl/2xl sizes, has no marginBottom, and locks `color` — so Heading renders React Native's `Text` directly and re-declares the five typography bindings. Either Text's schema grows an accessibility/role surface and the heading size steps, or the doc should stop implying composition here. → `site/src/content/docs/components/heading.md`
@@ -2489,6 +2541,34 @@ Doc: `site/src/content/docs/components/heading.md`
 ## Icon
 
 Doc: `site/src/content/docs/components/icon.md`
+
+### 2026-09-17 03:52 — rn round 1
+
+- **DOC** Icon: the rn color order is 'color prop, else enclosing Text's TextStyleContext colour, else color.foreground', but it doesn't say where `overrides.color` fits beyond 'sets an explicit color'. I chose color prop > overrides.color > nested Text colour > color.foreground. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the spec says react-native-svg honours `vectorEffect` only under react-native-web, and the platform notes say to pass it 'where the platform honors it'. It doesn't say whether native should get the prop at all, and if native did honour it the scaled stroke width would be applied twice. I chose to pass `vectorEffect` only when Platform.OS === 'web'. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the rn platform notes list `vectorEffect` and `fillRule` among the Svg root's props, but the React Native guidance puts `fillRule` and the stroke hint on the `Path` children. I kept them on `Path`, since the filled/line choice is made per glyph. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the Guidance section still names `TextNestingContext` and says `paths.ts` is 'byte-identical to the web table', while the platform notes say there is no TextNestingContext (use `TextStyleContext`) and the package conventions say paths.ts is rewritten from `tools/icon-paths.json`. I followed the platform notes and the JSON; the Guidance prose is stale. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the prop-level `a11y` text says a labelled icon uses 'importantForAccessibility auto', but the rn platform notes list only accessibilityRole, accessibilityLabel and accessibilityElementsHidden=false. I set importantForAccessibility='auto' when labelled. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the unknown-`name` rule says 'every platform renders an empty glyph and warns' but not whether that empty glyph keeps the label/decorative accessibility props. I kept them, so an unlabelled unknown icon stays hidden. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the rules above ask for 'accessibilityState disabled', 'ref as a prop' and a `Keyboard` story generically, but Icon has no disabled, no ref (Svg's ref is a class instance) and no keyboard block. None were added. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the `decorative-beside-a-label` and `inline-in-running-text` examples describe a glyph next to or inside text, but 'exactly its given as args' leaves the surrounding text unspecified. The existing stories wrap the icon in the system Text with placeholder copy ('Saved', 'Read the release notes') that isn't a `copy.*` string. → `site/src/content/docs/components/icon.md`
+
+### 2026-09-17 03:50 — lit round 1
+
+- **DOC** Icon: `inline` says an icon not inside a Text falls back to font.size.md, but on web/Lit `font-size: inherit` always has something to inherit (the document's font size), so there is never a 'no surrounding text' case. Lit keeps `inherit` and does not force --font-size-md; the doc should say the md fallback applies to React Native only (or say how web should detect 'not inside a Text'). → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the Lit guidance gives `:host { display: inline-flex; color: inherit }`, but the color binding needs `--ds-icon-color` (default currentColor) for overrides.color to work. Lit uses `color: var(--ds-icon-color)`, which resolves to the inherited color when there is no override; the guidance snippet should use the hook. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: web platform notes say non-inline icons are `display: inline-block`, but the Lit notes say the host is `inline-flex`. Lit uses inline-flex for the non-inline host and inline-block under [inline], as the Lit guidance says; the doc should state that the two platforms differ on purpose. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the `decorative-beside-a-label` example needs text beside the glyph, but the doc has no copy for it. The story renders the demo word 'Saved' inside ds-text; the example should give its adjacent text (or a copy key). → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the `renders` / `renders-size-*` scenarios apply `given` to the Default story args, which set name 'check'. `name` is required with no default, so Default has to choose a glyph; the doc should name the Default story's `name`. → `site/src/content/docs/components/icon.md`
+
+### 2026-09-17 03:49 — web round 1
+
+- **DOC** Icon: `inline` says the glyph falls back to font.size.md when it is 'not inside a Text', but the same prop is also for Link and Button labels, which are not Text. On web the font size is always inherited, so there is always surrounding text to read. I kept `font-size: inherit` for every inline icon and added no md fallback, so an inline icon inside a Link or Button still matches its label. The md fallback reads as React Native only; the prose should say which platforms it applies to. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the Lit notes put font-size on the host through `var(--ds-icon-size)` and render the svg at 1em, but the Lit Guidance gives `:host([inline])` its own 1em inline-size/block-size and says nothing about font-size. Not a web issue, noted for the Lit pass. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the React Native Guidance section still names `TextNestingContext`, but the rn platform notes say it does not exist and the real export is `TextStyleContext`. The Guidance prose is stale. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the web Guidance lists the filled glyphs as 'the four status shapes and the ellipsis'. `tools/icon-paths.json` (and Content guidelines) also mark `play` and `pause` as filled. I followed the JSON. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the spec says `...rest` never forwards `style` or `className`, but `IconProps` extends the svg props, which include both. I removed them from the props type. Sibling components such as Button still accept and merge them, so the package is inconsistent until those are regenerated. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the 'renders' scenarios have nothing to check beyond the root existing, and none checks `data-part="glyph"` on the root, the unknown-name warning, or that an empty `label` is decorative. The web notes spell all three out, but no scenario covers them, so a regression there passes the gate. → `site/src/content/docs/components/icon.md`
 
 ### 2026-09-16 01:41 — rn round 1
 
@@ -4255,6 +4335,34 @@ Doc: `site/src/content/docs/components/splitter.md`
 
 Doc: `site/src/content/docs/components/stack.md`
 
+### 2026-09-17 04:02 — rn round 1
+
+- **DOC** Stack: the generic rule says enum props whose values are quoted digits (naming 'Stack gap') accept both string and number, but Stack's gap values are now names (none|tight|normal|loose|section); the rule's example is stale. Chose names only. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: examples give `children` as prose ('A submit Button and a Cancel Button', 'A row of filters', 'The regions of the page') rather than content, so the stories invent the children (Buttons, Inputs, Headings); the Default story's children are also unspecified. For button-row the prose lists submit before cancel, and I rendered Cancel then Submit (the usual order for an end-aligned row). → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: the button-row and wrapping-filters examples leave `align` at its default `stretch`, so on a horizontal row children stretch to the tallest item's height; the previous stories added align: center to avoid that. Removed it to match 'exactly its given'. The doc should say whether rows should set align. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: platforms.rn.props lists `style`, but the overrides contract says no `style` prop is accepted; read as the View's internal style, not a public prop. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: every behavior scenario is `renders: true`; the two semantic scenarios (nav, ul) are web/lit-only and `element` is excluded on rn, so nothing tests direction, gap, align or justify on native. The rn notes say to use `accessibilityRole` on the content, but the element prop's own description says RN's counterparts are Landmark (navigation) and a plain View (list); the two notes should agree. → `site/src/content/docs/components/stack.md`
+
+### 2026-09-17 04:01 — lit round 1
+
+- **DOC** Stack: the Lit guidance paragraph says `element="ul"` wraps each node in an `<li>` 'via slotchange', but platforms.lit.notes requires manual slot assignment rebuilt from a childList observer and warns that slotchange-driven moves loop; I followed platforms.lit.notes. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: examples give `children` as prose ('A submit Button and a Cancel Button', 'The form fields'), which a Lit story cannot take as an arg since children are slotted; the example stories pass only the other `given` keys as args and render representative ds-button / ds-input / ds-text content in `render`. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: `gap: none` makes `overrides.gap` a no-op, but the doc doesn't say whether a consumer CSS hook (`ds-stack { --ds-stack-gap: … }`) should also be ignored at `gap="none"`; the element ignores the `overrides` property there but still reads the hook, so CSS on the hook still applies. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: `element` isn't in platforms.lit.reflect, so it is a non-reflected attribute/property; the doc doesn't say whether `ds-stack[element=nav]` should be styleable from outside. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: nav-element-is-a-navigation-landmark asserts `role: navigation`, but the doc doesn't say how a Lit test should read a computed role across the shadow root (no getByRole precedent in packages/lit tests); the test checks the native `<nav>` in the shadow root instead of the computed accessible role, and whether Chromium still exposes the landmark under `display: contents` is untested. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: Related names Form and Button; Stack composes neither itself (it only slots children), so they appear only as story content. → `site/src/content/docs/components/stack.md`
+
+### 2026-09-17 03:59 — web round 1
+
+- **DOC** Stack: the generic rules say quoted-digit enums like 'Stack gap' accept numbers, but Stack gap's values are none/tight/normal/loose/section — no digit strings, so gap takes only the string union. The rule's example is stale. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: the platform notes say Stack merges consumer className/style, while the package convention says `...rest` never forwards style/className and the override contract is the only per-instance styling. I followed the component notes (merged, with `overrides` hooks applied first and consumer style after); the ordering between the two isn't specified. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: examples give `children` as prose ('The form fields', 'A submit Button and a Cancel Button', 'A row of filters') rather than values, so 'exactly its given as args' can't be literal. I realised them as arrays of Input/Button/Text elements. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: WrappingFilters needs a narrow container to show wrapping; the example has no width, so the story keeps a decorator with an inline maxInlineSize (story-only, not in args). → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: `wrap` is a boolean, so it doesn't fit the one-story-per-enum-value rule. The story is named `Wrap` rather than `WrapTrue`; the doc doesn't name it. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: `ref` is typed Ref<HTMLElement> because the root tag varies with `element` (div/section/nav/ul/ol); the spec doesn't say whether the type should narrow per element. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: `element` is web/lit only, but the doc doesn't say whether a consumer `role` on a ul/ol Stack should win over the forced role="list". The list role wins; for other elements a consumer role passes through. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: the doc says 'one li per child as the platform counts children' but not how null/boolean children count. React.Children.map skips them (no empty li), which I kept. → `site/src/content/docs/components/stack.md`
+
 ### 2026-09-16 02:34 — rn round 1
 
 - **DOC** Stack: the rule list says "Enum props whose values are quoted digits (Heading `level`, Stack `gap`) accept both the string and the number", but Stack's `gap` values are `none|tight|normal|loose|section` — no digits. Treated as a stale reference and typed `gap` as the string union only. → `site/src/content/docs/components/stack.md`
@@ -4708,6 +4816,33 @@ Doc: `site/src/content/docs/components/tabs.md`
 ## Text
 
 Doc: `site/src/content/docs/components/text.md`
+
+### 2026-09-17 03:55 — rn round 1
+
+- **DOC** Text: the Rules say to import tokens from `@design-schema/tokens/<theme-id>/rn/light` and `/dark`, but the package conventions (and every existing component) read them from `useTheme()`; kept `useTheme()`. → `site/src/content/docs/components/text.md`
+- **DOC** Text: the Refs rule says a component exposing its root declares `ref?: Ref<ViewInstance>`, but Text's root is RN `Text`, whose instance type is `TextInstance`; kept `React.Ref<TextInstance>`. The rule should say 'the root's instance type (TextInstance for Text)'. → `site/src/content/docs/components/text.md`
+- **DOC** Text: the digest's helper example `toLineHeight(t.fontLineHeightNormal, t.fontSizeMd)` has the arguments in the wrong order; the real signature is `toLineHeight(fontSize, multiplier)`, which is what Text calls. → `site/src/content/docs/components/text.md`
+- **DOC** Text: the only doc behavior (`truncated-text-keeps-the-full-string-reachable`) is web-only and RN has no `title`, so there is no RN test for it; the TruncatedCell story's comment and the `truncate` JSDoc record that there is no sighted affordance. → `site/src/content/docs/components/text.md`
+- **DOC** Text: `ToneOnAction` needs an action-coloured background to make sense, and the spec doesn't say where it comes from; the story wraps Text in a View painted with `colorActionPrimaryBackground`, padded with `spaceMd`/`spaceSm` and rounded with `radiusMd`. The `ToneDanger` story swaps in the error wording from the web-only `inline-error-wording` example so danger is never shown on neutral text. → `site/src/content/docs/components/text.md`
+- **DOC** Text: `TextForegroundContext` is named in the `styles.color` description but has no RN export guidance beyond 'package-internal'; kept it exported from Text.tsx for sibling components but not re-exported from index.ts. → `site/src/content/docs/components/text.md`
+- **DOC** Text: behavior scenario name `renders-tone-on-action` kebab-cases the enum value `onAction`; the existing test used `renders-tone-onAction`, now renamed to match the doc. → `site/src/content/docs/components/text.md`
+
+### 2026-09-17 03:54 — lit round 1
+
+- **DOC** Text: the Lit platform note says to render `part="text"`, the Lit guidance says it is 'for outside styling', but the package rule is that no `::part` is exposed for styling. I kept `part="text"` as an anatomy name only and ship no part-based styling; the guidance sentence should drop 'for outside styling'. → `site/src/content/docs/components/text.md`
+- **DOC** Text: the behavior scenario `truncated-text-keeps-the-full-string-reachable` is limited to `platforms: [web]`, but the `truncate` description gives Lit its own title rule (flattened, whitespace-collapsed textContent, omitted when empty). So Lit has no test for a behavior it is required to have. I implemented it and wrote no test; the scenario should list `lit` too. → `site/src/content/docs/components/text.md`
+- **DOC** Text: the spec says `title` comes from the host's textContent but not when it must update. `slotchange` does not fire when the text inside an existing node changes. I added a MutationObserver (childList + characterData, subtree) that only updates state; the doc should say the title follows live text edits. → `site/src/content/docs/components/text.md`
+- **DOC** Text: `align` says start/end follow writing direction and describes Native's I18nManager limitation, but says nothing for Lit. I used CSS `text-align: start|end`, which follows `dir` live. → `site/src/content/docs/components/text.md`
+- **DOC** Text: `styles.color` is interpolated (`color.foreground.{tone}`) and locked, but the doc doesn't give a hook name or say that `default` resolves to the bare `--color-foreground` custom property, the one inverse surfaces re-scope. I read the token directly with no `--ds-text-color` hook, and `default` reads `var(--color-foreground)`. → `site/src/content/docs/components/text.md`
+- **DOC** Text: the doc doesn't say how `onAction` maps to a CSS custom property. I used `--color-foreground-on-action` (camelCase to kebab-case). → `site/src/content/docs/components/text.md`
+
+### 2026-09-17 03:53 — web round 1
+
+- **DOC** Text: `truncate` with `element: span` gives `display: inline-block`, but an inline-block with `overflow: hidden` sits on its bottom margin edge rather than the text baseline, which lifts it off the line next to surrounding text. The doc doesn't say how to align it; I added `vertical-align: bottom`. → `site/src/content/docs/components/text.md`
+- **DOC** Text: `truncate` says `title` is set when children is a plain string, but not what happens when the consumer also passes `title`, or passes `title` without `truncate`. I let a consumer `title` win in both cases and forward it unchanged. → `site/src/content/docs/components/text.md`
+- **DOC** Text: `color` is locked, but nothing says whether its internal CSS hook (`--ds-text-color`) should exist. It does, and it is set by the tone modifier class on the root. A consumer rule with higher specificity on the same element could still override it, so locking only covers the `overrides` type, not consumer CSS. The doc should say whether a locked binding gets a hook at all. → `site/src/content/docs/components/text.md`
+- **DOC** Text: the web notes say Text merges a consumer `className` and `style` onto the root, while the package-wide convention says `...rest` never forwards `style` or `className`. I followed the component doc (Declared contracts win): I merge them, with `style` applied after the inline `overrides`, so a consumer's `style` can set the same hook and beat an override. The order between the two isn't specified. → `site/src/content/docs/components/text.md`
+- **DOC** Text: the doc gives no `transition` binding, focus or disabled state, so the rule template's reduced-motion, focus-visible and opacity items don't apply and I added none. → `site/src/content/docs/components/text.md`
 
 ### 2026-09-16 02:07 — rn round 1
 
@@ -5335,7 +5470,7 @@ Doc: `site/src/content/docs/components/treegrid.md`
 
 ## Totals
 
-DOC: 3385 · CODE: 92 · TOOLING: 2 · NOISE: 42
+DOC: 3475 · CODE: 92 · TOOLING: 2 · NOISE: 42
 
 ## Gates to fix
 

@@ -78,3 +78,13 @@ Gaps a fold cannot answer because they are about the tools, not the docs.
 - Generator Constants rule says to read constants through token expressions, which a documented `literal-ok` number cannot follow; DataGrid's 160 is now the `columnWidth` binding, but the rule should name `literal-ok` as the exception (DataGrid, rn).
 - tools/__tests__/composition-forwards.test.ts corpus counts go stale with the new DataGrid (caption, sortButton, statusBar) and Tree (icon, label) forwards (all).
 - Keyboard story rule ("open with its trigger and at least three focusable children") has no given for a component with no open state; the generator picked newItemsCount plus the default items' actions (Feed, web and rn).
+
+## 2026-09-17
+
+- Refs rule names `Ref<ViewInstance>`; it should say "the root's instance type" (TextInstance for Text and Heading) (Text, Heading; rn).
+- The package digest shows `toLineHeight(t.fontLineHeightNormal, t.fontSizeMd)`; the real signature is `toLineHeight(fontSize, multiplier)` (Text, Heading; rn).
+- RN rules say to import tokens from `@design-schema/tokens/<theme>/rn/light|dark`, but the package reads them through `useTheme()` (Text, rn).
+- The quoted-digit enum rule still cites Stack `gap` as its example; gap values are names now (Stack, web and rn).
+- The story-naming rule covers only enum values: no name for a boolean prop's story (`Wrap`, `Border`) or a digit-led value (`Size4xl`) (Stack, Box, Heading; web).
+- No precedent for asserting a computed role across a Lit shadow root; the Stack nav test checks the native `<nav>` instead, and exposure under the host is untested (Stack, lit).
+- RN `resolveToken` returns a general token value, so every component casts overrides by hand; a typed resolver per binding kind would remove the casts (Box, rn).

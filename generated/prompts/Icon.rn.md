@@ -93,7 +93,8 @@ component:
       description: Which glyph. The set is deliberately small and grows only when
         a component needs a shape; `info`, `success`, `warning` and `danger` are the
         four status shapes (circle-i, circle-check, triangle-!, octagon-x) so tone
-        is never carried by color alone.
+        is never carried by color alone. `name` has no default; the Default story
+        renders `check`.
     size:
       type: enum
       enumRef: size
@@ -109,11 +110,12 @@ component:
     inline:
       type: boolean
       default: false
-      description: Size the glyph at 1em of the surrounding text and align it to the
-        text baseline, ignoring `size`. For icons inside Text, Link and Button labels.
-        With no surrounding text to read — an inline icon that is not inside a Text
-        — the glyph falls back to font.size.md, so `inline` still ignores `size` in
-        that case.
+      description: 'Size the glyph at 1em of the surrounding text and align it to
+        the text baseline, ignoring `size`. For icons inside Text, Link and Button
+        labels. On web and Lit `font-size: inherit` always has a surrounding size
+        to read, so there is no fallback there. The fallback is React Native only:
+        an inline icon that is not inside a Text has nothing to inherit and renders
+        at font.size.md, so `inline` still ignores `size` in that case.'
     label:
       type: string
       description: Accessible name. When set (non-empty), the icon is meaningful and
@@ -148,9 +150,10 @@ component:
         to `currentColor`, not to the token — defaulting it to the token would break
         that inheritance — and color.foreground is what it resolves to at the root.
         `overrides.color` sets an explicit color. On React Native, where there is
-        no currentColor, the order is: the `color` prop, else the enclosing Text''s
-        TextStyleContext colour whenever the glyph is nested in a Text (nesting alone
-        is enough; `inline` governs only the size), else color.foreground.'
+        no currentColor, the order is: the `color` prop, else `overrides.color`, else
+        the enclosing Text''s TextStyleContext colour whenever the glyph is nested
+        in a Text (nesting alone is enough; `inline` governs only the size), else
+        color.foreground.'
       locked: false
     strokeWidth:
       token: border.width.focus
@@ -191,7 +194,8 @@ component:
         and the `glyph` part, carrying `data-ds="Icon"` and `data-part="glyph"` on
         the one element. An unknown `name` is unreachable from TypeScript but possible
         from JavaScript: every platform renders an empty glyph and warns, on every
-        render, with no dedupe.'
+        render, with no dedupe. The empty glyph keeps the label or decorative accessibility
+        props, so an unlabelled unknown icon stays hidden.'
     lit:
       tag: ds-icon
       reflect:
@@ -201,13 +205,17 @@ component:
       notes: 'Renders the same <svg> in the shadow root carrying `part="glyph"` and
         `data-part="glyph"`; the host is display: inline-flex with vertical-align:
         middle and font-size: var(--ds-icon-size), and the <svg> is 1em, so the box
-        works as it does on web; :host([hidden]) { display: none }. The role and the
-        accessible name live on that <svg>, not on the host — this is the one primitive
-        whose semantics sit inside the shadow root, because the glyph is the image.
-        No delegatesFocus — the icon is never focusable. color inherits through the
-        shadow root, so a ds-icon inside ds-button takes the button foreground. The
-        paths table lives in Icon.ts and is imported by no one else — other components
-        use <ds-icon name>, never the paths.'
+        works as it does on web; `:host([inline])` is inline-block with font-size
+        inherit instead. The inline-flex host differs from web''s inline-block on
+        purpose: the host is a box around a shadow <svg>, not the svg itself. The
+        host colour is `color: var(--ds-icon-color)`, never a bare `inherit`, so `overrides.color`
+        reaches it. :host([hidden]) { display: none }. The role and the accessible
+        name live on that <svg>, not on the host — this is the one primitive whose
+        semantics sit inside the shadow root, because the glyph is the image. No delegatesFocus
+        — the icon is never focusable. color inherits through the shadow root, so
+        a ds-icon inside ds-button takes the button foreground. The paths table lives
+        in Icon.ts and is imported by no one else — other components use <ds-icon
+        name>, never the paths.'
     rn:
       element: Svg
       props:
@@ -229,7 +237,10 @@ component:
         16" width={size} height={size} fill="none" stroke={color}> with <Path> children,
         strokeWidth from border.width.focus scaled to the 16-grid at the rendered
         size (vectorEffect="non-scaling-stroke" where the platform honors it), filled
-        glyphs with fill={color} stroke="none". `color` is an explicit prop (no currentColor
+        glyphs with fill={color} stroke="none". `strokeWidth`, `fillRule` and `vectorEffect`
+        in the props list go on each <Path>, since fill-or-stroke is chosen per glyph,
+        and `vectorEffect` is passed only when Platform.OS is web — native gets the
+        scaled width instead, never both. `color` is an explicit prop (no currentColor
         on native) defaulting to color.foreground, and a nested icon reads the enclosing
         Text through `TextStyleContext` — the real export, which carries the resolved
         fontSize, color and nesting flag; there is no boolean TextNestingContext.
@@ -239,7 +250,7 @@ component:
         Svg, whose ref is a class instance rather than a view handle, so Icon exposes
         no ref; it carries `testID="Icon"` and no separate part hook. Decorative:
         accessibilityElementsHidden + importantForAccessibility="no"; labelled: accessibilityRole="image"
-        + accessibilityLabel and accessibilityElementsHidden false.'
+        + accessibilityLabel, accessibilityElementsHidden false and importantForAccessibility="auto".'
     swiftui:
       element: Path
       props:
@@ -294,6 +305,22 @@ component:
       platforms:
       - rn
     - name: 'Warning: over quota'
+  - name: empty-label-is-decorative
+    description: 'An empty string is the decorative case, not an authoring error:
+      the icon stays hidden.'
+    given:
+      name: check
+      label: ''
+    then:
+    - attribute: aria-hidden
+      is: 'true'
+      platforms:
+      - web
+      - lit
+    - attribute: accessibilityElementsHidden
+      is: true
+      platforms:
+      - rn
   examples:
   - name: status-in-a-cell
     description: A lone status glyph that is the whole message, so it says what it
@@ -303,13 +330,15 @@ component:
       label: 'Warning: over quota'
   - name: decorative-beside-a-label
     description: The usual case - a glyph next to text, with no label, so the label
-      carries the meaning alone.
+      carries the meaning alone. Its story wraps the glyph in a system Text with the
+      demo word "Saved" beside it; that word is story scaffolding, not copy.
     given:
       name: check
       size: sm
   - name: inline-in-running-text
     description: An icon sized at 1em of the surrounding text and sitting on its baseline,
-      for use inside a Text or Link.
+      for use inside a Text or Link. Its story nests it at the end of a system Text
+      reading "Read the release notes"; that sentence is story scaffolding, not copy.
     given:
       name: external
       inline: true
@@ -318,8 +347,8 @@ component:
 ## Constants and examples
 
 - example `status-in-a-cell`, story `StatusInACell`: given `name: "warning"`, `label: "Warning: over quota"`; A lone status glyph that is the whole message, so it says what it means instead of what it depicts.
-- example `decorative-beside-a-label`, story `DecorativeBesideALabel`: given `name: "check"`, `size: "sm"`; The usual case - a glyph next to text, with no label, so the label carries the meaning alone.
-- example `inline-in-running-text`, story `InlineInRunningText`: given `name: "external"`, `inline: true`; An icon sized at 1em of the surrounding text and sitting on its baseline, for use inside a Text or Link.
+- example `decorative-beside-a-label`, story `DecorativeBesideALabel`: given `name: "check"`, `size: "sm"`; The usual case - a glyph next to text, with no label, so the label carries the meaning alone. Its story wraps the glyph in a system Text with the demo word "Saved" beside it; that word is story scaffolding, not copy.
+- example `inline-in-running-text`, story `InlineInRunningText`: given `name: "external"`, `inline: true`; An icon sized at 1em of the surrounding text and sitting on its baseline, for use inside a Text or Link. Its story nests it at the end of a system Text reading "Read the release notes"; that sentence is story scaffolding, not copy.
 
 ## Overrides (per-instance styling contract)
 
@@ -332,7 +361,7 @@ The `platforms.rn.props` list names the native props the schema cares about; `ov
 Overridable: `size`, `color`
 Locked (accessibility-bearing, never overridable): `strokeWidth`
 
-## Behavior scenarios (35)
+## Behavior scenarios (36)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
@@ -353,6 +382,15 @@ Each scenario below becomes one test. They are platform-neutral: `given` are pro
   - attribute: accessibilityElementsHidden
     is: false
   - name: 'Warning: over quota'
+- name: empty-label-is-decorative
+  description: 'An empty string is the decorative case, not an authoring error: the
+    icon stays hidden.'
+  given:
+    name: check
+    label: ''
+  then:
+  - attribute: accessibilityElementsHidden
+    is: true
 - name: renders
   then:
   - renders: true
@@ -574,7 +612,10 @@ notes: "react-native-svg is the one sanctioned native dependency (decision 2026-
   \ width={size} height={size} fill=\"none\" stroke={color}> with <Path> children,\
   \ strokeWidth from border.width.focus scaled to the 16-grid at the rendered size\
   \ (vectorEffect=\"non-scaling-stroke\" where the platform honors it), filled glyphs\
-  \ with fill={color} stroke=\"none\". `color` is an explicit prop (no currentColor\
+  \ with fill={color} stroke=\"none\". `strokeWidth`, `fillRule` and `vectorEffect`\
+  \ in the props list go on each <Path>, since fill-or-stroke is chosen per glyph,\
+  \ and `vectorEffect` is passed only when Platform.OS is web \u2014 native gets the\
+  \ scaled width instead, never both. `color` is an explicit prop (no currentColor\
   \ on native) defaulting to color.foreground, and a nested icon reads the enclosing\
   \ Text through `TextStyleContext` \u2014 the real export, which carries the resolved\
   \ fontSize, color and nesting flag; there is no boolean TextNestingContext. An Svg\
@@ -583,8 +624,8 @@ notes: "react-native-svg is the one sanctioned native dependency (decision 2026-
   \ than on web: a platform limit, not a bug. The root is react-native-svg's Svg,\
   \ whose ref is a class instance rather than a view handle, so Icon exposes no ref;\
   \ it carries `testID=\"Icon\"` and no separate part hook. Decorative: accessibilityElementsHidden\
-  \ + importantForAccessibility=\"no\"; labelled: accessibilityRole=\"image\" + accessibilityLabel\
-  \ and accessibilityElementsHidden false."
+  \ + importantForAccessibility=\"no\"; labelled: accessibilityRole=\"image\" + accessibilityLabel,\
+  \ accessibilityElementsHidden false and importantForAccessibility=\"auto\"."
 ```
 
 ## Guidance
@@ -616,13 +657,13 @@ Decorative icons are hidden from assistive technology (WCAG 1.1.1: they carry no
 ## Platform notes
 
 ### Web
-Export a `paths` table keyed by `name`, drawn on a 16×16 grid: line glyphs are bare `<path>`s inheriting the root's `fill="none" stroke="currentColor"`; the four status shapes and the ellipsis are single `fill="currentColor" stroke="none" fill-rule="evenodd"` paths whose inner mark is a hole. Render `<svg viewBox="0 0 16 16" width="1em" height="1em" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">` with `stroke-width: var(--border-width-focus)` and `vector-effect: non-scaling-stroke` on paths in CSS. Size: `font-size: var(--font-size-{size})` on the element (attributes cannot take custom properties); `display: inline-block; vertical-align: middle`; with `inline`, `font-size: inherit; vertical-align: -0.125em`. Reuse the existing Disclosure/Link/Breadcrumb/Alert path data for chevrons, external, ellipsis and close so the later swap is visually neutral. Decorative: `aria-hidden="true"`; labelled: `role="img"` and `aria-label`. Always `focusable="false"`. Button, Link, Alert, Disclosure, Checkbox, RadioGroup and Breadcrumb should be updated to render `<Icon>` instead of their private glyphs in the next regeneration.
+Export a `paths` table keyed by `name`, drawn on a 16×16 grid: line glyphs are bare `<path>`s inheriting the root's `fill="none" stroke="currentColor"`; the four status shapes, the ellipsis, `play` and `pause` are single `fill="currentColor" stroke="none" fill-rule="evenodd"` paths whose inner mark is a hole. Render `<svg viewBox="0 0 16 16" width="1em" height="1em" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">` with `stroke-width: var(--border-width-focus)` and `vector-effect: non-scaling-stroke` on paths in CSS. Size: `font-size: var(--font-size-{size})` on the element (attributes cannot take custom properties); `display: inline-block; vertical-align: middle`; with `inline`, `font-size: inherit; vertical-align: -0.125em`. The `d` strings come verbatim from `tools/icon-paths.json`. Decorative: `aria-hidden="true"`; labelled: `role="img"` and `aria-label`. Always `focusable="false"`. Button, Link, Alert, Disclosure, Checkbox, RadioGroup and Breadcrumb should be updated to render `<Icon>` instead of their private glyphs in the next regeneration.
 
 ### Lit
-`<ds-icon name="check" size="sm">` renders the same SVG in its shadow root; `:host { display: inline-flex; color: inherit }` and `:host([inline]) { display: inline-block; vertical-align: -0.125em; inline-size: 1em; block-size: 1em }`. Reflect `name`, `size` and `inline`. The paths table is a module-private constant; other elements compose `<ds-icon>`.
+`<ds-icon name="check" size="sm">` renders the same SVG in its shadow root; `:host { display: inline-flex; vertical-align: middle; font-size: var(--ds-icon-size); color: var(--ds-icon-color) }` and `:host([inline]) { display: inline-block; vertical-align: -0.125em; font-size: inherit; inline-size: 1em; block-size: 1em }`. Reflect `name`, `size` and `inline`. The paths table is a module-private constant; other elements compose `<ds-icon>`.
 
 ### React Native
-Import `Svg` and `Path` from `react-native-svg` and render the shared `paths` table (export it from a `paths.ts` in the RN package, byte-identical to the web table so the swap stays visually neutral): `<Svg viewBox="0 0 16 16" width={size} height={size} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">` with `<Path d>` per glyph; filled glyphs pass `fill={color} stroke="none" fillRule="evenodd"`. `size` and `strokeWidth` come from the tokens through `useTheme()`. With `inline` nested in the system Text, size from the parent's font size via `TextNestingContext`; otherwise `font.size.md`. `color` from the prop, defaulting to `color.foreground`. Decorative: `accessibilityElementsHidden`, `importantForAccessibility="no"`; labelled: `accessibilityRole="image"`, `accessibilityLabel`. No Unicode fallback remains.
+Import `Svg` and `Path` from `react-native-svg` and render the shared `paths` table (a `paths.ts` in the RN package, written from `tools/icon-paths.json`): `<Svg viewBox="0 0 16 16" width={size} height={size} fill="none" stroke={color} strokeLinecap="round" strokeLinejoin="round">` with `<Path d strokeWidth>` per glyph; filled glyphs pass `fill={color} stroke="none" fillRule="evenodd"` on their Path. `size` and `strokeWidth` come from the tokens through `useTheme()`. With `inline` nested in the system Text, size from the parent's font size via `TextStyleContext`; otherwise `font.size.md`. `color` from the prop, then `overrides.color`, then the enclosing Text's colour, then `color.foreground`. Decorative: `accessibilityElementsHidden`, `importantForAccessibility="no"`; labelled: `accessibilityRole="image"`, `accessibilityLabel`. No Unicode fallback remains.
 
 ## Related
 

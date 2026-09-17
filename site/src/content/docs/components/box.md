@@ -10,7 +10,7 @@ component:
     children:
       type: content
       required: true
-      description: Any content. Box does not space its children; put a Stack inside for that.
+      description: 'Any content. Box does not space its children; put a Stack inside for that. A string given as `children` in an example is wrapped in the system Text by its story on every platform (`<ds-text>` on Lit, where slotted content cannot be an arg). The Default story uses the `highlighted-panel` props, since a Box at its schema defaults draws nothing.'
     inset:
       type: enum
       values: [none, sm, md, lg, xl]
@@ -47,10 +47,10 @@ component:
   styles:
     paddingBlock: { token: 'layout.inset.{inset}', description: 'An override applies at every value including `none`: `layout.inset.none` is a real token (a zero), not an absent part, so padding is not one of the bindings presence gates.' }
     paddingInline: { token: 'layout.inset.{inset}' }
-    background: { token: 'color.background.{surface}', description: '`none` renders the literal transparent, not a token; the token binding covers the other three values. Interpolated bindings like this one are locked — they keep their `--ds-box-*` hook, which is the consumer''s own-CSS escape hatch, but they are not members of the overrides type.' }
+    background: { token: 'color.background.{surface}', description: '`none` renders the literal transparent, not a token, written out explicitly (`background-color: transparent`) and not read through the hook, so neither `overrides.background` nor consumer CSS on `--ds-box-background` paints a `none` box; the token binding covers the other three values. Interpolated bindings like this one are locked — they keep their `--ds-box-*` hook, which is the consumer''s own-CSS escape hatch, but they are not members of the overrides type.' }
     border: { token: color.border, description: 'The border colour. It shares a name with the `border` boolean, which decides presence: an override recolours the border and never brings one into existence.' }
     borderWidth: { token: border.width.thin }
-    radius: { token: 'radius.{radius}', description: '`radius: none` resolves `radius.none` and is written out, rather than leaving the property unset — every binding is applied explicitly, with no cascade.' }
+    radius: { token: 'radius.{radius}', description: '`radius: none` resolves `radius.none` and is written out, rather than leaving the property unset — every binding is applied explicitly, with no cascade. Unlike padding, radius is presence-gated: `none` means no rounded corners, so `overrides.radius` is ignored at `none` and applies at every other value.' }
   a11y:
     role: none
     requires: [contrast-aa]
@@ -65,15 +65,15 @@ component:
     web:
       element: div
       attributes: []
-      notes: 'A plain element with classes for each enum value; `surface: none` sets no background. insetBlock/insetInline modifiers win over inset. No margin, ever. The root is the `surface` part and carries `data-part="surface"`, written before `...rest` so a composing parent can relabel it (Popover and BottomSheet pass `data-part="body"`). Box is the one primitive that merges a consumer `className` and `style` onto the root instead of dropping them, as Text does, because those same composites give it a layout-only class. Props are typed against `div` for every `element` value; Box is not polymorphic.'
+      notes: 'A plain element with classes for each enum value; `surface: none` paints `transparent` and reads no hook. insetBlock/insetInline modifiers win over inset. No margin, ever. The root is the `surface` part and carries `data-part="surface"`, written before `...rest` so a composing parent can relabel it (Popover and BottomSheet pass `data-part="body"`). Box is the one primitive that merges a consumer `className` and `style` onto the root instead of dropping them, as Text does, because those same composites give it a layout-only class. Props are typed against `div` for every `element` value; Box is not polymorphic, and the ref is `Ref<HTMLElement>`.'
     lit:
       tag: ds-box
       reflect: [inset, inset-block, inset-inline, surface, border, radius]
-      notes: 'The host is the box (`:host { display: block }`) with a default slot, so children stay in the light DOM. The host is also the `surface` part: it carries `data-part="surface"` alongside `data-ds`, and there is no `::part`, since `:host` cannot take one. `element` swaps nothing in the shadow root — the host is the element, so `element` is accepted for API parity and sets `role` via ElementInternals only where the implicit role does not depend on ancestry: article, aside → complementary, main, nav → navigation. `div`, `section`, `header` and `footer` set no role, because a native `<header>` or `<footer>` is only a banner or contentinfo outside sectioning content and the element cannot see where it sits; a page-level banner is Landmark.'
+      notes: 'The host is the box (`:host { display: block }`) with a default slot, so children stay in the light DOM. The host is also the `surface` part: it carries `data-part="surface"` alongside `data-ds`, and there is no `::part`, since `:host` cannot take one. `element` swaps nothing in the shadow root — the host is the element, so `element` is accepted for API parity (set by attribute or property, not reflected) and sets a plain `role` attribute on the host — not ElementInternals, which the accessible-role tests cannot read — only where the implicit role does not depend on ancestry: article, aside → complementary, main, nav → navigation. `div`, `section`, `header` and `footer` set no role, because a native `<header>` or `<footer>` is only a banner or contentinfo outside sectioning content and the element cannot see where it sits; a page-level banner is Landmark.'
     rn:
       element: View
       props: []
-      notes: 'View with paddingVertical/paddingHorizontal, backgroundColor, borderWidth/borderColor, borderRadius from the token object. `element` does not apply — use Landmark for a region. The root view is both the component and its only part, so it carries `testID="Box"` and there is no `Box.surface`: when a component''s single anatomy part is the root, the root form wins. A string given as `children` in an example is illustrative; native requires it inside a Text.'
+      notes: 'View with paddingVertical/paddingHorizontal, backgroundColor, borderWidth/borderColor, borderRadius from the token object. `element` does not apply — use Landmark for a region. The root view is both the component and its only part, so it carries `testID="Box"` and there is no `Box.surface`: when a component''s single anatomy part is the root, the root form wins. A string given as `children` in an example is illustrative; native requires it inside a Text. Resolved overrides are cast to the binding''s own type: number for padding, width and radius, string for the border colour.'
     swiftui:
       element: VStack
       props: [.padding, .background, .overlay=border, .clipShape, .frame=maxWidth, .accessibilityElement=contain]
@@ -81,15 +81,15 @@ component:
   behavior:
     # Authored scenarios; the parser adds renders/enum ones from the schema.
     - name: nav-element-carries-navigation-semantics
-      description: 'When element is section, article, aside or nav, the native element carries that semantics on web; Box adds no role of its own otherwise.'
+      description: 'When element is article, aside, main or nav, the element carries that semantics on web and the host role carries it on Lit; Box adds no role of its own otherwise.'
       given: { element: nav }
       then:
-        - { role: navigation, platforms: [web] }
+        - { role: navigation, platforms: [web, lit] }
     - name: article-element-carries-article-semantics
       description: The same rule for the other sectioning values - the element is the semantics, and Box adds nothing else.
       given: { element: article }
       then:
-        - { role: article, platforms: [web] }
+        - { role: article, platforms: [web, lit] }
   examples:
     - name: highlighted-panel
       description: A panel lifted off the page with a tinted surface, rounded corners and the usual inset.
@@ -118,7 +118,7 @@ Do not use a Box to add space between two components; put them in a Stack. Do no
 
 ## Behavior
 
-Box renders its children in a block with the requested padding, background, border and radius, and nothing else. It adds no role of its own (`a11y.role: none`); on web the native element carries whatever semantics it has, which for `section`, `header` and `footer` depends on naming and ancestry as it does in plain HTML, and Lit sets an ElementInternals role only for the values whose role is unconditional (see the platform note). It never scrolls, never clips (`radius` does not imply `overflow: hidden`; a child that should be clipped clips itself), and never carries margin. `insetBlock` and `insetInline` override `inset` per axis. `surface: none` sets no background at all, so the parent's shows through.
+Box renders its children in a block with the requested padding, background, border and radius, and nothing else. It adds no role of its own (`a11y.role: none`); on web the native element carries whatever semantics it has, which for `section`, `header` and `footer` depends on naming and ancestry as it does in plain HTML, and Lit sets an ElementInternals role only for the values whose role is unconditional (see the platform note). It never scrolls, never clips (`radius` does not imply `overflow: hidden`; a child that should be clipped clips itself), and never carries margin. `insetBlock` and `insetInline` override `inset` per axis. `surface: none` paints transparent, so the parent's background shows through.
 
 ## Content guidelines
 
@@ -134,7 +134,7 @@ Box is invisible to assistive technology unless `element` gives it a sectioning 
 Render the `element` with classes `ds-box`, `ds-box--inset-{value}`, `ds-box--inset-block-{value}`, `ds-box--inset-inline-{value}`, `ds-box--surface-{value}`, `ds-box--border`, `ds-box--radius-{value}`. Padding uses logical properties (`padding-block`, `padding-inline`). Axis modifiers are declared after the all-sides modifier so they win.
 
 ### Lit
-`<ds-box inset="md" surface="subtle" radius="md">`. The host is the box; `:host` carries the padding, background, border and radius from reflected attributes (`:host([inset="md"])`). Children are slotted. `element` maps to a role on the host through `ElementInternals` for the sectioning values and is otherwise inert.
+`<ds-box inset="md" surface="subtle" radius="md">`. The host is the box; `:host` carries the padding, background, border and radius from reflected attributes (`:host([inset="md"])`). Children are slotted. `element` maps to a plain `role` attribute on the host for the values whose role is unconditional and is otherwise inert.
 
 ### React Native
 `View` with `paddingVertical`/`paddingHorizontal` from `layout.inset.*`, `backgroundColor` from `color.background.*` (undefined for `none`), `borderWidth`/`borderColor` when `border`, `borderRadius` from `radius.*`. No `element`.

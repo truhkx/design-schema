@@ -1559,3 +1559,71 @@ One line per decision: `<date> <Component> <platform>: <gap> → <what the doc n
 2026-09-16 Splitter web: collapsed without collapsible → collapsed ignored unless collapsible
 2026-09-16 Splitter web: RTL arrow keys vs mirrored primary → ArrowLeft/ArrowRight swap in RTL
 2026-09-16 Splitter web: vertical splitter needs definite height → fills parent block-size 100%; parent needs definite height
+2026-09-17 Icon web: inline md fallback when not inside a Text → web/Lit always inherit; md fallback is React Native only
+2026-09-17 Icon web: guidance filled list omits play and pause → web guidance names play and pause; paths come verbatim from icon-paths.json
+2026-09-17 Icon web: no scenario covers empty label being decorative → new scenario empty-label-is-decorative (aria-hidden / accessibilityElementsHidden)
+2026-09-17 Icon lit: guidance host color inherit bypasses the color hook → Lit host uses color: var(--ds-icon-color); guidance snippet updated
+2026-09-17 Icon lit: web inline-block vs Lit inline-flex host unexplained → Lit note: inline-flex host differs on purpose; [inline] is inline-block with font-size inherit
+2026-09-17 Icon lit: decorative-beside-a-label example has no adjacent text → example says story wraps it in Text with demo word "Saved"
+2026-09-17 Icon lit: Default story name unspecified for required name → name description: Default story renders check
+2026-09-17 Icon rn: where overrides.color sits in the rn colour order → color prop > overrides.color > enclosing Text colour > color.foreground
+2026-09-17 Icon rn: whether native receives vectorEffect at all → vectorEffect only when Platform.OS is web; native gets the scaled width
+2026-09-17 Icon rn: fillRule/vectorEffect on Svg root or Path children → strokeWidth, fillRule, vectorEffect go on each Path
+2026-09-17 Icon rn: guidance still names TextNestingContext and byte-identical web table → RN guidance uses TextStyleContext and paths from icon-paths.json
+2026-09-17 Icon rn: importantForAccessibility auto when labelled missing from notes → rn notes add importantForAccessibility="auto" for labelled icons
+2026-09-17 Icon rn: unknown-name empty glyph keeps accessibility props or not → keeps label/decorative props; unlabelled unknown icon stays hidden
+2026-09-17 Icon rn: inline-in-running-text story needs surrounding text → example says story nests it in Text "Read the release notes"
+2026-09-17 Text web: truncated inline-block span sits off the baseline → truncate span adds vertical-align: bottom
+2026-09-17 Text web: consumer title versus generated truncate title precedence → a consumer title always wins, forwarded unchanged, with or without truncate
+2026-09-17 Text web: does locked color binding get a CSS hook → no --ds-text-color hook; tone reads the token's custom property directly
+2026-09-17 Text web: consumer style versus overrides merge order unspecified → consumer style merges after the overrides hooks and wins
+2026-09-17 Text lit: part="text" guidance says for outside styling → Lit guidance: part is an anatomy name only, never ::part styling
+2026-09-17 Text lit: truncate title scenario excludes Lit despite Lit rule → scenario platforms [web, lit]; Lit title sits on the part="text" element
+2026-09-17 Text lit: title update timing when slotted text changes → title follows live edits via a MutationObserver over the host subtree
+2026-09-17 Text lit: align start/end mechanism on Lit unstated → web and Lit use CSS text-align start|end, which follows dir live
+2026-09-17 Text lit: onAction custom property name and default hook → default reads var(--color-foreground); onAction reads var(--color-foreground-on-action)
+2026-09-17 Text rn: ToneOnAction story needs an action background → tone description: onAction story paints color.action.primary.background behind it
+2026-09-17 Text rn: TextForegroundContext export location unspecified → exported from Text.tsx for siblings, not re-exported from index
+2026-09-17 Text rn: ref type for Text root not ViewInstance → rn notes: ref is Ref<TextInstance>
+2026-09-17 Heading web: [size] selector sentence meaningless for React headings → [size] sentence is Lit-only; web carries the resolved size as a modifier class
+2026-09-17 Heading web: no runtime fallback for invalid level on web → missing/invalid level treated as 2 everywhere, one dev warning per element
+2026-09-17 Heading web: locked color binding hook could break AAA pair → no --ds-heading-color hook; reads var(--color-foreground-strong) directly
+2026-09-17 Heading web: browser default top margin has no binding → web note: UA margin-block-start reset to 0, a reset not a binding
+2026-09-17 Heading web: Default story args not given → level description: Default story renders level 2 "Account settings"
+2026-09-17 Heading lit: guidance part="heading" contradicts platform note part="text" → Lit guidance says part="text"
+2026-09-17 Heading lit: web guidance class vs Lit attribute-selector size mechanism → web uses modifier class; Lit note: attribute selectors, [size] after [level]
+2026-09-17 Heading lit: warn once scope and invalid level values → invalid treated as absent; warns once per element for its lifetime
+2026-09-17 Heading lit: whether HeadingLevel type includes numbers → HeadingLevel is the string union; prop type adds 1–6
+2026-09-17 Heading lit: heading role scenarios exclude Lit → both scenarios run on lit; rn asserts accessibilityRole header
+2026-09-17 Heading rn: whether Heading provides TextStyleContext to inline children → Heading provides TextStyleContext with its size and colour; ref is TextInstance
+2026-09-17 Stack web: consumer style versus overrides merge order → consumer style merged after overrides hooks; ref is Ref<HTMLElement>
+2026-09-17 Stack web: examples give children as prose, not values → children description: stories render the named content with system components
+2026-09-17 Stack web: wrapping-filters needs a narrow container to show wrapping → example: story decorator bounds the width, not an arg
+2026-09-17 Stack web: consumer role on ul/ol versus forced list role → list role wins on ul/ol; consumer role passes through elsewhere
+2026-09-17 Stack web: null/boolean children and li wrappers → null and boolean children are skipped and get no li
+2026-09-17 Stack lit: guidance says wrap li via slotchange → Lit guidance: manual assignment rebuilt from childList observer, never slotchange
+2026-09-17 Stack lit: consumer CSS gap hook at gap none → none reads var(--layout-gap-none) directly; hook ignored there
+2026-09-17 Stack lit: element not reflected, styleable from outside or not → element is not reflected and is not a styling contract
+2026-09-17 Stack rn: horizontal example rows stretch children with default align → button-row and wrapping-filters set align: center; Behavior says rows do
+2026-09-17 Stack rn: button-row child order and Default story children → Cancel then submit; Default renders three Text children
+2026-09-17 Stack rn: rn props style and accessibilityRole note disagree with element → style is internal; element on rn is Landmark or plain View
+2026-09-17 Box web: radius none presence-gating versus written-out radius.none → radius.none written out and overrides.radius ignored at none
+2026-09-17 Box web: surface none transparent versus no background and hook → none paints transparent explicitly and reads no hook
+2026-09-17 Box web: Default story args differ from schema defaults → Default story uses highlighted-panel props
+2026-09-17 Box web: ref type when element swaps the tag → ref is Ref<HTMLElement>
+2026-09-17 Box lit: ElementInternals role unreadable by role tests → Lit sets a plain role attribute on the host; element scenarios run on lit
+2026-09-17 Box lit: behavior prose lists section, Lit note lists main → scenario description names article, aside, main, nav
+2026-09-17 Box lit: string children in examples on Lit slots → stories wrap string children in Text on every platform
+2026-09-17 Box lit: element attribute versus property, not reflected → element set by attribute or property, not reflected
+2026-09-17 Box rn: resolved override type on rn → overrides cast to the binding's own type (number or colour string)
+2026-09-17 Pattern.SettingsPage web: Form has no reset contract for Cancel → Inputs controlled; Cancel restores saved copy; errors stay until next submit
+2026-09-17 Pattern.SettingsPage web: Form label and field names not given → Form name=profile, no label; every field name listed in structure
+2026-09-17 Pattern.SettingsPage web: TabPanels with sibling Fieldsets/Cards have no spacing → Notifications, Appearance, Account panels wrap children in Stack gap=loose
+2026-09-17 Pattern.SettingsPage web: Card body children need spacing and alignment → each Card body is Stack gap=normal align=start
+2026-09-17 Pattern.SettingsPage web: "the page says so" has no copy → Fieldset descriptions give the two preview-only sentences verbatim
+2026-09-17 Pattern.SettingsPage web: initial values for Frequency, Color mode, density → Immediately, System, Comfortable
+2026-09-17 Pattern.SettingsPage web: Tabs ids, Request export handler, AlertDialog confirm → ids lowercase; export has no handler; confirm only closes
+2026-09-17 Pattern.SettingsPage lit: story title Patterns/Settings versus Patterns/SettingsPage → Acceptance says Patterns/SettingsPage
+2026-09-17 Pattern.SettingsPage lit: Notifications controls outside Form, save path → page state, neither saved nor reset; Switch controlled
+2026-09-17 Pattern.SettingsPage rn: where ToastProvider comes from on native → adopter app root; the story mounts one in a decorator
+2026-09-17 Pattern.SettingsPage rn: AlertDialog placement and ScrollView versus Landmark order → AlertDialog after Container in main; ScrollView wraps Landmark main

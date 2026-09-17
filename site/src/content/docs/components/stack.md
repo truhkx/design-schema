@@ -10,7 +10,7 @@ component:
     children:
       type: content
       required: true
-      description: Any components. Stack does not style its children; it only positions them.
+      description: 'Any components. Stack does not style its children; it only positions them. Null and boolean children are skipped, as the platform skips them. In examples `children` describes the content in words; stories render it with system components (Input, Button, Text) in the order named, and the Default story renders three Text children.'
     direction:
       type: enum
       values: [vertical, horizontal]
@@ -40,10 +40,10 @@ component:
       type: enum
       values: [div, section, nav, ul, ol]
       default: div
-      description: 'Landmark or list semantics when the group has meaning. For `ul`/`ol`, each child is wrapped in an `li` that is `display: contents`, so the children stay the flex items and the gap is unchanged; the wrapper carries `role="listitem"` and the list `role="list"`, because dropping `list-style` removes list semantics in some browsers. One `li` per child as the platform counts children: a fragment holding two elements is one child, so pass an array. React Native has no counterpart for either value — a native list has no accessibility role to claim — so a navigation region there is Landmark and a list is a plain View whose rows carry their own semantics.'
+      description: 'Landmark or list semantics when the group has meaning. For `ul`/`ol`, each child is wrapped in an `li` that is `display: contents`, so the children stay the flex items and the gap is unchanged; the wrapper carries `role="listitem"` and the list `role="list"`, because dropping `list-style` removes list semantics in some browsers. One `li` per child as the platform counts children: a fragment holding two elements is one child, so pass an array; null and boolean children get no `li`. The list role wins over a consumer `role` on `ul`/`ol`; on the other elements a consumer `role` passes through. React Native has no counterpart for either value — a native list has no accessibility role to claim — so a navigation region there is Landmark and a list is a plain View whose rows carry their own semantics.'
       platforms: [web, lit]
   styles:
-    gap: { token: 'layout.gap.{gap}', description: '`gap: none` resolves `layout.gap.none`, a real token that is zero, and makes `overrides.gap` a no-op, per the presence rule. It is read as a token on every platform — none of them writes a bare 0.' }
+    gap: { token: 'layout.gap.{gap}', description: '`gap: none` resolves `layout.gap.none`, a real token that is zero, and makes `overrides.gap` a no-op, per the presence rule; on web and Lit the `none` rule reads `var(--layout-gap-none)` directly rather than the `--ds-stack-gap` hook, so consumer CSS on the hook is ignored there too. It is read as a token on every platform — none of them writes a bare 0.' }
   a11y:
     role: none
     requires: []
@@ -51,15 +51,15 @@ component:
     web:
       element: div
       attributes: []
-      notes: 'Flexbox. `gap` maps to the CSS gap property with the layout.gap token; no margins on children. The root is the `container` part; the `li` wrappers for `ul`/`ol` are the `item` part. Stack merges a consumer `className` and `style` onto the root, as Box and Text do, because composites give it layout-only classes.'
+      notes: 'Flexbox. `gap` maps to the CSS gap property with the layout.gap token; no margins on children. The root is the `container` part; the `li` wrappers for `ul`/`ol` are the `item` part. Stack merges a consumer `className` and `style` onto the root, as Box and Text do, because composites give it layout-only classes; the consumer `style` is merged after the `overrides` hooks. The ref is `Ref<HTMLElement>`, not narrowed per `element`.'
     lit:
       tag: ds-stack
       reflect: [direction, gap, align, justify, wrap]
-      notes: 'The host is the flex container (`:host { display: flex }`) with a default slot, so children stay in the light DOM and keep their own semantics. The host is the `container` part and carries no `part` attribute, since a host cannot; for `ul`/`ol` the shadow root renders the list and one `li` per child, each `display: contents` and marked `part="item"`. Keep the light DOM where it is: use manual slot assignment and rebuild the wrappers from a childList observer rather than moving children into them, which would re-fire slotchange forever.'
+      notes: 'The host is the flex container (`:host { display: flex }`) with a default slot, so children stay in the light DOM and keep their own semantics. The host is the `container` part and carries no `part` attribute, since a host cannot; for `ul`/`ol` the shadow root renders the list and one `li` per child, each `display: contents` and marked `part="item"`. Keep the light DOM where it is: use manual slot assignment and rebuild the wrappers from a childList observer rather than moving children into them, which would re-fire slotchange forever. `element` is not reflected: it is read from the attribute or property but is not a styling contract, since it changes only the shadow structure.'
     rn:
       element: View
       props: [style]
-      notes: Flexbox with `gap` (RN ≥ 0.71). Children are not wrapped. `element` is not applicable; use `accessibilityRole` on the content instead.
+      notes: 'Flexbox with `gap` (RN ≥ 0.71). Children are not wrapped. `style` in the props list is the View''s internal style, not a public prop. `element` is not applicable: a navigation region is Landmark and a list is a plain View whose rows carry their own semantics.'
     swiftui:
       element: VStack
       props: [HStack, spacing, alignment, .frame, ViewThatFits, .accessibilityElement=contain]
@@ -82,13 +82,13 @@ component:
       given: { direction: vertical, gap: normal, children: 'The form fields' }
     - name: button-row
       description: A row of actions at the end of a form or card, tightly spaced and pushed to the end.
-      given: { direction: horizontal, gap: tight, justify: end, children: 'A submit Button and a Cancel Button' }
+      given: { direction: horizontal, gap: tight, justify: end, align: center, children: 'A secondary Cancel Button, then a primary submit Button' }
     - name: page-sections
       description: The section rhythm between the regions of a page.
       given: { direction: vertical, gap: section, children: 'The regions of the page' }
     - name: wrapping-filters
-      description: A horizontal group that reflows onto new lines on narrow viewports instead of overflowing.
-      given: { direction: horizontal, gap: tight, wrap: true, children: 'A row of filters' }
+      description: A horizontal group that reflows onto new lines on narrow viewports instead of overflowing. Its story renders inside a width-bounded container (a story decorator, not an arg) so the wrap shows.
+      given: { direction: horizontal, gap: tight, wrap: true, align: center, children: 'A row of filters' }
 ---
 
 Stack is how things get spaced. Instead of margins on individual components, a Stack owns the gap between its children, using one of the theme's rhythm presets (`layout.gap.*`) rather than a raw number, so a theme with `layout.rhythm: loose` opens up every screen at once. Almost every screen is stacks inside stacks.
@@ -105,7 +105,7 @@ A wrapped Stack is not a card grid, and `wrap` should not be asked to be one. Fl
 
 ## Behavior
 
-Stack is purely presentational: no events, no state. `horizontal` stacks overflow by default; set `wrap` so content reflows on narrow viewports. `align: stretch` (the default) makes children fill the cross axis, which is what buttons in a vertical stack usually want; set `start` for natural widths.
+Stack is purely presentational: no events, no state. `horizontal` stacks overflow by default; set `wrap` so content reflows on narrow viewports. `align: stretch` (the default) makes children fill the cross axis, which is what buttons in a vertical stack usually want; set `start` for natural widths. A horizontal row of controls sets `align: center`, so its children keep their own heights rather than stretching to the tallest.
 
 ## Accessibility
 
@@ -117,7 +117,7 @@ Stack has no role by default and adds nothing to the accessibility tree. When `e
 `display: flex` with `flex-direction`, `gap: var(--layout-gap-<preset>)`, `align-items`, `justify-content`, and `flex-wrap`. `between` maps to `space-between`.
 
 ### Lit
-`<ds-stack direction="horizontal" gap="tight">`. The host itself is the flex container; children are slotted light-DOM nodes, so their semantics are untouched. `element="ul"` renders the slot inside a `<ul role="list">` and wraps each assigned node in an `<li>` via slotchange.
+`<ds-stack direction="horizontal" gap="tight">`. The host itself is the flex container; children are slotted light-DOM nodes, so their semantics are untouched. `element="ul"` renders a `<ul role="list">` with one `<li>` slot per child, assigned manually and rebuilt from a childList observer (never slotchange, which loops).
 
 ### React Native
 `View` with `flexDirection`, `gap` from the RN token object, `alignItems`, `justifyContent`, `flexWrap`. `start`/`end` map to `flex-start`/`flex-end`.

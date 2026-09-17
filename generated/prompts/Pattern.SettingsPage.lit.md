@@ -37,6 +37,7 @@ Every one exists in `packages/lit/src`; import from there and read a file only w
 - `Text` — `packages/lit/src/Text.*` (ds-text)
 - `Alert` — `packages/lit/src/Alert.*` (ds-alert)
 - `Toast` — `packages/lit/src/Toast.*` (ds-toast)
+- `AlertDialog` — `packages/lit/src/AlertDialog.*` (ds-alert-dialog)
 
 ## Structure
 
@@ -45,45 +46,51 @@ Landmark main
   Container width=content
     Stack gap=section
       Heading level=1  "Settings"
-      Tabs label="Settings sections"  (Profile | Notifications | Appearance | Account)
+      Tabs label="Settings sections"  (Profile | Notifications | Appearance | Account; ids profile, notifications, appearance, account)
         TabPanel "Profile"
-          Form onSubmit
+          Form name=profile onSubmit   (no label: it is the page's only form)
             Stack gap=loose
               Fieldset legend="Your details"
-                Input label="Name" required
-                Input label="Email" type=email required description="We send receipts here."
+                Input name=name label="Name" required
+                Input name=email label="Email" type=email required description="We send receipts here."
               Fieldset legend="Public profile"
-                Input label="Display name"
-                Input label="Website" type=url
+                Input name=displayName label="Display name"
+                Input name=website label="Website" type=url
               Stack horizontal gap=tight justify=end   (given to Form's `actions` prop or named slot, never as a trailing child)
                 Button variant=secondary "Cancel"
                 Button variant=primary type=submit "Save changes"
         TabPanel "Notifications"
-          Fieldset legend="Email me about"
-            Checkbox "Product updates" description="About once a month."
-            Checkbox "Security alerts" defaultChecked
-            Checkbox "Tips and tutorials"
-          Fieldset legend="Push notifications"
-            Switch label="Enable push notifications"
-            RadioGroup label="Frequency" (Immediately | Daily digest | Weekly digest)  disabled unless the Switch is on
+          Stack gap=loose
+            Fieldset legend="Email me about"
+              Checkbox name=productUpdates "Product updates" description="About once a month."
+              Checkbox name=securityAlerts "Security alerts" defaultChecked
+              Checkbox name=tips "Tips and tutorials"
+            Fieldset legend="Push notifications"
+              Switch label="Enable push notifications"   (controlled, so it can disable the RadioGroup)
+              RadioGroup name=pushFrequency label="Frequency" (Immediately | Daily digest | Weekly digest) defaultValue=Immediately  disabled unless the Switch is on
         TabPanel "Appearance"
-          Fieldset legend="Theme"
-            SegmentedControl label="Color mode" (System | Light | Dark)
-          Fieldset legend="Density"
-            RadioGroup label="Layout density" (Comfortable | Compact) description="Affects tables and lists."
+          Stack gap=loose
+            Fieldset legend="Theme" description="A preview only: the app sets the color mode, and System means no override."
+              SegmentedControl label="Color mode" (System | Light | Dark)  value starts at System
+            Fieldset legend="Density" description="A preview only: the theme has no density setting yet."
+              RadioGroup name=density label="Layout density" (Comfortable | Compact) description="Affects tables and lists."  value starts at Comfortable
         TabPanel "Account"
-          Card surface=subtle inset=lg heading="Export your data" headingLevel=2
-            Text "Download everything we store about you as a ZIP."
-            Button variant=secondary "Request export"
-          Card surface=subtle inset=lg heading="Delete account" headingLevel=2
-            Alert tone=warning "This cannot be undone."
-            Button variant=danger "Delete account…"  → AlertDialog
+          Stack gap=loose
+            Card surface=subtle inset=lg heading="Export your data" headingLevel=2
+              Stack gap=normal align=start
+                Text "Download everything we store about you as a ZIP."
+                Button variant=secondary "Request export"   (no handler: the page has no export to run)
+            Card surface=subtle inset=lg heading="Delete account" headingLevel=2
+              Stack gap=normal align=start
+                Alert tone=warning "This cannot be undone."
+                Button variant=danger "Delete account…"  → AlertDialog
       Toast "Changes saved" on successful submit   (raised with toast(), default tone; the provider owns the region and where it sits, so no region is authored here)
+  AlertDialog   (a sibling after Container, inside Landmark main)
 ```
 
 ## Behaviors the page must show
 
-Saving the profile form validates on submit (the Form contract: required first; there is no built-in email or URL format check, so a format rule is the page's own business logic and this pattern does not add one), focuses the first invalid field — set `errorSummary={false}`, since the default focuses the summary instead — and on success shows a Toast "Changes saved" without moving focus. Cancel resets the form to its saved values and does nothing else; with no seed data the fields return to empty. The Notifications tab's frequency RadioGroup is disabled while push is off — a real disabled-but-readable control, not hidden. The Appearance tab's color-mode and density controls are presentational here: the page may not read the theme or branch on it, the mode is set by an ancestor, and there is no density in the theme at all — so both are real, controlled inputs that drive nothing, and the page says so. "System" is not a third mode the system has; it means no override. The Delete button opens an AlertDialog with `tone: danger`, heading "Delete your account?", description "This permanently deletes your account and everything in it. This cannot be undone." and confirm label "Delete account". Its initial focus is AlertDialog's own — Cancel on web and Lit, the heading on native, which has no way to focus a Button first. Escape closes it. Switching tabs keeps each panel's unsaved state (Tabs with `keepMounted`).
+Saving the profile form validates on submit (the Form contract: required first; there is no built-in email or URL format check, so a format rule is the page's own business logic and this pattern does not add one), focuses the first invalid field — set `errorSummary={false}`, since the default focuses the summary instead — and on success shows a Toast "Changes saved" without moving focus. Cancel resets the form to its saved values and does nothing else; with no seed data the fields return to empty. Form has no reset contract, so the page keeps the four Inputs controlled and Cancel restores their saved copy; any error messages already showing stay until the next submit. The Notifications and Appearance controls sit outside the Form, so they are page state that is neither saved nor reset. The Notifications tab's frequency RadioGroup is disabled while push is off — a real disabled-but-readable control, not hidden. The Appearance tab's color-mode and density controls are presentational here: the page may not read the theme or branch on it, the mode is set by an ancestor, and there is no density in the theme at all — so both are real, controlled inputs that drive nothing, and the page says so in each Fieldset's `description`. "System" is not a third mode the system has; it means no override. The Delete button opens an AlertDialog with `tone: danger`, heading "Delete your account?", description "This permanently deletes your account and everything in it. This cannot be undone." and confirm label "Delete account". Confirm only closes it, like Cancel: there is no account to delete, and no follow-up Toast is faked. Its initial focus is AlertDialog's own — Cancel on web and Lit, the heading on native, which has no way to focus a Button first. Escape closes it. Switching tabs keeps each panel's unsaved state (Tabs with `keepMounted`).
 
 ## Guidance
 
@@ -109,4 +116,4 @@ Does `Stack gap=section` between the Heading and the Tabs read as one page, or a
 
 ## Acceptance
 
-The page passes the same gates as a component (parse is moot; contrast, literals, typecheck, keyboard on the Tabs and Dialog, axe on the page story), renders in both themes and modes with no theme branching, and has a Storybook story `Patterns/Settings` per platform. The findings list above is answered in writing in `process/generation-log.md`, and each answer that changed a doc links the doc.
+The page passes the same gates as a component (parse is moot; contrast, literals, typecheck, keyboard on the Tabs and Dialog, axe on the page story), renders in both themes and modes with no theme branching, and has a Storybook story `Patterns/SettingsPage` per platform. The findings list above is answered in writing in `process/generation-log.md`, and each answer that changed a doc links the doc.

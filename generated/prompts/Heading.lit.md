@@ -68,9 +68,14 @@ component:
       - '5'
       - '6'
       required: true
-      description: Position in the document outline. Controls the semantic element,
+      description: 'Position in the document outline. Controls the semantic element,
         not the visual size. Canonical values are strings; generated components also
-        accept the number.
+        accept the number — the exported `HeadingLevel` type is the string union,
+        and the prop or property type adds `1 | 2 | 3 | 4 | 5 | 6`. A missing, out-of-range
+        or non-numeric level (untyped JavaScript, `level="7"`) is treated as `2` on
+        every platform: an <h2> on web and Lit, the 3xl default size everywhere, and
+        one development warning per element for its lifetime. The Default story renders
+        level `2` with "Account settings".'
       a11y: Screen-reader users navigate by heading level; levels must not skip (h1
         → h3).
     size:
@@ -86,10 +91,11 @@ component:
       description: Visual size, independent of level. There is no single default;
         the default is read from `level` by this exact map — 1 → 4xl, 2 → 3xl, 3 →
         2xl, 4 → xl, 5 → lg, 6 → md — and an explicit `size` always wins over it.
-        The resolved default is never written back to the `size` attribute, so `[size]`
-        selectors match only explicit sizes. Heading takes the large end of the shared
-        size vocabulary; the exported type is its own, since Text takes the small
-        end.
+        On Lit the resolved default is never written back to the `size` attribute,
+        so `[size]` selectors match only explicit sizes; web exposes no size attribute
+        at all, only the `ds-heading--size-*` modifier class, which carries the resolved
+        size. Heading takes the large end of the shared size vocabulary; the exported
+        type is its own, since Text takes the small end.
     children:
       type: content
       required: true
@@ -123,6 +129,9 @@ component:
       locked: false
     color:
       token: color.foreground.strong
+      description: 'Locked by the AAA pair, so it has no `--ds-heading-color` hook:
+        the rule reads `var(--color-foreground-strong)` directly and consumer CSS
+        has no hook to break the pair with.'
       locked: true
     marginBlockEnd:
       token: space.sm
@@ -152,7 +161,9 @@ component:
         sizes or a margin. `contrast-aaa` and `heading-hierarchy` have nothing to
         implement here — the first is a property of the locked token pair and the
         second is a property of the page; both are checked by the build, not by the
-        component.'
+        component. The user-agent top margin of h1–h6 is reset to `margin-block-start:
+        0` — a reset of a browser default, not a binding, since marginBlockEnd is
+        the one margin Heading owns.'
     lit:
       tag: ds-heading
       reflect:
@@ -163,9 +174,12 @@ component:
         and `data-part="text"` — the anatomy name, not `heading`. Headings inside
         shadow roots are exposed to assistive technology normally; some in-page outline
         tools do not see them, and the component does nothing about that. `level`
-        is required, but an element always renders: with the attribute absent it falls
-        back to <h2> and warns once per element in development. Non-interactive, so
-        no delegatesFocus and no focus styling.'
+        is required, but an element always renders: with the attribute absent or invalid
+        it falls back to <h2> and warns once per element, for the element''s lifetime,
+        in development. Sizes are attribute selectors on the reflected `level` and
+        `size` setting `--ds-heading-font-size`, with the `[size]` rules declared
+        after the `[level]` defaults so an explicit size wins at equal specificity.
+        Non-interactive, so no delegatesFocus and no focus styling.'
     rn:
       element: Text
       props:
@@ -175,7 +189,10 @@ component:
         design instead. Heading renders the platform Text directly rather than composing
         the system Text, which carries no header role, no heading sizes and no margin.
         The root is both the component and its only part, so it carries `testID="Heading"`
-        and there is no `Heading.text`: a part that is the root keeps the root hook.'
+        and there is no `Heading.text`: a part that is the root keeps the root hook.
+        The ref is `Ref<TextInstance>`. Heading provides `TextStyleContext` ({ fontSize,
+        color, nested: true }) with its own resolved size and colour, as Text does,
+        so an inline Icon or Link inside it matches the heading.'
     swiftui:
       element: Text
       props:
@@ -198,6 +215,11 @@ component:
     - role: heading
       platforms:
       - web
+      - lit
+    - attribute: accessibilityRole
+      is: header
+      platforms:
+      - rn
   - name: size-does-not-change-the-outline
     description: Decoupling level from size is the whole point of this component -
       a heading at the smallest size is still a heading.
@@ -208,6 +230,11 @@ component:
     - role: heading
       platforms:
       - web
+      - lit
+    - attribute: accessibilityRole
+      is: header
+      platforms:
+      - rn
   examples:
   - name: page-title
     description: The one level-1 heading on a page, at its default size.
@@ -245,11 +272,27 @@ Overrides change values, never presence: a prop that turns a part off (`surface:
 Overridable: `fontFamily`, `fontWeight`, `fontSize`, `lineHeight`, `marginBlockEnd`
 Locked (accessibility-bearing, never overridable): `color`
 
-## Behavior scenarios (16)
+## Behavior scenarios (18)
 
 Each scenario below becomes one test. They are platform-neutral: `given` are prop overrides on the `Default` story's args, `when` is one interaction, `then` is a list of expectations. Scenarios marked `derived` were produced by the parser from the schema; the rest were written in the doc. Render every scenario; never skip one because the component does not satisfy it. A scenario the code fails is a failing test, and a scenario that cannot be expressed on this platform is a gap to report, not a test to delete.
 
 ```yaml
+- name: level-puts-the-heading-in-the-outline
+  description: On web the semantic element is always a real <h1>-<h6> chosen from
+    level, so the heading is in the accessibility tree screen-reader users navigate
+    by.
+  given:
+    level: '3'
+  then:
+  - role: heading
+- name: size-does-not-change-the-outline
+  description: Decoupling level from size is the whole point of this component - a
+    heading at the smallest size is still a heading.
+  given:
+    level: '2'
+    size: md
+  then:
+  - role: heading
 - name: renders
   then:
   - renders: true
@@ -358,8 +401,11 @@ notes: "Renders the matching <h1>\u2013<h6> inside the shadow root, carrying `pa
   text\"` and `data-part=\"text\"` \u2014 the anatomy name, not `heading`. Headings\
   \ inside shadow roots are exposed to assistive technology normally; some in-page\
   \ outline tools do not see them, and the component does nothing about that. `level`\
-  \ is required, but an element always renders: with the attribute absent it falls\
-  \ back to <h2> and warns once per element in development. Non-interactive, so no\
+  \ is required, but an element always renders: with the attribute absent or invalid\
+  \ it falls back to <h2> and warns once per element, for the element's lifetime,\
+  \ in development. Sizes are attribute selectors on the reflected `level` and `size`\
+  \ setting `--ds-heading-font-size`, with the `[size]` rules declared after the `[level]`\
+  \ defaults so an explicit size wins at equal specificity. Non-interactive, so no\
   \ delegatesFocus and no focus styling."
 ```
 
@@ -388,10 +434,10 @@ Headings must reflect the actual structure of the content (WCAG 1.3.1 Info and R
 ## Platform notes
 
 ### Web
-`level` selects the element. `size` maps to `font.size.*` via a class or inline custom property; the default size per level is 1→4xl, 2→3xl, 3→2xl, 4→xl, 5→lg, 6→md.
+`level` selects the element. `size` maps to `font.size.*` via a `ds-heading--size-*` modifier class; the default size per level is 1→4xl, 2→3xl, 3→2xl, 4→xl, 5→lg, 6→md.
 
 ### Lit
-`<ds-heading level="2">` renders `<h2>` inside its shadow root. `level`, `size` and `align` are reflected as attributes. Because the heading lives in a shadow root, styling comes through the `--ds-heading-*` hooks and `overrides`, never `::part`; `part="heading"` may remain on the inner element as an anatomy hook only.
+`<ds-heading level="2">` renders `<h2>` inside its shadow root. `level`, `size` and `align` are reflected as attributes. Because the heading lives in a shadow root, styling comes through the `--ds-heading-*` hooks and `overrides`, never `::part`; the inner element carries `part="text"` as an anatomy hook only.
 
 ### React Native
 Renders `Text` with `accessibilityRole="header"`. `level` chooses the default size only. iOS VoiceOver exposes the header trait but not a level; Android TalkBack likewise. Do not simulate levels with `accessibilityLabel` prefixes like "Heading level 2" — it is noisy and non-standard.

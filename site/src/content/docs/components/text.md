@@ -27,17 +27,17 @@ component:
       enumRef: foregroundTone
       values: [default, strong, muted, danger, onAction]
       default: default
-      description: 'Semantic color. `onAction` is only for text placed on an action background. There is no `inverse` tone: the shared foreground vocabulary has no such name, so an inverse surface re-scopes the foreground instead (see `styles.color`).'
+      description: 'Semantic color. `onAction` is only for text placed on an action background, and its story paints that background (color.action.primary.background) behind the Text. There is no `inverse` tone: the shared foreground vocabulary has no such name, so an inverse surface re-scopes the foreground instead (see `styles.color`).'
       a11y: Every tone meets 4.5:1 on the page background in every theme and mode except onAction, which is checked against color.action.primary.background.
     align:
       type: enum
       values: [start, center, end]
       default: start
-      description: 'Horizontal alignment. `start`/`end` follow writing direction. Native has no logical text alignment, so they resolve through I18nManager.isRTL at render; a direction change mid-session does not re-align text that is already on screen.'
+      description: 'Horizontal alignment. `start`/`end` follow writing direction. Native has no logical text alignment, so they resolve through I18nManager.isRTL at render; a direction change mid-session does not re-align text that is already on screen. Web and Lit use CSS `text-align: start|end`, which follows `dir` live.'
     truncate:
       type: boolean
       default: false
-      description: 'Clip to one line with an ellipsis. On web the full text is exposed via `title` when children is a plain string; otherwise the consumer passes `title`, and neither one is a development warning — the text is then reachable only to a screen reader. On Lit there is no "plain string" state, so `title` comes from the host''s flattened, whitespace-collapsed textContent and is omitted when that is empty. With `element: span` the clipped box is `display: inline-block; max-inline-size: 100%`, so the width comes from the parent. Native clips with `numberOfLines={1}` and `ellipsizeMode="tail"` and has no affordance that reveals the rest — a known gap.'
+      description: 'Clip to one line with an ellipsis. On web the full text is exposed via `title` when children is a plain string; otherwise the consumer passes `title`, and neither one is a development warning — the text is then reachable only to a screen reader. A consumer `title` always wins and is forwarded unchanged, with or without `truncate`. On Lit there is no "plain string" state, so `title` comes from the host''s flattened, whitespace-collapsed textContent, is omitted when that is empty, sits on the `part="text"` element (the one that clips), and follows live edits to the text (a MutationObserver over the host''s subtree, since slotchange misses character changes). With `element: span` the clipped box is `display: inline-block; max-inline-size: 100%; vertical-align: bottom`, so the width comes from the parent and the clipped box stays on the line. Native clips with `numberOfLines={1}` and `ellipsizeMode="tail"` and has no affordance that reveals the rest — a known gap.'
       a11y: Truncated text is still read in full by screen readers; ensure sighted users can also reach it.
     element:
       type: enum
@@ -50,7 +50,7 @@ component:
     fontSize: { token: 'font.size.{size}' }
     fontWeight: { token: 'font.weight.{weight}' }
     lineHeight: { token: font.lineHeight.normal }
-    color: { token: 'color.foreground.{tone}', description: 'Locked, and locked means absent from the overridable type — so a composing parent that forwards `{ color: … }` gets a compile error, not a silent no-op. A surface with its own foreground (Toast, Tooltip, Slider''s value bubble on `color.inverse.foreground`) therefore does not recolour Text at all: on web and Lit it re-scopes `--color-foreground` on its own container, which the tone resolves through and which touches no part of the child; on React Native, where there is no cascade, it provides the package-internal `TextForegroundContext`, which Text reads only while `tone` is `default`. `onAction` is not a stand-in for either — in dark mode it is near-white while the inverse foreground is near-black. A control that paints its own selected text (a DatePicker day) draws that text itself rather than asking Text for a colour it has no tone for.' }
+    color: { token: 'color.foreground.{tone}', description: 'Locked, and locked means absent from the overridable type — so a composing parent that forwards `{ color: … }` gets a compile error, not a silent no-op. A surface with its own foreground (Toast, Tooltip, Slider''s value bubble on `color.inverse.foreground`) therefore does not recolour Text at all: on web and Lit it re-scopes `--color-foreground` on its own container, which the tone resolves through and which touches no part of the child; on React Native, where there is no cascade, it provides the package-internal `TextForegroundContext`, which Text reads only while `tone` is `default`. `onAction` is not a stand-in for either — in dark mode it is near-white while the inverse foreground is near-black. A control that paints its own selected text (a DatePicker day) draws that text itself rather than asking Text for a colour it has no tone for. Being locked, it has no `--ds-text-color` hook on web or Lit: the tone rule reads the token''s own custom property directly — `default` is the bare `var(--color-foreground)` an inverse surface re-scopes, and `onAction` is `var(--color-foreground-on-action)` (camelCase to kebab-case). `TextForegroundContext` is exported from Text.tsx for sibling components and not re-exported from the package index.' }
   a11y:
     role: generic
     requires: [contrast-aa]
@@ -63,7 +63,7 @@ component:
     web:
       element: p
       attributes: []
-      notes: 'Renders the `element` prop. `truncate` uses overflow/text-overflow and sets `title` to the full text on the root, the only element Text renders. The root carries `data-ds="Text"` and no `data-part`: composing parents pass their own part name through `...rest` (`description`, `errorMessage`, `label`), and a hardcoded one would collide. Text merges a consumer `className` and `style` onto the root, because most of the package gives it a layout-only class on the way past.'
+      notes: 'Renders the `element` prop. `truncate` uses overflow/text-overflow and sets `title` to the full text on the root, the only element Text renders. The root carries `data-ds="Text"` and no `data-part`: composing parents pass their own part name through `...rest` (`description`, `errorMessage`, `label`), and a hardcoded one would collide. Text merges a consumer `className` and `style` onto the root, because most of the package gives it a layout-only class on the way past. The consumer `style` is merged after the inline `overrides` hooks, so it wins where both set the same property.'
     lit:
       tag: ds-text
       reflect: [size, weight, tone, align, truncate, element]
@@ -71,7 +71,7 @@ component:
     rn:
       element: Text
       props: [numberOfLines, ellipsizeMode, allowFontScaling]
-      notes: 'No `element` prop — RN has one Text primitive. `truncate` maps to `numberOfLines={1}`. Keep `allowFontScaling` on so Dynamic Type / font scaling works. Text provides `TextStyleContext` ({ fontSize, color, nested: true }) to its descendants — the resolved size and color it renders with — so inline children (Icon, Link) can match it; the older boolean `TextNestingContext` is replaced by `nested` on this object. Outside any Text the context reads `{ fontSize: 0, color: '''', nested: false }`, so a consumer branches on `nested` and never on the numbers. `a11y.role: generic` has no native counterpart and no accessibilityRole is set. Font weight tokens are numbers and the platform wants a string union, so a weight snaps to the nearest hundred, and lineHeight × fontSize rounds to a whole pixel: a theme with a weight of 550 or a fractional line height lands on the nearest step.'
+      notes: 'No `element` prop — RN has one Text primitive. `truncate` maps to `numberOfLines={1}`. Keep `allowFontScaling` on so Dynamic Type / font scaling works. Text provides `TextStyleContext` ({ fontSize, color, nested: true }) to its descendants — the resolved size and color it renders with — so inline children (Icon, Link) can match it; the older boolean `TextNestingContext` is replaced by `nested` on this object. The ref is `Ref<TextInstance>`, the root''s own instance type. Outside any Text the context reads `{ fontSize: 0, color: '''', nested: false }`, so a consumer branches on `nested` and never on the numbers. `a11y.role: generic` has no native counterpart and no accessibilityRole is set. Font weight tokens are numbers and the platform wants a string union, so a weight snaps to the nearest hundred, and lineHeight × fontSize rounds to a whole pixel: a theme with a weight of 550 or a fractional line height lands on the nearest step.'
     swiftui:
       element: Text
       props: [.font, .fontWeight, .lineSpacing, .foregroundStyle, .lineLimit, .truncationMode, .accessibilityAddTraits=isStaticText]
@@ -83,7 +83,7 @@ component:
       given: { truncate: true, children: 'A sentence long enough to be clipped by its column.' }
       then:
         - { attribute: title, is: 'A sentence long enough to be clipped by its column.' }
-      platforms: [web]
+      platforms: [web, lit]
   examples:
     - name: body-copy
       description: The default paragraph - body size, regular weight, default tone.
@@ -124,7 +124,7 @@ Every tone except `onAction` is contrast-checked against the page background at 
 The `element` prop chooses the tag; default `p`. `label` should only be used with a `for` association — prefer the Input component, which handles this. Truncation adds `title` with the full string.
 
 ### Lit
-`<ds-text size="sm" tone="muted">` renders the element in a shadow root with `part="text"` for outside styling. Reflected attributes allow `ds-text[tone="danger"]` selectors in consuming apps.
+`<ds-text size="sm" tone="muted">` renders the element in a shadow root with `part="text"` as an anatomy name only; styling comes through the `--ds-text-*` hooks and `overrides`, never `::part`. Reflected attributes allow `ds-text[tone="danger"]` selectors in consuming apps.
 
 ### React Native
 Renders `Text`. `size` and `weight` map to `fontSize`/`fontWeight` from the RN token object; `tone` to a color token. `truncate` sets `numberOfLines={1}` and `ellipsizeMode="tail"`. Nested Text is fine for inline emphasis.

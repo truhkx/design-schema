@@ -35,8 +35,8 @@ export const Open: Story = { args: { open: true } };
 /* examples */
 export const IconOnlyButtonName: Story = {
   args: {
-    content: 'Bold',
-    children: <Button label="Bold" iconOnly leadingIcon={<Icon name="list" />} />,
+    content: 'Add item',
+    children: <Button label="Add item" iconOnly leadingIcon={<Icon name="plus" />} />,
     describes: false,
   },
 };
@@ -44,7 +44,7 @@ export const IconOnlyButtonName: Story = {
 export const ColumnHeaderHint: Story = {
   args: {
     content: 'Includes archived items',
-    children: <Button label="Items" variant="ghost" />,
+    children: <Button label="Items" />,
   },
   render: (args) => (
     <table>
@@ -61,15 +61,12 @@ export const ColumnHeaderHint: Story = {
 
 export const WarmToolbar: Story = {
   args: {
-    content: 'Italic',
-    children: <Button label="Italic" iconOnly leadingIcon={<Icon name="dash" />} />,
+    content: 'Grid view',
+    children: <Button label="Grid view" iconOnly leadingIcon={<Icon name="grid" />} />,
     delay: 'none',
   },
   render: (args) => (
-    <Toolbar label="Text formatting">
-      <Tooltip content="Bold" describes={false} delay="none">
-        <Button label="Bold" iconOnly leadingIcon={<Icon name="list" />} />
-      </Tooltip>
+    <Toolbar label="View">
       <Tooltip {...args} />
     </Toolbar>
   ),
@@ -77,10 +74,15 @@ export const WarmToolbar: Story = {
 
 export const BelowTheTrigger: Story = {
   args: {
-    content: 'Copy link',
-    children: <Button label="Copy link" iconOnly leadingIcon={<Icon name="external" />} />,
+    content: 'Open in new tab',
+    children: <Button label="Open in new tab" iconOnly leadingIcon={<Icon name="external" />} />,
     placement: 'bottom',
   },
+  render: (args) => (
+    <header>
+      <Tooltip {...args} />
+    </header>
+  ),
 };
 
 /** Open with its trigger and three focusable triggers in total, for the keyboard gate (Escape hides it, focus stays). */

@@ -12,10 +12,10 @@ const meta: Meta<typeof Tooltip> = {
   component: Tooltip,
   decorators: [withTheme({ fit: true })],
   args: {
-    content: 'Add item',
-    children: <Button iconOnly label="Add item" leadingIcon={<Icon name="plus" />} />,
+    content: 'Includes archived items',
+    children: <Button variant="ghost" size="sm" label="Items" />,
     placement: 'top',
-    describes: false,
+    describes: true,
     delay: 'default',
   },
 };
@@ -51,9 +51,8 @@ export const WithOverrides: Story = {
 /** The tooltip is the control's name, not a second announcement, so it is linked as the label. */
 export const IconOnlyButtonName: Story = {
   args: {
-    content: 'Bold',
-    // The icon table has no `bold` glyph yet; `plus` stands in.
-    children: <Button iconOnly label="Bold" leadingIcon={<Icon name="plus" />} />,
+    content: 'Add item',
+    children: <Button iconOnly label="Add item" leadingIcon={<Icon name="plus" />} />,
     describes: false,
   },
 };
@@ -63,23 +62,19 @@ export const ColumnHeaderHint: Story = {
   args: {
     content: 'Includes archived items',
     children: <Button variant="ghost" size="sm" label="Items" />,
-    describes: true,
   },
 };
 
 /** A toolbar where a sibling tooltip is already open, so the next one shows instantly. */
 export const WarmToolbar: Story = {
   args: {
-    content: 'Italic',
-    children: <Button iconOnly variant="ghost" label="Italic" leadingIcon={<Icon name="minus" />} />,
+    content: 'Grid view',
+    children: <Button iconOnly variant="ghost" label="Grid view" leadingIcon={<Icon name="grid" />} />,
     delay: 'none',
   },
   render: (args) => (
-    <Toolbar label="Formatting">
-      <Tooltip content="Bold" describes={false} delay="none">
-        <Button iconOnly variant="ghost" label="Bold" leadingIcon={<Icon name="plus" />} />
-      </Tooltip>
-      <Tooltip {...args} describes={false} />
+    <Toolbar label="View">
+      <Tooltip {...args} />
     </Toolbar>
   ),
 };
@@ -87,8 +82,8 @@ export const WarmToolbar: Story = {
 /** A trigger at the top of the page, where the bubble reads better underneath. */
 export const BelowTheTrigger: Story = {
   args: {
-    content: 'Copy link',
-    children: <Button iconOnly label="Copy link" leadingIcon={<Icon name="external" />} />,
+    content: 'Open in new tab',
+    children: <Button iconOnly label="Open in new tab" leadingIcon={<Icon name="external" />} />,
     placement: 'bottom',
   },
 };
@@ -104,11 +99,11 @@ export const Keyboard: Story = {
       <Tooltip content="Add item" describes={false} open>
         <Button iconOnly variant="ghost" label="Add item" leadingIcon={<Icon name="plus" />} />
       </Tooltip>
-      <Tooltip content="Remove item" describes={false}>
-        <Button iconOnly variant="ghost" label="Remove item" leadingIcon={<Icon name="minus" />} />
+      <Tooltip content="Grid view" describes={false}>
+        <Button iconOnly variant="ghost" label="Grid view" leadingIcon={<Icon name="grid" />} />
       </Tooltip>
-      <Tooltip content="Search" describes={false}>
-        <Button iconOnly variant="ghost" label="Search" leadingIcon={<Icon name="search" />} />
+      <Tooltip content="Open in new tab" describes={false}>
+        <Button iconOnly variant="ghost" label="Open in new tab" leadingIcon={<Icon name="external" />} />
       </Tooltip>
     </Stack>
   ),

@@ -53,14 +53,21 @@ describe('ds-focus-scope', () => {
   });
 
   it('auto-focus-none-moves-focus-nowhere', async () => {
+    const outside = document.createElement('button');
+    document.body.append(outside);
+    outside.focus();
     const { el } = await setup({ autoFocus: 'none' });
+    expect(document.activeElement).toBe(outside);
     expect(activeChain()).not.toContain(el);
   });
 
   it('the-wrapper-is-not-focusable', async () => {
-    const { el } = await setup({ autoFocus: 'none' });
+    const { el, scope } = await setup({ autoFocus: 'none' });
+    expect(scope).not.toHaveAttribute('tabindex');
     el.focus();
+    scope.focus();
     expect(activeChain()).not.toContain(el);
+    expect(activeChain()).not.toContain(scope);
   });
 
   it('the-scope-adds-no-role', async () => {
@@ -105,6 +112,29 @@ describe('ds-focus-scope', () => {
     await userEvent.keyboard('{Tab}');
     expect(document.activeElement).toBe(buttons[1]);
     expect(escapeAttempt).not.toHaveBeenCalled();
+  });
+
+  it('shift+tab from the container wraps to the last', async () => {
+    const { buttons, escapeAttempt } = await setup({ autoFocus: 'container' });
+    await userEvent.keyboard('{Shift>}{Tab}{/Shift}');
+    expect(document.activeElement).toBe(buttons[2]);
+    expect(escapeAttempt.mock.calls[0]?.[0]?.detail).toEqual({ direction: 'backward' });
+  });
+
+  it('only the top active scope has tab-stop sentinels', async () => {
+    const { el: outer } = await setup();
+    const inner = document.createElement('ds-focus-scope');
+    inner.append(document.createElement('button'));
+    outer.append(inner);
+    await inner.updateComplete;
+    await outer.updateComplete;
+    const sentinelTabIndex = (scope: DsFocusScope) =>
+      scope.shadowRoot!.querySelector('[data-focus-sentinel="start"]')!.getAttribute('tabindex');
+    expect(sentinelTabIndex(inner)).toBe('0');
+    expect(sentinelTabIndex(outer)).toBe('-1');
+    inner.remove();
+    await outer.updateComplete;
+    expect(sentinelTabIndex(outer)).toBe('0');
   });
 
   it('restores focus to the opener on unmount', async () => {

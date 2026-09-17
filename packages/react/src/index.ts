@@ -133,7 +133,7 @@ export type { DividerProps, DividerOrientation, DividerSpacing, DividerOverridab
 export { Fieldset } from './Fieldset';
 export type { FieldsetProps, FieldsetGap, FieldsetOverridableBinding } from './Fieldset';
 
-export { Toast, ToastRegion, toast } from './Toast';
+export { Toast, ToastRegion, toast, dismiss } from './Toast';
 export type {
   ToastProps,
   ToastTone,

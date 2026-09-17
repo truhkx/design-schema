@@ -152,6 +152,72 @@ describe('FocusScope', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Done' }));
     expect(opener).toHaveFocus();
   });
+
+  const sentinelTabIndexes = (root: Element) =>
+    Array.from(root.querySelectorAll<HTMLElement>(':scope > [data-focus-sentinel]')).map((el) => el.tabIndex);
+
+  it('sentinels are tab stops only while trapped, active and on top', () => {
+    const { rerender, container } = render(
+      <FocusScope autoFocus="none">
+        <button>A</button>
+      </FocusScope>,
+    );
+    const root = () => container.querySelector('[data-ds="FocusScope"]')!;
+    expect(sentinelTabIndexes(root())).toEqual([0, 0]);
+    rerender(
+      <FocusScope autoFocus="none" trapped={false}>
+        <button>A</button>
+      </FocusScope>,
+    );
+    expect(sentinelTabIndexes(root())).toEqual([-1, -1]);
+    rerender(
+      <FocusScope autoFocus="none" active={false}>
+        <button>A</button>
+      </FocusScope>,
+    );
+    expect(sentinelTabIndexes(root())).toEqual([-1, -1]);
+  });
+
+  it('a nested scope mounted in the same commit owns Tab; the outer takes it back when the inner pauses', () => {
+    function Nested({ innerActive }: { innerActive: boolean }) {
+      return (
+        <FocusScope autoFocus="none" data-testid="outer">
+          <button>Outer</button>
+          <FocusScope autoFocus="none" active={innerActive} data-testid="inner">
+            <button>Inner</button>
+          </FocusScope>
+        </FocusScope>
+      );
+    }
+    const { rerender, getByTestId } = render(<Nested innerActive />);
+    expect(sentinelTabIndexes(getByTestId('outer'))).toEqual([-1, -1]);
+    expect(sentinelTabIndexes(getByTestId('inner'))).toEqual([0, 0]);
+    rerender(<Nested innerActive={false} />);
+    expect(sentinelTabIndexes(getByTestId('outer'))).toEqual([0, 0]);
+    expect(sentinelTabIndexes(getByTestId('inner'))).toEqual([-1, -1]);
+  });
+
+  it('Shift+Tab from the wrapper wraps to the last descendant and reports backward', () => {
+    const attempts: string[] = [];
+    render(
+      <FocusScope autoFocus="container" onEscapeAttempt={(direction) => attempts.push(direction)}>
+        <button>One</button>
+        <button>Two</button>
+      </FocusScope>,
+    );
+    fireEvent.keyDown(document.activeElement!, { key: 'Tab', shiftKey: true });
+    expect(screen.getByRole('button', { name: 'Two' })).toHaveFocus();
+    expect(attempts).toEqual(['backward']);
+  });
+
+  it('the scope part wins over a composing data-part', () => {
+    const { container } = render(
+      <FocusScope autoFocus="none" data-part="focusScope">
+        <button>A</button>
+      </FocusScope>,
+    );
+    expect(container.querySelector('[data-ds="FocusScope"]')).toHaveAttribute('data-part', 'scope');
+  });
 });
 
 describe('overlay composites restore focus to their opener', () => {

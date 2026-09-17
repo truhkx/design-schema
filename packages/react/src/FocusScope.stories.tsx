@@ -8,11 +8,12 @@ const meta: Meta<typeof FocusScope> = {
   component: FocusScope,
   tags: ['autodocs'],
   args: {
+    trapped: true,
     children: (
       <>
-        <Button label="First" />
-        <Button label="Second" />
-        <Button label="Third" />
+        <Text>Confirm your changes</Text>
+        <Button label="Cancel" />
+        <Button label="Continue" />
       </>
     ),
   },
@@ -39,7 +40,19 @@ export const RestoreFocusFalse: Story = { args: { restoreFocus: false } };
 export const ActiveFalse: Story = { args: { active: false } };
 
 /** Present with three focusable descendants, for the keyboard gate to verify Tab wrapping both ways. */
-export const Keyboard: Story = { args: { trapped: true, autoFocus: 'first' } };
+export const Keyboard: Story = {
+  args: {
+    trapped: true,
+    autoFocus: 'first',
+    children: (
+      <>
+        <Button label="First" />
+        <Button label="Second" />
+        <Button label="Third" />
+      </>
+    ),
+  },
+};
 
 /**
  * The examples' `children` are descriptions of content; each story passes that description as

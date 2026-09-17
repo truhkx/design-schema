@@ -84,11 +84,16 @@ function isFocusable(element: Element): element is HTMLElement {
   return element.getAttribute('tabindex') !== '-1' && element.tabIndex >= 0;
 }
 
+/** `inert`, `aria-hidden="true"` and `fieldset[disabled]` subtrees contribute nothing. */
 function isExcludedSubtree(element: Element): boolean {
-  return element.hasAttribute('inert') || element.getAttribute('aria-hidden') === 'true';
+  return (
+    element.hasAttribute('inert') ||
+    element.getAttribute('aria-hidden') === 'true' ||
+    (element.localName === 'fieldset' && element.hasAttribute('disabled'))
+  );
 }
 
-/** Walks DOM order including open shadow roots and assigned slot nodes, skipping inert and aria-hidden subtrees. */
+/** Walks DOM order including open shadow roots and assigned slot nodes. Visibility is not tested. */
 function collectFocusable(root: Element | ShadowRoot, results: HTMLElement[] = []): HTMLElement[] {
   for (const child of Array.from(root.children)) {
     if (isExcludedSubtree(child)) continue;
@@ -115,10 +120,22 @@ function deepActiveElement(): Element | null {
   return active;
 }
 
-/** First document-order focusable element after `marker`, for restoring focus once the opener is gone. */
-function findNextFocusableAfter(marker: Node): HTMLElement | null {
+/** `container.contains(node)`, crossing out of shadow roots through their hosts. */
+function containsDeep(container: Node, node: Node | null): boolean {
+  let current = node;
+  while (current) {
+    if (container.contains(current)) return true;
+    const root = current.getRootNode();
+    current = root instanceof ShadowRoot ? root.host : null;
+  }
+  return false;
+}
+
+/** First document-order focusable element after `marker`, outside `exclude`, once the opener is gone. */
+function findNextFocusableAfter(marker: Node, exclude: Node | null): HTMLElement | null {
   for (const element of collectFocusable(document.body)) {
     if (element.getRootNode() !== document) continue;
+    if (exclude?.contains(element)) continue;
     if (marker.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_FOLLOWING) return element;
   }
   return null;
@@ -127,9 +144,11 @@ function findNextFocusableAfter(marker: Node): HTMLElement | null {
 interface ScopeEntry {
   active: boolean;
   parent: ScopeEntry | null;
+  /** Re-derives the sentinels' tabindex after the stack or the scope's own props change. */
+  sync: () => void;
 }
 
-/** Module-level stack of mounted scopes; only the top entry traps, and only while it is active. */
+/** Module-level stack of mounted scopes; the topmost active entry is the effective one. */
 const scopeStack: ScopeEntry[] = [];
 
 /** The enclosing scope in the React tree (portals included), so nesting survives same-commit mounts. */
@@ -153,6 +172,19 @@ function pushScope(entry: ScopeEntry): void {
 function removeScope(entry: ScopeEntry): void {
   const index = scopeStack.indexOf(entry);
   if (index !== -1) scopeStack.splice(index, 1);
+}
+
+/** Only active scopes count when picking the top. */
+function topScope(): ScopeEntry | undefined {
+  for (let i = scopeStack.length - 1; i >= 0; i--) {
+    const entry = scopeStack[i]!;
+    if (entry.active) return entry;
+  }
+  return undefined;
+}
+
+function syncScopes(): void {
+  for (const entry of scopeStack) entry.sync();
 }
 
 /**
@@ -183,21 +215,34 @@ export function FocusScope({
   const containerRef = useRef<HTMLDivElement | null>(null);
   useImperativeHandle(ref, () => containerRef.current as HTMLDivElement, []);
 
+  const startSentinelRef = useRef<HTMLSpanElement | null>(null);
+  const endSentinelRef = useRef<HTMLSpanElement | null>(null);
+
+  const latest = useRef({ trapped, autoFocus, restoreFocus, returnFocusTo, onEscapeAttempt });
+  latest.current = { trapped, autoFocus, restoreFocus, returnFocusTo, onEscapeAttempt };
+
   const parentEntry = useContext(ScopeParentContext);
   const entryRef = useRef<ScopeEntry | null>(null);
-  if (entryRef.current === null) entryRef.current = { active, parent: parentEntry };
+  if (entryRef.current === null) {
+    const created: ScopeEntry = {
+      active,
+      parent: parentEntry,
+      sync: () => {
+        const next = latest.current.trapped && created.active && topScope() === created ? 0 : -1;
+        for (const sentinel of [startSentinelRef.current, endSentinelRef.current]) {
+          if (sentinel && sentinel.tabIndex !== next) sentinel.tabIndex = next;
+        }
+      },
+    };
+    entryRef.current = created;
+  }
   const entry = entryRef.current;
-  entry.active = active;
 
   const openerRef = useRef<HTMLElement | null>(null);
   const markerRef = useRef<Comment | null>(null);
   const lastFocusedRef = useRef<HTMLElement | null>(null);
 
-  const latest = useRef({ trapped, restoreFocus, returnFocusTo, onEscapeAttempt });
-  latest.current = { trapped, restoreFocus, returnFocusTo, onEscapeAttempt };
-
-  const isEffective = (): boolean =>
-    latest.current.trapped && entry.active && scopeStack[scopeStack.length - 1] === entry;
+  const isEffective = (): boolean => latest.current.trapped && entry.active && topScope() === entry;
 
   // Registers in the stack, records the opener, focuses per `autoFocus`, and restores on unmount.
   // A layout effect, so it reads the opener before the parent's layout effects run: every overlay
@@ -206,6 +251,7 @@ export function FocusScope({
     const container = containerRef.current;
     if (!container) return undefined;
     pushScope(entry);
+    syncScopes();
 
     const opener = document.activeElement;
     openerRef.current = opener instanceof HTMLElement && opener !== document.body ? opener : null;
@@ -235,18 +281,35 @@ export function FocusScope({
       // Leave the stack before restoring, or the focusin trap below (still listening, since passive
       // cleanups run later) pulls the restored focus straight back into the departing container.
       removeScope(entry);
+      syncScopes();
       const recorded = openerRef.current;
       const restoreMarker = markerRef.current;
       if (latest.current.restoreFocus) {
         const explicit = latest.current.returnFocusTo?.current;
         if (explicit && explicit.isConnected) explicit.focus();
         else if (recorded && recorded.isConnected) recorded.focus();
-        else if (restoreMarker?.isConnected) findNextFocusableAfter(restoreMarker)?.focus();
+        else if (restoreMarker?.isConnected) findNextFocusableAfter(restoreMarker, container)?.focus();
       }
       restoreMarker?.parentNode?.removeChild(restoreMarker);
       markerRef.current = null;
     };
   }, []);
+
+  // `active` pauses the scope wherever it sits; turning it back on moves the scope to the top.
+  useLayoutEffect(() => {
+    if (entry.active === active) return;
+    entry.active = active;
+    if (active && scopeStack.includes(entry)) {
+      removeScope(entry);
+      scopeStack.push(entry);
+    }
+    syncScopes();
+  }, [active]);
+
+  // `trapped` feeds the sentinels' tabindex; the write converges, so running every commit is cheap.
+  useLayoutEffect(() => {
+    entry.sync();
+  });
 
   // Focus that leaves the scope by any means (not only Tab) is pulled back to the last focused descendant.
   useEffect(() => {
@@ -254,7 +317,7 @@ export function FocusScope({
       const container = containerRef.current;
       const target = event.target;
       if (!container || !(target instanceof Node)) return;
-      if (container.contains(target)) {
+      if (containsDeep(container, target)) {
         const focused = deepActiveElement();
         if (focused instanceof HTMLElement && focused !== container && !focused.hasAttribute('data-focus-sentinel')) {
           lastFocusedRef.current = focused;
@@ -263,8 +326,12 @@ export function FocusScope({
       }
       if (!isEffective()) return;
       const remembered = lastFocusedRef.current;
-      const fallback =
-        remembered && container.contains(remembered) ? remembered : (collectFocusable(container)[0] ?? null);
+      let fallback: HTMLElement | null =
+        remembered && remembered.isConnected && containsDeep(container, remembered)
+          ? remembered
+          : (collectFocusable(container)[0] ?? null);
+      if (!fallback && latest.current.autoFocus === 'container') fallback = container;
+      // Nothing to pull back to: focus stays where it went, and the mount warning covers it.
       fallback?.focus();
     };
     document.addEventListener('focusin', handleFocusIn);
@@ -280,7 +347,12 @@ export function FocusScope({
     const last = focusables[focusables.length - 1];
     if (!first || !last) return;
     const focused = deepActiveElement();
-    if (!event.shiftKey && focused === last) {
+    if (focused === container) {
+      // From the wrapper (autoFocus: container): Tab enters at the first, Shift+Tab wraps to the last.
+      if (event.shiftKey) latest.current.onEscapeAttempt?.('backward');
+      event.preventDefault();
+      (event.shiftKey ? last : first).focus();
+    } else if (!event.shiftKey && focused === last) {
       latest.current.onEscapeAttempt?.('forward');
       event.preventDefault();
       first.focus();
@@ -308,27 +380,30 @@ export function FocusScope({
   return (
     <ScopeParentContext.Provider value={entry}>
       <div
-        data-part="scope"
         {...rest}
         ref={containerRef}
         tabIndex={autoFocus === 'container' ? -1 : undefined}
         data-focus-scope=""
         data-ds="FocusScope"
+        data-part="scope"
         className="ds-focus-scope"
         onKeyDown={handleKeyDown}
       >
-        {trapped ? (
-          <span
-            tabIndex={0}
-            data-focus-sentinel=""
-            className="ds-focus-scope__sentinel"
-            onFocus={handleStartSentinelFocus}
-          />
-        ) : null}
+        <span
+          ref={startSentinelRef}
+          tabIndex={-1}
+          data-focus-sentinel=""
+          className="ds-focus-scope__sentinel"
+          onFocus={handleStartSentinelFocus}
+        />
         {children}
-        {trapped ? (
-          <span tabIndex={0} data-focus-sentinel="" className="ds-focus-scope__sentinel" onFocus={handleEndSentinelFocus} />
-        ) : null}
+        <span
+          ref={endSentinelRef}
+          tabIndex={-1}
+          data-focus-sentinel=""
+          className="ds-focus-scope__sentinel"
+          onFocus={handleEndSentinelFocus}
+        />
       </div>
     </ScopeParentContext.Provider>
   );

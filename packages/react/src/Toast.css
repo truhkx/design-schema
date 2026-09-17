@@ -1,21 +1,22 @@
 /* Toast — styled only through Design Schema token custom properties. */
 
 .ds-toast {
-  /* locked: surface, text */
+  /* locked: surface, text, minTarget */
   --ds-toast-surface: var(--color-inverse-surface);
   --ds-toast-text: var(--color-inverse-foreground);
+  --ds-toast-min-target: var(--size-target-min);
   --ds-toast-radius: var(--radius-md);
   --ds-toast-shadow: var(--shadow-overlay);
   --ds-toast-padding-block: var(--space-sm);
   --ds-toast-padding-inline: var(--space-md);
   --ds-toast-gap: var(--layout-gap-normal);
   --ds-toast-max-width: var(--layout-max-width-prose);
-  --ds-toast-font-family: var(--font-family-body);
-  --ds-toast-font-size: var(--font-size-md);
-  --ds-toast-line-height: var(--font-line-height-normal);
-  --ds-toast-min-target: var(--size-target-min);
   --ds-toast-enter: var(--motion-duration-base);
+  --ds-toast-enter-offset: var(--space-2);
   --ds-toast-exit: var(--motion-duration-fast);
+  /* text: Text's color is locked with no inverse tone, so the toast re-scopes the foreground its
+     composed Text reads (as Tooltip does) and renders Text unchanged. */
+  --color-foreground: var(--ds-toast-text);
   box-sizing: border-box;
   display: flex;
   align-items: center;
@@ -28,18 +29,15 @@
   box-shadow: var(--ds-toast-shadow);
   background-color: var(--ds-toast-surface);
   color: var(--ds-toast-text);
-  font-family: var(--ds-toast-font-family);
-  font-size: var(--ds-toast-font-size);
-  line-height: var(--ds-toast-line-height);
   /* exit: fade and sink back over `exit`; the base state is what a dismissal animates to. */
   opacity: 0;
-  transform: translateY(var(--space-sm));
+  transform: translateY(var(--ds-toast-enter-offset));
   transition-property: opacity, transform;
   transition-duration: var(--ds-toast-exit);
   transition-timing-function: var(--motion-easing-standard);
 }
 
-/* enter: rise and fade over `enter`. */
+/* enter: rise by `enterOffset` and fade in over `enter`. */
 .ds-toast--entered {
   opacity: 1;
   transform: none;
@@ -52,13 +50,8 @@
   flex: none;
 }
 
-/* message: text on the inverse surface. Text has no inverse tone, so the toast sets Text's
-   public hooks (the sanctioned CSS escape hatch) rather than passing it a class. */
-.ds-toast [data-part='message'] {
-  --ds-text-color: var(--ds-toast-text);
-  --ds-text-font-family: var(--ds-toast-font-family);
-  --ds-text-font-size: var(--ds-toast-font-size);
-  --ds-text-line-height: var(--ds-toast-line-height);
+/* Layout of the parts inside the toast's own flex row; the composed children are not restyled. */
+.ds-toast > [data-part='message'] {
   flex: 1 1 auto;
   min-inline-size: 0;
 }
@@ -98,7 +91,7 @@
 }
 
 /* Wide screens: bottom-start once there is room beside the page content (Container's layout.maxWidth.content threshold). */
-@media (min-width: 960px) { /* literal-ok: breakpoint mirrors layout.maxWidth.content, matching Container's wide-screen threshold */
+@media (min-width: 960px) { /* literal-ok: breakpoint from layout.maxWidth.content */
   .ds-toast-region {
     inset-inline-end: auto;
     align-items: flex-start;

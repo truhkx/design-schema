@@ -8,7 +8,6 @@ import { Icon } from './Icon';
 import type { IconName } from './Icon';
 import { Text, TextForegroundContext } from './Text';
 import { toEasing, toLineHeight, useReducedMotion, useTheme } from './theme';
-import type { Tokens } from './theme';
 
 export type ToastTone = 'neutral' | 'success' | 'warning' | 'danger';
 export type ToastDuration = 'short' | 'long' | 'persistent';
@@ -17,7 +16,7 @@ export type ToastDuration = 'short' | 'long' | 'persistent';
  * never reported on native (there is no Escape to press inside a toast); it stays in
  * the union so handlers are shared across platforms.
  */
-export type ToastDismissReason = 'timeout' | 'dismiss-button' | 'escape' | 'action' | 'replaced';
+export type ToastDismissReason = 'timeout' | 'dismiss-button' | 'escape' | 'action' | 'replaced' | 'programmatic';
 
 /**
  * The style bindings a caller may replace with a different token; see the
@@ -40,6 +39,7 @@ export type ToastOverridableBinding =
   | 'lineHeight'
   | 'layer'
   | 'enter'
+  | 'enterOffset'
   | 'exit';
 
 export interface ToastProps {
@@ -52,7 +52,9 @@ export interface ToastProps {
   /**
    * `short` ≈ 5s, `long` ≈ 10s (`motion.duration.loop` × 6 / × 12, so themes without motion
    * still get sensible times), `persistent` until dismissed. When `actionLabel` is set or `tone` is
-   * `danger` the toast is persistent regardless of this prop (a dev warning notes the override).
+   * `danger` the toast is persistent regardless of this prop (a dev warning notes the override only
+   * when `duration` was passed explicitly as `short` or `long`). If `motion.duration.loop` is 0,
+   * both durations are persistent.
    */
   duration?: ToastDuration | undefined;
   /** Shows a dismiss button. Persistent toasts are always dismissible regardless of this prop. */
@@ -72,24 +74,24 @@ const COPY = {
   regionLabel: 'Notifications',
 } as const;
 
-const TONE_ICON: Record<ToastTone, IconName | null> = {
+/** `icon`: Icon `name={tone}` with `color.inverse.status.{tone}` forwarded to Icon's `overrides.color`; `neutral` renders no icon. */
+const TONE_ICON = {
   neutral: null,
-  success: 'success',
-  warning: 'warning',
-  danger: 'danger',
-};
-
-const TONE_COLOR_TOKEN = {
-  neutral: 'colorInverseStatusNeutral',
-  success: 'colorInverseStatusSuccess',
-  warning: 'colorInverseStatusWarning',
-  danger: 'colorInverseStatusDanger',
-} as const satisfies Record<ToastTone, keyof Tokens>;
+  success: { name: 'success', color: 'color.inverse.status.success' },
+  warning: { name: 'warning', color: 'color.inverse.status.warning' },
+  danger: { name: 'danger', color: 'color.inverse.status.danger' },
+} as const satisfies Record<ToastTone, { name: IconName; color: TokenRef } | null>;
 
 /** constants.shortDuration / longDuration: `motion.duration.loop` × multiplier, in ms. */
 const DURATION_MULTIPLIER = { short: 6, long: 12 } as const satisfies Record<'short' | 'long', number>;
 
 type PauseSource = 'touch' | 'hidden';
+
+/**
+ * Set by a `ToastProvider` when `dismiss()` asks a shown toast to leave, so it runs its
+ * exit transition before reporting. `null` outside a provider and while the toast stays.
+ */
+const ToastExitContext: React.Context<ToastDismissReason | null> = React.createContext<ToastDismissReason | null>(null);
 
 /**
  * Toast — says "done" and gets out of the way. Confirms an action just taken,
@@ -125,12 +127,13 @@ export function Toast({
   message,
   tone = 'neutral',
   actionLabel,
-  duration = 'short',
+  duration: durationProp,
   dismissible = true,
   overrides,
   onAction,
   onDismiss,
 }: ToastProps): React.JSX.Element {
+  const duration: ToastDuration = durationProp ?? 'short';
   const { tokens: t } = useTheme();
   const reducedMotion = useReducedMotion();
 
@@ -143,14 +146,16 @@ export function Toast({
   const fontSize = overrides?.fontSize ? (resolveToken(t, overrides.fontSize) as number) : t.fontSizeMd;
   const lineHeightMultiplier = overrides?.lineHeight ? (resolveToken(t, overrides.lineHeight) as number) : t.fontLineHeightNormal;
   const enterDuration = overrides?.enter ? (resolveToken(t, overrides.enter) as number) : t.motionDurationBase;
+  const enterOffset = overrides?.enterOffset ? (resolveToken(t, overrides.enterOffset) as number) : t.space2;
   const exitDuration = overrides?.exit ? (resolveToken(t, overrides.exit) as number) : t.motionDurationFast;
 
-  // An action or danger tone forces the toast to stay until dismissed, regardless of `duration`.
+  // An action or danger tone forces the toast to stay until dismissed, regardless of `duration`;
+  // so does a theme whose `motion.duration.loop` is 0 (no timed durations can be computed).
   const forcedPersistent = actionLabel !== undefined || tone === 'danger';
-  const effectiveDuration: ToastDuration = forcedPersistent ? 'persistent' : duration;
+  const loopResolved = t.motionDurationLoop > 0;
+  const effectiveDuration: ToastDuration = forcedPersistent || !loopResolved ? 'persistent' : duration;
   const isDismissible = effectiveDuration === 'persistent' ? true : dismissible;
-  const iconName = TONE_ICON[tone];
-  const iconColor = t[TONE_COLOR_TOKEN[tone]];
+  const icon = TONE_ICON[tone];
   const lineHeight = toLineHeight(fontSize, lineHeightMultiplier);
 
   const [dismissReason, setDismissReason] = React.useState<ToastDismissReason | null>(null);
@@ -164,9 +169,10 @@ export function Toast({
   }, []);
 
   React.useEffect(() => {
-    if (__DEV__ && duration !== 'persistent' && forcedPersistent) {
+    // Only an explicit `short` or `long` warns; the default never does.
+    if (__DEV__ && (durationProp === 'short' || durationProp === 'long') && forcedPersistent) {
       console.warn(
-        `Toast: duration "${duration}" is overridden to "persistent" because ${actionLabel !== undefined ? 'an action is present' : 'tone is danger'}.`,
+        `Toast: duration "${durationProp}" is overridden to "persistent" because ${actionLabel !== undefined ? 'an action is present' : 'tone is danger'}.`,
       );
     }
     // Reflects how this instance was configured on mount; a live toast is not reconfigured.
@@ -189,6 +195,14 @@ export function Toast({
   const totalDurationRef = React.useRef<number | null>(
     effectiveDuration === 'persistent' ? null : t.motionDurationLoop * DURATION_MULTIPLIER[effectiveDuration],
   );
+
+  // `dismiss(toastId?)` on the provider: leave through the exit transition like any other reason.
+  const exitSignal = React.useContext(ToastExitContext);
+  React.useEffect(() => {
+    if (exitSignal !== null) {
+      requestDismiss(exitSignal);
+    }
+  }, [exitSignal, requestDismiss]);
   const remainingRef = React.useRef(totalDurationRef.current ?? 0);
   const timerStartRef = React.useRef(0);
   const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -275,7 +289,8 @@ export function Toast({
       return undefined;
     }
     stopTimer();
-    if (reducedMotion) {
+    // Immediate under reduced motion or when the exit time does not resolve to a positive duration.
+    if (reducedMotion || !(exitDuration > 0)) {
       onDismiss?.(dismissReason);
       return undefined;
     }
@@ -313,7 +328,7 @@ export function Toast({
     borderRadius: radius,
     backgroundColor: t.colorInverseSurface,
     opacity: progress,
-    transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [t.space2, 0] }) }],
+    transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [enterOffset, 0] }) }],
     ...shadow,
   };
 
@@ -338,9 +353,9 @@ export function Toast({
       onTouchEnd={() => resume('touch')}
       onTouchCancel={() => resume('touch')}
     >
-      {iconName !== null ? (
+      {icon !== null ? (
         <View testID="Toast.icon" style={iconCellStyle} accessibilityElementsHidden importantForAccessibility="no">
-          <Icon name={iconName} color={iconColor} />
+          <Icon name={icon.name} overrides={{ color: icon.color }} />
         </View>
       ) : null}
       <View testID="Toast.message" style={messageStyle}>
@@ -348,6 +363,7 @@ export function Toast({
             inverse surface provides its foreground to the subtree instead. */}
         <TextForegroundContext.Provider value={t.colorInverseForeground}>
           <Text
+            size="md"
             overrides={{
               fontFamily: overrides?.fontFamily,
               fontSize: overrides?.fontSize,
@@ -395,8 +411,11 @@ export interface ToastContextValue {
    * reason `replaced`, as does the oldest one when a fourth is shown.
    */
   toast: (options: ToastOptions) => Promise<ToastResult>;
-  /** Removes the toast with this `toastId` immediately, without its exit transition (reason `replaced`). */
-  dismiss: (toastId: string) => void;
+  /**
+   * Dismisses the toast with this `toastId`, or every shown toast when called with no id,
+   * with reason `programmatic`. Each leaves through its exit transition.
+   */
+  dismiss: (toastId?: string | undefined) => void;
 }
 
 export interface ToastProviderProps {
@@ -410,6 +429,8 @@ interface ToastEntry {
   id: string;
   options: ToastOptions;
   resolve: (result: ToastResult) => void;
+  /** Set when `dismiss()` asked this toast to leave; it reports once its exit transition ends. */
+  exiting: ToastDismissReason | null;
 }
 
 const ToastContext: React.Context<ToastContextValue | null> = React.createContext<ToastContextValue | null>(null);
@@ -456,7 +477,7 @@ export function ToastProvider({ children, overrides }: ToastProviderProps): Reac
         counterRef.current += 1;
         const id = options.toastId ?? `toast-${counterRef.current}`;
         settle(id, 'replaced');
-        const next = [...entriesRef.current, { id, options, resolve }];
+        const next: ToastEntry[] = [...entriesRef.current, { id, options, resolve, exiting: null }];
         const evicted = next.length > MAX_TOASTS ? next.shift() : undefined;
         commit(next);
         if (evicted !== undefined) {
@@ -467,7 +488,16 @@ export function ToastProvider({ children, overrides }: ToastProviderProps): Reac
     [commit, settle],
   );
 
-  const dismiss = React.useCallback((toastId: string) => settle(toastId, 'replaced'), [settle]);
+  const dismiss = React.useCallback(
+    (toastId?: string | undefined) => {
+      commit(
+        entriesRef.current.map((entry) =>
+          (toastId === undefined || entry.id === toastId) && entry.exiting === null ? { ...entry, exiting: 'programmatic' } : entry,
+        ),
+      );
+    },
+    [commit],
+  );
 
   const value = React.useMemo<ToastContextValue>(() => ({ toast, dismiss }), [toast, dismiss]);
 
@@ -499,7 +529,9 @@ export function ToastProvider({ children, overrides }: ToastProviderProps): Reac
       {children}
       <View testID="Toast.region" style={regionStyle} pointerEvents="box-none" accessibilityLabel={COPY.regionLabel}>
         {entries.map((entry) => (
-          <Toast key={entry.id} {...entry.options} onDismiss={(reason) => settle(entry.id, reason)} />
+          <ToastExitContext.Provider key={entry.id} value={entry.exiting}>
+            <Toast {...entry.options} onDismiss={(reason) => settle(entry.id, reason)} />
+          </ToastExitContext.Provider>
         ))}
       </View>
     </ToastContext.Provider>

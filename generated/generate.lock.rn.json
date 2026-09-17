@@ -455,19 +455,19 @@
     }
   },
   "FocusScope.rn": {
-    "hash": "e73128e359a836d7",
-    "lastAttemptHash": "e73128e359a836d7",
-    "generatedAt": "2026-09-16T09:50:32+00:00",
+    "hash": "491f3e2b9b910216",
+    "lastAttemptHash": "491f3e2b9b910216",
+    "generatedAt": "2026-09-17T13:50:25+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.7663,
+    "costUsd": 1.05,
     "files": [
       "packages/rn/src/FocusScope.stories.tsx",
       "packages/rn/src/FocusScope.test.tsx",
       "packages/rn/src/FocusScope.tsx"
     ],
-    "gaps": 9,
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1068,20 +1068,18 @@
     }
   },
   "Toast.rn": {
-    "hash": "9036b3511d5a3b73",
-    "lastAttemptHash": "9036b3511d5a3b73",
-    "generatedAt": "2026-09-16T10:12:39+00:00",
+    "hash": "3e8f3aac397d0e35",
+    "lastAttemptHash": "3e8f3aac397d0e35",
+    "generatedAt": "2026-09-17T14:07:29+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.7215,
+    "costUsd": 1.6624,
     "files": [
       "packages/rn/src/Toast.stories.tsx",
-      "packages/rn/src/Toast.test.tsx",
-      "packages/rn/src/Toast.tsx",
-      "packages/rn/src/index.ts"
+      "packages/rn/src/Toast.tsx"
     ],
-    "gaps": 14,
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1115,18 +1113,19 @@
     }
   },
   "Tooltip.rn": {
-    "hash": "df5752983ecef931",
-    "lastAttemptHash": "df5752983ecef931",
-    "generatedAt": "2026-09-16T10:01:01+00:00",
+    "hash": "5caea4048343e453",
+    "lastAttemptHash": "5caea4048343e453",
+    "generatedAt": "2026-09-17T13:57:29+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.7139,
+    "costUsd": 1.0723,
     "files": [
       "packages/rn/src/Tooltip.stories.tsx",
+      "packages/rn/src/Tooltip.test.tsx",
       "packages/rn/src/Tooltip.tsx"
     ],
-    "gaps": 11,
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,

@@ -39,8 +39,6 @@ export interface TooltipProps {
   delay?: TooltipDelay | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<TooltipOverridableBinding, TokenRef | undefined>> | undefined;
-  /** The root `View`. */
-  ref?: React.Ref<ViewInstance> | undefined;
 }
 
 type Size = { width: number; height: number };
@@ -120,6 +118,9 @@ type Handler = ((event: unknown) => void) | undefined;
  * `layer.toast`, placed from the trigger's `measureInWindow` rect and flipped on
  * overflow. An ancestor that clips (`overflow: 'hidden'`) or a sibling stacking context
  * above the root can still cover it — the acknowledged native limit.
+ *
+ * Tooltip exposes no `ref`: it adds no root a caller needs; a caller that wants the
+ * trigger refs its own child. Inside a Toolbar it adds no focus stop and no role.
  */
 export function Tooltip({
   content,
@@ -129,7 +130,6 @@ export function Tooltip({
   open: openProp,
   delay = 'default',
   overrides,
-  ref,
 }: TooltipProps): React.JSX.Element {
   const { tokens: t } = useTheme();
   const reducedMotion = useReducedMotion();
@@ -223,30 +223,32 @@ export function Tooltip({
     setEscaped(true);
   }, []);
 
-  // Escape hides without moving focus. Only react-native-web has a keyboard event to
-  // listen for; native hardware keyboards have no Escape binding for a non-modal view.
+  // Escape hides without moving focus, also when the tooltip was opened by hover alone.
+  // Only react-native-web has a keyboard event to listen for; native hardware keyboards
+  // have no Escape binding for a non-modal view. The listener is attached only while the
+  // bubble is visible and runs in the capture phase, stopping the event, so inside a
+  // Dialog the first Escape hides the tooltip and the second closes the Dialog.
   React.useEffect(() => {
     if (Platform.OS !== 'web' || !visible) {
       return undefined;
     }
-    type KeyListener = (event: { key?: string | undefined }) => void;
-    const globalWindow = (
-      globalThis as {
-        window?:
-          | { addEventListener: (type: 'keydown', listener: KeyListener) => void; removeEventListener: (type: 'keydown', listener: KeyListener) => void }
-          | undefined;
-      }
-    ).window;
+    type KeyListener = (event: { key?: string | undefined; stopPropagation: () => void }) => void;
+    type KeyTarget = {
+      addEventListener: (type: 'keydown', listener: KeyListener, capture: boolean) => void;
+      removeEventListener: (type: 'keydown', listener: KeyListener, capture: boolean) => void;
+    };
+    const globalWindow = (globalThis as { window?: KeyTarget | undefined }).window;
     if (globalWindow === undefined) {
       return undefined;
     }
     const handleKeyDown: KeyListener = (event) => {
       if (event.key === 'Escape') {
+        event.stopPropagation();
         dismiss();
       }
     };
-    globalWindow.addEventListener('keydown', handleKeyDown);
-    return () => globalWindow.removeEventListener('keydown', handleKeyDown);
+    globalWindow.addEventListener('keydown', handleKeyDown, true);
+    return () => globalWindow.removeEventListener('keydown', handleKeyDown, true);
   }, [visible, dismiss]);
 
   const isSingleElement = React.isValidElement(children) && React.Children.count(children) === 1;
@@ -366,7 +368,7 @@ export function Tooltip({
   };
 
   return (
-    <View ref={ref} testID="Tooltip" style={{ position: 'relative', alignSelf: 'flex-start', ...(mounted ? { zIndex: layer } : {}) }}>
+    <View testID="Tooltip" style={{ position: 'relative', alignSelf: 'flex-start', ...(mounted ? { zIndex: layer } : {}) }}>
       {/* `collapsable={false}` keeps this View in the native tree on Android so measureInWindow stays reliable. */}
       <View ref={triggerRef} collapsable={false}>
         {trigger}

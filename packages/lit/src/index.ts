@@ -230,7 +230,7 @@ export type {
 export { DsTooltip } from './Tooltip.js';
 export type { TooltipPlacement, TooltipDelay, TooltipOverridableBinding } from './Tooltip.js';
 
-export { DsToast, DsToastRegion, toast } from './Toast.js';
+export { DsToast, DsToastRegion, toast, dismiss } from './Toast.js';
 export type {
   ToastTone,
   ToastDuration,

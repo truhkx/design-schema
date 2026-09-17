@@ -1,11 +1,9 @@
 /**
  * FocusScope — behavior scenarios from the component doc, one test each, in the doc's
- * order. `children` is required but absent from the Default story's args (the story
- * renders its own panel), so setup supplies a focusable child.
+ * order. The Default story's args carry the documented content (a Text and two Buttons).
  */
 import * as React from 'react';
 import { render, screen } from '@testing-library/react-native';
-import { Button } from './Button';
 import { FocusScope } from './FocusScope';
 import type { FocusScopeProps } from './FocusScope';
 import meta from './FocusScope.stories';
@@ -13,11 +11,10 @@ import { ThemeProvider } from './theme';
 
 /** The Default story's args plus the scenario's `given`. */
 function setup(given: Partial<FocusScopeProps> = {}) {
-  const props: FocusScopeProps = {
+  const props = {
     ...(meta.args as Partial<FocusScopeProps>),
-    children: <Button label="First action" />,
     ...given,
-  };
+  } as FocusScopeProps;
   const utils = render(
     <ThemeProvider mode="light">
       <FocusScope {...props} />

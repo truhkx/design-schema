@@ -18,12 +18,12 @@ import { createRoot, type Root } from 'react-dom/client';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
 import { Icon } from './Icon';
-import { Text } from './Text';
+import { Text, type TextOverridableBinding } from './Text';
 import './Toast.css';
 
 export type ToastTone = 'neutral' | 'success' | 'warning' | 'danger';
 export type ToastDuration = 'short' | 'long' | 'persistent';
-export type ToastDismissReason = 'timeout' | 'dismiss-button' | 'escape' | 'action' | 'replaced';
+export type ToastDismissReason = 'timeout' | 'dismiss-button' | 'escape' | 'action' | 'replaced' | 'programmatic';
 
 /**
  * Style bindings that can be overridden on a toast; accessibility-bearing bindings are never in
@@ -41,20 +41,27 @@ export type ToastOverridableBinding =
   | 'fontSize'
   | 'lineHeight'
   | 'enter'
+  | 'enterOffset'
   | 'exit';
 
-const OVERRIDE_HOOK: Record<ToastOverridableBinding, string> = {
+/** Bindings drawn by the toast itself; `fontFamily`, `fontSize` and `lineHeight` are forwarded to Text. */
+const OVERRIDE_HOOK: Record<Exclude<ToastOverridableBinding, TextOverridableBinding>, string> = {
   radius: '--ds-toast-radius',
   shadow: '--ds-toast-shadow',
   paddingBlock: '--ds-toast-padding-block',
   paddingInline: '--ds-toast-padding-inline',
   gap: '--ds-toast-gap',
   maxWidth: '--ds-toast-max-width',
-  fontFamily: '--ds-toast-font-family', // literal-ok: CSS custom-property hook name, not a font stack
-  fontSize: '--ds-toast-font-size',
-  lineHeight: '--ds-toast-line-height',
   enter: '--ds-toast-enter',
+  enterOffset: '--ds-toast-enter-offset',
   exit: '--ds-toast-exit',
+};
+
+/** Toast binding → the Text binding it is forwarded to on the `message` part. */
+const MESSAGE_FORWARDS: Record<'fontFamily' | 'fontSize' | 'lineHeight', TextOverridableBinding> = {
+  fontFamily: 'fontFamily', // literal-ok: Text binding name, not a font stack
+  fontSize: 'fontSize',
+  lineHeight: 'lineHeight',
 };
 
 /** Style bindings that can be overridden on the region (ToastRegion). */
@@ -68,7 +75,7 @@ const REGION_OVERRIDE_HOOK: Record<ToastRegionOverridableBinding, string> = {
 
 function hooksToStyle<Binding extends string>(
   hooks: Record<Binding, string>,
-  overrides: Partial<Record<Binding, TokenRef | undefined>> | undefined,
+  overrides: Partial<Record<string, TokenRef | undefined>> | undefined,
 ): CSSProperties | undefined {
   if (!overrides) return undefined;
   const style: Record<string, string> = {};
@@ -96,7 +103,7 @@ function parseTime(value: string): number | null {
   return match[2] === 's' ? amount * 1000 : amount;
 }
 
-/** The resolved motion.duration.loop on `el`, or `null` when the theme's tokens are not loaded. */
+/** The resolved motion.duration.loop on `el`, or `null` when it is 0 or the theme's tokens are not loaded. */
 function resolveLoopMs(el: Element): number | null {
   const ms = parseTime(getComputedStyle(el).getPropertyValue('--motion-duration-loop'));
   return ms !== null && ms > 0 ? ms : null;
@@ -110,6 +117,7 @@ function prefersReducedMotion(): boolean {
 }
 
 const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])';
+const REGION_SELECTOR = '[data-ds="ToastRegion"]';
 
 /** Where focus was before it entered the toast region (by F6 or Tab); Escape and the buttons send it back. */
 let returnFocusTarget: HTMLElement | null = null;
@@ -139,6 +147,9 @@ interface RegionTiming {
 
 const ToastRegionContext: Context<RegionTiming | null> = createContext<RegionTiming | null>(null);
 
+/** Set by the region when `dismiss(toastId)` or `dismiss()` asked this toast to leave. */
+const ToastDismissRequestContext: Context<boolean> = createContext<boolean>(false);
+
 export interface ToastProps extends Omit<ComponentPropsWithoutRef<'div'>, 'id' | 'children' | 'role' | 'style' | 'className'> {
   /** One sentence saying what happened ("Message sent", "3 files deleted"). */
   message: string;
@@ -148,18 +159,26 @@ export interface ToastProps extends Omit<ComponentPropsWithoutRef<'div'>, 'id' |
   actionLabel?: string | undefined;
   /**
    * `short` ≈ 5s, `long` ≈ 10s (both computed from motion.duration.loop × 6 / × 12 so themes
-   * without motion still get sensible times), `persistent` until dismissed. When `action` is set or
-   * `tone` is danger the toast is persistent regardless of this prop (a dev warning notes the
-   * override).
+   * without motion still get sensible times), `persistent` until dismissed. When `actionLabel` is
+   * set or `tone` is danger the toast is persistent regardless of this prop (a dev warning notes
+   * the override only when `duration` was passed explicitly as `short` or `long`). If
+   * motion.duration.loop resolves to 0 or cannot be resolved, both durations are persistent.
    */
   duration?: ToastDuration | undefined;
   /** Shows a dismiss button. Persistent toasts are always dismissible. */
   dismissible?: boolean | undefined;
-  /** Stable identity; showing a toast with the same toastId replaces the previous one instead of stacking. */
+  /**
+   * Stable identity; showing a toast with the same toastId replaces the previous one instead of
+   * stacking. It never becomes the DOM `id`; on a directly rendered Toast it has no effect.
+   */
   toastId?: string | undefined;
   /** The action button was activated. The toast dismisses. */
   onAction?: (() => void) | undefined;
-  /** The toast left the screen: reason `timeout`, `dismiss-button`, `escape`, `action`, or `replaced`. */
+  /**
+   * The toast left the screen: reason `timeout`, `dismiss-button`, `escape`, `action`, `replaced`
+   * (left immediately, without its exit transition), or `programmatic`. Fires after the exit
+   * transition, just before the toast is removed.
+   */
   onDismiss?: ((reason: ToastDismissReason) => void) | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<ToastOverridableBinding, TokenRef | undefined>> | undefined;
@@ -194,6 +213,7 @@ export function Toast({
   useImperativeHandle(ref, () => rootRef.current as HTMLDivElement, []);
 
   const regionTiming = useContext(ToastRegionContext);
+  const dismissRequested = useContext(ToastDismissRequestContext);
   const [ownLoopMs, setOwnLoopMs] = useState<number | null | undefined>(undefined);
   const loopMs = regionTiming ? regionTiming.loopMs : ownLoopMs;
 
@@ -211,7 +231,7 @@ export function Toast({
   const showDismiss = dismissible || effectiveDuration === 'persistent';
 
   useEffect(() => {
-    if (isDev && forcedPersistent && duration !== undefined && duration !== 'persistent') {
+    if (isDev && forcedPersistent && (duration === 'short' || duration === 'long')) {
       console.warn(
         `Toast: \`duration: ${duration}\` is ignored — a toast with an action or \`tone: danger\` is persistent until dismissed.`,
       );
@@ -232,11 +252,11 @@ export function Toast({
       clearTimeout(timerRef.current);
       timerRef.current = null;
     }
-    if (node.contains(node.ownerDocument.activeElement)) returnFocus(node);
+    if (node.contains(node.ownerDocument.activeElement)) returnFocus(node.closest<HTMLElement>(REGION_SELECTOR) ?? node);
 
     const finish = (): void => {
-      setGone(true);
       onDismissLatest.current?.(reason);
+      setGone(true);
     };
     // The exit transition runs for the resolved `exit` hook; onDismiss fires once it has finished.
     const exitMs = prefersReducedMotion() ? null : parseTime(getComputedStyle(node).getPropertyValue('--ds-toast-exit'));
@@ -254,6 +274,10 @@ export function Toast({
     },
     [],
   );
+
+  useEffect(() => {
+    if (dismissRequested) dismiss('programmatic');
+  }, [dismissRequested, dismiss]);
 
   // Enter: reveal on the next frame so the rise-and-fade runs; instant under reduced motion.
   useEffect(() => {
@@ -333,7 +357,7 @@ export function Toast({
     if (!node) return undefined;
     const handleFocusIn = (event: FocusEvent): void => {
       const from = event.relatedTarget;
-      const region = node.closest('[data-ds="ToastRegion"]') ?? node;
+      const region = node.closest(REGION_SELECTOR) ?? node;
       if (from instanceof HTMLElement && !region.contains(from)) returnFocusTarget = from;
     };
     const handleKeyDown = (event: KeyboardEvent): void => {
@@ -357,6 +381,14 @@ export function Toast({
     dismiss('action');
   };
 
+  const messageOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
+  if (overrides) {
+    for (const binding of Object.keys(MESSAGE_FORWARDS) as (keyof typeof MESSAGE_FORWARDS)[]) {
+      const tokenRef = overrides[binding];
+      if (tokenRef) messageOverrides[MESSAGE_FORWARDS[binding]] = tokenRef;
+    }
+  }
+
   return (
     <div
       {...rest}
@@ -370,13 +402,13 @@ export function Toast({
       {tone !== 'neutral' ? (
         <Icon data-part="icon" name={tone} overrides={{ color: `color.inverse.status.${tone}` as TokenRef }} />
       ) : null}
-      <Text element="span" data-part="message">
+      <Text element="span" size="md" data-part="message" overrides={messageOverrides}>
         {message}
       </Text>
-      {/* Button owns its root's data-part, so each button part is a wrapper around it (as in Alert). */}
+      {/* Button owns its root's data-part, so each button part is a wrapper the toast owns around it. */}
       {actionLabel ? (
         <span className="ds-toast__action" data-part="actionButton">
-          <Button variant="ghost" inverse label={actionLabel} onClick={handleActionClick} />
+          <Button variant="ghost" inverse size="sm" label={actionLabel} onClick={handleActionClick} />
         </span>
       ) : null}
       {showDismiss ? (
@@ -384,6 +416,7 @@ export function Toast({
           <Button
             variant="ghost"
             inverse
+            size="sm"
             iconOnly
             label={COPY.dismissLabel}
             leadingIcon={<Icon name="close" inline />}
@@ -418,6 +451,7 @@ export interface ToastOptions {
 interface ToastEntry {
   key: number;
   options: ToastOptions;
+  dismissRequested: boolean;
   resolve: (result: { reason: ToastDismissReason }) => void;
 }
 
@@ -450,13 +484,13 @@ function settle(entry: ToastEntry, reason: ToastDismissReason): void {
   entry.resolve({ reason });
 }
 
-/** A toast finished leaving on its own (timeout, button, Escape, action). */
+/** A toast finished leaving (timeout, button, Escape, action, programmatic): report, then remove. */
 function removeEntry(key: number, reason: ToastDismissReason): void {
   const entry = entries.find((item) => item.key === key);
   if (!entry) return;
+  settle(entry, reason);
   entries = entries.filter((item) => item.key !== key);
   notify();
-  settle(entry, reason);
 }
 
 /** Adds a toast; one with the same toastId, or the oldest beyond three, leaves immediately as `replaced`. */
@@ -466,10 +500,10 @@ function pushEntry(entry: ToastEntry): void {
   let next = replaced ? entries.map((item) => (item === replaced ? entry : item)) : [...entries, entry];
   const evicted = next.length > MAX_STACKED ? next.slice(0, next.length - MAX_STACKED) : [];
   next = next.slice(evicted.length);
-  entries = next;
-  notify();
   if (replaced) settle(replaced, 'replaced');
   for (const item of evicted) settle(item, 'replaced');
+  entries = next;
+  notify();
 }
 
 export interface ToastRegionProps {
@@ -548,17 +582,18 @@ export function ToastRegion({
     >
       <ToastRegionContext.Provider value={timing}>
         {list.map((entry) => (
-          <Toast
-            key={entry.key}
-            message={entry.options.message}
-            tone={entry.options.tone}
-            actionLabel={entry.options.actionLabel}
-            duration={entry.options.duration}
-            dismissible={entry.options.dismissible}
-            toastId={entry.options.toastId}
-            onAction={entry.options.onAction}
-            onDismiss={(reason) => removeEntry(entry.key, reason)}
-          />
+          <ToastDismissRequestContext.Provider key={entry.key} value={entry.dismissRequested}>
+            <Toast
+              message={entry.options.message}
+              tone={entry.options.tone}
+              actionLabel={entry.options.actionLabel}
+              duration={entry.options.duration}
+              dismissible={entry.options.dismissible}
+              toastId={entry.options.toastId}
+              onAction={entry.options.onAction}
+              onDismiss={(reason) => removeEntry(entry.key, reason)}
+            />
+          </ToastDismissRequestContext.Provider>
         ))}
       </ToastRegionContext.Provider>
     </div>,
@@ -572,7 +607,7 @@ export function ToastRegion({
  */
 export function toast(options: ToastOptions): Promise<{ reason: ToastDismissReason }> {
   return new Promise((resolve) => {
-    const entry: ToastEntry = { key: ++entryCounter, options, resolve };
+    const entry: ToastEntry = { key: ++entryCounter, options, dismissRequested: false, resolve };
     if (regionMountCount > 0 || autoRoot || typeof document === 'undefined') {
       pushEntry(entry);
       return;
@@ -586,4 +621,23 @@ export function toast(options: ToastOptions): Promise<{ reason: ToastDismissReas
     if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => pushEntry(entry));
     else pushEntry(entry);
   });
+}
+
+/**
+ * Removes the toast shown with `toastId`, or every toast when called with no id; each leaves
+ * through its exit transition with reason `programmatic`.
+ */
+export function dismiss(toastId?: string): void {
+  const matches = (entry: ToastEntry): boolean => toastId === undefined || entry.options.toastId === toastId;
+  const targets = entries.filter((entry) => matches(entry) && !entry.dismissRequested);
+  if (targets.length === 0) return;
+  if (regionMountCount === 0) {
+    // No region is rendering them, so nothing can animate out: settle and drop them now.
+    entries = entries.filter((entry) => !targets.includes(entry));
+    for (const entry of targets) settle(entry, 'programmatic');
+    notify();
+    return;
+  }
+  entries = entries.map((entry) => (targets.includes(entry) ? { ...entry, dismissRequested: true } : entry));
+  notify();
 }

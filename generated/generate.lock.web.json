@@ -484,19 +484,19 @@
     }
   },
   "FocusScope.web": {
-    "hash": "81a7d7d70152e59b",
-    "lastAttemptHash": "81a7d7d70152e59b",
-    "generatedAt": "2026-09-16T09:45:02+00:00",
+    "hash": "86bbf03724557fbb",
+    "lastAttemptHash": "86bbf03724557fbb",
+    "generatedAt": "2026-09-17T13:45:10+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.3428,
+    "costUsd": 1.2413,
     "files": [
       "packages/react/src/FocusScope.stories.tsx",
       "packages/react/src/FocusScope.test.tsx",
       "packages/react/src/FocusScope.tsx"
     ],
-    "gaps": 12,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1124,20 +1124,21 @@
     }
   },
   "Toast.web": {
-    "hash": "30c25d5c148283c4",
-    "lastAttemptHash": "30c25d5c148283c4",
-    "generatedAt": "2026-09-16T10:06:02+00:00",
+    "hash": "e74e713b5947b795",
+    "lastAttemptHash": "e74e713b5947b795",
+    "generatedAt": "2026-09-17T14:00:54+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.7961,
+    "costUsd": 1.711,
     "files": [
       "packages/react/src/Toast.css",
       "packages/react/src/Toast.stories.tsx",
       "packages/react/src/Toast.test.tsx",
-      "packages/react/src/Toast.tsx"
+      "packages/react/src/Toast.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 14,
+    "gaps": 11,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1172,20 +1173,20 @@
     }
   },
   "Tooltip.web": {
-    "hash": "1b54372bac049e91",
-    "lastAttemptHash": "1b54372bac049e91",
-    "generatedAt": "2026-09-16T09:55:01+00:00",
+    "hash": "1088edd04b29e0c8",
+    "lastAttemptHash": "1088edd04b29e0c8",
+    "generatedAt": "2026-09-17T13:52:25+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.0801,
+    "costUsd": 1.1221,
     "files": [
       "packages/react/src/Tooltip.css",
       "packages/react/src/Tooltip.stories.tsx",
       "packages/react/src/Tooltip.test.tsx",
       "packages/react/src/Tooltip.tsx"
     ],
-    "gaps": 13,
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,

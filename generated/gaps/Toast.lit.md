@@ -34,3 +34,16 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Toast: the Lit notes say the region sets role/aria-live via ElementInternals, but the package convention says names and roles tests read must be plain attributes; I set both on the region, and a plain `role` attribute on each toast.
 - Toast: the Guidance's `toast({ message, tone, actionLabel, onAction })` includes `onAction`, and the Behavior section mentions `id`, but ToastOptions isn't part of the schema; I added `onAction` and used `toastId`, not `id`.
 - Toast: the region position ('bottom-start on wide screens, bottom center on phones') has no breakpoint token; I kept the existing `min-width: 572px` media query (layout.maxWidth.prose's value) with a literal-ok comment, since custom properties can't be used in media queries.
+
+## 2026-09-17 10:04 — round 1
+
+- Toast: the Overrides section lists stackGap, regionInset and layer as overridable on the toast, but the stackGap description says they belong to the region's own `overrides`; I kept them only on `<ds-toast-region>`'s `overrides`.
+- Toast: the region's hook names are not given. The rule `--ds-<tag-without-ds>-<binding>` gives `--ds-toast-stack-gap` / `--ds-toast-region-inset` / `--ds-toast-layer` (as React uses), not `--ds-toast-region-*` from the region's tag; I used the toast-prefixed names, which renames the previous Lit hooks.
+- Toast: the `text` binding names part `message`, but its description says the foreground is re-scoped on the toast's own container; I set `--color-foreground` on the `toast` part so Text inherits it unchanged.
+- Toast: the `duration` doc covers timing only for toasts inside a region; for a `<ds-toast>` rendered outside a region I measure motion.duration.loop on the toast itself.
+- Toast: 'the next focusable element after the region' is not defined for elements inside shadow roots; the fallback searches light-DOM native focusables and `[tabindex]` only, so a custom element that takes focus through delegatesFocus is skipped.
+- Toast: the doc does not say whether focus returns when the action, dismiss button, or a replaced/programmatic dismissal removes a focused toast; I restore focus for any reason whenever focus was inside the toast when it left.
+- Toast: 'newest at the bottom on wide screens' implies a different order on phones, but none is specified; the region keeps newest at the bottom at every width.
+- Toast: 'pauses while touched' has no event named for Lit; I use pointerenter/pointerleave/pointercancel, which cover touch contact.
+- Toast: the forwarded Text bindings (fontFamily, fontSize, lineHeight) have toast-level default tokens, but the doc does not say whether to forward those defaults or only explicit overrides; I always forward the resolved token (override or the binding's default).
+- Toast: the eviction count is unclear on whether a toast still in its exit transition counts toward the three; I count only toasts not already leaving.

@@ -15,7 +15,7 @@ function setup(given: Partial<TooltipProps> = {}) {
     props,
     tooltip: () => screen.getByRole('tooltip'),
     trigger: () => screen.getByRole('button'),
-    bubble: () => document.querySelector('[data-ds="Tooltip"]'),
+    bubble: () => document.querySelector('[data-part="popup"]'),
   };
 }
 
@@ -24,8 +24,9 @@ describe('Tooltip', () => {
     const s = setup({ open: true });
     const tooltip = s.tooltip();
     expect(tooltip).toHaveTextContent(s.props.content);
+    expect(tooltip).toHaveAttribute('data-ds', 'Tooltip');
     expect(s.trigger()).toHaveAttribute('aria-describedby', tooltip.id);
-    expect(s.bubble()).not.toBeNull();
+    expect(s.bubble()).toHaveAttribute('aria-hidden', 'true');
   });
 
   it('the-text-stays-in-the-tree-while-hidden', () => {

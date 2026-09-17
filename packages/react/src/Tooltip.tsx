@@ -194,12 +194,15 @@ export interface TooltipProps {
   describes?: boolean | undefined;
   /**
    * Controlled visibility, for stories and tests only (the Keyboard story renders the tooltip open
-   * with it). Product code never sets it: a tooltip is hover and focus driven.
+   * with it). Product code never sets it: a tooltip is hover and focus driven. There is no change
+   * event: Escape still hides a tooltip rendered with `open: true`, and it stays hidden until the
+   * `open` prop next changes.
    */
   open?: boolean | undefined;
   /**
    * Hover delay before showing: `default` uses `motion.duration.base` × 3 (roughly 600ms, so casual
    * mouse movement does not flash tooltips); `none` for toolbars where a sibling tooltip is already open.
+   * After any tooltip hides, siblings show with no delay for one `motion.duration.base` (the warm window).
    */
   delay?: TooltipDelay | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
@@ -217,12 +220,12 @@ export interface TooltipProps {
  * clarification ("Includes archived items"). Use it in toolbars, table headers and dense UI where
  * visible labels do not fit. Keep it to a phrase.
  *
- * The description lives in two nodes: a visually-hidden `role="tooltip"` span carrying the id,
- * always in the accessibility tree, and the positioned bubble (the root, `data-ds="Tooltip"`),
- * which is `aria-hidden` and only a visible copy.
+ * The description lives in two nodes: a visually-hidden `role="tooltip"` span carrying the id and
+ * `data-ds="Tooltip"`, always in the accessibility tree, and the positioned bubble
+ * (`data-part="popup"`), which is `aria-hidden` and only a visible copy. Tooltip exposes no `ref`:
+ * a caller that needs the trigger refs its own child.
  */
-export const Tooltip = function Tooltip({
-  ref,
+export function Tooltip({
   content,
   children,
   placement = 'top',
@@ -231,7 +234,7 @@ export const Tooltip = function Tooltip({
   delay = 'default',
   overrides,
   container,
-}: TooltipProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
+}: TooltipProps): ReactElement {
   const tooltipId = useId();
 
   const [internalOpen, setInternalOpen] = useState(false);
@@ -286,7 +289,8 @@ export const Tooltip = function Tooltip({
       hideTimer.current = null;
       if (hoveringTrigger.current || hoveringPopup.current || focused.current) return;
       setInternalOpen(false);
-      setDismissed(false);
+      // A controlled tooltip dismissed by Escape stays hidden until `open` next changes.
+      if (open === undefined) setDismissed(false);
     }, resolveMs(portalTarget(), POINTER_GRACE));
   };
 
@@ -376,13 +380,6 @@ export const Tooltip = function Tooltip({
     },
     [childRef],
   );
-  const setPopupRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      popupRef.current = node;
-      assignRef(ref, node);
-    },
-    [ref],
-  );
 
   // `children` is an unknown element type, so React's typings cannot admit `ref` in the clone config;
   // cast the config only.
@@ -393,7 +390,7 @@ export const Tooltip = function Tooltip({
     onPointerEnter: (event: ReactPointerEvent<HTMLElement>) => {
       child.props.onPointerEnter?.(event);
       // No hover surface on touch; the description stays in the accessibility tree.
-      if (event.pointerType === 'touch' || matches('(pointer: coarse)')) return;
+      if (event.pointerType === 'touch') return;
       hoveringTrigger.current = true;
       show(false);
     },
@@ -426,14 +423,14 @@ export const Tooltip = function Tooltip({
   return (
     <>
       {cloned}
-      <span id={tooltipId} role="tooltip" className="ds-tooltip__description">
+      <span id={tooltipId} role="tooltip" data-ds="Tooltip" className="ds-tooltip__description">
         {content}
       </span>
       {present
         ? createPortal(
             <div
-              ref={setPopupRef}
-              data-ds="Tooltip"
+              ref={popupRef}
+              data-part="popup"
               data-placement={side}
               aria-hidden="true"
               className={classes}
@@ -456,4 +453,4 @@ export const Tooltip = function Tooltip({
         : null}
     </>
   );
-};
+}

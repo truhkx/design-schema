@@ -27,6 +27,7 @@ describe('Tooltip', () => {
   it('renders', () => {
     const t = setup();
     expect(t.toJSON()).not.toBeNull();
+    expect(t.getByTestId('Tooltip')).toBeTruthy();
   });
 
   /* derived: props.placement */

@@ -1,6 +1,6 @@
 import { useEffect, type ReactElement } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Toast, ToastRegion, toast } from './Toast';
+import { Toast, ToastRegion, dismiss, toast } from './Toast';
 
 const meta: Meta<typeof Toast> = {
   title: 'Toast/React',
@@ -9,7 +9,6 @@ const meta: Meta<typeof Toast> = {
   args: {
     message: 'Message sent',
     tone: 'neutral',
-    duration: 'short',
     dismissible: true,
   },
   argTypes: {
@@ -52,6 +51,7 @@ function ToastKeyboardHarness(): ReactElement {
   useEffect(() => {
     void toast({ toastId: 'keyboard-undo', message: '3 files moved to Archive', actionLabel: 'Undo', duration: 'persistent' });
     void toast({ toastId: 'keyboard-view', message: 'Export ready', actionLabel: 'View', duration: 'persistent' });
+    return () => dismiss();
   }, []);
   return <ToastRegion />;
 }

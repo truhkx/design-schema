@@ -39,7 +39,7 @@ const meta: Meta<TooltipArgs> = {
       delay=${args.delay}
       .open=${args.open}
     >
-      <ds-button label="Show all" variant="secondary"></ds-button>
+      <ds-button label="Items" variant="secondary"></ds-button>
     </ds-tooltip>
   `,
 };
@@ -63,11 +63,11 @@ export const DelayNone: Story = { args: { delay: 'none' } };
 
 /** The tooltip is the control's name, not a second announcement, so it is linked as the label. */
 export const IconOnlyButtonName: Story = {
-  args: { content: 'Bold', describes: false },
+  args: { content: 'Add item', describes: false },
   render: (args) => html`
     <ds-tooltip content=${args.content} placement=${args.placement} ?no-describes=${!args.describes} delay=${args.delay} .open=${args.open}>
-      <ds-button icon-only label="Bold" variant="ghost">
-        <ds-icon slot="leading-icon" name="menu"></ds-icon>
+      <ds-button icon-only label="Add item" variant="ghost">
+        <ds-icon slot="leading-icon" name="plus"></ds-icon>
       </ds-button>
     </ds-tooltip>
   `,
@@ -85,14 +85,14 @@ export const ColumnHeaderHint: Story = {
 
 /** A toolbar where a sibling tooltip is already open, so the next one shows instantly. */
 export const WarmToolbar: Story = {
-  args: { content: 'Italic', delay: 'none' },
+  args: { content: 'Grid view', delay: 'none' },
   render: (args) => html`
-    <ds-toolbar label="Formatting">
-      <ds-tooltip content="Bold" no-describes delay=${args.delay}>
-        <ds-button icon-only label="Bold" variant="ghost"><ds-icon slot="leading-icon" name="menu"></ds-icon></ds-button>
+    <ds-toolbar label="View">
+      <ds-tooltip content="List view" no-describes delay=${args.delay}>
+        <ds-button icon-only label="List view" variant="ghost"><ds-icon slot="leading-icon" name="list"></ds-icon></ds-button>
       </ds-tooltip>
-      <ds-tooltip content=${args.content} placement=${args.placement} no-describes delay=${args.delay} .open=${args.open}>
-        <ds-button icon-only label=${args.content} variant="ghost"><ds-icon slot="leading-icon" name="list"></ds-icon></ds-button>
+      <ds-tooltip content=${args.content} placement=${args.placement} ?no-describes=${!args.describes} delay=${args.delay} .open=${args.open}>
+        <ds-button icon-only label="Grid view" variant="ghost"><ds-icon slot="leading-icon" name="grid"></ds-icon></ds-button>
       </ds-tooltip>
     </ds-toolbar>
   `,
@@ -100,10 +100,10 @@ export const WarmToolbar: Story = {
 
 /** A trigger at the top of the page, where the bubble reads better underneath. */
 export const BelowTheTrigger: Story = {
-  args: { content: 'Copy link', placement: 'bottom' },
+  args: { content: 'Open in new tab', placement: 'bottom' },
   render: (args) => html`
     <ds-tooltip content=${args.content} placement=${args.placement} ?no-describes=${!args.describes} delay=${args.delay} .open=${args.open}>
-      <ds-button icon-only label="Copy link" variant="ghost"><ds-icon slot="leading-icon" name="external"></ds-icon></ds-button>
+      <ds-button icon-only label="Open in new tab" variant="ghost"><ds-icon slot="leading-icon" name="external"></ds-icon></ds-button>
     </ds-tooltip>
   `,
 };
@@ -118,7 +118,7 @@ export const Keyboard: Story = {
     <ds-stack direction="horizontal" gap="normal">
       <ds-button label="Before" variant="secondary"></ds-button>
       <ds-tooltip content=${args.content} placement=${args.placement} ?no-describes=${!args.describes} delay=${args.delay} .open=${args.open}>
-        <ds-button label="Show all" variant="secondary"></ds-button>
+        <ds-button label="Items" variant="secondary"></ds-button>
       </ds-tooltip>
       <ds-button label="After" variant="secondary"></ds-button>
     </ds-stack>

@@ -36,3 +36,15 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Toast: the iOS announcement's priority is not specified; chose announceForAccessibilityWithOptions with queue: true for polite tones and plain announceForAccessibility (interrupting) for danger.
 - Toast: the 'at most three, the region replaces the oldest' stack limit is prose, not a schema constant or token; kept MAX_TOASTS = 3 with a literal-ok comment.
 - Toast: the enter binding says 'rise and fade' but names no distance token; chose t.space2 for the rise offset.
+
+## 2026-09-17 10:07 — round 1
+
+- Toast: composition gives the message part `element: span`, but RN Text has no `element` prop; passed only `size="md"`.
+- Toast: rn notes say toasts are centered, but web centers only below the content width and uses bottom-start on wide screens; kept centered at every width on native, as the rn notes say.
+- Toast: the spec says `programmatic` toasts leave via dismiss(toastId) and that only `replaced` skips the exit transition, but not whether a programmatic dismiss animates; chose to animate it (internal exit context from ToastProvider), with `replaced`/evicted still removed immediately.
+- Toast: the duration description says both durations are computed at region mount; on native they are computed from `t.motionDurationLoop` when each toast mounts, so a standalone Toast outside a provider also works.
+- Toast: the dev warning names the prop explicitly passed as short/long, so any story or test args carrying `duration: 'short'` plus actionLabel or danger tone warn; the doc does not say whether examples should omit `duration` to avoid it.
+- Toast: the rn `props` list names only accessibilityLiveRegion/accessibilityRole, but the region also needs an accessible name (copy.regionLabel); applied as accessibilityLabel on the region View.
+- Toast: dismissButton props list `variant, inverse, size, iconOnly` and says Button receives only its listed props, yet it also needs `label` (copy.dismissLabel), `leadingIcon` (Icon close) and `onPress`; passed those too, with the Icon colored `color.inverse.link` because RN has no currentColor. The same applies to the actionButton label/onPress.
+- Toast: the React 19 rule asks a component that exposes its root to declare `ref`, but the schema does not say whether Toast exposes its root (an Animated.View); declared no ref.
+- Toast: keyboard Tab rule applies on rn but needs no code (native focus order); nothing implemented beyond the visible buttons.

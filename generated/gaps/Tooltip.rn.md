@@ -33,3 +33,13 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Tooltip: the example givens describe children in prose ('A table column header Button', 'An icon-only Button inside a Toolbar') with no label text or Toolbar label. I wrote the story labels 'Items' and 'Formatting' myself; the examples should give them verbatim.
 - Tooltip: the spec declares no ref, but the package rule says a component that exposes its root takes `ref?: React.Ref<ViewInstance>`. I added it on the root View.
 - Tooltip: the Default story args use describes=false with an icon-only Button (the recommended use), while the schema default for describes is true. The doc doesn't say which one Default should show.
+
+## 2026-09-17 09:57 — round 1
+
+- Tooltip: the rn rules say a component exposing its root declares `ref`, but the Behavior prose says Tooltip exposes no ref; followed the prose and removed `ref` from TooltipProps (breaking for any caller that passed one).
+- Tooltip: the rn notes list onFocus/onBlur among the handlers cloned onto the child, but don't say whether focus shows the bubble on native (hardware keyboard / tapping an Input focuses it) or only on react-native-web; kept focus and hover handlers web-only, so on native only long-press shows the bubble, per 'on native the text becomes a hint and is not visible'.
+- Tooltip: 'stops that Escape in the capture phase' names no target on rn; used a capture-phase keydown listener on window with stopPropagation (not stopImmediatePropagation), attached only while visible, react-native-web only.
+- Tooltip: the renders scenarios say they find the always-present visually-hidden role=tooltip node, but rn has no such node (the notes say no hidden copy on rn); the rn test asserts the root testID='Tooltip' instead.
+- Tooltip: example givens describe children in prose ('A table column header Button labelled "Items"'); rendered a ghost size-sm Button labelled Items, since rn has no table-header context; the warm-toolbar example is one Tooltip in a Toolbar labelled View, so the 'sibling already open' part cannot be seen from its args alone.
+- Tooltip: 'the pointer may cross to the tooltip within one motion.duration.fast before it hides' plus onPressOut ending the press source: after a long-press on native the bubble hides at once on release (no grace); the spec only defines the grace for pointer leave.
+- Tooltip: the Text composition says `element: span`, but rn Text has no `element` prop; omitted it and passed only size='sm'.

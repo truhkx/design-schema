@@ -2,7 +2,8 @@ import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Toast.js';
-import type { ToastDuration, ToastTone } from './Toast.js';
+import './Button.js';
+import { dismiss, toast, type ToastDuration, type ToastTone } from './Toast.js';
 
 interface ToastArgs {
   message: string;
@@ -30,6 +31,8 @@ const meta: Meta<ToastArgs> = {
     duration: 'short',
     dismissible: true,
   },
+  // Toasts shown through `toast()` outlive the story; clear them on cleanup.
+  beforeEach: () => () => dismiss(),
   render: (args) => html`
     <ds-toast
       message=${args.message}
@@ -72,6 +75,24 @@ export const FailedUpload: Story = {
 
 /* notable states */
 export const NotDismissible: Story = { args: { dismissible: false } };
+
+/** The imperative API: each press shows the story's args as a toast in the auto-created region. */
+export const Imperative: Story = {
+  render: (args) => html`
+    <ds-button
+      label="Show toast"
+      @press=${() =>
+        void toast({
+          message: args.message,
+          tone: args.tone,
+          actionLabel: args.actionLabel,
+          duration: args.duration,
+          dismissible: args.dismissible,
+          toastId: args.toastId,
+        })}
+    ></ds-button>
+  `,
+};
 
 /**
  * A toast present in its region with focusable content before and after it,

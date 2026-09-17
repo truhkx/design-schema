@@ -40,10 +40,10 @@ const HOOKS: Record<TooltipOverridableBinding, string> = {
 /** Whether the running browser implements the Popover API. Evaluated once. */
 const POPOVER_SUPPORTED = typeof HTMLElement !== 'undefined' && typeof HTMLElement.prototype.showPopover === 'function';
 
-/** Constants, each read through its token expression at the moment it is needed. */
-const HOVER_DELAY = { token: '--motion-duration-base', multiply: 3 } as const;
-const WARM_WINDOW = { token: '--motion-duration-base', multiply: 1 } as const;
-const POINTER_GRACE = { token: '--motion-duration-fast', multiply: 1 } as const;
+/** Constants, as their token expressions; resolved through getComputedStyle when needed. */
+const HOVER_DELAY = 'calc(var(--motion-duration-base) * 3)';
+const WARM_WINDOW = 'var(--motion-duration-base)';
+const POINTER_GRACE = 'var(--motion-duration-fast)';
 
 let idCounter = 0;
 function nextTooltipId(): string {
@@ -51,16 +51,16 @@ function nextTooltipId(): string {
   return `ds-tooltip-${idCounter}`;
 }
 
-/** Resolves a duration constant (`token` × `multiply`) off `el`, in ms. */
-function constantMs(el: HTMLElement, constant: { token: string; multiply: number }): number {
-  const raw = getComputedStyle(el).getPropertyValue(constant.token).trim();
+/** Parses a computed `<time>` list ("0.6s", "200ms") into ms; anything unresolved is 0. */
+function parseTimeMs(raw: string): number {
+  const first = (raw.split(',')[0] ?? '').trim();
   let ms = 0;
-  if (raw.endsWith('ms')) {
-    ms = parseFloat(raw);
-  } else if (raw.endsWith('s')) {
-    ms = parseFloat(raw) * 1000;
+  if (first.endsWith('ms')) {
+    ms = parseFloat(first);
+  } else if (first.endsWith('s')) {
+    ms = parseFloat(first) * 1000;
   }
-  return (Number.isFinite(ms) ? ms : 0) * constant.multiply;
+  return Number.isFinite(ms) ? ms : 0;
 }
 
 /** Shared "warm" state: until this timestamp a newly hovered tooltip shows with no delay. Set whenever any tooltip hides. */
@@ -73,7 +73,8 @@ const LIGHT_STYLE_MARKER = 'data-ds-tooltip-style';
 /* The description copy and the bubble live in the light DOM (so the trigger's ID reference resolves), which
    `ds-tooltip`'s shadow stylesheet cannot reach; their rules are injected into the tree they live in.
    surface: color.inverse.surface and text: color.inverse.foreground are locked. Text's color is locked too,
-   so the bubble re-scopes --color-foreground on its own container and composes <ds-text> unchanged. */
+   so the bubble re-scopes --color-foreground on its own container and composes <ds-text> unchanged.
+   The bubble's scroll-margin-top carries the offset hook so logic can read it resolved to px. */
 const LIGHT_STYLE_CSS = `
 .${DESCRIPTION_CLASS} {
   /* literal-ok: standard visually-hidden clip pattern, exempt from token-only rule */
@@ -94,6 +95,7 @@ const LIGHT_STYLE_CSS = `
   box-sizing: border-box;
   margin: 0;
   border: none;
+  scroll-margin-top: var(--ds-tooltip-offset);
   padding-block: var(--ds-tooltip-padding-block);
   padding-inline: var(--ds-tooltip-padding-inline);
   border-radius: var(--ds-tooltip-radius);
@@ -160,20 +162,28 @@ function ensureLightStyle(root: Node): void {
   target.appendChild(style);
 }
 
+/** The attribute Tooltip wrote onto the trigger, so it only ever removes its own value. */
+interface TriggerLink {
+  attribute: 'aria-describedby' | 'aria-labelledby' | 'aria-description' | 'aria-label';
+  value: string;
+}
+
 /**
  * `<ds-tooltip>` — Tooltip (category: overlay, APG pattern: tooltip).
  *
  * `<ds-tooltip content="Bold" no-describes><ds-button icon-only label="Bold">…</ds-button></ds-tooltip>`
- * wraps its single focusable child. Because `aria-describedby`/`aria-labelledby`
- * cannot cross a shadow boundary, the tooltip is not rendered in this element's
- * shadow root. Two light-DOM nodes are appended to the host, siblings of the
- * trigger: a visually-hidden `<span role="tooltip" id>` that the trigger's
- * `aria-describedby` (or `aria-labelledby`) points at and that is always in the
- * accessibility tree, and the positioned bubble — `aria-hidden`, the visible
- * copy — shown with the Popover API (`popover="manual"`) or a `position: fixed`
- * fallback. The bubble shows after `delay` on hover, immediately on focus, stays
- * while the pointer is over it (hoverable), and hides on Escape without moving
- * focus, when focus leaves the trigger, or when the pointer leaves both.
+ * wraps its single focusable child. Because ID references cannot cross a shadow
+ * boundary, the tooltip is not rendered in this element's shadow root. Two
+ * light-DOM nodes are appended to the host, siblings of the trigger: a
+ * visually-hidden `<span role="tooltip" id>`, always in the accessibility tree,
+ * and the positioned bubble (`data-part="popup"`, `aria-hidden`, the visible
+ * copy) shown with the Popover API (`popover="manual"`) or a `position: fixed`
+ * fallback. A plain light-DOM trigger gets `aria-describedby` (or
+ * `aria-labelledby` with `describes: false`) pointing at the span; a custom
+ * element with a shadow root gets the text itself as `aria-description` (or
+ * `aria-label`). The bubble shows after `delay` on hover, immediately on focus,
+ * stays while the pointer is over it (hoverable), and hides on Escape without
+ * moving focus, when focus leaves the trigger, or when the pointer leaves both.
  *
  * ## When to use
  *
@@ -220,8 +230,8 @@ export class DsTooltip extends LitElement {
   @property({ type: String, reflect: true }) accessor placement: TooltipPlacement = 'top';
 
   /**
-   * `true`: supplementary, linked as the child's `aria-describedby`. `false`: the tooltip IS the child's name
-   * and is linked as `aria-labelledby`. Defaults to true, so the attribute is the negated `no-describes`.
+   * `true`: supplementary, the child's accessible description. `false`: the tooltip IS the child's name.
+   * Defaults to true, so the attribute is the negated `no-describes`.
    */
   @property({
     type: Boolean,
@@ -239,7 +249,8 @@ export class DsTooltip extends LitElement {
 
   /**
    * Controlled visibility, for stories and tests only (the `Keyboard` story renders the tooltip open with it).
-   * Product code never sets it: a tooltip is hover and focus driven.
+   * Product code never sets it: a tooltip is hover and focus driven. Escape still hides a tooltip rendered
+   * with `open`, and it stays hidden until `open` next changes.
    */
   @property({ type: Boolean }) accessor open: boolean | undefined;
 
@@ -250,6 +261,7 @@ export class DsTooltip extends LitElement {
   private descriptionEl: HTMLSpanElement | null = null;
   private bubbleEl: HTMLDivElement | null = null;
   private triggerEl: HTMLElement | null = null;
+  private triggerLink: TriggerLink | null = null;
   private visible = false;
   private pointerOverTrigger = false;
   private pointerOverBubble = false;
@@ -279,7 +291,7 @@ export class DsTooltip extends LitElement {
     if (changed.has('content') || changed.has('overrides')) {
       this.renderLightContent();
     }
-    if (changed.has('describes')) {
+    if (changed.has('describes') || changed.has('content')) {
       this.updateTriggerAria();
     }
   }
@@ -304,6 +316,11 @@ export class DsTooltip extends LitElement {
     return html`<slot @slotchange=${this.handleSlotChange}></slot>`;
   }
 
+  /** `open` set: visibility follows the property (and Escape), not hover or focus. */
+  private get controlled(): boolean {
+    return this.open !== undefined;
+  }
+
   /** Creates the description copy and the bubble once, and appends them only when not already in place. */
   private ensureLightNodes(): void {
     if (!this.descriptionEl) {
@@ -317,6 +334,7 @@ export class DsTooltip extends LitElement {
       const bubble = document.createElement('div');
       bubble.className = BUBBLE_CLASS;
       bubble.setAttribute('aria-hidden', 'true');
+      bubble.setAttribute('data-part', 'popup');
       if (POPOVER_SUPPORTED) {
         bubble.setAttribute('popover', 'manual');
       } else {
@@ -363,7 +381,6 @@ export class DsTooltip extends LitElement {
     trigger.addEventListener('pointerleave', this.handleTriggerPointerLeave);
     trigger.addEventListener('focusin', this.handleTriggerFocusIn);
     trigger.addEventListener('focusout', this.handleTriggerFocusOut);
-    trigger.addEventListener('keydown', this.handleTriggerKeydown);
     this.updateTriggerAria();
     this.warnInDev();
   }
@@ -377,30 +394,43 @@ export class DsTooltip extends LitElement {
     trigger.removeEventListener('pointerleave', this.handleTriggerPointerLeave);
     trigger.removeEventListener('focusin', this.handleTriggerFocusIn);
     trigger.removeEventListener('focusout', this.handleTriggerFocusOut);
-    trigger.removeEventListener('keydown', this.handleTriggerKeydown);
-    if (trigger.getAttribute('aria-describedby') === this.tooltipId) {
-      trigger.removeAttribute('aria-describedby');
-    }
-    if (trigger.getAttribute('aria-labelledby') === this.tooltipId) {
-      trigger.removeAttribute('aria-labelledby');
-    }
+    this.clearTriggerLink();
     this.pointerOverTrigger = false;
     this.triggerFocused = false;
     this.hideBubble();
   }
 
+  /**
+   * Links the trigger to the tooltip text. ID references do not reach into a trigger's shadow root, so a custom
+   * element with one gets the text (`aria-description`, or `aria-label` when the tooltip is the name); a plain
+   * light-DOM trigger gets `aria-describedby` / `aria-labelledby` pointing at the description copy.
+   */
   private updateTriggerAria(): void {
     const trigger = this.triggerEl;
     if (!trigger) {
       return;
     }
-    const [set, clear] = this.describes ? ['aria-describedby', 'aria-labelledby'] : ['aria-labelledby', 'aria-describedby'];
-    if (trigger.getAttribute(set) !== this.tooltipId) {
-      trigger.setAttribute(set, this.tooltipId);
+    const byText = trigger.shadowRoot !== null;
+    const next: TriggerLink = byText
+      ? { attribute: this.describes ? 'aria-description' : 'aria-label', value: this.content }
+      : { attribute: this.describes ? 'aria-describedby' : 'aria-labelledby', value: this.tooltipId };
+    const previous = this.triggerLink;
+    if (previous && previous.attribute !== next.attribute) {
+      this.clearTriggerLink();
     }
-    if (trigger.getAttribute(clear) === this.tooltipId) {
-      trigger.removeAttribute(clear);
+    if (trigger.getAttribute(next.attribute) !== next.value) {
+      trigger.setAttribute(next.attribute, next.value);
     }
+    this.triggerLink = next;
+  }
+
+  private clearTriggerLink(): void {
+    const trigger = this.triggerEl;
+    const link = this.triggerLink;
+    if (trigger && link && trigger.getAttribute(link.attribute) === link.value) {
+      trigger.removeAttribute(link.attribute);
+    }
+    this.triggerLink = null;
   }
 
   private readonly handleTriggerPointerEnter = (event: PointerEvent): void => {
@@ -437,21 +467,23 @@ export class DsTooltip extends LitElement {
       return;
     }
     this.triggerFocused = false;
-    this.hideBubble();
-  };
-
-  /** Escape: hides the tooltip without moving focus. */
-  private readonly handleTriggerKeydown = (event: KeyboardEvent): void => {
-    if (event.key === 'Escape' && this.visible) {
+    if (!this.controlled) {
       this.hideBubble();
     }
   };
 
-  /** Escape while shown by hover alone (focus elsewhere): still dismissable without moving the pointer (WCAG 1.4.13). */
+  /**
+   * Escape hides the tooltip without moving focus, wherever focus is (WCAG 1.4.13). Attached to the document in
+   * the capture phase only while the bubble is visible, and it stops that Escape, so inside a Dialog the first
+   * Escape hides the tooltip and the second closes the Dialog.
+   */
   private readonly handleDocumentKeydown = (event: KeyboardEvent): void => {
-    if (event.key === 'Escape' && this.visible && !this.triggerFocused) {
-      this.hideBubble();
+    if (event.key !== 'Escape' || !this.visible) {
+      return;
     }
+    event.stopPropagation();
+    event.preventDefault();
+    this.hideBubble();
   };
 
   private readonly handleBubblePointerEnter = (): void => {
@@ -471,7 +503,7 @@ export class DsTooltip extends LitElement {
   };
 
   private requestShow(immediate: boolean): void {
-    if (this.visible) {
+    if (this.visible || this.controlled) {
       return;
     }
     clearTimeout(this.showTimerId);
@@ -479,18 +511,21 @@ export class DsTooltip extends LitElement {
     if (immediate || this.delay === 'none' || Date.now() < warmUntil) {
       this.showBubble();
     } else {
-      this.showTimerId = setTimeout(() => this.showBubble(), constantMs(this, HOVER_DELAY));
+      this.showTimerId = setTimeout(() => this.showBubble(), this.resolveMs(HOVER_DELAY));
     }
   }
 
   /** Waits one pointerGrace so the pointer can cross the `offset` gap to the bubble. */
   private scheduleMaybeHide(): void {
+    if (this.controlled) {
+      return;
+    }
     clearTimeout(this.hideGraceTimerId);
     this.hideGraceTimerId = setTimeout(() => {
       if (!this.pointerOverTrigger && !this.pointerOverBubble && !this.triggerFocused) {
         this.hideBubble();
       }
-    }, constantMs(this, POINTER_GRACE));
+    }, this.resolveMs(POINTER_GRACE));
   }
 
   private showBubble(): void {
@@ -512,19 +547,17 @@ export class DsTooltip extends LitElement {
     this.updatePosition();
     window.addEventListener('scroll', this.handleReposition, true);
     window.addEventListener('resize', this.handleReposition);
-    document.addEventListener('keydown', this.handleDocumentKeydown);
+    document.addEventListener('keydown', this.handleDocumentKeydown, true);
   }
 
   private hideBubble(): void {
+    clearTimeout(this.showTimerId);
+    this.showTimerId = undefined;
     if (!this.visible) {
-      clearTimeout(this.showTimerId);
-      this.showTimerId = undefined;
       return;
     }
     this.visible = false;
-    clearTimeout(this.showTimerId);
     clearTimeout(this.hideGraceTimerId);
-    this.showTimerId = undefined;
     const bubble = this.bubbleEl;
     if (bubble) {
       if (POPOVER_SUPPORTED) {
@@ -538,8 +571,20 @@ export class DsTooltip extends LitElement {
     }
     window.removeEventListener('scroll', this.handleReposition, true);
     window.removeEventListener('resize', this.handleReposition);
-    document.removeEventListener('keydown', this.handleDocumentKeydown);
-    warmUntil = Date.now() + constantMs(this, WARM_WINDOW);
+    document.removeEventListener('keydown', this.handleDocumentKeydown, true);
+    warmUntil = Date.now() + this.resolveMs(WARM_WINDOW);
+  }
+
+  /** Resolves a duration token expression in ms through getComputedStyle; unresolved (no theme) is 0. */
+  private resolveMs(expression: string): number {
+    const probe = this.descriptionEl;
+    if (!probe || !probe.isConnected) {
+      return 0;
+    }
+    probe.style.setProperty('transition-duration', expression);
+    const ms = parseTimeMs(getComputedStyle(probe).transitionDuration);
+    probe.style.removeProperty('transition-duration');
+    return ms;
   }
 
   /** Positions the bubble from the trigger rect at `placement`, resolving start/end from the trigger's direction and flipping on overflow. */
@@ -553,7 +598,7 @@ export class DsTooltip extends LitElement {
     const bubbleRect = bubble.getBoundingClientRect();
     const viewportWidth = document.documentElement.clientWidth;
     const viewportHeight = document.documentElement.clientHeight;
-    const gap = parseFloat(getComputedStyle(this).getPropertyValue('--ds-tooltip-offset')) || 0;
+    const gap = parseFloat(getComputedStyle(bubble).scrollMarginTop) || 0;
     const rtl = getComputedStyle(trigger).direction === 'rtl';
 
     type Side = 'top' | 'bottom' | 'left' | 'right';

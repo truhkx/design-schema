@@ -22,7 +22,7 @@ function activeChain(): Element[] {
   return chain;
 }
 
-/** The Default story's args plus the scenario's `given`, as properties on a fresh element wrapping a ds-button. */
+/** The Default story's args plus the scenario's `given`, as properties on a fresh element wrapping the Default story's ds-button. */
 async function setup(given: Given = {}) {
   const el = document.createElement('ds-tooltip');
   const props = { ...meta.args, ...given };
@@ -30,19 +30,24 @@ async function setup(given: Given = {}) {
     if (value !== undefined) (el as unknown as Record<string, unknown>)[key] = value;
   }
   const trigger = document.createElement('ds-button');
-  trigger.setAttribute('label', 'Show all');
+  trigger.setAttribute('label', 'Items');
   el.append(trigger);
   document.body.append(el);
   await el.updateComplete;
   await trigger.updateComplete;
   await new Promise((resolve) => requestAnimationFrame(resolve));
   const tooltips = () => [...el.querySelectorAll<HTMLElement>('[role="tooltip"]')].filter((node) => !node.closest('[aria-hidden="true"]'));
-  const bubble = () => el.querySelector<HTMLElement>('[aria-hidden="true"]');
+  const bubble = () => el.querySelector<HTMLElement>('[data-part="popup"]');
   return { el, trigger, tooltips, bubble, content: props.content ?? '' };
 }
 
 function bubbleShown(bubble: HTMLElement | null): boolean {
   return bubble !== null && (bubble.matches(':popover-open') || bubble.hasAttribute('data-open'));
+}
+
+/** ds-button keeps its real <button> in a shadow root, so the tooltip text reaches it as aria-description. */
+function expectLinked(trigger: HTMLElement, content: string): void {
+  expect(trigger).toHaveAttribute('aria-description', content);
 }
 
 beforeEach(() => {
@@ -56,7 +61,7 @@ describe('ds-tooltip', () => {
     const [tooltip, ...rest] = s.tooltips();
     expect(rest).toHaveLength(0);
     expect(tooltip).toHaveTextContent(s.content);
-    expect(s.trigger).toHaveAttribute('aria-describedby', tooltip!.id);
+    expectLinked(s.trigger, s.content);
   });
 
   it('the-text-stays-in-the-tree-while-hidden', async () => {
@@ -65,7 +70,7 @@ describe('ds-tooltip', () => {
     const [tooltip] = s.tooltips();
     expect(tooltip).toBeDefined();
     expect(tooltip).toHaveTextContent(s.content);
-    expect(s.trigger).toHaveAttribute('aria-describedby', tooltip!.id);
+    expectLinked(s.trigger, s.content);
   });
 
   /* derived */

@@ -2,7 +2,7 @@ import * as React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button } from './Button';
 import { Stack } from './Stack';
-import { Toast } from './Toast';
+import { Toast, ToastProvider, useToast } from './Toast';
 import { withTheme } from './decorators';
 
 const meta: Meta<typeof Toast> = {
@@ -59,6 +59,22 @@ export const NotDismissible: Story = { args: { dismissible: false } };
 
 export const WithOverrides: Story = {
   args: { overrides: { radius: 'radius.full', maxWidth: 'layout.maxWidth.content' } },
+};
+
+/** The imperative API: `useToast()` inside a `ToastProvider`; `dismiss()` clears every toast on cleanup. */
+export const WithProvider: Story = {
+  render: (args) => {
+    function Trigger(): React.JSX.Element {
+      const { toast, dismiss } = useToast();
+      React.useEffect(() => () => dismiss(), [dismiss]);
+      return <Button label="Show toast" onPress={() => void toast({ ...args })} />;
+    }
+    return (
+      <ToastProvider>
+        <Trigger />
+      </ToastProvider>
+    );
+  },
 };
 
 /** Open with its trigger and several focusable children, for the axe gate and manual keyboard checks. */

@@ -35,3 +35,17 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Toast: the region's placement ('bottom-start on wide screens, bottom center on phones') has no breakpoint token. Chose the existing 960px media query, marked literal-ok to match Container's threshold. The safe-area offset uses `env(safe-area-inset-bottom, 0px)`, also marked literal-ok.
 - Toast: the `Keyboard` story needs toasts in the region, but there is no API to clear them, so they stay in the module-level store across stories. Chose fixed `toastId`s so re-renders replace rather than stack.
 - Toast: `has-accessible-name` is derived, but a `role=status` toast has no name source in the spec (the region has `copy.regionLabel`; the toast itself has none). Chose to assert that the status carries the visible message and the dismiss button is named `Dismiss`.
+
+## 2026-09-17 10:00 — round 1
+
+- Toast: the spec never names the region component or the dismiss function's export; kept the existing `ToastRegion` and `toast`, and added `dismiss(toastId?: string): void` beside them.
+- Toast: `dismiss(toastId)` has no stated animation; the doc only says `replaced` skips the exit transition, so programmatic dismissals play the exit transition and fire onDismiss afterwards. With no region mounted they settle immediately.
+- Toast: a programmatic dismissal needs to reach a toast rendered by the region, but the schema props have no channel for it; used a private context (not a prop) so the public API stays as specified.
+- Toast: `fontFamily`/`fontSize`/`lineHeight` are forwarded to Text, yet the Overrides section says every binding is a `--ds-toast-*` hook on the root; forwarded bindings get no root hook, following the 'forward to the child, never CSS on the child' rule.
+- Toast: `stackGap`, `regionInset` and `layer` are listed as Toast overridables but described as region-only; they are typed on `ToastRegionProps.overrides` only, not on `ToastProps.overrides`.
+- Toast: the `text` binding names `part: message`, but its description says to re-scope `--color-foreground` on the container; set it on the toast root (like Tooltip), not on the message part.
+- Toast: the exit transition's direction isn't specified (only enter 'rise and fade'); exit reverses enter, sinking by `enterOffset` while fading over `exit`.
+- Toast: 'wide' is layout.maxWidth.content resolved at generation time; used 960px to match Container's existing breakpoint, without re-reading the theme.
+- Toast: the spec doesn't say whether the dev warning fires once per instance or on every change; it fires when `duration`, `actionLabel` or `tone` changes into the override case.
+- Toast: the `escape-dismisses-the-focused-toast` scenario has no `given` or focus step; the test focuses the dismiss button first, since Escape only acts when focus is inside a toast.
+- Toast: with toast() auto-mounting the region in its own React root, the enter frame between region creation and the first push is a requestAnimationFrame; the spec doesn't say how long the empty live region must exist before content.

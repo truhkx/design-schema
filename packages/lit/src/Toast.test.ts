@@ -58,7 +58,7 @@ describe('ds-toast', () => {
 
   it('escape-dismisses-the-focused-toast', async () => {
     const t = await setup();
-    t.part('dismissButton')!.focus();
+    t.part('dismissButton')!.querySelector('ds-button')!.focus();
     expect(t.el.matches(':focus-within')).toBe(true);
     await userEvent.keyboard('{Escape}');
     await expect.poll(() => t.dismiss.mock.calls.length).toBe(1);

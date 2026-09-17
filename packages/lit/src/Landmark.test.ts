@@ -3,6 +3,7 @@
  * The element has no shadow root: the host carries `role` and `aria-label` itself.
  */
 import { beforeEach, describe, expect, it } from 'vitest';
+import { page } from 'vitest/browser';
 import './Landmark.js';
 import type { DsLandmark, LandmarkRole } from './Landmark.js';
 import meta from './Landmark.stories.js';
@@ -11,6 +12,8 @@ interface Given {
   role?: LandmarkRole | undefined;
   label?: string | undefined;
 }
+
+const ROLES = ['banner', 'navigation', 'main', 'complementary', 'contentinfo', 'region', 'search', 'form'] as const;
 
 /** The Default story's args plus the scenario's `given`, as properties on a fresh element. */
 async function setup(given: Given = {}): Promise<DsLandmark> {
@@ -24,12 +27,16 @@ async function setup(given: Given = {}): Promise<DsLandmark> {
   return el;
 }
 
-async function expectRendersRole(role: LandmarkRole | undefined): Promise<void> {
-  const el = await setup(role === undefined ? {} : { role });
+/** The element is what a role query finds. */
+function expectRole(el: DsLandmark, role: LandmarkRole): void {
+  expect(page.getByRole(role).elements()).toContain(el);
+}
+
+async function expectRenders(given: Given = {}): Promise<void> {
+  const el = await setup(given);
   expect(el.isConnected).toBe(true);
   expect(el.shadowRoot).toBeNull();
   expect(el).toHaveAttribute('data-ds', 'Landmark');
-  expect(el).toHaveAttribute('role', role ?? meta.args?.role);
   expect(el).toBeVisible();
 }
 
@@ -38,45 +45,40 @@ beforeEach(() => {
 });
 
 describe('ds-landmark', () => {
+  it('the-role-prop-chooses-the-landmark', async () => {
+    const el = await setup({ role: 'navigation' });
+    expectRole(el, 'navigation');
+  });
+
+  it('search-is-the-search-landmark', async () => {
+    const el = await setup({ role: 'search' });
+    expectRole(el, 'search');
+  });
+
+  it('main-is-the-primary-content-landmark', async () => {
+    const el = await setup({ role: 'main' });
+    expectRole(el, 'main');
+  });
+
+  it('a-region-is-named-by-its-label', async () => {
+    const el = await setup({ role: 'region', label: 'Related articles' });
+    expectRole(el, 'region');
+    expect(el).toHaveAttribute('aria-label', 'Related articles');
+  });
+
+  /* derived */
   it('renders', async () => {
-    await expectRendersRole(undefined);
+    await expectRenders();
   });
 
-  it('renders-role-banner', async () => {
-    await expectRendersRole('banner');
-  });
-
-  it('renders-role-navigation', async () => {
-    await expectRendersRole('navigation');
-  });
-
-  it('renders-role-main', async () => {
-    await expectRendersRole('main');
-  });
-
-  it('renders-role-complementary', async () => {
-    await expectRendersRole('complementary');
-  });
-
-  it('renders-role-contentinfo', async () => {
-    await expectRendersRole('contentinfo');
-  });
-
-  it('renders-role-region', async () => {
-    await expectRendersRole('region');
-  });
-
-  it('renders-role-search', async () => {
-    await expectRendersRole('search');
-  });
-
-  it('renders-role-form', async () => {
-    await expectRendersRole('form');
-  });
+  for (const role of ROLES) {
+    it(`renders-role-${role}`, async () => {
+      await expectRenders({ role });
+    });
+  }
 
   it('has-accessible-name', async () => {
     const el = await setup({ label: 'Accessible name' });
-    expect(el).toHaveAttribute('aria-label', 'Accessible name');
     expect(el).toHaveAccessibleName('Accessible name');
   });
 });

@@ -22,8 +22,9 @@ const meta: Meta<LandmarkArgs> = {
     children: { control: 'text' },
   },
   args: {
-    role: 'main',
-    children: 'The page content.',
+    role: 'navigation',
+    label: 'Main',
+    children: 'Primary links.',
   },
   render: (args) => html`
     <ds-landmark role=${args.role} .label=${args.label}>
@@ -37,18 +38,22 @@ type Story = StoryObj<LandmarkArgs>;
 
 export const Default: Story = {};
 
-/* role */
-export const RoleBanner: Story = { args: { role: 'banner' } };
+/* role — banner, main and contentinfo never take a label, so the Default label is cleared. */
+export const RoleBanner: Story = { args: { role: 'banner', label: undefined, children: 'Site header' } };
 export const RoleNavigation: Story = { args: { role: 'navigation', label: 'Main' } };
-export const RoleMain: Story = { args: { role: 'main' } };
-export const RoleComplementary: Story = { args: { role: 'complementary', label: 'Related' } };
-export const RoleContentinfo: Story = { args: { role: 'contentinfo' } };
-export const RoleRegion: Story = { args: { role: 'region', label: 'Related articles' } };
-export const RoleSearch: Story = { args: { role: 'search' } };
-export const RoleForm: Story = { args: { role: 'form', label: 'Newsletter' } };
+export const RoleMain: Story = { args: { role: 'main', label: undefined, children: 'The page content.' } };
+export const RoleComplementary: Story = {
+  args: { role: 'complementary', label: 'Help', children: 'Sidebar content' },
+};
+export const RoleContentinfo: Story = { args: { role: 'contentinfo', label: undefined, children: 'Site footer' } };
+export const RoleRegion: Story = {
+  args: { role: 'region', label: 'Related articles', children: 'A list of related articles.' },
+};
+export const RoleSearch: Story = { args: { role: 'search', label: 'Site', children: 'Search form' } };
+export const RoleForm: Story = { args: { role: 'form', label: 'Feedback', children: 'Form fields' } };
 
 /* examples */
-export const PageMain: Story = { args: { role: 'main', children: 'The page content.' } };
+export const PageMain: Story = { args: { role: 'main', label: undefined, children: 'The page content.' } };
 export const FooterNavigation: Story = {
   args: { role: 'navigation', label: 'Footer', children: 'Footer links.' },
 };

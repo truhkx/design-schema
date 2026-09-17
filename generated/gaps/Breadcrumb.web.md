@@ -27,3 +27,11 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Breadcrumb: an empty `items` array, or a single item, isn't covered. It renders an empty <ol> or a lone current item, with no dev warning (the doc calls a single-item trail noise but asks for no warning).
 - Breadcrumb: `BreadcrumbItem` uses the schema shape verbatim (`href?: string`); under exactOptionalPropertyTypes callers can't pass `href: undefined` explicitly, unlike the `| undefined` convention for props.
 - Breadcrumb: no enum props, so the 'one story per enum value' rule has nothing to apply to. I added CollapseTrue/CollapseFalse for the boolean alongside the four example stories.
+
+## 2026-09-17 05:25 — round 1
+
+- Breadcrumb: the focus fallback puts tabindex=-1 on the first revealed <li>, but the doc says Breadcrumb adds no focus ring (Link and Button bring their own). A focusable <li> with no visible focus would fail focus-visible, so I added a :focus-visible outline on the item. The doc should say whether this outline is intended.
+- Breadcrumb: 'first revealed item' is ambiguous. I read the revealed range as indices 1 to length-3, taken when the ellipsis is pressed, and the fallback item as index 1. The doc doesn't say what happens if `items` changes between the press and the focus move.
+- Breadcrumb: the anatomy has no part for a plain-text ancestor (an item without href). I rendered it as a <span> with no data-part, and it takes its colour from the item's itemColor.
+- Breadcrumb: the web notes don't say whether the `link`/`expand` wrapper spans need a display value. I left them inline, so the Link and Button lay out inside the item's inline-flex row.
+- Breadcrumb: the doc gives no story for the no-href focus fallback or for an ancestor without href. I kept the existing AncestorWithoutHref story and added no story for the fallback.

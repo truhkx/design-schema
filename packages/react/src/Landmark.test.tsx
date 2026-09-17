@@ -22,6 +22,11 @@ describe('Landmark', () => {
     expect(getByRole('navigation').getAttribute('data-ds')).toBe('Landmark');
   });
 
+  it('search-is-the-search-landmark', () => {
+    const { getByRole } = setup({ role: 'search' });
+    expect(getByRole('search').getAttribute('data-ds')).toBe('Landmark');
+  });
+
   it('main-is-the-primary-content-landmark', () => {
     const { getByRole } = setup({ role: 'main' });
     expect(getByRole('main').getAttribute('data-ds')).toBe('Landmark');
@@ -61,6 +66,6 @@ describe('Landmark', () => {
 
   it('has-accessible-name', () => {
     const { getByRole } = setup({ label: 'Accessible name' });
-    expect(getByRole('main', { name: 'Accessible name' })).toBeTruthy();
+    expect(getByRole('navigation', { name: 'Accessible name' })).toBeTruthy();
   });
 });

@@ -32,6 +32,12 @@ describe('Alert', () => {
     expect(s.getByTestId('Alert').props.accessibilityRole).toBe('alert');
   });
 
+  it('live-status-renders-the-status-role', () => {
+    // React Native has no status role; the polite live region stands in for it.
+    const s = setup({ live: 'status' });
+    expect(s.getByTestId('Alert').props.accessibilityLiveRegion).toBe('polite');
+  });
+
   it('the-heading-is-rendered', () => {
     const s = setup({ heading: 'Payment failed' });
     expect(s.getByText('Payment failed')).toBeTruthy();

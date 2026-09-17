@@ -35,3 +35,14 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Fieldset: the examples give `children` as prose ('Street and city Inputs.', 'Email, SMS and Push Checkboxes.'), which can't be passed as args; example stories pass the other given props as args and build the children in `render` with Input/Checkbox.
 - Fieldset: the scenario `a-disabled-group-is-marked-disabled` is web-only; RN still sets accessibilityState.disabled on the group, but a View that is not accessible exposes no state, so there is no test for it on rn. `has-accessible-name` is checked with toHaveAccessibleName on the group view.
 - Fieldset: the schema requires `label-association`, and the doc's only native answer is the legend prefix inside each field's accessibilityLabel through FieldsetContext; a non-field child such as a plain Text gets no association, and the doc doesn't say whether that's acceptable.
+
+## 2026-09-17 05:36 — round 1
+
+- Fieldset: composition gives the legend/description/error Texts `element: span`, but the RN Text has no `element` prop; omitted on native.
+- Fieldset: the required-indicator rule says fragments count as direct children on web but does not say whether RN flattens fragments; chose React.Children.toArray on direct children (fragments are not looked into), so fields inside a fragment do not trigger the indicator on native.
+- Fieldset: the rn notes say the group label includes copy.requiredIndicator 'when shown' and Behavior says it is appended inside the legend; chose to render it in the visible legend Text too, so the legend text reads 'Shipping address (required)'. The doc does not say whether the FieldsetContext `legend` passed to fields should include it; chose the bare legend so fields read 'Shipping address, Street'.
+- Fieldset: disabledOpacity's part is `legend` but its description dims legend and description; applied the opacity to the Fieldset.legend and Fieldset.description wrapper Views, not to the Texts (a Text has no opacity override), and the error is left undimmed — the doc does not say whether a group error under a disabled group dims.
+- Fieldset: fontFamily and lineHeight are declared with part `legend` but forward to all three Texts; followed the forwards.
+- Fieldset: the scenario `the-legend-names-the-group` limits its name check to web/lit, yet the rn notes say RN tests check toHaveAccessibleName on the group view; the derived has-accessible-name test does that, the legend scenario checks text only.
+- Fieldset: the doc does not say whether an empty-string `description`/`error` counts as unset; chose to treat '' as unset (no part rendered, no hint, no announcement).
+- Fieldset: the web a11y note says the error region has role=alert; on RN the Android live region is on the Fieldset.errorMessage wrapper View (as in Input), since role=alert has no native equivalent — `a-group-error-is-announced` is web/lit only so no RN test asserts it.

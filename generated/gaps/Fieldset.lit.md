@@ -34,3 +34,14 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Fieldset: examples give `children` as prose ('Street and city Inputs.'); stories keep it as the literal `children` arg and map it through a lookup to real ds-input/ds-checkbox elements. Input has no date type, so the date-range example uses text Inputs.
 - Fieldset: behavior `the-legend-names-the-group` limits the `name` expectation to web, though the Lit group gets its name from the native <legend> too; tested text only per the scenario, while `has-accessible-name` covers the name.
 - Fieldset: the `a-disabled-group-is-marked-disabled` doc scenario is web-only, so no Lit test exists for aria-disabled; the element still sets it.
+
+## 2026-09-17 05:35 — round 1
+
+- Fieldset: the fieldsGap description says Fieldset's own CSS hook (--ds-fieldset-fields-gap) exists but does not reach the Stack, while helperSize/legendSize etc. say 'no --ds-fieldset-* hook' and the package convention says every binding is a hook; a hook no rule reads does nothing, so I declared no hook for fieldsGap, legendSize, legendWeight, helperSize, fontFamily or lineHeight (only partGap and disabledOpacity have hooks). The doc should say plainly which bindings get a hook.
+- Fieldset: the doc doesn't say whether forwarded bindings are always sent to the child's overrides or only when overridden; I always forward the resolved token (the override, or the binding's default token such as font.size.md or layout.gap.{gap}), and the Stack gets no gap attribute.
+- Fieldset: fontFamily, lineHeight and disabledOpacity say part: legend, but their descriptions also cover description and error (fontFamily/lineHeight) and the description (disabledOpacity); a style binding has one part, so I followed the descriptions.
+- Fieldset: the lit notes don't say which elements wrap the description and fields (only web's notes name a <div data-part=fields>); I used Fieldset-owned <div>s with data-part and part for description, fields and errorMessage, as on web.
+- Fieldset: the description a11y says it's linked with aria-describedby, but no behavior scenario checks the description or the error in the group's accessible description; untested.
+- Fieldset: the required indicator (copy.requiredIndicator, derived from direct data-ds-field children) has no behavior scenario or example; it's implemented and shown in an AllFieldsRequired story but untested.
+- Fieldset: the doc doesn't say whether the indicator counts a child that has the required attribute but no required property, or what an empty group shows; I count either the property or the attribute, and a group with no fields shows no indicator.
+- Fieldset: the examples give children as prose ('An Input name=street label=Street …'); to use them verbatim as story args, the stories map each sentence to real fields. A structured children form in examples would avoid that mapping.

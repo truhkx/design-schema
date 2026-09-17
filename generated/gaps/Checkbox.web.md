@@ -28,3 +28,14 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Checkbox: `requiredIndicator` placement: rendered as plain text inside the <label> so it takes the label bindings (matching Input); the doc doesn't say whether it is muted or uses a smaller size.
 - Checkbox: 'the whole row is the hit area' doesn't say whether the gap between control and label toggles. Chose yes: a click whose target is the row itself is forwarded to the input.
 - Checkbox: the `disabledOpacity` target part isn't named. Dimmed the box (control plus indicator) and the label; description and error stay at full opacity so they remain readable.
+
+## 2026-09-17 04:58 — round 1
+
+- Checkbox: the indicator binding says nothing is rendered when unchecked, but the web input is native and uncontrolled. Rendering the icon needs a mirrored checked state in React. A fully controlled input made a prevented click on a disabled box stay checked in jsdom, so uncontrolled stays native (defaultChecked) with a state mirror used only for the icon. The spec should say whether the web input is controlled internally.
+- Checkbox: the transition binding covers 'fill and indicator transitions', but the icon is added and removed rather than faded, so only background-color and border-color transition. An indicator fade isn't possible without keeping a hidden icon mounted, which the indicator binding rules out.
+- Checkbox: controlBorderInvalid vs controlSelectedBackground when a box is both invalid and checked or mixed is not specified. The selected border wins, so the invalid border shows only on an unchecked box.
+- Checkbox: when `invalid` is true and there is no error or Form message, the doc says the error slot shows copy.required or copy.invalid. That makes a bare `invalid` render a role=alert message, which the `invalid` prop description ('Marks the control as failing validation') doesn't mention. Implemented as the Behavior section says.
+- Checkbox: partGap is described as the gap in both the text column (label to description) and the root column (row to error), but no inline alignment is given for the error below the row. The error is indented by controlSize + gap in a wrapper div so it lines up with the label; the spec doesn't say this.
+- Checkbox: the row click forwarding covers only 'the row itself (the gap)' plus the description. The text column's own area (the partGap between label and description) is not named; it forwards too, since the whole row is the hit area.
+- Checkbox: the spec has no enum props, so the only stories are Default, the four examples and the existing state stories (Checked, Disabled, DisabledChecked, Invalid, WithError, Controlled). No per-value stories are required.
+- Checkbox: FormFieldRegistration in FormContext.ts has isDisabled(), which the conventions digest's registration shape { name, label, id, getValue, validate, focus } leaves out; implemented per FormContext.ts.

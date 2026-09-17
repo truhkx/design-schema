@@ -113,14 +113,3 @@ export const WithLink: Story = {
     </div>
   `,
 };
-
-export const RichHeading: Story = {
-  render: (args) => html`
-    <div style="inline-size: min(100%, 36rem)">
-      <ds-alert tone=${args.tone} live=${args.live} ?dismissible=${args.dismissible}>
-        <span slot="heading">Changes saved</span>
-        ${args.children}
-      </ds-alert>
-    </div>
-  `,
-};

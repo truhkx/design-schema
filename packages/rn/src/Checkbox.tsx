@@ -35,7 +35,7 @@ export interface CheckboxProps {
   hideLabel?: boolean | undefined;
   /** Field name used by the enclosing Form when collecting values. */
   name: string;
-  /** The value submitted when checked. Lets several checkboxes share a `name` to form a multi-select. */
+  /** What a native HTML form submits when checked (web and Lit only). The enclosing Form ignores it and collects the boolean `checked`; checkboxes sharing a `name` are not a multi-select, so give each its own name. */
   value?: string | undefined;
   /** Controlled checked state. Omit for an uncontrolled control. */
   checked?: boolean | undefined;
@@ -72,8 +72,8 @@ const COPY = {
  * opposed to a Switch, which takes effect the moment it is flipped.
  *
  * When to use: Use a Checkbox for one independent option ("Remember me"), for terms
- * and consent (`required`), or several with the same `name` when the user may pick
- * any number of items. Use `indeterminate` on a "select all" parent when only some
+ * and consent (`required`), or several, each with its own `name`, when the user may
+ * pick any number of items. Use `indeterminate` on a "select all" parent when only some
  * of its children are checked. Do not use it for a setting that applies immediately
  * (Switch) or to pick exactly one option (RadioGroup).
  *
@@ -85,11 +85,15 @@ const COPY = {
  * never drops below the comfortable target. Space on a hardware keyboard is handled by
  * the platform once the role is set. The fill, border and indicator cross-fade over
  * `transition` with `motion.easing.standard` (skipped under reduced motion); while
- * pressed the box shows the selected fill at `pressedOverlay`. Toggling an
- * indeterminate checkbox clears the mixed state until `indeterminate` is set again.
- * Inside a Form the control registers by `name` and submits its checked state as a
- * boolean; validation precedence is `error`, then `required` (`copy.required`), then
- * `invalid` (`copy.invalid`), as in Input, and `validate: blur` means on change.
+ * pressed an unchecked, enabled box shows the selected fill at `pressedOverlay`.
+ * Toggling an indeterminate checkbox clears the mixed state until `indeterminate`
+ * changes value again. Inside a Form the control registers by `name` and submits its
+ * checked state as a boolean (`value` is not used on native); the error slot shows
+ * `error`, else the Form's message, else — only while `invalid` — `copy.required`
+ * (required and unchecked) or `copy.invalid`, as in Input, and `validate: blur` means
+ * on change. `disabledOpacity` dims the control and label, not the description or
+ * error. The row has no vertical padding: it is at least `size.target.comfortable`
+ * tall and centers the control and text column.
  * Inside a Fieldset the group's `disabled` applies and the legend prefixes the
  * accessibility label. Errors are announced as in Input.
  */
@@ -128,7 +132,8 @@ export function Checkbox({
   const isMixed = indeterminate && !mixedCleared;
   const isDisabled = disabled || (form?.disabled ?? false) || (fieldset?.disabled ?? false);
   const formError = form?.errors[name];
-  const displayedError = error !== undefined && error !== '' ? error : formError;
+  const derivedError = invalid ? (required && !isChecked ? COPY.required(label) : COPY.invalid(label)) : undefined;
+  const displayedError = error !== undefined && error !== '' ? error : (formError ?? derivedError);
   const isInvalid = invalid || displayedError !== undefined;
   const summarised = form !== null && form.errorSummary;
 
@@ -236,16 +241,17 @@ export function Checkbox({
   const rootStyle: ViewStyle = {
     flexDirection: 'column',
     gap: partGap,
-    opacity: isDisabled ? disabledOpacity : 1,
   };
 
   const rowStyle: ViewStyle = {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap,
     minHeight: t.sizeTargetComfortable,
-    paddingVertical: t.space1,
   };
+
+  // Dims the control (with its indicator) and the label; description and error stay readable.
+  const dimStyle: ViewStyle = { opacity: isDisabled ? disabledOpacity : 1 };
 
   const controlStyle: Animated.WithAnimatedValue<ViewStyle> = {
     width: controlSize,
@@ -257,12 +263,14 @@ export function Checkbox({
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
+    opacity: dimStyle.opacity,
   };
 
+  // Only an unchecked, not-mixed, enabled box shows the pressed overlay; a filled one has nothing to add.
   const overlayStyle = ({ pressed }: PressableStateCallbackType): ViewStyle => ({
     ...StyleSheet.absoluteFill,
     backgroundColor: t.colorControlSelectedBackground,
-    opacity: pressed && !isDisabled ? pressedOverlay : 0,
+    opacity: pressed && !filled && !isDisabled ? pressedOverlay : 0,
   });
 
   const indicatorStyle: Animated.WithAnimatedValue<ViewStyle> = { opacity: fillAnim };
@@ -299,8 +307,13 @@ export function Checkbox({
             </Animated.View>
             <View style={textColumnStyle}>
               {hideLabel ? null : (
-                <View testID="Checkbox.label">
-                  <Text overrides={{ ...typographyOverrides, fontSize: overrides?.labelSize, fontWeight: overrides?.labelWeight }}>
+                <View testID="Checkbox.label" style={dimStyle}>
+                  <Text
+                    size="md"
+                    weight="regular"
+                    tone="default"
+                    overrides={{ ...typographyOverrides, fontSize: overrides?.labelSize, fontWeight: overrides?.labelWeight }}
+                  >
                     {visibleLabel}
                   </Text>
                 </View>

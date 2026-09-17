@@ -7,7 +7,7 @@ import { useFieldsetContext } from './Fieldset';
 import { useFormContext } from './FormContext';
 import type { FormFieldHandle } from './FormContext';
 import { Text } from './Text';
-import { useTheme } from './theme';
+import { toLineHeight, useTheme } from './theme';
 
 export type SwitchLabelPosition = 'start' | 'end';
 
@@ -65,7 +65,7 @@ export interface SwitchProps {
  * `ios_backgroundColor={trackOff}`. The row is a `Pressable` with `accessible={false}`
  * that toggles the value, so label and description are part of the target while the
  * Switch stays the single focusable element; the row is at least the comfortable
- * target tall. Track and thumb sizes, radius, thumb travel, its animation (and reduced
+ * target tall, with the track at its top, centred on the label's first line. Track and thumb sizes, radius, thumb travel, its animation (and reduced
  * motion) and the focus indicator are the OS values. With `name` inside a Form the
  * switch registers and contributes a boolean; it has no error state by design. Inside
  * a Fieldset the group's `disabled` applies and the legend prefixes the label.
@@ -131,13 +131,23 @@ export function Switch({
   const gap = overrides?.gap ? (resolveToken(t, overrides.gap) as number) : t.space3;
   const partGap = overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.space1;
   const disabledOpacity = overrides?.disabledOpacity ? (resolveToken(t, overrides.disabledOpacity) as number) : t.opacityDisabled;
+  const labelSize = overrides?.labelSize ? (resolveToken(t, overrides.labelSize) as number) : t.fontSizeMd;
+  const lineHeight = overrides?.lineHeight ? (resolveToken(t, overrides.lineHeight) as number) : t.fontLineHeightNormal;
 
+  // Dims the track (with its thumb), the label and the description together.
   const rowStyle: ViewStyle = {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap,
     minHeight: t.sizeTargetComfortable,
     opacity: isDisabled ? disabledOpacity : 1,
+  };
+
+  // The track sits at the top of the row, centred on the label's first line, so a
+  // wrapping label or a description does not pull it down.
+  const trackSlotStyle: ViewStyle = {
+    height: toLineHeight(labelSize, lineHeight),
+    justifyContent: 'center',
   };
 
   const textColumnStyle: ViewStyle = {
@@ -152,7 +162,14 @@ export function Switch({
   const labelColumn = (
     <View style={textColumnStyle}>
       <View testID="Switch.label">
-        <Text overrides={{ ...typographyOverrides, fontSize: overrides?.labelSize, fontWeight: overrides?.labelWeight }}>{label}</Text>
+        <Text
+          size="md"
+          weight="regular"
+          tone="default"
+          overrides={{ ...typographyOverrides, fontSize: overrides?.labelSize, fontWeight: overrides?.labelWeight }}
+        >
+          {label}
+        </Text>
       </View>
       {description !== undefined ? (
         <View testID="Switch.description">
@@ -167,20 +184,22 @@ export function Switch({
   return (
     <Pressable ref={ref} testID="Switch" accessible={false} onPress={() => setValue(!isChecked)} style={rowStyle}>
       {labelPosition === 'start' ? labelColumn : null}
-      <RNSwitch
-        ref={switchRef}
-        testID="Switch.track"
-        accessibilityRole="switch"
-        accessibilityLabel={accessibleName}
-        accessibilityHint={description}
-        accessibilityState={{ checked: isChecked, disabled: isDisabled }}
-        value={isChecked}
-        disabled={isDisabled}
-        trackColor={{ false: t.colorControlTrackOff, true: t.colorControlSelectedBackground }}
-        thumbColor={t.colorControlSelectedForeground}
-        ios_backgroundColor={t.colorControlTrackOff}
-        onValueChange={setValue}
-      />
+      <View style={trackSlotStyle}>
+        <RNSwitch
+          ref={switchRef}
+          testID="Switch.track"
+          accessibilityRole="switch"
+          accessibilityLabel={accessibleName}
+          accessibilityHint={description}
+          accessibilityState={{ checked: isChecked, disabled: isDisabled }}
+          value={isChecked}
+          disabled={isDisabled}
+          trackColor={{ false: t.colorControlTrackOff, true: t.colorControlSelectedBackground }}
+          thumbColor={t.colorControlSelectedForeground}
+          ios_backgroundColor={t.colorControlTrackOff}
+          onValueChange={setValue}
+        />
+      </View>
       {labelPosition === 'end' ? labelColumn : null}
     </Pressable>
   );

@@ -20,3 +20,11 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Disclosure: `defaultOpen` has no attribute name in the lit notes (only `heading-level` and `keep-mounted` are given); I kept `default-open`, not reflected.
 - Disclosure: the `disabled-trigger-does-not-toggle` scenario needs a forced click in Playwright, because the aria-disabled button counts as not actionable; the test uses `{ force: true }`, as Switch does.
 - Disclosure: the scenarios have no case for `reason` (keyboard vs pointer), a controlled `open` change, keepMounted `hidden`, or focus moving to the trigger on close, though the Behavior prose requires all four. They are implemented but not tested; the doc should add scenarios for them.
+
+## 2026-09-17 05:14 — round 1
+
+- Disclosure: the lit event name `toggle` is also a native HTMLElement event name (ToggleEvent, fired for popover and details), and the package rule says never to dispatch a CustomEvent under a native event's name. The native one does not bubble and ds-disclosure is not a popover, so I kept `toggle` as the doc says, but the doc should confirm the exception or rename the event.
+- Disclosure: `open` is a reflected boolean attribute, so markup can only set it to true (controlled open). A missing attribute means uncontrolled, so markup cannot express a controlled closed state; only the property can. The Lit notes say `open` can be 'set from markup' without this limit.
+- Disclosure: 'focus on the body after leaving the now-hidden panel' does not say how long focus that left the panel still counts as within it. I followed web: the flag clears only on a focusout whose relatedTarget is outside the panel, so clicking empty page after focusing the panel (relatedTarget null) still sends focus to the trigger on a later close.
+- Disclosure: the panel's `hidden` attribute is used only with keepMounted, but the host's own `:host([hidden])` rule and `[data-part=panel][hidden]` both need `display: none` explicitly, because the panel sets padding. The doc does not mention it; I kept both rules.
+- Disclosure: no behavior scenario covers moving focus to the trigger on close (from a click or a controlled change) or the `controlled` / echo-suppression rules of onToggle, so the generated tests leave the most intricate logic unchecked. Suggest scenarios for those.

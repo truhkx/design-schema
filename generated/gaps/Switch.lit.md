@@ -23,3 +23,13 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Switch: the doc doesn't say how the track lines up with a label that wraps or has a description under it. Put the track at the top of the row and centered on the label's first line with a calc from labelSize × lineHeight, as Checkbox does.
 - Switch: the Guidance says 'Inside a Fieldset the field reads FieldsetContext' but Lit has no context mechanism named. Only native `formDisabledCallback` (form/fieldset disabled) is honored.
 - Switch: a native form uses the host's `name` attribute, but `name` isn't in platforms.lit.reflect, so a name set only as a property isn't submitted by a native `<form>`. Left it unreflected, matching ds-checkbox.
+
+## 2026-09-17 05:05 — round 1
+
+- Switch: the `checked` attribute is described as 'the initial state only', but Lit's Boolean property converter applies later attribute changes to the live property too (a native input does this only until the user changes it). Chose Lit's default: every attribute change sets the property, and form reset reads the attribute.
+- Switch: `disabled` is aria-disabled only (the switch stays focusable), so nothing stops a native <form> from submitting it; the spec says only that 'the Form's disabled-field rule applies'. Chose native semantics: setFormValue(null) while disabled or form-disabled.
+- Switch: the spec says the thumb is the input's ::before 'with no hook', but thumbSize, thumbInset and transition are overridable bindings on part `thumb`. Chose to keep the :host hooks (--ds-switch-thumb-size, --ds-switch-thumb-inset, --ds-switch-transition) and read them in the input's ::before rules; 'no hook' is taken to mean no part/data-part.
+- Switch: ::before on an appearance:none <input> draws in Chromium and WebKit but not in Firefox, so the thumb would be invisible there. The spec requires the pseudo-element anyway; no fallback element was added.
+- Switch: helperSize 'has no --ds-switch-* hook', so a consumer can change the description size only through the `overrides` property, not from CSS, unlike every other overridable binding. Followed the spec.
+- Switch: the behaviour `controlled-updates-on-set` (given checked: false; set checked: true) still runs on Lit, where there is no controlled mode; tested as a plain property write updating the live state.
+- Switch: DsFormField lists `required`; the Lit note says it is always false. Implemented as a readonly plain field (not a decorated accessor), so setting it has no effect and nothing reports that.

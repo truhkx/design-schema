@@ -130,8 +130,8 @@ export type { TooltipProps, TooltipPlacement, TooltipDelay, TooltipOverridableBi
 export { Divider } from './Divider';
 export type { DividerProps, DividerOrientation, DividerSpacing, DividerOverridableBinding } from './Divider';
 
-export { Fieldset, FieldsetContext, useFieldsetContext } from './Fieldset';
-export type { FieldsetProps, FieldsetGap, FieldsetOverridableBinding, FieldsetContextValue } from './Fieldset';
+export { Fieldset } from './Fieldset';
+export type { FieldsetProps, FieldsetGap, FieldsetOverridableBinding } from './Fieldset';
 
 export { Toast, ToastRegion, toast } from './Toast';
 export type {

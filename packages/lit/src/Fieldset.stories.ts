@@ -22,16 +22,20 @@ const addressFields = (): TemplateResult => html`
 `;
 
 /** Real fields for each `children` description the examples give. */
+const ADDRESS = 'An Input name=street label=Street and an Input name=city label=City';
+const NOTIFICATIONS = 'A Checkbox name=email label=Email, a Checkbox name=sms label=SMS and a Checkbox name=push label=Push';
+const DATE_RANGE = 'An Input name=startDate label=Start date and an Input name=endDate label=End date';
+
 const CHILDREN: Record<string, () => TemplateResult> = {
-  'Street and city Inputs.': addressFields,
-  'Email, SMS and Push Checkboxes.': () => html`
+  [ADDRESS]: addressFields,
+  [NOTIFICATIONS]: () => html`
     <ds-checkbox name="email" label="Email"></ds-checkbox>
     <ds-checkbox name="sms" label="SMS"></ds-checkbox>
     <ds-checkbox name="push" label="Push"></ds-checkbox>
   `,
-  'Start date and End date Inputs.': () => html`
-    <ds-input name="start" label="Start date"></ds-input>
-    <ds-input name="end" label="End date"></ds-input>
+  [DATE_RANGE]: () => html`
+    <ds-input name="startDate" label="Start date"></ds-input>
+    <ds-input name="endDate" label="End date"></ds-input>
   `,
 };
 
@@ -86,14 +90,14 @@ export const AllFieldsRequired: Story = {
 
 /* examples */
 export const ShippingAddress: Story = {
-  args: { legend: 'Shipping address', children: 'Street and city Inputs.' },
+  args: { legend: 'Shipping address', children: ADDRESS },
 };
 
 export const NotificationPreferences: Story = {
   args: {
     legend: 'Notification preferences',
     description: 'You can change these at any time.',
-    children: 'Email, SMS and Push Checkboxes.',
+    children: NOTIFICATIONS,
     gap: 'tight',
   },
 };
@@ -102,10 +106,10 @@ export const DateRangeWithAGroupError: Story = {
   args: {
     legend: 'Reporting period',
     error: 'End date must be after start date.',
-    children: 'Start date and End date Inputs.',
+    children: DATE_RANGE,
   },
 };
 
 export const DisabledGroup: Story = {
-  args: { legend: 'Billing address', disabled: true, children: 'Street and city Inputs.' },
+  args: { legend: 'Billing address', disabled: true, children: ADDRESS },
 };

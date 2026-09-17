@@ -24,3 +24,12 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Disclosure: the `disabled-trigger-does-not-toggle` scenario checks `state: disabled`; with aria-disabled (not the native attribute) this is asserted as aria-disabled="true" and the button not being :disabled.
 - Disclosure: 'focus inside the panel moves to the trigger on close' does not define what counts as focus-within once focus has left for a non-focusable area (relatedTarget null); chose to restore only when the flag is set and document.activeElement is body/null or still inside the hidden panel.
 - Disclosure: renders-heading-level-* scenarios only say `renders: true`; the test also asserts the heading of that level contains the trigger, since that is what headingLevel means.
+
+## 2026-09-17 05:12 — round 1
+
+- Disclosure: the `onToggle` timing is `after-change`, but in controlled mode the state only changes when the consumer passes back `open`. So a user toggle can only be reported as a request before the change, not after it. Chose: controlled mode fires in the click handler, uncontrolled mode fires after the new state is committed. The doc should say that controlled `after-change` means 'the component's request', not 'the committed state'.
+- Disclosure: 'a pending request that is never echoed is cleared at the next `open` change' leaves open what happens when the user clicks twice before the consumer echoes either click. Chose: only the latest request is remembered, so an echo of the first click counts as `controlled`.
+- Disclosure: the schema gives the trigger no line-height binding. Chose: `var(--font-line-height-normal)` directly, with no override hook.
+- Disclosure: the web notes list which button attributes the component owns but leave out `children`, which the schema redefines as panel content. Chose: `children` is also omitted from the button props and goes to the panel.
+- Disclosure: the spec doesn't say where a consumer's `id` goes. Chose: `id` goes on the trigger button (it sits in the button's props), and the panel id is `<id>-panel`, generated with `useId()` when `id` isn't given.
+- Disclosure: the `transition` binding and the RTL mirroring both use `transform` on the same `triggerIcon` wrapper. Chose: the mirror and rotation are combined in one transform (`scaleX(-1) rotate(90deg)`), so under RTL the chevron animates from the mirrored state and doesn't jump.

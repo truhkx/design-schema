@@ -57,6 +57,7 @@ describe('ds-fieldset', () => {
   it('the-legend-names-the-group', async () => {
     const s = await setup({ legend: 'Delivery window' });
     expect(s.text()).toContain('Delivery window');
+    expect(s.group()).toHaveAccessibleName('Delivery window');
   });
 
   it('the-description-is-rendered', async () => {
@@ -68,6 +69,11 @@ describe('ds-fieldset', () => {
     const s = await setup({ error: 'End date must be after start date.' });
     expect(s.alert()).not.toBeNull();
     expect(s.el.shadowRoot!.querySelectorAll('[role=alert]')).toHaveLength(1);
+  });
+
+  it('a-disabled-group-is-marked-disabled', async () => {
+    const s = await setup({ disabled: true });
+    expect(s.group()).toHaveAttribute('aria-disabled', 'true');
   });
 
   /* derived */

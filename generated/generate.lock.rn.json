@@ -46,19 +46,20 @@
     }
   },
   "Alert.rn": {
-    "hash": "9e7ac8cd0ebe3dbe",
-    "lastAttemptHash": "9e7ac8cd0ebe3dbe",
-    "generatedAt": "2026-09-16T09:11:42+00:00",
+    "hash": "0de7ff57be1375e3",
+    "lastAttemptHash": "0de7ff57be1375e3",
+    "generatedAt": "2026-09-17T09:19:28+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.2813,
+    "costUsd": 0.73,
     "files": [
       "packages/rn/src/Alert.stories.tsx",
       "packages/rn/src/Alert.test.tsx",
-      "packages/rn/src/Alert.tsx"
+      "packages/rn/src/Alert.tsx",
+      "packages/rn/src/index.ts"
     ],
-    "gaps": 10,
+    "gaps": 6,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -137,19 +138,17 @@
     }
   },
   "Breadcrumb.rn": {
-    "hash": "7a5e9d728bb63024",
-    "lastAttemptHash": "7a5e9d728bb63024",
-    "generatedAt": "2026-09-16T09:21:28+00:00",
+    "hash": "f259ce970b36ea3a",
+    "lastAttemptHash": "f259ce970b36ea3a",
+    "generatedAt": "2026-09-17T09:28:23+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.0881,
+    "costUsd": 1.4868,
     "files": [
-      "packages/rn/src/Breadcrumb.stories.tsx",
-      "packages/rn/src/Breadcrumb.test.tsx",
       "packages/rn/src/Breadcrumb.tsx"
     ],
-    "gaps": 13,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -229,19 +228,17 @@
     }
   },
   "Checkbox.rn": {
-    "hash": "1df48c8fb4bd6eb3",
-    "lastAttemptHash": "1df48c8fb4bd6eb3",
-    "generatedAt": "2026-09-16T08:47:41+00:00",
+    "hash": "a73153e5c4687533",
+    "lastAttemptHash": "a73153e5c4687533",
+    "generatedAt": "2026-09-17T09:01:37+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.2867,
+    "costUsd": 1.051,
     "files": [
-      "packages/rn/src/Checkbox.stories.tsx",
-      "packages/rn/src/Checkbox.test.tsx",
       "packages/rn/src/Checkbox.tsx"
     ],
-    "gaps": 11,
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -369,19 +366,18 @@
     }
   },
   "Disclosure.rn": {
-    "hash": "92783697cd5f11bf",
-    "lastAttemptHash": "92783697cd5f11bf",
-    "generatedAt": "2026-09-16T09:06:20+00:00",
+    "hash": "a90718d02e455b48",
+    "lastAttemptHash": "a90718d02e455b48",
+    "generatedAt": "2026-09-17T09:15:24+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.2543,
+    "costUsd": 0.7808,
     "files": [
-      "packages/rn/src/Disclosure.stories.tsx",
       "packages/rn/src/Disclosure.test.tsx",
       "packages/rn/src/Disclosure.tsx"
     ],
-    "gaps": 13,
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -437,19 +433,18 @@
     }
   },
   "Fieldset.rn": {
-    "hash": "0e622b640d5233e4",
-    "lastAttemptHash": "0e622b640d5233e4",
-    "generatedAt": "2026-09-16T09:32:45+00:00",
+    "hash": "2f3c7dbc18093335",
+    "lastAttemptHash": "2f3c7dbc18093335",
+    "generatedAt": "2026-09-17T09:36:40+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.9278,
+    "costUsd": 0.8907,
     "files": [
       "packages/rn/src/Fieldset.stories.tsx",
-      "packages/rn/src/Fieldset.test.tsx",
       "packages/rn/src/Fieldset.tsx"
     ],
-    "gaps": 11,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -573,13 +568,13 @@
     }
   },
   "Landmark.rn": {
-    "hash": "f9c7c87f7f967830",
-    "lastAttemptHash": "f9c7c87f7f967830",
-    "generatedAt": "2026-09-16T09:15:58+00:00",
+    "hash": "ca4fdbe10414cdac",
+    "lastAttemptHash": "ca4fdbe10414cdac",
+    "generatedAt": "2026-09-17T09:24:03+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.7044,
+    "costUsd": 0.7162,
     "files": [
       "packages/rn/src/Landmark.stories.tsx",
       "packages/rn/src/Landmark.test.tsx",
@@ -665,19 +660,17 @@
     }
   },
   "Meter.rn": {
-    "hash": "9e35ece0af4d303c",
-    "lastAttemptHash": "9e35ece0af4d303c",
-    "generatedAt": "2026-09-16T09:26:21+00:00",
+    "hash": "1a4397dd8db7e80d",
+    "lastAttemptHash": "1a4397dd8db7e80d",
+    "generatedAt": "2026-09-17T09:32:02+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.0539,
+    "costUsd": 0.8544,
     "files": [
-      "packages/rn/src/Meter.stories.tsx",
-      "packages/rn/src/Meter.test.tsx",
       "packages/rn/src/Meter.tsx"
     ],
-    "gaps": 9,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -779,19 +772,17 @@
     }
   },
   "RadioGroup.rn": {
-    "hash": "36806631937d2514",
-    "lastAttemptHash": "36806631937d2514",
-    "generatedAt": "2026-09-16T09:00:28+00:00",
+    "hash": "f8f682c3d9413a47",
+    "lastAttemptHash": "f8f682c3d9413a47",
+    "generatedAt": "2026-09-17T09:11:51+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.2532,
+    "costUsd": 1.1776,
     "files": [
-      "packages/rn/src/RadioGroup.stories.tsx",
-      "packages/rn/src/RadioGroup.test.tsx",
       "packages/rn/src/RadioGroup.tsx"
     ],
-    "gaps": 12,
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -986,19 +977,17 @@
     }
   },
   "Switch.rn": {
-    "hash": "e0c93471228ab296",
-    "lastAttemptHash": "e0c93471228ab296",
-    "generatedAt": "2026-09-16T08:53:17+00:00",
+    "hash": "008ce9124b5c8789",
+    "lastAttemptHash": "008ce9124b5c8789",
+    "generatedAt": "2026-09-17T09:06:39+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.8486,
+    "costUsd": 1.0271,
     "files": [
-      "packages/rn/src/Switch.stories.tsx",
-      "packages/rn/src/Switch.test.tsx",
       "packages/rn/src/Switch.tsx"
     ],
-    "gaps": 9,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,

@@ -36,6 +36,8 @@ export type RadioGroupOverridableBinding =
   | 'controlBorderInvalid'
   | 'controlSize'
   | 'controlRadius'
+  | 'optionPaddingBlock'
+  | 'optionTextGap'
   | 'optionGap'
   | 'listGap'
   | 'partGap'
@@ -54,6 +56,8 @@ const HOOKS: Record<RadioGroupOverridableBinding, string> = {
   controlBorderInvalid: '--ds-radio-group-control-border-invalid',
   controlSize: '--ds-radio-group-control-size',
   controlRadius: '--ds-radio-group-control-radius',
+  optionPaddingBlock: '--ds-radio-group-option-padding-block',
+  optionTextGap: '--ds-radio-group-option-text-gap',
   optionGap: '--ds-radio-group-option-gap',
   listGap: '--ds-radio-group-list-gap',
   partGap: '--ds-radio-group-part-gap',
@@ -115,6 +119,8 @@ export class DsRadioGroup extends LitElement {
       --ds-radio-group-control-border-invalid: var(--color-border-danger);
       --ds-radio-group-control-size: var(--space-5);
       --ds-radio-group-control-radius: var(--radius-full);
+      --ds-radio-group-option-padding-block: var(--space-1);
+      --ds-radio-group-option-text-gap: var(--space-1);
       --ds-radio-group-option-gap: var(--space-2);
       --ds-radio-group-list-gap: var(--space-2);
       --ds-radio-group-part-gap: var(--space-1);
@@ -165,12 +171,14 @@ export class DsRadioGroup extends LitElement {
       flex-wrap: wrap;
     }
 
-    /* minTarget: each option row is the hit area; optionGap between radio and label */
+    /* minTarget: each option row is the hit area; optionPaddingBlock on the row; optionGap between radio and label */
     .option {
       display: flex;
       align-items: flex-start;
       gap: var(--ds-radio-group-option-gap);
+      box-sizing: border-box;
       min-block-size: var(--size-target-comfortable);
+      padding-block: var(--ds-radio-group-option-padding-block);
       cursor: pointer;
     }
 
@@ -229,29 +237,31 @@ export class DsRadioGroup extends LitElement {
       border-color: var(--ds-radio-group-control-border-invalid);
     }
 
-    /* focusRing, focusRingWidth */
+    /* focusRing, focusRingWidth: the radio's border becomes the focus ring; the row is not outlined */
     .radio:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
+      outline: none;
+      border-width: var(--border-width-focus);
+      border-color: var(--color-border-focus);
     }
 
-    /* disabledOpacity: a disabled group dims every option, a disabled option dims its row */
-    :host([disabled]) .option,
+    /* disabledOpacity: a disabled group dims every option row once, a disabled option dims its own row */
+    .list.disabled .option,
     .option.disabled {
       opacity: var(--ds-radio-group-disabled-opacity);
       cursor: not-allowed;
     }
-    :host([disabled]) .radio,
-    :host([disabled]) .label,
+    .list.disabled .radio,
+    .list.disabled .label,
     .option.disabled .radio,
     .option.disabled .label {
       cursor: not-allowed;
     }
 
+    /* optionTextGap: between radioLabel and radioDescription */
     .text {
       display: flex;
       flex-direction: column;
-      gap: var(--ds-radio-group-part-gap);
+      gap: var(--ds-radio-group-option-text-gap);
       min-inline-size: 0;
     }
 
@@ -428,6 +438,7 @@ export class DsRadioGroup extends LitElement {
         aria-invalid=${ifDefined(this.invalid ? 'true' : undefined)}
         aria-required=${ifDefined(this.required ? 'true' : undefined)}
         aria-disabled=${ifDefined(groupDisabled ? 'true' : undefined)}
+        @click=${this.handleGroupClick}
         @keydown=${this.handleKeydown}
       >
         <legend part="legend" data-part="legend">${this.label}${this.required ? COPY_REQUIRED_INDICATOR : nothing}</legend>
@@ -443,7 +454,7 @@ export class DsRadioGroup extends LitElement {
               >${this.description}</ds-text
             >`
           : nothing}
-        <div class="list">
+        <div class=${classMap({ list: true, disabled: groupDisabled })}>
           ${this.options.map((option, index) => {
             const id = `${groupId}-${option.value}`;
             const optionDisabled = option.disabled === true;
@@ -464,7 +475,6 @@ export class DsRadioGroup extends LitElement {
                   ?disabled=${optionDisabled}
                   aria-describedby=${ifDefined(option.description ? `${id}-description` : undefined)}
                   aria-disabled=${ifDefined(groupDisabled ? 'true' : undefined)}
-                  @click=${this.handleRadioClick}
                   @change=${(event: Event) => this.handleChange(event, option)}
                 />
                 <div class="text">
@@ -550,8 +560,8 @@ export class DsRadioGroup extends LitElement {
     radio.click();
   }
 
-  /** A disabled group keeps its radios focusable (aria-disabled); the click is cancelled so nothing is selected. */
-  private handleRadioClick(event: MouseEvent): void {
+  /** A disabled group keeps its radios focusable (aria-disabled); clicks are cancelled on the fieldset so nothing is selected. */
+  private handleGroupClick(event: MouseEvent): void {
     if (this.isDisabled) {
       event.preventDefault();
     }

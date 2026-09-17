@@ -17,3 +17,14 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Meter: the Default story args are not given by the spec; I kept the existing ones (Storage used, 32, valueText '3.2 GB of 10 GB'), so the Default story already passes the valueText scenario before its given is applied.
 - Meter: the rules list says a component that exposes its root takes a ref, but the spec doesn't say whether Meter does; I added ref?: React.Ref<ViewInstance> on the root.
 - rn package digest: toLineHeight's argument order is shown as (lineHeight, fontSize), but theme.tsx declares toLineHeight(fontSize, multiplier); I followed the code.
+
+## 2026-09-17 05:31 — round 1
+
+- Meter: composition lists `element: span` for both Text parts, but the React Native Text has no `element` prop; I dropped it.
+- Meter: `testID="Meter.label"` and `testID="Meter.valueText"` can't be set because the RN Text component takes no `testID` prop and Meter must not reach into it. Only header, track and fill carry part testIDs.
+- Meter: valueText says to format with `Intl.NumberFormat(locale, …)`, but Meter has no `locale` prop and the doc names no locale source. I passed `undefined` (the device locale), so the announced percentage may differ between platforms, which contradicts 'the same on every platform'.
+- Meter: the `radius` binding is on part `track`, but its description says it 'rounds the track and the fill ends'. On web only the track clips. On RN I put `borderRadius` on both the track and the fill so the fill's leading end is rounded too. Say whether the fill should carry the radius.
+- Meter: the header row's layout isn't in any binding (value 'at the end of the label row'). I used `justifyContent: 'space-between'` and `alignItems: 'baseline'`. A long label can't shrink, because Meter can't style the child Text (no flexShrink), so label and value may overflow a narrow row. The doc doesn't say whether to wrap or truncate.
+- Meter: the 'max <= min' behavior says to show and announce '0%', but it doesn't say whether that percent string also goes through Intl (locale-formatted, e.g. '0 %' in fr). I used the same Intl formatter.
+- Meter: the transition's direction isn't stated. The doc says the fill snaps before the width is known and on resize, and animates only when `value` changes. I also snap when `min`/`max` change the width at the same time as a resize, but a `min`/`max` change without a resize animates like a value change.
+- Meter: behavior scenario value-text-is-shown-and-announced can't assert 'announced' on RN (accessibilityValue is excluded from the scenarios), so the test only checks the visible text.

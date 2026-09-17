@@ -1,14 +1,11 @@
 /* Fieldset — styled only through Design Schema token custom properties.
- * legendColor/legendSize/legendWeight and descriptionText are the composed Text's own tone, size and
- * weight (overrides are forwarded to it); fieldsGap is forwarded to the composed Stack. */
+ * legendColor, descriptionText and errorText are the composed Texts' tones (locked, no hooks);
+ * legendSize, legendWeight, helperSize, fontFamily and lineHeight reach the Texts through their
+ * `overrides`, and fieldsGap reaches the Stack through its `overrides.gap`. */
 
 .ds-fieldset {
-  --ds-fieldset-helper-size: var(--font-size-sm);
-  --ds-fieldset-error-text: var(--color-foreground-danger);
   --ds-fieldset-part-gap: var(--layout-gap-tight);
   --ds-fieldset-disabled-opacity: var(--opacity-disabled);
-  --ds-fieldset-font-family: var(--font-family-body);
-  --ds-fieldset-line-height: var(--font-line-height-normal);
   display: flex;
   flex-direction: column;
   gap: var(--ds-fieldset-part-gap);
@@ -16,8 +13,6 @@
   margin: 0;
   padding: 0;
   border: 0;
-  font-family: var(--ds-fieldset-font-family);
-  line-height: var(--ds-fieldset-line-height);
 }
 
 /* A legend does not take part in the fieldset's flex gap, so partGap below it is a margin. */
@@ -26,14 +21,8 @@
   margin-block-end: var(--ds-fieldset-part-gap);
 }
 
-.ds-fieldset__error {
-  margin: 0;
-  color: var(--ds-fieldset-error-text);
-  font-size: var(--ds-fieldset-helper-size);
-}
-
-/* disabled: the group's own text dims; fields dim by their own disabled rule, so the Stack is not dimmed twice. */
+/* disabled: the group's own text dims; fields dim by their own disabled rule, so the fields wrapper is not dimmed. */
 .ds-fieldset--disabled > .ds-fieldset__legend,
-.ds-fieldset--disabled > [data-part='description'] {
+.ds-fieldset--disabled > .ds-fieldset__description {
   opacity: var(--ds-fieldset-disabled-opacity);
 }

@@ -22,3 +22,14 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Switch: the spec defines no copy for the Fieldset prefix separator, so ', ' is taken from Checkbox and isn't a copy.* string.
 - Switch: `fires: user` — a controlled prop change doesn't fire onValueChange. A press that asks for the current value (next === checked) also fires nothing; the spec doesn't cover that no-op case.
 - Switch: the spec has no row padding. The old component added paddingVertical space1 and a padded, radius.full frame around the track; I removed both and kept only minHeight = size.target.comfortable.
+
+## 2026-09-17 05:06 — round 1
+
+- Switch: the prompt's Overridable list includes trackWidth, trackHeight, thumbSize, thumbInset, radius and transition, but platforms.rn.notes says they are left out of the RN overridable type. I followed the platform notes: SwitchOverridableBinding is gap, partGap, labelSize, labelWeight, helperSize, fontFamily, lineHeight, disabledOpacity.
+- Switch: props.disabled says a disabled Switch 'still registers with the Form, where the Form's disabled-field rule applies', but the RN Form's rule is that disabled fields do not register (Form.tsx docs). Checkbox RN doesn't register when disabled either. I kept that: a disabled Switch unregisters, so its key is left out.
+- Switch: the events contract says to name the handler by its platforms.rn name (onValueChange), but the generic rules and the Checkbox RN sibling use onChange. I kept onValueChange as the spec says, so RN Switch and Checkbox now use different callback names.
+- Switch: the rules say 'disabled uses opacity.disabled on the whole element', while the disabledOpacity binding lists track, label and description. Those three are the whole row on RN, so the whole Pressable row is dimmed. Checkbox RN leaves the description undimmed, so the two differ.
+- Switch: labelSize's track-alignment rule (centre the track on the label's first line, labelSize × lineHeight) is written with the web calc in mind. On RN the native Switch (about 31pt on iOS) is taller than a 24pt line, so it spills evenly above and below that slot. The spec doesn't say whether the 44pt minHeight row should instead centre a single-line row.
+- Switch: the 'disabled' example says the setting stays 'focusable', which contradicts the RN platform limit (a disabled native Switch can't take focus). The story keeps the given args; the RN note wins.
+- Switch: the generic rules say to style focus-visible in the Pressable style callback, but platforms.rn says the row Pressable is accessible={false} and the OS focus indicator is used. I followed the platform notes: no focus styling, and focusRing/focusRingWidth aren't applied.
+- Switch: the generic rules ask for Storybook stories wrapped in ThemeProvider, but the package uses the withTheme() decorator. I kept the decorator, as the package conventions say.

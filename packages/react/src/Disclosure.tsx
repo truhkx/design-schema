@@ -117,7 +117,7 @@ export interface DisclosureProps
  * `ref` resolves to the trigger `<button>` (Accordion moves focus between triggers through it); the wrapping `<div>`
  * carries `data-ds="Disclosure"`.
  */
-export const Disclosure = function Disclosure({
+export function Disclosure({
   ref,
   summary,
   children,
@@ -156,29 +156,42 @@ export const Disclosure = function Disclosure({
     if (lost) triggerRef.current?.focus();
   }, [isOpen]);
 
-  // Distinguishes an `open` prop change that echoes the trigger's own report ('pointer'/'keyboard') from one the
-  // consumer made on their own ('controlled').
+  // Controlled: a user toggle is reported at once (the state changes only when the consumer echoes it), and an `open`
+  // change that echoes that report does not fire again; any other `open` change reports 'controlled'. Uncontrolled:
+  // the toggle is reported after the new state has committed. A pending request is cleared at the next `open` change.
   const previousOpenRef = useRef(isOpen);
   const selfEmittedRef = useRef<boolean | null>(null);
+  const pendingReasonRef = useRef<DisclosureToggleReason | null>(null);
   useEffect(() => {
     if (previousOpenRef.current === isOpen) return;
     previousOpenRef.current = isOpen;
     const echo = selfEmittedRef.current === isOpen;
     selfEmittedRef.current = null;
-    if (isControlled && !echo) onToggle?.(isOpen, 'controlled');
+    const reason = pendingReasonRef.current;
+    pendingReasonRef.current = null;
+    if (isControlled) {
+      if (!echo) onToggle?.(isOpen, 'controlled');
+    } else if (reason !== null) {
+      onToggle?.(isOpen, reason);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
-  const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
+  const handleClick = (event: MouseEvent<HTMLButtonElement>): void => {
     if (disabled) {
       event.preventDefault();
       return;
     }
     const next = !isOpen;
-    if (isControlled) selfEmittedRef.current = next;
-    else setInternalOpen(next);
     // A native button's click carries `detail: 0` when Enter or Space activated it.
-    onToggle?.(next, event.detail === 0 ? 'keyboard' : 'pointer');
+    const reason: DisclosureToggleReason = event.detail === 0 ? 'keyboard' : 'pointer';
+    if (isControlled) {
+      selfEmittedRef.current = next;
+      onToggle?.(next, reason);
+    } else {
+      pendingReasonRef.current = reason;
+      setInternalOpen(next);
+    }
   };
 
   const trigger = (
@@ -231,4 +244,4 @@ export const Disclosure = function Disclosure({
       ) : null}
     </div>
   );
-};
+}

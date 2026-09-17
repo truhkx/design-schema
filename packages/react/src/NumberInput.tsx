@@ -19,7 +19,6 @@ import { Text, type TextOverridableBinding } from './Text';
 import { Button } from './Button';
 import { Icon } from './Icon';
 import { useFormContext } from './FormContext';
-import { useFieldsetContext } from './Fieldset';
 import './NumberInput.css';
 
 export type NumberInputFormat = 'decimal' | 'currency' | 'percent' | 'unit';
@@ -329,7 +328,6 @@ export function NumberInput({
   ...rest
 }: NumberInputProps & { ref?: Ref<HTMLInputElement> | undefined }): ReactElement {
   const form = useFormContext();
-  const fieldset = useFieldsetContext();
   const generatedId = useId();
   const id = idProp ?? (form?.idBase ? `${form.idBase}-${name}` : `ds-number-input${generatedId}`);
   const descriptionId = `${id}-description`;
@@ -355,7 +353,7 @@ export function NumberInput({
   const [textInvalid, setTextInvalid] = useState(false);
   const [rangeMessage, setRangeMessage] = useState<string | undefined>(undefined);
 
-  const isDisabled = disabled || (fieldset?.disabled ?? false) || (form?.disabled ?? false);
+  const isDisabled = disabled ||(form?.disabled ?? false);
 
   /** The shown number, advanced synchronously by `report` so steps and Form submission within the
    * same event see it; a controlled field is re-synced to its prop on every render. */

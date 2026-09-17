@@ -39,6 +39,11 @@
   color: var(--ds-breadcrumb-item-color);
 }
 
+/* The first revealed item takes focus (tabindex -1) when no revealed item is a link. */
+.ds-breadcrumb__item:focus-visible {
+  outline: var(--border-width-focus) solid var(--color-border-focus);
+}
+
 /* separator: CSS-generated from copy.separator, so it is not in the accessibility tree. */
 .ds-breadcrumb__item + .ds-breadcrumb__item::before {
   content: var(--ds-breadcrumb-separator);

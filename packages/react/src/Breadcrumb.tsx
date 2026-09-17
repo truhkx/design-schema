@@ -51,22 +51,25 @@ export interface BreadcrumbProps
   extends Omit<ComponentPropsWithoutRef<'nav'>, 'children' | 'aria-label' | 'className' | 'style'> {
   /**
    * The trail from root to current page, in order. Every item but the last needs an `href`; an
-   * ancestor without one renders as plain text (never an empty link). The last is the current page
-   * and its `href` is ignored.
+   * ancestor without one, or with an empty-string `href`, renders as plain text (never an empty link).
+   * The last is the current page and its `href` is ignored. An empty array renders the named landmark
+   * around an empty list; a single item renders only the current page.
    */
   items: BreadcrumbItem[];
   /** Accessible name of the navigation landmark. Change it only if the page has another breadcrumb. */
   label?: string | undefined;
   /**
    * When there are more than four items, show the first, an ellipsis, and the last two; the ellipsis
-   * is a button that reveals the rest. Set false for short trails that must always show in full.
+   * is a button that reveals the rest. The rule is literal: five items hide the second and third. Once
+   * revealed the trail stays expanded for the life of the instance, even if `items` changes. Set false
+   * for short trails that must always show in full.
    */
   collapse?: boolean | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<BreadcrumbOverridableBinding, TokenRef | undefined>> | undefined;
   /**
    * Fired when a non-current item is activated, as `(item, index, event)`. The link still navigates
-   * unless the consumer calls `event.preventDefault()` or returns `false`.
+   * unless the handler returns `false` or calls `event.preventDefault()`.
    */
   onNavigate?:
     | ((item: BreadcrumbItem, index: number, event: MouseEvent<HTMLAnchorElement>) => void | boolean)
@@ -90,30 +93,39 @@ export function Breadcrumb({
   onNavigate,
   ...rest
 }: BreadcrumbProps & { ref?: Ref<HTMLElement> | undefined }): ReactElement {
+  // One-way: once revealed, the trail stays expanded for the life of the instance, even if `items` changes.
   const [expanded, setExpanded] = useState(false);
+  // Set when no revealed item is a link: the first revealed `<li>` takes focus instead (tabindex -1).
+  const [focusItemFallback, setFocusItemFallback] = useState(false);
   const collapsed = collapse && !expanded && items.length > COLLAPSE_ABOVE;
   const lastIndex = items.length - 1;
   // Collapsed: items[0], the ellipsis, then items[hiddenEnd..].
   const hiddenEnd = items.length - 2;
 
   const linkRefs = useRef(new Map<number, HTMLAnchorElement>());
-  const focusRevealed = useRef(false);
+  const itemRefs = useRef(new Map<number, HTMLLIElement>());
+  // The revealed range [1, end) captured when the ellipsis is activated; null once focus has moved.
+  const revealedEnd = useRef<number | null>(null);
 
-  // After the ellipsis is activated, focus moves to the first revealed link.
+  // After the ellipsis is activated, focus moves to the first revealed link, or else the first revealed item.
   useEffect(() => {
-    if (!focusRevealed.current) return;
-    focusRevealed.current = false;
-    for (let index = 1; index < hiddenEnd; index++) {
+    const end = revealedEnd.current;
+    if (end === null) return;
+    revealedEnd.current = null;
+    for (let index = 1; index < end; index++) {
       const link = linkRefs.current.get(index);
       if (link) {
         link.focus();
         return;
       }
     }
-  }, [expanded, hiddenEnd]);
+    itemRefs.current.get(1)?.focus();
+  }, [expanded, focusItemFallback]);
 
   const handleExpand = (): void => {
-    focusRevealed.current = true;
+    revealedEnd.current = hiddenEnd;
+    const hasRevealedLink = items.slice(1, hiddenEnd).some((item) => item.href !== undefined && item.href !== '');
+    setFocusItemFallback(!hasRevealedLink);
     setExpanded(true);
   };
 
@@ -122,6 +134,13 @@ export function Breadcrumb({
     (el: HTMLAnchorElement | null): void => {
       if (el) linkRefs.current.set(index, el);
       else linkRefs.current.delete(index);
+    };
+
+  const setItemRef =
+    (index: number) =>
+    (el: HTMLLIElement | null): void => {
+      if (el) itemRefs.current.set(index, el);
+      else itemRefs.current.delete(index);
     };
 
   const renderItem = (item: BreadcrumbItem, index: number): ReactElement => {
@@ -137,18 +156,25 @@ export function Breadcrumb({
       content = <span className="ds-breadcrumb__text">{item.label}</span>;
     } else {
       content = (
-        <Link
-          ref={setLinkRef(index)}
-          href={item.href}
-          label={item.label}
-          tone="default"
-          data-part="link"
-          onClick={onNavigate ? (event) => onNavigate(item, index, event) : undefined}
-        />
+        <span className="ds-breadcrumb__link" data-part="link">
+          <Link
+            ref={setLinkRef(index)}
+            href={item.href}
+            label={item.label}
+            tone="default"
+            onClick={onNavigate ? (event) => onNavigate(item, index, event) : undefined}
+          />
+        </span>
       );
     }
     return (
-      <li key={index} className="ds-breadcrumb__item" data-part="item">
+      <li
+        key={index}
+        ref={setItemRef(index)}
+        className="ds-breadcrumb__item"
+        data-part="item"
+        tabIndex={index === 1 && expanded && focusItemFallback ? -1 : undefined}
+      >
         {content}
       </li>
     );
@@ -160,14 +186,16 @@ export function Breadcrumb({
       ? [
           renderItem(first, 0),
           <li key="ellipsis" className="ds-breadcrumb__item" data-part="item">
-            <Button
-              variant="ghost"
-              size="sm"
-              iconOnly
-              label={COPY.expandLabel}
-              leadingIcon={<Icon name="ellipsis" inline />}
-              onClick={handleExpand}
-            />
+            <span className="ds-breadcrumb__expand" data-part="expand">
+              <Button
+                variant="ghost"
+                size="sm"
+                iconOnly
+                label={COPY.expandLabel}
+                leadingIcon={<Icon name="ellipsis" inline />}
+                onClick={handleExpand}
+              />
+            </span>
           </li>,
           ...items.slice(hiddenEnd).map((item, offset) => renderItem(item, hiddenEnd + offset)),
         ]

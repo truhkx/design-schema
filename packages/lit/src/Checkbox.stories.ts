@@ -101,9 +101,9 @@ export const SelectionColumn: Story = {
 export const MultiSelect: Story = {
   render: () => html`
     <ds-stack>
-      <ds-checkbox name="channels" value="email" label="Email" default-checked></ds-checkbox>
-      <ds-checkbox name="channels" value="sms" label="Text message"></ds-checkbox>
-      <ds-checkbox name="channels" value="push" label="Push notification"></ds-checkbox>
+      <ds-checkbox name="channelEmail" label="Email" default-checked></ds-checkbox>
+      <ds-checkbox name="channelSms" label="Text message"></ds-checkbox>
+      <ds-checkbox name="channelPush" label="Push notification"></ds-checkbox>
     </ds-stack>
   `,
 };

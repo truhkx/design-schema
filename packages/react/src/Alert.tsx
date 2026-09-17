@@ -57,14 +57,34 @@ function overridesToStyle(overrides: Partial<Record<AlertOverridableBinding, Tok
 }
 
 const FOCUSABLE =
-  'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"]), [contenteditable="true"]';
+  'a[href], button, input, select, textarea, [tabindex], [contenteditable]:not([contenteditable="false"])';
+
+/** Whether `el` is rendered: neither it nor an ancestor is `hidden` or `display: none`. */
+function isRendered(el: HTMLElement): boolean {
+  const view = el.ownerDocument.defaultView;
+  for (let node: HTMLElement | null = el; node !== null; node = node.parentElement) {
+    if (node.hidden) return false;
+    if (view !== null && view.getComputedStyle(node).display === 'none') return false;
+  }
+  return true;
+}
+
+/** A focus candidate outside the alert: not disabled, not inside `inert`, rendered, tabindex ≥ 0 when set. */
+function isCandidate(root: HTMLElement, el: HTMLElement): boolean {
+  if (root.contains(el)) return false;
+  const tabindex = el.getAttribute('tabindex');
+  if (tabindex !== null && Number.parseInt(tabindex, 10) < 0) return false;
+  if (el.matches(':disabled') || el.closest('[inert]') !== null) return false;
+  return isRendered(el);
+}
 
 /** Moves focus to the next focusable element after `root` in reading order, or the previous one when there is none. */
 function focusOutside(root: HTMLElement): void {
-  const candidates = Array.from(root.ownerDocument.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
-    (el) => !root.contains(el) && !el.hasAttribute('disabled'),
+  const candidates = Array.from(root.ownerDocument.querySelectorAll<HTMLElement>(FOCUSABLE)).filter((el) =>
+    isCandidate(root, el),
   );
-  const isAfter = (el: HTMLElement) => (root.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+  const isAfter = (el: HTMLElement): boolean =>
+    (root.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
   const next = candidates.find(isAfter);
   const previous = next === undefined ? candidates.filter((el) => !isAfter(el)).pop() : undefined;
   // Nothing focusable outside the alert: focus is left alone.
@@ -113,7 +133,7 @@ export interface AlertProps extends Omit<ComponentPropsWithoutRef<'div'>, 'child
  * something. Use `dismissible` for messages the user can safely put away; leave persistent
  * problems undismissable.
  */
-export const Alert = function Alert({
+export function Alert({
   ref,
   tone = 'info',
   heading,
@@ -132,7 +152,7 @@ export const Alert = function Alert({
   const hasHeading = heading !== undefined && heading !== '';
 
   // The component is controlled by its presence in the tree: the consumer removes it on dismiss.
-  const handleDismiss = () => {
+  const handleDismiss = (): void => {
     // Activation happened inside the alert; move focus out first so it is never lost.
     if (rootRef.current) focusOutside(rootRef.current);
     onDismiss?.();
@@ -182,4 +202,4 @@ export const Alert = function Alert({
       ) : null}
     </div>
   );
-};
+}

@@ -147,7 +147,7 @@ describe('ds-checkbox', () => {
 
   it('error-is-identified', async () => {
     const s = await setup({ error: 'Fix this before continuing.' });
-    expect(s.el.shadowRoot!.textContent).toContain('Fix this before continuing.');
+    expect(s.el.shadowRoot!.querySelector('[data-part=errorMessage]')!.textContent).toContain('Fix this before continuing.');
     expect(s.el.invalid).toBe(true);
     expect(s.control()).toHaveAttribute('aria-invalid', 'true');
   });

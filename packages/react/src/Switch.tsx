@@ -36,7 +36,8 @@ export type SwitchOverridableBinding =
   | 'disabledOpacity'
   | 'transition';
 
-const OVERRIDE_HOOK: Record<SwitchOverridableBinding, string> = {
+/** helperSize has no hook: it reaches the description Text only through its `fontSize` override. */
+const OVERRIDE_HOOK: Partial<Record<SwitchOverridableBinding, string>> = {
   trackWidth: '--ds-switch-track-width',
   trackHeight: '--ds-switch-track-height',
   thumbSize: '--ds-switch-thumb-size',
@@ -46,7 +47,6 @@ const OVERRIDE_HOOK: Record<SwitchOverridableBinding, string> = {
   partGap: '--ds-switch-part-gap',
   labelSize: '--ds-switch-label-size',
   labelWeight: '--ds-switch-label-weight',
-  helperSize: '--ds-switch-helper-size',
   fontFamily: '--ds-switch-font-family', // literal-ok: CSS custom-property hook name, not a font stack
   lineHeight: '--ds-switch-line-height',
   disabledOpacity: '--ds-switch-disabled-opacity',
@@ -64,11 +64,11 @@ function resolveOverrides(overrides: Partial<Record<SwitchOverridableBinding, To
   for (const binding of Object.keys(overrides) as SwitchOverridableBinding[]) {
     const ref = overrides[binding];
     if (!ref) continue;
-    // The description is Text: its typography bindings reach Text's own overrides.
+    // The description is Text: helperSize, fontFamily and lineHeight reach Text's own overrides.
     if (binding === 'helperSize') helperOverrides.fontSize = ref;
     if (binding === 'fontFamily') helperOverrides.fontFamily = ref;
     if (binding === 'lineHeight') helperOverrides.lineHeight = ref;
-    // Locked bindings have no entry in the hook table, so they are ignored if passed.
+    // Locked bindings (and helperSize) have no entry in the hook table, so no hook is written.
     const hook = OVERRIDE_HOOK[binding];
     if (hook) rootStyle[hook] = cssVar(ref);
   }
@@ -100,11 +100,11 @@ export interface SwitchProps
    * most switches are not in forms. A Switch never validates and never appears in an error summary.
    */
   name?: string | undefined;
-  /** Controlled state. Omit for an uncontrolled control. */
+  /** Controlled state: a controlled switch shows a new state only once this prop changes. Omit for an uncontrolled control. */
   checked?: boolean | undefined;
   /** Initial state for an uncontrolled control. */
   defaultChecked?: boolean | undefined;
-  /** Cannot be toggled. Stays visible, readable and focusable. */
+  /** Cannot be toggled. Stays visible, readable and focusable. Still registered with the Form. */
   disabled?: boolean | undefined;
   /** Persistent helper text below the label explaining the effect. */
   description?: string | undefined;
@@ -115,7 +115,7 @@ export interface SwitchProps
   labelPosition?: SwitchLabelPosition | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<SwitchOverridableBinding, TokenRef | undefined>> | undefined;
-  /** Fired when the state changes, with the new boolean. The change is already in effect; there is nothing to submit. */
+  /** Fired when the user changes the state, with the new boolean. The change is already in effect; there is nothing to submit. */
   onChange?: ((checked: boolean) => void) | undefined;
 }
 
@@ -125,7 +125,7 @@ export interface SwitchProps
  * When to use:
  * Use a Switch for a binary setting that applies as soon as it changes and can be undone by flipping it back: notifications, dark mode, Wi‑Fi, "show archived". Use it in settings lists and preference panels, with `labelPosition: start` so the labels line up and the switches sit at the row end.
  */
-export const Switch = function Switch({
+export function Switch({
   ref,
   label,
   name,
@@ -146,18 +146,24 @@ export const Switch = function Switch({
   const descriptionId = `${id}-description`;
 
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const labelRef = useRef<HTMLLabelElement | null>(null);
+  // The root is the row; the forwarded ref resolves to the interactive <input>, as in Checkbox.
   useImperativeHandle(ref, () => inputRef.current as HTMLInputElement, []);
 
-  // aria-checked is written explicitly, so the uncontrolled state is mirrored here. The input itself
-  // stays natively uncontrolled: a component-controlled `checked` fights the canceled click on disabled.
+  // The input stays natively uncontrolled (no React-held `checked`); the component holds the state
+  // and mirrors it as aria-checked and, when it differs, onto the DOM property.
   const isControlled = checked !== undefined;
-  const [internalChecked, setInternalChecked] = useState(defaultChecked);
-  const isChecked = isControlled ? checked : internalChecked;
-
+  const [uncontrolledChecked, setUncontrolledChecked] = useState(defaultChecked);
+  const isChecked = isControlled ? checked : uncontrolledChecked;
   const isDisabled = disabled || (form?.disabled ?? false);
 
-  const latest = useRef({ label, disabled: isDisabled });
-  latest.current = { label, disabled: isDisabled };
+  useEffect(() => {
+    const el = inputRef.current;
+    if (el && el.checked !== isChecked) el.checked = isChecked;
+  }, [isChecked]);
+
+  const latest = useRef({ label, disabled: isDisabled, checked: isChecked });
+  latest.current = { label, disabled: isDisabled, checked: isChecked };
 
   // A Switch has no error state: it contributes its boolean under `name` and never validates.
   useEffect(() => {
@@ -168,7 +174,7 @@ export const Switch = function Switch({
       get label() {
         return latest.current.label;
       },
-      getValue: () => inputRef.current?.checked ?? false,
+      getValue: () => latest.current.checked,
       isDisabled: () => latest.current.disabled,
       validate: () => null,
       focus: () => inputRef.current?.focus(),
@@ -190,16 +196,22 @@ export const Switch = function Switch({
       return;
     }
     const next = event.target.checked;
-    if (!isControlled) setInternalChecked(next);
+    if (next === isChecked) return;
+    if (isControlled) {
+      // Controlled: report the change but show it only once the prop changes.
+      event.target.checked = isChecked;
+    } else {
+      setUncontrolledChecked(next);
+    }
     onChange?.(next);
   };
 
-  // The whole row is the target: the description and the row's own gap forward to the control.
-  const forwardClick = () => {
-    if (!isDisabled) inputRef.current?.click();
-  };
+  // The whole row is the target: the gap, the text column and the description forward to the
+  // control. The input and the label already toggle natively, so they are left alone.
   const handleRowClick = (event: MouseEvent<HTMLDivElement>) => {
-    if (event.target === event.currentTarget) forwardClick();
+    const target = event.target as Node;
+    if (inputRef.current?.contains(target) || labelRef.current?.contains(target)) return;
+    if (!isDisabled) inputRef.current?.click();
   };
 
   const classes = ['ds-switch', `ds-switch--label-${labelPosition}`, isDisabled ? 'ds-switch--disabled' : null]
@@ -213,42 +225,35 @@ export const Switch = function Switch({
   return (
     <div className={classes} data-ds="Switch" data-ds-field style={rootStyle} onClick={handleRowClick}>
       <div className="ds-switch__text">
-        <label htmlFor={id} className="ds-switch__label" data-part="label">
+        <label ref={labelRef} htmlFor={id} className="ds-switch__label" data-part="label">
           {label}
         </label>
         {description ? (
-          <Text
-            element="p"
-            id={descriptionId}
-            data-part="description"
-            size="sm"
-            tone="muted"
-            className="ds-switch__description"
-            overrides={helperOverrides}
-            onClick={forwardClick}
-          >
+          <Text element="p" id={descriptionId} data-part="description" size="sm" tone="muted" overrides={helperOverrides}>
             {description}
           </Text>
         ) : null}
       </div>
-      {/* track: the input itself; thumb is its ::before, so it has no data-part hook. */}
-      <input
-        {...rest}
-        ref={inputRef}
-        id={id}
-        type="checkbox"
-        role="switch"
-        name={name}
-        checked={checked}
-        defaultChecked={isControlled ? undefined : defaultChecked}
-        className="ds-switch__control"
-        data-part="track"
-        aria-checked={isChecked ? 'true' : 'false'}
-        aria-describedby={description ? descriptionId : undefined}
-        aria-disabled={isDisabled ? 'true' : undefined}
-        onClick={handleClick}
-        onChange={handleChange}
-      />
+      {/* The slot is one label line tall, so the track centres on the label's first line. */}
+      <span className="ds-switch__slot">
+        {/* track: the input itself; the thumb is its ::before, so it has no data-part hook. */}
+        <input
+          {...rest}
+          ref={inputRef}
+          id={id}
+          type="checkbox"
+          role="switch"
+          name={name}
+          defaultChecked={isChecked}
+          className="ds-switch__control"
+          data-part="track"
+          aria-checked={isChecked ? 'true' : 'false'}
+          aria-describedby={description ? descriptionId : undefined}
+          aria-disabled={isDisabled ? 'true' : undefined}
+          onClick={handleClick}
+          onChange={handleChange}
+        />
+      </span>
     </div>
   );
-};
+}

@@ -1,13 +1,10 @@
 import {
   Children,
   cloneElement,
-  createContext,
   Fragment,
   isValidElement,
-  useContext,
   useId,
   type ComponentPropsWithoutRef,
-  type Context,
   type CSSProperties,
   type ReactElement,
   type ReactNode,
@@ -37,19 +34,22 @@ export type FieldsetOverridableBinding =
   | 'lineHeight';
 
 type FieldsetOverrides = Partial<Record<FieldsetOverridableBinding, TokenRef | undefined>>;
+type TextOverrides = Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
 
-/** Bindings Fieldset's own CSS reads; the rest are forwarded to the composed Text and Stack. */
+/**
+ * Bindings Fieldset's own CSS reads. legendSize, legendWeight, helperSize, fontFamily and lineHeight
+ * reach the composed Texts only through their `overrides`; fieldsGap reaches the Stack only through its `overrides.gap`.
+ */
 const OVERRIDE_HOOK: Partial<Record<FieldsetOverridableBinding, string>> = {
-  helperSize: '--ds-fieldset-helper-size',
   partGap: '--ds-fieldset-part-gap',
   disabledOpacity: '--ds-fieldset-disabled-opacity',
-  fontFamily: '--ds-fieldset-font-family', // literal-ok: CSS custom-property hook name, not a font stack
-  lineHeight: '--ds-fieldset-line-height',
 };
 
-function overridesToStyle(overrides: FieldsetOverrides): CSSProperties | undefined {
+function overridesToStyle(overrides: FieldsetOverrides, disabled: boolean): CSSProperties | undefined {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as FieldsetOverridableBinding[]) {
+    // disabledOpacity is only in effect while disabled.
+    if (binding === 'disabledOpacity' && !disabled) continue;
     const hook = OVERRIDE_HOOK[binding];
     const ref = overrides[binding];
     if (hook && ref) style[hook] = cssVar(ref);
@@ -57,18 +57,10 @@ function overridesToStyle(overrides: FieldsetOverrides): CSSProperties | undefin
   return Object.keys(style).length > 0 ? (style as CSSProperties) : undefined;
 }
 
-/** What a field inside a Fieldset reads: the group's `disabled` and its legend. */
-export interface FieldsetContextValue {
-  disabled: boolean;
-  legend: string;
-}
-
-/** Provided by Fieldset; Input, Checkbox, Switch and RadioGroup read it to render disabled. */
-export const FieldsetContext: Context<FieldsetContextValue | null> = createContext<FieldsetContextValue | null>(null);
-
-/** The enclosing Fieldset's context, or `null` outside one. */
-export function useFieldsetContext(): FieldsetContextValue | null {
-  return useContext(FieldsetContext);
+/** Drops undefined entries so a Text receives only the overrides that were passed. */
+function defined(overrides: TextOverrides): TextOverrides | undefined {
+  const entries = Object.entries(overrides).filter(([, ref]) => ref !== undefined);
+  return entries.length > 0 ? (Object.fromEntries(entries) as TextOverrides) : undefined;
 }
 
 /** Direct children with fragments flattened, so `<>…</>` children count as direct. */
@@ -78,28 +70,33 @@ function directChildren(children: ReactNode): ReactNode[] {
   );
 }
 
+const NATIVE_FIELDS = new Set(['input', 'select', 'textarea', 'button', 'fieldset']);
+
+type FieldElement = ReactElement<{ disabled?: boolean | undefined; required?: boolean | undefined }>;
+
+/** A direct child that can take `disabled`: a component, or a native form control. */
+function isField(child: ReactNode): child is FieldElement {
+  return isValidElement(child) && (typeof child.type !== 'string' || NATIVE_FIELDS.has(child.type));
+}
+
 export interface FieldsetProps
   extends Omit<
     ComponentPropsWithoutRef<'fieldset'>,
     'disabled' | 'children' | 'className' | 'style' | 'aria-describedby' | 'aria-disabled' | 'aria-invalid'
   > {
-  /** The group's name — what the fields together describe ("Shipping address", "Notification
-   * preferences"). Always visible. The accessible name of the group; screen readers read it
-   * before each field inside. */
+  /** The group's name — what the fields together describe ("Shipping address", "Notification preferences"). Always visible. */
   legend: string;
-  /** The fields, usually a Stack of Inputs, Checkboxes or Switches. */
+  /** The fields as direct children, usually Inputs, Checkboxes or Switches; Fieldset renders the Stack around them. */
   children: ReactNode;
-  /** Persistent helper text under the legend. Linked with aria-describedby on the group. */
+  /** Persistent helper text under the legend. */
   description?: string | undefined;
-  /** A group-level error (cross-field validation such as "End date must be after start date").
-   * Field-level errors stay on the fields. Rendered once under the group with role=alert and
-   * linked with aria-describedby; while set, the group carries aria-invalid="true". */
+  /** A group-level error (cross-field validation such as "End date must be after start date"). Field-level errors stay on the fields. */
   error?: string | undefined;
   /** Disables every field inside. Fields keep their own `disabled` for finer control. */
   disabled?: boolean | undefined;
   /** Gap between the fields, from the layout rhythm. Fieldset renders the Stack itself; children are the raw fields. */
   gap?: FieldsetGap | undefined;
-  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
+  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline, or reaches the composed Text/Stack through its `overrides`. */
   overrides?: FieldsetOverrides | undefined;
 }
 
@@ -108,11 +105,11 @@ export interface FieldsetProps
  *
  * When to use:
  * Use a Fieldset whenever two or more fields share a name a user would say aloud — an address, a
- * card, "Which days?" as a set of Checkboxes, a start and end date. Give it a `description` when
- * the group needs a rule ("We only ship within the EU") and put cross-field errors on the group
- * rather than on one field.
+ * card, "Which days?" as a set of Checkboxes, a start and end date. Give it a `description` when the
+ * group needs a rule ("We only ship within the EU") and put cross-field errors on the group rather
+ * than on one field.
  */
-export const Fieldset = function Fieldset({
+export function Fieldset({
   ref,
   legend,
   children,
@@ -127,60 +124,67 @@ export const Fieldset = function Fieldset({
   const descriptionId = `${baseId}-description`;
   const errorId = `${baseId}-error`;
 
-  const fields = directChildren(children);
-  const fieldElements = fields.filter((child) => isValidElement<{ required?: boolean | undefined }>(child));
-  const allRequired = fieldElements.length > 0 && fieldElements.every((field) => field.props.required === true);
+  const direct = directChildren(children);
+  const fields = direct.filter(isField);
+  const allRequired = fields.length > 0 && fields.every((field) => field.props.required === true);
 
-  // Until every field reads FieldsetContext, direct children also receive `disabled`; a non-field ignores it.
-  const renderedChildren = disabled
-    ? fields.map((child) => (isValidElement(child) ? cloneElement(child as ReactElement<{ disabled?: boolean }>, { disabled: true }) : child))
-    : children;
+  // The native `disabled` attribute on <fieldset> would take fields out of the tab order, so the
+  // group carries aria-disabled and each direct child field receives `disabled`.
+  const renderedChildren = disabled ? direct.map((child) => (isField(child) ? cloneElement(child, { disabled: true }) : child)) : children;
 
   const describedBy = [description ? descriptionId : null, error ? errorId : null].filter(Boolean).join(' ');
-
   const classes = ['ds-fieldset', disabled ? 'ds-fieldset--disabled' : null].filter(Boolean).join(' ');
 
-  const shared: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {
+  const legendOverrides = defined({
+    fontSize: overrides?.legendSize,
+    fontWeight: overrides?.legendWeight,
     fontFamily: overrides?.fontFamily,
     lineHeight: overrides?.lineHeight,
-  };
-  const legendOverrides = { ...shared, fontSize: overrides?.legendSize, fontWeight: overrides?.legendWeight };
-  const helperOverrides = { ...shared, fontSize: overrides?.helperSize };
+  });
+  const helperOverrides = defined({
+    fontSize: overrides?.helperSize,
+    fontFamily: overrides?.fontFamily,
+    lineHeight: overrides?.lineHeight,
+  });
   const fieldsGap = overrides?.fieldsGap;
 
   return (
-    <FieldsetContext.Provider value={{ disabled, legend }}>
-      <fieldset
-        {...rest}
-        ref={ref}
-        data-ds="Fieldset"
-        data-part="group"
-        className={classes}
-        style={overrides ? overridesToStyle(overrides) : undefined}
-        aria-describedby={describedBy || undefined}
-        aria-disabled={disabled ? 'true' : undefined}
-        aria-invalid={error ? 'true' : undefined}
-      >
-        <legend data-part="legend" className="ds-fieldset__legend">
-          <Text element="span" size="md" weight="medium" overrides={legendOverrides}>
-            {legend}
-            {allRequired ? COPY.requiredIndicator : null}
-          </Text>
-        </legend>
-        {description ? (
-          <Text element="p" id={descriptionId} data-part="description" size="sm" tone="muted" overrides={helperOverrides}>
+    <fieldset
+      {...rest}
+      ref={ref}
+      data-ds="Fieldset"
+      data-part="group"
+      className={classes}
+      style={overrides ? overridesToStyle(overrides, disabled) : undefined}
+      aria-describedby={describedBy || undefined}
+      aria-disabled={disabled ? 'true' : undefined}
+      aria-invalid={error ? 'true' : undefined}
+    >
+      <legend data-part="legend" className="ds-fieldset__legend">
+        <Text element="span" tone="default" size="md" weight="medium" overrides={legendOverrides}>
+          {legend}
+          {allRequired ? COPY.requiredIndicator : null}
+        </Text>
+      </legend>
+      {description ? (
+        <div id={descriptionId} data-part="description" className="ds-fieldset__description">
+          <Text element="span" tone="muted" size="sm" overrides={helperOverrides}>
             {description}
           </Text>
-        ) : null}
+        </div>
+      ) : null}
+      <div data-part="fields" className="ds-fieldset__fields">
         <Stack gap={gap} overrides={fieldsGap ? { gap: fieldsGap } : undefined}>
           {renderedChildren}
         </Stack>
-        {error ? (
-          <p id={errorId} role="alert" data-part="errorMessage" className="ds-fieldset__error">
+      </div>
+      {error ? (
+        <div id={errorId} role="alert" data-part="errorMessage" className="ds-fieldset__error">
+          <Text element="span" tone="danger" size="sm" overrides={helperOverrides}>
             {error}
-          </p>
-        ) : null}
-      </fieldset>
-    </FieldsetContext.Provider>
+          </Text>
+        </div>
+      ) : null}
+    </fieldset>
   );
-};
+}

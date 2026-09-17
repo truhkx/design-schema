@@ -30,3 +30,15 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Alert: the Web platform notes say the icon is an '`aria-hidden` inline SVG' while the `icon` style binding says to render the system Icon. I used Icon, which hides itself from assistive technology when it has no label. The notes should drop 'inline SVG'.
 - Alert: the dismiss glyph is described as 'a 1em × glyph'. I used `<Icon name="close" inline />`; the doc should name the icon `close` explicitly, as the SwiftUI notes do.
 - Alert: the example stories must have 'exactly its given as args', but Storybook merges them over meta.args, so an example without `heading` would inherit a heading from the defaults. I left `heading` out of meta.args, so the Default story has no heading. The doc doesn't say what the Default story's args are.
+
+## 2026-09-17 05:16 — round 1
+
+- Alert: the `icon` binding is `locked: true`, yet its description says 'Override through `overrides.icon`'. Locked bindings are excluded from the overrides type, so I kept it locked and there is no `overrides.icon`; the Icon always gets `color.status.{tone}.icon`.
+- Alert: the web note's next-focusable list says `a`, but an anchor without `href` cannot take focus. I used `a[href]`.
+- Alert: 'elements that are not rendered (hidden or display none)' does not say whether `visibility: hidden` or zero-size elements count. I check only the `hidden` attribute and computed `display: none` on the element and its ancestors, which also works in jsdom (it has no layout, so `getClientRects` could not be used).
+- Alert: 'skipping disabled elements' does not say whether descendants of a disabled `<fieldset>` count. I used `:disabled`, which includes them.
+- Alert: the icon-box math needs to know if there is a heading. CSS has no prop for that, so I used `.ds-alert:has(> .ds-alert__content > .ds-alert__heading)`. The spec could name a mechanism (e.g. a modifier class).
+- Alert: `fontSize` is on the `body` part, but the icon-box math needs it on the icon part, and `lineHeight` is on the container while the heading has no line-height binding of its own. All hooks are set on the root and inherited, so every part reads the same values; the heading inherits the container's `lineHeight`.
+- Alert: `iconSize` says the `--ds-alert-icon-size` hook does not resize the Icon, yet the icon-box math reads that hook. A consumer who sets the hook in their own CSS instead of `overrides.iconSize` gets a box sized differently from the glyph. The spec could say whether the math should read only the forwarded token.
+- Alert: no scenario covers moving focus on dismiss or the next/previous/none cases, so this behavior has no test; the doc could add scenarios for it.
+- Alert: the web note says a consumer's `aria-labelledby` is replaced by the heading or body id, but does not say whether a consumer `aria-label` should win. Mine is forwarded through `...rest` and sits alongside `aria-labelledby`, which then takes precedence.

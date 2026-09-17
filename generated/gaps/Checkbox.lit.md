@@ -18,3 +18,13 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Checkbox: `required` requires copy.requiredIndicator in the label, but the doc doesn't say whether it should be part of the accessible name. I kept it inside the `<label>` text, so the name reads 'Label (required)', matching Input. aria-required is also set.
 - Checkbox: `validationMessage` when `invalid` is set on a required, unchecked box. The precedence (error, required, invalid) gives copy.required. I applied the same order to both the rendered error and ElementInternals validity.
 - Checkbox: the Behavior prose says a Fieldset's disabled applies via FieldsetContext, but the doc names no Lit mechanism. I only honour formDisabledCallback, from a native fieldset or form.
+
+## 2026-09-17 05:00 — round 1
+
+- Checkbox: the `transition` binding covers 'fill and indicator transitions', but the indicator must not be rendered when unchecked, so it cannot fade in or out; I transition only the control's background and border colour, and the indicator appears instantly.
+- Checkbox: validity order vs rendered error disagree for required. Behavior says the error slot shows copy.required only while `invalid` is true, and validity 'follows the same order — the same as Input', but Input reports valueMissing whenever a required field is empty, invalid or not. I copied Input: validity is error > required-and-unchecked (valueMissing) > invalid; the rendered error still waits for `invalid`.
+- Checkbox: 'clears the mixed indicator locally until the indeterminate prop changes value again' — on Lit a property set to the value it already has does not count as a change, so a consumer must set it to false and back to true to show the dash again. I used a private @state flag that resets when `indeterminate` changes; the reflected `indeterminate` attribute stays set while the dash is cleared.
+- Checkbox: 'the checked attribute is the initial state only', but a Lit Boolean property also takes later attribute changes. I kept a plain `@property({type: Boolean})` setter, so changing the attribute after mount still updates the live state; formResetCallback goes back to the attribute, else defaultChecked.
+- Checkbox: the doc doesn't say whether the Lit error message (shown below the row, outside the hit area) should say anything to a click; I added no handler, so clicks on it do nothing.
+- Checkbox: the doc's 'Form's message' step in the error order has no Lit channel (ds-form only sets `invalid`), so on Lit the order is error > copy.required/copy.invalid.
+- Checkbox: 'every enum value of every enum prop' — the component has no enum props, so the stories are Default, boolean states and the four examples (Consent, SelectAllParent, WithDescription, SelectionColumn).

@@ -28,3 +28,15 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Checkbox: errorMessage placement and its gap to the row are unspecified; rendered it outside the Pressable (so a tap on the error does not toggle and it is not in the hint) below the row, separated by partGap via the root column's gap.
 - Checkbox: `error-marks-invalid-and-is-announced` on rn only asserts the text; there is no RN accessibility state for 'invalid' (RN has no accessibilityInvalid), so invalid is conveyed only by the danger border plus the live-region/announce of the error text.
 - Checkbox: behavior scenario 'click on control' — the control is hidden from accessibility (accessibilityElementsHidden, importantForAccessibility=no) so the Pressable row is the single accessible element; the test must query it with includeHiddenElements. Not a spec defect, but the scenario vocabulary assumes the control is queryable.
+
+## 2026-09-17 05:01 — round 1
+
+- Checkbox: the rn rules say `disabled` sets accessibilityState plus the `disabled` prop, but the package conventions and the 'stays focusable' behaviour say never pass `disabled` to Pressable (it removes focus). Chose accessibilityState.disabled plus a press guard, no `disabled` prop.
+- Checkbox: `value` is listed as a prop but the doc says React Native's Form ignores it and there is no native form. Kept it as an accepted prop (default 'on') that does nothing on native.
+- Checkbox: the rn a11y rule says the error is conveyed 'as in Input' through accessibilityLiveRegion / announceForAccessibility, but not whether to stay quiet when the Form shows an error summary. Kept the existing behaviour: the live region is 'none' and iOS makes no announcement while form.errorSummary is on.
+- Checkbox: the doc never says whether the invalid border (controlBorderInvalid) or the focus border wins when both apply. Chose focus over invalid over the animated normal/selected border.
+- Checkbox: the doc never says whether the invalid border replaces the selected-fill border colour on a checked, invalid box. Chose invalid to win in every checked state.
+- Checkbox: controlBorderWidth is overridable but focusRingWidth (locked) swaps in on focus. With a controlBorderWidth override wider than border.width.focus, the focused border gets thinner; no rule covers this, so it was left as is.
+- Checkbox: the doc never says whether the `transition` cross-fade covers the check-to-dash glyph swap. The glyph swaps instantly and only the fill, border and indicator opacity animate.
+- Checkbox: the doc never says whether the derived copy.required / copy.invalid message counts as `error` for form.reportValidity. validate() still uses the order error → required-and-unchecked → invalid, whatever `invalid` is set to, so a required, unchecked box fails Form validation without `invalid` being set.
+- Checkbox: the doc gives no vertical alignment for multi-line labels or a label with a description. Row cross-axis 'center' (per minTarget) is applied, which centres the box against a two-line text column rather than aligning it to the first line.

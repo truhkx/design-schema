@@ -31,7 +31,8 @@ export type SwitchOverridableBinding =
   | 'disabledOpacity'
   | 'transition';
 
-const HOOKS: Record<SwitchOverridableBinding, string> = {
+/** Hooks on `:host`. `helperSize` has none: it reaches the description Text only through its `overrides`. */
+const HOOKS: Record<Exclude<SwitchOverridableBinding, 'helperSize'>, string> = {
   trackWidth: '--ds-switch-track-width',
   trackHeight: '--ds-switch-track-height',
   thumbSize: '--ds-switch-thumb-size',
@@ -41,7 +42,6 @@ const HOOKS: Record<SwitchOverridableBinding, string> = {
   partGap: '--ds-switch-part-gap',
   labelSize: '--ds-switch-label-size',
   labelWeight: '--ds-switch-label-weight',
-  helperSize: '--ds-switch-helper-size',
   fontFamily: '--ds-switch-font-family',
   lineHeight: '--ds-switch-line-height',
   disabledOpacity: '--ds-switch-disabled-opacity',
@@ -54,17 +54,18 @@ const HOOKS: Record<SwitchOverridableBinding, string> = {
  * `<ds-switch label="Email notifications">`. A native
  * `<input type="checkbox" role="switch">` styled with `appearance: none` is the
  * track (with `delegatesFocus`), and keeps label association and Space toggling
- * for free; the thumb is a sibling span laid over it. The `<label for>` sits in
- * the same root, so a click on it toggles natively; a click on the description
- * or the row's empty space is forwarded to the control, so the whole row toggles.
+ * for free; the thumb is the input's `::before` pseudo-element, so it has no
+ * part. The `<label for>` sits in the same root, so a click on it toggles
+ * natively; a click on the description or the row's gap is forwarded to the
+ * control, so the whole row toggles.
  *
  * The element is form-associated like `ds-checkbox`: the native form value is
  * `"on"` while checked and `null` otherwise, while `<ds-form>` discovers it by
- * `data-ds-field` and collects `currentValue` as a boolean. A switch never
- * validates. The inner native `change` is not composed, so a composed `change`
- * CustomEvent with `{ checked }` is re-dispatched from the host. `checked`
- * behaves like a native input: the attribute is the initial state only and the
- * property is the live state, so it is not reflected.
+ * `data-ds-field="change"` and collects `currentValue` as a boolean. A switch
+ * never validates. The inner native `change` is not composed, so a composed
+ * `change` CustomEvent with `{ checked }` is re-dispatched from the host.
+ * `checked` behaves like a native input: the attribute is the initial state
+ * only and the property is the live state, so it is not reflected.
  *
  * ## When to use
  *
@@ -74,7 +75,7 @@ const HOOKS: Record<SwitchOverridableBinding, string> = {
  * switches sit at the row end. A choice that is only applied on Save is a
  * Checkbox.
  *
- * @fires change - Fired when the state changes with `{ checked }` in `detail`. The change is already in effect.
+ * @fires change - Fired when the user changes the state, with `{ checked }` in `detail`. The change is already in effect.
  */
 @customElement('ds-switch')
 export class DsSwitch extends LitElement {
@@ -88,7 +89,6 @@ export class DsSwitch extends LitElement {
   static override styles: CSSResult = css`
     :host {
       display: block;
-      font-family: var(--ds-switch-font-family);
       --ds-switch-track-width: var(--space-10);
       --ds-switch-track-height: var(--space-6);
       --ds-switch-thumb-size: var(--space-5);
@@ -98,7 +98,6 @@ export class DsSwitch extends LitElement {
       --ds-switch-part-gap: var(--space-1);
       --ds-switch-label-size: var(--font-size-md);
       --ds-switch-label-weight: var(--font-weight-regular);
-      --ds-switch-helper-size: var(--font-size-sm);
       --ds-switch-font-family: var(--font-family-body);
       --ds-switch-line-height: var(--font-line-height-normal);
       --ds-switch-disabled-opacity: var(--opacity-disabled);
@@ -109,7 +108,7 @@ export class DsSwitch extends LitElement {
       display: none;
     }
 
-    /* minTarget: the whole row toggles */
+    /* minTarget: a full-width row with no padding; the whole row toggles, gap included */
     .row {
       display: flex;
       align-items: flex-start;
@@ -127,32 +126,27 @@ export class DsSwitch extends LitElement {
       flex: 1 1 auto;
       order: 0;
     }
-    .switch {
+    .track {
       order: 1;
     }
-    :host([label-position='end']) .switch {
+    :host([label-position='end']) .track {
       order: 0;
     }
     :host([label-position='end']) .text {
       order: 1;
     }
 
-    /* Holds the track and its thumb; centered on the label's first line. */
-    .switch {
-      position: relative;
-      display: inline-flex;
-      flex: none;
-      margin-block-start: calc(
-        (var(--ds-switch-label-size) * var(--ds-switch-line-height) - var(--ds-switch-track-height)) / 2
-      );
-    }
-
-    /* track: trackWidth × trackHeight, radius, trackOff / trackOn */
+    /* track: trackWidth × trackHeight, radius, trackOff / trackOn; centred on the label's first line */
     .track {
+      position: relative;
       box-sizing: border-box;
+      flex: none;
       inline-size: var(--ds-switch-track-width);
       block-size: var(--ds-switch-track-height);
       margin: 0;
+      margin-block-start: calc(
+        (var(--ds-switch-label-size) * var(--ds-switch-line-height) - var(--ds-switch-track-height)) / 2
+      );
       border: 0;
       border-radius: var(--ds-switch-radius);
       background: var(--color-control-track-off);
@@ -171,8 +165,9 @@ export class DsSwitch extends LitElement {
       outline-offset: var(--border-width-focus);
     }
 
-    /* thumb: thumbSize, inset by thumbInset, travels trackWidth − thumbSize − 2 × thumbInset */
-    .thumb {
+    /* thumb: the input's ::before; thumbSize, inset by thumbInset, travels trackWidth − thumbSize − 2 × thumbInset */
+    .track::before {
+      content: '';
       position: absolute;
       inset-block-start: calc((var(--ds-switch-track-height) - var(--ds-switch-thumb-size)) / 2);
       inset-inline-start: var(--ds-switch-thumb-inset);
@@ -180,39 +175,42 @@ export class DsSwitch extends LitElement {
       block-size: var(--ds-switch-thumb-size);
       border-radius: var(--ds-switch-radius);
       background: var(--color-control-selected-foreground);
-      pointer-events: none;
       transition: transform var(--ds-switch-transition) var(--motion-easing-standard);
     }
-    .track:checked + .thumb {
+    .track:checked::before {
       transform: translateX(
         calc(var(--ds-switch-track-width) - var(--ds-switch-thumb-size) - 2 * var(--ds-switch-thumb-inset))
       );
     }
-    :host(:dir(rtl)) .track:checked + .thumb {
+    :host(:dir(rtl)) .track:checked::before {
       transform: translateX(
         calc(-1 * (var(--ds-switch-track-width) - var(--ds-switch-thumb-size) - 2 * var(--ds-switch-thumb-inset)))
       );
     }
 
-    /* transition: travel is instant under reduced motion */
+    /* transition: under reduced motion the thumb jumps and the color changes instantly */
     @media (prefers-reduced-motion: reduce) {
       .track,
-      .thumb {
+      .track::before {
         transition: none;
       }
     }
 
-    /* disabled: stays focusable; dimmed with disabledOpacity */
-    :host([disabled]) .row {
+    /* disabled: stays focusable; the track, label and description dim with disabledOpacity */
+    :host([disabled]) .row,
+    .row.form-disabled {
       opacity: var(--ds-switch-disabled-opacity);
       cursor: not-allowed;
     }
     :host([disabled]) .track,
-    :host([disabled]) .label {
+    :host([disabled]) .label,
+    .row.form-disabled .track,
+    .row.form-disabled .label {
       cursor: not-allowed;
     }
 
     .label {
+      font-family: var(--ds-switch-font-family);
       font-size: var(--ds-switch-label-size);
       font-weight: var(--ds-switch-label-weight);
       line-height: var(--ds-switch-line-height);
@@ -224,8 +222,8 @@ export class DsSwitch extends LitElement {
   /** Visible label naming the thing being turned on or off. Also the accessible name. */
   @property() accessor label = '';
 
-  /** Optional field name. When inside a Form the state is collected as a boolean; most switches are not in forms. */
-  @property() accessor name = '';
+  /** Optional field name. When inside a Form the state is collected as a boolean; most switches are not in forms. Reflected so a native `<form>` still submits it. */
+  @property({ reflect: true }) accessor name = '';
 
   /** Initial state when neither the `checked` attribute nor property is set. */
   @property({ type: Boolean, attribute: 'default-checked' }) accessor defaultChecked = false;
@@ -246,7 +244,7 @@ export class DsSwitch extends LitElement {
 
   private checkedValue: boolean | undefined;
 
-  /** The live state, like a native input. The attribute is the initial state only; not reflected. */
+  /** The live state, like a native input: starts from the `checked` attribute, else `defaultChecked`, and follows every toggle. Not reflected. */
   get checked(): boolean {
     return this.checkedValue ?? this.defaultChecked;
   }
@@ -275,7 +273,7 @@ export class DsSwitch extends LitElement {
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('data-ds', 'Switch');
-    this.setAttribute('data-ds-field', '');
+    this.setAttribute('data-ds-field', 'change');
   }
 
   /** The value `<ds-form>` collects: the state as a boolean. */
@@ -298,6 +296,7 @@ export class DsSwitch extends LitElement {
     return true;
   }
 
+  /** Always valid: a switch has no error state by design. */
   reportValidity(): boolean {
     return true;
   }
@@ -308,9 +307,10 @@ export class DsSwitch extends LitElement {
     this.formDisabled = disabled;
   }
 
+  /** Back to the initial state: the `checked` attribute, else `defaultChecked`. */
   formResetCallback(): void {
     const old = this.checked;
-    this.checkedValue = undefined;
+    this.checkedValue = this.hasAttribute('checked') ? true : undefined;
     this.requestUpdate('checked', old);
   }
 
@@ -331,25 +331,22 @@ export class DsSwitch extends LitElement {
   protected override render(): TemplateResult {
     const isDisabled = this.isDisabled;
     return html`
-      <div class="row" @click=${this.handleRowClick}>
-        <span class="switch">
-          <input
-            id="track"
-            class="track"
-            part="track"
-            data-part="track"
-            type="checkbox"
-            role="switch"
-            name=${ifDefined(this.name || undefined)}
-            .checked=${live(this.checked)}
-            aria-checked=${this.checked ? 'true' : 'false'}
-            aria-describedby=${ifDefined(this.description ? 'description' : undefined)}
-            aria-disabled=${ifDefined(isDisabled ? 'true' : undefined)}
-            @click=${this.handleControlClick}
-            @change=${this.handleChange}
-          />
-          <span class="thumb" part="thumb" data-part="thumb" aria-hidden="true"></span>
-        </span>
+      <div class="row ${this.formDisabled ? 'form-disabled' : ''}" @click=${this.handleRowClick}>
+        <input
+          id="track"
+          class="track"
+          part="track"
+          data-part="track"
+          type="checkbox"
+          role="switch"
+          name=${ifDefined(this.name || undefined)}
+          .checked=${live(this.checked)}
+          aria-checked=${this.checked ? 'true' : 'false'}
+          aria-describedby=${ifDefined(this.description ? 'description' : undefined)}
+          aria-disabled=${ifDefined(isDisabled ? 'true' : undefined)}
+          @click=${this.handleControlClick}
+          @change=${this.handleChange}
+        />
         <div class="text">
           <label class="label" part="label" data-part="label" for="track">${this.label}</label>
           ${this.description
@@ -382,7 +379,7 @@ export class DsSwitch extends LitElement {
     return { fontSize: o.helperSize, fontFamily: o.fontFamily, lineHeight: o.lineHeight };
   }
 
-  /** Clicks on the description (or the row's empty space) toggle the switch too. */
+  /** Clicks on the description or the row's gap toggle the switch too. */
   private handleRowClick(event: MouseEvent): void {
     const input = this.inputEl;
     const target = event.target;
@@ -413,6 +410,9 @@ export class DsSwitch extends LitElement {
       return;
     }
     const next = input.checked;
+    if (next === this.checked) {
+      return;
+    }
     this.checked = next;
     this.dispatchEvent(
       new CustomEvent<SwitchChangeDetail>('change', {
@@ -424,9 +424,8 @@ export class DsSwitch extends LitElement {
   }
 
   private applyOverrides(): void {
-    for (const binding of Object.keys(HOOKS) as SwitchOverridableBinding[]) {
+    for (const [binding, hook] of Object.entries(HOOKS) as [keyof typeof HOOKS, string][]) {
       const ref = this.overrides?.[binding];
-      const hook = HOOKS[binding];
       if (ref === undefined) {
         this.style.removeProperty(hook);
       } else {

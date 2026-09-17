@@ -23,3 +23,13 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - RadioGroup: a disabled option inside an enabled group is dimmed with opacity.disabled on its row; the group opacity is not stacked on top when the whole group is disabled. The spec only defines opacity for the whole element.
 - RadioGroup: the vertical padding on each option row (space.1) and the gap between radioLabel and radioDescription (partGap) have no binding; I borrowed Checkbox's choices.
 - RadioGroup: behavior scenarios 'disabled-group-is-inert' and 'invalid-renders-the-invalid-copy' limit their state expectations to web/lit; on RN I only assert onChange not firing and the copy text, and the radio's unchecked state.
+
+## 2026-09-17 05:11 — round 1
+
+- RadioGroup: legend and radioLabel are listed as plain elements (not in `composition`), but they carry typography bindings (legendSize/Weight, labelSize/Weight, fontFamily, lineHeight) and RN has no cascade; I rendered them with the package `Text` (size md, weight medium/regular, tone default) with the bindings as `overrides`. The spec should either add them to composition or say to use a raw RN Text.
+- RadioGroup: optionPaddingBlock is declared `part: radio` but its description says it pads the option row wrapper (not an anatomy part), and controlSize/focusRing are also `part: radio` but apply to the drawn circle. On native the `RadioGroup.radio` testID sits on the row Pressable (where accessibilityRole=radio and the press live), not the drawn circle; the doc should name which node `radio` is on rn.
+- RadioGroup: `forwards` lists only helperSize/fontFamily/lineHeight for the composed Texts; fontFamily and lineHeight have no `part`, so I also applied them to legend and radioLabel. Unstated whether that is intended.
+- RadioGroup: the indicator dot uses controlRadius for its corner radius (no binding for the dot's shape); with a non-full controlRadius override the dot follows it. Not specified.
+- RadioGroup: the rn platform props list doesn't include accessibilityState on the group root; I kept `accessibilityState={{ disabled }}` there per the general `disabled` rule, which the platform note neither requires nor forbids.
+- RadioGroup: transition binding has no description of what animates; I cross-fade the selected border color and the dot opacity over it (skipped under reduced motion), while the invalid and focus borders switch instantly.
+- RadioGroup: Keyboard story rule asks for a trigger plus three focusable children, but RadioGroup has no trigger; the story renders the Default three options with no extra args.

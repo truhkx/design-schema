@@ -13,8 +13,6 @@ export type AlertDismissDetail = void;
 /** copy.dismissLabel */
 const COPY_DISMISS_LABEL = 'Dismiss';
 
-type LabelledInternals = ElementInternals & { ariaLabelledByElements?: Element[] | null | undefined };
-
 /** Overridable style hooks; see the `overrides` property. `background`, `foreground`, `bodyColor` and `icon` are locked and excluded. */
 export type AlertOverridableBinding =
   | 'border'
@@ -41,54 +39,39 @@ const HOOKS: Record<AlertOverridableBinding, string> = {
   iconSize: '--ds-alert-icon-size',
   headingSize: '--ds-alert-heading-size',
   headingWeight: '--ds-alert-heading-weight',
-  fontFamily: `--ds-alert-font-family`,
+  fontFamily: '--ds-alert-font-family',
   fontSize: '--ds-alert-font-size',
   lineHeight: '--ds-alert-line-height',
   dismissMargin: '--ds-alert-dismiss-margin',
 };
 
-const FOCUSABLE =
-  'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"]), ' +
-  'ds-button, ds-link, ds-input, ds-checkbox, ds-switch, ds-radio-group, ds-disclosure';
+/** The web "next focusable" set: a, button, input, select, textarea, [tabindex] ≥ 0, contenteditable. */
+const FOCUSABLE = 'a[href], button, input, select, textarea, [tabindex], [contenteditable]:not([contenteditable="false"])';
 
 /**
  * `<ds-alert>` — Alert (category: feedback, APG pattern: alert).
  *
  * `<ds-alert tone="danger" live="alert" heading="Payment failed">…</ds-alert>`.
- * The `role` (`status` or `alert`, none when `live` is `off`) is set on the
- * host element via `ElementInternals`, so the live region is the host itself
- * in the light DOM tree where assistive technology expects it. Inside the
- * shadow root: the tone icon as `<ds-icon name={tone}>`, a content column
- * with the heading as a `<p>` in `headingWeight` (not a heading element, so
- * it does not disturb the outline) and the default slot, and, when
- * `dismissible`, a ghost `sm` icon-only `<ds-button>` labelled "Dismiss" with
- * a `<ds-icon name="close">` leading icon, used unchanged (no `::part`
- * restyling) and pulled into the corner with `dismissMargin`. Dismissing
- * stops the inner `press`, moves focus onward and dispatches a composed
- * `dismiss` CustomEvent; the consumer removes the element.
- *
- * ## When to use
- *
- * Use an Alert for a message that relates to the current view and should stay
- * visible: a failed save above the form, an expiring trial, a success
- * confirmation after submit. Choose `tone` by what the user should do: `info`
- * to know, `success` to relax, `warning` to be careful, `danger` to fix
- * something. Use `dismissible` for messages the user can safely put away.
+ * A plain `role` attribute on the host (`status` or `alert`, removed when
+ * `live` is `off`) makes the host the live region in the light DOM, and a
+ * plain `aria-label` names it with the heading text, else the body text.
+ * Inside the shadow root: the tone `<ds-icon>` in a box as tall as the first
+ * line, a content column with the heading as a `<p>` (not a heading element,
+ * so it does not disturb the outline) and the default slot, and, when
+ * `dismissible`, a ghost `sm` icon-only `<ds-button>` labelled
+ * copy.dismissLabel in a wrapper pulled into the corner with `dismissMargin`.
+ * Dismissing stops the inner `press`, moves focus onward and dispatches a
+ * composed `dismiss` CustomEvent; the consumer removes the element.
  *
  * @fires dismiss - Fired when the user activates the dismiss button. The consumer removes the alert.
  * @slot - The message body. Text and Links; no headings or form controls.
- * @slot heading - Rich heading content; replaces the `heading` property text.
- * @csspart container - The bordered box (anatomy: container).
- * @csspart icon - The tone icon (anatomy: icon).
- * @csspart heading - The heading paragraph (anatomy: heading).
- * @csspart body - The body wrapper (anatomy: body).
- * @csspart dismiss-button - The dismiss `<ds-button>` (anatomy: dismissButton).
  */
 @customElement('ds-alert')
 export class DsAlert extends LitElement {
   static override styles: CSSResult = css`
     :host {
       display: block;
+      --ds-alert-body-color: var(--color-foreground);
       --ds-alert-border-width: var(--border-width-thin);
       --ds-alert-radius: var(--radius-md);
       --ds-alert-padding: var(--space-md);
@@ -101,24 +84,35 @@ export class DsAlert extends LitElement {
       --ds-alert-font-size: var(--font-size-md);
       --ds-alert-line-height: var(--font-line-height-normal);
       --ds-alert-dismiss-margin: var(--space-1);
-      font-family: var(--ds-alert-font-family);
     }
 
     :host([hidden]) {
       display: none;
     }
 
-    /* border: color.status.{tone}.border */
+    /* {tone} bindings: background, foreground, icon (locked) and border */
     :host([tone='info']) {
+      --ds-alert-background: var(--color-status-info-background);
+      --ds-alert-foreground: var(--color-status-info-foreground);
+      --ds-alert-icon: var(--color-status-info-icon);
       --ds-alert-border: var(--color-status-info-border);
     }
     :host([tone='success']) {
+      --ds-alert-background: var(--color-status-success-background);
+      --ds-alert-foreground: var(--color-status-success-foreground);
+      --ds-alert-icon: var(--color-status-success-icon);
       --ds-alert-border: var(--color-status-success-border);
     }
     :host([tone='warning']) {
+      --ds-alert-background: var(--color-status-warning-background);
+      --ds-alert-foreground: var(--color-status-warning-foreground);
+      --ds-alert-icon: var(--color-status-warning-icon);
       --ds-alert-border: var(--color-status-warning-border);
     }
     :host([tone='danger']) {
+      --ds-alert-background: var(--color-status-danger-background);
+      --ds-alert-foreground: var(--color-status-danger-foreground);
+      --ds-alert-icon: var(--color-status-danger-icon);
       --ds-alert-border: var(--color-status-danger-border);
     }
 
@@ -128,36 +122,27 @@ export class DsAlert extends LitElement {
       align-items: flex-start;
       gap: var(--ds-alert-gap);
       padding: var(--ds-alert-padding);
+      background: var(--ds-alert-background);
       border: var(--ds-alert-border-width) solid var(--ds-alert-border);
       border-radius: var(--ds-alert-radius);
-      font-size: var(--ds-alert-font-size);
+      font-family: var(--ds-alert-font-family);
       line-height: var(--ds-alert-line-height);
-      /* bodyColor: color.foreground, locked — long messages read as text, not colored emphasis */
-      color: var(--color-foreground);
     }
 
-    /* background: color.status.{tone}.background, locked */
-    :host([tone='info']) .container {
-      background: var(--color-status-info-background);
-    }
-    :host([tone='success']) .container {
-      background: var(--color-status-success-background);
-    }
-    :host([tone='warning']) .container {
-      background: var(--color-status-warning-background);
-    }
-    :host([tone='danger']) .container {
-      background: var(--color-status-danger-background);
-    }
-
-    /* icon (locked) and iconSize are forwarded to the Icon's own overrides (see render) */
+    /* The icon box is as tall as the first line (or the icon, when larger); the Icon is centred in it.
+       Its color and size reach the Icon through its overrides, not through these hooks. */
     .icon {
       flex: none;
-      /* Align with the first line of text. */
-      margin-block-start: calc(
-        (var(--ds-alert-font-size) * var(--ds-alert-line-height) - var(--ds-alert-icon-size)) / 2
-      );
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ds-alert-icon);
+      block-size: max(calc(var(--ds-alert-font-size) * var(--ds-alert-line-height)), var(--ds-alert-icon-size));
     }
+    .container.has-heading .icon {
+      block-size: max(calc(var(--ds-alert-heading-size) * var(--ds-alert-line-height)), var(--ds-alert-icon-size));
+    }
+
     .content {
       display: flex;
       flex: 1 1 auto;
@@ -168,71 +153,61 @@ export class DsAlert extends LitElement {
 
     .heading {
       margin: 0;
+      color: var(--ds-alert-foreground);
       font-size: var(--ds-alert-heading-size);
       font-weight: var(--ds-alert-heading-weight);
     }
-    /* foreground: color.status.{tone}.foreground, locked */
-    :host([tone='info']) .heading {
-      color: var(--color-status-info-foreground);
-    }
-    :host([tone='success']) .heading {
-      color: var(--color-status-success-foreground);
-    }
-    :host([tone='warning']) .heading {
-      color: var(--color-status-warning-foreground);
-    }
-    :host([tone='danger']) .heading {
-      color: var(--color-status-danger-foreground);
-    }
 
     .body {
-      color: var(--color-foreground);
+      color: var(--ds-alert-body-color);
+      font-size: var(--ds-alert-font-size);
     }
 
     /* dismissMargin: pull the Button into the corner; it keeps its own colors, radius and focus ring */
     .dismiss {
       flex: none;
-      margin-block: calc(-1 * var(--ds-alert-dismiss-margin));
+      display: flex;
+      margin-block-start: calc(-1 * var(--ds-alert-dismiss-margin));
       margin-inline-end: calc(-1 * var(--ds-alert-dismiss-margin));
     }
   `;
 
-  /** What kind of message this is. Sets the colors, the icon, and (with `live`) the announcement. */
+  /** What kind of message this is. Sets the colors and the icon, which together convey the tone without relying on color. */
   @property({ type: String, reflect: true }) accessor tone: AlertTone = 'info';
 
-  /** A short bold heading for the message. Optional for one-line messages. Never forwarded as the native `title`. */
+  /** A short bold first line for the message. Optional for one-line messages. Never forwarded as the native `title`. */
   @property() accessor heading: string | undefined;
 
-  /** How the alert is announced when it appears. `status` is polite; `alert` interrupts; `off` for alerts present at load. */
+  /** How the alert is announced when it appears. `status` is polite; `alert` interrupts (blocking errors only); `off` for alerts present at load. */
   @property({ type: String, reflect: true }) accessor live: AlertLive = 'status';
 
-  /** Shows a dismiss button at the end of the alert. */
+  /** Shows a dismiss button at the end of the alert. Activating it fires `dismiss`; the consumer removes the alert. */
   @property({ type: Boolean, reflect: true }) accessor dismissible = false;
 
-  /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings (background, foreground, bodyColor, icon) are ignored. */
+  /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings (background, foreground, bodyColor, icon) are not accepted. */
   @property({ attribute: false }) accessor overrides: Partial<Record<AlertOverridableBinding, TokenRef | undefined>> | undefined;
 
-  private readonly internals: ElementInternals;
-
-  constructor() {
-    super();
-    this.internals = this.attachInternals();
-  }
+  /** Body text edits do not change a property; watch the light DOM to keep the accessible name current. */
+  private readonly bodyObserver: MutationObserver = new MutationObserver(() => this.syncAccessibleName());
 
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('data-ds', 'Alert');
+    this.bodyObserver.observe(this, { childList: true, subtree: true, characterData: true });
+    this.syncAccessibleName();
+  }
+
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this.bodyObserver.disconnect();
   }
 
   protected override willUpdate(changed: PropertyValues): void {
     if (changed.has('live')) {
-      // role="status" implies aria-live="polite" and role="alert" implies assertive.
-      // Mirrored as a plain attribute: the accessible-name/role computation the
-      // tests use does not read ElementInternals.
+      // role="status" implies aria-live="polite" and role="alert" implies assertive; set only the role.
       const role = this.live === 'off' ? null : this.live;
-      this.internals.role = role;
       if (role === null) {
-        this.removeAttribute('role');
+        if (this.hasAttribute('role')) this.removeAttribute('role');
       } else if (this.getAttribute('role') !== role) {
         this.setAttribute('role', role);
       }
@@ -242,91 +217,53 @@ export class DsAlert extends LitElement {
     }
   }
 
-  protected override updated(): void {
-    this.syncAccessibleName();
+  protected override updated(changed: PropertyValues): void {
+    if (changed.has('heading')) {
+      this.syncAccessibleName();
+    }
   }
 
   protected override render(): TemplateResult {
-    const hasHeading = Boolean(this.heading) || this.querySelector('[slot="heading"]') !== null;
+    const heading = this.heading ? this.heading : undefined;
     return html`
-      <div class="container" part="container" data-part="container">
-        <ds-icon
-          class="icon"
-          part="icon"
-          data-part="icon"
-          name=${this.tone}
-          .overrides=${{
-            color: `color.status.${this.tone}.icon` as const,
-            size: this.overrides?.iconSize ?? 'font.size.lg',
-          }}
-        ></ds-icon>
+      <div class="container ${heading ? 'has-heading' : ''}" part="container" data-part="container">
+        <span class="icon" part="icon" data-part="icon">
+          <ds-icon
+            name=${this.tone}
+            .overrides=${{
+              color: `color.status.${this.tone}.icon` as const,
+              size: this.overrides?.iconSize ?? 'font.size.lg',
+            }}
+          ></ds-icon>
+        </span>
         <div class="content">
-          ${hasHeading
-            ? html`<p class="heading" part="heading" data-part="heading">
-                <slot name="heading" @slotchange=${this.handleContentSlotChange}
-                  >${this.heading ?? nothing}</slot
-                >
-              </p>`
+          ${heading !== undefined
+            ? html`<p class="heading" part="heading" data-part="heading">${heading}</p>`
             : nothing}
-          <div class="body" part="body" data-part="body"><slot @slotchange=${this.handleContentSlotChange}></slot></div>
+          <div class="body" part="body" data-part="body"><slot></slot></div>
         </div>
         ${this.dismissible
-          ? html`
-              <ds-button
-                class="dismiss"
-                part="dismiss-button"
-                data-part="dismissButton"
-                variant="ghost"
-                size="sm"
-                icon-only
-                label=${COPY_DISMISS_LABEL}
-                @press=${this.handleDismiss}
-              >
+          ? html`<span class="dismiss" part="dismissButton" data-part="dismissButton">
+              <ds-button variant="ghost" size="sm" icon-only label=${COPY_DISMISS_LABEL} @press=${this.handleDismiss}>
                 <ds-icon slot="leading-icon" name="close" inline></ds-icon>
               </ds-button>
-            `
+            </span>`
           : nothing}
       </div>
     `;
   }
 
-  /** Light-DOM slot content (heading or body) changed without a property change; re-render to keep `hasHeading` and the accessible name current. */
-  private handleContentSlotChange(): void {
-    this.requestUpdate();
-  }
-
   /**
-   * The region is named by the heading when present, else by the body (a
-   * status region is named by its content) — an Alert always has a name.
-   * `ariaLabelledByElements` points cross-root at the shadow-DOM element
-   * where supported. Otherwise the target's flattened text becomes a
-   * literal `aria-label` attribute, not `internals.ariaLabel`: ARIAMixin
-   * values set through ElementInternals aren't visible to the
-   * accessible-name computation the test suite uses (only real attributes
-   * are), though real assistive tech reads either.
+   * The region is named by its own content: the heading text when present,
+   * else the body text. A plain `aria-label` attribute, since ids never cross
+   * the shadow root and tests read the name from the attribute.
    */
   private syncAccessibleName(): void {
-    const internals = this.internals as LabelledInternals;
-    const target =
-      this.renderRoot.querySelector<HTMLElement>('.heading') ??
-      this.renderRoot.querySelector<HTMLElement>('.body');
-    if ('ariaLabelledByElements' in this.internals) {
-      internals.ariaLabelledByElements = target ? [target] : null;
-      this.removeAttribute('aria-label');
-      return;
-    }
-    // No cross-root ariaLabelledByElements support: read the assigned (or
-    // fallback) slot content directly, since `target.textContent` does not
-    // see light-DOM nodes projected into a shadow-root `<slot>`.
-    const slot = target?.querySelector<HTMLSlotElement>('slot') ?? null;
-    const text = (slot?.assignedNodes({ flatten: true }) ?? [])
-      .map((node) => node.textContent ?? '')
-      .join(' ')
-      .trim();
-    if (text) {
-      this.setAttribute('aria-label', text);
-    } else {
-      this.removeAttribute('aria-label');
+    const name = (this.heading || this.textContent || '').replace(/\s+/g, ' ').trim();
+    if (name === '') {
+      if (this.hasAttribute('aria-label')) this.removeAttribute('aria-label');
+    } else if (this.getAttribute('aria-label') !== name) {
+      this.setAttribute('aria-label', name);
     }
   }
 
@@ -334,36 +271,46 @@ export class DsAlert extends LitElement {
     // Keep the button's `press` inside the alert; consumers listen for `dismiss`.
     event.stopPropagation();
     this.moveFocusOnward();
-    this.dispatchEvent(
-      new CustomEvent<AlertDismissDetail>('dismiss', { bubbles: true, composed: true }),
-    );
+    this.dispatchEvent(new CustomEvent<AlertDismissDetail>('dismiss', { bubbles: true, composed: true }));
   }
 
   /**
-   * The consumer will remove the alert, so focus moves onward first: to the
-   * next focusable element after the alert in reading order, or to the
-   * previous one when there is none, so focus is never lost. Left alone if
-   * nothing outside the alert is focusable.
+   * The consumer will remove the alert, so focus moves first to the next
+   * focusable element after the alert in reading order, or to the previous
+   * one when there is none. Left alone if nothing outside the alert is
+   * focusable. Walks the flat tree (open shadow roots and slot assignments)
+   * so focusables inside other components count.
    */
   private moveFocusOnward(): void {
-    const active = document.activeElement;
-    if (active === null || (active !== this && !this.contains(active))) {
+    if (!this.matches(':focus-within')) {
       return;
     }
-    const candidates = Array.from(document.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
-      (candidate) => !this.contains(candidate),
-    );
-    const next = candidates.find(
-      (candidate) => (this.compareDocumentPosition(candidate) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0,
-    );
-    if (next) {
-      next.focus();
-      return;
-    }
-    const before = candidates.filter(
-      (candidate) => (this.compareDocumentPosition(candidate) & Node.DOCUMENT_POSITION_PRECEDING) !== 0,
-    );
-    before[before.length - 1]?.focus();
+    let previous: HTMLElement | undefined;
+    let next: HTMLElement | undefined;
+    let passed = false;
+    const visit = (node: Element): boolean => {
+      if (node === this) {
+        passed = true;
+        return false;
+      }
+      if (node instanceof HTMLElement && node.matches(FOCUSABLE) && isFocusCandidate(node)) {
+        if (passed) {
+          next = node;
+          return true;
+        }
+        previous = node;
+      }
+      const children: Element[] =
+        node instanceof HTMLSlotElement
+          ? node.assignedElements({ flatten: true })
+          : Array.from(node.shadowRoot?.children ?? node.children);
+      for (const child of children) {
+        if (visit(child)) return true;
+      }
+      return false;
+    };
+    visit(document.documentElement);
+    (next ?? previous)?.focus();
   }
 
   private applyOverrides(): void {
@@ -377,6 +324,18 @@ export class DsAlert extends LitElement {
       }
     }
   }
+}
+
+/** Skips negative tabindex, disabled, inert and unrendered elements. */
+function isFocusCandidate(el: HTMLElement): boolean {
+  const tabindex = el.getAttribute('tabindex');
+  if (tabindex !== null && Number(tabindex) < 0) return false;
+  if (el.matches(':disabled')) return false;
+  if (!el.checkVisibility()) return false;
+  for (let node: Node | null = el; node; node = node.parentNode ?? (node instanceof ShadowRoot ? node.host : null)) {
+    if (node instanceof HTMLElement && node.inert) return false;
+  }
+  return true;
 }
 
 declare global {

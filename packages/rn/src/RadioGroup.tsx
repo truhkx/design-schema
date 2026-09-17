@@ -21,6 +21,8 @@ export type RadioGroupOverridableBinding =
   | 'controlBorderInvalid'
   | 'controlSize'
   | 'controlRadius'
+  | 'optionPaddingBlock'
+  | 'optionTextGap'
   | 'optionGap'
   | 'listGap'
   | 'partGap'
@@ -80,7 +82,6 @@ interface RadioProps {
   total: number;
   selected: boolean;
   optionDisabled: boolean;
-  groupDisabled: boolean;
   invalid: boolean;
   radioRef: React.Ref<ViewInstance> | undefined;
   onSelect: (value: string) => void;
@@ -89,8 +90,9 @@ interface RadioProps {
     controlBorderInvalid: string;
     controlSize: number;
     controlRadius: number;
+    optionPaddingBlock: number;
+    optionTextGap: number;
     optionGap: number;
-    partGap: number;
     disabledOpacity: number;
     transitionDuration: number;
   };
@@ -105,7 +107,6 @@ function Radio({
   total,
   selected,
   optionDisabled,
-  groupDisabled,
   invalid,
   radioRef,
   onSelect,
@@ -138,9 +139,9 @@ function Radio({
     alignItems: 'flex-start',
     gap: sizes.optionGap,
     minHeight: t.sizeTargetComfortable,
-    paddingVertical: t.space1,
-    // The whole group already carries opacity.disabled; a disabled option inside an enabled group dims on its own.
-    opacity: optionDisabled && !groupDisabled ? sizes.disabledOpacity : 1,
+    paddingVertical: sizes.optionPaddingBlock,
+    // Only option rows dim, once each: `optionDisabled` already folds in the group's disabled state.
+    opacity: optionDisabled ? sizes.disabledOpacity : 1,
   };
 
   const controlStyle: Animated.WithAnimatedValue<ViewStyle> = {
@@ -171,7 +172,7 @@ function Radio({
   const textColumnStyle: ViewStyle = {
     flexShrink: 1,
     flexDirection: 'column',
-    gap: sizes.partGap,
+    gap: sizes.optionTextGap,
   };
 
   const accessibleName = option.description !== undefined ? `${option.label}, ${option.description}` : option.label;
@@ -198,7 +199,9 @@ function Radio({
       </Animated.View>
       <View style={textColumnStyle}>
         <View testID="RadioGroup.radioLabel">
-          <Text overrides={labelOverrides}>{option.label}</Text>
+          <Text size="md" weight="regular" tone="default" overrides={labelOverrides}>
+            {option.label}
+          </Text>
         </View>
         {option.description !== undefined ? (
           <View testID="RadioGroup.radioDescription">
@@ -265,9 +268,10 @@ export function RadioGroup({
   const currentValue = value !== undefined ? value : internalValue;
   const isDisabled = disabled || (form?.disabled ?? false) || (fieldset?.disabled ?? false);
   const formError = form?.errors[name];
-  // Precedence: `error` prop, then the Form's message (copy.required on a failed submit), then `invalid`.
-  const displayedError =
-    error !== undefined && error !== '' ? error : formError !== undefined ? formError : invalid ? COPY.invalid(label) : undefined;
+  // Precedence: `error` prop, then the Form's message, then — only while `invalid` — copy.required
+  // (required and nothing selected) or copy.invalid.
+  const derivedError = invalid ? (required && currentValue === undefined ? COPY.required(label) : COPY.invalid(label)) : undefined;
+  const displayedError = error !== undefined && error !== '' ? error : (formError ?? derivedError);
   const isInvalid = invalid || displayedError !== undefined;
   const summarised = form !== null && form.errorSummary;
 
@@ -341,17 +345,19 @@ export function RadioGroup({
     controlBorderInvalid: overrides?.controlBorderInvalid ? (resolveToken(t, overrides.controlBorderInvalid) as string) : t.colorBorderDanger,
     controlSize: overrides?.controlSize ? (resolveToken(t, overrides.controlSize) as number) : t.space5,
     controlRadius: overrides?.controlRadius ? (resolveToken(t, overrides.controlRadius) as number) : t.radiusFull,
+    optionPaddingBlock: overrides?.optionPaddingBlock ? (resolveToken(t, overrides.optionPaddingBlock) as number) : t.space1,
+    optionTextGap: overrides?.optionTextGap ? (resolveToken(t, overrides.optionTextGap) as number) : t.space1,
     optionGap: overrides?.optionGap ? (resolveToken(t, overrides.optionGap) as number) : t.space2,
-    partGap: overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.space1,
     disabledOpacity: overrides?.disabledOpacity ? (resolveToken(t, overrides.disabledOpacity) as number) : t.opacityDisabled,
     transitionDuration: overrides?.transition ? (resolveToken(t, overrides.transition) as number) : t.motionDurationFast,
   };
   const listGap = overrides?.listGap ? (resolveToken(t, overrides.listGap) as number) : t.space2;
+  const partGap = overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.space1;
 
+  // Legend, description and error stay at full opacity; the option rows carry disabledOpacity.
   const groupStyle: ViewStyle = {
     flexDirection: 'column',
-    gap: sizes.partGap,
-    opacity: isDisabled ? sizes.disabledOpacity : 1,
+    gap: partGap,
   };
 
   const listStyle: ViewStyle = {
@@ -376,7 +382,7 @@ export function RadioGroup({
       style={groupStyle}
     >
       <View testID="RadioGroup.legend">
-        <Text weight="medium" overrides={legendOverrides}>
+        <Text size="md" weight="medium" tone="default" overrides={legendOverrides}>
           {visibleLabel}
         </Text>
       </View>
@@ -396,7 +402,6 @@ export function RadioGroup({
             total={options.length}
             selected={option.value === currentValue}
             optionDisabled={isDisabled || option.disabled === true}
-            groupDisabled={isDisabled}
             invalid={isInvalid}
             radioRef={option.value === firstEnabledValue ? firstEnabledRef : undefined}
             onSelect={select}

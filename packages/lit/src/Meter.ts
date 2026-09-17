@@ -86,30 +86,31 @@ export class DsMeter extends LitElement {
       display: flex;
       flex-direction: column;
       gap: var(--ds-meter-part-gap);
-      font-family: var(--ds-meter-font-family);
-      line-height: var(--ds-meter-line-height);
     }
 
     /* labelGap: horizontal gap between the label and the value text */
-    .row {
+    [data-part='header'] {
       display: flex;
       align-items: baseline;
       justify-content: space-between;
       gap: var(--ds-meter-label-gap);
     }
 
-    /* label is a ds-text; its documented hooks are set from the meter's (labelColor locked via tone="default") */
+    /*
+     * label and valueText are ds-text elements (labelColor via tone="default", valueColor via tone="muted", both locked).
+     * Their bindings arrive through the child's overrides property; the documented --ds-text-* hooks are also set from
+     * the meter's hooks so a CSS-level --ds-meter-* override reaches them.
+     */
     [data-part='label'] {
       --ds-text-font-size: var(--ds-meter-label-size);
       --ds-text-font-weight: var(--ds-meter-label-weight);
       --ds-text-font-family: var(--ds-meter-font-family);
       --ds-text-line-height: var(--ds-meter-line-height);
     }
-
-    /* valueColor: color.foreground.muted, locked */
     [data-part='valueText'] {
-      font-size: var(--ds-meter-value-size);
-      color: var(--color-foreground-muted);
+      --ds-text-font-size: var(--ds-meter-value-size);
+      --ds-text-font-family: var(--ds-meter-font-family);
+      --ds-text-line-height: var(--ds-meter-line-height);
       text-align: end;
     }
 
@@ -205,16 +206,38 @@ export class DsMeter extends LitElement {
     const { min, max } = this.bounds;
     const fraction = this.fraction;
     const displayed = this.valueText ?? PERCENT.format(fraction);
+    const o = this.overrides;
 
     return html`
       <div part="container" data-part="container">
-        <div class="row">
-          <ds-text id="label" part="label" data-part="label" element="span" size="sm" weight="medium" tone="default"
+        <div part="header" data-part="header">
+          <ds-text
+            id="label"
+            part="label"
+            data-part="label"
+            element="span"
+            size="sm"
+            weight="medium"
+            tone="default"
+            .overrides=${{
+              fontSize: o?.labelSize,
+              fontWeight: o?.labelWeight,
+              fontFamily: o?.fontFamily,
+              lineHeight: o?.lineHeight,
+            }}
             >${this.label}</ds-text
           >
           ${this.hideValue
             ? nothing
-            : html`<span part="valueText" data-part="valueText">${displayed}</span>`}
+            : html`<ds-text
+                part="valueText"
+                data-part="valueText"
+                element="span"
+                size="sm"
+                tone="muted"
+                .overrides=${{ fontSize: o?.valueSize, fontFamily: o?.fontFamily, lineHeight: o?.lineHeight }}
+                >${displayed}</ds-text
+              >`}
         </div>
         <div
           part="track"

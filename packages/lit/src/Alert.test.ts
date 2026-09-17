@@ -37,7 +37,7 @@ beforeEach(() => {
 describe('ds-alert', () => {
   it('dismiss-fires-on-dismiss', async () => {
     const a = await setup({ dismissible: true });
-    await userEvent.click(a.part('dismissButton')!);
+    await userEvent.click(a.part('dismissButton')!.querySelector('ds-button')!);
     expect(a.dismiss).toHaveBeenCalledTimes(1);
   });
 
@@ -49,6 +49,11 @@ describe('ds-alert', () => {
   it('live-status-renders-the-status-role', async () => {
     const a = await setup({ live: 'status' });
     expect(a.el.getAttribute('role')).toBe('status');
+  });
+
+  it('live-off-renders-no-role', async () => {
+    const a = await setup({ live: 'off' });
+    expect(a.el.getAttribute('role')).toBeNull();
   });
 
   it('the-heading-is-rendered', async () => {

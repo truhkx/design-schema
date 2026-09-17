@@ -176,15 +176,17 @@ export class DsBreadcrumb extends LitElement {
         if (index === 1) {
           entries.push(html`
             <li part="item" data-part="item">
-              <ds-button
-                variant="ghost"
-                size="sm"
-                icon-only
-                label=${COPY_EXPAND_LABEL}
-                @press=${this.handleExpand}
-              >
-                <ds-icon slot="leading-icon" name="ellipsis"></ds-icon>
-              </ds-button>
+              <span part="expand" data-part="expand">
+                <ds-button
+                  variant="ghost"
+                  size="sm"
+                  icon-only
+                  label=${COPY_EXPAND_LABEL}
+                  @press=${this.handleExpand}
+                >
+                  <ds-icon slot="leading-icon" name="ellipsis"></ds-icon>
+                </ds-button>
+              </span>
             </li>
           `);
         }
@@ -192,21 +194,21 @@ export class DsBreadcrumb extends LitElement {
       }
       if (index === last) {
         entries.push(
-          html`<li part="item" data-part="item"><span part="current" data-part="current" aria-current="page">${item.label}</span></li>`,
+          html`<li part="item" data-part="item" data-index=${index}><span part="current" data-part="current" aria-current="page">${item.label}</span></li>`,
         );
       } else if (item.href === undefined || item.href === '') {
-        entries.push(html`<li part="item" data-part="item">${item.label}</li>`);
+        entries.push(html`<li part="item" data-part="item" data-index=${index}>${item.label}</li>`);
       } else {
         entries.push(html`
-          <li part="item" data-part="item">
-            <ds-link
-              part="link"
-              data-part="link"
-              data-index=${index}
-              href=${item.href}
-              label=${item.label}
-              @click=${(event: MouseEvent) => this.handleNavigate(event, item, index)}
-            ></ds-link>
+          <li part="item" data-part="item" data-index=${index}>
+            <span part="link" data-part="link">
+              <ds-link
+                tone="default"
+                href=${item.href}
+                label=${item.label}
+                @click=${(event: MouseEvent) => this.handleNavigate(event, item, index)}
+              ></ds-link>
+            </span>
           </li>
         `);
       }
@@ -240,13 +242,18 @@ export class DsBreadcrumb extends LitElement {
     const lastHidden = this.items.length - 3;
     this.expanded = true;
     await this.updateComplete;
-    // Focus moves to the first revealed link.
+    // Focus moves to the first revealed link, or to the first revealed item when none is a link.
     for (let index = firstHidden; index <= lastHidden; index++) {
-      const link = this.renderRoot.querySelector<DsLink>(`[data-part="link"][data-index="${index}"]`);
+      const link = this.renderRoot.querySelector<DsLink>(`[data-index="${index}"] ds-link`);
       if (link) {
         link.focus();
         return;
       }
+    }
+    const first = this.renderRoot.querySelector<HTMLElement>(`[data-index="${firstHidden}"]`);
+    if (first) {
+      if (first.tabIndex !== -1) first.tabIndex = -1;
+      first.focus();
     }
   }
 

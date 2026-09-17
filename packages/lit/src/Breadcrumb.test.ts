@@ -23,7 +23,7 @@ async function setup(given: Given = {}) {
     el,
     props,
     nav: () => root.querySelector<HTMLElement>('[data-part=nav]')!,
-    links: () => [...root.querySelectorAll<HTMLElement>('[data-part=link]')],
+    links: () => [...root.querySelectorAll<HTMLElement>('[data-part=link] ds-link')],
     current: () => root.querySelector<HTMLElement>('[data-part=current]'),
   };
 }

@@ -5,9 +5,6 @@
   --ds-checkbox-control-border: var(--color-control-border);
   --ds-checkbox-control-border-width: var(--border-width-thin);
   --ds-checkbox-control-selected-background: var(--color-control-selected-background);
-  --ds-checkbox-indicator: var(--color-control-selected-foreground);
-  /* indicatorStroke: Icon strokes at the same locked token, so nothing reads or forwards this hook. */
-  --ds-checkbox-indicator-stroke: var(--border-width-focus);
   --ds-checkbox-pressed-overlay: var(--opacity-disabled);
   --ds-checkbox-control-border-invalid: var(--color-border-danger);
   --ds-checkbox-control-size: var(--space-5);
@@ -17,9 +14,6 @@
   --ds-checkbox-label-color: var(--color-foreground);
   --ds-checkbox-label-size: var(--font-size-md);
   --ds-checkbox-label-weight: var(--font-weight-regular);
-  --ds-checkbox-helper-size: var(--font-size-sm);
-  --ds-checkbox-description-text: var(--color-foreground-muted);
-  --ds-checkbox-error-text: var(--color-foreground-danger);
   --ds-checkbox-font-family: var(--font-family-body);
   --ds-checkbox-line-height: var(--font-line-height-normal);
   --ds-checkbox-focus-ring: var(--color-border-focus);
@@ -27,14 +21,14 @@
   --ds-checkbox-min-target: var(--size-target-comfortable);
   --ds-checkbox-disabled-opacity: var(--opacity-disabled);
   --ds-checkbox-transition: var(--motion-duration-fast);
+  /* indicator, indicatorStroke, helperSize, descriptionText and errorText have no hook: the composed
+     Icon and Texts realise them through their own props and overrides. */
   display: flex;
   flex-direction: column;
   gap: var(--ds-checkbox-part-gap);
-  font-family: var(--ds-checkbox-font-family);
-  line-height: var(--ds-checkbox-line-height);
 }
 
-/* minTarget: the whole row is the hit area. */
+/* minTarget: the whole row, gap included, is the hit area; no vertical padding. */
 .ds-checkbox__row {
   display: flex;
   align-items: center;
@@ -73,7 +67,7 @@
   background-color: var(--ds-checkbox-control-selected-background);
 }
 
-/* pressedOverlay: while pressed, the box shows the selected fill at this opacity. */
+/* pressedOverlay: an unchecked, not-mixed, enabled box shows the selected fill at this opacity. */
 .ds-checkbox__control:not([aria-disabled='true']):not(:checked):not([aria-checked='mixed']):active {
   background-color: color-mix(
     in srgb,
@@ -83,7 +77,7 @@
 }
 
 /* controlBorderInvalid */
-.ds-checkbox__control[aria-invalid='true'] {
+.ds-checkbox__control[aria-invalid='true']:not(:checked):not([aria-checked='mixed']) {
   border-color: var(--ds-checkbox-control-border-invalid);
 }
 
@@ -93,42 +87,32 @@
   outline-offset: var(--ds-checkbox-focus-ring-width);
 }
 
-/* indicator: Icon check / dash at size xs, centered on the control, in the selected foreground. */
+/* indicator: holds the composed Icon (check / dash), centered over the control; clicks pass through. */
 .ds-checkbox__indicator {
   grid-area: 1 / 1;
   display: inline-flex;
-  color: var(--ds-checkbox-indicator);
   pointer-events: none;
-  opacity: 0;
 }
 
-.ds-checkbox__control:checked + .ds-checkbox__indicator,
-.ds-checkbox__control[aria-checked='mixed'] + .ds-checkbox__indicator {
-  opacity: 1;
+/* The text column: label and description, separated by partGap. */
+.ds-checkbox__text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-checkbox-part-gap);
+  min-inline-size: 0;
 }
 
 .ds-checkbox__label {
   cursor: pointer;
   color: var(--ds-checkbox-label-color);
+  font-family: var(--ds-checkbox-font-family);
   font-size: var(--ds-checkbox-label-size);
   font-weight: var(--ds-checkbox-label-weight);
-}
-
-/* disabled: stays focusable and readable; visually dimmed. */
-.ds-checkbox--disabled .ds-checkbox__row,
-.ds-checkbox--disabled .ds-checkbox__control,
-.ds-checkbox--disabled .ds-checkbox__label,
-.ds-checkbox--disabled .ds-checkbox__description {
-  cursor: not-allowed;
-}
-
-.ds-checkbox--disabled .ds-checkbox__box,
-.ds-checkbox--disabled .ds-checkbox__label {
-  opacity: var(--ds-checkbox-disabled-opacity);
+  line-height: var(--ds-checkbox-line-height);
 }
 
 /* hideLabel: visually hidden, clipped to a 1px box — the standard sanctioned pixel literals */
-.ds-checkbox__visually-hidden {
+.ds-checkbox__label--hidden {
   position: absolute;
   inline-size: 1px;
   block-size: 1px;
@@ -140,25 +124,32 @@
   border: 0;
 }
 
-/* Description and error are Text; this only aligns them under the label. */
-.ds-checkbox__description,
+/* The error sits below the row, outside the hit area, aligned with the text column. */
 .ds-checkbox__error {
-  margin: 0;
   padding-inline-start: calc(var(--ds-checkbox-control-size) + var(--ds-checkbox-gap));
 }
 
-.ds-checkbox__description {
-  cursor: pointer;
+/* disabled: stays focusable and readable; the control and label dim, description and error do not. */
+.ds-checkbox--disabled .ds-checkbox__row,
+.ds-checkbox--disabled .ds-checkbox__control,
+.ds-checkbox--disabled .ds-checkbox__label {
+  cursor: not-allowed;
 }
 
-/* transition: fill and indicator, with motion.easing.standard. */
-@media (prefers-reduced-motion: no-preference) {
+.ds-checkbox--disabled .ds-checkbox__box,
+.ds-checkbox--disabled .ds-checkbox__label {
+  opacity: var(--ds-checkbox-disabled-opacity);
+}
+
+/* transition: fill and border, with motion.easing.standard; removed under reduced motion. */
+.ds-checkbox__control {
+  transition:
+    background-color var(--ds-checkbox-transition) var(--motion-easing-standard),
+    border-color var(--ds-checkbox-transition) var(--motion-easing-standard);
+}
+
+@media (prefers-reduced-motion: reduce) {
   .ds-checkbox__control {
-    transition:
-      background-color var(--ds-checkbox-transition) var(--motion-easing-standard),
-      border-color var(--ds-checkbox-transition) var(--motion-easing-standard);
-  }
-  .ds-checkbox__indicator {
-    transition: opacity var(--ds-checkbox-transition) var(--motion-easing-standard);
+    transition: none;
   }
 }

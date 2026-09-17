@@ -24,3 +24,14 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Meter: the scenario `has-accessible-name` doesn't say how the name is checked. I query `getByRole('meter', { name: label })`, which proves aria-labelledby resolves.
 - Meter: the doc's web notes say to transition `width`. I used logical `inline-size` for both the inline fill size and the transition property, which is equivalent in horizontal writing modes.
 - Meter: the package digest says `...rest` never forwards `style`/`className`, but most existing components (ProgressBar, Button, Text) still merge them. I left both out of MeterProps and strip them at runtime, so Meter is stricter than its neighbours until they are regenerated.
+
+## 2026-09-17 05:29 — round 1
+
+- Meter: valueText says to format with `Intl.NumberFormat(locale, …)`, but there is no `locale` prop or locale source in the schema; I passed `undefined` (the runtime default locale), so the text may differ between a server and a browser with different locales.
+- Meter: the parts list says a composed part receives 'exactly the listed props', but the web platform notes need `id={labelId}` on the label Text so aria-labelledby can point at it, and the anatomy needs `data-part` on both Texts; I pass `id` and `data-part` as well and nothing else.
+- Meter: `fontFamily` and `lineHeight` are bound to part `header`, but their descriptions say they are only forwarded to the Texts and never style anything directly; I gave them no hook or CSS rule on the header, so a consumer who sets `--ds-meter-font-family` in their own CSS changes nothing, even though the overrides section calls consumer-set hooks the sanctioned escape hatch.
+- Meter: the forwarded bindings (labelSize, labelWeight, valueSize) default to the same tokens as the Text size/weight props, so I forward them only when set; the doc doesn't say whether the default token should also be forwarded.
+- Meter: the Behavior section says a non-finite `value` is treated as `min`, but says nothing about a non-finite `min` or `max` (NaN, Infinity); I don't guard them, so a NaN bound makes `max > min` false and the meter renders empty with a warning.
+- Meter: the development warning for `max ≤ min` has no copy string in the schema; I wrote the developer-facing text myself (``Meter: `max` (x) must be greater than `min` (y).``). It fires again whenever min or max change while the range stays invalid, which is not strictly 'once'.
+- Meter: the percent formatting keeps full precision in aria-valuenow (e.g. 3.14159), and the doc doesn't say whether aria-valuenow should be rounded; I left it exact because the scenarios only test integers.
+- Meter: the doc doesn't say whether the fill has its own border-radius or relies on the track clipping it ('the track clips the fill'); I kept the radius on both so the leading edge of a partial fill is rounded too.

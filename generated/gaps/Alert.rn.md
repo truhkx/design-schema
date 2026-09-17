@@ -30,3 +30,12 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Alert: 'Every example is a story with exactly its given' conflicts with the required `children` living in the Default args. I put children (plus the enum defaults) in meta.args with no heading, so examples without a heading don't pick one up; the Default story therefore has no heading.
 - Alert: the icon sits next to the first line, but nothing says how to line them up. I gave the icon a box as tall as the first line (heading or body line height, or the icon size if that's bigger) and centered the icon in it — my own choice.
 - Alert: dismissMargin is described as a 'negative block/inline-end margin', but the RN digest says siblings are never spaced with margins. I followed the spec (marginTop/marginEnd = -space.1 on a wrapper View) and didn't restyle the Button; the digest should list this as an exception.
+
+## 2026-09-17 05:19 — round 1
+
+- Alert: the RN notes say the accessibilityLabel is 'heading + body when body is a string' but also that a 'string or number body' is wrapped in Text; I treat a number body as text for the label and the iOS announcement too.
+- Alert: the separator for accessibilityLabel is only given for the iOS announcement ('joined by a full stop'); I use the same '. ' join for the label so the two read the same.
+- Alert: the conventions say to pass the foreground token to Icon's `color` prop because there is no currentColor, but the RN notes require `overrides.color` for both the tone icon and the dismiss close icon; I followed the component notes and used overrides everywhere.
+- Alert: the icon part is decorative, but the spec doesn't say whether Icon hides itself or the Alert must; I set accessibilityElementsHidden and importantForAccessibility='no' on the Alert-owned icon View.
+- Alert: behavior scenario live-off-renders-no-role only lists web and lit, and the spec gives no RN check (e.g. accessibilityLiveRegion unset); no RN test was written for it beyond renders-live-off.
+- Alert: the conventions list a `role` prop as the preferred form on RN 0.87, but the notes name accessibilityRole='alert'; I kept accessibilityRole and did not add `role`.

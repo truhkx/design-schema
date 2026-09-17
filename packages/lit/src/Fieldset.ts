@@ -12,7 +12,7 @@ export type FieldsetGap = 'tight' | 'normal' | 'loose';
 /** copy.requiredIndicator */
 const COPY_REQUIRED_INDICATOR = ' (required)';
 
-/** Overridable style hooks; see the `overrides` property. `legendColor`, `descriptionText` and `errorText` are locked and excluded. */
+/** Overridable style bindings; see the `overrides` property. `legendColor`, `descriptionText` and `errorText` are locked and excluded. */
 export type FieldsetOverridableBinding =
   | 'legendSize'
   | 'legendWeight'
@@ -23,77 +23,54 @@ export type FieldsetOverridableBinding =
   | 'fontFamily'
   | 'lineHeight';
 
-const HOOKS: Record<FieldsetOverridableBinding, string> = {
-  legendSize: '--ds-fieldset-legend-size',
-  legendWeight: '--ds-fieldset-legend-weight',
-  helperSize: '--ds-fieldset-helper-size',
+/**
+ * Bindings Fieldset's own rules read. The others reach the composed Text and Stack only
+ * through their `overrides`, so they have no --ds-fieldset-* hook.
+ */
+const HOOKS: Partial<Record<FieldsetOverridableBinding, string>> = {
   partGap: '--ds-fieldset-part-gap',
-  fieldsGap: '--ds-fieldset-fields-gap',
   disabledOpacity: '--ds-fieldset-disabled-opacity',
-  fontFamily: '--ds-fieldset-font-family', // literal-ok: CSS custom-property name, not a font stack
-  lineHeight: '--ds-fieldset-line-height',
 };
 
+type TextOverrides = Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
+type StackOverrides = Partial<Record<StackOverridableBinding, TokenRef | undefined>>;
 type Field = HTMLElement & { disabled: boolean; required?: boolean | undefined };
 
 /**
  * `<ds-fieldset>` — Fieldset (category: input).
  *
  * `<ds-fieldset legend="Shipping address" gap="normal"><ds-input …></ds-input>…</ds-fieldset>`.
- * A shadow `<fieldset><legend>` wraps a composed `<ds-stack>` around a default
- * `<slot>`; the fields stay in the light DOM as raw fields so `<ds-form>` still
- * collects them. The legend and description render their text through
- * `<ds-text>` inside the native `<legend>` / `<p>`, so `legendSize`,
- * `legendWeight` and `helperSize` reach Text as its own overrides. The group
- * error renders once under the fields with `role="alert"`; while it is set the
- * `<fieldset>` carries `aria-invalid="true"` and `aria-describedby` names it.
- * `disabled` sets `aria-disabled` on the fieldset and is propagated to every
- * slotted field (`data-ds-field`) on `slotchange` and whenever it changes,
- * remembering which ones it disabled so clearing never re-enables a field that
- * was disabled on its own — the same pattern `<ds-form>` uses. The
- * `requiredIndicator` is appended to the legend when every direct child field
- * is `required`.
+ * A shadow `<fieldset><legend>` wraps a Fieldset-owned `fields` wrapper around a
+ * composed `<ds-stack>` and a default `<slot>`; the fields stay in the light DOM
+ * so `<ds-form>` still collects them. The legend, description and error render
+ * their text through `<ds-text>` (element span) inside the native `<legend>`, a
+ * description wrapper and a `role="alert"` wrapper; `legendSize`, `legendWeight`,
+ * `helperSize`, `fontFamily` and `lineHeight` reach them only as Text overrides,
+ * and `fieldsGap` reaches the Stack only as its `overrides.gap`.
  *
- * ## When to use
+ * While `error` is set the `<fieldset>` carries `aria-invalid="true"` and
+ * `aria-describedby` names the error. `disabled` sets `aria-disabled` on the
+ * fieldset and the `disabled` property on direct `data-ds-field` children on
+ * `slotchange` and whenever it changes, remembering which it set so clearing
+ * never enables a field disabled on its own. The `requiredIndicator` is appended
+ * inside the legend when every direct child field is `required`.
  *
- * Use a Fieldset whenever two or more fields share a name a user would say
- * aloud — an address, a card, a start and end date. Give it a `description`
- * when the group needs a rule, and put cross-field errors on the group rather
- * than on one field.
- *
- * @slot - The raw fields (Inputs, Checkboxes, Switches); Fieldset lays them out in its own composed Stack.
+ * @slot - The raw fields (Inputs, Checkboxes, Switches) as direct children.
  */
 @customElement('ds-fieldset')
 export class DsFieldset extends LitElement {
   static override styles: CSSResult = css`
     :host {
       display: block;
-      --ds-fieldset-legend-size: var(--font-size-md);
-      --ds-fieldset-legend-weight: var(--font-weight-medium);
-      --ds-fieldset-helper-size: var(--font-size-sm);
       --ds-fieldset-part-gap: var(--layout-gap-tight);
-      --ds-fieldset-fields-gap: var(--layout-gap-normal);
       --ds-fieldset-disabled-opacity: var(--opacity-disabled);
-      --ds-fieldset-font-family: var(--font-family-body);
-      --ds-fieldset-line-height: var(--font-line-height-normal);
-      font-family: var(--ds-fieldset-font-family);
-      line-height: var(--ds-fieldset-line-height);
-    }
-    :host([gap='tight']) {
-      --ds-fieldset-fields-gap: var(--layout-gap-tight);
-    }
-    :host([gap='normal']) {
-      --ds-fieldset-fields-gap: var(--layout-gap-normal);
-    }
-    :host([gap='loose']) {
-      --ds-fieldset-fields-gap: var(--layout-gap-loose);
     }
 
     :host([hidden]) {
       display: none;
     }
 
-    /* No border and no padding: the group is structure, not a surface. */
+    /* No border, padding or min-inline-size: the group is structure, not a box. */
     fieldset {
       display: flex;
       flex-direction: column;
@@ -110,38 +87,9 @@ export class DsFieldset extends LitElement {
       padding: 0;
     }
 
-    /* Text's documented hooks, set from Fieldset's own. legendColor and descriptionText (locked) are Text's tones. */
-    legend ds-text {
-      --ds-text-font-size: var(--ds-fieldset-legend-size);
-      --ds-text-font-weight: var(--ds-fieldset-legend-weight);
-      --ds-text-font-family: var(--ds-fieldset-font-family);
-      --ds-text-line-height: var(--ds-fieldset-line-height);
-    }
-
-    .description {
-      margin: 0;
-    }
-    .description ds-text {
-      --ds-text-font-size: var(--ds-fieldset-helper-size);
-      --ds-text-font-family: var(--ds-fieldset-font-family);
-      --ds-text-line-height: var(--ds-fieldset-line-height);
-    }
-
-    /* fieldsGap reaches the composed Stack through its documented gap hook (and its overrides.gap). */
-    ds-stack {
-      --ds-stack-gap: var(--ds-fieldset-fields-gap);
-    }
-
-    /* errorText: color.foreground.danger, locked */
-    .error {
-      margin: 0;
-      font-size: var(--ds-fieldset-helper-size);
-      color: var(--color-foreground-danger);
-    }
-
-    /* The group's own text dims; fields dim by their own disabled rule, so the Stack is not dimmed twice. */
+    /* disabledOpacity: the legend and description only; the fields dim themselves. */
     :host([disabled]) legend,
-    :host([disabled]) .description {
+    :host([disabled]) [data-part='description'] {
       opacity: var(--ds-fieldset-disabled-opacity);
     }
   `;
@@ -167,7 +115,7 @@ export class DsFieldset extends LitElement {
   /** Every direct child field is `required`; derived on slotchange and when a child's `required` attribute changes. */
   @state() private accessor allFieldsRequired = false;
 
-  /** Fields this Fieldset disabled itself, so re-enabling never touches one already disabled by the consumer. */
+  /** Fields this Fieldset disabled itself, so clearing `disabled` never enables one disabled on its own. */
   private readonly disabledByFieldset = new WeakSet<Field>();
 
   private readonly requiredObserver = new MutationObserver(() => this.syncRequired());
@@ -175,7 +123,7 @@ export class DsFieldset extends LitElement {
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('data-ds', 'Fieldset');
-    // Observes only; the callback writes state, never an attribute, so it cannot re-trigger itself.
+    // The callback writes state only, never an observed attribute, so it cannot re-trigger itself.
     this.requiredObserver.observe(this, { subtree: true, attributes: true, attributeFilter: ['required'] });
   }
 
@@ -200,6 +148,7 @@ export class DsFieldset extends LitElement {
     const describedBy =
       [this.description ? 'description' : '', this.error ? 'error' : ''].filter((id) => id !== '').join(' ') ||
       undefined;
+    const helper = this.helperOverrides;
 
     return html`
       <fieldset
@@ -210,53 +159,53 @@ export class DsFieldset extends LitElement {
         aria-invalid=${ifDefined(this.error ? 'true' : undefined)}
       >
         <legend part="legend" data-part="legend"
-          ><ds-text element="span" size="md" weight="medium" tone="default" .overrides=${this.legendOverrides}
+          ><ds-text element="span" tone="default" size="md" weight="medium" .overrides=${this.legendOverrides}
             >${this.legend}${this.allFieldsRequired ? COPY_REQUIRED_INDICATOR : nothing}</ds-text
           ></legend
         >
         ${this.description
-          ? html`<p id="description" class="description" part="description" data-part="description"
-              ><ds-text element="span" size="sm" tone="muted" .overrides=${this.descriptionOverrides}
-                >${this.description}</ds-text
-              ></p
+          ? html`<div id="description" part="description" data-part="description"
+              ><ds-text element="span" tone="muted" size="sm" .overrides=${helper}>${this.description}</ds-text></div
             >`
           : nothing}
-        <ds-stack part="fields" data-part="fields" gap=${this.gap} .overrides=${this.stackOverrides}>
-          <slot @slotchange=${this.handleSlotChange}></slot>
-        </ds-stack>
+        <div part="fields" data-part="fields">
+          <ds-stack .overrides=${this.stackOverrides}>
+            <slot @slotchange=${this.handleSlotChange}></slot>
+          </ds-stack>
+        </div>
         ${this.error
-          ? html`<p id="error" class="error" part="errorMessage" data-part="errorMessage" role="alert">${this.error}</p>`
+          ? html`<div id="error" part="errorMessage" data-part="errorMessage" role="alert"
+              ><ds-text element="span" tone="danger" size="sm" .overrides=${helper}>${this.error}</ds-text></div
+            >`
           : nothing}
       </fieldset>
     `;
   }
 
-  /** `overrides.fieldsGap` forwarded to the composed `<ds-stack>`'s own `overrides.gap`. */
-  private get stackOverrides(): Partial<Record<StackOverridableBinding, TokenRef | undefined>> | undefined {
-    const ref = this.overrides?.fieldsGap;
-    return ref === undefined ? undefined : { gap: ref };
+  /** fieldsGap → the Stack's `overrides.gap`, as the token path `layout.gap.{gap}` unless overridden. */
+  private get stackOverrides(): StackOverrides {
+    return { gap: this.overrides?.fieldsGap ?? `layout.gap.${this.gap}` };
   }
 
-  private get legendOverrides(): Partial<Record<TextOverridableBinding, TokenRef | undefined>> | undefined {
-    return this.textOverrides(this.overrides?.legendSize, this.overrides?.legendWeight);
+  /** legendSize, legendWeight, fontFamily, lineHeight → the legend Text's overrides. */
+  private get legendOverrides(): TextOverrides {
+    return {
+      fontSize: this.overrides?.legendSize ?? 'font.size.md',
+      fontWeight: this.overrides?.legendWeight ?? 'font.weight.medium',
+      ...this.typeOverrides,
+    };
   }
 
-  private get descriptionOverrides(): Partial<Record<TextOverridableBinding, TokenRef | undefined>> | undefined {
-    return this.textOverrides(this.overrides?.helperSize, undefined);
+  /** helperSize, fontFamily, lineHeight → the description and error Texts' overrides. */
+  private get helperOverrides(): TextOverrides {
+    return { fontSize: this.overrides?.helperSize ?? 'font.size.sm', ...this.typeOverrides };
   }
 
-  private textOverrides(
-    fontSize: TokenRef | undefined,
-    fontWeight: TokenRef | undefined,
-  ): Partial<Record<TextOverridableBinding, TokenRef | undefined>> | undefined {
-    const o = this.overrides;
-    if (o === undefined) return undefined;
-    const out: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
-    if (fontSize !== undefined) out.fontSize = fontSize;
-    if (fontWeight !== undefined) out.fontWeight = fontWeight;
-    if (o.fontFamily !== undefined) out.fontFamily = o.fontFamily;
-    if (o.lineHeight !== undefined) out.lineHeight = o.lineHeight;
-    return Object.keys(out).length > 0 ? out : undefined;
+  private get typeOverrides(): TextOverrides {
+    return {
+      fontFamily: this.overrides?.fontFamily ?? 'font.family.body',
+      lineHeight: this.overrides?.lineHeight ?? 'font.lineHeight.normal',
+    };
   }
 
   /** Direct child fields only; fields wrapped in a consumer's own container are not inspected. */
@@ -275,7 +224,7 @@ export class DsFieldset extends LitElement {
     if (this.allFieldsRequired !== next) this.allFieldsRequired = next;
   }
 
-  /** Disables every slotted field, remembering which it disabled so re-enabling is exact. */
+  /** Sets `disabled` on direct fields, remembering which it set so clearing is exact. */
   private syncDisabled(): void {
     for (const field of this.directFields()) {
       if (this.disabled) {
@@ -291,9 +240,8 @@ export class DsFieldset extends LitElement {
   }
 
   private applyOverrides(): void {
-    for (const binding of Object.keys(HOOKS) as FieldsetOverridableBinding[]) {
+    for (const [binding, hook] of Object.entries(HOOKS) as [FieldsetOverridableBinding, string][]) {
       const ref = this.overrides?.[binding];
-      const hook = HOOKS[binding];
       if (ref === undefined) {
         this.style.removeProperty(hook);
       } else {

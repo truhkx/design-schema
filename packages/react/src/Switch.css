@@ -14,8 +14,6 @@
   --ds-switch-label-color: var(--color-foreground);
   --ds-switch-label-size: var(--font-size-md);
   --ds-switch-label-weight: var(--font-weight-regular);
-  --ds-switch-helper-size: var(--font-size-sm);
-  --ds-switch-description-text: var(--color-foreground-muted);
   --ds-switch-font-family: var(--font-family-body);
   --ds-switch-line-height: var(--font-line-height-normal);
   --ds-switch-focus-ring: var(--color-border-focus);
@@ -23,14 +21,14 @@
   --ds-switch-min-target: var(--size-target-comfortable);
   --ds-switch-disabled-opacity: var(--opacity-disabled);
   --ds-switch-transition: var(--motion-duration-fast);
+  /* helperSize and descriptionText have no hook: the composed Text realises them through its own
+     `muted` tone and `fontSize` override. */
+  /* minTarget: a full-width row with no padding; the whole row, gap included, toggles. */
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--ds-switch-gap);
   inline-size: 100%;
   min-block-size: var(--ds-switch-min-target);
-  font-family: var(--ds-switch-font-family);
-  line-height: var(--ds-switch-line-height);
-  /* minTarget: the whole row toggles. */
   cursor: pointer;
 }
 
@@ -39,10 +37,11 @@
   justify-content: space-between;
 }
 .ds-switch--label-start .ds-switch__text { order: 0; }
-.ds-switch--label-start .ds-switch__control { order: 1; }
+.ds-switch--label-start .ds-switch__slot { order: 1; }
 .ds-switch--label-end .ds-switch__text { order: 1; }
-.ds-switch--label-end .ds-switch__control { order: 0; }
+.ds-switch--label-end .ds-switch__slot { order: 0; }
 
+/* The text column: label and description, separated by partGap. */
 .ds-switch__text {
   display: flex;
   flex-direction: column;
@@ -53,15 +52,18 @@
 .ds-switch__label {
   cursor: pointer;
   color: var(--ds-switch-label-color);
+  font-family: var(--ds-switch-font-family);
   font-size: var(--ds-switch-label-size);
   font-weight: var(--ds-switch-label-weight);
+  line-height: var(--ds-switch-line-height);
 }
 
-.ds-switch__description {
-  margin: 0;
-  cursor: pointer;
-  font-size: var(--ds-switch-helper-size);
-  color: var(--ds-switch-description-text);
+/* One label line tall (labelSize × lineHeight): the track sits at the top, centred on the first line. */
+.ds-switch__slot {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  block-size: calc(var(--ds-switch-label-size) * var(--ds-switch-line-height));
 }
 
 /* track: a native input sized trackWidth × trackHeight, drawn with the control tokens. */
@@ -94,17 +96,18 @@
 }
 
 /* trackOn */
-.ds-switch__control:checked {
+.ds-switch__control[aria-checked='true'] {
   background-color: var(--ds-switch-track-on);
 }
 
-.ds-switch__control:checked::before {
+.ds-switch__control[aria-checked='true']::before {
   transform: translateX(
     calc(var(--ds-switch-track-width) - var(--ds-switch-thumb-size) - 2 * var(--ds-switch-thumb-inset))
   );
 }
 
-[dir='rtl'] .ds-switch__control:checked::before {
+/* RTL: the thumb travels toward the inline end, which is leftward. */
+[dir='rtl'] .ds-switch__control[aria-checked='true']::before {
   transform: translateX(
     calc(-1 * (var(--ds-switch-track-width) - var(--ds-switch-thumb-size) - 2 * var(--ds-switch-thumb-inset)))
   );
@@ -116,24 +119,30 @@
   outline-offset: var(--ds-switch-focus-ring-width);
 }
 
-/* disabled: stays focusable and readable; visually dimmed. */
-.ds-switch--disabled {
+/* disabled: stays focusable and readable; the track (with its thumb), label and description dim. */
+.ds-switch--disabled,
+.ds-switch--disabled .ds-switch__control,
+.ds-switch--disabled .ds-switch__label {
   cursor: not-allowed;
 }
 
-.ds-switch--disabled .ds-switch__control,
-.ds-switch--disabled .ds-switch__label,
-.ds-switch--disabled .ds-switch__description {
-  cursor: not-allowed;
+.ds-switch--disabled .ds-switch__slot,
+.ds-switch--disabled .ds-switch__text {
   opacity: var(--ds-switch-disabled-opacity);
 }
 
-/* transition: thumb travel and track color, with motion.easing.standard; instant under reduced motion. */
-@media (prefers-reduced-motion: no-preference) {
-  .ds-switch__control {
-    transition: background-color var(--ds-switch-transition) var(--motion-easing-standard);
-  }
+/* transition: thumb travel and track color, with motion.easing.standard. */
+.ds-switch__control {
+  transition: background-color var(--ds-switch-transition) var(--motion-easing-standard);
+}
+.ds-switch__control::before {
+  transition: transform var(--ds-switch-transition) var(--motion-easing-standard);
+}
+
+/* Reduced motion: the thumb jumps and the color changes instantly. */
+@media (prefers-reduced-motion: reduce) {
+  .ds-switch__control,
   .ds-switch__control::before {
-    transition: transform var(--ds-switch-transition) var(--motion-easing-standard);
+    transition: none;
   }
 }

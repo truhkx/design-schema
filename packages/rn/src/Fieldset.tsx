@@ -21,7 +21,7 @@ export type FieldsetOverridableBinding =
   | 'fontFamily'
   | 'lineHeight';
 
-/** What Fieldset shares with the fields inside it. Input, Checkbox, Switch and RadioGroup read this to prefix the legend into their own `accessibilityLabel` ("Shipping address, Street") and to fold in the group's `disabled`. */
+/** What Fieldset shares with the fields inside it. Input, Checkbox, Switch and RadioGroup read this to prefix the legend into their own `accessibilityLabel` ("Shipping address, Street") and to render disabled with the group. */
 export interface FieldsetContextValue {
   legend: string;
   disabled: boolean;
@@ -37,13 +37,13 @@ export function useFieldsetContext(): FieldsetContextValue | null {
 export interface FieldsetProps {
   /** The group's name — what the fields together describe ("Shipping address", "Notification preferences"). Always visible. Also the group's `accessibilityLabel`. */
   legend: string;
-  /** The fields, usually Inputs, Checkboxes or Switches. Fieldset renders the `Stack` itself; children are the raw fields. */
+  /** The fields as direct children, usually Inputs, Checkboxes or Switches. Fieldset renders the `Stack` around them. */
   children: React.ReactNode;
   /** Persistent helper text under the legend. Also the group's `accessibilityHint`. */
   description?: string | undefined;
   /** A group-level error (cross-field validation such as "End date must be after start date"). Field-level errors stay on the fields. */
   error?: string | undefined;
-  /** Disables every field inside. Fields keep their own `disabled` for finer control. */
+  /** Disables every field inside (through `FieldsetContext`). Fields keep their own `disabled` for finer control. */
   disabled?: boolean | undefined;
   /** Gap between the fields, from the layout rhythm. */
   gap?: FieldsetGap | undefined;
@@ -69,16 +69,16 @@ const COPY = {
  *
  * Renders a `View` that is NOT `accessible` (so children stay individually
  * reachable) with `role="group"`, `accessibilityLabel` (the legend, with
- * `copy.requiredIndicator` appended when every direct field is `required`) and
- * `accessibilityHint={description}`. The legend is plain `Text` — not a header
+ * `copy.requiredIndicator` appended when every direct child field is `required`)
+ * and `accessibilityHint={description}`. The legend is plain `Text` — not a header
  * trait, which would put it in the headings rotor. The fields render in a `Stack`
  * with `gap`; `FieldsetContext` carries the legend and `disabled` to Input,
- * Checkbox, Switch and RadioGroup, which prefix the legend into their label.
- * Direct children are also cloned with `disabled` while the group is disabled; a
- * child that is not a field ignores it. The group error is announced as in Input
- * (`accessibilityLiveRegion` on Android, `announceForAccessibility` on iOS);
- * native has no invalid state, so the error text alone identifies it. `disabled`
- * dims the whole group with `opacity.disabled`.
+ * Checkbox, Switch and RadioGroup, which render disabled and prefix the legend into
+ * their label. Children are never cloned; a non-field child gets no association.
+ * `disabled` dims only the legend and description with `opacity.disabled` — the
+ * fields dim themselves. The group error is announced as in Input
+ * (`accessibilityLiveRegion` on Android, `announceForAccessibility` on iOS); native
+ * has no invalid state, so the error text alone identifies it.
  */
 export function Fieldset({
   legend,
@@ -92,13 +92,16 @@ export function Fieldset({
 }: FieldsetProps): React.JSX.Element {
   const { tokens: t } = useTheme();
   const hasError = error !== undefined && error !== '';
+  const hasDescription = description !== undefined && description !== '';
 
+  // iOS: announce the group error the moment it appears.
   React.useEffect(() => {
     if (Platform.OS === 'ios' && error !== undefined && error !== '') {
       AccessibilityInfo.announceForAccessibility(error);
     }
   }, [error]);
 
+  // The indicator is derived: shown when every direct child field is `required`.
   const fieldElements = React.Children.toArray(children).filter(React.isValidElement) as React.ReactElement<{
     required?: boolean | undefined;
   }>[];
@@ -107,25 +110,24 @@ export function Fieldset({
 
   const contextValue = React.useMemo<FieldsetContextValue>(() => ({ legend, disabled }), [legend, disabled]);
 
-  const renderedChildren = disabled
-    ? React.Children.map(children, (child) =>
-        React.isValidElement(child)
-          ? React.cloneElement(child as React.ReactElement<{ disabled?: boolean | undefined }>, { disabled: true })
-          : child,
-      )
-    : children;
-
   const groupStyle = React.useMemo<ViewStyle>(
     () => ({
       flexDirection: 'column',
       gap: overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.layoutGapTight,
-      opacity: disabled
-        ? overrides?.disabledOpacity
-          ? (resolveToken(t, overrides.disabledOpacity) as number)
-          : t.opacityDisabled
-        : 1,
     }),
-    [t, disabled, overrides?.partGap, overrides?.disabledOpacity],
+    [t, overrides?.partGap],
+  );
+
+  const dimStyle = React.useMemo<ViewStyle | undefined>(
+    () =>
+      disabled
+        ? {
+            opacity: overrides?.disabledOpacity
+              ? (resolveToken(t, overrides.disabledOpacity) as number)
+              : t.opacityDisabled,
+          }
+        : undefined,
+    [t, disabled, overrides?.disabledOpacity],
   );
 
   const typographyOverrides = { fontFamily: overrides?.fontFamily, lineHeight: overrides?.lineHeight };
@@ -138,18 +140,17 @@ export function Fieldset({
       testID="Fieldset"
       role="group"
       accessibilityLabel={visibleLegend}
-      accessibilityHint={description}
-      accessibilityState={{ disabled }}
+      accessibilityHint={hasDescription ? description : undefined}
       style={groupStyle}
     >
-      <View testID="Fieldset.legend">
-        <Text size="md" weight="medium" tone="default" overrides={legendOverrides}>
+      <View testID="Fieldset.legend" style={dimStyle}>
+        <Text tone="default" size="md" weight="medium" overrides={legendOverrides}>
           {visibleLegend}
         </Text>
       </View>
-      {description !== undefined && description !== '' ? (
-        <View testID="Fieldset.description">
-          <Text size="sm" tone="muted" overrides={helperOverrides}>
+      {hasDescription ? (
+        <View testID="Fieldset.description" style={dimStyle}>
+          <Text tone="muted" size="sm" overrides={helperOverrides}>
             {description}
           </Text>
         </View>
@@ -157,13 +158,13 @@ export function Fieldset({
       <View testID="Fieldset.fields">
         <FieldsetContext.Provider value={contextValue}>
           <Stack gap={gap} overrides={overrides?.fieldsGap ? { gap: overrides.fieldsGap } : undefined}>
-            {renderedChildren}
+            {children}
           </Stack>
         </FieldsetContext.Provider>
       </View>
       {hasError ? (
         <View accessibilityLiveRegion="assertive" testID="Fieldset.errorMessage">
-          <Text size="sm" tone="danger" overrides={helperOverrides}>
+          <Text tone="danger" size="sm" overrides={helperOverrides}>
             {error}
           </Text>
         </View>

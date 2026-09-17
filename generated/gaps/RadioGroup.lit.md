@@ -24,3 +24,13 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - RadioGroup: the indicator is an ::after on an appearance:none <input>, which Chromium renders but some engines have not historically; the doc mandates it with no fallback.
 - RadioGroup: the Keyboard story's required 'at least three focusable children' conflicts with the one-tab-stop model (three radios, one tab stop); the Keyboard story renders the Default three-option group.
 - RadioGroup: scenario disabled-group-is-inert limits `state: disabled` to web, though Lit reflects `disabled` too; the Lit test asserts the reflected attribute and the fieldset's aria-disabled anyway.
+
+## 2026-09-17 05:10 — round 1
+
+- RadioGroup: the error order is `error`, then the Form's message, then copy.required/copy.invalid, but `form.discovery: context` has no Lit channel. ds-form finds fields by `[data-ds-field]`, keeps its errors to itself (summary and `invalid` event) and never sends a message back to the field. Chose: the group shows `error`, then copy.required/copy.invalid while `invalid`; there is no Form-message step.
+- RadioGroup: a required group that ds-form validates fails `checkValidity()`, but nothing sets `invalid` on it. So in Lit the prose 'shows copy.required once it is marked invalid by Form validation' never happens unless the app sets `invalid` or `error`. The doc should say whether ds-form sets `invalid` on failing fields.
+- RadioGroup: `optionPaddingBlock` is declared with `part: radio`, but its description says it pads the option row wrapper, which is not an anatomy part. Chose the row, as the description says. The part should be dropped or the row named.
+- RadioGroup: the `focusRing` description says the border 'becomes focusRingWidth', so the border gets thicker on focus. With box-sizing border-box the control keeps its size and the space inside shrinks a little. Chose border-box and removed the outline. The doc doesn't say whether the control's outer size may change.
+- RadioGroup: `radio` and `legend` are anatomy parts, but the Lit notes list only group, radioLabel, radioDescription and errorMessage for `part`/`data-part`. Chose `part` and `data-part` of `radio` and `legend` on the input and legend as well.
+- RadioGroup: the Lit notes don't say whether `defaultValue` is also an attribute. Chose attribute `default-value`, which the stories use.
+- RadioGroup: the Keyboard story gate asks for 'at least three focusable children', but a native radio group is one tab stop. Chose the Default args (three radios), reached by arrow keys. The doc should say whether three arrow-reachable radios count.

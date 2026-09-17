@@ -27,7 +27,6 @@
   background-color: var(--ds-alert-background);
   color: var(--ds-alert-body-color);
   font-family: var(--ds-alert-font-family);
-  font-size: var(--ds-alert-font-size);
   line-height: var(--ds-alert-line-height);
 }
 
@@ -53,12 +52,22 @@
   --ds-alert-border: var(--color-status-danger-border);
 }
 
-/* icon: decorative, iconSize, aligned to the first line of text. The Icon itself carries color.status.{tone}.icon via its own `overrides`. */
+/*
+ * icon: a box as tall as the first line of text (headingSize × lineHeight with a heading, else
+ * fontSize × lineHeight, or iconSize when larger) with the Icon centred in it. The Icon itself
+ * carries color.status.{tone}.icon and iconSize through its own `overrides`.
+ */
 .ds-alert__icon {
+  --ds-alert-first-line: calc(var(--ds-alert-font-size) * var(--ds-alert-line-height));
   display: inline-flex;
   flex: 0 0 auto;
-  margin-block-start: calc((var(--ds-alert-font-size) * var(--ds-alert-line-height) - var(--ds-alert-icon-size)) / 2);
+  align-items: center;
+  justify-content: center;
+  block-size: max(var(--ds-alert-first-line), var(--ds-alert-icon-size));
   line-height: 0;
+}
+.ds-alert:has(> .ds-alert__content > .ds-alert__heading) > .ds-alert__icon {
+  --ds-alert-first-line: calc(var(--ds-alert-heading-size) * var(--ds-alert-line-height));
 }
 
 .ds-alert__content {
@@ -80,6 +89,7 @@
 /* bodyColor: the page foreground, so long messages read as text. */
 .ds-alert__body {
   color: var(--ds-alert-body-color);
+  font-size: var(--ds-alert-font-size);
 }
 
 /* dismissButton: the system Button, unchanged; dismissMargin pulls it into the corner. */

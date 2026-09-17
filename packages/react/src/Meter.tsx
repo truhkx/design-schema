@@ -18,9 +18,8 @@ export type MeterOverridableBinding =
   | 'labelGap'
   | 'transition';
 
-/** Bindings owned by the root; `labelSize`/`labelWeight`/`valueSize`/`fontFamily`/`lineHeight` are forwarded
- * into the composed Text elements' own `overrides` contract instead, since Text already exposes them. */
-const ROOT_OVERRIDE_HOOK: Partial<Record<MeterOverridableBinding, string | undefined>> = {
+/** Bindings realised as hooks on the root. The rest are forwarded to the composed Texts' `overrides`. */
+const ROOT_OVERRIDE_HOOK: Partial<Record<MeterOverridableBinding, string>> = {
   trackHeight: '--ds-meter-track-height',
   radius: '--ds-meter-radius',
   partGap: '--ds-meter-part-gap',
@@ -29,50 +28,31 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<MeterOverridableBinding, string | undef
 };
 
 type TextOverrides = Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
+type MeterOverrides = Partial<Record<MeterOverridableBinding, TokenRef | undefined>>;
 
-function overridesToStyle(overrides: Partial<Record<MeterOverridableBinding, TokenRef | undefined>>): {
-  rootStyle: CSSProperties;
-  labelTextOverrides: TextOverrides;
-  valueTextOverrides: TextOverrides;
-} {
-  const rootStyle: Record<string, string> = {};
-  const labelTextOverrides: TextOverrides = {};
-  const valueTextOverrides: TextOverrides = {};
-
+function rootStyle(overrides: MeterOverrides): CSSProperties {
+  const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as MeterOverridableBinding[]) {
+    const hook = ROOT_OVERRIDE_HOOK[binding];
     const ref = overrides[binding];
-    if (!ref) continue;
-    const rootHook = ROOT_OVERRIDE_HOOK[binding];
-    if (rootHook) {
-      rootStyle[rootHook] = cssVar(ref);
-      continue;
-    }
-    switch (binding) {
-      case 'labelSize':
-        labelTextOverrides.fontSize = ref;
-        break;
-      case 'labelWeight':
-        labelTextOverrides.fontWeight = ref;
-        break;
-      case 'valueSize':
-        valueTextOverrides.fontSize = ref;
-        break;
-      case 'fontFamily':
-        labelTextOverrides.fontFamily = ref;
-        valueTextOverrides.fontFamily = ref;
-        break;
-      case 'lineHeight':
-        labelTextOverrides.lineHeight = ref;
-        valueTextOverrides.lineHeight = ref;
-        break;
-    }
+    // Locked and forwarded bindings have no root hook; ignore them here.
+    if (hook === undefined || !ref) continue;
+    style[hook] = cssVar(ref);
   }
-
-  return { rootStyle: rootStyle as CSSProperties, labelTextOverrides, valueTextOverrides };
+  return style as CSSProperties;
 }
 
-export interface MeterProps
-  extends Omit<ComponentPropsWithoutRef<'div'>, 'children' | 'role' | 'className' | 'style'> {
+/** Drops unset entries so the Text keeps its own defaults. */
+function compact(overrides: TextOverrides): TextOverrides | undefined {
+  const out: TextOverrides = {};
+  for (const key of Object.keys(overrides) as TextOverridableBinding[]) {
+    const ref = overrides[key];
+    if (ref) out[key] = ref;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+export interface MeterProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children' | 'role' | 'className' | 'style'> {
   /** The current measurement. Clamped to `min`…`max` for the bar; the accessible value is the clamped number too. */
   value: number;
   /** Lower bound of the range. */
@@ -81,30 +61,40 @@ export interface MeterProps
   max?: number | undefined;
   /** Visible label naming the measurement ("Storage used"). Also the accessible name. */
   label: string;
-  /** Human-readable value shown at the end of the label row and announced instead of the raw number ("3.2 GB of 10 GB", "Strong"). Omit to show and announce the percentage, rounded to a whole number ("32%"). */
+  /**
+   * Human-readable value shown at the end of the label row and announced instead of the raw number
+   * ("3.2 GB of 10 GB", "Strong"). Omit to show and announce the percentage, rounded to a whole number ("32%").
+   */
   valueText?: string | undefined;
-  /** Fill color. `info` is the neutral brand fill; the consumer sets `success`/`warning`/`danger` from thresholds it owns — the meter does not decide what is "too full". */
+  /**
+   * Fill color. `info` is the neutral brand fill; the consumer sets `success`/`warning`/`danger` from
+   * thresholds it owns — the meter does not decide what is "too full".
+   */
   tone?: MeterTone | undefined;
-  /** Hides the visible value text (a boolean attribute can only turn things on, so the flag is the hiding one). The accessible value is always exposed. */
+  /**
+   * Hides the visible value text (a boolean attribute can only turn things on, so the flag is the hiding
+   * one). The accessible value is always exposed.
+   */
   hideValue?: boolean | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
-  overrides?: Partial<Record<MeterOverridableBinding, TokenRef | undefined>> | undefined;
+  overrides?: MeterOverrides | undefined;
 }
 
-/* Only declared when the bundler defines it; never assumed. */
 declare const process: { env: Record<string, string | undefined> } | undefined;
-const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
+const isDev: boolean = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
+
+const PERCENT = new Intl.NumberFormat(undefined, { style: 'percent', maximumFractionDigits: 0 });
 
 /**
  * Meter — Design Schema, category: data.
  *
  * When to use:
- * Use a Meter for a measurement with a fixed range: storage or quota used, battery, password
- * strength, a score out of ten, a budget consumed. Let the consumer decide the tone from
- * thresholds it understands ("over 90% is `danger`"); the meter just paints. Provide `valueText`
- * whenever the raw percentage is not what a person would say.
+ * Use a Meter for a measurement with a fixed range: storage or quota used, battery, password strength, a
+ * score out of ten, a budget consumed. Let the consumer decide the tone from thresholds it understands
+ * ("over 90% is `danger`"); the meter just paints. Provide `valueText` whenever the raw percentage is not
+ * what a person would say.
  */
-export const Meter = function Meter({
+export function Meter({
   ref,
   value,
   min = 0,
@@ -114,7 +104,6 @@ export const Meter = function Meter({
   tone = 'info',
   hideValue = false,
   overrides,
-  id: idProp,
   ...rest
 }: MeterProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
   // Per-instance styling goes only through `overrides`; strip anything an untyped caller passes.
@@ -122,9 +111,7 @@ export const Meter = function Meter({
     className?: unknown;
     style?: unknown;
   };
-  const generatedId = useId();
-  const id = idProp ?? `ds-meter${generatedId}`;
-  const labelId = `${id}-label`;
+  const labelId = useId();
 
   const validRange = max > min;
   useEffect(() => {
@@ -134,29 +121,45 @@ export const Meter = function Meter({
   // A non-finite value is treated as `min`; with an invalid range the meter is empty at `min`.
   const safeValue = Number.isFinite(value) ? value : min;
   const clamped = validRange ? Math.min(Math.max(safeValue, min), max) : min;
-  const percent = validRange ? ((clamped - min) / (max - min)) * 100 : 0;
-  const resolvedValueText = valueText ?? `${Math.round(percent)}%`;
+  const fraction = validRange ? (clamped - min) / (max - min) : 0;
+  // Rounding is for the text only; the fill uses the exact fraction.
+  const resolvedValueText = valueText ?? PERCENT.format(fraction);
 
-  const { rootStyle, labelTextOverrides, valueTextOverrides } = overrides
-    ? overridesToStyle(overrides)
-    : { rootStyle: undefined, labelTextOverrides: undefined, valueTextOverrides: undefined };
+  const labelOverrides = compact({
+    fontSize: overrides?.labelSize,
+    fontWeight: overrides?.labelWeight,
+    fontFamily: overrides?.fontFamily,
+    lineHeight: overrides?.lineHeight,
+  });
+  const valueOverrides = compact({
+    fontSize: overrides?.valueSize,
+    fontFamily: overrides?.fontFamily,
+    lineHeight: overrides?.lineHeight,
+  });
 
   return (
     <div
       {...forwarded}
       ref={ref}
-      id={id}
       data-ds="Meter"
       data-part="container"
       className={`ds-meter ds-meter--${tone}`}
-      style={rootStyle}
+      style={overrides ? rootStyle(overrides) : undefined}
     >
-      <div className="ds-meter__header">
-        <Text element="span" id={labelId} data-part="label" size="sm" weight="medium" overrides={labelTextOverrides}>
+      <div className="ds-meter__header" data-part="header">
+        <Text
+          element="span"
+          size="sm"
+          weight="medium"
+          tone="default"
+          id={labelId}
+          data-part="label"
+          overrides={labelOverrides}
+        >
           {label}
         </Text>
         {hideValue ? null : (
-          <Text element="span" data-part="valueText" size="sm" tone="muted" overrides={valueTextOverrides}>
+          <Text element="span" size="sm" tone="muted" data-part="valueText" overrides={valueOverrides}>
             {resolvedValueText}
           </Text>
         )}
@@ -171,8 +174,8 @@ export const Meter = function Meter({
         aria-valuemax={max}
         aria-valuetext={resolvedValueText}
       >
-        <div className="ds-meter__fill" data-part="fill" style={{ inlineSize: `${percent}%` }} />
+        <div className="ds-meter__fill" data-part="fill" style={{ inlineSize: `${fraction * 100}%` }} />
       </div>
     </div>
   );
-};
+}

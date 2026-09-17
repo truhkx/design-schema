@@ -29,6 +29,7 @@ describe('Breadcrumb', () => {
     const link = s.getAllByRole('link')[0]!;
     await s.user.click(link);
     expect(s.onNavigate).toHaveBeenCalledTimes(1);
+    expect(s.onNavigate.mock.calls[0]![0]).toEqual(s.props.items[0]);
     expect(s.onNavigate.mock.calls[0]![1]).toBe(0);
   });
 

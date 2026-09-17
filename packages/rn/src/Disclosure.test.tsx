@@ -57,9 +57,11 @@ describe('Disclosure', () => {
     expect(screen.getByTestId('Disclosure')).toBeOnTheScreen();
   });
 
+  // Native has no heading levels: the summary Text carries the header role, not a level.
   it.each(['2', '3', '4', '5', '6'] as const)('renders-heading-level-%s', (headingLevel) => {
-    setup({ headingLevel });
+    const s = setup({ headingLevel });
     expect(screen.getByTestId('Disclosure')).toBeOnTheScreen();
+    expect(screen.getByRole('header', { name: s.props.summary })).toBeOnTheScreen();
   });
 
   it('has-accessible-name', () => {

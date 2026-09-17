@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { View } from 'react-native';
 import type { AccessibilityRole, Role, ViewInstance } from 'react-native';
+import { Text } from './Text';
 
 export type LandmarkRole =
   | 'banner'
@@ -13,11 +14,11 @@ export type LandmarkRole =
   | 'form';
 
 export interface LandmarkProps {
-  /** Which landmark this is. `banner` (site header), `navigation`, `main` (exactly one per page), `complementary` (sidebar), `contentinfo` (site footer), `region` (a labelled section that deserves a jump point), `search`, `form`. */
+  /** Which landmark this is. `banner` (site header), `navigation`, `main` (exactly one per page), `complementary` (sidebar), `contentinfo` (site footer), `region` (a labelled section that deserves a jump point), `search`, `form` (a labelled form that is a page-level region). */
   role: LandmarkRole;
-  /** Accessible name. Required for `region` and `form`, and whenever the page has more than one landmark of the same role. Not shown visually. */
+  /** Accessible name. Required for `region` and `form`, and whenever the page has more than one landmark of the same role. Not shown visually. An empty string counts as absent. */
   label?: string | undefined;
-  /** The region's content. */
+  /** The region's content. String and number children are wrapped in the package `Text`. */
   children: React.ReactNode;
   /** The root `View`. */
   ref?: React.Ref<ViewInstance> | undefined;
@@ -48,16 +49,19 @@ const NAME_REQUIRED_ROLES: ReadonlySet<LandmarkRole> = new Set<LandmarkRole>(['r
  * react-native-web maps to the same ARIA landmark. `label` is applied as `accessibilityLabel` only for
  * `navigation`, `region` and `form`, so the group has a name for TalkBack and
  * VoiceOver without every View announcing a role. The container is not
- * `accessible`, so its children stay individually reachable. There is no
+ * `accessible`, so its children stay individually reachable. A View cannot hold a
+ * raw string, so string and number children are wrapped in `Text`. There is no
  * jump-to-landmark on native — the value is web parity and one structure for the
  * same screen code. In development it warns when `region` or `form` has no `label`.
  */
 export function Landmark({ role, label, children, ref }: LandmarkProps): React.JSX.Element {
+  const name = label === '' ? undefined : label;
+
   React.useEffect(() => {
-    if (__DEV__ && NAME_REQUIRED_ROLES.has(role) && (label === undefined || label === '')) {
+    if (__DEV__ && NAME_REQUIRED_ROLES.has(role) && name === undefined) {
       console.warn(`Landmark: role "${role}" is only a landmark when it has a label.`);
     }
-  }, [role, label]);
+  }, [role, name]);
 
   // Every landmark role except `search` is in RN's `Role` union (RN ≥ 0.73); `search`
   // exists only in the legacy `accessibilityRole` union, which react-native-web maps
@@ -65,15 +69,24 @@ export function Landmark({ role, label, children, ref }: LandmarkProps): React.J
   const nativeRole: Role | undefined = role === 'search' ? undefined : role;
   const legacyRole: AccessibilityRole | undefined = role === 'search' ? 'search' : undefined;
 
+  const content =
+    typeof children === 'string' || typeof children === 'number' ? (
+      <Text>{children}</Text>
+    ) : (
+      React.Children.map(children, (child) =>
+        typeof child === 'string' || typeof child === 'number' ? <Text>{child}</Text> : child,
+      )
+    );
+
   return (
     <View
       ref={ref}
       testID="Landmark"
       role={nativeRole}
       accessibilityRole={legacyRole}
-      accessibilityLabel={LABELLED_ROLES.has(role) ? label : undefined}
+      accessibilityLabel={LABELLED_ROLES.has(role) ? name : undefined}
     >
-      {children}
+      {content}
     </View>
   );
 }

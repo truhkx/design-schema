@@ -98,9 +98,13 @@
 }
 
 /* transition: chevron rotation only; the panel does not animate. Instant under reduced motion. */
-@media (prefers-reduced-motion: no-preference) {
+.ds-disclosure__icon {
+  transition: transform var(--ds-disclosure-transition) var(--motion-easing-standard);
+}
+
+@media (prefers-reduced-motion: reduce) {
   .ds-disclosure__icon {
-    transition: transform var(--ds-disclosure-transition) var(--motion-easing-standard);
+    transition: none;
   }
 }
 

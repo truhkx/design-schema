@@ -1,5 +1,6 @@
 /* RadioGroup — styled only through Design Schema token custom properties. */
 
+/* descriptionText and errorText are realised by Text's tones and helperSize by Text's fontSize override: no hooks here. */
 .ds-radio-group {
   --ds-radio-group-control-background: var(--color-control-background);
   --ds-radio-group-control-border: var(--color-control-border);
@@ -9,6 +10,8 @@
   --ds-radio-group-control-border-invalid: var(--color-border-danger);
   --ds-radio-group-control-size: var(--space-5);
   --ds-radio-group-control-radius: var(--radius-full);
+  --ds-radio-group-option-padding-block: var(--space-1);
+  --ds-radio-group-option-text-gap: var(--space-1);
   --ds-radio-group-option-gap: var(--space-2);
   --ds-radio-group-list-gap: var(--space-2);
   --ds-radio-group-part-gap: var(--space-1);
@@ -18,9 +21,6 @@
   --ds-radio-group-label-color: var(--color-foreground);
   --ds-radio-group-label-size: var(--font-size-md);
   --ds-radio-group-label-weight: var(--font-weight-regular);
-  --ds-radio-group-helper-size: var(--font-size-sm);
-  --ds-radio-group-description-text: var(--color-foreground-muted);
-  --ds-radio-group-error-text: var(--color-foreground-danger);
   --ds-radio-group-font-family: var(--font-family-body);
   --ds-radio-group-line-height: var(--font-line-height-normal);
   --ds-radio-group-focus-ring: var(--color-border-focus);
@@ -46,16 +46,16 @@
   font-weight: var(--ds-radio-group-legend-weight);
 }
 
-/* A legend does not take part in the fieldset's flex gap; add the partGap below it explicitly. */
-.ds-radio-group__legend + * {
-  margin-block-start: var(--ds-radio-group-part-gap);
-}
-
-/* Descriptions and the error are Text (tone muted / danger, helperSize via Text overrides); this only lays them out. */
+/* Descriptions and the error are Text (tone muted / danger); this only lays them out. */
 .ds-radio-group__description,
 .ds-radio-group__error,
 .ds-radio-group__option-description {
   margin: 0;
+}
+
+/* A legend does not take part in the fieldset's flex gap; partGap below it is a margin. */
+.ds-radio-group__legend + * {
+  margin-block-start: var(--ds-radio-group-part-gap);
 }
 
 /* orientation → listGap on both axes; horizontal wraps rather than overflows. */
@@ -71,24 +71,25 @@
   flex-wrap: wrap;
 }
 
+/* The option row: radio, radioLabel and radioDescription. minTarget tall; the whole row is the hit area. */
 .ds-radio-group__option {
-  display: flex;
-  flex-direction: column;
-  gap: var(--ds-radio-group-part-gap);
-}
-
-/* minTarget: the whole row is the hit area. */
-.ds-radio-group__row {
-  display: flex;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: var(--ds-radio-group-control-size) minmax(0, 1fr);
+  column-gap: var(--ds-radio-group-option-gap);
+  row-gap: var(--ds-radio-group-option-text-gap);
   align-items: center;
-  gap: var(--ds-radio-group-option-gap);
+  align-content: center;
   min-block-size: var(--ds-radio-group-min-target);
+  padding-block: var(--ds-radio-group-option-padding-block);
+  cursor: pointer;
 }
 
-/* control: a native radio drawn with the control tokens. */
+/* The radio: a native input drawn with the control tokens. */
 .ds-radio-group__control {
   box-sizing: border-box;
-  flex: 0 0 auto;
+  grid-column: 1;
+  grid-row: 1;
   display: inline-grid;
   place-items: center;
   inline-size: var(--ds-radio-group-control-size);
@@ -98,7 +99,7 @@
   border: var(--ds-radio-group-control-border-width) solid var(--ds-radio-group-control-border);
   border-radius: var(--ds-radio-group-control-radius);
   background-color: var(--ds-radio-group-control-background);
-  cursor: pointer;
+  cursor: inherit;
   -webkit-appearance: none;
   appearance: none;
 }
@@ -123,51 +124,46 @@
   transform: scale(1);
 }
 
-/* controlBorderInvalid */
-.ds-radio-group__control[aria-invalid='true'] {
+/* controlBorderInvalid: aria-invalid lives on the fieldset only. */
+.ds-radio-group--invalid .ds-radio-group__control {
   border-color: var(--ds-radio-group-control-border-invalid);
 }
 
-/* focus-visible: never removed, only replaced by the token ring. */
+/* focusRing: the radio's border becomes focusRingWidth in the focus color; the row is not outlined.
+   The transparent outline keeps a ring in forced-colors mode. */
 .ds-radio-group__control:focus-visible {
-  outline: var(--ds-radio-group-focus-ring-width) solid var(--ds-radio-group-focus-ring);
-  outline-offset: var(--ds-radio-group-focus-ring-width);
+  outline: var(--ds-radio-group-focus-ring-width) solid transparent;
+  border-width: var(--ds-radio-group-focus-ring-width);
+  border-color: var(--ds-radio-group-focus-ring);
 }
 
 .ds-radio-group__label {
-  cursor: pointer;
+  grid-column: 2;
+  grid-row: 1;
+  cursor: inherit;
   color: var(--ds-radio-group-label-color);
   font-size: var(--ds-radio-group-label-size);
   font-weight: var(--ds-radio-group-label-weight);
 }
 
-.ds-radio-group__row,
 .ds-radio-group__option-description {
-  cursor: pointer;
+  grid-column: 2;
+  grid-row: 2;
 }
 
-.ds-radio-group__option-description {
-  padding-inline-start: calc(var(--ds-radio-group-control-size) + var(--ds-radio-group-option-gap));
-}
-
-/* disabled: group-disabled radios stay focusable; option-disabled ones are natively disabled. Both dim. */
-.ds-radio-group__option--disabled .ds-radio-group__row {
-  cursor: not-allowed;
-}
-
-.ds-radio-group__option--disabled .ds-radio-group__control,
-.ds-radio-group__option--disabled .ds-radio-group__label,
-.ds-radio-group__option--disabled .ds-radio-group__option-description {
+/* disabledOpacity dims option rows only, once: an option dims its own row, a disabled group every row. */
+.ds-radio-group--disabled .ds-radio-group__option,
+.ds-radio-group__option--disabled {
   cursor: not-allowed;
   opacity: var(--ds-radio-group-disabled-opacity);
 }
 
-/* transition: dot and border; removed under reduced motion. */
+/* transition: border and dot; removed under reduced motion. */
 @media (prefers-reduced-motion: no-preference) {
   .ds-radio-group__control {
     transition:
       border-color var(--ds-radio-group-transition) var(--motion-easing-standard),
-      background-color var(--ds-radio-group-transition) var(--motion-easing-standard);
+      border-width var(--ds-radio-group-transition) var(--motion-easing-standard);
   }
   .ds-radio-group__control::before {
     transition: transform var(--ds-radio-group-transition) var(--motion-easing-standard);

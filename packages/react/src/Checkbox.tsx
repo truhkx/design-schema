@@ -19,8 +19,8 @@ import './Checkbox.css';
 
 /**
  * copy.* — used verbatim; `{label}` is replaced by the visible label. `checked`, `unchecked` and
- * `mixed` are spoken state values for platforms without a native checkbox; on web the input's
- * checked state and `aria-checked="mixed"` carry them.
+ * `mixed` are SwiftUI-only spoken values; on web the native checked state and
+ * `aria-checked="mixed"` carry the state.
  */
 const COPY = {
   required: '{label} is required.',
@@ -30,6 +30,9 @@ const COPY = {
   unchecked: 'Unchecked',
   mixed: 'Mixed',
 } as const;
+
+/** The indicator binding's locked token, reaching the composed Icon only through its `color` override. */
+const INDICATOR_COLOR: TokenRef = 'color.control.selectedForeground' as TokenRef;
 
 /** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
 export type CheckboxOverridableBinding =
@@ -78,8 +81,11 @@ function resolveOverrides(overrides: Partial<Record<CheckboxOverridableBinding, 
   for (const binding of Object.keys(overrides) as CheckboxOverridableBinding[]) {
     const ref = overrides[binding];
     if (!ref) continue;
-    // Description and error are Text: their typography bindings reach Text's own overrides.
-    if (binding === 'helperSize') helperOverrides.fontSize = ref;
+    // Description and error are Text: helperSize, fontFamily and lineHeight reach Text's own overrides.
+    if (binding === 'helperSize') {
+      helperOverrides.fontSize = ref;
+      continue;
+    }
     if (binding === 'fontFamily') helperOverrides.fontFamily = ref;
     if (binding === 'lineHeight') helperOverrides.lineHeight = ref;
     // Locked bindings have no entry in the hook table, so they are ignored if passed.
@@ -115,7 +121,11 @@ export interface CheckboxProps
   hideLabel?: boolean | undefined;
   /** Field name used by the enclosing Form when collecting values. */
   name: string;
-  /** The value submitted when checked. Lets several checkboxes share a `name` to form a multi-select. */
+  /**
+   * What a native HTML <form> submits under `name` when checked (web and Lit only). The enclosing Form
+   * (React, React Native, ds-form) ignores it and collects the boolean `checked`. Checkboxes sharing a
+   * `name` are not a multi-select under Form; give each its own name.
+   */
   value?: string | undefined;
   /** Controlled checked state. Omit for an uncontrolled control. */
   checked?: boolean | undefined;
@@ -146,9 +156,9 @@ export interface CheckboxProps
  * Checkbox — Design Schema, category: input.
  *
  * When to use:
- * Use a Checkbox for one independent option ("Remember me"), for terms and consent (`required`), or several with the same `name` when the user may pick any number of items. Use `indeterminate` on a "select all" parent when only some of its children are checked.
+ * Use a Checkbox for one independent option ("Remember me"), for terms and consent (`required`), or several, each with its own `name`, when the user may pick any number of items. Use `indeterminate` on a "select all" parent when only some of its children are checked.
  */
-export const Checkbox = function Checkbox({
+export function Checkbox({
   ref,
   label,
   hideLabel = false,
@@ -175,12 +185,14 @@ export const Checkbox = function Checkbox({
   const errorId = `${id}-error`;
 
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const labelRef = useRef<HTMLLabelElement | null>(null);
+  // The root is the wrapper div; the forwarded ref resolves to the interactive <input>, as in Input.
   useImperativeHandle(ref, () => inputRef.current as HTMLInputElement, []);
 
   const isControlled = checked !== undefined;
+  const [uncontrolledChecked, setUncontrolledChecked] = useState(defaultChecked);
+  const isChecked = isControlled ? checked : uncontrolledChecked;
   const isDisabled = disabled || (form?.disabled ?? false);
-  const resolvedError = error ?? form?.errors[name];
-  const isInvalid = invalid || resolvedError !== undefined;
 
   // A user toggle clears the mixed state; a new `indeterminate` prop value restores it.
   const [mixedCleared, setMixedCleared] = useState(false);
@@ -197,6 +209,13 @@ export const Checkbox = function Checkbox({
     if (el && el.indeterminate !== isMixed) el.indeterminate = isMixed;
   }, [isMixed]);
 
+  // Error slot: `error`, else the Form's message, else — only while `invalid` — the copy.
+  const invalidMessage = invalid
+    ? (required && !isChecked ? COPY.required : COPY.invalid).replace('{label}', label)
+    : undefined;
+  const resolvedError = error ?? form?.errors[name] ?? invalidMessage;
+  const isInvalid = invalid || resolvedError !== undefined;
+
   // Keep the latest props in a ref so the Form registration does not churn on every render.
   const latest = useRef({ label, required, disabled: isDisabled, invalid, error });
   latest.current = { label, required, disabled: isDisabled, invalid, error };
@@ -209,7 +228,7 @@ export const Checkbox = function Checkbox({
       get label() {
         return latest.current.label;
       },
-      // form.valueType is boolean: the checked state is collected under `name`.
+      // form.valueType is boolean: the checked state is collected under `name`, false when unchecked.
       getValue: () => inputRef.current?.checked ?? false,
       isDisabled: () => latest.current.disabled,
       validate: () => {
@@ -239,24 +258,26 @@ export const Checkbox = function Checkbox({
       event.preventDefault();
       return;
     }
-    if (indeterminate) setMixedCleared(true);
-    onChange?.(event.target.checked);
+    const next = event.target.checked;
+    if (!isControlled) setUncontrolledChecked(next);
+    if (isMixed) setMixedCleared(true);
+    onChange?.(next);
     // There is no useful blur moment for a checkbox: `blur` mode validates on change too.
     if (form && (form.validate === 'blur' || form.validate === 'change')) form.validateField(name);
   };
 
-  // The whole row is the hit area: the description and the row's own gap forward to the control.
-  const forwardClick = () => {
-    if (!isDisabled) inputRef.current?.click();
-  };
+  // The whole row is the hit area: the gap, the text column and the description forward to the
+  // control. The input and the label already toggle natively, so they are left alone.
   const handleRowClick = (event: MouseEvent<HTMLDivElement>) => {
-    if (event.target === event.currentTarget) forwardClick();
+    const target = event.target as Node;
+    if (inputRef.current?.contains(target) || labelRef.current?.contains(target)) return;
+    if (!isDisabled) inputRef.current?.click();
   };
 
   const classes = ['ds-checkbox', isInvalid ? 'ds-checkbox--invalid' : null, isDisabled ? 'ds-checkbox--disabled' : null]
     .filter(Boolean)
     .join(' ');
-  const labelClasses = ['ds-checkbox__label', hideLabel ? 'ds-checkbox__visually-hidden' : null].filter(Boolean).join(' ');
+  const labelClasses = ['ds-checkbox__label', hideLabel ? 'ds-checkbox__label--hidden' : null].filter(Boolean).join(' ');
 
   const { rootStyle, helperOverrides } = overrides
     ? resolveOverrides(overrides)
@@ -274,6 +295,8 @@ export const Checkbox = function Checkbox({
             name={name}
             value={value}
             checked={checked}
+            // Uncontrolled stays native (the state above only mirrors it for the indicator), so a
+            // prevented click on a disabled box reverts through the browser, not a re-render.
             defaultChecked={isControlled ? undefined : defaultChecked}
             className="ds-checkbox__control"
             data-part="control"
@@ -285,44 +308,47 @@ export const Checkbox = function Checkbox({
             onClick={handleClick}
             onChange={handleChange}
           />
-          {/* indicator: decorative, drawn over the control; the input's state is what is announced. */}
-          <span className="ds-checkbox__indicator">
-            <Icon name={isMixed ? 'dash' : 'check'} size="xs" />
+          {/* indicator: decorative, stacked over the control; the input's state is what is announced. */}
+          <span className="ds-checkbox__indicator" data-part="indicator" aria-hidden="true">
+            {isMixed || isChecked ? (
+              <Icon name={isMixed ? 'dash' : 'check'} size="xs" overrides={{ color: INDICATOR_COLOR }} />
+            ) : null}
           </span>
         </span>
-        <label htmlFor={id} className={labelClasses} data-part="label">
-          {label}
-          {required ? COPY.requiredIndicator : null}
-        </label>
+        <div className="ds-checkbox__text">
+          <label ref={labelRef} htmlFor={id} className={labelClasses} data-part="label">
+            {label}
+            {required ? COPY.requiredIndicator : null}
+          </label>
+          {description ? (
+            <Text
+              element="p"
+              id={descriptionId}
+              data-part="description"
+              size="sm"
+              tone="muted"
+              overrides={helperOverrides}
+            >
+              {description}
+            </Text>
+          ) : null}
+        </div>
       </div>
-      {description ? (
-        <Text
-          element="p"
-          id={descriptionId}
-          data-part="description"
-          size="sm"
-          tone="muted"
-          className="ds-checkbox__description"
-          overrides={helperOverrides}
-          onClick={forwardClick}
-        >
-          {description}
-        </Text>
-      ) : null}
       {resolvedError ? (
-        <Text
-          element="p"
-          id={errorId}
-          role="alert"
-          data-part="errorMessage"
-          size="sm"
-          tone="danger"
-          className="ds-checkbox__error"
-          overrides={helperOverrides}
-        >
-          {resolvedError}
-        </Text>
+        <div className="ds-checkbox__error">
+          <Text
+            element="p"
+            id={errorId}
+            role="alert"
+            data-part="errorMessage"
+            size="sm"
+            tone="danger"
+            overrides={helperOverrides}
+          >
+            {resolvedError}
+          </Text>
+        </div>
       ) : null}
     </div>
   );
-};
+}

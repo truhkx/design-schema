@@ -76,8 +76,8 @@ export const DateRangeWithAGroupError: Story = {
   args: { legend: 'Reporting period', error: 'End date must be after start date.' },
   render: (args) => (
     <Fieldset {...args}>
-      <Input label="Start date" name="start" />
-      <Input label="End date" name="end" />
+      <Input label="Start date" name="startDate" />
+      <Input label="End date" name="endDate" />
     </Fieldset>
   ),
 };

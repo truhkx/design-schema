@@ -154,9 +154,13 @@ export function Disclosure({
     ? (resolveToken(t, overrides.transition) as number)
     : t.motionDurationBase;
 
+  // `useReducedMotion` reads `false` until the OS answers, so the first run snaps rather
+  // than trusting it: nothing animates on first render.
+  const animationReadyRef = React.useRef(false);
   React.useEffect(() => {
     const toValue = isOpen ? 1 : 0;
-    if (reducedMotion) {
+    if (reducedMotion || !animationReadyRef.current) {
+      animationReadyRef.current = true;
       rotation.setValue(toValue);
       return;
     }

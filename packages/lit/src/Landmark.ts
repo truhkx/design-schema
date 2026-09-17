@@ -14,42 +14,84 @@ export type LandmarkRole =
 /** Roles that are landmarks only when they have an accessible name. */
 const NAME_REQUIRED: ReadonlySet<string> = new Set(['region', 'form']);
 
-/** Roles that may legitimately repeat, so duplicates must be told apart by label. */
+/** Roles that never take a label: one passed to them is not rendered. */
+const NO_LABEL: ReadonlySet<string> = new Set(['banner', 'main', 'contentinfo']);
+
+/** Roles that may repeat in one root, so duplicates must be told apart by label. */
 const DISTINCT_BY_LABEL: ReadonlySet<string> = new Set(['navigation', 'complementary', 'region', 'form']);
+
+/** Implicit roles of the elements the web Landmark renders, for peers that carry no `role` attribute. */
+const IMPLICIT_ROLE: Readonly<Record<string, string>> = {
+  header: 'banner',
+  nav: 'navigation',
+  main: 'main',
+  aside: 'complementary',
+  footer: 'contentinfo',
+  section: 'region',
+  form: 'form',
+};
+
+function roleOf(el: Element): string | undefined {
+  return el.getAttribute('role') ?? IMPLICIT_ROLE[el.localName];
+}
+
+/** The name the warnings count: `aria-labelledby` text, else a non-empty `aria-label`; `''` when absent. */
+function nameOf(el: Element): string {
+  const labelledBy = el.getAttribute('aria-labelledby');
+  const root = el.getRootNode() as Document | ShadowRoot;
+  if (labelledBy) {
+    const text = labelledBy
+      .split(/\s+/)
+      .map((id) => root.getElementById(id)?.textContent?.trim() ?? '')
+      .filter(Boolean)
+      .join(' ');
+    if (text) return text;
+  }
+  return el.getAttribute('aria-label')?.trim() ?? '';
+}
 
 /**
  * `<ds-landmark>` — Landmark (category: layout, APG: landmarks).
  *
  * `<ds-landmark role="navigation" label="Main">` uses **no shadow root and no
  * wrapper element**: the host itself is the landmark in the light DOM tree
- * and its children are ordinary light-DOM children. The landmark role and
- * accessible name are plain `role` / `aria-label` attributes reflected
- * straight onto the host (real attributes, not `ElementInternals`, so the
- * accessible-name computation the test suite uses can see them — the same
- * attributes are what real assistive tech reads). The element is a plain
- * block; consumers lay it out like any block.
+ * and its children are ordinary light-DOM children. The role and accessible
+ * name are plain `role` / `aria-label` attributes on the host (not
+ * `ElementInternals`, which the accessible-name tooling does not read). The
+ * element is a plain block; consumers lay it out like any block. There is no
+ * wrapper `<nav>` or similar inside: a nested landmark of the same role would
+ * be a duplicate.
  *
- * ## When to use
+ * The property is `landmark` (attribute `role`) because `HTMLElement` already
+ * defines `role`. `label` maps to `aria-label`; `banner`, `main` and
+ * `contentinfo` never take a label, so on them it is not rendered.
  *
- * Wrap the page's major regions: one `banner`, exactly one `main`,
- * `navigation` for each navigation block (labelled when there is more than
- * one), `complementary` for sidebars, `contentinfo` for the footer, `search`
- * around the site search, and `region` for any other section a user might
- * want to jump to. Do not wrap everything; layout containers and cards are
- * not landmarks.
+ * In development it warns when no role is set, when `region` or `form` has no
+ * label, when a label is passed to a role that never takes one, when `main`
+ * appears twice in a root, and when two `navigation`, `complementary`,
+ * `region` or `form` landmarks share a label or both lack one (only the later
+ * one in document order warns). Warnings fire on mount and on a change of role
+ * or label, not on every render.
  *
- * @slot - The region's content (ordinary light-DOM children; there is no shadow root).
+ * Children are ordinary light-DOM children; there is no `<slot>` and no part
+ * hook — `data-ds="Landmark"` on the host is the only hook.
  */
 @customElement('ds-landmark')
 export class DsLandmark extends LitElement {
-  /**
-   * Which landmark this is. Exposed as the host's `role` attribute; the
-   * property is named `landmark` because `HTMLElement` already defines `role`.
-   */
-  @property({ reflect: true, attribute: 'role' }) accessor landmark: LandmarkRole | undefined;
+  /** Which landmark this is. Reflected to the host's `role` attribute; absent exposes no role. */
+  @property({ type: String, reflect: true, attribute: 'role' }) accessor landmark: LandmarkRole | undefined;
 
-  /** Accessible name. Required for `region` and `form`, and whenever the page has more than one landmark of the same role. Reflects to `aria-label`. */
-  @property({ reflect: true, attribute: 'aria-label' }) accessor label: string | undefined;
+  /**
+   * Accessible name, rendered as `aria-label`. Required for `region` and `form`, and whenever
+   * the page has more than one landmark of the same role. An empty string counts as absent.
+   */
+  @property({ type: String, attribute: 'aria-label' }) accessor label: string | undefined;
+
+  /** Set while the element writes `aria-label` itself, so the write does not feed back into `label`. */
+  private syncingLabel = false;
+
+  /** A (re)connection counts as a mount for the warnings. */
+  private warnPending = false;
 
   /** No shadow root: children stay in the light DOM and the host is the landmark. */
   protected override createRenderRoot(): HTMLElement {
@@ -63,44 +105,70 @@ export class DsLandmark extends LitElement {
     if (this.style.display === '') {
       this.style.display = 'block';
     }
-    this.warnInDev();
+    this.warnPending = true;
+    if (this.hasUpdated) this.requestUpdate();
   }
 
-  protected override willUpdate(changed: PropertyValues): void {
-    if ((changed.has('landmark') || changed.has('label')) && this.hasUpdated) {
-      this.warnInDev();
-    }
+  override attributeChangedCallback(name: string, old: string | null, value: string | null): void {
+    if (this.syncingLabel && name === 'aria-label') return;
+    super.attributeChangedCallback(name, old, value);
   }
 
   protected override render(): typeof nothing {
     return nothing;
   }
 
-  private warnInDev(): void {
-    if (!import.meta.env.DEV || !this.isConnected) {
-      return;
+  protected override updated(changed: PropertyValues): void {
+    this.syncLabel();
+    if (this.warnPending || changed.has('landmark') || changed.has('label')) {
+      this.warnPending = false;
+      this.warnInDev();
     }
+  }
+
+  /** Writes `aria-label` from `label`, omitting it when empty or when the role never takes a label. */
+  private syncLabel(): void {
+    const role = this.landmark;
+    const next = this.label && !(role !== undefined && NO_LABEL.has(role)) ? this.label : null;
+    if (this.getAttribute('aria-label') === next) return;
+    this.syncingLabel = true;
+    try {
+      if (next === null) this.removeAttribute('aria-label');
+      else this.setAttribute('aria-label', next);
+    } finally {
+      this.syncingLabel = false;
+    }
+  }
+
+  private warnInDev(): void {
+    if (!import.meta.env.DEV || !this.isConnected) return;
     const role = this.landmark;
     if (role === undefined) {
-      console.warn('<ds-landmark> needs a landmark role.', this);
+      console.warn('Landmark: no role is set, so no landmark is exposed.', this);
       return;
     }
-    if (NAME_REQUIRED.has(role) && !this.label) {
-      console.warn(`<ds-landmark role="${role}"> is only a landmark when it has a label.`, this);
+    if (NO_LABEL.has(role) && this.label) {
+      console.warn(`Landmark: role "${role}" does not take a label; it was not rendered.`, this);
+    }
+    const name = nameOf(this);
+    if (NAME_REQUIRED.has(role) && !name) {
+      console.warn(`Landmark: role "${role}" is only a landmark when it has a label.`, this);
     }
     const root = this.getRootNode() as Document | ShadowRoot;
-    const siblings = Array.from(root.querySelectorAll<DsLandmark>('ds-landmark')).filter(
-      (candidate) => candidate !== this && candidate.landmark === role,
+    const earlier = Array.from(root.querySelectorAll('[data-ds="Landmark"]')).filter(
+      (peer) =>
+        peer !== this &&
+        roleOf(peer) === role &&
+        (peer.compareDocumentPosition(this) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0,
     );
-    if (role === 'main' && siblings.length > 0) {
-      console.warn('A document must have exactly one <ds-landmark role="main">.', this);
+    if (role === 'main' && earlier.length > 0) {
+      console.warn('Landmark: role "main" appears more than once in this document.', this);
     }
-    if (
-      DISTINCT_BY_LABEL.has(role) &&
-      siblings.some((candidate) => !candidate.label || !this.label || candidate.label === this.label)
-    ) {
+    if (DISTINCT_BY_LABEL.has(role) && earlier.some((peer) => nameOf(peer) === name)) {
       console.warn(
-        `Two <ds-landmark role="${role}"> elements share a label or lack one; give each a distinct label.`,
+        name
+          ? `Landmark: two "${role}" landmarks share the label "${name}"; give each a distinct label.`
+          : `Landmark: two "${role}" landmarks both lack a label; give each a distinct label.`,
         this,
       );
     }

@@ -223,6 +223,15 @@ export class DsDisclosure extends LitElement {
   /** The state the last user activation asked for, so the resulting prop change is not re-reported as `controlled`. */
   private requestedOpen: boolean | undefined;
 
+  /**
+   * Focus entered the panel and has not demonstrably moved elsewhere. Unassigning a focused node from the slot can
+   * drop focus to the body without a focusout, so the flag is cleared only when focus lands somewhere known.
+   */
+  private focusWithinPanel = false;
+
+  /** Set when a close happens while focus is within the panel; resolved after the render that removes it. */
+  private restoreFocusPending = false;
+
   /** Whether the panel is currently open (controlled `open`, else the uncontrolled state). */
   get currentOpen(): boolean {
     return this.open ?? this.internalOpen;
@@ -240,9 +249,11 @@ export class DsDisclosure extends LitElement {
     if (changed.has('overrides')) {
       this.applyOverrides();
     }
-    // Closing removes (or hides) the panel: move focus inside it to the trigger first.
-    if (this.hasUpdated && this.renderedOpen === true && !this.currentOpen) {
-      this.moveFocusOutOfPanel();
+    // Closing removes (or hides) the panel: focus within it is handed to the trigger once the render lands,
+    // whether the close came from the trigger or from a controlled `open` change.
+    if (this.hasUpdated && this.renderedOpen === true && !this.currentOpen && this.focusWithinPanel) {
+      this.focusWithinPanel = false;
+      this.restoreFocusPending = true;
     }
   }
 
@@ -271,7 +282,14 @@ export class DsDisclosure extends LitElement {
     return html`
       ${heading}
       ${panelExists
-        ? html`<div id="panel" data-part="panel" part="panel" ?hidden=${!isOpen}><slot></slot></div>`
+        ? html`<div
+            id="panel"
+            data-part="panel"
+            part="panel"
+            ?hidden=${!isOpen}
+            @focusin=${this.handlePanelFocusIn}
+            @focusout=${this.handlePanelFocusOut}
+          ><slot></slot></div>`
         : nothing}
     `;
   }
@@ -280,6 +298,10 @@ export class DsDisclosure extends LitElement {
     const now = this.currentOpen;
     const previous = this.renderedOpen;
     this.renderedOpen = now;
+    if (this.restoreFocusPending) {
+      this.restoreFocusPending = false;
+      this.restoreFocus();
+    }
     if (!changed.has('open') && !changed.has('internalOpen')) return;
     const requested = this.requestedOpen;
     this.requestedOpen = undefined;
@@ -316,11 +338,23 @@ export class DsDisclosure extends LitElement {
     );
   }
 
-  private moveFocusOutOfPanel(): void {
-    const active = document.activeElement;
-    if (active !== null && active !== this && this.contains(active)) {
-      this.triggerEl?.focus();
+  private handlePanelFocusIn(): void {
+    this.focusWithinPanel = true;
+  }
+
+  private handlePanelFocusOut(event: FocusEvent): void {
+    const to = event.relatedTarget;
+    // Slotted panel content is the host's light DOM; the trigger lives in the shadow root, so it is not contained.
+    if (to instanceof Node && (to === this || !this.contains(to))) {
+      this.focusWithinPanel = false;
     }
+  }
+
+  /** Focus still inside the closed panel, or dropped to the body when the panel went away, moves to the trigger. */
+  private restoreFocus(): void {
+    const active = document.activeElement;
+    const lost = active === null || active === document.body || (active !== this && this.contains(active));
+    if (lost) this.triggerEl?.focus();
   }
 
   private applyOverrides(): void {

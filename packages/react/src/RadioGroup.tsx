@@ -8,6 +8,7 @@ import {
   type ComponentPropsWithoutRef,
   type CSSProperties,
   type FocusEvent,
+  type KeyboardEvent,
   type MouseEvent,
   type Ref,
   type ReactElement,
@@ -22,8 +23,8 @@ export type RadioGroupOrientation = 'vertical' | 'horizontal';
 export type RadioGroupOption = { value: string; label: string; description?: string; disabled?: boolean };
 
 /**
- * copy.* — used verbatim; `{label}` is replaced by the legend. `position` is spoken by platforms
- * without native radios; on web the browser announces "1 of 3" from the shared `name`.
+ * copy.* — used verbatim; `{label}` is replaced by the legend. `position` is spoken on native only:
+ * on web the browser announces "1 of 3" from the radios' shared `name`, so it is not rendered.
  */
 const COPY = {
   required: '{label} is required.',
@@ -38,6 +39,8 @@ export type RadioGroupOverridableBinding =
   | 'controlBorderInvalid'
   | 'controlSize'
   | 'controlRadius'
+  | 'optionPaddingBlock'
+  | 'optionTextGap'
   | 'optionGap'
   | 'listGap'
   | 'partGap'
@@ -51,11 +54,14 @@ export type RadioGroupOverridableBinding =
   | 'disabledOpacity'
   | 'transition';
 
-const OVERRIDE_HOOK: Record<RadioGroupOverridableBinding, string> = {
+/** helperSize has no root hook: it reaches the composed Text only through its fontSize override. */
+const OVERRIDE_HOOK: Partial<Record<RadioGroupOverridableBinding, string>> = {
   controlBorderWidth: '--ds-radio-group-control-border-width',
   controlBorderInvalid: '--ds-radio-group-control-border-invalid',
   controlSize: '--ds-radio-group-control-size',
   controlRadius: '--ds-radio-group-control-radius',
+  optionPaddingBlock: '--ds-radio-group-option-padding-block',
+  optionTextGap: '--ds-radio-group-option-text-gap',
   optionGap: '--ds-radio-group-option-gap',
   listGap: '--ds-radio-group-list-gap',
   partGap: '--ds-radio-group-part-gap',
@@ -63,7 +69,6 @@ const OVERRIDE_HOOK: Record<RadioGroupOverridableBinding, string> = {
   legendWeight: '--ds-radio-group-legend-weight',
   labelSize: '--ds-radio-group-label-size',
   labelWeight: '--ds-radio-group-label-weight',
-  helperSize: '--ds-radio-group-helper-size',
   fontFamily: '--ds-radio-group-font-family', // literal-ok: CSS custom-property hook name, not a font stack
   lineHeight: '--ds-radio-group-line-height',
   disabledOpacity: '--ds-radio-group-disabled-opacity',
@@ -91,6 +96,9 @@ function resolveOverrides(overrides: Partial<Record<RadioGroupOverridableBinding
   }
   return { rootStyle: rootStyle as CSSProperties, helperOverrides };
 }
+
+/** The keys a native radio group moves and selects with; swallowed while the whole group is disabled. */
+const GUARDED_KEYS = new Set(['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft', ' ']);
 
 export interface RadioGroupProps
   extends Omit<
@@ -144,7 +152,7 @@ export interface RadioGroupProps
  * When to use:
  * Use a RadioGroup when the user must pick exactly one of two to about seven options and seeing them all helps the decision — plan tiers, shipping methods, a "how did you hear about us". Give options a `description` when the label alone does not tell them apart. Set `defaultValue` when there is a sensible default; leave the group unselected when the choice is consequential and you want a deliberate answer.
  */
-export const RadioGroup = function RadioGroup({
+export function RadioGroup({
   ref,
   label,
   name,
@@ -160,6 +168,7 @@ export const RadioGroup = function RadioGroup({
   overrides,
   onChange,
   onBlur,
+  onKeyDown,
   id: idProp,
   ...rest
 }: RadioGroupProps & { ref?: Ref<HTMLFieldSetElement> | undefined }): ReactElement {
@@ -178,9 +187,11 @@ export const RadioGroup = function RadioGroup({
   const selected = isControlled ? value : internalValue;
 
   const isDisabled = disabled || (form?.disabled ?? false);
-  // Precedence: error prop → the Form's error (copy.required on a failed submit) → invalid (copy.invalid).
+  // Displayed error: error prop → the Form's message → while invalid, copy.required (required and
+  // nothing selected) else copy.invalid.
+  const invalidCopy = required && selected === undefined ? COPY.required : COPY.invalid;
   const resolvedError =
-    error ?? form?.errors[name] ?? (invalid ? COPY.invalid.replace('{label}', label) : undefined);
+    error ?? form?.errors[name] ?? (invalid ? invalidCopy.replace('{label}', label) : undefined);
   const isInvalid = invalid || resolvedError !== undefined;
 
   // Keep the latest props in a ref so the Form registration does not churn on every render.
@@ -217,9 +228,13 @@ export const RadioGroup = function RadioGroup({
 
   const describedBy = [description ? descriptionId : null, resolvedError ? errorId : null].filter(Boolean).join(' ');
 
-  // Group `disabled` keeps the radios focusable (aria-disabled + guards). A per-option `disabled` is the
-  // native attribute so native arrow movement skips it — the documented exception to the aria-disabled rule.
-  // Roving tabindex, arrows and Space are the native radio group's; no key handling here.
+  // Roving tabindex, arrows, Space and Tab are the native radio group's; nothing is reimplemented.
+  // Group `disabled` keeps the radios focusable (aria-disabled) and guards every way native radios select.
+  const handleKeyDown = (event: KeyboardEvent<HTMLFieldSetElement>) => {
+    onKeyDown?.(event);
+    if (isDisabled && GUARDED_KEYS.has(event.key)) event.preventDefault();
+  };
+
   const handleClick = (event: MouseEvent<HTMLInputElement>) => {
     if (isDisabled) event.preventDefault();
   };
@@ -241,12 +256,11 @@ export const RadioGroup = function RadioGroup({
     if (form && form.validate === 'blur') form.validateField(name);
   };
 
-  // The whole option row is the hit area: its gap and description forward to the radio.
-  const forwardClick = (option: RadioGroupOption) => () => {
-    if (!isDisabled && !option.disabled) radioRefs.current.get(option.value)?.click();
-  };
+  // The whole option row is the hit area: a click on its padding, gap or description selects the radio.
+  // The radio and its native <label for> handle their own clicks.
   const handleRowClick = (option: RadioGroupOption) => (event: MouseEvent<HTMLDivElement>) => {
-    if (event.target === event.currentTarget) forwardClick(option)();
+    if ((event.target as Element).closest('input, label')) return;
+    if (!isDisabled && !option.disabled) radioRefs.current.get(option.value)?.click();
   };
 
   const setRadioRef = (optionValue: string) => (el: HTMLInputElement | null) => {
@@ -283,6 +297,7 @@ export const RadioGroup = function RadioGroup({
       aria-required={required ? 'true' : undefined}
       aria-disabled={isDisabled ? 'true' : undefined}
       onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
     >
       <legend className="ds-radio-group__legend" data-part="legend">
         {label}
@@ -305,34 +320,31 @@ export const RadioGroup = function RadioGroup({
         {options.map((option) => {
           const optionId = `${id}-${option.value}`;
           const optionDescriptionId = `${optionId}-description`;
-          const optionDisabled = isDisabled || option.disabled === true;
-          const optionClasses = ['ds-radio-group__option', optionDisabled ? 'ds-radio-group__option--disabled' : null]
+          // A disabled group dims every row once (on the root class); an option dims only its own row.
+          const optionClasses = ['ds-radio-group__option', option.disabled ? 'ds-radio-group__option--disabled' : null]
             .filter(Boolean)
             .join(' ');
           return (
-            <div key={option.value} className={optionClasses}>
-              <div className="ds-radio-group__row" onClick={handleRowClick(option)}>
-                <input
-                  ref={setRadioRef(option.value)}
-                  id={optionId}
-                  type="radio"
-                  name={name}
-                  value={option.value}
-                  data-part="radio"
-                  checked={isControlled ? value === option.value : undefined}
-                  defaultChecked={isControlled ? undefined : defaultValue === option.value}
-                  className="ds-radio-group__control"
-                  disabled={option.disabled === true}
-                  aria-describedby={option.description ? optionDescriptionId : undefined}
-                  aria-disabled={isDisabled ? 'true' : undefined}
-                  aria-invalid={isInvalid ? 'true' : undefined}
-                  onClick={handleClick}
-                  onChange={handleChange(option)}
-                />
-                <label htmlFor={optionId} data-part="radioLabel" className="ds-radio-group__label">
-                  {option.label}
-                </label>
-              </div>
+            <div key={option.value} className={optionClasses} onClick={handleRowClick(option)}>
+              <input
+                ref={setRadioRef(option.value)}
+                id={optionId}
+                type="radio"
+                name={name}
+                value={option.value}
+                data-part="radio"
+                checked={selected === option.value}
+                className="ds-radio-group__control"
+                // Per-option disabled is the native attribute so native arrow movement skips it.
+                disabled={option.disabled === true}
+                aria-describedby={option.description ? optionDescriptionId : undefined}
+                aria-disabled={isDisabled ? 'true' : undefined}
+                onClick={handleClick}
+                onChange={handleChange(option)}
+              />
+              <label htmlFor={optionId} data-part="radioLabel" className="ds-radio-group__label">
+                {option.label}
+              </label>
               {option.description ? (
                 <Text
                   element="p"
@@ -342,7 +354,6 @@ export const RadioGroup = function RadioGroup({
                   tone="muted"
                   className="ds-radio-group__option-description"
                   overrides={helperOverrides}
-                  onClick={forwardClick(option)}
                 >
                   {option.description}
                 </Text>
@@ -367,4 +378,4 @@ export const RadioGroup = function RadioGroup({
       ) : null}
     </fieldset>
   );
-};
+}

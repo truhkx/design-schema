@@ -1,20 +1,19 @@
 /**
  * Landmark — behavior scenarios from the component doc, one test each, in the doc's order.
- * The doc's role scenarios are web-only; the derived ones here check rendering and the name.
+ * Native has no landmark query, so role scenarios check the `role` / `accessibilityRole`
+ * and `accessibilityLabel` props on the root View.
  */
 import * as React from 'react';
 import { render } from '@testing-library/react-native';
 import { Landmark } from './Landmark';
 import type { LandmarkProps } from './Landmark';
 import meta from './Landmark.stories';
-import { Text } from './Text';
 import { ThemeProvider } from './theme';
 
 /** The Default story's args plus the scenario's `given`. */
 function setup(given: Partial<LandmarkProps> = {}) {
   const props: LandmarkProps = {
     ...(meta.args as LandmarkProps),
-    children: <Text>Region content</Text>,
     ...given,
   };
   const utils = render(
@@ -34,13 +33,27 @@ describe('Landmark', () => {
     warn.mockRestore();
   });
 
-  /* derived: a11y.role */
+  it('the-role-prop-chooses-the-landmark', () => {
+    const s = setup({ role: 'navigation' });
+    expect(s.getByTestId('Landmark').props.role).toBe('navigation');
+  });
+
+  it('search-is-the-search-landmark', () => {
+    const s = setup({ role: 'search' });
+    expect(s.getByTestId('Landmark').props.accessibilityRole).toBe('search');
+  });
+
+  it('a-region-is-named-by-its-label', () => {
+    const s = setup({ role: 'region', label: 'Related articles' });
+    expect(s.getByTestId('Landmark').props.accessibilityLabel).toBe('Related articles');
+  });
+
+  /* derived */
   it('renders', () => {
     const s = setup();
     expect(s.getByTestId('Landmark')).toBeTruthy();
   });
 
-  /* derived: props.role */
   it('renders-role-banner', () => {
     const s = setup({ role: 'banner' });
     expect(s.getByTestId('Landmark')).toBeTruthy();
@@ -81,7 +94,6 @@ describe('Landmark', () => {
     expect(s.getByTestId('Landmark')).toBeTruthy();
   });
 
-  /* derived: a11y.requires accessible-name */
   it('has-accessible-name', () => {
     const s = setup({ label: 'Accessible name' });
     expect(s.getByTestId('Landmark').props.accessibilityLabel).toBe('Accessible name');

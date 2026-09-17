@@ -1,9 +1,10 @@
 import * as React from 'react';
-import { Animated, Text as RNText, View } from 'react-native';
-import type { LayoutChangeEvent, TextStyle, ViewInstance, ViewStyle } from 'react-native';
+import { Animated, View } from 'react-native';
+import type { LayoutChangeEvent, ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
-import { toEasing, toFontWeight, toLineHeight, useReducedMotion, useTheme } from './theme';
+import { Text } from './Text';
+import { toEasing, useReducedMotion, useTheme } from './theme';
 import type { Tokens } from './theme';
 
 export type MeterTone = 'info' | 'success' | 'warning' | 'danger';
@@ -30,7 +31,11 @@ export interface MeterProps {
   max?: number | undefined;
   /** Visible label naming the measurement ("Storage used"). Also the accessible name. */
   label: string;
-  /** Human-readable value shown at the end of the label row and announced instead of the raw number ("3.2 GB of 10 GB"). Omit to show and announce the percentage. */
+  /**
+   * Human-readable value shown at the end of the label row and announced instead of the raw
+   * number ("3.2 GB of 10 GB", "Strong"). Omit to show and announce the percentage, rounded to a
+   * whole number ("32%").
+   */
   valueText?: string | undefined;
   /** Fill color. `info` is the neutral brand fill; the consumer sets `success`/`warning`/`danger` from thresholds it owns. */
   tone?: MeterTone | undefined;
@@ -53,22 +58,18 @@ const FILL_TOKEN = {
  * Meter — shows how much of something there is against a known scale. Its shape is
  * a bar because people read fullness at a glance; its meaning is the number.
  *
- * When to use: Use a Meter for a measurement with a fixed range: storage or quota
- * used, battery, password strength, a score out of ten. Let the consumer decide the
- * tone from thresholds it understands; the meter just paints. Provide `valueText`
- * whenever the raw percentage is not what a person would say. Do not use it for
- * task progress (ProgressBar, planned).
+ * When to use: a measurement with a fixed range — storage or quota used, battery,
+ * password strength, a score out of ten. The consumer decides the tone from thresholds
+ * it owns; the meter just paints. Not for task progress (ProgressBar, planned).
  *
- * Renders an `accessible` `View` with `role="meter"` (RN ≥ 0.73; react-native-web
- * renders the ARIA role, native maps it to the nearest trait), `accessibilityLabel`
- * and `accessibilityValue={{ min, max, now: clamped, text: valueText }}` — `text` only
- * when `valueText` is given, so the platform otherwise announces the percentage.
- * Inside: a label row of two `Text` elements and a track `View` with `overflow:
- * 'hidden'` holding the fill. The track is measured with `onLayout` and the fill's
- * pixel width animates with `Animated` over `transition` (`useNativeDriver: false`),
- * snapping when reduce motion is on. Nothing is interactive. A non-finite `value`
- * counts as `min`; if `max <= min` the track renders empty, `now` is `min`, and a
- * warning is logged in development.
+ * Renders an `accessible` `View` with `role="meter"`, `accessibilityLabel={label}` and
+ * `accessibilityValue={{ min, max, now: clamped, text }}`, where `text` is always set:
+ * `valueText`, else the rounded percentage web and Lit announce. Inside: a header row of
+ * two composed `Text`s and a track `View` (`overflow: 'hidden'`) holding the fill. The
+ * track is measured with `onLayout` and the fill's pixel width animates over `transition`
+ * (`useNativeDriver: false`); it snaps before the width is known, on resize, and under
+ * reduced motion. A non-finite `value` counts as `min`; if `max <= min` the track renders
+ * empty, `now` is `min`, "0%" is shown, and a warning is logged in development.
  */
 export function Meter({
   value,
@@ -81,7 +82,7 @@ export function Meter({
   overrides,
   ref,
 }: MeterProps): React.JSX.Element {
-  const { tokens } = useTheme();
+  const { tokens: t } = useTheme();
   const reducedMotion = useReducedMotion();
 
   const validRange = max > min;
@@ -94,30 +95,24 @@ export function Meter({
   const safeValue = Number.isFinite(value) ? value : min;
   const clamped = validRange ? Math.min(max, Math.max(min, safeValue)) : min;
   const fraction = validRange ? (clamped - min) / (max - min) : 0;
-  const percent = Math.round(fraction * 100);
-  const displayedValue = valueText ?? `${percent}%`;
+  // Rounding is for the text only; the fill width uses the exact fraction.
+  const percentText = new Intl.NumberFormat(undefined, { style: 'percent', maximumFractionDigits: 0 }).format(fraction);
+  const announcedValue = valueText ?? percentText;
 
-  const trackHeight = overrides?.trackHeight ? (resolveToken(tokens, overrides.trackHeight) as number) : tokens.space2;
-  const radius = overrides?.radius ? (resolveToken(tokens, overrides.radius) as number) : tokens.radiusFull;
-  const labelSize = overrides?.labelSize ? (resolveToken(tokens, overrides.labelSize) as number) : tokens.fontSizeSm;
-  const labelWeight = overrides?.labelWeight ? (resolveToken(tokens, overrides.labelWeight) as number) : tokens.fontWeightMedium;
-  const valueSize = overrides?.valueSize ? (resolveToken(tokens, overrides.valueSize) as number) : tokens.fontSizeSm;
-  const fontFamily = overrides?.fontFamily ? (resolveToken(tokens, overrides.fontFamily) as string) : tokens.fontFamilyBody;
-  const lineHeightMultiplier = overrides?.lineHeight ? (resolveToken(tokens, overrides.lineHeight) as number) : tokens.fontLineHeightNormal;
-  const partGap = overrides?.partGap ? (resolveToken(tokens, overrides.partGap) as number) : tokens.space1;
-  const labelGap = overrides?.labelGap ? (resolveToken(tokens, overrides.labelGap) as number) : tokens.space2;
-  const transitionDuration = overrides?.transition ? (resolveToken(tokens, overrides.transition) as number) : tokens.motionDurationBase;
+  const trackHeight = overrides?.trackHeight ? (resolveToken(t, overrides.trackHeight) as number) : t.space2;
+  const radius = overrides?.radius ? (resolveToken(t, overrides.radius) as number) : t.radiusFull;
+  const partGap = overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.space1;
+  const labelGap = overrides?.labelGap ? (resolveToken(t, overrides.labelGap) as number) : t.space2;
+  const transitionDuration = overrides?.transition ? (resolveToken(t, overrides.transition) as number) : t.motionDurationBase;
 
-  // The fill is animated on `width` in pixels (measured from the track) rather than
-  // a percentage string, which `Animated` cannot interpolate on every platform.
+  // The fill animates `width` in measured pixels: a percentage cannot be interpolated.
   const [trackWidth, setTrackWidth] = React.useState(0);
   const fillWidth = React.useRef(new Animated.Value(0)).current;
   const laidOutWidth = React.useRef(0);
 
   React.useEffect(() => {
     const toValue = trackWidth * fraction;
-    // Only a change to `value` animates; the first layout and resizes snap so the
-    // bar never sweeps in on mount or on rotation.
+    // Only a change to `value` animates; the first layout and resizes snap.
     const resized = laidOutWidth.current !== trackWidth;
     laidOutWidth.current = trackWidth;
     if (reducedMotion || resized || trackWidth === 0) {
@@ -127,60 +122,38 @@ export function Meter({
     Animated.timing(fillWidth, {
       toValue,
       duration: transitionDuration,
-      easing: toEasing(tokens.motionEasingStandard),
-      // Layout properties cannot use the native driver.
+      easing: toEasing(t.motionEasingStandard),
       useNativeDriver: false,
     }).start();
-  }, [fraction, trackWidth, reducedMotion, fillWidth, transitionDuration, tokens.motionEasingStandard]);
+  }, [fraction, trackWidth, reducedMotion, fillWidth, transitionDuration, t.motionEasingStandard]);
 
   const handleTrackLayout = (event: LayoutChangeEvent): void => {
     const { width } = event.nativeEvent.layout;
     setTrackWidth((prev) => (prev === width ? prev : width));
   };
 
-  const containerStyle: ViewStyle = {
-    flexDirection: 'column',
-    gap: partGap,
-  };
-
-  const labelRowStyle: ViewStyle = {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'baseline',
-    gap: labelGap,
-  };
-
-  const labelStyle: TextStyle = {
-    fontFamily,
-    fontSize: labelSize,
-    fontWeight: toFontWeight(labelWeight),
-    lineHeight: toLineHeight(labelSize, lineHeightMultiplier),
-    color: tokens.colorForeground,
-    flexShrink: 1,
-  };
-
-  const valueStyle: TextStyle = {
-    fontFamily,
-    fontSize: valueSize,
-    fontWeight: toFontWeight(tokens.fontWeightRegular),
-    lineHeight: toLineHeight(valueSize, lineHeightMultiplier),
-    color: tokens.colorForegroundMuted,
-  };
-
-  const trackStyle: ViewStyle = {
-    height: trackHeight,
-    borderRadius: radius,
-    backgroundColor: tokens.colorBackgroundStrong,
-    overflow: 'hidden',
-  };
+  const styles = React.useMemo(() => {
+    const container: ViewStyle = { flexDirection: 'column', gap: partGap };
+    const header: ViewStyle = {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'baseline',
+      gap: labelGap,
+    };
+    const track: ViewStyle = {
+      height: trackHeight,
+      borderRadius: radius,
+      backgroundColor: t.colorBackgroundStrong,
+      overflow: 'hidden',
+    };
+    return { container, header, track };
+  }, [partGap, labelGap, trackHeight, radius, t.colorBackgroundStrong]);
 
   const fillStyle: Animated.WithAnimatedValue<ViewStyle> = {
     height: trackHeight,
     borderRadius: radius,
-    backgroundColor: tokens[FILL_TOKEN[tone]],
+    backgroundColor: t[FILL_TOKEN[tone]],
     width: fillWidth,
-    // Start edge follows the writing direction under I18nManager because the fill
-    // is a normal flex child, not absolutely positioned.
     alignSelf: 'flex-start',
   };
 
@@ -188,27 +161,43 @@ export function Meter({
     <View
       ref={ref}
       testID="Meter"
-      // One accessibility element: the label and value are announced together and
-      // the visible label row is not read a second time.
+      // One accessibility element: label and value announce together.
       accessible
       role="meter"
       accessibilityLabel={label}
-      // Without `text`, the platform announces `now` against `min`…`max` as a percentage.
-      accessibilityValue={{ min, max, now: clamped, text: valueText }}
-      style={containerStyle}
+      accessibilityValue={{ min, max, now: clamped, text: announcedValue }}
+      style={styles.container}
     >
-      <View style={labelRowStyle}>
-        <RNText allowFontScaling style={labelStyle}>
+      <View testID="Meter.header" style={styles.header}>
+        <Text
+          size="sm"
+          weight="medium"
+          tone="default"
+          overrides={{
+            fontSize: overrides?.labelSize,
+            fontWeight: overrides?.labelWeight,
+            fontFamily: overrides?.fontFamily,
+            lineHeight: overrides?.lineHeight,
+          }}
+        >
           {label}
-        </RNText>
+        </Text>
         {hideValue ? null : (
-          <RNText allowFontScaling style={valueStyle}>
-            {displayedValue}
-          </RNText>
+          <Text
+            size="sm"
+            tone="muted"
+            overrides={{
+              fontSize: overrides?.valueSize,
+              fontFamily: overrides?.fontFamily,
+              lineHeight: overrides?.lineHeight,
+            }}
+          >
+            {announcedValue}
+          </Text>
         )}
       </View>
-      <View style={trackStyle} onLayout={handleTrackLayout}>
-        <Animated.View style={fillStyle} />
+      <View testID="Meter.track" style={styles.track} onLayout={handleTrackLayout}>
+        <Animated.View testID="Meter.fill" style={fillStyle} />
       </View>
     </View>
   );

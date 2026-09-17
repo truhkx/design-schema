@@ -126,7 +126,8 @@ export function Alert({
   const lineHeightMultiplier = overrides?.lineHeight ? (resolveToken(t, overrides.lineHeight) as number) : t.fontLineHeightNormal;
   const dismissMargin = overrides?.dismissMargin ? (resolveToken(t, overrides.dismissMargin) as number) : t.space1;
 
-  const bodyText = typeof children === 'string' ? children : undefined;
+  const isTextBody = typeof children === 'string' || typeof children === 'number';
+  const bodyText = isTextBody ? String(children) : undefined;
   const announcement = [heading, bodyText]
     .filter((part): part is string => part !== undefined && part !== '')
     .join('. ');
@@ -173,7 +174,7 @@ export function Alert({
     color: t[colors.foreground],
   };
 
-  // A string body is the system Text (tone default = color.foreground, the locked
+  // A string or number body is the system Text (tone default = color.foreground, the locked
   // bodyColor); the typography bindings reach it through its own overrides.
   const bodyOverrides = { fontFamily: overrides?.fontFamily, fontSize: overrides?.fontSize, lineHeight: overrides?.lineHeight };
 
@@ -203,7 +204,7 @@ export function Alert({
           </RNText>
         ) : null}
         <View testID="Alert.body">
-          {typeof children === 'string' ? <Text overrides={bodyOverrides}>{children}</Text> : children}
+          {isTextBody ? <Text overrides={bodyOverrides}>{children}</Text> : children}
         </View>
       </View>
       {dismissible ? (
@@ -213,7 +214,7 @@ export function Alert({
             variant="ghost"
             size="sm"
             iconOnly
-            leadingIcon={<Icon name="close" color={t.colorActionGhostForeground} />}
+            leadingIcon={<Icon name="close" overrides={{ color: 'color.action.ghost.foreground' }} />}
             onPress={onDismiss}
           />
         </View>

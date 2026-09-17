@@ -8316,7 +8316,7 @@
         "caption": {
           "type": "string",
           "required": true,
-          "description": "What the grid holds (\"Price list\"). The accessible name; visually hidden with `hideCaption`.",
+          "description": "What the grid holds (\"Price list\"). The accessible name; visually hidden with `hideCaption`. Required: a grid built without one falls back to an empty caption and warns in development.",
           "a11y": "aria-labelledby the caption (web) / accessibilityLabel (native)."
         },
         "captionLevel": {
@@ -8327,7 +8327,7 @@
             "4"
           ],
           "default": "2",
-          "description": "Heading level of the caption in the page outline; its size is captionSize regardless, as Table."
+          "description": "Heading level of the caption in the page outline; its size is captionSize regardless, as Table. On React Native the level has no observable effect — Heading sets the header trait at every level and captionSize/captionWeight pin the typography — so the prop is accepted and forwarded for parity only."
         },
         "hideCaption": {
           "type": "boolean",
@@ -8337,8 +8337,8 @@
         "columns": {
           "type": "array",
           "required": true,
-          "shape": "{ key: string; header: string; abbr?: string; align?: \"start\" | \"end\" | \"center\"; sortable?: boolean; width?: number; minWidth?: number; resizable?: boolean; isRowHeader?: boolean; pinned?: \"start\" | \"end\"; editable?: boolean; editor?: \"text\" | \"number\" | \"select\" | \"date\" | \"checkbox\"; options?: { value: string; label: string }[]; render?: (row: Row) => ReactNode; validate?: (value: unknown, row: Row) => string | undefined }[]",
-          "description": "Table's column model plus grid concerns: pixel `width` (columns do not auto-size in a virtualized grid; `width` is a multiple of space.1, e.g. 160; the `columnWidth` binding when omitted), `minWidth` (the floor for pointer and keyboard resize; never below size.target.min, which is also its default), `resizable` (pointer drag on the header edge, Shift+ArrowLeft/Right on the header cell by `resizeStep`), `pinned` columns that stay put while scrolling sideways (pinned columns must be contiguous at the start or end of `columns` and keep their order there; the selection column is always pinned start and counted in the offsets), `editable` with an `editor` kind and `validate`. Exactly one column may be `isRowHeader`. `abbr` is the spoken name of a non-sortable header (the visible header is aria-hidden beside visually hidden `abbr` text); a sortable header's name stays copy.sortAscending/sortDescending built from `header`. `render` returns a ReactNode on web and rn and a lit-renderable value (TemplateResult, string or number) on Lit."
+          "shape": "{ key: string; header: string; abbr?: string; align?: \"start\" | \"end\" | \"center\"; sortable?: boolean; width?: number; minWidth?: number; resizable?: boolean; isRowHeader?: boolean; pinned?: \"start\" | \"end\"; editable?: boolean; editor?: \"text\" | \"number\" | \"select\" | \"date\" | \"checkbox\"; options?: { value: string; label: string }[]; render?: (row: Row) => unknown; validate?: (value: unknown, row: Row) => string | undefined }[]",
+          "description": "Table's column model plus grid concerns: pixel `width` (columns do not auto-size in a virtualized grid; `width` is a multiple of space.1, e.g. 160; the `columnWidth` binding when omitted), `minWidth` (the floor for pointer and keyboard resize; never below size.target.min, which is also its default), `resizable` (pointer drag on the header edge, Shift+ArrowLeft/Right on the header cell by `resizeStep`), `pinned` columns that stay put while scrolling sideways (pinned columns must be contiguous at the start or end of `columns` and keep their order there; the selection column is always pinned start and counted in the offsets), `editable` with an `editor` kind and `validate`. Exactly one column may be `isRowHeader`. `abbr` is the spoken name of a non-sortable header (the visible header is aria-hidden beside visually hidden `abbr` text); a sortable header's name stays copy.sortAscending/sortDescending built from `header`, so `abbr` has no effect on a sortable column. `render` returns a ReactNode on web and rn and a lit-renderable value (TemplateResult, string or number) on Lit — hence `unknown` in the shape, the one type that covers all three. The two column rules with no runtime consequence — exactly one `isRowHeader`, pinned columns contiguous at one end — are development-time warnings on every platform, never thrown errors."
         },
         "data": {
           "type": "array",
@@ -8362,7 +8362,7 @@
         "defaultSort": {
           "type": "object",
           "shape": "{ column: string; direction: \"ascending\" | \"descending\" }",
-          "description": "Initial sort; the grid sorts `data` itself when `rowCount` is not set."
+          "description": "Initial sort; the grid sorts `data` itself when `rowCount` is not set and the sort is uncontrolled. A controlled `sort` never reorders `data` — the caller owns the order, as Table."
         },
         "selectable": {
           "type": "enum",
@@ -8373,12 +8373,12 @@
             "range"
           ],
           "default": "none",
-          "description": "`row` adds a checkbox column and Shift/Ctrl row selection (pointer: a click on the select cell or its Checkbox toggles the row, Ctrl/Cmd+click toggles, Shift+click adds the rows from the anchor through the clicked row, a plain click on a data cell only moves focus); `cell` selects the focused cell (selection follows focus, no key needed, onSelectionChange fires on every move to a body cell, and the focus ring is its only visual); `range` allows Shift+arrow / pointer-drag rectangles (copy as TSV). Selection is separate from focus in row and range mode: focus is where the keyboard is, selection is what an action applies to."
+          "description": "`row` adds a checkbox column and Shift/Ctrl row selection (pointer: a click on the select cell or its Checkbox toggles the row, Ctrl/Cmd+click toggles, Shift+click adds the rows from the anchor through the clicked row, a plain click on a data cell only moves focus); `cell` selects the focused cell (selection follows focus, no key needed, and the focus ring is its only visual: onSelectionChange fires on every move to a body data cell, whether the move came from the keyboard or from a click, and a move to a header cell, to the selection column or to a row that is not loaded selects nothing); `range` allows Shift+arrow / pointer-drag rectangles (copy as TSV). Selection is separate from focus in row and range mode: focus is where the keyboard is, selection is what an action applies to."
         },
         "selected": {
           "type": "array",
           "shape": "string[]",
-          "description": "Controlled selected row ids (row mode)."
+          "description": "Controlled selected row ids (row mode). There is no `defaultSelected`: left undefined the grid keeps the selection itself, and onSelectionChange fires in both modes, as the controlled-state rule for `sort`."
         },
         "editable": {
           "type": "boolean",
@@ -8407,7 +8407,7 @@
             "fixed"
           ],
           "default": "viewport",
-          "description": "`viewport` sets the whole component (caption, scroll region and status bar) to `100vh − 2 × layout.gap.section` — the window height on native — and the scroll region takes what the caption and status bar leave, as Table (the grid, not the page, scrolls); `content` grows with rows (no virtualization, small grids); `fixed` uses a height the caller sets through `overrides.fixedHeight` — one of the few size bindings that is overridable by design."
+          "description": "`viewport` sets the whole component (caption, scroll region and status bar) to `100vh − 2 × layout.gap.section` — on native, the window height less 2 × layout.gap.section — and the scroll region takes what the caption and status bar leave, as Table (the grid, not the page, scrolls); `content` grows with rows (no virtualization, small grids); `fixed` uses a height the caller sets through `overrides.fixedHeight` — one of the few size bindings that is overridable by design."
         },
         "loading": {
           "type": "boolean",
@@ -8596,7 +8596,7 @@
           "keys": [
             "Tab"
           ],
-          "action": "Enters the grid on the last-focused cell (initially the first header cell) and, from inside, leaves it — the grid is one tab stop. Inside a cell that contains a control, Tab still leaves the grid; use Enter to interact with the control. While an editor is open, Tab commits and opens the next editable cell in the row (Shift+Tab the previous); from the last editable cell it commits and leaves the grid.",
+          "action": "Enters the grid on the last-focused cell (initially the first header cell) and, from inside, leaves it — the grid is one tab stop. Inside a cell that contains a control, Tab still leaves the grid; use Enter to interact with the control. While an editor is open, Tab commits and opens the next editable cell in the row (Shift+Tab the previous); from the last editable cell it commits and leaves the grid — the editor is removed in the same task so the browser's own Tab lands outside, unless `validate` rejects that commit, in which case the editor stays open and the key does nothing.",
           "from": "any",
           "expect": "manual"
         },
@@ -8668,7 +8668,7 @@
           "keys": [
             "Enter"
           ],
-          "action": "On a header cell: sorts (if sortable). On an editable cell: opens the editor; while editing, commits and moves focus down one row. On the selection cell: toggles its checkbox. On a cell whose `render` contains a control (Link, Button, Checkbox): focuses and activates the first focusable descendant.",
+          "action": "On a header cell: sorts (if sortable). On an editable cell: opens the editor; while editing, commits and moves focus down one row. On the selection cell: toggles its checkbox. On a cell whose `render` contains a control (Link, Button, Checkbox): focuses the first focusable descendant and clicks it (on a custom element, its inner native control), and Escape hands focus back to the cell. Controls inside `render` are demoted to tabindex=-1 after every update so the grid stays one tab stop.",
           "from": "inside",
           "expect": "manual"
         },
@@ -8732,7 +8732,7 @@
           "keys": [
             "Control+c"
           ],
-          "action": "Copies the selection as tab-separated text (with headers when whole columns are selected); bound by key code KeyC, Control or Meta.",
+          "action": "Copies the selection as tab-separated text; the header line is written when the range spans every loaded row, which is what \"whole columns\" means for a partly loaded set. Bound by key code KeyC, Control or Meta. copy.copied is announced once the clipboard write resolves; a refused or unavailable clipboard announces nothing.",
           "when": "selectable is range",
           "from": "inside",
           "expect": "manual",
@@ -8747,7 +8747,7 @@
             "Delete",
             "Backspace"
           ],
-          "action": "Clears the value of editable cells in the selection — every editable cell of the selected rows (row), the range (range), the focused cell (cell); nothing in `none` mode: onCellChange fires with `value: undefined`, the same shape the column model calls an omitted value, not an empty string. `validate` does not run; the caller rejects a clear by not updating `data`.",
+          "action": "Clears the value of editable cells in the selection — every editable cell of the selected rows (row), the range (range), the focused cell (cell); nothing in `none` mode: onCellChange fires once per cleared cell with `value: undefined`, the same shape the column model calls an omitted value, not an empty string, in row-major order (rows in display order, columns in `columns` order). `validate` does not run; the caller rejects a clear by not updating `data`. These two keys are the only path to `undefined` besides an emptied number editor, so on rn — where they have no equivalent — a cell cannot be cleared at all; clearing is web, lit and swiftui.",
           "when": "editable and selection",
           "from": "inside",
           "expect": "manual"
@@ -8756,6 +8756,7 @@
       "styles": {
         "surface": {
           "token": "color.background",
+          "part": "container",
           "locked": true
         },
         "headerSurface": {
@@ -8858,7 +8859,7 @@
         "selectColumnWidth": {
           "token": "size.target.min",
           "part": "selectCell",
-          "description": "The selection column: this plus 2 × cellPaddingInline in the rule; pinned-start offsets add it.",
+          "description": "The selection column's total inline size is this plus 2 × cellPaddingInline, and the cell has no inline padding of its own — the Checkbox is centred in it, and Checkbox has no inset override to take that padding. Pinned-start offsets add the same total.",
           "locked": true
         },
         "columnWidth": {
@@ -8908,26 +8909,30 @@
         },
         "rangeBackground": {
           "token": "color.background.strong",
-          "description": "Selected range fill, drawn beneath the cell content (so the foreground-on-strong pair is exact); opaque pinned cells and a hovered row cover it. The range border marks its edge and is drawn above the cells.",
+          "part": "rangeOverlay",
+          "description": "Selected range fill, drawn beneath the cell content (so the foreground-on-strong pair is exact); opaque pinned cells and a hovered row cover it. The range border marks its edge and is drawn above the cells. Range selection is web, lit and swiftui only — `selectable: range` degrades to `row` on rn, so the `rangeOverlay` part, these three bindings and copy.selectedRange have no element and no code there.",
           "locked": true
         },
         "rangeBorder": {
           "token": "color.control.selectedBackground",
+          "part": "rangeOverlay",
           "locked": true
         },
         "rangeBorderWidth": {
           "token": "border.width.focus",
+          "part": "rangeOverlay",
           "locked": true
         },
         "pinnedShadow": {
           "token": "shadow.raised",
+          "part": "cell",
           "description": "Cast by pinned columns once the body has scrolled sideways: start pins on their end edge, end pins on their start edge.",
           "locked": false
         },
         "resizeHandle": {
           "token": "color.border.strong",
           "part": "resizeHandle",
-          "description": "The column edge grab area (role=separator, not focusable; keyboard resizing is Shift+Arrow on the header cell), visible on hover/focus of the header cell. Native has no hover, so it is always visible there, hit-slopped to size.target.min.",
+          "description": "The column edge grab area (role=separator, not focusable; keyboard resizing is Shift+Arrow on the header cell), visible on hover/focus of the header cell. Its aria-valuenow is set once the column has a pixel width — an explicit `width` or one the user has resized — and omitted while the column sits at the columnWidth token, whose pixel value the grid does not know at render. Native has no hover, so it is always visible there, hit-slopped to size.target.min.",
           "locked": false
         },
         "resizeHandleWidth": {
@@ -8943,6 +8948,7 @@
         "statusBarSurface": {
           "token": "color.background.subtle",
           "part": "statusBar",
+          "description": "The `statusBar` part stays on the live status Text (the composed Text that carries statusBarSize); statusBarSurface, statusBarPadding and statusBarGap style the bar element the grid owns around that Text and its sibling Texts, which carries no part of its own.",
           "locked": true
         },
         "statusBarColor": {
@@ -8964,7 +8970,7 @@
         "statusBarGap": {
           "token": "space.2",
           "part": "statusBar",
-          "description": "Between status bar items (live message, row count, selection count, scroll hint, position); no separator characters.",
+          "description": "Between status bar items, which are laid out in this order and no other: the live message, the row count, the selection count, the scroll hint, the position. No separator characters. The row count is always shown; the selection count only while something is selected; the scroll hint only while the columns overflow the region and it has not yet been scrolled sideways; the position only once there is an active cell (so in `row` and `none` mode on rn, where there is no active cell until one is tapped, it is absent).",
           "locked": false
         },
         "captionSize": {
@@ -8985,23 +8991,27 @@
         },
         "fixedHeight": {
           "token": "space.20",
-          "description": "The grid height for `height: fixed`; overridable by design (a page decides how tall its grid is). space.20 is the floor, not a recommendation.",
+          "description": "The height for `height: fixed`. It sizes the whole component — caption, scroll region and status bar — as `viewport` does, and the scroll region takes what the caption and status bar leave. Overridable by design (a page decides how tall its grid is); space.20 is the floor, not a recommendation.",
           "locked": false
         },
         "fontFamily": {
           "token": "font.family.body",
+          "description": "The component's font, set on the container and inherited by the scroll region and the cells.",
           "locked": false
         },
         "fontSize": {
           "token": "font.size.sm",
+          "description": "Set with fontFamily on the container.",
           "locked": false
         },
         "lineHeight": {
           "token": "font.lineHeight.tight",
+          "description": "Set with fontFamily on the container.",
           "locked": false
         },
         "numericFont": {
           "token": "font.family.mono",
+          "part": "cell",
           "description": "Cells whose raw value is a number and that have no `render`.",
           "locked": false
         },
@@ -9011,10 +9021,13 @@
         },
         "focusRing": {
           "token": "color.border.focus",
+          "part": "scrollRegion",
+          "description": "Drawn by the scroll region while the grid inside it has focus, so the ring is never clipped by the region's own overflow.",
           "locked": true
         },
         "focusRingWidth": {
           "token": "border.width.focus",
+          "part": "scrollRegion",
           "locked": true
         },
         "transition": {
@@ -9089,7 +9102,12 @@
               "type": "number",
               "description": "How many columns the selected range covers."
             }
-          }
+          },
+          "platforms": [
+            "web",
+            "lit",
+            "swiftui"
+          ]
         },
         "copied": {
           "plural": {
@@ -9166,7 +9184,7 @@
         "empty": "Nothing to show.",
         "scrollHint": "Scroll sideways to see more columns",
         "editHint": {
-          "text": "Double tap to edit",
+          "text": "Opens the cell editor",
           "platforms": [
             "rn"
           ]
@@ -9273,7 +9291,7 @@
             "tabindex",
             "aria-activedescendant"
           ],
-          "notes": "Built from <div>s with explicit roles (role=\"grid\" > \"rowgroup\" > \"row\" > \"columnheader\"/\"rowheader\"/\"gridcell\"), never <table>: virtualization renders only visible rows, which breaks a native table's layout and its implicit roles anyway, and pinned columns need independent positioning. Every rendered row carries aria-rowindex and every cell aria-colindex so a screen reader knows the position among the unrendered rows; aria-rowcount/aria-colcount on the grid. `scrollRegion` and `grid` are two nested elements: scrollRegion is the scrolling div (it draws focusRing while the grid inside it is :focus-visible, so the ring is not clipped) and grid is the role=\"grid\" div inside it that carries tabindex, aria-activedescendant and the rowgroups. Focus: the grid element is the tab stop (tabindex=0) and uses aria-activedescendant pointing at the current cell (cells have ids and tabindex=-1); this keeps focus stable while rows are recycled. Except when a cell contains an interactive element or an editor is open: then real focus moves into it (the APG \"focus inside the cell\" mode) and returns to the cell on Escape/commit. Virtualization: a fixed rowHeight makes offsets arithmetic; a spacer sets the scroll height; rows render with translateY; overscan of one page. Editing: the editor is the system Input/NumberInput/Select/DatePicker/Checkbox rendered inside the cell with its label visually hidden, size sm, `overrides` for inset zero (Input, NumberInput, DatePicker: `paddingInline`/`paddingBlock` space.0; Select: `triggerPaddingInline`/`triggerPaddingBlock` space.0; Checkbox: none); validate on commit, and an invalid cell keeps the editor open with the message in the status bar and aria-describedby. Range selection is drawn with an absolutely positioned overlay, not per-cell styles. `container?: HTMLElement` (default document.body) is the portal target for the composed Select and DatePicker editors — a platform prop, not a schema prop. Column resize: the resizeHandle part, a separator (role=\"separator\" aria-orientation=\"vertical\" aria-valuenow) on the header cell edge, draggable with the pointer and not focusable; the keyboard path is Shift+ArrowLeft/Right on the header cell. Button and Heading keep their own data-part, so the sortButton part is a span the grid owns around the Button (it takes the click), and a click anywhere on a selectCell/selectAllCell toggles its Checkbox; the sort Button gets `overrides.paddingInline` space.0 so its text lines up with the cells. Copy writes text/plain TSV to the clipboard. The statusBar part is a div carrying the surface and padding; inside it only a live span is role=\"status\" (loading, invalid, sort, selection, copy and editing announcements), and the row count, selection count, scrollHint and position Texts sit beside it outside the live region. With showStatusBar false the bar stays in the DOM, visually hidden, holding only the live span."
+          "notes": "Built from <div>s with explicit roles (role=\"grid\" > \"rowgroup\" > \"row\" > \"columnheader\"/\"rowheader\"/\"gridcell\"), never <table>: virtualization renders only visible rows, which breaks a native table's layout and its implicit roles anyway, and pinned columns need independent positioning. Every rendered row carries aria-rowindex and every cell aria-colindex so a screen reader knows the position among the unrendered rows; aria-rowcount/aria-colcount on the grid. aria-rowcount counts the header row — it is `(rowCount ?? data.length) + 1`, the header row is aria-rowindex 1 and body rows start at 2. aria-multiselectable is \"true\" in `row` and `range`, \"false\" in `cell`, and absent in `none`. `scrollRegion` and `grid` are two nested elements: scrollRegion is the scrolling div (it draws focusRing while the grid inside it is :focus-visible, so the ring is not clipped) and grid is the role=\"grid\" div inside it that carries tabindex, aria-activedescendant and the rowgroups. Focus: the grid element is the tab stop (tabindex=0) and uses aria-activedescendant pointing at the current cell (cells have ids and tabindex=-1); this keeps focus stable while rows are recycled. Except when a cell contains an interactive element or an editor is open: then real focus moves into it (the APG \"focus inside the cell\" mode) and returns to the cell on Escape/commit. Virtualization: a fixed rowHeight makes offsets arithmetic; a spacer sets the scroll height; rows render with translateY; overscan of one page. Editing: the editor is the system Input/NumberInput/Select/DatePicker/Checkbox rendered inside the cell with its label visually hidden, size sm, `overrides` for inset zero (Input, NumberInput, DatePicker: `paddingInline`/`paddingBlock` space.0; Select: `triggerPaddingInline`/`triggerPaddingBlock` space.0; Checkbox: none); validate on commit, and an invalid cell keeps the editor open with the message in the status bar and aria-describedby. Range selection is drawn with an absolutely positioned overlay, not per-cell styles. `container?: HTMLElement` (default document.body) is the portal target for the composed Select and DatePicker editors — a platform prop, not a schema prop. Column resize: the resizeHandle part, a separator (role=\"separator\" aria-orientation=\"vertical\" aria-valuenow) on the header cell edge, draggable with the pointer and not focusable; the keyboard path is Shift+ArrowLeft/Right on the header cell. Button and Heading keep their own data-part, so the sortButton part is a span the grid owns around the Button (it takes the click), and a click anywhere on a selectCell/selectAllCell toggles its Checkbox; the sort Button gets `overrides.paddingInline` space.0 so its text lines up with the cells. Copy writes text/plain TSV to the clipboard. The statusBar part is a div carrying the surface and padding; inside it only a live span is role=\"status\" (loading, invalid, sort, selection, copy and editing announcements), and the row count, selection count, scrollHint and position Texts sit beside it outside the live region. With showStatusBar false the bar stays in the DOM, visually hidden, holding only the live span."
         },
         "lit": {
           "tag": "ds-data-grid",
@@ -9294,7 +9312,7 @@
               "attribute": "no-sticky-header"
             }
           ],
-          "notes": "`columns` and `data` as properties; `showStatusBar` and `stickyHeader` default true, so their attributes are the negated `no-status-bar` / `no-sticky-header`. the grid renders in the shadow root with `repeat` keyed by row id over the visible window. aria-activedescendant works inside one shadow root. Editors are the ds-* form elements composed in the cell. Composed events as listed. ElementInternals role=\"grid\" is NOT used on the host; the inner container carries the role so ids for activedescendant resolve within the same root."
+          "notes": "`columns` and `data` as properties; `showStatusBar` and `stickyHeader` default true, so their attributes are the negated `no-status-bar` / `no-sticky-header`. `caption`, `row-count` (Number) and `empty-message` are plain attributes that are not reflected; `sort`, `defaultSort`, `selected` and `overrides` are properties only (`attribute: false`), as `columns` and `data`. Plural copy (copy.copied, copy.rowCount) selects its form with `new Intl.PluralRules` at the runtime default locale — `document.documentElement.lang` when the page sets one. the grid renders in the shadow root with `repeat` keyed by row id over the visible window. aria-activedescendant works inside one shadow root. Editors are the ds-* form elements composed in the cell. Composed events as listed. ElementInternals role=\"grid\" is NOT used on the host; the inner container carries the role so ids for activedescendant resolve within the same root."
         },
         "rn": {
           "element": "FlatList",
@@ -9305,7 +9323,7 @@
             "stickyHeaderIndices",
             "onEndReached"
           ],
-          "notes": "A FlatList with fixed getItemLayout (virtualized for free); the FlatList is the role=\"grid\" element named by the caption, the header row has its own rowgroup, and the body rows have no rowgroup element. The caption Heading uses `captionLevel` as on web. Roles use the ARIA-aligned `role` prop (grid, row, rowgroup, columnheader, rowheader, cell) — RN's accessibilityRole has no grid member. A header row View of role=\"columnheader\" cells, rows as horizontal Views of fixed-width cells inside a horizontal ScrollView shared by header and body (scroll positions synced). Pinned columns are not sticky on native (no position: sticky, no extra dependency for a synced second list): they scroll with the rest and only cast pinnedShadow once scrolled, as Table's row-header column. Column resize is a PanResponder drag on the always-visible header edge plus increment/decrement accessibility actions on the header cell (by resizeStep). Commit timing: Input commits on blur; NumberInput and DatePicker have no blur event, so they commit when another cell or a sort header is pressed or through the editing cell's `activate` accessibility action, and `escape` cancels (an open editor stays open if focus leaves the grid); Select and Checkbox commit on change. Ctrl+C has no native equivalent (core RN has no clipboard API and no extra dependency is allowed); copy.copied is unused there. Each cell is accessible with accessibilityLabel \"{column}: {value}\" and, when editable, accessibilityHint copy.editHint; editing opens the system control inline, and select/date show a BottomSheet on phones through Select's and DatePicker's own native presentation, not a separate BottomSheet. Row selection via Checkbox cells; range selection is not offered on native (no keyboard model), and `selectable: range` degrades to `row`. Arrow keys apply only on react-native-web, and even there they are not wired: core RN gives View and Pressable no key events, so the whole cell-navigation model — arrows, Home/End, Page keys, Ctrl+A — is replaced by touch, where tapping a cell selects or edits it, the select-all checkbox stands in for Ctrl+A, and the header button sorts. `copy.position` has no announcement here. FlatList also gives the set of body rows no wrapper of its own, so the `body` rowgroup part has no element on native: the list is the grid, and only the header row carries a rowgroup. This is the one component where a phone is a poor fit; the doc recommends Table with `responsive: stack` for phone-first screens."
+          "notes": "A FlatList with fixed getItemLayout (virtualized for free); the FlatList is the role=\"grid\" element named by the caption, the header row has its own rowgroup, and the body rows have no rowgroup element. The caption Heading uses `captionLevel` as on web. Roles use the ARIA-aligned `role` prop (grid, row, rowgroup, columnheader, rowheader, cell) — RN's accessibilityRole has no grid member. A header row View of role=\"columnheader\" cells, rows as horizontal Views of fixed-width cells inside a horizontal ScrollView shared by header and body (scroll positions synced). Pinned columns are not sticky on native (no position: sticky, no extra dependency for a synced second list): they scroll with the rest and only cast pinnedShadow once scrolled, as Table's row-header column. Column resize is a PanResponder drag on the always-visible header edge plus increment/decrement accessibility actions on the header cell (by resizeStep). Commit timing: Input commits on blur; NumberInput and DatePicker have no blur event, so they commit when another cell or a sort header is pressed or through the editing cell's `activate` accessibility action, and `escape` cancels (an open editor stays open if focus leaves the grid); Select and Checkbox commit on change. Ctrl+C has no native equivalent (core RN has no clipboard API and no extra dependency is allowed); copy.copied is unused there. Each cell is accessible with accessibilityLabel \"{column}: {value}\" and, when editable, accessibilityHint copy.editHint; editing opens the system control inline, and select/date show a BottomSheet on phones through Select's and DatePicker's own native presentation, not a separate BottomSheet. Row selection via Checkbox cells; range selection is not offered on native (no keyboard model), and `selectable: range` degrades to `row`. Arrow keys apply only on react-native-web, and even there they are not wired: core RN gives View and Pressable no key events, so the whole cell-navigation model — arrows, Home/End, Page keys, Ctrl+A — is replaced by touch, where tapping a cell selects or edits it, the select-all checkbox stands in for Ctrl+A, and the header button sorts. `copy.position` has no announcement here. Native has no aria-rowindex/aria-rowcount either, so position among unloaded rows is never spoken: the grid's accessibilityLabel is the caption followed by copy.rowCount, so at least the total is announced on focus, and copy.position stays visible-only. `aria-readonly` has no native equivalent either — a read-only grid is told apart only by its cells carrying no copy.editHint. There is no Escape key: the only way to abandon an open editor is the editing cell's `escape` accessibility action (VoiceOver's two-finger scrub, TalkBack's back gesture), which is what answers `escape-dismiss` here; a sighted touch user leaves an edit by pressing another cell, which commits it. FlatList also gives the set of body rows no wrapper of its own, so the `body` rowgroup part has no element on native: the list is the grid, and only the header row carries a rowgroup. This is the one component where a phone is a poor fit; the doc recommends Table with `responsive: stack` for phone-first screens."
         },
         "swiftui": {
           "element": "ScrollView",
@@ -9859,9 +9877,9 @@
       "Overview": "A data grid is for working in data, not reading it: hundreds or thousands of rows, arrow keys from cell to cell, type to edit, select a block and copy it. It shares Table's column and data model so a screen can start as a Table and become a DataGrid when the job changes, but it is a different role with a different keyboard contract, and the two are never one component with a switch.",
       "When to use": "Use a DataGrid when people navigate cell by cell, edit values in place, select ranges, or scroll through more rows than fit in memory as DOM: price lists, inventory counts, timesheets, admin views over large sets, anything a spreadsheet would otherwise be used for. Set `editable` and mark the columns that may change; give every editable column a `validate`. Use `height: viewport` (the default) so the grid, not the page, scrolls.",
       "When not to use": "Do not use a DataGrid for content people read and act on by row — orders, members, invoices — where Table's ordinary Tab order, stacked responsive mode and row links serve better. Do not use it on phone-first screens (its keyboard model has no touch equivalent; Table with `responsive: stack` does). Do not use it for a handful of editable fields (a Form). Do not put links, buttons and editors in the same cell.",
-      "Behavior": "The grid is one tab stop; arrow keys move a focus rectangle between cells, Page keys move by a screen of rows, Home/End by row or (with Ctrl) by grid. Enter on a sortable header sorts; Enter or F2 on an editable cell opens its editor (typing a printable character opens a text or number editor with that character as its `defaultValue`, replacing the value; for select, date and checkbox editors typing only opens); Enter commits and moves down, Tab commits and moves to the next editable cell in the row, F2 commits in place, Escape cancels. Text, number and date editors commit on Enter, Tab, F2 or blur; select and checkbox editors commit on change (they are discrete pickers). The number editor commits NumberInput's number, or undefined when emptied. A select editor opens its popup at once, and closing the popup without a choice cancels the edit. While a select or date popup is open, Enter belongs to that control (choosing an option, picking a day); a date editor commits on Enter only from its text field. Space is never an edit trigger: in `none` and `cell` mode it does nothing. Editors are the composed Input/NumberInput/Select/DatePicker/Checkbox with `hideLabel`, `size: sm` and inset-zero overrides; they are never told about validity — the cell shows cellInvalid* while the editor stays open, the message goes to the status bar, and `copy.editing` is announced through the status bar live region when an editor opens (nothing is wired to the editor's own describedby). Invalid edits stay open with the message shown in the status bar and announced. `selectable: row` toggles rows with Space and the checkbox column; `range` extends with Shift+arrows or drag and copies as TSV with Ctrl+C. Focus and selection are independent. Rows render only in the visible window plus overscan; `rowCount` with `onRangeNeeded` lets the caller page in from a server while the scrollbar reflects the whole set. Pinned columns stay put during horizontal scroll and cast a shadow once the body has moved. Range selection by pointer: pointerdown on a body cell sets the anchor, pointermove with capture extends the rectangle, Shift+click extends from the existing anchor; the overlay is clipped to the rendered window when an endpoint has scrolled out of it. `cell` mode has no selection keys: the focused cell is the selection. Select-all and column selection cover the loaded rows only. `copy.scrollHint` shows in the status bar while the columns overflow sideways and the region has not yet been scrolled sideways. `copy.position` is the status bar's text for the active cell and is not announced — aria-rowindex/aria-colindex already carry position, and a polite region on every arrow press would be noise.",
+      "Behavior": "The grid is one tab stop; arrow keys move a focus rectangle between cells, Page keys move by a screen of rows, Home/End by row or (with Ctrl) by grid. Enter on a sortable header sorts, and the sorted column shows its direction as a `chevron-up`/`chevron-down` Icon in the sort Button's trailing slot (no glyph on the columns that are not sorted); activating a header cycles ascending ↔ descending only and never clears the sort. Enter or F2 on an editable cell opens its editor (typing a printable character opens a text or number editor with that character as its `defaultValue`, replacing the value; for select, date and checkbox editors typing only opens; the space character never opens an editor); Enter commits and moves down, Tab commits and moves to the next editable cell in the row, F2 commits in place, Escape cancels. Text, number and date editors commit on Enter, Tab, F2 or blur; select and checkbox editors commit on change (they are discrete pickers). The number editor commits NumberInput's number, or undefined when emptied. A select editor opens its popup at once, and closing the popup without a choice cancels the edit. While a select or date popup is open, Enter belongs to that control (choosing an option, picking a day); a date editor commits on Enter only from its text field. Space is never an edit trigger: in `none` and `cell` mode it does nothing. Editors are the composed Input/NumberInput/Select/DatePicker/Checkbox with `hideLabel`, `size: sm` and inset-zero overrides; they are never told about validity — the cell shows cellInvalid* while the editor stays open, the message goes to the status bar, and `copy.editing` is announced through the status bar live region when an editor opens (nothing is wired to the editor's own describedby). Invalid edits stay open with the message shown in the status bar and announced. `selectable: row` toggles rows with Space and the checkbox column; `range` extends with Shift+arrows or drag and copies as TSV with Ctrl+C. Focus and selection are independent. Rows render only in the visible window plus overscan; `rowCount` with `onRangeNeeded` lets the caller page in from a server while the scrollbar reflects the whole set. Pinned columns stay put during horizontal scroll and cast a shadow once the body has moved. Range selection by pointer: pointerdown on a body cell sets the anchor, pointermove with capture extends the rectangle, Shift+click extends from the existing anchor; the overlay is clipped to the rendered window when an endpoint has scrolled out of it. `cell` mode has no selection keys: the focused cell is the selection. Select-all and column selection cover the loaded rows only. `copy.scrollHint` shows in the status bar while the columns overflow sideways and the region has not yet been scrolled sideways. `copy.position` is the status bar's text for the active cell and is not announced — aria-rowindex/aria-colindex already carry position, and a polite region on every arrow press would be noise.",
       "Content guidelines": "Headers are short and unit-bearing (\"Qty\", \"Price (USD)\"); use `abbr` for the spoken form. Numbers align end with a fixed number of decimals per column. Editable columns should look editable only on focus (the editor appears in place) — no permanent input chrome in every cell. Keep the status bar: it is where counts, copy confirmations and validation messages live for sighted users, matching what the live region says.",
-      "Accessibility": "The grid follows the APG grid pattern: `role=\"grid\"` with `rowgroup`, `row`, `columnheader`, `rowheader` and `gridcell` roles stated explicitly, `aria-rowcount`/`aria-colcount` and per-row/cell indexes so virtualization does not hide the shape (WCAG 1.3.1, 4.1.2). It is one tab stop with full arrow-key navigation (2.1.1, 2.4.3) using `aria-activedescendant` so focus is stable while rows recycle; interactive cell content and editors take real focus while active and hand it back. Sort, selection counts, copy and editing state are announced and shown in the status bar (4.1.3). Validation errors are text, associated with the cell, and never color alone (3.3.1, 1.4.1). The focus ring is inset so it is visible at the grid edges (2.4.7, 2.4.11). Rows meet the minimum target height (2.5.8). Escape always leaves an editor without saving (2.1.2).",
+      "Accessibility": "The grid follows the APG grid pattern: `role=\"grid\"` with `rowgroup`, `row`, `columnheader`, `rowheader` and `gridcell` roles stated explicitly, `aria-rowcount`/`aria-colcount` and per-row/cell indexes so virtualization does not hide the shape (WCAG 1.3.1, 4.1.2). It is one tab stop with full arrow-key navigation (2.1.1, 2.4.3) using `aria-activedescendant` so focus is stable while rows recycle; interactive cell content and editors take real focus while active and hand it back. Sort, selection counts, copy and editing state are announced and shown in the status bar (4.1.3). Validation errors are text, associated with the cell, and never color alone (3.3.1, 1.4.1). The focus ring is inset so it is visible at the grid edges (2.4.7, 2.4.11). Rows meet the minimum target height (2.5.8). Escape always leaves an editor without saving and clears a range selection (2.1.2); the grid has no overlay to dismiss, so those two are what `escape-dismiss` means here.",
       "Platform notes": "### Web\nRender `<div data-ds=\"DataGrid\">` with the caption (`Heading level={captionLevel}` or visually hidden text with an id), then the scroll region `<div data-part=\"scrollRegion\">` holding `<div role=\"grid\" aria-labelledby aria-rowcount aria-colcount aria-multiselectable aria-readonly={!editable} aria-busy tabindex=\"0\" aria-activedescendant>` containing a sticky header `<div role=\"rowgroup\"><div role=\"row\" aria-rowindex=\"1\">` of `<div role=\"columnheader\" aria-colindex aria-sort id>` (with the sort `Button` and the resize `<div role=\"separator\">` when applicable), and the body `<div role=\"rowgroup\">` positioned inside a spacer sized to `rowCount × rowHeight`, rendering the visible rows as `<div role=\"row\" aria-rowindex aria-selected style=\"transform: translateY(...)\">` of `<div role=\"gridcell\"|\"rowheader\" aria-colindex id tabindex=\"-1\">`. Keydown on the grid implements the table, updating the active cell id and scrolling it into view. For a cell with a control or an open editor, move real focus in and set `aria-activedescendant` to the cell; on Escape/commit, focus the grid again. Editors: `Input`/`NumberInput`/`Select`/`DatePicker`/`Checkbox` with `hideLabel`-style visually hidden labels, `size=\"sm\"`, and `overrides` that zero the inset. Range overlay: one absolutely positioned `<div aria-hidden>` from the anchor and focus cells. Status bar: a `<div>` whose inner `<span role=\"status\">` is the live region, with the counts, scroll hint and position beside it. Pinned columns use `position: sticky` within each row. `ResizeObserver` recomputes the visible window.\n\n### Lit\n`<ds-data-grid caption=\"Price list\" .columns=${columns} .data=${rows} editable selectable=\"range\" height=\"viewport\"></ds-data-grid>`; the grid is in the shadow root; `repeat` over the window; composed events; editors are `ds-input`, `ds-number-input`, `ds-select`, `ds-date-picker`, `ds-checkbox`.\n\n### React Native\n`FlatList` with `getItemLayout` from `rowHeight`, inside a horizontal `ScrollView` shared with the header row; pinned columns are not sticky here — native has no `position: sticky` and a second synced list would need a gesture dependency the package does not take — so they scroll with the rest and only cast `pinnedShadow`, as Table's row-header column does. Cells are `Pressable`s with `accessibilityLabel` \"{column}: {value}\"; editable cells open the system control inline (text, number, checkbox) or in a `BottomSheet` (select, date). `selectable: range` degrades to `row`. `onEndReached` drives `onRangeNeeded`.",
       "Related": "Table, Input, NumberInput, Select, DatePicker, Checkbox, Toolbar."
     },
@@ -33045,7 +33063,7 @@
         "expanded": {
           "type": "array",
           "shape": "string[]",
-          "description": "Controlled expanded ids.",
+          "description": "Controlled expanded ids. A still-`\"lazy\"` id here is held closed until the user opens it, exactly as in `defaultExpanded` — the id stays in the array the caller passed and in what onExpandChange reports, but the node does not render open and fires no onExpand.",
           "controls": {
             "event": "onExpandChange",
             "default": "defaultExpanded"
@@ -33054,7 +33072,7 @@
         "defaultExpanded": {
           "type": "array",
           "shape": "string[]",
-          "description": "Initially expanded ids. `[\"*\"]` opens every node whose `children` is a non-empty array and never a `\"lazy\"` node, as TreeGrid; a lazy id listed explicitly stays closed until the user opens it (onExpand only fires for user acts)."
+          "description": "Initially expanded ids. `[\"*\"]` opens every node whose `children` is a non-empty array and never a `\"lazy\"` node, as TreeGrid; `\"*\"` is reserved as that sentinel, so a node whose id is literally `\"*\"` is never matched by it. A lazy id listed explicitly stays closed until the user opens it (onExpand only fires for user acts), and the same rule covers the controlled `expanded`."
         },
         "selectable": {
           "type": "enum",
@@ -33083,7 +33101,7 @@
         "selectChildren": {
           "type": "boolean",
           "default": false,
-          "description": "With `multiple`, selecting a parent selects its descendants and parents show indeterminate. The cascade covers loaded, enabled descendants only (a `\"lazy\"` subtree contributes nothing until loaded); a parent's id is in `selected` exactly when all its enabled loaded descendants are, and unchecking any descendant removes it and every ancestor id. Its aria-checked (true, mixed, false) is derived from its descendants. Shift+ArrowDown/Up cascade like Space."
+          "description": "With `multiple`, selecting a parent selects its descendants and parents show indeterminate. The cascade covers loaded, enabled descendants only (a `\"lazy\"` subtree contributes nothing until loaded); a parent's id is in `selected` exactly when all its enabled loaded descendants are, and unchecking any descendant removes it and every ancestor id. Its aria-checked (true, mixed, false) is derived from its descendants. A disabled node is skipped as a target but does not wall off its subtree: its enabled loaded descendants still cascade. A parent with no enabled loaded descendants at all (a still-lazy subtree, or only disabled children) behaves as a leaf and carries just its own id. Shift+ArrowDown/Up cascade like Space but only ever add — they never remove a node or an ancestor."
         },
         "selectOnFocus": {
           "type": "boolean",
@@ -33181,9 +33199,14 @@
           "keys": [
             "Tab"
           ],
-          "action": "Moves into the tree (to the selected node, else the first) and out of it — one tab stop.",
+          "action": "Moves into the tree (to the selected node — the first selected in tree order when several are — else the first node) and out of it — one tab stop. Leaving the tree forgets which node was focused, so re-entry follows the same rule instead of restoring it.",
           "from": "any",
-          "expect": "manual"
+          "expect": "manual",
+          "platforms": [
+            "web",
+            "lit",
+            "swiftui"
+          ]
         },
         {
           "keys": [
@@ -33243,7 +33266,12 @@
           ],
           "action": "First node.",
           "from": "last",
-          "expect": "focus-first"
+          "expect": "focus-first",
+          "platforms": [
+            "web",
+            "lit",
+            "swiftui"
+          ]
         },
         {
           "keys": [
@@ -33251,7 +33279,12 @@
           ],
           "action": "Last visible node.",
           "from": "first",
-          "expect": "focus-last"
+          "expect": "focus-last",
+          "platforms": [
+            "web",
+            "lit",
+            "swiftui"
+          ]
         },
         {
           "keys": [
@@ -33265,10 +33298,15 @@
           "keys": [
             " "
           ],
-          "action": "Selects (single) or toggles selection (multiple) of the focused node.",
+          "action": "Selects (single) or toggles selection (multiple) of the focused node. On rn a tap on the row does this instead — Pressable has no key events.",
           "when": "selectable",
           "from": "inside",
-          "expect": "manual"
+          "expect": "manual",
+          "platforms": [
+            "web",
+            "lit",
+            "swiftui"
+          ]
         },
         {
           "keys": [
@@ -33302,16 +33340,21 @@
           "keys": [
             "Control+a"
           ],
-          "action": "Selects every visible, enabled node at the current expansion state; bound by key code KeyA, with Control or Meta (Cmd on macOS).",
+          "action": "Adds every visible, enabled node at the current expansion state to the selection; nodes already selected inside a collapsed branch stay selected (the key never deselects). Bound by key code KeyA, with Control or Meta (Cmd on macOS).",
           "when": "multiple",
           "from": "inside",
-          "expect": "manual"
+          "expect": "manual",
+          "platforms": [
+            "web",
+            "lit",
+            "swiftui"
+          ]
         },
         {
           "keys": [
             "a-z"
           ],
-          "action": "Type-ahead: any printable character (letters, digits, punctuation) moves to the next visible node whose label starts with the typed characters; the buffer clears after 500 ms (literal-ok, as Listbox).",
+          "action": "Type-ahead: any printable character (letters, digits, punctuation) moves to the next visible node whose label starts with the typed characters; `*` and Space keep their own bindings and never enter the buffer. A fresh one-character buffer searches from the node after the focused one; a longer buffer may re-match the focused node (as Listbox). The buffer clears after 500 ms (literal-ok, as Listbox).",
           "from": "inside",
           "expect": "manual",
           "platforms": [
@@ -33353,12 +33396,12 @@
         },
         "rowSelected": {
           "token": "color.background.strong",
-          "description": "Fill on the selected node, and on aria-checked=\"true\" nodes in multiple mode.",
+          "description": "Fill on the selected node, and on aria-checked=\"true\" nodes in multiple mode. An indeterminate (mixed) parent gets neither this fill nor the start-edge bar — its dash glyph is the only signal.",
           "locked": true
         },
         "rowSelectedBorder": {
           "token": "color.control.selectedBackground",
-          "description": "Start-edge bar on the selected (or checked) node, as Table and DataGrid. Drawn over the row (absolutely positioned at the logical start, mirrored in RTL) so selecting does not shift the content.",
+          "description": "Start-edge bar on the selected (or checked) node, as Table and DataGrid. Drawn over the row at the logical start and mirrored in RTL, by whichever means the platform has that does not move the content (an inset shadow on the row, or an absolutely positioned box).",
           "locked": true
         },
         "rowSelectedBorderWidth": {
@@ -33403,11 +33446,12 @@
         "expandButtonSize": {
           "token": "size.target.min",
           "part": "expandButton",
-          "description": "The `expandButton` part is a wrapper the tree owns, this size on both axes, around an unmodified ghost Button (Button has no size override and keeps its own data-part); the chevron takes the Button's own color.",
+          "description": "The `expandButton` part is a wrapper the tree owns, this size on both axes, around an unmodified ghost Button centred inside it (Button has no size override and keeps its own data-part, and a `sm` Button is smaller than this, so the target is the wrapper, not the Button); the chevron takes the Button's own color. TreeGrid's expandButton is the same wrapper-around-a-Button shape.",
           "locked": true
         },
         "guideLine": {
           "token": "color.border",
+          "description": "One vertical line per open parent, drawn down that parent's group, at rowPaddingInline + indent × (parent level − 1) + expandButtonSize / 2 from the row's start — the centre of that parent's chevron. No elbows, no termination at the last child, as TreeGrid.",
           "locked": false
         },
         "guideLineWidth": {
@@ -33417,7 +33461,7 @@
         "checkboxGap": {
           "token": "layout.gap.tight",
           "part": "checkbox",
-          "description": "Between the checkbox and the label in multiple mode.",
+          "description": "In multiple mode the row reads chevron, checkbox, icon, label, badge; this is the gap after the checkbox, so on a node with an icon it falls between the checkbox and the icon. Every other gap in the row is rowGap.",
           "locked": false
         },
         "checkboxSize": {
@@ -33461,14 +33505,17 @@
         },
         "fontFamily": {
           "token": "font.family.body",
+          "description": "Sets the container's font, and the resolved value (the override when there is one, the token otherwise) is always forwarded to the label Text as `overrides.fontFamily`, so the root hook and the composed label never disagree.",
           "locked": false
         },
         "fontSize": {
           "token": "font.size.sm",
+          "description": "The container's size and, resolved the same way, the label Text's `overrides.fontSize`.",
           "locked": false
         },
         "lineHeight": {
           "token": "font.lineHeight.normal",
+          "description": "The container's line height and, resolved the same way, the label Text's `overrides.lineHeight`.",
           "locked": false
         },
         "minTarget": {
@@ -33477,6 +33524,7 @@
         },
         "focusRing": {
           "token": "color.border.focus",
+          "description": "Drawn around the whole `node` — the chevron included, since the row is one visual target — not around nodeRow alone.",
           "locked": true
         },
         "focusRingWidth": {
@@ -33495,7 +33543,7 @@
       },
       "constants": {
         "typeaheadReset": {
-          "description": "How long typed characters accumulate before the typeahead buffer clears.",
+          "description": "How long typed characters accumulate before the typeahead buffer clears. Read on web, lit and swiftui only — there is no type-ahead on rn, so no rn code reads it.",
           "value": 500,
           "unit": "ms"
         }
@@ -33588,7 +33636,7 @@
             "aria-disabled",
             "tabindex"
           ],
-          "notes": "A <div data-ds=\"Tree\" data-part=\"container\"> holding the Heading when showLabel and the <ul role=\"tree\" aria-labelledby={headingId} | aria-label aria-multiselectable> of <li role=\"treeitem\" aria-level aria-setsize aria-posinset aria-expanded (parents only) aria-selected|aria-checked> whose children are in a nested <ul role=\"group\">. Roving tabindex on the treeitems (one tab stop; the item, not the row div, is focused); no aria-activedescendant. The <ul role=\"tree\"> has no data-part (address it by role). The expand chevron is a Button with aria-hidden and tabindex=-1 — ArrowLeft/Right are the keyboard path; on a disabled node it is disabled too, and clicks on a disabled row do nothing (a disabled parent stays closed, so do not disable a parent whose children must stay reachable). Heading and Button keep their own data-part, so the `heading` and `expandButton` parts are wrappers the tree owns; Link keeps its own `data-part=\"anchor\"` too, so the `link` part is a `<span data-part=\"link\">` the tree owns around it (activation finds the anchor inside that span); Text takes data-part directly. Nodes with href render the label as a Link inside the treeitem; Enter activates it. Multiple mode uses aria-checked with an indeterminate value for cascading parents and a Checkbox glyph (not the Checkbox component: the treeitem itself is the control). Type-ahead buffers keys for 500 ms. Pointer: click on a node focuses it and does what Space does (select in single, toggle in multiple); double-click does what Enter does, and a click whose `detail` is 2 or more does not toggle again (a double-click toggles once, then activates); click on the chevron toggles expansion and focuses the node without changing selection. Lazy placeholder: a <li role=\"treeitem\" aria-disabled=\"true\"> holding copy.loading inside the group, not navigable, with no data-part, and aria-busy on the parent treeitem. Empty `nodes`: the <ul> renders with no items and copy.empty is a `Text tone=\"muted\"` below it inside the container."
+          "notes": "A <div data-ds=\"Tree\" data-part=\"container\"> holding the Heading when showLabel and the <ul role=\"tree\" aria-labelledby={headingId} | aria-label aria-multiselectable> of <li role=\"treeitem\" aria-level aria-setsize aria-posinset aria-expanded (parents only) aria-selected|aria-checked> whose children are in a nested <ul role=\"group\">. Roving tabindex on the treeitems (one tab stop; the item, not the row div, is focused); no aria-activedescendant. The <ul role=\"tree\"> has no data-part (address it by role). The expand chevron is a Button with aria-hidden and tabindex=-1 — ArrowLeft/Right are the keyboard path; on a disabled node it is disabled too, and clicks on a disabled row do nothing (a disabled parent stays closed, so do not disable a parent whose children must stay reachable). Heading and Button keep their own data-part, so the `heading` and `expandButton` parts are wrappers the tree owns; Link keeps its own `data-part=\"anchor\"` too, so the `link` part is a `<span data-part=\"link\">` the tree owns around it (activation finds the anchor inside that span); Text takes data-part directly. Nodes with href render the label as a Link inside the treeitem, and the composed Link takes tabindex=-1 so the treeitem stays the only tab stop; Enter activates it by clicking the anchor. The tree's own label Text is the outer `data-part=\"label\"`; the Link nested inside it keeps its own inner parts, which a part locator resolves after the tree's. In single mode aria-selected is on every node (\"false\" when unselected, so a screen reader hears the state on each one), and in multiple mode aria-checked is on every node. Multiple mode uses aria-checked with an indeterminate value for cascading parents and a Checkbox glyph (not the Checkbox component: the treeitem itself is the control). Type-ahead buffers keys for 500 ms. Pointer: click on a node focuses it and does what Space does (select in single, toggle in multiple); double-click does what Enter does, and a click whose `detail` is 2 or more does not toggle again (a double-click toggles once, then activates); click on the chevron toggles expansion and focuses the node without changing selection. Lazy placeholder: a <li role=\"treeitem\" aria-disabled=\"true\"> holding copy.loading inside the group, not navigable, with no data-part, and aria-busy on the parent treeitem. Empty `nodes`: the <ul> renders with no items and copy.empty is a `Text tone=\"muted\"` below it inside the container."
         },
         "lit": {
           "tag": "ds-tree",
@@ -33603,7 +33651,7 @@
             "show-label",
             "heading-level"
           ],
-          "notes": "`nodes` as a property rendered in the shadow root; roving tabindex over shadow treeitems; composed events. ds-link is composed for href nodes. `showGuides` defaults true, so its attribute is the negated `hide-guides`. Forwarded bindings reach the composed ds-text / ds-heading / ds-icon through their `overrides` property only, so a consumer's CSS on a forwarded --ds-tree-* hook does not reach the child; override them through `overrides`. Composed events carry bare detail values — `selection-change` and `expand-change` the string[] itself, `expand` and `activate` the id string — not objects, as TreeGrid."
+          "notes": "`nodes` as a property rendered in the shadow root; roving tabindex over shadow treeitems; composed events. ds-link is composed for href nodes. A tabindex on a custom-element host does not reach the child's inner control, so every composed ds-link and ds-button inside a treeitem has its own inner `<a>`/`<button>` demoted to tabindex=\"-1\" after each render (as TreeGrid does for cell controls); otherwise the tree would have a tab stop per node and a focusable button inside aria-hidden. `showGuides` defaults true, so its attribute is the negated `hide-guides`. Forwarded bindings reach the composed ds-text / ds-heading / ds-icon through their `overrides` property only, so a consumer's CSS on a forwarded --ds-tree-* hook does not reach the child; override them through `overrides`. Composed events carry bare detail values — `selection-change` and `expand-change` the string[] itself, `expand` and `activate` the id string — not objects, as TreeGrid."
         },
         "rn": {
           "element": "FlatList",
@@ -33611,7 +33659,7 @@
             "accessibilityRole=list",
             "accessibilityLabel"
           ],
-          "notes": "A FlatList over the flattened visible nodes; each row a Pressable with accessibilityRole=\"button\" (or \"link\" for href), accessibilityState={{ expanded, selected, checked, disabled }}, accessibilityLabel \"{label}, level {n}\" and accessibilityActions expand/collapse. Multiple mode draws the checkbox glyph (checkbox* bindings, accessibilityState.checked) inside the same Pressable — not the Checkbox component — so the row stays one target and Enter-equivalent activation and href still work: a tap toggles selection, a long press activates. A screen reader's activate gesture lands on the tap, which in that mode toggles selection, so in multiple mode the row also carries the standard `longpress` accessibility action (no label needed; a custom `activate` would take over the double-tap) calling the same handler as a long press — otherwise there would be no non-gestural way to follow a node. In `single` a tap does what Enter does (selects, then activates); in `none` a tap only activates and does not toggle expansion. `href` is followed with `Linking.openURL` by the row itself (the composed Link gets an onPress that returns false, so a tap on its text acts like the rest of the row); apps with in-app routes use onActivate instead of href. The root View is the `container` (holding the Heading and the FlatList); `group` has no element. `selectOnFocus` is wired to the Pressable's onFocus (hardware keyboard and assistive-technology focus). No arrow keys, no type-ahead, no `*` and no expand-all action; the expand chevron is a real target, accessible and named with copy.expand/collapse."
+          "notes": "A FlatList over the flattened visible nodes; each row a Pressable with accessibilityRole=\"button\" (or \"link\" for href), accessibilityState={{ expanded, selected, checked, disabled }}, accessibilityLabel \"{label}, level {n}\" — with the badge folded in when the node has one (\"{label}, {badge}, level {n}\"), since the label replaces the row's rendered content for a screen reader — and accessibilityActions expand/collapse. The lazy placeholder is its own row whose label is copy.loading. Multiple mode draws the checkbox glyph (checkbox* bindings, accessibilityState.checked) inside the same Pressable — not the Checkbox component — so the row stays one target and Enter-equivalent activation and href still work: a tap toggles selection, a long press activates. A screen reader's activate gesture lands on the tap, which in that mode toggles selection, so in multiple mode the row also carries the standard `longpress` accessibility action (no label needed; a custom `activate` would take over the double-tap) calling the same handler as a long press — otherwise there would be no non-gestural way to follow a node. In `single` a tap does what Enter does (selects, then activates); in `none` a tap only activates and does not toggle expansion. `href` is followed with `Linking.openURL` by the row itself (the composed Link gets an onPress that returns false, so a tap on its text acts like the rest of the row); on native an href must be an absolute URL, because `Linking.openURL` cannot open an app-relative path, and apps with in-app routes use onActivate instead of href (an app-relative href is a web and lit affordance). The root View is the `container` (holding the Heading and the FlatList); `group` has no element. `selectOnFocus` is wired to the Pressable's onFocus (hardware keyboard and assistive-technology focus). No arrow keys, no type-ahead, no `*` and no expand-all action; the expand chevron is a real target, accessible and named with copy.expand/collapse. React Native gives View and Pressable no key events, so Tab, Home, End, Space and Control+a have no native path either — a tap stands in for Space and Enter, and the expand/collapse actions for the arrows. There is no tabIndex on native, so the roving tabindex and the one-tab-stop rule are web, lit and swiftui only; on react-native-web every row Pressable and chevron Button is its own tab stop, and the accessibility path is the row's accessibilityState plus its expand/collapse actions rather than focus order. There is no role=\"status\" either: copy.selectedCount goes in a one-point View with accessibilityLiveRegion=\"polite\" on Android and through AccessibilityInfo.announceForAccessibility on iOS, on each fired selection change — that pairing is the rn form of every live-region requirement in this doc. copy.empty is the FlatList's empty component, so it renders inside the list rather than beside it."
         },
         "swiftui": {
           "element": "ScrollView",
@@ -34134,9 +34182,9 @@
       "Overview": "A tree is a list that knows about nesting. One field per node, arrows to move and open, Enter to act: the shape of a file browser's sidebar, a category picker, a documentation site's navigation. When nodes need several fields, it becomes a TreeGrid.",
       "When to use": "Use a Tree for a hierarchy the user navigates or picks from: folders, a site's sections, product categories, an org's departments. `single` selection with `href` nodes is a navigation tree; `multiple` with `selectChildren` is a picker (choose folders to sync). Use `selectOnFocus` only when the tree drives a panel beside it and moving through nodes should preview them.",
       "When not to use": "Do not use a Tree for one level (a Listbox or a list of Links), for nodes with several fields (TreeGrid), or as a Menu (a Menu closes after a choice; a tree stays). Do not use it for a hierarchy most people need entirely visible — render nested headings and lists instead.",
-      "Behavior": "ArrowUp/Down move through visible nodes; ArrowRight opens a closed parent or steps into an open one; ArrowLeft closes or steps up; `*` opens all siblings; typing jumps by label. Enter activates (navigates for `href`, otherwise `onActivate`) and, in single mode, selects. Space selects or toggles; in multiple mode Shift+arrows extend and Ctrl+A selects all visible. Lazy nodes load when opened, with a placeholder child; onExpand fires before onExpandChange. Disabled nodes are visible, skipped by arrows, not selectable, and cannot be expanded. Selection and expansion are both controlled-or-uncontrolled and reported through events; `selected` is always an array. With the pointer, click selects or toggles and focuses, double-click activates, and the chevron only expands. The heading, when shown, is a composed Heading at `headingLevel` sized by headingSize and names the tree.",
+      "Behavior": "ArrowUp/Down move through visible nodes; ArrowRight opens a closed parent or steps into an open one; ArrowLeft closes or steps up; `*` opens all siblings; typing jumps by label. Enter activates (navigates for `href`, otherwise `onActivate`) and, in single mode, selects. Space selects or toggles; in multiple mode Shift+arrows extend and Ctrl+A selects all visible. Lazy nodes load when opened, with a placeholder child; onExpand fires before onExpandChange. Disabled nodes are visible, skipped by arrows, not selectable, and cannot be expanded by any means — the keyboard never reaches them and their chevron is disabled — so a disabled parent's children are unreachable: never disable a parent whose children must stay reachable. Selection and expansion are both controlled-or-uncontrolled and reported through events; `selected` is always an array. With the pointer, click selects or toggles and focuses, double-click activates, and the chevron only expands. Touch has no double-tap equivalent, so on native a tap activates in `selectable: none` while web and lit keep activation on double-click and Enter — the one place the pointer and the tap disagree. The heading, when shown, is a composed Heading at `headingLevel` sized by headingSize and names the tree.",
       "Content guidelines": "Labels are short nouns; nesting supplies the context, so \"Invoices\" not \"Billing – Invoices\". Use `icon` consistently per node type (folder/file) or not at all; use `badge` for counts that help choose (\"12\"). Open the first level by default in navigation trees so the structure is visible.",
-      "Accessibility": "The tree is a `tree` of `treeitem`s with `group`s for children, each item exposing level, position in set, set size, expanded state on parents, and selected or checked state (WCAG 1.3.1, 4.1.2; APG tree view). It is one tab stop with a roving tabindex and full arrow-key movement, type-ahead included (2.1.1, 2.4.3). Expansion is operable from the item itself, so the chevron is decoration (2.1.1). Selection shows as a fill plus a start-edge bar (1.4.1) and rows meet the minimum target (2.5.8). In multiple mode the count is announced (4.1.3): copy.selectedCount goes to a visually hidden role=\"status\" region, rendered in multiple mode only, on every user selection change; expanding and collapsing announce nothing beyond the item's own expanded state.",
+      "Accessibility": "The tree is a `tree` of `treeitem`s with `group`s for children, each item exposing level, position in set, set size, expanded state on parents, and selected or checked state (WCAG 1.3.1, 4.1.2; APG tree view). It is one tab stop with a roving tabindex and full arrow-key movement, type-ahead included (2.1.1, 2.4.3). Expansion is operable from the item itself, so the chevron is decoration (2.1.1). Selection shows as a fill plus a start-edge bar (1.4.1) and rows meet the minimum target (2.5.8). In multiple mode the count is announced (4.1.3): copy.selectedCount goes to a visually hidden role=\"status\" region, rendered in multiple mode only. The region exists from mount and always holds the current count (an empty tree reads \"0 selected\"), so nothing is announced at mount; it is written on every user selection change and never forced to re-announce, which means two different selections that yield the same string (\"1 selected\") are announced once. Expanding and collapsing announce nothing beyond the item's own expanded state. The roving tabindex and the one-tab-stop rule are web, lit and swiftui; React Native has no tabIndex, so there the row's accessibilityState and its expand/collapse actions carry the same information.",
       "Platform notes": "### Web\nRender `<div data-ds=\"Tree\">` holding the optional `Heading level={headingLevel}` and `<ul role=\"tree\" aria-labelledby|aria-label aria-multiselectable>` with `<li role=\"treeitem\" id aria-level aria-setsize aria-posinset aria-expanded? aria-selected|aria-checked tabIndex={roving}>` containing the row `<div>` (indent as `padding-inline-start`, the chevron `Button` `ghost sm iconOnly aria-hidden tabIndex={-1}`, optional `Icon`, the label `Text` or `Link`, the badge `Text tone=\"muted\"` with `overrides.fontSize` from badgeSize, and in multiple mode the drawn checkbox `<span aria-hidden>` from the checkbox* bindings with a `check`/`dash` Icon) and, when expanded, `<ul role=\"group\">` of child items. Keydown on the tree implements the table over the flattened visible list; focus moves to the item. Guide lines are a `::before` on groups, hidden with `showGuides: false`. Lazy: on each expand of a still-lazy node fire `onExpand`, render the placeholder item (`aria-disabled`, not navigable) with `copy.loading` and `aria-busy` on the parent.\n\n### Lit\n`<ds-tree label=\"Folders\" .nodes=${nodes} selectable=\"multiple\" select-children></ds-tree>`; shadow tree; composed `selection-change`, `expand-change`, `expand`, `activate`.\n\n### React Native\n`FlatList` over the flattened visible nodes; rows are `Pressable`s with indent, chevron `Button`, `Icon`, `Text`, badge; `accessibilityState` and `accessibilityActions` as noted; multiple mode draws the checkbox glyph inside the row from the checkbox* bindings (`View` + `Icon`), never the Checkbox component. Groups have no wrapper on native: visible children are flattened into the one list, as TreeGrid.",
       "Related": "TreeGrid, Listbox, Disclosure, Accordion, Link, Menu."
     },
@@ -34210,7 +34258,7 @@
           "type": "array",
           "required": true,
           "shape": "DataGridColumn[]",
-          "description": "DataGrid's column model. The `isRowHeader` column is required here: it carries the indent and the expand button, so it must exist and come first after the selection column."
+          "description": "DataGrid's column model. The `isRowHeader` column is required here: it carries the indent and the expand button, so it must exist and come first after the selection column — never pinned, never reordered, because the guide lines are measured from its start."
         },
         "data": {
           "type": "array",
@@ -34221,7 +34269,7 @@
         "expanded": {
           "type": "array",
           "shape": "string[]",
-          "description": "Controlled ids of expanded rows.",
+          "description": "Controlled ids of expanded rows. A still-`\"lazy\"` id here is held collapsed until the user opens it, exactly as in `defaultExpanded`; the id stays in the caller's array and in what onExpandChange reports, and no onExpand fires for it.",
           "controls": {
             "event": "onExpandChange",
             "default": "defaultExpanded"
@@ -34230,7 +34278,7 @@
         "defaultExpanded": {
           "type": "array",
           "shape": "string[]",
-          "description": "Initially expanded ids. `[\"*\"]` expands every row whose `children` is a non-empty array, including rows loaded later, and never a `\"lazy\"` row (that would fire onExpand without a user act); `\"*\"` is honoured the same way in controlled `expanded`, and the first user toggle resolves it to concrete ids, which is what onExpandChange reports. A lazy id listed explicitly stays collapsed until the user opens it."
+          "description": "Initially expanded ids. `[\"*\"]` expands every row whose `children` is a non-empty array, including rows loaded later, and never a `\"lazy\"` row (that would fire onExpand without a user act); `\"*\"` is honoured the same way in controlled `expanded`, and the first user toggle resolves it to concrete ids, which is what onExpandChange reports. A lazy id listed explicitly stays collapsed until the user opens it, in `defaultExpanded` and in the controlled `expanded` alike — so a lazy row cannot be opened programmatically at all; the caller opens it by replacing its `children`. The `*` key is a user act and does open lazy siblings, firing onExpand for each; the native expandAll action does the same over every loaded row."
         },
         "sort": {
           "type": "object",
@@ -34297,7 +34345,7 @@
             "fixed"
           ],
           "default": "viewport",
-          "description": "As DataGrid."
+          "description": "As DataGrid: `viewport` and `fixed` both size the whole component, and the scroll region takes what the caption and status bar leave."
         },
         "loading": {
           "type": "boolean",
@@ -34429,7 +34477,7 @@
               "name": "value",
               "type": "union",
               "shape": "string | number | boolean | undefined",
-              "description": "The committed value, as the column editor produces it; undefined when cleared, as DataGrid (never coerced to an empty string)."
+              "description": "The committed value, as the column editor produces it; undefined when cleared, as DataGrid (never coerced to an empty string). A text editor the user empties commits `''` — only Delete/Backspace and an emptied number editor produce undefined. A cell holding a value the column `render`s reports `String(value)`."
             },
             {
               "name": "previous",
@@ -34548,7 +34596,7 @@
           "keys": [
             "Enter"
           ],
-          "action": "On a row header of a row with children: toggles expansion. On a leaf row header: DataGrid's order (edit if editable, else activate a control inside it). Elsewhere as DataGrid: sort, edit, activate. F2 edits an editable parent row header.",
+          "action": "On a row header of a row with children: toggles expansion — always, never edits, even when that column is editable (F2 is the edit path for an editable parent row header). On a leaf row header: DataGrid's order (edit if editable, else activate a control inside it). Elsewhere as DataGrid: sort, edit, activate.",
           "from": "inside",
           "expect": "manual"
         },
@@ -34556,7 +34604,7 @@
           "keys": [
             "*"
           ],
-          "action": "Expands every row at the focused row's level under the same parent, the focused row included.",
+          "action": "Expands every row at the focused row's level under the same parent, the focused row included; a `\"lazy\"` sibling opens too and fires its onExpand, unlike `defaultExpanded: [\"*\"]`, because this is a user act.",
           "from": "inside",
           "expect": "manual"
         },
@@ -34568,7 +34616,7 @@
             "Control+a",
             "Shift+Space"
           ],
-          "action": "As DataGrid. Shift+Space extends the row selection from the last plain-Space anchor through the focused row, over the visible rows only — a range does not cascade into descendants even with selectChildren, which is a per-row act. Shift with the arrows keeps their own meaning here (column navigation, expand and collapse) and never selects. Control means Control or Meta, as DataGrid.",
+          "action": "As DataGrid. Escape cancels an open editor and returns focus from a control inside a cell to the grid; on the grid itself it does nothing (there is no range here to clear, and no collapse-all), which is also all `escape-dismiss` asks of a component with no overlay. Control+a selects every loaded row in `row` mode and is unhandled in `cell` and `none`. Shift+Space extends the row selection from the last plain-Space anchor through the focused row, over the visible rows only — a range does not cascade into descendants even with selectChildren, which is a per-row act; when that anchor row is no longer visible (its subtree was collapsed, or sorting moved it) Shift+Space is a plain, non-cascading toggle of the focused row. Shift with the arrows keeps their own meaning here (column navigation, expand and collapse) and never selects. Control means Control or Meta, as DataGrid.",
           "from": "inside",
           "expect": "manual"
         },
@@ -34579,7 +34627,7 @@
             "Delete",
             "Backspace"
           ],
-          "action": "As DataGrid: Page keys move one visible page of rows; Delete/Backspace clear editable cells in the selection. Typing a printable character opens an editor, as DataGrid.",
+          "action": "As DataGrid: Page keys move one visible page of rows; Delete/Backspace clear editable cells in the selection — in `row` mode every editable cell of every selected row, in `cell` and `none` the active cell alone. Typing a printable character opens an editor, as DataGrid (the character seeds the text and number editors only; select, date and checkbox editors open unseeded).",
           "from": "inside",
           "expect": "manual"
         },
@@ -34624,7 +34672,7 @@
         },
         "fixedHeight": {
           "token": "space.20",
-          "description": "As DataGrid: the height for `height: fixed`, overridable by design.",
+          "description": "As DataGrid: the height for `height: fixed`, sizing the whole component with the scroll region taking what the caption and status bar leave; overridable by design.",
           "locked": false
         },
         "guideLineWidth": {
@@ -34643,7 +34691,7 @@
         },
         "transition": {
           "token": "motion.duration.fast",
-          "description": "Chevron rotation on expand; rows appear instantly (no height animation in a virtualized grid).",
+          "description": "The chevron rotation on expand, and nothing else TreeGrid owns: rows appear instantly (no height animation in a virtualized grid), and the row hover and editor-open transitions are DataGrid's, at DataGrid's own token.",
           "locked": false
         },
         "focusRing": {
@@ -34685,7 +34733,11 @@
               "type": "number",
               "description": "The row's depth in the tree."
             }
-          }
+          },
+          "platforms": [
+            "rn",
+            "swiftui"
+          ]
         },
         "childCount": {
           "plural": {
@@ -34698,11 +34750,33 @@
               "type": "number",
               "description": "How many children the row has."
             }
-          }
+          },
+          "platforms": [
+            "rn",
+            "swiftui"
+          ]
         },
         "loading": "Loading",
-        "expandAll": "Expand all",
-        "collapseAll": "Collapse all",
+        "expandAll": {
+          "text": "Expand all",
+          "platforms": [
+            "rn",
+            "swiftui"
+          ]
+        },
+        "collapseAll": {
+          "text": "Collapse all",
+          "platforms": [
+            "rn",
+            "swiftui"
+          ]
+        },
+        "editHint": {
+          "text": "Opens the cell editor",
+          "platforms": [
+            "rn"
+          ]
+        },
         "empty": "Nothing to show.",
         "sortAscending": {
           "text": "Sort by {column}, ascending",
@@ -34754,7 +34828,7 @@
             },
             "total": {
               "type": "number",
-              "description": "Every loaded row at every level, expanded or not (aria-rowcount instead counts the visible rows plus the header)."
+              "description": "Every loaded row at every level, expanded or not — deliberately a different number from aria-rowcount, which counts the visible rows plus the header: the status bar counts the data, the ARIA attributes count what is rendered. The lazy placeholder row counts in neither."
             }
           }
         },
@@ -34794,7 +34868,7 @@
           "params": {
             "row": {
               "type": "number",
-              "description": "The active cell's row number."
+              "description": "The active cell's row number among the visible rows (the active row + 1), so it agrees with aria-rowindex rather than with copy.rowCount's total."
             },
             "column": {
               "type": "string",
@@ -34856,7 +34930,7 @@
             "aria-rowcount",
             "aria-activedescendant"
           ],
-          "notes": "DataGrid's structure with role=\"treegrid\" on the container and, on every row, aria-level, aria-setsize and aria-posinset (among its siblings), plus aria-expanded on rows that have children (absent on leaves — a leaf must not say \"collapsed\"). The flattened visible-row list is what gets virtualized and indexed with aria-rowindex, so collapsing removes rows from the list. The expand control is a Button (ghost, sm, iconOnly, chevron-right Icon, `overrides` paddingInline/paddingBlock space.0, label copy.expand/collapse) inside the row header cell with tabindex=-1; it is a pointer convenience — ArrowLeft/Right are the keyboard path, and the button has aria-hidden since the row already exposes aria-expanded. The rotation is on a span TreeGrid owns around the Button, never on the Icon; in RTL the collapsed chevron is mirrored. Indent is the `indent` spacer part at the start of the row header. Lazy children: on expand set aria-busy on the row and render one placeholder child row until data arrives — a navigable row (level + 1, setsize 1, posinset 1) with copy.loading in the row-header column and the other cells empty, not selectable or editable. The caption Heading gets captionLevel and marginBlockEnd space.0, as DataGrid. DataGrid's own bindings (header, grid lines, row height, status bar, caption, resize handle, resizeStep) apply at DataGrid's default tokens and are not overridable on TreeGrid except cellPaddingInline and fixedHeight."
+          "notes": "DataGrid's structure with role=\"treegrid\" on the container and, on every row, aria-level, aria-setsize and aria-posinset (among its siblings), plus aria-expanded on rows that have children (absent on leaves — a leaf must not say \"collapsed\"). The flattened visible-row list is what gets virtualized and indexed with aria-rowindex, so collapsing removes rows from the list. The expand control is a Button (ghost, sm, iconOnly, chevron-right Icon, `overrides` paddingInline/paddingBlock space.0, label copy.expand/collapse) inside the row header cell with tabindex=-1; it is a pointer convenience — ArrowLeft/Right are the keyboard path. The `expandButton` part is the span TreeGrid owns around that Button (the Button keeps its own data-part, as in Tree): the span is the pointer target, carries the rotation — never the Icon — and carries aria-hidden=\"true\", which hides the Button as a descendant, since the row already exposes aria-expanded. In RTL the collapsed chevron is mirrored. Indent is the `indent` spacer part at the start of the row header. Lazy children: on expand set aria-busy on the row and render one placeholder child row until data arrives — a navigable row (level + 1, setsize 1, posinset 1) with copy.loading in the row-header column and the other cells empty, not selectable or editable; it is counted by aria-rowindex and aria-rowcount but by neither copy.rowCount nor copy.selectedRows, which count loaded data rows. The caption Heading gets captionLevel and marginBlockEnd space.0, and DataGrid's captionGap does the spacing, as DataGrid. Every binding DataGrid declares that TreeGrid does not — column width, header, grid lines, row height, row hover and selection, status bar, caption, pinned shadow, resize handle, resizeStep, the fonts — applies at DataGrid's own default token and is not overridable on TreeGrid except cellPaddingInline and fixedHeight; the two move together by design, so changing a DataGrid default changes TreeGrid."
         },
         "lit": {
           "tag": "ds-tree-grid",
@@ -34887,7 +34961,7 @@
             "accessibilityLabel",
             "getItemLayout"
           ],
-          "notes": "DataGrid's list over the flattened visible rows (role=\"grid\" via the ARIA-aligned `role` prop, as DataGrid); the root View exposes expandAll/collapseAll accessibility actions named from copy; each row header cell has accessibilityState={{ expanded }} when it has children, accessibilityLabel of rowName, copy.level and copy.childCount joined with \", \" (the count is left out for leaves and for lazy rows not yet loaded), and its own accessibilityActions expand/collapse. Native has no row position in set: only level and child count are conveyed. The expand Button is a real touch target (minimum size) since there are no arrow keys, but it is hidden from accessibility (importantForAccessibility no-hide-descendants / accessibilityElementsHidden): screen readers reach expansion through the row header's actions. Pressing a row header with children toggles it; long-pressing an editable row header edits. The keyboard table has no native path beyond Enter and the editor's Enter/Escape: expand/collapse actions, the root expandAll/collapseAll (every loaded row, not only siblings), and the select Checkboxes stand in; `*`, Shift+Space and Ctrl+A have no native equivalent."
+          "notes": "DataGrid's list over the flattened visible rows (role=\"grid\" via the ARIA-aligned `role` prop, as DataGrid); the root View exposes expandAll/collapseAll accessibility actions named from copy; each row header cell has accessibilityState={{ expanded }} when it has children, accessibilityLabel of rowName, copy.level and copy.childCount joined with \", \" (the count is left out for leaves and for lazy rows not yet loaded), and its own accessibilityActions expand/collapse. Native has no row position in set: only level and child count are conveyed. The expand Button is a real touch target (minimum size) since there are no arrow keys, and it stays accessible, named with copy.expand/collapse, exactly as Tree's chevron — it is not hidden from accessibility here, because a focusable control inside an aria-hidden wrapper is an axe failure on react-native-web and Button has no non-focusable option; the row header's expand/collapse actions are the other path to the same act. Pressing a row header with children toggles it and never selects the cell, `selectable: \"cell\"` included; a leaf follows DataGrid's order (select the cell, then edit when editable), and long-pressing an editable row header edits. Cells carry accessibilityLabel \"{column}: {value}\" and, when editable, accessibilityHint copy.editHint, as DataGrid. The lazy placeholder row announces copy.loading with copy.level and no child count, and is neither selectable nor editable. The keyboard table has no native path beyond Enter and the editor's Enter/Escape — View and Pressable have no key events — so the arrows, Home/End, `*`, F2, Space, Shift+Space, Control+a, the Page keys, Delete/Backspace and Shift+arrow resize are all replaced by: the row header's expand/collapse actions, the root expandAll/collapseAll (every loaded row, not only siblings), the select Checkboxes, the header cell's increment/decrement resize actions, and the editing cell's activate/escape actions — the last of which is also what answers `escape-dismiss`, TreeGrid having no overlay. Two parts have no element here: `body` (FlatList gives the rows no wrapper, as DataGrid) and the guide lines, which are not a declared part at all — they are decoration drawn inside the row header cell."
         },
         "swiftui": {
           "element": "ScrollView",
@@ -35490,7 +35564,7 @@
       "Overview": "A tree grid is a data grid where rows have rows inside them. The hierarchy lives in the row-header column — indent, a chevron, a level announced to screen readers — and everything else is DataGrid: same columns, same cell navigation, same editors. Collapsing a parent removes its descendants from the visible list, which is also the virtualized list, so a hundred thousand leaf rows cost nothing until they are opened.",
       "When to use": "Use a TreeGrid when records nest and each record has several comparable fields: a chart of accounts with balances, folders and files with sizes and dates, a bill of materials with quantities and costs, an org chart with headcount. Use `children: \"lazy\"` for deep or large trees so the first paint is fast. Use `selectChildren` when selection means \"this and everything in it\" (a folder to export).",
       "When not to use": "Do not use a TreeGrid for a hierarchy with one field per node — a navigation tree, a file picker with names only — that is a Tree. Do not use it for flat data (DataGrid) or for content people read row by row (Table). Do not nest more than about six levels; past that, give the user a way to open a subtree as its own root (a Breadcrumb above the grid).",
-      "Behavior": "Rows with children show a chevron in the row header; ArrowRight expands, ArrowLeft collapses or moves to the parent, `*` expands all siblings, Enter on the row header toggles. Expanded ids are controlled or uncontrolled; `onExpandChange` reports them. Lazy rows show a loading placeholder child until the caller supplies `children`. Sorting orders siblings within each parent and keeps the tree. Row selection with `selectChildren` cascades down and shows indeterminate parents. Vertical navigation moves through visible rows only; everything else — editing, cell selection, status bar, virtualization, pinned and resizable columns, sticky header, controlled and uncontrolled sort and selection — behaves as DataGrid, and the copy strings for those behaviors are TreeGrid's own (listed above, identical to DataGrid's) so each platform package is self-contained. Descendant, parent and sibling lookups are O(n) walks of `data`; only the visible-row list is optimized. `copy.level` and `copy.childCount` are used only in the native accessibilityLabel (web relies on aria-level/aria-setsize/aria-posinset); `copy.expandAll`/`copy.collapseAll` name the native root's expandAll/collapseAll accessibility actions and have no web control (`*` is the keyboard path). `*` expands the focused row along with its siblings, not the siblings alone. `selectChildren` cascades a row's own id and its loaded descendants when that row's own checkbox is the one used; every other row derives its checked or indeterminate state by counting selected descendants, and a `lazy` subtree contributes nothing until it loads. A `lazy` row fires `onExpand` each time it opens from collapsed, not once ever — a caller that never fills in `children` is asked again. Guide lines are one continuous vertical segment per ancestor depth down every descendant row, not elbows that stop at a subtree's last child.",
+      "Behavior": "Rows with children show a chevron in the row header; ArrowRight expands, ArrowLeft collapses or moves to the parent, `*` expands all siblings, Enter on the row header toggles. Expanded ids are controlled or uncontrolled; `onExpandChange` reports them. Lazy rows show a loading placeholder child until the caller supplies `children`. Sorting orders siblings within each parent and keeps the tree. Row selection with `selectChildren` cascades down and shows indeterminate parents. Vertical navigation moves through visible rows only; everything else — editing, cell selection, status bar, virtualization, pinned and resizable columns, sticky header, controlled and uncontrolled sort and selection — behaves as DataGrid, and the copy strings for those behaviors are TreeGrid's own (listed above, identical to DataGrid's) so each platform package is self-contained. Descendant, parent and sibling lookups are O(n) walks of `data`; only the visible-row list is optimized. `copy.level` and `copy.childCount` are used only in the native accessibilityLabel (web relies on aria-level/aria-setsize/aria-posinset); `copy.expandAll`/`copy.collapseAll` name the native root's expandAll/collapseAll accessibility actions and have no web control (`*` is the keyboard path). `*` expands the focused row along with its siblings, not the siblings alone. TreeGrid has no `rowCount` and no `onRangeNeeded`: only loaded `data` is virtualized, and paging in from a server is per-subtree through `children: \"lazy\"`. The status bar's live region announces loading, the validation message, the editing hint, the sort and the selection count, as DataGrid; the row count, the scroll hint and the position are shown and never announced. `selectChildren` cascades a row's own id and its loaded descendants when that row's own checkbox is the one used; every other row derives its checked or indeterminate state by counting selected descendants, and a `lazy` subtree contributes nothing until it loads. A `lazy` row fires `onExpand` each time it opens from collapsed, not once ever — a caller that never fills in `children` is asked again. Guide lines are one continuous vertical segment per ancestor depth down every descendant row, not elbows that stop at a subtree's last child.",
       "Content guidelines": "The row header is the node's name; keep it short because it is indented. Show aggregate values on parent rows (a folder's total size, an account's balance) so a collapsed tree still reads. Order children meaningfully by default (by name, by code) and let sorting change it.",
       "Accessibility": "The container is a `treegrid` (APG treegrid) and every row exposes `aria-level`, `aria-setsize` and `aria-posinset`, with `aria-expanded` only on rows that have children, so a screen reader hears \"Assets, level 1, 1 of 4, expanded\" (WCAG 1.3.1, 4.1.2). Expansion is keyboard-operable through the row itself — ArrowLeft/Right, Enter — with the chevron as a pointer convenience (2.1.1). The visible-row list is what `aria-rowindex` counts, so positions stay honest after collapsing. Focus stays on the row header when a subtree collapses under it (2.4.3). Guide lines are decorative (not checked for contrast) and indent is reinforced by the announced level, never the only signal (1.3.1). Everything else inherits DataGrid's guarantees.",
       "Platform notes": "### Web\nBuild on DataGrid's structure (a shared hook or base is welcome, not required; a self-contained implementation importing only the DataGridColumn type is fine): flatten `data` by `expanded` into visible rows carrying `level`, `posinset`, `setsize`, `hasChildren`, `parentId`; render the row header cell with the `indent` spacer (`inline-size: calc(var(--ds-tree-grid-indent) * (level - 1))`), the expand `Button` (`aria-hidden`, `tabIndex={-1}`) when `hasChildren`, and the guide line as a `::before` on child rows. Add `role=\"treegrid\"` and the row attributes; extend DataGrid's keydown with the ArrowLeft/ArrowRight/`*` rules on the row-header column. Lazy: on expand of a `\"lazy\"` row, fire `onExpand`, mark the row `aria-busy`, and render a placeholder child until `children` changes.\n\n### Lit\n`<ds-tree-grid caption=\"Chart of accounts\" .columns=${columns} .data=${tree} .expanded=${['assets']}></ds-tree-grid>`; extends the grid base class; composed `expand-change`, `expand`.\n\n### React Native\nDataGrid's `FlatList` over the flattened rows; the row header `Pressable` has `accessibilityState.expanded`, `accessibilityActions` expand/collapse, and the visible expand `Button` at minimum target size; indent by level.",

@@ -109,7 +109,8 @@ component:
       shape: DataGridColumn[]
       description: 'DataGrid''s column model. The `isRowHeader` column is required
         here: it carries the indent and the expand button, so it must exist and come
-        first after the selection column.'
+        first after the selection column — never pinned, never reordered, because
+        the guide lines are measured from its start.'
     data:
       type: array
       required: true
@@ -122,7 +123,10 @@ component:
     expanded:
       type: array
       shape: string[]
-      description: Controlled ids of expanded rows.
+      description: Controlled ids of expanded rows. A still-`"lazy"` id here is held
+        collapsed until the user opens it, exactly as in `defaultExpanded`; the id
+        stays in the caller's array and in what onExpandChange reports, and no onExpand
+        fires for it.
       controls:
         event: onExpandChange
         default: defaultExpanded
@@ -134,7 +138,11 @@ component:
         (that would fire onExpand without a user act); `"*"` is honoured the same
         way in controlled `expanded`, and the first user toggle resolves it to concrete
         ids, which is what onExpandChange reports. A lazy id listed explicitly stays
-        collapsed until the user opens it.
+        collapsed until the user opens it, in `defaultExpanded` and in the controlled
+        `expanded` alike — so a lazy row cannot be opened programmatically at all;
+        the caller opens it by replacing its `children`. The `*` key is a user act
+        and does open lazy siblings, firing onExpand for each; the native expandAll
+        action does the same over every loaded row.
     sort:
       type: object
       shape: '{ column: string; direction: "ascending" | "descending" }'
@@ -198,7 +206,8 @@ component:
       - viewport
       - fixed
       default: viewport
-      description: As DataGrid.
+      description: 'As DataGrid: `viewport` and `fixed` both size the whole component,
+        and the scroll region takes what the caption and status bar leave.'
     loading:
       type: boolean
       default: false
@@ -297,7 +306,10 @@ component:
         type: union
         shape: string | number | boolean | undefined
         description: The committed value, as the column editor produces it; undefined
-          when cleared, as DataGrid (never coerced to an empty string).
+          when cleared, as DataGrid (never coerced to an empty string). A text editor
+          the user empties commits `''` — only Delete/Backspace and an emptied number
+          editor produce undefined. A cell holding a value the column `render`s reports
+          `String(value)`.
       - name: previous
         type: union
         shape: string | number | boolean | undefined
@@ -380,16 +392,17 @@ component:
     expect: manual
   - keys:
     - Enter
-    action: 'On a row header of a row with children: toggles expansion. On a leaf
-      row header: DataGrid''s order (edit if editable, else activate a control inside
-      it). Elsewhere as DataGrid: sort, edit, activate. F2 edits an editable parent
-      row header.'
+    action: 'On a row header of a row with children: toggles expansion — always, never
+      edits, even when that column is editable (F2 is the edit path for an editable
+      parent row header). On a leaf row header: DataGrid''s order (edit if editable,
+      else activate a control inside it). Elsewhere as DataGrid: sort, edit, activate.'
     from: inside
     expect: manual
   - keys:
     - '*'
-    action: Expands every row at the focused row's level under the same parent, the
-      focused row included.
+    action: 'Expands every row at the focused row''s level under the same parent,
+      the focused row included; a `"lazy"` sibling opens too and fires its onExpand,
+      unlike `defaultExpanded: ["*"]`, because this is a user act.'
     from: inside
     expect: manual
   - keys:
@@ -398,11 +411,18 @@ component:
     - ' '
     - Control+a
     - Shift+Space
-    action: As DataGrid. Shift+Space extends the row selection from the last plain-Space
-      anchor through the focused row, over the visible rows only — a range does not
-      cascade into descendants even with selectChildren, which is a per-row act. Shift
-      with the arrows keeps their own meaning here (column navigation, expand and
-      collapse) and never selects. Control means Control or Meta, as DataGrid.
+    action: As DataGrid. Escape cancels an open editor and returns focus from a control
+      inside a cell to the grid; on the grid itself it does nothing (there is no range
+      here to clear, and no collapse-all), which is also all `escape-dismiss` asks
+      of a component with no overlay. Control+a selects every loaded row in `row`
+      mode and is unhandled in `cell` and `none`. Shift+Space extends the row selection
+      from the last plain-Space anchor through the focused row, over the visible rows
+      only — a range does not cascade into descendants even with selectChildren, which
+      is a per-row act; when that anchor row is no longer visible (its subtree was
+      collapsed, or sorting moved it) Shift+Space is a plain, non-cascading toggle
+      of the focused row. Shift with the arrows keeps their own meaning here (column
+      navigation, expand and collapse) and never selects. Control means Control or
+      Meta, as DataGrid.
     from: inside
     expect: manual
   - keys:
@@ -411,8 +431,10 @@ component:
     - Delete
     - Backspace
     action: 'As DataGrid: Page keys move one visible page of rows; Delete/Backspace
-      clear editable cells in the selection. Typing a printable character opens an
-      editor, as DataGrid.'
+      clear editable cells in the selection — in `row` mode every editable cell of
+      every selected row, in `cell` and `none` the active cell alone. Typing a printable
+      character opens an editor, as DataGrid (the character seeds the text and number
+      editors only; select, date and checkbox editors open unseeded).'
     from: inside
     expect: manual
   - keys:
@@ -457,7 +479,9 @@ component:
       locked: false
     fixedHeight:
       token: space.20
-      description: 'As DataGrid: the height for `height: fixed`, overridable by design.'
+      description: 'As DataGrid: the height for `height: fixed`, sizing the whole
+        component with the scroll region taking what the caption and status bar leave;
+        overridable by design.'
       locked: false
     guideLineWidth:
       token: border.width.thin
@@ -472,8 +496,10 @@ component:
       locked: true
     transition:
       token: motion.duration.fast
-      description: Chevron rotation on expand; rows appear instantly (no height animation
-        in a virtualized grid).
+      description: 'The chevron rotation on expand, and nothing else TreeGrid owns:
+        rows appear instantly (no height animation in a virtualized grid), and the
+        row hover and editor-open transitions are DataGrid''s, at DataGrid''s own
+        token.'
       locked: false
     focusRing:
       token: color.border.focus
@@ -503,6 +529,9 @@ component:
         level:
           type: number
           description: The row's depth in the tree.
+      platforms:
+      - rn
+      - swiftui
     childCount:
       plural:
         by: count
@@ -512,9 +541,20 @@ component:
         count:
           type: number
           description: How many children the row has.
+      platforms:
+      - rn
+      - swiftui
     loading: Loading
-    expandAll: Expand all
-    collapseAll: Collapse all
+    expandAll:
+      text: Expand all
+      platforms:
+      - rn
+      - swiftui
+    collapseAll:
+      text: Collapse all
+      platforms:
+      - rn
+      - swiftui
     empty: Nothing to show.
     sortAscending:
       text: Sort by {column}, ascending
@@ -552,8 +592,10 @@ component:
           description: How many rows are selected.
         total:
           type: number
-          description: Every loaded row at every level, expanded or not (aria-rowcount
-            instead counts the visible rows plus the header).
+          description: 'Every loaded row at every level, expanded or not — deliberately
+            a different number from aria-rowcount, which counts the visible rows plus
+            the header: the status bar counts the data, the ARIA attributes count
+            what is rendered. The lazy placeholder row counts in neither.'
     editing:
       text: Editing {column}. Enter to save, Escape to cancel.
       params:
@@ -580,7 +622,9 @@ component:
       params:
         row:
           type: number
-          description: The active cell's row number.
+          description: The active cell's row number among the visible rows (the active
+            row + 1), so it agrees with aria-rowindex rather than with copy.rowCount's
+            total.
         column:
           type: string
           description: The column header text.
@@ -634,17 +678,23 @@ component:
         The expand control is a Button (ghost, sm, iconOnly, chevron-right Icon, `overrides`
         paddingInline/paddingBlock space.0, label copy.expand/collapse) inside the
         row header cell with tabindex=-1; it is a pointer convenience — ArrowLeft/Right
-        are the keyboard path, and the button has aria-hidden since the row already
-        exposes aria-expanded. The rotation is on a span TreeGrid owns around the
-        Button, never on the Icon; in RTL the collapsed chevron is mirrored. Indent
-        is the `indent` spacer part at the start of the row header. Lazy children:
-        on expand set aria-busy on the row and render one placeholder child row until
-        data arrives — a navigable row (level + 1, setsize 1, posinset 1) with copy.loading
-        in the row-header column and the other cells empty, not selectable or editable.
-        The caption Heading gets captionLevel and marginBlockEnd space.0, as DataGrid.
-        DataGrid''s own bindings (header, grid lines, row height, status bar, caption,
-        resize handle, resizeStep) apply at DataGrid''s default tokens and are not
-        overridable on TreeGrid except cellPaddingInline and fixedHeight.'
+        are the keyboard path. The `expandButton` part is the span TreeGrid owns around
+        that Button (the Button keeps its own data-part, as in Tree): the span is
+        the pointer target, carries the rotation — never the Icon — and carries aria-hidden="true",
+        which hides the Button as a descendant, since the row already exposes aria-expanded.
+        In RTL the collapsed chevron is mirrored. Indent is the `indent` spacer part
+        at the start of the row header. Lazy children: on expand set aria-busy on
+        the row and render one placeholder child row until data arrives — a navigable
+        row (level + 1, setsize 1, posinset 1) with copy.loading in the row-header
+        column and the other cells empty, not selectable or editable; it is counted
+        by aria-rowindex and aria-rowcount but by neither copy.rowCount nor copy.selectedRows,
+        which count loaded data rows. The caption Heading gets captionLevel and marginBlockEnd
+        space.0, and DataGrid''s captionGap does the spacing, as DataGrid. Every binding
+        DataGrid declares that TreeGrid does not — column width, header, grid lines,
+        row height, row hover and selection, status bar, caption, pinned shadow, resize
+        handle, resizeStep, the fonts — applies at DataGrid''s own default token and
+        is not overridable on TreeGrid except cellPaddingInline and fixedHeight; the
+        two move together by design, so changing a DataGrid default changes TreeGrid.'
     lit:
       tag: ds-tree-grid
       reflect:
@@ -679,14 +729,27 @@ component:
         for lazy rows not yet loaded), and its own accessibilityActions expand/collapse.
         Native has no row position in set: only level and child count are conveyed.
         The expand Button is a real touch target (minimum size) since there are no
-        arrow keys, but it is hidden from accessibility (importantForAccessibility
-        no-hide-descendants / accessibilityElementsHidden): screen readers reach expansion
-        through the row header''s actions. Pressing a row header with children toggles
-        it; long-pressing an editable row header edits. The keyboard table has no
-        native path beyond Enter and the editor''s Enter/Escape: expand/collapse actions,
-        the root expandAll/collapseAll (every loaded row, not only siblings), and
-        the select Checkboxes stand in; `*`, Shift+Space and Ctrl+A have no native
-        equivalent.'
+        arrow keys, and it stays accessible, named with copy.expand/collapse, exactly
+        as Tree''s chevron — it is not hidden from accessibility here, because a focusable
+        control inside an aria-hidden wrapper is an axe failure on react-native-web
+        and Button has no non-focusable option; the row header''s expand/collapse
+        actions are the other path to the same act. Pressing a row header with children
+        toggles it and never selects the cell, `selectable: "cell"` included; a leaf
+        follows DataGrid''s order (select the cell, then edit when editable), and
+        long-pressing an editable row header edits. Cells carry accessibilityLabel
+        "{column}: {value}" and, when editable, accessibilityHint copy.editHint, as
+        DataGrid. The lazy placeholder row announces copy.loading with copy.level
+        and no child count, and is neither selectable nor editable. The keyboard table
+        has no native path beyond Enter and the editor''s Enter/Escape — View and
+        Pressable have no key events — so the arrows, Home/End, `*`, F2, Space, Shift+Space,
+        Control+a, the Page keys, Delete/Backspace and Shift+arrow resize are all
+        replaced by: the row header''s expand/collapse actions, the root expandAll/collapseAll
+        (every loaded row, not only siblings), the select Checkboxes, the header cell''s
+        increment/decrement resize actions, and the editing cell''s activate/escape
+        actions — the last of which is also what answers `escape-dismiss`, TreeGrid
+        having no overlay. Two parts have no element here: `body` (FlatList gives
+        the rows no wrapper, as DataGrid) and the guide lines, which are not a declared
+        part at all — they are decoration drawn inside the row header cell.'
     swiftui:
       element: ScrollView
       props:
@@ -1068,7 +1131,7 @@ Do not use a TreeGrid for a hierarchy with one field per node — a navigation t
 
 ## Behavior
 
-Rows with children show a chevron in the row header; ArrowRight expands, ArrowLeft collapses or moves to the parent, `*` expands all siblings, Enter on the row header toggles. Expanded ids are controlled or uncontrolled; `onExpandChange` reports them. Lazy rows show a loading placeholder child until the caller supplies `children`. Sorting orders siblings within each parent and keeps the tree. Row selection with `selectChildren` cascades down and shows indeterminate parents. Vertical navigation moves through visible rows only; everything else — editing, cell selection, status bar, virtualization, pinned and resizable columns, sticky header, controlled and uncontrolled sort and selection — behaves as DataGrid, and the copy strings for those behaviors are TreeGrid's own (listed above, identical to DataGrid's) so each platform package is self-contained. Descendant, parent and sibling lookups are O(n) walks of `data`; only the visible-row list is optimized. `copy.level` and `copy.childCount` are used only in the native accessibilityLabel (web relies on aria-level/aria-setsize/aria-posinset); `copy.expandAll`/`copy.collapseAll` name the native root's expandAll/collapseAll accessibility actions and have no web control (`*` is the keyboard path). `*` expands the focused row along with its siblings, not the siblings alone. `selectChildren` cascades a row's own id and its loaded descendants when that row's own checkbox is the one used; every other row derives its checked or indeterminate state by counting selected descendants, and a `lazy` subtree contributes nothing until it loads. A `lazy` row fires `onExpand` each time it opens from collapsed, not once ever — a caller that never fills in `children` is asked again. Guide lines are one continuous vertical segment per ancestor depth down every descendant row, not elbows that stop at a subtree's last child.
+Rows with children show a chevron in the row header; ArrowRight expands, ArrowLeft collapses or moves to the parent, `*` expands all siblings, Enter on the row header toggles. Expanded ids are controlled or uncontrolled; `onExpandChange` reports them. Lazy rows show a loading placeholder child until the caller supplies `children`. Sorting orders siblings within each parent and keeps the tree. Row selection with `selectChildren` cascades down and shows indeterminate parents. Vertical navigation moves through visible rows only; everything else — editing, cell selection, status bar, virtualization, pinned and resizable columns, sticky header, controlled and uncontrolled sort and selection — behaves as DataGrid, and the copy strings for those behaviors are TreeGrid's own (listed above, identical to DataGrid's) so each platform package is self-contained. Descendant, parent and sibling lookups are O(n) walks of `data`; only the visible-row list is optimized. `copy.level` and `copy.childCount` are used only in the native accessibilityLabel (web relies on aria-level/aria-setsize/aria-posinset); `copy.expandAll`/`copy.collapseAll` name the native root's expandAll/collapseAll accessibility actions and have no web control (`*` is the keyboard path). `*` expands the focused row along with its siblings, not the siblings alone. TreeGrid has no `rowCount` and no `onRangeNeeded`: only loaded `data` is virtualized, and paging in from a server is per-subtree through `children: "lazy"`. The status bar's live region announces loading, the validation message, the editing hint, the sort and the selection count, as DataGrid; the row count, the scroll hint and the position are shown and never announced. `selectChildren` cascades a row's own id and its loaded descendants when that row's own checkbox is the one used; every other row derives its checked or indeterminate state by counting selected descendants, and a `lazy` subtree contributes nothing until it loads. A `lazy` row fires `onExpand` each time it opens from collapsed, not once ever — a caller that never fills in `children` is asked again. Guide lines are one continuous vertical segment per ancestor depth down every descendant row, not elbows that stop at a subtree's last child.
 
 ## Content guidelines
 

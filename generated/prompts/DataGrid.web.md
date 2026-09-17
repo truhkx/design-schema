@@ -103,8 +103,9 @@ component:
     caption:
       type: string
       required: true
-      description: What the grid holds ("Price list"). The accessible name; visually
-        hidden with `hideCaption`.
+      description: 'What the grid holds ("Price list"). The accessible name; visually
+        hidden with `hideCaption`. Required: a grid built without one falls back to
+        an empty caption and warns in development.'
       a11y: aria-labelledby the caption (web) / accessibilityLabel (native).
     captionLevel:
       type: enum
@@ -114,7 +115,9 @@ component:
       - '4'
       default: '2'
       description: Heading level of the caption in the page outline; its size is captionSize
-        regardless, as Table.
+        regardless, as Table. On React Native the level has no observable effect —
+        Heading sets the header trait at every level and captionSize/captionWeight
+        pin the typography — so the prop is accepted and forwarded for parity only.
     hideCaption:
       type: boolean
       default: false
@@ -126,7 +129,7 @@ component:
         | "center"; sortable?: boolean; width?: number; minWidth?: number; resizable?:
         boolean; isRowHeader?: boolean; pinned?: "start" | "end"; editable?: boolean;
         editor?: "text" | "number" | "select" | "date" | "checkbox"; options?: { value:
-        string; label: string }[]; render?: (row: Row) => ReactNode; validate?: (value:
+        string; label: string }[]; render?: (row: Row) => unknown; validate?: (value:
         unknown, row: Row) => string | undefined }[]'
       description: 'Table''s column model plus grid concerns: pixel `width` (columns
         do not auto-size in a virtualized grid; `width` is a multiple of space.1,
@@ -140,8 +143,12 @@ component:
         Exactly one column may be `isRowHeader`. `abbr` is the spoken name of a non-sortable
         header (the visible header is aria-hidden beside visually hidden `abbr` text);
         a sortable header''s name stays copy.sortAscending/sortDescending built from
-        `header`. `render` returns a ReactNode on web and rn and a lit-renderable
-        value (TemplateResult, string or number) on Lit.'
+        `header`, so `abbr` has no effect on a sortable column. `render` returns a
+        ReactNode on web and rn and a lit-renderable value (TemplateResult, string
+        or number) on Lit — hence `unknown` in the shape, the one type that covers
+        all three. The two column rules with no runtime consequence — exactly one
+        `isRowHeader`, pinned columns contiguous at one end — are development-time
+        warnings on every platform, never thrown errors.'
     data:
       type: array
       required: true
@@ -165,7 +172,8 @@ component:
       type: object
       shape: '{ column: string; direction: "ascending" | "descending" }'
       description: Initial sort; the grid sorts `data` itself when `rowCount` is not
-        set.
+        set and the sort is uncontrolled. A controlled `sort` never reorders `data`
+        — the caller owns the order, as Table.
     selectable:
       type: enum
       values:
@@ -178,15 +186,19 @@ component:
         a click on the select cell or its Checkbox toggles the row, Ctrl/Cmd+click
         toggles, Shift+click adds the rows from the anchor through the clicked row,
         a plain click on a data cell only moves focus); `cell` selects the focused
-        cell (selection follows focus, no key needed, onSelectionChange fires on every
-        move to a body cell, and the focus ring is its only visual); `range` allows
-        Shift+arrow / pointer-drag rectangles (copy as TSV). Selection is separate
+        cell (selection follows focus, no key needed, and the focus ring is its only
+        visual: onSelectionChange fires on every move to a body data cell, whether
+        the move came from the keyboard or from a click, and a move to a header cell,
+        to the selection column or to a row that is not loaded selects nothing); `range`
+        allows Shift+arrow / pointer-drag rectangles (copy as TSV). Selection is separate
         from focus in row and range mode: focus is where the keyboard is, selection
         is what an action applies to.'
     selected:
       type: array
       shape: string[]
-      description: Controlled selected row ids (row mode).
+      description: 'Controlled selected row ids (row mode). There is no `defaultSelected`:
+        left undefined the grid keeps the selection itself, and onSelectionChange
+        fires in both modes, as the controlled-state rule for `sort`.'
     editable:
       type: boolean
       default: false
@@ -215,11 +227,12 @@ component:
       - fixed
       default: viewport
       description: '`viewport` sets the whole component (caption, scroll region and
-        status bar) to `100vh − 2 × layout.gap.section` — the window height on native
-        — and the scroll region takes what the caption and status bar leave, as Table
-        (the grid, not the page, scrolls); `content` grows with rows (no virtualization,
-        small grids); `fixed` uses a height the caller sets through `overrides.fixedHeight`
-        — one of the few size bindings that is overridable by design.'
+        status bar) to `100vh − 2 × layout.gap.section` — on native, the window height
+        less 2 × layout.gap.section — and the scroll region takes what the caption
+        and status bar leave, as Table (the grid, not the page, scrolls); `content`
+        grows with rows (no virtualization, small grids); `fixed` uses a height the
+        caller sets through `overrides.fixedHeight` — one of the few size bindings
+        that is overridable by design.'
     loading:
       type: boolean
       default: false
@@ -373,7 +386,9 @@ component:
       a control, Tab still leaves the grid; use Enter to interact with the control.
       While an editor is open, Tab commits and opens the next editable cell in the
       row (Shift+Tab the previous); from the last editable cell it commits and leaves
-      the grid.
+      the grid — the editor is removed in the same task so the browser's own Tab lands
+      outside, unless `validate` rejects that commit, in which case the editor stays
+      open and the key does nothing.
     from: any
     expect: manual
   - keys:
@@ -421,7 +436,10 @@ component:
     action: 'On a header cell: sorts (if sortable). On an editable cell: opens the
       editor; while editing, commits and moves focus down one row. On the selection
       cell: toggles its checkbox. On a cell whose `render` contains a control (Link,
-      Button, Checkbox): focuses and activates the first focusable descendant.'
+      Button, Checkbox): focuses the first focusable descendant and clicks it (on
+      a custom element, its inner native control), and Escape hands focus back to
+      the cell. Controls inside `render` are demoted to tabindex=-1 after every update
+      so the grid stays one tab stop.'
     from: inside
     expect: manual
   - keys:
@@ -476,8 +494,11 @@ component:
     expect: manual
   - keys:
     - Control+c
-    action: Copies the selection as tab-separated text (with headers when whole columns
-      are selected); bound by key code KeyC, Control or Meta.
+    action: Copies the selection as tab-separated text; the header line is written
+      when the range spans every loaded row, which is what "whole columns" means for
+      a partly loaded set. Bound by key code KeyC, Control or Meta. copy.copied is
+      announced once the clipboard write resolves; a refused or unavailable clipboard
+      announces nothing.
     when: selectable is range
     from: inside
     expect: manual
@@ -490,15 +511,20 @@ component:
     - Backspace
     action: 'Clears the value of editable cells in the selection — every editable
       cell of the selected rows (row), the range (range), the focused cell (cell);
-      nothing in `none` mode: onCellChange fires with `value: undefined`, the same
-      shape the column model calls an omitted value, not an empty string. `validate`
-      does not run; the caller rejects a clear by not updating `data`.'
+      nothing in `none` mode: onCellChange fires once per cleared cell with `value:
+      undefined`, the same shape the column model calls an omitted value, not an empty
+      string, in row-major order (rows in display order, columns in `columns` order).
+      `validate` does not run; the caller rejects a clear by not updating `data`.
+      These two keys are the only path to `undefined` besides an emptied number editor,
+      so on rn — where they have no equivalent — a cell cannot be cleared at all;
+      clearing is web, lit and swiftui.'
     when: editable and selection
     from: inside
     expect: manual
   styles:
     surface:
       token: color.background
+      part: container
       locked: true
     headerSurface:
       token: color.background.subtle
@@ -592,8 +618,10 @@ component:
     selectColumnWidth:
       token: size.target.min
       part: selectCell
-      description: 'The selection column: this plus 2 × cellPaddingInline in the rule;
-        pinned-start offsets add it.'
+      description: The selection column's total inline size is this plus 2 × cellPaddingInline,
+        and the cell has no inline padding of its own — the Checkbox is centred in
+        it, and Checkbox has no inset override to take that padding. Pinned-start
+        offsets add the same total.
       locked: true
     columnWidth:
       token: space.20
@@ -642,18 +670,25 @@ component:
       locked: true
     rangeBackground:
       token: color.background.strong
-      description: Selected range fill, drawn beneath the cell content (so the foreground-on-strong
+      part: rangeOverlay
+      description: 'Selected range fill, drawn beneath the cell content (so the foreground-on-strong
         pair is exact); opaque pinned cells and a hovered row cover it. The range
-        border marks its edge and is drawn above the cells.
+        border marks its edge and is drawn above the cells. Range selection is web,
+        lit and swiftui only — `selectable: range` degrades to `row` on rn, so the
+        `rangeOverlay` part, these three bindings and copy.selectedRange have no element
+        and no code there.'
       locked: true
     rangeBorder:
       token: color.control.selectedBackground
+      part: rangeOverlay
       locked: true
     rangeBorderWidth:
       token: border.width.focus
+      part: rangeOverlay
       locked: true
     pinnedShadow:
       token: shadow.raised
+      part: cell
       description: 'Cast by pinned columns once the body has scrolled sideways: start
         pins on their end edge, end pins on their start edge.'
       locked: false
@@ -662,8 +697,11 @@ component:
       part: resizeHandle
       description: The column edge grab area (role=separator, not focusable; keyboard
         resizing is Shift+Arrow on the header cell), visible on hover/focus of the
-        header cell. Native has no hover, so it is always visible there, hit-slopped
-        to size.target.min.
+        header cell. Its aria-valuenow is set once the column has a pixel width —
+        an explicit `width` or one the user has resized — and omitted while the column
+        sits at the columnWidth token, whose pixel value the grid does not know at
+        render. Native has no hover, so it is always visible there, hit-slopped to
+        size.target.min.
       locked: false
     resizeHandleWidth:
       token: space.1
@@ -676,6 +714,10 @@ component:
     statusBarSurface:
       token: color.background.subtle
       part: statusBar
+      description: The `statusBar` part stays on the live status Text (the composed
+        Text that carries statusBarSize); statusBarSurface, statusBarPadding and statusBarGap
+        style the bar element the grid owns around that Text and its sibling Texts,
+        which carries no part of its own.
       locked: true
     statusBarColor:
       token: color.foreground.muted
@@ -694,8 +736,13 @@ component:
     statusBarGap:
       token: space.2
       part: statusBar
-      description: Between status bar items (live message, row count, selection count,
-        scroll hint, position); no separator characters.
+      description: 'Between status bar items, which are laid out in this order and
+        no other: the live message, the row count, the selection count, the scroll
+        hint, the position. No separator characters. The row count is always shown;
+        the selection count only while something is selected; the scroll hint only
+        while the columns overflow the region and it has not yet been scrolled sideways;
+        the position only once there is an active cell (so in `row` and `none` mode
+        on rn, where there is no active cell until one is tapped, it is absent).'
       locked: false
     captionSize:
       token: font.size.md
@@ -713,20 +760,27 @@ component:
       locked: false
     fixedHeight:
       token: space.20
-      description: 'The grid height for `height: fixed`; overridable by design (a
-        page decides how tall its grid is). space.20 is the floor, not a recommendation.'
+      description: 'The height for `height: fixed`. It sizes the whole component —
+        caption, scroll region and status bar — as `viewport` does, and the scroll
+        region takes what the caption and status bar leave. Overridable by design
+        (a page decides how tall its grid is); space.20 is the floor, not a recommendation.'
       locked: false
     fontFamily:
       token: font.family.body
+      description: The component's font, set on the container and inherited by the
+        scroll region and the cells.
       locked: false
     fontSize:
       token: font.size.sm
+      description: Set with fontFamily on the container.
       locked: false
     lineHeight:
       token: font.lineHeight.tight
+      description: Set with fontFamily on the container.
       locked: false
     numericFont:
       token: font.family.mono
+      part: cell
       description: Cells whose raw value is a number and that have no `render`.
       locked: false
     minTarget:
@@ -734,9 +788,13 @@ component:
       locked: true
     focusRing:
       token: color.border.focus
+      part: scrollRegion
+      description: Drawn by the scroll region while the grid inside it has focus,
+        so the ring is never clipped by the region's own overflow.
       locked: true
     focusRingWidth:
       token: border.width.focus
+      part: scrollRegion
       locked: true
     transition:
       token: motion.duration.fast
@@ -789,6 +847,10 @@ component:
         columns:
           type: number
           description: How many columns the selected range covers.
+      platforms:
+      - web
+      - lit
+      - swiftui
     copied:
       plural:
         by: cells
@@ -922,38 +984,40 @@ component:
         roles anyway, and pinned columns need independent positioning. Every rendered
         row carries aria-rowindex and every cell aria-colindex so a screen reader
         knows the position among the unrendered rows; aria-rowcount/aria-colcount
-        on the grid. `scrollRegion` and `grid` are two nested elements: scrollRegion
-        is the scrolling div (it draws focusRing while the grid inside it is :focus-visible,
-        so the ring is not clipped) and grid is the role="grid" div inside it that
-        carries tabindex, aria-activedescendant and the rowgroups. Focus: the grid
-        element is the tab stop (tabindex=0) and uses aria-activedescendant pointing
-        at the current cell (cells have ids and tabindex=-1); this keeps focus stable
-        while rows are recycled. Except when a cell contains an interactive element
-        or an editor is open: then real focus moves into it (the APG "focus inside
-        the cell" mode) and returns to the cell on Escape/commit. Virtualization:
-        a fixed rowHeight makes offsets arithmetic; a spacer sets the scroll height;
-        rows render with translateY; overscan of one page. Editing: the editor is
-        the system Input/NumberInput/Select/DatePicker/Checkbox rendered inside the
-        cell with its label visually hidden, size sm, `overrides` for inset zero (Input,
-        NumberInput, DatePicker: `paddingInline`/`paddingBlock` space.0; Select: `triggerPaddingInline`/`triggerPaddingBlock`
-        space.0; Checkbox: none); validate on commit, and an invalid cell keeps the
-        editor open with the message in the status bar and aria-describedby. Range
-        selection is drawn with an absolutely positioned overlay, not per-cell styles.
-        `container?: HTMLElement` (default document.body) is the portal target for
-        the composed Select and DatePicker editors — a platform prop, not a schema
-        prop. Column resize: the resizeHandle part, a separator (role="separator"
-        aria-orientation="vertical" aria-valuenow) on the header cell edge, draggable
-        with the pointer and not focusable; the keyboard path is Shift+ArrowLeft/Right
-        on the header cell. Button and Heading keep their own data-part, so the sortButton
-        part is a span the grid owns around the Button (it takes the click), and a
-        click anywhere on a selectCell/selectAllCell toggles its Checkbox; the sort
-        Button gets `overrides.paddingInline` space.0 so its text lines up with the
-        cells. Copy writes text/plain TSV to the clipboard. The statusBar part is
-        a div carrying the surface and padding; inside it only a live span is role="status"
-        (loading, invalid, sort, selection, copy and editing announcements), and the
-        row count, selection count, scrollHint and position Texts sit beside it outside
-        the live region. With showStatusBar false the bar stays in the DOM, visually
-        hidden, holding only the live span.'
+        on the grid. aria-rowcount counts the header row — it is `(rowCount ?? data.length)
+        + 1`, the header row is aria-rowindex 1 and body rows start at 2. aria-multiselectable
+        is "true" in `row` and `range`, "false" in `cell`, and absent in `none`. `scrollRegion`
+        and `grid` are two nested elements: scrollRegion is the scrolling div (it
+        draws focusRing while the grid inside it is :focus-visible, so the ring is
+        not clipped) and grid is the role="grid" div inside it that carries tabindex,
+        aria-activedescendant and the rowgroups. Focus: the grid element is the tab
+        stop (tabindex=0) and uses aria-activedescendant pointing at the current cell
+        (cells have ids and tabindex=-1); this keeps focus stable while rows are recycled.
+        Except when a cell contains an interactive element or an editor is open: then
+        real focus moves into it (the APG "focus inside the cell" mode) and returns
+        to the cell on Escape/commit. Virtualization: a fixed rowHeight makes offsets
+        arithmetic; a spacer sets the scroll height; rows render with translateY;
+        overscan of one page. Editing: the editor is the system Input/NumberInput/Select/DatePicker/Checkbox
+        rendered inside the cell with its label visually hidden, size sm, `overrides`
+        for inset zero (Input, NumberInput, DatePicker: `paddingInline`/`paddingBlock`
+        space.0; Select: `triggerPaddingInline`/`triggerPaddingBlock` space.0; Checkbox:
+        none); validate on commit, and an invalid cell keeps the editor open with
+        the message in the status bar and aria-describedby. Range selection is drawn
+        with an absolutely positioned overlay, not per-cell styles. `container?: HTMLElement`
+        (default document.body) is the portal target for the composed Select and DatePicker
+        editors — a platform prop, not a schema prop. Column resize: the resizeHandle
+        part, a separator (role="separator" aria-orientation="vertical" aria-valuenow)
+        on the header cell edge, draggable with the pointer and not focusable; the
+        keyboard path is Shift+ArrowLeft/Right on the header cell. Button and Heading
+        keep their own data-part, so the sortButton part is a span the grid owns around
+        the Button (it takes the click), and a click anywhere on a selectCell/selectAllCell
+        toggles its Checkbox; the sort Button gets `overrides.paddingInline` space.0
+        so its text lines up with the cells. Copy writes text/plain TSV to the clipboard.
+        The statusBar part is a div carrying the surface and padding; inside it only
+        a live span is role="status" (loading, invalid, sort, selection, copy and
+        editing announcements), and the row count, selection count, scrollHint and
+        position Texts sit beside it outside the live region. With showStatusBar false
+        the bar stays in the DOM, visually hidden, holding only the live span.'
     lit:
       tag: ds-data-grid
       reflect:
@@ -970,11 +1034,16 @@ component:
         attribute: no-sticky-header
       notes: '`columns` and `data` as properties; `showStatusBar` and `stickyHeader`
         default true, so their attributes are the negated `no-status-bar` / `no-sticky-header`.
-        the grid renders in the shadow root with `repeat` keyed by row id over the
-        visible window. aria-activedescendant works inside one shadow root. Editors
-        are the ds-* form elements composed in the cell. Composed events as listed.
-        ElementInternals role="grid" is NOT used on the host; the inner container
-        carries the role so ids for activedescendant resolve within the same root.'
+        `caption`, `row-count` (Number) and `empty-message` are plain attributes that
+        are not reflected; `sort`, `defaultSort`, `selected` and `overrides` are properties
+        only (`attribute: false`), as `columns` and `data`. Plural copy (copy.copied,
+        copy.rowCount) selects its form with `new Intl.PluralRules` at the runtime
+        default locale — `document.documentElement.lang` when the page sets one. the
+        grid renders in the shadow root with `repeat` keyed by row id over the visible
+        window. aria-activedescendant works inside one shadow root. Editors are the
+        ds-* form elements composed in the cell. Composed events as listed. ElementInternals
+        role="grid" is NOT used on the host; the inner container carries the role
+        so ids for activedescendant resolve within the same root.'
     rn:
       element: FlatList
       props:
@@ -1011,11 +1080,20 @@ component:
         so the whole cell-navigation model — arrows, Home/End, Page keys, Ctrl+A —
         is replaced by touch, where tapping a cell selects or edits it, the select-all
         checkbox stands in for Ctrl+A, and the header button sorts. `copy.position`
-        has no announcement here. FlatList also gives the set of body rows no wrapper
-        of its own, so the `body` rowgroup part has no element on native: the list
-        is the grid, and only the header row carries a rowgroup. This is the one component
-        where a phone is a poor fit; the doc recommends Table with `responsive: stack`
-        for phone-first screens.'
+        has no announcement here. Native has no aria-rowindex/aria-rowcount either,
+        so position among unloaded rows is never spoken: the grid''s accessibilityLabel
+        is the caption followed by copy.rowCount, so at least the total is announced
+        on focus, and copy.position stays visible-only. `aria-readonly` has no native
+        equivalent either — a read-only grid is told apart only by its cells carrying
+        no copy.editHint. There is no Escape key: the only way to abandon an open
+        editor is the editing cell''s `escape` accessibility action (VoiceOver''s
+        two-finger scrub, TalkBack''s back gesture), which is what answers `escape-dismiss`
+        here; a sighted touch user leaves an edit by pressing another cell, which
+        commits it. FlatList also gives the set of body rows no wrapper of its own,
+        so the `body` rowgroup part has no element on native: the list is the grid,
+        and only the header row carries a rowgroup. This is the one component where
+        a phone is a poor fit; the doc recommends Table with `responsive: stack` for
+        phone-first screens.'
     swiftui:
       element: ScrollView
       props:
@@ -1318,6 +1396,7 @@ component:
 
 ## Style bindings
 
+- `surface`: token `color.background`; part `container`; locked
 - `headerSurface`: token `color.background.subtle`; part `header`; locked
 - `headerColor`: token `color.foreground`; part `header`; locked
 - `headerWeight`: token `font.weight.semibold`; part `header`
@@ -1345,6 +1424,10 @@ component:
 - `cellInvalidBorder`: token `color.border.danger`; part `cell`; locked
 - `cellInvalidBackground`: token `color.status.danger.background`; part `cell`; locked
 - `cellInvalidForeground`: token `color.status.danger.foreground`; part `cell`; locked
+- `rangeBackground`: token `color.background.strong`; part `rangeOverlay`; locked
+- `rangeBorder`: token `color.control.selectedBackground`; part `rangeOverlay`; locked
+- `rangeBorderWidth`: token `border.width.focus`; part `rangeOverlay`; locked
+- `pinnedShadow`: token `shadow.raised`; part `cell`
 - `resizeHandle`: token `color.border.strong`; part `resizeHandle`
 - `resizeHandleWidth`: token `space.1`; part `resizeHandle`
 - `statusBarSurface`: token `color.background.subtle`; part `statusBar`; locked
@@ -1355,10 +1438,13 @@ component:
 - `captionSize`: token `font.size.md`; part `caption`
 - `captionWeight`: token `font.weight.semibold`; part `caption`
 - `captionGap`: token `space.2`; part `caption`
+- `numericFont`: token `font.family.mono`; part `cell`
+- `focusRing`: token `color.border.focus`; part `scrollRegion`; locked
+- `focusRingWidth`: token `border.width.focus`; part `scrollRegion`; locked
 
 ## Keyboard
 
-- `Control+c` (Copies the selection as tab-separated text (with headers when whole columns are selected); bound by key code KeyC, Control or Meta.): expect manual
+- `Control+c` (Copies the selection as tab-separated text; the header line is written when the range spans every loaded row, which is what "whole columns" means for a partly loaded set. Bound by key code KeyC, Control or Meta. copy.copied is announced once the clipboard write resolves; a refused or unavailable clipboard announces nothing.): expect manual
 
 ## Copy
 
@@ -1635,37 +1721,39 @@ notes: "Built from <div>s with explicit roles (role=\"grid\" > \"rowgroup\" > \"
   \ roles anyway, and pinned columns need independent positioning. Every rendered\
   \ row carries aria-rowindex and every cell aria-colindex so a screen reader knows\
   \ the position among the unrendered rows; aria-rowcount/aria-colcount on the grid.\
-  \ `scrollRegion` and `grid` are two nested elements: scrollRegion is the scrolling\
-  \ div (it draws focusRing while the grid inside it is :focus-visible, so the ring\
-  \ is not clipped) and grid is the role=\"grid\" div inside it that carries tabindex,\
-  \ aria-activedescendant and the rowgroups. Focus: the grid element is the tab stop\
-  \ (tabindex=0) and uses aria-activedescendant pointing at the current cell (cells\
-  \ have ids and tabindex=-1); this keeps focus stable while rows are recycled. Except\
-  \ when a cell contains an interactive element or an editor is open: then real focus\
-  \ moves into it (the APG \"focus inside the cell\" mode) and returns to the cell\
-  \ on Escape/commit. Virtualization: a fixed rowHeight makes offsets arithmetic;\
-  \ a spacer sets the scroll height; rows render with translateY; overscan of one\
-  \ page. Editing: the editor is the system Input/NumberInput/Select/DatePicker/Checkbox\
-  \ rendered inside the cell with its label visually hidden, size sm, `overrides`\
-  \ for inset zero (Input, NumberInput, DatePicker: `paddingInline`/`paddingBlock`\
-  \ space.0; Select: `triggerPaddingInline`/`triggerPaddingBlock` space.0; Checkbox:\
-  \ none); validate on commit, and an invalid cell keeps the editor open with the\
-  \ message in the status bar and aria-describedby. Range selection is drawn with\
-  \ an absolutely positioned overlay, not per-cell styles. `container?: HTMLElement`\
-  \ (default document.body) is the portal target for the composed Select and DatePicker\
-  \ editors \u2014 a platform prop, not a schema prop. Column resize: the resizeHandle\
-  \ part, a separator (role=\"separator\" aria-orientation=\"vertical\" aria-valuenow)\
-  \ on the header cell edge, draggable with the pointer and not focusable; the keyboard\
-  \ path is Shift+ArrowLeft/Right on the header cell. Button and Heading keep their\
-  \ own data-part, so the sortButton part is a span the grid owns around the Button\
-  \ (it takes the click), and a click anywhere on a selectCell/selectAllCell toggles\
-  \ its Checkbox; the sort Button gets `overrides.paddingInline` space.0 so its text\
-  \ lines up with the cells. Copy writes text/plain TSV to the clipboard. The statusBar\
-  \ part is a div carrying the surface and padding; inside it only a live span is\
-  \ role=\"status\" (loading, invalid, sort, selection, copy and editing announcements),\
-  \ and the row count, selection count, scrollHint and position Texts sit beside it\
-  \ outside the live region. With showStatusBar false the bar stays in the DOM, visually\
-  \ hidden, holding only the live span."
+  \ aria-rowcount counts the header row \u2014 it is `(rowCount ?? data.length) +\
+  \ 1`, the header row is aria-rowindex 1 and body rows start at 2. aria-multiselectable\
+  \ is \"true\" in `row` and `range`, \"false\" in `cell`, and absent in `none`. `scrollRegion`\
+  \ and `grid` are two nested elements: scrollRegion is the scrolling div (it draws\
+  \ focusRing while the grid inside it is :focus-visible, so the ring is not clipped)\
+  \ and grid is the role=\"grid\" div inside it that carries tabindex, aria-activedescendant\
+  \ and the rowgroups. Focus: the grid element is the tab stop (tabindex=0) and uses\
+  \ aria-activedescendant pointing at the current cell (cells have ids and tabindex=-1);\
+  \ this keeps focus stable while rows are recycled. Except when a cell contains an\
+  \ interactive element or an editor is open: then real focus moves into it (the APG\
+  \ \"focus inside the cell\" mode) and returns to the cell on Escape/commit. Virtualization:\
+  \ a fixed rowHeight makes offsets arithmetic; a spacer sets the scroll height; rows\
+  \ render with translateY; overscan of one page. Editing: the editor is the system\
+  \ Input/NumberInput/Select/DatePicker/Checkbox rendered inside the cell with its\
+  \ label visually hidden, size sm, `overrides` for inset zero (Input, NumberInput,\
+  \ DatePicker: `paddingInline`/`paddingBlock` space.0; Select: `triggerPaddingInline`/`triggerPaddingBlock`\
+  \ space.0; Checkbox: none); validate on commit, and an invalid cell keeps the editor\
+  \ open with the message in the status bar and aria-describedby. Range selection\
+  \ is drawn with an absolutely positioned overlay, not per-cell styles. `container?:\
+  \ HTMLElement` (default document.body) is the portal target for the composed Select\
+  \ and DatePicker editors \u2014 a platform prop, not a schema prop. Column resize:\
+  \ the resizeHandle part, a separator (role=\"separator\" aria-orientation=\"vertical\"\
+  \ aria-valuenow) on the header cell edge, draggable with the pointer and not focusable;\
+  \ the keyboard path is Shift+ArrowLeft/Right on the header cell. Button and Heading\
+  \ keep their own data-part, so the sortButton part is a span the grid owns around\
+  \ the Button (it takes the click), and a click anywhere on a selectCell/selectAllCell\
+  \ toggles its Checkbox; the sort Button gets `overrides.paddingInline` space.0 so\
+  \ its text lines up with the cells. Copy writes text/plain TSV to the clipboard.\
+  \ The statusBar part is a div carrying the surface and padding; inside it only a\
+  \ live span is role=\"status\" (loading, invalid, sort, selection, copy and editing\
+  \ announcements), and the row count, selection count, scrollHint and position Texts\
+  \ sit beside it outside the live region. With showStatusBar false the bar stays\
+  \ in the DOM, visually hidden, holding only the live span."
 ```
 
 ## Guidance
@@ -1684,7 +1772,7 @@ Do not use a DataGrid for content people read and act on by row — orders, memb
 
 ## Behavior
 
-The grid is one tab stop; arrow keys move a focus rectangle between cells, Page keys move by a screen of rows, Home/End by row or (with Ctrl) by grid. Enter on a sortable header sorts; Enter or F2 on an editable cell opens its editor (typing a printable character opens a text or number editor with that character as its `defaultValue`, replacing the value; for select, date and checkbox editors typing only opens); Enter commits and moves down, Tab commits and moves to the next editable cell in the row, F2 commits in place, Escape cancels. Text, number and date editors commit on Enter, Tab, F2 or blur; select and checkbox editors commit on change (they are discrete pickers). The number editor commits NumberInput's number, or undefined when emptied. A select editor opens its popup at once, and closing the popup without a choice cancels the edit. While a select or date popup is open, Enter belongs to that control (choosing an option, picking a day); a date editor commits on Enter only from its text field. Space is never an edit trigger: in `none` and `cell` mode it does nothing. Editors are the composed Input/NumberInput/Select/DatePicker/Checkbox with `hideLabel`, `size: sm` and inset-zero overrides; they are never told about validity — the cell shows cellInvalid* while the editor stays open, the message goes to the status bar, and `copy.editing` is announced through the status bar live region when an editor opens (nothing is wired to the editor's own describedby). Invalid edits stay open with the message shown in the status bar and announced. `selectable: row` toggles rows with Space and the checkbox column; `range` extends with Shift+arrows or drag and copies as TSV with Ctrl+C. Focus and selection are independent. Rows render only in the visible window plus overscan; `rowCount` with `onRangeNeeded` lets the caller page in from a server while the scrollbar reflects the whole set. Pinned columns stay put during horizontal scroll and cast a shadow once the body has moved. Range selection by pointer: pointerdown on a body cell sets the anchor, pointermove with capture extends the rectangle, Shift+click extends from the existing anchor; the overlay is clipped to the rendered window when an endpoint has scrolled out of it. `cell` mode has no selection keys: the focused cell is the selection. Select-all and column selection cover the loaded rows only. `copy.scrollHint` shows in the status bar while the columns overflow sideways and the region has not yet been scrolled sideways. `copy.position` is the status bar's text for the active cell and is not announced — aria-rowindex/aria-colindex already carry position, and a polite region on every arrow press would be noise.
+The grid is one tab stop; arrow keys move a focus rectangle between cells, Page keys move by a screen of rows, Home/End by row or (with Ctrl) by grid. Enter on a sortable header sorts, and the sorted column shows its direction as a `chevron-up`/`chevron-down` Icon in the sort Button's trailing slot (no glyph on the columns that are not sorted); activating a header cycles ascending ↔ descending only and never clears the sort. Enter or F2 on an editable cell opens its editor (typing a printable character opens a text or number editor with that character as its `defaultValue`, replacing the value; for select, date and checkbox editors typing only opens; the space character never opens an editor); Enter commits and moves down, Tab commits and moves to the next editable cell in the row, F2 commits in place, Escape cancels. Text, number and date editors commit on Enter, Tab, F2 or blur; select and checkbox editors commit on change (they are discrete pickers). The number editor commits NumberInput's number, or undefined when emptied. A select editor opens its popup at once, and closing the popup without a choice cancels the edit. While a select or date popup is open, Enter belongs to that control (choosing an option, picking a day); a date editor commits on Enter only from its text field. Space is never an edit trigger: in `none` and `cell` mode it does nothing. Editors are the composed Input/NumberInput/Select/DatePicker/Checkbox with `hideLabel`, `size: sm` and inset-zero overrides; they are never told about validity — the cell shows cellInvalid* while the editor stays open, the message goes to the status bar, and `copy.editing` is announced through the status bar live region when an editor opens (nothing is wired to the editor's own describedby). Invalid edits stay open with the message shown in the status bar and announced. `selectable: row` toggles rows with Space and the checkbox column; `range` extends with Shift+arrows or drag and copies as TSV with Ctrl+C. Focus and selection are independent. Rows render only in the visible window plus overscan; `rowCount` with `onRangeNeeded` lets the caller page in from a server while the scrollbar reflects the whole set. Pinned columns stay put during horizontal scroll and cast a shadow once the body has moved. Range selection by pointer: pointerdown on a body cell sets the anchor, pointermove with capture extends the rectangle, Shift+click extends from the existing anchor; the overlay is clipped to the rendered window when an endpoint has scrolled out of it. `cell` mode has no selection keys: the focused cell is the selection. Select-all and column selection cover the loaded rows only. `copy.scrollHint` shows in the status bar while the columns overflow sideways and the region has not yet been scrolled sideways. `copy.position` is the status bar's text for the active cell and is not announced — aria-rowindex/aria-colindex already carry position, and a polite region on every arrow press would be noise.
 
 ## Content guidelines
 
@@ -1692,7 +1780,7 @@ Headers are short and unit-bearing ("Qty", "Price (USD)"); use `abbr` for the sp
 
 ## Accessibility
 
-The grid follows the APG grid pattern: `role="grid"` with `rowgroup`, `row`, `columnheader`, `rowheader` and `gridcell` roles stated explicitly, `aria-rowcount`/`aria-colcount` and per-row/cell indexes so virtualization does not hide the shape (WCAG 1.3.1, 4.1.2). It is one tab stop with full arrow-key navigation (2.1.1, 2.4.3) using `aria-activedescendant` so focus is stable while rows recycle; interactive cell content and editors take real focus while active and hand it back. Sort, selection counts, copy and editing state are announced and shown in the status bar (4.1.3). Validation errors are text, associated with the cell, and never color alone (3.3.1, 1.4.1). The focus ring is inset so it is visible at the grid edges (2.4.7, 2.4.11). Rows meet the minimum target height (2.5.8). Escape always leaves an editor without saving (2.1.2).
+The grid follows the APG grid pattern: `role="grid"` with `rowgroup`, `row`, `columnheader`, `rowheader` and `gridcell` roles stated explicitly, `aria-rowcount`/`aria-colcount` and per-row/cell indexes so virtualization does not hide the shape (WCAG 1.3.1, 4.1.2). It is one tab stop with full arrow-key navigation (2.1.1, 2.4.3) using `aria-activedescendant` so focus is stable while rows recycle; interactive cell content and editors take real focus while active and hand it back. Sort, selection counts, copy and editing state are announced and shown in the status bar (4.1.3). Validation errors are text, associated with the cell, and never color alone (3.3.1, 1.4.1). The focus ring is inset so it is visible at the grid edges (2.4.7, 2.4.11). Rows meet the minimum target height (2.5.8). Escape always leaves an editor without saving and clears a range selection (2.1.2); the grid has no overlay to dismiss, so those two are what `escape-dismiss` means here.
 
 ## Platform notes
 

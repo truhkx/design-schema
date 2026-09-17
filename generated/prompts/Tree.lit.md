@@ -128,7 +128,10 @@ component:
     expanded:
       type: array
       shape: string[]
-      description: Controlled expanded ids.
+      description: Controlled expanded ids. A still-`"lazy"` id here is held closed
+        until the user opens it, exactly as in `defaultExpanded` — the id stays in
+        the array the caller passed and in what onExpandChange reports, but the node
+        does not render open and fires no onExpand.
       controls:
         event: onExpandChange
         default: defaultExpanded
@@ -136,9 +139,10 @@ component:
       type: array
       shape: string[]
       description: Initially expanded ids. `["*"]` opens every node whose `children`
-        is a non-empty array and never a `"lazy"` node, as TreeGrid; a lazy id listed
-        explicitly stays closed until the user opens it (onExpand only fires for user
-        acts).
+        is a non-empty array and never a `"lazy"` node, as TreeGrid; `"*"` is reserved
+        as that sentinel, so a node whose id is literally `"*"` is never matched by
+        it. A lazy id listed explicitly stays closed until the user opens it (onExpand
+        only fires for user acts), and the same rule covers the controlled `expanded`.
     selectable:
       type: enum
       values:
@@ -165,13 +169,17 @@ component:
     selectChildren:
       type: boolean
       default: false
-      description: With `multiple`, selecting a parent selects its descendants and
+      description: 'With `multiple`, selecting a parent selects its descendants and
         parents show indeterminate. The cascade covers loaded, enabled descendants
-        only (a `"lazy"` subtree contributes nothing until loaded); a parent's id
+        only (a `"lazy"` subtree contributes nothing until loaded); a parent''s id
         is in `selected` exactly when all its enabled loaded descendants are, and
         unchecking any descendant removes it and every ancestor id. Its aria-checked
-        (true, mixed, false) is derived from its descendants. Shift+ArrowDown/Up cascade
-        like Space.
+        (true, mixed, false) is derived from its descendants. A disabled node is skipped
+        as a target but does not wall off its subtree: its enabled loaded descendants
+        still cascade. A parent with no enabled loaded descendants at all (a still-lazy
+        subtree, or only disabled children) behaves as a leaf and carries just its
+        own id. Shift+ArrowDown/Up cascade like Space but only ever add — they never
+        remove a node or an ancestor.'
     selectOnFocus:
       type: boolean
       default: false
@@ -245,10 +253,16 @@ component:
   keyboard:
   - keys:
     - Tab
-    action: Moves into the tree (to the selected node, else the first) and out of
-      it — one tab stop.
+    action: Moves into the tree (to the selected node — the first selected in tree
+      order when several are — else the first node) and out of it — one tab stop.
+      Leaving the tree forgets which node was focused, so re-entry follows the same
+      rule instead of restoring it.
     from: any
     expect: manual
+    platforms:
+    - web
+    - lit
+    - swiftui
   - keys:
     - ArrowDown
     action: Next visible node.
@@ -292,11 +306,19 @@ component:
     action: First node.
     from: last
     expect: focus-first
+    platforms:
+    - web
+    - lit
+    - swiftui
   - keys:
     - End
     action: Last visible node.
     from: first
     expect: focus-last
+    platforms:
+    - web
+    - lit
+    - swiftui
   - keys:
     - Enter
     action: 'Activates the node (onActivate, or follows href); with `selectable: single`,
@@ -307,9 +329,14 @@ component:
   - keys:
     - ' '
     action: Selects (single) or toggles selection (multiple) of the focused node.
+      On rn a tap on the row does this instead — Pressable has no key events.
     when: selectable
     from: inside
     expect: manual
+    platforms:
+    - web
+    - lit
+    - swiftui
   - keys:
     - '*'
     action: Opens every enabled sibling of the focused node, the focused node included;
@@ -334,16 +361,24 @@ component:
     - swiftui
   - keys:
     - Control+a
-    action: Selects every visible, enabled node at the current expansion state; bound
-      by key code KeyA, with Control or Meta (Cmd on macOS).
+    action: Adds every visible, enabled node at the current expansion state to the
+      selection; nodes already selected inside a collapsed branch stay selected (the
+      key never deselects). Bound by key code KeyA, with Control or Meta (Cmd on macOS).
     when: multiple
     from: inside
     expect: manual
+    platforms:
+    - web
+    - lit
+    - swiftui
   - keys:
     - a-z
     action: 'Type-ahead: any printable character (letters, digits, punctuation) moves
-      to the next visible node whose label starts with the typed characters; the buffer
-      clears after 500 ms (literal-ok, as Listbox).'
+      to the next visible node whose label starts with the typed characters; `*` and
+      Space keep their own bindings and never enter the buffer. A fresh one-character
+      buffer searches from the node after the focused one; a longer buffer may re-match
+      the focused node (as Listbox). The buffer clears after 500 ms (literal-ok, as
+      Listbox).'
     from: inside
     expect: manual
     platforms:
@@ -379,13 +414,15 @@ component:
     rowSelected:
       token: color.background.strong
       description: Fill on the selected node, and on aria-checked="true" nodes in
-        multiple mode.
+        multiple mode. An indeterminate (mixed) parent gets neither this fill nor
+        the start-edge bar — its dash glyph is the only signal.
       locked: true
     rowSelectedBorder:
       token: color.control.selectedBackground
       description: Start-edge bar on the selected (or checked) node, as Table and
-        DataGrid. Drawn over the row (absolutely positioned at the logical start,
-        mirrored in RTL) so selecting does not shift the content.
+        DataGrid. Drawn over the row at the logical start and mirrored in RTL, by
+        whichever means the platform has that does not move the content (an inset
+        shadow on the row, or an absolutely positioned box).
       locked: true
     rowSelectedBorderWidth:
       token: border.width.focus
@@ -429,11 +466,18 @@ component:
       token: size.target.min
       part: expandButton
       description: The `expandButton` part is a wrapper the tree owns, this size on
-        both axes, around an unmodified ghost Button (Button has no size override
-        and keeps its own data-part); the chevron takes the Button's own color.
+        both axes, around an unmodified ghost Button centred inside it (Button has
+        no size override and keeps its own data-part, and a `sm` Button is smaller
+        than this, so the target is the wrapper, not the Button); the chevron takes
+        the Button's own color. TreeGrid's expandButton is the same wrapper-around-a-Button
+        shape.
       locked: true
     guideLine:
       token: color.border
+      description: One vertical line per open parent, drawn down that parent's group,
+        at rowPaddingInline + indent × (parent level − 1) + expandButtonSize / 2 from
+        the row's start — the centre of that parent's chevron. No elbows, no termination
+        at the last child, as TreeGrid.
       locked: false
     guideLineWidth:
       token: border.width.thin
@@ -441,7 +485,9 @@ component:
     checkboxGap:
       token: layout.gap.tight
       part: checkbox
-      description: Between the checkbox and the label in multiple mode.
+      description: In multiple mode the row reads chevron, checkbox, icon, label,
+        badge; this is the gap after the checkbox, so on a node with an icon it falls
+        between the checkbox and the icon. Every other gap in the row is rowGap.
       locked: false
     checkboxSize:
       token: space.4
@@ -479,18 +525,27 @@ component:
       locked: false
     fontFamily:
       token: font.family.body
+      description: Sets the container's font, and the resolved value (the override
+        when there is one, the token otherwise) is always forwarded to the label Text
+        as `overrides.fontFamily`, so the root hook and the composed label never disagree.
       locked: false
     fontSize:
       token: font.size.sm
+      description: The container's size and, resolved the same way, the label Text's
+        `overrides.fontSize`.
       locked: false
     lineHeight:
       token: font.lineHeight.normal
+      description: The container's line height and, resolved the same way, the label
+        Text's `overrides.lineHeight`.
       locked: false
     minTarget:
       token: size.target.min
       locked: true
     focusRing:
       token: color.border.focus
+      description: Drawn around the whole `node` — the chevron included, since the
+        row is one visual target — not around nodeRow alone.
       locked: true
     focusRingWidth:
       token: border.width.focus
@@ -506,7 +561,8 @@ component:
   constants:
     typeaheadReset:
       description: How long typed characters accumulate before the typeahead buffer
-        clears.
+        clears. Read on web, lit and swiftui only — there is no type-ahead on rn,
+        so no rn code reads it.
       value: 500
       unit: ms
   copy:
@@ -590,18 +646,23 @@ component:
         keeps its own `data-part="anchor"` too, so the `link` part is a `<span data-part="link">`
         the tree owns around it (activation finds the anchor inside that span); Text
         takes data-part directly. Nodes with href render the label as a Link inside
-        the treeitem; Enter activates it. Multiple mode uses aria-checked with an
-        indeterminate value for cascading parents and a Checkbox glyph (not the Checkbox
-        component: the treeitem itself is the control). Type-ahead buffers keys for
-        500 ms. Pointer: click on a node focuses it and does what Space does (select
-        in single, toggle in multiple); double-click does what Enter does, and a click
-        whose `detail` is 2 or more does not toggle again (a double-click toggles
-        once, then activates); click on the chevron toggles expansion and focuses
-        the node without changing selection. Lazy placeholder: a <li role="treeitem"
-        aria-disabled="true"> holding copy.loading inside the group, not navigable,
-        with no data-part, and aria-busy on the parent treeitem. Empty `nodes`: the
-        <ul> renders with no items and copy.empty is a `Text tone="muted"` below it
-        inside the container.'
+        the treeitem, and the composed Link takes tabindex=-1 so the treeitem stays
+        the only tab stop; Enter activates it by clicking the anchor. The tree''s
+        own label Text is the outer `data-part="label"`; the Link nested inside it
+        keeps its own inner parts, which a part locator resolves after the tree''s.
+        In single mode aria-selected is on every node ("false" when unselected, so
+        a screen reader hears the state on each one), and in multiple mode aria-checked
+        is on every node. Multiple mode uses aria-checked with an indeterminate value
+        for cascading parents and a Checkbox glyph (not the Checkbox component: the
+        treeitem itself is the control). Type-ahead buffers keys for 500 ms. Pointer:
+        click on a node focuses it and does what Space does (select in single, toggle
+        in multiple); double-click does what Enter does, and a click whose `detail`
+        is 2 or more does not toggle again (a double-click toggles once, then activates);
+        click on the chevron toggles expansion and focuses the node without changing
+        selection. Lazy placeholder: a <li role="treeitem" aria-disabled="true"> holding
+        copy.loading inside the group, not navigable, with no data-part, and aria-busy
+        on the parent treeitem. Empty `nodes`: the <ul> renders with no items and
+        copy.empty is a `Text tone="muted"` below it inside the container.'
     lit:
       tag: ds-tree
       reflect:
@@ -613,13 +674,17 @@ component:
       - show-label
       - heading-level
       notes: '`nodes` as a property rendered in the shadow root; roving tabindex over
-        shadow treeitems; composed events. ds-link is composed for href nodes. `showGuides`
-        defaults true, so its attribute is the negated `hide-guides`. Forwarded bindings
-        reach the composed ds-text / ds-heading / ds-icon through their `overrides`
-        property only, so a consumer''s CSS on a forwarded --ds-tree-* hook does not
-        reach the child; override them through `overrides`. Composed events carry
-        bare detail values — `selection-change` and `expand-change` the string[] itself,
-        `expand` and `activate` the id string — not objects, as TreeGrid.'
+        shadow treeitems; composed events. ds-link is composed for href nodes. A tabindex
+        on a custom-element host does not reach the child''s inner control, so every
+        composed ds-link and ds-button inside a treeitem has its own inner `<a>`/`<button>`
+        demoted to tabindex="-1" after each render (as TreeGrid does for cell controls);
+        otherwise the tree would have a tab stop per node and a focusable button inside
+        aria-hidden. `showGuides` defaults true, so its attribute is the negated `hide-guides`.
+        Forwarded bindings reach the composed ds-text / ds-heading / ds-icon through
+        their `overrides` property only, so a consumer''s CSS on a forwarded --ds-tree-*
+        hook does not reach the child; override them through `overrides`. Composed
+        events carry bare detail values — `selection-change` and `expand-change` the
+        string[] itself, `expand` and `activate` the id string — not objects, as TreeGrid.'
     rn:
       element: FlatList
       props:
@@ -627,25 +692,42 @@ component:
       - accessibilityLabel
       notes: 'A FlatList over the flattened visible nodes; each row a Pressable with
         accessibilityRole="button" (or "link" for href), accessibilityState={{ expanded,
-        selected, checked, disabled }}, accessibilityLabel "{label}, level {n}" and
-        accessibilityActions expand/collapse. Multiple mode draws the checkbox glyph
-        (checkbox* bindings, accessibilityState.checked) inside the same Pressable
-        — not the Checkbox component — so the row stays one target and Enter-equivalent
-        activation and href still work: a tap toggles selection, a long press activates.
-        A screen reader''s activate gesture lands on the tap, which in that mode toggles
-        selection, so in multiple mode the row also carries the standard `longpress`
-        accessibility action (no label needed; a custom `activate` would take over
-        the double-tap) calling the same handler as a long press — otherwise there
-        would be no non-gestural way to follow a node. In `single` a tap does what
-        Enter does (selects, then activates); in `none` a tap only activates and does
-        not toggle expansion. `href` is followed with `Linking.openURL` by the row
-        itself (the composed Link gets an onPress that returns false, so a tap on
-        its text acts like the rest of the row); apps with in-app routes use onActivate
-        instead of href. The root View is the `container` (holding the Heading and
-        the FlatList); `group` has no element. `selectOnFocus` is wired to the Pressable''s
-        onFocus (hardware keyboard and assistive-technology focus). No arrow keys,
-        no type-ahead, no `*` and no expand-all action; the expand chevron is a real
-        target, accessible and named with copy.expand/collapse.'
+        selected, checked, disabled }}, accessibilityLabel "{label}, level {n}" —
+        with the badge folded in when the node has one ("{label}, {badge}, level {n}"),
+        since the label replaces the row''s rendered content for a screen reader —
+        and accessibilityActions expand/collapse. The lazy placeholder is its own
+        row whose label is copy.loading. Multiple mode draws the checkbox glyph (checkbox*
+        bindings, accessibilityState.checked) inside the same Pressable — not the
+        Checkbox component — so the row stays one target and Enter-equivalent activation
+        and href still work: a tap toggles selection, a long press activates. A screen
+        reader''s activate gesture lands on the tap, which in that mode toggles selection,
+        so in multiple mode the row also carries the standard `longpress` accessibility
+        action (no label needed; a custom `activate` would take over the double-tap)
+        calling the same handler as a long press — otherwise there would be no non-gestural
+        way to follow a node. In `single` a tap does what Enter does (selects, then
+        activates); in `none` a tap only activates and does not toggle expansion.
+        `href` is followed with `Linking.openURL` by the row itself (the composed
+        Link gets an onPress that returns false, so a tap on its text acts like the
+        rest of the row); on native an href must be an absolute URL, because `Linking.openURL`
+        cannot open an app-relative path, and apps with in-app routes use onActivate
+        instead of href (an app-relative href is a web and lit affordance). The root
+        View is the `container` (holding the Heading and the FlatList); `group` has
+        no element. `selectOnFocus` is wired to the Pressable''s onFocus (hardware
+        keyboard and assistive-technology focus). No arrow keys, no type-ahead, no
+        `*` and no expand-all action; the expand chevron is a real target, accessible
+        and named with copy.expand/collapse. React Native gives View and Pressable
+        no key events, so Tab, Home, End, Space and Control+a have no native path
+        either — a tap stands in for Space and Enter, and the expand/collapse actions
+        for the arrows. There is no tabIndex on native, so the roving tabindex and
+        the one-tab-stop rule are web, lit and swiftui only; on react-native-web every
+        row Pressable and chevron Button is its own tab stop, and the accessibility
+        path is the row''s accessibilityState plus its expand/collapse actions rather
+        than focus order. There is no role="status" either: copy.selectedCount goes
+        in a one-point View with accessibilityLiveRegion="polite" on Android and through
+        AccessibilityInfo.announceForAccessibility on iOS, on each fired selection
+        change — that pairing is the rn form of every live-region requirement in this
+        doc. copy.empty is the FlatList''s empty component, so it renders inside the
+        list rather than beside it.'
     swiftui:
       element: ScrollView
       props:
@@ -958,13 +1040,18 @@ component:
 
 ## Keyboard
 
+- `Tab` (Moves into the tree (to the selected node — the first selected in tree order when several are — else the first node) and out of it — one tab stop. Leaving the tree forgets which node was focused, so re-entry follows the same rule instead of restoring it.): expect manual
 - `ArrowDown` (Next visible node.): expect focus-next
 - `ArrowUp` (Previous visible node.): expect focus-prev
 - `ArrowRight` (On a closed parent: opens it. On an open parent: moves to its first enabled child (disabled nodes are skipped). On a leaf: nothing.): expect manual
 - `ArrowLeft` (On an open parent: closes it. Otherwise: moves to the parent; when the parent is disabled, focus stays put.): expect manual
+- `Home` (First node.): expect focus-first
+- `End` (Last visible node.): expect focus-last
+- ` ` (Selects (single) or toggles selection (multiple) of the focused node. On rn a tap on the row does this instead — Pressable has no key events.): expect manual
 - `*` (Opens every enabled sibling of the focused node, the focused node included; lazy siblings open and fire onExpand.): expect manual
 - `Shift+ArrowDown`, `Shift+ArrowUp` (Moves focus to the next / previous node and adds it to the selection (the APG rule; no anchor range). Outside `multiple` they act as plain arrows.): expect manual
-- `a-z` (Type-ahead: any printable character (letters, digits, punctuation) moves to the next visible node whose label starts with the typed characters; the buffer clears after 500 ms (literal-ok, as Listbox).): expect manual
+- `Control+a` (Adds every visible, enabled node at the current expansion state to the selection; nodes already selected inside a collapsed branch stay selected (the key never deselects). Bound by key code KeyA, with Control or Meta (Cmd on macOS).): expect manual
+- `a-z` (Type-ahead: any printable character (letters, digits, punctuation) moves to the next visible node whose label starts with the typed characters; `*` and Space keep their own bindings and never enter the buffer. A fresh one-character buffer searches from the node after the focused one; a longer buffer may re-match the focused node (as Listbox). The buffer clears after 500 ms (literal-ok, as Listbox).): expect manual
 
 ## Copy
 
@@ -1167,13 +1254,17 @@ reflect:
 - show-label
 - heading-level
 notes: "`nodes` as a property rendered in the shadow root; roving tabindex over shadow\
-  \ treeitems; composed events. ds-link is composed for href nodes. `showGuides` defaults\
-  \ true, so its attribute is the negated `hide-guides`. Forwarded bindings reach\
-  \ the composed ds-text / ds-heading / ds-icon through their `overrides` property\
-  \ only, so a consumer's CSS on a forwarded --ds-tree-* hook does not reach the child;\
-  \ override them through `overrides`. Composed events carry bare detail values \u2014\
-  \ `selection-change` and `expand-change` the string[] itself, `expand` and `activate`\
-  \ the id string \u2014 not objects, as TreeGrid."
+  \ treeitems; composed events. ds-link is composed for href nodes. A tabindex on\
+  \ a custom-element host does not reach the child's inner control, so every composed\
+  \ ds-link and ds-button inside a treeitem has its own inner `<a>`/`<button>` demoted\
+  \ to tabindex=\"-1\" after each render (as TreeGrid does for cell controls); otherwise\
+  \ the tree would have a tab stop per node and a focusable button inside aria-hidden.\
+  \ `showGuides` defaults true, so its attribute is the negated `hide-guides`. Forwarded\
+  \ bindings reach the composed ds-text / ds-heading / ds-icon through their `overrides`\
+  \ property only, so a consumer's CSS on a forwarded --ds-tree-* hook does not reach\
+  \ the child; override them through `overrides`. Composed events carry bare detail\
+  \ values \u2014 `selection-change` and `expand-change` the string[] itself, `expand`\
+  \ and `activate` the id string \u2014 not objects, as TreeGrid."
 ```
 
 ## Guidance
@@ -1192,7 +1283,7 @@ Do not use a Tree for one level (a Listbox or a list of Links), for nodes with s
 
 ## Behavior
 
-ArrowUp/Down move through visible nodes; ArrowRight opens a closed parent or steps into an open one; ArrowLeft closes or steps up; `*` opens all siblings; typing jumps by label. Enter activates (navigates for `href`, otherwise `onActivate`) and, in single mode, selects. Space selects or toggles; in multiple mode Shift+arrows extend and Ctrl+A selects all visible. Lazy nodes load when opened, with a placeholder child; onExpand fires before onExpandChange. Disabled nodes are visible, skipped by arrows, not selectable, and cannot be expanded. Selection and expansion are both controlled-or-uncontrolled and reported through events; `selected` is always an array. With the pointer, click selects or toggles and focuses, double-click activates, and the chevron only expands. The heading, when shown, is a composed Heading at `headingLevel` sized by headingSize and names the tree.
+ArrowUp/Down move through visible nodes; ArrowRight opens a closed parent or steps into an open one; ArrowLeft closes or steps up; `*` opens all siblings; typing jumps by label. Enter activates (navigates for `href`, otherwise `onActivate`) and, in single mode, selects. Space selects or toggles; in multiple mode Shift+arrows extend and Ctrl+A selects all visible. Lazy nodes load when opened, with a placeholder child; onExpand fires before onExpandChange. Disabled nodes are visible, skipped by arrows, not selectable, and cannot be expanded by any means — the keyboard never reaches them and their chevron is disabled — so a disabled parent's children are unreachable: never disable a parent whose children must stay reachable. Selection and expansion are both controlled-or-uncontrolled and reported through events; `selected` is always an array. With the pointer, click selects or toggles and focuses, double-click activates, and the chevron only expands. Touch has no double-tap equivalent, so on native a tap activates in `selectable: none` while web and lit keep activation on double-click and Enter — the one place the pointer and the tap disagree. The heading, when shown, is a composed Heading at `headingLevel` sized by headingSize and names the tree.
 
 ## Content guidelines
 
@@ -1200,7 +1291,7 @@ Labels are short nouns; nesting supplies the context, so "Invoices" not "Billing
 
 ## Accessibility
 
-The tree is a `tree` of `treeitem`s with `group`s for children, each item exposing level, position in set, set size, expanded state on parents, and selected or checked state (WCAG 1.3.1, 4.1.2; APG tree view). It is one tab stop with a roving tabindex and full arrow-key movement, type-ahead included (2.1.1, 2.4.3). Expansion is operable from the item itself, so the chevron is decoration (2.1.1). Selection shows as a fill plus a start-edge bar (1.4.1) and rows meet the minimum target (2.5.8). In multiple mode the count is announced (4.1.3): copy.selectedCount goes to a visually hidden role="status" region, rendered in multiple mode only, on every user selection change; expanding and collapsing announce nothing beyond the item's own expanded state.
+The tree is a `tree` of `treeitem`s with `group`s for children, each item exposing level, position in set, set size, expanded state on parents, and selected or checked state (WCAG 1.3.1, 4.1.2; APG tree view). It is one tab stop with a roving tabindex and full arrow-key movement, type-ahead included (2.1.1, 2.4.3). Expansion is operable from the item itself, so the chevron is decoration (2.1.1). Selection shows as a fill plus a start-edge bar (1.4.1) and rows meet the minimum target (2.5.8). In multiple mode the count is announced (4.1.3): copy.selectedCount goes to a visually hidden role="status" region, rendered in multiple mode only. The region exists from mount and always holds the current count (an empty tree reads "0 selected"), so nothing is announced at mount; it is written on every user selection change and never forced to re-announce, which means two different selections that yield the same string ("1 selected") are announced once. Expanding and collapsing announce nothing beyond the item's own expanded state. The roving tabindex and the one-tab-stop rule are web, lit and swiftui; React Native has no tabIndex, so there the row's accessibilityState and its expand/collapse actions carry the same information.
 
 ## Platform notes
 

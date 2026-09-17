@@ -2385,3 +2385,97 @@ One line per decision: `<date> <Component> <platform>: <gap> → <what the doc n
 2026-09-17 Table rn: no locale source for copy.rowCount's plural → the runtime default locale
 2026-09-17 Table rn: the stacked sort Toolbar's density, size and name → Table's density, size sm, copy.sortToolbarLabel even with only select-all
 2026-09-17 Table rn: is scrollHint announced when nothing is hidden → always, whenever responsive is scroll
+2026-09-17 Tree web: do root fontFamily/fontSize/lineHeight or the label forward win → both; the resolved value is always forwarded to the label Text
+2026-09-17 Tree web: two nested label parts when a node has href → the tree's Text is the outer label; Link's inner parts sit under it
+2026-09-17 Tree web: the composed Link is a second tab stop → the Link takes tabindex=-1; Enter clicks the anchor
+2026-09-17 Tree web: does Ctrl+A drop nodes inside collapsed branches → no, it only adds; the key never deselects
+2026-09-17 Tree web: are `*` and Space printable for type-ahead → they keep their bindings and never enter the buffer
+2026-09-17 Tree web: where type-ahead starts searching → after the focused node for a fresh one-character buffer, as Listbox
+2026-09-17 Tree web: selectedCount region has content at mount → rendered from mount, holding the count, announcing nothing then
+2026-09-17 Tree web: a sm chevron Button is smaller than expandButtonSize → the wrapper is the target, the Button is centred in it
+2026-09-17 Tree web: guide lines have tokens but no geometry → rowPaddingInline + indent × (parent level − 1) + expandButtonSize / 2
+2026-09-17 Tree web: rowSelectedBorder must be absolutely positioned → any means that does not move content, an inset shadow included
+2026-09-17 Tree web: a disabled parent can never be expanded → stated as a hard rule; never disable a parent whose children must stay reachable
+2026-09-17 Tree web: the tab stop after focus leaves and returns → leaving forgets the node; re-entry follows the Tab rule
+2026-09-17 Tree web: a node whose id is literally "*" → "*" is reserved as the sentinel and never matches an id
+2026-09-17 Tree lit: what a Lit composite does with a composed child's focusable element → demote the inner control to tabindex="-1" after render
+2026-09-17 Tree lit: expandButton wrapper contradicts TreeGrid's own chevron → both are wrappers the component owns; TreeGrid's doc moved
+2026-09-17 Tree lit: the row order around the checkbox → chevron, checkbox, icon, label, badge; checkboxGap follows the checkbox
+2026-09-17 Tree lit: a lazy id in the controlled `expanded` → held closed as in defaultExpanded, and kept in the reported array
+2026-09-17 Tree lit: Shift+ArrowDown/Up cascade like Space, which toggles → add-only; they never remove a node or an ancestor
+2026-09-17 Tree lit: aria-selected="false" on unselected nodes in single → on every node in single; aria-checked on every node in multiple
+2026-09-17 Tree lit: Tab into a multiple tree with several selected → the first selected in tree order
+2026-09-17 Tree lit: is the selectedCount region forced to re-announce → no; an unchanged string is announced once
+2026-09-17 Tree rn: Tab, Home, End, Space and Ctrl+A have no key events → scoped to web, lit and swiftui; a tap stands in
+2026-09-17 Tree rn: roving-tabindex is unreachable on native → stated as a web/lit/swiftui rule with the accessibilityState path named
+2026-09-17 Tree rn: the accessibilityLabel hides the badge → the badge joins the row label; the placeholder row is labelled copy.loading
+2026-09-17 Tree rn: RN has no role="status" for selectedCount → an Android live region plus announceForAccessibility on iOS
+2026-09-17 Tree rn: do the children of a disabled node cascade → yes; a disabled node is skipped but does not wall off its subtree
+2026-09-17 Tree rn: a cascading parent with no enabled loaded descendants → behaves as a leaf and carries its own id
+2026-09-17 Tree rn: what a mixed parent's row shows → neither the fill nor the start bar; the dash glyph alone
+2026-09-17 Tree rn: focusRing has no part and the row is split → drawn around the whole node, chevron included
+2026-09-17 Tree rn: Linking.openURL cannot open an app-relative href → native hrefs are absolute; app routes use onActivate
+2026-09-17 Tree rn: copy.empty renders inside the list, not beside it → stated as the rn form of the empty state
+2026-09-17 Tree rn: typeaheadReset is unreachable on native → the constant is read on web, lit and swiftui only
+2026-09-17 DataGrid web: no sort-direction indicator for sighted users → a chevron-up/down Icon in the sort Button's trailing slot
+2026-09-17 DataGrid web: the resize separator's aria-valuenow with a token width → set once the column has a pixel width, omitted otherwise
+2026-09-17 DataGrid web: does a controlled `sort` also sort `data` → no; the caller owns the order, as Table
+2026-09-17 DataGrid web: does aria-rowcount count the header row → yes, (rowCount ?? data.length) + 1, body rows from 2
+2026-09-17 DataGrid web: does Space open an editor by typing → never; the space character is not a type-to-edit trigger
+2026-09-17 DataGrid web: what a click outside a body data cell selects in `cell` → nothing; headers and the select column select nothing
+2026-09-17 DataGrid web: what copy.copied announces on a refused clipboard → nothing; it announces only once the write resolves
+2026-09-17 DataGrid web: `abbr` on a sortable column → has no effect; the sort copy is the name
+2026-09-17 DataGrid web: the order of Delete over a multi-cell selection → row-major, one onCellChange per cell
+2026-09-17 DataGrid web: the status bar's item order and visibility → live, count, selection, hint, position, each with its condition
+2026-09-17 DataGrid lit: statusBar is both a composed Text and a surface div → the part stays on the Text; surface/padding/gap style the bar around it
+2026-09-17 DataGrid lit: fourteen bindings declare no part → surface on container, range* on rangeOverlay, focusRing on scrollRegion, numericFont and pinnedShadow on cell
+2026-09-17 DataGrid lit: is selectColumnWidth the total or the content box → the total is this plus 2 × cellPaddingInline; the cell has no padding
+2026-09-17 DataGrid lit: caption required and two column rules with no enforcement → development-time warnings on every platform
+2026-09-17 DataGrid lit: the attribute story for rowCount, caption, sort, selected → plain attributes for three, attribute:false properties for the rest
+2026-09-17 DataGrid lit: `selected` is controlled with no defaultSelected → uncontrolled when omitted; the event fires in both modes
+2026-09-17 DataGrid lit: Tab out of the last editor when validate rejects → the editor stays open and the key does nothing
+2026-09-17 DataGrid lit: how a control inside a cell is activated and returns focus → focus it, click its native control, Escape returns focus
+2026-09-17 DataGrid lit: `render` typed ReactNode but lit-renderable on Lit → the shape is `(row: Row) => unknown`
+2026-09-17 DataGrid lit: no locale source for the plural copy → the runtime default, document.documentElement.lang when set
+2026-09-17 DataGrid lit: aria-multiselectable is only implied → true in row and range, false in cell, absent in none
+2026-09-17 DataGrid lit: Ctrl+C headers for a partly loaded set → the header line goes in when the range spans every loaded row
+2026-09-17 DataGrid lit: escape-dismiss with no overlay → the editor and the range clear are what it means here
+2026-09-17 DataGrid rn: captionLevel has no observable effect on native → stated as documentation-only there
+2026-09-17 DataGrid rn: "100vh − 2 × layout.gap.section — the window height on native" → the window height less 2 × layout.gap.section
+2026-09-17 DataGrid rn: range bindings and copy.selectedRange have no rn code → range is web/lit/swiftui; the rangeOverlay part has no element there
+2026-09-17 DataGrid rn: nothing can clear a cell on native → clearing is web/lit/swiftui, the emptied number editor aside
+2026-09-17 DataGrid rn: "Double tap to edit" is prefixed by the reader's own verb → copy.editHint is now the predicate, "Opens the cell editor"
+2026-09-17 DataGrid rn: no row position among unrendered rows on native → the grid's label carries copy.rowCount; position stays visible-only
+2026-09-17 DataGrid rn: escape-dismiss with no visible cancel on native → the editing cell's escape action, stated as the limit
+2026-09-17 DataGrid rn: no warning for non-contiguous pinned columns → a dev warning on every platform, with the isRowHeader rule
+2026-09-17 DataGrid rn: aria-readonly has no native equivalent → stated; only the missing editHint distinguishes a read-only grid
+2026-09-17 TreeGrid web: a lazy id in the controlled `expanded` → suppressed in both modes; the caller opens it by filling in children
+2026-09-17 TreeGrid web: no columnWidth default declared → DataGrid's, with the whole shared-default list restated
+2026-09-17 TreeGrid web: four copy strings are native-only with no web control → level, childCount, expandAll, collapseAll carry platforms [rn, swiftui]
+2026-09-17 TreeGrid web: Enter on an editable parent row header → always toggles, never edits; F2 is the edit path
+2026-09-17 TreeGrid web: does `*` open lazy siblings → yes, one onExpand each; it is a user act, unlike defaultExpanded
+2026-09-17 TreeGrid web: no rowCount or onRangeNeeded for server paging → there is none; paging is per-subtree through children "lazy"
+2026-09-17 TreeGrid web: height viewport has no declared binding → as DataGrid, sizing the whole component
+2026-09-17 TreeGrid web: what a rendered non-primitive cell reports → String(value); undefined only for null and undefined
+2026-09-17 TreeGrid web: the guide line offset depends on column order → the isRowHeader column is never pinned or reordered
+2026-09-17 TreeGrid web: which element holds the chevron rotation and aria-hidden → the expandButton span TreeGrid owns, as Tree
+2026-09-17 TreeGrid web: copy totals disagree with aria-rowcount → deliberately: the bar counts data, ARIA counts what is rendered
+2026-09-17 TreeGrid lit: "the selection" for Delete outside `row` mode → the active cell alone in cell and none
+2026-09-17 TreeGrid lit: Ctrl+A in `cell` mode with no range here → selects loaded rows in row mode, unhandled otherwise
+2026-09-17 TreeGrid lit: Escape with no range to clear → cancels an editor, returns focus from a cell control, else does nothing
+2026-09-17 TreeGrid lit: which row number copy.position shows → the visible index, agreeing with aria-rowindex
+2026-09-17 TreeGrid lit: how the lazy placeholder row is counted → by aria-rowindex, never by rowCount or selectedRows
+2026-09-17 TreeGrid lit: Shift+Space when the anchor row is no longer visible → a plain, non-cascading toggle of the focused row
+2026-09-17 TreeGrid lit: does a typed character seed every editor → text and number only; the others open unseeded
+2026-09-17 TreeGrid lit: a text editor the user empties → commits the empty string; only Delete and an emptied number editor give undefined
+2026-09-17 TreeGrid lit: does TreeGrid's transition cover rows and cells → the chevron only; hover and editor motion are DataGrid's
+2026-09-17 TreeGrid lit: which status strings are announced → loading, invalid, editing, sort and selection, as DataGrid
+2026-09-17 TreeGrid rn: hiding a focusable expand Button is an axe failure → the Button stays accessible on rn, named as Tree's chevron
+2026-09-17 TreeGrid rn: `*` versus the native expandAll over lazy rows → both are user acts and open lazy rows; only the prop never does
+2026-09-17 TreeGrid rn: does a suppressed lazy id stay in the reported array → yes; the caller's value is never rewritten
+2026-09-17 TreeGrid rn: DataGrid's defaults are hard-coded and drift → the sharing is declared, the defaults listed, caption gap included
+2026-09-17 TreeGrid rn: no cellLabel or editHint for native cells → editHint added to TreeGrid's copy; the cell label named in the notes
+2026-09-17 TreeGrid rn: the lazy placeholder's accessible name → copy.loading with copy.level, no child count
+2026-09-17 TreeGrid rn: pressing a parent row header under `selectable: cell` → toggles only, never selects the cell
+2026-09-17 TreeGrid rn: no native path for a dozen keyboard rules → the stand-in actions listed, escape-dismiss named among them
+2026-09-17 TreeGrid rn: `body` and the guide lines have no element on rn → stated, with the guide lines called decoration

@@ -185,8 +185,16 @@ export type {
 export { Slider } from './Slider';
 export type { SliderMark, SliderOverridableBinding, SliderProps, SliderShowValue, SliderValue } from './Slider';
 
-export { Toolbar } from './Toolbar';
-export type { ToolbarDensity, ToolbarOrientation, ToolbarOverflow, ToolbarOverridableBinding, ToolbarProps, ToolbarSize } from './Toolbar';
+export { Toolbar, ToolbarGroup } from './Toolbar';
+export type {
+  ToolbarDensity,
+  ToolbarGroupProps,
+  ToolbarOrientation,
+  ToolbarOverflow,
+  ToolbarOverridableBinding,
+  ToolbarProps,
+  ToolbarSize,
+} from './Toolbar';
 
 export { Carousel, CarouselSlide } from './Carousel';
 export type { CarouselChangeReason, CarouselOverridableBinding, CarouselPicker, CarouselProps, CarouselSlideProps } from './Carousel';

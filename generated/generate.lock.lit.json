@@ -205,19 +205,18 @@
     }
   },
   "Carousel.lit": {
-    "hash": "623c6574d01d258a",
-    "lastAttemptHash": "623c6574d01d258a",
-    "generatedAt": "2026-09-16T14:58:16+00:00",
+    "hash": "ca178cf8d4d67e67",
+    "lastAttemptHash": "ca178cf8d4d67e67",
+    "generatedAt": "2026-09-17T17:33:22+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.7518,
+    "costUsd": 2.3006,
     "files": [
       "packages/lit/src/Carousel.stories.ts",
-      "packages/lit/src/Carousel.test.ts",
       "packages/lit/src/Carousel.ts"
     ],
-    "gaps": 17,
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1007,19 +1006,19 @@
     }
   },
   "Table.lit": {
-    "hash": "2f3d19eb0b2be794",
-    "lastAttemptHash": "2f3d19eb0b2be794",
-    "generatedAt": "2026-09-16T15:13:13+00:00",
+    "hash": "e919aa7b76bf8b04",
+    "lastAttemptHash": "e919aa7b76bf8b04",
+    "generatedAt": "2026-09-17T17:42:42+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 3.072,
+    "costUsd": 2.2085,
     "files": [
       "packages/lit/src/Table.stories.ts",
       "packages/lit/src/Table.test.ts",
       "packages/lit/src/Table.ts"
     ],
-    "gaps": 12,
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1100,19 +1099,19 @@
     }
   },
   "Toolbar.lit": {
-    "hash": "e4b3f5d5480f5802",
-    "lastAttemptHash": "e4b3f5d5480f5802",
-    "generatedAt": "2026-09-16T14:44:19+00:00",
+    "hash": "791042755a8c3efa",
+    "lastAttemptHash": "791042755a8c3efa",
+    "generatedAt": "2026-09-17T17:22:26+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.2443,
+    "costUsd": 2.024,
     "files": [
       "packages/lit/src/Toolbar.stories.ts",
       "packages/lit/src/Toolbar.test.ts",
       "packages/lit/src/Toolbar.ts"
     ],
-    "gaps": 14,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,

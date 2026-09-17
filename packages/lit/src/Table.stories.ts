@@ -149,7 +149,7 @@ export const RowActions: Story = { args: { rowActions: editAction } };
 
 export const RowPress: Story = {
   render: (args) => html`
-    <ds-table caption=${args.caption} .columns=${args.columns} .data=${args.data} @row-press=${() => {}}></ds-table>
+    <ds-table caption=${args.caption} .columns=${args.columns} .data=${args.data} pressable-rows></ds-table>
   `,
 };
 

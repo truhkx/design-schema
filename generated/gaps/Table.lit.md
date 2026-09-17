@@ -35,3 +35,15 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Table: `copy.sortToolbarLabel` and `copy.cellLabel` have no web/Lit use (they're for the RN sort Toolbar and the SwiftUI stacked labels); they aren't rendered.
 - Table: `loading` with empty data shows `copy.loading` in the emptyState part, and with rows shows it as a muted Text below the table. The doc says only 'the body shows copy.loading'.
 - Table: behavior scenario `loading-marks-the-table-busy` names no target element for `aria-busy`. Asserted it on the shadow `<table role="table">`, and `has-accessible-name` on that table, not the host, because the host carries no role.
+
+## 2026-09-17 13:42 — round 1
+
+- Table: `pressable-rows` appears only in the onRowPress description and the Lit notes, not in props or platforms.lit.reflect, so its property name is unstated; I chose a reflected boolean property `pressableRows` on attribute `pressable-rows`.
+- Table: the forwards to Heading/Button `overrides` (captionSize/captionWeight/captionGap, headerWeight/cellGap) are inline styles on the child, so a consumer's CSS override of `--ds-table-caption-size`, `--ds-table-header-weight` or `--ds-table-cell-gap` never reaches the child; only the `overrides` property does. The doc should say whether forwarded bindings are CSS-hook overridable.
+- Table: the `caption` part is a composed Heading, but the doc doesn't say whether `hideCaption` visually hides the Heading element itself or a wrapper; I put data-part=caption and the visually-hidden class on the ds-heading host, dropped the wrapper, and gave the Heading no `size` because composition lists no props (its size comes from the fontSize forward).
+- Table: the container-query breakpoints can't read custom properties, so layout.maxWidth.prose (572) and layout.maxWidth.content (960) are hard-coded from the calm-precise build; warm-sleek's content width is 1040, so the numbers are theme-specific and the doc doesn't say which theme's values a package bakes in.
+- Table: the doc says select-all and sortable headers 'stay visible as a wrapping row' when stacked but gives no binding for that row's gap or whether it keeps the header border; I used stackedRowGap and kept the header cell styles. Sticky header when stacked sticks the whole thead, which the doc does not describe.
+- Table: scrollFade 'fades an edge only while columns are hidden past it', but the mask also fades the scroll region's inset focus ring at those edges; the doc doesn't say whether the ring should sit outside the mask.
+- Table: loading-marks-the-table-busy is scoped to `platforms: [web]`, yet the Lit notes specify aria-busy on the shadow table; I kept its test in Table.test.ts (20 tests for 19 listed scenarios).
+- Table: `footer` is type content with a note that a string footer renders in Text with the font bindings; Lit exposes it only as a `footer` slot, so the string form has no Lit equivalent and slotted content brings its own typography.
+- Table: the loading-with-rows live region and the sort/selection announcement region are separate polite regions; the doc doesn't say whether they should share one.

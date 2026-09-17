@@ -1,8 +1,7 @@
 import * as React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Toolbar } from './Toolbar';
+import { Toolbar, ToolbarGroup } from './Toolbar';
 import { Button } from './Button';
-import { Divider } from './Divider';
 import { SegmentedControl } from './SegmentedControl';
 import { Select } from './Select';
 import { Switch } from './Switch';
@@ -11,12 +10,14 @@ import { withTheme } from './decorators';
 function formattingControls(): React.ReactNode {
   return (
     <>
-      <Button label="Bold" variant="ghost" />
-      <Button label="Italic" variant="ghost" />
-      <Button label="Underline" variant="ghost" />
-      <Divider />
-      <Button label="Insert link" variant="ghost" />
-      <Divider />
+      <ToolbarGroup label="Text style">
+        <Button label="Bold" variant="ghost" overflowLabel="Bold" />
+        <Button label="Italic" variant="ghost" overflowLabel="Italic" />
+        <Button label="Underline" variant="ghost" overflowLabel="Underline" />
+      </ToolbarGroup>
+      <ToolbarGroup label="Insert">
+        <Button label="Insert link" variant="ghost" overflowLabel="Insert link" />
+      </ToolbarGroup>
       <Switch label="Preview" defaultChecked={false} />
     </>
   );
@@ -26,10 +27,10 @@ const meta: Meta<typeof Toolbar> = {
   title: 'Toolbar/React Native',
   component: Toolbar,
   decorators: [withTheme()],
+  // `overflow` is left to the schema default (`menu`, rendered as `scroll` without a warning).
   args: {
     label: 'Formatting',
     orientation: 'horizontal',
-    overflow: 'menu',
     size: 'md',
     density: 'comfortable',
   },
@@ -90,10 +91,10 @@ export const CompactActionsWithOverflow: Story = {
   args: { label: 'Table actions', overflow: 'menu', density: 'compact', size: 'sm' },
   render: (args) => (
     <Toolbar {...args}>
-      <Button label="Filter" variant="ghost" />
-      <Button label="Sort" variant="ghost" />
-      <Button label="Export" variant="ghost" />
-      <Button label="Delete" variant="danger" />
+      <Button label="Filter" variant="ghost" overflowLabel="Filter" />
+      <Button label="Sort" variant="ghost" overflowLabel="Sort" />
+      <Button label="Export" variant="ghost" overflowLabel="Export" />
+      <Button label="Delete" variant="ghost" overflowLabel="Delete" />
     </Toolbar>
   ),
 };
@@ -104,12 +105,11 @@ export const ScrollingFilterRow: Story = {
   render: (args) => (
     <Toolbar {...args}>
       <SegmentedControl
-        label="Status"
-        defaultValue="open"
+        label="View"
+        defaultValue="list"
         options={[
-          { value: 'open', label: 'Open' },
-          { value: 'closed', label: 'Closed' },
-          { value: 'all', label: 'All' },
+          { value: 'list', label: 'List' },
+          { value: 'board', label: 'Board' },
         ]}
       />
       <Select
@@ -123,11 +123,11 @@ export const ScrollingFilterRow: Story = {
       />
       <Select
         name="sort"
-        label="Sort by"
+        label="Sort"
         hideLabel
         options={[
-          { value: 'updated', label: 'Recently updated' },
-          { value: 'created', label: 'Newest' },
+          { value: 'newest', label: 'Newest' },
+          { value: 'oldest', label: 'Oldest' },
         ]}
       />
     </Toolbar>
@@ -138,5 +138,17 @@ export const WithOverrides: Story = {
   args: { overrides: { itemGap: 'layout.gap.tight', groupGap: 'layout.gap.loose' } },
 };
 
-/** At least three focusable controls, for the axe gate and manual keyboard checks on react-native-web. */
-export const Keyboard: Story = {};
+/** Three focusable controls in two groups, for the axe gate and manual keyboard checks on react-native-web. */
+export const Keyboard: Story = {
+  render: (args) => (
+    <Toolbar {...args}>
+      <ToolbarGroup label="Text style">
+        <Button label="Bold" variant="ghost" />
+        <Button label="Italic" variant="ghost" />
+      </ToolbarGroup>
+      <ToolbarGroup label="Insert">
+        <Button label="Insert link" variant="ghost" />
+      </ToolbarGroup>
+    </Toolbar>
+  ),
+};

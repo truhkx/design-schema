@@ -3,17 +3,26 @@
 .ds-carousel {
   --ds-carousel-slide-gap: var(--layout-gap-normal);
   --ds-carousel-control-offset: var(--space-2);
+  --ds-carousel-control-radius: var(--radius-full);
   --ds-carousel-control-shadow: var(--shadow-raised);
   --ds-carousel-picker-gap: var(--layout-gap-tight);
   --ds-carousel-picker-offset: var(--space-3);
   --ds-carousel-dot-size: var(--space-2);
   --ds-carousel-radius: var(--radius-md);
+  --ds-carousel-tab-font-size: var(--font-size-sm);
+  --ds-carousel-tab-font-weight: var(--font-weight-medium);
+  --ds-carousel-tab-padding-block: var(--space-sm);
+  --ds-carousel-tab-padding-inline: var(--space-md);
+  --ds-carousel-font-family: var(--font-family-body);
   --ds-carousel-transition: var(--motion-duration-base);
   /* locked: accessibility-bearing, never overridable */
   --ds-carousel-control-background: var(--color-overlay-surface);
   --ds-carousel-dot: var(--color-border-strong);
   --ds-carousel-dot-active: var(--color-control-selected-background);
   --ds-carousel-dot-target: var(--size-target-min);
+  --ds-carousel-tab-color: var(--color-foreground-muted);
+  --ds-carousel-tab-selected-color: var(--color-foreground-strong);
+  --ds-carousel-tab-indicator-thickness: var(--border-width-focus);
   --ds-carousel-min-target: var(--size-target-comfortable);
   --ds-carousel-focus-ring: var(--color-border-focus);
   --ds-carousel-focus-ring-width: var(--border-width-focus);
@@ -21,9 +30,11 @@
   container-type: inline-size;
   display: flex;
   flex-direction: column;
-  gap: var(--layout-gap-tight);
+  /* pickerOffset: the gap between the play/pause row and the viewport. */
+  gap: var(--ds-carousel-picker-offset);
 }
 
+/* playButton: its own row above the viewport, at the inline start. */
 .ds-carousel__play {
   align-self: flex-start;
 }
@@ -54,6 +65,7 @@
   scroll-snap-type: none;
 }
 
+/* slideGap: the track's gap, never a slide margin. */
 .ds-carousel__track {
   display: flex;
   gap: var(--ds-carousel-slide-gap);
@@ -65,6 +77,10 @@
     calc((100% - (var(--ds-carousel-per-view) - 1) * var(--ds-carousel-slide-gap)) / var(--ds-carousel-per-view));
   min-inline-size: 0;
   scroll-snap-align: start;
+}
+
+.ds-carousel--no-snap .ds-carousel__slide {
+  scroll-snap-align: none;
 }
 
 /* `@container` conditions cannot read custom properties, so layout.maxWidth.prose is duplicated. */
@@ -82,7 +98,7 @@
   position: relative;
   z-index: 1;
   display: inline-flex;
-  border-radius: var(--radius-full);
+  border-radius: var(--ds-carousel-control-radius);
   background-color: var(--ds-carousel-control-background);
   box-shadow: var(--ds-carousel-control-shadow);
 }
@@ -97,7 +113,7 @@
   inset-inline-end: var(--ds-carousel-control-offset);
 }
 
-/* control: extends the arrow's pointer target to the comfortable size. */
+/* control: extends the arrow's pointer target to minTarget. */
 .ds-carousel__control {
   display: inline-flex;
   align-items: center;
@@ -143,30 +159,28 @@
   background-color: var(--ds-carousel-dot-active);
 }
 
-/* tab: Carousel's own tab button; selection is carried by aria-selected, weight and an underline. */
+/* tab: Carousel's own tab button; the weight never changes, so selection never shifts the row. */
 .ds-carousel__tab {
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-inline-size: var(--ds-carousel-min-target);
   min-block-size: var(--ds-carousel-min-target);
-  padding-block: 0;
-  padding-inline: var(--space-sm);
+  padding-block: var(--ds-carousel-tab-padding-block);
+  padding-inline: var(--ds-carousel-tab-padding-inline);
   border: 0;
-  border-radius: var(--ds-carousel-radius);
   background: transparent;
-  color: var(--color-foreground-muted);
-  font: inherit;
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
+  color: var(--ds-carousel-tab-color);
+  font-family: var(--ds-carousel-font-family);
+  font-size: var(--ds-carousel-tab-font-size);
+  font-weight: var(--ds-carousel-tab-font-weight);
   cursor: pointer;
 }
 
+/* tabIndicatorThickness: an inset underline in dotActive, taking no layout. */
 .ds-carousel__tab[aria-selected='true'] {
-  color: var(--color-foreground);
-  font-weight: var(--font-weight-semibold);
-  box-shadow: inset 0 calc(-1 * var(--ds-carousel-focus-ring-width)) 0 var(--ds-carousel-dot-active);
+  color: var(--ds-carousel-tab-selected-color);
+  box-shadow: inset 0 calc(-1 * var(--ds-carousel-tab-indicator-thickness)) 0 var(--ds-carousel-dot-active);
 }
 
 .ds-carousel__dot:focus-visible,
@@ -175,12 +189,13 @@
   outline-offset: var(--ds-carousel-focus-ring-width);
 }
 
-.ds-carousel__dot-mark,
+/* transition: dot background and tab text colour only. */
+.ds-carousel__dot-mark {
+  transition: background-color var(--ds-carousel-transition) var(--motion-easing-standard);
+}
+
 .ds-carousel__tab {
-  transition:
-    background-color var(--ds-carousel-transition) var(--motion-easing-standard),
-    color var(--ds-carousel-transition) var(--motion-easing-standard),
-    box-shadow var(--ds-carousel-transition) var(--motion-easing-standard);
+  transition: color var(--ds-carousel-transition) var(--motion-easing-standard);
 }
 
 @media (prefers-reduced-motion: reduce) {

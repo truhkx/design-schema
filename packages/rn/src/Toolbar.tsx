@@ -4,8 +4,11 @@ import type { ViewInstance, ViewStyle } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
+import { Button } from './Button';
 import { Divider } from './Divider';
-import type { DividerOrientation, DividerProps } from './Divider';
+import { Search } from './Search';
+import { SegmentedControl } from './SegmentedControl';
+import { Select } from './Select';
 import { useTheme } from './theme';
 
 export type ToolbarOrientation = 'horizontal' | 'vertical';
@@ -30,19 +33,24 @@ export interface ToolbarProps {
   label: string;
   /**
    * Controls in order: Buttons (usually `ghost` or `secondary`, `iconOnly` for glyph tools),
-   * SegmentedControl, Select, Switch. On React Native, group related controls by placing a
-   * `Divider` between clusters; the Toolbar draws it at `separatorLength` between the groups.
+   * SegmentedControl, Select, Switch. Group related controls with `ToolbarGroup`; a Divider is
+   * drawn between two adjacent groups only (a bare control next to a group gets `itemGap`, no
+   * Divider). Consumers never place Dividers themselves.
    */
   children: React.ReactNode;
-  /** Vertical toolbars sit beside a canvas; arrow keys swap axes (react-native-web only). */
+  /** Vertical toolbars sit beside a canvas; the controls stack along the column. */
   orientation?: ToolbarOrientation | undefined;
   /**
    * What happens when controls do not fit: `wrap` onto more rows, or `scroll` with the edges
-   * faded. `menu` renders as `scroll` on React Native (children are opaque and nothing measures
-   * them), with a development warning.
+   * faded. `menu` (the default) renders as `scroll` on React Native — children are opaque and
+   * nothing measures them; an explicitly passed `menu` warns once in development.
    */
   overflow?: ToolbarOverflow | undefined;
-  /** Default for child controls that have a `size` prop and do not set their own (a child's own `size` wins). */
+  /**
+   * Default for child Buttons, SegmentedControls, Selects and Searches (recognised by component
+   * identity) that do not set their own; applied to direct children and to each ToolbarGroup's
+   * children. A child's own `size` wins.
+   */
   size?: ToolbarSize | undefined;
   /** Gap between controls: tight or normal rhythm. */
   density?: ToolbarDensity | undefined;
@@ -52,25 +60,39 @@ export interface ToolbarProps {
   ref?: React.Ref<ViewInstance> | undefined;
 }
 
+export interface ToolbarGroupProps {
+  /** The group's accessible name. */
+  label?: string | undefined;
+  /** The group's controls, in order. */
+  children: React.ReactNode;
+  /** The group's `View`. */
+  ref?: React.Ref<ViewInstance> | undefined;
+}
+
 const ITEM_GAP = {
   compact: 'layoutGapTight',
   comfortable: 'layoutGapNormal',
 } as const;
 
+/** Components that take a toolbar `size`, recognised by identity, never by probing for a prop. */
+const SIZED_COMPONENTS: ReadonlySet<unknown> = new Set<unknown>([Button, SegmentedControl, Select, Search]);
+
 let warnedMenu = false;
 
-function isDividerElement(node: React.ReactNode): node is React.ReactElement<DividerProps> {
-  return React.isValidElement(node) && node.type === Divider;
+interface ToolbarLayout {
+  group: ViewStyle;
 }
 
-/** Direct children with fragments expanded, so a fragment of controls counts as its controls. */
+const ToolbarLayoutContext: React.Context<ToolbarLayout | null> = React.createContext<ToolbarLayout | null>(null);
+
+/** Children with fragments expanded, so a fragment of controls counts as its controls. */
 function flattenChildren(children: React.ReactNode, prefix = ''): React.ReactNode[] {
   const out: React.ReactNode[] = [];
   React.Children.toArray(children).forEach((child) => {
     if (React.isValidElement<{ children?: React.ReactNode }>(child) && child.type === React.Fragment) {
       out.push(...flattenChildren(child.props.children, `${prefix}${String(child.key)}`));
     } else if (React.isValidElement(child)) {
-      out.push(React.cloneElement(child, { key: `${prefix}${String(child.key)}` }));
+      out.push(prefix === '' ? child : React.cloneElement(child, { key: `${prefix}${String(child.key)}` }));
     } else {
       out.push(child);
     }
@@ -78,30 +100,33 @@ function flattenChildren(children: React.ReactNode, prefix = ''): React.ReactNod
   return out;
 }
 
-interface ToolbarSegment {
-  /** The Divider drawn before this group; absent on the first. */
-  divider: React.ReactElement<DividerProps> | undefined;
-  items: React.ReactNode[];
+function withSize(node: React.ReactNode, size: ToolbarSize): React.ReactNode {
+  if (!React.isValidElement<{ size?: unknown }>(node) || !SIZED_COMPONENTS.has(node.type)) return node;
+  if (node.props.size !== undefined) return node;
+  // Search has no `sm`; it keeps its own default rather than taking a value outside its union.
+  if (node.type === Search && size === 'sm') return node;
+  return React.cloneElement(node, { size });
 }
 
-/** Splits the controls into groups at each Divider; a Divider with no controls on one side draws nothing. */
-function toSegments(nodes: React.ReactNode[]): ToolbarSegment[] {
-  const segments: ToolbarSegment[] = [];
-  let current: ToolbarSegment = { divider: undefined, items: [] };
-  for (const node of nodes) {
-    if (isDividerElement(node)) {
-      if (current.items.length > 0) {
-        segments.push(current);
-        current = { divider: node, items: [] };
-      } else if (segments.length > 0) {
-        current.divider = node;
-      }
-    } else {
-      current.items.push(node);
-    }
+function isGroup(node: React.ReactNode): node is React.ReactElement<ToolbarGroupProps> {
+  return React.isValidElement(node) && node.type === ToolbarGroup;
+}
+
+/**
+ * ToolbarGroup — related controls inside a Toolbar. A `View` with `role="group"` and
+ * `accessibilityLabel` from `label`, laid out along the toolbar axis with `itemGap` between its
+ * controls. The Toolbar draws a Divider between two adjacent groups.
+ */
+export function ToolbarGroup({ label, children, ref }: ToolbarGroupProps): React.JSX.Element {
+  const layout = React.useContext(ToolbarLayoutContext);
+  if (__DEV__ && layout === null) {
+    console.warn('ToolbarGroup: render it as a direct child of Toolbar; outside one it has no layout.');
   }
-  if (current.items.length > 0) segments.push(current);
-  return segments;
+  return (
+    <View ref={ref} role="group" accessibilityLabel={label} style={layout?.group} testID="Toolbar.group">
+      {children}
+    </View>
+  );
 }
 
 /**
@@ -113,32 +138,30 @@ function toSegments(nodes: React.ReactNode[]): ToolbarSegment[] {
  * submit row, a single control, or as a generic horizontal Stack.
  *
  * Renders a `View` with `accessibilityRole="toolbar"` and `accessibilityLabel` carrying
- * `background` (locked), `border`, `borderWidth`, `radius` and `paddingInline`/
- * `paddingBlock`. Children are split into groups at each `Divider` child: each group is a
- * `View` (`Toolbar.group`) spacing its controls by `itemGap` (by `density`), and the row
- * spaces groups and separators by `groupGap`, which replaces `itemGap` either side of a
- * separator. A Divider is laid in a `Toolbar.separator` box `separatorLength` long on the
- * cross axis, which its own stretch fills — the Toolbar sizes the slot, never the Divider,
- * and only supplies the Divider's `orientation` (across the toolbar axis) when it sets none.
- * Direct children (fragments expanded) that are not Dividers receive `size` by cloning
- * when they do not set their own.
+ * `background` (locked), `border`, `borderWidth`, `radius` and `paddingInline`/`paddingBlock`.
+ * Direct children (fragments expanded) and `ToolbarGroup`s are laid out along the axis with
+ * `itemGap` (by `density`). Between two adjacent groups the Toolbar renders a
+ * `Toolbar.separator` wrapper `separatorLength` long across the axis, padded along it by
+ * `groupGap − itemGap` (clamped at 0), holding a `Divider` across the axis with `spacing: none`
+ * that stretches to fill it. Sized children (Button, SegmentedControl, Select, Search) without
+ * their own `size` receive the toolbar's.
  *
  * `overflow: wrap` wraps rows (columns when vertical). `scroll` — and `menu`, which has no
- * native measurement, so it renders as `scroll` with a `__DEV__` warning — puts the groups
- * in a `ScrollView` along the toolbar axis with a react-native-svg gradient `fadeWidth`
- * long from `background` to transparent over each edge that has content scrolled past it.
+ * native measurement — puts the controls in a `ScrollView` along the toolbar axis with a
+ * react-native-svg gradient `fadeWidth` long from `background` to transparent over each edge
+ * that has content hidden past it, re-checked on scroll, layout and content size changes.
  *
- * Acknowledged native limits: no roving focus or arrow/Home/End keys without a hardware
- * keyboard — every control is its own accessibility stop, reachable by swipe; the arrow
- * model applies on react-native-web only. `focusRing`/`focusRingWidth` are applied nowhere:
- * each composed control draws its own ring. The `overflowButton`/`overflowMenu` parts have
- * no element on this platform.
+ * Acknowledged native limits: no roving focus and no arrow/Home/End handling (Pressable has
+ * no key events, react-native-web included) — every control is its own accessibility stop,
+ * reached by swipe or by Tab with a hardware keyboard; Enter/Space activation is the control's
+ * own. `focusRing`/`focusRingWidth` are applied nowhere: each composed control draws its own
+ * ring. The `overflowButton`/`overflowMenu` parts have no element on this platform.
  */
 export function Toolbar({
   label,
   children,
   orientation = 'horizontal',
-  overflow = 'menu',
+  overflow,
   size = 'md',
   density = 'comfortable',
   overrides,
@@ -146,17 +169,17 @@ export function Toolbar({
 }: ToolbarProps): React.JSX.Element {
   const { tokens: t } = useTheme();
   const vertical = orientation === 'vertical';
-  // `menu` assumes a fixed cross axis and a measurer; neither exists here.
+  // The schema default is `menu`; neither it nor `scroll` can measure here, so both scroll.
   const mode: 'wrap' | 'scroll' = overflow === 'wrap' ? 'wrap' : 'scroll';
 
   React.useEffect(() => {
-    if (__DEV__ && overflow === 'menu' && !vertical && !warnedMenu) {
+    if (__DEV__ && overflow === 'menu' && !warnedMenu) {
       warnedMenu = true;
       console.warn(
         'Toolbar: `overflow="menu"` renders as `overflow="scroll"` on React Native — children are opaque, so nothing can measure them and move trailing controls into a "More" Menu.',
       );
     }
-  }, [overflow, vertical]);
+  }, [overflow]);
 
   const styles = React.useMemo(() => {
     const border = overrides?.border ? (resolveToken(t, overrides.border) as string) : t.colorBorder;
@@ -170,6 +193,8 @@ export function Toolbar({
       ? (resolveToken(t, overrides.separatorLength) as number)
       : t.space5;
     const fadeWidth = overrides?.fadeWidth ? (resolveToken(t, overrides.fadeWidth) as number) : t.space6;
+    // groupGap replaces itemGap either side of a separator: the row keeps itemGap, the separator pads the rest.
+    const separatorPad = Math.max(0, groupGap - itemGap);
 
     const wrap = mode === 'wrap' ? 'wrap' : 'nowrap';
     const root: ViewStyle = {
@@ -184,7 +209,7 @@ export function Toolbar({
       flexDirection: vertical ? 'column' : 'row',
       alignItems: vertical ? 'stretch' : 'center',
       flexWrap: wrap,
-      gap: groupGap,
+      gap: itemGap,
     };
     const group: ViewStyle = {
       flexDirection: vertical ? 'column' : 'row',
@@ -195,35 +220,34 @@ export function Toolbar({
     };
     // A row box lets a vertical Divider stretch to the height; a column box lets a horizontal one stretch to the width.
     const separator: ViewStyle = vertical
-      ? { width: separatorLength, alignSelf: 'center' }
-      : { height: separatorLength, flexDirection: 'row', alignSelf: 'center' };
+      ? { width: separatorLength, paddingVertical: separatorPad, alignSelf: 'center' }
+      : { height: separatorLength, paddingHorizontal: separatorPad, flexDirection: 'row', alignSelf: 'center' };
     return { root, row, group, separator, fadeWidth };
   }, [t, overrides, density, vertical, mode]);
 
-  const segments = toSegments(flattenChildren(children));
-  const dividerOrientation: DividerOrientation = vertical ? 'horizontal' : 'vertical';
+  const layout = React.useMemo<ToolbarLayout>(() => ({ group: styles.group }), [styles.group]);
 
   const content: React.ReactNode[] = [];
-  segments.forEach((segment, index) => {
-    if (segment.divider) {
-      const divider =
-        segment.divider.props.orientation === undefined
-          ? React.cloneElement(segment.divider, { orientation: dividerOrientation })
-          : segment.divider;
+  let previousWasGroup = false;
+  flattenChildren(children).forEach((node, index) => {
+    if (isGroup(node)) {
+      if (previousWasGroup) {
+        content.push(
+          <View key={`separator-${index}`} style={styles.separator} testID="Toolbar.separator">
+            <Divider orientation={vertical ? 'horizontal' : 'vertical'} spacing="none" />
+          </View>,
+        );
+      }
       content.push(
-        <View key={`separator-${index}`} style={styles.separator} testID="Toolbar.separator">
-          {divider}
-        </View>,
+        React.cloneElement(node, {
+          children: flattenChildren(node.props.children).map((child) => withSize(child, size)),
+        }),
       );
+      previousWasGroup = true;
+    } else {
+      content.push(withSize(node, size));
+      previousWasGroup = false;
     }
-    content.push(
-      <View key={`group-${index}`} style={styles.group} testID="Toolbar.group">
-        {segment.items.map((item) => {
-          if (!React.isValidElement<{ size?: unknown }>(item) || item.props.size !== undefined) return item;
-          return React.cloneElement(item, { size });
-        })}
-      </View>,
-    );
   });
 
   // Which edges have content scrolled past them, so a fade only covers hidden content.
@@ -238,41 +262,43 @@ export function Toolbar({
 
   return (
     <View ref={ref} testID="Toolbar" accessibilityRole="toolbar" accessibilityLabel={label} style={styles.root}>
-      {mode === 'wrap' ? (
-        <View style={styles.row}>{content}</View>
-      ) : (
-        <View>
-          <ScrollView
-            horizontal={!vertical}
-            showsHorizontalScrollIndicator={false}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.row}
-            scrollEventThrottle={16} // literal-ok: one frame between fade updates
-            onLayout={(event) => {
-              const { width, height } = event.nativeEvent.layout;
-              metrics.current.viewport = vertical ? height : width;
-              updateEdges();
-            }}
-            onContentSizeChange={(width, height) => {
-              metrics.current.content = vertical ? height : width;
-              updateEdges();
-            }}
-            onScroll={(event) => {
-              const { contentOffset } = event.nativeEvent;
-              metrics.current.offset = vertical ? contentOffset.y : contentOffset.x;
-              updateEdges();
-            }}
-          >
-            {content}
-          </ScrollView>
-          {edges.start ? (
-            <ToolbarFade edge="start" vertical={vertical} length={styles.fadeWidth} color={t.colorBackgroundSubtle} />
-          ) : null}
-          {edges.end ? (
-            <ToolbarFade edge="end" vertical={vertical} length={styles.fadeWidth} color={t.colorBackgroundSubtle} />
-          ) : null}
-        </View>
-      )}
+      <ToolbarLayoutContext.Provider value={layout}>
+        {mode === 'wrap' ? (
+          <View style={styles.row}>{content}</View>
+        ) : (
+          <View>
+            <ScrollView
+              horizontal={!vertical}
+              showsHorizontalScrollIndicator={false}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.row}
+              scrollEventThrottle={16} // literal-ok: one frame between fade updates
+              onLayout={(event) => {
+                const { width, height } = event.nativeEvent.layout;
+                metrics.current.viewport = vertical ? height : width;
+                updateEdges();
+              }}
+              onContentSizeChange={(width, height) => {
+                metrics.current.content = vertical ? height : width;
+                updateEdges();
+              }}
+              onScroll={(event) => {
+                const { contentOffset } = event.nativeEvent;
+                metrics.current.offset = vertical ? contentOffset.y : contentOffset.x;
+                updateEdges();
+              }}
+            >
+              {content}
+            </ScrollView>
+            {edges.start ? (
+              <ToolbarFade edge="start" vertical={vertical} length={styles.fadeWidth} color={t.colorBackgroundSubtle} />
+            ) : null}
+            {edges.end ? (
+              <ToolbarFade edge="end" vertical={vertical} length={styles.fadeWidth} color={t.colorBackgroundSubtle} />
+            ) : null}
+          </View>
+        )}
+      </ToolbarLayoutContext.Provider>
     </View>
   );
 }

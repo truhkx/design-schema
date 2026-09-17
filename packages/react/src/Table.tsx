@@ -84,6 +84,7 @@ export type TableOverridableBinding =
   | 'captionGap'
   | 'stackedRowInset'
   | 'stackedRowGap'
+  | 'stackedBlockGap'
   | 'stackedLabelSize'
   | 'stackedLabelWeight'
   | 'stackedRowRadius'
@@ -112,6 +113,7 @@ const OVERRIDE_HOOK: Partial<Record<TableOverridableBinding, string>> = {
   cellGap: '--ds-table-cell-gap',
   stackedRowInset: '--ds-table-stacked-row-inset',
   stackedRowGap: '--ds-table-stacked-row-gap',
+  stackedBlockGap: '--ds-table-stacked-block-gap',
   stackedLabelSize: '--ds-table-stacked-label-size',
   stackedLabelWeight: '--ds-table-stacked-label-weight',
   stackedRowRadius: '--ds-table-stacked-row-radius',
@@ -169,7 +171,7 @@ export interface TableProps extends Omit<ComponentPropsWithoutRef<'div'>, 'child
   caption: string;
   /** Heading level of the caption in the page outline; its size is captionSize regardless. */
   captionLevel?: TableCaptionLevel | undefined;
-  /** Content below the table: a row count, pagination, a total. Rendered in the `footer` part with the table's font. */
+  /** Content below the table: a row count, pagination, a total. Rendered in the `footer` part with the table's font: a string footer renders in Text with the `fontFamily`/`fontSize`/`lineHeight` bindings; other content brings its own typography. */
   footer?: ReactNode;
   /** Visually hide the caption; it remains the accessible name. */
   hideCaption?: boolean | undefined;
@@ -191,7 +193,7 @@ export interface TableProps extends Omit<ComponentPropsWithoutRef<'div'>, 'child
   responsive?: TableResponsive | undefined;
   /** The header row stays visible while the body scrolls (the page, or `maxHeight`). */
   stickyHeader?: boolean | undefined;
-  /** `viewport` caps the table at the viewport height minus the section rhythm and scrolls the body; `none` lets the page scroll. */
+  /** `viewport` caps the table at the viewport height minus two `layout.gap.section` and scrolls a frame around the table (the scroll region itself in `responsive: scroll`); `none` lets the page scroll. */
   maxHeight?: TableMaxHeight | undefined;
   /** Cell padding: layout.inset.sm or layout.inset.md. */
   density?: TableDensity | undefined;
@@ -199,7 +201,7 @@ export interface TableProps extends Omit<ComponentPropsWithoutRef<'div'>, 'child
   striped?: boolean | undefined;
   /** Shown in place of the body when `data` is empty. Defaults to `copy.empty`. */
   emptyMessage?: string | undefined;
-  /** Data is being fetched: the body shows `copy.loading` and aria-busy is set. Existing rows stay visible while re-sorting. */
+  /** Data is being fetched: aria-busy is set on the table and `copy.loading` shows — with no rows, in the emptyState; with rows, as muted Text in a polite live region below the table. Existing rows stay visible while re-sorting. */
   loading?: boolean | undefined;
   /** Renders a trailing actions cell: Buttons (ghost, sm, iconOnly with Tooltip) or a Menu. */
   rowActions?: ((row: TableRow) => ReactNode) | undefined;
@@ -305,11 +307,13 @@ export function Table({
   const someSelected = !allSelected && data.some((row) => selectedSet.has(row.id));
   const toggleAll = (): void => commitSelection(allSelected ? [] : data.map((row) => row.id));
 
-  /* Sticky header shadow: on once the sentinel above the table has scrolled out past the top of its root. */
+  /* Sticky header shadow: on once the sentinel above the table has scrolled out past the top of its root.
+     In `responsive: scroll` the region is the sticky container, so the header sticks only with `maxHeight: viewport`. */
+  const headerSticks = stickyHeader && (responsive !== 'scroll' || maxHeight === 'viewport');
   const [scrolledUnder, setScrolledUnder] = useState(false);
   useEffect(() => {
     const sentinel = sentinelRef.current;
-    if (!stickyHeader || !sentinel || typeof IntersectionObserver === 'undefined') {
+    if (!headerSticks || !sentinel || typeof IntersectionObserver === 'undefined') {
       setScrolledUnder(false);
       return undefined;
     }
@@ -325,14 +329,30 @@ export function Table({
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [stickyHeader, maxHeight]);
+  }, [headerSticks, maxHeight, responsive]);
 
-  /* `responsive: scroll` — sticky-column shadow once scrolled, and arrow keys scroll by space.10. */
-  const [scrolledSideways, setScrolledSideways] = useState(false);
-  const onRegionScroll = (event: UIEvent<HTMLDivElement>): void => {
-    const next = Math.abs(event.currentTarget.scrollLeft) > 0;
-    if (next !== scrolledSideways) setScrolledSideways(next);
+  /* `responsive: scroll` — an edge fades only while columns are hidden past it; the sticky column casts its
+     shadow once scrolled; arrow keys scroll by space.10. Writes only when an edge actually changes. */
+  const [fadeStart, setFadeStart] = useState(false);
+  const [fadeEnd, setFadeEnd] = useState(false);
+  const measureEdges = (region: HTMLDivElement): void => {
+    const hidden = region.scrollWidth - region.clientWidth;
+    const offset = Math.abs(region.scrollLeft);
+    const nextStart = offset > 0;
+    const nextEnd = hidden - offset >= 1;
+    setFadeStart((current) => (current === nextStart ? current : nextStart));
+    setFadeEnd((current) => (current === nextEnd ? current : nextEnd));
   };
+  const onRegionScroll = (event: UIEvent<HTMLDivElement>): void => measureEdges(event.currentTarget);
+  useEffect(() => {
+    const region = frameRef.current;
+    if (responsive !== 'scroll' || !region || typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(() => measureEdges(region));
+    observer.observe(region);
+    const table = region.querySelector('table');
+    if (table) observer.observe(table);
+    return () => observer.disconnect();
+  }, [responsive]);
   const onRegionKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>): void => {
     if (event.target !== event.currentTarget) return;
     if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
@@ -388,7 +408,10 @@ export function Table({
               column.header,
             )}
             trailingIcon={sorted ? <Icon name={sorted === 'ascending' ? 'chevron-up' : 'chevron-down'} inline /> : undefined}
-            overrides={overrides?.cellGap ? { iconGap: overrides.cellGap } : undefined}
+            overrides={{
+              fontWeight: overrides?.headerWeight ?? 'font.weight.semibold',
+              iconGap: overrides?.cellGap ?? 'layout.gap.tight',
+            }}
             onClick={() => activateSort(column)}
           />
         ) : (
@@ -506,7 +529,7 @@ export function Table({
     </table>
   );
 
-  const frameClass = joinClasses('ds-table__frame', scrolledSideways && 'ds-table__frame--scrolled');
+  const frameClass = joinClasses('ds-table__frame', fadeStart && 'ds-table__frame--scrolled');
   const sentinel = <div ref={sentinelRef} aria-hidden="true" className="ds-table__sentinel" />;
 
   return (
@@ -551,7 +574,12 @@ export function Table({
           aria-describedby={scrollHintId}
           tabIndex={0}
           data-part="scrollRegion"
-          className={joinClasses(frameClass, 'ds-table__scroll-region')}
+          className={joinClasses(
+            frameClass,
+            'ds-table__scroll-region',
+            fadeStart && 'ds-table__scroll-region--fade-start',
+            fadeEnd && 'ds-table__scroll-region--fade-end',
+          )}
           onScroll={onRegionScroll}
           onKeyDown={onRegionKeyDown}
         >
@@ -569,14 +597,29 @@ export function Table({
           {COPY.scrollHint}
         </span>
       ) : null}
-      {loading && rows.length > 0 ? (
-        <Text element="p" tone="muted" size="sm">
-          {COPY.loading}
-        </Text>
-      ) : null}
-      {footer !== undefined && footer !== null ? (
+      <div aria-live="polite" className="ds-table__loading">
+        {loading && rows.length > 0 ? (
+          <Text element="p" tone="muted" size="sm">
+            {COPY.loading}
+          </Text>
+        ) : null}
+      </div>
+      {footer !== undefined && footer !== null && footer !== false ? (
         <div data-part="footer" className="ds-table__footer">
-          {footer}
+          {typeof footer === 'string' ? (
+            <Text
+              element="p"
+              overrides={{
+                fontFamily: overrides?.fontFamily ?? 'font.family.body',
+                fontSize: overrides?.fontSize ?? 'font.size.sm',
+                lineHeight: overrides?.lineHeight ?? 'font.lineHeight.normal',
+              }}
+            >
+              {footer}
+            </Text>
+          ) : (
+            footer
+          )}
         </div>
       ) : null}
       <div role="status" aria-live="polite" className="ds-table__visually-hidden">

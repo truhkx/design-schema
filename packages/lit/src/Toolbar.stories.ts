@@ -8,7 +8,7 @@ import type { ToolbarDensity, ToolbarOrientation, ToolbarOverflow, ToolbarSize }
 
 interface ToolbarArgs {
   label: string;
-  /** Names one of the child sets below; the examples' `children` descriptions are the keys. */
+  /** Names one of the child sets below; the examples' `children` descriptions are the keys, verbatim. */
   children: string;
   orientation: ToolbarOrientation;
   overflow: ToolbarOverflow;
@@ -19,44 +19,47 @@ interface ToolbarArgs {
 const button = (label: string): TemplateResult =>
   html`<ds-button variant="ghost" label=${label} overflow-label=${label}></ds-button>`;
 
+const FORMATTING_GROUPS = 'Two labelled groups of ghost Buttons: Text style (Bold, Italic, Underline) and Alignment (Align left, Align center, Align right)';
+
 const CHILDREN: Record<string, () => TemplateResult> = {
-  'Formatting groups': () => html`
+  [FORMATTING_GROUPS]: () => html`
     <ds-toolbar-group label="Text style">${button('Bold')}${button('Italic')}${button('Underline')}</ds-toolbar-group>
     <ds-toolbar-group label="Alignment">${button('Align left')}${button('Align center')}${button('Align right')}</ds-toolbar-group>
   `,
-  'Bold, Italic and Underline buttons': () => html`${button('Bold')}${button('Italic')}${button('Underline')}`,
-  'Select, Draw and Erase buttons': () => html`${button('Select')}${button('Draw')}${button('Erase')}`,
-  'Filter, Sort, Export and Delete buttons': () => html`
-    <ds-toolbar-group label="View">${button('Filter')}${button('Sort')}</ds-toolbar-group>
-    <ds-toolbar-group label="Data">${button('Export')}</ds-toolbar-group>
-    <ds-toolbar-group label="Danger">${button('Delete')}</ds-toolbar-group>
-  `,
-  'A SegmentedControl and two Selects': () => html`
-    <ds-segmented-control
-      label="Period"
-      .options=${[
-        { value: 'day', label: 'Day' },
-        { value: 'week', label: 'Week' },
-        { value: 'month', label: 'Month' },
-      ]}
-    ></ds-segmented-control>
-    <ds-select
-      label="Status"
-      hide-label
-      .options=${[
-        { value: 'open', label: 'Open' },
-        { value: 'closed', label: 'Closed' },
-      ]}
-    ></ds-select>
-    <ds-select
-      label="Owner"
-      hide-label
-      .options=${[
-        { value: 'me', label: 'Me' },
-        { value: 'anyone', label: 'Anyone' },
-      ]}
-    ></ds-select>
-  `,
+  'Three ghost text Buttons labelled Bold, Italic and Underline (the icon set has no formatting glyphs)': () =>
+    html`${button('Bold')}${button('Italic')}${button('Underline')}`,
+  'Three ghost text Buttons labelled Select, Draw and Erase': () =>
+    html`${button('Select')}${button('Draw')}${button('Erase')}`,
+  'Four ghost text Buttons labelled Filter, Sort, Export and Delete, each with the same overflowLabel': () =>
+    html`${button('Filter')}${button('Sort')}${button('Export')}${button('Delete')}`,
+  'A SegmentedControl labelled View (List, Board) and two Selects: Owner (name owner; Anyone, Me) and Sort (name sort; Newest, Oldest)':
+    () => html`
+      <ds-segmented-control
+        label="View"
+        .options=${[
+          { value: 'list', label: 'List' },
+          { value: 'board', label: 'Board' },
+        ]}
+      ></ds-segmented-control>
+      <ds-select
+        label="Owner"
+        name="owner"
+        hide-label
+        .options=${[
+          { value: 'anyone', label: 'Anyone' },
+          { value: 'me', label: 'Me' },
+        ]}
+      ></ds-select>
+      <ds-select
+        label="Sort"
+        name="sort"
+        hide-label
+        .options=${[
+          { value: 'newest', label: 'Newest' },
+          { value: 'oldest', label: 'Oldest' },
+        ]}
+      ></ds-select>
+    `,
 };
 
 const meta: Meta<ToolbarArgs> = {
@@ -71,7 +74,7 @@ const meta: Meta<ToolbarArgs> = {
   },
   args: {
     label: 'Formatting',
-    children: 'Formatting groups',
+    children: FORMATTING_GROUPS,
     orientation: 'horizontal',
     overflow: 'menu',
     size: 'md',
@@ -85,7 +88,7 @@ const meta: Meta<ToolbarArgs> = {
       size=${args.size}
       density=${args.density}
     >
-      ${(CHILDREN[args.children] ?? CHILDREN['Formatting groups']!)()}
+      ${(CHILDREN[args.children] ?? CHILDREN[FORMATTING_GROUPS]!)()}
     </ds-toolbar>
   `,
 };
@@ -114,21 +117,34 @@ export const OverflowMenuNarrow: Story = {
   decorators: [(story) => html`<div style="max-inline-size: 16rem;">${story()}</div>`],
 };
 
+/** Narrow width so the row scrolls and its edges fade while content is hidden past them. */
+export const OverflowScrollNarrow: Story = {
+  args: { overflow: 'scroll' },
+  decorators: [(story) => html`<div style="max-inline-size: 16rem;">${story()}</div>`],
+};
+
 /** Six focusable controls in two groups: Tab enters once, arrows move, Home/End jump. */
 export const Keyboard: Story = {};
 
 export const FormattingToolbar: Story = {
-  args: { label: 'Formatting', children: 'Bold, Italic and Underline buttons' },
+  args: {
+    label: 'Formatting',
+    children: 'Three ghost text Buttons labelled Bold, Italic and Underline (the icon set has no formatting glyphs)',
+  },
 };
 
 export const VerticalToolPalette: Story = {
-  args: { label: 'Drawing tools', children: 'Select, Draw and Erase buttons', orientation: 'vertical' },
+  args: {
+    label: 'Drawing tools',
+    children: 'Three ghost text Buttons labelled Select, Draw and Erase',
+    orientation: 'vertical',
+  },
 };
 
 export const CompactActionsWithOverflow: Story = {
   args: {
     label: 'Table actions',
-    children: 'Filter, Sort, Export and Delete buttons',
+    children: 'Four ghost text Buttons labelled Filter, Sort, Export and Delete, each with the same overflowLabel',
     overflow: 'menu',
     density: 'compact',
     size: 'sm',
@@ -136,5 +152,10 @@ export const CompactActionsWithOverflow: Story = {
 };
 
 export const ScrollingFilterRow: Story = {
-  args: { label: 'Filters', children: 'A SegmentedControl and two Selects', overflow: 'scroll' },
+  args: {
+    label: 'Filters',
+    children:
+      'A SegmentedControl labelled View (List, Board) and two Selects: Owner (name owner; Anyone, Me) and Sort (name sort; Newest, Oldest)',
+    overflow: 'scroll',
+  },
 };

@@ -114,7 +114,7 @@ export const CompactActionsWithOverflow: Story = {
         <Button variant="ghost" label="Filter" overflowLabel="Filter" />
         <Button variant="ghost" label="Sort" overflowLabel="Sort" />
         <Button variant="ghost" label="Export" overflowLabel="Export" />
-        <Button variant="danger" label="Delete" overflowLabel="Delete" />
+        <Button variant="ghost" label="Delete" overflowLabel="Delete" />
       </>
     ),
     overflow: 'menu',
@@ -130,11 +130,10 @@ export const ScrollingFilterRow: Story = {
     children: (
       <>
         <SegmentedControl
-          label="Status"
+          label="View"
           options={[
-            { value: 'all', label: 'All' },
-            { value: 'open', label: 'Open' },
-            { value: 'closed', label: 'Closed' },
+            { value: 'list', label: 'List' },
+            { value: 'board', label: 'Board' },
           ]}
         />
         <Select
@@ -146,12 +145,11 @@ export const ScrollingFilterRow: Story = {
           ]}
         />
         <Select
-          label="Priority"
-          name="priority"
+          label="Sort"
+          name="sort"
           options={[
-            { value: 'any', label: 'Any' },
-            { value: 'high', label: 'High' },
-            { value: 'low', label: 'Low' },
+            { value: 'newest', label: 'Newest' },
+            { value: 'oldest', label: 'Oldest' },
           ]}
         />
       </>

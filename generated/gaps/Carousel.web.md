@@ -35,3 +35,16 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Carousel: CarouselSlide isn't in the schema's props, but the guidance says it takes a required label on every platform. Chose: CarouselSlideProps { label: string; children: ReactNode }, exported alongside Carousel; label is the tab text only (the slide's aria-label stays copy.slideLabel).
 - Carousel: the attribute list has both aria-hidden and inert for off-screen slides. Chose: set both (inert='' plus aria-hidden='true') on every slide outside the visible page.
 - Carousel: the interval development warning doesn't say whether it repeats. Chose: warn once per instance and raise the value to minInterval in every build.
+
+## 2026-09-17 13:28 — round 1
+
+- Carousel: pressing play while stopped at the last slide (no loop) restarts from the first slide, but the spec gives no onChange reason for that move; none of next/prev/picker/swipe/autoplay fits a user pressing play. Chose `autoplay` (not announced).
+- Carousel: picker ArrowRight/ArrowLeft move 'one slide, not one page', but with perView > 1 the index is capped at total − page, so arrowing past total − page leaves the selection where it is while focus moves on. Chose: focus goes to the target item, the index is capped, and the roving tab stop follows the focused item while it is on the current page, otherwise the current slide's item.
+- Carousel: aria-live is 'off while rotating', but the spec doesn't say whether a hover/focus/touch pause counts as rotating. Chose: any of those pauses, the pause button or stopping at the end makes the live region polite.
+- Carousel: the spec doesn't say when the play control shows copy.pause vs copy.play during a hover/focus pause. Chose: pause while rotation is on and not stopped (hover/focus pauses don't change the label); play once stopped or at the end without loop.
+- Carousel: layout.maxWidth.prose has to be read in JS to work out the page size; there's no helper for resolving a token to pixels. Chose getComputedStyle(viewport).getPropertyValue('--layout-max-width-prose'), handling px and rem; perView stays in effect if the value can't be parsed.
+- Carousel: the spec says 'a swipe settling' but not how to detect it on web. Chose the viewport's `scrollend` event where supported and each IntersectionObserver delivery otherwise.
+- Carousel: the spec says the controlSurface wrapper has hit area minTarget, but the platform notes also put a prevButton/nextButton part wrapper inside it. Chose to put minTarget's min-inline/block-size on the inner part wrapper, which fills the surface.
+- Carousel: dots have no specified aria-controls; kept aria-controls to each slide id, mirroring tabs.
+- Carousel: tabs get minTarget only as a minimum block size; the spec gives no minimum inline size, so none is set (padding keeps it above 24px).
+- Carousel: the behavior scenario loop-wraps-backwards doesn't say the target index; it depends on the Default story's slide count (now four, following the featured-products example, so 3). Default args aren't specified anywhere.

@@ -18,7 +18,12 @@ import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
 import { Divider } from './Divider';
 import { Menu, type MenuAction, type MenuItem } from './Menu';
+import { Search } from './Search';
+import { SegmentedControl } from './SegmentedControl';
+import { Select } from './Select';
 import './Toolbar.css';
+
+declare const process: { env: { NODE_ENV?: string | undefined } };
 
 export type ToolbarOrientation = 'horizontal' | 'vertical';
 export type ToolbarOverflow = 'wrap' | 'menu' | 'scroll';
@@ -103,10 +108,13 @@ function flattenChildren(children: ReactNode): ReactElement<any>[] {
   return result;
 }
 
-/** Applies the toolbar's `size` to a composed control that did not set its own. Host elements are left alone. */
+// The package components with a `size` prop, recognised by identity — never by probing for the prop.
+const SIZED_COMPONENTS: ReadonlySet<unknown> = new Set<unknown>([Button, SegmentedControl, Select, Search]);
+
+/** Applies the toolbar's `size` to a sized package control that did not set its own. */
 function withSize(element: ReactElement<any>, size: ToolbarSize, key?: string): ReactElement<any> {
   const props = element.props as { size?: unknown };
-  if (typeof element.type === 'string' || props.size !== undefined) {
+  if (!SIZED_COMPONENTS.has(element.type) || props.size !== undefined) {
     return key === undefined ? element : cloneElement(element, { key });
   }
   return cloneElement(element, key === undefined ? { size } : { size, key });
@@ -132,9 +140,21 @@ function buildEntries(children: ReactNode): ToolbarEntry[] {
   });
 }
 
-function actionFromButton(element: ReactElement<any>, id: string): MenuAction {
+function actionFromButton(element: ReactElement<any>, id: string, warned: Set<string>): MenuAction {
   const props = element.props as { overflowLabel?: string | undefined; label?: string | undefined; disabled?: boolean | undefined };
+  if (props.overflowLabel === undefined && process.env.NODE_ENV !== 'production' && !warned.has(id)) {
+    warned.add(id);
+    console.warn(`Toolbar: a collapsed Button ("${props.label ?? id}") has no overflowLabel; its label is used in the overflow Menu.`);
+  }
+  // Button's children are not part of its API, so the chain ends at `label` (required on Button).
   return { id, label: props.overflowLabel ?? props.label ?? id, disabled: props.disabled === true };
+}
+
+/** A text-entry control keeps ArrowLeft, ArrowRight, Home and End for its caret. */
+function isTextEntry(element: HTMLElement): boolean {
+  if (element instanceof HTMLTextAreaElement || element.isContentEditable) return true;
+  if (!(element instanceof HTMLInputElement)) return false;
+  return !['button', 'checkbox', 'color', 'file', 'image', 'radio', 'range', 'reset', 'submit'].includes(element.type);
 }
 
 function readPx(value: string): number {
@@ -150,7 +170,7 @@ export interface ToolbarGroupProps extends Omit<ComponentPropsWithoutRef<'div'>,
 }
 
 /** Groups related controls inside a Toolbar; a Divider is drawn between adjacent groups. */
-export const ToolbarGroup = function ToolbarGroup({
+export function ToolbarGroup({
   ref,
   label,
   children,
@@ -161,7 +181,7 @@ export const ToolbarGroup = function ToolbarGroup({
       {children}
     </div>
   );
-};
+}
 
 export interface ToolbarProps
   extends Omit<ComponentPropsWithoutRef<'div'>, 'children' | 'role' | 'aria-label' | 'aria-orientation' | 'className' | 'style'> {
@@ -170,7 +190,8 @@ export interface ToolbarProps
   /**
    * Controls in order: Buttons (usually `ghost` or `secondary`, `iconOnly` for glyph tools),
    * SegmentedControl, Select, Switch. Group related controls with `ToolbarGroup`; a Divider is drawn
-   * between groups.
+   * between two adjacent groups only (a bare control next to a group gets `itemGap`, no Divider).
+   * Consumers never place Dividers themselves.
    */
   children: ReactNode;
   /** Vertical toolbars sit beside a canvas; arrow keys swap axes. */
@@ -181,12 +202,16 @@ export interface ToolbarProps
    * the edges faded. Collapsing takes whole entries from the end — a group goes into the Menu as a
    * group, never half of one — and the width budget reserves `size.target.min` for the More trigger
    * before it is rendered. `menu` is for horizontal toolbars; a vertical one treats it as `scroll`,
-   * since a menu overflow assumes a fixed cross axis.
+   * since a menu overflow assumes a fixed cross axis. An entry collapses only if every control in it
+   * is a Button: walking from the end, an entry holding any other control is skipped and stays
+   * visible. Collapsed controls are removed from the render and from the roving list.
    */
   overflow?: ToolbarOverflow | undefined;
   /**
-   * Default for child controls that have a `size` prop and do not set their own (applied by cloning
-   * direct children; a child's own `size` wins).
+   * Default for the child controls that have a `size` prop — Button, SegmentedControl, Select and
+   * Search, recognised by component identity — and do not set their own. Applied to direct children
+   * and to the children of each ToolbarGroup; a child's own `size` wins. The overflow Menu's trigger
+   * takes no size.
    */
   size?: ToolbarSize | undefined;
   /** Gap between controls: tight or normal rhythm. */
@@ -205,7 +230,7 @@ export interface ToolbarProps
  * width the layout cannot guarantee; give every control an `overflowLabel` so it reads well as a
  * menu item.
  */
-export const Toolbar = function Toolbar({
+export function Toolbar({
   ref,
   label,
   children,
@@ -223,6 +248,9 @@ export const Toolbar = function Toolbar({
   const entryNodesRef = useRef(new Map<string, HTMLElement>());
   const probeRef = useRef<HTMLSpanElement | null>(null);
   const observedWidthRef = useRef<number | null>(null);
+  const warnedRef = useRef(new Set<string>());
+  // Scroll fades: each edge fades only while content is hidden past it.
+  const [fade, setFade] = useState<{ start: boolean; end: boolean }>({ start: false, end: false });
 
   // A vertical toolbar has no fixed cross axis to measure against, so `menu` scrolls instead.
   const effectiveOverflow: ToolbarOverflow = overflow === 'menu' && orientation === 'vertical' ? 'scroll' : overflow;
@@ -302,6 +330,32 @@ export const Toolbar = function Toolbar({
     return () => observer.disconnect();
   }, [isMenuOverflow, hiddenKeys]);
 
+  const isScrollOverflow = effectiveOverflow === 'scroll';
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    if (!isScrollOverflow || !container) return undefined;
+    const vertical = orientation === 'vertical';
+    const check = () => {
+      const offset = vertical ? container.scrollTop : Math.abs(container.scrollLeft);
+      const hiddenLength = vertical
+        ? container.scrollHeight - container.clientHeight
+        : container.scrollWidth - container.clientWidth;
+      const start = offset > 0;
+      const end = offset < hiddenLength - 1;
+      // Converges: state is set only when an edge actually changes, so the observer below settles.
+      setFade((last) => (last.start === start && last.end === end ? last : { start, end }));
+    };
+    check();
+    container.addEventListener('scroll', check, { passive: true });
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(check);
+    observer?.observe(container);
+    for (const child of Array.from(container.children)) observer?.observe(child);
+    return () => {
+      container.removeEventListener('scroll', check);
+      observer?.disconnect();
+    };
+  }, [isScrollOverflow, orientation, entriesKey]);
+
   // Roving tabindex: the toolbar is one tab stop. Requery on every DOM change (controls mounting,
   // collapsing, or a composite control moving its own checked radio) so the stop is always real.
   useLayoutEffect(() => {
@@ -358,6 +412,8 @@ export const Toolbar = function Toolbar({
     const controls = getControls(container);
     const currentIndex = indexOfTarget(controls, event.target);
     if (currentIndex === -1) return;
+    // A text-entry control keeps these keys for its caret; the toolbar never takes them.
+    if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown' && isTextEntry(event.target as HTMLElement)) return;
 
     const enabledIndexes = controls.map((control, index) => (isControlDisabled(control) ? -1 : index)).filter((index) => index !== -1);
     let target: number | undefined;
@@ -387,7 +443,7 @@ export const Toolbar = function Toolbar({
       const actions = flattenChildren(groupProps.children).map((child, index) => {
         const id = `${entry.key}-${index}`;
         overflowButtons.set(id, child);
-        return actionFromButton(child, id);
+        return actionFromButton(child, id, warnedRef.current);
       });
       if (groupProps.label) menuItems.push({ group: groupProps.label, items: actions });
       else {
@@ -396,7 +452,7 @@ export const Toolbar = function Toolbar({
       }
     } else {
       overflowButtons.set(entry.key, entry.element);
-      menuItems.push(actionFromButton(entry.element, entry.key));
+      menuItems.push(actionFromButton(entry.element, entry.key, warnedRef.current));
     }
   }
 
@@ -439,7 +495,7 @@ export const Toolbar = function Toolbar({
     if (previous && previous.kind === 'group' && entry.kind === 'group') {
       content.push(
         <span key={`${entry.key}-separator`} className="ds-toolbar__separator" data-part="separator">
-          <Divider orientation={separatorOrientation} />
+          <Divider orientation={separatorOrientation} spacing="none" />
         </span>,
       );
     }
@@ -451,7 +507,11 @@ export const Toolbar = function Toolbar({
     `ds-toolbar--${orientation}`,
     `ds-toolbar--overflow-${effectiveOverflow}`,
     `ds-toolbar--${density}`,
-  ].join(' ');
+    isScrollOverflow && fade.start ? 'ds-toolbar--fade-start' : '',
+    isScrollOverflow && fade.end ? 'ds-toolbar--fade-end' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
     <div
@@ -484,4 +544,4 @@ export const Toolbar = function Toolbar({
       ) : null}
     </div>
   );
-};
+}

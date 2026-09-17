@@ -201,19 +201,19 @@
     }
   },
   "Carousel.rn": {
-    "hash": "0912c2aa3b9e84a3",
-    "lastAttemptHash": "0912c2aa3b9e84a3",
-    "generatedAt": "2026-09-16T15:02:49+00:00",
+    "hash": "b47f71da3208578f",
+    "lastAttemptHash": "b47f71da3208578f",
+    "generatedAt": "2026-09-17T17:37:06+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.424,
+    "costUsd": 1.8591,
     "files": [
       "packages/rn/src/Carousel.stories.tsx",
       "packages/rn/src/Carousel.test.tsx",
       "packages/rn/src/Carousel.tsx"
     ],
-    "gaps": 18,
+    "gaps": 11,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -975,19 +975,18 @@
     }
   },
   "Table.rn": {
-    "hash": "67d1f9b1611ead96",
-    "lastAttemptHash": "67d1f9b1611ead96",
-    "generatedAt": "2026-09-16T15:19:06+00:00",
+    "hash": "111f0693ff7e7bc2",
+    "lastAttemptHash": "111f0693ff7e7bc2",
+    "generatedAt": "2026-09-17T17:45:38+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 3.3741,
+    "costUsd": 2.6062,
     "files": [
-      "packages/rn/src/Table.stories.tsx",
       "packages/rn/src/Table.test.tsx",
       "packages/rn/src/Table.tsx"
     ],
-    "gaps": 16,
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1068,19 +1067,20 @@
     }
   },
   "Toolbar.rn": {
-    "hash": "11b625eba56b7367",
-    "lastAttemptHash": "11b625eba56b7367",
-    "generatedAt": "2026-09-16T14:47:31+00:00",
+    "hash": "27706af6a1524a36",
+    "lastAttemptHash": "27706af6a1524a36",
+    "generatedAt": "2026-09-17T17:24:43+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.6518,
+    "costUsd": 1.3719,
     "files": [
       "packages/rn/src/Toolbar.stories.tsx",
       "packages/rn/src/Toolbar.test.tsx",
-      "packages/rn/src/Toolbar.tsx"
+      "packages/rn/src/Toolbar.tsx",
+      "packages/rn/src/index.ts"
     ],
-    "gaps": 11,
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,

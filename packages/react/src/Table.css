@@ -14,6 +14,7 @@
   --ds-table-cell-gap: var(--layout-gap-tight);
   --ds-table-stacked-row-inset: var(--layout-inset-md);
   --ds-table-stacked-row-gap: var(--layout-gap-tight);
+  --ds-table-stacked-block-gap: var(--layout-gap-tight);
   --ds-table-stacked-label-size: var(--font-size-xs);
   --ds-table-stacked-label-weight: var(--font-weight-medium);
   --ds-table-stacked-row-radius: var(--radius-md);
@@ -57,9 +58,21 @@
   overflow-y: auto;
 }
 
+/* scrollFade: an edge fades only while columns are hidden past it */
 .ds-table__scroll-region {
+  --ds-table-fade-start-width: 0%;
+  --ds-table-fade-end-width: 0%;
   overflow-x: auto;
-  mask-image: linear-gradient(to right, transparent, black var(--ds-table-scroll-fade), black calc(100% - var(--ds-table-scroll-fade)), transparent); /* literal-ok: mask alpha stops, not a rendered color */
+  mask-image: linear-gradient(to right, transparent, black var(--ds-table-fade-start-width), black calc(100% - var(--ds-table-fade-end-width)), transparent); /* literal-ok: mask alpha stops, not a rendered color */
+}
+.ds-table__scroll-region:dir(rtl) {
+  mask-image: linear-gradient(to left, transparent, black var(--ds-table-fade-start-width), black calc(100% - var(--ds-table-fade-end-width)), transparent); /* literal-ok: mask alpha stops, not a rendered color */
+}
+.ds-table__scroll-region--fade-start {
+  --ds-table-fade-start-width: var(--ds-table-scroll-fade);
+}
+.ds-table__scroll-region--fade-end {
+  --ds-table-fade-end-width: var(--ds-table-scroll-fade);
 }
 
 /* focusRing / focusRingWidth, locked */
@@ -136,7 +149,7 @@
 }
 
 .ds-table__cell--width-min {
-  inline-size: 0;
+  inline-size: 1%;
   white-space: nowrap;
 }
 .ds-table__cell--width-fill {
@@ -166,19 +179,22 @@
   box-shadow: inset calc(-1 * var(--border-width-focus)) 0 0 0 var(--color-control-selected-background);
 }
 
-/* rowHover: interactive rows only */
+/* rowHover: interactive rows only (onRowPress, or a Link in the row header) */
 .ds-table__row--interactive {
   cursor: pointer;
 }
-.ds-table__row--interactive > * {
+.ds-table__row--interactive > *,
+.ds-table__body > .ds-table__row:has(> .ds-table__row-header a[href]) > * {
   transition: background-color var(--ds-table-transition) var(--motion-easing-standard);
 }
-.ds-table__row--interactive:hover > * {
+.ds-table__row--interactive:hover > *,
+.ds-table__body > .ds-table__row:has(> .ds-table__row-header a[href]):hover > * {
   background-color: var(--ds-table-row-hover);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ds-table__row--interactive > * {
+  .ds-table__row--interactive > *,
+  .ds-table__body > .ds-table__row:has(> .ds-table__row-header a[href]) > * {
     transition: none;
   }
 }
@@ -242,9 +258,15 @@
     white-space: nowrap;
   }
 
-  .ds-table--stack .ds-table__table,
-  .ds-table--stack .ds-table__body {
+  .ds-table--stack .ds-table__table {
     display: block;
+  }
+
+  /* stackedBlockGap: between stacked row blocks */
+  .ds-table--stack .ds-table__body {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--ds-table-stacked-block-gap);
   }
 
   .ds-table--stack .ds-table__body > .ds-table__row {
@@ -281,7 +303,8 @@
   .ds-table--stack .ds-table__body > .ds-table__row--selected:dir(rtl) {
     box-shadow: inset calc(-1 * var(--border-width-focus)) 0 0 0 var(--color-control-selected-background);
   }
-  .ds-table--stack .ds-table__body > .ds-table__row--interactive:hover {
+  .ds-table--stack .ds-table__body > .ds-table__row--interactive:hover,
+  .ds-table--stack .ds-table__body > .ds-table__row:has(> .ds-table__row-header a[href]):hover {
     background-color: var(--ds-table-row-hover);
   }
 

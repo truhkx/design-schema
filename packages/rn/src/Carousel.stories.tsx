@@ -1,37 +1,22 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Carousel, CarouselSlide } from './Carousel';
-import { Box } from './Box';
 import { Button } from './Button';
 import { Card } from './Card';
-import { Heading } from './Heading';
 import { Text } from './Text';
 import { withTheme } from './decorators';
 
-const PRODUCTS = [
-  { label: 'Desk lamp', body: 'A warm, dimmable desk lamp.' },
-  { label: 'Ceramic mug', body: 'Holds a full press of coffee.' },
-  { label: 'Wool blanket', body: 'Woven from recycled wool.' },
-  { label: 'Reading chair', body: 'A low, deep chair for long books.' },
-];
-
-const productSlides = PRODUCTS.map((product) => (
-  <CarouselSlide key={product.label} label={product.label}>
-    <Card heading={product.label} headingLevel={3}>
-      <Text>{product.body}</Text>
-    </Card>
-  </CarouselSlide>
-));
-
-/** A stand-in for a photograph or image: a strong surface with the slide's visible heading. */
-function pictureSlides(labels: string[]): React.JSX.Element[] {
+/** `CarouselSlide`s labelled `labels`, each a Card whose heading repeats the label. */
+function cardSlides(labels: string[]): React.JSX.Element[] {
   return labels.map((label) => (
     <CarouselSlide key={label} label={label}>
-      <Box surface="strong" inset="xl">
-        <Heading level={3}>{label}</Heading>
-      </Box>
+      <Card heading={label} headingLevel={3}>
+        <Text>{label}</Text>
+      </Card>
     </CarouselSlide>
   ));
 }
+
+const productSlides = cardSlides(['Product 1', 'Product 2', 'Product 3', 'Product 4']);
 
 const meta: Meta<typeof Carousel> = {
   title: 'Carousel/React Native',
@@ -66,17 +51,7 @@ export const WithOverrides: Story = { args: { overrides: { radius: 'radius.sm', 
 export const FeaturedProducts: Story = { args: { label: 'Featured products', children: productSlides } };
 
 export const NamedSlidesWithTabs: Story = {
-  args: {
-    label: 'Plans',
-    picker: 'tabs',
-    children: ['Starter', 'Team', 'Enterprise'].map((plan) => (
-      <CarouselSlide key={plan} label={plan}>
-        <Card heading={plan} headingLevel={3}>
-          <Text>Everything in the {plan} plan.</Text>
-        </Card>
-      </CarouselSlide>
-    )),
-  },
+  args: { label: 'Plans', picker: 'tabs', children: cardSlides(['Starter', 'Team', 'Enterprise']) },
 };
 
 export const AmbientHero: Story = {
@@ -85,7 +60,7 @@ export const AmbientHero: Story = {
     autoplay: true,
     interval: 8000,
     loop: true,
-    children: pictureSlides(['Harbour at dawn', 'Workshop floor', 'Rooftop garden']),
+    children: cardSlides(['Story 1', 'Story 2', 'Story 3']),
   },
 };
 
@@ -94,7 +69,7 @@ export const ThreeUpGallery: Story = {
     label: 'Gallery',
     perView: 3,
     picker: 'none',
-    children: pictureSlides(['Image 1', 'Image 2', 'Image 3', 'Image 4', 'Image 5', 'Image 6']),
+    children: cardSlides(['Image 1', 'Image 2', 'Image 3', 'Image 4', 'Image 5', 'Image 6']),
   },
 };
 
@@ -102,10 +77,9 @@ export const ThreeUpGallery: Story = {
 export const Keyboard: Story = {
   args: {
     autoplay: true,
-    children: PRODUCTS.map((product) => (
-      <CarouselSlide key={product.label} label={product.label}>
-        <Card heading={product.label} headingLevel={3}>
-          <Text>{product.body}</Text>
+    children: ['Product 1', 'Product 2', 'Product 3', 'Product 4'].map((label) => (
+      <CarouselSlide key={label} label={label}>
+        <Card heading={label} headingLevel={3}>
           <Button label="Add to cart" variant="secondary" />
         </Card>
       </CarouselSlide>

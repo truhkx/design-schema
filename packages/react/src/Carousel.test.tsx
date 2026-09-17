@@ -40,7 +40,7 @@ describe('Carousel', () => {
     const s = setup({ loop: true });
     await s.user.click(s.part('prevButton'));
     expect(s.onChange).toHaveBeenCalledTimes(1);
-    expect(s.onChange).toHaveBeenCalledWith(2, 'prev');
+    expect(s.onChange).toHaveBeenCalledWith(3, 'prev');
   });
 
   it('the-picker-jumps-straight-to-a-slide', async () => {

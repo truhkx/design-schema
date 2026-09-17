@@ -56,3 +56,17 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Carousel: the liveRegion accessibilityLiveRegion switches to 'none' while rotating, following the web aria-live rule; the RN notes only mention announceForAccessibility, which I also call on iOS for user-initiated changes.
 - Carousel: the AmbientHero and ThreeUpGallery examples call for photographs and images, but the package has no image assets or Image component; the stories use strong-surface Boxes with a visible heading as stand-ins.
 - Carousel: the Keyboard story has no `given` to follow; it turns autoplay on so the play/pause control is present, and puts a focusable Button in each slide (demo text 'Add to cart' is story content, not copy).
+
+## 2026-09-17 13:36 — round 1
+
+- Carousel: the RN notes say pagingEnabled at perView 1, but with slideGap > 0 each slide plus gap is wider than the viewport, so native paging drifts by one gap per page; chose pagingEnabled only when the page is 1 and the gap is 0, and snapToInterval (itemWidth + gap) otherwise.
+- Carousel: pressing play on the last slide without loop 'restarts rotation from the first slide', but the doc gives no onChange reason for that move; chose 'autoplay' (so it is not announced).
+- Carousel: the web notes say pressing play clears hover/focus/touch pauses, but the RN notes say rotation pauses while the play button has focus, which on react-native-web would block rotation right after a keyboard press of play; chose to clear the touch and focus pauses on play (the next focus change pauses again).
+- Carousel: 'reaching the last slide without loop counts as stopped' doesn't say whether that covers the arrows or a swipe reaching the end while autoplay is paused, or only an autoplay step; chose any arrival at the last page while playing.
+- Carousel: an RN picker item's focus ring has no radius binding (dotTarget/minTarget/focusRing give size and colour only); chose a square ring (no radius) rather than borrowing a token.
+- Carousel: the tabs picker's label has no lineHeight binding, so none is set (platform default); the doc doesn't say whether it should follow font.lineHeight.normal.
+- Carousel: dots have no RN equivalent of aria-current; chose accessibilityState.selected on every dot of the current page, and the picker row is role='group' (dots) or 'tablist' (tabs) labelled copy.pickerLabel.
+- Carousel: the doc doesn't say whether a slide's increment/decrement actions should stay listed at an end without loop; they stay and do nothing, since the Button-style disabled state has no per-action equivalent.
+- Carousel: accessible={visible} on each slide makes the visible slide one VoiceOver element, so its inner focusable content (e.g. a Card's Button) is no longer reachable one by one on iOS; the doc asks for the slide as the adjustable element and doesn't address its interactive content.
+- Carousel: onMomentumScrollEnd doesn't fire on iOS when a drag ends without momentum, so the swipe window (onScrollBeginDrag → onMomentumScrollEnd) can stay open; the doc names only those two events, so no onScrollEndDrag fallback was added.
+- rn conventions digest: toLineHeight is documented as (lineHeight, fontSize), but theme.tsx declares toLineHeight(fontSize, multiplier).

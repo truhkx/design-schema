@@ -23,6 +23,8 @@ const COPY_PLAY = 'Start automatic rotation';
 const COPY_PAUSE = 'Stop automatic rotation';
 /** copy.slideLabel */
 const COPY_SLIDE_LABEL = (n: number, total: number): string => `${n} of ${total}`;
+/** copy.pickerLabel */
+const COPY_PICKER_LABEL = 'Choose a slide';
 /** copy.goTo */
 const COPY_GO_TO = (n: number): string => `Go to slide ${n}`;
 /** copy.announce */
@@ -34,12 +36,13 @@ const MIN_INTERVAL = 5000;
 /** The share of a slide that must be inside the viewport for it to count as visible. */
 const VISIBLE_THRESHOLD = 0.6;
 
-/** How long a programmatic scroll may take before visibility changes count as a swipe again (when `scrollend` never fires). */
-const PROGRAMMATIC_SCROLL_TIMEOUT = 1000;
+/** Settle delay for a user scroll where `scrollend` is not supported. */
+const SCROLL_SETTLE_FALLBACK = 150;
+const SCROLLEND_SUPPORTED: boolean = typeof window !== 'undefined' && 'onscrollend' in window;
 
-/** layout.maxWidth.prose: `@container` conditions cannot read custom properties, so the built breakpoint is
-    duplicated here as a literal, as Table does. literal-ok: breakpoint from layout.maxWidth.prose */
-const PROSE_BREAKPOINT_PX = 572;
+/** layout.maxWidth.prose from the built token JSON: `@container` conditions cannot read custom properties, so the
+    breakpoint is duplicated as a literal, as Table does. Logic reads the token first. literal-ok: breakpoint from layout.maxWidth.prose */
+const PROSE_BREAKPOINT = 572;
 
 /** Negates a boolean attribute: `no-snap` present means `snap` is `false`. */
 const NEGATED_BOOLEAN_CONVERTER = {
@@ -51,34 +54,46 @@ const NEGATED_BOOLEAN_CONVERTER = {
   },
 };
 
-/** Overridable style hooks; see the `overrides` property. `controlBackground`, `dot`, `dotActive`, `dotTarget`, `minTarget`, `focusRing` and `focusRingWidth` are locked and excluded. */
+/** Overridable style hooks; see the `overrides` property. Locked bindings (`controlBackground`, `dot`, `dotActive`, `dotTarget`, `tabColor`, `tabSelectedColor`, `tabIndicatorThickness`, `minTarget`, `focusRing`, `focusRingWidth`) are excluded. */
 export type CarouselOverridableBinding =
   | 'slideGap'
   | 'controlOffset'
+  | 'controlRadius'
   | 'controlShadow'
   | 'pickerGap'
   | 'pickerOffset'
   | 'dotSize'
   | 'radius'
+  | 'tabFontSize'
+  | 'tabFontWeight'
+  | 'tabPaddingBlock'
+  | 'tabPaddingInline'
+  | 'fontFamily'
   | 'transition';
 
 const HOOKS: Record<CarouselOverridableBinding, string> = {
   slideGap: '--ds-carousel-slide-gap',
   controlOffset: '--ds-carousel-control-offset',
+  controlRadius: '--ds-carousel-control-radius',
   controlShadow: '--ds-carousel-control-shadow',
   pickerGap: '--ds-carousel-picker-gap',
   pickerOffset: '--ds-carousel-picker-offset',
   dotSize: '--ds-carousel-dot-size',
   radius: '--ds-carousel-radius',
+  tabFontSize: '--ds-carousel-tab-font-size',
+  tabFontWeight: '--ds-carousel-tab-font-weight',
+  tabPaddingBlock: '--ds-carousel-tab-padding-block',
+  tabPaddingInline: '--ds-carousel-tab-padding-inline',
+  fontFamily: '--ds-carousel-font-family',
   transition: '--ds-carousel-transition',
 };
 
 /**
  * `<ds-carousel-slide>` — one Carousel slide (anatomy: slide).
  *
- * `<ds-carousel>` sets its `role="group"`, `aria-roledescription="slide"`,
- * positional `aria-label` and `inert`; consumers set `label` (the slide's name
- * in the tabs picker and its accessible name) and repeat that wording in the
+ * `<ds-carousel>` sets its role, `aria-roledescription="slide"`, positional
+ * `aria-label` (`copy.slideLabel`), `inert` and `aria-hidden`; consumers set
+ * `label` (the slide's name in the tabs picker) and repeat that wording in the
  * slide's own visible heading.
  */
 @customElement('ds-carousel-slide')
@@ -95,7 +110,7 @@ export class DsCarouselSlide extends LitElement {
     }
   `;
 
-  /** The slide's name: the tab label with `picker="tabs"` and part of its accessible name. */
+  /** The slide's name in the tabs picker. A plain string, never read from the slide's content. */
   @property() accessor label: string | undefined;
 
   override connectedCallback(): void {
@@ -114,17 +129,17 @@ export class DsCarouselSlide extends LitElement {
  * `<ds-carousel label="Featured products">` holds slotted
  * `<ds-carousel-slide>` children in a scroll-snap viewport, so swipe and
  * trackpad scrolling work natively. An `IntersectionObserver` on the slotted
- * slides keeps the current index on what is visible and makes the rest
- * `inert`. Previous/Next move one page of visible slides and are disabled at
- * the ends unless `loop`; the picker (`dots` or `tabs`) jumps directly and
- * answers ArrowLeft/ArrowRight/Home/End. `autoplay` advances every `interval`
- * (never faster than 5000 ms), pauses while hovered, focused or touched, stops
- * for good at the last slide without `loop` or when the pause button is
- * pressed, and never starts under reduced motion (the play/pause button is not
- * rendered then). Every change dispatches a composed `change` with
- * `{ index, reason }`; user-initiated changes are announced.
+ * slides makes the ones outside the visible page `inert` and `aria-hidden`;
+ * a scroll the user started reports the first visible slide as a `swipe` when
+ * it settles. Previous/Next move one page and are disabled at the ends unless
+ * `loop`; the picker (`dots` or `tabs`) jumps directly and answers
+ * ArrowLeft/ArrowRight/Home/End. `autoplay` advances every `interval` (never
+ * faster than `minInterval`), pauses while hovered, focused or touched, stops
+ * at the last slide without `loop` or when paused, and never starts under
+ * reduced motion (the play/pause button is not rendered then).
  *
- * Tab order: play/pause, previous, next, picker, then the current slide.
+ * Order: play/pause, previous, next, picker, then the slides; the grid places
+ * the play/pause row above the viewport and the picker below it.
  *
  * @fires change - The current slide changed; `detail` is `{ index, reason }`.
  * @slot - `<ds-carousel-slide>` children, one per slide.
@@ -135,15 +150,22 @@ export class DsCarousel extends LitElement {
 
   static override styles: CSSResult = css`
     :host {
+      position: relative;
       display: block;
       box-sizing: border-box;
       --ds-carousel-slide-gap: var(--layout-gap-normal);
       --ds-carousel-control-offset: var(--space-2);
+      --ds-carousel-control-radius: var(--radius-full);
       --ds-carousel-control-shadow: var(--shadow-raised);
       --ds-carousel-picker-gap: var(--layout-gap-tight);
       --ds-carousel-picker-offset: var(--space-3);
       --ds-carousel-dot-size: var(--space-2);
       --ds-carousel-radius: var(--radius-md);
+      --ds-carousel-tab-font-size: var(--font-size-sm);
+      --ds-carousel-tab-font-weight: var(--font-weight-medium);
+      --ds-carousel-tab-padding-block: var(--space-sm);
+      --ds-carousel-tab-padding-inline: var(--space-md);
+      --ds-carousel-font-family: var(--font-family-body);
       --ds-carousel-transition: var(--motion-duration-base);
     }
 
@@ -151,21 +173,42 @@ export class DsCarousel extends LitElement {
       display: none;
     }
 
-    /* The DOM order is the tab order (play, previous, next, picker, slides); the grid places the picker below the viewport. */
+    /* DOM order is the tab order (play, previous, next, picker, slides); the grid places the rows.
+       pickerOffset: the gap between the play row, the viewport and the picker row. */
     .frame {
       display: grid;
-      grid-template-columns: auto minmax(0, 1fr);
-      column-gap: var(--ds-carousel-picker-gap);
+      grid-template-columns: minmax(0, 1fr);
       row-gap: var(--ds-carousel-picker-offset);
       align-items: center;
     }
 
-    [data-part='viewport'],
-    [data-part='controlSurface'] {
+    [data-part='playButton'] {
       grid-row: 1;
-      grid-column: 1 / -1;
+      grid-column: 1;
+      justify-self: start;
     }
 
+    [data-part='viewport'],
+    [data-part='controlSurface'] {
+      grid-row: 2;
+      grid-column: 1;
+    }
+
+    [data-part='picker'] {
+      grid-row: 3;
+      grid-column: 1;
+    }
+
+    .frame.no-play [data-part='viewport'],
+    .frame.no-play [data-part='controlSurface'] {
+      grid-row: 1;
+    }
+
+    .frame.no-play [data-part='picker'] {
+      grid-row: 2;
+    }
+
+    /* radius: the viewport's corners */
     [data-part='viewport'] {
       box-sizing: border-box;
       container-type: inline-size;
@@ -184,14 +227,14 @@ export class DsCarousel extends LitElement {
       scroll-snap-type: none;
     }
 
-    /* slideGap: layout.gap.normal, between slides */
+    /* slideGap: the track's gap, never a slide margin */
     [data-part='track'] {
       --ds-carousel-visible: var(--ds-carousel-per-view, 1);
       display: flex;
       gap: var(--ds-carousel-slide-gap);
     }
 
-    @container (max-width: ${unsafeCSS(PROSE_BREAKPOINT_PX)}px) {
+    @container (max-width: ${unsafeCSS(PROSE_BREAKPOINT)}px) {
       [data-part='track'] {
         --ds-carousel-visible: 1;
       }
@@ -204,7 +247,7 @@ export class DsCarousel extends LitElement {
       scroll-snap-align: start;
     }
 
-    /* controlBackground (locked), controlShadow, minTarget (locked); full radius per the doc */
+    /* controlBackground (locked), controlShadow, controlRadius, minTarget (locked) */
     [data-part='controlSurface'] {
       position: relative;
       z-index: 1;
@@ -217,10 +260,10 @@ export class DsCarousel extends LitElement {
       min-block-size: var(--size-target-comfortable);
       background: var(--color-overlay-surface);
       box-shadow: var(--ds-carousel-control-shadow);
-      border-radius: var(--radius-full);
+      border-radius: var(--ds-carousel-control-radius);
     }
 
-    /* controlOffset: distance from the viewport edge */
+    /* controlOffset: the inline inset from the viewport's inline edge */
     .prev {
       justify-self: start;
       inset-inline-start: var(--ds-carousel-control-offset);
@@ -231,25 +274,20 @@ export class DsCarousel extends LitElement {
       inset-inline-end: var(--ds-carousel-control-offset);
     }
 
-    .play {
-      grid-row: 2;
-      grid-column: 1;
+    [data-part='prevButton'],
+    [data-part='nextButton'],
+    [data-part='playButton'] {
+      display: inline-flex;
     }
 
-    /* pickerGap, pickerOffset (the frame's row gap) */
+    /* pickerGap */
     [data-part='picker'] {
-      grid-row: 2;
-      grid-column: 2;
       justify-self: center;
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       justify-content: center;
       gap: var(--ds-carousel-picker-gap);
-    }
-
-    .frame.no-play [data-part='picker'] {
-      grid-column: 1 / -1;
     }
 
     button[data-part='pickerItem'] {
@@ -278,33 +316,30 @@ export class DsCarousel extends LitElement {
       inline-size: var(--ds-carousel-dot-size);
       block-size: var(--ds-carousel-dot-size);
       border-radius: var(--radius-full);
-      /* dot: color.border.strong, locked */
+      /* dot: locked */
       background: var(--color-border-strong);
       transition: background-color var(--ds-carousel-transition) var(--motion-easing-standard);
     }
 
-    /* dotActive: color.control.selectedBackground, locked; aria-current carries the state too */
+    /* dotActive: locked; aria-current carries the state too */
     .dot[aria-current='true']::before {
       background: var(--color-control-selected-background);
     }
 
+    /* tabColor (locked), tabFontSize, tabFontWeight, tabPaddingBlock, tabPaddingInline, fontFamily, minTarget (locked) */
     .tab {
       min-block-size: var(--size-target-comfortable);
-      padding-block: 0;
-      padding-inline: var(--space-3);
-      border-radius: var(--ds-carousel-radius);
-      font-family: var(--font-family-body);
-      font-size: var(--font-size-md);
-      font-weight: var(--font-weight-medium);
-      line-height: var(--font-line-height-normal);
+      padding-block: var(--ds-carousel-tab-padding-block);
+      padding-inline: var(--ds-carousel-tab-padding-inline);
+      font-family: var(--ds-carousel-font-family);
+      font-size: var(--ds-carousel-tab-font-size);
+      font-weight: var(--ds-carousel-tab-font-weight);
       color: var(--color-foreground-muted);
       white-space: nowrap;
-      transition:
-        color var(--ds-carousel-transition) var(--motion-easing-standard),
-        box-shadow var(--ds-carousel-transition) var(--motion-easing-standard);
+      transition: color var(--ds-carousel-transition) var(--motion-easing-standard);
     }
 
-    /* dotActive as the selected tab's indicator; aria-selected carries the state too */
+    /* tabSelectedColor (locked); tabIndicatorThickness (locked) drawn in dotActive inside the tab's box */
     .tab[aria-selected='true'] {
       color: var(--color-foreground-strong);
       box-shadow: inset 0 calc(-1 * var(--border-width-focus)) 0 var(--color-control-selected-background);
@@ -340,7 +375,7 @@ export class DsCarousel extends LitElement {
   /** What the carousel shows ("Featured products"): the region's accessible name. */
   @property() accessor label = '';
 
-  /** Slides visible at once at the widest layout; one below the prose width. */
+  /** Slides visible at once at the widest layout; one while the viewport is at or below `layout.maxWidth.prose`. */
   @property({ type: Number, reflect: true, attribute: 'per-view' }) accessor perView = 1;
 
   /** Next from the last slide returns to the first. */
@@ -349,7 +384,7 @@ export class DsCarousel extends LitElement {
   /** Rotate every `interval`; never under reduced motion. */
   @property({ type: Boolean, reflect: true }) accessor autoplay = false;
 
-  /** Milliseconds between automatic advances; values below 5000 are raised to 5000. */
+  /** Milliseconds between automatic advances; values below `minInterval` are raised to it. */
   @property({ type: Number }) accessor interval = 6000;
 
   /** How slides are chosen directly. */
@@ -367,14 +402,15 @@ export class DsCarousel extends LitElement {
     | undefined;
 
   @state() private accessor internalIndex = 0;
-  /** How many slides the observer reports visible: one page. */
-  @state() private accessor visibleCount = 1;
+  /** False until the viewport is first measured; `perView` applies until then. */
+  @state() private accessor measured = false;
+  @state() private accessor viewportWide = true;
   @state() private accessor focusedPickerIndex: number | null = null;
   @state() private accessor slideCount = 0;
   @state() private accessor hovering = false;
   @state() private accessor focusWithin = false;
   @state() private accessor touching = false;
-  /** Set by the pause button (and by autoplay reaching the end without `loop`); cleared only by play. */
+  /** Set by the pause button and by autoplay reaching the last slide without `loop`; cleared only by play. */
   @state() private accessor stopped = false;
   @state() private accessor reducedMotion = false;
   @state() private accessor announceText = '';
@@ -382,16 +418,19 @@ export class DsCarousel extends LitElement {
   @query('[data-part="viewport"]') private accessor viewportEl!: HTMLElement | null;
 
   private intersectionObserver: IntersectionObserver | undefined;
+  private resizeObserver: ResizeObserver | undefined;
   private reducedMotionQuery: MediaQueryList | undefined;
   private timer: number | undefined;
   private timerInterval: number | undefined;
-  private scrollTimeout: number | undefined;
-  /** True while a programmatic scroll is settling, so its visibility changes are not reported as a swipe. */
-  private programmaticScroll = false;
+  private settleTimeout: number | undefined;
+  /** True after pointerdown, touchstart or wheel on the viewport: the next settled scroll is a swipe. */
+  private userScroll = false;
+  /** The first positioning is instant. */
+  private positioned = false;
   /** A user-initiated change in controlled mode is announced once the new `activeIndex` arrives. */
   private announcePending = false;
-  private warnedLabel = false;
   private warnedInterval = false;
+  private readonly warnedSlides: WeakSet<Element> = new WeakSet();
 
   /** The current slide index, controlled or not. */
   get currentIndex(): number {
@@ -402,8 +441,14 @@ export class DsCarousel extends LitElement {
     return this.activeIndex !== undefined;
   }
 
+  private get perViewInt(): number {
+    return Math.max(1, Math.round(this.perView));
+  }
+
+  /** The page size: `perView` above the prose width, 1 at or below it; `perView` until measured. */
   private get page(): number {
-    return Math.max(1, this.visibleCount);
+    if (!this.measured) return this.perViewInt;
+    return this.viewportWide ? this.perViewInt : 1;
   }
 
   /** The furthest index a page can start at. */
@@ -411,25 +456,30 @@ export class DsCarousel extends LitElement {
     return Math.max(0, this.slideCount - this.page);
   }
 
-  /** Rotation is wanted: autoplay on, not stopped by the user, motion allowed. */
-  private get rotating(): boolean {
+  /** Rotation is wanted: autoplay on, motion allowed, not stopped. */
+  private get rotationOn(): boolean {
     return this.autoplay && !this.reducedMotion && !this.stopped;
   }
 
-  private get timerShouldRun(): boolean {
-    return this.rotating && !this.hovering && !this.focusWithin && !this.touching && this.slideCount > 1;
+  /** Rotating right now: wanted and not paused by hover, focus or touch. */
+  private get rotating(): boolean {
+    return (
+      this.rotationOn && !this.hovering && !this.focusWithin && !this.touching && this.slideCount > this.page
+    );
   }
 
   private get prevTarget(): number | null {
+    if (this.slideCount <= this.page) return null;
     const current = this.currentIndex;
-    if (current <= 0) return this.loop && this.slideCount > 1 ? this.lastStart : null;
-    return Math.max(0, current - this.page);
+    if (current <= 0) return this.loop ? this.lastStart : null;
+    return Math.max(current - this.page, 0);
   }
 
   private get nextTarget(): number | null {
+    if (this.slideCount <= this.page) return null;
     const current = this.currentIndex;
-    if (current >= this.lastStart) return this.loop && this.slideCount > 1 ? 0 : null;
-    return Math.min(this.lastStart, current + this.page);
+    if (current >= this.lastStart) return this.loop ? 0 : null;
+    return Math.min(current + this.page, this.lastStart);
   }
 
   override connectedCallback(): void {
@@ -447,7 +497,7 @@ export class DsCarousel extends LitElement {
     this.reducedMotionQuery = matchMedia('(prefers-reduced-motion: reduce)');
     this.reducedMotionQuery.addEventListener('change', this.handleReducedMotionChange);
     this.reducedMotion = this.reducedMotionQuery.matches;
-    if (this.hasUpdated) this.observeSlides();
+    if (this.hasUpdated) this.observe();
   }
 
   override disconnectedCallback(): void {
@@ -462,17 +512,14 @@ export class DsCarousel extends LitElement {
     this.reducedMotionQuery?.removeEventListener('change', this.handleReducedMotionChange);
     this.intersectionObserver?.disconnect();
     this.intersectionObserver = undefined;
+    this.resizeObserver?.disconnect();
+    this.resizeObserver = undefined;
     this.clearTimer();
-    window.clearTimeout(this.scrollTimeout);
+    window.clearTimeout(this.settleTimeout);
   }
 
   protected override willUpdate(changed: PropertyValues): void {
     if (changed.has('overrides')) this.applyOverrides();
-    if (changed.has('perView')) {
-      const perView = Math.max(1, Math.round(this.perView));
-      this.style.setProperty('--ds-carousel-per-view', String(perView));
-      if (!this.intersectionObserver) this.visibleCount = perView;
-    }
     if (changed.has('label')) {
       if (this.label) this.setAttribute('aria-label', this.label);
       else this.removeAttribute('aria-label');
@@ -481,14 +528,18 @@ export class DsCarousel extends LitElement {
 
   protected override firstUpdated(): void {
     this.syncSlides();
-    this.observeSlides();
+    this.observe();
   }
 
   protected override updated(changed: PropertyValues): void {
-    if (changed.has('activeIndex') && this.activeIndex !== undefined) {
-      if (changed.get('activeIndex') !== undefined || this.activeIndex !== 0) {
-        this.scrollToIndex(this.currentIndex);
+    if (changed.has('picker')) this.syncSlides();
+    if (!this.positioned) {
+      if (this.slideCount > 0) {
+        this.positioned = true;
+        if (this.currentIndex > 0) this.scrollToIndex(this.currentIndex, true);
       }
+    } else if (changed.has('activeIndex') && this.activeIndex !== undefined) {
+      this.scrollToIndex(this.currentIndex);
       if (this.announcePending) {
         this.announcePending = false;
         this.announce(this.currentIndex);
@@ -496,7 +547,10 @@ export class DsCarousel extends LitElement {
       this.syncInert();
     }
     this.syncAutoplay();
-    this.warnInDev();
+    if (import.meta.env.DEV && this.autoplay && this.interval < MIN_INTERVAL && !this.warnedInterval) {
+      this.warnedInterval = true;
+      console.warn(`<ds-carousel> \`interval\` ${this.interval} is below ${MIN_INTERVAL} ms; raised to ${MIN_INTERVAL}.`, this);
+    }
   }
 
   protected override render(): TemplateResult {
@@ -506,60 +560,74 @@ export class DsCarousel extends LitElement {
     return html`
       <div class="frame ${showPlay ? '' : 'no-play'}">
         ${showPlay
-          ? html`<ds-button
-              class="play"
-              data-part="playButton"
-              part="playButton"
-              label=${this.stopped ? COPY_PLAY : COPY_PAUSE}
-              @press=${this.handlePlayPause}
-            ></ds-button>`
+          ? html`<span data-part="playButton" part="playButton" @click=${this.handlePlayWrapperClick}>
+              <ds-button variant="secondary" label=${this.stopped ? COPY_PLAY : COPY_PAUSE} @press=${this.handlePlayPause}></ds-button>
+            </span>`
           : nothing}
         <div class="prev" data-part="controlSurface" part="controlSurface">
-          <ds-button
-            data-part="prevButton"
-            part="prevButton"
-            variant="secondary"
-            icon-only
-            label=${COPY_PREVIOUS}
-            ?disabled=${prevTarget === null}
-            @press=${this.handlePrev}
-          >
-            <ds-icon slot="leading-icon" name="chevron-left"></ds-icon>
-          </ds-button>
+          <span data-part="prevButton" part="prevButton" @click=${this.handlePrevWrapperClick}>
+            <ds-button
+              variant="secondary"
+              icon-only
+              label=${COPY_PREVIOUS}
+              ?disabled=${prevTarget === null}
+              @press=${this.handlePrev}
+            >
+              <ds-icon slot="leading-icon" name="chevron-left"></ds-icon>
+            </ds-button>
+          </span>
         </div>
         <div class="next" data-part="controlSurface" part="controlSurface">
-          <ds-button
-            data-part="nextButton"
-            part="nextButton"
-            variant="secondary"
-            icon-only
-            label=${COPY_NEXT}
-            ?disabled=${nextTarget === null}
-            @press=${this.handleNext}
-          >
-            <ds-icon slot="leading-icon" name="chevron-right"></ds-icon>
-          </ds-button>
+          <span data-part="nextButton" part="nextButton" @click=${this.handleNextWrapperClick}>
+            <ds-button
+              variant="secondary"
+              icon-only
+              label=${COPY_NEXT}
+              ?disabled=${nextTarget === null}
+              @press=${this.handleNext}
+            >
+              <ds-icon slot="leading-icon" name="chevron-right"></ds-icon>
+            </ds-button>
+          </span>
         </div>
         ${this.picker === 'none' ? nothing : this.renderPicker()}
-        <div data-part="viewport" part="viewport" @scrollend=${this.handleScrollEnd}>
-          <div data-part="track" part="track" aria-live=${this.rotating ? 'off' : 'polite'}>
+        <div
+          data-part="viewport"
+          part="viewport"
+          @pointerdown=${this.armUserScroll}
+          @touchstart=${this.armUserScroll}
+          @wheel=${this.armUserScroll}
+          @scroll=${this.handleScroll}
+          @scrollend=${this.handleScrollEnd}
+        >
+          <div data-part="track" part="track" style="--ds-carousel-per-view: ${this.perViewInt}">
             <slot @slotchange=${this.handleSlotChange}></slot>
           </div>
         </div>
       </div>
-      <div class="visually-hidden" data-part="liveRegion" part="liveRegion" aria-live="polite">${this.announceText}</div>
+      <div class="visually-hidden" data-part="liveRegion" part="liveRegion" aria-live=${this.rotating ? 'off' : 'polite'}>
+        ${this.announceText}
+      </div>
     `;
   }
 
   private renderPicker(): TemplateResult {
     const slides = this.slideElements();
     const current = this.currentIndex;
+    const page = this.page;
     const roving = this.focusedPickerIndex ?? current;
     if (this.picker === 'tabs') {
       return html`
-        <div data-part="picker" part="picker" role="tablist" @keydown=${this.handlePickerKeydown}>
-          ${slides.map(
-            (slide, index) => html`<button
+        <div
+          data-part="picker"
+          part="picker"
+          role="tablist"
+          aria-label=${COPY_PICKER_LABEL}
+          @keydown=${this.handlePickerKeydown}
+        >
+          ${slides.map((slide, index) => {
+            if (!slide.label) this.warnMissingSlideLabel(slide, index);
+            return html`<button
               type="button"
               class="tab"
               data-part="pickerItem"
@@ -570,14 +638,20 @@ export class DsCarousel extends LitElement {
               tabindex=${index === roving ? 0 : -1}
               @click=${() => this.selectFromPicker(index)}
             >
-              ${slide.label ?? COPY_GO_TO(index + 1)}
-            </button>`,
-          )}
+              ${slide.label || COPY_GO_TO(index + 1)}
+            </button>`;
+          })}
         </div>
       `;
     }
     return html`
-      <div data-part="picker" part="picker" role="group" @keydown=${this.handlePickerKeydown}>
+      <div
+        data-part="picker"
+        part="picker"
+        role="group"
+        aria-label=${COPY_PICKER_LABEL}
+        @keydown=${this.handlePickerKeydown}
+      >
         ${slides.map(
           (_slide, index) => html`<button
             type="button"
@@ -585,7 +659,7 @@ export class DsCarousel extends LitElement {
             data-part="pickerItem"
             part="pickerItem"
             aria-label=${COPY_GO_TO(index + 1)}
-            aria-current=${index === current ? 'true' : nothing}
+            aria-current=${index >= current && index < current + page ? 'true' : nothing}
             data-index=${index}
             tabindex=${index === roving ? 0 : -1}
             @click=${() => this.selectFromPicker(index)}
@@ -597,19 +671,41 @@ export class DsCarousel extends LitElement {
 
   private readonly handlePlayPause = (event: Event): void => {
     event.stopPropagation();
-    this.stopped = !this.stopped;
+    if (!this.stopped) {
+      this.stopped = true;
+      return;
+    }
+    // Play clears the hover, focus and touch pauses so rotation resumes at once.
+    this.stopped = false;
+    this.hovering = false;
+    this.focusWithin = false;
+    this.touching = false;
+    if (!this.loop && this.nextTarget === null && this.currentIndex > 0) this.moveTo(0, 'autoplay');
   };
 
-  private readonly handlePrev = (event: Event): void => {
-    event.stopPropagation();
+  private readonly handlePrev = (event?: Event): void => {
+    event?.stopPropagation();
     const target = this.prevTarget;
     if (target !== null) this.moveTo(target, 'prev');
   };
 
-  private readonly handleNext = (event: Event): void => {
-    event.stopPropagation();
+  private readonly handleNext = (event?: Event): void => {
+    event?.stopPropagation();
     const target = this.nextTarget;
     if (target !== null) this.moveTo(target, 'next');
+  };
+
+  /** A click on a wrapper outside its Button passes through to the Button's action. */
+  private readonly handlePrevWrapperClick = (event: Event): void => {
+    if (event.target === event.currentTarget) this.handlePrev();
+  };
+
+  private readonly handleNextWrapperClick = (event: Event): void => {
+    if (event.target === event.currentTarget) this.handleNext();
+  };
+
+  private readonly handlePlayWrapperClick = (event: Event): void => {
+    if (event.target === event.currentTarget) this.handlePlayPause(event);
   };
 
   private readonly handlePickerKeydown = (event: KeyboardEvent): void => {
@@ -645,8 +741,8 @@ export class DsCarousel extends LitElement {
     this.moveTo(index, 'picker');
   }
 
-  private readonly handlePointerEnter = (): void => {
-    this.hovering = true;
+  private readonly handlePointerEnter = (event: PointerEvent): void => {
+    if (event.pointerType !== 'touch') this.hovering = true;
   };
 
   private readonly handlePointerLeave = (): void => {
@@ -679,39 +775,81 @@ export class DsCarousel extends LitElement {
     this.observeSlides();
   };
 
+  private readonly armUserScroll = (): void => {
+    this.userScroll = true;
+  };
+
+  private readonly handleScroll = (): void => {
+    if (!this.userScroll || SCROLLEND_SUPPORTED) return;
+    window.clearTimeout(this.settleTimeout);
+    this.settleTimeout = window.setTimeout(this.handleScrollEnd, SCROLL_SETTLE_FALLBACK);
+  };
+
+  /** A scroll the user started has settled: the first visible slide is the new index. */
   private readonly handleScrollEnd = (): void => {
-    this.endProgrammaticScroll();
+    if (!this.userScroll) return;
+    this.userScroll = false;
+    const first = this.firstVisibleIndex();
+    if (first === -1) return;
+    if (this.clampToPage(first) === this.currentIndex) return;
+    this.moveTo(first, 'swipe', false);
   };
 
   private readonly handleIntersect = (entries: IntersectionObserverEntry[]): void => {
     for (const entry of entries) {
-      const visible = entry.isIntersecting && entry.intersectionRatio >= VISIBLE_THRESHOLD;
-      const slide = entry.target as HTMLElement;
-      if (slide.hasAttribute('inert') === visible) slide.toggleAttribute('inert', !visible);
+      const hidden = !(entry.isIntersecting && entry.intersectionRatio >= VISIBLE_THRESHOLD);
+      setHidden(entry.target, hidden);
     }
-    const slides = this.slideElements();
-    const visible = slides.filter((slide) => !slide.hasAttribute('inert')).length;
-    if (visible > 0 && visible !== this.visibleCount) this.visibleCount = visible;
-    if (this.programmaticScroll) return;
-    const first = slides.findIndex((slide) => !slide.hasAttribute('inert'));
-    if (first === -1 || first === this.currentIndex) return;
-    this.moveTo(first, 'swipe', false);
   };
+
+  private readonly handleResize = (entries: ResizeObserverEntry[]): void => {
+    const entry = entries[0];
+    if (!entry) return;
+    const width = entry.contentRect.width;
+    const wide = width > this.proseBreakpoint();
+    if (this.viewportWide !== wide) this.viewportWide = wide;
+    if (!this.measured) this.measured = true;
+  };
+
+  /** layout.maxWidth.prose, read from the token; the built value when the token stylesheet is absent. */
+  private proseBreakpoint(): number {
+    const value = parseFloat(getComputedStyle(this).getPropertyValue('--layout-max-width-prose'));
+    return Number.isFinite(value) ? value : PROSE_BREAKPOINT;
+  }
+
+  private firstVisibleIndex(): number {
+    const viewport = this.viewportEl;
+    if (!viewport) return -1;
+    const bounds = viewport.getBoundingClientRect();
+    return this.slideElements().findIndex((slide) => {
+      const rect = slide.getBoundingClientRect();
+      if (rect.width === 0) return false;
+      const overlap = Math.min(rect.right, bounds.right) - Math.max(rect.left, bounds.left);
+      return overlap / rect.width >= VISIBLE_THRESHOLD;
+    });
+  }
 
   private clamp(index: number): number {
     return Math.min(Math.max(Math.round(index), 0), Math.max(0, this.slideCount - 1));
   }
 
+  /** A target past the last page start becomes the last page start. */
+  private clampToPage(index: number): number {
+    return Math.min(this.clamp(index), this.lastStart);
+  }
+
   /**
    * Requests slide `index`: dispatches `change`; uncontrolled, it also moves and (for a user change) announces.
-   * Controlled, the element waits for `activeIndex` to change before it shows or announces anything.
+   * Controlled, the element waits for `activeIndex` to change before it shows or announces anything, and a swipe the
+   * parent does not accept scrolls back.
    */
   private moveTo(index: number, reason: CarouselChangeReason, scroll = true): void {
     if (this.slideCount === 0) return;
-    const target = this.clamp(index);
+    const target = this.clampToPage(index);
     if (target === this.currentIndex) return;
     if (reason !== 'picker') this.focusedPickerIndex = null;
     const user = reason !== 'autoplay';
+    const previous = this.activeIndex;
     if (this.isControlled) {
       this.announcePending = user;
     } else {
@@ -727,55 +865,71 @@ export class DsCarousel extends LitElement {
         composed: true,
       }),
     );
+    if (this.isControlled) {
+      void this.updateComplete.then(() => {
+        if (this.activeIndex !== previous) return;
+        this.announcePending = false;
+        if (reason === 'swipe') this.scrollToIndex(this.currentIndex);
+      });
+    }
   }
 
   private announce(index: number): void {
     this.announceText = COPY_ANNOUNCE(index + 1, this.slideCount);
   }
 
-  private scrollToIndex(index: number): void {
+  /** Scrolls the viewport itself (never scrollIntoView, which would also scroll the page); RTL-aware. */
+  private scrollToIndex(index: number, instant = false): void {
     const slide = this.slideElements()[index];
     const viewport = this.viewportEl;
     if (!slide || !viewport) return;
-    this.programmaticScroll = true;
-    window.clearTimeout(this.scrollTimeout);
-    this.scrollTimeout = window.setTimeout(() => this.endProgrammaticScroll(), PROGRAMMATIC_SCROLL_TIMEOUT);
-    slide.scrollIntoView({ behavior: this.reducedMotion ? 'instant' : 'smooth', inline: 'start', block: 'nearest' });
-  }
-
-  private endProgrammaticScroll(): void {
-    window.clearTimeout(this.scrollTimeout);
-    this.programmaticScroll = false;
+    this.userScroll = false;
+    const rtl = getComputedStyle(viewport).direction === 'rtl';
+    const slideRect = slide.getBoundingClientRect();
+    const viewportRect = viewport.getBoundingClientRect();
+    const delta = rtl ? slideRect.right - viewportRect.right : slideRect.left - viewportRect.left;
+    viewport.scrollTo({
+      left: viewport.scrollLeft + delta,
+      behavior: instant || this.reducedMotion ? 'instant' : 'smooth',
+    });
   }
 
   private slideElements(): DsCarouselSlide[] {
     return Array.from(this.children).filter((el): el is DsCarouselSlide => el instanceof DsCarouselSlide);
   }
 
-  /** Stamps each slide's group role, roledescription and positional name. Every write compares first. */
+  /** Stamps each slide's role, roledescription, positional name and part. Every write compares first. */
   private syncSlides(): void {
     const slides = this.slideElements();
     const total = slides.length;
+    const role = this.picker === 'tabs' ? 'tabpanel' : 'group';
     slides.forEach((slide, index) => {
-      const positional = COPY_SLIDE_LABEL(index + 1, total);
-      const name = slide.label ? `${positional}, ${slide.label}` : positional;
-      setAttr(slide, 'role', 'group');
+      setAttr(slide, 'role', role);
       setAttr(slide, 'aria-roledescription', 'slide');
-      setAttr(slide, 'aria-label', name);
+      setAttr(slide, 'aria-label', COPY_SLIDE_LABEL(index + 1, total));
       setAttr(slide, 'data-part', 'slide');
     });
-    this.slideCount = total;
+    if (this.slideCount !== total) this.slideCount = total;
     this.syncInert();
   }
 
-  /** Before the observer reports (or without it), the current page is the visible one. */
+  /** Before the observer exists, the current page is the visible one. */
   private syncInert(): void {
     if (this.intersectionObserver) return;
     const first = Math.min(this.currentIndex, this.lastStart);
     this.slideElements().forEach((slide, index) => {
-      const hidden = index < first || index >= first + this.page;
-      if (slide.hasAttribute('inert') !== hidden) slide.toggleAttribute('inert', hidden);
+      setHidden(slide, index < first || index >= first + this.page);
     });
+  }
+
+  private observe(): void {
+    const viewport = this.viewportEl;
+    if (viewport && typeof ResizeObserver !== 'undefined') {
+      this.resizeObserver?.disconnect();
+      this.resizeObserver = new ResizeObserver(this.handleResize);
+      this.resizeObserver.observe(viewport);
+    }
+    this.observeSlides();
   }
 
   private observeSlides(): void {
@@ -794,7 +948,7 @@ export class DsCarousel extends LitElement {
   }
 
   private syncAutoplay(): void {
-    if (!this.timerShouldRun) {
+    if (!this.rotating) {
       this.clearTimer();
       return;
     }
@@ -819,9 +973,15 @@ export class DsCarousel extends LitElement {
       return;
     }
     this.moveTo(target, 'autoplay');
-    // Without loop, rotation stops for good once it reaches the last page.
+    // Without loop, reaching the last page counts as stopped: the control shows play and announcements return.
     if (!this.loop && target >= this.lastStart) this.stopped = true;
   };
+
+  private warnMissingSlideLabel(slide: Element, index: number): void {
+    if (!import.meta.env.DEV || this.warnedSlides.has(slide)) return;
+    this.warnedSlides.add(slide);
+    console.warn(`<ds-carousel> slide ${index + 1} has no \`label\`; the tab shows "${COPY_GO_TO(index + 1)}".`, slide);
+  }
 
   private applyOverrides(): void {
     for (const binding of Object.keys(HOOKS) as CarouselOverridableBinding[]) {
@@ -831,22 +991,17 @@ export class DsCarousel extends LitElement {
       else this.style.setProperty(hook, cssVar(ref));
     }
   }
-
-  private warnInDev(): void {
-    if (!import.meta.env.DEV) return;
-    if (!this.label && !this.warnedLabel) {
-      this.warnedLabel = true;
-      console.warn("<ds-carousel> requires a `label`, the region's accessible name.", this);
-    }
-    if (this.interval < MIN_INTERVAL && !this.warnedInterval) {
-      this.warnedInterval = true;
-      console.warn(`<ds-carousel> \`interval\` ${this.interval} is below the minimum; raised to ${MIN_INTERVAL}.`, this);
-    }
-  }
 }
 
 function setAttr(el: Element, name: string, value: string): void {
   if (el.getAttribute(name) !== value) el.setAttribute(name, value);
+}
+
+/** Slides outside the visible page get both `inert` and `aria-hidden="true"`. */
+function setHidden(el: Element, hidden: boolean): void {
+  if (el.hasAttribute('inert') !== hidden) el.toggleAttribute('inert', hidden);
+  if (hidden) setAttr(el, 'aria-hidden', 'true');
+  else if (el.hasAttribute('aria-hidden')) el.removeAttribute('aria-hidden');
 }
 
 declare global {

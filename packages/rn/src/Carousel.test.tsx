@@ -72,7 +72,7 @@ describe('Carousel', () => {
     // The region is deliberately not `accessible` (its controls must stay reachable), so
     // getByRole cannot match it; assert the role and name on the root itself.
     const region = screen.getByTestId('Carousel');
-    expect(region).toHaveProp('accessibilityRole', 'adjustable');
+    expect(region).toHaveProp('role', 'region');
     expect(region).toHaveAccessibleName(s.props.label);
   });
 });

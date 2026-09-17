@@ -114,6 +114,7 @@ export type TableOverridableBinding =
   | 'captionGap'
   | 'stackedRowInset'
   | 'stackedRowGap'
+  | 'stackedBlockGap'
   | 'stackedLabelSize'
   | 'stackedLabelWeight'
   | 'stackedRowRadius'
@@ -142,6 +143,7 @@ const HOOKS: Record<TableOverridableBinding, string> = {
   captionGap: '--ds-table-caption-gap',
   stackedRowInset: '--ds-table-stacked-row-inset',
   stackedRowGap: '--ds-table-stacked-row-gap',
+  stackedBlockGap: '--ds-table-stacked-block-gap',
   stackedLabelSize: '--ds-table-stacked-label-size',
   stackedLabelWeight: '--ds-table-stacked-label-weight',
   stackedRowRadius: '--ds-table-stacked-row-radius',
@@ -176,7 +178,7 @@ function compareValues(left: unknown, right: unknown): number {
  *
  * Sort and selection are controlled (`sort`, `selected`) or uncontrolled (`defaultSort`, `defaultSelected`); the
  * table fires `sort-change` and `selection-change` in both modes. Rows become interactive (the row header turns
- * into a Button) only while a `row-press` listener is attached to the element.
+ * into a Button) only with the `pressable-rows` attribute.
  *
  * @fires sort-change - A sortable header was activated: `{ column, direction }`.
  * @fires selection-change - The selection changed: `{ selected }`.
@@ -205,6 +207,7 @@ export class DsTable extends LitElement {
       --ds-table-caption-gap: var(--space-2);
       --ds-table-stacked-row-inset: var(--layout-inset-md);
       --ds-table-stacked-row-gap: var(--layout-gap-tight);
+      --ds-table-stacked-block-gap: var(--layout-gap-tight);
       --ds-table-stacked-label-size: var(--font-size-xs);
       --ds-table-stacked-label-weight: var(--font-weight-medium);
       --ds-table-stacked-row-radius: var(--radius-md);
@@ -247,13 +250,6 @@ export class DsTable extends LitElement {
       border: 0;
     }
 
-    /* The composed Heading's documented hooks, set from the caption bindings. */
-    [data-part='caption'] ds-heading {
-      --ds-heading-font-size: var(--ds-table-caption-size);
-      --ds-heading-font-weight: var(--ds-table-caption-weight);
-      --ds-heading-margin-block-end: var(--ds-table-caption-gap);
-    }
-
     .frame {
       position: relative;
     }
@@ -270,6 +266,16 @@ export class DsTable extends LitElement {
 
     [data-part='scrollRegion'] {
       overflow-x: auto;
+    }
+
+    /* scrollFade: an edge fades only while columns are hidden past it */
+    :host([data-fade-left]) [data-part='scrollRegion'] {
+      mask-image: linear-gradient(to right, transparent, black var(--ds-table-scroll-fade)); /* literal-ok: mask alpha stops, not a rendered color */
+    }
+    :host([data-fade-right]) [data-part='scrollRegion'] {
+      mask-image: linear-gradient(to left, transparent, black var(--ds-table-scroll-fade)); /* literal-ok: mask alpha stops, not a rendered color */
+    }
+    :host([data-fade-left][data-fade-right]) [data-part='scrollRegion'] {
       mask-image: linear-gradient(to right, transparent, black var(--ds-table-scroll-fade), black calc(100% - var(--ds-table-scroll-fade)), transparent); /* literal-ok: mask alpha stops, not a rendered color */
     }
 
@@ -361,10 +367,6 @@ export class DsTable extends LitElement {
       }
     }
 
-    [data-part='sortButton'] {
-      --ds-button-icon-gap: var(--ds-table-cell-gap);
-    }
-
     [data-part='selectCell'],
     [data-part='selectAllCell'],
     .header-select {
@@ -415,19 +417,42 @@ export class DsTable extends LitElement {
       font: inherit;
     }
 
+    /* hideBelow applies to responsive: stack only; scrolling tables keep every column */
     @container (max-width: ${unsafeCSS(CONTENT_BREAKPOINT)}px) {
-      .hide-below-content {
+      :host([responsive='stack']) .hide-below-content {
         display: none;
       }
     }
 
     @container (max-width: ${unsafeCSS(PROSE_BREAKPOINT)}px) {
-      .hide-below-prose {
+      :host([responsive='stack']) .hide-below-prose {
         display: none;
       }
 
-      /* visually hidden, not display none, so the columnheaders stay in the tree */
       :host([responsive='stack']) thead {
+        display: block;
+      }
+      :host([responsive='stack']:not([no-sticky-header])) thead {
+        position: sticky;
+        inset-block-start: 0;
+        z-index: 2;
+      }
+
+      /* select-all and sortable headers stay visible as a wrapping row, so no focusable control is invisible */
+      :host([responsive='stack']) [data-part='headerRow'] {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--ds-table-stacked-row-gap);
+      }
+      :host([responsive='stack']) thead th,
+      :host([responsive='stack']) thead td {
+        position: static;
+        display: block;
+      }
+
+      /* plain column headers: visually hidden, not display none, so the columnheaders stay in the tree */
+      :host([responsive='stack']) thead .plain {
         position: absolute;
         inline-size: 1px;
         block-size: 1px;
@@ -440,9 +465,10 @@ export class DsTable extends LitElement {
         border: 0;
       }
 
+      /* stackedBlockGap: between stacked row blocks */
       :host([responsive='stack']) tbody {
         display: grid;
-        gap: var(--ds-table-stacked-row-gap);
+        gap: var(--ds-table-stacked-block-gap);
       }
 
       :host([responsive='stack']) [data-part='row'] {
@@ -465,10 +491,14 @@ export class DsTable extends LitElement {
       :host([responsive='stack']) [data-part='row'][aria-selected='true'] {
         box-shadow: inset var(--border-width-focus) 0 0 0 var(--color-control-selected-background);
       }
+      :host([responsive='stack']) [data-part='row'][aria-selected='true']:dir(rtl) {
+        box-shadow: inset calc(-1 * var(--border-width-focus)) 0 0 0 var(--color-control-selected-background);
+      }
 
-      /* stackedLabel, drawn as a pseudo-element: aria-hidden by nature */
+      /* stackedLabel, drawn as a pseudo-element with empty alternative text: the roles already associate the header */
       :host([responsive='stack']) td[data-label]::before {
         content: attr(data-label);
+        content: attr(data-label) / '';
         display: block;
         /* stackedLabelColor (locked) */
         color: var(--color-foreground-muted);
@@ -533,6 +563,12 @@ export class DsTable extends LitElement {
   /** Renders a trailing actions cell (ghost sm icon-only Buttons with Tooltip, or a Menu). */
   @property({ attribute: false }) accessor rowActions: ((row: TableRow) => unknown) | undefined;
 
+  /**
+   * Rows fire `row-press` (the row header becomes a Button and the row is styled interactive). Lit cannot see
+   * whether anyone listens, so this is the element's stand-in for `onRowPress` being set.
+   */
+  @property({ type: Boolean, reflect: true, attribute: 'pressable-rows' }) accessor pressableRows = false;
+
   /** Per-instance token overrides. Locked bindings are not in the type. */
   @property({ attribute: false }) accessor overrides: Partial<Record<TableOverridableBinding, TokenRef | undefined>> | undefined;
 
@@ -540,13 +576,15 @@ export class DsTable extends LitElement {
   @state() private accessor internalSelected: string[] = [];
   @state() private accessor announcement = '';
   @state() private accessor hasFooter = false;
-  @state() private accessor rowPressListeners = 0;
 
   @query('.sentinel') private accessor sentinelEl!: HTMLElement | null;
   @query('.frame') private accessor frameEl!: HTMLElement | null;
+  @query('[data-part="scrollRegion"]') private accessor scrollRegionEl!: HTMLElement | null;
 
   private headerObserver: IntersectionObserver | undefined;
   private observedFor = '';
+  private regionObserver: ResizeObserver | undefined;
+  private observedRegion: HTMLElement | null = null;
   private readonly warned = new Set<string>();
 
   override connectedCallback(): void {
@@ -559,29 +597,9 @@ export class DsTable extends LitElement {
     this.headerObserver?.disconnect();
     this.headerObserver = undefined;
     this.observedFor = '';
-  }
-
-  /** `onRowPress` is set when a `row-press` listener is attached to the element itself. */
-  override addEventListener(
-    type: string,
-    listener: EventListenerOrEventListenerObject,
-    options?: boolean | AddEventListenerOptions,
-  ): void {
-    super.addEventListener(type, listener, options);
-    if (type === 'row-press') {
-      this.rowPressListeners += 1;
-    }
-  }
-
-  override removeEventListener(
-    type: string,
-    listener: EventListenerOrEventListenerObject,
-    options?: boolean | EventListenerOptions,
-  ): void {
-    super.removeEventListener(type, listener, options);
-    if (type === 'row-press' && this.rowPressListeners > 0) {
-      this.rowPressListeners -= 1;
-    }
+    this.regionObserver?.disconnect();
+    this.regionObserver = undefined;
+    this.observedRegion = null;
   }
 
   protected override willUpdate(changed: PropertyValues): void {
@@ -596,13 +614,14 @@ export class DsTable extends LitElement {
 
   protected override updated(): void {
     this.observeHeader();
+    this.observeScrollRegion();
     this.warnInDev();
   }
 
   protected override render(): TemplateResult {
     const rows = this.sortedRows();
     const rowHeaderColumn = this.rowHeaderColumn;
-    const rowsInteractive = this.rowPressListeners > 0 && rowHeaderColumn !== undefined && !rowHeaderColumn.render;
+    const rowsInteractive = this.pressableRows && rowHeaderColumn !== undefined && !rowHeaderColumn.render;
     const columnCount = (this.selectable !== 'none' ? 1 : 0) + this.columns.length + (this.rowActions ? 1 : 0);
     const pluralForm = new Intl.PluralRules(document.documentElement.lang || undefined).select(this.data.length);
     const rowCountText = COPY_ROW_COUNT[pluralForm === 'one' ? 'one' : 'other'](this.data.length);
@@ -621,7 +640,7 @@ export class DsTable extends LitElement {
           <tr role="row" data-part="headerRow">
             ${this.renderSelectionHeader()} ${this.columns.map((column) => this.renderColumnHeader(column))}
             ${this.rowActions
-              ? html`<th role="columnheader" scope="col" data-part="columnHeader">
+              ? html`<th role="columnheader" scope="col" data-part="columnHeader" class="plain">
                   <span class="visually-hidden">${COPY_ACTIONS}</span>
                 </th>`
               : nothing}
@@ -645,9 +664,18 @@ export class DsTable extends LitElement {
 
     return html`
       <div data-part="container">
-        <div data-part="caption" class=${classMap({ 'visually-hidden': this.hideCaption })}>
-          <ds-heading id="caption" level=${this.captionLevel} size="md">${this.caption}</ds-heading>
-        </div>
+        <ds-heading
+          id="caption"
+          data-part="caption"
+          class=${classMap({ 'visually-hidden': this.hideCaption })}
+          level=${this.captionLevel}
+          .overrides=${{
+            fontSize: this.overrides?.captionSize ?? 'font.size.md',
+            fontWeight: this.overrides?.captionWeight ?? 'font.weight.semibold',
+            marginBlockEnd: this.overrides?.captionGap ?? 'space.2',
+          }}
+          >${this.caption}</ds-heading
+        >
         <span id="row-count" class="visually-hidden">${rowCountText}</span>
         ${this.responsive === 'scroll'
           ? html`<div
@@ -664,9 +692,11 @@ export class DsTable extends LitElement {
               </div>
               <span id="scroll-hint" class="visually-hidden">${COPY_SCROLL_HINT}</span>`
           : html`<div class="frame">${sentinel}${table}</div>`}
-        ${this.loading && rows.length > 0
-          ? html`<ds-text element="p" tone="muted" size="sm">${COPY_LOADING}</ds-text>`
-          : nothing}
+        <div aria-live="polite">
+          ${this.loading && rows.length > 0
+            ? html`<ds-text element="p" tone="muted" size="sm">${COPY_LOADING}</ds-text>`
+            : nothing}
+        </div>
         <div data-part="footer" class="footer" ?hidden=${!this.hasFooter}>
           <slot name="footer" @slotchange=${this.handleFooterSlotChange}></slot>
         </div>
@@ -704,7 +734,7 @@ export class DsTable extends LitElement {
       role="columnheader"
       scope="col"
       data-part="columnHeader"
-      class=${classMap(this.cellClasses(column))}
+      class=${classMap({ ...this.cellClasses(column), plain: !column.sortable })}
       abbr=${ifDefined(column.abbr)}
       aria-sort=${ifDefined(sorted)}
     >
@@ -713,6 +743,10 @@ export class DsTable extends LitElement {
             data-part="sortButton"
             variant="ghost"
             size="sm"
+            .overrides=${{
+              fontWeight: this.overrides?.headerWeight ?? 'font.weight.semibold',
+              iconGap: this.overrides?.cellGap ?? 'layout.gap.tight',
+            }}
             label=${column.header}
             accessible-name=${next === 'ascending' ? COPY_SORT_ASCENDING(column.header) : COPY_SORT_DESCENDING(column.header)}
             @press=${(event: Event) => this.handleSort(event, column)}
@@ -893,6 +927,41 @@ export class DsTable extends LitElement {
     if (this.hasAttribute('data-column-scrolled') !== scrolled) {
       this.toggleAttribute('data-column-scrolled', scrolled);
     }
+    this.updateScrollEdges();
+  }
+
+  /** Marks which physical edges have columns hidden past them, for `scrollFade`. Writes only on a change. */
+  private updateScrollEdges(): void {
+    const region = this.scrollRegionEl;
+    let left = false;
+    let right = false;
+    if (region) {
+      const max = region.scrollWidth - region.clientWidth;
+      const rtl = getComputedStyle(region).direction === 'rtl';
+      // In RTL, scrollLeft runs from 0 (start, at the right) down to -max.
+      left = rtl ? region.scrollLeft + max >= 1 : region.scrollLeft >= 1;
+      right = rtl ? -region.scrollLeft >= 1 : max - region.scrollLeft >= 1;
+    }
+    if (this.hasAttribute('data-fade-left') !== left) {
+      this.toggleAttribute('data-fade-left', left);
+    }
+    if (this.hasAttribute('data-fade-right') !== right) {
+      this.toggleAttribute('data-fade-right', right);
+    }
+  }
+
+  private observeScrollRegion(): void {
+    const region = this.scrollRegionEl;
+    if (region !== this.observedRegion) {
+      this.regionObserver?.disconnect();
+      this.regionObserver = undefined;
+      this.observedRegion = region;
+      if (region && typeof ResizeObserver !== 'undefined') {
+        this.regionObserver = new ResizeObserver(() => this.updateScrollEdges());
+        this.regionObserver.observe(region);
+      }
+    }
+    this.updateScrollEdges();
   }
 
   /** Arrow keys scroll the focused region by `space.10`. */
@@ -975,8 +1044,8 @@ export class DsTable extends LitElement {
     if (this.columns.filter((column) => column.isRowHeader).length > 1) {
       this.warnOnce('<ds-table>: exactly one column may set `isRowHeader`; the first is used.');
     }
-    if (this.rowPressListeners > 0 && !this.rowHeaderColumn) {
-      this.warnOnce('<ds-table>: `row-press` needs an `isRowHeader` column; rows stay inert.');
+    if (this.pressableRows && !this.rowHeaderColumn) {
+      this.warnOnce('<ds-table>: `pressable-rows` needs an `isRowHeader` column; rows stay inert.');
     }
   }
 }

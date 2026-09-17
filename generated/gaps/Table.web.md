@@ -43,3 +43,17 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Table: the transition binding also covers 'sort-arrow changes', but the arrow is an Icon inside Button and can't be styled from outside, so only the row hover background transitions.
 - Table: the selected-row start-edge bar is an inset box-shadow on the first cell (on the row itself when stacked), mirrored with :dir(rtl). The spec doesn't say how to draw it; a border would shift the layout.
 - Table: the actions column header 'Actions' is visually hidden with no part named; it uses columnHeader.
+
+## 2026-09-17 13:39 — round 1
+
+- Table: the web platform notes say `element: table` but the guidance and notes put the root on a `<div data-ds="Table">` container with the Heading as a sibling of the table; kept the div root (`Ref<HTMLDivElement>`), with aria-busy/aria-rowcount/aria-colcount on the inner `<table role="table">`.
+- Table: the web guidance still says `<caption id>` inside the table, contradicting the platform notes (Heading as a sibling referenced by aria-labelledby); followed the platform notes.
+- Table: rowHover applies to rows with 'a Link in the row header', but a `render` function's output cannot be inspected; used CSS `:has(> rowHeader a[href]):hover` without the pointer cursor or row click that onRowPress rows get.
+- Table: scrollFade 'an edge fades only while columns are hidden past it' has no stated measurement; used scrollLeft vs scrollWidth-clientWidth with 1px tolerance, re-measured on scroll and ResizeObserver (region + table), with the mask direction flipped under RTL.
+- Table: stickyHeader in `responsive: scroll` without `maxHeight: viewport` 'has no effect' — chose not to run the header-shadow IntersectionObserver there at all.
+- Table: the loading Text shown with rows has no size in the spec; used Text size sm, tone muted, matching the table's fontSize binding.
+- Table: a string `footer` renders in Text, but the element is unspecified; used `<p>`. `false` is treated like absent.
+- Table: `hideCaption` sends `space.0` for the Heading's marginBlockEnd instead of captionGap so a hidden caption leaves no gap; the spec does not say whether captionGap still applies when hidden.
+- Table: `width: fill` has no web recipe (only `min` does); used `inline-size: 100%`.
+- Table: container-query breakpoints read layout.maxWidth.prose/content as built numbers (572px/960px, calm-precise) with literal-ok, so another theme with a different content width (warm-friendly 1040px) needs a CSS rebuild — the spec does not say how per-theme breakpoints reach the stylesheet.
+- Table: arrow-key scrolling reads `--space-10` via getComputedStyle and parseFloat, which assumes the token builds to px.

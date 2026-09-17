@@ -119,6 +119,7 @@ export const NoStickyHeader: Story = { args: { stickyHeader: false } };
 export const Striped: Story = { args: { striped: true } };
 export const Empty: Story = { args: { data: [] } };
 export const Loading: Story = { args: { loading: true } };
+export const LoadingEmpty: Story = { args: { loading: true, data: [] } };
 export const DefaultSortDescending: Story = { args: { defaultSort: { column: 'amount', direction: 'descending' } } };
 
 export const LinkInRowHeader: Story = {
@@ -141,7 +142,11 @@ export const WithRowActions: Story = {
   },
 };
 
-export const WithFooter: Story = {
+/** A string footer renders in Text with the table's font bindings. */
+export const WithFooter: Story = { args: { footer: 'Total due: 300' } };
+
+/** Other footer content brings its own typography. */
+export const WithFooterContent: Story = {
   args: {
     footer: (
       <Text element="p" size="sm" tone="muted">

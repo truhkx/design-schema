@@ -152,17 +152,17 @@ describe('ds-table', () => {
   /* derived: props.captionLevel */
   it('renders-caption-level-2', async () => {
     const s = await setup({ captionLevel: '2' });
-    expect(s.part('caption')!.querySelector('ds-heading')).toHaveAttribute('level', '2');
+    expect(s.part('caption')).toHaveAttribute('level', '2');
   });
 
   it('renders-caption-level-3', async () => {
     const s = await setup({ captionLevel: '3' });
-    expect(s.part('caption')!.querySelector('ds-heading')).toHaveAttribute('level', '3');
+    expect(s.part('caption')).toHaveAttribute('level', '3');
   });
 
   it('renders-caption-level-4', async () => {
     const s = await setup({ captionLevel: '4' });
-    expect(s.part('caption')!.querySelector('ds-heading')).toHaveAttribute('level', '4');
+    expect(s.part('caption')).toHaveAttribute('level', '4');
   });
 
   /* derived: props.selectable */

@@ -65,7 +65,7 @@ const meta: Meta<CarouselArgs> = {
     snap: true,
   },
   render: (args) =>
-    carousel(args, slides(['Aria desk lamp', 'Solstice mug', 'Range planter'], () => 'A product worth a closer look.')),
+    carousel(args, slides(['Product 1', 'Product 2', 'Product 3'], () => 'A product worth a closer look.')),
 };
 
 export default meta;
@@ -87,7 +87,7 @@ export const Controlled: Story = { args: { activeIndex: 1 } };
 export const FeaturedProducts: Story = {
   args: { label: 'Featured products' },
   render: (args) =>
-    carousel(args, slides(['Aria desk lamp', 'Solstice mug', 'Range planter', 'Ledger notebook'], () => 'A product card.')),
+    carousel(args, slides(['Product 1', 'Product 2', 'Product 3', 'Product 4'], () => 'A product worth a closer look.')),
 };
 
 export const NamedSlidesWithTabs: Story = {
@@ -98,13 +98,17 @@ export const NamedSlidesWithTabs: Story = {
 
 export const AmbientHero: Story = {
   args: { label: 'Customer stories', autoplay: true, interval: 8000, loop: true },
-  render: (args) => carousel(args, slides(['Harbour at dawn', 'Studio floor', 'Night market'], () => 'A photograph.')),
+  render: (args) =>
+    carousel(args, slides(['Story 1', 'Story 2', 'Story 3'], () => 'Stands in for a photograph.')),
 };
 
 export const ThreeUpGallery: Story = {
   args: { label: 'Gallery', perView: 3, picker: 'none' },
   render: (args) =>
-    carousel(args, slides(['One', 'Two', 'Three', 'Four', 'Five', 'Six'], (name) => `Image ${name}.`)),
+    carousel(
+      args,
+      slides(['Image 1', 'Image 2', 'Image 3', 'Image 4', 'Image 5', 'Image 6'], () => 'Stands in for an image.'),
+    ),
 };
 
 /** Present with its controls: previous, next and three picker tabs are focusable. */

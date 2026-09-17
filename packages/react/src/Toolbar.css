@@ -51,13 +51,25 @@
   overflow: hidden;
 }
 
+/* Each edge fades only while content is hidden past it: the component toggles --fade-start and
+   --fade-end on scroll and on size changes, and each sets its stop's length to fadeWidth. */
 .ds-toolbar--overflow-scroll {
+  --ds-toolbar-fade-start: 0px; /* literal-ok: zero-length fade stop */
+  --ds-toolbar-fade-end: 0px; /* literal-ok: zero-length fade stop */
   flex-wrap: nowrap;
   overflow-x: auto;
   scrollbar-width: none;
   /* mask-image stops are alpha (black = opaque), not a design color. */
-  mask-image: linear-gradient(to right, transparent, black var(--ds-toolbar-fade-width), black calc(100% - var(--ds-toolbar-fade-width)), transparent); /* literal-ok: mask alpha stop */
-  -webkit-mask-image: linear-gradient(to right, transparent, black var(--ds-toolbar-fade-width), black calc(100% - var(--ds-toolbar-fade-width)), transparent); /* literal-ok: mask alpha stop */
+  mask-image: linear-gradient(var(--ds-toolbar-fade-direction, to right), transparent, black var(--ds-toolbar-fade-start), black calc(100% - var(--ds-toolbar-fade-end)), transparent); /* literal-ok: mask alpha stop */
+  -webkit-mask-image: linear-gradient(var(--ds-toolbar-fade-direction, to right), transparent, black var(--ds-toolbar-fade-start), black calc(100% - var(--ds-toolbar-fade-end)), transparent); /* literal-ok: mask alpha stop */
+}
+
+.ds-toolbar--overflow-scroll.ds-toolbar--fade-start {
+  --ds-toolbar-fade-start: var(--ds-toolbar-fade-width);
+}
+
+.ds-toolbar--overflow-scroll.ds-toolbar--fade-end {
+  --ds-toolbar-fade-end: var(--ds-toolbar-fade-width);
 }
 
 .ds-toolbar--overflow-scroll::-webkit-scrollbar {
@@ -65,10 +77,9 @@
 }
 
 .ds-toolbar--vertical.ds-toolbar--overflow-scroll {
+  --ds-toolbar-fade-direction: to bottom;
   overflow-x: hidden;
   overflow-y: auto;
-  mask-image: linear-gradient(to bottom, transparent, black var(--ds-toolbar-fade-width), black calc(100% - var(--ds-toolbar-fade-width)), transparent); /* literal-ok: mask alpha stop */
-  -webkit-mask-image: linear-gradient(to bottom, transparent, black var(--ds-toolbar-fade-width), black calc(100% - var(--ds-toolbar-fade-width)), transparent); /* literal-ok: mask alpha stop */
 }
 
 .ds-toolbar__group {

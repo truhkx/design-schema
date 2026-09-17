@@ -43,8 +43,9 @@ describe('Table', () => {
       ],
       onSortChange,
     });
-    const sortButton = screen.getAllByTestId('Table.sortButton')[0]!;
-    fireEvent.press(within(sortButton).getByRole('button'));
+    // The sort control is a Button in the header row on wide layouts and in the sort Toolbar when
+    // stacked; its accessible name is the same phrase either way.
+    fireEvent.press(screen.getByLabelText('Sort by Amount, ascending'));
     expect(onSortChange).toHaveBeenCalledWith('amount', 'ascending');
   });
 

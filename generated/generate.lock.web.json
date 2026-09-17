@@ -212,20 +212,20 @@
     }
   },
   "Carousel.web": {
-    "hash": "6617b7c49aef92a0",
-    "lastAttemptHash": "6617b7c49aef92a0",
-    "generatedAt": "2026-09-16T14:52:31+00:00",
+    "hash": "af3647e25cf32094",
+    "lastAttemptHash": "af3647e25cf32094",
+    "generatedAt": "2026-09-17T17:28:40+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.4654,
+    "costUsd": 1.9908,
     "files": [
       "packages/react/src/Carousel.css",
       "packages/react/src/Carousel.stories.tsx",
       "packages/react/src/Carousel.test.tsx",
       "packages/react/src/Carousel.tsx"
     ],
-    "gaps": 15,
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1052,20 +1052,19 @@
     }
   },
   "Table.web": {
-    "hash": "e6f837f0d78d84f2",
-    "lastAttemptHash": "e6f837f0d78d84f2",
-    "generatedAt": "2026-09-16T15:08:17+00:00",
+    "hash": "4a2a708516aa76cf",
+    "lastAttemptHash": "4a2a708516aa76cf",
+    "generatedAt": "2026-09-17T17:39:42+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 3.0677,
+    "costUsd": 1.8613,
     "files": [
       "packages/react/src/Table.css",
       "packages/react/src/Table.stories.tsx",
-      "packages/react/src/Table.test.tsx",
       "packages/react/src/Table.tsx"
     ],
-    "gaps": 18,
+    "gaps": 11,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1148,20 +1147,20 @@
     }
   },
   "Toolbar.web": {
-    "hash": "3426a01f0a1add78",
-    "lastAttemptHash": "3426a01f0a1add78",
-    "generatedAt": "2026-09-16T14:38:39+00:00",
+    "hash": "7fb743eb5769bf2b",
+    "lastAttemptHash": "7fb743eb5769bf2b",
+    "generatedAt": "2026-09-17T17:18:45+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.1917,
+    "costUsd": 1.423,
     "files": [
       "packages/react/src/Toolbar.css",
       "packages/react/src/Toolbar.stories.tsx",
       "packages/react/src/Toolbar.test.tsx",
       "packages/react/src/Toolbar.tsx"
     ],
-    "gaps": 10,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,

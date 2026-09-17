@@ -34,6 +34,7 @@ const COPY: {
   play: string;
   pause: string;
   slideLabel: string;
+  pickerLabel: string;
   goTo: string;
   announce: string;
 } = {
@@ -42,36 +43,49 @@ const COPY: {
   play: 'Start automatic rotation',
   pause: 'Stop automatic rotation',
   slideLabel: '{n} of {total}',
+  pickerLabel: 'Choose a slide',
   goTo: 'Go to slide {n}',
   announce: 'Slide {n} of {total}',
 };
 
 /** constants.minInterval: the floor `interval` is raised to, so autoplay never outpaces reading. */
 const MIN_INTERVAL: number = 5000;
-/** The share of a slide that must be visible for it to count as the current one. */
+/** The share of a slide that must be visible for it to count as visible. */
 const VISIBLE_THRESHOLD: number = 0.6;
-/** How long a programmatic scroll may take before the observer trusts what is visible again. */
-const PROGRAMMATIC_SCROLL_GRACE: number = 1000;
+/** layout.maxWidth.prose, read from the token at measurement time rather than its value today. */
+const PROSE_WIDTH_VAR = '--layout-max-width-prose';
 
 /** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
 export type CarouselOverridableBinding =
   | 'slideGap'
   | 'controlOffset'
+  | 'controlRadius'
   | 'controlShadow'
   | 'pickerGap'
   | 'pickerOffset'
   | 'dotSize'
   | 'radius'
+  | 'tabFontSize'
+  | 'tabFontWeight'
+  | 'tabPaddingBlock'
+  | 'tabPaddingInline'
+  | 'fontFamily'
   | 'transition';
 
 const OVERRIDE_HOOK: Record<CarouselOverridableBinding, string> = {
   slideGap: '--ds-carousel-slide-gap',
   controlOffset: '--ds-carousel-control-offset',
+  controlRadius: '--ds-carousel-control-radius',
   controlShadow: '--ds-carousel-control-shadow',
   pickerGap: '--ds-carousel-picker-gap',
   pickerOffset: '--ds-carousel-picker-offset',
   dotSize: '--ds-carousel-dot-size',
   radius: '--ds-carousel-radius',
+  tabFontSize: '--ds-carousel-tab-font-size',
+  tabFontWeight: '--ds-carousel-tab-font-weight',
+  tabPaddingBlock: '--ds-carousel-tab-padding-block',
+  tabPaddingInline: '--ds-carousel-tab-padding-inline',
+  fontFamily: '--ds-carousel-font-family',
   transition: '--ds-carousel-transition',
 };
 
@@ -113,6 +127,18 @@ function useReducedMotion(): boolean {
   return useSyncExternalStore(subscribeReducedMotion, getReducedMotion, () => false);
 }
 
+/** Resolves a length custom property to pixels (px or rem); null when it cannot be read. */
+function readLengthVar(element: Element, name: string): number | null {
+  const raw = getComputedStyle(element).getPropertyValue(name).trim();
+  const value = Number.parseFloat(raw);
+  if (!Number.isFinite(value)) return null;
+  if (raw.endsWith('rem')) {
+    const rootSize = Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
+    return Number.isFinite(rootSize) ? value * rootSize : null;
+  }
+  return raw.endsWith('px') || /^[\d.]+$/.test(raw) ? value : null;
+}
+
 /* ------------------------------------------------------------------------------------------------ */
 /* CarouselSlide                                                                                     */
 /* ------------------------------------------------------------------------------------------------ */
@@ -128,10 +154,10 @@ interface SlideContextValue {
 const SlideContext: Context<SlideContextValue | null> = createContext<SlideContextValue | null>(null);
 
 export interface CarouselSlideProps
-  extends Omit<ComponentPropsWithoutRef<'div'>, 'role' | 'aria-label' | 'className' | 'style' | 'id'> {
+  extends Omit<ComponentPropsWithoutRef<'div'>, 'role' | 'aria-label' | 'className' | 'style' | 'id' | 'children'> {
   /**
-   * The slide's name in the picker (tab text) and the announcement. A plain string, not read from
-   * the rendered content; repeat it visibly as the slide's own heading.
+   * The slide's name in the tabs picker. A plain string, not read from the rendered content; repeat
+   * it visibly as the slide's own heading.
    */
   label: string;
   /** The slide's content; a Card is the usual shape. */
@@ -139,7 +165,7 @@ export interface CarouselSlideProps
 }
 
 /** One slide — a direct child of `Carousel`, one per slide, in order. */
-export const CarouselSlide = function CarouselSlide({
+export function CarouselSlide({
   ref,
   label: _label,
   children,
@@ -168,7 +194,7 @@ export const CarouselSlide = function CarouselSlide({
       {children}
     </div>
   );
-};
+}
 
 /** `Children.toArray` keeps fragments whole; slides written inside `<>…</>` are unwrapped here. */
 function collectSlides(children: ReactNode): ReactElement<CarouselSlideProps>[] {
@@ -195,8 +221,8 @@ export interface CarouselProps
   /** One `CarouselSlide` per slide. A slide is any content; a Card is the usual shape. Slides should be equal height. */
   children: ReactNode;
   /**
-   * How many slides are visible at once at the widest layout; fewer are shown as the viewport
-   * narrows (one below the prose width).
+   * How many slides are visible at once at the widest layout. The page size is `perView` while the
+   * viewport's own width is above `layout.maxWidth.prose` and 1 at or below it.
    */
   perView?: number | undefined;
   /** Next from the last returns to the first. Off by default so users can tell where the end is. */
@@ -208,8 +234,8 @@ export interface CarouselProps
    */
   autoplay?: boolean | undefined;
   /**
-   * Milliseconds between automatic advances; values below 5000 are raised to 5000 on every
-   * platform (with a development warning).
+   * Milliseconds between automatic advances; values below 5000 are raised to 5000 in every build,
+   * with a development warning once per instance while `autoplay` is on.
    */
   interval?: number | undefined;
   /**
@@ -225,7 +251,7 @@ export interface CarouselProps
   overrides?: Partial<Record<CarouselOverridableBinding, TokenRef | undefined>> | undefined;
   /**
    * Fired when the current slide changes, with the new index and the reason (`next`, `prev`,
-   * `picker`, `swipe`, `autoplay`).
+   * `picker`, `swipe`, `autoplay`). A change of a controlled `activeIndex` never fires it.
    */
   onChange?: ((index: number, reason: CarouselChangeReason) => void) | undefined;
 }
@@ -235,12 +261,12 @@ export interface CarouselProps
  *
  * When to use:
  * Use a Carousel for a small set (three to eight) of peer items too rich to show as a grid —
- * featured products with images, testimonials, a gallery — where paging is a reasonable way to
- * see them all. Use `picker: tabs` when slides have meaningful names ("Plans", "Pricing"); `dots`
- * for images. Leave `autoplay` off unless the content is ambient (a hero of photographs) and even
- * then keep the pause control visible.
+ * featured products with images, testimonials, a gallery — where paging is a reasonable way to see
+ * them all. Use `picker: tabs` when slides have meaningful names ("Plans", "Pricing"); `dots` for
+ * images. Leave `autoplay` off unless the content is ambient (a hero of photographs) and even then
+ * keep the pause control visible.
  */
-export const Carousel = function Carousel({
+export function Carousel({
   ref,
   label,
   children,
@@ -266,76 +292,91 @@ export const Carousel = function Carousel({
   const slides = collectSlides(children);
   const total = slides.length;
 
-  // perView is an integer; below the prose width the CSS collapses it to one, and the measured
-  // value (from the rendered slide width) drives paging so the arrows match what is visible.
+  // perView applies until the viewport is first measured; at or below the prose width the page is one.
   const requestedPerView = Math.max(1, Math.floor(perView));
-  const [measuredPerView, setMeasuredPerView] = useState<number | null>(null);
-  const pageSize = Math.min(measuredPerView ?? requestedPerView, Math.max(total, 1));
+  const [narrow, setNarrow] = useState<boolean | null>(null);
+  const pageSize = Math.min(narrow ? 1 : requestedPerView, Math.max(total, 1));
   const lastStart = Math.max(total - pageSize, 0);
 
+  // The current index is the first visible slide, so it never passes total − page.
   const isControlled = activeIndex !== undefined;
   const [internalIndex, setInternalIndex] = useState(0);
   const rawIndex = isControlled ? Math.floor(activeIndex) : internalIndex;
-  const current = total === 0 ? 0 : Math.min(Math.max(rawIndex, 0), total - 1);
-  const visibleStart = Math.min(current, lastStart);
+  const current = Math.min(Math.max(rawIndex, 0), lastStart);
 
   const reducedMotion = useReducedMotion();
   const effectiveInterval = Math.max(interval, MIN_INTERVAL);
   // stopped: the user pressed pause; only play clears it. The interruptions last as long as the
-  // hover, focus or touch does.
+  // hover, focus or touch does. Reaching the end without loop also counts as stopped.
   const [stopped, setStopped] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
   const [touched, setTouched] = useState(false);
   const canRotate = autoplay && !reducedMotion;
-  const rotating = canRotate && !stopped && !hovered && !focused && !touched;
+  const atEnd = total <= pageSize || (!loop && current >= lastStart);
+  const playing = canRotate && !stopped && !atEnd;
+  const rotating = playing && !hovered && !focused && !touched;
 
   const [announcement, setAnnouncement] = useState('');
+  const [pickerFocus, setPickerFocus] = useState<number | null>(null);
+  // Bumped after a swipe so a controlled parent that keeps activeIndex gets scrolled back.
+  const [swipeTick, setSwipeTick] = useState(0);
 
   const rootRef = useRef<HTMLElement | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
-  const trackRef = useRef<HTMLDivElement | null>(null);
   const slideNodes = useRef<Array<HTMLDivElement | null>>([]);
   const pickerNodes = useRef<Array<HTMLButtonElement | null>>([]);
   const prevButtonRef = useRef<HTMLButtonElement | null>(null);
   const nextButtonRef = useRef<HTMLButtonElement | null>(null);
-  const programmaticTarget = useRef<number | null>(null);
+  const playButtonRef = useRef<HTMLButtonElement | null>(null);
   const lastScrolledTo = useRef<number | null>(null);
-  const lastReason = useRef<CarouselChangeReason | null>(null);
+  const userScroll = useRef(false);
+  const firstVisible = useRef<number | null>(null);
   const warnedInterval = useRef(false);
+  const warnedLabel = useRef(false);
 
   useEffect(() => {
-    if (isDev && interval < MIN_INTERVAL && !warnedInterval.current) {
+    if (isDev && autoplay && interval < MIN_INTERVAL && !warnedInterval.current) {
       warnedInterval.current = true;
       console.warn(`Carousel: \`interval\` ${interval}ms is below the ${MIN_INTERVAL}ms minimum; using ${MIN_INTERVAL}ms.`);
     }
-  }, [interval]);
+  }, [autoplay, interval]);
+
+  const missingLabel = picker === 'tabs' && slides.some((slide) => !slide.props.label);
+  useEffect(() => {
+    if (isDev && missingLabel && !warnedLabel.current) {
+      warnedLabel.current = true;
+      console.warn('Carousel: every CarouselSlide needs a `label`; the tab falls back to "Go to slide {n}".');
+    }
+  }, [missingLabel]);
 
   const goTo = (index: number, reason: CarouselChangeReason): void => {
     if (total === 0) return;
-    const next = Math.min(Math.max(index, 0), total - 1);
+    const next = Math.min(Math.max(index, 0), lastStart);
     if (next === current) return;
-    lastReason.current = reason;
     if (!isControlled) setInternalIndex(next);
     onChange?.(next, reason);
     // Changes the user made are announced; automatic ones are not (WCAG 4.1.3, APG carousel).
     if (reason !== 'autoplay') setAnnouncement(fill(COPY.announce, { n: next + 1, total }));
   };
 
-  // The observer and timers read the latest render through this ref rather than re-subscribing.
-  const latest = useRef({ goTo, current, pageSize, lastStart });
-  latest.current = { goTo, current, pageSize, lastStart };
+  // Observers and timers read the latest render through this ref rather than re-subscribing.
+  const latest = useRef({ goTo, current, lastStart });
+  latest.current = { goTo, current, lastStart };
 
-  const nextIndex = (from: number): number => (loop && from >= lastStart ? 0 : Math.min(from + pageSize, lastStart));
-  const prevIndex = (from: number): number => (loop && from <= 0 ? lastStart : Math.max(Math.min(from, lastStart) - pageSize, 0));
-
-  const prevDisabled = total <= pageSize || (!loop && visibleStart <= 0);
+  const prevDisabled = total <= pageSize || (!loop && current <= 0);
   const nextDisabled = total <= pageSize || (!loop && current >= lastStart);
 
-  const handlePrev = (): void => goTo(prevIndex(current), 'prev');
-  const handleNext = (): void => goTo(nextIndex(current), 'next');
+  const handleNext = (): void => {
+    if (nextDisabled) return;
+    goTo(current >= lastStart ? 0 : Math.min(current + pageSize, lastStart), 'next');
+  };
+  const handlePrev = (): void => {
+    if (prevDisabled) return;
+    goTo(current <= 0 ? lastStart : Math.max(current - pageSize, 0), 'prev');
+  };
 
-  // The part wrappers extend the pointer target; a click on the wrapper itself activates its Button.
+  // The part wrappers pass a click on themselves through to their Button.
   const forwardClick =
     (buttonRef: { current: HTMLButtonElement | null }) =>
     (event: ReactMouseEvent<HTMLSpanElement>): void => {
@@ -345,27 +386,30 @@ export const Carousel = function Carousel({
     };
 
   const togglePlay = (): void => {
-    if (stopped) {
-      // Play is an explicit request: it overrides the focus that pressing it just moved here.
-      setStopped(false);
-      setHovered(false);
-      setFocused(false);
-      setTouched(false);
-    } else {
+    if (playing) {
       setStopped(true);
+      return;
     }
+    // Play is an explicit request: it clears the hover/focus/touch pauses, so rotation resumes at once.
+    setStopped(false);
+    setHovered(false);
+    setFocused(false);
+    setTouched(false);
+    // Stopped at the end without loop: play restarts rotation from the first slide.
+    if (!loop && total > pageSize && current >= lastStart) goTo(0, 'autoplay');
   };
 
-  // Keyboard on the picker: ArrowRight/ArrowLeft/Home/End, wrapping as Tabs does.
+  // Picker keys move one slide (not one page), wrapping as Tabs does; focus and selection move together.
   const handlePickerKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>): void => {
     if (total === 0) return;
+    const from = pickerFocus ?? current;
     let target: number;
     switch (event.key) {
       case 'ArrowRight':
-        target = (current + 1) % total;
+        target = (from + 1) % total;
         break;
       case 'ArrowLeft':
-        target = (current - 1 + total) % total;
+        target = (from - 1 + total) % total;
         break;
       case 'Home':
         target = 0;
@@ -378,98 +422,98 @@ export const Carousel = function Carousel({
     }
     event.preventDefault();
     goTo(target, 'picker');
+    setPickerFocus(target);
     pickerNodes.current[target]?.focus();
   };
 
   // Autoplay: one timeout per current slide, so each wait is a full interval after the last change.
-  // Without loop it stops at the last page instead of wrapping.
   useEffect(() => {
-    if (!rotating || total <= pageSize) return undefined;
-    if (!loop && current >= lastStart) return undefined;
+    if (!rotating) return undefined;
     const id = window.setTimeout(() => {
-      const { goTo: move, current: from, lastStart: end, pageSize: size } = latest.current;
-      move(loop && from >= end ? 0 : Math.min(from + size, end), 'autoplay');
+      const { goTo: move, current: from, lastStart: end } = latest.current;
+      move(from >= end ? 0 : Math.min(from + pageSize, end), 'autoplay');
     }, effectiveInterval);
     return () => window.clearTimeout(id);
-  }, [rotating, effectiveInterval, current, loop, total, pageSize, lastStart]);
+  }, [rotating, effectiveInterval, current, pageSize]);
 
-  // Bring the current slide to the viewport's inline start. The viewport is scrolled directly
-  // (not scrollIntoView) so the page itself never jumps, including on mount and during autoplay.
+  // Bring the current slide to the viewport's inline start by scrolling the viewport itself (never
+  // scrollIntoView, which would also scroll the page). Instant the first time and under reduced motion.
   useEffect(() => {
     const viewport = viewportRef.current;
-    const slide = slideNodes.current[visibleStart];
-    if (!viewport || !slide) return undefined;
-    if (lastReason.current === 'swipe') {
-      // The user already scrolled it there.
-      lastReason.current = null;
-      lastScrolledTo.current = visibleStart;
-      return undefined;
-    }
-    if (lastScrolledTo.current === visibleStart) return undefined;
+    const slide = slideNodes.current[current];
+    if (!viewport || !slide) return;
+    if (lastScrolledTo.current === current) return;
     const isFirstScroll = lastScrolledTo.current === null;
-    lastScrolledTo.current = visibleStart;
-    if (typeof viewport.scrollBy !== 'function') return undefined;
+    lastScrolledTo.current = current;
+    if (typeof viewport.scrollBy !== 'function') return;
     const viewportRect = viewport.getBoundingClientRect();
     const slideRect = slide.getBoundingClientRect();
     const rtl = getComputedStyle(viewport).direction === 'rtl';
     const delta = rtl ? slideRect.right - viewportRect.right : slideRect.left - viewportRect.left;
-    if (delta === 0) return undefined;
-    programmaticTarget.current = visibleStart;
+    if (delta === 0) return;
+    // A scroll we start is not a swipe; the move already reported its own reason.
+    userScroll.current = false;
     viewport.scrollBy({ left: delta, behavior: reducedMotion || isFirstScroll ? 'instant' : 'smooth' });
-    const timeout = window.setTimeout(() => {
-      programmaticTarget.current = null;
-    }, PROGRAMMATIC_SCROLL_GRACE);
-    return () => {
-      window.clearTimeout(timeout);
-      programmaticTarget.current = null;
-    };
-  }, [visibleStart, reducedMotion]);
+  }, [current, reducedMotion, swipeTick]);
 
-  // Swipe and trackpad scrolling: the first slide at least 60% visible becomes current. The ratio
-  // table is kept across callbacks (each only reports the entries that changed), and a change is
-  // reported only when it differs from the current index, so the initial notification converges.
+  // Swipe and trackpad scrolling: a user-started scroll that settles on a new first visible slide
+  // reports `swipe`. Settling is `scrollend` where supported, otherwise each observer delivery.
   useEffect(() => {
     const viewport = viewportRef.current;
-    if (!viewport || typeof IntersectionObserver === 'undefined') return undefined;
+    if (!viewport) return undefined;
+    const settle = (): void => {
+      const first = firstVisible.current;
+      if (!userScroll.current || first === null) return;
+      const { goTo: move, current: from, lastStart: end } = latest.current;
+      const index = Math.min(first, end);
+      // The viewport already shows `index`; if a controlled parent keeps activeIndex, scroll back.
+      lastScrolledTo.current = index;
+      if (index !== from) {
+        move(index, 'swipe');
+        setSwipeTick((tick) => tick + 1);
+      }
+    };
+    const hasScrollEnd = 'onscrollend' in viewport;
+    if (hasScrollEnd) viewport.addEventListener('scrollend', settle);
     const ratios = new Map<Element, number>();
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) ratios.set(entry.target, entry.intersectionRatio);
-        const first = slideNodes.current.findIndex((node) => node !== null && (ratios.get(node) ?? 0) >= VISIBLE_THRESHOLD);
-        if (first === -1) return;
-        if (programmaticTarget.current !== null) {
-          if (first === programmaticTarget.current) programmaticTarget.current = null;
-          return;
-        }
-        const { goTo: move, current: from, lastStart: end } = latest.current;
-        if (first !== Math.min(from, end)) move(first, 'swipe');
-      },
-      { root: viewport, threshold: VISIBLE_THRESHOLD },
-    );
-    for (const node of slideNodes.current) if (node) observer.observe(node);
-    return () => observer.disconnect();
+    const observer =
+      typeof IntersectionObserver === 'undefined'
+        ? null
+        : new IntersectionObserver(
+            (entries) => {
+              for (const entry of entries) ratios.set(entry.target, entry.intersectionRatio);
+              const first = slideNodes.current.findIndex((node) => node !== null && (ratios.get(node) ?? 0) >= VISIBLE_THRESHOLD);
+              if (first === -1) return;
+              firstVisible.current = first;
+              if (!hasScrollEnd) settle();
+            },
+            { root: viewport, threshold: VISIBLE_THRESHOLD },
+          );
+    if (observer) for (const node of slideNodes.current) if (node) observer.observe(node);
+    return () => {
+      if (hasScrollEnd) viewport.removeEventListener('scrollend', settle);
+      observer?.disconnect();
+    };
   }, [total]);
 
-  // Measure how many slides the layout actually shows (perView collapses below the prose width).
-  // ResizeObserver delivers once on observe(); state is set only when the count changes.
+  // Page size: compare the viewport's own width with layout.maxWidth.prose. ResizeObserver delivers
+  // once on observe(); state is set only when the width changes and the answer differs.
   useEffect(() => {
     const viewport = viewportRef.current;
-    const track = trackRef.current;
-    if (!viewport || !track || typeof ResizeObserver === 'undefined') return undefined;
+    if (!viewport || typeof ResizeObserver === 'undefined') return undefined;
     let lastWidth = -1;
     const observer = new ResizeObserver(() => {
       const width = viewport.clientWidth;
-      if (width === lastWidth) return;
+      if (width === lastWidth || width === 0) return;
       lastWidth = width;
-      const slide = slideNodes.current[0];
-      if (!slide || width === 0 || slide.offsetWidth === 0) return;
-      const gap = Number.parseFloat(getComputedStyle(track).columnGap) || 0;
-      const count = Math.max(1, Math.round((width + gap) / (slide.offsetWidth + gap)));
-      setMeasuredPerView((previous) => (previous === count ? previous : count));
+      const prose = readLengthVar(viewport, PROSE_WIDTH_VAR);
+      if (prose === null) return;
+      const next = width <= prose;
+      setNarrow((previous) => (previous === next ? previous : next));
     });
     observer.observe(viewport);
     return () => observer.disconnect();
-  }, [total, requestedPerView]);
+  }, []);
 
   const setRootRef = (node: HTMLElement | null): void => {
     rootRef.current = node;
@@ -482,14 +526,23 @@ export const Carousel = function Carousel({
     if (!rootRef.current?.contains(event.relatedTarget as Node | null)) setFocused(false);
   };
 
+  const markUserScroll = (): void => {
+    userScroll.current = true;
+  };
+
   const classes = ['ds-carousel', snap ? null : 'ds-carousel--no-snap'].filter(Boolean).join(' ');
   const rootStyle = {
     '--ds-carousel-per-view': requestedPerView,
     ...(overrides ? overridesToStyle(overrides) : null),
   } as CSSProperties;
 
-  const pickerItemId = (index: number): string => `${baseId}-picker-${index}`;
   const slideId = (index: number): string => `${baseId}-slide-${index}`;
+  // Roving tabindex: the focused item while it is on the current page, else the current slide's item.
+  const tabStop = pickerFocus !== null && pickerFocus >= current && pickerFocus < current + pageSize ? pickerFocus : current;
+  const onCurrentPage = (index: number): boolean => index >= current && index < current + pageSize;
+  const pickerItemRef = (index: number) => (node: HTMLButtonElement | null): void => {
+    pickerNodes.current[index] = node;
+  };
 
   return (
     <section
@@ -529,8 +582,8 @@ export const Carousel = function Carousel({
       }}
     >
       {canRotate ? (
-        <span className="ds-carousel__play" data-part="playButton">
-          <Button variant="secondary" label={stopped ? COPY.play : COPY.pause} onClick={togglePlay} />
+        <span className="ds-carousel__play" data-part="playButton" onClick={forwardClick(playButtonRef)}>
+          <Button ref={playButtonRef} variant="secondary" label={playing ? COPY.pause : COPY.play} onClick={togglePlay} />
         </span>
       ) : null}
       <div className="ds-carousel__stage">
@@ -563,59 +616,68 @@ export const Carousel = function Carousel({
           </span>
         </span>
         {picker === 'dots' ? (
-          <div role="group" aria-label={label} className="ds-carousel__picker" data-part="picker" onKeyDown={handlePickerKeyDown}>
-            {slides.map((slide, index) => {
-              const selected = index === current;
-              return (
-                <button
-                  key={slide.key ?? index}
-                  ref={(node) => {
-                    pickerNodes.current[index] = node;
-                  }}
-                  type="button"
-                  id={pickerItemId(index)}
-                  aria-label={fill(COPY.goTo, { n: index + 1 })}
-                  aria-current={selected ? 'true' : undefined}
-                  aria-controls={slideId(index)}
-                  tabIndex={selected ? 0 : -1}
-                  className="ds-carousel__dot"
-                  data-part="pickerItem"
-                  onClick={() => goTo(index, 'picker')}
-                >
-                  <span className="ds-carousel__dot-mark" aria-hidden="true" />
-                </button>
-              );
-            })}
+          <div
+            role="group"
+            aria-label={COPY.pickerLabel}
+            className="ds-carousel__picker"
+            data-part="picker"
+            onKeyDown={handlePickerKeyDown}
+          >
+            {slides.map((slide, index) => (
+              <button
+                key={slide.key ?? index}
+                ref={pickerItemRef(index)}
+                type="button"
+                aria-label={fill(COPY.goTo, { n: index + 1 })}
+                aria-current={onCurrentPage(index) ? 'true' : undefined}
+                aria-controls={slideId(index)}
+                tabIndex={index === tabStop ? 0 : -1}
+                className="ds-carousel__dot"
+                data-part="pickerItem"
+                onFocus={() => setPickerFocus(index)}
+                onClick={() => goTo(index, 'picker')}
+              >
+                <span className="ds-carousel__dot-mark" aria-hidden="true" />
+              </button>
+            ))}
           </div>
         ) : null}
         {picker === 'tabs' ? (
-          <div role="tablist" aria-label={label} className="ds-carousel__picker" data-part="picker" onKeyDown={handlePickerKeyDown}>
-            {slides.map((slide, index) => {
-              const selected = index === current;
-              return (
-                <button
-                  key={slide.key ?? index}
-                  ref={(node) => {
-                    pickerNodes.current[index] = node;
-                  }}
-                  type="button"
-                  role="tab"
-                  id={pickerItemId(index)}
-                  aria-selected={selected ? 'true' : 'false'}
-                  aria-controls={slideId(index)}
-                  tabIndex={selected ? 0 : -1}
-                  className="ds-carousel__tab"
-                  data-part="pickerItem"
-                  onClick={() => goTo(index, 'picker')}
-                >
-                  {slide.props.label}
-                </button>
-              );
-            })}
+          <div
+            role="tablist"
+            aria-label={COPY.pickerLabel}
+            className="ds-carousel__picker"
+            data-part="picker"
+            onKeyDown={handlePickerKeyDown}
+          >
+            {slides.map((slide, index) => (
+              <button
+                key={slide.key ?? index}
+                ref={pickerItemRef(index)}
+                type="button"
+                role="tab"
+                aria-selected={index === current ? 'true' : 'false'}
+                aria-controls={slideId(index)}
+                tabIndex={index === tabStop ? 0 : -1}
+                className="ds-carousel__tab"
+                data-part="pickerItem"
+                onFocus={() => setPickerFocus(index)}
+                onClick={() => goTo(index, 'picker')}
+              >
+                {slide.props.label || fill(COPY.goTo, { n: index + 1 })}
+              </button>
+            ))}
           </div>
         ) : null}
-        <div ref={viewportRef} className="ds-carousel__viewport" data-part="viewport">
-          <div ref={trackRef} id={`${baseId}-track`} className="ds-carousel__track" data-part="track">
+        <div
+          ref={viewportRef}
+          className="ds-carousel__viewport"
+          data-part="viewport"
+          onPointerDown={markUserScroll}
+          onTouchStart={markUserScroll}
+          onWheel={markUserScroll}
+        >
+          <div id={`${baseId}-track`} className="ds-carousel__track" data-part="track">
             {slides.map((slide, index) => (
               <SlideContext
                 key={slide.key ?? index}
@@ -623,7 +685,7 @@ export const Carousel = function Carousel({
                   id: slideId(index),
                   role: picker === 'tabs' ? 'tabpanel' : 'group',
                   label: fill(COPY.slideLabel, { n: index + 1, total }),
-                  hidden: index < visibleStart || index >= visibleStart + pageSize,
+                  hidden: !onCurrentPage(index),
                   register: (node) => {
                     slideNodes.current[index] = node;
                   },
@@ -640,4 +702,4 @@ export const Carousel = function Carousel({
       </div>
     </section>
   );
-};
+}

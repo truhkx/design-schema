@@ -38,3 +38,16 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Carousel: controlled mode plus a swipe: the viewport has already moved when `change` fires, and the doc doesn't say whether to snap back if the parent keeps activeIndex unchanged. I leave the scroll where the user put it.
 - Carousel: the picker's accessible name (dots group / tablist) is not specified. I left both unnamed.
 - Carousel: the example `children` values are prose ('Four CarouselSlide children, each a product Card'), not args. Each example story passes the other `given` keys as args and renders its children in a story-specific render with ds-card placeholders; there are no image assets for the 'photograph'/'image' slides.
+
+## 2026-09-17 13:33 — round 1
+
+- Carousel: pressing play at the last slide without loop 'restarts rotation from the first slide', but the move to slide 0 is not a listed onChange reason (none of next/prev/picker/swipe/autoplay is 'play'); chose reason `autoplay` and did not announce it.
+- Carousel: 'Reaching the last slide without loop counts as stopped' does not say whether a user reaching it with Next (not autoplay) also stops rotation; implemented it for autoplay ticks only (a later tick with no next target also sets stopped).
+- Carousel: aria-live is 'off while rotating, polite otherwise', but it is unspecified whether a temporary hover/focus/touch pause counts as rotating; chose not rotating (polite while paused), so arrow presses made while focus is inside are announced.
+- Carousel: the play/pause Button has no `playButton` props beyond variant, yet the doc says the wrapper 'passes a click through to its Button'; implemented as the wrapper invoking the same action when the click lands on the wrapper itself, not by calling into the Button's shadow root.
+- Carousel: layout.maxWidth.prose is compared as `width > prose` using the token's computed value parsed as px; the doc does not say what to do when the token is in rem or absent, so it falls back to the built 572px literal.
+- Carousel: the settle signal for a user swipe is `scrollend`; the doc names no fallback for engines without it, so a scroll-debounce constant (150 ms, not a token) is used there.
+- Carousel: the dot's round shape (radius.full) and the pickerItem/dot corner radius are not style bindings; used radius.full for dots and no radius for tabs.
+- Carousel: a slide's `label` changed after first render does not notify the carousel (no event is specified), so the tabs picker text only refreshes on the next render or slotchange.
+- Carousel: the tabs picker cannot carry aria-controls to slotted slides (doc acknowledges this); tabs are named by the slide label and pairing is conveyed by aria-selected only.
+- Carousel: the Keyboard story has no `given`; kept `picker: tabs` so previous, next and three tabs make at least three focusable children, though the tabs picker is one tab stop.

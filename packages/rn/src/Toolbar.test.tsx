@@ -5,11 +5,10 @@
  */
 import * as React from 'react';
 import { render, screen } from '@testing-library/react-native';
-import { Toolbar } from './Toolbar';
+import { Toolbar, ToolbarGroup } from './Toolbar';
 import type { ToolbarProps } from './Toolbar';
 import meta from './Toolbar.stories';
 import { Button } from './Button';
-import { Divider } from './Divider';
 import { ThemeProvider } from './theme';
 
 /** The Default story's args plus the scenario's `given`. */
@@ -18,10 +17,13 @@ function setup(given: Partial<ToolbarProps> = {}) {
   const utils = render(
     <ThemeProvider mode="light">
       <Toolbar {...props}>
-        <Button label="Bold" variant="ghost" />
-        <Button label="Italic" variant="ghost" />
-        <Divider />
-        <Button label="Insert link" variant="ghost" />
+        <ToolbarGroup label="Text style">
+          <Button label="Bold" variant="ghost" />
+          <Button label="Italic" variant="ghost" />
+        </ToolbarGroup>
+        <ToolbarGroup label="Insert">
+          <Button label="Insert link" variant="ghost" />
+        </ToolbarGroup>
       </Toolbar>
     </ThemeProvider>,
   );

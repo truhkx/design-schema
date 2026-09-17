@@ -35,3 +35,14 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Toolbar: the roving list selector in Guidance ('button, [role=radio][aria-checked=true], select, input, [tabindex]') would drop tabindex-only controls once they are set to -1 and would include every native radio; narrowed it (checked native radio only, no hidden inputs, textarea added, [tabindex] only for non-native elements).
 - Toolbar: behavior scenario `the-toolbar-is-one-tab-stop` asserts `focusable: false` on the root; the test also checks that exactly one descendant has tabIndex 0.
 - Toolbar: example `given.children` are prose ('Bold, Italic and Underline buttons', 'A SegmentedControl and two Selects'); rendered them as ghost text Buttons (no bold/italic glyphs exist in icon-paths.json) and a SegmentedControl plus two Selects with invented option lists.
+
+## 2026-09-17 13:18 — round 1
+
+- Toolbar: the overflowLabel fallback chain ends in 'the Button's text content', but React Button has no children (label is required), so the chain stops at `label`.
+- Toolbar: 'warn once per control' has no stable control identity in React (elements are recreated each render); keyed the warning by the toolbar entry key (group key + index for grouped Buttons), stored per Toolbar instance.
+- Toolbar: example compact-actions-with-overflow says 'each with the same overflowLabel' — read as each Button's overflowLabel equal to its own label (identical labels on all four would make the Menu unusable).
+- Toolbar: 'focusing a control scrolls it into view' is left to the browser's native focus scrolling; no explicit scrollIntoView call.
+- Toolbar: edge-fade direction under RTL is not specified; the mask uses `to right` / `to bottom` and measures Math.abs(scrollLeft), so the start fade is drawn on the physical left in RTL.
+- Toolbar: text-entry controls keep ArrowLeft/ArrowRight/Home/End, but the doc is silent on ArrowUp/ArrowDown from an input in a vertical toolbar; the toolbar still moves focus on those.
+- Toolbar: which input types count as 'text-entry' is not listed; treated every input except button, checkbox, color, file, image, radio, range, reset and submit (plus textarea and contenteditable) as text entry.
+- Toolbar: the overflowMenu hook — passed data-part="overflowMenu" through Menu's rest props, which land on Menu's root wrapper rather than its portaled popup; the doc does not say which Menu element carries the part.

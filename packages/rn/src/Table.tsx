@@ -3,6 +3,7 @@ import { AccessibilityInfo, Animated, FlatList, Platform, Pressable, StyleSheet,
 import type { LayoutChangeEvent, ListRenderItemInfo, ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { Button } from './Button';
 import { Checkbox } from './Checkbox';
 import { Heading } from './Heading';
@@ -60,6 +61,7 @@ export type TableOverridableBinding =
   | 'captionGap'
   | 'stackedRowInset'
   | 'stackedRowGap'
+  | 'stackedBlockGap'
   | 'stackedLabelSize'
   | 'stackedLabelWeight'
   | 'stackedRowRadius'
@@ -76,8 +78,11 @@ export interface TableProps {
   caption: string;
   /** Heading level of the caption in the page outline; its size is `captionSize` regardless. */
   captionLevel?: TableCaptionLevel | undefined;
-  /** Content below the table: a row count, pagination, a total. Rendered in the `footer` part. */
-  footer?: React.ReactNode;
+  /**
+   * Content below the table: a row count, pagination, a total. Rendered in the `footer` part; a string
+   * renders in Text with the table's `fontFamily`/`fontSize`/`lineHeight`, other content brings its own typography.
+   */
+  footer?: React.ReactNode | undefined;
   /** Visually hide the caption; it remains the accessible name. */
   hideCaption?: boolean | undefined;
   /** Column definitions in display order. Exactly one column may be `isRowHeader`. */
@@ -150,6 +155,8 @@ const HIDDEN_STYLE: ViewStyle = { position: 'absolute', width: 1, height: 1, ove
 
 const NUMERIC_FONT: TokenRef = 'font.family.mono';
 const HEADER_WEIGHT: TokenRef = 'font.weight.semibold';
+const CELL_GAP: TokenRef = 'layout.gap.tight';
+const CAPTION_SIZE: TokenRef = 'font.size.md';
 const CAPTION_WEIGHT: TokenRef = 'font.weight.semibold';
 const CAPTION_GAP: TokenRef = 'space.2';
 
@@ -196,6 +203,35 @@ function HoverTint({ visible, color, duration }: { visible: boolean; color: stri
   );
 }
 
+/** One edge fade over the scroll region: opaque `color` at the edge to transparent inward, `scrollFade` long. */
+function ScrollFade({ edge, inset, length, color }: { edge: 'start' | 'end'; inset: number; length: number; color: string }): React.JSX.Element {
+  // useId's colons are not valid in an SVG `url(#…)` reference on react-native-web.
+  const gradientId = `table-fade-${React.useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
+  const position: ViewStyle = {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: length,
+    pointerEvents: 'none',
+    ...(edge === 'start' ? { start: inset } : { end: inset }),
+  };
+  const from = edge === 'start' ? '0%' : '100%';
+  const to = edge === 'start' ? '100%' : '0%';
+  return (
+    <View style={position} accessibilityElementsHidden importantForAccessibility="no">
+      <Svg width="100%" height="100%">
+        <Defs>
+          <LinearGradient id={gradientId} x1={from} y1="0%" x2={to} y2="0%">
+            <Stop offset="0" stopColor={color} stopOpacity={1} />
+            <Stop offset="1" stopColor={color} stopOpacity={0} />
+          </LinearGradient>
+        </Defs>
+        <Rect width="100%" height="100%" fill={`url(#${gradientId})`} />
+      </Svg>
+    </View>
+  );
+}
+
 /**
  * Table — the honest way to show records that share fields: every row the same shape,
  * every column a comparable thing.
@@ -217,7 +253,8 @@ function HoverTint({ visible, color, duration }: { visible: boolean; color: stri
  * `responsive: scroll` keeps the columns at every width inside a horizontal scroll region
  * named by the caption with `copy.scrollHint` as its hint; the row-header cells are
  * translated by the horizontal offset so they stay pinned, and cast `stickyColumnShadow`
- * once scrolled. `stickyHeader` pins the list header (`stickyHeaderIndices`), which casts
+ * once scrolled, with a `scrollFade` gradient over each edge that still hides columns
+ * (react-native-svg, as Toolbar does; the start fade begins where the pinned column ends). `stickyHeader` pins the list header (`stickyHeaderIndices`), which casts
  * `headerShadow` once the body has scrolled beneath it; with `maxHeight: none` the list
  * does not scroll itself, so the page does. `abbr` has no effect on native.
  *
@@ -288,6 +325,18 @@ export function Table({
     const id = scrollX.addListener(({ value }) => setColumnScrolled(value > 0));
     return () => scrollX.removeListener(id);
   }, [scrollX]);
+
+  // Which edges of the scroll region have columns hidden past them, so a fade only covers hidden content.
+  // The start fade begins where the pinned row-header column ends, so it never covers the pinned cells.
+  const [fadeEdges, setFadeEdges] = React.useState({ start: false, end: false });
+  const [pinnedEnd, setPinnedEnd] = React.useState(0);
+  const scrollMetrics = React.useRef({ offset: 0, viewport: 0, content: 0 });
+  const updateFadeEdges = (): void => {
+    const { offset, viewport: visible, content } = scrollMetrics.current;
+    const start = offset > 1;
+    const end = offset + visible < content - 1;
+    setFadeEdges((prev) => (prev.start === start && prev.end === end ? prev : { start, end }));
+  };
 
   const rowHeaderColumn = columns.find((column) => column.isRowHeader === true);
   const rowPressEnabled = onRowPress !== undefined && rowHeaderColumn !== undefined && rowHeaderColumn.render === undefined;
@@ -395,7 +444,9 @@ export function Table({
   const cellGap = tokenOr<number>(t, overrides?.cellGap, t.layoutGapTight);
   const stackedRowInset = tokenOr<number>(t, overrides?.stackedRowInset, t.layoutInsetMd);
   const stackedRowGap = tokenOr<number>(t, overrides?.stackedRowGap, t.layoutGapTight);
+  const stackedBlockGap = tokenOr<number>(t, overrides?.stackedBlockGap, t.layoutGapTight);
   const stackedRowRadius = tokenOr<number>(t, overrides?.stackedRowRadius, t.radiusMd);
+  const scrollFade = tokenOr<number>(t, overrides?.scrollFade, t.space6);
   const stickyColumnShadow = tokenOr<Shadow>(t, overrides?.stickyColumnShadow, t.shadowRaised);
   const transition = tokenOr<number>(t, overrides?.transition, t.motionDurationFast);
 
@@ -450,7 +501,7 @@ export function Table({
       variant="ghost"
       size="sm"
       trailingIcon={sortIcon(column)}
-      overrides={{ fontWeight: overrides?.headerWeight ?? HEADER_WEIGHT, fontSize: overrides?.headerSize, iconGap: overrides?.cellGap }}
+      overrides={{ fontWeight: overrides?.headerWeight ?? HEADER_WEIGHT, iconGap: overrides?.cellGap ?? CELL_GAP }}
       onPress={() => handleSortPress(column.key)}
     />
   );
@@ -517,7 +568,16 @@ export function Table({
           );
           const style = [cellStyle, columnBox(column)];
           return pinned(column) ? (
-            <Animated.View key={column.key} testID="Table.columnHeader" accessibilityRole="header" style={[...style, pinnedStyle(t.colorBackgroundSubtle)]}>
+            <Animated.View
+              key={column.key}
+              testID="Table.columnHeader"
+              accessibilityRole="header"
+              onLayout={(event: LayoutChangeEvent) => {
+                const box = event.nativeEvent.layout;
+                setPinnedEnd(box.x + box.width);
+              }}
+              style={[...style, pinnedStyle(t.colorBackgroundSubtle)]}
+            >
               {content}
             </Animated.View>
           ) : (
@@ -711,7 +771,7 @@ export function Table({
       ListHeaderComponent={layout === 'stack' ? stackedHeader : headerRow}
       ListEmptyComponent={emptyState}
       stickyHeaderIndices={stickyHeader ? [0] : undefined}
-      contentContainerStyle={layout === 'stack' ? { gap: stackedRowGap } : undefined}
+      contentContainerStyle={layout === 'stack' ? { gap: stackedBlockGap } : undefined}
       scrollEnabled={maxHeight === 'viewport'}
       style={maxHeight === 'viewport' ? { maxHeight: viewport.height - 2 * t.layoutGapSection } : undefined}
       onScroll={(event) => setHeaderScrolled(event.nativeEvent.contentOffset.y > 0)}
@@ -734,8 +794,7 @@ export function Table({
           level={captionLevel}
           size="md"
           overrides={{
-            fontFamily: overrides?.fontFamily,
-            fontSize: overrides?.captionSize,
+            fontSize: overrides?.captionSize ?? CAPTION_SIZE,
             fontWeight: overrides?.captionWeight ?? CAPTION_WEIGHT,
             marginBlockEnd: overrides?.captionGap ?? CAPTION_GAP,
           }}
@@ -744,32 +803,56 @@ export function Table({
         </Heading>
       </View>
       <View testID="Table.container">
-        {loading && rows.length > 0 ? (
-          <View accessibilityLiveRegion="polite" style={cellStyle}>
-            <Text size="sm" tone="muted" overrides={bodyText}>
-              {COPY.loading}
-            </Text>
-          </View>
-        ) : null}
         {layout === 'scroll' ? (
-          <Animated.ScrollView
-            testID="Table.scrollRegion"
-            horizontal
-            accessibilityLabel={caption}
-            accessibilityHint={COPY.scrollHint}
-            onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], { useNativeDriver: false })}
-            scrollEventThrottle={16}
-            contentContainerStyle={{ flexGrow: 1 }}
-          >
-            <View style={{ flexGrow: 1 }}>{list}</View>
-          </Animated.ScrollView>
+          <View>
+            <Animated.ScrollView
+              testID="Table.scrollRegion"
+              horizontal
+              accessibilityLabel={caption}
+              accessibilityHint={COPY.scrollHint}
+              onLayout={(event: LayoutChangeEvent) => {
+                scrollMetrics.current.viewport = event.nativeEvent.layout.width;
+                updateFadeEdges();
+              }}
+              onContentSizeChange={(contentWidth: number) => {
+                scrollMetrics.current.content = contentWidth;
+                updateFadeEdges();
+              }}
+              onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
+                useNativeDriver: false,
+                listener: (event: { nativeEvent: { contentOffset: { x: number } } }) => {
+                  scrollMetrics.current.offset = event.nativeEvent.contentOffset.x;
+                  updateFadeEdges();
+                },
+              })}
+              scrollEventThrottle={16} // literal-ok: one frame between pin and fade updates
+              contentContainerStyle={{ flexGrow: 1 }}
+            >
+              <View style={{ flexGrow: 1 }}>{list}</View>
+            </Animated.ScrollView>
+            {fadeEdges.start ? <ScrollFade edge="start" inset={pinnedEnd} length={scrollFade} color={t.colorBackground} /> : null}
+            {fadeEdges.end ? <ScrollFade edge="end" inset={0} length={scrollFade} color={t.colorBackground} /> : null}
+          </View>
         ) : (
           list
         )}
       </View>
+      {loading && rows.length > 0 ? (
+        <View accessibilityLiveRegion="polite" style={cellStyle}>
+          <Text size="sm" tone="muted" overrides={bodyText}>
+            {COPY.loading}
+          </Text>
+        </View>
+      ) : null}
       {footer !== undefined && footer !== null ? (
         <View testID="Table.footer" style={cellStyle}>
-          {footer}
+          {typeof footer === 'string' ? (
+            <Text size="sm" overrides={bodyText}>
+              {footer}
+            </Text>
+          ) : (
+            footer
+          )}
         </View>
       ) : null}
       <View accessibilityLiveRegion="polite" style={HIDDEN_STYLE}>

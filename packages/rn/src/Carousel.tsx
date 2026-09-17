@@ -5,8 +5,7 @@ import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
 import { Icon } from './Icon';
-import { Text } from './Text';
-import { toEasing, useReducedMotion, useTheme } from './theme';
+import { toEasing, toFontWeight, useReducedMotion, useTheme } from './theme';
 
 export type CarouselPicker = 'dots' | 'tabs' | 'none';
 export type CarouselChangeReason = 'next' | 'prev' | 'picker' | 'swipe' | 'autoplay';
@@ -15,18 +14,24 @@ export type CarouselChangeReason = 'next' | 'prev' | 'picker' | 'swipe' | 'autop
 export type CarouselOverridableBinding =
   | 'slideGap'
   | 'controlOffset'
+  | 'controlRadius'
   | 'controlShadow'
   | 'pickerGap'
   | 'pickerOffset'
   | 'dotSize'
   | 'radius'
+  | 'tabFontSize'
+  | 'tabFontWeight'
+  | 'tabPaddingBlock'
+  | 'tabPaddingInline'
+  | 'fontFamily'
   | 'transition';
 
 export interface CarouselSlideProps {
   /**
-   * The slide's name: its tab in a `tabs` picker and part of its accessible name
-   * ("{n} of {total}, {label}"). A plain string, not read from the content; the
-   * slide repeats it visibly in its own heading.
+   * The slide's name in a `tabs` picker. A plain string, not read from the content; the slide
+   * repeats it visibly in its own heading. It is not part of the slide's accessible name, which
+   * is its position ("2 of 4") alone.
    */
   label: string;
   /** The slide's content. Slides should be equal height. */
@@ -44,11 +49,11 @@ export interface CarouselProps {
   label: string;
   /** One `CarouselSlide` per slide. A Card is the usual shape. Slides should be equal height. */
   children: React.ReactNode;
-  /** How many slides are visible at once at the widest layout; one below the prose width. Whole numbers. */
+  /** How many slides are visible at once while the viewport is wider than the prose width; one at or below it. Whole numbers. */
   perView?: number | undefined;
   /** Next from the last returns to the first. Off by default so users can tell where the end is. */
   loop?: boolean | undefined;
-  /** Rotate automatically every `interval`. Never starts under reduced motion; pauses while touched or focused; stops on the pause button until play. */
+  /** Rotate automatically every `interval`. Never starts under reduced motion; pauses while touched or a control has focus; stops on the pause button. */
   autoplay?: boolean | undefined;
   /** Milliseconds between automatic advances; values below 5000 are raised to 5000 (with a development warning). */
   interval?: number | undefined;
@@ -58,7 +63,7 @@ export interface CarouselProps {
   activeIndex?: number | undefined;
   /** Swiping snaps to slide boundaries. `false` lets the track scroll freely. */
   snap?: boolean | undefined;
-  /** Fired when the current slide changes, with the new index and the reason. */
+  /** Fired when the current slide changes, with the new index and the reason. Never fired by a change of a controlled `activeIndex`. */
   onChange?: ((index: number, reason: CarouselChangeReason) => void) | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<CarouselOverridableBinding, TokenRef | undefined>> | undefined;
@@ -89,6 +94,7 @@ const COPY = {
   play: 'Start automatic rotation',
   pause: 'Stop automatic rotation',
   slideLabel: (n: number, total: number): string => `${n} of ${total}`,
+  pickerLabel: 'Choose a slide',
   goTo: (n: number): string => `Go to slide ${n}`,
   announce: (n: number, total: number): string => `Slide ${n} of ${total}`,
 } as const;
@@ -102,7 +108,7 @@ const DEFAULT_INTERVAL = 6000; // literal-ok: schema default for the interval pr
 /** `itemVisiblePercentThreshold` from the platform notes. */
 const VISIBLE_THRESHOLD = 60; // literal-ok: viewability percentage, not a size
 
-const REGION_ACTIONS = [
+const SLIDE_ACTIONS = [
   { name: 'increment', label: COPY.next },
   { name: 'decrement', label: COPY.previous },
 ] as const;
@@ -115,13 +121,13 @@ const REGION_ACTIONS = [
  * `dots` for images. Leave `autoplay` off unless the content is ambient, and keep the pause
  * control visible. Do not hide important content behind slide two.
  *
- * The region `View` has `accessibilityRole="adjustable"` with increment/decrement actions
- * mapped to next/previous (the swipe alternative) and is not `accessible`, so the controls
- * inside stay reachable. In tree order: the play/pause `Button` (only when `autoplay` and
- * motion is allowed), the viewport with the previous/next `secondary` icon-only `Button`s
- * overlaid inside their `controlSurface` wrappers, a horizontal `FlatList` track
- * (`pagingEnabled` at one per view, `snapToInterval` above), and the picker of Carousel's own
- * `Pressable`s. Slides outside the current page are hidden from assistive technology.
+ * The region is a plain `View` named by `label`, so every control stays individually reachable.
+ * In tree order: the play/pause `Button` in its own row (only when `autoplay` and motion is
+ * allowed), the previous/next `secondary` icon-only `Button`s overlaid on the viewport inside
+ * their `controlSurface` wrappers, a horizontal `FlatList` track of slides, then the picker of
+ * Carousel's own `Pressable`s. Each visible slide is an accessible element with
+ * `accessibilityRole="adjustable"` and increment/decrement actions mapped to next/previous — the
+ * swipe alternative VoiceOver can reach; slides outside the current page are hidden.
  * Previous/Next move one page of `perView` slides, disabled at the ends unless `loop`.
  * User-initiated changes are announced; autoplay changes are not.
  */
@@ -150,13 +156,17 @@ export function Carousel({
       React.Children.forEach(children, (child) => {
         if (!React.isValidElement(child) || child.type !== CarouselSlide) {
           console.warn('Carousel: children must be CarouselSlide elements.');
+        } else if (!(child.props as CarouselSlideProps).label) {
+          console.warn('Carousel: every CarouselSlide needs a label; the tab falls back to "Go to slide {n}".');
         }
       });
     }
   }, [children]);
 
+  const warnedInterval = React.useRef(false);
   React.useEffect(() => {
-    if (__DEV__ && autoplay && interval < MIN_INTERVAL) {
+    if (__DEV__ && autoplay && interval < MIN_INTERVAL && !warnedInterval.current) {
+      warnedInterval.current = true;
       console.warn(`Carousel: interval ${interval}ms is below the ${MIN_INTERVAL}ms minimum and was raised to it.`);
     }
   }, [autoplay, interval]);
@@ -164,15 +174,22 @@ export function Carousel({
 
   const slideGap = overrides?.slideGap ? (resolveToken(t, overrides.slideGap) as number) : t.layoutGapNormal;
   const controlOffset = overrides?.controlOffset ? (resolveToken(t, overrides.controlOffset) as number) : t.space2;
+  const controlRadius = overrides?.controlRadius ? (resolveToken(t, overrides.controlRadius) as number) : t.radiusFull;
   const controlShadow = overrides?.controlShadow ? (resolveToken(t, overrides.controlShadow) as typeof t.shadowRaised) : t.shadowRaised;
   const pickerGap = overrides?.pickerGap ? (resolveToken(t, overrides.pickerGap) as number) : t.layoutGapTight;
   const pickerOffset = overrides?.pickerOffset ? (resolveToken(t, overrides.pickerOffset) as number) : t.space3;
   const dotSize = overrides?.dotSize ? (resolveToken(t, overrides.dotSize) as number) : t.space2;
   const radius = overrides?.radius ? (resolveToken(t, overrides.radius) as number) : t.radiusMd;
+  const tabFontSize = overrides?.tabFontSize ? (resolveToken(t, overrides.tabFontSize) as number) : t.fontSizeSm;
+  const tabFontWeight = overrides?.tabFontWeight ? (resolveToken(t, overrides.tabFontWeight) as number) : t.fontWeightMedium;
+  const tabPaddingBlock = overrides?.tabPaddingBlock ? (resolveToken(t, overrides.tabPaddingBlock) as number) : t.spaceSm;
+  const tabPaddingInline = overrides?.tabPaddingInline ? (resolveToken(t, overrides.tabPaddingInline) as number) : t.spaceMd;
+  const fontFamily = overrides?.fontFamily ? (resolveToken(t, overrides.fontFamily) as string) : t.fontFamilyBody;
   const transition = overrides?.transition ? (resolveToken(t, overrides.transition) as number) : t.motionDurationBase;
 
+  // Page size: `perView` above the prose width (and until the first measurement), 1 at or below it.
   const [viewportWidth, setViewportWidth] = React.useState(0);
-  const narrow = viewportWidth > 0 && viewportWidth < t.layoutMaxWidthProse;
+  const narrow = viewportWidth > 0 && viewportWidth <= t.layoutMaxWidthProse;
   const pageSize = narrow ? 1 : Math.max(1, Math.round(perView));
   const itemWidth = viewportWidth > 0 ? (viewportWidth - slideGap * (pageSize - 1)) / pageSize : 0;
   const maxStart = Math.max(0, total - pageSize);
@@ -181,27 +198,21 @@ export function Carousel({
   const [internalIndex, setInternalIndex] = React.useState(0);
   const currentIndex = Math.min(Math.max(0, Math.round(isControlled ? activeIndex : internalIndex)), maxStart);
 
-  /** The start index Next/Previous would move to, or `null` at an end without `loop`. */
+  /** The start index Next/Previous would move to, or `null` when that arrow is disabled. */
   const stepTarget = (from: number, direction: 1 | -1): number | null => {
-    if (total === 0) {
+    if (maxStart === 0) {
       return null;
     }
     if (direction === 1) {
-      if (from + pageSize <= maxStart) {
-        return from + pageSize;
-      }
       if (from < maxStart) {
-        return maxStart;
+        return Math.min(from + pageSize, maxStart);
       }
-      return loop && maxStart > 0 ? 0 : null;
-    }
-    if (from - pageSize >= 0) {
-      return from - pageSize;
+      return loop ? 0 : null;
     }
     if (from > 0) {
-      return 0;
+      return Math.max(from - pageSize, 0);
     }
-    return loop && maxStart > 0 ? maxStart : null;
+    return loop ? maxStart : null;
   };
 
   const [announcement, setAnnouncement] = React.useState('');
@@ -228,43 +239,9 @@ export function Carousel({
   const latest = React.useRef({ currentIndex, goTo, stepTarget });
   latest.current = { currentIndex, goTo, stepTarget };
 
-  const trackRef = React.useRef<FlatList<CollectedSlide>>(null);
-  React.useEffect(() => {
-    if (itemWidth > 0) {
-      trackRef.current?.scrollToOffset({ offset: currentIndex * (itemWidth + slideGap), animated: !reducedMotion });
-    }
-  }, [currentIndex, itemWidth, slideGap, reducedMotion]);
-
-  // Autoplay: `playing` is the user's intent (the pause button stops it until play);
-  // touch and focus pause it only while they last.
-  const canRotate = autoplay && !reducedMotion;
-  const [playing, setPlaying] = React.useState(autoplay);
-  const [touching, setTouching] = React.useState(false);
-  const [focusCount, setFocusCount] = React.useState(0);
-  const rotating = canRotate && playing && !touching && focusCount === 0 && total > 1;
-
-  React.useEffect(() => {
-    if (!rotating) {
-      return undefined;
-    }
-    const id = setInterval(() => {
-      const { currentIndex: from, goTo: go, stepTarget: step } = latest.current;
-      const next = step(from, 1);
-      if (next === null) {
-        // Without loop, autoplay stops at the last slide.
-        setPlaying(false);
-        return;
-      }
-      go(next, 'autoplay');
-    }, effectiveInterval);
-    return () => clearInterval(id);
-  }, [rotating, effectiveInterval]);
-
-  const onControlFocus = (): void => setFocusCount((n) => n + 1);
-  const onControlBlur = (): void => setFocusCount((n) => Math.max(0, n - 1));
-
-  // Swipe: viewability only reports a change while the user is dragging the track.
+  // Swipe: viewability only reports a change between onScrollBeginDrag and onMomentumScrollEnd.
   const dragging = React.useRef(false);
+  const [settleCount, setSettleCount] = React.useState(0);
   const viewabilityConfig = React.useRef({ itemVisiblePercentThreshold: VISIBLE_THRESHOLD }).current;
   const onViewableItemsChanged = React.useRef(({ viewableItems }: { viewableItems: ListViewToken[] }): void => {
     if (!dragging.current) {
@@ -276,6 +253,67 @@ export function Carousel({
     }
   }).current;
 
+  // Programmatic moves scroll the track; a drag in progress is left alone. `settleCount` makes a
+  // controlled carousel whose parent kept `activeIndex` after a swipe scroll back to it.
+  const trackRef = React.useRef<FlatList<CollectedSlide>>(null);
+  const positioned = React.useRef(false);
+  React.useEffect(() => {
+    if (itemWidth <= 0 || dragging.current) {
+      return;
+    }
+    trackRef.current?.scrollToOffset({ offset: currentIndex * (itemWidth + slideGap), animated: positioned.current && !reducedMotion });
+    positioned.current = true;
+  }, [currentIndex, itemWidth, slideGap, reducedMotion, settleCount]);
+
+  // Autoplay: `playing` is the user's intent (only the pause button, or reaching the end without
+  // loop, clears it); touch and control focus pause it only while they last.
+  const canRotate = autoplay && !reducedMotion;
+  const [playing, setPlaying] = React.useState(autoplay);
+  React.useEffect(() => setPlaying(autoplay), [autoplay]);
+  const [touching, setTouching] = React.useState(false);
+  const [focusCount, setFocusCount] = React.useState(0);
+  const rotating = canRotate && playing && !touching && focusCount === 0 && maxStart > 0;
+
+  React.useEffect(() => {
+    if (canRotate && playing && !loop && maxStart > 0 && currentIndex === maxStart) {
+      // Reaching the last slide without loop counts as stopped.
+      setPlaying(false);
+    }
+  }, [canRotate, playing, loop, maxStart, currentIndex]);
+
+  React.useEffect(() => {
+    if (!rotating) {
+      return undefined;
+    }
+    const id = setInterval(() => {
+      const { currentIndex: from, goTo: go, stepTarget: step } = latest.current;
+      const next = step(from, 1);
+      if (next === null) {
+        setPlaying(false);
+        return;
+      }
+      go(next, 'autoplay');
+    }, effectiveInterval);
+    return () => clearInterval(id);
+  }, [rotating, effectiveInterval]);
+
+  const onControlFocus = (): void => setFocusCount((n) => n + 1);
+  const onControlBlur = (): void => setFocusCount((n) => Math.max(0, n - 1));
+
+  const handlePlayPress = (): void => {
+    if (playing) {
+      setPlaying(false);
+      return;
+    }
+    // Pressing play clears the touch and focus pauses, so rotation resumes at once.
+    setTouching(false);
+    setFocusCount(0);
+    if (!loop && maxStart > 0 && currentIndex === maxStart) {
+      goTo(0, 'autoplay');
+    }
+    setPlaying(true);
+  };
+
   const handleViewportLayout = (event: LayoutChangeEvent): void => {
     setViewportWidth(event.nativeEvent.layout.width);
   };
@@ -283,7 +321,7 @@ export function Carousel({
   const prevTarget = stepTarget(currentIndex, -1);
   const nextTarget = stepTarget(currentIndex, 1);
 
-  const handleRegionAccessibilityAction = (event: AccessibilityActionEvent): void => {
+  const handleSlideAccessibilityAction = (event: AccessibilityActionEvent): void => {
     if (event.nativeEvent.actionName === 'increment' && nextTarget !== null) {
       goTo(nextTarget, 'next');
     } else if (event.nativeEvent.actionName === 'decrement' && prevTarget !== null) {
@@ -296,8 +334,11 @@ export function Carousel({
     return (
       <View
         testID="Carousel.slide"
-        accessible
-        accessibilityLabel={`${COPY.slideLabel(index + 1, total)}, ${item.label}`}
+        accessible={visible}
+        accessibilityRole="adjustable"
+        accessibilityLabel={COPY.slideLabel(index + 1, total)}
+        accessibilityActions={SLIDE_ACTIONS}
+        onAccessibilityAction={handleSlideAccessibilityAction}
         accessibilityElementsHidden={!visible}
         importantForAccessibility={visible ? 'auto' : 'no-hide-descendants'}
         style={itemWidth > 0 ? { width: itemWidth } : undefined}
@@ -307,7 +348,11 @@ export function Carousel({
     );
   };
 
-  const viewportStyle: ViewStyle = { position: 'relative', borderRadius: radius, overflow: 'hidden' };
+  // With a gap between slides a page is wider than the viewport, so paging snaps by interval instead.
+  const usePaging = snap && pageSize === 1 && slideGap === 0;
+  const snapInterval = snap && !usePaging && itemWidth > 0 ? itemWidth + slideGap : undefined;
+
+  const viewportStyle: ViewStyle = { borderRadius: radius, overflow: 'hidden' };
   const controlsStyle: ViewStyle = {
     ...StyleSheet.absoluteFill,
     flexDirection: 'row',
@@ -316,42 +361,48 @@ export function Carousel({
     paddingHorizontal: controlOffset,
     zIndex: 1,
   };
-  const controlSurfaceStyle: ViewStyle = { borderRadius: t.radiusFull, backgroundColor: t.colorOverlaySurface, ...controlShadow };
+  const controlSurfaceStyle: ViewStyle = {
+    minWidth: t.sizeTargetComfortable,
+    minHeight: t.sizeTargetComfortable,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: controlRadius,
+    backgroundColor: t.colorOverlaySurface,
+    ...controlShadow,
+  };
   const pickerStyle: ViewStyle = {
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'center',
     gap: pickerGap,
-    paddingTop: pickerOffset,
   };
   const iconColor = t.colorActionSecondaryForeground;
+  const itemTransition = reducedMotion ? 0 : transition;
 
   return (
     <View
       ref={ref}
       testID="Carousel"
-      accessibilityRole="adjustable"
+      role="region"
       accessibilityLabel={label}
-      accessibilityValue={total > 0 ? { text: COPY.slideLabel(currentIndex + 1, total) } : undefined}
-      accessibilityActions={REGION_ACTIONS}
-      onAccessibilityAction={handleRegionAccessibilityAction}
       onTouchStart={() => setTouching(true)}
       onTouchEnd={() => setTouching(false)}
       onTouchCancel={() => setTouching(false)}
+      style={{ gap: pickerOffset }}
     >
       {canRotate ? (
-        <View testID="Carousel.playButton" style={{ alignSelf: 'flex-start', paddingBottom: t.layoutGapTight }}>
+        <View testID="Carousel.playButton" style={{ alignSelf: 'flex-start' }}>
           <Button
             label={playing ? COPY.pause : COPY.play}
             variant="secondary"
-            onPress={() => setPlaying((value) => !value)}
+            onPress={handlePlayPress}
             onFocus={onControlFocus}
             onBlur={onControlBlur}
           />
         </View>
       ) : null}
-      <View testID="Carousel.viewport" onLayout={handleViewportLayout} style={viewportStyle}>
+      <View>
         <View style={controlsStyle} pointerEvents="box-none">
           <View testID="Carousel.controlSurface" style={controlSurfaceStyle}>
             <View testID="Carousel.prevButton">
@@ -390,45 +441,69 @@ export function Carousel({
             </View>
           </View>
         </View>
-        <FlatList
-          ref={trackRef}
-          testID="Carousel.track"
-          data={slides}
-          keyExtractor={(item) => item.key}
-          renderItem={renderItem}
-          extraData={`${currentIndex}:${pageSize}:${itemWidth}`}
-          horizontal
-          pagingEnabled={snap && pageSize === 1}
-          snapToInterval={snap && pageSize > 1 && itemWidth > 0 ? itemWidth + slideGap : undefined}
-          snapToAlignment="start"
-          decelerationRate="fast"
-          showsHorizontalScrollIndicator={false}
-          onScrollBeginDrag={() => {
-            dragging.current = true;
-          }}
-          onMomentumScrollEnd={() => {
-            dragging.current = false;
-          }}
-          viewabilityConfig={viewabilityConfig}
-          onViewableItemsChanged={onViewableItemsChanged}
-          ItemSeparatorComponent={() => <View style={{ width: slideGap }} />}
-        />
+        <View testID="Carousel.viewport" onLayout={handleViewportLayout} style={viewportStyle}>
+          <FlatList
+            ref={trackRef}
+            testID="Carousel.track"
+            data={slides}
+            keyExtractor={(item) => item.key}
+            renderItem={renderItem}
+            extraData={`${currentIndex}:${pageSize}:${itemWidth}`}
+            horizontal
+            pagingEnabled={usePaging}
+            snapToInterval={snapInterval}
+            snapToAlignment="start"
+            decelerationRate="fast"
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ gap: slideGap }}
+            onScrollBeginDrag={() => {
+              dragging.current = true;
+            }}
+            onMomentumScrollEnd={() => {
+              if (!dragging.current) {
+                return;
+              }
+              dragging.current = false;
+              if (isControlled) {
+                setSettleCount((n) => n + 1);
+              }
+            }}
+            viewabilityConfig={viewabilityConfig}
+            onViewableItemsChanged={onViewableItemsChanged}
+          />
+        </View>
       </View>
       {picker !== 'none' && total > 0 ? (
-        <View testID="Carousel.picker" accessibilityRole={picker === 'tabs' ? 'tablist' : undefined} style={pickerStyle}>
-          {slides.map((slide, index) => (
-            <CarouselPickerItem
-              key={slide.key}
-              kind={picker}
-              label={picker === 'tabs' ? slide.label : COPY.goTo(index + 1)}
-              selected={index >= currentIndex && index < currentIndex + pageSize}
-              dotSize={dotSize}
-              transition={reducedMotion ? 0 : transition}
-              onSelect={() => goTo(index, 'picker')}
-              onFocus={onControlFocus}
-              onBlur={onControlBlur}
-            />
-          ))}
+        <View testID="Carousel.picker" role={picker === 'tabs' ? 'tablist' : 'group'} accessibilityLabel={COPY.pickerLabel} style={pickerStyle}>
+          {slides.map((slide, index) =>
+            picker === 'tabs' ? (
+              <CarouselTab
+                key={slide.key}
+                label={slide.label || COPY.goTo(index + 1)}
+                selected={index === currentIndex}
+                fontSize={tabFontSize}
+                fontWeight={tabFontWeight}
+                fontFamily={fontFamily}
+                paddingBlock={tabPaddingBlock}
+                paddingInline={tabPaddingInline}
+                transition={itemTransition}
+                onSelect={() => goTo(index, 'picker')}
+                onFocus={onControlFocus}
+                onBlur={onControlBlur}
+              />
+            ) : (
+              <CarouselDot
+                key={slide.key}
+                label={COPY.goTo(index + 1)}
+                selected={index >= currentIndex && index < currentIndex + pageSize}
+                size={dotSize}
+                transition={itemTransition}
+                onSelect={() => goTo(index, 'picker')}
+                onFocus={onControlFocus}
+                onBlur={onControlBlur}
+              />
+            ),
+          )}
         </View>
       ) : null}
       <View
@@ -442,23 +517,9 @@ export function Carousel({
   );
 }
 
-interface CarouselPickerItemProps {
-  kind: 'dots' | 'tabs';
-  label: string;
-  selected: boolean;
-  dotSize: number;
-  transition: number;
-  onSelect: () => void;
-  onFocus: () => void;
-  onBlur: () => void;
-}
-
-/** One dot or tab: Carousel's own Pressable, since no Button variant carries the dot and tab tokens. */
-function CarouselPickerItem({ kind, label, selected, dotSize, transition, onSelect, onFocus, onBlur }: CarouselPickerItemProps): React.JSX.Element {
+/** 0 → 1 as `selected` turns on, over `transition` with the standard easing; jumps when `transition` is 0. */
+function useSelectedProgress(selected: boolean, transition: number): Animated.Value {
   const { tokens: t } = useTheme();
-  const [focused, setFocused] = React.useState(false);
-  const isTabs = kind === 'tabs';
-
   const progress = React.useRef(new Animated.Value(selected ? 1 : 0)).current;
   const wasSelected = React.useRef(selected);
   React.useEffect(() => {
@@ -466,6 +527,10 @@ function CarouselPickerItem({ kind, label, selected, dotSize, transition, onSele
       return undefined;
     }
     wasSelected.current = selected;
+    if (transition === 0) {
+      progress.setValue(selected ? 1 : 0);
+      return undefined;
+    }
     const animation = Animated.timing(progress, {
       toValue: selected ? 1 : 0,
       duration: transition,
@@ -475,21 +540,35 @@ function CarouselPickerItem({ kind, label, selected, dotSize, transition, onSele
     animation.start();
     return () => animation.stop();
   }, [selected, transition, progress, t.motionEasingStandard]);
+  return progress;
+}
 
-  const target = isTabs ? t.sizeTargetComfortable : t.sizeTargetMin;
+interface PickerItemBaseProps {
+  label: string;
+  selected: boolean;
+  transition: number;
+  onSelect: () => void;
+  onFocus: () => void;
+  onBlur: () => void;
+}
+
+/** One dot: Carousel's own Pressable, since no Button variant carries the dot tokens. */
+function CarouselDot({ label, selected, size, transition, onSelect, onFocus, onBlur }: PickerItemBaseProps & { size: number }): React.JSX.Element {
+  const { tokens: t } = useTheme();
+  const [focused, setFocused] = React.useState(false);
+  const progress = useSelectedProgress(selected, transition);
+
   const hitStyle: ViewStyle = {
-    minWidth: target,
-    minHeight: target,
-    paddingHorizontal: isTabs ? t.spaceSm : 0,
+    minWidth: t.sizeTargetMin,
+    minHeight: t.sizeTargetMin,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: t.radiusMd,
     borderWidth: t.borderWidthFocus,
     borderColor: focused ? t.colorBorderFocus : 'transparent',
   };
   const dotStyle: Animated.WithAnimatedValue<ViewStyle> = {
-    width: dotSize,
-    height: dotSize,
+    width: size,
+    height: size,
     borderRadius: t.radiusFull,
     backgroundColor: progress.interpolate({ inputRange: [0, 1], outputRange: [t.colorBorderStrong, t.colorControlSelectedBackground] }),
   };
@@ -497,7 +576,7 @@ function CarouselPickerItem({ kind, label, selected, dotSize, transition, onSele
   return (
     <Pressable
       testID="Carousel.pickerItem"
-      accessibilityRole={isTabs ? 'tab' : 'button'}
+      accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ selected }}
       onFocus={() => {
@@ -511,13 +590,82 @@ function CarouselPickerItem({ kind, label, selected, dotSize, transition, onSele
       onPress={onSelect}
       style={hitStyle}
     >
-      {isTabs ? (
-        <Text size="sm" weight={selected ? 'semibold' : 'regular'} tone={selected ? 'strong' : 'muted'}>
-          {label}
-        </Text>
-      ) : (
-        <Animated.View style={dotStyle} accessibilityElementsHidden importantForAccessibility="no" />
-      )}
+      <Animated.View style={dotStyle} accessibilityElementsHidden importantForAccessibility="no" />
+    </Pressable>
+  );
+}
+
+interface CarouselTabProps extends PickerItemBaseProps {
+  fontSize: number;
+  fontWeight: number;
+  fontFamily: string;
+  paddingBlock: number;
+  paddingInline: number;
+}
+
+/** One tab: Carousel's own Pressable and label, styled from the `tab*` bindings. */
+function CarouselTab({
+  label,
+  selected,
+  fontSize,
+  fontWeight,
+  fontFamily,
+  paddingBlock,
+  paddingInline,
+  transition,
+  onSelect,
+  onFocus,
+  onBlur,
+}: CarouselTabProps): React.JSX.Element {
+  const { tokens: t } = useTheme();
+  const [focused, setFocused] = React.useState(false);
+  const progress = useSelectedProgress(selected, transition);
+
+  const hitStyle: ViewStyle = {
+    minHeight: t.sizeTargetComfortable,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: paddingBlock,
+    paddingHorizontal: paddingInline,
+    borderWidth: t.borderWidthFocus,
+    borderColor: focused ? t.colorBorderFocus : 'transparent',
+  };
+  const labelStyle = {
+    fontFamily,
+    fontSize,
+    // The same weight selected or not, so selection never shifts the row.
+    fontWeight: toFontWeight(fontWeight),
+    color: progress.interpolate({ inputRange: [0, 1], outputRange: [t.colorForegroundMuted, t.colorForegroundStrong] }),
+  };
+  // The selected tab's underline sits inside the tab's box, so it takes no layout.
+  const indicatorStyle: ViewStyle = {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: t.borderWidthFocus,
+    backgroundColor: t.colorControlSelectedBackground,
+  };
+
+  return (
+    <Pressable
+      testID="Carousel.pickerItem"
+      accessibilityRole="tab"
+      accessibilityLabel={label}
+      accessibilityState={{ selected }}
+      onFocus={() => {
+        setFocused(true);
+        onFocus();
+      }}
+      onBlur={() => {
+        setFocused(false);
+        onBlur();
+      }}
+      onPress={onSelect}
+      style={hitStyle}
+    >
+      <Animated.Text style={labelStyle}>{label}</Animated.Text>
+      {selected ? <View style={indicatorStyle} accessibilityElementsHidden importantForAccessibility="no" /> : null}
     </Pressable>
   );
 }

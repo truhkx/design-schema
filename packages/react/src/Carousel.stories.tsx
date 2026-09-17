@@ -3,10 +3,11 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Carousel, CarouselSlide } from './Carousel';
 import { Card } from './Card';
 
-function slides(names: string[], body: (name: string) => string): ReactElement[] {
+/** One CarouselSlide per name, each a Card whose heading repeats the label. */
+function slides(names: string[]): ReactElement[] {
   return names.map((name) => (
     <CarouselSlide key={name} label={name}>
-      <Card heading={name}>{body(name)}</Card>
+      <Card heading={name}>{name}</Card>
     </CarouselSlide>
   ));
 }
@@ -16,8 +17,7 @@ const meta: Meta<typeof Carousel> = {
   component: Carousel,
   args: {
     label: 'Featured products',
-    picker: 'dots',
-    children: slides(['Aria desk lamp', 'Solstice mug', 'Range planter'], () => 'A product worth a closer look.'),
+    children: slides(['Product 1', 'Product 2', 'Product 3', 'Product 4']),
   },
   tags: ['autodocs'],
 };
@@ -36,12 +36,13 @@ export const PickerNone: Story = { args: { picker: 'none' } };
 export const Loop: Story = { args: { loop: true } };
 export const NoSnap: Story = { args: { snap: false } };
 export const Controlled: Story = { args: { activeIndex: 1 } };
+export const Autoplay: Story = { args: { autoplay: true } };
 
 /* examples */
 export const FeaturedProducts: Story = {
   args: {
     label: 'Featured products',
-    children: slides(['Aria desk lamp', 'Solstice mug', 'Range planter', 'Ledger notebook'], () => 'A product card.'),
+    children: slides(['Product 1', 'Product 2', 'Product 3', 'Product 4']),
   },
 };
 
@@ -49,7 +50,7 @@ export const NamedSlidesWithTabs: Story = {
   args: {
     label: 'Plans',
     picker: 'tabs',
-    children: slides(['Starter', 'Team', 'Enterprise'], (name) => `What the ${name} plan includes.`),
+    children: slides(['Starter', 'Team', 'Enterprise']),
   },
 };
 
@@ -59,7 +60,7 @@ export const AmbientHero: Story = {
     autoplay: true,
     interval: 8000,
     loop: true,
-    children: slides(['Harbour at dawn', 'Studio floor', 'Night market'], () => 'A photograph.'),
+    children: slides(['Story 1', 'Story 2', 'Story 3']),
   },
 };
 
@@ -68,7 +69,7 @@ export const ThreeUpGallery: Story = {
     label: 'Gallery',
     perView: 3,
     picker: 'none',
-    children: slides(['One', 'Two', 'Three', 'Four', 'Five', 'Six'], (name) => `Image ${name}.`),
+    children: slides(['Image 1', 'Image 2', 'Image 3', 'Image 4', 'Image 5', 'Image 6']),
   },
 };
 

@@ -91,18 +91,21 @@ component:
       type: number
       required: true
       description: The current measurement. Clamped to `min`…`max` for the bar; the
-        accessible value is the clamped number too. Lit starts the property at 0,
-        with no development warning.
+        accessible value is the clamped number too, exact and unrounded (aria-valuenow="3.14159";
+        only the percentage text is rounded). Lit starts the property at 0, with no
+        development warning.
     min:
       type: number
       default: 0
       description: Lower bound of the range. On Lit a missing or unparseable attribute
-        falls back to 0.
+        falls back to 0; on every platform a non-finite `min` (NaN, Infinity) is treated
+        as 0.
     max:
       type: number
       default: 100
       description: Upper bound of the range. Must be greater than `min`. On Lit a
-        missing or unparseable attribute falls back to 100.
+        missing or unparseable attribute falls back to 100; on every platform a non-finite
+        `max` (NaN, Infinity) is treated as 100.
     label:
       type: string
       required: true
@@ -114,10 +117,13 @@ component:
       type: string
       description: 'Human-readable value shown at the end of the label row and announced
         instead of the raw number ("3.2 GB of 10 GB", "Strong"). Omit to show and
-        announce the percentage, rounded to a whole number ("32%"): `Intl.NumberFormat(locale,
-        { style: ''percent'', maximumFractionDigits: 0 })` of the fill fraction. Rounding
-        is for the text only; the fill width uses the exact fraction. The announced
-        string is the same on every platform.'
+        announce the percentage, rounded to a whole number ("32%"): `Intl.NumberFormat(undefined,
+        { style: ''percent'', maximumFractionDigits: 0 })` of the fill fraction. Meter
+        has no locale prop: every platform uses the runtime (browser, server or device)
+        default locale, and the same formatter produces the "0%" of an invalid range
+        (so "0 %" in fr). Rounding is for the text only; the fill width uses the exact
+        fraction. For the same locale, the announced string is the same on every platform.
+        Lit attribute `value-text`, not reflected.'
       a11y: 'Always rendered, as aria-valuetext (web, Lit) and accessibilityValue.text
         (React Native): valueText when given, else the formatted percentage.'
     tone:
@@ -156,8 +162,9 @@ component:
     radius:
       token: radius.full
       part: track
-      description: Rounds the track and the fill ends; the track clips the fill (overflow
-        hidden).
+      description: 'Rounds the track and the fill ends: the track clips the fill (overflow
+        hidden) and the fill carries the same radius on every platform, so the leading
+        end of a partial fill is rounded too.'
       locked: false
     labelColor:
       token: color.foreground
@@ -188,14 +195,16 @@ component:
     fontFamily:
       token: font.family.body
       part: header
-      description: Forwarded to both Texts' fontFamily overrides; never styles them
-        directly.
+      description: 'Forwarded to both Texts'' fontFamily overrides; never styles them
+        directly. `part: header` only says it covers both Texts in the header row:
+        the header element itself takes no style and no hook from it.'
       locked: false
     lineHeight:
       token: font.lineHeight.normal
       part: header
-      description: Forwarded to both Texts' lineHeight overrides; never styles them
-        directly.
+      description: 'Forwarded to both Texts'' lineHeight overrides; never styles them
+        directly. `part: header` only says it covers both Texts in the header row:
+        the header element itself takes no style and no hook from it.'
       locked: false
     partGap:
       token: space.1
@@ -250,7 +259,13 @@ component:
         our tone colors reliably. The label is a real element referenced by aria-labelledby;
         the track and fill are plain divs. role=meter and every aria-value* attribute
         sit on the track, while data-ds sits on the root wrapper: they are different
-        elements. aria-valuetext is always set (valueText, else the formatted percentage).'
+        elements. aria-valuetext is always set (valueText, else the formatted percentage).
+        Besides their listed composition props, the composed Texts receive only anatomy
+        plumbing: `data-part` on both and `id={labelId}` on the label. The forwarded-only
+        bindings (labelSize, labelWeight, valueSize, fontFamily, lineHeight) get no
+        `--ds-meter-*` hook and no CSS rule of their own: they reach the Texts only
+        through the Texts'' `overrides`, and only when the consumer overrides them,
+        since their default tokens are the ones the Text props already resolve to.'
     lit:
       tag: ds-meter
       reflect:
@@ -258,13 +273,17 @@ component:
       - value
       - min
       - max
-      notes: The meter role and aria-value* attributes are plain attributes on the
+      notes: 'The meter role and aria-value* attributes are plain attributes on the
         track element in the shadow root; data-ds is on the root wrapper, a different
         element. aria-valuetext is always set. aria-labelledby points at the composed
         ds-text host of the label inside the same shadow root, which is a valid target.
         Numeric attributes reflect as strings; parse them, falling back to 0/100 when
-        missing or unparseable. `hideValue` is the attribute `hide-value`, not reflected.
-        No events.
+        missing or unparseable. `hideValue` is the attribute `hide-value` and `valueText`
+        the attribute `value-text`, neither reflected. No events. As on web, the forwarded-only
+        bindings (labelSize, labelWeight, valueSize, fontFamily, lineHeight) get no
+        `--ds-meter-*` hook on :host and the shadow CSS never sets `--ds-text-*` hooks:
+        the child ds-text receives them only through its `overrides` property, when
+        the consumer overrides them.'
     rn:
       element: View
       props:
@@ -278,8 +297,12 @@ component:
         same formatted percentage web and Lit announce. The fill animates in measured
         pixels from onLayout — a percentage width cannot be interpolated — and snaps
         with no animation before the width is known, on first layout and on resize.
-        RN tests check the name through accessibilityLabel and the visible text; accessibilityValue
-        is not asserted by the scenarios.'
+        The composition''s `element: span` is not passed (native Text has no `element`).
+        Text takes no testID, so the label and value Texts each sit in a plain View
+        the Meter owns, carrying `testID="Meter.label"` and `testID="Meter.valueText"`;
+        the label''s wrapper View has `flexShrink: 1` so a long label wraps inside
+        the header row. RN tests check the name through accessibilityLabel and the
+        visible text; accessibilityValue is not asserted by the scenarios.'
     swiftui:
       element: VStack
       props:
@@ -513,12 +536,16 @@ reflect:
 - value
 - min
 - max
-notes: The meter role and aria-value* attributes are plain attributes on the track
+notes: 'The meter role and aria-value* attributes are plain attributes on the track
   element in the shadow root; data-ds is on the root wrapper, a different element.
   aria-valuetext is always set. aria-labelledby points at the composed ds-text host
   of the label inside the same shadow root, which is a valid target. Numeric attributes
   reflect as strings; parse them, falling back to 0/100 when missing or unparseable.
-  `hideValue` is the attribute `hide-value`, not reflected. No events.
+  `hideValue` is the attribute `hide-value` and `valueText` the attribute `value-text`,
+  neither reflected. No events. As on web, the forwarded-only bindings (labelSize,
+  labelWeight, valueSize, fontFamily, lineHeight) get no `--ds-meter-*` hook on :host
+  and the shadow CSS never sets `--ds-text-*` hooks: the child ds-text receives them
+  only through its `overrides` property, when the consumer overrides them.'
 ```
 
 ## Guidance
@@ -537,7 +564,9 @@ Do not use a Meter for the progress of a task — uploads, loading, multi-step f
 
 ## Behavior
 
-The fill width is `(value − min) / (max − min)` of the track, clamped to 0–100%; a non-finite `value` is treated as `min`. Changes to `value` animate the fill width over `transition`, instantly under reduced motion. Nothing is interactive; the meter has no focus, no events, and no hover. If `max ≤ min` the component renders an empty track, exposes `valuenow = min` with the given bounds, shows and announces "0%" (unless `valueText` is given), and warns in development.
+The fill width is `(value − min) / (max − min)` of the track, clamped to 0–100%; a non-finite `value` is treated as `min`, and a non-finite `min` or `max` as its default (0, 100). Any change of `value`, `min` or `max` that moves the fill fraction animates the fill width over `transition`, in whichever direction it moves, instantly under reduced motion; a width change that comes only from layout (first layout, resize) snaps, and an update where both happen at once snaps. Nothing is interactive; the meter has no focus, no events, and no hover. If `max ≤ min` the component renders an empty track, exposes `valuenow = min` with the given bounds, shows and announces "0%" (unless `valueText` is given) from the same locale formatter as any percentage, and warns in development with the developer-facing message ``Meter: `max` (<max>) must be greater than `min` (<min>).`` — not a copy key, since it is never shown to users — once per distinct invalid `min`/`max` pair.
+
+The header row places the label at the start and the value text at the end (space-between), aligned on their text baseline. A long label wraps onto more lines inside the row; neither text is truncated.
 
 ## Content guidelines
 

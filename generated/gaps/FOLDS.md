@@ -1723,3 +1723,163 @@ One line per decision: `<date> <Component> <platform>: <gap> → <what the doc n
 2026-09-17 Divider rn: spacing, line width and vertical stretch natively → root padding always; flex 1 lines; both stretch
 2026-09-17 Divider rn: key of the second semantic warning → semantic plus label in effect
 2026-09-17 Divider rn: section-boundary example contradicts rn silence → description says rn is silent and warns
+2026-09-17 Alert rn: number body in label and iOS announcement → string or number body is text for both
+2026-09-17 Alert rn: label separator given only for iOS announcement → label joined by ". " like the announcement
+2026-09-17 Alert rn: who hides the decorative icon → unlabelled Icon hides itself; Alert adds no a11y props
+2026-09-17 Alert rn: live-off scenario has no rn check → then accessibilityLiveRegion is null on rn
+2026-09-17 Alert rn: role prop versus accessibilityRole on RN 0.87 → accessibilityRole and accessibilityLiveRegion, not role
+2026-09-17 Alert lit: region containing a button delegates focus or not → no delegatesFocus; the alert is a region
+2026-09-17 Alert lit: dismissMargin block/inline-end sides ambiguous → margin-block-start and margin-inline-end only
+2026-09-17 Alert lit: next-focusable bare a and negative tabindex → a[href]; negative tabindex skipped
+2026-09-17 Alert lit: next-focusable walk ignores shadow roots → flat tree walk, open shadow roots and slotted content
+2026-09-17 Alert lit: body-text name omits ds-link label attributes → collapsed light-DOM textContent; attribute labels excluded
+2026-09-17 Alert lit: what the --ds-alert-icon hook styles → locked, no overrides.icon and no hook
+2026-09-17 Alert lit: icon box reads hook, glyph reads override → overrides.iconSize is the only supported input
+2026-09-17 Alert lit: empty heading string → same as no heading on every platform
+2026-09-17 Alert web: locked icon says override through overrides.icon → clause removed; locked, no override, no hook
+2026-09-17 Alert web: next-focusable a without href → a[href]
+2026-09-17 Alert web: visibility hidden or zero-size counts as unrendered → hidden attr, display none up the tree, visibility hidden; size not checked
+2026-09-17 Alert web: disabled fieldset descendants count as disabled → :disabled, includes them
+2026-09-17 Alert web: icon-box math needs a heading signal → data-has-heading on the root, no :has()
+2026-09-17 Alert web: fontSize/lineHeight parts versus icon math → hooks on root inherited; heading uses container lineHeight
+2026-09-17 Alert web: icon-size hook and forwarded token can diverge → overrides.iconSize is the only supported input
+2026-09-17 Alert web: no scenario for focus move on dismiss → web and Lit add a hand-written next/previous/none test
+2026-09-17 Alert web: consumer aria-label versus content name → name always from content; consumer aria-label/labelledby dropped
+2026-09-17 Breadcrumb rn: Text has no testID for the link part → wrapper View around the Text carries Breadcrumb.link
+2026-09-17 Breadcrumb rn: ellipsis Icon colour when Button does not colour icons → explicit color color.action.ghost.foreground
+2026-09-17 Breadcrumb rn: current-page label clashes with nav label prop → '<item.label>, <copy.current>'
+2026-09-17 Breadcrumb rn: native focus fallback unreachable by hardware keyboard → setAccessibilityFocus on index-1 View; screen reader only
+2026-09-17 Breadcrumb rn: pressing link wrapper testID misses the Link → tests press the Link found by role link
+2026-09-17 Breadcrumb rn: items href optional under exactOptionalPropertyTypes → href?: string | undefined
+2026-09-17 Breadcrumb rn: gap override in list and inside items → applies in both places
+2026-09-17 Breadcrumb lit: focus-fallback li has no focus-visible style → new focusRing/focusRingWidth bindings on item, web and Lit
+2026-09-17 Breadcrumb lit: tabindex=-1 on revealed li removed later → set once and left, even when items change
+2026-09-17 Breadcrumb lit: Lit asserting role=navigation in shadow root → role asserted on web only; Lit via accessible name
+2026-09-17 Breadcrumb web: focus-fallback li outline intended → yes, via focusRing/focusRingWidth on the fallback li
+2026-09-17 Breadcrumb web: revealed range and items change before focus → indices 1..length−3 at press; fallback index 1
+2026-09-17 Breadcrumb web: no part for a plain-text ancestor → text inside item, no part, takes itemColor
+2026-09-17 Breadcrumb web: display value of link/expand wrapper spans → no display set; inline in the item row
+2026-09-17 Checkbox rn: disabled prop removes Pressable focus → accessibilityState.disabled plus press guard, no disabled prop
+2026-09-17 Checkbox rn: value prop meaningless on native → accepted (default 'on'), no effect on RN
+2026-09-17 Checkbox rn: error announcement while errorSummary is on → summary announces; live region none, no iOS announcement
+2026-09-17 Checkbox rn: focus border versus invalid border precedence → invalid colour never hidden by focus; only width changes
+2026-09-17 Checkbox rn: invalid versus selected border on checked box → invalid wins in every state; fill stays selected
+2026-09-17 Checkbox rn: wide controlBorderWidth override thins focused border → focused width is max(focusRingWidth, controlBorderWidth)
+2026-09-17 Checkbox rn: transition covers check-to-dash glyph swap → fill and border colour only; glyphs swap instantly
+2026-09-17 Checkbox rn: derived copy versus validate() order → error > required-and-unchecked > invalid regardless of invalid
+2026-09-17 Checkbox rn: vertical alignment for multi-line label → start-aligned; control centred on the label's first line
+2026-09-17 Checkbox lit: indicator cannot fade when unchecked renders nothing → indicator not animated
+2026-09-17 Checkbox lit: required validity order versus rendered error → validity error > valueMissing > invalid; message waits for invalid
+2026-09-17 Checkbox lit: re-setting indeterminate to the same value → cleared state resets only on a value change
+2026-09-17 Checkbox lit: checked attribute changes after mount → also set live state; reset restores attribute else defaultChecked
+2026-09-17 Checkbox lit: clicks on the error message → outside the hit area, do nothing
+2026-09-17 Checkbox lit: Form-message step has no Lit channel → Lit order is error, then invalid-derived copy
+2026-09-17 Checkbox web: web input controlled internally for the indicator → never React-controlled; state mirror for indicator only
+2026-09-17 Checkbox web: indicator transition impossible when unmounted → fill and border colour only
+2026-09-17 Checkbox web: invalid versus selected border on checked box → invalid wins in every state
+2026-09-17 Checkbox web: bare invalid renders a role=alert message → invalid description says so
+2026-09-17 Checkbox web: inline alignment of error below the row → indented by controlSize + gap on every platform
+2026-09-17 Checkbox web: partGap between label and description forwarding → whole text column forwards clicks to the input
+2026-09-17 Disclosure rn: useReducedMotion resolution undetectable for first snap → first placement always direct; later changes animate unless reduced
+2026-09-17 Disclosure rn: keepMounted closed panel in accessibility tree → display none plus hidden-descendants props
+2026-09-17 Disclosure rn: useNativeDriver for the chevron transform → Platform.OS !== 'web'
+2026-09-17 Disclosure rn: package Text lacks summary font overrides → package Text with overrides; plain RN Text as stopgap
+2026-09-17 Disclosure rn: ignored press then same-value open change → counts as the echo; no controlled
+2026-09-17 Disclosure lit: toggle collides with native ToggleEvent name → deliberate exception stated
+2026-09-17 Disclosure lit: markup cannot express controlled closed → property only for controlled closed
+2026-09-17 Disclosure lit: how long focus counts as within the panel → until a focusout with relatedTarget outside; null does not clear
+2026-09-17 Disclosure lit: hidden host and panel need display none → both rules stated in lit notes
+2026-09-17 Disclosure lit: no scenarios for controlled and echo rules → new scenario controlled-open-change-reports-controlled
+2026-09-17 Disclosure web: controlled after-change timing means request → controlled fires from press handler; uncontrolled after commit
+2026-09-17 Disclosure web: two clicks before any echo → only the latest request is remembered
+2026-09-17 Disclosure web: trigger has no line-height binding → new triggerLineHeight binding on font.lineHeight.normal
+2026-09-17 Disclosure web: children missing from owned button attributes → children omitted from button props; it is panel content
+2026-09-17 Disclosure web: where a consumer id goes → trigger button; panel id <id>-panel or useId()
+2026-09-17 Fieldset rn: RN Text has no element prop → element span not passed on native
+2026-09-17 Fieldset rn: fragments count for the required indicator natively → fragments flattened on web and RN
+2026-09-17 Fieldset rn: context legend includes required indicator → visible legend shows it; context carries bare legend
+2026-09-17 Fieldset rn: disabledOpacity target and group error dimming → legend/description wrappers dim; error never dims
+2026-09-17 Fieldset rn: fontFamily/lineHeight part legend but forward to three → part names the first; forwards decide
+2026-09-17 Fieldset rn: legend scenario web/lit only versus rn name check → name via derived accessible-name scenario on rn
+2026-09-17 Fieldset rn: empty-string description or error → counts as unset
+2026-09-17 Fieldset lit: which bindings get a --ds-fieldset hook → only partGap and disabledOpacity; forwarded-only get none
+2026-09-17 Fieldset lit: forwarded bindings always or only when overridden → always sent as resolved token; Stack gets no gap
+2026-09-17 Fieldset lit: single part versus multi-part descriptions → part names the first; forwards and descriptions govern
+2026-09-17 Fieldset lit: wrapper elements for description, fields, errorMessage → Fieldset-owned divs with data-part and part
+2026-09-17 Fieldset lit: indicator counts required property or attribute → either counts; empty group shows none
+2026-09-17 Fieldset web: NumberInput nested deeper not disabled by group → no field reads a context; deeper fields need disabled themselves
+2026-09-17 Fieldset web: what counts as a field before render → component elements or native form controls
+2026-09-17 Fieldset web: element for the description part → div data-part=description with id around the Text
+2026-09-17 Fieldset web: required indicator plain string or styled span → plain text inside the legend Text
+2026-09-17 Landmark rn: strings mixed with elements in children → each string/number child wrapped in Text
+2026-09-17 Landmark rn: role stories inherit Default label Main → label undefined for roles that take none
+2026-09-17 Landmark rn: label on complementary or search on RN → dropped silently; only navigation/region/form take it
+2026-09-17 Landmark rn: no RoleForm story label → region "Related articles", form "Sign in"
+2026-09-17 Landmark lit: guidance uses label attribute that does nothing → aria-label="Main"; label is property-only
+2026-09-17 Landmark lit: label reflection versus roles without labels → conditional; element writes aria-label itself
+2026-09-17 Landmark lit: no copy for three dev warnings → exact strings in Behavior
+2026-09-17 Landmark lit: duplicate scan misses native-element peer roles → role attribute else implicit tag role
+2026-09-17 Landmark lit: no labelledBy property on Lit → host aria-labelledby attribute, resolved in getRootNode()
+2026-09-17 Landmark lit: aria-labelledby changes do not re-run warnings → not watched, stated
+2026-09-17 Landmark lit: Default label carries into page-main example → examples set exactly their given, label undefined otherwise
+2026-09-17 Landmark lit: role scenarios merge Default label → per-role scenarios clear label
+2026-09-17 Landmark web: no copy for duplicate-main and shared-label warnings → exact strings in Behavior
+2026-09-17 Landmark web: examples inherit Default label → given plus label undefined unless named
+2026-09-17 Landmark web: unlabelled region with as=div → as rule wins; role=region emitted, still warns
+2026-09-17 Landmark web: aria-labelledby on banner/main/contentinfo → dropped like label, with the warning
+2026-09-17 Landmark web: Text style for example children → package Text defaults
+2026-09-17 Meter rn: element span on native Text → not passed on native
+2026-09-17 Meter rn: label and valueText testIDs without Text testID → Meter-owned wrapper Views carry them
+2026-09-17 Meter rn: Intl locale source unnamed → Intl.NumberFormat(undefined) runtime default on every platform
+2026-09-17 Meter rn: radius on the fill too → track clips and fill carries the same radius
+2026-09-17 Meter rn: header layout and long label overflow → space-between, baseline, label wraps; wrapper flexShrink 1
+2026-09-17 Meter rn: max<=min 0% locale formatting → same formatter
+2026-09-17 Meter rn: animate or snap on min/max with resize → fraction change animates; layout-only or combined snaps
+2026-09-17 Meter lit: forwarded bindings via overrides or hooks → overrides only; no --ds-meter hook, no --ds-text writes
+2026-09-17 Meter lit: Intl locale source unnamed → runtime default locale
+2026-09-17 Meter lit: fontFamily/lineHeight part header meaning → cover both header Texts; header element unstyled
+2026-09-17 Meter lit: valueText attribute name and reflection → value-text, not reflected
+2026-09-17 Meter web: Intl locale may differ server and browser → runtime default locale, stated
+2026-09-17 Meter web: Texts need id and data-part beyond listed props → anatomy plumbing allowed: data-part both, id on label
+2026-09-17 Meter web: header font hooks dead for consumer CSS → no hook or header rule for forwarded-only bindings
+2026-09-17 Meter web: default tokens of forwarded bindings forwarded → only when overridden
+2026-09-17 Meter web: non-finite min or max → min counts as 0, max as 100
+2026-09-17 Meter web: max<=min warning text and repetition → exact message; once per distinct invalid pair
+2026-09-17 Meter web: aria-valuenow rounded or exact → exact clamped value; only the text is rounded
+2026-09-17 Meter web: fill radius or track clipping → track clips and fill carries the radius
+2026-09-17 RadioGroup rn: legend/radioLabel typography without composition → composed Texts with bindings as overrides
+2026-09-17 RadioGroup rn: optionPaddingBlock part and radio testID node → binding has no part; Pressable row is radio with testID
+2026-09-17 RadioGroup rn: fontFamily/lineHeight on legend and radioLabel → applied directly and forwarded to every Text
+2026-09-17 RadioGroup rn: dot radius follows controlRadius → dot always a circle
+2026-09-17 RadioGroup rn: accessibilityState disabled on group root → listed; group View carries it
+2026-09-17 RadioGroup rn: what transition animates → selected border colour and dot opacity; invalid/focus instant
+2026-09-17 RadioGroup lit: Form-message step has no Lit channel → Lit order error, then copy while invalid
+2026-09-17 RadioGroup lit: ds-form never sets invalid on failing group → app sets invalid or error from ds-form's invalid event
+2026-09-17 RadioGroup lit: optionPaddingBlock part radio pads the row → no part; targets the row wrapper
+2026-09-17 RadioGroup lit: control outer size when focus border thickens → border-box, outer size unchanged
+2026-09-17 RadioGroup lit: radio and legend missing from Lit part list → part/data-part legend, radio, description listed
+2026-09-17 RadioGroup lit: defaultValue as attribute → default-value attribute
+2026-09-17 RadioGroup web: forwarded-only helper/description/error hooks → no --ds-radio-group hooks; overrides only
+2026-09-17 RadioGroup web: disabled guards omit arrow and Space keys → click, change, arrows and Space guarded
+2026-09-17 RadioGroup web: validate() order versus display order → error, required, invalid
+2026-09-17 RadioGroup web: optionPaddingBlock part radio versus row wrapper → no part; row wrapper
+2026-09-17 RadioGroup web: dot diameter reads non-binding space.1 → new indicatorInset binding; diameter controlSize − 2 × indicatorInset
+2026-09-17 RadioGroup web: thick focus border could clip the dot → dot keeps size; fits while indicatorInset ≥ focusRingWidth
+2026-09-17 Switch rn: disabled switch Form registration contradicts RN Form → disabled adds no key on any platform
+2026-09-17 Switch rn: disabledOpacity parts versus whole element → RN dims the whole Pressable row
+2026-09-17 Switch rn: native Switch taller than the label line → centres on the line slot, overflows evenly
+2026-09-17 Switch rn: disabled example says focusable versus RN limit → focusable except on React Native
+2026-09-17 Switch lit: checked attribute initial only versus Lit converter → later attribute changes set live state; reset reads attribute
+2026-09-17 Switch lit: aria-disabled switch submitted by native form → setFormValue null while disabled
+2026-09-17 Switch lit: thumb no hook versus overridable thumb bindings → thumb is a span part with --ds-switch-thumb-* hooks
+2026-09-17 Switch lit: ::before thumb invisible in Firefox → aria-hidden thumb span, not ::before
+2026-09-17 Switch lit: helperSize has no hook → forwarded-only bindings get no hook; overrides only
+2026-09-17 Switch lit: controlled-updates-on-set without controlled mode → plain property write on Lit
+2026-09-17 Switch lit: required always false implementation → readonly getter returning false
+2026-09-17 Switch web: one-line 44px row centring → row centres content; track slot one line tall
+2026-09-17 Switch web: controlled switch DOM checked sync → defaultChecked, reset in handler, effect syncs
+2026-09-17 Switch web: next-equals-checked guard unreachable on web → guard only on RN/SwiftUI
+2026-09-17 Switch web: styles key off :checked or aria-checked → [aria-checked='true']
+2026-09-17 Switch web: disabledOpacity on composed description Text → on track and text column wrappers
+2026-09-17 Switch web: RTL selector misses inherited dir → :dir(rtl); Lit :host(:dir(rtl))
+2026-09-17 Switch web: nameless switch inside a Form → does not register; id from useId

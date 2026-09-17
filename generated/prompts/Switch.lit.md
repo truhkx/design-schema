@@ -81,8 +81,10 @@ component:
     name:
       type: string
       description: Optional field name. When inside a Form the state is collected
-        as a boolean on every platform; most switches are not in forms. A Switch never
-        validates and never appears in an error summary.
+        as a boolean on every platform; most switches are not in forms. Without `name`
+        a Switch inside a Form does not register (it contributes no key) and its id
+        comes from the platform id generator (useId on web), not the Form's idBase.
+        A Switch never validates and never appears in an error summary.
     checked:
       type: boolean
       description: 'Controlled state (web, RN, SwiftUI): a controlled switch shows
@@ -101,10 +103,14 @@ component:
     disabled:
       type: boolean
       default: false
-      description: Cannot be toggled. Stays visible, readable and focusable on web,
+      description: 'Cannot be toggled. Stays visible, readable and focusable on web,
         Lit and SwiftUI; a disabled native React Native Switch is not focusable (platform
-        limit, see platforms.rn.notes). Still registered with the Form, where the
-        Form's disabled-field rule applies, as for Checkbox.
+        limit, see platforms.rn.notes). A disabled switch contributes no key to the
+        Form''s values on any platform (the Form''s disabled-field rule, as for Checkbox):
+        on web and RN it does not register while disabled (it unregisters when it
+        becomes disabled and registers again when re-enabled); on Lit it calls setFormValue(null)
+        while disabled or form-disabled, so neither a native <form> nor ds-form collects
+        it.'
     description:
       type: string
       description: Persistent helper text below the label explaining the effect.
@@ -122,7 +128,10 @@ component:
       description: Fired when the user changes the state, with the new boolean. The
         change is already in effect; there is nothing to submit. A controlled prop
         change fires nothing, a press that asks for the current value (next equals
-        checked) fires nothing, and nothing fires on mount.
+        checked) fires nothing, and nothing fires on mount. The next-equals-checked
+        rule needs a guard only where a platform can report the current value (RN
+        valueChange, SwiftUI); on web and Lit every native toggle flips the value,
+        so no guard is written there.
       platforms:
         web: onChange
         lit: change
@@ -149,10 +158,14 @@ component:
       token: color.control.selectedForeground
       part: thumb
       description: 'Thumb color in both states. Web and Lit draw the thumb the same
-        way: a `::before` pseudo-element of the native input, so the thumb part has
-        no element and no data-part/part hook on either platform; its bindings are
-        the input''s own rules. RN: no view (the native Switch draws it), so there
-        is no `Switch.thumb` testID. SwiftUI: a shape in the ToggleStyle.'
+        way: a Switch-owned aria-hidden <span> with `pointer-events: none`, stacked
+        over the input in a track wrapper span (as Checkbox''s indicator), carrying
+        `data-part="thumb"` (web) / `part="thumb"` and `data-part="thumb"` (Lit).
+        Not a `::before` of the input: Firefox draws no pseudo-element on an `appearance:
+        none` input. Its state styles key off the input''s `[aria-checked=''true'']`
+        (the component state, so controlled mode looks right), never `:checked`. RN:
+        no view (the native Switch draws it), so there is no `Switch.thumb` testID.
+        SwiftUI: a shape in the ToggleStyle.'
       locked: true
     trackWidth:
       token: space.10
@@ -200,8 +213,14 @@ component:
     labelSize:
       token: font.size.md
       part: label
-      description: 'Also sets the track alignment: the track sits at the top of the
-        row, centred on the label''s first line (labelSize × lineHeight), as Checkbox.'
+      description: 'Also sets the track alignment: the track sits in a slot one label
+        line tall (labelSize × lineHeight), aligned with the top of the text column
+        and centred on the label''s first line. The row centres its content (track
+        slot plus text column) on the cross axis, so a one-line row is vertically
+        centred in minTarget; a wrapping label or a description grows the content
+        and the track stays on the first line. RN: the native Switch (about 31pt on
+        iOS) can be taller than the line slot; it is centred on the slot and overflows
+        it evenly above and below, and the row''s minHeight still contains it.'
       locked: false
     labelWeight:
       token: font.weight.regular
@@ -210,9 +229,12 @@ component:
     helperSize:
       token: font.size.sm
       part: description
-      description: Description text size. Reaches the composed Text only through its
-        `fontSize` override, with fontFamily and lineHeight forwarded the same way;
-        no --ds-switch-* hook.
+      description: 'Description text size. Reaches the composed Text only through
+        its `fontSize` override, with fontFamily and lineHeight forwarded the same
+        way; no --ds-switch-* hook. Rule for every binding that is only forwarded
+        to a composed child (helperSize, descriptionText): it gets no --ds-switch-*
+        CSS hook on web or Lit, so it is changed through the Switch `overrides` property
+        only, never from CSS.'
       locked: false
     descriptionText:
       token: color.foreground.muted
@@ -253,7 +275,11 @@ component:
     disabledOpacity:
       token: opacity.disabled
       part: track
-      description: Dims the track (with its thumb), the label and the description.
+      description: 'Dims the track (with its thumb), the label and the description.
+        Web/Lit: on the track wrapper and on the text column wrapper that holds the
+        label and the description, never on the composed description Text itself.
+        RN: on the whole Pressable row (track, label and description), unlike Checkbox,
+        which leaves its description undimmed.'
       locked: false
     transition:
       token: motion.duration.fast
@@ -315,17 +341,25 @@ component:
       notes: 'A native <input type="checkbox" role="switch"> styled with appearance:
         none. Keeps label association, Space toggling and form participation for free;
         role=switch makes screen readers say "on/off" instead of "checked". The track
-        and thumb are drawn in CSS on the input itself: the input carries data-part="track"
-        and the thumb is its ::before pseudo-element, with no hook. The input stays
-        uncontrolled for its native checked state (no React-held `checked` on the
-        element, so a prevented click on a disabled switch cannot leave the DOM out
-        of step); the component tracks the state and mirrors it as aria-checked. The
-        row is a full-width flex row with min-block-size minTarget and no padding;
-        a click whose target is the row itself (the gap) or the description is forwarded
-        to the input. The track sits at the top of the row, centred on the label''s
-        first line (calc from labelSize × lineHeight). Group disabled: Fieldset passes
-        `disabled` to its direct child fields; there is no React FieldsetContext.
-        Registered with Form like Checkbox, including when disabled.'
+        is drawn in CSS on the input itself (data-part="track"); the thumb is a sibling
+        aria-hidden span (data-part="thumb", see the thumb binding) in the track wrapper.
+        Track and thumb state styles use `[aria-checked=''true'']`, not `:checked`.
+        The input stays uncontrolled for its native checked state (no React-held `checked`
+        on the element, so a prevented click on a disabled switch cannot leave the
+        DOM out of step); the component tracks the state and mirrors it as aria-checked.
+        Controlled: the input renders with defaultChecked from the held state; the
+        change handler resets `event.target.checked` to the `checked` prop before
+        calling onChange, and an effect writes the DOM `checked` property whenever
+        the held state changes. Thumb travel mirrors under `:dir(rtl)` (not an ancestor
+        `[dir=rtl]` selector, which misses an inherited direction). The row is a full-width
+        flex row with min-block-size minTarget and no padding; a click whose target
+        is the row itself (the gap) or the description is forwarded to the input.
+        The track sits in a slot one label line tall, centred on the label''s first
+        line (calc from labelSize × lineHeight), and the row centres a one-line content
+        box in minTarget (see labelSize). Group disabled: Fieldset passes `disabled`
+        to its direct child fields; there is no React FieldsetContext. Registers with
+        Form by `name` like Checkbox, except while disabled or nameless (see props.disabled
+        and props.name).'
     lit:
       tag: ds-switch
       reflect:
@@ -337,18 +371,25 @@ component:
         is reflected so a name set as a property is still submitted by a native <form>.
         Shadow root with delegatesFocus; the native change is not composed, so re-dispatch
         a composed `change` CustomEvent with detail { checked }. `checked` behaves
-        like a native input: the attribute is the initial state only, the property
-        is the live state (starts from the attribute, else `defaultChecked`, and follows
+        like a native input: the attribute is the initial state, the property is the
+        live state (starts from the attribute, else `defaultChecked`, and follows
         every toggle), and it is not reflected; there is no controlled mode on Lit.
-        The host sets data-ds-field="change" (ds-form discovers fields by attribute
-        and validates this one on change). DsFormField: `required` is always false,
-        `validationMessage` is empty, checkValidity()/reportValidity() always return
-        true, and there is no `error` property. Group disabled: ds-fieldset sets the
-        `disabled` property on its direct data-ds-field children, and the switch also
-        honours formDisabledCallback from a native fieldset or form. The thumb is
-        the input''s ::before pseudo-element, as on web, with no part; shadow parts
-        otherwise use the anatomy names verbatim for `part` and `data-part` (track
-        on the input, label, description).'
+        Lit''s default Boolean converter is kept: a later `checked` attribute change
+        also sets the live property, and form reset (formResetCallback) restores the
+        property from the attribute. Form value: setFormValue(checked ? "on" : null),
+        and null while disabled or form-disabled. The host sets data-ds-field="change"
+        (ds-form discovers fields by attribute and validates this one on change).
+        DsFormField: `required` is a readonly plain getter that always returns false
+        (not a decorated property; setting it is silently ignored), `validationMessage`
+        is empty, checkValidity()/reportValidity() always return true, and there is
+        no `error` property. Group disabled: ds-fieldset sets the `disabled` property
+        on its direct data-ds-field children, and the switch also honours formDisabledCallback
+        from a native fieldset or form. The thumb is a Switch-owned span, as on web
+        (not ::before, which Firefox does not draw on an appearance: none input);
+        shadow parts use the anatomy names verbatim for `part` and `data-part` (track
+        on the input, thumb on its span, label, description). The --ds-switch-thumb-size,
+        --ds-switch-thumb-inset and --ds-switch-transition :host hooks style that
+        span. Thumb travel mirrors under `:host(:dir(rtl))`.'
     rn:
       element: Switch
       props:
@@ -499,6 +540,8 @@ component:
     - web
     - rn
   - name: controlled-updates-on-set
+    description: On Lit, which has no controlled mode, this is a plain `checked` property
+      write updating the live state.
     given:
       checked: false
     when:
@@ -542,8 +585,9 @@ component:
       label: Show archived
       labelPosition: end
   - name: disabled
-    description: A setting that cannot be changed here, still visible, readable and
-      focusable.
+    description: A setting that cannot be changed here, still visible and readable
+      (and focusable, except on React Native, where a disabled native Switch cannot
+      take focus).
     given:
       label: Two-factor authentication
       disabled: true
@@ -608,7 +652,7 @@ form:
 - example `settings-row`, story `SettingsRow`: given `label: "Email notifications"`, `labelPosition: "start"`; The settings-list convention, with the label at the start and the switch at the row end.
 - example `with-description`, story `WithDescription`: given `label: "Daily summary"`, `description: "Sends a daily summary at 9:00."`; A switch whose effect is stated in one sentence under the label.
 - example `checkbox-aligned`, story `CheckboxAligned`: given `label: "Show archived"`, `labelPosition: "end"`; The Checkbox-aligned form, with the switch before its label.
-- example `disabled`, story `Disabled`: given `label: "Two-factor authentication"`, `disabled: true`; A setting that cannot be changed here, still visible, readable and focusable.
+- example `disabled`, story `Disabled`: given `label: "Two-factor authentication"`, `disabled: true`; A setting that cannot be changed here, still visible and readable (and focusable, except on React Native, where a disabled native Switch cannot take focus).
 
 ## Overrides (per-instance styling contract)
 
@@ -712,6 +756,8 @@ Each scenario below becomes one test. They are platform-neutral: `given` are pro
   - web
   - lit
 - name: controlled-updates-on-set
+  description: On Lit, which has no controlled mode, this is a plain `checked` property
+    write updating the live state.
   given:
     checked: false
   when:
@@ -780,17 +826,23 @@ notes: 'Form-associated like ds-checkbox: the native form value is "on" or null 
   so a name set as a property is still submitted by a native <form>. Shadow root with
   delegatesFocus; the native change is not composed, so re-dispatch a composed `change`
   CustomEvent with detail { checked }. `checked` behaves like a native input: the
-  attribute is the initial state only, the property is the live state (starts from
-  the attribute, else `defaultChecked`, and follows every toggle), and it is not reflected;
-  there is no controlled mode on Lit. The host sets data-ds-field="change" (ds-form
-  discovers fields by attribute and validates this one on change). DsFormField: `required`
-  is always false, `validationMessage` is empty, checkValidity()/reportValidity()
+  attribute is the initial state, the property is the live state (starts from the
+  attribute, else `defaultChecked`, and follows every toggle), and it is not reflected;
+  there is no controlled mode on Lit. Lit''s default Boolean converter is kept: a
+  later `checked` attribute change also sets the live property, and form reset (formResetCallback)
+  restores the property from the attribute. Form value: setFormValue(checked ? "on"
+  : null), and null while disabled or form-disabled. The host sets data-ds-field="change"
+  (ds-form discovers fields by attribute and validates this one on change). DsFormField:
+  `required` is a readonly plain getter that always returns false (not a decorated
+  property; setting it is silently ignored), `validationMessage` is empty, checkValidity()/reportValidity()
   always return true, and there is no `error` property. Group disabled: ds-fieldset
   sets the `disabled` property on its direct data-ds-field children, and the switch
-  also honours formDisabledCallback from a native fieldset or form. The thumb is the
-  input''s ::before pseudo-element, as on web, with no part; shadow parts otherwise
-  use the anatomy names verbatim for `part` and `data-part` (track on the input, label,
-  description).'
+  also honours formDisabledCallback from a native fieldset or form. The thumb is a
+  Switch-owned span, as on web (not ::before, which Firefox does not draw on an appearance:
+  none input); shadow parts use the anatomy names verbatim for `part` and `data-part`
+  (track on the input, thumb on its span, label, description). The --ds-switch-thumb-size,
+  --ds-switch-thumb-inset and --ds-switch-transition :host hooks style that span.
+  Thumb travel mirrors under `:host(:dir(rtl))`.'
 ```
 
 ## Guidance
@@ -809,7 +861,7 @@ Do not use a Switch for a choice that is only applied on Save or Submit; use Che
 
 ## Behavior
 
-Clicking or tapping the row, or pressing Space on the control, flips the state, moves the thumb, and fires `onChange` with the new boolean. Enter is neither intercepted nor used to toggle. The row is full width: with `labelPosition: start` the label is at the start and the switch at the row's end; with `end` the switch comes first and the label follows it. The consumer applies the effect immediately; if it can fail asynchronously, the switch should be controlled and flipped back with an error message elsewhere — the switch itself has no error state by design. Uncontrolled unless `checked` is provided; a controlled switch shows the new state only once the prop changes. On Lit there is no controlled mode: the `checked` property is the live state, as on a native input. `onChange` fires only for user changes: not on mount, not for a controlled prop change, and not for a press that asks for the value it already has. `disabled` switches are visible, readable and focusable (`aria-disabled`), and do not toggle; a disabled native React Native Switch is the exception and cannot take focus. A disabled switch is still registered with the Form, whose disabled-field rule applies. `disabledOpacity` dims the track, label and description. Thumb travel and the track color change are animated with `transition`; under reduced motion both are instant. The track sits at the top of the row, centred on the label's first line, so a wrapping label or a description does not pull it down. Inside a Fieldset the group's `disabled` applies as if set on the field: on web Fieldset passes `disabled` to its direct child fields; on Lit ds-fieldset sets the `disabled` property on its direct `data-ds-field` children and the switch also honours `formDisabledCallback`; on React Native and SwiftUI `FieldsetContext` carries `disabled` and the legend, which prefixes the accessibility label as "<legend>, <label>" ("Notifications, Email") — the ", " is fixed punctuation, not copy.
+Clicking or tapping the row, or pressing Space on the control, flips the state, moves the thumb, and fires `onChange` with the new boolean. Enter is neither intercepted nor used to toggle. The row is full width: with `labelPosition: start` the label is at the start and the switch at the row's end; with `end` the switch comes first and the label follows it. The consumer applies the effect immediately; if it can fail asynchronously, the switch should be controlled and flipped back with an error message elsewhere — the switch itself has no error state by design. Uncontrolled unless `checked` is provided; a controlled switch shows the new state only once the prop changes. On Lit there is no controlled mode: the `checked` property is the live state, as on a native input. `onChange` fires only for user changes: not on mount, not for a controlled prop change, and not for a press that asks for the value it already has. `disabled` switches are visible, readable and focusable (`aria-disabled`), and do not toggle; a disabled native React Native Switch is the exception and cannot take focus. A disabled switch contributes no key to the Form's values on any platform, the Form's disabled-field rule. `disabledOpacity` dims the track, label and description. Thumb travel and the track color change are animated with `transition`; under reduced motion both are instant. The track sits at the top of the row, centred on the label's first line, so a wrapping label or a description does not pull it down. Inside a Fieldset the group's `disabled` applies as if set on the field: on web Fieldset passes `disabled` to its direct child fields; on Lit ds-fieldset sets the `disabled` property on its direct `data-ds-field` children and the switch also honours `formDisabledCallback`; on React Native and SwiftUI `FieldsetContext` carries `disabled` and the legend, which prefixes the accessibility label as "<legend>, <label>" ("Notifications, Email") — the ", " is fixed punctuation, not copy.
 
 ## Content guidelines
 
@@ -822,7 +874,7 @@ The switch has role `switch` and its state is exposed as `aria-checked` / `acces
 ## Platform notes
 
 ### Web
-Render `<input type="checkbox" role="switch">` with `appearance: none`, sized `trackWidth × trackHeight`, and draw the thumb with a pseudo-element translated by `trackWidth − thumbSize − 2 × thumbInset` when checked. Set `aria-checked` explicitly to mirror the checked state, since some screen readers do not derive it from a checkbox carrying `role="switch"`: the input stays uncontrolled for its native checked state, and the component holds the state (the `checked` prop when controlled) and mirrors it into `aria-checked`. For disabled, `aria-disabled` plus `preventDefault()` on `click` and `change`. Mirror the thumb travel under `[dir=rtl]`. Label with `<label for>`; the `labelPosition` prop changes flex order only.
+Render `<input type="checkbox" role="switch">` with `appearance: none`, sized `trackWidth × trackHeight`, and draw the thumb as an aria-hidden `<span data-part="thumb">` stacked over the input (not a pseudo-element, which Firefox does not draw on an `appearance: none` input), translated by `trackWidth − thumbSize − 2 × thumbInset` when `aria-checked="true"`. Set `aria-checked` explicitly to mirror the checked state, since some screen readers do not derive it from a checkbox carrying `role="switch"`: the input stays uncontrolled for its native checked state, and the component holds the state (the `checked` prop when controlled) and mirrors it into `aria-checked`. For disabled, `aria-disabled` plus `preventDefault()` on `click` and `change`. Mirror the thumb travel under `:dir(rtl)`. Label with `<label for>`; the `labelPosition` prop changes flex order only.
 
 ### Lit
 `<ds-switch>` is form-associated so a `name` inside a native `<form>` or `<ds-form>` contributes `"on"` when checked. The inner input is in the shadow root with `delegatesFocus: true`; re-dispatch a composed `change` CustomEvent with `detail: { checked }`. Reflect `name`, `disabled` and `label-position`; `checked` is not reflected (the attribute is the initial state, the property the live state). The host carries `data-ds-field="change"`; the switch never validates.

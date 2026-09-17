@@ -62,3 +62,8 @@ Gaps where a sibling component's generated code is wrong. The docs are already r
 - packages/react exports a FieldsetContext, but fieldset.md says none is exported (web Fieldset passes `disabled` to child fields) (found in Input, web).
 - packages/rn: NumberInput and Slider register `String(value)`, Combobox joins multiple values with commas, and DatePicker registers a range as two keys; form.md's contract is a number, a string array and a `[number, number]` pair (found in Form, rn).
 - packages/rn/src/FormContext.tsx is a stale, unused copy beside FormContext.ts (string | boolean values, no label); delete it (found in Form, rn).
+- packages/rn Text takes no `testID` and no layout style (`flexShrink`), so composites put part testIDs on wrapper Views; Breadcrumb still names `Breadcrumb.separator`/`Breadcrumb.current` on Texts (found in Breadcrumb, Meter; rn).
+- packages/rn Button does not colour its icon slots, so every caller passes the Icon colour itself (found in Breadcrumb, rn).
+- packages/rn Text has no fontFamily/fontSize/fontWeight/lineHeight overrides although text.md declares those bindings (found in Disclosure, rn).
+- packages/rn useReducedMotion reads false until the OS answers and cannot report "not resolved yet" (found in Disclosure, rn).
+- packages/lit ds-form never sets `invalid` on a failing field and sends no message back, so copy.required never shows from Form validation alone (found in RadioGroup, Checkbox; lit).

@@ -1,6 +1,6 @@
-# Gap digest — phase Core
+# Gap digest — phase Controls
 
-Generated 2026-09-17T04:47 by tools/gap_digest.ts. DOC lines belong in the named doc; fold them, run `pnpm parse`, and the affected targets become stale by prompt hash.
+Generated 2026-09-17T05:36 by tools/gap_digest.ts. DOC lines belong in the named doc; fold them, run `pnpm parse`, and the affected targets become stale by prompt hash.
 
 ## Accordion
 
@@ -198,6 +198,39 @@ Doc: `site/src/content/docs/components/actionsheet.md`
 ## Alert
 
 Doc: `site/src/content/docs/components/alert.md`
+
+### 2026-09-17 05:19 — rn round 1
+
+- **DOC** Alert: the RN notes say the accessibilityLabel is 'heading + body when body is a string' but also that a 'string or number body' is wrapped in Text; I treat a number body as text for the label and the iOS announcement too. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: the separator for accessibilityLabel is only given for the iOS announcement ('joined by a full stop'); I use the same '. ' join for the label so the two read the same. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: the conventions say to pass the foreground token to Icon's `color` prop because there is no currentColor, but the RN notes require `overrides.color` for both the tone icon and the dismiss close icon; I followed the component notes and used overrides everywhere. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: the icon part is decorative, but the spec doesn't say whether Icon hides itself or the Alert must; I set accessibilityElementsHidden and importantForAccessibility='no' on the Alert-owned icon View. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: behavior scenario live-off-renders-no-role only lists web and lit, and the spec gives no RN check (e.g. accessibilityLiveRegion unset); no RN test was written for it beyond renders-live-off. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: the conventions list a `role` prop as the preferred form on RN 0.87, but the notes name accessibilityRole='alert'; I kept accessibilityRole and did not add `role`. → `site/src/content/docs/components/alert.md`
+
+### 2026-09-17 05:18 — lit round 1
+
+- **DOC** Alert: the conventions say anything focusable uses delegatesFocus, but the only focusable thing in Alert is the dismiss button. With delegatesFocus, focusing the host or clicking the message text would jump focus to Dismiss, so I left it off. The doc should say whether a region that contains a button delegates focus. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: dismissMargin says 'negative block/inline-end margin', which could mean all of margin-block plus inline-end, or only block-start plus inline-end. I followed the React Native note (marginTop and marginEnd): margin-block-start and margin-inline-end only. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: the next-focusable list says `a`, but an `a` without href can't take focus, so I matched `a[href]`. It also lists `[tabindex] ≥ 0` separately and doesn't say whether a native button or input with tabindex=-1 counts. I skip any element with a negative tabindex. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: the next-focusable rule is written for a flat DOM and doesn't mention shadow roots. On Lit, focusable elements inside other components' shadow roots are invisible to querySelector, so I walk the flat tree (open shadow roots and assigned slot content). The doc should say so. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: the Lit accessible name falls back to 'the slotted body text'. I use the host's light-DOM textContent. A body made of <ds-link label=…> children contributes no link text, because the label is an attribute rather than text. The doc doesn't say whether the name should include those labels. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: the icon binding is locked and the doc says the --ds-alert-icon hook does not recolor the Icon, but it doesn't say what the hook does style. I set it as `color` on the icon span box, which has no visible effect. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: the icon box height is the larger of the first line and iconSize. The doc says the math reads the same token as the forward, but the forwarded size is a token path from overrides.iconSize, while the box reads --ds-alert-icon-size. A consumer who sets the CSS hook directly would resize the box but not the Icon. The doc should say which one wins. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: the rules require a Storybook story for each prop value, and dismissible is a boolean. I kept one `Dismissible` story rather than DismissibleTrue/DismissibleFalse. The naming rule for boolean props isn't stated. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: an empty `heading` string is treated as no heading, so no heading paragraph is rendered and the name falls back to the body text. The doc doesn't cover an empty heading. → `site/src/content/docs/components/alert.md`
+
+### 2026-09-17 05:16 — web round 1
+
+- **DOC** Alert: the `icon` binding is `locked: true`, yet its description says 'Override through `overrides.icon`'. Locked bindings are excluded from the overrides type, so I kept it locked and there is no `overrides.icon`; the Icon always gets `color.status.{tone}.icon`. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: the web note's next-focusable list says `a`, but an anchor without `href` cannot take focus. I used `a[href]`. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: 'elements that are not rendered (hidden or display none)' does not say whether `visibility: hidden` or zero-size elements count. I check only the `hidden` attribute and computed `display: none` on the element and its ancestors, which also works in jsdom (it has no layout, so `getClientRects` could not be used). → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: 'skipping disabled elements' does not say whether descendants of a disabled `<fieldset>` count. I used `:disabled`, which includes them. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: the icon-box math needs to know if there is a heading. CSS has no prop for that, so I used `.ds-alert:has(> .ds-alert__content > .ds-alert__heading)`. The spec could name a mechanism (e.g. a modifier class). → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: `fontSize` is on the `body` part, but the icon-box math needs it on the icon part, and `lineHeight` is on the container while the heading has no line-height binding of its own. All hooks are set on the root and inherited, so every part reads the same values; the heading inherits the container's `lineHeight`. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: `iconSize` says the `--ds-alert-icon-size` hook does not resize the Icon, yet the icon-box math reads that hook. A consumer who sets the hook in their own CSS instead of `overrides.iconSize` gets a box sized differently from the glyph. The spec could say whether the math should read only the forwarded token. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: no scenario covers moving focus on dismiss or the next/previous/none cases, so this behavior has no test; the doc could add scenarios for it. → `site/src/content/docs/components/alert.md`
+- **DOC** Alert: the web note says a consumer's `aria-labelledby` is replaced by the heading or body id, but does not say whether a consumer `aria-label` should win. Mine is forwarded through `...rest` and sits alongside `aria-labelledby`, which then takes precedence. → `site/src/content/docs/components/alert.md`
 
 ### 2026-09-16 05:11 — rn round 1
 
@@ -666,6 +699,34 @@ Doc: `site/src/content/docs/components/box.md`
 ## Breadcrumb
 
 Doc: `site/src/content/docs/components/breadcrumb.md`
+
+### 2026-09-17 05:28 — rn round 1
+
+- **DOC** Breadcrumb: the rn notes say 'the Text wrapping each Link carries Breadcrumb.link', but the system Text takes no testID (it always renders testID="Text"). I put testID `Breadcrumb.link` on a plain View around that Text. Either Text needs a testID prop, or the doc should name the wrapper View as the `link` part. → `site/src/content/docs/components/breadcrumb.md`
+- **DOC** Breadcrumb: the RN platform notes say the ellipsis Icon goes through Button's icon prop 'so Button colours it (no explicit color)', but Button's own doc says 'there is no cascade, so callers color glyphs with the variant's foreground themselves', and Button provides no colour context. Without a colour, Icon would fall back to its default. I kept `color={t.colorActionGhostForeground}` on the ellipsis Icon. Either Button needs to colour its icon slots, or the Breadcrumb doc should drop the 'no explicit color' line. → `site/src/content/docs/components/breadcrumb.md`
+- **DOC** Breadcrumb: the current page's accessibilityLabel is written as '<label>, <copy.current>', where `label` is also the name of the nav's own prop. I read it as the current item's label (`${item.label}, current page`). The doc should say `item.label`. → `site/src/content/docs/components/breadcrumb.md`
+- **DOC** Breadcrumb: the RN guidance says focus after expanding goes to 'the first revealed item's View (index 1)'. If that item has no href it is plain Text, and setAccessibilityFocus on its View is the only option. Web instead gives the `<li>` tabindex=-1. On native, hardware-keyboard focus can't land there, only screen-reader focus. That limit isn't stated for native. → `site/src/content/docs/components/breadcrumb.md`
+- **DOC** Breadcrumb: the behavior scenario `click-on-an-ancestor-reports-navigation` says `click: link`, but on RN the `link` part hook (`Breadcrumb.link`) is a wrapper. fireEvent.press on it bubbles up to ancestors, not down to the Link's onPress, so the test has to find the Link by role='link'. A locator that presses the part's testID would fail on native. → `site/src/content/docs/components/breadcrumb.md`
+- **DOC** Breadcrumb: `onNavigate` is declared `cancelable: true`, but on native returning false has nothing to cancel (the doc says so itself). I typed it `boolean | void` and pass it straight to Link's `onPress`. The Events contract ('skip the default action when the handler returns false') has no effect here, and the schema has no per-platform cancelable flag to express that. → `site/src/content/docs/components/breadcrumb.md`
+- **DOC** Breadcrumb: the `items` shape `{ label: string; href?: string }[]` is given verbatim, but under exactOptionalPropertyTypes the package convention is `href?: string | undefined`. I exported `BreadcrumbItem` with `| undefined` so callers can pass an href that may be undefined. → `site/src/content/docs/components/breadcrumb.md`
+- **DOC** Breadcrumb: the `gap` binding's part is `list`, but on RN it is also used inside each item between separator and content. The overrides contract doesn't say whether a `gap` override should apply in both places. I applied it in both, as the description says 'applied twice'. → `site/src/content/docs/components/breadcrumb.md`
+
+### 2026-09-17 05:26 — lit round 1
+
+- **DOC** Breadcrumb: the item focused after expanding (when no revealed item has an href) gets tabindex=-1 but the doc gives it no focus-visible style; Link and Button bring their own rings and 'Breadcrumb adds none', so a focused plain <li> shows only the browser default outline. Chose to add no style. → `site/src/content/docs/components/breadcrumb.md`
+- **DOC** Breadcrumb: the doc does not say whether tabindex=-1 on the revealed <li> should be removed afterwards or when items change; chose to set it once when focus moves and leave it. → `site/src/content/docs/components/breadcrumb.md`
+- **DOC** Breadcrumb: the behavior scenario 'the-trail-is-a-named-navigation-landmark' is web-only, and the Lit test covers the name only through the derived has-accessible-name scenario (toHaveAccessibleName on the nav); the doc does not say whether Lit should also assert role=navigation from inside the shadow root. → `site/src/content/docs/components/breadcrumb.md`
+- **DOC** Breadcrumb: the Keyboard-story testability rule applies only to components with a keyboard block; Breadcrumb has none, though the doc requires keyboard-operable (met by the native link and button). No Keyboard story added. → `site/src/content/docs/components/breadcrumb.md`
+- **DOC** Breadcrumb: 'every enum value of every enum prop' has nothing to cover (no enum props), and the doc names no story for the collapse=false case other than the AlwaysInFull example; no extra stories added. → `site/src/content/docs/components/breadcrumb.md`
+- **DOC** Breadcrumb: the doc does not say which element the `navigate` event's preventDefault acts on when originalEvent was already prevented by the consumer before dispatch; the native click cancels either way, so the order does not matter here. → `site/src/content/docs/components/breadcrumb.md`
+
+### 2026-09-17 05:25 — web round 1
+
+- **DOC** Breadcrumb: the focus fallback puts tabindex=-1 on the first revealed <li>, but the doc says Breadcrumb adds no focus ring (Link and Button bring their own). A focusable <li> with no visible focus would fail focus-visible, so I added a :focus-visible outline on the item. The doc should say whether this outline is intended. → `site/src/content/docs/components/breadcrumb.md`
+- **DOC** Breadcrumb: 'first revealed item' is ambiguous. I read the revealed range as indices 1 to length-3, taken when the ellipsis is pressed, and the fallback item as index 1. The doc doesn't say what happens if `items` changes between the press and the focus move. → `site/src/content/docs/components/breadcrumb.md`
+- **DOC** Breadcrumb: the anatomy has no part for a plain-text ancestor (an item without href). I rendered it as a <span> with no data-part, and it takes its colour from the item's itemColor. → `site/src/content/docs/components/breadcrumb.md`
+- **DOC** Breadcrumb: the web notes don't say whether the `link`/`expand` wrapper spans need a display value. I left them inline, so the Link and Button lay out inside the item's inline-flex row. → `site/src/content/docs/components/breadcrumb.md`
+- **DOC** Breadcrumb: the doc gives no story for the no-href focus fallback or for an ancestor without href. I kept the existing AncestorWithoutHref story and added no story for the fallback. → `site/src/content/docs/components/breadcrumb.md`
 
 ### 2026-09-16 05:21 — rn round 1
 
@@ -1214,6 +1275,39 @@ Doc: `site/src/content/docs/components/carousel.md`
 ## Checkbox
 
 Doc: `site/src/content/docs/components/checkbox.md`
+
+### 2026-09-17 05:01 — rn round 1
+
+- **DOC** Checkbox: the rn rules say `disabled` sets accessibilityState plus the `disabled` prop, but the package conventions and the 'stays focusable' behaviour say never pass `disabled` to Pressable (it removes focus). Chose accessibilityState.disabled plus a press guard, no `disabled` prop. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: `value` is listed as a prop but the doc says React Native's Form ignores it and there is no native form. Kept it as an accepted prop (default 'on') that does nothing on native. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: the rn a11y rule says the error is conveyed 'as in Input' through accessibilityLiveRegion / announceForAccessibility, but not whether to stay quiet when the Form shows an error summary. Kept the existing behaviour: the live region is 'none' and iOS makes no announcement while form.errorSummary is on. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: the doc never says whether the invalid border (controlBorderInvalid) or the focus border wins when both apply. Chose focus over invalid over the animated normal/selected border. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: the doc never says whether the invalid border replaces the selected-fill border colour on a checked, invalid box. Chose invalid to win in every checked state. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: controlBorderWidth is overridable but focusRingWidth (locked) swaps in on focus. With a controlBorderWidth override wider than border.width.focus, the focused border gets thinner; no rule covers this, so it was left as is. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: the doc never says whether the `transition` cross-fade covers the check-to-dash glyph swap. The glyph swaps instantly and only the fill, border and indicator opacity animate. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: the doc never says whether the derived copy.required / copy.invalid message counts as `error` for form.reportValidity. validate() still uses the order error → required-and-unchecked → invalid, whatever `invalid` is set to, so a required, unchecked box fails Form validation without `invalid` being set. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: the doc gives no vertical alignment for multi-line labels or a label with a description. Row cross-axis 'center' (per minTarget) is applied, which centres the box against a two-line text column rather than aligning it to the first line. → `site/src/content/docs/components/checkbox.md`
+
+### 2026-09-17 05:00 — lit round 1
+
+- **DOC** Checkbox: the `transition` binding covers 'fill and indicator transitions', but the indicator must not be rendered when unchecked, so it cannot fade in or out; I transition only the control's background and border colour, and the indicator appears instantly. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: validity order vs rendered error disagree for required. Behavior says the error slot shows copy.required only while `invalid` is true, and validity 'follows the same order — the same as Input', but Input reports valueMissing whenever a required field is empty, invalid or not. I copied Input: validity is error > required-and-unchecked (valueMissing) > invalid; the rendered error still waits for `invalid`. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: 'clears the mixed indicator locally until the indeterminate prop changes value again' — on Lit a property set to the value it already has does not count as a change, so a consumer must set it to false and back to true to show the dash again. I used a private @state flag that resets when `indeterminate` changes; the reflected `indeterminate` attribute stays set while the dash is cleared. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: 'the checked attribute is the initial state only', but a Lit Boolean property also takes later attribute changes. I kept a plain `@property({type: Boolean})` setter, so changing the attribute after mount still updates the live state; formResetCallback goes back to the attribute, else defaultChecked. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: the doc doesn't say whether the Lit error message (shown below the row, outside the hit area) should say anything to a click; I added no handler, so clicks on it do nothing. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: the doc's 'Form's message' step in the error order has no Lit channel (ds-form only sets `invalid`), so on Lit the order is error > copy.required/copy.invalid. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: 'every enum value of every enum prop' — the component has no enum props, so the stories are Default, boolean states and the four examples (Consent, SelectAllParent, WithDescription, SelectionColumn). → `site/src/content/docs/components/checkbox.md`
+
+### 2026-09-17 04:58 — web round 1
+
+- **DOC** Checkbox: the indicator binding says nothing is rendered when unchecked, but the web input is native and uncontrolled. Rendering the icon needs a mirrored checked state in React. A fully controlled input made a prevented click on a disabled box stay checked in jsdom, so uncontrolled stays native (defaultChecked) with a state mirror used only for the icon. The spec should say whether the web input is controlled internally. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: the transition binding covers 'fill and indicator transitions', but the icon is added and removed rather than faded, so only background-color and border-color transition. An indicator fade isn't possible without keeping a hidden icon mounted, which the indicator binding rules out. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: controlBorderInvalid vs controlSelectedBackground when a box is both invalid and checked or mixed is not specified. The selected border wins, so the invalid border shows only on an unchecked box. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: when `invalid` is true and there is no error or Form message, the doc says the error slot shows copy.required or copy.invalid. That makes a bare `invalid` render a role=alert message, which the `invalid` prop description ('Marks the control as failing validation') doesn't mention. Implemented as the Behavior section says. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: partGap is described as the gap in both the text column (label to description) and the root column (row to error), but no inline alignment is given for the error below the row. The error is indented by controlSize + gap in a wrapper div so it lines up with the label; the spec doesn't say this. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: the row click forwarding covers only 'the row itself (the gap)' plus the description. The text column's own area (the partGap between label and description) is not named; it forwards too, since the whole row is the hit area. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: the spec has no enum props, so the only stories are Default, the four examples and the existing state stories (Checked, Disabled, DisabledChecked, Invalid, WithError, Controlled). No per-value stories are required. → `site/src/content/docs/components/checkbox.md`
+- **DOC** Checkbox: FormFieldRegistration in FormContext.ts has isDisabled(), which the conventions digest's registration shape { name, label, id, getValue, validate, focus } leaves out; implemented per FormContext.ts. → `site/src/content/docs/components/checkbox.md`
 
 ### 2026-09-16 04:47 — rn round 1
 
@@ -1984,6 +2078,33 @@ Doc: `site/src/content/docs/components/dialog.md`
 
 Doc: `site/src/content/docs/components/disclosure.md`
 
+### 2026-09-17 05:15 — rn round 1
+
+- **DOC** Disclosure: the notes say the chevron snaps 'until useReducedMotion resolves', but the package's useReducedMotion() returns a plain boolean that reads false until the OS answers, so the component can't tell when it has resolved. I made only the first effect run snap and animated every later change. A toggle that comes before the OS answers still animates even if reduce motion is on. → `site/src/content/docs/components/disclosure.md`
+- **DOC** Disclosure: the package digest shows toLineHeight(t.fontLineHeightNormal, t.fontSizeMd), but theme.tsx declares toLineHeight(fontSize, multiplier). I followed the real signature (font size first); the digest example has the arguments the wrong way round. → `site/src/content/docs/components/disclosure.md`
+- **DOC** Disclosure: the spec says keepMounted hides the closed panel with display: 'none' but doesn't say whether it also leaves the accessibility tree. I added accessibilityElementsHidden and importantForAccessibility='no-hide-descendants' while closed, to match the Accessibility section ('not in the accessibility tree either way'). → `site/src/content/docs/components/disclosure.md`
+- **DOC** Disclosure: the Animated section says useNativeDriver: false for layout props, but the chevron animates a transform, which isn't a layout prop. I used useNativeDriver: Platform.OS !== 'web'. The spec doesn't say which to use for transforms. → `site/src/content/docs/components/disclosure.md`
+- **DOC** Disclosure: the triggerFontFamily/triggerFontSize/triggerFontWeight bindings style the summary text, but the Composition rule says to use the package Text, and that Text has no overrides for family, size or weight. I kept a plain react-native Text with every binding applied explicitly and the header role on it. Either Text needs those overrides, or the doc should say that a plain react-native Text is the right choice for the summary. → `site/src/content/docs/components/disclosure.md`
+- **DOC** Disclosure: when the component is controlled and the consumer ignores a press, the pending request is only cleared at the next open change. If that change sets open to the value the ignored press asked for, it is treated as an echo and does not fire 'controlled'. The spec's wording allows this, but it doesn't say whether that case should report 'controlled'. → `site/src/content/docs/components/disclosure.md`
+- **DOC** Disclosure: the platform notes say react-native-web renders testID as data-testid, but the Keyboard-story rule doesn't apply because the schema has no keyboard block. So no Keyboard story ships, and the axe/manual keyboard check on react-native-web has no story that renders the disclosure open with three focusable children. OpenWithFormFields only has text children. → `site/src/content/docs/components/disclosure.md`
+
+### 2026-09-17 05:14 — lit round 1
+
+- **DOC** Disclosure: the lit event name `toggle` is also a native HTMLElement event name (ToggleEvent, fired for popover and details), and the package rule says never to dispatch a CustomEvent under a native event's name. The native one does not bubble and ds-disclosure is not a popover, so I kept `toggle` as the doc says, but the doc should confirm the exception or rename the event. → `site/src/content/docs/components/disclosure.md`
+- **DOC** Disclosure: `open` is a reflected boolean attribute, so markup can only set it to true (controlled open). A missing attribute means uncontrolled, so markup cannot express a controlled closed state; only the property can. The Lit notes say `open` can be 'set from markup' without this limit. → `site/src/content/docs/components/disclosure.md`
+- **DOC** Disclosure: 'focus on the body after leaving the now-hidden panel' does not say how long focus that left the panel still counts as within it. I followed web: the flag clears only on a focusout whose relatedTarget is outside the panel, so clicking empty page after focusing the panel (relatedTarget null) still sends focus to the trigger on a later close. → `site/src/content/docs/components/disclosure.md`
+- **DOC** Disclosure: the panel's `hidden` attribute is used only with keepMounted, but the host's own `:host([hidden])` rule and `[data-part=panel][hidden]` both need `display: none` explicitly, because the panel sets padding. The doc does not mention it; I kept both rules. → `site/src/content/docs/components/disclosure.md`
+- **DOC** Disclosure: no behavior scenario covers moving focus to the trigger on close (from a click or a controlled change) or the `controlled` / echo-suppression rules of onToggle, so the generated tests leave the most intricate logic unchecked. Suggest scenarios for those. → `site/src/content/docs/components/disclosure.md`
+
+### 2026-09-17 05:12 — web round 1
+
+- **DOC** Disclosure: the `onToggle` timing is `after-change`, but in controlled mode the state only changes when the consumer passes back `open`. So a user toggle can only be reported as a request before the change, not after it. Chose: controlled mode fires in the click handler, uncontrolled mode fires after the new state is committed. The doc should say that controlled `after-change` means 'the component's request', not 'the committed state'. → `site/src/content/docs/components/disclosure.md`
+- **DOC** Disclosure: 'a pending request that is never echoed is cleared at the next `open` change' leaves open what happens when the user clicks twice before the consumer echoes either click. Chose: only the latest request is remembered, so an echo of the first click counts as `controlled`. → `site/src/content/docs/components/disclosure.md`
+- **DOC** Disclosure: the schema gives the trigger no line-height binding. Chose: `var(--font-line-height-normal)` directly, with no override hook. → `site/src/content/docs/components/disclosure.md`
+- **DOC** Disclosure: the web notes list which button attributes the component owns but leave out `children`, which the schema redefines as panel content. Chose: `children` is also omitted from the button props and goes to the panel. → `site/src/content/docs/components/disclosure.md`
+- **DOC** Disclosure: the spec doesn't say where a consumer's `id` goes. Chose: `id` goes on the trigger button (it sits in the button's props), and the panel id is `<id>-panel`, generated with `useId()` when `id` isn't given. → `site/src/content/docs/components/disclosure.md`
+- **DOC** Disclosure: the `transition` binding and the RTL mirroring both use `transform` on the same `triggerIcon` wrapper. Chose: the mirror and rotation are combined in one transform (`scaleX(-1) rotate(90deg)`), so under RTL the chevron animates from the mirrored state and doesn't jump. → `site/src/content/docs/components/disclosure.md`
+
 ### 2026-09-16 05:06 — rn round 1
 
 - **DOC** Disclosure: the `icon` binding says the chevron is `Icon name="chevron-right" inline`, but the rn notes say to pass `triggerFontSize`'s token to the Icon's `overrides.size`. The package Icon ignores `size` and its override while `inline` is set, and inline outside a Text falls back to font.size.md. The two instructions can't both work, so I rendered a non-inline Icon with `overrides.size` set to the `triggerFontSize` override, or 'font.size.md' by default. → `site/src/content/docs/components/disclosure.md`
@@ -2278,6 +2399,38 @@ Doc: `site/src/content/docs/components/feed.md`
 ## Fieldset
 
 Doc: `site/src/content/docs/components/fieldset.md`
+
+### 2026-09-17 05:36 — rn round 1
+
+- **DOC** Fieldset: composition gives the legend/description/error Texts `element: span`, but the RN Text has no `element` prop; omitted on native. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: the required-indicator rule says fragments count as direct children on web but does not say whether RN flattens fragments; chose React.Children.toArray on direct children (fragments are not looked into), so fields inside a fragment do not trigger the indicator on native. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: the rn notes say the group label includes copy.requiredIndicator 'when shown' and Behavior says it is appended inside the legend; chose to render it in the visible legend Text too, so the legend text reads 'Shipping address (required)'. The doc does not say whether the FieldsetContext `legend` passed to fields should include it; chose the bare legend so fields read 'Shipping address, Street'. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: disabledOpacity's part is `legend` but its description dims legend and description; applied the opacity to the Fieldset.legend and Fieldset.description wrapper Views, not to the Texts (a Text has no opacity override), and the error is left undimmed — the doc does not say whether a group error under a disabled group dims. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: fontFamily and lineHeight are declared with part `legend` but forward to all three Texts; followed the forwards. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: the scenario `the-legend-names-the-group` limits its name check to web/lit, yet the rn notes say RN tests check toHaveAccessibleName on the group view; the derived has-accessible-name test does that, the legend scenario checks text only. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: the doc does not say whether an empty-string `description`/`error` counts as unset; chose to treat '' as unset (no part rendered, no hint, no announcement). → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: the web a11y note says the error region has role=alert; on RN the Android live region is on the Fieldset.errorMessage wrapper View (as in Input), since role=alert has no native equivalent — `a-group-error-is-announced` is web/lit only so no RN test asserts it. → `site/src/content/docs/components/fieldset.md`
+
+### 2026-09-17 05:35 — lit round 1
+
+- **DOC** Fieldset: the fieldsGap description says Fieldset's own CSS hook (--ds-fieldset-fields-gap) exists but does not reach the Stack, while helperSize/legendSize etc. say 'no --ds-fieldset-* hook' and the package convention says every binding is a hook; a hook no rule reads does nothing, so I declared no hook for fieldsGap, legendSize, legendWeight, helperSize, fontFamily or lineHeight (only partGap and disabledOpacity have hooks). The doc should say plainly which bindings get a hook. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: the doc doesn't say whether forwarded bindings are always sent to the child's overrides or only when overridden; I always forward the resolved token (the override, or the binding's default token such as font.size.md or layout.gap.{gap}), and the Stack gets no gap attribute. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: fontFamily, lineHeight and disabledOpacity say part: legend, but their descriptions also cover description and error (fontFamily/lineHeight) and the description (disabledOpacity); a style binding has one part, so I followed the descriptions. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: the lit notes don't say which elements wrap the description and fields (only web's notes name a <div data-part=fields>); I used Fieldset-owned <div>s with data-part and part for description, fields and errorMessage, as on web. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: the description a11y says it's linked with aria-describedby, but no behavior scenario checks the description or the error in the group's accessible description; untested. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: the required indicator (copy.requiredIndicator, derived from direct data-ds-field children) has no behavior scenario or example; it's implemented and shown in an AllFieldsRequired story but untested. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: the doc doesn't say whether the indicator counts a child that has the required attribute but no required property, or what an empty group shows; I count either the property or the attribute, and a group with no fields shows no indicator. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: the examples give children as prose ('An Input name=street label=Street …'); to use them verbatim as story args, the stories map each sentence to real fields. A structured children form in examples would avoid that mapping. → `site/src/content/docs/components/fieldset.md`
+
+### 2026-09-17 05:33 — web round 1
+
+- **DOC** Fieldset: web notes say 'No React FieldsetContext is exported', but the previous generation exported FieldsetContext/useFieldsetContext and NumberInput read it; I removed the context and index exports and dropped NumberInput's read, so a NumberInput nested deeper than a direct child is no longer disabled by the group. The doc should say NumberInput depends only on the direct-child `disabled` prop on web. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: 'passes disabled to its direct child fields' does not define what a 'field' is before render (data-ds-field lives on the rendered DOM, not the React element). I treat any component element or native input/select/textarea/button/fieldset as a field; plain DOM elements like <p> are left alone. The same rule decides which children count for the required indicator. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: the overrides contract says every binding becomes a --ds-fieldset-* hook, but helperSize says 'no --ds-fieldset-* hook', legendSize/legendWeight/fontFamily/lineHeight 'reach the Text only through overrides', and fieldsGap mentions a --ds-fieldset-fields-gap hook that 'does not reach the Stack'. I emit hooks only for partGap and disabledOpacity; there is no --ds-fieldset-fields-gap, since declaring it would be dead CSS. The doc should say whether that hook is expected to exist. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: the element for the description part is unspecified ('Fieldset-owned elements carrying the parts and ids'); I used a <div data-part=description id> around the span Text, matching the errorMessage <div>. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: legendColor/descriptionText/errorText are 'realised by the Text tone'. I pass tone=default explicitly on the legend Text even though it is Text's default, so the composition props match the schema exactly. → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: disabledOpacity 'only while disabled': an override passed while not disabled is not written inline (overrides change values, never presence). → `site/src/content/docs/components/fieldset.md`
+- **DOC** Fieldset: the requiredIndicator is appended inside the legend Text as a plain string after the legend, so it inherits the legend styling and joins the accessible name. The doc does not say whether it should be a separate styled span; I chose none. → `site/src/content/docs/components/fieldset.md`
 
 ### 2026-09-16 05:32 — rn round 1
 
@@ -3007,6 +3160,35 @@ Doc: `site/src/content/docs/components/input.md`
 
 Doc: `site/src/content/docs/components/landmark.md`
 
+### 2026-09-17 05:23 — rn round 1
+
+- **DOC** Landmark: the rn notes say to wrap string and number children in Text but not what to do with strings mixed with elements in an array; I wrap each string/number child individually via React.Children.map. → `site/src/content/docs/components/landmark.md`
+- **DOC** Landmark: the Default story has label "Main", and the role stories inherit it; the doc doesn't say whether stories for banner/main/contentinfo/search/complementary should clear it. RN ignores the label for those roles anyway; I set label undefined on them so the stories don't model passing a label to a role that never takes one. → `site/src/content/docs/components/landmark.md`
+- **DOC** Landmark: the derived renders-role-region and renders-role-form scenarios inherit the Default label "Main", so they never exercise the missing-label warning, and no scenario tests that warning on RN even though the notes say it is the one warning that applies. → `site/src/content/docs/components/landmark.md`
+- **DOC** Landmark: the doc says banner/main/contentinfo never take a label and warn on web/Lit, but on RN 'only the missing-label warning applies'. I emit no warning when a label is passed to those roles on RN (it is silently not applied), and complementary/search labels are also silently dropped because accessibilityLabel is limited to navigation/region/form; the doc doesn't say whether a label on complementary or search should warn. → `site/src/content/docs/components/landmark.md`
+- **DOC** Landmark: the doc names no RoleForm story label; I used "Sign in" (the only invented string, story-only) so the form story doesn't trigger the missing-label warning. The doc should give one. → `site/src/content/docs/components/landmark.md`
+
+### 2026-09-17 05:22 — lit round 1
+
+- **DOC** Landmark: the Lit guidance writes `<ds-landmark role="navigation" label="Main">`, but the platform notes say `label` reflects to `aria-label`, so a `label` attribute does nothing. I mapped the property to the `aria-label` attribute (stories set `.label`); the doc example should use `aria-label="Main"`, or the doc should say `label` is property-only. → `site/src/content/docs/components/landmark.md`
+- **DOC** Landmark: `label` 'reflects to aria-label', but banner/main/contentinfo must not render a label. Plain reflection can't do both, so `label` is not reflected: the element writes `aria-label` itself (omitted for those roles and for an empty string) and ignores its own write, so the `label` property keeps its value. The doc should say reflection is conditional. → `site/src/content/docs/components/landmark.md`
+- **DOC** Landmark: only the missing-label and does-not-take-a-label warnings have copy. The no-role, duplicate-main and shared-or-missing-label warnings have none, so I wrote: `Landmark: no role is set, so no landmark is exposed.`, `Landmark: role "main" appears more than once in this document.`, `Landmark: two "<role>" landmarks share the label "<label>"; give each a distinct label.` / `... both lack a label; ...`. The doc should give the copy. → `site/src/content/docs/components/landmark.md`
+- **DOC** Landmark: the duplicate scan counts `[data-ds="Landmark"]` peers by role, but the web Landmark only emits a `role` attribute sometimes (`<nav>`, `<main>` and `<aside>` have none), so a Lit scan of mixed output would miss them. I fall back to the element's implicit role by tag (header, nav, main, aside, footer, section, form). The doc should say how a peer's role is read. → `site/src/content/docs/components/landmark.md`
+- **DOC** Landmark: the doc says a composite's `aria-labelledby` counts as a name for the warnings, but Lit has no `labelledBy` property and no Lit composite uses ds-landmark. I read an `aria-labelledby` attribute on the host (ids resolved in `getRootNode()`) with no new property; the doc should say whether Lit gets one. → `site/src/content/docs/components/landmark.md`
+- **DOC** Landmark: 'warnings fire on mount or a change of role, label or element'. Lit has no element choice, and a change to the `aria-labelledby` attribute is not watched, so it does not re-run the warnings. → `site/src/content/docs/components/landmark.md`
+- **DOC** Landmark: the examples say 'exactly its given as args', but the Default story sets label "Main", which would carry into `page-main` (role main) and trigger the does-not-take-a-label warning. PageMain and the banner/main/contentinfo role stories set `label: undefined`. The doc should say whether Default args carry into examples. → `site/src/content/docs/components/landmark.md`
+- **DOC** Landmark: the derived `renders` / `renders-role-*` scenarios merge Default's label "Main" into banner/main/contentinfo, so those tests hit the does-not-take-a-label warning. They still pass; the doc could say whether derived scenarios should clear labels that aren't allowed. → `site/src/content/docs/components/landmark.md`
+- **DOC** Landmark: the `an-overridden-element-still-carries-its-role` scenario and the `banner-that-is-not-the-page-header` example are web-only (`as`) and have no Lit test or story, since the Lit host is its own element. They are platform-scoped in the schema; no Lit equivalent is expected. → `site/src/content/docs/components/landmark.md`
+
+### 2026-09-17 05:21 — web round 1
+
+- **DOC** Landmark: the doc says development warnings fire for more than one `main` and for two navigation/complementary/region/form landmarks that share a label or both lack one, but gives no copy for either; I kept 'Landmark: a document should contain exactly one "main" landmark.' and 'Landmark: two "<role>" landmarks in the same root share the label "<label>" / both lack a label; give each a distinct label.' → `site/src/content/docs/components/landmark.md`
+- **DOC** Landmark: the Default story has label "Main" and scenarios/examples are 'given overrides on Default args', so role banner/main/contentinfo scenarios and the page-main / banner-that-is-not-the-page-header examples inherit a label those roles refuse (and warn about); the stories add `label: undefined` for those roles, which goes beyond the example's exact `given`. The doc should say whether examples inherit Default args. → `site/src/content/docs/components/landmark.md`
+- **DOC** Landmark: an unlabelled `region` with `as` set to something other than section (e.g. div) is not covered: the 'as differs from default → emit role' rule and the 'unlabelled region renders no role attribute' rule conflict; I followed the `as` rule (role="region" is emitted). → `site/src/content/docs/components/landmark.md`
+- **DOC** Landmark: a label on banner/main/contentinfo is dropped, but the doc doesn't say whether a composite's `aria-labelledby` on those roles is dropped too; I forward it unchanged. → `site/src/content/docs/components/landmark.md`
+- **DOC** Landmark: the doc says example `children` strings are text inside the package Text but doesn't say which Text size/weight/tone to use; I used the Text defaults. → `site/src/content/docs/components/landmark.md`
+- **DOC** Landmark: the renders-as-* scenarios apply `as` on top of Default (role navigation), so e.g. `as: main` renders <main role="navigation" aria-label="Main">, a role/element combination the guidance would call wrong; the scenario only checks that it renders. → `site/src/content/docs/components/landmark.md`
+
 ### 2026-09-16 05:15 — rn round 1
 
 - **DOC** Landmark: the derived `has-accessible-name` scenario only sets `label` on the Default story's args, but the rn platform notes apply accessibilityLabel only for navigation, region and form. The schema doesn't say what role the Default story uses, so on an unlabelled role like main the scenario can't pass. I chose Default role `navigation`; the scenario should set a role that takes a label, or the rn notes should say which roles the scenario applies to. → `site/src/content/docs/components/landmark.md`
@@ -3419,6 +3601,36 @@ Doc: `site/src/content/docs/components/menu.md`
 ## Meter
 
 Doc: `site/src/content/docs/components/meter.md`
+
+### 2026-09-17 05:31 — rn round 1
+
+- **DOC** Meter: composition lists `element: span` for both Text parts, but the React Native Text has no `element` prop; I dropped it. → `site/src/content/docs/components/meter.md`
+- **DOC** Meter: `testID="Meter.label"` and `testID="Meter.valueText"` can't be set because the RN Text component takes no `testID` prop and Meter must not reach into it. Only header, track and fill carry part testIDs. → `site/src/content/docs/components/meter.md`
+- **DOC** Meter: valueText says to format with `Intl.NumberFormat(locale, …)`, but Meter has no `locale` prop and the doc names no locale source. I passed `undefined` (the device locale), so the announced percentage may differ between platforms, which contradicts 'the same on every platform'. → `site/src/content/docs/components/meter.md`
+- **DOC** Meter: the `radius` binding is on part `track`, but its description says it 'rounds the track and the fill ends'. On web only the track clips. On RN I put `borderRadius` on both the track and the fill so the fill's leading end is rounded too. Say whether the fill should carry the radius. → `site/src/content/docs/components/meter.md`
+- **DOC** Meter: the header row's layout isn't in any binding (value 'at the end of the label row'). I used `justifyContent: 'space-between'` and `alignItems: 'baseline'`. A long label can't shrink, because Meter can't style the child Text (no flexShrink), so label and value may overflow a narrow row. The doc doesn't say whether to wrap or truncate. → `site/src/content/docs/components/meter.md`
+- **DOC** Meter: the 'max <= min' behavior says to show and announce '0%', but it doesn't say whether that percent string also goes through Intl (locale-formatted, e.g. '0 %' in fr). I used the same Intl formatter. → `site/src/content/docs/components/meter.md`
+- **DOC** Meter: the transition's direction isn't stated. The doc says the fill snaps before the width is known and on resize, and animates only when `value` changes. I also snap when `min`/`max` change the width at the same time as a resize, but a `min`/`max` change without a resize animates like a value change. → `site/src/content/docs/components/meter.md`
+- **DOC** Meter: behavior scenario value-text-is-shown-and-announced can't assert 'announced' on RN (accessibilityValue is excluded from the scenarios), so the test only checks the visible text. → `site/src/content/docs/components/meter.md`
+
+### 2026-09-17 05:30 — lit round 1
+
+- **DOC** Meter: the Parts section says forwarded bindings reach the child Text's `overrides` property, but the overrides contract also makes every binding a `--ds-meter-*` hook on :host that CSS consumers can override; forwarding only through `overrides` would leave a CSS-level `--ds-meter-label-size` override dead. Chose both: the child's `overrides` receives the meter's `overrides` refs, and the meter's shadow CSS sets the child's documented `--ds-text-*` hooks from the `--ds-meter-*` hooks. The doc should say which path (or both) is canonical. → `site/src/content/docs/components/meter.md`
+- **DOC** Meter: `valueText` percentage formatting names `Intl.NumberFormat(locale, …)` but Meter has no `locale` prop and the doc does not say where Lit gets the locale; used the runtime default (`undefined`). → `site/src/content/docs/components/meter.md`
+- **DOC** Meter: `fontFamily` and `lineHeight` bind to part `header`, but their descriptions say they are forwarded to the Texts and never style anything directly, so the `header` part itself carries no style from them; it is unclear what `part: header` means for these two bindings. Applied them only through the Text forwards. → `site/src/content/docs/components/meter.md`
+- **DOC** Meter: `value` and `label` are `required: true` while the Lit notes give them starting values (0, empty string) with no warning; the Default story args are not specified by the doc, so the existing Default (`label: Storage used`, `value: 32`) was kept for the scenarios that override only one prop. → `site/src/content/docs/components/meter.md`
+- **DOC** Meter: the doc does not say whether `value-text` (not reflected) is the attribute name for `valueText` on Lit; the Lit guidance example uses `value-text`, which was kept. → `site/src/content/docs/components/meter.md`
+
+### 2026-09-17 05:29 — web round 1
+
+- **DOC** Meter: valueText says to format with `Intl.NumberFormat(locale, …)`, but there is no `locale` prop or locale source in the schema; I passed `undefined` (the runtime default locale), so the text may differ between a server and a browser with different locales. → `site/src/content/docs/components/meter.md`
+- **DOC** Meter: the parts list says a composed part receives 'exactly the listed props', but the web platform notes need `id={labelId}` on the label Text so aria-labelledby can point at it, and the anatomy needs `data-part` on both Texts; I pass `id` and `data-part` as well and nothing else. → `site/src/content/docs/components/meter.md`
+- **DOC** Meter: `fontFamily` and `lineHeight` are bound to part `header`, but their descriptions say they are only forwarded to the Texts and never style anything directly; I gave them no hook or CSS rule on the header, so a consumer who sets `--ds-meter-font-family` in their own CSS changes nothing, even though the overrides section calls consumer-set hooks the sanctioned escape hatch. → `site/src/content/docs/components/meter.md`
+- **DOC** Meter: the forwarded bindings (labelSize, labelWeight, valueSize) default to the same tokens as the Text size/weight props, so I forward them only when set; the doc doesn't say whether the default token should also be forwarded. → `site/src/content/docs/components/meter.md`
+- **DOC** Meter: the Behavior section says a non-finite `value` is treated as `min`, but says nothing about a non-finite `min` or `max` (NaN, Infinity); I don't guard them, so a NaN bound makes `max > min` false and the meter renders empty with a warning. → `site/src/content/docs/components/meter.md`
+- **DOC** Meter: the development warning for `max ≤ min` has no copy string in the schema; I wrote the developer-facing text myself (``Meter: `max` (x) must be greater than `min` (y).``). It fires again whenever min or max change while the range stays invalid, which is not strictly 'once'. → `site/src/content/docs/components/meter.md`
+- **DOC** Meter: the percent formatting keeps full precision in aria-valuenow (e.g. 3.14159), and the doc doesn't say whether aria-valuenow should be rounded; I left it exact because the scenarios only test integers. → `site/src/content/docs/components/meter.md`
+- **DOC** Meter: the doc doesn't say whether the fill has its own border-radius or relies on the track clipping it ('the track clips the fill'); I kept the radius on both so the leading edge of a partial fill is rounded too. → `site/src/content/docs/components/meter.md`
 
 ### 2026-09-16 05:26 — rn round 1
 
@@ -3860,6 +4072,36 @@ Doc: `site/src/content/docs/components/progressbar.md`
 ## RadioGroup
 
 Doc: `site/src/content/docs/components/radiogroup.md`
+
+### 2026-09-17 05:11 — rn round 1
+
+- **DOC** RadioGroup: legend and radioLabel are listed as plain elements (not in `composition`), but they carry typography bindings (legendSize/Weight, labelSize/Weight, fontFamily, lineHeight) and RN has no cascade; I rendered them with the package `Text` (size md, weight medium/regular, tone default) with the bindings as `overrides`. The spec should either add them to composition or say to use a raw RN Text. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: optionPaddingBlock is declared `part: radio` but its description says it pads the option row wrapper (not an anatomy part), and controlSize/focusRing are also `part: radio` but apply to the drawn circle. On native the `RadioGroup.radio` testID sits on the row Pressable (where accessibilityRole=radio and the press live), not the drawn circle; the doc should name which node `radio` is on rn. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: `forwards` lists only helperSize/fontFamily/lineHeight for the composed Texts; fontFamily and lineHeight have no `part`, so I also applied them to legend and radioLabel. Unstated whether that is intended. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: the indicator dot uses controlRadius for its corner radius (no binding for the dot's shape); with a non-full controlRadius override the dot follows it. Not specified. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: the rn platform props list doesn't include accessibilityState on the group root; I kept `accessibilityState={{ disabled }}` there per the general `disabled` rule, which the platform note neither requires nor forbids. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: transition binding has no description of what animates; I cross-fade the selected border color and the dot opacity over it (skipped under reduced motion), while the invalid and focus borders switch instantly. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: Keyboard story rule asks for a trigger plus three focusable children, but RadioGroup has no trigger; the story renders the Default three options with no extra args. → `site/src/content/docs/components/radiogroup.md`
+
+### 2026-09-17 05:10 — lit round 1
+
+- **DOC** RadioGroup: the error order is `error`, then the Form's message, then copy.required/copy.invalid, but `form.discovery: context` has no Lit channel. ds-form finds fields by `[data-ds-field]`, keeps its errors to itself (summary and `invalid` event) and never sends a message back to the field. Chose: the group shows `error`, then copy.required/copy.invalid while `invalid`; there is no Form-message step. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: a required group that ds-form validates fails `checkValidity()`, but nothing sets `invalid` on it. So in Lit the prose 'shows copy.required once it is marked invalid by Form validation' never happens unless the app sets `invalid` or `error`. The doc should say whether ds-form sets `invalid` on failing fields. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: `optionPaddingBlock` is declared with `part: radio`, but its description says it pads the option row wrapper, which is not an anatomy part. Chose the row, as the description says. The part should be dropped or the row named. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: the `focusRing` description says the border 'becomes focusRingWidth', so the border gets thicker on focus. With box-sizing border-box the control keeps its size and the space inside shrinks a little. Chose border-box and removed the outline. The doc doesn't say whether the control's outer size may change. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: `radio` and `legend` are anatomy parts, but the Lit notes list only group, radioLabel, radioDescription and errorMessage for `part`/`data-part`. Chose `part` and `data-part` of `radio` and `legend` on the input and legend as well. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: the Lit notes don't say whether `defaultValue` is also an attribute. Chose attribute `default-value`, which the stories use. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: the Keyboard story gate asks for 'at least three focusable children', but a native radio group is one tab stop. Chose the Default args (three radios), reached by arrow keys. The doc should say whether three arrow-reachable radios count. → `site/src/content/docs/components/radiogroup.md`
+
+### 2026-09-17 05:08 — web round 1
+
+- **DOC** RadioGroup: the conventions say every binding is a CSS hook on the root, but helperSize 'reaches the composed Text only through its fontSize override' and descriptionText/errorText 'declare no hook'. I dropped the root hooks --ds-radio-group-helper-size, -description-text and -error-text, so consumer CSS can't set helper text size; the overrides prop is the only way. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: the conventions say ':focus-visible outline' but focusRing says the radio's border becomes focusRingWidth in the focus color and the row isn't outlined. I followed the binding (border-width and border-color) and added a transparent outline so forced-colors mode still shows a ring. The docs should say which rule wins for drawn controls. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: the web notes say a disabled group uses 'preventDefault guards' but only list click/change. Native radios select on arrow keys regardless of aria-disabled, so I also preventDefault ArrowUp/Down/Left/Right and Space on the fieldset, the rule Lit's notes already state. The web note should list the keys. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: the spec says validate() 'checks required then invalid, as Input does', while the displayed error puts the error prop first. I kept the error prop first in validate() too (error → required → invalid), matching the display order. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: optionPaddingBlock names 'the row wrapper holding radio, radioLabel and radioDescription (not an anatomy part)' but gives part: radio. I put padding-block and min-block-size (minTarget) on that wrapper, not the radio. The binding's part field should say which is meant. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: the indicator dot's diameter is 'controlSize minus 2 × space.1', but space.1 is neither a binding nor overridable. I read var(--space-1) directly, and radius.full directly for the dot's roundness. If controlRadius is overridden, the dot stays round. → `site/src/content/docs/components/radiogroup.md`
+- **DOC** RadioGroup: when the focus ring is thicker than controlBorderWidth, the border-box shrinks the space inside while the dot keeps its size. It still fits at the default tokens (20 − 2×focus ≥ 12), but a small controlSize override could clip the dot. The spec doesn't say whether the dot should shrink. → `site/src/content/docs/components/radiogroup.md`
 
 ### 2026-09-16 05:00 — rn round 1
 
@@ -4747,6 +4989,37 @@ Doc: `site/src/content/docs/components/stepper.md`
 ## Switch
 
 Doc: `site/src/content/docs/components/switch.md`
+
+### 2026-09-17 05:06 — rn round 1
+
+- **DOC** Switch: the prompt's Overridable list includes trackWidth, trackHeight, thumbSize, thumbInset, radius and transition, but platforms.rn.notes says they are left out of the RN overridable type. I followed the platform notes: SwitchOverridableBinding is gap, partGap, labelSize, labelWeight, helperSize, fontFamily, lineHeight, disabledOpacity. → `site/src/content/docs/components/switch.md`
+- **DOC** Switch: props.disabled says a disabled Switch 'still registers with the Form, where the Form's disabled-field rule applies', but the RN Form's rule is that disabled fields do not register (Form.tsx docs). Checkbox RN doesn't register when disabled either. I kept that: a disabled Switch unregisters, so its key is left out. → `site/src/content/docs/components/switch.md`
+- **DOC** Switch: the events contract says to name the handler by its platforms.rn name (onValueChange), but the generic rules and the Checkbox RN sibling use onChange. I kept onValueChange as the spec says, so RN Switch and Checkbox now use different callback names. → `site/src/content/docs/components/switch.md`
+- **DOC** Switch: the rules say 'disabled uses opacity.disabled on the whole element', while the disabledOpacity binding lists track, label and description. Those three are the whole row on RN, so the whole Pressable row is dimmed. Checkbox RN leaves the description undimmed, so the two differ. → `site/src/content/docs/components/switch.md`
+- **DOC** Switch: labelSize's track-alignment rule (centre the track on the label's first line, labelSize × lineHeight) is written with the web calc in mind. On RN the native Switch (about 31pt on iOS) is taller than a 24pt line, so it spills evenly above and below that slot. The spec doesn't say whether the 44pt minHeight row should instead centre a single-line row. → `site/src/content/docs/components/switch.md`
+- **DOC** Switch: the 'disabled' example says the setting stays 'focusable', which contradicts the RN platform limit (a disabled native Switch can't take focus). The story keeps the given args; the RN note wins. → `site/src/content/docs/components/switch.md`
+- **DOC** Switch: the generic rules say to style focus-visible in the Pressable style callback, but platforms.rn says the row Pressable is accessible={false} and the OS focus indicator is used. I followed the platform notes: no focus styling, and focusRing/focusRingWidth aren't applied. → `site/src/content/docs/components/switch.md`
+- **DOC** Switch: the generic rules ask for Storybook stories wrapped in ThemeProvider, but the package uses the withTheme() decorator. I kept the decorator, as the package conventions say. → `site/src/content/docs/components/switch.md`
+
+### 2026-09-17 05:05 — lit round 1
+
+- **DOC** Switch: the `checked` attribute is described as 'the initial state only', but Lit's Boolean property converter applies later attribute changes to the live property too (a native input does this only until the user changes it). Chose Lit's default: every attribute change sets the property, and form reset reads the attribute. → `site/src/content/docs/components/switch.md`
+- **DOC** Switch: `disabled` is aria-disabled only (the switch stays focusable), so nothing stops a native <form> from submitting it; the spec says only that 'the Form's disabled-field rule applies'. Chose native semantics: setFormValue(null) while disabled or form-disabled. → `site/src/content/docs/components/switch.md`
+- **DOC** Switch: the spec says the thumb is the input's ::before 'with no hook', but thumbSize, thumbInset and transition are overridable bindings on part `thumb`. Chose to keep the :host hooks (--ds-switch-thumb-size, --ds-switch-thumb-inset, --ds-switch-transition) and read them in the input's ::before rules; 'no hook' is taken to mean no part/data-part. → `site/src/content/docs/components/switch.md`
+- **DOC** Switch: ::before on an appearance:none <input> draws in Chromium and WebKit but not in Firefox, so the thumb would be invisible there. The spec requires the pseudo-element anyway; no fallback element was added. → `site/src/content/docs/components/switch.md`
+- **DOC** Switch: helperSize 'has no --ds-switch-* hook', so a consumer can change the description size only through the `overrides` property, not from CSS, unlike every other overridable binding. Followed the spec. → `site/src/content/docs/components/switch.md`
+- **DOC** Switch: the behaviour `controlled-updates-on-set` (given checked: false; set checked: true) still runs on Lit, where there is no controlled mode; tested as a plain property write updating the live state. → `site/src/content/docs/components/switch.md`
+- **DOC** Switch: DsFormField lists `required`; the Lit note says it is always false. Implemented as a readonly plain field (not a decorated accessor), so setting it has no effect and nothing reports that. → `site/src/content/docs/components/switch.md`
+
+### 2026-09-17 05:03 — web round 1
+
+- **DOC** Switch: the spec wants a full-width row with min-block-size minTarget and no padding, and the track 'at the top of the row, centred on the label's first line'. With a one-line label that row is 44px tall with the content in the top line-height (24px), leaving empty space below. Checkbox, which the spec calls 'as Checkbox', centres its row. I followed the Switch spec (align-items: flex-start plus a track wrapper one label line tall). The doc should say whether a one-line row centres vertically. → `site/src/content/docs/components/switch.md`
+- **DOC** Switch: the web notes say the input stays uncontrolled for its native checked state, but don't say how a controlled switch keeps the DOM `checked` in step when the prop doesn't change. I reset `event.target.checked` to the prop in the change handler and sync the DOM property in an effect whenever the held state changes. The markup uses defaultChecked from the current state. → `site/src/content/docs/components/switch.md`
+- **DOC** Switch: there's no rule for 'a press that asks for the current value (next equals checked) fires nothing' on web, where every native click flips the value. I added a `next === isChecked` guard that can't be reached in practice. → `site/src/content/docs/components/switch.md`
+- **DOC** Switch: the track and thumb styles key off the component state, either `:checked` or `[aria-checked='true']`. I used `[aria-checked='true']` so the look follows the component state, including in controlled mode. → `site/src/content/docs/components/switch.md`
+- **DOC** Switch: 'disabledOpacity dims the track, the label and the description', but the description is a composed Text that must not be restyled. I put the opacity on the wrapper around the label and description, not on the Text. → `site/src/content/docs/components/switch.md`
+- **DOC** Switch: RTL thumb travel is required ('Mirror the thumb travel under [dir=rtl]'), but no selector is given. I used the ancestor selector `[dir='rtl'] …`, which misses a `dir` inherited only from the user agent. `:dir(rtl)` would be more exact. → `site/src/content/docs/components/switch.md`
+- **DOC** Switch: `name` is optional here but FormContext registration needs one, so a Switch without `name` inside a Form doesn't register. Its DOM id then comes from useId rather than form.idBase. The doc doesn't say whether a nameless switch should register. → `site/src/content/docs/components/switch.md`
 
 ### 2026-09-16 04:53 — rn round 1
 
@@ -5684,7 +5957,7 @@ Doc: `site/src/content/docs/components/treegrid.md`
 
 ## Totals
 
-DOC: 3625 · CODE: 93 · TOOLING: 2 · NOISE: 42
+DOC: 3817 · CODE: 93 · TOOLING: 2 · NOISE: 42
 
 ## Gates to fix
 

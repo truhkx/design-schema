@@ -99,3 +99,18 @@ Gaps a fold cannot answer because they are about the tools, not the docs.
 - The Lit test harness has no accessible-name helper, so `name` expectations are checked through host role/aria-label attributes (Form, lit).
 - Container `renders` scenarios assert only existence; jsdom and RNTL cannot evaluate max-width, the gutter media queries or window-width breakpoints, so the style contract is untested (Container, web/lit/rn).
 - No rn behavior scenario covers Card `interactive` or `focusable`, so the native target logic has no test (Card, rn).
+- Fold jobs cannot run `node`, `pnpm parse`, the contrast check or `pnpm commit` headless (approval required); the Controls-phase fold was left uncommitted and unvalidated (fold, all).
+- The rn conventions digest says pass the token to Icon's `color` prop, while alert.md says `overrides.color` (Alert, rn).
+- Story-naming rule for boolean props is still unstated (`Dismissible` vs `DismissibleTrue/False`) (Alert, lit).
+- The scenario vocabulary cannot render focusables outside the component, so focus-onward-on-dismiss cannot be a scenario (Alert, web).
+- Story rules: Keyboard story only with a keyboard block, so Breadcrumb and Disclosure (rn-web axe check) get none; "every enum value" has nothing to cover; no story for the no-href focus fallback (Breadcrumb, Disclosure; web/lit/rn).
+- The schema has no per-platform `cancelable`; native `onNavigate` has nothing to cancel (Breadcrumb, rn).
+- The conventions digest's FormFieldRegistration shape omits `isDisabled()` (Checkbox, web).
+- The rn package digest still shows `toLineHeight` arguments in the wrong order (Disclosure, rn).
+- Examples give children as prose, and scenarios cannot express structured children (required child fields) or assert an accessible description (Fieldset, lit).
+- The package convention "every binding is a hook" is wrong for bindings a composite only forwards; component docs now say no hook (Fieldset, Meter, RadioGroup, Switch; web/lit).
+- No scenario assertion for development warnings, and derived `renders-role-*`/`renders-as-*` scenarios merge Default args into mismatched role/element pairs (Landmark, web/rn).
+- The scenario runner skips accessibilityValue on rn, so "announced" is untestable (Meter, rn).
+- The Keyboard-story rule ("a trigger plus three focusable children") does not fit a one-tab-stop radio group (RadioGroup, lit/rn).
+- The conventions digest's ":focus-visible outline" rule does not fit drawn controls that thicken their border (RadioGroup, web).
+- The rn prompt contradicts switch.md: Overridable list includes track/thumb bindings, the generic rules say `onChange` and Pressable focus-visible styling, and stories use ThemeProvider instead of withTheme() (Switch, rn).

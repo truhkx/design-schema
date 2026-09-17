@@ -83,13 +83,16 @@ component:
     items:
       type: array
       required: true
-      shape: '{ label: string; href?: string }[]'
+      shape: '{ label: string; href?: string | undefined }[]'
       description: The trail from root to current page, in order. Every item but the
         last needs an `href`; an ancestor without one, or with an empty-string `href`,
-        renders as plain text (never an empty link). The last is the current page
-        and its `href` is ignored. An empty array renders the named landmark around
-        an empty list; a single item renders only the current page; neither raises
-        a dev warning. Lit starts the property as `[]`. Export the item type as `BreadcrumbItem`.
+        renders as plain text (never an empty link); a plain ancestor has no anatomy
+        part of its own — it is text inside `item` (a `<span>` with no data-part on
+        web and Lit, a Text with no testID on native) and takes `itemColor`. The last
+        is the current page and its `href` is ignored. An empty array renders the
+        named landmark around an empty list; a single item renders only the current
+        page; neither raises a dev warning. Lit starts the property as `[]`. Export
+        the item type as `BreadcrumbItem`.
     label:
       type: string
       default: Breadcrumb
@@ -154,8 +157,21 @@ component:
         content. The separator belongs to the item after it, so a wrapped line may
         start with a separator. The ellipsis sits in its own item like any other.
         Row gap between wrapped lines is none; the items'' minTarget height spaces
-        the lines.'
+        the lines. An override of `gap` applies in both places.'
       locked: false
+    focusRing:
+      token: color.border.focus
+      part: item
+      description: Only the focus-fallback item (the `<li>` given `tabindex="-1"`
+        after expanding, web and Lit) draws it, as an outline under `:focus-visible`;
+        Link and Button draw their own rings. Not applied on native, where that focus
+        is screen-reader focus only.
+      locked: true
+    focusRingWidth:
+      token: border.width.focus
+      part: item
+      description: Outline width of the focus-fallback item ring; web and Lit only.
+      locked: true
     fontFamily:
       token: font.family.body
       part: nav
@@ -166,10 +182,10 @@ component:
       token: font.size.sm
       part: nav
       description: Set on the nav; the Links inherit it on web and Lit. On native
-        each ancestor Link is wrapped in a Text (the `link` part) whose `overrides`
-        receive fontSize, fontFamily, fontWeight and lineHeight (and any override
-        of them), and plain ancestors, the current page and separators are Text at
-        the same values, so the type is one value everywhere.
+        each ancestor Link is wrapped in a Text (inside the `link` part's View) whose
+        `overrides` receive fontSize, fontFamily, fontWeight and lineHeight (and any
+        override of them), and plain ancestors, the current page and separators are
+        Text at the same values, so the type is one value everywhere.
       locked: false
     fontWeight:
       token: font.weight.regular
@@ -223,8 +239,10 @@ component:
         the separator is not in the accessibility tree at all. The ellipsis is the
         system Button (ghost, sm, iconOnly, leadingIcon the system Icon `ellipsis`)
         unchanged, inside `<span data-part="expand">` in its own `<li>`. Each ancestor
-        Link sits inside `<span data-part="link">`; Link keeps its own `data-part="anchor"`.
-        `copy.current` is not rendered: aria-current="page" announces it.'
+        Link sits inside `<span data-part="link">`; the `link` and `expand` spans
+        set no display (they stay inline inside the item''s inline-flex row); Link
+        keeps its own `data-part="anchor"`. `copy.current` is not rendered: aria-current="page"
+        announces it.'
     lit:
       tag: ds-breadcrumb
       reflect:
@@ -239,7 +257,9 @@ component:
         `press` is stopped so consumers see only `navigate`. Parts carry `part` and
         `data-part` with the anatomy names: `link` and `expand` on spans wrapping
         ds-link and ds-button; separators are `::before` pseudo-elements with no part.
-        `copy.current` is not rendered.'
+        `copy.current` is not rendered. The landmark role is asserted on web only;
+        Lit tests cover the nav through the derived accessible-name scenario and do
+        not assert role=navigation separately.'
     rn:
       element: View
       props:
@@ -249,15 +269,19 @@ component:
         no accessibilityRole value exists for it) labelled with `label`; ancestors
         are ds Links (Text with role link) whose onPress fires onNavigate, the current
         page is Text with accessibilityState={{ selected: true }} and accessibilityLabel
-        ''<label>, <copy.current>'' (screen readers would otherwise say only "selected").
-        Separators are Text with importantForAccessibility="no" / accessibilityElementsHidden.
-        The one root View is both the `nav` and `list` parts (testID `Breadcrumb`;
-        there is no `Breadcrumb.nav` or `Breadcrumb.list`); items are Views with testID
-        `Breadcrumb.item`, the Text wrapping each Link carries `Breadcrumb.link` (Link
-        takes no testID), separators `Breadcrumb.separator`, the current Text `Breadcrumb.current`,
-        and a View around the ellipsis Button `Breadcrumb.expand`. Breadcrumbs are
-        rare on native — most screens rely on the navigation stack — and are provided
-        mainly for tablet and react-native-web layouts.'
+        ''<item.label>, <copy.current>'' (the current item''s own label, not the `label`
+        prop; screen readers would otherwise say only "selected"). Separators are
+        Text with importantForAccessibility="no" / accessibilityElementsHidden. The
+        one root View is both the `nav` and `list` parts (testID `Breadcrumb`; there
+        is no `Breadcrumb.nav` or `Breadcrumb.list`); items are Views with testID
+        `Breadcrumb.item`, a View around the Text wrapping each Link carries `Breadcrumb.link`
+        (neither Link nor the system Text takes a testID), so tests that activate
+        the `link` part press the Link found by role link inside it, never the wrapper''s
+        testID (a press does not travel down to the Link); separators `Breadcrumb.separator`,
+        the current Text `Breadcrumb.current`, and a View around the ellipsis Button
+        `Breadcrumb.expand`. Breadcrumbs are rare on native — most screens rely on
+        the navigation stack — and are provided mainly for tablet and react-native-web
+        layouts.'
     swiftui:
       element: HStack
       props:
@@ -388,6 +412,8 @@ component:
 - `itemColor`: token `color.foreground.muted`; part `item`; locked
 - `separatorColor`: token `color.foreground.muted`; part `separator`; locked
 - `gap`: token `space.2`; part `list`
+- `focusRing`: token `color.border.focus`; part `item`; locked
+- `focusRingWidth`: token `border.width.focus`; part `item`; locked
 - `fontFamily`: token `font.family.body`; part `nav`
 - `fontSize`: token `font.size.sm`; part `nav`
 - `fontWeight`: token `font.weight.regular`; part `nav`
@@ -410,7 +436,7 @@ The component accepts `overrides?: Partial<Record<OverridableBinding, TokenRef>>
 Overrides change values, never presence: a prop that turns a part off (`surface: none`, `border: false`, `radius: none`) makes the matching overrides no-ops; apply an override only where the binding is in effect.
 
 Overridable: `gap`, `fontFamily`, `fontSize`, `fontWeight`, `lineHeight`
-Locked (accessibility-bearing, never overridable): `currentColor`, `itemColor`, `separatorColor`, `minTarget`
+Locked (accessibility-bearing, never overridable): `currentColor`, `itemColor`, `separatorColor`, `focusRing`, `focusRingWidth`, `minTarget`
 
 ## Behavior scenarios (6)
 
@@ -485,9 +511,10 @@ notes: '<nav aria-label> containing an <ol> of <li>; each ancestor is a ds Link,
   so the copy string lives in code and the separator is not in the accessibility tree
   at all. The ellipsis is the system Button (ghost, sm, iconOnly, leadingIcon the
   system Icon `ellipsis`) unchanged, inside `<span data-part="expand">` in its own
-  `<li>`. Each ancestor Link sits inside `<span data-part="link">`; Link keeps its
-  own `data-part="anchor"`. `copy.current` is not rendered: aria-current="page" announces
-  it.'
+  `<li>`. Each ancestor Link sits inside `<span data-part="link">`; the `link` and
+  `expand` spans set no display (they stay inline inside the item''s inline-flex row);
+  Link keeps its own `data-part="anchor"`. `copy.current` is not rendered: aria-current="page"
+  announces it.'
 ```
 
 ## Guidance
@@ -506,7 +533,7 @@ Do not use a Breadcrumb on top-level pages or in flat sites; a single-item trail
 
 ## Behavior
 
-Each ancestor is a Link that navigates on activation and fires `onNavigate` with the item first, so client-side routers can intercept. The last item is the current page: plain text with `aria-current="page"`, not focusable. With `collapse` and more than four items, the trail shows the first item, an ellipsis button labelled `copy.expandLabel`, and the last two; activating the ellipsis replaces it with the hidden items (one-way; the trail does not re-collapse, even when `items` changes) and moves focus to the first revealed item that is a link; if no revealed item has an `href`, focus goes to the first revealed item itself (`tabindex="-1"` on its `<li>` on web and Lit), so focus never falls to the page. On narrow widths the trail wraps rather than truncating so every ancestor stays reachable.
+Each ancestor is a Link that navigates on activation and fires `onNavigate` with the item first, so client-side routers can intercept. The last item is the current page: plain text with `aria-current="page"`, not focusable. With `collapse` and more than four items, the trail shows the first item, an ellipsis button labelled `copy.expandLabel`, and the last two; activating the ellipsis replaces it with the hidden items (one-way; the trail does not re-collapse, even when `items` changes) and moves focus to the first revealed item that is a link; if no revealed item has an `href`, focus goes to the first revealed item itself (`tabindex="-1"` on its `<li>` on web and Lit, set when focus moves and left in place afterwards, also across `items` changes, since it keeps the item out of the tab order), so focus never falls to the page. The revealed items are indices 1 through length − 3 of `items` as they were at the press, and the fallback is index 1; focus moves in the update that reveals them, so a later `items` change does not re-target it. On narrow widths the trail wraps rather than truncating so every ancestor stays reachable.
 
 ## Content guidelines
 
@@ -519,13 +546,13 @@ The breadcrumb is a `navigation` landmark with a name that distinguishes it from
 ## Platform notes
 
 ### Web
-Render `<nav aria-label={label}><ol>` with `<li>` per item. Ancestors render the system `Link` (`tone: default`, inheriting the nav's `fontSize`); the last renders `<span aria-current="page">`. Draw separators with `li + li::before { content: var(--ds-breadcrumb-separator) }` in `separatorColor`, so they are invisible to assistive technology. The ellipsis is the system `Button` (`ghost`, `size: sm`, `iconOnly`, `label: copy.expandLabel`, the system `Icon` named `ellipsis` as `leadingIcon`). Call `onNavigate(item, index, event)` from the link's `onClick` before the default navigation; consumers routing client-side return `false` or call `event.preventDefault()` on that event. Link and Button bring their own focus rings; Breadcrumb adds none.
+Render `<nav aria-label={label}><ol>` with `<li>` per item. Ancestors render the system `Link` (`tone: default`, inheriting the nav's `fontSize`); the last renders `<span aria-current="page">`. The `link` and `expand` wrapper spans set no display, so they stay inline in the item's inline-flex row. Draw separators with `li + li::before { content: var(--ds-breadcrumb-separator) }` in `separatorColor`, so they are invisible to assistive technology. The ellipsis is the system `Button` (`ghost`, `size: sm`, `iconOnly`, `label: copy.expandLabel`, the system `Icon` named `ellipsis` as `leadingIcon`). Call `onNavigate(item, index, event)` from the link's `onClick` before the default navigation; consumers routing client-side return `false` or call `event.preventDefault()` on that event. Link and Button bring their own focus rings; Breadcrumb adds one only for the focus-fallback `<li>`: an outline of `focusRingWidth` in `focusRing` under `:focus-visible` (Lit does the same).
 
 ### Lit
 `<ds-breadcrumb .items=${items}>` renders the `<nav>`, list and `<ds-link>` elements in its shadow root. Landmarks inside shadow roots are exposed normally. Dispatch a composed `navigate` CustomEvent with `detail: { item, index, originalEvent }` from the inner link's click; consumers who route client-side call `preventDefault()` on `detail.originalEvent`. `collapse` defaults to true, so it reflects as the negated attribute `no-collapse` — a bare boolean attribute cannot express false in static HTML.
 
 ### React Native
-Render a `View` with `flexDirection: 'row'`, `flexWrap: 'wrap'`, `accessibilityLabel={label}` and `role="navigation"` (semantic on react-native-web, ignored on native). Ancestors are the system `Link` nested in a `Text` whose `overrides` receive `fontSize`, `fontFamily`, `fontWeight` and `lineHeight` so the Link inherits them, with `onPress` calling `onNavigate(item, index)`; each item sits in a row `View` with `minHeight: minTarget` and `gap` between its separator and content, and the root row uses `columnGap: gap`. Focus after expanding goes to the first revealed item's `View` (index 1) via `setAccessibilityFocus` (hardware-keyboard focus cannot be moved to a Text link); the current page is `Text` in `currentColor` with `accessibilityState={{ selected: true }}` and `copy.current` appended to its label; separators are `Text` in `separatorColor` with `accessibilityElementsHidden` and `importantForAccessibility="no"`. The ellipsis is the system `Button` (`ghost`, `size: sm`, `iconOnly`) with the `ellipsis` Icon passed through Button's own icon prop, so Button colours it (no explicit `color`).
+Render a `View` with `flexDirection: 'row'`, `flexWrap: 'wrap'`, `accessibilityLabel={label}` and `role="navigation"` (semantic on react-native-web, ignored on native). Ancestors are the system `Link` nested in a `Text` whose `overrides` receive `fontSize`, `fontFamily`, `fontWeight` and `lineHeight` so the Link inherits them, with `onPress` calling `onNavigate(item, index)`; each item sits in a row `View` with `minHeight: minTarget` and `gap` between its separator and content, and the root row uses `columnGap: gap`. Focus after expanding goes to the first revealed item's `View` (index 1) via `setAccessibilityFocus`, whether that item is a Link or plain Text. This moves screen-reader focus only: hardware-keyboard focus cannot be moved to a Text link or a View on native, so keyboard users continue from the ellipsis position with Tab, and no focus ring is drawn; the current page is `Text` in `currentColor` with `accessibilityState={{ selected: true }}` and `copy.current` appended to its label; separators are `Text` in `separatorColor` with `accessibilityElementsHidden` and `importantForAccessibility="no"`. The ellipsis is the system `Button` (`ghost`, `size: sm`, `iconOnly`) with the `ellipsis` Icon passed through Button's own icon prop; Button does not colour its icon slots, so the Icon takes `color` = `color.action.ghost.foreground` explicitly.
 
 ## Related
 

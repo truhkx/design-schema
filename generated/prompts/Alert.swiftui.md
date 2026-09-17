@@ -97,9 +97,11 @@ component:
         that says nothing about urgency is not an Alert.'
     heading:
       type: string
-      description: A short bold first line for the message. Optional for one-line
-        messages. Named `heading`, not `title`, because `title` is a native attribute
-        (tooltip) on every platform element.
+      description: 'A short bold first line for the message. Optional for one-line
+        messages. An empty string is the same as no heading on every platform: no
+        heading element is rendered and the name falls back to the body. Named `heading`,
+        not `title`, because `title` is a native attribute (tooltip) on every platform
+        element.'
     children:
       type: content
       required: true
@@ -164,9 +166,13 @@ component:
         error octagon by tone, rendered with the system Icon (`info`, `success`, `warning`,
         `danger`) and colored by passing this token path as `overrides.color` to the
         Icon on every platform, React Native included (never Icon''s RN `color` prop)
-        — the sanctioned way to color a composed child. Override through `overrides.icon`;
-        the --ds-alert-icon hook does not recolor the Icon. Decorative; the tone is
-        also conveyed by the heading or role.'
+        — the sanctioned way to color a composed child. Locked by its non-text contrast
+        pair, so there is no `overrides.icon` and no --ds-alert-icon hook: the Icon
+        always gets this tone token, and the icon part box carries no color of its
+        own. Decorative: the Icon has no `label`, so it hides itself from assistive
+        technology (aria-hidden; on React Native accessibilityElementsHidden and importantForAccessibility
+        no), and the Alert-owned box adds no accessibility props on any platform;
+        the tone is also conveyed by the heading or role.'
       locked: true
     borderWidth:
       token: border.width.thin
@@ -193,13 +199,20 @@ component:
     iconSize:
       token: font.size.lg
       part: icon
-      description: Forwarded to the Icon as `overrides.size` (a token path, default
-        font.size.lg); Icon's `size` enum is not used here. Override through `overrides.iconSize`;
+      description: 'Forwarded to the Icon as `overrides.size` (a token path, default
+        font.size.lg); Icon''s `size` enum is not used here. Override through `overrides.iconSize`;
         the --ds-alert-icon-size hook does not resize the Icon. The icon part is a
         box as tall as the first line of text — headingSize × lineHeight when there
         is a heading, else fontSize × lineHeight, or iconSize when that is larger
         — with the Icon centred in it, so the glyph lines up with the first line;
-        that math reads the same token as the forward.
+        that math reads the same token as the forward. `overrides.iconSize` is the
+        only supported input: the component writes --ds-alert-icon-size from it and
+        the box math reads that hook, so a consumer who sets the hook directly in
+        their own CSS resizes the box but not the glyph, which is unsupported. Web
+        and Lit know whether there is a heading from a `data-has-heading` attribute
+        the component sets on its root (not a CSS `:has()` query), and all hooks (fontSize,
+        headingSize, lineHeight, iconSize) are set on the root and inherited, so the
+        icon box reads them there.'
       locked: false
     headingSize:
       token: font.size.md
@@ -227,15 +240,18 @@ component:
     lineHeight:
       token: font.lineHeight.normal
       part: container
+      description: Set on the root and inherited by the heading, the body and the
+        icon-box math; the heading has no line-height binding of its own and uses
+        this one.
       locked: false
     dismissMargin:
       token: space.1
       part: dismissButton
-      description: Negative block/inline-end margin on the wrapper around the dismiss
-        Button (web span, Lit span, RN View) so its target sits in the corner without
-        enlarging the padding; the Button keeps its own colors, radius and focus ring.
-        On React Native this is the one sanctioned sibling margin (marginTop and marginEnd
-        of −dismissMargin on the wrapper View).
+      description: Negative margin-block-start and margin-inline-end only (not block-end)
+        on the wrapper around the dismiss Button (web span, Lit span, RN View) so
+        its target sits in the corner without enlarging the padding; the Button keeps
+        its own colors, radius and focus ring. On React Native this is the one sanctioned
+        sibling margin (marginTop and marginEnd of −dismissMargin on the wrapper View).
       locked: false
   copy:
     dismissLabel: Dismiss
@@ -269,7 +285,7 @@ component:
       element: div
       attributes:
       - role
-      notes: role="status" | "alert" from `live` (each implies its aria-live; set
+      notes: 'role="status" | "alert" from `live` (each implies its aria-live; set
         only the role); no role when off. Rendering the role on the component root
         is enough for the announcement, since React mounts the element and its content
         together. The dismiss button is the system Button (ghost, sm, iconOnly, label
@@ -278,14 +294,19 @@ component:
         every tone background. Button writes its own data-part, so `data-part="dismissButton"`
         goes on a span wrapper the Alert owns (it also carries dismissMargin), and
         tests click the button inside it; likewise `data-part="icon"` is on the span
-        box that aligns the Icon, which renders no Alert hook of its own. The region's
+        box that aligns the Icon, which renders no Alert hook of its own. The region''s
         accessible name is the heading (aria-labelledby) when present, otherwise the
         body element, so an Alert always has a name even without a heading; the whole
         body text, link text included, is then the name, which is intended (a status
-        region is named by its content). On dismiss, "next focusable" means a, button,
-        input, select, textarea, [tabindex] ≥ 0 or contenteditable in document order
-        after the alert, skipping disabled elements, elements inside `inert`, and
-        elements that are not rendered (hidden or display none).
+        region is named by its content). That content name always wins: a consumer
+        `aria-label` or `aria-labelledby` is not forwarded to the root. On dismiss,
+        "next focusable" means a[href], button, input, select, textarea, [tabindex]
+        ≥ 0 or contenteditable in document order after the alert, skipping any element
+        with a negative tabindex, disabled elements (`:disabled`, which includes descendants
+        of a disabled fieldset), elements inside `inert`, and elements that are not
+        rendered: the `hidden` attribute or computed `display: none` on the element
+        or an ancestor, or computed `visibility: hidden`; size and layout are not
+        checked (jsdom has none).'
     lit:
       tag: ds-alert
       reflect:
@@ -300,14 +321,22 @@ component:
         as on every platform the heading is plain text; body is the default slot.
         Accessible name: a plain `aria-label` attribute on the host carrying the heading
         text when present, else the slotted body text (a status region is named by
-        its content), updated when either changes — ids never cross the shadow root
-        and ElementInternals ariaLabelledByElements is not used, so tests read the
-        name from the attribute. Shadow parts carry the anatomy names verbatim, camelCase,
-        for both `part` and `data-part` (`part="dismissButton" data-part="dismissButton"`);
+        its content) — the host''s light-DOM textContent with whitespace collapsed
+        and trimmed, so a label a child carries only as an attribute (such as `<ds-link
+        label>`) is not part of it; put that wording in the heading or the body text
+        when it matters — updated when either changes — ids never cross the shadow
+        root and ElementInternals ariaLabelledByElements is not used, so tests read
+        the name from the attribute. Shadow parts carry the anatomy names verbatim,
+        camelCase, for both `part` and `data-part` (`part="dismissButton" data-part="dismissButton"`);
         the dismissButton part is a span wrapper the element owns around `<ds-button>`
         (whose leading icon is `<ds-icon name="close" inline>`), and the icon part
         a span box around the tone `<ds-icon>`; both children keep their own hooks.
-        The same next-focusable rule as web applies on dismiss.'
+        The shadow root is created without `delegatesFocus`: the alert is a region,
+        not a control, so focusing the host or clicking the message must not jump
+        focus to the dismiss button, which is focusable on its own. The same next-focusable
+        rule as web applies on dismiss, walked over the flat tree (into open shadow
+        roots and slot-assigned content) in document order, since focusables inside
+        other components'' shadow roots are invisible to querySelector.'
     rn:
       element: View
       props:
@@ -321,19 +350,22 @@ component:
         only (Platform.OS === 'ios', since Android already announces through accessibilityLiveRegion)
         with live≠off call AccessibilityInfo.announceForAccessibility on mount and
         again whenever heading or body change (a changed message is a new message).
-        The label is heading + body when body is a string; otherwise heading only
-        — a body that is not plain text should carry its own accessible text, and
-        with no heading and a non-string body accessibilityLabel is left unset (the
-        region has no name; its children are read on their own). A string or number
-        body is wrapped in the system Text (default tone, fontFamily, fontSize and
-        lineHeight through its `overrides`). The heading is a raw Text styled with
-        foreground, headingSize, headingWeight, fontFamily and lineHeight, with no
-        accessibilityRole="header", as web renders no heading element. The icon part
-        is a View as tall as the first line holding the tone Icon with `overrides.color`
-        set to the `icon` token path; parts carry testID `Alert.<part>` on Views the
-        Alert owns (the dismissButton wrapper View also carries dismissMargin). The
-        dismiss button is the system Button (ghost, sm, iconOnly, label copy.dismissLabel)
-        whose `leadingIcon` is the Icon `close` with `overrides.color` color.action.ghost.foreground,
+        Use the `accessibilityRole` and `accessibilityLiveRegion` props named here,
+        not the newer `role` prop. The label is heading + body when body is a string
+        or number (the number as its text), joined by ". " exactly like the iOS announcement
+        so the two read the same; otherwise heading only — a body that is not plain
+        text should carry its own accessible text, and with no heading and a body
+        that is neither string nor number accessibilityLabel is left unset (the region
+        has no name; its children are read on their own). A string or number body
+        is wrapped in the system Text (default tone, fontFamily, fontSize and lineHeight
+        through its `overrides`). The heading is a raw Text styled with foreground,
+        headingSize, headingWeight, fontFamily and lineHeight, with no accessibilityRole="header",
+        as web renders no heading element. The icon part is a View as tall as the
+        first line holding the tone Icon with `overrides.color` set to the `icon`
+        token path; parts carry testID `Alert.<part>` on Views the Alert owns (the
+        dismissButton wrapper View also carries dismissMargin). The dismiss button
+        is the system Button (ghost, sm, iconOnly, label copy.dismissLabel) whose
+        `leadingIcon` is the Icon `close` with `overrides.color` color.action.ghost.foreground,
         since Button cannot recolor it. Native cannot move focus to an arbitrary element,
         so the focus-onward step the web and Lit builds perform on dismiss is skipped
         here; the dismiss Button is inside the alert and its own removal returns focus
@@ -395,6 +427,10 @@ component:
       platforms:
       - web
       - lit
+    - attribute: accessibilityLiveRegion
+      is: null
+      platforms:
+      - rn
   - name: the-heading-is-rendered
     description: The heading is a short bold first line saying what happened.
     given:
@@ -536,7 +572,7 @@ Render `<div role={live === 'off' ? undefined : live}>` — `role="status"` impl
 `<ds-alert tone="danger" live="alert" heading="Payment failed">` sets a plain `role` attribute on the host (removed when `live` is `off`) so the live region is the host itself, which assistive technology sees in the light DOM, and names the host with a plain `aria-label` carrying the heading text, else the body text. The body is the default slot and `heading` is a string property only (no named slot). Dispatch a composed `dismiss` CustomEvent (stop the inner `press`); the consumer removes the element. The dismiss `<ds-button>` is used unchanged — no `::part` restyling. Reflect `tone`, `live` and `dismissible`.
 
 ### React Native
-Render a `View` with `accessibilityRole="alert"` when `live` is `alert`, `accessibilityLiveRegion="assertive"` or `"polite"` by `live`, and `accessibilityLabel` = heading + body (when body is a string) so the whole message is one announcement. iOS does not honour live regions: on iOS only, in an effect on mount, when `live !== 'off'`, call `AccessibilityInfo.announceForAccessibility()` with the heading and body joined by a full stop, and again whenever they change. Apply `background`, `border` and `radius` from the tone tokens; render the tone Icon with the `icon` token path as `overrides.color` (decorative, so it is hidden from assistive technology). The dismiss button is the system Button (`ghost`, `sm`, `iconOnly`, with `<Icon name="close" overrides={{ color: 'color.action.ghost.foreground' }} />` as `leadingIcon`), in a wrapper View pulled into the corner with `dismissMargin` — the one negative margin this component uses.
+Render a `View` with `accessibilityRole="alert"` when `live` is `alert`, `accessibilityLiveRegion="assertive"` or `"polite"` by `live`, and `accessibilityLabel` = heading + body joined by ". " (when body is a string or number) so the whole message is one announcement. iOS does not honour live regions: on iOS only, in an effect on mount, when `live !== 'off'`, call `AccessibilityInfo.announceForAccessibility()` with the heading and body joined by a full stop, and again whenever they change. Apply `background`, `border` and `radius` from the tone tokens; render the tone Icon with the `icon` token path as `overrides.color` (decorative, so it is hidden from assistive technology). The dismiss button is the system Button (`ghost`, `sm`, `iconOnly`, with `<Icon name="close" overrides={{ color: 'color.action.ghost.foreground' }} />` as `leadingIcon`), in a wrapper View pulled into the corner with `dismissMargin` — the one negative margin this component uses.
 
 ## Related
 

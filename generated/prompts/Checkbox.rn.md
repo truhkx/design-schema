@@ -111,7 +111,8 @@ component:
       description: What a native HTML <form> submits under `name` when checked (web
         and Lit only). The enclosing Form (React, React Native, ds-form) ignores it
         and collects the boolean `checked`. Checkboxes sharing a `name` are not a
-        multi-select under Form; give each its own name.
+        multi-select under Form; give each its own name. React Native accepts it (default
+        'on') for API parity and does nothing with it.
     checked:
       type: boolean
       description: Controlled checked state. Omit for an uncontrolled control.
@@ -145,7 +146,9 @@ component:
       type: boolean
       default: false
       description: Marks the control as failing validation. Usually set by the Form;
-        can be set directly.
+        can be set directly. While true with no `error` (and no Form message), the
+        error slot renders copy.required (required and unchecked) or copy.invalid,
+        with role=alert, so a bare `invalid` always shows a message.
     description:
       type: string
       description: Persistent helper text below the label.
@@ -185,7 +188,8 @@ component:
     controlSelectedBackground:
       token: color.control.selectedBackground
       part: control
-      description: Checked and indeterminate fill; the border takes the same color.
+      description: Checked and indeterminate fill; the border takes the same color
+        unless the box is invalid (see controlBorderInvalid).
       locked: true
     indicator:
       token: color.control.selectedForeground
@@ -224,6 +228,13 @@ component:
     controlBorderInvalid:
       token: color.border.danger
       part: control
+      description: 'Border color while invalid (`invalid` or `error`), in every state:
+        it replaces controlBorder on an unchecked box and the controlSelectedBackground-colored
+        border on a checked or mixed box (the fill stays controlSelectedBackground).
+        Border color precedence: invalid, then selected, then rest. Focus never hides
+        it: on web/Lit the focus ring is a separate outline; on native, where focus
+        is drawn on the border, a focused invalid box keeps this color and only the
+        width changes to focusRingWidth, as in Input.'
       locked: false
     controlSize:
       token: space.5
@@ -244,7 +255,8 @@ component:
       part: description
       description: Vertical gap between label and description (the text column inside
         the row), and between the row and the error message below it (the root column's
-        gap).
+        gap). The error message is indented by controlSize + gap on every platform,
+        so it lines up with the label rather than the control.
       locked: false
     labelColor:
       token: color.foreground
@@ -300,8 +312,12 @@ component:
       part: control
       description: 'Web/Lit: an outline of focusRingWidth in this color around the
         control on :focus-visible. Native (hardware keyboard focus): the control''s
-        border takes this color at focusRingWidth while focused; the box keeps its
-        size, so the glyph area shrinks by the width difference.'
+        border takes this color at focusRingWidth while focused (an invalid box keeps
+        controlBorderInvalid and only the width changes); the box keeps its size,
+        so the glyph area shrinks by the width difference. The focused width is never
+        thinner than the rest width: it is the larger of focusRingWidth and controlBorderWidth,
+        so a controlBorderWidth override wider than border.width.focus keeps its width
+        on focus.'
       locked: true
     focusRingWidth:
       token: border.width.focus
@@ -310,10 +326,15 @@ component:
     minTarget:
       token: size.target.comfortable
       part: control
-      description: 'Minimum height of the control + label row; the whole row is the
-        hit area, including the gap. The row has no vertical padding: it is at least
-        this tall and centers the control and the text column on the cross axis. The
-        error message sits below the row, outside the hit area.'
+      description: Minimum height of the control + label row; the whole row is the
+        hit area, including the gap. The row aligns its children to the start of the
+        cross axis, with paddingBlock (minTarget − labelSize × lineHeight) / 2 on
+        each side, so a single-line row is exactly this tall and the control, offset
+        by (labelSize × lineHeight − controlSize) / 2 from the top of the text column,
+        is centred on the label's first line; a wrapping label or a description grows
+        the row downwards without pulling the control off the first line (as Switch).
+        With hideLabel the control is still centred in the row. The error message
+        sits below the row, outside the hit area.
       locked: true
     disabledOpacity:
       token: opacity.disabled
@@ -324,7 +345,11 @@ component:
     transition:
       token: motion.duration.fast
       part: control
-      description: Fill and indicator transitions, with motion.easing.standard.
+      description: 'The control''s background (fill) and border color transitions,
+        with motion.easing.standard. The indicator is not animated: the check and
+        dash Icons are mounted and unmounted (nothing is rendered when unchecked),
+        so they appear, disappear and swap check↔dash instantly. Instant under reduced
+        motion.'
       locked: false
   copy:
     required: '{label} is required.'
@@ -392,11 +417,16 @@ component:
         and Space all keep working. `indeterminate` is set as the DOM property (it
         has no attribute) and mirrored as aria-checked="mixed". The root is a wrapper
         div (data-ds), but the forwarded ref resolves to the <input>, the interactive
-        native element, as in Input. A click whose target is the row itself (the gap)
-        is forwarded to the input. Fieldset''s group `disabled` arrives as the `disabled`
-        prop Fieldset passes to its direct child fields; there is no React FieldsetContext.
-        copy.checked, copy.unchecked and copy.mixed are not used (native checked state
-        plus aria-checked=mixed).'
+        native element, as in Input. A click whose target is the row itself (the gap),
+        the text column itself (including the partGap between label and description)
+        or the description is forwarded to the input. The <input> is never React-controlled:
+        it gets `defaultChecked` and keeps its native checked state, and the component
+        mirrors the live state in React only to render the indicator; with a controlled
+        `checked` prop the component writes the prop back to the DOM `checked` property
+        after reporting the change, so the box follows the prop. Fieldset''s group
+        `disabled` arrives as the `disabled` prop Fieldset passes to its direct child
+        fields; there is no React FieldsetContext. copy.checked, copy.unchecked and
+        copy.mixed are not used (native checked state plus aria-checked=mixed).'
     lit:
       tag: ds-checkbox
       reflect:
@@ -410,12 +440,21 @@ component:
         from the host. `checked` behaves like a native input: the `checked` attribute
         is the initial state only and the property tracks the live state, so `checked`
         is not reflected. The property starts from the `checked` attribute, else `defaultChecked`,
-        and every toggle updates it; there is no controlled mode on Lit. Native form
-        value is `checked ? value : null` (native semantics); ds-form collects the
-        boolean `checked` (`currentValue`, false when unchecked). Validity (ElementInternals)
-        follows the same precedence as the rendered error. Group disabled: ds-fieldset
-        sets the `disabled` property on its direct data-ds-field children (the host
-        carries `data-ds-field`), and the field also honours formDisabledCallback
+        and every toggle updates it; there is no controlled mode on Lit. It is a plain
+        Boolean property, so a later change of the `checked` attribute also sets the
+        live state; formResetCallback restores the `checked` attribute, else `defaultChecked`.
+        The locally cleared mixed indicator is private state reset whenever the `indeterminate`
+        property changes value; the reflected `indeterminate` attribute stays set
+        while the dash is cleared, and re-setting the same value is not a change (set
+        it false, then true, to show the dash again). ds-form marks a failing field
+        only by setting `invalid`, so on Lit the error order is `error`, then the
+        `invalid`-derived copy.required / copy.invalid. Native form value is `checked
+        ? value : null` (native semantics); ds-form collects the boolean `checked`
+        (`currentValue`, false when unchecked). Validity (ElementInternals) is error
+        > required-and-unchecked (valueMissing) > invalid, whether or not `invalid`
+        is set, as in Input; the rendered error still waits for `invalid` (see Behavior).
+        Group disabled: ds-fieldset sets the `disabled` property on its direct data-ds-field
+        children (the host carries `data-ds-field`), and the field also honours formDisabledCallback
         from a native fieldset or form. Shadow parts use the anatomy names verbatim
         for both `part` and `data-part` (control, indicator, label, description, errorMessage).
         copy.checked, copy.unchecked and copy.mixed are not used.'
@@ -428,20 +467,24 @@ component:
       - accessibilityState
       notes: 'No native checkbox in core RN. Render Pressable (the row) containing
         a drawn control View and the text column (label Text, description Text); accessibilityState={{
-        checked: indeterminate ? "mixed" : checked, disabled }}. The label is a composed
-        Text (`size: md`, `weight: regular`, tone default) with labelSize, labelWeight,
-        fontFamily and lineHeight passed through its overrides. accessibilityLabel
-        is the label plus copy.requiredIndicator when required, prefixed by the Fieldset
-        legend from FieldsetContext (which also carries the group `disabled`) as ''<legend>,
-        <label>''. The drawn control is hidden from accessibility (accessibilityElementsHidden,
-        importantForAccessibility="no"), so the Pressable row is the one accessible
-        element; RN tests check that instead of querying the control. The error Text
-        renders below the Pressable, outside it (a tap on it does not toggle and it
-        is not in the hint), separated by partGap. RN has no invalid accessibility
-        state: invalid is shown by controlBorderInvalid and conveyed to assistive
-        technology by the error text through accessibilityLiveRegion (Android) / AccessibilityInfo.announceForAccessibility
-        (iOS), as in Input; RN tests of the error check its text. copy.checked, copy.unchecked
-        and copy.mixed are not used.'
+        checked: indeterminate ? "mixed" : checked, disabled }}. Disabled uses accessibilityState.disabled
+        and a press guard, never the Pressable `disabled` prop (it removes focus),
+        so the row stays focusable. The label is a composed Text (`size: md`, `weight:
+        regular`, tone default) with labelSize, labelWeight, fontFamily and lineHeight
+        passed through its overrides. accessibilityLabel is the label plus copy.requiredIndicator
+        when required, prefixed by the Fieldset legend from FieldsetContext (which
+        also carries the group `disabled`) as ''<legend>, <label>''. The drawn control
+        is hidden from accessibility (accessibilityElementsHidden, importantForAccessibility="no"),
+        so the Pressable row is the one accessible element; RN tests check that instead
+        of querying the control. The error Text renders below the Pressable, outside
+        it (a tap on it does not toggle and it is not in the hint), separated by partGap.
+        RN has no invalid accessibility state: invalid is shown by controlBorderInvalid
+        and conveyed to assistive technology by the error text through accessibilityLiveRegion
+        (Android) / AccessibilityInfo.announceForAccessibility (iOS), as in Input;
+        inside a Form with `errorSummary` on, the summary is the announcement, so
+        the error Text''s live region is "none" and iOS makes no announcement for
+        it. RN tests of the error check its text. copy.checked, copy.unchecked and
+        copy.mixed are not used.'
     swiftui:
       element: Toggle
       props:
@@ -822,20 +865,23 @@ props:
 - accessibilityState
 notes: 'No native checkbox in core RN. Render Pressable (the row) containing a drawn
   control View and the text column (label Text, description Text); accessibilityState={{
-  checked: indeterminate ? "mixed" : checked, disabled }}. The label is a composed
-  Text (`size: md`, `weight: regular`, tone default) with labelSize, labelWeight,
-  fontFamily and lineHeight passed through its overrides. accessibilityLabel is the
-  label plus copy.requiredIndicator when required, prefixed by the Fieldset legend
-  from FieldsetContext (which also carries the group `disabled`) as ''<legend>, <label>''.
-  The drawn control is hidden from accessibility (accessibilityElementsHidden, importantForAccessibility="no"),
-  so the Pressable row is the one accessible element; RN tests check that instead
-  of querying the control. The error Text renders below the Pressable, outside it
-  (a tap on it does not toggle and it is not in the hint), separated by partGap. RN
-  has no invalid accessibility state: invalid is shown by controlBorderInvalid and
-  conveyed to assistive technology by the error text through accessibilityLiveRegion
-  (Android) / AccessibilityInfo.announceForAccessibility (iOS), as in Input; RN tests
-  of the error check its text. copy.checked, copy.unchecked and copy.mixed are not
-  used.'
+  checked: indeterminate ? "mixed" : checked, disabled }}. Disabled uses accessibilityState.disabled
+  and a press guard, never the Pressable `disabled` prop (it removes focus), so the
+  row stays focusable. The label is a composed Text (`size: md`, `weight: regular`,
+  tone default) with labelSize, labelWeight, fontFamily and lineHeight passed through
+  its overrides. accessibilityLabel is the label plus copy.requiredIndicator when
+  required, prefixed by the Fieldset legend from FieldsetContext (which also carries
+  the group `disabled`) as ''<legend>, <label>''. The drawn control is hidden from
+  accessibility (accessibilityElementsHidden, importantForAccessibility="no"), so
+  the Pressable row is the one accessible element; RN tests check that instead of
+  querying the control. The error Text renders below the Pressable, outside it (a
+  tap on it does not toggle and it is not in the hint), separated by partGap. RN has
+  no invalid accessibility state: invalid is shown by controlBorderInvalid and conveyed
+  to assistive technology by the error text through accessibilityLiveRegion (Android)
+  / AccessibilityInfo.announceForAccessibility (iOS), as in Input; inside a Form with
+  `errorSummary` on, the summary is the announcement, so the error Text''s live region
+  is "none" and iOS makes no announcement for it. RN tests of the error check its
+  text. copy.checked, copy.unchecked and copy.mixed are not used.'
 ```
 
 ## Guidance
@@ -854,7 +900,7 @@ Do not use a Checkbox for a setting that applies immediately without a submit st
 
 ## Behavior
 
-Clicking or tapping anywhere on the row — control, label, or description — toggles the state and fires `onChange` with the new boolean. The description is not inside the label (it would join the accessible name); a click on it is forwarded to the control. Space toggles from the keyboard; Enter does not (it submits the enclosing form on web, and the component must not intercept that). The whole row is the hit area, including the gap between control and label; the error message below the row is not. Uncontrolled unless `checked` is provided (on Lit the `checked` property is always the live state; see the Lit note). `onChange` fires only for a user toggle: nothing fires on mount, and a controlled `checked` catching up with a change already reported does not fire again. Toggling an `indeterminate` checkbox sets `checked` to `!checked` and clears the mixed indicator locally (aria-checked, the DOM property, the dash) until the `indeterminate` prop changes value again; a consumer that keeps passing `true` unchanged sees it cleared. Consumers who own the mixed state update `indeterminate` in `onChange`, and decide what happens to the children. `disabled` controls are visible, readable and focusable (`aria-disabled`, not the native attribute), and are skipped by the Form; `disabledOpacity` dims the control and label, not the description or error. `required` appends `copy.requiredIndicator` to the label and sets `aria-required`; the indicator is plain label text at the label's size and color (not aria-hidden) and is part of the accessible name on every platform, including the native accessibilityLabel. Error display: the error slot shows `error` when set, else the Form's message, else — only while `invalid` is true — `copy.required` if the box is required and unchecked, otherwise `copy.invalid`. Validity (`validationMessage`, ElementInternals) follows the same order — the same as Input. The Form marks a failing field by setting its `invalid` and never sets `error`. Inside a Form, `validate: blur` means "on change" for a checkbox; there is no useful blur moment. The Form (React, React Native, ds-form) collects the boolean `checked` under `name` — `false` when unchecked. `value` is only what a native HTML `<form>` submits when checked (web and Lit). Several checkboxes sharing a `name` are not a multi-select under Form: give each its own name. Inside a Fieldset the group's `disabled` applies as if set on the field — on web through the `disabled` prop Fieldset passes to its direct child fields, on Lit through the `disabled` property ds-fieldset sets on its direct data-ds-field children (or formDisabledCallback from a native fieldset/form), and on native through `FieldsetContext`, which also carries the legend that prefixes the accessibility label ("Shipping address, Street"). The label is a native `<label for>` on web/Lit, styled from Checkbox's label bindings, and a composed Text on native; description and error are Text.
+Clicking or tapping anywhere on the row — control, label, or description — toggles the state and fires `onChange` with the new boolean. The description is not inside the label (it would join the accessible name); a click on it is forwarded to the control. Space toggles from the keyboard; Enter does not (it submits the enclosing form on web, and the component must not intercept that). The whole row is the hit area, including the gap between control and label and the gap between label and description; the error message below the row is not (a click on it does nothing). Uncontrolled unless `checked` is provided (on Lit the `checked` property is always the live state; see the Lit note). `onChange` fires only for a user toggle: nothing fires on mount, and a controlled `checked` catching up with a change already reported does not fire again. Toggling an `indeterminate` checkbox sets `checked` to `!checked` and clears the mixed indicator locally (aria-checked, the DOM property, the dash) until the `indeterminate` prop changes value again; a consumer that keeps passing `true` unchanged sees it cleared. Consumers who own the mixed state update `indeterminate` in `onChange`, and decide what happens to the children. `disabled` controls are visible, readable and focusable (`aria-disabled`, not the native attribute), and are skipped by the Form; `disabledOpacity` dims the control and label, not the description or error. `required` appends `copy.requiredIndicator` to the label and sets `aria-required`; the indicator is plain label text at the label's size and color (not aria-hidden) and is part of the accessible name on every platform, including the native accessibilityLabel. Error display: the error slot shows `error` when set, else the Form's message, else — only while `invalid` is true — `copy.required` if the box is required and unchecked, otherwise `copy.invalid`. Validity (`validationMessage`, ElementInternals, and the Form's `validate()`) always follows the full order whatever `invalid` is — `error`, then required-and-unchecked (`copy.required`, valueMissing), then `invalid` (`copy.invalid`) — the same as Input: a required, unchecked box fails Form validation without `invalid` being set, while the rendered message still waits for `invalid`. On Lit there is no Form-message step (ds-form only sets `invalid`). The Form marks a failing field by setting its `invalid` and never sets `error`. Inside a Form, `validate: blur` means "on change" for a checkbox; there is no useful blur moment. The Form (React, React Native, ds-form) collects the boolean `checked` under `name` — `false` when unchecked. `value` is only what a native HTML `<form>` submits when checked (web and Lit). Several checkboxes sharing a `name` are not a multi-select under Form: give each its own name. Inside a Fieldset the group's `disabled` applies as if set on the field — on web through the `disabled` prop Fieldset passes to its direct child fields, on Lit through the `disabled` property ds-fieldset sets on its direct data-ds-field children (or formDisabledCallback from a native fieldset/form), and on native through `FieldsetContext`, which also carries the legend that prefixes the accessibility label ("Shipping address, Street"). The label is a native `<label for>` on web/Lit, styled from Checkbox's label bindings, and a composed Text on native; description and error are Text.
 
 ## Content guidelines
 

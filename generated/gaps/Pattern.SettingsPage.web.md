@@ -28,3 +28,16 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Button 'Request export' has no behavior in the spec. It renders with no handler.
 - AlertDialog: `onConfirm` only closes the dialog (no business logic), same as Cancel/Escape. The spec doesn't say what confirming should do on a demo page.
 - Guidance says the story is `Patterns/Settings`; Output says `Patterns/SettingsPage`. I followed Output.
+
+## 2026-09-17 16:48 — round 1
+
+- RadioGroup/SegmentedControl: the spec gives option *labels* only ("Immediately", "Daily digest", "System"), but RadioGroup's `options[].value` must be a short identifier because it becomes an element id. Chose immediately/daily/weekly, system/light/dark, comfortable/compact.
+- Tabs: the structure block nests `TabPanel "Profile"` under Tabs as if the label lived on the panel, but React Tabs takes a `tabs: TabsItem[]` array for the labels and separate `TabPanel id=…` children. Built SETTINGS_TABS from the given ids and labels; the panel children carry ids only.
+- Stack: the structure writes `Stack horizontal gap=tight justify=end`; the prop is `direction="horizontal"`. Wrote it as `direction`.
+- Form: no `validate` mode is specified. Left it unset — the package default is already `submit`, which is what "validates on submit" asks for. `errorSummary={false}` is set as instructed, so the first invalid field takes focus.
+- Push RadioGroup: the spec says both `defaultValue=Immediately` (uncontrolled) and that Notifications controls are "page state". Kept it uncontrolled with `defaultValue`, since nothing on the page reads the frequency; only the Switch is controlled, because it drives `disabled`.
+- Switch: no `name` given, and it sits outside the Form, so it was left off. If the intent was for push to be collected by some future form, the spec should say so.
+- AlertDialog placement: the structure puts it as a sibling after Container inside Landmark main, but AlertDialog portals to `document.body`, so its position in the React tree has no DOM effect on web. Followed the structure anyway; on web the instruction is a no-op and the `container` prop is untouched.
+- Cancel: the spec says it "resets the form to its saved values" and with no seed data the fields return to empty — so on first load Cancel is a visible no-op. Implemented as specified (saved copy restored, errors untouched); the page has no seed profile to make the behavior observable in the story.
+- Card heading vs Fieldset legend: the danger/export Cards use `headingLevel={2}` beside Fieldset legends of similar weight — the seam the guidance flags (does Fieldset's legend need a `size`, or Card's heading a smaller default?) is real in the rendered page but was left unaddressed here, since the page may not restyle a child.
+- Toast: `toast()` returns a Promise that resolves when the toast leaves; the page ignores it (`void`). The spec does not say whether a second save should replace an in-flight toast, so no dedupe or id was set.

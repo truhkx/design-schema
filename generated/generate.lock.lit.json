@@ -713,18 +713,18 @@
     }
   },
   "Pattern.SettingsPage.lit": {
-    "hash": "9d815ef0663c1f52",
-    "lastAttemptHash": "9d815ef0663c1f52",
-    "generatedAt": "2026-09-16T17:13:01+00:00",
+    "hash": "fe41208c6f0b5c9f",
+    "lastAttemptHash": "fe41208c6f0b5c9f",
+    "generatedAt": "2026-09-17T20:53:12+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.225,
+    "costUsd": 1.9362,
     "files": [
       "packages/lit/demo/SettingsPage.stories.ts",
       "packages/lit/demo/SettingsPage.ts"
     ],
-    "gaps": 10,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,

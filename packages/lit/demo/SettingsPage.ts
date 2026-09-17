@@ -65,11 +65,14 @@ const EMPTY_PROFILE: SettingsProfile = { name: '', email: '', displayName: '', w
 /**
  * `<ds-pattern-settings-page>` — the Settings pattern: a main Landmark →
  * Container → Tabs (Profile, Notifications, Appearance, Account), composed only
- * from system elements.
+ * from system elements. The page owns no styling of its own beyond
+ * `:host { display: block }`, reads no tokens and never branches on theme or
+ * mode; spacing is Stack, Card inset and Container gutters throughout.
  *
  * The Appearance controls are presentational: they are real, controlled inputs
  * that drive nothing. The mode is set by an ancestor (`data-mode` on `<html>`)
- * and the theme has no density, so the page never reads or writes either.
+ * and the theme has no density, so the page never reads or writes either, and
+ * each Fieldset's `description` says so.
  *
  * Expects the token custom properties to be loaded once at the app root.
  */
@@ -84,15 +87,16 @@ export class DsPatternSettingsPage extends LitElement {
   /** Last saved profile; there is no seed data, so it starts empty. */
   @state() private accessor savedProfile: SettingsProfile = EMPTY_PROFILE;
 
-  /** Unsaved edits to the profile form. */
+  /** Unsaved edits to the profile form; the four Inputs are controlled from it so Cancel can restore. */
   @state() private accessor draftProfile: SettingsProfile = EMPTY_PROFILE;
 
+  /** Push notifications: page state outside the Form, and the RadioGroup's enablement. */
   @state() private accessor pushEnabled = false;
 
-  @state() private accessor frequency: string | undefined;
-
+  /** Presentational: the color mode the user picked, where "System" means no override. */
   @state() private accessor colorMode = 'system';
 
+  /** Presentational: the theme has no density setting, so this drives nothing. */
   @state() private accessor density = 'comfortable';
 
   @state() private accessor deleteDialogOpen = false;
@@ -112,7 +116,7 @@ export class DsPatternSettingsPage extends LitElement {
 
             <ds-tabs label="Settings sections" .tabs=${SETTINGS_TABS} keep-mounted>
               <ds-tab-panel id="profile">
-                <ds-form no-error-summary @submit=${this.handleProfileSubmit}>
+                <ds-form name="profile" no-error-summary @submit=${this.handleProfileSubmit}>
                   <ds-stack gap="loose">
                     <ds-fieldset legend="Your details">
                       <ds-input
@@ -156,56 +160,78 @@ export class DsPatternSettingsPage extends LitElement {
               </ds-tab-panel>
 
               <ds-tab-panel id="notifications">
-                <ds-fieldset legend="Email me about">
-                  <ds-checkbox label="Product updates" description="About once a month."></ds-checkbox>
-                  <ds-checkbox label="Security alerts" default-checked></ds-checkbox>
-                  <ds-checkbox label="Tips and tutorials"></ds-checkbox>
-                </ds-fieldset>
-                <ds-fieldset legend="Push notifications">
-                  <ds-switch
-                    label="Enable push notifications"
-                    .checked=${this.pushEnabled}
-                    @change=${this.handlePushChange}
-                  ></ds-switch>
-                  <ds-radio-group
-                    label="Frequency"
-                    .options=${FREQUENCY_OPTIONS}
-                    .value=${this.frequency}
-                    ?disabled=${!this.pushEnabled}
-                    @change=${this.handleFrequencyChange}
-                  ></ds-radio-group>
-                </ds-fieldset>
+                <ds-stack gap="loose">
+                  <ds-fieldset legend="Email me about">
+                    <ds-checkbox
+                      name="productUpdates"
+                      label="Product updates"
+                      description="About once a month."
+                    ></ds-checkbox>
+                    <ds-checkbox name="securityAlerts" label="Security alerts" default-checked></ds-checkbox>
+                    <ds-checkbox name="tips" label="Tips and tutorials"></ds-checkbox>
+                  </ds-fieldset>
+                  <ds-fieldset legend="Push notifications">
+                    <ds-switch
+                      label="Enable push notifications"
+                      .checked=${this.pushEnabled}
+                      @change=${this.handlePushChange}
+                    ></ds-switch>
+                    <ds-radio-group
+                      name="pushFrequency"
+                      label="Frequency"
+                      .options=${FREQUENCY_OPTIONS}
+                      default-value="immediately"
+                      ?disabled=${!this.pushEnabled}
+                    ></ds-radio-group>
+                  </ds-fieldset>
+                </ds-stack>
               </ds-tab-panel>
 
               <ds-tab-panel id="appearance">
-                <ds-fieldset legend="Theme">
-                  <ds-segmented-control
-                    label="Color mode"
-                    .options=${COLOR_MODE_OPTIONS}
-                    .value=${this.colorMode}
-                    @change=${this.handleColorModeChange}
-                  ></ds-segmented-control>
-                </ds-fieldset>
-                <ds-fieldset legend="Density">
-                  <ds-radio-group
-                    label="Layout density"
-                    description="Affects tables and lists."
-                    .options=${DENSITY_OPTIONS}
-                    .value=${this.density}
-                    @change=${this.handleDensityChange}
-                  ></ds-radio-group>
-                </ds-fieldset>
+                <ds-stack gap="loose">
+                  <ds-fieldset
+                    legend="Theme"
+                    description="A preview only: the app sets the color mode, and System means no override."
+                  >
+                    <ds-segmented-control
+                      label="Color mode"
+                      .options=${COLOR_MODE_OPTIONS}
+                      .value=${this.colorMode}
+                      @change=${this.handleColorModeChange}
+                    ></ds-segmented-control>
+                  </ds-fieldset>
+                  <ds-fieldset legend="Density" description="A preview only: the theme has no density setting yet.">
+                    <ds-radio-group
+                      name="density"
+                      label="Layout density"
+                      description="Affects tables and lists."
+                      .options=${DENSITY_OPTIONS}
+                      .value=${this.density}
+                      @change=${this.handleDensityChange}
+                    ></ds-radio-group>
+                  </ds-fieldset>
+                </ds-stack>
               </ds-tab-panel>
 
               <ds-tab-panel id="account">
-                <ds-card surface="subtle" inset="lg" heading="Export your data" heading-level="2">
-                  <ds-text>Download everything we store about you as a ZIP.</ds-text>
-                  <ds-button variant="secondary" label="Request export"></ds-button>
-                </ds-card>
-                <ds-card surface="subtle" inset="lg" heading="Delete account" heading-level="2">
-                  <ds-alert tone="warning">This cannot be undone.</ds-alert>
-                  <ds-button variant="danger" label="Delete account…" @press=${this.handleDeleteRequest}></ds-button>
-                </ds-card>
+                <ds-stack gap="loose">
+                  <ds-card surface="subtle" inset="lg" heading="Export your data" heading-level="2">
+                    <ds-stack gap="normal" align="start">
+                      <ds-text>Download everything we store about you as a ZIP.</ds-text>
+                      <ds-button variant="secondary" label="Request export"></ds-button>
+                    </ds-stack>
+                  </ds-card>
+                  <ds-card surface="subtle" inset="lg" heading="Delete account" heading-level="2">
+                    <ds-stack gap="normal" align="start">
+                      <ds-alert tone="warning">This cannot be undone.</ds-alert>
+                      <ds-button
+                        variant="danger"
+                        label="Delete account…"
+                        @press=${this.handleDeleteRequest}
+                      ></ds-button>
+                    </ds-stack>
+                  </ds-card>
+                </ds-stack>
               </ds-tab-panel>
             </ds-tabs>
           </ds-stack>
@@ -228,7 +254,12 @@ export class DsPatternSettingsPage extends LitElement {
     this.draftProfile = { ...this.draftProfile, [field]: event.detail.value };
   }
 
-  /** Form has validated before `submit` fires; the save is faked, and the toast does not move focus. */
+  /**
+   * Form validates before `submit` fires (required only: there is no built-in
+   * email or URL format check and this pattern adds no business logic of its
+   * own). The save is faked with a resolved Promise, and the Toast does not move
+   * focus.
+   */
   private readonly handleProfileSubmit = (_event: CustomEvent<FormSubmitDetail>): void => {
     const saving = this.draftProfile;
     void Promise.resolve().then(() => {
@@ -237,16 +268,13 @@ export class DsPatternSettingsPage extends LitElement {
     });
   };
 
+  /** Form has no reset contract, so Cancel restores the saved copy the Inputs are controlled from. */
   private readonly handleProfileCancel = (): void => {
     this.draftProfile = this.savedProfile;
   };
 
   private readonly handlePushChange = (event: CustomEvent<SwitchChangeDetail>): void => {
     this.pushEnabled = event.detail.checked;
-  };
-
-  private readonly handleFrequencyChange = (event: CustomEvent<RadioGroupChangeDetail>): void => {
-    this.frequency = event.detail.value;
   };
 
   /** Presentational: records the choice and drives nothing ("System" means no override). */
@@ -263,6 +291,7 @@ export class DsPatternSettingsPage extends LitElement {
     this.deleteDialogOpen = true;
   };
 
+  /** Confirm closes it exactly like Cancel: there is no account to delete. */
   private readonly closeDeleteDialog = (): void => {
     this.deleteDialogOpen = false;
   };

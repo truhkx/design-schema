@@ -163,6 +163,7 @@ export function SettingsPage(): ReactElement {
                     label="Frequency"
                     name="pushFrequency"
                     options={FREQUENCY_OPTIONS}
+                    defaultValue="immediately"
                     disabled={!pushEnabled}
                   />
                 </Fieldset>

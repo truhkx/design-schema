@@ -81,12 +81,22 @@ export function SettingsPage(): React.JSX.Element {
   const [density, setDensity] = React.useState('comfortable');
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
 
+  /** Confirm closes the dialog exactly like Cancel: there is no account to delete. */
+  const closeDeleteDialog = (): void => {
+    setDeleteDialogOpen(false);
+  };
+
   const setField =
     (field: keyof Profile) =>
     (value: string): void => {
       setProfile((prev) => ({ ...prev, [field]: value }));
     };
 
+  /**
+   * Form validates before `onSubmit` fires (required only: there is no built-in email or URL
+   * format check and this pattern adds no business logic of its own). The save is faked, and
+   * the Toast does not move focus.
+   */
   const handleSubmit = (_values: FormValues): void => {
     void saveProfile(profile).then((saved) => {
       setSavedProfile(saved);
@@ -94,6 +104,7 @@ export function SettingsPage(): React.JSX.Element {
     });
   };
 
+  /** Form has no reset contract, so Cancel restores the saved copy the Inputs are controlled from. */
   const handleCancel = (): void => {
     setProfile(savedProfile);
   };
@@ -163,6 +174,7 @@ export function SettingsPage(): React.JSX.Element {
                       label="Frequency"
                       name="pushFrequency"
                       options={FREQUENCY_OPTIONS}
+                      defaultValue="immediately"
                       disabled={!pushEnabled}
                     />
                   </Fieldset>
@@ -218,8 +230,8 @@ export function SettingsPage(): React.JSX.Element {
           heading="Delete your account?"
           description="This permanently deletes your account and everything in it. This cannot be undone."
           confirmLabel="Delete account"
-          onConfirm={() => setDeleteDialogOpen(false)}
-          onCancel={() => setDeleteDialogOpen(false)}
+          onConfirm={closeDeleteDialog}
+          onCancel={closeDeleteDialog}
         />
       </Landmark>
     </ScrollView>

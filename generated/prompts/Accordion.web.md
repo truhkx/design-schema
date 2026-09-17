@@ -104,7 +104,13 @@ component:
       description: 'Opening one section closes the others. Off by default: users usually
         want to compare, and forced-closing is a common frustration. Turning it on
         while several sections are open trims the open set to the first open id without
-        firing any event (the same as several ids in `value`/`defaultValue`).'
+        firing any event or the development warning (the same as several ids in `value`/`defaultValue`).
+        "First" is array order: the order of `value`/`defaultValue`, and for uncontrolled
+        state the order the sections were opened, not item order. Uncontrolled, the
+        trim changes state for good, so turning `exclusive` off again does not reopen
+        the trimmed sections; controlled, the trim only affects what is shown, so
+        turning `exclusive` off shows the full `value` again, still without events.
+        Toggling `exclusive` does not consume a pending just-emitted set (see Behavior).'
     value:
       type: union
       description: Controlled open ids. A bare `string` is accepted as shorthand for
@@ -230,8 +236,10 @@ component:
   styles:
     divider:
       token: color.border
-      description: Passed to each composed Divider as its `color` override; Accordion
-        writes no divider rule of its own.
+      description: 'Passed to each composed Divider as its `color` override (always,
+        even when it equals Divider''s default); Accordion writes no divider rule
+        of its own. The Divider keeps its default `spacing: none`: `itemGap` is the
+        only space around it.'
       locked: false
     dividerWidth:
       token: border.width.thin
@@ -256,6 +264,10 @@ component:
       locked: false
     fontFamily:
       token: font.family.body
+      part: trigger
+      description: Forwarded to Disclosure's `triggerFontFamily`. Like `divider` and
+        `dividerWidth`, it is an overridable hook even though Accordion writes no
+        rule for it.
       locked: false
     triggerFontSize:
       token: font.size.md
@@ -329,9 +341,11 @@ component:
         so a consumer''s CSS override of the accordion hook still arrives; the Dividers
         get `--ds-divider-color`/`--ds-divider-thickness` the same way. A slotted
         disclosure''s composed `toggle` is left to reach the page (the consumer owns
-        those elements); the `toggle` of disclosures rendered from `items` is stopped
-        at the accordion, which reports `change`/`open-change` instead. The trigger
-        hit area ends at the summary, as on web.'
+        those elements), including its `reason: ''controlled''` echoes whenever `exclusive`
+        or a `value` change opens or closes it, so a page listening to slotted children
+        sees those as well as the accordion''s `open-change`; the `toggle` of disclosures
+        rendered from `items` is stopped at the accordion, which reports `change`/`open-change`
+        instead. The trigger hit area ends at the summary, as on web.'
     rn:
       element: View
       props: []
@@ -473,6 +487,7 @@ component:
 
 - `itemGap`: token `layout.gap.none`; part `list`
 - `triggerPaddingBlock`: token `space.md`; part `trigger`
+- `fontFamily`: token `font.family.body`; part `trigger`
 - `triggerFontSize`: token `font.size.md`; part `trigger`
 - `triggerFontWeight`: token `font.weight.medium`; part `trigger`
 
@@ -598,7 +613,7 @@ Do not use an Accordion for content most users need — show it. Do not use it a
 
 ## Behavior
 
-Each item is a Disclosure with a heading. Enter or Space toggles the focused item; with `exclusive`, opening one closes the others (closing does not open anything). Arrow keys, Home and End move focus among the triggers and wrap; Tab moves through triggers and open panel content in document order, since every trigger remains a tab stop. `onChange` receives the open ids. Disabled items are visible and skipped by arrows: arrow keys, Home and End never land on a disabled trigger, but they still work when focus starts on one (it remains a tab stop). `onOpenChange` reasons come from Disclosure's `onToggle(open, reason)` — `pointer` becomes `trigger`, `keyboard` stays `keyboard`, and Disclosure's `controlled` (the echo of the accordion setting `open`) is ignored — so `keyboard` is distinguishable from `trigger` on web and Lit (native always reports `trigger`). One toggle fires, in order: `onChange` with the new set, then `onOpenChange` for the toggled section, then one `onOpenChange(id, false, 'exclusive')` per section `exclusive` closed, in item order. With `exclusive` and several ids in `value`/`defaultValue`, the first is opened and a development warning notes the rest. Items are identified by `id` (on Lit, the slotted `<ds-disclosure>`'s `id` attribute). The `item` part is the composed Disclosure root itself — Accordion does not add a `data-part="item"` hook and must not wrap items in an extra element to carry one, since Dividers are direct siblings of the items (on web and React Native; on Lit they sit between per-item slots in the shadow root, see its notes); address an item as `[data-ds="Accordion"] > [data-ds="Disclosure"]`. The `trigger`, `triggerIcon` and `panel` parts are tagged by Disclosure. Nothing open is `[]` or `''`, never `undefined`. `reason: 'controlled'` is reported when `value` arrives holding a set the accordion did not itself just emit; a controlled parent that answers a trigger with some other set therefore sees `controlled`, which is the intended reading. The just-emitted set is compared only with the next `value` change and then cleared, as Disclosure does for `open`: a parent that ignores `onChange` leaves it pending until `value` next changes.
+Each item is a Disclosure with a heading. Enter or Space toggles the focused item; with `exclusive`, opening one closes the others (closing does not open anything). Arrow keys, Home and End move focus among the triggers and wrap; Tab moves through triggers and open panel content in document order, since every trigger remains a tab stop. `onChange` receives the open ids. Disabled items are visible and skipped by arrows: arrow keys, Home and End never land on a disabled trigger, but they still work when focus starts on one (it remains a tab stop). `onOpenChange` reasons come from Disclosure's `onToggle(open, reason)` — `pointer` becomes `trigger`, `keyboard` stays `keyboard`, and Disclosure's `controlled` (the echo of the accordion setting `open`) is ignored — so `keyboard` is distinguishable from `trigger` on web and Lit (native always reports `trigger`). One toggle fires, in order: `onChange` with the new set, then `onOpenChange` for the toggled section, then one `onOpenChange(id, false, 'exclusive')` per section `exclusive` closed, in item order. With `exclusive` and several ids in `value`/`defaultValue`, the first is opened and a development warning notes the rest. Items are identified by `id` (on Lit, the slotted `<ds-disclosure>`'s `id` attribute). The `item` part is the composed Disclosure root itself — Accordion does not add a `data-part="item"` hook and must not wrap items in an extra element to carry one, since Dividers are direct siblings of the items (on web and React Native; on Lit they sit between per-item slots in the shadow root, see its notes); address an item as `[data-ds="Accordion"] > [data-ds="Disclosure"]`. The `trigger`, `triggerIcon` and `panel` parts are tagged by Disclosure. Nothing open is `[]` or `''`, never `undefined`. `reason: 'controlled'` is reported when `value` arrives holding a set the accordion did not itself just emit; a controlled parent that answers a trigger with some other set therefore sees `controlled`, which is the intended reading. The just-emitted set is compared only with the next `value` change and then cleared, as Disclosure does for `open`: a parent that ignores `onChange` leaves it pending until `value` next changes, and a change caused only by toggling `exclusive` does not consume it. A `controlled` `value` change fires `onOpenChange` only for sections whose open state actually changed, in item order; a `value` that resolves to the set already shown (for example several ids trimmed back to the same one under `exclusive`) fires nothing. Events fire from the toggle handler with the new set as the payload, in controlled and uncontrolled mode alike; they do not wait for the re-render. Every forward (to Disclosure and to Divider) always carries the resolved token — the consumer's override, else the Accordion default — even when it equals the child's own default. An item's `id` is the accordion's key, not a DOM id: on web and React Native each Disclosure generates its own element ids, so two accordions with the same item ids never collide. On Lit, `value`/`defaultValue` are the only source of the open set: a slotted `<ds-disclosure>`'s own `open` or `default-open` attribute is overwritten, not read.
 
 ## Content guidelines
 

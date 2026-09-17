@@ -73,15 +73,17 @@ component:
       description: Accessible name of the control ("View mode"). Not shown; put a
         visible Text label beside it when the meaning is not obvious from context.
         Lit, where an attribute can be absent, defaults the property to an empty string
-        and warns in development when it is empty.
+        and warns in development when it is empty; React and React Native rely on
+        the required type and do not warn, even for an empty string.
     options:
       type: array
       required: true
-      shape: '{ value: string; label: string; icon?: IconName; disabled?: boolean
-        }[]'
+      shape: '{ value: string; label: string; icon?: IconName | undefined; disabled?:
+        boolean | undefined }[]'
       description: 'Two to five options (guidance, not enforced: any count renders,
         with no warning). Labels are one word; with `iconOnly` the label becomes the
-        accessible name.'
+        accessible name. The icon is an Icon whose `size` is the control''s `size`
+        (`sm` or `md`), on every platform.'
     value:
       type: string
       description: Controlled selected value. Omit for uncontrolled.
@@ -94,14 +96,18 @@ component:
         — a segmented control always has a selection. A `value` or `defaultValue`
         is taken as given, never corrected: one naming a disabled option keeps that
         segment checked with the pill under it (arrows still skip it); one matching
-        no option checks nothing and draws no pill. In both cases the tab stop is
-        the first enabled segment, and arrows move from there.'
+        no option checks nothing and draws no pill (the pill is unmounted, and the
+        next selection places it instantly rather than sliding it in). In both cases
+        the tab stop is the first enabled segment, and arrows move from there when
+        no segment has focus.'
     iconOnly:
       type: boolean
       default: false
       description: Show icons only (every option must have one); labels become accessible
-        names and Tooltips. An option without `icon` warns in development (once) and
-        that segment shows its label as text instead, so it never renders empty.
+        names and Tooltips. An option without `icon` warns in development once per
+        instance (one message listing every option without an icon) and that segment
+        shows its label as text instead, so it never renders empty; that segment gets
+        no Tooltip and no `aria-label`, since its visible text is its name.
     size:
       type: enum
       enumRef: size
@@ -324,7 +330,8 @@ component:
         form-associated by design, and no `data-ds-field`. The pill is `aria-hidden`.
         `iconOnly` segments carry `aria-label` = the option label (the Tooltip''s
         aria-labelledby cannot cross the shadow root) inside `<ds-tooltip no-describes>`
-        with `content` = the label and default placement and delay.'
+        with `content` = the label and default placement and delay. `defaultValue`
+        reads the `default-value` attribute and is not reflected.'
     rn:
       element: View
       props:
@@ -340,8 +347,12 @@ component:
         on the group, roving `focusable`), and the arrow scenarios are web and Lit
         only. No Tooltip part on React Native: an `iconOnly` segment carries its label
         as `accessibilityLabel` with no `accessibilityHint` (it would repeat the name)
-        and no long-press bubble, because a press already selects. iOS''s UISegmentedControl
-        look is approximated with the tokens rather than used, so the theme applies.'
+        and no long-press bubble, because a press already selects. The group View
+        carries accessibilityRole="radiogroup", accessibilityLabel = `label` and testID
+        `SegmentedControl` but is not `accessible` (that would merge the segments
+        into one stop), so tests find it by testID and assert role and name rather
+        than getByRole. iOS''s UISegmentedControl look is approximated with the tokens
+        rather than used, so the theme applies.'
     swiftui:
       element: HStack
       props:
@@ -376,6 +387,7 @@ component:
     - event: onChange
       with: list
       platforms:
+      - web
       - lit
       - rn
   - name: arrow-moves-and-selects
@@ -452,6 +464,31 @@ component:
     - event: onChange
     - event: onChange
       with: table
+      platforms:
+      - lit
+    platforms:
+    - web
+    - lit
+  - name: end-selects-the-last-enabled-segment
+    description: End moves to and selects the last enabled segment, like the arrows.
+      Focus starts on the selected first segment (the tab stop); the last segment
+      is disabled, so End selects the middle one.
+    given:
+      options:
+      - value: list
+        label: List
+      - value: grid
+        label: Grid
+      - value: table
+        label: Table
+        disabled: true
+      defaultValue: list
+    when:
+      key: End
+    then:
+    - event: onChange
+    - event: onChange
+      with: grid
       platforms:
       - lit
     platforms:
@@ -590,7 +627,7 @@ Do not use it to pick a value that is submitted later (RadioGroup) or that has c
 
 ## Behavior
 
-Click or tap selects a segment and fires `onChange`. Keyboard: the group is one tab stop on the selected segment; arrows move focus *and* selection (radio semantics), wrapping and skipping disabled segments; Home and End do the same to the ends. In right-to-left writing ArrowLeft is "next" and ArrowRight "previous" (ArrowDown and ArrowUp are unchanged), as in Tabs. Under a controlled `value` the arrow still moves focus and fires `onChange`; the checked state and the pill stay where `value` says until the parent changes it. The pill slides to the selected segment. `fill` divides the width equally. Icon-only segments are wrapped in a Tooltip showing the label on every platform that has hover or focus (web, Lit); on native the label is the accessibility label. The control is horizontal only. It is not a form field: there is no `name`, no `form` block, and it neither registers with a Form nor submits a value — use RadioGroup inside a Form. Inside a Toolbar (a `role="toolbar"` ancestor; on Lit found through `composedPath`/host ancestors across shadow roots, on React Native not applicable) the arrows do not wrap: an arrow pointing out of the first or last enabled segment, and Home and End, are left unhandled (no `preventDefault`), so the toolbar moves focus to the neighbouring control. Outside a toolbar the keyboard table applies unchanged.
+Click or tap selects a segment and fires `onChange`. Keyboard: the group is one tab stop on the selected segment; arrows move focus *and* selection (radio semantics), wrapping and skipping disabled segments; Home and End do the same to the ends. In right-to-left writing ArrowLeft is "next" and ArrowRight "previous" (ArrowDown and ArrowUp are unchanged), as in Tabs; the direction is the group's (the host's on Lit) computed `direction`, read at keydown. Arrows, Home and End move from the focused segment, and from the tab stop only when no segment has focus. Under a controlled `value` the arrow still moves focus and fires `onChange`; the checked state, the pill and the tab stop (`tabindex="0"`) stay where `value` says until the parent changes it, so focus can sit on a `tabindex="-1"` segment meanwhile. `onChange` fires only when the target differs from the current `value`, so moving back onto the checked segment fires nothing. The pill slides to the selected segment. `fill` divides the width equally. Icon-only segments are wrapped in a Tooltip showing the label on every platform that has hover or focus (web, Lit); on native the label is the accessibility label. The control is horizontal only. It is not a form field: there is no `name`, no `form` block, and it neither registers with a Form nor submits a value — use RadioGroup inside a Form. Inside a Toolbar (a `role="toolbar"` ancestor, looked up at keydown by walking `parentElement` and, on Lit, crossing shadow roots through each root's host; on React Native not applicable) the arrows do not wrap: an arrow pointing out of the first or last enabled segment, and Home and End, are left unhandled (no `preventDefault`), so the toolbar moves focus to the neighbouring control. When focus is on no enabled segment, an outward arrow moves to the first or last enabled segment instead, which is still inside the control. Outside a toolbar the keyboard table applies unchanged.
 
 ## Content guidelines
 

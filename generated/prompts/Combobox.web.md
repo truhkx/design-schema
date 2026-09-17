@@ -134,7 +134,13 @@ component:
         synthetic first row, suppressed when the trimmed text already matches an existing
         option by either its `value` or its `label`. Committing text that matches
         an option that way (Enter or a comma, same case- and diacritic-insensitive
-        match) commits that option's `value`, never a custom string.
+        match) commits that option's `value`, never a custom string. If the matching
+        option is disabled, the row stays suppressed and the commit does nothing (neither
+        the disabled value nor a custom string). With `multiple`, text matching an
+        already-selected option leaves it selected (no `onChange`, unlike Enter on
+        its row, which toggles) and clears the text. A comma typed when there is nothing
+        to commit (empty text, or only a disabled match) is dropped and the text before
+        it kept.
     filter:
       type: enum
       values:
@@ -199,7 +205,8 @@ component:
       description: Fired on every text change the user causes — each keystroke, and
         the text a commit, Escape-to-clear or the clear button leaves behind (so `async`
         consumers can reset) — with the input text. Not fired when a controlled `value`
-        change rewrites the label. The hook for `async` filtering.
+        change rewrites the label, nor when a commit, Escape or the clear button leaves
+        the text unchanged. The hook for `async` filtering.
       platforms:
         web: onInputChange
         lit: input-change
@@ -284,7 +291,7 @@ component:
   - keys:
     - Alt+ArrowDown
     action: Opens the list with the selected option active, or no active option when
-      nothing is selected.
+      nothing is selected; does nothing while the list is already open.
     from: first
     expect: manual
   styles:
@@ -366,7 +373,8 @@ component:
     iconColor:
       token: color.foreground.muted
       description: Toggle chevron, clear and chip-remove icons; forwarded to each
-        composed Icon's own `color` override.
+        composed Icon's own `color` override as this token. It has no --ds-combobox-*
+        hook, since the hook could not reach the child without restyling it.
       locked: true
     partGap:
       token: space.1
@@ -411,6 +419,9 @@ component:
     popupOffset:
       token: space.1
       part: popup
+      description: The gap between field and popup. Applied as the fixed-position
+        popup's block margin (it has no parent gap to use), as Select; only the side
+        facing the field shows.
       locked: false
     layer:
       token: layer.dropdown
@@ -454,7 +465,11 @@ component:
       description: 'How long result-count, loading and empty announcements wait before
         the status live region updates. Not motion: it does not follow reduced motion,
         so it is computed from the theme''s standard `motion.duration.base` value,
-        never from a reduced-motion override that zeroes the token.'
+        never from a reduced-motion override that zeroes the token. On web and Lit
+        it is read from the computed `--motion-duration-base`, which is the standard
+        value because the token stylesheets never zero it under reduced motion (components
+        apply reduced motion in their own rules); when it cannot be read (jsdom) there
+        is no debounce. React Native reads the theme value.'
       token: motion.duration.base
       multiply: 2
       unit: ms
@@ -574,16 +589,22 @@ component:
       - open
       - prop: clearable
         attribute: no-clear
-      notes: Form-associated (FormData for multiple). <ds-listbox> lives in the combobox's
-        shadow root, but its options render inside ds-listbox's own shadow root, which
-        an aria-activedescendant IDREF cannot reach; as ds-select does, the input
-        carries no aria-activedescendant and the active option's label (`copy.activeOption`)
+      notes: 'Form-associated (FormData for multiple). <ds-listbox> lives in the combobox''s
+        shadow root, but its options render inside ds-listbox''s own shadow root,
+        which an aria-activedescendant IDREF cannot reach; as ds-select does, the
+        input carries no aria-activedescendant and the active option''s label (`copy.activeOption`)
         is written to a polite live span linked by aria-describedby. Keys are forwarded
-        through ds-listbox's `handleKey`, only those in the keyboard table. The `open`
+        through ds-listbox''s `handleKey`, only those in the keyboard table. The `open`
         attribute mirrors the effective state (controlled or not), so an uncontrolled
         open list still shows it. The `chipRemove`, `clearButton` and `toggleButton`
-        parts are wrappers around their <ds-button>s. Composed `change`, `input-change`,
-        `open-change`. Popup via the Popover API when available.
+        parts are wrappers around their <ds-button>s. The toggle stays tabbable on
+        Lit: ds-button exposes no way to leave the tab order, so web''s `tabIndex={-1}`
+        has no Lit form yet. `copy.done` is not rendered on Lit. The composed ds-listbox
+        is named with `label` (the combobox label), not `labelled-by`, since a label
+        id cannot cross its shadow root. Setting `open` as a property or as an attribute
+        makes the element controlled; the element''s own mirror writes of the attribute
+        do not. Composed `change`, `input-change`, `open-change`. Popup via the Popover
+        API when available.'
     rn:
       element: TextInput
       props:
@@ -614,7 +635,15 @@ component:
         (removes the last chip) and comma-commits with allowCustom. There is no active
         option on native, so `copy.activeOption` is not announced (the screen reader
         reads the focused row) and `filter: none` typing only opens the list. Tapping
-        is the accessible path, and every row is its own focus stop.'
+        is the accessible path, and every row is its own focus stop. In the phone
+        sheet blur does not close the list (tapping a row dismisses the keyboard);
+        `copy.done` or dismissing the sheet does. Re-pressing the already-selected
+        row in single mode does nothing on native, because Listbox reports no press
+        for an unchanged value; the user closes with `copy.done` (phones) or an outside
+        tap (tablets). The `status` part: announceForAccessibility on iOS only, a
+        polite live region on Android and react-native-web alike. On tablets and react-native-web
+        it sits between the field and the error message; on phones it sits in the
+        sheet body between the input row and the Listbox.'
     swiftui:
       element: TextField
       props:
@@ -1088,7 +1117,7 @@ Do not use a Combobox for fewer than about ten options that never grow — use S
 
 ## Behavior
 
-Typing filters `options` per `filter` and opens the list with no active option (so Enter commits typed text only when `allowCustom`); ArrowDown activates the first match without moving DOM focus from the input; Enter commits the active option, fires `onChange`, and — single — closes and shows the label in the input, or — multiple — adds a chip, clears the text and keeps the list open. Escape closes the list, then clears the text (not the value) if pressed again. Tab closes without committing an active option, in single and multiple mode. Clicking the toggle button opens the full list; the clear button empties value and text. Only typing opens with no active option: the toggle button, a click in the input, the `open` prop and ArrowDown open with the selected option active, else the first; ArrowUp with the selected option, else the last; Alt+ArrowDown with the selected option, else none. Pressing the already-selected option in single mode fires no `onChange` (Listbox skips same-value commits), so the combobox detects that press itself, restores the label and closes. In `multiple`, Backspace on an empty input removes the last chip, and each chip's remove button removes that one; `onChange` receives the array in selection order. With `async`, the component shows `copy.loading` while `loading`, calls `onInputChange` on each user text change, and renders whatever `options` the consumer supplies; while `loading` the Listbox is given `options: []` and `loading` (so stale results are hidden and Listbox shows `copy.loading` in place of `emptyMessage`, which stays `copy.empty`), and the `copy.addCustom` row is hidden. Result counts, loading and "no matches" are announced politely; the count excludes the synthetic `copy.addCustom` row, so zero matches announce `copy.empty` even while that row shows. The `resultCount` plural uses the nearest `lang` ancestor's locale on web and Lit, else the runtime default. `copy.requiredIndicator` renders inside the label, so it is part of the accessible name (as Select). The Default story's args are the `fruit-picker` example; the scenarios' `apple` is its Apple option. Validation and Form behavior are as Input; the value collected is the option value(s), or the custom string(s). Filtering is case- and diacritic-insensitive on every platform. The result-count announcement is debounced by `motion.duration.base × 2` everywhere. The toggle button opens the full, unfiltered list for that opening; the next keystroke filters again. After a commit the input shows the selected option's label (single) or clears (multiple); a controlled `inputValue` is expected to follow the same rule. The composed Listbox is `embedded`, gets `loading` while an async filter runs, and with `allowCustom` is given a synthetic first option carrying `copy.addCustom`. On phones the chips render at the top of the sheet body.
+Typing filters `options` per `filter` and opens the list with no active option (so Enter commits typed text only when `allowCustom`); ArrowDown activates the first match without moving DOM focus from the input; Enter commits the active option, fires `onChange`, and — single — closes and shows the label in the input, or — multiple — adds a chip, clears the text and keeps the list open. Escape closes the list, then clears the text (not the value) if pressed again. Tab closes without committing an active option, in single and multiple mode. Clicking the toggle button opens the full list; the clear button empties value and text. Only typing opens with no active option: the toggle button, a click in the input, the `open` prop and ArrowDown open with the selected option active, else the first; ArrowUp with the selected option, else the last; Alt+ArrowDown with the selected option, else none. Pressing the already-selected option in single mode fires no `onChange` (Listbox skips same-value commits), so the combobox detects that press itself, restores the label and closes. In `multiple`, Backspace on an empty input removes the last chip, and each chip's remove button removes that one; `onChange` receives the array in selection order. With `async`, the component shows `copy.loading` while `loading`, calls `onInputChange` on each user text change, and renders whatever `options` the consumer supplies; while `loading` the Listbox is given `options: []` and `loading` (so stale results are hidden and Listbox shows `copy.loading` in place of `emptyMessage`, which stays `copy.empty`), and the `copy.addCustom` row is hidden. Result counts, loading and "no matches" are announced politely; the count excludes the synthetic `copy.addCustom` row, so zero matches announce `copy.empty` even while that row shows. The `resultCount` plural uses the nearest `lang` ancestor's locale on web and Lit, else the runtime default. `copy.requiredIndicator` renders inside the label, so it is part of the accessible name (as Select). The Default story's args are the `fruit-picker` example; the scenarios' `apple` is its Apple option. Validation and Form behavior are as Input; the value collected is the option value(s), or the custom string(s). Filtering is case- and diacritic-insensitive on every platform. The result-count announcement is debounced by `motion.duration.base × 2` everywhere. The toggle button opens the full, unfiltered list for that opening; the next keystroke filters again. After a commit the input shows the selected option's label (single) or clears (multiple); a controlled `inputValue` is expected to follow the same rule. In single mode an uncontrolled input starts with the label of `value`/`defaultValue` and is rewritten to the new label on every `value` change, without firing `onInputChange`; a controlled `inputValue` is left to the consumer. The Keyboard story sets `defaultValue: apple` so the clear button renders and the story has enough focusable children. The composed Listbox is `embedded`, gets `loading` while an async filter runs, and with `allowCustom` is given a synthetic first option carrying `copy.addCustom`. On phones the chips render at the top of the sheet body.
 
 ## Content guidelines
 

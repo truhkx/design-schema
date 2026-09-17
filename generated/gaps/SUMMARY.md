@@ -1,10 +1,37 @@
-# Gap digest — phase Overlays
+# Gap digest — phase Selection
 
-Generated 2026-09-17T11:19 by tools/gap_digest.ts. DOC lines belong in the named doc; fold them, run `pnpm parse`, and the affected targets become stale by prompt hash.
+Generated 2026-09-17T12:06 by tools/gap_digest.ts. DOC lines belong in the named doc; fold them, run `pnpm parse`, and the affected targets become stale by prompt hash.
 
 ## Accordion
 
 Doc: `site/src/content/docs/components/accordion.md`
+
+### 2026-09-17 12:06 — rn round 1
+
+- **DOC** Accordion: a `value` change whose set matches the current open set but whose raw input differs (e.g. several ids trimmed under `exclusive`) — the doc doesn't say whether that counts as a change the accordion 'did not itself just emit'; I report per-section `controlled` only for ids whose open state actually changed, and nothing when `exclusive` alone trims the set. → `site/src/content/docs/components/accordion.md`
+- **DOC** Accordion: the just-emitted set is 'compared only with the next `value` change and then cleared' — unspecified whether a change caused only by toggling `exclusive` (value unchanged) consumes it; I leave it pending until `value` itself changes. → `site/src/content/docs/components/accordion.md`
+- **DOC** Accordion: turning `exclusive` on in uncontrolled mode 'trims the open set' — unclear whether it's permanent (turning `exclusive` off again doesn't restore the others) or only for display; I made it permanent in local state. → `site/src/content/docs/components/accordion.md`
+- **DOC** Accordion: the `divider`/`dividerWidth` bindings have no `part` and Divider's own defaults are the same tokens, so it's unspecified whether Accordion forwards its defaults or only overrides; I always forward the Accordion defaults (same for the four Disclosure forwards). → `site/src/content/docs/components/accordion.md`
+- **DOC** Accordion: the Keyboard story rule asks for 'open with its trigger and at least three focusable children'; the RN Keyboard story opens one section of four (4 triggers as focus stops, plain-text panel), since panel content in the Default items isn't focusable. → `site/src/content/docs/components/accordion.md`
+- **DOC** Accordion: Divider between items keeps its default `spacing: none`; the doc says itemGap falls on both sides of the divider but doesn't say whether the Divider should add spacing of its own; I left it at none. → `site/src/content/docs/components/accordion.md`
+
+### 2026-09-17 12:04 — lit round 1
+
+- **DOC** Accordion: `exclusive` says turning it on 'trims the open set to the first open id' but not whether 'first' means first in item order or first in the open set (open order / the `value` array); chose the open set's order, matching the stated equivalence with several ids in `value`/`defaultValue`. → `site/src/content/docs/components/accordion.md`
+- **DOC** Accordion: behavior says sections closed by `exclusive` are reported 'in item order', but no order is given for the several per-section `open-change` events of a `reason: 'controlled'` `value` change; chose item order too. → `site/src/content/docs/components/accordion.md`
+- **DOC** Accordion (lit): the accordion always sets `open` on slotted `<ds-disclosure>` children, so a consumer's `open` / `default-open` attribute on a slotted disclosure is overridden by `value`/`defaultValue`; the doc does not say whether a child's own open state should seed the accordion's set. Kept `value`/`defaultValue` as the only source. → `site/src/content/docs/components/accordion.md`
+- **DOC** Accordion (lit): with the accordion setting `open`, each slotted disclosure that `exclusive` or a `value` change opens or closes fires its own composed `toggle` with `reason: 'controlled'`, which the notes leave to reach the page; the doc does not say a consumer listening for `toggle` on slotted children will see these echoes as well as the accordion's `open-change`. → `site/src/content/docs/components/accordion.md`
+- **DOC** Accordion: `exclusive` 'turned on later while `value` holds several ids' trims silently, but the doc only asks for the development warning when `value`/`defaultValue` itself holds several ids under `exclusive`; no warning is emitted for the toggle-on case. → `site/src/content/docs/components/accordion.md`
+- **DOC** Accordion: the `divider`/`dividerWidth` bindings have no `part` (they are forwarded to Divider), and `fontFamily` has no `part` although it is forwarded to the trigger like the other three; `Style bindings` therefore lists only four of the seven overridable bindings. Implemented all seven as hooks per the Lit notes. → `site/src/content/docs/components/accordion.md`
+
+### 2026-09-17 12:03 — web round 1
+
+- **DOC** Accordion: `exclusive` trims to 'the first open id' but doesn't say first by item order or by array order; I used array order, the same as several ids in `value`/`defaultValue` (so for uncontrolled state, the first section the user opened). → `site/src/content/docs/components/accordion.md`
+- **DOC** Accordion: turning `exclusive` on trims uncontrolled state for good, so turning it off again doesn't bring back the trimmed sections. For a controlled `value` the trim only affects what's shown, so turning `exclusive` off shows the full `value` again without firing events. The doc doesn't say which is intended. → `site/src/content/docs/components/accordion.md`
+- **DOC** Accordion: when `value` changes to a set the accordion didn't emit, the doc doesn't say what order the `controlled` onOpenChange calls go in; I used item order, matching the `exclusive` rule. → `site/src/content/docs/components/accordion.md`
+- **DOC** Accordion: the timing is 'after-change', but the item Disclosures are always controlled, so onChange/onOpenChange fire in the click handler before React commits the new state, even when the accordion is uncontrolled. The doc doesn't say whether uncontrolled mode should wait for the commit, as Disclosure does. → `site/src/content/docs/components/accordion.md`
+- **DOC** Accordion: the `divider`/`dividerWidth` bindings default to `color.border`/`border.width.thin`, which is also Divider's own default. So the accordion only passes Divider an `overrides` object when the consumer sets one; the doc doesn't say whether the defaults must always be forwarded. `triggerPaddingBlock` is always forwarded because its default (space.md) differs from Disclosure's (space.sm). → `site/src/content/docs/components/accordion.md`
+- **DOC** Accordion: the item Disclosures get no `id`, so their ids come from `useId`, not the item `id`. The doc says items are identified by `id` but doesn't say whether that id should reach the DOM (e.g. as the trigger id). → `site/src/content/docs/components/accordion.md`
 
 ### 2026-09-16 09:02 — rn round 1
 
@@ -1487,6 +1514,37 @@ Doc: `site/src/content/docs/components/checkbox.md`
 ## Combobox
 
 Doc: `site/src/content/docs/components/combobox.md`
+
+### 2026-09-17 12:00 — rn round 1
+
+- **DOC** Combobox: Behavior says pressing the already-selected option in single mode should restore the label and close, detected by the combobox itself because Listbox skips same-value commits. The RN Listbox has no per-row press callback (only onChange and onActiveChange, and onActiveChange fires on hover only), so a native re-press of the selected row does nothing. I left it unimplemented; Listbox needs an onOptionPress (or a commit-on-reselect flag) for this to be expressible. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: allowCustom says typed text matching an option by label or value commits that option's value, but says nothing about a disabled option. I chose: that match still hides the copy.addCustom row, but Enter/comma commits nothing (neither the disabled value nor a custom string). → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: the RN notes say the status part is announced with announceForAccessibility 'on iOS only' and is a polite live region 'on Android'; react-native-web is covered by neither. I treated web like Android (live region only, no announce call) to avoid a double announcement. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: the status part's position on phones is 'under the input', but the anchored (tablet/web) layout does not say where it goes. I kept it between the field and the error message there, and inside the sheet body between the input row and the Listbox on phones. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: the doc says a controlled inputValue 'is expected to follow' the commit rule, and that onInputChange is 'not fired when a controlled value change rewrites the label'. It does not say whether an uncontrolled input should rewrite its label when a controlled value changes, or what an initial defaultValue shows. I chose: single mode starts with the default/controlled value's label and rewrites the uncontrolled text on every value change without firing onInputChange; a controlled inputValue is left to the consumer. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: a comma typed with allowCustom when the text before it commits nothing (empty, or only a disabled-option match) is unspecified. I drop the comma and keep the text before it. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: the helper's argument order is toLineHeight(fontSize, multiplier) in theme.tsx, but the package digest documents toLineHeight(t.fontLineHeightNormal, t.fontSizeMd), which is the reverse. I followed the code; the digest example is wrong. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: the Tab and Home/End rules in the declared keyboard contract have no native hook (rows are touch Pressables, and TextInput has no Tab event). Tab-close is met only through blur closing the anchored list; in the phone sheet, blur does not close because tapping a row dismisses the keyboard. → `site/src/content/docs/components/combobox.md`
+
+### 2026-09-17 11:58 — lit round 1
+
+- **DOC** Combobox: statusDebounce must be computed from the theme's standard motion.duration.base, 'never from a reduced-motion override that zeroes the token', but Lit can only read the resolved --motion-duration-base custom property (as NumberInput does); if the token stylesheet zeroes it under reduced motion, the debounce drops to 0. Chose getComputedStyle, as the package already does; the doc should say where a non-reduced value is readable on web and Lit. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: the web notes make the toggle Button tabIndex=-1 (the input is the only tab stop, per APG), but the Lit notes say nothing and ds-button exposes no tabindex prop. Left the toggle tabbable on Lit. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: copy.done is not rendered on web and is only used by the RN sheet footer; the Lit notes don't say. Not rendered on Lit. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: with multiple + allowCustom, committing typed text that matches an already-selected option could mean toggle it off (as Enter on that option does) or leave it selected. Chose to leave it selected and clear the text. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: Alt+ArrowDown while the list is already open has no rule. Chose to do nothing. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: a controlled open and the effective-state `open` attribute share one attribute name: the element suppresses its own mirror writes, but a consumer who sets the attribute makes the element controlled. The doc should say whether that is intended. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: popupBorderWidth was missing from the previous Lit type, and the Listbox was given a `labelledBy` attribute the Listbox never reads (its attribute is `labelled-by`, and label IDREFs cannot cross its shadow root anyway). Passed `label` instead; the doc could state that the Lit listbox is named by the combobox label. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: guidance says the Default story's args are the fruit-picker example, while the Keyboard gate needs at least three focusable children; with the three fruit options that only holds when a value is set (so the clear button renders). The Keyboard story sets defaultValue 'apple' for that reason. → `site/src/content/docs/components/combobox.md`
+
+### 2026-09-17 11:56 — web round 1
+
+- **DOC** Combobox: constant `statusDebounce` must come from the theme's standard `motion.duration.base`, 'never from a reduced-motion override that zeroes the token', but web has no way to read the non-reduced value at run time other than getComputedStyle of `--motion-duration-base`, which a reduced-motion media query would zero; kept the computed-style read (falls back to 0 when unreadable) — the doc should name a source for the unreduced value (a JS token export or a separate custom property). → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: allowCustom says text matching an option commits that option's value, but does not say what happens when the matching option is disabled; chose to commit nothing (no custom string, no option). → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: allowCustom + multiple where the typed text matches an already-selected option — Enter/comma is 'commit', not 'toggle'; chose to keep it selected (no onChange) and clear the text, unlike Enter on an active row, which toggles. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: onInputChange fires for 'the text a commit, Escape-to-clear or the clear button leaves behind', but the doc does not say whether it fires when that text equals the text already in the input; chose to fire only on an actual change. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: the `popupOffset` binding has no platform mechanism named for a position: fixed popup; applied as margin-block on the side the popup opened, which the 'spacing is never a margin' convention otherwise forbids. → `site/src/content/docs/components/combobox.md`
+- **DOC** Combobox: `iconColor` is locked and 'forwarded to each composed Icon's own color override', but Icon's color override type needs a TokenRef cast from the binding's token; the locked binding therefore has no root hook and is written as the literal token path color.foreground.muted at each Icon. → `site/src/content/docs/components/combobox.md`
 
 ### 2026-09-16 08:53 — rn round 1
 
@@ -3526,6 +3584,45 @@ Doc: `site/src/content/docs/components/link.md`
 
 Doc: `site/src/content/docs/components/listbox.md`
 
+### 2026-09-17 11:48 — rn round 1
+
+- **DOC** Listbox: the row formula says fontSize × lineHeight but doesn't say whether to round it; I used toLineHeight (rounded), which is also the line height the rows render with, so the computed height matches what's drawn. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: `typeaheadReset` is overridable, but native has no typeahead (the platform notes say so), so nothing reads it. It's accepted in the overrides type for parity only. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: the spec gives no weight for unselected options (only `optionSelectedWeight`); I used font.weight.regular. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: individually disabled options: the spec only says the list's `disabledOpacity` isn't stacked on top of them, which implies they are dimmed but never says so. I dim them with `disabledOpacity` when the whole list isn't disabled. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: the spec doesn't say whether a Form-supplied error (form.errors[name]) turns on `borderInvalid`; I treat it as invalid, the same as `error`. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: `initialActiveValue` is described only for first focus. Combobox changes it as the user types, so I move the pre-highlight when the prop changes and no row has focus, without firing onActiveChange (consistent with 'never on mount'). → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: the spec doesn't say what a disabled list does on row focus. I still draw the focus border but don't fire onActiveChange or show the active background, because keys, hover and taps are supposed to do nothing. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: with `multiple` the list's accessibilityValue is '{count} selected' even at 0. The spec says 'the list's accessibilityValue text is copy.selectedCount' without an exception for zero, and the copy has no plural or zero form. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: the 'focus on failed submit' target on native isn't specified (there's no single tab stop); I move accessibility focus to the FlatList. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: `valueType: string[]` in the form block conflicts with the single-select string value; I followed the `name` prop description (a string when single, an array with multiple, no key when nothing is selected). → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: the group label row's padding only covers the block direction (groupLabelPaddingBlock); I reused optionPaddingInline for its inline padding so it lines up with the option labels. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: the empty/loading row has no padding binding; I reused optionPaddingBlock/optionPaddingInline so it lines up with the rows. → `site/src/content/docs/components/listbox.md`
+
+### 2026-09-17 11:46 — lit round 1
+
+- **DOC** Listbox: `error` says the displayed message falls back to 'the Form's message', but Lit's ds-form never pushes a message into its fields (it only reads `validationMessage`), so there is no Form message to show; the displayed order is `error`, then copy.required/copy.invalid while invalid. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: the export rename (ListboxOption = leaf, ListboxGroup, ListboxItem = union) swaps the meaning of two existing Lit names and drops ListboxGroupOption, which breaks Select, Combobox, Search and adopters; the doc has no lifecycle/deprecation entry for the old names. Chose a clean rename and updated the in-package consumers. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: typeahead says 'the next option whose label starts with the typed characters' and nothing about typing the same letter again. The old Lit code cycled through options sharing that letter (the APG convention); I dropped cycling to follow the rule literally, so 'aa' matches only a label starting with 'aa'. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: onActiveChange fires null 'when the list loses focus', but when Select/Combobox/Search drive the list with handleKey the list never has focus, so the host must clear `activeValue` itself; the doc doesn't say who fires null in that case. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: `disabled` says keys, hover and clicks do nothing but doesn't say whether focusing a disabled list still sets an active option and fires active-change; chose not to (the active option is only set when enabled). → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: `labelledBy` gives no attribute name for Lit; chose `labelled-by` (kebab-case like `initial-active-value`, `empty-message`). → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: `invalid` must reflect (platforms.lit.reflect) but the list is also invalid while `error` is set; to keep `:host([invalid])` and the state test consistent, setting `error` sets `invalid` and clearing it resets `invalid` only if `error` was what set it. The doc doesn't say whether the reflected attribute should cover error-implied invalid. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: the errorMessage part is a composed Text but the doc names no live-region behaviour; the old wrapper's role=alert was removed, so a newly set error is announced only through aria-describedby. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: the Behavior row formula multiplies `fontSize × lineHeight`, which is only valid CSS if `font.lineHeight.normal` is unitless; the doc doesn't state that constraint on the token. → `site/src/content/docs/components/listbox.md`
+
+### 2026-09-17 11:42 — web round 1
+
+- **DOC** Listbox: the spec makes the root a wrapper div (data-ds) around the role=listbox list, but never says which element gets `id` and the `...rest` DOM props. Select depends on `${id}-option-${value}` ids and aria-controls pointing at the listbox, so `id` goes on the list. `ref` and `...rest` go on the wrapper, and keydown/focus/blur are handled there so a host can dispatch events on the ref. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: the Web platform notes ask for a `useListbox` hook/ref exposing `activeId` and the keydown handler for Combobox. No prop, event or type in the schema describes it, and today's React Combobox doesn't need it. Not built; the equivalent is sending keydown/focusin to the ref. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: typeaheadReset is 'read at runtime from the list', but the spec doesn't say how to turn a CSS time into a timer or what to do when it can't be read (jsdom, no token stylesheet). I parse `ms`/`s` from getComputedStyle; if it can't be read the buffer clears right away, so only single-letter typeahead works. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: `onActiveChange` fires 'with null when the list loses focus', but in Select, DOM focus stays on the trigger and the list never gets real focus. Only a real blur of the list element clears the active option, so a host that fakes focus with `focusin` has to reset the active option itself. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: the spec lists `aria-describedby` on the list and `aria-describedby` for descriptions, but doesn't say whether option descriptions are linked. Each option's description gets an id, and the option points to it with `aria-describedby`. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: 'a composed part receives exactly the listed props' clashes with what the component needs: the errorMessage Text needs an `id` (for aria-describedby) and every part needs its `data-part` hook, and optionCheck needs its check colour. Kept `id` and `data-part`, dropped `role=alert` and `element`, and passed the check colour to Icon `overrides.color` because the binding names part optionCheck. Icon `size: sm` is only specified for optionIcon; the check uses it too. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: the `copy.selectedCount` text is declared, but on web nothing in the list shows it (the guidance says the surrounding UI does). Kept in COPY, unused. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: making ListboxOption a single row (per the `options` description) broke Select.tsx, Select.stories.tsx and Combobox.tsx, which used it as the row-or-group type. Changed them to ListboxItem/ListboxGroup; Combobox's filterTree no longer recurses, because groups don't nest. → `site/src/content/docs/components/listbox.md`
+- **DOC** Listbox: 'implies invalid' + 'invalid while invalid OR error is non-empty': the spec doesn't say whether a Form error message alone (with no `error` prop) sets aria-invalid. It does, because an error message is showing. → `site/src/content/docs/components/listbox.md`
+
 ### 2026-09-16 08:21 — rn round 1
 
 - **DOC** Listbox: `options.shape` is a recursive union and says 'export the item type as `ListboxOption`' (web does this), but the shape's own `options: ListboxOption[]` reads as the leaf, and RN's Select/Combobox import `ListboxOption` as the leaf; kept `ListboxOption` = leaf, `ListboxGroup`, `ListboxItem` = union. The doc should name the leaf and item types separately for every platform. → `site/src/content/docs/components/listbox.md`
@@ -4531,6 +4628,37 @@ Doc: `site/src/content/docs/components/search.md`
 
 Doc: `site/src/content/docs/components/segmentedcontrol.md`
 
+### 2026-09-17 11:38 — rn round 1
+
+- **DOC** SegmentedControl: the segmentIcon size is not given (Tabs uses Icon size md). I kept size sm for both control sizes, because every RN segment already reaches size.target.comfortable and sm keeps the pill tight at toolbar height. → `site/src/content/docs/components/segmentedcontrol.md`
+- **DOC** SegmentedControl: 'warns in development (once)' does not say once per instance, once per option or once per app. I chose once per instance, with one message listing every option that has no icon. → `site/src/content/docs/components/segmentedcontrol.md`
+- **DOC** SegmentedControl: the options `shape` has `icon?: IconName; disabled?: boolean` with no `| undefined`. Under exactOptionalPropertyTypes a caller cannot pass `icon: undefined`. I used the shape verbatim as the rule says, but it contradicts the package convention `name?: T | undefined`. → `site/src/content/docs/components/segmentedcontrol.md`
+- **DOC** SegmentedControl: when the value matches no option, the spec says 'draws no pill' but not whether it should animate out or vanish. I unmount it, and the next selection snaps it into place without sliding. → `site/src/content/docs/components/segmentedcontrol.md`
+- **DOC** SegmentedControl: the spec says arrows move 'from there' (the tab stop) when the value names a disabled option or none. On react-native-web, a key only reaches the group after a segment has focus, so the tab-stop fallback only matters if focus tracking misses. I read from the focused segment first, then the tab stop. → `site/src/content/docs/components/segmentedcontrol.md`
+- **DOC** SegmentedControl: the has-accessible-name scenario cannot use getByRole('radiogroup'). The group is not `accessible`, because that would merge the segments into one accessibility stop, so the test reads role and name from testID `SegmentedControl`. → `site/src/content/docs/components/segmentedcontrol.md`
+- **DOC** SegmentedControl: the `Keyboard` story rule asks for 'at least three focusable children', but roving `focusable` on react-native-web leaves one tab stop. The story has three segments and one of them is focusable. → `site/src/content/docs/components/segmentedcontrol.md`
+
+### 2026-09-17 11:36 — lit round 1
+
+- **DOC** SegmentedControl: the resolved Keyboard section lists only the arrow rules, but the schema's keyboard block and the guidance also define Home/End (and ArrowRight wrap from last); kept Home/End as the schema says. → `site/src/content/docs/components/segmentedcontrol.md`
+- **DOC** SegmentedControl: under a controlled `value`, the guidance says arrows move focus and fire onChange while the checked state stays put, but not what the next arrow moves from (the focused segment or the still-checked one), nor whether moving back onto the checked value fires onChange; chose: move from the focused segment, and fire only when the target differs from the current value. → `site/src/content/docs/components/segmentedcontrol.md`
+- **DOC** SegmentedControl: iconOnly with an option lacking `icon` — the doc says that segment shows its label as text, but not whether it still gets the Tooltip and `aria-label`; chose no Tooltip and no aria-label (the visible text is the name). → `site/src/content/docs/components/segmentedcontrol.md`
+- **DOC** SegmentedControl: 'inside a Toolbar' is defined as a role="toolbar" ancestor found via composedPath/host ancestors, but composedPath exists only during an event and does not show where the element sits in the page; implemented as a parentElement/shadow-host walk at keydown time. → `site/src/content/docs/components/segmentedcontrol.md`
+- **DOC** SegmentedControl: the doc does not say which element's writing direction decides RTL for the arrows; used the host's computed `direction`. → `site/src/content/docs/components/segmentedcontrol.md`
+- **DOC** SegmentedControl: no behavior scenario covers RTL arrows, Home/End, the toolbar no-wrap rule, or controlled-mode arrows, so those paths are untested; the Keyboard story has no RTL or in-toolbar variant for the keyboard gate. → `site/src/content/docs/components/segmentedcontrol.md`
+- **DOC** SegmentedControl: `defaultValue` has no reflect entry and no attribute name is given; kept `default-value`. → `site/src/content/docs/components/segmentedcontrol.md`
+
+### 2026-09-17 11:35 — web round 1
+
+- **DOC** SegmentedControl: the `click-selects-a-segment` then-list has an `onChange` expectation with `with: list` restricted to lit/rn, so web only asserts the event fired; the React test also asserts `list`, since that is what the description implies. → `site/src/content/docs/components/segmentedcontrol.md`
+- **DOC** SegmentedControl: `iconOnly` with an option lacking `icon` says the segment 'shows its label as text instead' but not whether it keeps the Tooltip wrap and `aria-label`; chose no Tooltip and no `aria-label` for that segment (the visible text names it). → `site/src/content/docs/components/segmentedcontrol.md`
+- **DOC** SegmentedControl: Home/End appear in the schema keyboard block but not in the resolved Keyboard section (only the arrow pairs); implemented Home/End per the schema and Behavior prose. → `site/src/content/docs/components/segmentedcontrol.md`
+- **DOC** SegmentedControl: RTL arrow swap is in the Behavior prose only, not the keyboard table; direction is read with getComputedStyle(group).direction at keydown. → `site/src/content/docs/components/segmentedcontrol.md`
+- **DOC** SegmentedControl: the toolbar exception doesn't say what happens when focus sits on no enabled segment (tab stop fallback) and an arrow points outward; chose to move to the first/last enabled segment, which is inside the control. → `site/src/content/docs/components/segmentedcontrol.md`
+- **DOC** SegmentedControl: 'warns in development (once)' does not say once per instance or once per page; chose a module-level flag (once per page load). → `site/src/content/docs/components/segmentedcontrol.md`
+- **DOC** SegmentedControl: under controlled `value`, the arrow moves focus to a segment whose tabindex stays -1 until the parent updates `value`; the spec does not say whether the tab stop follows focus or the checked state — chose the checked state. → `site/src/content/docs/components/segmentedcontrol.md`
+- **DOC** SegmentedControl: the `label` description says only Lit warns on empty; React has no warning (removed the previous one). `label` is required by type, but an empty string is not caught. → `site/src/content/docs/components/segmentedcontrol.md`
+
 ### 2026-09-16 08:09 — rn round 1
 
 - **DOC** SegmentedControl: `form` declares role field, discovery context, value `value`, but the schema has no `name` prop (FormContext.register needs one) and the web/Lit notes say it is not a form field and not form-associated by design; chose not to register with FormContext and invented no `name` prop. → `site/src/content/docs/components/segmentedcontrol.md`
@@ -4612,6 +4740,46 @@ Doc: `site/src/content/docs/components/segmentedcontrol.md`
 ## Select
 
 Doc: `site/src/content/docs/components/select.md`
+
+### 2026-09-17 11:55 — rn round 1
+
+- **DOC** Select: the parts' `element: span` prop can't be passed on React Native. The package's Text has no `element` prop, so I left it out; the spec should say the prop is web/Lit only. → `site/src/content/docs/components/select.md`
+- **DOC** Select: the RN notes say to pass `testID="Select.<part>"` to the composed Text and Icon, but neither component accepts `testID`. As Input does, I wrapped each part in a `View` carrying the testID. Either Text and Icon should accept testID, or the notes should describe the wrapper. → `site/src/content/docs/components/select.md`
+- **DOC** Select: the chevron's locked `chevron` binding is only reachable through Icon's `overrides.color`. I forwarded `color.foreground.muted` there instead of using Icon's `color` prop, which would win over the override. The spec doesn't say which of the two to use. → `site/src/content/docs/components/select.md`
+- **DOC** Select: the value Text's color comes from its `tone` (`default`/`muted`, per valueColor/placeholderColor), but the composition lists only `element` as the value part's props. 'Exactly the listed props' contradicts that, so I passed `tone` anyway. `tone` should be added to the value part's props. → `site/src/content/docs/components/select.md`
+- **DOC** Select: the spec doesn't say whether a forward sends the binding's default token or only a caller's override. I always send the token (override or default), because `fontSize` must follow `size` (`font.size.{size}`) and Text has no size prop in the composition. → `site/src/content/docs/components/select.md`
+- **DOC** Select: guidance says the Listbox gets `initialActiveValue` and Select's own `onChange`/`onActiveChange`, but the composition's listbox props list neither. It also doesn't mention Listbox's required `label`. I passed `label`, `initialActiveValue` and `onChange` and left out `onActiveChange`, since RN has no activedescendant to track. → `site/src/content/docs/components/select.md`
+- **DOC** Select: `focusRingWidth` says the width changes while 'keyboard-focused', but Pressable's onFocus/onBlur can't tell keyboard focus from touch focus. The ring shows on any focus. → `site/src/content/docs/components/select.md`
+- **DOC** Select: `enter` describes only the opening fade. I reused the same duration and easing for the closing fade on the popup Modal. The spec doesn't say how closing should animate; BottomSheet runs its own animation. → `site/src/content/docs/components/select.md`
+- **DOC** Select: whether the tablet/web popup is modal isn't declared (the form/overlay section has no `modal` or `dismiss`). I kept a transparent Modal with a scrim for outside-tap, `onRequestClose` for Android back, and a trapped FocusScope with `accessibilityViewIsModal` on the popup. → `site/src/content/docs/components/select.md`
+- **DOC** Select: guidance says Tab commits and closes and that focus leaving the Select closes it. Neither has a native form here, which the RN notes acknowledge for Tab; nothing handles focus leaving beyond the modal trap. → `site/src/content/docs/components/select.md`
+- **DOC** Select: `hideLabel` says 'visually hide'. On RN I don't render the label Text at all, and the trigger's accessibilityLabel stays the accessible name, so `Select.label` is absent when it's hidden. → `site/src/content/docs/components/select.md`
+- **DOC** Select: `copy.selectedCount` is formatted with `Intl.NumberFormat()` using the default locale. The spec doesn't name a locale source for RN. → `site/src/content/docs/components/select.md`
+
+### 2026-09-17 11:53 — lit round 1
+
+- **DOC** Select: fontSize is `font.size.{size}` but the composed label and value Text take only `weight`/`tone`/`element` props, so following `size` needs the forward to carry a default. Chose to always forward `overrides.fontSize = overrides.fontSize ?? font.size.<size>`; the doc should say the forward carries the resolved default, not only a consumer override. → `site/src/content/docs/components/select.md`
+- **DOC** Select: the composition lists the Listbox props as exactly options, multiple, value, embedded, selectionFollowsFocus, but the Behavior prose adds initialActiveValue and labelledBy, and the lit notes add setting `activeValue` on open. Passed all three and dropped `disabled` (a disabled Select never opens); the composition's props list should include them. → `site/src/content/docs/components/select.md`
+- **DOC** Select: ds-listbox warns in development without `label` (it is always the list's aria-label, even with labelledBy), but the Select composition gives the Listbox no label. Left it unset, so an open Select logs the Listbox warning in dev; the doc should forward `label` or Listbox should accept labelledBy alone. → `site/src/content/docs/components/select.md`
+- **DOC** Select: errorMessage is a Text part, but the doc also calls it a `role=alert` region. Put `role=alert` on a wrapper div (id `error`, the aria-describedby target) and `data-part=errorMessage` on the ds-text inside it; the doc should say which element carries the part. → `site/src/content/docs/components/select.md`
+- **DOC** Select: popupOffset 'on the side the popup opens' is implemented as the popup's block margin (both sides), so the side away from the trigger also gets the margin; this only matters against the viewport edge in the flip test, which reads the resolved margin. → `site/src/content/docs/components/select.md`
+- **DOC** Select: the value Text truncating a long label with an ellipsis cannot be done from the parent without restyling the child's shadow tree (text-overflow does not cross the shadow boundary). The value host is clipped (overflow hidden, nowrap) without an ellipsis; Text would need a truncate prop for this. → `site/src/content/docs/components/select.md`
+- **DOC** Select: the `enter` binding asks for an opacity fade, but the Popover API top layer has no exit transition unless display/overlay are transitioned too. Implemented entry only (@starting-style), and closing is instant; the doc says 'enter', which this satisfies, but it does not say whether an exit fade is expected. → `site/src/content/docs/components/select.md`
+- **DOC** Select: triggerBorderFocus says the danger border stays when invalid and focused, which the code does, but with focusRingWidth replacing triggerBorderWidth the padding calc() can go negative if a consumer overrides triggerBorderWidth above border.width.focus; the doc says 'clamped at zero' and CSS max() on a calc() of custom properties does the clamp, but the existing calc is unclamped. Left unclamped; flag for the doc to give the exact computed expression. → `site/src/content/docs/components/select.md`
+
+### 2026-09-17 11:51 — web round 1
+
+- **DOC** Select: the web notes say to replay keys and dispatch `focusin` on 'the Listbox's list element', but React Listbox has its key and focus handlers on the wrapper (its ref), and its own doc says a host dispatches on the ref. Chose the wrapper ref. → `site/src/content/docs/components/select.md`
+- **DOC** Select: Behavior says 'the embedded list is never a tab stop', but Listbox always renders its list with tabIndex=0 and has no prop to turn that off. Select can't fix it without restyling or reaching into the child, so it keeps a popup keydown fallback for when focus lands on the list. Listbox needs a non-tabbable mode for `embedded`. → `site/src/content/docs/components/select.md`
+- **DOC** Select: Behavior says Enter with `multiple` toggles and stays open, but Listbox's Enter does nothing with `multiple`. Select handles Enter itself instead of forwarding it. The doc should say whether Enter is forwarded or handled by the host. → `site/src/content/docs/components/select.md`
+- **DOC** Select: `fontSize`, `fontFamily`, `lineHeight` and `fontWeight` are forwarded into the composed parts, but the overrides contract still wants a --ds-select-* hook on the root for every binding. Kept the root hooks because the `native: always` <select> has no Text to forward into. The doc doesn't say whether these hooks exist, as it does for labelWeight/helperSize. → `site/src/content/docs/components/select.md`
+- **DOC** Select: the locked `chevron` binding (color.foreground.muted) is forwarded as Icon overrides.color, but Icon's `color` is overridable while `chevron` is locked. Chose to always pass the locked token and give consumers no way to change it. → `site/src/content/docs/components/select.md`
+- **DOC** Select: `valueColor`, `placeholderColor` and `chevron` are locked bindings realised through child tones, so their --ds-select-* hooks are declared on the root but read by nothing. The doc should say whether locked bindings realised by a child get a hook at all. → `site/src/content/docs/components/select.md`
+- **DOC** Select: 'Clicking the label focuses the trigger and does not open the popup' conflicts with a native <label for> on a <button>, where the browser turns the label click into a button click. Chose to preventDefault the label click and focus the trigger by hand (native: always excluded). The doc should name this. → `site/src/content/docs/components/select.md`
+- **DOC** Select: the doc doesn't say where data-part='label' goes when a native <label> wraps the label Text. Put it on the composed Text and gave the <label> only the class. → `site/src/content/docs/components/select.md`
+- **DOC** Select: the chevron needs placing (absolutely positioned over the native <select>), and 'never restyle a child' rules out a class on Icon. Wrapped the Icon in a layout-only span. The native select's end padding reserves var(--font-size-sm) for the glyph, because Icon size sm is one font.size.sm wide; the doc gives no binding for that reserve. → `site/src/content/docs/components/select.md`
+- **DOC** Select: disabledOpacity is 'applied to the whole field group', but a portaled popup can't inherit it. Moot for now because a disabled Select never opens; noting it in case a controlled `open` is passed with `disabled`. → `site/src/content/docs/components/select.md`
+- **DOC** Select: the error message precedence (error → Form message → copy.invalid) is written 'as Input', and `copy.required` only shows through Form validate(). Chose not to show copy.required in the region when `invalid` is set and nothing is selected, which Listbox does. The doc should state which one. → `site/src/content/docs/components/select.md`
 
 ### 2026-09-16 08:36 — rn round 1
 
@@ -5507,6 +5675,39 @@ Doc: `site/src/content/docs/components/table.md`
 
 Doc: `site/src/content/docs/components/tabs.md`
 
+### 2026-09-17 11:33 — rn round 1
+
+- **DOC** Tabs: the doc names the exported item type `TabsItem`, but the package already exported `TabsTab`; I renamed it without a deprecated alias (the schema lists no deprecation) and updated the RN demo, so anyone importing `TabsTab` breaks. → `site/src/content/docs/components/tabs.md`
+- **DOC** Tabs: `fit` says fill has no effect when vertical, and the RN note says a 'vertical list with fit: start' is a ScrollView, which leaves vertical + fill unspecified; I treat vertical + fill exactly like vertical + start (a scrolling list). → `site/src/content/docs/components/tabs.md`
+- **DOC** Tabs: 'a tab without a matching panel is still rendered (its panel region is empty)' does not say whether an empty panel View (with its accessibilityLabel) should exist; RN renders no panel View for it, so screen readers get no empty region. → `site/src/content/docs/components/tabs.md`
+- **DOC** Tabs: the Enter/Space keyboard rule (manual activation) has no RN-specific instruction; it relies on react-native-web's Pressable turning Enter/Space into a press, with no explicit key handling in the list's onKeyDown. → `site/src/content/docs/components/tabs.md`
+- **DOC** Tabs: `badgeSize` gives only a font size and line height; the badge's font weight is unspecified, so it uses the platform default weight rather than the tab label's `fontWeight`. → `site/src/content/docs/components/tabs.md`
+- **DOC** Tabs: the RN note says a disabled tab is 'non-focusable on react-native-web only' but not what the roving tab stop is when the selected tab is disabled or nothing is selected; I use the first enabled tab. → `site/src/content/docs/components/tabs.md`
+- **DOC** Tabs: the behavior scenarios cover no RN keyboard behavior, and `the-selected-tab-is-marked-selected` is web-only, although RN has an equivalent (accessibilityState.selected); the click scenarios assert toBeSelected on RN as a stand-in. → `site/src/content/docs/components/tabs.md`
+
+### 2026-09-17 11:32 — lit round 1
+
+- **DOC** Tabs: the spec names the exported item type `TabsItem`, but RN and the existing Lit code export `TabsTab`; Lit now exports `TabsItem` plus a deprecated `TabsTab` alias, and the doc's Lifecycle section should record the rename (RN still exports only `TabsTab`). → `site/src/content/docs/components/tabs.md`
+- **DOC** Tabs: `children` / `<ds-tab-panel>` is a second custom element with no anatomy or props of its own in the schema (tag, `data-ds` value, whether it has overrides); kept `ds-tab-panel` with `data-ds="TabPanel"` and `data-part="panel"`. → `site/src/content/docs/components/tabs.md`
+- **DOC** Tabs: `panelGap` is bound to part `panel`, but its description applies it as the gap of the host's flex layout; applied as `gap` on `:host`, so the binding's `part` is misleading. → `site/src/content/docs/components/tabs.md`
+- **DOC** Tabs: the web notes make panels focusable (`tabindex="0"`) but the Lit notes list only `hidden`, `role` and `aria-label` as attributes ds-tabs sets; ds-tabs also sets `tabindex="0"` so Tab from the list lands in the panel. → `site/src/content/docs/components/tabs.md`
+- **DOC** Tabs: a tab's accessible name is the label then the badge separated by a space, but the doc doesn't say how to produce that when label and badge are separate elements (their text runs together as "Inbox3"); used `aria-labelledby` pointing at both spans inside the shadow root. → `site/src/content/docs/components/tabs.md`
+- **DOC** Tabs: the doc doesn't say whether the indicator animates on first render or when the selected tab first appears; chose instant first placement and animation only between tabs (theme: prefer no animation). → `site/src/content/docs/components/tabs.md`
+- **DOC** Tabs: 'the selected tab is kept in view … (including on first render)' is ambiguous about whether the list should scroll to the selected tab on first render; it now does, setting only the list's own scrollLeft/scrollTop. → `site/src/content/docs/components/tabs.md`
+- **DOC** Tabs: `defaultValue` has no Lit attribute name in the doc; used `default-value`. `keepMounted` is not reflected but still reads the `keep-mounted` attribute. → `site/src/content/docs/components/tabs.md`
+- **DOC** Tabs: examples say 'exactly its given as args', but CSF3 merges the meta defaults (activation, orientation, fit, keepMounted: false) into every story; each example story sets only its given args on top of those defaults. → `site/src/content/docs/components/tabs.md`
+
+### 2026-09-17 11:30 — web round 1
+
+- **DOC** Tabs: the React panel DOM id is `id` prefixed with a useId base, but the spec does not say how TabPanel learns that base; chose an internal (unexported) context from Tabs that gives each TabPanel its DOM id, aria-labelledby and hidden state, and a TabPanel rendered outside Tabs falls back to its raw id. → `site/src/content/docs/components/tabs.md`
+- **DOC** Tabs: 'indicator flush against the list border' does not say whether the bar overlaps the border or sits inside it; because the list scrolls (overflow auto clips anything beyond the padding box), a negative offset over the border would be clipped, so the bar sits at inset 0 on top of the border. → `site/src/content/docs/components/tabs.md`
+- **DOC** Tabs: keyboard rule 'Tab moves focus to the selected tab' does not cover manual activation after arrows moved focus without selecting; chose to return the roving tab stop to the selected tab when focus leaves the list. → `site/src/content/docs/components/tabs.md`
+- **DOC** Tabs: native button Enter/Space still clicks under automatic activation; the keyboard table lists Enter/Space only for manual. Left native behaviour alone (under automatic the focused tab is already selected, so it is a no-op) and preventDefault only under manual. → `site/src/content/docs/components/tabs.md`
+- **DOC** Tabs: the web notes say the indicator is placed with inset-inline-start from the tab's offsetLeft, which is a physical (left) measurement, so in RTL the bar would be misplaced; kept the documented logical property, and the doc should say whether RTL is in scope. → `site/src/content/docs/components/tabs.md`
+- **DOC** Tabs: tab and panel ids are built from the consumer's `id` strings; an id containing whitespace makes an invalid IDREF. The spec gives no constraint on tab ids; chose none. → `site/src/content/docs/components/tabs.md`
+- **DOC** Tabs: the `a11y.requires` list says target-24px but the minTarget binding is size.target.comfortable (44px); followed the binding. → `site/src/content/docs/components/tabs.md`
+- **DOC** Tabs: the `overrides` prop is in the overrides contract but not in the schema props list; kept it as in every other component. → `site/src/content/docs/components/tabs.md`
+
 ### 2026-09-16 08:01 — rn round 1
 
 - **DOC** Tabs: `activation` and the whole keyboard table have no iOS/Android equivalent (View/Pressable have no key events); implemented through an untyped `onKeyDown` on the tablist that only react-native-web delivers, and a touch always selects regardless of activation. The platform notes should state what `manual` means on native. → `site/src/content/docs/components/tabs.md`
@@ -6324,7 +6525,7 @@ Doc: `site/src/content/docs/components/treegrid.md`
 
 ## Totals
 
-DOC: 4094 · CODE: 93 · TOOLING: 2 · NOISE: 42
+DOC: 4241 · CODE: 93 · TOOLING: 2 · NOISE: 42
 
 ## Gates to fix
 

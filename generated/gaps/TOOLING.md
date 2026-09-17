@@ -125,3 +125,6 @@ Gaps a fold cannot answer because they are about the tools, not the docs.
 - The has-accessible-name scenario the parser derives runs on the closed Default story, so the named region is hidden; for overlays it should use `open: true` (SidePanel, web).
 - Persistent mode reads the breakpoint token through getComputedStyle, so without the token stylesheet (jsdom) the renders-persistent scenarios only exercise the overlay path (SidePanel, web).
 - The parser's prose-forward check matches any composed child named anywhere in a binding description, so mentioning the body Box inside `footerGap` raised a false "Box has no gap binding" error (BottomSheet, fold).
+- The resolved Keyboard section the parser renders drops the Home/End rows the schema's keyboard block declares, so generators see two conflicting keyboard lists (SegmentedControl, web and lit).
+- The rn package digest documents `toLineHeight(t.fontLineHeightNormal, t.fontSizeMd)`, but theme.tsx takes `toLineHeight(fontSize, multiplier)`; the digest example has the arguments reversed (Combobox, rn).
+- CSF3 merges meta default args into every story, while the example rule says a story's args are "exactly its given"; the rule should say "given on top of the meta defaults" (Tabs, lit).

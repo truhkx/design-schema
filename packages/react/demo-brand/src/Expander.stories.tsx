@@ -13,6 +13,7 @@ const panel = (
 const meta: Meta<typeof Expander> = {
   title: 'Expander/React',
   component: Expander,
+  tags: ['autodocs'],
   args: {
     summary: 'What happens if I cancel?',
     defaultOpen: false,
@@ -22,6 +23,7 @@ const meta: Meta<typeof Expander> = {
   },
   argTypes: {
     onToggle: { action: 'onToggle' },
+    headingLevel: { control: 'select', options: [undefined, '2', '3', '4', '5', '6'] },
   },
   decorators: [
     (Story) => (
@@ -44,9 +46,41 @@ export const HeadingLevel4: Story = { args: { headingLevel: '4' } };
 export const HeadingLevel5: Story = { args: { headingLevel: '5' } };
 export const HeadingLevel6: Story = { args: { headingLevel: '6' } };
 
+/* examples — exactly their `given` as args */
+export const FaqAnswer: Story = {
+  args: {
+    summary: 'What happens if I cancel?',
+    children: 'You keep access until the end of the current billing period.',
+    headingLevel: '3',
+  },
+};
+
+export const AdvancedOptions: Story = {
+  args: {
+    summary: 'Advanced options',
+    children: 'Retry limit, timeout and proxy settings.',
+  },
+};
+
+export const OpenWithFormFields: Story = {
+  args: {
+    summary: 'Billing address',
+    children: 'Street, city and postcode fields.',
+    defaultOpen: true,
+    keepMounted: true,
+  },
+};
+
+export const Disabled: Story = {
+  args: {
+    summary: 'Shipping details',
+    children: 'Choose a delivery address first.',
+    disabled: true,
+  },
+};
+
 /* states */
 export const Open: Story = { args: { defaultOpen: true } };
-export const Disabled: Story = { args: { disabled: true } };
 export const Controlled: Story = { args: { open: true } };
 export const KeepMounted: Story = { args: { keepMounted: true } };
 

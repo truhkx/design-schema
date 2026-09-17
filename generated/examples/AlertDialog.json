@@ -10,7 +10,7 @@
     {
       "title": "Default",
       "args": {
-        "open": false,
+        "open": true,
         "heading": "Delete 3 files?",
         "description": "They will be removed from all shared folders. This cannot be undone.",
         "tone": "danger",
@@ -18,14 +18,14 @@
         "confirmDisabled": false
       },
       "snippets": {
-        "react": "import { useState } from 'react';\nimport { AlertDialog, type AlertDialogProps, Button } from '@design-schema/react';\n\nfunction AlertDialogHarness({ onConfirm, onCancel, ...rest }: Partial<AlertDialogProps>) {\n  const [open, setOpen] = useState(rest.open ?? false);\n\n  return (\n    <>\n      <Button label=\"Delete files\" variant=\"danger\" onClick={() => setOpen(true)} />\n      <AlertDialog\n        heading=\"Delete 3 files?\"\n        description=\"They will be removed from all shared folders. This cannot be undone.\"\n        confirmLabel=\"Delete files\"\n        {...rest}\n        open={open}\n        onConfirm={() => {\n          onConfirm?.();\n          setOpen(false);\n        }}\n        onCancel={(reason) => {\n          onCancel?.(reason);\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\n<AlertDialogHarness\n  heading=\"Delete 3 files?\"\n  description=\"They will be removed from all shared folders. This cannot be undone.\"\n  confirmLabel=\"Delete files\"\n/>",
-        "lit": "<ds-alert-dialog\n  open\n  heading=\"Delete 3 files?\"\n  description=\"They will be removed from all shared folders. This cannot be undone.\"\n  confirm-label=\"Delete files\"\n></ds-alert-dialog>",
+        "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { AlertDialog, type AlertDialogProps, Button } from '@design-schema/react';\n\nfunction AlertDialogHarness({ open: initialOpen, onConfirm, onCancel, ...rest }: AlertDialogProps): ReactElement {\n  const [open, setOpen] = useState(initialOpen);\n  useEffect(() => setOpen(initialOpen), [initialOpen]);\n\n  return (\n    <>\n      <Button label={rest.confirmLabel} onClick={() => setOpen(true)} />\n      <AlertDialog\n        {...rest}\n        open={open}\n        onConfirm={() => {\n          onConfirm?.();\n          setOpen(false);\n        }}\n        onCancel={(reason) => {\n          onCancel?.(reason);\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\n<AlertDialogHarness\n  open\n  heading=\"Delete 3 files?\"\n  description=\"They will be removed from all shared folders. This cannot be undone.\"\n  confirmLabel=\"Delete files\"\n/>",
+        "lit": null,
         "rn": "import { AlertDialog } from '@design-schema/rn';\n\n<AlertDialog\n  open\n  heading=\"Delete 3 files?\"\n  description=\"They will be removed from all shared folders. This cannot be undone.\"\n  confirmLabel=\"Delete files\"\n/>",
         "swift": null
       },
       "stories": {
         "react": "Default",
-        "lit": "Default",
+        "lit": null,
         "rn": "Default",
         "swift": null
       },
@@ -37,7 +37,7 @@
     {
       "title": "Tone Danger",
       "args": {
-        "open": false,
+        "open": true,
         "heading": "Delete 3 files?",
         "description": "They will be removed from all shared folders. This cannot be undone.",
         "tone": "danger",
@@ -45,14 +45,14 @@
         "confirmDisabled": false
       },
       "snippets": {
-        "react": "import { useState } from 'react';\nimport { AlertDialog, type AlertDialogProps, Button } from '@design-schema/react';\n\nfunction AlertDialogHarness({ onConfirm, onCancel, ...rest }: Partial<AlertDialogProps>) {\n  const [open, setOpen] = useState(rest.open ?? false);\n\n  return (\n    <>\n      <Button label=\"Delete files\" variant=\"danger\" onClick={() => setOpen(true)} />\n      <AlertDialog\n        heading=\"Delete 3 files?\"\n        description=\"They will be removed from all shared folders. This cannot be undone.\"\n        confirmLabel=\"Delete files\"\n        {...rest}\n        open={open}\n        onConfirm={() => {\n          onConfirm?.();\n          setOpen(false);\n        }}\n        onCancel={(reason) => {\n          onCancel?.(reason);\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\n<AlertDialogHarness\n  heading=\"Delete 3 files?\"\n  description=\"They will be removed from all shared folders. This cannot be undone.\"\n  tone=\"danger\"\n  confirmLabel=\"Delete files\"\n/>",
-        "lit": "<ds-alert-dialog\n  open\n  heading=\"Delete 3 files?\"\n  description=\"They will be removed from all shared folders. This cannot be undone.\"\n  tone=\"danger\"\n  confirm-label=\"Delete files\"\n></ds-alert-dialog>",
+        "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { AlertDialog, type AlertDialogProps, Button } from '@design-schema/react';\n\nfunction AlertDialogHarness({ open: initialOpen, onConfirm, onCancel, ...rest }: AlertDialogProps): ReactElement {\n  const [open, setOpen] = useState(initialOpen);\n  useEffect(() => setOpen(initialOpen), [initialOpen]);\n\n  return (\n    <>\n      <Button label={rest.confirmLabel} onClick={() => setOpen(true)} />\n      <AlertDialog\n        {...rest}\n        open={open}\n        onConfirm={() => {\n          onConfirm?.();\n          setOpen(false);\n        }}\n        onCancel={(reason) => {\n          onCancel?.(reason);\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\n<AlertDialogHarness\n  open\n  heading=\"Delete 3 files?\"\n  description=\"They will be removed from all shared folders. This cannot be undone.\"\n  tone=\"danger\"\n  confirmLabel=\"Delete files\"\n/>",
+        "lit": null,
         "rn": "import { AlertDialog } from '@design-schema/rn';\n\n<AlertDialog\n  open\n  heading=\"Delete 3 files?\"\n  description=\"They will be removed from all shared folders. This cannot be undone.\"\n  tone=\"danger\"\n  confirmLabel=\"Delete files\"\n/>",
         "swift": null
       },
       "stories": {
         "react": "ToneDanger",
-        "lit": "ToneDanger",
+        "lit": null,
         "rn": "ToneDanger",
         "swift": null
       },
@@ -62,27 +62,27 @@
         "value": "danger"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Tone Warning",
       "args": {
-        "open": false,
-        "heading": "Discard unsaved changes?",
-        "description": "Your edits since the last save will be lost.",
+        "open": true,
+        "heading": "Delete 3 files?",
+        "description": "They will be removed from all shared folders. This cannot be undone.",
         "tone": "warning",
-        "confirmLabel": "Discard changes",
+        "confirmLabel": "Delete files",
         "confirmDisabled": false
       },
       "snippets": {
-        "react": "import { useState } from 'react';\nimport { AlertDialog, type AlertDialogProps, Button } from '@design-schema/react';\n\nfunction AlertDialogHarness({ onConfirm, onCancel, ...rest }: Partial<AlertDialogProps>) {\n  const [open, setOpen] = useState(rest.open ?? false);\n\n  return (\n    <>\n      <Button label=\"Delete files\" variant=\"danger\" onClick={() => setOpen(true)} />\n      <AlertDialog\n        heading=\"Delete 3 files?\"\n        description=\"They will be removed from all shared folders. This cannot be undone.\"\n        confirmLabel=\"Delete files\"\n        {...rest}\n        open={open}\n        onConfirm={() => {\n          onConfirm?.();\n          setOpen(false);\n        }}\n        onCancel={(reason) => {\n          onCancel?.(reason);\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\n<AlertDialogHarness\n  heading=\"Discard unsaved changes?\"\n  description=\"Your edits since the last save will be lost.\"\n  tone=\"warning\"\n  confirmLabel=\"Discard changes\"\n/>",
-        "lit": "<ds-alert-dialog\n  open\n  heading=\"Leave without saving?\"\n  description=\"Your changes will be lost.\"\n  tone=\"warning\"\n  confirm-label=\"Leave page\"\n></ds-alert-dialog>",
-        "rn": "import { AlertDialog } from '@design-schema/rn';\n\n<AlertDialog\n  open\n  heading=\"Leave without saving?\"\n  description=\"Your changes will be lost. This cannot be undone.\"\n  tone=\"warning\"\n  confirmLabel=\"Leave page\"\n/>",
+        "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { AlertDialog, type AlertDialogProps, Button } from '@design-schema/react';\n\nfunction AlertDialogHarness({ open: initialOpen, onConfirm, onCancel, ...rest }: AlertDialogProps): ReactElement {\n  const [open, setOpen] = useState(initialOpen);\n  useEffect(() => setOpen(initialOpen), [initialOpen]);\n\n  return (\n    <>\n      <Button label={rest.confirmLabel} onClick={() => setOpen(true)} />\n      <AlertDialog\n        {...rest}\n        open={open}\n        onConfirm={() => {\n          onConfirm?.();\n          setOpen(false);\n        }}\n        onCancel={(reason) => {\n          onCancel?.(reason);\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\n<AlertDialogHarness\n  open\n  heading=\"Delete 3 files?\"\n  description=\"They will be removed from all shared folders. This cannot be undone.\"\n  tone=\"warning\"\n  confirmLabel=\"Delete files\"\n/>",
+        "lit": null,
+        "rn": "import { AlertDialog } from '@design-schema/rn';\n\n<AlertDialog\n  open\n  heading=\"Leave without saving?\"\n  description=\"Your changes to this draft will be lost.\"\n  tone=\"warning\"\n  confirmLabel=\"Leave\"\n/>",
         "swift": null
       },
       "stories": {
         "react": "ToneWarning",
-        "lit": "ToneWarning",
+        "lit": null,
         "rn": "ToneWarning",
         "swift": null
       },
@@ -92,27 +92,27 @@
         "value": "warning"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Tone Info",
       "args": {
-        "open": false,
-        "heading": "Leave this page?",
-        "description": "Filters you set here will not be kept.",
+        "open": true,
+        "heading": "Delete 3 files?",
+        "description": "They will be removed from all shared folders. This cannot be undone.",
         "tone": "info",
-        "confirmLabel": "Leave page",
+        "confirmLabel": "Delete files",
         "confirmDisabled": false
       },
       "snippets": {
-        "react": "import { useState } from 'react';\nimport { AlertDialog, type AlertDialogProps, Button } from '@design-schema/react';\n\nfunction AlertDialogHarness({ onConfirm, onCancel, ...rest }: Partial<AlertDialogProps>) {\n  const [open, setOpen] = useState(rest.open ?? false);\n\n  return (\n    <>\n      <Button label=\"Delete files\" variant=\"danger\" onClick={() => setOpen(true)} />\n      <AlertDialog\n        heading=\"Delete 3 files?\"\n        description=\"They will be removed from all shared folders. This cannot be undone.\"\n        confirmLabel=\"Delete files\"\n        {...rest}\n        open={open}\n        onConfirm={() => {\n          onConfirm?.();\n          setOpen(false);\n        }}\n        onCancel={(reason) => {\n          onCancel?.(reason);\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\n<AlertDialogHarness\n  heading=\"Leave this page?\"\n  description=\"Filters you set here will not be kept.\"\n  tone=\"info\"\n  confirmLabel=\"Leave page\"\n/>",
-        "lit": "<ds-alert-dialog\n  open\n  heading=\"Switch workspaces?\"\n  description=\"You will need to sign in again to switch back.\"\n  tone=\"info\"\n  confirm-label=\"Switch workspace\"\n></ds-alert-dialog>",
-        "rn": "import { AlertDialog } from '@design-schema/rn';\n\n<AlertDialog\n  open\n  heading=\"Switch workspaces?\"\n  description=\"You will be moved to the Marketing workspace.\"\n  tone=\"info\"\n  confirmLabel=\"Switch workspace\"\n/>",
+        "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { AlertDialog, type AlertDialogProps, Button } from '@design-schema/react';\n\nfunction AlertDialogHarness({ open: initialOpen, onConfirm, onCancel, ...rest }: AlertDialogProps): ReactElement {\n  const [open, setOpen] = useState(initialOpen);\n  useEffect(() => setOpen(initialOpen), [initialOpen]);\n\n  return (\n    <>\n      <Button label={rest.confirmLabel} onClick={() => setOpen(true)} />\n      <AlertDialog\n        {...rest}\n        open={open}\n        onConfirm={() => {\n          onConfirm?.();\n          setOpen(false);\n        }}\n        onCancel={(reason) => {\n          onCancel?.(reason);\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\n<AlertDialogHarness\n  open\n  heading=\"Delete 3 files?\"\n  description=\"They will be removed from all shared folders. This cannot be undone.\"\n  tone=\"info\"\n  confirmLabel=\"Delete files\"\n/>",
+        "lit": null,
+        "rn": "import { AlertDialog } from '@design-schema/rn';\n\n<AlertDialog\n  open\n  heading=\"Publish to the team?\"\n  description=\"Everyone in the workspace will be able to see this page.\"\n  tone=\"info\"\n  confirmLabel=\"Publish\"\n/>",
         "swift": null
       },
       "stories": {
         "react": "ToneInfo",
-        "lit": "ToneInfo",
+        "lit": null,
         "rn": "ToneInfo",
         "swift": null
       },
@@ -122,65 +122,64 @@
         "value": "info"
       },
       "decorated": false,
-      "primary": true
-    },
-    {
-      "title": "Custom Cancel Label",
-      "args": {
-        "open": false,
-        "heading": "Discard unsaved changes?",
-        "description": "Your edits since the last save will be lost.",
-        "tone": "warning",
-        "confirmLabel": "Discard changes",
-        "confirmDisabled": false,
-        "cancelLabel": "Keep editing"
-      },
-      "snippets": {
-        "react": "import { useState } from 'react';\nimport { AlertDialog, type AlertDialogProps, Button } from '@design-schema/react';\n\nfunction AlertDialogHarness({ onConfirm, onCancel, ...rest }: Partial<AlertDialogProps>) {\n  const [open, setOpen] = useState(rest.open ?? false);\n\n  return (\n    <>\n      <Button label=\"Delete files\" variant=\"danger\" onClick={() => setOpen(true)} />\n      <AlertDialog\n        heading=\"Delete 3 files?\"\n        description=\"They will be removed from all shared folders. This cannot be undone.\"\n        confirmLabel=\"Delete files\"\n        {...rest}\n        open={open}\n        onConfirm={() => {\n          onConfirm?.();\n          setOpen(false);\n        }}\n        onCancel={(reason) => {\n          onCancel?.(reason);\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\n<AlertDialogHarness\n  heading=\"Discard unsaved changes?\"\n  description=\"Your edits since the last save will be lost.\"\n  tone=\"warning\"\n  confirmLabel=\"Discard changes\"\n  cancelLabel=\"Keep editing\"\n/>",
-        "lit": null,
-        "rn": "import { AlertDialog } from '@design-schema/rn';\n\n<AlertDialog\n  open\n  heading=\"Leave without saving?\"\n  description=\"Your changes will be lost. This cannot be undone.\"\n  tone=\"warning\"\n  confirmLabel=\"Leave page\"\n  cancelLabel=\"Keep editing\"\n/>",
-        "swift": null
-      },
-      "stories": {
-        "react": "CustomCancelLabel",
-        "lit": null,
-        "rn": "CustomCancelLabel",
-        "swift": null
-      },
-      "storyId": "alertdialog-react--custom-cancel-label",
-      "sweep": {
-        "prop": "tone",
-        "value": "warning"
-      },
-      "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Confirm Disabled",
       "args": {
-        "open": false,
-        "heading": "Delete your account?",
-        "description": "Type the account name below to confirm. This cannot be undone.",
+        "open": true,
+        "heading": "Delete 3 files?",
+        "description": "They will be removed from all shared folders. This cannot be undone.",
         "tone": "danger",
-        "confirmLabel": "Delete account",
+        "confirmLabel": "Delete files",
         "confirmDisabled": true
       },
       "snippets": {
-        "react": "import { useState } from 'react';\nimport { AlertDialog, type AlertDialogProps, Button } from '@design-schema/react';\n\nfunction AlertDialogHarness({ onConfirm, onCancel, ...rest }: Partial<AlertDialogProps>) {\n  const [open, setOpen] = useState(rest.open ?? false);\n\n  return (\n    <>\n      <Button label=\"Delete files\" variant=\"danger\" onClick={() => setOpen(true)} />\n      <AlertDialog\n        heading=\"Delete 3 files?\"\n        description=\"They will be removed from all shared folders. This cannot be undone.\"\n        confirmLabel=\"Delete files\"\n        {...rest}\n        open={open}\n        onConfirm={() => {\n          onConfirm?.();\n          setOpen(false);\n        }}\n        onCancel={(reason) => {\n          onCancel?.(reason);\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\n<AlertDialogHarness\n  heading=\"Delete your account?\"\n  description=\"Type the account name below to confirm. This cannot be undone.\"\n  confirmLabel=\"Delete account\"\n  confirmDisabled\n/>",
-        "lit": "<ds-alert-dialog\n  open\n  heading=\"Delete 3 files?\"\n  description=\"They will be removed from all shared folders. This cannot be undone.\"\n  confirm-label=\"Delete files\"\n  confirm-disabled\n></ds-alert-dialog>",
-        "rn": "import { AlertDialog } from '@design-schema/rn';\n\n<AlertDialog\n  open\n  heading=\"Delete 3 files?\"\n  description=\"They will be removed from all shared folders. This cannot be undone.\"\n  confirmLabel=\"Delete files\"\n  confirmDisabled\n/>",
+        "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { AlertDialog, type AlertDialogProps, Button } from '@design-schema/react';\n\nfunction AlertDialogHarness({ open: initialOpen, onConfirm, onCancel, ...rest }: AlertDialogProps): ReactElement {\n  const [open, setOpen] = useState(initialOpen);\n  useEffect(() => setOpen(initialOpen), [initialOpen]);\n\n  return (\n    <>\n      <Button label={rest.confirmLabel} onClick={() => setOpen(true)} />\n      <AlertDialog\n        {...rest}\n        open={open}\n        onConfirm={() => {\n          onConfirm?.();\n          setOpen(false);\n        }}\n        onCancel={(reason) => {\n          onCancel?.(reason);\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\n<AlertDialogHarness\n  open\n  heading=\"Delete 3 files?\"\n  description=\"They will be removed from all shared folders. This cannot be undone.\"\n  confirmLabel=\"Delete files\"\n  confirmDisabled\n/>",
+        "lit": null,
+        "rn": null,
         "swift": null
       },
       "stories": {
         "react": "ConfirmDisabled",
-        "lit": "ConfirmDisabled",
-        "rn": "ConfirmDisabled",
+        "lit": null,
+        "rn": null,
         "swift": null
       },
       "storyId": "alertdialog-react--confirm-disabled",
       "sweep": {
         "prop": "confirmDisabled",
         "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Closed",
+      "args": {
+        "open": false,
+        "heading": "Delete 3 files?",
+        "description": "They will be removed from all shared folders. This cannot be undone.",
+        "tone": "danger",
+        "confirmLabel": "Delete files",
+        "confirmDisabled": false
+      },
+      "snippets": {
+        "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { AlertDialog, type AlertDialogProps, Button } from '@design-schema/react';\n\nfunction AlertDialogHarness({ open: initialOpen, onConfirm, onCancel, ...rest }: AlertDialogProps): ReactElement {\n  const [open, setOpen] = useState(initialOpen);\n  useEffect(() => setOpen(initialOpen), [initialOpen]);\n\n  return (\n    <>\n      <Button label={rest.confirmLabel} onClick={() => setOpen(true)} />\n      <AlertDialog\n        {...rest}\n        open={open}\n        onConfirm={() => {\n          onConfirm?.();\n          setOpen(false);\n        }}\n        onCancel={(reason) => {\n          onCancel?.(reason);\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\n<AlertDialogHarness\n  open={false}\n  heading=\"Delete 3 files?\"\n  description=\"They will be removed from all shared folders. This cannot be undone.\"\n  confirmLabel=\"Delete files\"\n/>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "Closed",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "alertdialog-react--closed",
+      "sweep": {
+        "prop": "open",
+        "value": false
       },
       "decorated": false,
       "primary": true
@@ -196,21 +195,133 @@
         "confirmDisabled": false
       },
       "snippets": {
-        "react": "import { useState } from 'react';\nimport { AlertDialog, type AlertDialogProps, Button } from '@design-schema/react';\n\nfunction AlertDialogHarness({ onConfirm, onCancel, ...rest }: Partial<AlertDialogProps>) {\n  const [open, setOpen] = useState(rest.open ?? false);\n\n  return (\n    <>\n      <Button label=\"Delete files\" variant=\"danger\" onClick={() => setOpen(true)} />\n      <AlertDialog\n        heading=\"Delete 3 files?\"\n        description=\"They will be removed from all shared folders. This cannot be undone.\"\n        confirmLabel=\"Delete files\"\n        {...rest}\n        open={open}\n        onConfirm={() => {\n          onConfirm?.();\n          setOpen(false);\n        }}\n        onCancel={(reason) => {\n          onCancel?.(reason);\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\n<AlertDialogHarness\n  open\n  heading=\"Delete 3 files?\"\n  description=\"They will be removed from all shared folders. This cannot be undone.\"\n  confirmLabel=\"Delete files\"\n/>",
-        "lit": "<button type=\"button\" id=\"alert-dialog-trigger\">Delete files</button>\n<ds-alert-dialog\n  open\n  tone=\"danger\"\n  heading=\"Delete 3 files?\"\n  description=\"They will be removed from all shared folders. This cannot be undone.\"\n  confirm-label=\"Delete files\"\n></ds-alert-dialog>",
-        "rn": "import * as React from 'react';\nimport { AlertDialog, Button, Input, Stack } from '@design-schema/rn';\n\nfunction Open(): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  return (\n    <Stack gap=\"loose\" align=\"start\">\n      <Button label=\"Delete files\" variant=\"danger\" onPress={() => setOpen(true)} />\n      <Input label=\"Project name\" name=\"name\" defaultValue=\"Marketing site\" />\n      <Input label=\"Description\" name=\"description\" />\n      <AlertDialog\n        heading=\"Delete 3 files?\"\n        description=\"They will be removed from all shared folders. This cannot be undone.\"\n        confirmLabel=\"Delete files\"\n        open={open}\n        onCancel={() => setOpen(false)}\n        onConfirm={() => setOpen(false)}\n      />\n    </Stack>\n  );\n}\n\n<Open />",
+        "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { AlertDialog, type AlertDialogProps, Button } from '@design-schema/react';\n\nfunction AlertDialogHarness({ open: initialOpen, onConfirm, onCancel, ...rest }: AlertDialogProps): ReactElement {\n  const [open, setOpen] = useState(initialOpen);\n  useEffect(() => setOpen(initialOpen), [initialOpen]);\n\n  return (\n    <>\n      <Button label={rest.confirmLabel} onClick={() => setOpen(true)} />\n      <AlertDialog\n        {...rest}\n        open={open}\n        onConfirm={() => {\n          onConfirm?.();\n          setOpen(false);\n        }}\n        onCancel={(reason) => {\n          onCancel?.(reason);\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\n<AlertDialogHarness\n  open\n  heading=\"Delete 3 files?\"\n  description=\"They will be removed from all shared folders. This cannot be undone.\"\n  confirmLabel=\"Delete files\"\n/>",
+        "lit": null,
+        "rn": "import * as React from 'react';\nimport { AlertDialog, Button, Stack } from '@design-schema/rn';\n\nfunction Open(): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  return (\n    <Stack gap=\"loose\" align=\"start\">\n      <Button label=\"Delete files\" variant=\"danger\" onPress={() => setOpen(true)} />\n      <AlertDialog\n        heading=\"Delete 3 files?\"\n        description=\"They will be removed from all shared folders. This cannot be undone.\"\n        confirmLabel=\"Delete files\"\n        open={open}\n        onCancel={() => setOpen(false)}\n        onConfirm={() => setOpen(false)}\n      />\n    </Stack>\n  );\n}\n\n<Open />",
         "swift": null
       },
       "stories": {
         "react": "Keyboard",
-        "lit": "Keyboard",
+        "lit": null,
         "rn": "Keyboard",
         "swift": null
       },
       "storyId": "alertdialog-react--keyboard",
+      "sweep": {
+        "prop": "open",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Delete Files",
+      "args": {
+        "open": true,
+        "heading": "Delete 3 files?",
+        "description": "They will be removed from all shared folders. This cannot be undone.",
+        "tone": "danger",
+        "confirmLabel": "Delete files",
+        "confirmDisabled": false
+      },
+      "snippets": {
+        "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { AlertDialog, type AlertDialogProps, Button } from '@design-schema/react';\n\nfunction AlertDialogHarness({ open: initialOpen, onConfirm, onCancel, ...rest }: AlertDialogProps): ReactElement {\n  const [open, setOpen] = useState(initialOpen);\n  useEffect(() => setOpen(initialOpen), [initialOpen]);\n\n  return (\n    <>\n      <Button label={rest.confirmLabel} onClick={() => setOpen(true)} />\n      <AlertDialog\n        {...rest}\n        open={open}\n        onConfirm={() => {\n          onConfirm?.();\n          setOpen(false);\n        }}\n        onCancel={(reason) => {\n          onCancel?.(reason);\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\n<AlertDialogHarness\n  open\n  heading=\"Delete 3 files?\"\n  description=\"They will be removed from all shared folders. This cannot be undone.\"\n  tone=\"danger\"\n  confirmLabel=\"Delete files\"\n/>",
+        "lit": null,
+        "rn": "import { AlertDialog } from '@design-schema/rn';\n\n<AlertDialog\n  open\n  heading=\"Delete 3 files?\"\n  description=\"They will be removed from all shared folders. This cannot be undone.\"\n  tone=\"danger\"\n  confirmLabel=\"Delete files\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "DeleteFiles",
+        "lit": null,
+        "rn": "DeleteFiles",
+        "swift": null
+      },
+      "storyId": "alertdialog-react--delete-files",
       "sweep": null,
       "decorated": false,
       "primary": true
+    },
+    {
+      "title": "Leave Without Saving",
+      "args": {
+        "open": true,
+        "heading": "Leave without saving?",
+        "description": "Your changes to this draft will be lost.",
+        "tone": "warning",
+        "confirmLabel": "Leave",
+        "confirmDisabled": false,
+        "cancelLabel": "Keep editing"
+      },
+      "snippets": {
+        "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { AlertDialog, type AlertDialogProps, Button } from '@design-schema/react';\n\nfunction AlertDialogHarness({ open: initialOpen, onConfirm, onCancel, ...rest }: AlertDialogProps): ReactElement {\n  const [open, setOpen] = useState(initialOpen);\n  useEffect(() => setOpen(initialOpen), [initialOpen]);\n\n  return (\n    <>\n      <Button label={rest.confirmLabel} onClick={() => setOpen(true)} />\n      <AlertDialog\n        {...rest}\n        open={open}\n        onConfirm={() => {\n          onConfirm?.();\n          setOpen(false);\n        }}\n        onCancel={(reason) => {\n          onCancel?.(reason);\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\n<AlertDialogHarness\n  open\n  heading=\"Leave without saving?\"\n  description=\"Your changes to this draft will be lost.\"\n  tone=\"warning\"\n  confirmLabel=\"Leave\"\n  cancelLabel=\"Keep editing\"\n/>",
+        "lit": null,
+        "rn": "import { AlertDialog } from '@design-schema/rn';\n\n<AlertDialog\n  open\n  heading=\"Leave without saving?\"\n  description=\"Your changes to this draft will be lost.\"\n  tone=\"warning\"\n  confirmLabel=\"Leave\"\n  cancelLabel=\"Keep editing\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "LeaveWithoutSaving",
+        "lit": null,
+        "rn": "LeaveWithoutSaving",
+        "swift": null
+      },
+      "storyId": "alertdialog-react--leave-without-saving",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Typed Confirmation",
+      "args": {
+        "open": true,
+        "heading": "Cancel your subscription?",
+        "description": "Your workspace stays read-only after the current billing period ends.",
+        "tone": "danger",
+        "confirmLabel": "Cancel subscription",
+        "confirmDisabled": true
+      },
+      "snippets": {
+        "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { AlertDialog, type AlertDialogProps, Button } from '@design-schema/react';\n\nfunction AlertDialogHarness({ open: initialOpen, onConfirm, onCancel, ...rest }: AlertDialogProps): ReactElement {\n  const [open, setOpen] = useState(initialOpen);\n  useEffect(() => setOpen(initialOpen), [initialOpen]);\n\n  return (\n    <>\n      <Button label={rest.confirmLabel} onClick={() => setOpen(true)} />\n      <AlertDialog\n        {...rest}\n        open={open}\n        onConfirm={() => {\n          onConfirm?.();\n          setOpen(false);\n        }}\n        onCancel={(reason) => {\n          onCancel?.(reason);\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\n<AlertDialogHarness\n  open\n  heading=\"Cancel your subscription?\"\n  description=\"Your workspace stays read-only after the current billing period ends.\"\n  tone=\"danger\"\n  confirmLabel=\"Cancel subscription\"\n  confirmDisabled\n/>",
+        "lit": null,
+        "rn": "import { AlertDialog } from '@design-schema/rn';\n\n<AlertDialog\n  open\n  heading=\"Cancel your subscription?\"\n  description=\"Your workspace stays read-only after the current billing period ends.\"\n  tone=\"danger\"\n  confirmLabel=\"Cancel subscription\"\n  confirmDisabled\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "TypedConfirmation",
+        "lit": null,
+        "rn": "TypedConfirmation",
+        "swift": null
+      },
+      "storyId": "alertdialog-react--typed-confirmation",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Publish To The Team",
+      "args": {
+        "open": true,
+        "heading": "Publish to the team?",
+        "description": "Everyone in the workspace will be able to see this page.",
+        "tone": "info",
+        "confirmLabel": "Publish",
+        "confirmDisabled": false
+      },
+      "snippets": {
+        "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { AlertDialog, type AlertDialogProps, Button } from '@design-schema/react';\n\nfunction AlertDialogHarness({ open: initialOpen, onConfirm, onCancel, ...rest }: AlertDialogProps): ReactElement {\n  const [open, setOpen] = useState(initialOpen);\n  useEffect(() => setOpen(initialOpen), [initialOpen]);\n\n  return (\n    <>\n      <Button label={rest.confirmLabel} onClick={() => setOpen(true)} />\n      <AlertDialog\n        {...rest}\n        open={open}\n        onConfirm={() => {\n          onConfirm?.();\n          setOpen(false);\n        }}\n        onCancel={(reason) => {\n          onCancel?.(reason);\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\n<AlertDialogHarness\n  open\n  heading=\"Publish to the team?\"\n  description=\"Everyone in the workspace will be able to see this page.\"\n  tone=\"info\"\n  confirmLabel=\"Publish\"\n/>",
+        "lit": null,
+        "rn": "import { AlertDialog } from '@design-schema/rn';\n\n<AlertDialog\n  open\n  heading=\"Publish to the team?\"\n  description=\"Everyone in the workspace will be able to see this page.\"\n  tone=\"info\"\n  confirmLabel=\"Publish\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "PublishToTheTeam",
+        "lit": null,
+        "rn": "PublishToTheTeam",
+        "swift": null
+      },
+      "storyId": "alertdialog-react--publish-to-the-team",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
     }
   ]
 }

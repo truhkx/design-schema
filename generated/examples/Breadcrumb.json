@@ -27,8 +27,8 @@
         "collapse": true
       },
       "snippets": {
-        "react": "import { Breadcrumb } from '@design-schema/react';\n\nconst shortTrail = [\n  { label: 'Settings', href: '/settings' },\n  { label: 'Notifications', href: '/settings/notifications' },\n  { label: 'Email digest' },\n];\n\n<Breadcrumb items={shortTrail} />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { BreadcrumbItem, BreadcrumbNavigateDetail } from '@design-schema/lit';\n\nconst shortTrail: BreadcrumbItem[] = [\n  { label: 'Docs', href: '#docs' },\n  { label: 'Components', href: '#components' },\n  { label: 'Breadcrumb' },\n];\n\nhtml`\n  <ds-breadcrumb\n    .items=${shortTrail}\n    @navigate=${(event: CustomEvent<BreadcrumbNavigateDetail>) => event.detail.originalEvent.preventDefault()}\n  ></ds-breadcrumb>\n`;",
+        "react": "import { Breadcrumb } from '@design-schema/react';\n\n<Breadcrumb\n  items={[\n    { label: 'Settings', href: '/settings' },\n    { label: 'Notifications', href: '/settings/notifications' },\n    { label: 'Email digest' },\n  ]}\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { BreadcrumbNavigateDetail } from '@design-schema/lit';\n\nhtml`\n      <ds-breadcrumb\n        .items=${[\n    { label: 'Docs', href: '/docs' },\n    { label: 'Components', href: '/docs/components' },\n    { label: 'Breadcrumb' },\n  ]}\n        @navigate=${(event: CustomEvent<BreadcrumbNavigateDetail>) => event.preventDefault()}\n      ></ds-breadcrumb>\n`;",
         "rn": "import { Breadcrumb } from '@design-schema/rn';\n\n<Breadcrumb\n  items={[\n    { label: 'Docs', href: '/docs' },\n    { label: 'Components', href: '/docs/components' },\n    { label: 'Breadcrumb' },\n  ]}\n/>",
         "swift": null
       },
@@ -44,7 +44,7 @@
       "primary": true
     },
     {
-      "title": "Collapsed",
+      "title": "Collapse True",
       "args": {
         "items": [
           {
@@ -62,10 +62,6 @@
           {
             "label": "Breadcrumb",
             "href": "/docs/components/navigation/breadcrumb"
-          },
-          {
-            "label": "Accessibility",
-            "href": "/docs/components/navigation/breadcrumb/accessibility"
           },
           {
             "label": "Keyboard"
@@ -75,24 +71,24 @@
         "collapse": true
       },
       "snippets": {
-        "react": "import { Breadcrumb } from '@design-schema/react';\n\nconst longTrail = [\n  { label: 'Docs', href: '/docs' },\n  { label: 'Components', href: '/docs/components' },\n  { label: 'Navigation', href: '/docs/components/navigation' },\n  { label: 'Breadcrumb', href: '/docs/components/navigation/breadcrumb' },\n  { label: 'Accessibility', href: '/docs/components/navigation/breadcrumb/accessibility' },\n  { label: 'Keyboard' },\n];\n\n<Breadcrumb items={longTrail} collapse />",
+        "react": "import { Breadcrumb } from '@design-schema/react';\n\n<Breadcrumb\n  items={[\n    { label: 'Docs', href: '/docs' },\n    { label: 'Components', href: '/docs/components' },\n    { label: 'Navigation', href: '/docs/components/navigation' },\n    { label: 'Breadcrumb', href: '/docs/components/navigation/breadcrumb' },\n    { label: 'Keyboard' },\n  ]}\n  collapse\n/>",
         "lit": null,
-        "rn": "import { Breadcrumb } from '@design-schema/rn';\n\nconst longTrail = [\n  { label: 'Docs', href: '/docs' },\n  { label: 'Guides', href: '/docs/guides' },\n  { label: 'Forms', href: '/docs/guides/forms' },\n  { label: 'Validation', href: '/docs/guides/forms/validation' },\n  { label: 'Errors', href: '/docs/guides/forms/validation/errors' },\n  { label: 'Summary' },\n];\n\n<Breadcrumb items={longTrail} collapse />",
+        "rn": "import { Breadcrumb } from '@design-schema/rn';\n\nconst deepTrail = [\n  { label: 'Docs', href: '/docs' },\n  { label: 'Components', href: '/docs/components' },\n  { label: 'Navigation', href: '/docs/components/navigation' },\n  { label: 'Breadcrumb', href: '/docs/components/navigation/breadcrumb' },\n  { label: 'Keyboard' },\n];\n\n<Breadcrumb items={deepTrail} collapse />",
         "swift": null
       },
       "stories": {
-        "react": "Collapsed",
+        "react": "CollapseTrue",
         "lit": null,
-        "rn": "Collapsed",
+        "rn": "CollapseTrue",
         "swift": null
       },
-      "storyId": "breadcrumb-react--collapsed",
+      "storyId": "breadcrumb-react--collapse-true",
       "sweep": null,
       "decorated": false,
       "primary": true
     },
     {
-      "title": "Not Collapsed",
+      "title": "Collapse False",
       "args": {
         "items": [
           {
@@ -112,10 +108,6 @@
             "href": "/docs/components/navigation/breadcrumb"
           },
           {
-            "label": "Accessibility",
-            "href": "/docs/components/navigation/breadcrumb/accessibility"
-          },
-          {
             "label": "Keyboard"
           }
         ],
@@ -123,24 +115,24 @@
         "collapse": false
       },
       "snippets": {
-        "react": "import { Breadcrumb } from '@design-schema/react';\n\nconst longTrail = [\n  { label: 'Docs', href: '/docs' },\n  { label: 'Components', href: '/docs/components' },\n  { label: 'Navigation', href: '/docs/components/navigation' },\n  { label: 'Breadcrumb', href: '/docs/components/navigation/breadcrumb' },\n  { label: 'Accessibility', href: '/docs/components/navigation/breadcrumb/accessibility' },\n  { label: 'Keyboard' },\n];\n\n<Breadcrumb items={longTrail} collapse={false} />",
+        "react": "import { Breadcrumb } from '@design-schema/react';\n\n<Breadcrumb\n  items={[\n    { label: 'Docs', href: '/docs' },\n    { label: 'Components', href: '/docs/components' },\n    { label: 'Navigation', href: '/docs/components/navigation' },\n    { label: 'Breadcrumb', href: '/docs/components/navigation/breadcrumb' },\n    { label: 'Keyboard' },\n  ]}\n  collapse={false}\n/>",
         "lit": null,
-        "rn": null,
+        "rn": "import { Breadcrumb } from '@design-schema/rn';\n\nconst deepTrail = [\n  { label: 'Docs', href: '/docs' },\n  { label: 'Components', href: '/docs/components' },\n  { label: 'Navigation', href: '/docs/components/navigation' },\n  { label: 'Breadcrumb', href: '/docs/components/navigation/breadcrumb' },\n  { label: 'Keyboard' },\n];\n\n<Breadcrumb items={deepTrail} collapse={false} />",
         "swift": null
       },
       "stories": {
-        "react": "NotCollapsed",
+        "react": "CollapseFalse",
         "lit": null,
-        "rn": null,
+        "rn": "CollapseFalse",
         "swift": null
       },
-      "storyId": "breadcrumb-react--not-collapsed",
+      "storyId": "breadcrumb-react--collapse-false",
       "sweep": null,
       "decorated": false,
       "primary": true
     },
     {
-      "title": "Custom Label",
+      "title": "Settings Trail",
       "args": {
         "items": [
           {
@@ -155,28 +147,72 @@
             "label": "Email digest"
           }
         ],
-        "label": "Document location",
+        "label": "Breadcrumb",
         "collapse": true
       },
       "snippets": {
-        "react": "import { Breadcrumb } from '@design-schema/react';\n\nconst shortTrail = [\n  { label: 'Settings', href: '/settings' },\n  { label: 'Notifications', href: '/settings/notifications' },\n  { label: 'Email digest' },\n];\n\n<Breadcrumb items={shortTrail} label=\"Document location\" />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { BreadcrumbItem, BreadcrumbNavigateDetail } from '@design-schema/lit';\n\nconst longTrail: BreadcrumbItem[] = [\n  { label: 'Catalogue', href: '#catalogue' },\n  { label: 'Hardware', href: '#hardware' },\n  { label: 'Storage', href: '#storage' },\n  { label: 'Solid state', href: '#ssd' },\n  { label: 'NVMe', href: '#nvme' },\n  { label: '2 TB' },\n];\n\nhtml`\n  <ds-breadcrumb\n    .items=${longTrail}\n    label=\"Catalogue location\"\n    @navigate=${(event: CustomEvent<BreadcrumbNavigateDetail>) => event.detail.originalEvent.preventDefault()}\n  ></ds-breadcrumb>\n`;",
-        "rn": null,
+        "react": "import { Breadcrumb } from '@design-schema/react';\n\n<Breadcrumb\n  items={[\n    { label: 'Settings', href: '/settings' },\n    { label: 'Notifications', href: '/settings/notifications' },\n    { label: 'Email digest' },\n  ]}\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { BreadcrumbNavigateDetail } from '@design-schema/lit';\n\nhtml`\n      <ds-breadcrumb\n        .items=${[\n    { label: 'Settings', href: '/settings' },\n    { label: 'Notifications', href: '/settings/notifications' },\n    { label: 'Email digest' },\n  ]}\n        @navigate=${(event: CustomEvent<BreadcrumbNavigateDetail>) => event.preventDefault()}\n      ></ds-breadcrumb>\n`;",
+        "rn": "import { Breadcrumb } from '@design-schema/rn';\n\n<Breadcrumb\n  items={[\n    { label: 'Settings', href: '/settings' },\n    { label: 'Notifications', href: '/settings/notifications' },\n    { label: 'Email digest' },\n  ]}\n/>",
         "swift": null
       },
       "stories": {
-        "react": "CustomLabel",
-        "lit": "CustomLabel",
-        "rn": null,
+        "react": "SettingsTrail",
+        "lit": "SettingsTrail",
+        "rn": "SettingsTrail",
         "swift": null
       },
-      "storyId": "breadcrumb-react--custom-label",
+      "storyId": "breadcrumb-react--settings-trail",
       "sweep": null,
       "decorated": false,
       "primary": true
     },
     {
-      "title": "Two Levels",
+      "title": "Deep Trail Collapsed",
+      "args": {
+        "items": [
+          {
+            "label": "Docs",
+            "href": "/docs"
+          },
+          {
+            "label": "Components",
+            "href": "/docs/components"
+          },
+          {
+            "label": "Navigation",
+            "href": "/docs/components/navigation"
+          },
+          {
+            "label": "Breadcrumb",
+            "href": "/docs/components/navigation/breadcrumb"
+          },
+          {
+            "label": "Keyboard"
+          }
+        ],
+        "label": "Breadcrumb",
+        "collapse": true
+      },
+      "snippets": {
+        "react": "import { Breadcrumb } from '@design-schema/react';\n\n<Breadcrumb\n  items={[\n    { label: 'Docs', href: '/docs' },\n    { label: 'Components', href: '/docs/components' },\n    { label: 'Navigation', href: '/docs/components/navigation' },\n    { label: 'Breadcrumb', href: '/docs/components/navigation/breadcrumb' },\n    { label: 'Keyboard' },\n  ]}\n  collapse\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { BreadcrumbNavigateDetail } from '@design-schema/lit';\n\nhtml`\n      <ds-breadcrumb\n        .items=${[\n    { label: 'Docs', href: '/docs' },\n    { label: 'Components', href: '/docs/components' },\n    { label: 'Navigation', href: '/docs/components/navigation' },\n    { label: 'Breadcrumb', href: '/docs/components/navigation/breadcrumb' },\n    { label: 'Keyboard' },\n  ]}\n        @navigate=${(event: CustomEvent<BreadcrumbNavigateDetail>) => event.preventDefault()}\n      ></ds-breadcrumb>\n`;",
+        "rn": "import { Breadcrumb } from '@design-schema/rn';\n\nconst deepTrail = [\n  { label: 'Docs', href: '/docs' },\n  { label: 'Components', href: '/docs/components' },\n  { label: 'Navigation', href: '/docs/components/navigation' },\n  { label: 'Breadcrumb', href: '/docs/components/navigation/breadcrumb' },\n  { label: 'Keyboard' },\n];\n\n<Breadcrumb items={deepTrail} collapse />",
+        "swift": null
+      },
+      "stories": {
+        "react": "DeepTrailCollapsed",
+        "lit": "DeepTrailCollapsed",
+        "rn": "DeepTrailCollapsed",
+        "swift": null
+      },
+      "storyId": "breadcrumb-react--deep-trail-collapsed",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Always In Full",
       "args": {
         "items": [
           {
@@ -184,25 +220,96 @@
             "href": "/catalogue"
           },
           {
-            "label": "Chairs"
+            "label": "Outdoor",
+            "href": "/catalogue/outdoor"
+          },
+          {
+            "label": "Tents"
+          }
+        ],
+        "label": "Breadcrumb",
+        "collapse": false
+      },
+      "snippets": {
+        "react": "import { Breadcrumb } from '@design-schema/react';\n\n<Breadcrumb\n  items={[\n    { label: 'Catalogue', href: '/catalogue' },\n    { label: 'Outdoor', href: '/catalogue/outdoor' },\n    { label: 'Tents' },\n  ]}\n  collapse={false}\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { BreadcrumbNavigateDetail } from '@design-schema/lit';\n\nhtml`\n      <ds-breadcrumb\n        .items=${[\n    { label: 'Catalogue', href: '/catalogue' },\n    { label: 'Outdoor', href: '/catalogue/outdoor' },\n    { label: 'Tents' },\n  ]}\n        no-collapse\n        @navigate=${(event: CustomEvent<BreadcrumbNavigateDetail>) => event.preventDefault()}\n      ></ds-breadcrumb>\n`;",
+        "rn": "import { Breadcrumb } from '@design-schema/rn';\n\n<Breadcrumb\n  items={[\n    { label: 'Catalogue', href: '/catalogue' },\n    { label: 'Outdoor', href: '/catalogue/outdoor' },\n    { label: 'Tents' },\n  ]}\n  collapse={false}\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "AlwaysInFull",
+        "lit": "AlwaysInFull",
+        "rn": "AlwaysInFull",
+        "swift": null
+      },
+      "storyId": "breadcrumb-react--always-in-full",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Second Breadcrumb On A Page",
+      "args": {
+        "items": [
+          {
+            "label": "Catalogue",
+            "href": "/catalogue"
+          },
+          {
+            "label": "Tents"
+          }
+        ],
+        "label": "Catalogue breadcrumb",
+        "collapse": true
+      },
+      "snippets": {
+        "react": "import { Breadcrumb } from '@design-schema/react';\n\n<Breadcrumb\n  items={[{ label: 'Catalogue', href: '/catalogue' }, { label: 'Tents' }]}\n  label=\"Catalogue breadcrumb\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { BreadcrumbNavigateDetail } from '@design-schema/lit';\n\nhtml`\n  <ds-breadcrumb\n    .items=${[{ label: 'Catalogue', href: '/catalogue' }, { label: 'Tents' }]}\n    label=\"Catalogue breadcrumb\"\n    @navigate=${(event: CustomEvent<BreadcrumbNavigateDetail>) => event.preventDefault()}\n  ></ds-breadcrumb>\n`;",
+        "rn": "import { Breadcrumb } from '@design-schema/rn';\n\n<Breadcrumb\n  items={[\n    { label: 'Catalogue', href: '/catalogue' },\n    { label: 'Tents' },\n  ]}\n  label=\"Catalogue breadcrumb\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "SecondBreadcrumbOnAPage",
+        "lit": "SecondBreadcrumbOnAPage",
+        "rn": "SecondBreadcrumbOnAPage",
+        "swift": null
+      },
+      "storyId": "breadcrumb-react--second-breadcrumb-on-a-page",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Ancestor Without Href",
+      "args": {
+        "items": [
+          {
+            "label": "Docs",
+            "href": "/docs"
+          },
+          {
+            "label": "Guides"
+          },
+          {
+            "label": "Theming"
           }
         ],
         "label": "Breadcrumb",
         "collapse": true
       },
       "snippets": {
-        "react": "import { Breadcrumb } from '@design-schema/react';\n\n<Breadcrumb\n  items={[{ label: 'Catalogue', href: '/catalogue' }, { label: 'Chairs' }]}\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { BreadcrumbNavigateDetail } from '@design-schema/lit';\n\nhtml`\n  <ds-breadcrumb\n    .items=${[{ label: 'Settings', href: '#settings' }, { label: 'Notifications' }]}\n    @navigate=${(event: CustomEvent<BreadcrumbNavigateDetail>) => event.detail.originalEvent.preventDefault()}\n  ></ds-breadcrumb>\n`;",
-        "rn": "import { Breadcrumb } from '@design-schema/rn';\n\n<Breadcrumb\n  items={[\n    { label: 'Settings', href: '/settings' },\n    { label: 'Notifications' },\n  ]}\n/>",
+        "react": "import { Breadcrumb } from '@design-schema/react';\n\n<Breadcrumb\n  items={[{ label: 'Docs', href: '/docs' }, { label: 'Guides' }, { label: 'Theming' }]}\n/>",
+        "lit": null,
+        "rn": "import { Breadcrumb } from '@design-schema/rn';\n\n<Breadcrumb\n  items={[\n    { label: 'Docs', href: '/docs' },\n    { label: 'Reference' },\n    { label: 'Tokens' },\n  ]}\n/>",
         "swift": null
       },
       "stories": {
-        "react": "TwoLevels",
-        "lit": "TwoLevels",
-        "rn": "TwoLevels",
+        "react": "AncestorWithoutHref",
+        "lit": null,
+        "rn": "AncestorWithoutHref",
         "swift": null
       },
-      "storyId": "breadcrumb-react--two-levels",
+      "storyId": "breadcrumb-react--ancestor-without-href",
       "sweep": null,
       "decorated": false,
       "primary": true

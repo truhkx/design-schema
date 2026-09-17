@@ -18,13 +18,13 @@
       },
       "snippets": {
         "react": "import { Link } from '@design-schema/react';\n\n<Link href=\"/billing/history\" label=\"View the billing history\" />",
-        "lit": "<ds-link href=\"#billing\" label=\"View the billing history\"></ds-link>",
-        "rn": "import { Link } from '@design-schema/rn';\n\n<Link href=\"https://example.com/billing\" label=\"View the billing history\" />",
+        "lit": null,
+        "rn": "import { Link } from '@design-schema/rn';\n\n<Link href=\"/billing/history\" label=\"View the billing history\" />",
         "swift": null
       },
       "stories": {
         "react": "Default",
-        "lit": "Default",
+        "lit": null,
         "rn": "Default",
         "swift": null
       },
@@ -44,13 +44,13 @@
       },
       "snippets": {
         "react": "import { Link } from '@design-schema/react';\n\n<Link href=\"/billing/history\" label=\"View the billing history\" tone=\"default\" />",
-        "lit": "<ds-link href=\"#billing\" label=\"View the billing history\" tone=\"default\"></ds-link>",
-        "rn": "import { Link } from '@design-schema/rn';\n\n<Link\n  href=\"https://example.com/billing\"\n  label=\"View the billing history\"\n  tone=\"default\"\n/>",
+        "lit": null,
+        "rn": "import { Link } from '@design-schema/rn';\n\n<Link href=\"/billing/history\" label=\"View the billing history\" tone=\"default\" />",
         "swift": null
       },
       "stories": {
         "react": "ToneDefault",
-        "lit": "ToneDefault",
+        "lit": null,
         "rn": "ToneDefault",
         "swift": null
       },
@@ -60,21 +60,21 @@
         "value": "default"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Tone Inherit",
       "args": {
-        "href": "/privacy",
-        "label": "privacy policy",
+        "href": "/billing/history",
+        "label": "View the billing history",
         "external": false,
         "tone": "inherit",
         "download": false
       },
       "snippets": {
-        "react": "import { Link, Text } from '@design-schema/react';\n\n<Text tone=\"muted\" size=\"sm\">\n  By continuing you agree to the <Link href=\"/privacy\" label=\"privacy policy\" tone=\"inherit\" />.\n</Text>",
-        "lit": "<ds-text tone=\"muted\">Your trial ends in 3 days.\n  <ds-link href=\"#billing\" label=\"Compare plans\" tone=\"inherit\"></ds-link>.</ds-text>",
-        "rn": "import { Link, Text } from '@design-schema/rn';\n\n<Text tone=\"muted\">\n  Read the <Link href=\"https://example.com/billing\" tone=\"inherit\" label=\"terms of service\" /> before you continue.\n</Text>",
+        "react": "import { Link, Text } from '@design-schema/react';\n\n<Text tone=\"muted\">\n  <Link\n    href=\"/billing/history\"\n    label=\"View the billing history\"\n    tone=\"inherit\"\n  />\n</Text>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\nimport type { LinkTone } from '@design-schema/lit';\n\ninterface LinkArgs {\n  href: string;\n  label: string;\n  external: boolean;\n  tone: LinkTone;\n  download: boolean;\n}\n\nconst link = (args: LinkArgs): TemplateResult => html`<ds-link\n  href=${args.href}\n  label=${args.label}\n  tone=${args.tone}\n  ?external=${args.external}\n  ?download=${args.download}\n></ds-link>`;\n\nhtml`\n  <ds-text tone=\"muted\">See ${link({ href: '#billing', label: 'View the billing history', tone: 'inherit' })}.</ds-text>\n`;",
+        "rn": "import { Link, Text } from '@design-schema/rn';\n\n<Text tone=\"muted\">\n  <Link\n    href=\"/billing/history\"\n    label=\"View the billing history\"\n    tone=\"inherit\"\n  />.\n</Text>",
         "swift": null
       },
       "stories": {
@@ -91,22 +91,22 @@
     {
       "title": "External",
       "args": {
-        "href": "https://example.com/docs",
-        "label": "Example documentation",
+        "href": "/billing/history",
+        "label": "View the billing history",
         "external": true,
         "tone": "default",
         "download": false
       },
       "snippets": {
-        "react": "import { Link } from '@design-schema/react';\n\n<Link href=\"https://example.com/docs\" label=\"Example documentation\" external />",
-        "lit": "<ds-link href=\"https://www.w3.org/WAI/ARIA/apg/\" label=\"ARIA Authoring Practices Guide\" external></ds-link>",
-        "rn": "import { Link } from '@design-schema/rn';\n\n<Link href=\"https://status.example.com\" label=\"Status page\" external />",
+        "react": "import { Link } from '@design-schema/react';\n\n<Link href=\"/billing/history\" label=\"View the billing history\" external />",
+        "lit": null,
+        "rn": null,
         "swift": null
       },
       "stories": {
         "react": "External",
-        "lit": "ExternalTrue",
-        "rn": "External",
+        "lit": null,
+        "rn": null,
         "swift": null
       },
       "storyId": "link-react--external",
@@ -120,21 +120,21 @@
     {
       "title": "Download",
       "args": {
-        "href": "/invoices/2026-09.pdf",
-        "label": "Invoice for September",
+        "href": "/billing/history",
+        "label": "View the billing history",
         "external": false,
         "tone": "default",
         "download": true
       },
       "snippets": {
-        "react": "import { Link } from '@design-schema/react';\n\n<Link href=\"/invoices/2026-09.pdf\" label=\"Invoice for September\" download />",
-        "lit": "<ds-link href=\"/invoice-2026-09.pdf\" label=\"Download invoice (PDF)\" download></ds-link>",
+        "react": "import { Link } from '@design-schema/react';\n\n<Link href=\"/billing/history\" label=\"View the billing history\" download />",
+        "lit": null,
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "Download",
-        "lit": "DownloadTrue",
+        "lit": null,
         "rn": null,
         "swift": null
       },
@@ -147,7 +147,7 @@
       "primary": true
     },
     {
-      "title": "Inline",
+      "title": "Inline In A Paragraph",
       "args": {
         "href": "/billing/history",
         "label": "View the billing history",
@@ -156,21 +156,105 @@
         "download": false
       },
       "snippets": {
-        "react": "import { Link, Text } from '@design-schema/react';\n\n<Text>\n  Your plan renews on 1 October. <Link href=\"/billing/history\" label=\"View the billing history\" /> to see previous charges.\n</Text>",
-        "lit": "<ds-text>Screen-reader users navigate by pulling up a list of links, so\n  <ds-link href=\"#billing\" label=\"link text should describe the destination\"></ds-link>\n  and make sense out of context.</ds-text>",
-        "rn": "import { Link, Text } from '@design-schema/rn';\n\n<Text>\n  Your plan renews on 1 October. <Link href=\"https://example.com/billing\" label=\"Manage your subscription\" /> to change it.\n</Text>",
+        "react": "import { Link, Text } from '@design-schema/react';\n\n<Text>\n  Invoices from the last twelve months are kept. <Link href=\"/billing/history\" label=\"View the billing history\" />.\n</Text>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\nimport type { LinkTone } from '@design-schema/lit';\n\ninterface LinkArgs {\n  href: string;\n  label: string;\n  external: boolean;\n  tone: LinkTone;\n  download: boolean;\n}\n\nconst link = (args: LinkArgs): TemplateResult => html`<ds-link\n  href=${args.href}\n  label=${args.label}\n  tone=${args.tone}\n  ?external=${args.external}\n  ?download=${args.download}\n></ds-link>`;\n\nhtml`\n  <ds-text>Invoices from the last twelve months are kept. ${link({ href: '/billing/history', label: 'View the billing history' })}.</ds-text>\n`;",
+        "rn": "import { Link, Text } from '@design-schema/rn';\n\n<Text>\n  Invoices from the last twelve months are kept. <Link href=\"/billing/history\" label=\"View the billing history\" />.\n</Text>",
         "swift": null
       },
       "stories": {
-        "react": "Inline",
-        "lit": "Inline",
-        "rn": "Inline",
+        "react": "InlineInAParagraph",
+        "lit": "InlineInAParagraph",
+        "rn": "InlineInAParagraph",
         "swift": null
       },
-      "storyId": "link-react--inline",
+      "storyId": "link-react--inline-in-a-paragraph",
       "sweep": null,
       "decorated": false,
       "primary": true
+    },
+    {
+      "title": "External Destination",
+      "args": {
+        "href": "https://status.example.com",
+        "label": "Status page",
+        "external": true,
+        "tone": "default",
+        "download": false
+      },
+      "snippets": {
+        "react": "import { Link } from '@design-schema/react';\n\n<Link href=\"https://status.example.com\" label=\"Status page\" external />",
+        "lit": null,
+        "rn": "import { Link } from '@design-schema/rn';\n\n<Link href=\"https://status.example.com\" label=\"Status page\" external />",
+        "swift": null
+      },
+      "stories": {
+        "react": "ExternalDestination",
+        "lit": null,
+        "rn": "ExternalDestination",
+        "swift": null
+      },
+      "storyId": "link-react--external-destination",
+      "sweep": {
+        "prop": "external",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Inside Muted Text",
+      "args": {
+        "href": "/help/billing",
+        "label": "the billing guide",
+        "external": false,
+        "tone": "inherit",
+        "download": false
+      },
+      "snippets": {
+        "react": "import { Link, Text } from '@design-schema/react';\n\n<Text tone=\"muted\">\n  For how charges are calculated, read <Link\n    href=\"/help/billing\"\n    label=\"the billing guide\"\n    tone=\"inherit\"\n  />.\n</Text>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\nimport type { LinkTone } from '@design-schema/lit';\n\ninterface LinkArgs {\n  href: string;\n  label: string;\n  external: boolean;\n  tone: LinkTone;\n  download: boolean;\n}\n\nconst link = (args: LinkArgs): TemplateResult => html`<ds-link\n  href=${args.href}\n  label=${args.label}\n  tone=${args.tone}\n  ?external=${args.external}\n  ?download=${args.download}\n></ds-link>`;\n\nhtml`\n  <ds-text tone=\"muted\">For how charges are calculated, read ${link({ href: '/help/billing', label: 'the billing guide', tone: 'inherit' })}.</ds-text>\n`;",
+        "rn": "import { Link, Text } from '@design-schema/rn';\n\n<Text tone=\"muted\">\n  For how charges are calculated, read <Link\n    href=\"/help/billing\"\n    label=\"the billing guide\"\n    tone=\"inherit\"\n  />.\n</Text>",
+        "swift": null
+      },
+      "stories": {
+        "react": "InsideMutedText",
+        "lit": "InsideMutedText",
+        "rn": "InsideMutedText",
+        "swift": null
+      },
+      "storyId": "link-react--inside-muted-text",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Downloadable File",
+      "args": {
+        "href": "/invoices/2026-09.pdf",
+        "label": "Download the September invoice",
+        "external": false,
+        "tone": "default",
+        "download": true
+      },
+      "snippets": {
+        "react": "import { Link } from '@design-schema/react';\n\n<Link\n  href=\"/invoices/2026-09.pdf\"\n  label=\"Download the September invoice\"\n  download\n/>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "DownloadableFile",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "link-react--downloadable-file",
+      "sweep": {
+        "prop": "download",
+        "value": true
+      },
+      "decorated": false,
+      "primary": false
     }
   ]
 }

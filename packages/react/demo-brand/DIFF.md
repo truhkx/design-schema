@@ -16,43 +16,44 @@ hold for the mechanism to be what it claims to be:
    hooks, and every HTML element name appears in the renamed file exactly as it does in the
    canonical one.
 
-**Result: 593 name(s) differ across 24 file(s), 0 of them unexplained.**
+**Result: 640 name(s) differ across 25 file(s), 0 of them unexplained.**
 
 ## What moved, by kind
 
 | Kind of identifier           | Occurrences |
 | ---------------------------- | ----------- |
-| file name                    | 14          |
-| component name               | 138         |
-| prop name                    | 22          |
-| class or custom-element name | 160         |
-| CSS custom-property prefix   | 266         |
+| file name                    | 15          |
+| component name               | 150         |
+| prop name                    | 30          |
+| class or custom-element name | 172         |
+| CSS custom-property prefix   | 281         |
 | package scope                | 7           |
 
 ## File by file
 
 | Canonical                        | Renamed                | Names | Differ | Kinds                                                                                                         |
 | -------------------------------- | ---------------------- | ----- | ------ | ------------------------------------------------------------------------------------------------------------- |
-| src/Alert.css                    | Callout.css            | 266   | 62     | CSS custom-property prefix, class or custom-element name, component name, file name                           |
-| src/Alert.stories.tsx            | Callout.stories.tsx    | 199   | 5      | component name, file name                                                                                     |
-| src/Alert.test.tsx               | Callout.test.tsx       | 216   | 10     | component name, file name                                                                                     |
-| src/Alert.tsx                    | Callout.tsx            | 715   | 41     | CSS custom-property prefix, class or custom-element name, component name, file name, package scope, prop name |
-| src/Button.css                   | CtaButton.css          | 409   | 88     | CSS custom-property prefix, class or custom-element name, component name, file name                           |
-| src/Button.stories.tsx           | CtaButton.stories.tsx  | 218   | 13     | component name, file name, prop name                                                                          |
-| src/Button.test.tsx              | CtaButton.test.tsx     | 307   | 15     | component name, file name, prop name                                                                          |
-| src/Button.tsx                   | CtaButton.tsx          | 775   | 44     | CSS custom-property prefix, class or custom-element name, component name, file name, package scope, prop name |
-| src/Disclosure.css               | Expander.css           | 311   | 54     | CSS custom-property prefix, class or custom-element name, component name, file name                           |
-| src/Disclosure.stories.tsx       | Expander.stories.tsx   | 219   | 10     | component name, file name                                                                                     |
-| src/Disclosure.tsx               | Expander.tsx           | 818   | 36     | CSS custom-property prefix, class or custom-element name, component name, file name, package scope            |
-| src/FormContext.ts               | (same name)            | 281   | 0      | —                                                                                                             |
+| src/Alert.css                    | Callout.css            | 300   | 69     | CSS custom-property prefix, class or custom-element name, component name, file name                           |
+| src/Alert.stories.tsx            | Callout.stories.tsx    | 241   | 5      | component name, file name                                                                                     |
+| src/Alert.test.tsx               | Callout.test.tsx       | 279   | 9      | component name, file name                                                                                     |
+| src/Alert.tsx                    | Callout.tsx            | 891   | 41     | CSS custom-property prefix, class or custom-element name, component name, file name, package scope, prop name |
+| src/Button.css                   | CtaButton.css          | 488   | 98     | CSS custom-property prefix, class or custom-element name, component name, file name                           |
+| src/Button.stories.tsx           | CtaButton.stories.tsx  | 379   | 19     | component name, file name, prop name                                                                          |
+| src/Button.test.tsx              | CtaButton.test.tsx     | 528   | 15     | component name, file name, prop name                                                                          |
+| src/Button.tsx                   | CtaButton.tsx          | 1087  | 51     | CSS custom-property prefix, class or custom-element name, component name, file name, package scope, prop name |
+| src/Disclosure.css               | Expander.css           | 356   | 56     | CSS custom-property prefix, class or custom-element name, component name, file name                           |
+| src/Disclosure.stories.tsx       | Expander.stories.tsx   | 298   | 10     | component name, file name                                                                                     |
+| src/Disclosure.test.tsx          | Expander.test.tsx      | 366   | 10     | component name, file name                                                                                     |
+| src/Disclosure.tsx               | Expander.tsx           | 954   | 38     | CSS custom-property prefix, class or custom-element name, component name, file name, package scope            |
+| src/FormContext.ts               | (same name)            | 307   | 0      | —                                                                                                             |
 | src/Icon.css                     | (same name)            | 222   | 24     | CSS custom-property prefix, class or custom-element name, component name                                      |
-| src/Icon.tsx                     | (same name)            | 1094  | 14     | CSS custom-property prefix, class or custom-element name, component name, package scope                       |
-| src/Link.css                     | (same name)            | 210   | 34     | CSS custom-property prefix, class or custom-element name                                                      |
-| src/Link.tsx                     | (same name)            | 466   | 11     | CSS custom-property prefix, class or custom-element name, package scope                                       |
-| src/Stack.css                    | (same name)            | 160   | 29     | CSS custom-property prefix, class or custom-element name                                                      |
-| src/Stack.tsx                    | (same name)            | 475   | 10     | CSS custom-property prefix, class or custom-element name, package scope                                       |
-| src/Text.css                     | (same name)            | 150   | 40     | CSS custom-property prefix, class or custom-element name                                                      |
-| src/Text.tsx                     | (same name)            | 565   | 16     | CSS custom-property prefix, class or custom-element name, package scope                                       |
+| src/Icon.tsx                     | (same name)            | 1103  | 18     | CSS custom-property prefix, class or custom-element name, component name, package scope                       |
+| src/Link.css                     | (same name)            | 223   | 34     | CSS custom-property prefix, class or custom-element name                                                      |
+| src/Link.tsx                     | (same name)            | 568   | 11     | CSS custom-property prefix, class or custom-element name, package scope                                       |
+| src/Stack.css                    | (same name)            | 164   | 27     | CSS custom-property prefix, class or custom-element name                                                      |
+| src/Stack.tsx                    | (same name)            | 586   | 10     | CSS custom-property prefix, class or custom-element name, package scope                                       |
+| src/Text.css                     | (same name)            | 171   | 41     | CSS custom-property prefix, class or custom-element name                                                      |
+| src/Text.tsx                     | (same name)            | 610   | 17     | CSS custom-property prefix, class or custom-element name, package scope                                       |
 | src/custom/analytics.ts          | (same name)            | 65    | 0      | —                                                                                                             |
 | behavior/Alert.web.test.tsx      | Callout.web.test.tsx   | 315   | 11     | component name, file name                                                                                     |
 | behavior/Button.web.test.tsx     | CtaButton.web.test.tsx | 576   | 15     | component name, file name, prop name                                                                          |
@@ -67,19 +68,20 @@ hold for the mechanism to be what it claims to be:
 | `--ds-alert-border`                        | `--demo-alert-border`                        | CSS custom-property prefix   | 7           |
 | `--ds-alert-border-width`                  | `--demo-alert-border-width`                  | CSS custom-property prefix   | 3           |
 | `--ds-alert-dismiss-margin`                | `--demo-alert-dismiss-margin`                | CSS custom-property prefix   | 4           |
+| `--ds-alert-first-line`                    | `--demo-alert-first-line`                    | CSS custom-property prefix   | 3           |
 | `--ds-alert-font-family`                   | `--demo-alert-font-family`                   | CSS custom-property prefix   | 3           |
 | `--ds-alert-font-size`                     | `--demo-alert-font-size`                     | CSS custom-property prefix   | 4           |
 | `--ds-alert-foreground`                    | `--demo-alert-foreground`                    | CSS custom-property prefix   | 6           |
 | `--ds-alert-gap`                           | `--demo-alert-gap`                           | CSS custom-property prefix   | 3           |
-| `--ds-alert-heading-size`                  | `--demo-alert-heading-size`                  | CSS custom-property prefix   | 3           |
+| `--ds-alert-heading-size`                  | `--demo-alert-heading-size`                  | CSS custom-property prefix   | 4           |
 | `--ds-alert-heading-weight`                | `--demo-alert-heading-weight`                | CSS custom-property prefix   | 3           |
 | `--ds-alert-icon-size`                     | `--demo-alert-icon-size`                     | CSS custom-property prefix   | 3           |
-| `--ds-alert-line-height`                   | `--demo-alert-line-height`                   | CSS custom-property prefix   | 4           |
+| `--ds-alert-line-height`                   | `--demo-alert-line-height`                   | CSS custom-property prefix   | 5           |
 | `--ds-alert-padding`                       | `--demo-alert-padding`                       | CSS custom-property prefix   | 3           |
 | `--ds-alert-part-gap`                      | `--demo-alert-part-gap`                      | CSS custom-property prefix   | 3           |
 | `--ds-alert-radius`                        | `--demo-alert-radius`                        | CSS custom-property prefix   | 3           |
 | `--ds-button-background`                   | `--demo-button-background`                   | CSS custom-property prefix   | 6           |
-| `--ds-button-background-hover`             | `--demo-button-background-hover`             | CSS custom-property prefix   | 8           |
+| `--ds-button-background-hover`             | `--demo-button-background-hover`             | CSS custom-property prefix   | 7           |
 | `--ds-button-disabled-opacity`             | `--demo-button-disabled-opacity`             | CSS custom-property prefix   | 3           |
 | `--ds-button-focus-ring`                   | `--demo-button-focus-ring`                   | CSS custom-property prefix   | 3           |
 | `--ds-button-focus-ring-width`             | `--demo-button-focus-ring-width`             | CSS custom-property prefix   | 3           |
@@ -88,15 +90,18 @@ hold for the mechanism to be what it claims to be:
 | `--ds-button-font-weight`                  | `--demo-button-font-weight`                  | CSS custom-property prefix   | 3           |
 | `--ds-button-foreground`                   | `--demo-button-foreground`                   | CSS custom-property prefix   | 7           |
 | `--ds-button-icon-gap`                     | `--demo-button-icon-gap`                     | CSS custom-property prefix   | 3           |
+| `--ds-button-inverse-background-hover`     | `--demo-button-inverse-background-hover`     | CSS custom-property prefix   | 3           |
 | `--ds-button-inverse-focus-ring`           | `--demo-button-inverse-focus-ring`           | CSS custom-property prefix   | 2           |
 | `--ds-button-inverse-foreground`           | `--demo-button-inverse-foreground`           | CSS custom-property prefix   | 2           |
+| `--ds-button-inverse-hover-opacity`        | `--demo-button-inverse-hover-opacity`        | CSS custom-property prefix   | 3           |
 | `--ds-button-loading-spin`                 | `--demo-button-loading-spin`                 | CSS custom-property prefix   | 3           |
 | `--ds-button-min-target`                   | `--demo-button-min-target`                   | CSS custom-property prefix   | 3           |
 | `--ds-button-padding-block`                | `--demo-button-padding-block`                | CSS custom-property prefix   | 3           |
 | `--ds-button-padding-inline`               | `--demo-button-padding-inline`               | CSS custom-property prefix   | 7           |
 | `--ds-button-radius`                       | `--demo-button-radius`                       | CSS custom-property prefix   | 3           |
-| `--ds-button-spinner-stroke`               | `--demo-button-spinner-stroke`               | CSS custom-property prefix   | 3           |
-| `--ds-button-transition`                   | `--demo-button-transition`                   | CSS custom-property prefix   | 4           |
+| `--ds-button-spinner-size`                 | `--demo-button-spinner-size`                 | CSS custom-property prefix   | 7           |
+| `--ds-button-spinner-stroke`               | `--demo-button-spinner-stroke`               | CSS custom-property prefix   | 2           |
+| `--ds-button-transition`                   | `--demo-button-transition`                   | CSS custom-property prefix   | 3           |
 | `--ds-disclosure-disabled-opacity`         | `--demo-disclosure-disabled-opacity`         | CSS custom-property prefix   | 3           |
 | `--ds-disclosure-focus-ring`               | `--demo-disclosure-focus-ring`               | CSS custom-property prefix   | 2           |
 | `--ds-disclosure-focus-ring-width`         | `--demo-disclosure-focus-ring-width`         | CSS custom-property prefix   | 3           |
@@ -115,8 +120,8 @@ hold for the mechanism to be what it claims to be:
 | `--ds-disclosure-trigger-padding-block`    | `--demo-disclosure-trigger-padding-block`    | CSS custom-property prefix   | 3           |
 | `--ds-disclosure-trigger-padding-inline`   | `--demo-disclosure-trigger-padding-inline`   | CSS custom-property prefix   | 3           |
 | `--ds-disclosure-trigger-radius`           | `--demo-disclosure-trigger-radius`           | CSS custom-property prefix   | 3           |
-| `--ds-icon-color`                          | `--demo-icon-color`                          | CSS custom-property prefix   | 3           |
-| `--ds-icon-size`                           | `--demo-icon-size`                           | CSS custom-property prefix   | 11          |
+| `--ds-icon-color`                          | `--demo-icon-color`                          | CSS custom-property prefix   | 4           |
+| `--ds-icon-size`                           | `--demo-icon-size`                           | CSS custom-property prefix   | 12          |
 | `--ds-icon-stroke-width`                   | `--demo-icon-stroke-width`                   | CSS custom-property prefix   | 3           |
 | `--ds-link-color`                          | `--demo-link-color`                          | CSS custom-property prefix   | 3           |
 | `--ds-link-color-hover`                    | `--demo-link-color-hover`                    | CSS custom-property prefix   | 3           |
@@ -128,13 +133,13 @@ hold for the mechanism to be what it claims to be:
 | `--ds-link-transition`                     | `--demo-link-transition`                     | CSS custom-property prefix   | 3           |
 | `--ds-link-underline-offset`               | `--demo-link-underline-offset`               | CSS custom-property prefix   | 3           |
 | `--ds-link-underline-thickness`            | `--demo-link-underline-thickness`            | CSS custom-property prefix   | 3           |
-| `--ds-stack-gap`                           | `--demo-stack-gap`                           | CSS custom-property prefix   | 11          |
+| `--ds-stack-gap`                           | `--demo-stack-gap`                           | CSS custom-property prefix   | 9           |
 | `--ds-text-color`                          | `--demo-text-color`                          | CSS custom-property prefix   | 6           |
 | `--ds-text-font-family`                    | `--demo-text-font-family`                    | CSS custom-property prefix   | 3           |
 | `--ds-text-font-size`                      | `--demo-text-font-size`                      | CSS custom-property prefix   | 7           |
 | `--ds-text-font-weight`                    | `--demo-text-font-weight`                    | CSS custom-property prefix   | 6           |
 | `--ds-text-line-height`                    | `--demo-text-line-height`                    | CSS custom-property prefix   | 3           |
-| `Alert`                                    | `Callout`                                    | component name               | 29          |
+| `Alert`                                    | `Callout`                                    | component name               | 31          |
 | `Alert.css`                                | `Callout.css`                                | file name                    | 1           |
 | `Alert.stories.tsx`                        | `Callout.stories.tsx`                        | file name                    | 1           |
 | `Alert.test.tsx`                           | `Callout.test.tsx`                           | file name                    | 1           |
@@ -142,9 +147,9 @@ hold for the mechanism to be what it claims to be:
 | `Alert.web.test.tsx`                       | `Callout.web.test.tsx`                       | file name                    | 1           |
 | `AlertLive`                                | `CalloutLive`                                | component name               | 2           |
 | `AlertOverridableBinding`                  | `CalloutOverridableBinding`                  | component name               | 5           |
-| `AlertProps`                               | `CalloutProps`                               | component name               | 8           |
+| `AlertProps`                               | `CalloutProps`                               | component name               | 5           |
 | `AlertTone`                                | `CalloutTone`                                | component name               | 2           |
-| `Button`                                   | `CtaButton`                                  | component name               | 34          |
+| `Button`                                   | `CtaButton`                                  | component name               | 35          |
 | `Button.css`                               | `CtaButton.css`                              | file name                    | 1           |
 | `Button.stories.tsx`                       | `CtaButton.stories.tsx`                      | file name                    | 1           |
 | `Button.test.tsx`                          | `CtaButton.test.tsx`                         | file name                    | 1           |
@@ -155,34 +160,36 @@ hold for the mechanism to be what it claims to be:
 | `ButtonSize`                               | `CtaButtonSize`                              | component name               | 2           |
 | `ButtonType`                               | `CtaButtonType`                              | component name               | 2           |
 | `ButtonVariant`                            | `CtaButtonVariant`                           | component name               | 2           |
-| `Disclosure`                               | `Expander`                                   | component name               | 25          |
+| `Disclosure`                               | `Expander`                                   | component name               | 33          |
 | `Disclosure.css`                           | `Expander.css`                               | file name                    | 1           |
 | `Disclosure.stories.tsx`                   | `Expander.stories.tsx`                       | file name                    | 1           |
+| `Disclosure.test.tsx`                      | `Expander.test.tsx`                          | file name                    | 1           |
 | `Disclosure.tsx`                           | `Expander.tsx`                               | file name                    | 1           |
 | `Disclosure.web.test.tsx`                  | `Expander.web.test.tsx`                      | file name                    | 1           |
 | `DisclosureHeadingLevel`                   | `ExpanderHeadingLevel`                       | component name               | 2           |
 | `DisclosureOverridableBinding`             | `ExpanderOverridableBinding`                 | component name               | 5           |
-| `DisclosureProps`                          | `ExpanderProps`                              | component name               | 5           |
-| `DisclosureToggleReason`                   | `ExpanderToggleReason`                       | component name               | 2           |
+| `DisclosureProps`                          | `ExpanderProps`                              | component name               | 7           |
+| `DisclosureToggleReason`                   | `ExpanderToggleReason`                       | component name               | 4           |
 | `design-schema`                            | `demo`                                       | package scope                | 7           |
-| `ds-alert`                                 | `demo-callout`                               | class or custom-element name | 7           |
-| `ds-alert__body`                           | `demo-callout__body`                         | class or custom-element name | 4           |
-| `ds-alert__content`                        | `demo-callout__content`                      | class or custom-element name | 2           |
+| `ds-alert`                                 | `demo-callout`                               | class or custom-element name | 8           |
+| `ds-alert__body`                           | `demo-callout__body`                         | class or custom-element name | 2           |
+| `ds-alert__content`                        | `demo-callout__content`                      | class or custom-element name | 3           |
 | `ds-alert__dismiss`                        | `demo-callout__dismiss`                      | class or custom-element name | 2           |
-| `ds-alert__heading`                        | `demo-callout__heading`                      | class or custom-element name | 2           |
-| `ds-alert__icon`                           | `demo-callout__icon`                         | class or custom-element name | 2           |
-| `ds-button`                                | `demo-cta-button`                            | class or custom-element name | 23          |
+| `ds-alert__heading`                        | `demo-callout__heading`                      | class or custom-element name | 3           |
+| `ds-alert__icon`                           | `demo-callout__icon`                         | class or custom-element name | 3           |
+| `ds-button`                                | `demo-cta-button`                            | class or custom-element name | 24          |
 | `ds-button-spin`                           | `demo-cta-button-spin`                       | class or custom-element name | 2           |
 | `ds-button__icon`                          | `demo-cta-button__icon`                      | class or custom-element name | 3           |
 | `ds-button__label`                         | `demo-cta-button__label`                     | class or custom-element name | 2           |
 | `ds-button__spinner`                       | `demo-cta-button__spinner`                   | class or custom-element name | 3           |
-| `ds-disclosure`                            | `demo-expander`                              | class or custom-element name | 4           |
+| `ds-button__visually-hidden`               | `demo-cta-button__visually-hidden`           | class or custom-element name | 2           |
+| `ds-disclosure`                            | `demo-expander`                              | class or custom-element name | 5           |
 | `ds-disclosure__heading`                   | `demo-expander__heading`                     | class or custom-element name | 2           |
-| `ds-disclosure__icon`                      | `demo-expander__icon`                        | class or custom-element name | 6           |
+| `ds-disclosure__icon`                      | `demo-expander__icon`                        | class or custom-element name | 7           |
 | `ds-disclosure__panel`                     | `demo-expander__panel`                       | class or custom-element name | 3           |
 | `ds-disclosure__summary`                   | `demo-expander__summary`                     | class or custom-element name | 1           |
-| `ds-disclosure__trigger`                   | `demo-expander__trigger`                     | class or custom-element name | 7           |
-| `ds-icon`                                  | `demo-icon`                                  | class or custom-element name | 12          |
+| `ds-disclosure__trigger`                   | `demo-expander__trigger`                     | class or custom-element name | 8           |
+| `ds-icon`                                  | `demo-icon`                                  | class or custom-element name | 14          |
 | `ds-input__description`                    | `demo-input__description`                    | class or custom-element name | 1           |
 | `ds-link`                                  | `demo-link`                                  | class or custom-element name | 11          |
 | `ds-link__external-icon`                   | `demo-link__external-icon`                   | class or custom-element name | 2           |
@@ -190,8 +197,8 @@ hold for the mechanism to be what it claims to be:
 | `ds-link__label`                           | `demo-link__label`                           | class or custom-element name | 1           |
 | `ds-stack`                                 | `demo-stack`                                 | class or custom-element name | 25          |
 | `ds-stack__item`                           | `demo-stack__item`                           | class or custom-element name | 2           |
-| `ds-text`                                  | `demo-text`                                  | class or custom-element name | 29          |
-| `variant`                                  | `emphasis`                                   | prop name                    | 22          |
+| `ds-text`                                  | `demo-text`                                  | class or custom-element name | 31          |
+| `variant`                                  | `emphasis`                                   | prop name                    | 30          |
 
 ## Prose collisions
 
@@ -204,9 +211,10 @@ ordinary word in the canonical prose* is read as the brand’s name on the way b
 changes wording. It never reaches the fork’s disk (the forward pass restores it) and no gate reads
 English, but it is worth knowing when choosing a brand name.
 
-| File           | Canonical                                            | After a revert                                      |
-| -------------- | ---------------------------------------------------- | --------------------------------------------------- |
-| src/Button.tsx | /** Visual emphasis. One primary button per view. */ | /** Visual variant. One primary button per view. */ |
+| File           | Canonical                                                                                    | After a revert                                                                              |
+| -------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| src/Button.tsx | * Visual emphasis. One primary button per view. These four are the whole set: there is no    | * Visual variant. One primary button per view. These four are the whole set: there is no    |
+| src/Button.tsx | * `outline` variant, and a bordered low-fill emphasis would be a new value here with its own | * `outline` variant, and a bordered low-fill variant would be a new value here with its own |
 
 ## Compatibility layer
 

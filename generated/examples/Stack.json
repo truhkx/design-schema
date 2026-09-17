@@ -16,45 +16,44 @@
         "justify": "start",
         "wrap": false,
         "element": "div",
-        "children": {
-          "$element": "Fragment",
-          "props": {},
-          "children": [
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Save changes"
-              },
-              "children": []
+        "children": [
+          {
+            "$element": "Button",
+            "props": {
+              "key": "save",
+              "label": "Save changes"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Cancel",
-                "variant": "secondary"
-              },
-              "children": []
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "cancel",
+              "label": "Cancel",
+              "variant": "secondary"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Delete file",
-                "variant": "danger"
-              },
-              "children": []
-            }
-          ]
-        }
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "delete",
+              "label": "Delete file",
+              "variant": "danger"
+            },
+            "children": []
+          }
+        ]
       },
       "snippets": {
-        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = (\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Delete file\" variant=\"danger\" />\n  </>\n);\n\n<Stack>{items}</Stack>",
-        "lit": "<ds-stack>\n  <ds-button label=\"Save changes\"></ds-button>\n  <ds-button variant=\"secondary\" label=\"Preview\"></ds-button>\n  <ds-button variant=\"ghost\" label=\"Cancel\"></ds-button>\n</ds-stack>",
+        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = [\n  <Button key=\"save\" label=\"Save changes\" />,\n  <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\n  <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\n];\n\n<Stack>{items}</Stack>",
+        "lit": null,
         "rn": "import { Button, Stack } from '@design-schema/rn';\n\n<Stack>\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Forgot password?\" variant=\"ghost\" />\n  </>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "Default",
-        "lit": "Default",
+        "lit": null,
         "rn": "Default",
         "swift": null
       },
@@ -72,45 +71,44 @@
         "justify": "start",
         "wrap": false,
         "element": "div",
-        "children": {
-          "$element": "Fragment",
-          "props": {},
-          "children": [
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Save changes"
-              },
-              "children": []
+        "children": [
+          {
+            "$element": "Button",
+            "props": {
+              "key": "save",
+              "label": "Save changes"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Cancel",
-                "variant": "secondary"
-              },
-              "children": []
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "cancel",
+              "label": "Cancel",
+              "variant": "secondary"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Delete file",
-                "variant": "danger"
-              },
-              "children": []
-            }
-          ]
-        }
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "delete",
+              "label": "Delete file",
+              "variant": "danger"
+            },
+            "children": []
+          }
+        ]
       },
       "snippets": {
-        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = (\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Delete file\" variant=\"danger\" />\n  </>\n);\n\n<Stack direction=\"vertical\">{items}</Stack>",
-        "lit": "<ds-stack direction=\"vertical\">\n  <ds-button label=\"Save changes\"></ds-button>\n  <ds-button variant=\"secondary\" label=\"Preview\"></ds-button>\n  <ds-button variant=\"ghost\" label=\"Cancel\"></ds-button>\n</ds-stack>",
+        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = [\n  <Button key=\"save\" label=\"Save changes\" />,\n  <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\n  <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\n];\n\n<Stack direction=\"vertical\">{items}</Stack>",
+        "lit": null,
         "rn": "import { Button, Stack } from '@design-schema/rn';\n\n<Stack direction=\"vertical\">\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Forgot password?\" variant=\"ghost\" />\n  </>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "DirectionVertical",
-        "lit": "Vertical",
+        "lit": null,
         "rn": "DirectionVertical",
         "swift": null
       },
@@ -131,38 +129,37 @@
         "justify": "start",
         "wrap": false,
         "element": "div",
-        "children": {
-          "$element": "Fragment",
-          "props": {},
-          "children": [
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Save changes"
-              },
-              "children": []
+        "children": [
+          {
+            "$element": "Button",
+            "props": {
+              "key": "save",
+              "label": "Save changes"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Cancel",
-                "variant": "secondary"
-              },
-              "children": []
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "cancel",
+              "label": "Cancel",
+              "variant": "secondary"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Delete file",
-                "variant": "danger"
-              },
-              "children": []
-            }
-          ]
-        }
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "delete",
+              "label": "Delete file",
+              "variant": "danger"
+            },
+            "children": []
+          }
+        ]
       },
       "snippets": {
-        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = (\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Delete file\" variant=\"danger\" />\n  </>\n);\n\n<Stack direction=\"horizontal\" align=\"start\">{items}</Stack>",
+        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = [\n  <Button key=\"save\" label=\"Save changes\" />,\n  <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\n  <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\n];\n\n<Stack direction=\"horizontal\" align=\"start\">{items}</Stack>",
         "lit": null,
         "rn": "import { Button, Stack } from '@design-schema/rn';\n\n<Stack direction=\"horizontal\" align=\"start\">\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Forgot password?\" variant=\"ghost\" />\n  </>\n</Stack>",
         "swift": null
@@ -187,45 +184,44 @@
         "justify": "start",
         "wrap": false,
         "element": "div",
-        "children": {
-          "$element": "Fragment",
-          "props": {},
-          "children": [
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Save changes"
-              },
-              "children": []
+        "children": [
+          {
+            "$element": "Button",
+            "props": {
+              "key": "save",
+              "label": "Save changes"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Cancel",
-                "variant": "secondary"
-              },
-              "children": []
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "cancel",
+              "label": "Cancel",
+              "variant": "secondary"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Delete file",
-                "variant": "danger"
-              },
-              "children": []
-            }
-          ]
-        }
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "delete",
+              "label": "Delete file",
+              "variant": "danger"
+            },
+            "children": []
+          }
+        ]
       },
       "snippets": {
-        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = (\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Delete file\" variant=\"danger\" />\n  </>\n);\n\n<Stack gap=\"none\">{items}</Stack>",
-        "lit": "<ds-stack>\n  <ds-button label=\"Save changes\"></ds-button>\n  <ds-button variant=\"secondary\" label=\"Preview\"></ds-button>\n  <ds-button variant=\"ghost\" label=\"Cancel\"></ds-button>\n</ds-stack>",
+        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = [\n  <Button key=\"save\" label=\"Save changes\" />,\n  <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\n  <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\n];\n\n<Stack gap=\"none\">{items}</Stack>",
+        "lit": null,
         "rn": "import { Button, Stack } from '@design-schema/rn';\n\n<Stack gap=\"none\">\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Forgot password?\" variant=\"ghost\" />\n  </>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "GapNone",
-        "lit": "GapNone",
+        "lit": null,
         "rn": "GapNone",
         "swift": null
       },
@@ -246,45 +242,44 @@
         "justify": "start",
         "wrap": false,
         "element": "div",
-        "children": {
-          "$element": "Fragment",
-          "props": {},
-          "children": [
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Save changes"
-              },
-              "children": []
+        "children": [
+          {
+            "$element": "Button",
+            "props": {
+              "key": "save",
+              "label": "Save changes"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Cancel",
-                "variant": "secondary"
-              },
-              "children": []
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "cancel",
+              "label": "Cancel",
+              "variant": "secondary"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Delete file",
-                "variant": "danger"
-              },
-              "children": []
-            }
-          ]
-        }
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "delete",
+              "label": "Delete file",
+              "variant": "danger"
+            },
+            "children": []
+          }
+        ]
       },
       "snippets": {
-        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = (\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Delete file\" variant=\"danger\" />\n  </>\n);\n\n<Stack gap=\"tight\">{items}</Stack>",
-        "lit": "<ds-stack>\n  <ds-button label=\"Save changes\"></ds-button>\n  <ds-button variant=\"secondary\" label=\"Preview\"></ds-button>\n  <ds-button variant=\"ghost\" label=\"Cancel\"></ds-button>\n</ds-stack>",
+        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = [\n  <Button key=\"save\" label=\"Save changes\" />,\n  <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\n  <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\n];\n\n<Stack gap=\"tight\">{items}</Stack>",
+        "lit": null,
         "rn": "import { Button, Stack } from '@design-schema/rn';\n\n<Stack gap=\"tight\">\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Forgot password?\" variant=\"ghost\" />\n  </>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "GapTight",
-        "lit": "GapTight",
+        "lit": null,
         "rn": "GapTight",
         "swift": null
       },
@@ -305,45 +300,44 @@
         "justify": "start",
         "wrap": false,
         "element": "div",
-        "children": {
-          "$element": "Fragment",
-          "props": {},
-          "children": [
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Save changes"
-              },
-              "children": []
+        "children": [
+          {
+            "$element": "Button",
+            "props": {
+              "key": "save",
+              "label": "Save changes"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Cancel",
-                "variant": "secondary"
-              },
-              "children": []
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "cancel",
+              "label": "Cancel",
+              "variant": "secondary"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Delete file",
-                "variant": "danger"
-              },
-              "children": []
-            }
-          ]
-        }
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "delete",
+              "label": "Delete file",
+              "variant": "danger"
+            },
+            "children": []
+          }
+        ]
       },
       "snippets": {
-        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = (\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Delete file\" variant=\"danger\" />\n  </>\n);\n\n<Stack gap=\"normal\">{items}</Stack>",
-        "lit": "<ds-stack>\n  <ds-button label=\"Save changes\"></ds-button>\n  <ds-button variant=\"secondary\" label=\"Preview\"></ds-button>\n  <ds-button variant=\"ghost\" label=\"Cancel\"></ds-button>\n</ds-stack>",
+        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = [\n  <Button key=\"save\" label=\"Save changes\" />,\n  <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\n  <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\n];\n\n<Stack gap=\"normal\">{items}</Stack>",
+        "lit": null,
         "rn": "import { Button, Stack } from '@design-schema/rn';\n\n<Stack gap=\"normal\">\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Forgot password?\" variant=\"ghost\" />\n  </>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "GapNormal",
-        "lit": "GapNormal",
+        "lit": null,
         "rn": "GapNormal",
         "swift": null
       },
@@ -364,45 +358,44 @@
         "justify": "start",
         "wrap": false,
         "element": "div",
-        "children": {
-          "$element": "Fragment",
-          "props": {},
-          "children": [
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Save changes"
-              },
-              "children": []
+        "children": [
+          {
+            "$element": "Button",
+            "props": {
+              "key": "save",
+              "label": "Save changes"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Cancel",
-                "variant": "secondary"
-              },
-              "children": []
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "cancel",
+              "label": "Cancel",
+              "variant": "secondary"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Delete file",
-                "variant": "danger"
-              },
-              "children": []
-            }
-          ]
-        }
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "delete",
+              "label": "Delete file",
+              "variant": "danger"
+            },
+            "children": []
+          }
+        ]
       },
       "snippets": {
-        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = (\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Delete file\" variant=\"danger\" />\n  </>\n);\n\n<Stack gap=\"loose\">{items}</Stack>",
-        "lit": "<ds-stack>\n  <ds-button label=\"Save changes\"></ds-button>\n  <ds-button variant=\"secondary\" label=\"Preview\"></ds-button>\n  <ds-button variant=\"ghost\" label=\"Cancel\"></ds-button>\n</ds-stack>",
+        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = [\n  <Button key=\"save\" label=\"Save changes\" />,\n  <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\n  <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\n];\n\n<Stack gap=\"loose\">{items}</Stack>",
+        "lit": null,
         "rn": "import { Button, Stack } from '@design-schema/rn';\n\n<Stack gap=\"loose\">\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Forgot password?\" variant=\"ghost\" />\n  </>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "GapLoose",
-        "lit": "GapLoose",
+        "lit": null,
         "rn": "GapLoose",
         "swift": null
       },
@@ -423,45 +416,44 @@
         "justify": "start",
         "wrap": false,
         "element": "div",
-        "children": {
-          "$element": "Fragment",
-          "props": {},
-          "children": [
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Save changes"
-              },
-              "children": []
+        "children": [
+          {
+            "$element": "Button",
+            "props": {
+              "key": "save",
+              "label": "Save changes"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Cancel",
-                "variant": "secondary"
-              },
-              "children": []
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "cancel",
+              "label": "Cancel",
+              "variant": "secondary"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Delete file",
-                "variant": "danger"
-              },
-              "children": []
-            }
-          ]
-        }
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "delete",
+              "label": "Delete file",
+              "variant": "danger"
+            },
+            "children": []
+          }
+        ]
       },
       "snippets": {
-        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = (\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Delete file\" variant=\"danger\" />\n  </>\n);\n\n<Stack gap=\"section\">{items}</Stack>",
-        "lit": "<ds-stack>\n  <ds-button label=\"Save changes\"></ds-button>\n  <ds-button variant=\"secondary\" label=\"Preview\"></ds-button>\n  <ds-button variant=\"ghost\" label=\"Cancel\"></ds-button>\n</ds-stack>",
+        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = [\n  <Button key=\"save\" label=\"Save changes\" />,\n  <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\n  <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\n];\n\n<Stack gap=\"section\">{items}</Stack>",
+        "lit": null,
         "rn": "import { Button, Stack } from '@design-schema/rn';\n\n<Stack gap=\"section\">\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Forgot password?\" variant=\"ghost\" />\n  </>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "GapSection",
-        "lit": "GapSection",
+        "lit": null,
         "rn": "GapSection",
         "swift": null
       },
@@ -482,45 +474,44 @@
         "justify": "start",
         "wrap": false,
         "element": "div",
-        "children": {
-          "$element": "Fragment",
-          "props": {},
-          "children": [
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Save changes"
-              },
-              "children": []
+        "children": [
+          {
+            "$element": "Button",
+            "props": {
+              "key": "save",
+              "label": "Save changes"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Cancel",
-                "variant": "secondary"
-              },
-              "children": []
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "cancel",
+              "label": "Cancel",
+              "variant": "secondary"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Delete file",
-                "variant": "danger"
-              },
-              "children": []
-            }
-          ]
-        }
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "delete",
+              "label": "Delete file",
+              "variant": "danger"
+            },
+            "children": []
+          }
+        ]
       },
       "snippets": {
-        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = (\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Delete file\" variant=\"danger\" />\n  </>\n);\n\n<Stack align=\"start\">{items}</Stack>",
-        "lit": "<ds-stack align=\"start\">\n  <ds-button label=\"Save changes\"></ds-button>\n  <ds-button variant=\"secondary\" label=\"Preview\"></ds-button>\n  <ds-button variant=\"ghost\" label=\"Cancel\"></ds-button>\n</ds-stack>",
+        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = [\n  <Button key=\"save\" label=\"Save changes\" />,\n  <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\n  <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\n];\n\n<Stack align=\"start\">{items}</Stack>",
+        "lit": null,
         "rn": "import { Button, Stack } from '@design-schema/rn';\n\n<Stack align=\"start\">\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Forgot password?\" variant=\"ghost\" />\n  </>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "AlignStart",
-        "lit": "AlignStart",
+        "lit": null,
         "rn": "AlignStart",
         "swift": null
       },
@@ -541,45 +532,44 @@
         "justify": "start",
         "wrap": false,
         "element": "div",
-        "children": {
-          "$element": "Fragment",
-          "props": {},
-          "children": [
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Save changes"
-              },
-              "children": []
+        "children": [
+          {
+            "$element": "Button",
+            "props": {
+              "key": "save",
+              "label": "Save changes"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Cancel",
-                "variant": "secondary"
-              },
-              "children": []
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "cancel",
+              "label": "Cancel",
+              "variant": "secondary"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Delete file",
-                "variant": "danger"
-              },
-              "children": []
-            }
-          ]
-        }
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "delete",
+              "label": "Delete file",
+              "variant": "danger"
+            },
+            "children": []
+          }
+        ]
       },
       "snippets": {
-        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = (\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Delete file\" variant=\"danger\" />\n  </>\n);\n\n<Stack align=\"center\">{items}</Stack>",
-        "lit": "<ds-stack align=\"center\">\n  <ds-button label=\"Save changes\"></ds-button>\n  <ds-button variant=\"secondary\" label=\"Preview\"></ds-button>\n  <ds-button variant=\"ghost\" label=\"Cancel\"></ds-button>\n</ds-stack>",
+        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = [\n  <Button key=\"save\" label=\"Save changes\" />,\n  <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\n  <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\n];\n\n<Stack align=\"center\">{items}</Stack>",
+        "lit": null,
         "rn": "import { Button, Stack } from '@design-schema/rn';\n\n<Stack align=\"center\">\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Forgot password?\" variant=\"ghost\" />\n  </>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "AlignCenter",
-        "lit": "AlignCenter",
+        "lit": null,
         "rn": "AlignCenter",
         "swift": null
       },
@@ -600,45 +590,44 @@
         "justify": "start",
         "wrap": false,
         "element": "div",
-        "children": {
-          "$element": "Fragment",
-          "props": {},
-          "children": [
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Save changes"
-              },
-              "children": []
+        "children": [
+          {
+            "$element": "Button",
+            "props": {
+              "key": "save",
+              "label": "Save changes"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Cancel",
-                "variant": "secondary"
-              },
-              "children": []
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "cancel",
+              "label": "Cancel",
+              "variant": "secondary"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Delete file",
-                "variant": "danger"
-              },
-              "children": []
-            }
-          ]
-        }
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "delete",
+              "label": "Delete file",
+              "variant": "danger"
+            },
+            "children": []
+          }
+        ]
       },
       "snippets": {
-        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = (\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Delete file\" variant=\"danger\" />\n  </>\n);\n\n<Stack align=\"end\">{items}</Stack>",
-        "lit": "<ds-stack align=\"end\">\n  <ds-button label=\"Save changes\"></ds-button>\n  <ds-button variant=\"secondary\" label=\"Preview\"></ds-button>\n  <ds-button variant=\"ghost\" label=\"Cancel\"></ds-button>\n</ds-stack>",
+        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = [\n  <Button key=\"save\" label=\"Save changes\" />,\n  <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\n  <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\n];\n\n<Stack align=\"end\">{items}</Stack>",
+        "lit": null,
         "rn": "import { Button, Stack } from '@design-schema/rn';\n\n<Stack align=\"end\">\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Forgot password?\" variant=\"ghost\" />\n  </>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "AlignEnd",
-        "lit": "AlignEnd",
+        "lit": null,
         "rn": "AlignEnd",
         "swift": null
       },
@@ -659,45 +648,44 @@
         "justify": "start",
         "wrap": false,
         "element": "div",
-        "children": {
-          "$element": "Fragment",
-          "props": {},
-          "children": [
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Save changes"
-              },
-              "children": []
+        "children": [
+          {
+            "$element": "Button",
+            "props": {
+              "key": "save",
+              "label": "Save changes"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Cancel",
-                "variant": "secondary"
-              },
-              "children": []
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "cancel",
+              "label": "Cancel",
+              "variant": "secondary"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Delete file",
-                "variant": "danger"
-              },
-              "children": []
-            }
-          ]
-        }
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "delete",
+              "label": "Delete file",
+              "variant": "danger"
+            },
+            "children": []
+          }
+        ]
       },
       "snippets": {
-        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = (\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Delete file\" variant=\"danger\" />\n  </>\n);\n\n<Stack align=\"stretch\">{items}</Stack>",
-        "lit": "<ds-stack align=\"stretch\">\n  <ds-button label=\"Save changes\"></ds-button>\n  <ds-button variant=\"secondary\" label=\"Preview\"></ds-button>\n  <ds-button variant=\"ghost\" label=\"Cancel\"></ds-button>\n</ds-stack>",
+        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = [\n  <Button key=\"save\" label=\"Save changes\" />,\n  <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\n  <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\n];\n\n<Stack align=\"stretch\">{items}</Stack>",
+        "lit": null,
         "rn": "import { Button, Stack } from '@design-schema/rn';\n\n<Stack align=\"stretch\">\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Forgot password?\" variant=\"ghost\" />\n  </>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "AlignStretch",
-        "lit": "AlignStretch",
+        "lit": null,
         "rn": "AlignStretch",
         "swift": null
       },
@@ -718,45 +706,44 @@
         "justify": "start",
         "wrap": false,
         "element": "div",
-        "children": {
-          "$element": "Fragment",
-          "props": {},
-          "children": [
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Save changes"
-              },
-              "children": []
+        "children": [
+          {
+            "$element": "Button",
+            "props": {
+              "key": "save",
+              "label": "Save changes"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Cancel",
-                "variant": "secondary"
-              },
-              "children": []
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "cancel",
+              "label": "Cancel",
+              "variant": "secondary"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Delete file",
-                "variant": "danger"
-              },
-              "children": []
-            }
-          ]
-        }
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "delete",
+              "label": "Delete file",
+              "variant": "danger"
+            },
+            "children": []
+          }
+        ]
       },
       "snippets": {
-        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = (\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Delete file\" variant=\"danger\" />\n  </>\n);\n\n<Stack direction=\"horizontal\" align=\"start\" justify=\"start\">{items}</Stack>",
-        "lit": "<ds-stack>\n  <ds-button label=\"Save changes\"></ds-button>\n  <ds-button variant=\"secondary\" label=\"Preview\"></ds-button>\n  <ds-button variant=\"ghost\" label=\"Cancel\"></ds-button>\n</ds-stack>",
+        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = [\n  <Button key=\"save\" label=\"Save changes\" />,\n  <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\n  <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\n];\n\n<Stack direction=\"horizontal\" align=\"start\" justify=\"start\">{items}</Stack>",
+        "lit": null,
         "rn": "import { Button, Stack } from '@design-schema/rn';\n\n<Stack direction=\"horizontal\" align=\"start\" justify=\"start\">\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Forgot password?\" variant=\"ghost\" />\n  </>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "JustifyStart",
-        "lit": "JustifyStart",
+        "lit": null,
         "rn": "JustifyStart",
         "swift": null
       },
@@ -774,45 +761,44 @@
         "justify": "center",
         "wrap": false,
         "element": "div",
-        "children": {
-          "$element": "Fragment",
-          "props": {},
-          "children": [
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Save changes"
-              },
-              "children": []
+        "children": [
+          {
+            "$element": "Button",
+            "props": {
+              "key": "save",
+              "label": "Save changes"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Cancel",
-                "variant": "secondary"
-              },
-              "children": []
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "cancel",
+              "label": "Cancel",
+              "variant": "secondary"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Delete file",
-                "variant": "danger"
-              },
-              "children": []
-            }
-          ]
-        }
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "delete",
+              "label": "Delete file",
+              "variant": "danger"
+            },
+            "children": []
+          }
+        ]
       },
       "snippets": {
-        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = (\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Delete file\" variant=\"danger\" />\n  </>\n);\n\n<Stack direction=\"horizontal\" align=\"start\" justify=\"center\">{items}</Stack>",
-        "lit": "<ds-stack>\n  <ds-button label=\"Save changes\"></ds-button>\n  <ds-button variant=\"secondary\" label=\"Preview\"></ds-button>\n  <ds-button variant=\"ghost\" label=\"Cancel\"></ds-button>\n</ds-stack>",
+        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = [\n  <Button key=\"save\" label=\"Save changes\" />,\n  <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\n  <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\n];\n\n<Stack direction=\"horizontal\" align=\"start\" justify=\"center\">{items}</Stack>",
+        "lit": null,
         "rn": "import { Button, Stack } from '@design-schema/rn';\n\n<Stack direction=\"horizontal\" align=\"start\" justify=\"center\">\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Forgot password?\" variant=\"ghost\" />\n  </>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "JustifyCenter",
-        "lit": "JustifyCenter",
+        "lit": null,
         "rn": "JustifyCenter",
         "swift": null
       },
@@ -830,45 +816,44 @@
         "justify": "end",
         "wrap": false,
         "element": "div",
-        "children": {
-          "$element": "Fragment",
-          "props": {},
-          "children": [
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Save changes"
-              },
-              "children": []
+        "children": [
+          {
+            "$element": "Button",
+            "props": {
+              "key": "save",
+              "label": "Save changes"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Cancel",
-                "variant": "secondary"
-              },
-              "children": []
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "cancel",
+              "label": "Cancel",
+              "variant": "secondary"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Delete file",
-                "variant": "danger"
-              },
-              "children": []
-            }
-          ]
-        }
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "delete",
+              "label": "Delete file",
+              "variant": "danger"
+            },
+            "children": []
+          }
+        ]
       },
       "snippets": {
-        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = (\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Delete file\" variant=\"danger\" />\n  </>\n);\n\n<Stack direction=\"horizontal\" align=\"start\" justify=\"end\">{items}</Stack>",
-        "lit": "<ds-stack>\n  <ds-button label=\"Save changes\"></ds-button>\n  <ds-button variant=\"secondary\" label=\"Preview\"></ds-button>\n  <ds-button variant=\"ghost\" label=\"Cancel\"></ds-button>\n</ds-stack>",
+        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = [\n  <Button key=\"save\" label=\"Save changes\" />,\n  <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\n  <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\n];\n\n<Stack direction=\"horizontal\" align=\"start\" justify=\"end\">{items}</Stack>",
+        "lit": null,
         "rn": "import { Button, Stack } from '@design-schema/rn';\n\n<Stack direction=\"horizontal\" align=\"start\" justify=\"end\">\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Forgot password?\" variant=\"ghost\" />\n  </>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "JustifyEnd",
-        "lit": "JustifyEnd",
+        "lit": null,
         "rn": "JustifyEnd",
         "swift": null
       },
@@ -886,45 +871,44 @@
         "justify": "between",
         "wrap": false,
         "element": "div",
-        "children": {
-          "$element": "Fragment",
-          "props": {},
-          "children": [
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Save changes"
-              },
-              "children": []
+        "children": [
+          {
+            "$element": "Button",
+            "props": {
+              "key": "save",
+              "label": "Save changes"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Cancel",
-                "variant": "secondary"
-              },
-              "children": []
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "cancel",
+              "label": "Cancel",
+              "variant": "secondary"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Delete file",
-                "variant": "danger"
-              },
-              "children": []
-            }
-          ]
-        }
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "delete",
+              "label": "Delete file",
+              "variant": "danger"
+            },
+            "children": []
+          }
+        ]
       },
       "snippets": {
-        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = (\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Delete file\" variant=\"danger\" />\n  </>\n);\n\n<Stack direction=\"horizontal\" align=\"start\" justify=\"between\">{items}</Stack>",
-        "lit": "<ds-stack>\n  <ds-button label=\"Save changes\"></ds-button>\n  <ds-button variant=\"secondary\" label=\"Preview\"></ds-button>\n  <ds-button variant=\"ghost\" label=\"Cancel\"></ds-button>\n</ds-stack>",
+        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = [\n  <Button key=\"save\" label=\"Save changes\" />,\n  <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\n  <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\n];\n\n<Stack direction=\"horizontal\" align=\"start\" justify=\"between\">{items}</Stack>",
+        "lit": null,
         "rn": "import { Button, Stack } from '@design-schema/rn';\n\n<Stack direction=\"horizontal\" align=\"start\" justify=\"between\">\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Forgot password?\" variant=\"ghost\" />\n  </>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "JustifyBetween",
-        "lit": "JustifyBetween",
+        "lit": null,
         "rn": "JustifyBetween",
         "swift": null
       },
@@ -942,39 +926,38 @@
         "justify": "start",
         "wrap": true,
         "element": "div",
-        "children": {
-          "$element": "Fragment",
-          "props": {},
-          "children": [
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Save changes"
-              },
-              "children": []
+        "children": [
+          {
+            "$element": "Button",
+            "props": {
+              "key": "save",
+              "label": "Save changes"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Cancel",
-                "variant": "secondary"
-              },
-              "children": []
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "cancel",
+              "label": "Cancel",
+              "variant": "secondary"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Delete file",
-                "variant": "danger"
-              },
-              "children": []
-            }
-          ]
-        }
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "delete",
+              "label": "Delete file",
+              "variant": "danger"
+            },
+            "children": []
+          }
+        ]
       },
       "snippets": {
-        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = (\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Delete file\" variant=\"danger\" />\n  </>\n);\n\n<Stack direction=\"horizontal\" align=\"start\" wrap>{items}</Stack>",
-        "lit": "<div style=\"max-inline-size: 20rem\">\n  <ds-stack direction=\"horizontal\" align=\"center\" wrap>\n    <ds-button label=\"Save changes\"></ds-button>\n    <ds-button variant=\"secondary\" label=\"Preview\"></ds-button>\n    <ds-button variant=\"secondary\" label=\"Duplicate\"></ds-button>\n    <ds-button variant=\"ghost\" label=\"Cancel\"></ds-button>\n  </ds-stack>\n</div>",
+        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = [\n  <Button key=\"save\" label=\"Save changes\" />,\n  <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\n  <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\n];\n\n<Stack direction=\"horizontal\" align=\"start\" wrap>{items}</Stack>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\nimport type { StackAlign, StackDirection, StackElement, StackGap, StackJustify } from '@design-schema/lit';\n\ninterface StackArgs {\n  direction: StackDirection;\n  gap: StackGap;\n  align: StackAlign;\n  justify: StackJustify;\n  wrap: boolean;\n  element: StackElement;\n}\n\nfunction renderStack(args: StackArgs, content: TemplateResult): TemplateResult {\n  return html`\n    <ds-stack\n      direction=${args.direction}\n      gap=${args.gap}\n      align=${args.align}\n      justify=${args.justify}\n      ?wrap=${args.wrap}\n      .element=${args.element}\n    >\n      ${content}\n    </ds-stack>\n  `;\n}\n\nconst buttons: TemplateResult = html`\n  <ds-button label=\"Save changes\"></ds-button>\n  <ds-button variant=\"secondary\" label=\"Preview\"></ds-button>\n  <ds-button variant=\"ghost\" label=\"Cancel\"></ds-button>\n`;\n\nhtml`\n  <div style=\"max-inline-size: 16rem\">${renderStack({ direction: 'horizontal', align: 'center', wrap: true }, buttons)}</div>\n`;",
         "rn": "import { Button, Stack } from '@design-schema/rn';\n\n<Stack direction=\"horizontal\" align=\"start\" wrap>\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Forgot password?\" variant=\"ghost\" />\n  </>\n</Stack>",
         "swift": null
       },
@@ -998,45 +981,44 @@
         "justify": "start",
         "wrap": false,
         "element": "div",
-        "children": {
-          "$element": "Fragment",
-          "props": {},
-          "children": [
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Save changes"
-              },
-              "children": []
+        "children": [
+          {
+            "$element": "Button",
+            "props": {
+              "key": "save",
+              "label": "Save changes"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Cancel",
-                "variant": "secondary"
-              },
-              "children": []
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "cancel",
+              "label": "Cancel",
+              "variant": "secondary"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Delete file",
-                "variant": "danger"
-              },
-              "children": []
-            }
-          ]
-        }
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "delete",
+              "label": "Delete file",
+              "variant": "danger"
+            },
+            "children": []
+          }
+        ]
       },
       "snippets": {
-        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = (\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Delete file\" variant=\"danger\" />\n  </>\n);\n\n<Stack element=\"div\">{items}</Stack>",
-        "lit": "<ds-stack element=\"div\">\n  <ds-button label=\"Save changes\"></ds-button>\n  <ds-button variant=\"secondary\" label=\"Preview\"></ds-button>\n  <ds-button variant=\"ghost\" label=\"Cancel\"></ds-button>\n</ds-stack>",
+        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = [\n  <Button key=\"save\" label=\"Save changes\" />,\n  <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\n  <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\n];\n\n<Stack element=\"div\">{items}</Stack>",
+        "lit": null,
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "ElementDiv",
-        "lit": "ElementDiv",
+        "lit": null,
         "rn": null,
         "swift": null
       },
@@ -1057,45 +1039,44 @@
         "justify": "start",
         "wrap": false,
         "element": "section",
-        "children": {
-          "$element": "Fragment",
-          "props": {},
-          "children": [
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Save changes"
-              },
-              "children": []
+        "children": [
+          {
+            "$element": "Button",
+            "props": {
+              "key": "save",
+              "label": "Save changes"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Cancel",
-                "variant": "secondary"
-              },
-              "children": []
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "cancel",
+              "label": "Cancel",
+              "variant": "secondary"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Delete file",
-                "variant": "danger"
-              },
-              "children": []
-            }
-          ]
-        }
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "delete",
+              "label": "Delete file",
+              "variant": "danger"
+            },
+            "children": []
+          }
+        ]
       },
       "snippets": {
-        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = (\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Delete file\" variant=\"danger\" />\n  </>\n);\n\n<Stack element=\"section\">{items}</Stack>",
-        "lit": "<ds-stack element=\"section\">\n  <ds-button label=\"Save changes\"></ds-button>\n  <ds-button variant=\"secondary\" label=\"Preview\"></ds-button>\n  <ds-button variant=\"ghost\" label=\"Cancel\"></ds-button>\n</ds-stack>",
+        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = [\n  <Button key=\"save\" label=\"Save changes\" />,\n  <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\n  <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\n];\n\n<Stack element=\"section\">{items}</Stack>",
+        "lit": null,
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "ElementSection",
-        "lit": "ElementSection",
+        "lit": null,
         "rn": null,
         "swift": null
       },
@@ -1116,45 +1097,44 @@
         "justify": "start",
         "wrap": false,
         "element": "nav",
-        "children": {
-          "$element": "Fragment",
-          "props": {},
-          "children": [
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Save changes"
-              },
-              "children": []
+        "children": [
+          {
+            "$element": "Button",
+            "props": {
+              "key": "save",
+              "label": "Save changes"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Cancel",
-                "variant": "secondary"
-              },
-              "children": []
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "cancel",
+              "label": "Cancel",
+              "variant": "secondary"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Delete file",
-                "variant": "danger"
-              },
-              "children": []
-            }
-          ]
-        }
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "delete",
+              "label": "Delete file",
+              "variant": "danger"
+            },
+            "children": []
+          }
+        ]
       },
       "snippets": {
-        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = (\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Delete file\" variant=\"danger\" />\n  </>\n);\n\n<Stack direction=\"horizontal\" align=\"start\" element=\"nav\">{items}</Stack>",
-        "lit": "<ds-stack direction=\"horizontal\" align=\"center\" element=\"nav\">\n  <ds-button label=\"Save changes\"></ds-button>\n  <ds-button variant=\"secondary\" label=\"Preview\"></ds-button>\n  <ds-button variant=\"ghost\" label=\"Cancel\"></ds-button>\n</ds-stack>",
+        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = [\n  <Button key=\"save\" label=\"Save changes\" />,\n  <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\n  <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\n];\n\n<Stack direction=\"horizontal\" align=\"start\" element=\"nav\">{items}</Stack>",
+        "lit": null,
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "ElementNav",
-        "lit": "ElementNav",
+        "lit": null,
         "rn": null,
         "swift": null
       },
@@ -1172,45 +1152,44 @@
         "justify": "start",
         "wrap": false,
         "element": "ul",
-        "children": {
-          "$element": "Fragment",
-          "props": {},
-          "children": [
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Save changes"
-              },
-              "children": []
+        "children": [
+          {
+            "$element": "Button",
+            "props": {
+              "key": "save",
+              "label": "Save changes"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Cancel",
-                "variant": "secondary"
-              },
-              "children": []
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "cancel",
+              "label": "Cancel",
+              "variant": "secondary"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Delete file",
-                "variant": "danger"
-              },
-              "children": []
-            }
-          ]
-        }
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "delete",
+              "label": "Delete file",
+              "variant": "danger"
+            },
+            "children": []
+          }
+        ]
       },
       "snippets": {
-        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = (\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Delete file\" variant=\"danger\" />\n  </>\n);\n\n<Stack element=\"ul\">{items}</Stack>",
-        "lit": "<ds-stack element=\"ul\">\n  <ds-button label=\"Save changes\"></ds-button>\n  <ds-button variant=\"secondary\" label=\"Preview\"></ds-button>\n  <ds-button variant=\"ghost\" label=\"Cancel\"></ds-button>\n</ds-stack>",
+        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = [\n  <Button key=\"save\" label=\"Save changes\" />,\n  <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\n  <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\n];\n\n<Stack element=\"ul\">{items}</Stack>",
+        "lit": null,
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "ElementUl",
-        "lit": "ElementUl",
+        "lit": null,
         "rn": null,
         "swift": null
       },
@@ -1231,45 +1210,44 @@
         "justify": "start",
         "wrap": false,
         "element": "ol",
-        "children": {
-          "$element": "Fragment",
-          "props": {},
-          "children": [
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Save changes"
-              },
-              "children": []
+        "children": [
+          {
+            "$element": "Button",
+            "props": {
+              "key": "save",
+              "label": "Save changes"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Cancel",
-                "variant": "secondary"
-              },
-              "children": []
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "cancel",
+              "label": "Cancel",
+              "variant": "secondary"
             },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Delete file",
-                "variant": "danger"
-              },
-              "children": []
-            }
-          ]
-        }
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "delete",
+              "label": "Delete file",
+              "variant": "danger"
+            },
+            "children": []
+          }
+        ]
       },
       "snippets": {
-        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = (\n  <>\n    <Button label=\"Save changes\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Delete file\" variant=\"danger\" />\n  </>\n);\n\n<Stack element=\"ol\">{items}</Stack>",
-        "lit": "<ds-stack element=\"ol\">\n  <ds-button label=\"Save changes\"></ds-button>\n  <ds-button variant=\"secondary\" label=\"Preview\"></ds-button>\n  <ds-button variant=\"ghost\" label=\"Cancel\"></ds-button>\n</ds-stack>",
+        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst items = [\n  <Button key=\"save\" label=\"Save changes\" />,\n  <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\n  <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\n];\n\n<Stack element=\"ol\">{items}</Stack>",
+        "lit": null,
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "ElementOl",
-        "lit": "ElementOl",
+        "lit": null,
         "rn": null,
         "swift": null
       },
@@ -1279,6 +1257,257 @@
         "value": "ol"
       },
       "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Form Fields",
+      "args": {
+        "direction": "vertical",
+        "gap": "normal",
+        "align": "stretch",
+        "justify": "start",
+        "wrap": false,
+        "element": "div",
+        "children": [
+          {
+            "$element": "Input",
+            "props": {
+              "key": "name",
+              "label": "Full name",
+              "name": "name",
+              "type": "text"
+            },
+            "children": []
+          },
+          {
+            "$element": "Input",
+            "props": {
+              "key": "email",
+              "label": "Email address",
+              "name": "email",
+              "type": "email"
+            },
+            "children": []
+          },
+          {
+            "$element": "Input",
+            "props": {
+              "key": "phone",
+              "label": "Phone number",
+              "name": "phone",
+              "type": "tel"
+            },
+            "children": []
+          }
+        ]
+      },
+      "snippets": {
+        "react": "import { Stack, Input } from '@design-schema/react';\n\n<Stack direction=\"vertical\" gap=\"normal\">\n  {[\n    <Input key=\"name\" label=\"Full name\" name=\"name\" type=\"text\" />,\n    <Input key=\"email\" label=\"Email address\" name=\"email\" type=\"email\" />,\n    <Input key=\"phone\" label=\"Phone number\" name=\"phone\" type=\"tel\" />,\n  ]}\n</Stack>",
+        "lit": null,
+        "rn": "import { Input, Stack } from '@design-schema/rn';\n\n<Stack direction=\"vertical\" gap=\"normal\">\n  <>\n    <Input label=\"Full name\" name=\"name\" />\n    <Input label=\"Email\" name=\"email\" type=\"email\" />\n    <Input label=\"Password\" name=\"password\" type=\"password\" />\n  </>\n</Stack>",
+        "swift": null
+      },
+      "stories": {
+        "react": "FormFields",
+        "lit": null,
+        "rn": "FormFields",
+        "swift": null
+      },
+      "storyId": "stack-react--form-fields",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Button Row",
+      "args": {
+        "direction": "horizontal",
+        "gap": "tight",
+        "align": "stretch",
+        "justify": "end",
+        "wrap": false,
+        "element": "div",
+        "children": [
+          {
+            "$element": "Button",
+            "props": {
+              "key": "cancel",
+              "label": "Cancel",
+              "variant": "secondary"
+            },
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "submit",
+              "label": "Submit",
+              "type": "submit"
+            },
+            "children": []
+          }
+        ]
+      },
+      "snippets": {
+        "react": "import { Stack, Button } from '@design-schema/react';\n\n<Stack direction=\"horizontal\" gap=\"tight\" justify=\"end\">\n  {[\n    <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\n    <Button key=\"submit\" label=\"Submit\" type=\"submit\" />,\n  ]}\n</Stack>",
+        "lit": null,
+        "rn": "import { Button, Stack } from '@design-schema/rn';\n\n<Stack direction=\"horizontal\" gap=\"tight\" justify=\"end\">\n  <>\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Submit\" type=\"submit\" />\n  </>\n</Stack>",
+        "swift": null
+      },
+      "stories": {
+        "react": "ButtonRow",
+        "lit": null,
+        "rn": "ButtonRow",
+        "swift": null
+      },
+      "storyId": "stack-react--button-row",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Page Sections",
+      "args": {
+        "direction": "vertical",
+        "gap": "section",
+        "align": "stretch",
+        "justify": "start",
+        "wrap": false,
+        "element": "div",
+        "children": [
+          {
+            "$element": "Text",
+            "props": {
+              "key": "first"
+            },
+            "children": [
+              "The first region of the page"
+            ]
+          },
+          {
+            "$element": "Text",
+            "props": {
+              "key": "second"
+            },
+            "children": [
+              "The second region of the page"
+            ]
+          },
+          {
+            "$element": "Text",
+            "props": {
+              "key": "third"
+            },
+            "children": [
+              "The third region of the page"
+            ]
+          }
+        ]
+      },
+      "snippets": {
+        "react": "import { Stack, Text } from '@design-schema/react';\n\n<Stack direction=\"vertical\" gap=\"section\">\n  {[\n    <Text key=\"first\">The first region of the page</Text>,\n    <Text key=\"second\">The second region of the page</Text>,\n    <Text key=\"third\">The third region of the page</Text>,\n  ]}\n</Stack>",
+        "lit": null,
+        "rn": "import { Heading, Stack } from '@design-schema/rn';\n\n<Stack direction=\"vertical\" gap=\"section\">\n  <>\n    <Heading level=\"2\">Profile</Heading>\n    <Heading level=\"2\">Billing</Heading>\n    <Heading level=\"2\">Notifications</Heading>\n  </>\n</Stack>",
+        "swift": null
+      },
+      "stories": {
+        "react": "PageSections",
+        "lit": null,
+        "rn": "PageSections",
+        "swift": null
+      },
+      "storyId": "stack-react--page-sections",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Wrapping Filters",
+      "args": {
+        "direction": "horizontal",
+        "gap": "tight",
+        "align": "stretch",
+        "justify": "start",
+        "wrap": true,
+        "element": "div",
+        "children": [
+          {
+            "$element": "Button",
+            "props": {
+              "key": "all",
+              "label": "All",
+              "variant": "secondary",
+              "size": "sm"
+            },
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "open",
+              "label": "Open",
+              "variant": "ghost",
+              "size": "sm"
+            },
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "in-review",
+              "label": "In review",
+              "variant": "ghost",
+              "size": "sm"
+            },
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "merged",
+              "label": "Merged",
+              "variant": "ghost",
+              "size": "sm"
+            },
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "closed",
+              "label": "Closed",
+              "variant": "ghost",
+              "size": "sm"
+            },
+            "children": []
+          },
+          {
+            "$element": "Button",
+            "props": {
+              "key": "archived",
+              "label": "Archived",
+              "variant": "ghost",
+              "size": "sm"
+            },
+            "children": []
+          }
+        ]
+      },
+      "snippets": {
+        "react": "import { Stack, Button } from '@design-schema/react';\n\n<Stack direction=\"horizontal\" gap=\"tight\" wrap>\n  {[\n    <Button key=\"all\" label=\"All\" variant=\"secondary\" size=\"sm\" />,\n    <Button key=\"open\" label=\"Open\" variant=\"ghost\" size=\"sm\" />,\n    <Button key=\"in-review\" label=\"In review\" variant=\"ghost\" size=\"sm\" />,\n    <Button key=\"merged\" label=\"Merged\" variant=\"ghost\" size=\"sm\" />,\n    <Button key=\"closed\" label=\"Closed\" variant=\"ghost\" size=\"sm\" />,\n    <Button key=\"archived\" label=\"Archived\" variant=\"ghost\" size=\"sm\" />,\n  ]}\n</Stack>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\nimport type { StackAlign, StackDirection, StackElement, StackGap, StackJustify } from '@design-schema/lit';\n\ninterface StackArgs {\n  direction: StackDirection;\n  gap: StackGap;\n  align: StackAlign;\n  justify: StackJustify;\n  wrap: boolean;\n  element: StackElement;\n}\n\nfunction renderStack(args: StackArgs, content: TemplateResult): TemplateResult {\n  return html`\n    <ds-stack\n      direction=${args.direction}\n      gap=${args.gap}\n      align=${args.align}\n      justify=${args.justify}\n      ?wrap=${args.wrap}\n      .element=${args.element}\n    >\n      ${content}\n    </ds-stack>\n  `;\n}\n\nhtml`\n      <div style=\"max-inline-size: 16rem\">\n        ${renderStack(\n    { direction: 'horizontal', gap: 'tight', wrap: true },\n    html\\`\n      <ds-button variant=\"secondary\" size=\"sm\" label=\"All\"></ds-button>\n      <ds-button variant=\"ghost\" size=\"sm\" label=\"Open\"></ds-button>\n      <ds-button variant=\"ghost\" size=\"sm\" label=\"In review\"></ds-button>\n      <ds-button variant=\"ghost\" size=\"sm\" label=\"Merged\"></ds-button>\n      <ds-button variant=\"ghost\" size=\"sm\" label=\"Closed\"></ds-button>\n      <ds-button variant=\"ghost\" size=\"sm\" label=\"Archived\"></ds-button>\n    \\`,\n  )}\n      </div>\n`;",
+        "rn": "import { Button, Stack, Text } from '@design-schema/rn';\n\n<Stack direction=\"horizontal\" gap=\"tight\" wrap>\n  <>\n    <Button label=\"All\" variant=\"secondary\" />\n    <Button label=\"Open\" variant=\"secondary\" />\n    <Button label=\"In review\" variant=\"secondary\" />\n    <Button label=\"Merged\" variant=\"secondary\" />\n    <Button label=\"Closed\" variant=\"secondary\" />\n    <Text>6 results</Text>\n  </>\n</Stack>",
+        "swift": null
+      },
+      "stories": {
+        "react": "WrappingFilters",
+        "lit": "WrappingFilters",
+        "rn": "WrappingFilters",
+        "swift": null
+      },
+      "storyId": "stack-react--wrapping-filters",
+      "sweep": null,
+      "decorated": true,
       "primary": false
     }
   ]

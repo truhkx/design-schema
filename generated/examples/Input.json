@@ -11,16 +11,12 @@
       "title": "Default",
       "args": {
         "label": "Email address",
-        "name": "email",
-        "type": "text",
-        "required": false,
-        "disabled": false,
-        "invalid": false
+        "name": "email"
       },
       "snippets": {
         "react": "import { Input } from '@design-schema/react';\n\n<Input label=\"Email address\" name=\"email\" />",
         "lit": "<ds-input label=\"Email address\" name=\"email\"></ds-input>",
-        "rn": "import { Input } from '@design-schema/rn';\n\n<Input\n  label=\"Email address\"\n  name=\"email\"\n  placeholder=\"name@example.com\"\n  description=\"Use the email you signed up with.\"\n/>",
+        "rn": "import { Input } from '@design-schema/rn';\n\n<Input label=\"Email address\" name=\"email\" />",
         "swift": null
       },
       "stories": {
@@ -37,17 +33,13 @@
     {
       "title": "Type Text",
       "args": {
-        "label": "Full name",
-        "name": "name",
-        "type": "text",
-        "required": false,
-        "disabled": false,
-        "invalid": false,
-        "autocomplete": "name"
+        "label": "Email address",
+        "name": "email",
+        "type": "text"
       },
       "snippets": {
-        "react": "import { Input } from '@design-schema/react';\n\n<Input label=\"Full name\" name=\"name\" type=\"text\" autocomplete=\"name\" />",
-        "lit": "<ds-input label=\"Full name\" name=\"name\" type=\"text\" autocomplete=\"name\"></ds-input>",
+        "react": "import { Input } from '@design-schema/react';\n\n<Input label=\"Email address\" name=\"email\" type=\"text\" />",
+        "lit": "<ds-input label=\"Email address\" name=\"email\" type=\"text\"></ds-input>",
         "rn": "import { Input } from '@design-schema/rn';\n\n<Input label=\"Full name\" name=\"name\" type=\"text\" />",
         "swift": null
       },
@@ -70,16 +62,12 @@
       "args": {
         "label": "Email address",
         "name": "email",
-        "type": "email",
-        "required": false,
-        "disabled": false,
-        "invalid": false,
-        "autocomplete": "email"
+        "type": "email"
       },
       "snippets": {
-        "react": "import { Input } from '@design-schema/react';\n\n<Input label=\"Email address\" name=\"email\" type=\"email\" autocomplete=\"email\" />",
-        "lit": "<ds-input label=\"Email address\" name=\"email\" type=\"email\" autocomplete=\"email\"></ds-input>",
-        "rn": "import { Input } from '@design-schema/rn';\n\n<Input\n  label=\"Email address\"\n  name=\"email\"\n  type=\"email\"\n  placeholder=\"name@example.com\"\n  description=\"Use the email you signed up with.\"\n/>",
+        "react": "import { Input } from '@design-schema/react';\n\n<Input label=\"Email address\" name=\"email\" type=\"email\" />",
+        "lit": "<ds-input label=\"Email address\" name=\"email\" type=\"email\"></ds-input>",
+        "rn": "import { Input } from '@design-schema/rn';\n\n<Input label=\"Email address\" name=\"email\" type=\"email\" />",
         "swift": null
       },
       "stories": {
@@ -99,18 +87,14 @@
     {
       "title": "Type Password",
       "args": {
-        "label": "Password",
-        "name": "password",
-        "type": "password",
-        "required": false,
-        "disabled": false,
-        "invalid": false,
-        "autocomplete": "current-password"
+        "label": "Email address",
+        "name": "email",
+        "type": "password"
       },
       "snippets": {
-        "react": "import { Input } from '@design-schema/react';\n\n<Input\n  label=\"Password\"\n  name=\"password\"\n  type=\"password\"\n  autocomplete=\"current-password\"\n/>",
-        "lit": "<ds-input label=\"Password\" name=\"password\" type=\"password\" autocomplete=\"current-password\"></ds-input>",
-        "rn": "import { Input } from '@design-schema/rn';\n\n<Input\n  label=\"Password\"\n  name=\"password\"\n  type=\"password\"\n  description=\"At least 12 characters.\"\n/>",
+        "react": "import { Input } from '@design-schema/react';\n\n<Input label=\"Email address\" name=\"email\" type=\"password\" />",
+        "lit": "<ds-input label=\"Email address\" name=\"email\" type=\"password\"></ds-input>",
+        "rn": "import { Input } from '@design-schema/rn';\n\n<Input label=\"Password\" name=\"password\" type=\"password\" />",
         "swift": null
       },
       "stories": {
@@ -130,16 +114,13 @@
     {
       "title": "Type Number",
       "args": {
-        "label": "Seats",
-        "name": "seats",
-        "type": "number",
-        "required": false,
-        "disabled": false,
-        "invalid": false
+        "label": "Email address",
+        "name": "email",
+        "type": "number"
       },
       "snippets": {
-        "react": "import { Input } from '@design-schema/react';\n\n<Input label=\"Seats\" name=\"seats\" type=\"number\" />",
-        "lit": "<ds-input label=\"Seats\" name=\"seats\" type=\"number\"></ds-input>",
+        "react": "import { Input } from '@design-schema/react';\n\n<Input label=\"Email address\" name=\"email\" type=\"number\" />",
+        "lit": "<ds-input label=\"Email address\" name=\"email\" type=\"number\"></ds-input>",
         "rn": "import { Input } from '@design-schema/rn';\n\n<Input label=\"Seats\" name=\"seats\" type=\"number\" />",
         "swift": null
       },
@@ -160,18 +141,14 @@
     {
       "title": "Type Search",
       "args": {
-        "label": "Search",
-        "name": "q",
-        "type": "search",
-        "required": false,
-        "disabled": false,
-        "invalid": false,
-        "placeholder": "Project name"
+        "label": "Email address",
+        "name": "email",
+        "type": "search"
       },
       "snippets": {
-        "react": "import { Input } from '@design-schema/react';\n\n<Input label=\"Search\" name=\"q\" type=\"search\" placeholder=\"Project name\" />",
-        "lit": "<ds-input label=\"Search\" name=\"q\" type=\"search\" placeholder=\"Search projects\"></ds-input>",
-        "rn": "import { Input } from '@design-schema/rn';\n\n<Input label=\"Search\" name=\"q\" type=\"search\" placeholder=\"Search projects\" />",
+        "react": "import { Input } from '@design-schema/react';\n\n<Input label=\"Email address\" name=\"email\" type=\"search\" />",
+        "lit": "<ds-input label=\"Email address\" name=\"email\" type=\"search\"></ds-input>",
+        "rn": "import { Input } from '@design-schema/rn';\n\n<Input label=\"Search\" name=\"q\" type=\"search\" />",
         "swift": null
       },
       "stories": {
@@ -191,18 +168,14 @@
     {
       "title": "Type Tel",
       "args": {
-        "label": "Phone number",
-        "name": "tel",
-        "type": "tel",
-        "required": false,
-        "disabled": false,
-        "invalid": false,
-        "autocomplete": "tel"
+        "label": "Email address",
+        "name": "email",
+        "type": "tel"
       },
       "snippets": {
-        "react": "import { Input } from '@design-schema/react';\n\n<Input label=\"Phone number\" name=\"tel\" type=\"tel\" autocomplete=\"tel\" />",
-        "lit": "<ds-input label=\"Phone number\" name=\"tel\" type=\"tel\" autocomplete=\"tel\"></ds-input>",
-        "rn": "import { Input } from '@design-schema/rn';\n\n<Input\n  label=\"Phone number\"\n  name=\"phone\"\n  type=\"tel\"\n  description=\"Include the country code.\"\n/>",
+        "react": "import { Input } from '@design-schema/react';\n\n<Input label=\"Email address\" name=\"email\" type=\"tel\" />",
+        "lit": "<ds-input label=\"Email address\" name=\"email\" type=\"tel\"></ds-input>",
+        "rn": "import { Input } from '@design-schema/rn';\n\n<Input label=\"Phone number\" name=\"phone\" type=\"tel\" />",
         "swift": null
       },
       "stories": {
@@ -222,18 +195,14 @@
     {
       "title": "Type Url",
       "args": {
-        "label": "Website",
-        "name": "url",
-        "type": "url",
-        "required": false,
-        "disabled": false,
-        "invalid": false,
-        "autocomplete": "url"
+        "label": "Email address",
+        "name": "email",
+        "type": "url"
       },
       "snippets": {
-        "react": "import { Input } from '@design-schema/react';\n\n<Input label=\"Website\" name=\"url\" type=\"url\" autocomplete=\"url\" />",
-        "lit": "<ds-input label=\"Website\" name=\"url\" type=\"url\" autocomplete=\"url\"></ds-input>",
-        "rn": "import { Input } from '@design-schema/rn';\n\n<Input label=\"Website\" name=\"website\" type=\"url\" placeholder=\"https://\" />",
+        "react": "import { Input } from '@design-schema/react';\n\n<Input label=\"Email address\" name=\"email\" type=\"url\" />",
+        "lit": "<ds-input label=\"Email address\" name=\"email\" type=\"url\"></ds-input>",
+        "rn": "import { Input } from '@design-schema/rn';\n\n<Input label=\"Website\" name=\"website\" type=\"url\" />",
         "swift": null
       },
       "stories": {
@@ -251,263 +220,16 @@
       "primary": false
     },
     {
-      "title": "With Description",
-      "args": {
-        "label": "Email address",
-        "name": "email",
-        "type": "email",
-        "required": false,
-        "disabled": false,
-        "invalid": false,
-        "description": "Use the email you signed up with.",
-        "autocomplete": "email"
-      },
-      "snippets": {
-        "react": "import { Input } from '@design-schema/react';\n\n<Input\n  label=\"Email address\"\n  name=\"email\"\n  type=\"email\"\n  description=\"Use the email you signed up with.\"\n  autocomplete=\"email\"\n/>",
-        "lit": "<ds-input\n  label=\"Email address\"\n  name=\"email\"\n  type=\"email\"\n  description=\"Use the email you signed up with.\"\n  autocomplete=\"email\"\n></ds-input>",
-        "rn": null,
-        "swift": null
-      },
-      "stories": {
-        "react": "WithDescription",
-        "lit": "WithDescription",
-        "rn": null,
-        "swift": null
-      },
-      "storyId": "input-react--with-description",
-      "sweep": {
-        "prop": "type",
-        "value": "email"
-      },
-      "decorated": false,
-      "primary": false
-    },
-    {
-      "title": "With Placeholder",
-      "args": {
-        "label": "Email address",
-        "name": "email",
-        "type": "text",
-        "required": false,
-        "disabled": false,
-        "invalid": false,
-        "placeholder": "name@example.com"
-      },
-      "snippets": {
-        "react": "import { Input } from '@design-schema/react';\n\n<Input label=\"Email address\" name=\"email\" placeholder=\"name@example.com\" />",
-        "lit": null,
-        "rn": null,
-        "swift": null
-      },
-      "stories": {
-        "react": "WithPlaceholder",
-        "lit": null,
-        "rn": null,
-        "swift": null
-      },
-      "storyId": "input-react--with-placeholder",
-      "sweep": null,
-      "decorated": false,
-      "primary": true
-    },
-    {
-      "title": "Required",
-      "args": {
-        "label": "Email address",
-        "name": "email",
-        "type": "text",
-        "required": true,
-        "disabled": false,
-        "invalid": false
-      },
-      "snippets": {
-        "react": "import { Input } from '@design-schema/react';\n\n<Input label=\"Email address\" name=\"email\" required />",
-        "lit": "<ds-input label=\"Email address\" name=\"email\" required></ds-input>",
-        "rn": "import { Input } from '@design-schema/rn';\n\n<Input\n  label=\"Email address\"\n  name=\"email\"\n  placeholder=\"name@example.com\"\n  description=\"Use the email you signed up with.\"\n  required\n/>",
-        "swift": null
-      },
-      "stories": {
-        "react": "Required",
-        "lit": "Required",
-        "rn": "Required",
-        "swift": null
-      },
-      "storyId": "input-react--required",
-      "sweep": {
-        "prop": "required",
-        "value": true
-      },
-      "decorated": false,
-      "primary": true
-    },
-    {
-      "title": "Disabled",
-      "args": {
-        "label": "Email address",
-        "name": "email",
-        "type": "text",
-        "required": false,
-        "disabled": true,
-        "invalid": false,
-        "defaultValue": "name@example.com"
-      },
-      "snippets": {
-        "react": "import { Input } from '@design-schema/react';\n\n<Input\n  label=\"Email address\"\n  name=\"email\"\n  disabled\n  defaultValue=\"name@example.com\"\n/>",
-        "lit": "<ds-input label=\"Email address\" name=\"email\" default-value=\"name@example.com\" disabled></ds-input>",
-        "rn": "import { Input } from '@design-schema/rn';\n\n<Input\n  label=\"Email address\"\n  name=\"email\"\n  placeholder=\"name@example.com\"\n  description=\"Use the email you signed up with.\"\n  disabled\n  value=\"name@example.com\"\n/>",
-        "swift": null
-      },
-      "stories": {
-        "react": "Disabled",
-        "lit": "Disabled",
-        "rn": "Disabled",
-        "swift": null
-      },
-      "storyId": "input-react--disabled",
-      "sweep": {
-        "prop": "disabled",
-        "value": true
-      },
-      "decorated": false,
-      "primary": true
-    },
-    {
-      "title": "Invalid",
-      "args": {
-        "label": "Email address",
-        "name": "email",
-        "type": "text",
-        "required": false,
-        "disabled": false,
-        "invalid": true
-      },
-      "snippets": {
-        "react": "import { Input } from '@design-schema/react';\n\n<Input label=\"Email address\" name=\"email\" invalid />",
-        "lit": "<ds-input label=\"Email address\" name=\"email\" invalid></ds-input>",
-        "rn": "import { Input } from '@design-schema/rn';\n\n<Input\n  label=\"Email address\"\n  name=\"email\"\n  placeholder=\"name@example.com\"\n  description=\"Use the email you signed up with.\"\n  invalid\n/>",
-        "swift": null
-      },
-      "stories": {
-        "react": "Invalid",
-        "lit": "Invalid",
-        "rn": "Invalid",
-        "swift": null
-      },
-      "storyId": "input-react--invalid",
-      "sweep": {
-        "prop": "invalid",
-        "value": true
-      },
-      "decorated": false,
-      "primary": true
-    },
-    {
-      "title": "With Error",
-      "args": {
-        "label": "Email address",
-        "name": "email",
-        "type": "email",
-        "required": false,
-        "disabled": false,
-        "invalid": false,
-        "defaultValue": "name@",
-        "error": "Enter an email address like name@example.com."
-      },
-      "snippets": {
-        "react": "import { Input } from '@design-schema/react';\n\n<Input\n  label=\"Email address\"\n  name=\"email\"\n  type=\"email\"\n  defaultValue=\"name@\"\n  error=\"Enter an email address like name@example.com.\"\n/>",
-        "lit": "<ds-input\n  label=\"Email address\"\n  name=\"email\"\n  type=\"email\"\n  error=\"Enter an email address like name@example.com\"\n></ds-input>",
-        "rn": "import { Input } from '@design-schema/rn';\n\n<Input\n  label=\"Email address\"\n  name=\"email\"\n  placeholder=\"name@example.com\"\n  description=\"Use the email you signed up with.\"\n  error=\"Enter an email address like name@example.com.\"\n/>",
-        "swift": null
-      },
-      "stories": {
-        "react": "WithError",
-        "lit": "WithError",
-        "rn": "WithError",
-        "swift": null
-      },
-      "storyId": "input-react--with-error",
-      "sweep": {
-        "prop": "type",
-        "value": "email"
-      },
-      "decorated": false,
-      "primary": false
-    },
-    {
-      "title": "Controlled",
-      "args": {
-        "label": "Email address",
-        "name": "email",
-        "type": "text",
-        "required": false,
-        "disabled": false,
-        "invalid": false,
-        "value": "name@example.com"
-      },
-      "snippets": {
-        "react": "import { Input } from '@design-schema/react';\n\n<Input label=\"Email address\" name=\"email\" value=\"name@example.com\" />",
-        "lit": null,
-        "rn": null,
-        "swift": null
-      },
-      "stories": {
-        "react": "Controlled",
-        "lit": null,
-        "rn": null,
-        "swift": null
-      },
-      "storyId": "input-react--controlled",
-      "sweep": null,
-      "decorated": false,
-      "primary": true
-    },
-    {
-      "title": "Hide Label",
-      "args": {
-        "label": "Email address",
-        "name": "email",
-        "type": "text",
-        "required": false,
-        "disabled": false,
-        "invalid": false,
-        "hideLabel": true,
-        "placeholder": "Search projects"
-      },
-      "snippets": {
-        "react": "import { Input } from '@design-schema/react';\n\n<Input\n  label=\"Email address\"\n  name=\"email\"\n  hideLabel\n  placeholder=\"Search projects\"\n/>",
-        "lit": "<ds-input label=\"Email address\" name=\"email\" type=\"search\" placeholder=\"Search projects\" hide-label></ds-input>",
-        "rn": "import { Input } from '@design-schema/rn';\n\n<Input\n  label=\"Search\"\n  name=\"q\"\n  type=\"search\"\n  placeholder=\"Search projects\"\n  description=\"Use the email you signed up with.\"\n  hideLabel\n/>",
-        "swift": null
-      },
-      "stories": {
-        "react": "HideLabel",
-        "lit": "HideLabel",
-        "rn": "HideLabel",
-        "swift": null
-      },
-      "storyId": "input-react--hide-label",
-      "sweep": {
-        "prop": "hideLabel",
-        "value": true
-      },
-      "decorated": false,
-      "primary": false
-    },
-    {
       "title": "Size Sm",
       "args": {
         "label": "Email address",
         "name": "email",
-        "type": "text",
-        "required": false,
-        "disabled": false,
-        "invalid": false,
         "size": "sm"
       },
       "snippets": {
         "react": "import { Input } from '@design-schema/react';\n\n<Input label=\"Email address\" name=\"email\" size=\"sm\" />",
         "lit": "<ds-input label=\"Email address\" name=\"email\" size=\"sm\"></ds-input>",
-        "rn": "import { Input } from '@design-schema/rn';\n\n<Input\n  label=\"Email address\"\n  name=\"email\"\n  placeholder=\"name@example.com\"\n  description=\"Use the email you signed up with.\"\n  size=\"sm\"\n/>",
+        "rn": "import { Input } from '@design-schema/rn';\n\n<Input label=\"Email address\" name=\"email\" size=\"sm\" />",
         "swift": null
       },
       "stories": {
@@ -529,16 +251,12 @@
       "args": {
         "label": "Email address",
         "name": "email",
-        "type": "text",
-        "required": false,
-        "disabled": false,
-        "invalid": false,
         "size": "md"
       },
       "snippets": {
         "react": "import { Input } from '@design-schema/react';\n\n<Input label=\"Email address\" name=\"email\" size=\"md\" />",
         "lit": "<ds-input label=\"Email address\" name=\"email\" size=\"md\"></ds-input>",
-        "rn": "import { Input } from '@design-schema/rn';\n\n<Input\n  label=\"Email address\"\n  name=\"email\"\n  placeholder=\"name@example.com\"\n  description=\"Use the email you signed up with.\"\n  size=\"md\"\n/>",
+        "rn": "import { Input } from '@design-schema/rn';\n\n<Input label=\"Email address\" name=\"email\" size=\"md\" />",
         "swift": null
       },
       "stories": {
@@ -552,6 +270,219 @@
         "prop": "size",
         "value": "md"
       },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Email With A Description",
+      "args": {
+        "label": "Email address",
+        "name": "email",
+        "type": "email",
+        "description": "Use the email you signed up with."
+      },
+      "snippets": {
+        "react": "import { Input } from '@design-schema/react';\n\n<Input\n  label=\"Email address\"\n  name=\"email\"\n  type=\"email\"\n  description=\"Use the email you signed up with.\"\n/>",
+        "lit": "<ds-input\n  label=\"Email address\"\n  name=\"email\"\n  type=\"email\"\n  description=\"Use the email you signed up with.\"\n></ds-input>",
+        "rn": "import { Input } from '@design-schema/rn';\n\n<Input\n  label=\"Email address\"\n  name=\"email\"\n  type=\"email\"\n  description=\"Use the email you signed up with.\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "EmailWithADescription",
+        "lit": "EmailWithADescription",
+        "rn": "EmailWithADescription",
+        "swift": null
+      },
+      "storyId": "input-react--email-with-a-description",
+      "sweep": {
+        "prop": "type",
+        "value": "email"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Required Field",
+      "args": {
+        "label": "Full name",
+        "name": "name",
+        "required": true
+      },
+      "snippets": {
+        "react": "import { Input } from '@design-schema/react';\n\n<Input label=\"Full name\" name=\"name\" required />",
+        "lit": "<ds-input label=\"Full name\" name=\"name\" required></ds-input>",
+        "rn": "import { Input } from '@design-schema/rn';\n\n<Input label=\"Full name\" name=\"name\" required />",
+        "swift": null
+      },
+      "stories": {
+        "react": "RequiredField",
+        "lit": "RequiredField",
+        "rn": "RequiredField",
+        "swift": null
+      },
+      "storyId": "input-react--required-field",
+      "sweep": {
+        "prop": "required",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Field With An Error",
+      "args": {
+        "label": "Email address",
+        "name": "email",
+        "type": "email",
+        "error": "Enter an email address like name@example.com"
+      },
+      "snippets": {
+        "react": "import { Input } from '@design-schema/react';\n\n<Input\n  label=\"Email address\"\n  name=\"email\"\n  type=\"email\"\n  error=\"Enter an email address like name@example.com\"\n/>",
+        "lit": "<ds-input\n  label=\"Email address\"\n  name=\"email\"\n  type=\"email\"\n  error=\"Enter an email address like name@example.com\"\n></ds-input>",
+        "rn": "import { Input } from '@design-schema/rn';\n\n<Input\n  label=\"Email address\"\n  name=\"email\"\n  type=\"email\"\n  error=\"Enter an email address like name@example.com\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "FieldWithAnError",
+        "lit": "FieldWithAnError",
+        "rn": "FieldWithAnError",
+        "swift": null
+      },
+      "storyId": "input-react--field-with-an-error",
+      "sweep": {
+        "prop": "type",
+        "value": "email"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Dense Grid Editor",
+      "args": {
+        "label": "Quantity",
+        "name": "quantity",
+        "type": "number",
+        "size": "sm",
+        "hideLabel": true
+      },
+      "snippets": {
+        "react": "import { Input } from '@design-schema/react';\n\n<Input label=\"Quantity\" name=\"quantity\" type=\"number\" size=\"sm\" hideLabel />",
+        "lit": "<ds-input label=\"Quantity\" name=\"quantity\" type=\"number\" size=\"sm\" hide-label></ds-input>",
+        "rn": "import { Input } from '@design-schema/rn';\n\n<Input label=\"Quantity\" name=\"quantity\" type=\"number\" size=\"sm\" hideLabel />",
+        "swift": null
+      },
+      "stories": {
+        "react": "DenseGridEditor",
+        "lit": "DenseGridEditor",
+        "rn": "DenseGridEditor",
+        "swift": null
+      },
+      "storyId": "input-react--dense-grid-editor",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Disabled",
+      "args": {
+        "label": "Email address",
+        "name": "email",
+        "disabled": true,
+        "defaultValue": "name@example.com"
+      },
+      "snippets": {
+        "react": "import { Input } from '@design-schema/react';\n\n<Input\n  label=\"Email address\"\n  name=\"email\"\n  disabled\n  defaultValue=\"name@example.com\"\n/>",
+        "lit": "<ds-input label=\"Email address\" name=\"email\" default-value=\"name@example.com\" disabled></ds-input>",
+        "rn": "import { Input } from '@design-schema/rn';\n\n<Input\n  label=\"Email address\"\n  name=\"email\"\n  disabled\n  defaultValue=\"name@example.com\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Disabled",
+        "lit": "Disabled",
+        "rn": "Disabled",
+        "swift": null
+      },
+      "storyId": "input-react--disabled",
+      "sweep": {
+        "prop": "disabled",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Invalid",
+      "args": {
+        "label": "Email address",
+        "name": "email",
+        "invalid": true
+      },
+      "snippets": {
+        "react": "import { Input } from '@design-schema/react';\n\n<Input label=\"Email address\" name=\"email\" invalid />",
+        "lit": "<ds-input label=\"Email address\" name=\"email\" invalid></ds-input>",
+        "rn": "import { Input } from '@design-schema/rn';\n\n<Input label=\"Email address\" name=\"email\" invalid />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Invalid",
+        "lit": "Invalid",
+        "rn": "Invalid",
+        "swift": null
+      },
+      "storyId": "input-react--invalid",
+      "sweep": {
+        "prop": "invalid",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Invalid Required Empty",
+      "args": {
+        "label": "Email address",
+        "name": "email",
+        "invalid": true,
+        "required": true
+      },
+      "snippets": {
+        "react": "import { Input } from '@design-schema/react';\n\n<Input label=\"Email address\" name=\"email\" invalid required />",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "InvalidRequiredEmpty",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "input-react--invalid-required-empty",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "With Placeholder",
+      "args": {
+        "label": "Email address",
+        "name": "email",
+        "placeholder": "name@example.com"
+      },
+      "snippets": {
+        "react": "import { Input } from '@design-schema/react';\n\n<Input label=\"Email address\" name=\"email\" placeholder=\"name@example.com\" />",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "WithPlaceholder",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "input-react--with-placeholder",
+      "sweep": null,
       "decorated": false,
       "primary": false
     }

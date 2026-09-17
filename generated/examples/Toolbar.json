@@ -25,16 +25,8 @@
                   "$element": "Button",
                   "props": {
                     "variant": "ghost",
-                    "iconOnly": true,
                     "label": "Bold",
-                    "leadingIcon": {
-                      "$element": "Icon",
-                      "props": {
-                        "name": "check",
-                        "inline": true
-                      },
-                      "children": []
-                    }
+                    "overflowLabel": "Bold"
                   },
                   "children": []
                 },
@@ -42,16 +34,17 @@
                   "$element": "Button",
                   "props": {
                     "variant": "ghost",
-                    "iconOnly": true,
                     "label": "Italic",
-                    "leadingIcon": {
-                      "$element": "Icon",
-                      "props": {
-                        "name": "check",
-                        "inline": true
-                      },
-                      "children": []
-                    }
+                    "overflowLabel": "Italic"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "label": "Underline",
+                    "overflowLabel": "Underline"
                   },
                   "children": []
                 }
@@ -67,22 +60,21 @@
                   "$element": "SegmentedControl",
                   "props": {
                     "label": "Alignment",
-                    "size": "sm",
                     "iconOnly": true,
                     "options": [
                       {
                         "value": "left",
-                        "label": "Left",
+                        "label": "Align left",
                         "icon": "chevron-left"
                       },
                       {
                         "value": "center",
-                        "label": "Center",
+                        "label": "Align center",
                         "icon": "dash"
                       },
                       {
                         "value": "right",
-                        "label": "Right",
+                        "label": "Align right",
                         "icon": "chevron-right"
                       }
                     ]
@@ -92,28 +84,38 @@
               ]
             },
             {
-              "$element": "Button",
+              "$element": "ToolbarGroup",
               "props": {
-                "variant": "ghost",
-                "label": "Insert link"
+                "label": "Insert"
               },
-              "children": []
-            },
-            {
-              "$element": "Button",
-              "props": {
-                "variant": "ghost",
-                "label": "Insert image"
-              },
-              "children": []
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "label": "Insert link",
+                    "overflowLabel": "Insert link"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "label": "Insert image",
+                    "overflowLabel": "Insert image"
+                  },
+                  "children": []
+                }
+              ]
             }
           ]
         }
       },
       "snippets": {
-        "react": "import { Toolbar, ToolbarGroup, Button, SegmentedControl, Icon } from '@design-schema/react';\n\n<Toolbar label=\"Formatting\">\n  <>\n    <ToolbarGroup label=\"Text style\">\n      <Button variant=\"ghost\" iconOnly label=\"Bold\" leadingIcon={<Icon name=\"check\" inline />} />\n      <Button variant=\"ghost\" iconOnly label=\"Italic\" leadingIcon={<Icon name=\"check\" inline />} />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Alignment\">\n      <SegmentedControl\n        label=\"Alignment\"\n        size=\"sm\"\n        iconOnly\n        options={[\n          { value: 'left', label: 'Left', icon: 'chevron-left' },\n          { value: 'center', label: 'Center', icon: 'dash' },\n          { value: 'right', label: 'Right', icon: 'chevron-right' },\n        ]}\n      />\n    </ToolbarGroup>\n    <Button variant=\"ghost\" label=\"Insert link\" />\n    <Button variant=\"ghost\" label=\"Insert image\" />\n  </>\n</Toolbar>",
-        "lit": "<ds-toolbar label=\"Formatting\" style=\"max-inline-size: 22rem;\">\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Bold\" overflow-label=\"Bold\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Italic\" overflow-label=\"Italic\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Underline\" overflow-label=\"Underline\"></ds-button>\n  </ds-toolbar-group>\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align left\" overflow-label=\"Align left\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align center\" overflow-label=\"Align center\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align right\" overflow-label=\"Align right\"></ds-button>\n  </ds-toolbar-group>\n  <ds-button variant=\"ghost\" size=\"sm\" label=\"Share\" overflow-label=\"Share\"></ds-button>\n</ds-toolbar>",
-        "rn": "import * as React from 'react';\nimport { Toolbar, type ToolbarOrientation, Button, Divider, Switch } from '@design-schema/rn';\n\nfunction buildChildren(orientation: ToolbarOrientation): React.ReactNode {\n  const dividerOrientation = orientation === 'vertical' ? 'horizontal' : 'vertical';\n  return (\n    <>\n      <Button label=\"Bold\" variant=\"ghost\" iconOnly />\n      <Button label=\"Italic\" variant=\"ghost\" iconOnly />\n      <Button label=\"Underline\" variant=\"ghost\" iconOnly />\n      <Divider orientation={dividerOrientation} />\n      <Button label=\"Insert link\" variant=\"secondary\" />\n      <Divider orientation={dividerOrientation} />\n      <Switch label=\"Preview\" checked={false} />\n    </>\n  );\n}\n\n<Toolbar label=\"Formatting\">{buildChildren('horizontal' ?? 'horizontal')}</Toolbar>",
+        "react": "import { Toolbar, ToolbarGroup, Button, SegmentedControl } from '@design-schema/react';\n\n<Toolbar label=\"Formatting\">\n  <>\n    <ToolbarGroup label=\"Text style\">\n      <Button variant=\"ghost\" label=\"Bold\" overflowLabel=\"Bold\" />\n      <Button variant=\"ghost\" label=\"Italic\" overflowLabel=\"Italic\" />\n      <Button variant=\"ghost\" label=\"Underline\" overflowLabel=\"Underline\" />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Alignment\">\n      <SegmentedControl\n        label=\"Alignment\"\n        iconOnly\n        options={[\n          { value: 'left', label: 'Align left', icon: 'chevron-left' },\n          { value: 'center', label: 'Align center', icon: 'dash' },\n          { value: 'right', label: 'Align right', icon: 'chevron-right' },\n        ]}\n      />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Insert\">\n      <Button variant=\"ghost\" label=\"Insert link\" overflowLabel=\"Insert link\" />\n      <Button variant=\"ghost\" label=\"Insert image\" overflowLabel=\"Insert image\" />\n    </ToolbarGroup>\n  </>\n</Toolbar>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst button = (label: string): TemplateResult =>\n  html`<ds-button variant=\"ghost\" label=${label} overflow-label=${label}></ds-button>`;\n\nconst FORMATTING_GROUPS = 'Two labelled groups of ghost Buttons: Text style (Bold, Italic, Underline) and Alignment (Align left, Align center, Align right)';\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [FORMATTING_GROUPS]: () => html`\n    <ds-toolbar-group label=\"Text style\">${button('Bold')}${button('Italic')}${button('Underline')}</ds-toolbar-group>\n    <ds-toolbar-group label=\"Alignment\">${button('Align left')}${button('Align center')}${button('Align right')}</ds-toolbar-group>\n  `,\n  'Three ghost text Buttons labelled Bold, Italic and Underline (the icon set has no formatting glyphs)': () =>\n    html`${button('Bold')}${button('Italic')}${button('Underline')}`,\n  'Three ghost text Buttons labelled Select, Draw and Erase': () =>\n    html`${button('Select')}${button('Draw')}${button('Erase')}`,\n  'Four ghost text Buttons labelled Filter, Sort, Export and Delete, each with the same overflowLabel': () =>\n    html`${button('Filter')}${button('Sort')}${button('Export')}${button('Delete')}`,\n  'A SegmentedControl labelled View (List, Board) and two Selects: Owner (name owner; Anyone, Me) and Sort (name sort; Newest, Oldest)':\n    () => html`\n      <ds-segmented-control\n        label=\"View\"\n        .options=${[\n          { value: 'list', label: 'List' },\n          { value: 'board', label: 'Board' },\n        ]}\n      ></ds-segmented-control>\n      <ds-select\n        label=\"Owner\"\n        name=\"owner\"\n        hide-label\n        .options=${[\n          { value: 'anyone', label: 'Anyone' },\n          { value: 'me', label: 'Me' },\n        ]}\n      ></ds-select>\n      <ds-select\n        label=\"Sort\"\n        name=\"sort\"\n        hide-label\n        .options=${[\n          { value: 'newest', label: 'Newest' },\n          { value: 'oldest', label: 'Oldest' },\n        ]}\n      ></ds-select>\n    `,\n};\n\nhtml`\n  <ds-toolbar label=\"Formatting\">\n    ${(CHILDREN[FORMATTING_GROUPS] ?? CHILDREN[FORMATTING_GROUPS]!)()}\n  </ds-toolbar>\n`;",
+        "rn": "import * as React from 'react';\nimport { Toolbar, ToolbarGroup, Button, Switch } from '@design-schema/rn';\n\nfunction formattingControls(): React.ReactNode {\n  return (\n    <>\n      <ToolbarGroup label=\"Text style\">\n        <Button label=\"Bold\" variant=\"ghost\" overflowLabel=\"Bold\" />\n        <Button label=\"Italic\" variant=\"ghost\" overflowLabel=\"Italic\" />\n        <Button label=\"Underline\" variant=\"ghost\" overflowLabel=\"Underline\" />\n      </ToolbarGroup>\n      <ToolbarGroup label=\"Insert\">\n        <Button label=\"Insert link\" variant=\"ghost\" overflowLabel=\"Insert link\" />\n      </ToolbarGroup>\n      <Switch label=\"Preview\" defaultChecked={false} />\n    </>\n  );\n}\n\n<Toolbar label=\"Formatting\">{formattingControls()}</Toolbar>",
         "swift": null
       },
       "stories": {
@@ -145,16 +147,8 @@
                   "$element": "Button",
                   "props": {
                     "variant": "ghost",
-                    "iconOnly": true,
                     "label": "Bold",
-                    "leadingIcon": {
-                      "$element": "Icon",
-                      "props": {
-                        "name": "check",
-                        "inline": true
-                      },
-                      "children": []
-                    }
+                    "overflowLabel": "Bold"
                   },
                   "children": []
                 },
@@ -162,16 +156,17 @@
                   "$element": "Button",
                   "props": {
                     "variant": "ghost",
-                    "iconOnly": true,
                     "label": "Italic",
-                    "leadingIcon": {
-                      "$element": "Icon",
-                      "props": {
-                        "name": "check",
-                        "inline": true
-                      },
-                      "children": []
-                    }
+                    "overflowLabel": "Italic"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "label": "Underline",
+                    "overflowLabel": "Underline"
                   },
                   "children": []
                 }
@@ -187,22 +182,21 @@
                   "$element": "SegmentedControl",
                   "props": {
                     "label": "Alignment",
-                    "size": "sm",
                     "iconOnly": true,
                     "options": [
                       {
                         "value": "left",
-                        "label": "Left",
+                        "label": "Align left",
                         "icon": "chevron-left"
                       },
                       {
                         "value": "center",
-                        "label": "Center",
+                        "label": "Align center",
                         "icon": "dash"
                       },
                       {
                         "value": "right",
-                        "label": "Right",
+                        "label": "Align right",
                         "icon": "chevron-right"
                       }
                     ]
@@ -212,29 +206,39 @@
               ]
             },
             {
-              "$element": "Button",
+              "$element": "ToolbarGroup",
               "props": {
-                "variant": "ghost",
-                "label": "Insert link"
+                "label": "Insert"
               },
-              "children": []
-            },
-            {
-              "$element": "Button",
-              "props": {
-                "variant": "ghost",
-                "label": "Insert image"
-              },
-              "children": []
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "label": "Insert link",
+                    "overflowLabel": "Insert link"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "label": "Insert image",
+                    "overflowLabel": "Insert image"
+                  },
+                  "children": []
+                }
+              ]
             }
           ]
         },
         "orientation": "horizontal"
       },
       "snippets": {
-        "react": "import { Toolbar, ToolbarGroup, Button, SegmentedControl, Icon } from '@design-schema/react';\n\n<Toolbar label=\"Formatting\" orientation=\"horizontal\">\n  <>\n    <ToolbarGroup label=\"Text style\">\n      <Button variant=\"ghost\" iconOnly label=\"Bold\" leadingIcon={<Icon name=\"check\" inline />} />\n      <Button variant=\"ghost\" iconOnly label=\"Italic\" leadingIcon={<Icon name=\"check\" inline />} />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Alignment\">\n      <SegmentedControl\n        label=\"Alignment\"\n        size=\"sm\"\n        iconOnly\n        options={[\n          { value: 'left', label: 'Left', icon: 'chevron-left' },\n          { value: 'center', label: 'Center', icon: 'dash' },\n          { value: 'right', label: 'Right', icon: 'chevron-right' },\n        ]}\n      />\n    </ToolbarGroup>\n    <Button variant=\"ghost\" label=\"Insert link\" />\n    <Button variant=\"ghost\" label=\"Insert image\" />\n  </>\n</Toolbar>",
-        "lit": "<ds-toolbar label=\"Formatting\" orientation=\"horizontal\" style=\"max-inline-size: 22rem;\">\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Bold\" overflow-label=\"Bold\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Italic\" overflow-label=\"Italic\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Underline\" overflow-label=\"Underline\"></ds-button>\n  </ds-toolbar-group>\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align left\" overflow-label=\"Align left\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align center\" overflow-label=\"Align center\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align right\" overflow-label=\"Align right\"></ds-button>\n  </ds-toolbar-group>\n  <ds-button variant=\"ghost\" size=\"sm\" label=\"Share\" overflow-label=\"Share\"></ds-button>\n</ds-toolbar>",
-        "rn": "import * as React from 'react';\nimport { Toolbar, type ToolbarOrientation, Button, Divider, Switch } from '@design-schema/rn';\n\nfunction buildChildren(orientation: ToolbarOrientation): React.ReactNode {\n  const dividerOrientation = orientation === 'vertical' ? 'horizontal' : 'vertical';\n  return (\n    <>\n      <Button label=\"Bold\" variant=\"ghost\" iconOnly />\n      <Button label=\"Italic\" variant=\"ghost\" iconOnly />\n      <Button label=\"Underline\" variant=\"ghost\" iconOnly />\n      <Divider orientation={dividerOrientation} />\n      <Button label=\"Insert link\" variant=\"secondary\" />\n      <Divider orientation={dividerOrientation} />\n      <Switch label=\"Preview\" checked={false} />\n    </>\n  );\n}\n\n<Toolbar label=\"Formatting\" orientation=\"horizontal\">{buildChildren('horizontal' ?? 'horizontal')}</Toolbar>",
+        "react": "import { Toolbar, ToolbarGroup, Button, SegmentedControl } from '@design-schema/react';\n\n<Toolbar label=\"Formatting\" orientation=\"horizontal\">\n  <>\n    <ToolbarGroup label=\"Text style\">\n      <Button variant=\"ghost\" label=\"Bold\" overflowLabel=\"Bold\" />\n      <Button variant=\"ghost\" label=\"Italic\" overflowLabel=\"Italic\" />\n      <Button variant=\"ghost\" label=\"Underline\" overflowLabel=\"Underline\" />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Alignment\">\n      <SegmentedControl\n        label=\"Alignment\"\n        iconOnly\n        options={[\n          { value: 'left', label: 'Align left', icon: 'chevron-left' },\n          { value: 'center', label: 'Align center', icon: 'dash' },\n          { value: 'right', label: 'Align right', icon: 'chevron-right' },\n        ]}\n      />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Insert\">\n      <Button variant=\"ghost\" label=\"Insert link\" overflowLabel=\"Insert link\" />\n      <Button variant=\"ghost\" label=\"Insert image\" overflowLabel=\"Insert image\" />\n    </ToolbarGroup>\n  </>\n</Toolbar>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst button = (label: string): TemplateResult =>\n  html`<ds-button variant=\"ghost\" label=${label} overflow-label=${label}></ds-button>`;\n\nconst FORMATTING_GROUPS = 'Two labelled groups of ghost Buttons: Text style (Bold, Italic, Underline) and Alignment (Align left, Align center, Align right)';\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [FORMATTING_GROUPS]: () => html`\n    <ds-toolbar-group label=\"Text style\">${button('Bold')}${button('Italic')}${button('Underline')}</ds-toolbar-group>\n    <ds-toolbar-group label=\"Alignment\">${button('Align left')}${button('Align center')}${button('Align right')}</ds-toolbar-group>\n  `,\n  'Three ghost text Buttons labelled Bold, Italic and Underline (the icon set has no formatting glyphs)': () =>\n    html`${button('Bold')}${button('Italic')}${button('Underline')}`,\n  'Three ghost text Buttons labelled Select, Draw and Erase': () =>\n    html`${button('Select')}${button('Draw')}${button('Erase')}`,\n  'Four ghost text Buttons labelled Filter, Sort, Export and Delete, each with the same overflowLabel': () =>\n    html`${button('Filter')}${button('Sort')}${button('Export')}${button('Delete')}`,\n  'A SegmentedControl labelled View (List, Board) and two Selects: Owner (name owner; Anyone, Me) and Sort (name sort; Newest, Oldest)':\n    () => html`\n      <ds-segmented-control\n        label=\"View\"\n        .options=${[\n          { value: 'list', label: 'List' },\n          { value: 'board', label: 'Board' },\n        ]}\n      ></ds-segmented-control>\n      <ds-select\n        label=\"Owner\"\n        name=\"owner\"\n        hide-label\n        .options=${[\n          { value: 'anyone', label: 'Anyone' },\n          { value: 'me', label: 'Me' },\n        ]}\n      ></ds-select>\n      <ds-select\n        label=\"Sort\"\n        name=\"sort\"\n        hide-label\n        .options=${[\n          { value: 'newest', label: 'Newest' },\n          { value: 'oldest', label: 'Oldest' },\n        ]}\n      ></ds-select>\n    `,\n};\n\nhtml`\n  <ds-toolbar label=\"Formatting\" orientation=\"horizontal\">\n    ${(CHILDREN[FORMATTING_GROUPS] ?? CHILDREN[FORMATTING_GROUPS]!)()}\n  </ds-toolbar>\n`;",
+        "rn": "import * as React from 'react';\nimport { Toolbar, ToolbarGroup, Button, Switch } from '@design-schema/rn';\n\nfunction formattingControls(): React.ReactNode {\n  return (\n    <>\n      <ToolbarGroup label=\"Text style\">\n        <Button label=\"Bold\" variant=\"ghost\" overflowLabel=\"Bold\" />\n        <Button label=\"Italic\" variant=\"ghost\" overflowLabel=\"Italic\" />\n        <Button label=\"Underline\" variant=\"ghost\" overflowLabel=\"Underline\" />\n      </ToolbarGroup>\n      <ToolbarGroup label=\"Insert\">\n        <Button label=\"Insert link\" variant=\"ghost\" overflowLabel=\"Insert link\" />\n      </ToolbarGroup>\n      <Switch label=\"Preview\" defaultChecked={false} />\n    </>\n  );\n}\n\n<Toolbar label=\"Formatting\" orientation=\"horizontal\">{formattingControls()}</Toolbar>",
         "swift": null
       },
       "stories": {
@@ -269,16 +273,8 @@
                   "$element": "Button",
                   "props": {
                     "variant": "ghost",
-                    "iconOnly": true,
                     "label": "Bold",
-                    "leadingIcon": {
-                      "$element": "Icon",
-                      "props": {
-                        "name": "check",
-                        "inline": true
-                      },
-                      "children": []
-                    }
+                    "overflowLabel": "Bold"
                   },
                   "children": []
                 },
@@ -286,16 +282,17 @@
                   "$element": "Button",
                   "props": {
                     "variant": "ghost",
-                    "iconOnly": true,
                     "label": "Italic",
-                    "leadingIcon": {
-                      "$element": "Icon",
-                      "props": {
-                        "name": "check",
-                        "inline": true
-                      },
-                      "children": []
-                    }
+                    "overflowLabel": "Italic"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "label": "Underline",
+                    "overflowLabel": "Underline"
                   },
                   "children": []
                 }
@@ -311,22 +308,21 @@
                   "$element": "SegmentedControl",
                   "props": {
                     "label": "Alignment",
-                    "size": "sm",
                     "iconOnly": true,
                     "options": [
                       {
                         "value": "left",
-                        "label": "Left",
+                        "label": "Align left",
                         "icon": "chevron-left"
                       },
                       {
                         "value": "center",
-                        "label": "Center",
+                        "label": "Align center",
                         "icon": "dash"
                       },
                       {
                         "value": "right",
-                        "label": "Right",
+                        "label": "Align right",
                         "icon": "chevron-right"
                       }
                     ]
@@ -336,29 +332,39 @@
               ]
             },
             {
-              "$element": "Button",
+              "$element": "ToolbarGroup",
               "props": {
-                "variant": "ghost",
-                "label": "Insert link"
+                "label": "Insert"
               },
-              "children": []
-            },
-            {
-              "$element": "Button",
-              "props": {
-                "variant": "ghost",
-                "label": "Insert image"
-              },
-              "children": []
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "label": "Insert link",
+                    "overflowLabel": "Insert link"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "label": "Insert image",
+                    "overflowLabel": "Insert image"
+                  },
+                  "children": []
+                }
+              ]
             }
           ]
         },
         "orientation": "vertical"
       },
       "snippets": {
-        "react": "import { Toolbar, ToolbarGroup, Button, SegmentedControl, Icon } from '@design-schema/react';\n\n<Toolbar label=\"Formatting\" orientation=\"vertical\">\n  <>\n    <ToolbarGroup label=\"Text style\">\n      <Button variant=\"ghost\" iconOnly label=\"Bold\" leadingIcon={<Icon name=\"check\" inline />} />\n      <Button variant=\"ghost\" iconOnly label=\"Italic\" leadingIcon={<Icon name=\"check\" inline />} />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Alignment\">\n      <SegmentedControl\n        label=\"Alignment\"\n        size=\"sm\"\n        iconOnly\n        options={[\n          { value: 'left', label: 'Left', icon: 'chevron-left' },\n          { value: 'center', label: 'Center', icon: 'dash' },\n          { value: 'right', label: 'Right', icon: 'chevron-right' },\n        ]}\n      />\n    </ToolbarGroup>\n    <Button variant=\"ghost\" label=\"Insert link\" />\n    <Button variant=\"ghost\" label=\"Insert image\" />\n  </>\n</Toolbar>",
-        "lit": "<ds-toolbar label=\"Formatting\" orientation=\"vertical\" style=\"max-inline-size: 22rem;\">\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Bold\" overflow-label=\"Bold\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Italic\" overflow-label=\"Italic\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Underline\" overflow-label=\"Underline\"></ds-button>\n  </ds-toolbar-group>\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align left\" overflow-label=\"Align left\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align center\" overflow-label=\"Align center\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align right\" overflow-label=\"Align right\"></ds-button>\n  </ds-toolbar-group>\n  <ds-button variant=\"ghost\" size=\"sm\" label=\"Share\" overflow-label=\"Share\"></ds-button>\n</ds-toolbar>",
-        "rn": "import * as React from 'react';\nimport { Toolbar, type ToolbarOrientation, Button, Divider, Switch } from '@design-schema/rn';\n\nfunction buildChildren(orientation: ToolbarOrientation): React.ReactNode {\n  const dividerOrientation = orientation === 'vertical' ? 'horizontal' : 'vertical';\n  return (\n    <>\n      <Button label=\"Bold\" variant=\"ghost\" iconOnly />\n      <Button label=\"Italic\" variant=\"ghost\" iconOnly />\n      <Button label=\"Underline\" variant=\"ghost\" iconOnly />\n      <Divider orientation={dividerOrientation} />\n      <Button label=\"Insert link\" variant=\"secondary\" />\n      <Divider orientation={dividerOrientation} />\n      <Switch label=\"Preview\" checked={false} />\n    </>\n  );\n}\n\n<Toolbar label=\"Formatting\" orientation=\"vertical\">{buildChildren('vertical' ?? 'horizontal')}</Toolbar>",
+        "react": "import { Toolbar, ToolbarGroup, Button, SegmentedControl } from '@design-schema/react';\n\n<Toolbar label=\"Formatting\" orientation=\"vertical\">\n  <>\n    <ToolbarGroup label=\"Text style\">\n      <Button variant=\"ghost\" label=\"Bold\" overflowLabel=\"Bold\" />\n      <Button variant=\"ghost\" label=\"Italic\" overflowLabel=\"Italic\" />\n      <Button variant=\"ghost\" label=\"Underline\" overflowLabel=\"Underline\" />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Alignment\">\n      <SegmentedControl\n        label=\"Alignment\"\n        iconOnly\n        options={[\n          { value: 'left', label: 'Align left', icon: 'chevron-left' },\n          { value: 'center', label: 'Align center', icon: 'dash' },\n          { value: 'right', label: 'Align right', icon: 'chevron-right' },\n        ]}\n      />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Insert\">\n      <Button variant=\"ghost\" label=\"Insert link\" overflowLabel=\"Insert link\" />\n      <Button variant=\"ghost\" label=\"Insert image\" overflowLabel=\"Insert image\" />\n    </ToolbarGroup>\n  </>\n</Toolbar>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst button = (label: string): TemplateResult =>\n  html`<ds-button variant=\"ghost\" label=${label} overflow-label=${label}></ds-button>`;\n\nconst FORMATTING_GROUPS = 'Two labelled groups of ghost Buttons: Text style (Bold, Italic, Underline) and Alignment (Align left, Align center, Align right)';\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [FORMATTING_GROUPS]: () => html`\n    <ds-toolbar-group label=\"Text style\">${button('Bold')}${button('Italic')}${button('Underline')}</ds-toolbar-group>\n    <ds-toolbar-group label=\"Alignment\">${button('Align left')}${button('Align center')}${button('Align right')}</ds-toolbar-group>\n  `,\n  'Three ghost text Buttons labelled Bold, Italic and Underline (the icon set has no formatting glyphs)': () =>\n    html`${button('Bold')}${button('Italic')}${button('Underline')}`,\n  'Three ghost text Buttons labelled Select, Draw and Erase': () =>\n    html`${button('Select')}${button('Draw')}${button('Erase')}`,\n  'Four ghost text Buttons labelled Filter, Sort, Export and Delete, each with the same overflowLabel': () =>\n    html`${button('Filter')}${button('Sort')}${button('Export')}${button('Delete')}`,\n  'A SegmentedControl labelled View (List, Board) and two Selects: Owner (name owner; Anyone, Me) and Sort (name sort; Newest, Oldest)':\n    () => html`\n      <ds-segmented-control\n        label=\"View\"\n        .options=${[\n          { value: 'list', label: 'List' },\n          { value: 'board', label: 'Board' },\n        ]}\n      ></ds-segmented-control>\n      <ds-select\n        label=\"Owner\"\n        name=\"owner\"\n        hide-label\n        .options=${[\n          { value: 'anyone', label: 'Anyone' },\n          { value: 'me', label: 'Me' },\n        ]}\n      ></ds-select>\n      <ds-select\n        label=\"Sort\"\n        name=\"sort\"\n        hide-label\n        .options=${[\n          { value: 'newest', label: 'Newest' },\n          { value: 'oldest', label: 'Oldest' },\n        ]}\n      ></ds-select>\n    `,\n};\n\nhtml`\n  <ds-toolbar label=\"Formatting\" orientation=\"vertical\">\n    ${(CHILDREN[FORMATTING_GROUPS] ?? CHILDREN[FORMATTING_GROUPS]!)()}\n  </ds-toolbar>\n`;",
+        "rn": "import * as React from 'react';\nimport { Toolbar, ToolbarGroup, Button, Switch } from '@design-schema/rn';\n\nfunction formattingControls(): React.ReactNode {\n  return (\n    <>\n      <ToolbarGroup label=\"Text style\">\n        <Button label=\"Bold\" variant=\"ghost\" overflowLabel=\"Bold\" />\n        <Button label=\"Italic\" variant=\"ghost\" overflowLabel=\"Italic\" />\n        <Button label=\"Underline\" variant=\"ghost\" overflowLabel=\"Underline\" />\n      </ToolbarGroup>\n      <ToolbarGroup label=\"Insert\">\n        <Button label=\"Insert link\" variant=\"ghost\" overflowLabel=\"Insert link\" />\n      </ToolbarGroup>\n      <Switch label=\"Preview\" defaultChecked={false} />\n    </>\n  );\n}\n\n<Toolbar label=\"Formatting\" orientation=\"vertical\">{formattingControls()}</Toolbar>",
         "swift": null
       },
       "stories": {
@@ -393,16 +399,8 @@
                   "$element": "Button",
                   "props": {
                     "variant": "ghost",
-                    "iconOnly": true,
                     "label": "Bold",
-                    "leadingIcon": {
-                      "$element": "Icon",
-                      "props": {
-                        "name": "check",
-                        "inline": true
-                      },
-                      "children": []
-                    }
+                    "overflowLabel": "Bold"
                   },
                   "children": []
                 },
@@ -410,16 +408,17 @@
                   "$element": "Button",
                   "props": {
                     "variant": "ghost",
-                    "iconOnly": true,
                     "label": "Italic",
-                    "leadingIcon": {
-                      "$element": "Icon",
-                      "props": {
-                        "name": "check",
-                        "inline": true
-                      },
-                      "children": []
-                    }
+                    "overflowLabel": "Italic"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "label": "Underline",
+                    "overflowLabel": "Underline"
                   },
                   "children": []
                 }
@@ -435,22 +434,21 @@
                   "$element": "SegmentedControl",
                   "props": {
                     "label": "Alignment",
-                    "size": "sm",
                     "iconOnly": true,
                     "options": [
                       {
                         "value": "left",
-                        "label": "Left",
+                        "label": "Align left",
                         "icon": "chevron-left"
                       },
                       {
                         "value": "center",
-                        "label": "Center",
+                        "label": "Align center",
                         "icon": "dash"
                       },
                       {
                         "value": "right",
-                        "label": "Right",
+                        "label": "Align right",
                         "icon": "chevron-right"
                       }
                     ]
@@ -460,29 +458,39 @@
               ]
             },
             {
-              "$element": "Button",
+              "$element": "ToolbarGroup",
               "props": {
-                "variant": "ghost",
-                "label": "Insert link"
+                "label": "Insert"
               },
-              "children": []
-            },
-            {
-              "$element": "Button",
-              "props": {
-                "variant": "ghost",
-                "label": "Insert image"
-              },
-              "children": []
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "label": "Insert link",
+                    "overflowLabel": "Insert link"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "label": "Insert image",
+                    "overflowLabel": "Insert image"
+                  },
+                  "children": []
+                }
+              ]
             }
           ]
         },
         "overflow": "wrap"
       },
       "snippets": {
-        "react": "import { Toolbar, ToolbarGroup, Button, SegmentedControl, Icon } from '@design-schema/react';\n\n<Toolbar label=\"Formatting\" overflow=\"wrap\">\n  <>\n    <ToolbarGroup label=\"Text style\">\n      <Button variant=\"ghost\" iconOnly label=\"Bold\" leadingIcon={<Icon name=\"check\" inline />} />\n      <Button variant=\"ghost\" iconOnly label=\"Italic\" leadingIcon={<Icon name=\"check\" inline />} />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Alignment\">\n      <SegmentedControl\n        label=\"Alignment\"\n        size=\"sm\"\n        iconOnly\n        options={[\n          { value: 'left', label: 'Left', icon: 'chevron-left' },\n          { value: 'center', label: 'Center', icon: 'dash' },\n          { value: 'right', label: 'Right', icon: 'chevron-right' },\n        ]}\n      />\n    </ToolbarGroup>\n    <Button variant=\"ghost\" label=\"Insert link\" />\n    <Button variant=\"ghost\" label=\"Insert image\" />\n  </>\n</Toolbar>",
-        "lit": "<ds-toolbar label=\"Formatting\" overflow=\"wrap\" style=\"max-inline-size: 22rem;\">\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Bold\" overflow-label=\"Bold\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Italic\" overflow-label=\"Italic\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Underline\" overflow-label=\"Underline\"></ds-button>\n  </ds-toolbar-group>\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align left\" overflow-label=\"Align left\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align center\" overflow-label=\"Align center\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align right\" overflow-label=\"Align right\"></ds-button>\n  </ds-toolbar-group>\n  <ds-button variant=\"ghost\" size=\"sm\" label=\"Share\" overflow-label=\"Share\"></ds-button>\n</ds-toolbar>",
-        "rn": "import * as React from 'react';\nimport { Toolbar, type ToolbarOrientation, Button, Divider, Switch } from '@design-schema/rn';\n\nfunction buildChildren(orientation: ToolbarOrientation): React.ReactNode {\n  const dividerOrientation = orientation === 'vertical' ? 'horizontal' : 'vertical';\n  return (\n    <>\n      <Button label=\"Bold\" variant=\"ghost\" iconOnly />\n      <Button label=\"Italic\" variant=\"ghost\" iconOnly />\n      <Button label=\"Underline\" variant=\"ghost\" iconOnly />\n      <Divider orientation={dividerOrientation} />\n      <Button label=\"Insert link\" variant=\"secondary\" />\n      <Divider orientation={dividerOrientation} />\n      <Switch label=\"Preview\" checked={false} />\n    </>\n  );\n}\n\n<Toolbar label=\"Formatting\" overflow=\"wrap\">{buildChildren('horizontal' ?? 'horizontal')}</Toolbar>",
+        "react": "import { Toolbar, ToolbarGroup, Button, SegmentedControl } from '@design-schema/react';\n\n<Toolbar label=\"Formatting\" overflow=\"wrap\">\n  <>\n    <ToolbarGroup label=\"Text style\">\n      <Button variant=\"ghost\" label=\"Bold\" overflowLabel=\"Bold\" />\n      <Button variant=\"ghost\" label=\"Italic\" overflowLabel=\"Italic\" />\n      <Button variant=\"ghost\" label=\"Underline\" overflowLabel=\"Underline\" />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Alignment\">\n      <SegmentedControl\n        label=\"Alignment\"\n        iconOnly\n        options={[\n          { value: 'left', label: 'Align left', icon: 'chevron-left' },\n          { value: 'center', label: 'Align center', icon: 'dash' },\n          { value: 'right', label: 'Align right', icon: 'chevron-right' },\n        ]}\n      />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Insert\">\n      <Button variant=\"ghost\" label=\"Insert link\" overflowLabel=\"Insert link\" />\n      <Button variant=\"ghost\" label=\"Insert image\" overflowLabel=\"Insert image\" />\n    </ToolbarGroup>\n  </>\n</Toolbar>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst button = (label: string): TemplateResult =>\n  html`<ds-button variant=\"ghost\" label=${label} overflow-label=${label}></ds-button>`;\n\nconst FORMATTING_GROUPS = 'Two labelled groups of ghost Buttons: Text style (Bold, Italic, Underline) and Alignment (Align left, Align center, Align right)';\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [FORMATTING_GROUPS]: () => html`\n    <ds-toolbar-group label=\"Text style\">${button('Bold')}${button('Italic')}${button('Underline')}</ds-toolbar-group>\n    <ds-toolbar-group label=\"Alignment\">${button('Align left')}${button('Align center')}${button('Align right')}</ds-toolbar-group>\n  `,\n  'Three ghost text Buttons labelled Bold, Italic and Underline (the icon set has no formatting glyphs)': () =>\n    html`${button('Bold')}${button('Italic')}${button('Underline')}`,\n  'Three ghost text Buttons labelled Select, Draw and Erase': () =>\n    html`${button('Select')}${button('Draw')}${button('Erase')}`,\n  'Four ghost text Buttons labelled Filter, Sort, Export and Delete, each with the same overflowLabel': () =>\n    html`${button('Filter')}${button('Sort')}${button('Export')}${button('Delete')}`,\n  'A SegmentedControl labelled View (List, Board) and two Selects: Owner (name owner; Anyone, Me) and Sort (name sort; Newest, Oldest)':\n    () => html`\n      <ds-segmented-control\n        label=\"View\"\n        .options=${[\n          { value: 'list', label: 'List' },\n          { value: 'board', label: 'Board' },\n        ]}\n      ></ds-segmented-control>\n      <ds-select\n        label=\"Owner\"\n        name=\"owner\"\n        hide-label\n        .options=${[\n          { value: 'anyone', label: 'Anyone' },\n          { value: 'me', label: 'Me' },\n        ]}\n      ></ds-select>\n      <ds-select\n        label=\"Sort\"\n        name=\"sort\"\n        hide-label\n        .options=${[\n          { value: 'newest', label: 'Newest' },\n          { value: 'oldest', label: 'Oldest' },\n        ]}\n      ></ds-select>\n    `,\n};\n\nhtml`\n  <ds-toolbar label=\"Formatting\" overflow=\"wrap\">\n    ${(CHILDREN[FORMATTING_GROUPS] ?? CHILDREN[FORMATTING_GROUPS]!)()}\n  </ds-toolbar>\n`;",
+        "rn": "import * as React from 'react';\nimport { Toolbar, ToolbarGroup, Button, Switch } from '@design-schema/rn';\n\nfunction formattingControls(): React.ReactNode {\n  return (\n    <>\n      <ToolbarGroup label=\"Text style\">\n        <Button label=\"Bold\" variant=\"ghost\" overflowLabel=\"Bold\" />\n        <Button label=\"Italic\" variant=\"ghost\" overflowLabel=\"Italic\" />\n        <Button label=\"Underline\" variant=\"ghost\" overflowLabel=\"Underline\" />\n      </ToolbarGroup>\n      <ToolbarGroup label=\"Insert\">\n        <Button label=\"Insert link\" variant=\"ghost\" overflowLabel=\"Insert link\" />\n      </ToolbarGroup>\n      <Switch label=\"Preview\" defaultChecked={false} />\n    </>\n  );\n}\n\n<Toolbar label=\"Formatting\" overflow=\"wrap\">{formattingControls()}</Toolbar>",
         "swift": null
       },
       "stories": {
@@ -517,16 +525,8 @@
                   "$element": "Button",
                   "props": {
                     "variant": "ghost",
-                    "iconOnly": true,
                     "label": "Bold",
-                    "leadingIcon": {
-                      "$element": "Icon",
-                      "props": {
-                        "name": "check",
-                        "inline": true
-                      },
-                      "children": []
-                    }
+                    "overflowLabel": "Bold"
                   },
                   "children": []
                 },
@@ -534,16 +534,17 @@
                   "$element": "Button",
                   "props": {
                     "variant": "ghost",
-                    "iconOnly": true,
                     "label": "Italic",
-                    "leadingIcon": {
-                      "$element": "Icon",
-                      "props": {
-                        "name": "check",
-                        "inline": true
-                      },
-                      "children": []
-                    }
+                    "overflowLabel": "Italic"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "label": "Underline",
+                    "overflowLabel": "Underline"
                   },
                   "children": []
                 }
@@ -559,22 +560,21 @@
                   "$element": "SegmentedControl",
                   "props": {
                     "label": "Alignment",
-                    "size": "sm",
                     "iconOnly": true,
                     "options": [
                       {
                         "value": "left",
-                        "label": "Left",
+                        "label": "Align left",
                         "icon": "chevron-left"
                       },
                       {
                         "value": "center",
-                        "label": "Center",
+                        "label": "Align center",
                         "icon": "dash"
                       },
                       {
                         "value": "right",
-                        "label": "Right",
+                        "label": "Align right",
                         "icon": "chevron-right"
                       }
                     ]
@@ -584,29 +584,39 @@
               ]
             },
             {
-              "$element": "Button",
+              "$element": "ToolbarGroup",
               "props": {
-                "variant": "ghost",
-                "label": "Insert link"
+                "label": "Insert"
               },
-              "children": []
-            },
-            {
-              "$element": "Button",
-              "props": {
-                "variant": "ghost",
-                "label": "Insert image"
-              },
-              "children": []
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "label": "Insert link",
+                    "overflowLabel": "Insert link"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "label": "Insert image",
+                    "overflowLabel": "Insert image"
+                  },
+                  "children": []
+                }
+              ]
             }
           ]
         },
         "overflow": "menu"
       },
       "snippets": {
-        "react": "import { Toolbar, ToolbarGroup, Button, SegmentedControl, Icon } from '@design-schema/react';\n\n<Toolbar label=\"Formatting\" overflow=\"menu\">\n  <>\n    <ToolbarGroup label=\"Text style\">\n      <Button variant=\"ghost\" iconOnly label=\"Bold\" leadingIcon={<Icon name=\"check\" inline />} />\n      <Button variant=\"ghost\" iconOnly label=\"Italic\" leadingIcon={<Icon name=\"check\" inline />} />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Alignment\">\n      <SegmentedControl\n        label=\"Alignment\"\n        size=\"sm\"\n        iconOnly\n        options={[\n          { value: 'left', label: 'Left', icon: 'chevron-left' },\n          { value: 'center', label: 'Center', icon: 'dash' },\n          { value: 'right', label: 'Right', icon: 'chevron-right' },\n        ]}\n      />\n    </ToolbarGroup>\n    <Button variant=\"ghost\" label=\"Insert link\" />\n    <Button variant=\"ghost\" label=\"Insert image\" />\n  </>\n</Toolbar>",
-        "lit": "<ds-toolbar label=\"Formatting\" overflow=\"menu\" style=\"max-inline-size: 22rem;\">\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Bold\" overflow-label=\"Bold\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Italic\" overflow-label=\"Italic\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Underline\" overflow-label=\"Underline\"></ds-button>\n  </ds-toolbar-group>\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align left\" overflow-label=\"Align left\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align center\" overflow-label=\"Align center\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align right\" overflow-label=\"Align right\"></ds-button>\n  </ds-toolbar-group>\n  <ds-button variant=\"ghost\" size=\"sm\" label=\"Share\" overflow-label=\"Share\"></ds-button>\n</ds-toolbar>",
-        "rn": "import * as React from 'react';\nimport { Toolbar, type ToolbarOrientation, Button, Divider, Switch } from '@design-schema/rn';\n\nfunction buildChildren(orientation: ToolbarOrientation): React.ReactNode {\n  const dividerOrientation = orientation === 'vertical' ? 'horizontal' : 'vertical';\n  return (\n    <>\n      <Button label=\"Bold\" variant=\"ghost\" iconOnly />\n      <Button label=\"Italic\" variant=\"ghost\" iconOnly />\n      <Button label=\"Underline\" variant=\"ghost\" iconOnly />\n      <Divider orientation={dividerOrientation} />\n      <Button label=\"Insert link\" variant=\"secondary\" />\n      <Divider orientation={dividerOrientation} />\n      <Switch label=\"Preview\" checked={false} />\n    </>\n  );\n}\n\n<Toolbar label=\"Formatting\" overflow=\"menu\">{buildChildren('horizontal' ?? 'horizontal')}</Toolbar>",
+        "react": "import { Toolbar, ToolbarGroup, Button, SegmentedControl } from '@design-schema/react';\n\n<Toolbar label=\"Formatting\" overflow=\"menu\">\n  <>\n    <ToolbarGroup label=\"Text style\">\n      <Button variant=\"ghost\" label=\"Bold\" overflowLabel=\"Bold\" />\n      <Button variant=\"ghost\" label=\"Italic\" overflowLabel=\"Italic\" />\n      <Button variant=\"ghost\" label=\"Underline\" overflowLabel=\"Underline\" />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Alignment\">\n      <SegmentedControl\n        label=\"Alignment\"\n        iconOnly\n        options={[\n          { value: 'left', label: 'Align left', icon: 'chevron-left' },\n          { value: 'center', label: 'Align center', icon: 'dash' },\n          { value: 'right', label: 'Align right', icon: 'chevron-right' },\n        ]}\n      />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Insert\">\n      <Button variant=\"ghost\" label=\"Insert link\" overflowLabel=\"Insert link\" />\n      <Button variant=\"ghost\" label=\"Insert image\" overflowLabel=\"Insert image\" />\n    </ToolbarGroup>\n  </>\n</Toolbar>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst button = (label: string): TemplateResult =>\n  html`<ds-button variant=\"ghost\" label=${label} overflow-label=${label}></ds-button>`;\n\nconst FORMATTING_GROUPS = 'Two labelled groups of ghost Buttons: Text style (Bold, Italic, Underline) and Alignment (Align left, Align center, Align right)';\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [FORMATTING_GROUPS]: () => html`\n    <ds-toolbar-group label=\"Text style\">${button('Bold')}${button('Italic')}${button('Underline')}</ds-toolbar-group>\n    <ds-toolbar-group label=\"Alignment\">${button('Align left')}${button('Align center')}${button('Align right')}</ds-toolbar-group>\n  `,\n  'Three ghost text Buttons labelled Bold, Italic and Underline (the icon set has no formatting glyphs)': () =>\n    html`${button('Bold')}${button('Italic')}${button('Underline')}`,\n  'Three ghost text Buttons labelled Select, Draw and Erase': () =>\n    html`${button('Select')}${button('Draw')}${button('Erase')}`,\n  'Four ghost text Buttons labelled Filter, Sort, Export and Delete, each with the same overflowLabel': () =>\n    html`${button('Filter')}${button('Sort')}${button('Export')}${button('Delete')}`,\n  'A SegmentedControl labelled View (List, Board) and two Selects: Owner (name owner; Anyone, Me) and Sort (name sort; Newest, Oldest)':\n    () => html`\n      <ds-segmented-control\n        label=\"View\"\n        .options=${[\n          { value: 'list', label: 'List' },\n          { value: 'board', label: 'Board' },\n        ]}\n      ></ds-segmented-control>\n      <ds-select\n        label=\"Owner\"\n        name=\"owner\"\n        hide-label\n        .options=${[\n          { value: 'anyone', label: 'Anyone' },\n          { value: 'me', label: 'Me' },\n        ]}\n      ></ds-select>\n      <ds-select\n        label=\"Sort\"\n        name=\"sort\"\n        hide-label\n        .options=${[\n          { value: 'newest', label: 'Newest' },\n          { value: 'oldest', label: 'Oldest' },\n        ]}\n      ></ds-select>\n    `,\n};\n\nhtml`\n  <ds-toolbar label=\"Formatting\" overflow=\"menu\">\n    ${(CHILDREN[FORMATTING_GROUPS] ?? CHILDREN[FORMATTING_GROUPS]!)()}\n  </ds-toolbar>\n`;",
+        "rn": "import * as React from 'react';\nimport { Toolbar, ToolbarGroup, Button, Switch } from '@design-schema/rn';\n\nfunction formattingControls(): React.ReactNode {\n  return (\n    <>\n      <ToolbarGroup label=\"Text style\">\n        <Button label=\"Bold\" variant=\"ghost\" overflowLabel=\"Bold\" />\n        <Button label=\"Italic\" variant=\"ghost\" overflowLabel=\"Italic\" />\n        <Button label=\"Underline\" variant=\"ghost\" overflowLabel=\"Underline\" />\n      </ToolbarGroup>\n      <ToolbarGroup label=\"Insert\">\n        <Button label=\"Insert link\" variant=\"ghost\" overflowLabel=\"Insert link\" />\n      </ToolbarGroup>\n      <Switch label=\"Preview\" defaultChecked={false} />\n    </>\n  );\n}\n\n<Toolbar label=\"Formatting\" overflow=\"menu\">{formattingControls()}</Toolbar>",
         "swift": null
       },
       "stories": {
@@ -641,16 +651,8 @@
                   "$element": "Button",
                   "props": {
                     "variant": "ghost",
-                    "iconOnly": true,
                     "label": "Bold",
-                    "leadingIcon": {
-                      "$element": "Icon",
-                      "props": {
-                        "name": "check",
-                        "inline": true
-                      },
-                      "children": []
-                    }
+                    "overflowLabel": "Bold"
                   },
                   "children": []
                 },
@@ -658,16 +660,17 @@
                   "$element": "Button",
                   "props": {
                     "variant": "ghost",
-                    "iconOnly": true,
                     "label": "Italic",
-                    "leadingIcon": {
-                      "$element": "Icon",
-                      "props": {
-                        "name": "check",
-                        "inline": true
-                      },
-                      "children": []
-                    }
+                    "overflowLabel": "Italic"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "label": "Underline",
+                    "overflowLabel": "Underline"
                   },
                   "children": []
                 }
@@ -683,22 +686,21 @@
                   "$element": "SegmentedControl",
                   "props": {
                     "label": "Alignment",
-                    "size": "sm",
                     "iconOnly": true,
                     "options": [
                       {
                         "value": "left",
-                        "label": "Left",
+                        "label": "Align left",
                         "icon": "chevron-left"
                       },
                       {
                         "value": "center",
-                        "label": "Center",
+                        "label": "Align center",
                         "icon": "dash"
                       },
                       {
                         "value": "right",
-                        "label": "Right",
+                        "label": "Align right",
                         "icon": "chevron-right"
                       }
                     ]
@@ -708,29 +710,39 @@
               ]
             },
             {
-              "$element": "Button",
+              "$element": "ToolbarGroup",
               "props": {
-                "variant": "ghost",
-                "label": "Insert link"
+                "label": "Insert"
               },
-              "children": []
-            },
-            {
-              "$element": "Button",
-              "props": {
-                "variant": "ghost",
-                "label": "Insert image"
-              },
-              "children": []
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "label": "Insert link",
+                    "overflowLabel": "Insert link"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "label": "Insert image",
+                    "overflowLabel": "Insert image"
+                  },
+                  "children": []
+                }
+              ]
             }
           ]
         },
         "overflow": "scroll"
       },
       "snippets": {
-        "react": "import { Toolbar, ToolbarGroup, Button, SegmentedControl, Icon } from '@design-schema/react';\n\n<Toolbar label=\"Formatting\" overflow=\"scroll\">\n  <>\n    <ToolbarGroup label=\"Text style\">\n      <Button variant=\"ghost\" iconOnly label=\"Bold\" leadingIcon={<Icon name=\"check\" inline />} />\n      <Button variant=\"ghost\" iconOnly label=\"Italic\" leadingIcon={<Icon name=\"check\" inline />} />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Alignment\">\n      <SegmentedControl\n        label=\"Alignment\"\n        size=\"sm\"\n        iconOnly\n        options={[\n          { value: 'left', label: 'Left', icon: 'chevron-left' },\n          { value: 'center', label: 'Center', icon: 'dash' },\n          { value: 'right', label: 'Right', icon: 'chevron-right' },\n        ]}\n      />\n    </ToolbarGroup>\n    <Button variant=\"ghost\" label=\"Insert link\" />\n    <Button variant=\"ghost\" label=\"Insert image\" />\n  </>\n</Toolbar>",
-        "lit": "<ds-toolbar label=\"Formatting\" overflow=\"scroll\" style=\"max-inline-size: 22rem;\">\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Bold\" overflow-label=\"Bold\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Italic\" overflow-label=\"Italic\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Underline\" overflow-label=\"Underline\"></ds-button>\n  </ds-toolbar-group>\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align left\" overflow-label=\"Align left\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align center\" overflow-label=\"Align center\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align right\" overflow-label=\"Align right\"></ds-button>\n  </ds-toolbar-group>\n  <ds-button variant=\"ghost\" size=\"sm\" label=\"Share\" overflow-label=\"Share\"></ds-button>\n</ds-toolbar>",
-        "rn": "import * as React from 'react';\nimport { Toolbar, type ToolbarOrientation, Button, Divider, Switch } from '@design-schema/rn';\n\nfunction buildChildren(orientation: ToolbarOrientation): React.ReactNode {\n  const dividerOrientation = orientation === 'vertical' ? 'horizontal' : 'vertical';\n  return (\n    <>\n      <Button label=\"Bold\" variant=\"ghost\" iconOnly />\n      <Button label=\"Italic\" variant=\"ghost\" iconOnly />\n      <Button label=\"Underline\" variant=\"ghost\" iconOnly />\n      <Divider orientation={dividerOrientation} />\n      <Button label=\"Insert link\" variant=\"secondary\" />\n      <Divider orientation={dividerOrientation} />\n      <Switch label=\"Preview\" checked={false} />\n    </>\n  );\n}\n\n<Toolbar label=\"Formatting\" overflow=\"scroll\">{buildChildren('horizontal' ?? 'horizontal')}</Toolbar>",
+        "react": "import { Toolbar, ToolbarGroup, Button, SegmentedControl } from '@design-schema/react';\n\n<Toolbar label=\"Formatting\" overflow=\"scroll\">\n  <>\n    <ToolbarGroup label=\"Text style\">\n      <Button variant=\"ghost\" label=\"Bold\" overflowLabel=\"Bold\" />\n      <Button variant=\"ghost\" label=\"Italic\" overflowLabel=\"Italic\" />\n      <Button variant=\"ghost\" label=\"Underline\" overflowLabel=\"Underline\" />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Alignment\">\n      <SegmentedControl\n        label=\"Alignment\"\n        iconOnly\n        options={[\n          { value: 'left', label: 'Align left', icon: 'chevron-left' },\n          { value: 'center', label: 'Align center', icon: 'dash' },\n          { value: 'right', label: 'Align right', icon: 'chevron-right' },\n        ]}\n      />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Insert\">\n      <Button variant=\"ghost\" label=\"Insert link\" overflowLabel=\"Insert link\" />\n      <Button variant=\"ghost\" label=\"Insert image\" overflowLabel=\"Insert image\" />\n    </ToolbarGroup>\n  </>\n</Toolbar>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst button = (label: string): TemplateResult =>\n  html`<ds-button variant=\"ghost\" label=${label} overflow-label=${label}></ds-button>`;\n\nconst FORMATTING_GROUPS = 'Two labelled groups of ghost Buttons: Text style (Bold, Italic, Underline) and Alignment (Align left, Align center, Align right)';\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [FORMATTING_GROUPS]: () => html`\n    <ds-toolbar-group label=\"Text style\">${button('Bold')}${button('Italic')}${button('Underline')}</ds-toolbar-group>\n    <ds-toolbar-group label=\"Alignment\">${button('Align left')}${button('Align center')}${button('Align right')}</ds-toolbar-group>\n  `,\n  'Three ghost text Buttons labelled Bold, Italic and Underline (the icon set has no formatting glyphs)': () =>\n    html`${button('Bold')}${button('Italic')}${button('Underline')}`,\n  'Three ghost text Buttons labelled Select, Draw and Erase': () =>\n    html`${button('Select')}${button('Draw')}${button('Erase')}`,\n  'Four ghost text Buttons labelled Filter, Sort, Export and Delete, each with the same overflowLabel': () =>\n    html`${button('Filter')}${button('Sort')}${button('Export')}${button('Delete')}`,\n  'A SegmentedControl labelled View (List, Board) and two Selects: Owner (name owner; Anyone, Me) and Sort (name sort; Newest, Oldest)':\n    () => html`\n      <ds-segmented-control\n        label=\"View\"\n        .options=${[\n          { value: 'list', label: 'List' },\n          { value: 'board', label: 'Board' },\n        ]}\n      ></ds-segmented-control>\n      <ds-select\n        label=\"Owner\"\n        name=\"owner\"\n        hide-label\n        .options=${[\n          { value: 'anyone', label: 'Anyone' },\n          { value: 'me', label: 'Me' },\n        ]}\n      ></ds-select>\n      <ds-select\n        label=\"Sort\"\n        name=\"sort\"\n        hide-label\n        .options=${[\n          { value: 'newest', label: 'Newest' },\n          { value: 'oldest', label: 'Oldest' },\n        ]}\n      ></ds-select>\n    `,\n};\n\nhtml`\n  <ds-toolbar label=\"Formatting\" overflow=\"scroll\">\n    ${(CHILDREN[FORMATTING_GROUPS] ?? CHILDREN[FORMATTING_GROUPS]!)()}\n  </ds-toolbar>\n`;",
+        "rn": "import * as React from 'react';\nimport { Toolbar, ToolbarGroup, Button, Switch } from '@design-schema/rn';\n\nfunction formattingControls(): React.ReactNode {\n  return (\n    <>\n      <ToolbarGroup label=\"Text style\">\n        <Button label=\"Bold\" variant=\"ghost\" overflowLabel=\"Bold\" />\n        <Button label=\"Italic\" variant=\"ghost\" overflowLabel=\"Italic\" />\n        <Button label=\"Underline\" variant=\"ghost\" overflowLabel=\"Underline\" />\n      </ToolbarGroup>\n      <ToolbarGroup label=\"Insert\">\n        <Button label=\"Insert link\" variant=\"ghost\" overflowLabel=\"Insert link\" />\n      </ToolbarGroup>\n      <Switch label=\"Preview\" defaultChecked={false} />\n    </>\n  );\n}\n\n<Toolbar label=\"Formatting\" overflow=\"scroll\">{formattingControls()}</Toolbar>",
         "swift": null
       },
       "stories": {
@@ -765,16 +777,8 @@
                   "$element": "Button",
                   "props": {
                     "variant": "ghost",
-                    "iconOnly": true,
                     "label": "Bold",
-                    "leadingIcon": {
-                      "$element": "Icon",
-                      "props": {
-                        "name": "check",
-                        "inline": true
-                      },
-                      "children": []
-                    }
+                    "overflowLabel": "Bold"
                   },
                   "children": []
                 },
@@ -782,16 +786,17 @@
                   "$element": "Button",
                   "props": {
                     "variant": "ghost",
-                    "iconOnly": true,
                     "label": "Italic",
-                    "leadingIcon": {
-                      "$element": "Icon",
-                      "props": {
-                        "name": "check",
-                        "inline": true
-                      },
-                      "children": []
-                    }
+                    "overflowLabel": "Italic"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "label": "Underline",
+                    "overflowLabel": "Underline"
                   },
                   "children": []
                 }
@@ -807,22 +812,21 @@
                   "$element": "SegmentedControl",
                   "props": {
                     "label": "Alignment",
-                    "size": "sm",
                     "iconOnly": true,
                     "options": [
                       {
                         "value": "left",
-                        "label": "Left",
+                        "label": "Align left",
                         "icon": "chevron-left"
                       },
                       {
                         "value": "center",
-                        "label": "Center",
+                        "label": "Align center",
                         "icon": "dash"
                       },
                       {
                         "value": "right",
-                        "label": "Right",
+                        "label": "Align right",
                         "icon": "chevron-right"
                       }
                     ]
@@ -832,29 +836,39 @@
               ]
             },
             {
-              "$element": "Button",
+              "$element": "ToolbarGroup",
               "props": {
-                "variant": "ghost",
-                "label": "Insert link"
+                "label": "Insert"
               },
-              "children": []
-            },
-            {
-              "$element": "Button",
-              "props": {
-                "variant": "ghost",
-                "label": "Insert image"
-              },
-              "children": []
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "label": "Insert link",
+                    "overflowLabel": "Insert link"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "label": "Insert image",
+                    "overflowLabel": "Insert image"
+                  },
+                  "children": []
+                }
+              ]
             }
           ]
         },
         "size": "sm"
       },
       "snippets": {
-        "react": "import { Toolbar, ToolbarGroup, Button, SegmentedControl, Icon } from '@design-schema/react';\n\n<Toolbar label=\"Formatting\" size=\"sm\">\n  <>\n    <ToolbarGroup label=\"Text style\">\n      <Button variant=\"ghost\" iconOnly label=\"Bold\" leadingIcon={<Icon name=\"check\" inline />} />\n      <Button variant=\"ghost\" iconOnly label=\"Italic\" leadingIcon={<Icon name=\"check\" inline />} />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Alignment\">\n      <SegmentedControl\n        label=\"Alignment\"\n        size=\"sm\"\n        iconOnly\n        options={[\n          { value: 'left', label: 'Left', icon: 'chevron-left' },\n          { value: 'center', label: 'Center', icon: 'dash' },\n          { value: 'right', label: 'Right', icon: 'chevron-right' },\n        ]}\n      />\n    </ToolbarGroup>\n    <Button variant=\"ghost\" label=\"Insert link\" />\n    <Button variant=\"ghost\" label=\"Insert image\" />\n  </>\n</Toolbar>",
-        "lit": "<ds-toolbar label=\"Formatting\" size=\"sm\" style=\"max-inline-size: 22rem;\">\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Bold\" overflow-label=\"Bold\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Italic\" overflow-label=\"Italic\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Underline\" overflow-label=\"Underline\"></ds-button>\n  </ds-toolbar-group>\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align left\" overflow-label=\"Align left\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align center\" overflow-label=\"Align center\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align right\" overflow-label=\"Align right\"></ds-button>\n  </ds-toolbar-group>\n  <ds-button variant=\"ghost\" size=\"sm\" label=\"Share\" overflow-label=\"Share\"></ds-button>\n</ds-toolbar>",
-        "rn": "import * as React from 'react';\nimport { Toolbar, type ToolbarOrientation, Button, Divider, Switch } from '@design-schema/rn';\n\nfunction buildChildren(orientation: ToolbarOrientation): React.ReactNode {\n  const dividerOrientation = orientation === 'vertical' ? 'horizontal' : 'vertical';\n  return (\n    <>\n      <Button label=\"Bold\" variant=\"ghost\" iconOnly />\n      <Button label=\"Italic\" variant=\"ghost\" iconOnly />\n      <Button label=\"Underline\" variant=\"ghost\" iconOnly />\n      <Divider orientation={dividerOrientation} />\n      <Button label=\"Insert link\" variant=\"secondary\" />\n      <Divider orientation={dividerOrientation} />\n      <Switch label=\"Preview\" checked={false} />\n    </>\n  );\n}\n\n<Toolbar label=\"Formatting\" size=\"sm\">{buildChildren('horizontal' ?? 'horizontal')}</Toolbar>",
+        "react": "import { Toolbar, ToolbarGroup, Button, SegmentedControl } from '@design-schema/react';\n\n<Toolbar label=\"Formatting\" size=\"sm\">\n  <>\n    <ToolbarGroup label=\"Text style\">\n      <Button variant=\"ghost\" label=\"Bold\" overflowLabel=\"Bold\" />\n      <Button variant=\"ghost\" label=\"Italic\" overflowLabel=\"Italic\" />\n      <Button variant=\"ghost\" label=\"Underline\" overflowLabel=\"Underline\" />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Alignment\">\n      <SegmentedControl\n        label=\"Alignment\"\n        iconOnly\n        options={[\n          { value: 'left', label: 'Align left', icon: 'chevron-left' },\n          { value: 'center', label: 'Align center', icon: 'dash' },\n          { value: 'right', label: 'Align right', icon: 'chevron-right' },\n        ]}\n      />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Insert\">\n      <Button variant=\"ghost\" label=\"Insert link\" overflowLabel=\"Insert link\" />\n      <Button variant=\"ghost\" label=\"Insert image\" overflowLabel=\"Insert image\" />\n    </ToolbarGroup>\n  </>\n</Toolbar>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst button = (label: string): TemplateResult =>\n  html`<ds-button variant=\"ghost\" label=${label} overflow-label=${label}></ds-button>`;\n\nconst FORMATTING_GROUPS = 'Two labelled groups of ghost Buttons: Text style (Bold, Italic, Underline) and Alignment (Align left, Align center, Align right)';\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [FORMATTING_GROUPS]: () => html`\n    <ds-toolbar-group label=\"Text style\">${button('Bold')}${button('Italic')}${button('Underline')}</ds-toolbar-group>\n    <ds-toolbar-group label=\"Alignment\">${button('Align left')}${button('Align center')}${button('Align right')}</ds-toolbar-group>\n  `,\n  'Three ghost text Buttons labelled Bold, Italic and Underline (the icon set has no formatting glyphs)': () =>\n    html`${button('Bold')}${button('Italic')}${button('Underline')}`,\n  'Three ghost text Buttons labelled Select, Draw and Erase': () =>\n    html`${button('Select')}${button('Draw')}${button('Erase')}`,\n  'Four ghost text Buttons labelled Filter, Sort, Export and Delete, each with the same overflowLabel': () =>\n    html`${button('Filter')}${button('Sort')}${button('Export')}${button('Delete')}`,\n  'A SegmentedControl labelled View (List, Board) and two Selects: Owner (name owner; Anyone, Me) and Sort (name sort; Newest, Oldest)':\n    () => html`\n      <ds-segmented-control\n        label=\"View\"\n        .options=${[\n          { value: 'list', label: 'List' },\n          { value: 'board', label: 'Board' },\n        ]}\n      ></ds-segmented-control>\n      <ds-select\n        label=\"Owner\"\n        name=\"owner\"\n        hide-label\n        .options=${[\n          { value: 'anyone', label: 'Anyone' },\n          { value: 'me', label: 'Me' },\n        ]}\n      ></ds-select>\n      <ds-select\n        label=\"Sort\"\n        name=\"sort\"\n        hide-label\n        .options=${[\n          { value: 'newest', label: 'Newest' },\n          { value: 'oldest', label: 'Oldest' },\n        ]}\n      ></ds-select>\n    `,\n};\n\nhtml`\n  <ds-toolbar label=\"Formatting\" size=\"sm\">\n    ${(CHILDREN[FORMATTING_GROUPS] ?? CHILDREN[FORMATTING_GROUPS]!)()}\n  </ds-toolbar>\n`;",
+        "rn": "import * as React from 'react';\nimport { Toolbar, ToolbarGroup, Button, Switch } from '@design-schema/rn';\n\nfunction formattingControls(): React.ReactNode {\n  return (\n    <>\n      <ToolbarGroup label=\"Text style\">\n        <Button label=\"Bold\" variant=\"ghost\" overflowLabel=\"Bold\" />\n        <Button label=\"Italic\" variant=\"ghost\" overflowLabel=\"Italic\" />\n        <Button label=\"Underline\" variant=\"ghost\" overflowLabel=\"Underline\" />\n      </ToolbarGroup>\n      <ToolbarGroup label=\"Insert\">\n        <Button label=\"Insert link\" variant=\"ghost\" overflowLabel=\"Insert link\" />\n      </ToolbarGroup>\n      <Switch label=\"Preview\" defaultChecked={false} />\n    </>\n  );\n}\n\n<Toolbar label=\"Formatting\" size=\"sm\">{formattingControls()}</Toolbar>",
         "swift": null
       },
       "stories": {
@@ -889,16 +903,8 @@
                   "$element": "Button",
                   "props": {
                     "variant": "ghost",
-                    "iconOnly": true,
                     "label": "Bold",
-                    "leadingIcon": {
-                      "$element": "Icon",
-                      "props": {
-                        "name": "check",
-                        "inline": true
-                      },
-                      "children": []
-                    }
+                    "overflowLabel": "Bold"
                   },
                   "children": []
                 },
@@ -906,16 +912,17 @@
                   "$element": "Button",
                   "props": {
                     "variant": "ghost",
-                    "iconOnly": true,
                     "label": "Italic",
-                    "leadingIcon": {
-                      "$element": "Icon",
-                      "props": {
-                        "name": "check",
-                        "inline": true
-                      },
-                      "children": []
-                    }
+                    "overflowLabel": "Italic"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "label": "Underline",
+                    "overflowLabel": "Underline"
                   },
                   "children": []
                 }
@@ -931,22 +938,21 @@
                   "$element": "SegmentedControl",
                   "props": {
                     "label": "Alignment",
-                    "size": "sm",
                     "iconOnly": true,
                     "options": [
                       {
                         "value": "left",
-                        "label": "Left",
+                        "label": "Align left",
                         "icon": "chevron-left"
                       },
                       {
                         "value": "center",
-                        "label": "Center",
+                        "label": "Align center",
                         "icon": "dash"
                       },
                       {
                         "value": "right",
-                        "label": "Right",
+                        "label": "Align right",
                         "icon": "chevron-right"
                       }
                     ]
@@ -956,29 +962,39 @@
               ]
             },
             {
-              "$element": "Button",
+              "$element": "ToolbarGroup",
               "props": {
-                "variant": "ghost",
-                "label": "Insert link"
+                "label": "Insert"
               },
-              "children": []
-            },
-            {
-              "$element": "Button",
-              "props": {
-                "variant": "ghost",
-                "label": "Insert image"
-              },
-              "children": []
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "label": "Insert link",
+                    "overflowLabel": "Insert link"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "label": "Insert image",
+                    "overflowLabel": "Insert image"
+                  },
+                  "children": []
+                }
+              ]
             }
           ]
         },
         "size": "md"
       },
       "snippets": {
-        "react": "import { Toolbar, ToolbarGroup, Button, SegmentedControl, Icon } from '@design-schema/react';\n\n<Toolbar label=\"Formatting\" size=\"md\">\n  <>\n    <ToolbarGroup label=\"Text style\">\n      <Button variant=\"ghost\" iconOnly label=\"Bold\" leadingIcon={<Icon name=\"check\" inline />} />\n      <Button variant=\"ghost\" iconOnly label=\"Italic\" leadingIcon={<Icon name=\"check\" inline />} />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Alignment\">\n      <SegmentedControl\n        label=\"Alignment\"\n        size=\"sm\"\n        iconOnly\n        options={[\n          { value: 'left', label: 'Left', icon: 'chevron-left' },\n          { value: 'center', label: 'Center', icon: 'dash' },\n          { value: 'right', label: 'Right', icon: 'chevron-right' },\n        ]}\n      />\n    </ToolbarGroup>\n    <Button variant=\"ghost\" label=\"Insert link\" />\n    <Button variant=\"ghost\" label=\"Insert image\" />\n  </>\n</Toolbar>",
-        "lit": "<ds-toolbar label=\"Formatting\" size=\"md\" style=\"max-inline-size: 22rem;\">\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Bold\" overflow-label=\"Bold\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Italic\" overflow-label=\"Italic\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Underline\" overflow-label=\"Underline\"></ds-button>\n  </ds-toolbar-group>\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align left\" overflow-label=\"Align left\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align center\" overflow-label=\"Align center\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align right\" overflow-label=\"Align right\"></ds-button>\n  </ds-toolbar-group>\n  <ds-button variant=\"ghost\" size=\"sm\" label=\"Share\" overflow-label=\"Share\"></ds-button>\n</ds-toolbar>",
-        "rn": "import * as React from 'react';\nimport { Toolbar, type ToolbarOrientation, Button, Divider, Switch } from '@design-schema/rn';\n\nfunction buildChildren(orientation: ToolbarOrientation): React.ReactNode {\n  const dividerOrientation = orientation === 'vertical' ? 'horizontal' : 'vertical';\n  return (\n    <>\n      <Button label=\"Bold\" variant=\"ghost\" iconOnly />\n      <Button label=\"Italic\" variant=\"ghost\" iconOnly />\n      <Button label=\"Underline\" variant=\"ghost\" iconOnly />\n      <Divider orientation={dividerOrientation} />\n      <Button label=\"Insert link\" variant=\"secondary\" />\n      <Divider orientation={dividerOrientation} />\n      <Switch label=\"Preview\" checked={false} />\n    </>\n  );\n}\n\n<Toolbar label=\"Formatting\" size=\"md\">{buildChildren('horizontal' ?? 'horizontal')}</Toolbar>",
+        "react": "import { Toolbar, ToolbarGroup, Button, SegmentedControl } from '@design-schema/react';\n\n<Toolbar label=\"Formatting\" size=\"md\">\n  <>\n    <ToolbarGroup label=\"Text style\">\n      <Button variant=\"ghost\" label=\"Bold\" overflowLabel=\"Bold\" />\n      <Button variant=\"ghost\" label=\"Italic\" overflowLabel=\"Italic\" />\n      <Button variant=\"ghost\" label=\"Underline\" overflowLabel=\"Underline\" />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Alignment\">\n      <SegmentedControl\n        label=\"Alignment\"\n        iconOnly\n        options={[\n          { value: 'left', label: 'Align left', icon: 'chevron-left' },\n          { value: 'center', label: 'Align center', icon: 'dash' },\n          { value: 'right', label: 'Align right', icon: 'chevron-right' },\n        ]}\n      />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Insert\">\n      <Button variant=\"ghost\" label=\"Insert link\" overflowLabel=\"Insert link\" />\n      <Button variant=\"ghost\" label=\"Insert image\" overflowLabel=\"Insert image\" />\n    </ToolbarGroup>\n  </>\n</Toolbar>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst button = (label: string): TemplateResult =>\n  html`<ds-button variant=\"ghost\" label=${label} overflow-label=${label}></ds-button>`;\n\nconst FORMATTING_GROUPS = 'Two labelled groups of ghost Buttons: Text style (Bold, Italic, Underline) and Alignment (Align left, Align center, Align right)';\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [FORMATTING_GROUPS]: () => html`\n    <ds-toolbar-group label=\"Text style\">${button('Bold')}${button('Italic')}${button('Underline')}</ds-toolbar-group>\n    <ds-toolbar-group label=\"Alignment\">${button('Align left')}${button('Align center')}${button('Align right')}</ds-toolbar-group>\n  `,\n  'Three ghost text Buttons labelled Bold, Italic and Underline (the icon set has no formatting glyphs)': () =>\n    html`${button('Bold')}${button('Italic')}${button('Underline')}`,\n  'Three ghost text Buttons labelled Select, Draw and Erase': () =>\n    html`${button('Select')}${button('Draw')}${button('Erase')}`,\n  'Four ghost text Buttons labelled Filter, Sort, Export and Delete, each with the same overflowLabel': () =>\n    html`${button('Filter')}${button('Sort')}${button('Export')}${button('Delete')}`,\n  'A SegmentedControl labelled View (List, Board) and two Selects: Owner (name owner; Anyone, Me) and Sort (name sort; Newest, Oldest)':\n    () => html`\n      <ds-segmented-control\n        label=\"View\"\n        .options=${[\n          { value: 'list', label: 'List' },\n          { value: 'board', label: 'Board' },\n        ]}\n      ></ds-segmented-control>\n      <ds-select\n        label=\"Owner\"\n        name=\"owner\"\n        hide-label\n        .options=${[\n          { value: 'anyone', label: 'Anyone' },\n          { value: 'me', label: 'Me' },\n        ]}\n      ></ds-select>\n      <ds-select\n        label=\"Sort\"\n        name=\"sort\"\n        hide-label\n        .options=${[\n          { value: 'newest', label: 'Newest' },\n          { value: 'oldest', label: 'Oldest' },\n        ]}\n      ></ds-select>\n    `,\n};\n\nhtml`\n  <ds-toolbar label=\"Formatting\" size=\"md\">\n    ${(CHILDREN[FORMATTING_GROUPS] ?? CHILDREN[FORMATTING_GROUPS]!)()}\n  </ds-toolbar>\n`;",
+        "rn": "import * as React from 'react';\nimport { Toolbar, ToolbarGroup, Button, Switch } from '@design-schema/rn';\n\nfunction formattingControls(): React.ReactNode {\n  return (\n    <>\n      <ToolbarGroup label=\"Text style\">\n        <Button label=\"Bold\" variant=\"ghost\" overflowLabel=\"Bold\" />\n        <Button label=\"Italic\" variant=\"ghost\" overflowLabel=\"Italic\" />\n        <Button label=\"Underline\" variant=\"ghost\" overflowLabel=\"Underline\" />\n      </ToolbarGroup>\n      <ToolbarGroup label=\"Insert\">\n        <Button label=\"Insert link\" variant=\"ghost\" overflowLabel=\"Insert link\" />\n      </ToolbarGroup>\n      <Switch label=\"Preview\" defaultChecked={false} />\n    </>\n  );\n}\n\n<Toolbar label=\"Formatting\" size=\"md\">{formattingControls()}</Toolbar>",
         "swift": null
       },
       "stories": {
@@ -1013,16 +1029,8 @@
                   "$element": "Button",
                   "props": {
                     "variant": "ghost",
-                    "iconOnly": true,
                     "label": "Bold",
-                    "leadingIcon": {
-                      "$element": "Icon",
-                      "props": {
-                        "name": "check",
-                        "inline": true
-                      },
-                      "children": []
-                    }
+                    "overflowLabel": "Bold"
                   },
                   "children": []
                 },
@@ -1030,16 +1038,17 @@
                   "$element": "Button",
                   "props": {
                     "variant": "ghost",
-                    "iconOnly": true,
                     "label": "Italic",
-                    "leadingIcon": {
-                      "$element": "Icon",
-                      "props": {
-                        "name": "check",
-                        "inline": true
-                      },
-                      "children": []
-                    }
+                    "overflowLabel": "Italic"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "label": "Underline",
+                    "overflowLabel": "Underline"
                   },
                   "children": []
                 }
@@ -1055,22 +1064,21 @@
                   "$element": "SegmentedControl",
                   "props": {
                     "label": "Alignment",
-                    "size": "sm",
                     "iconOnly": true,
                     "options": [
                       {
                         "value": "left",
-                        "label": "Left",
+                        "label": "Align left",
                         "icon": "chevron-left"
                       },
                       {
                         "value": "center",
-                        "label": "Center",
+                        "label": "Align center",
                         "icon": "dash"
                       },
                       {
                         "value": "right",
-                        "label": "Right",
+                        "label": "Align right",
                         "icon": "chevron-right"
                       }
                     ]
@@ -1080,29 +1088,39 @@
               ]
             },
             {
-              "$element": "Button",
+              "$element": "ToolbarGroup",
               "props": {
-                "variant": "ghost",
-                "label": "Insert link"
+                "label": "Insert"
               },
-              "children": []
-            },
-            {
-              "$element": "Button",
-              "props": {
-                "variant": "ghost",
-                "label": "Insert image"
-              },
-              "children": []
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "label": "Insert link",
+                    "overflowLabel": "Insert link"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "label": "Insert image",
+                    "overflowLabel": "Insert image"
+                  },
+                  "children": []
+                }
+              ]
             }
           ]
         },
         "density": "compact"
       },
       "snippets": {
-        "react": "import { Toolbar, ToolbarGroup, Button, SegmentedControl, Icon } from '@design-schema/react';\n\n<Toolbar label=\"Formatting\" density=\"compact\">\n  <>\n    <ToolbarGroup label=\"Text style\">\n      <Button variant=\"ghost\" iconOnly label=\"Bold\" leadingIcon={<Icon name=\"check\" inline />} />\n      <Button variant=\"ghost\" iconOnly label=\"Italic\" leadingIcon={<Icon name=\"check\" inline />} />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Alignment\">\n      <SegmentedControl\n        label=\"Alignment\"\n        size=\"sm\"\n        iconOnly\n        options={[\n          { value: 'left', label: 'Left', icon: 'chevron-left' },\n          { value: 'center', label: 'Center', icon: 'dash' },\n          { value: 'right', label: 'Right', icon: 'chevron-right' },\n        ]}\n      />\n    </ToolbarGroup>\n    <Button variant=\"ghost\" label=\"Insert link\" />\n    <Button variant=\"ghost\" label=\"Insert image\" />\n  </>\n</Toolbar>",
-        "lit": "<ds-toolbar label=\"Formatting\" density=\"compact\" style=\"max-inline-size: 22rem;\">\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Bold\" overflow-label=\"Bold\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Italic\" overflow-label=\"Italic\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Underline\" overflow-label=\"Underline\"></ds-button>\n  </ds-toolbar-group>\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align left\" overflow-label=\"Align left\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align center\" overflow-label=\"Align center\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align right\" overflow-label=\"Align right\"></ds-button>\n  </ds-toolbar-group>\n  <ds-button variant=\"ghost\" size=\"sm\" label=\"Share\" overflow-label=\"Share\"></ds-button>\n</ds-toolbar>",
-        "rn": "import * as React from 'react';\nimport { Toolbar, type ToolbarOrientation, Button, Divider, Switch } from '@design-schema/rn';\n\nfunction buildChildren(orientation: ToolbarOrientation): React.ReactNode {\n  const dividerOrientation = orientation === 'vertical' ? 'horizontal' : 'vertical';\n  return (\n    <>\n      <Button label=\"Bold\" variant=\"ghost\" iconOnly />\n      <Button label=\"Italic\" variant=\"ghost\" iconOnly />\n      <Button label=\"Underline\" variant=\"ghost\" iconOnly />\n      <Divider orientation={dividerOrientation} />\n      <Button label=\"Insert link\" variant=\"secondary\" />\n      <Divider orientation={dividerOrientation} />\n      <Switch label=\"Preview\" checked={false} />\n    </>\n  );\n}\n\n<Toolbar label=\"Formatting\" density=\"compact\">{buildChildren('horizontal' ?? 'horizontal')}</Toolbar>",
+        "react": "import { Toolbar, ToolbarGroup, Button, SegmentedControl } from '@design-schema/react';\n\n<Toolbar label=\"Formatting\" density=\"compact\">\n  <>\n    <ToolbarGroup label=\"Text style\">\n      <Button variant=\"ghost\" label=\"Bold\" overflowLabel=\"Bold\" />\n      <Button variant=\"ghost\" label=\"Italic\" overflowLabel=\"Italic\" />\n      <Button variant=\"ghost\" label=\"Underline\" overflowLabel=\"Underline\" />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Alignment\">\n      <SegmentedControl\n        label=\"Alignment\"\n        iconOnly\n        options={[\n          { value: 'left', label: 'Align left', icon: 'chevron-left' },\n          { value: 'center', label: 'Align center', icon: 'dash' },\n          { value: 'right', label: 'Align right', icon: 'chevron-right' },\n        ]}\n      />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Insert\">\n      <Button variant=\"ghost\" label=\"Insert link\" overflowLabel=\"Insert link\" />\n      <Button variant=\"ghost\" label=\"Insert image\" overflowLabel=\"Insert image\" />\n    </ToolbarGroup>\n  </>\n</Toolbar>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst button = (label: string): TemplateResult =>\n  html`<ds-button variant=\"ghost\" label=${label} overflow-label=${label}></ds-button>`;\n\nconst FORMATTING_GROUPS = 'Two labelled groups of ghost Buttons: Text style (Bold, Italic, Underline) and Alignment (Align left, Align center, Align right)';\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [FORMATTING_GROUPS]: () => html`\n    <ds-toolbar-group label=\"Text style\">${button('Bold')}${button('Italic')}${button('Underline')}</ds-toolbar-group>\n    <ds-toolbar-group label=\"Alignment\">${button('Align left')}${button('Align center')}${button('Align right')}</ds-toolbar-group>\n  `,\n  'Three ghost text Buttons labelled Bold, Italic and Underline (the icon set has no formatting glyphs)': () =>\n    html`${button('Bold')}${button('Italic')}${button('Underline')}`,\n  'Three ghost text Buttons labelled Select, Draw and Erase': () =>\n    html`${button('Select')}${button('Draw')}${button('Erase')}`,\n  'Four ghost text Buttons labelled Filter, Sort, Export and Delete, each with the same overflowLabel': () =>\n    html`${button('Filter')}${button('Sort')}${button('Export')}${button('Delete')}`,\n  'A SegmentedControl labelled View (List, Board) and two Selects: Owner (name owner; Anyone, Me) and Sort (name sort; Newest, Oldest)':\n    () => html`\n      <ds-segmented-control\n        label=\"View\"\n        .options=${[\n          { value: 'list', label: 'List' },\n          { value: 'board', label: 'Board' },\n        ]}\n      ></ds-segmented-control>\n      <ds-select\n        label=\"Owner\"\n        name=\"owner\"\n        hide-label\n        .options=${[\n          { value: 'anyone', label: 'Anyone' },\n          { value: 'me', label: 'Me' },\n        ]}\n      ></ds-select>\n      <ds-select\n        label=\"Sort\"\n        name=\"sort\"\n        hide-label\n        .options=${[\n          { value: 'newest', label: 'Newest' },\n          { value: 'oldest', label: 'Oldest' },\n        ]}\n      ></ds-select>\n    `,\n};\n\nhtml`\n  <ds-toolbar label=\"Formatting\" density=\"compact\">\n    ${(CHILDREN[FORMATTING_GROUPS] ?? CHILDREN[FORMATTING_GROUPS]!)()}\n  </ds-toolbar>\n`;",
+        "rn": "import * as React from 'react';\nimport { Toolbar, ToolbarGroup, Button, Switch } from '@design-schema/rn';\n\nfunction formattingControls(): React.ReactNode {\n  return (\n    <>\n      <ToolbarGroup label=\"Text style\">\n        <Button label=\"Bold\" variant=\"ghost\" overflowLabel=\"Bold\" />\n        <Button label=\"Italic\" variant=\"ghost\" overflowLabel=\"Italic\" />\n        <Button label=\"Underline\" variant=\"ghost\" overflowLabel=\"Underline\" />\n      </ToolbarGroup>\n      <ToolbarGroup label=\"Insert\">\n        <Button label=\"Insert link\" variant=\"ghost\" overflowLabel=\"Insert link\" />\n      </ToolbarGroup>\n      <Switch label=\"Preview\" defaultChecked={false} />\n    </>\n  );\n}\n\n<Toolbar label=\"Formatting\" density=\"compact\">{formattingControls()}</Toolbar>",
         "swift": null
       },
       "stories": {
@@ -1137,16 +1155,8 @@
                   "$element": "Button",
                   "props": {
                     "variant": "ghost",
-                    "iconOnly": true,
                     "label": "Bold",
-                    "leadingIcon": {
-                      "$element": "Icon",
-                      "props": {
-                        "name": "check",
-                        "inline": true
-                      },
-                      "children": []
-                    }
+                    "overflowLabel": "Bold"
                   },
                   "children": []
                 },
@@ -1154,16 +1164,17 @@
                   "$element": "Button",
                   "props": {
                     "variant": "ghost",
-                    "iconOnly": true,
                     "label": "Italic",
-                    "leadingIcon": {
-                      "$element": "Icon",
-                      "props": {
-                        "name": "check",
-                        "inline": true
-                      },
-                      "children": []
-                    }
+                    "overflowLabel": "Italic"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "label": "Underline",
+                    "overflowLabel": "Underline"
                   },
                   "children": []
                 }
@@ -1179,22 +1190,21 @@
                   "$element": "SegmentedControl",
                   "props": {
                     "label": "Alignment",
-                    "size": "sm",
                     "iconOnly": true,
                     "options": [
                       {
                         "value": "left",
-                        "label": "Left",
+                        "label": "Align left",
                         "icon": "chevron-left"
                       },
                       {
                         "value": "center",
-                        "label": "Center",
+                        "label": "Align center",
                         "icon": "dash"
                       },
                       {
                         "value": "right",
-                        "label": "Right",
+                        "label": "Align right",
                         "icon": "chevron-right"
                       }
                     ]
@@ -1204,29 +1214,39 @@
               ]
             },
             {
-              "$element": "Button",
+              "$element": "ToolbarGroup",
               "props": {
-                "variant": "ghost",
-                "label": "Insert link"
+                "label": "Insert"
               },
-              "children": []
-            },
-            {
-              "$element": "Button",
-              "props": {
-                "variant": "ghost",
-                "label": "Insert image"
-              },
-              "children": []
+              "children": [
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "label": "Insert link",
+                    "overflowLabel": "Insert link"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Button",
+                  "props": {
+                    "variant": "ghost",
+                    "label": "Insert image",
+                    "overflowLabel": "Insert image"
+                  },
+                  "children": []
+                }
+              ]
             }
           ]
         },
         "density": "comfortable"
       },
       "snippets": {
-        "react": "import { Toolbar, ToolbarGroup, Button, SegmentedControl, Icon } from '@design-schema/react';\n\n<Toolbar label=\"Formatting\" density=\"comfortable\">\n  <>\n    <ToolbarGroup label=\"Text style\">\n      <Button variant=\"ghost\" iconOnly label=\"Bold\" leadingIcon={<Icon name=\"check\" inline />} />\n      <Button variant=\"ghost\" iconOnly label=\"Italic\" leadingIcon={<Icon name=\"check\" inline />} />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Alignment\">\n      <SegmentedControl\n        label=\"Alignment\"\n        size=\"sm\"\n        iconOnly\n        options={[\n          { value: 'left', label: 'Left', icon: 'chevron-left' },\n          { value: 'center', label: 'Center', icon: 'dash' },\n          { value: 'right', label: 'Right', icon: 'chevron-right' },\n        ]}\n      />\n    </ToolbarGroup>\n    <Button variant=\"ghost\" label=\"Insert link\" />\n    <Button variant=\"ghost\" label=\"Insert image\" />\n  </>\n</Toolbar>",
-        "lit": "<ds-toolbar label=\"Formatting\" density=\"comfortable\" style=\"max-inline-size: 22rem;\">\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Bold\" overflow-label=\"Bold\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Italic\" overflow-label=\"Italic\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Underline\" overflow-label=\"Underline\"></ds-button>\n  </ds-toolbar-group>\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align left\" overflow-label=\"Align left\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align center\" overflow-label=\"Align center\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align right\" overflow-label=\"Align right\"></ds-button>\n  </ds-toolbar-group>\n  <ds-button variant=\"ghost\" size=\"sm\" label=\"Share\" overflow-label=\"Share\"></ds-button>\n</ds-toolbar>",
-        "rn": "import * as React from 'react';\nimport { Toolbar, type ToolbarOrientation, Button, Divider, Switch } from '@design-schema/rn';\n\nfunction buildChildren(orientation: ToolbarOrientation): React.ReactNode {\n  const dividerOrientation = orientation === 'vertical' ? 'horizontal' : 'vertical';\n  return (\n    <>\n      <Button label=\"Bold\" variant=\"ghost\" iconOnly />\n      <Button label=\"Italic\" variant=\"ghost\" iconOnly />\n      <Button label=\"Underline\" variant=\"ghost\" iconOnly />\n      <Divider orientation={dividerOrientation} />\n      <Button label=\"Insert link\" variant=\"secondary\" />\n      <Divider orientation={dividerOrientation} />\n      <Switch label=\"Preview\" checked={false} />\n    </>\n  );\n}\n\n<Toolbar label=\"Formatting\" density=\"comfortable\">{buildChildren('horizontal' ?? 'horizontal')}</Toolbar>",
+        "react": "import { Toolbar, ToolbarGroup, Button, SegmentedControl } from '@design-schema/react';\n\n<Toolbar label=\"Formatting\" density=\"comfortable\">\n  <>\n    <ToolbarGroup label=\"Text style\">\n      <Button variant=\"ghost\" label=\"Bold\" overflowLabel=\"Bold\" />\n      <Button variant=\"ghost\" label=\"Italic\" overflowLabel=\"Italic\" />\n      <Button variant=\"ghost\" label=\"Underline\" overflowLabel=\"Underline\" />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Alignment\">\n      <SegmentedControl\n        label=\"Alignment\"\n        iconOnly\n        options={[\n          { value: 'left', label: 'Align left', icon: 'chevron-left' },\n          { value: 'center', label: 'Align center', icon: 'dash' },\n          { value: 'right', label: 'Align right', icon: 'chevron-right' },\n        ]}\n      />\n    </ToolbarGroup>\n    <ToolbarGroup label=\"Insert\">\n      <Button variant=\"ghost\" label=\"Insert link\" overflowLabel=\"Insert link\" />\n      <Button variant=\"ghost\" label=\"Insert image\" overflowLabel=\"Insert image\" />\n    </ToolbarGroup>\n  </>\n</Toolbar>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst button = (label: string): TemplateResult =>\n  html`<ds-button variant=\"ghost\" label=${label} overflow-label=${label}></ds-button>`;\n\nconst FORMATTING_GROUPS = 'Two labelled groups of ghost Buttons: Text style (Bold, Italic, Underline) and Alignment (Align left, Align center, Align right)';\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [FORMATTING_GROUPS]: () => html`\n    <ds-toolbar-group label=\"Text style\">${button('Bold')}${button('Italic')}${button('Underline')}</ds-toolbar-group>\n    <ds-toolbar-group label=\"Alignment\">${button('Align left')}${button('Align center')}${button('Align right')}</ds-toolbar-group>\n  `,\n  'Three ghost text Buttons labelled Bold, Italic and Underline (the icon set has no formatting glyphs)': () =>\n    html`${button('Bold')}${button('Italic')}${button('Underline')}`,\n  'Three ghost text Buttons labelled Select, Draw and Erase': () =>\n    html`${button('Select')}${button('Draw')}${button('Erase')}`,\n  'Four ghost text Buttons labelled Filter, Sort, Export and Delete, each with the same overflowLabel': () =>\n    html`${button('Filter')}${button('Sort')}${button('Export')}${button('Delete')}`,\n  'A SegmentedControl labelled View (List, Board) and two Selects: Owner (name owner; Anyone, Me) and Sort (name sort; Newest, Oldest)':\n    () => html`\n      <ds-segmented-control\n        label=\"View\"\n        .options=${[\n          { value: 'list', label: 'List' },\n          { value: 'board', label: 'Board' },\n        ]}\n      ></ds-segmented-control>\n      <ds-select\n        label=\"Owner\"\n        name=\"owner\"\n        hide-label\n        .options=${[\n          { value: 'anyone', label: 'Anyone' },\n          { value: 'me', label: 'Me' },\n        ]}\n      ></ds-select>\n      <ds-select\n        label=\"Sort\"\n        name=\"sort\"\n        hide-label\n        .options=${[\n          { value: 'newest', label: 'Newest' },\n          { value: 'oldest', label: 'Oldest' },\n        ]}\n      ></ds-select>\n    `,\n};\n\nhtml`\n  <ds-toolbar label=\"Formatting\" density=\"comfortable\">\n    ${(CHILDREN[FORMATTING_GROUPS] ?? CHILDREN[FORMATTING_GROUPS]!)()}\n  </ds-toolbar>\n`;",
+        "rn": "import * as React from 'react';\nimport { Toolbar, ToolbarGroup, Button, Switch } from '@design-schema/rn';\n\nfunction formattingControls(): React.ReactNode {\n  return (\n    <>\n      <ToolbarGroup label=\"Text style\">\n        <Button label=\"Bold\" variant=\"ghost\" overflowLabel=\"Bold\" />\n        <Button label=\"Italic\" variant=\"ghost\" overflowLabel=\"Italic\" />\n        <Button label=\"Underline\" variant=\"ghost\" overflowLabel=\"Underline\" />\n      </ToolbarGroup>\n      <ToolbarGroup label=\"Insert\">\n        <Button label=\"Insert link\" variant=\"ghost\" overflowLabel=\"Insert link\" />\n      </ToolbarGroup>\n      <Switch label=\"Preview\" defaultChecked={false} />\n    </>\n  );\n}\n\n<Toolbar label=\"Formatting\" density=\"comfortable\">{formattingControls()}</Toolbar>",
         "swift": null
       },
       "stories": {
@@ -1255,7 +1275,8 @@
               "$element": "Button",
               "props": {
                 "variant": "ghost",
-                "label": "Bold"
+                "label": "Bold",
+                "overflowLabel": "Bold"
               },
               "children": []
             },
@@ -1263,7 +1284,8 @@
               "$element": "Button",
               "props": {
                 "variant": "ghost",
-                "label": "Italic"
+                "label": "Italic",
+                "overflowLabel": "Italic"
               },
               "children": []
             },
@@ -1271,7 +1293,8 @@
               "$element": "Button",
               "props": {
                 "variant": "ghost",
-                "label": "Underline"
+                "label": "Underline",
+                "overflowLabel": "Underline"
               },
               "children": []
             },
@@ -1279,7 +1302,8 @@
               "$element": "Button",
               "props": {
                 "variant": "ghost",
-                "label": "Strikethrough"
+                "label": "Strikethrough",
+                "overflowLabel": "Strikethrough"
               },
               "children": []
             }
@@ -1288,9 +1312,9 @@
         "overflow": "wrap"
       },
       "snippets": {
-        "react": "import { Toolbar, Button } from '@design-schema/react';\n\n<Toolbar label=\"Formatting\" overflow=\"wrap\">\n  <>\n    <Button variant=\"ghost\" label=\"Bold\" />\n    <Button variant=\"ghost\" label=\"Italic\" />\n    <Button variant=\"ghost\" label=\"Underline\" />\n    <Button variant=\"ghost\" label=\"Strikethrough\" />\n  </>\n</Toolbar>",
-        "lit": "<ds-toolbar label=\"Formatting\" style=\"max-inline-size: 22rem;\">\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Bold\" overflow-label=\"Bold\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Italic\" overflow-label=\"Italic\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Underline\" overflow-label=\"Underline\"></ds-button>\n  </ds-toolbar-group>\n  <ds-toolbar-group>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align left\" overflow-label=\"Align left\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align center\" overflow-label=\"Align center\"></ds-button>\n    <ds-button variant=\"ghost\" size=\"sm\" label=\"Align right\" overflow-label=\"Align right\"></ds-button>\n  </ds-toolbar-group>\n  <ds-button variant=\"ghost\" size=\"sm\" label=\"Share\" overflow-label=\"Share\"></ds-button>\n</ds-toolbar>",
-        "rn": "import * as React from 'react';\nimport { Toolbar, type ToolbarOrientation, Button, Divider, Switch } from '@design-schema/rn';\n\nfunction buildChildren(orientation: ToolbarOrientation): React.ReactNode {\n  const dividerOrientation = orientation === 'vertical' ? 'horizontal' : 'vertical';\n  return (\n    <>\n      <Button label=\"Bold\" variant=\"ghost\" iconOnly />\n      <Button label=\"Italic\" variant=\"ghost\" iconOnly />\n      <Button label=\"Underline\" variant=\"ghost\" iconOnly />\n      <Divider orientation={dividerOrientation} />\n      <Button label=\"Insert link\" variant=\"secondary\" />\n      <Divider orientation={dividerOrientation} />\n      <Switch label=\"Preview\" checked={false} />\n    </>\n  );\n}\n\n<Toolbar label=\"Formatting\">{buildChildren('horizontal' ?? 'horizontal')}</Toolbar>",
+        "react": "import { Toolbar, Button } from '@design-schema/react';\n\n<Toolbar label=\"Formatting\" overflow=\"wrap\">\n  <>\n    <Button variant=\"ghost\" label=\"Bold\" overflowLabel=\"Bold\" />\n    <Button variant=\"ghost\" label=\"Italic\" overflowLabel=\"Italic\" />\n    <Button variant=\"ghost\" label=\"Underline\" overflowLabel=\"Underline\" />\n    <Button variant=\"ghost\" label=\"Strikethrough\" overflowLabel=\"Strikethrough\" />\n  </>\n</Toolbar>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst button = (label: string): TemplateResult =>\n  html`<ds-button variant=\"ghost\" label=${label} overflow-label=${label}></ds-button>`;\n\nconst FORMATTING_GROUPS = 'Two labelled groups of ghost Buttons: Text style (Bold, Italic, Underline) and Alignment (Align left, Align center, Align right)';\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [FORMATTING_GROUPS]: () => html`\n    <ds-toolbar-group label=\"Text style\">${button('Bold')}${button('Italic')}${button('Underline')}</ds-toolbar-group>\n    <ds-toolbar-group label=\"Alignment\">${button('Align left')}${button('Align center')}${button('Align right')}</ds-toolbar-group>\n  `,\n  'Three ghost text Buttons labelled Bold, Italic and Underline (the icon set has no formatting glyphs)': () =>\n    html`${button('Bold')}${button('Italic')}${button('Underline')}`,\n  'Three ghost text Buttons labelled Select, Draw and Erase': () =>\n    html`${button('Select')}${button('Draw')}${button('Erase')}`,\n  'Four ghost text Buttons labelled Filter, Sort, Export and Delete, each with the same overflowLabel': () =>\n    html`${button('Filter')}${button('Sort')}${button('Export')}${button('Delete')}`,\n  'A SegmentedControl labelled View (List, Board) and two Selects: Owner (name owner; Anyone, Me) and Sort (name sort; Newest, Oldest)':\n    () => html`\n      <ds-segmented-control\n        label=\"View\"\n        .options=${[\n          { value: 'list', label: 'List' },\n          { value: 'board', label: 'Board' },\n        ]}\n      ></ds-segmented-control>\n      <ds-select\n        label=\"Owner\"\n        name=\"owner\"\n        hide-label\n        .options=${[\n          { value: 'anyone', label: 'Anyone' },\n          { value: 'me', label: 'Me' },\n        ]}\n      ></ds-select>\n      <ds-select\n        label=\"Sort\"\n        name=\"sort\"\n        hide-label\n        .options=${[\n          { value: 'newest', label: 'Newest' },\n          { value: 'oldest', label: 'Oldest' },\n        ]}\n      ></ds-select>\n    `,\n};\n\nhtml`\n  <ds-toolbar label=\"Formatting\">\n    ${(CHILDREN[FORMATTING_GROUPS] ?? CHILDREN[FORMATTING_GROUPS]!)()}\n  </ds-toolbar>\n`;",
+        "rn": "import { Toolbar, ToolbarGroup, Button } from '@design-schema/rn';\n\n<Toolbar label=\"Formatting\">\n  <ToolbarGroup label=\"Text style\">\n    <Button label=\"Bold\" variant=\"ghost\" />\n    <Button label=\"Italic\" variant=\"ghost\" />\n  </ToolbarGroup>\n  <ToolbarGroup label=\"Insert\">\n    <Button label=\"Insert link\" variant=\"ghost\" />\n  </ToolbarGroup>\n</Toolbar>",
         "swift": null
       },
       "stories": {
@@ -1303,6 +1327,272 @@
       "sweep": {
         "prop": "overflow",
         "value": "wrap"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Formatting Toolbar",
+      "args": {
+        "label": "Formatting",
+        "children": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "Button",
+              "props": {
+                "variant": "ghost",
+                "label": "Bold",
+                "overflowLabel": "Bold"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "variant": "ghost",
+                "label": "Italic",
+                "overflowLabel": "Italic"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "variant": "ghost",
+                "label": "Underline",
+                "overflowLabel": "Underline"
+              },
+              "children": []
+            }
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Toolbar, Button } from '@design-schema/react';\n\n<Toolbar label=\"Formatting\">\n  <>\n    <Button variant=\"ghost\" label=\"Bold\" overflowLabel=\"Bold\" />\n    <Button variant=\"ghost\" label=\"Italic\" overflowLabel=\"Italic\" />\n    <Button variant=\"ghost\" label=\"Underline\" overflowLabel=\"Underline\" />\n  </>\n</Toolbar>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst button = (label: string): TemplateResult =>\n  html`<ds-button variant=\"ghost\" label=${label} overflow-label=${label}></ds-button>`;\n\nconst FORMATTING_GROUPS = 'Two labelled groups of ghost Buttons: Text style (Bold, Italic, Underline) and Alignment (Align left, Align center, Align right)';\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [FORMATTING_GROUPS]: () => html`\n    <ds-toolbar-group label=\"Text style\">${button('Bold')}${button('Italic')}${button('Underline')}</ds-toolbar-group>\n    <ds-toolbar-group label=\"Alignment\">${button('Align left')}${button('Align center')}${button('Align right')}</ds-toolbar-group>\n  `,\n  'Three ghost text Buttons labelled Bold, Italic and Underline (the icon set has no formatting glyphs)': () =>\n    html`${button('Bold')}${button('Italic')}${button('Underline')}`,\n  'Three ghost text Buttons labelled Select, Draw and Erase': () =>\n    html`${button('Select')}${button('Draw')}${button('Erase')}`,\n  'Four ghost text Buttons labelled Filter, Sort, Export and Delete, each with the same overflowLabel': () =>\n    html`${button('Filter')}${button('Sort')}${button('Export')}${button('Delete')}`,\n  'A SegmentedControl labelled View (List, Board) and two Selects: Owner (name owner; Anyone, Me) and Sort (name sort; Newest, Oldest)':\n    () => html`\n      <ds-segmented-control\n        label=\"View\"\n        .options=${[\n          { value: 'list', label: 'List' },\n          { value: 'board', label: 'Board' },\n        ]}\n      ></ds-segmented-control>\n      <ds-select\n        label=\"Owner\"\n        name=\"owner\"\n        hide-label\n        .options=${[\n          { value: 'anyone', label: 'Anyone' },\n          { value: 'me', label: 'Me' },\n        ]}\n      ></ds-select>\n      <ds-select\n        label=\"Sort\"\n        name=\"sort\"\n        hide-label\n        .options=${[\n          { value: 'newest', label: 'Newest' },\n          { value: 'oldest', label: 'Oldest' },\n        ]}\n      ></ds-select>\n    `,\n};\n\nhtml`\n  <ds-toolbar label=\"Formatting\">\n    ${(CHILDREN['Three ghost text Buttons labelled Bold, Italic and Underline (the icon set has no formatting glyphs)'] ?? CHILDREN[FORMATTING_GROUPS]!)()}\n  </ds-toolbar>\n`;",
+        "rn": "import { Toolbar, Button } from '@design-schema/rn';\n\n<Toolbar label=\"Formatting\">\n  <Button label=\"Bold\" variant=\"ghost\" />\n  <Button label=\"Italic\" variant=\"ghost\" />\n  <Button label=\"Underline\" variant=\"ghost\" />\n</Toolbar>",
+        "swift": null
+      },
+      "stories": {
+        "react": "FormattingToolbar",
+        "lit": "FormattingToolbar",
+        "rn": "FormattingToolbar",
+        "swift": null
+      },
+      "storyId": "toolbar-react--formatting-toolbar",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Vertical Tool Palette",
+      "args": {
+        "label": "Drawing tools",
+        "children": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "Button",
+              "props": {
+                "variant": "ghost",
+                "label": "Select",
+                "overflowLabel": "Select"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "variant": "ghost",
+                "label": "Draw",
+                "overflowLabel": "Draw"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "variant": "ghost",
+                "label": "Erase",
+                "overflowLabel": "Erase"
+              },
+              "children": []
+            }
+          ]
+        },
+        "orientation": "vertical"
+      },
+      "snippets": {
+        "react": "import { Toolbar, Button } from '@design-schema/react';\n\n<Toolbar label=\"Drawing tools\" orientation=\"vertical\">\n  <>\n    <Button variant=\"ghost\" label=\"Select\" overflowLabel=\"Select\" />\n    <Button variant=\"ghost\" label=\"Draw\" overflowLabel=\"Draw\" />\n    <Button variant=\"ghost\" label=\"Erase\" overflowLabel=\"Erase\" />\n  </>\n</Toolbar>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst button = (label: string): TemplateResult =>\n  html`<ds-button variant=\"ghost\" label=${label} overflow-label=${label}></ds-button>`;\n\nconst FORMATTING_GROUPS = 'Two labelled groups of ghost Buttons: Text style (Bold, Italic, Underline) and Alignment (Align left, Align center, Align right)';\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [FORMATTING_GROUPS]: () => html`\n    <ds-toolbar-group label=\"Text style\">${button('Bold')}${button('Italic')}${button('Underline')}</ds-toolbar-group>\n    <ds-toolbar-group label=\"Alignment\">${button('Align left')}${button('Align center')}${button('Align right')}</ds-toolbar-group>\n  `,\n  'Three ghost text Buttons labelled Bold, Italic and Underline (the icon set has no formatting glyphs)': () =>\n    html`${button('Bold')}${button('Italic')}${button('Underline')}`,\n  'Three ghost text Buttons labelled Select, Draw and Erase': () =>\n    html`${button('Select')}${button('Draw')}${button('Erase')}`,\n  'Four ghost text Buttons labelled Filter, Sort, Export and Delete, each with the same overflowLabel': () =>\n    html`${button('Filter')}${button('Sort')}${button('Export')}${button('Delete')}`,\n  'A SegmentedControl labelled View (List, Board) and two Selects: Owner (name owner; Anyone, Me) and Sort (name sort; Newest, Oldest)':\n    () => html`\n      <ds-segmented-control\n        label=\"View\"\n        .options=${[\n          { value: 'list', label: 'List' },\n          { value: 'board', label: 'Board' },\n        ]}\n      ></ds-segmented-control>\n      <ds-select\n        label=\"Owner\"\n        name=\"owner\"\n        hide-label\n        .options=${[\n          { value: 'anyone', label: 'Anyone' },\n          { value: 'me', label: 'Me' },\n        ]}\n      ></ds-select>\n      <ds-select\n        label=\"Sort\"\n        name=\"sort\"\n        hide-label\n        .options=${[\n          { value: 'newest', label: 'Newest' },\n          { value: 'oldest', label: 'Oldest' },\n        ]}\n      ></ds-select>\n    `,\n};\n\nhtml`\n  <ds-toolbar label=\"Drawing tools\" orientation=\"vertical\">\n    ${(CHILDREN['Three ghost text Buttons labelled Select, Draw and Erase'] ?? CHILDREN[FORMATTING_GROUPS]!)()}\n  </ds-toolbar>\n`;",
+        "rn": "import { Toolbar, Button } from '@design-schema/rn';\n\n<Toolbar label=\"Drawing tools\" orientation=\"vertical\">\n  <Button label=\"Select\" variant=\"ghost\" />\n  <Button label=\"Draw\" variant=\"ghost\" />\n  <Button label=\"Erase\" variant=\"ghost\" />\n</Toolbar>",
+        "swift": null
+      },
+      "stories": {
+        "react": "VerticalToolPalette",
+        "lit": "VerticalToolPalette",
+        "rn": "VerticalToolPalette",
+        "swift": null
+      },
+      "storyId": "toolbar-react--vertical-tool-palette",
+      "sweep": {
+        "prop": "orientation",
+        "value": "vertical"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Compact Actions With Overflow",
+      "args": {
+        "label": "Table actions",
+        "children": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "Button",
+              "props": {
+                "variant": "ghost",
+                "label": "Filter",
+                "overflowLabel": "Filter"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "variant": "ghost",
+                "label": "Sort",
+                "overflowLabel": "Sort"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "variant": "ghost",
+                "label": "Export",
+                "overflowLabel": "Export"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "variant": "ghost",
+                "label": "Delete",
+                "overflowLabel": "Delete"
+              },
+              "children": []
+            }
+          ]
+        },
+        "overflow": "menu",
+        "density": "compact",
+        "size": "sm"
+      },
+      "snippets": {
+        "react": "import { Toolbar, Button } from '@design-schema/react';\n\n<Toolbar label=\"Table actions\" overflow=\"menu\" density=\"compact\" size=\"sm\">\n  <>\n    <Button variant=\"ghost\" label=\"Filter\" overflowLabel=\"Filter\" />\n    <Button variant=\"ghost\" label=\"Sort\" overflowLabel=\"Sort\" />\n    <Button variant=\"ghost\" label=\"Export\" overflowLabel=\"Export\" />\n    <Button variant=\"ghost\" label=\"Delete\" overflowLabel=\"Delete\" />\n  </>\n</Toolbar>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst button = (label: string): TemplateResult =>\n  html`<ds-button variant=\"ghost\" label=${label} overflow-label=${label}></ds-button>`;\n\nconst FORMATTING_GROUPS = 'Two labelled groups of ghost Buttons: Text style (Bold, Italic, Underline) and Alignment (Align left, Align center, Align right)';\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [FORMATTING_GROUPS]: () => html`\n    <ds-toolbar-group label=\"Text style\">${button('Bold')}${button('Italic')}${button('Underline')}</ds-toolbar-group>\n    <ds-toolbar-group label=\"Alignment\">${button('Align left')}${button('Align center')}${button('Align right')}</ds-toolbar-group>\n  `,\n  'Three ghost text Buttons labelled Bold, Italic and Underline (the icon set has no formatting glyphs)': () =>\n    html`${button('Bold')}${button('Italic')}${button('Underline')}`,\n  'Three ghost text Buttons labelled Select, Draw and Erase': () =>\n    html`${button('Select')}${button('Draw')}${button('Erase')}`,\n  'Four ghost text Buttons labelled Filter, Sort, Export and Delete, each with the same overflowLabel': () =>\n    html`${button('Filter')}${button('Sort')}${button('Export')}${button('Delete')}`,\n  'A SegmentedControl labelled View (List, Board) and two Selects: Owner (name owner; Anyone, Me) and Sort (name sort; Newest, Oldest)':\n    () => html`\n      <ds-segmented-control\n        label=\"View\"\n        .options=${[\n          { value: 'list', label: 'List' },\n          { value: 'board', label: 'Board' },\n        ]}\n      ></ds-segmented-control>\n      <ds-select\n        label=\"Owner\"\n        name=\"owner\"\n        hide-label\n        .options=${[\n          { value: 'anyone', label: 'Anyone' },\n          { value: 'me', label: 'Me' },\n        ]}\n      ></ds-select>\n      <ds-select\n        label=\"Sort\"\n        name=\"sort\"\n        hide-label\n        .options=${[\n          { value: 'newest', label: 'Newest' },\n          { value: 'oldest', label: 'Oldest' },\n        ]}\n      ></ds-select>\n    `,\n};\n\nhtml`\n  <ds-toolbar label=\"Table actions\" overflow=\"menu\" size=\"sm\" density=\"compact\">\n    ${(CHILDREN['Four ghost text Buttons labelled Filter, Sort, Export and Delete, each with the same overflowLabel'] ?? CHILDREN[FORMATTING_GROUPS]!)()}\n  </ds-toolbar>\n`;",
+        "rn": "import { Toolbar, Button } from '@design-schema/rn';\n\n<Toolbar\n  label=\"Table actions\"\n  size=\"sm\"\n  density=\"compact\"\n  overflow=\"menu\"\n>\n  <Button label=\"Filter\" variant=\"ghost\" overflowLabel=\"Filter\" />\n  <Button label=\"Sort\" variant=\"ghost\" overflowLabel=\"Sort\" />\n  <Button label=\"Export\" variant=\"ghost\" overflowLabel=\"Export\" />\n  <Button label=\"Delete\" variant=\"ghost\" overflowLabel=\"Delete\" />\n</Toolbar>",
+        "swift": null
+      },
+      "stories": {
+        "react": "CompactActionsWithOverflow",
+        "lit": "CompactActionsWithOverflow",
+        "rn": "CompactActionsWithOverflow",
+        "swift": null
+      },
+      "storyId": "toolbar-react--compact-actions-with-overflow",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Scrolling Filter Row",
+      "args": {
+        "label": "Filters",
+        "children": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "SegmentedControl",
+              "props": {
+                "label": "View",
+                "options": [
+                  {
+                    "value": "list",
+                    "label": "List"
+                  },
+                  {
+                    "value": "board",
+                    "label": "Board"
+                  }
+                ]
+              },
+              "children": []
+            },
+            {
+              "$element": "Select",
+              "props": {
+                "label": "Owner",
+                "name": "owner",
+                "options": [
+                  {
+                    "value": "anyone",
+                    "label": "Anyone"
+                  },
+                  {
+                    "value": "me",
+                    "label": "Me"
+                  }
+                ]
+              },
+              "children": []
+            },
+            {
+              "$element": "Select",
+              "props": {
+                "label": "Sort",
+                "name": "sort",
+                "options": [
+                  {
+                    "value": "newest",
+                    "label": "Newest"
+                  },
+                  {
+                    "value": "oldest",
+                    "label": "Oldest"
+                  }
+                ]
+              },
+              "children": []
+            }
+          ]
+        },
+        "overflow": "scroll"
+      },
+      "snippets": {
+        "react": "import { Toolbar, SegmentedControl, Select } from '@design-schema/react';\n\n<Toolbar label=\"Filters\" overflow=\"scroll\">\n  <>\n    <SegmentedControl\n      label=\"View\"\n      options={[\n        { value: 'list', label: 'List' },\n        { value: 'board', label: 'Board' },\n      ]}\n    />\n    <Select\n      label=\"Owner\"\n      name=\"owner\"\n      options={[\n        { value: 'anyone', label: 'Anyone' },\n        { value: 'me', label: 'Me' },\n      ]}\n    />\n    <Select\n      label=\"Sort\"\n      name=\"sort\"\n      options={[\n        { value: 'newest', label: 'Newest' },\n        { value: 'oldest', label: 'Oldest' },\n      ]}\n    />\n  </>\n</Toolbar>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\n\nconst button = (label: string): TemplateResult =>\n  html`<ds-button variant=\"ghost\" label=${label} overflow-label=${label}></ds-button>`;\n\nconst FORMATTING_GROUPS = 'Two labelled groups of ghost Buttons: Text style (Bold, Italic, Underline) and Alignment (Align left, Align center, Align right)';\n\nconst CHILDREN: Record<string, () => TemplateResult> = {\n  [FORMATTING_GROUPS]: () => html`\n    <ds-toolbar-group label=\"Text style\">${button('Bold')}${button('Italic')}${button('Underline')}</ds-toolbar-group>\n    <ds-toolbar-group label=\"Alignment\">${button('Align left')}${button('Align center')}${button('Align right')}</ds-toolbar-group>\n  `,\n  'Three ghost text Buttons labelled Bold, Italic and Underline (the icon set has no formatting glyphs)': () =>\n    html`${button('Bold')}${button('Italic')}${button('Underline')}`,\n  'Three ghost text Buttons labelled Select, Draw and Erase': () =>\n    html`${button('Select')}${button('Draw')}${button('Erase')}`,\n  'Four ghost text Buttons labelled Filter, Sort, Export and Delete, each with the same overflowLabel': () =>\n    html`${button('Filter')}${button('Sort')}${button('Export')}${button('Delete')}`,\n  'A SegmentedControl labelled View (List, Board) and two Selects: Owner (name owner; Anyone, Me) and Sort (name sort; Newest, Oldest)':\n    () => html`\n      <ds-segmented-control\n        label=\"View\"\n        .options=${[\n          { value: 'list', label: 'List' },\n          { value: 'board', label: 'Board' },\n        ]}\n      ></ds-segmented-control>\n      <ds-select\n        label=\"Owner\"\n        name=\"owner\"\n        hide-label\n        .options=${[\n          { value: 'anyone', label: 'Anyone' },\n          { value: 'me', label: 'Me' },\n        ]}\n      ></ds-select>\n      <ds-select\n        label=\"Sort\"\n        name=\"sort\"\n        hide-label\n        .options=${[\n          { value: 'newest', label: 'Newest' },\n          { value: 'oldest', label: 'Oldest' },\n        ]}\n      ></ds-select>\n    `,\n};\n\nhtml`\n  <ds-toolbar label=\"Filters\" overflow=\"scroll\">\n    ${(CHILDREN['A SegmentedControl labelled View (List, Board) and two Selects: Owner (name owner; Anyone, Me) and Sort (name sort; Newest, Oldest)'] ?? CHILDREN[FORMATTING_GROUPS]!)()}\n  </ds-toolbar>\n`;",
+        "rn": "import { Toolbar, SegmentedControl, Select } from '@design-schema/rn';\n\n<Toolbar label=\"Filters\" overflow=\"scroll\">\n  <SegmentedControl\n    label=\"View\"\n    defaultValue=\"list\"\n    options={[\n      { value: 'list', label: 'List' },\n      { value: 'board', label: 'Board' },\n    ]}\n  />\n  <Select\n    name=\"owner\"\n    label=\"Owner\"\n    hideLabel\n    options={[\n      { value: 'anyone', label: 'Anyone' },\n      { value: 'me', label: 'Me' },\n    ]}\n  />\n  <Select\n    name=\"sort\"\n    label=\"Sort\"\n    hideLabel\n    options={[\n      { value: 'newest', label: 'Newest' },\n      { value: 'oldest', label: 'Oldest' },\n    ]}\n  />\n</Toolbar>",
+        "swift": null
+      },
+      "stories": {
+        "react": "ScrollingFilterRow",
+        "lit": "ScrollingFilterRow",
+        "rn": "ScrollingFilterRow",
+        "swift": null
+      },
+      "storyId": "toolbar-react--scrolling-filter-row",
+      "sweep": {
+        "prop": "overflow",
+        "value": "scroll"
       },
       "decorated": false,
       "primary": false

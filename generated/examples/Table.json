@@ -13,65 +13,40 @@
         "caption": "Open invoices",
         "columns": [
           {
-            "key": "customer",
-            "header": "Customer",
+            "key": "invoice",
+            "header": "Invoice",
             "isRowHeader": true
           },
           {
-            "key": "status",
-            "header": "Status"
+            "key": "due",
+            "header": "Due"
           },
           {
             "key": "amount",
-            "header": "Amount (USD)",
-            "abbr": "Amount",
+            "header": "Amount",
             "align": "end",
-            "sortable": true,
-            "render": {
-              "$unsupported": "(row) => `$${(row as Invoice).amount.toFixed(2)}`"
-            }
-          },
-          {
-            "key": "due",
-            "header": "Due date",
-            "hideBelow": "prose"
+            "sortable": true
           }
         ],
         "data": [
           {
-            "id": "inv-1001",
-            "customer": "Aster Studio",
-            "status": "Open",
-            "amount": 420,
-            "due": "2026-09-30"
+            "id": "a",
+            "invoice": "INV-1",
+            "due": "12 Sep",
+            "amount": 100
           },
           {
-            "id": "inv-1002",
-            "customer": "Bramble & Co",
-            "status": "Overdue",
-            "amount": 1280,
-            "due": "2026-08-15"
-          },
-          {
-            "id": "inv-1003",
-            "customer": "Cedar Analytics",
-            "status": "Open",
-            "amount": 96,
-            "due": "2026-10-04"
-          },
-          {
-            "id": "inv-1004",
-            "customer": "Driftwood Supply",
-            "status": "Paid",
-            "amount": 640,
-            "due": "2026-09-01"
+            "id": "b",
+            "invoice": "INV-2",
+            "due": "19 Sep",
+            "amount": 200
           }
         ]
       },
       "snippets": {
-        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\ninterface Invoice extends TableRow {\n  customer: string;\n  status: string;\n  amount: number;\n  due: string;\n}\n\nconst DATA: Invoice[] = [\n  { id: 'inv-1001', customer: 'Aster Studio', status: 'Open', amount: 420, due: '2026-09-30' },\n  { id: 'inv-1002', customer: 'Bramble & Co', status: 'Overdue', amount: 1280, due: '2026-08-15' },\n  { id: 'inv-1003', customer: 'Cedar Analytics', status: 'Open', amount: 96, due: '2026-10-04' },\n  { id: 'inv-1004', customer: 'Driftwood Supply', status: 'Paid', amount: 640, due: '2026-09-01' },\n];\n\nconst COLUMNS: TableColumn[] = [\n  { key: 'customer', header: 'Customer', isRowHeader: true },\n  { key: 'status', header: 'Status' },\n  {\n    key: 'amount',\n    header: 'Amount (USD)',\n    abbr: 'Amount',\n    align: 'end',\n    sortable: true,\n    render: (row) => `$${(row as Invoice).amount.toFixed(2)}`,\n  },\n  { key: 'due', header: 'Due date', hideBelow: 'prose' },\n];\n\n<Table caption=\"Open invoices\" columns={COLUMNS} data={DATA} />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow, TableRowPressDetail, TableSelectionChangeDetail, TableSortChangeDetail } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'id', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n  { key: 'status', header: 'Status', hideBelow: 'content' },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'INV-1001', customer: 'Acme Co.', amount: '$1,240.00', status: 'Open' },\n  { id: 'INV-1002', customer: 'Globex', amount: '$860.50', status: 'Open' },\n  { id: 'INV-1003', customer: 'Initech', amount: '$3,020.00', status: 'Overdue' },\n  { id: 'INV-1004', customer: 'Umbrella Corp.', amount: '$412.75', status: 'Paid' },\n];\n\nhtml`\n    <ds-table\n      caption=\"Open invoices\"\n      .columns=${invoiceColumns}\n      .data=${invoiceRows}\n      empty-message=\"\"\n      @sort-change=${(event: CustomEvent<TableSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<TableSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @row-press=${(event: CustomEvent<TableRowPressDetail>) => console.log('row-press', event.detail)}\n    ></ds-table>\n`;",
-        "rn": "import { Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'name', header: 'Customer', isRowHeader: true },\n  { key: 'invoice', header: 'Invoice', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n  { key: 'status', header: 'Status', sortable: true },\n];\n\nconst data: TableRow[] = [\n  { id: '1', name: 'Acme Co', invoice: 'INV-1001', amount: '1,204.00', status: 'Paid' },\n  { id: '2', name: 'Globex', invoice: 'INV-1002', amount: '389.50', status: 'Overdue' },\n  { id: '3', name: 'Initech', invoice: 'INV-1003', amount: '2,050.00', status: 'Paid' },\n  { id: '4', name: 'Umbrella Corp', invoice: 'INV-1004', amount: '75.00', status: 'Draft' },\n];\n\n<Table caption=\"Open invoices\" columns={columns} data={data} />",
+        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\nconst INVOICE_COLUMNS: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount', align: 'end', sortable: true },\n];\n\nconst INVOICES: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', due: '12 Sep', amount: 100 },\n  { id: 'b', invoice: 'INV-2', due: '19 Sep', amount: 200 },\n];\n\n<Table caption=\"Open invoices\" columns={INVOICE_COLUMNS} data={INVOICES} />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'due', header: 'Due', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'a', invoice: 'INV-1001', customer: 'Acme Co.', due: '12 Sep', amount: 1240 },\n  { id: 'b', invoice: 'INV-1002', customer: 'Globex', due: '19 Sep', amount: 860.5 },\n  { id: 'c', invoice: 'INV-1003', customer: 'Initech', due: '26 Sep', amount: 3020 },\n  { id: 'd', invoice: 'INV-1004', customer: 'Umbrella Corp.', due: '3 Oct', amount: 412.75 },\n];\n\nhtml`\n  <ds-table caption=\"Open invoices\" .columns=${invoiceColumns} .data=${invoiceRows}></ds-table>\n`;",
+        "rn": "import { Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer', hideBelow: 'prose' },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n];\n\nconst data: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', customer: 'Acme Co', due: '12 Sep', amount: 1204 },\n  { id: 'b', invoice: 'INV-2', customer: 'Globex', due: '19 Sep', amount: 389.5 },\n  { id: 'c', invoice: 'INV-3', customer: 'Initech', due: '26 Sep', amount: 2050 },\n];\n\n<Table caption=\"Open invoices\" columns={columns} data={data} />",
         "swift": null
       },
       "stories": {
@@ -91,66 +66,41 @@
         "caption": "Open invoices",
         "columns": [
           {
-            "key": "customer",
-            "header": "Customer",
+            "key": "invoice",
+            "header": "Invoice",
             "isRowHeader": true
           },
           {
-            "key": "status",
-            "header": "Status"
+            "key": "due",
+            "header": "Due"
           },
           {
             "key": "amount",
-            "header": "Amount (USD)",
-            "abbr": "Amount",
+            "header": "Amount",
             "align": "end",
-            "sortable": true,
-            "render": {
-              "$unsupported": "(row) => `$${(row as Invoice).amount.toFixed(2)}`"
-            }
-          },
-          {
-            "key": "due",
-            "header": "Due date",
-            "hideBelow": "prose"
+            "sortable": true
           }
         ],
         "data": [
           {
-            "id": "inv-1001",
-            "customer": "Aster Studio",
-            "status": "Open",
-            "amount": 420,
-            "due": "2026-09-30"
+            "id": "a",
+            "invoice": "INV-1",
+            "due": "12 Sep",
+            "amount": 100
           },
           {
-            "id": "inv-1002",
-            "customer": "Bramble & Co",
-            "status": "Overdue",
-            "amount": 1280,
-            "due": "2026-08-15"
-          },
-          {
-            "id": "inv-1003",
-            "customer": "Cedar Analytics",
-            "status": "Open",
-            "amount": 96,
-            "due": "2026-10-04"
-          },
-          {
-            "id": "inv-1004",
-            "customer": "Driftwood Supply",
-            "status": "Paid",
-            "amount": 640,
-            "due": "2026-09-01"
+            "id": "b",
+            "invoice": "INV-2",
+            "due": "19 Sep",
+            "amount": 200
           }
         ],
         "captionLevel": "2"
       },
       "snippets": {
-        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\ninterface Invoice extends TableRow {\n  customer: string;\n  status: string;\n  amount: number;\n  due: string;\n}\n\nconst DATA: Invoice[] = [\n  { id: 'inv-1001', customer: 'Aster Studio', status: 'Open', amount: 420, due: '2026-09-30' },\n  { id: 'inv-1002', customer: 'Bramble & Co', status: 'Overdue', amount: 1280, due: '2026-08-15' },\n  { id: 'inv-1003', customer: 'Cedar Analytics', status: 'Open', amount: 96, due: '2026-10-04' },\n  { id: 'inv-1004', customer: 'Driftwood Supply', status: 'Paid', amount: 640, due: '2026-09-01' },\n];\n\nconst COLUMNS: TableColumn[] = [\n  { key: 'customer', header: 'Customer', isRowHeader: true },\n  { key: 'status', header: 'Status' },\n  {\n    key: 'amount',\n    header: 'Amount (USD)',\n    abbr: 'Amount',\n    align: 'end',\n    sortable: true,\n    render: (row) => `$${(row as Invoice).amount.toFixed(2)}`,\n  },\n  { key: 'due', header: 'Due date', hideBelow: 'prose' },\n];\n\n<Table caption=\"Open invoices\" columns={COLUMNS} data={DATA} captionLevel=\"2\" />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow, TableRowPressDetail, TableSelectionChangeDetail, TableSortChangeDetail } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'id', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n  { key: 'status', header: 'Status', hideBelow: 'content' },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'INV-1001', customer: 'Acme Co.', amount: '$1,240.00', status: 'Open' },\n  { id: 'INV-1002', customer: 'Globex', amount: '$860.50', status: 'Open' },\n  { id: 'INV-1003', customer: 'Initech', amount: '$3,020.00', status: 'Overdue' },\n  { id: 'INV-1004', customer: 'Umbrella Corp.', amount: '$412.75', status: 'Paid' },\n];\n\nhtml`\n    <ds-table\n      caption=\"Open invoices\"\n      caption-level=\"2\"\n      .columns=${invoiceColumns}\n      .data=${invoiceRows}\n      empty-message=\"\"\n      @sort-change=${(event: CustomEvent<TableSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<TableSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @row-press=${(event: CustomEvent<TableRowPressDetail>) => console.log('row-press', event.detail)}\n    ></ds-table>\n`;",
-        "rn": "import { Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'name', header: 'Customer', isRowHeader: true },\n  { key: 'invoice', header: 'Invoice', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n  { key: 'status', header: 'Status', sortable: true },\n];\n\nconst data: TableRow[] = [\n  { id: '1', name: 'Acme Co', invoice: 'INV-1001', amount: '1,204.00', status: 'Paid' },\n  { id: '2', name: 'Globex', invoice: 'INV-1002', amount: '389.50', status: 'Overdue' },\n  { id: '3', name: 'Initech', invoice: 'INV-1003', amount: '2,050.00', status: 'Paid' },\n  { id: '4', name: 'Umbrella Corp', invoice: 'INV-1004', amount: '75.00', status: 'Draft' },\n];\n\n<Table caption=\"Open invoices\" columns={columns} data={data} captionLevel=\"2\" />",
+        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\nconst INVOICE_COLUMNS: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount', align: 'end', sortable: true },\n];\n\nconst INVOICES: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', due: '12 Sep', amount: 100 },\n  { id: 'b', invoice: 'INV-2', due: '19 Sep', amount: 200 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={INVOICE_COLUMNS}\n  data={INVOICES}\n  captionLevel=\"2\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'due', header: 'Due', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'a', invoice: 'INV-1001', customer: 'Acme Co.', due: '12 Sep', amount: 1240 },\n  { id: 'b', invoice: 'INV-1002', customer: 'Globex', due: '19 Sep', amount: 860.5 },\n  { id: 'c', invoice: 'INV-1003', customer: 'Initech', due: '26 Sep', amount: 3020 },\n  { id: 'd', invoice: 'INV-1004', customer: 'Umbrella Corp.', due: '3 Oct', amount: 412.75 },\n];\n\nhtml`\n  <ds-table caption=\"Open invoices\" caption-level=\"2\" .columns=${invoiceColumns} .data=${invoiceRows}></ds-table>\n`;",
+        "rn": "import { Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer', hideBelow: 'prose' },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n];\n\nconst data: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', customer: 'Acme Co', due: '12 Sep', amount: 1204 },\n  { id: 'b', invoice: 'INV-2', customer: 'Globex', due: '19 Sep', amount: 389.5 },\n  { id: 'c', invoice: 'INV-3', customer: 'Initech', due: '26 Sep', amount: 2050 },\n];\n\n<Table caption=\"Open invoices\" columns={columns} data={data} captionLevel=\"2\" />",
         "swift": null
       },
       "stories": {
@@ -173,66 +123,41 @@
         "caption": "Open invoices",
         "columns": [
           {
-            "key": "customer",
-            "header": "Customer",
+            "key": "invoice",
+            "header": "Invoice",
             "isRowHeader": true
           },
           {
-            "key": "status",
-            "header": "Status"
+            "key": "due",
+            "header": "Due"
           },
           {
             "key": "amount",
-            "header": "Amount (USD)",
-            "abbr": "Amount",
+            "header": "Amount",
             "align": "end",
-            "sortable": true,
-            "render": {
-              "$unsupported": "(row) => `$${(row as Invoice).amount.toFixed(2)}`"
-            }
-          },
-          {
-            "key": "due",
-            "header": "Due date",
-            "hideBelow": "prose"
+            "sortable": true
           }
         ],
         "data": [
           {
-            "id": "inv-1001",
-            "customer": "Aster Studio",
-            "status": "Open",
-            "amount": 420,
-            "due": "2026-09-30"
+            "id": "a",
+            "invoice": "INV-1",
+            "due": "12 Sep",
+            "amount": 100
           },
           {
-            "id": "inv-1002",
-            "customer": "Bramble & Co",
-            "status": "Overdue",
-            "amount": 1280,
-            "due": "2026-08-15"
-          },
-          {
-            "id": "inv-1003",
-            "customer": "Cedar Analytics",
-            "status": "Open",
-            "amount": 96,
-            "due": "2026-10-04"
-          },
-          {
-            "id": "inv-1004",
-            "customer": "Driftwood Supply",
-            "status": "Paid",
-            "amount": 640,
-            "due": "2026-09-01"
+            "id": "b",
+            "invoice": "INV-2",
+            "due": "19 Sep",
+            "amount": 200
           }
         ],
         "captionLevel": "3"
       },
       "snippets": {
-        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\ninterface Invoice extends TableRow {\n  customer: string;\n  status: string;\n  amount: number;\n  due: string;\n}\n\nconst DATA: Invoice[] = [\n  { id: 'inv-1001', customer: 'Aster Studio', status: 'Open', amount: 420, due: '2026-09-30' },\n  { id: 'inv-1002', customer: 'Bramble & Co', status: 'Overdue', amount: 1280, due: '2026-08-15' },\n  { id: 'inv-1003', customer: 'Cedar Analytics', status: 'Open', amount: 96, due: '2026-10-04' },\n  { id: 'inv-1004', customer: 'Driftwood Supply', status: 'Paid', amount: 640, due: '2026-09-01' },\n];\n\nconst COLUMNS: TableColumn[] = [\n  { key: 'customer', header: 'Customer', isRowHeader: true },\n  { key: 'status', header: 'Status' },\n  {\n    key: 'amount',\n    header: 'Amount (USD)',\n    abbr: 'Amount',\n    align: 'end',\n    sortable: true,\n    render: (row) => `$${(row as Invoice).amount.toFixed(2)}`,\n  },\n  { key: 'due', header: 'Due date', hideBelow: 'prose' },\n];\n\n<Table caption=\"Open invoices\" columns={COLUMNS} data={DATA} captionLevel=\"3\" />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow, TableRowPressDetail, TableSelectionChangeDetail, TableSortChangeDetail } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'id', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n  { key: 'status', header: 'Status', hideBelow: 'content' },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'INV-1001', customer: 'Acme Co.', amount: '$1,240.00', status: 'Open' },\n  { id: 'INV-1002', customer: 'Globex', amount: '$860.50', status: 'Open' },\n  { id: 'INV-1003', customer: 'Initech', amount: '$3,020.00', status: 'Overdue' },\n  { id: 'INV-1004', customer: 'Umbrella Corp.', amount: '$412.75', status: 'Paid' },\n];\n\nhtml`\n    <ds-table\n      caption=\"Open invoices\"\n      caption-level=\"3\"\n      .columns=${invoiceColumns}\n      .data=${invoiceRows}\n      empty-message=\"\"\n      @sort-change=${(event: CustomEvent<TableSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<TableSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @row-press=${(event: CustomEvent<TableRowPressDetail>) => console.log('row-press', event.detail)}\n    ></ds-table>\n`;",
-        "rn": "import { Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'name', header: 'Customer', isRowHeader: true },\n  { key: 'invoice', header: 'Invoice', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n  { key: 'status', header: 'Status', sortable: true },\n];\n\nconst data: TableRow[] = [\n  { id: '1', name: 'Acme Co', invoice: 'INV-1001', amount: '1,204.00', status: 'Paid' },\n  { id: '2', name: 'Globex', invoice: 'INV-1002', amount: '389.50', status: 'Overdue' },\n  { id: '3', name: 'Initech', invoice: 'INV-1003', amount: '2,050.00', status: 'Paid' },\n  { id: '4', name: 'Umbrella Corp', invoice: 'INV-1004', amount: '75.00', status: 'Draft' },\n];\n\n<Table caption=\"Open invoices\" columns={columns} data={data} captionLevel=\"3\" />",
+        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\nconst INVOICE_COLUMNS: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount', align: 'end', sortable: true },\n];\n\nconst INVOICES: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', due: '12 Sep', amount: 100 },\n  { id: 'b', invoice: 'INV-2', due: '19 Sep', amount: 200 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={INVOICE_COLUMNS}\n  data={INVOICES}\n  captionLevel=\"3\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'due', header: 'Due', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'a', invoice: 'INV-1001', customer: 'Acme Co.', due: '12 Sep', amount: 1240 },\n  { id: 'b', invoice: 'INV-1002', customer: 'Globex', due: '19 Sep', amount: 860.5 },\n  { id: 'c', invoice: 'INV-1003', customer: 'Initech', due: '26 Sep', amount: 3020 },\n  { id: 'd', invoice: 'INV-1004', customer: 'Umbrella Corp.', due: '3 Oct', amount: 412.75 },\n];\n\nhtml`\n  <ds-table caption=\"Open invoices\" caption-level=\"3\" .columns=${invoiceColumns} .data=${invoiceRows}></ds-table>\n`;",
+        "rn": "import { Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer', hideBelow: 'prose' },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n];\n\nconst data: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', customer: 'Acme Co', due: '12 Sep', amount: 1204 },\n  { id: 'b', invoice: 'INV-2', customer: 'Globex', due: '19 Sep', amount: 389.5 },\n  { id: 'c', invoice: 'INV-3', customer: 'Initech', due: '26 Sep', amount: 2050 },\n];\n\n<Table caption=\"Open invoices\" columns={columns} data={data} captionLevel=\"3\" />",
         "swift": null
       },
       "stories": {
@@ -255,66 +180,41 @@
         "caption": "Open invoices",
         "columns": [
           {
-            "key": "customer",
-            "header": "Customer",
+            "key": "invoice",
+            "header": "Invoice",
             "isRowHeader": true
           },
           {
-            "key": "status",
-            "header": "Status"
+            "key": "due",
+            "header": "Due"
           },
           {
             "key": "amount",
-            "header": "Amount (USD)",
-            "abbr": "Amount",
+            "header": "Amount",
             "align": "end",
-            "sortable": true,
-            "render": {
-              "$unsupported": "(row) => `$${(row as Invoice).amount.toFixed(2)}`"
-            }
-          },
-          {
-            "key": "due",
-            "header": "Due date",
-            "hideBelow": "prose"
+            "sortable": true
           }
         ],
         "data": [
           {
-            "id": "inv-1001",
-            "customer": "Aster Studio",
-            "status": "Open",
-            "amount": 420,
-            "due": "2026-09-30"
+            "id": "a",
+            "invoice": "INV-1",
+            "due": "12 Sep",
+            "amount": 100
           },
           {
-            "id": "inv-1002",
-            "customer": "Bramble & Co",
-            "status": "Overdue",
-            "amount": 1280,
-            "due": "2026-08-15"
-          },
-          {
-            "id": "inv-1003",
-            "customer": "Cedar Analytics",
-            "status": "Open",
-            "amount": 96,
-            "due": "2026-10-04"
-          },
-          {
-            "id": "inv-1004",
-            "customer": "Driftwood Supply",
-            "status": "Paid",
-            "amount": 640,
-            "due": "2026-09-01"
+            "id": "b",
+            "invoice": "INV-2",
+            "due": "19 Sep",
+            "amount": 200
           }
         ],
         "captionLevel": "4"
       },
       "snippets": {
-        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\ninterface Invoice extends TableRow {\n  customer: string;\n  status: string;\n  amount: number;\n  due: string;\n}\n\nconst DATA: Invoice[] = [\n  { id: 'inv-1001', customer: 'Aster Studio', status: 'Open', amount: 420, due: '2026-09-30' },\n  { id: 'inv-1002', customer: 'Bramble & Co', status: 'Overdue', amount: 1280, due: '2026-08-15' },\n  { id: 'inv-1003', customer: 'Cedar Analytics', status: 'Open', amount: 96, due: '2026-10-04' },\n  { id: 'inv-1004', customer: 'Driftwood Supply', status: 'Paid', amount: 640, due: '2026-09-01' },\n];\n\nconst COLUMNS: TableColumn[] = [\n  { key: 'customer', header: 'Customer', isRowHeader: true },\n  { key: 'status', header: 'Status' },\n  {\n    key: 'amount',\n    header: 'Amount (USD)',\n    abbr: 'Amount',\n    align: 'end',\n    sortable: true,\n    render: (row) => `$${(row as Invoice).amount.toFixed(2)}`,\n  },\n  { key: 'due', header: 'Due date', hideBelow: 'prose' },\n];\n\n<Table caption=\"Open invoices\" columns={COLUMNS} data={DATA} captionLevel=\"4\" />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow, TableRowPressDetail, TableSelectionChangeDetail, TableSortChangeDetail } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'id', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n  { key: 'status', header: 'Status', hideBelow: 'content' },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'INV-1001', customer: 'Acme Co.', amount: '$1,240.00', status: 'Open' },\n  { id: 'INV-1002', customer: 'Globex', amount: '$860.50', status: 'Open' },\n  { id: 'INV-1003', customer: 'Initech', amount: '$3,020.00', status: 'Overdue' },\n  { id: 'INV-1004', customer: 'Umbrella Corp.', amount: '$412.75', status: 'Paid' },\n];\n\nhtml`\n    <ds-table\n      caption=\"Open invoices\"\n      caption-level=\"4\"\n      .columns=${invoiceColumns}\n      .data=${invoiceRows}\n      empty-message=\"\"\n      @sort-change=${(event: CustomEvent<TableSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<TableSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @row-press=${(event: CustomEvent<TableRowPressDetail>) => console.log('row-press', event.detail)}\n    ></ds-table>\n`;",
-        "rn": "import { Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'name', header: 'Customer', isRowHeader: true },\n  { key: 'invoice', header: 'Invoice', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n  { key: 'status', header: 'Status', sortable: true },\n];\n\nconst data: TableRow[] = [\n  { id: '1', name: 'Acme Co', invoice: 'INV-1001', amount: '1,204.00', status: 'Paid' },\n  { id: '2', name: 'Globex', invoice: 'INV-1002', amount: '389.50', status: 'Overdue' },\n  { id: '3', name: 'Initech', invoice: 'INV-1003', amount: '2,050.00', status: 'Paid' },\n  { id: '4', name: 'Umbrella Corp', invoice: 'INV-1004', amount: '75.00', status: 'Draft' },\n];\n\n<Table caption=\"Open invoices\" columns={columns} data={data} captionLevel=\"4\" />",
+        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\nconst INVOICE_COLUMNS: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount', align: 'end', sortable: true },\n];\n\nconst INVOICES: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', due: '12 Sep', amount: 100 },\n  { id: 'b', invoice: 'INV-2', due: '19 Sep', amount: 200 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={INVOICE_COLUMNS}\n  data={INVOICES}\n  captionLevel=\"4\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'due', header: 'Due', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'a', invoice: 'INV-1001', customer: 'Acme Co.', due: '12 Sep', amount: 1240 },\n  { id: 'b', invoice: 'INV-1002', customer: 'Globex', due: '19 Sep', amount: 860.5 },\n  { id: 'c', invoice: 'INV-1003', customer: 'Initech', due: '26 Sep', amount: 3020 },\n  { id: 'd', invoice: 'INV-1004', customer: 'Umbrella Corp.', due: '3 Oct', amount: 412.75 },\n];\n\nhtml`\n  <ds-table caption=\"Open invoices\" caption-level=\"4\" .columns=${invoiceColumns} .data=${invoiceRows}></ds-table>\n`;",
+        "rn": "import { Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer', hideBelow: 'prose' },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n];\n\nconst data: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', customer: 'Acme Co', due: '12 Sep', amount: 1204 },\n  { id: 'b', invoice: 'INV-2', customer: 'Globex', due: '19 Sep', amount: 389.5 },\n  { id: 'c', invoice: 'INV-3', customer: 'Initech', due: '26 Sep', amount: 2050 },\n];\n\n<Table caption=\"Open invoices\" columns={columns} data={data} captionLevel=\"4\" />",
         "swift": null
       },
       "stories": {
@@ -337,66 +237,41 @@
         "caption": "Open invoices",
         "columns": [
           {
-            "key": "customer",
-            "header": "Customer",
+            "key": "invoice",
+            "header": "Invoice",
             "isRowHeader": true
           },
           {
-            "key": "status",
-            "header": "Status"
+            "key": "due",
+            "header": "Due"
           },
           {
             "key": "amount",
-            "header": "Amount (USD)",
-            "abbr": "Amount",
+            "header": "Amount",
             "align": "end",
-            "sortable": true,
-            "render": {
-              "$unsupported": "(row) => `$${(row as Invoice).amount.toFixed(2)}`"
-            }
-          },
-          {
-            "key": "due",
-            "header": "Due date",
-            "hideBelow": "prose"
+            "sortable": true
           }
         ],
         "data": [
           {
-            "id": "inv-1001",
-            "customer": "Aster Studio",
-            "status": "Open",
-            "amount": 420,
-            "due": "2026-09-30"
+            "id": "a",
+            "invoice": "INV-1",
+            "due": "12 Sep",
+            "amount": 100
           },
           {
-            "id": "inv-1002",
-            "customer": "Bramble & Co",
-            "status": "Overdue",
-            "amount": 1280,
-            "due": "2026-08-15"
-          },
-          {
-            "id": "inv-1003",
-            "customer": "Cedar Analytics",
-            "status": "Open",
-            "amount": 96,
-            "due": "2026-10-04"
-          },
-          {
-            "id": "inv-1004",
-            "customer": "Driftwood Supply",
-            "status": "Paid",
-            "amount": 640,
-            "due": "2026-09-01"
+            "id": "b",
+            "invoice": "INV-2",
+            "due": "19 Sep",
+            "amount": 200
           }
         ],
         "selectable": "none"
       },
       "snippets": {
-        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\ninterface Invoice extends TableRow {\n  customer: string;\n  status: string;\n  amount: number;\n  due: string;\n}\n\nconst DATA: Invoice[] = [\n  { id: 'inv-1001', customer: 'Aster Studio', status: 'Open', amount: 420, due: '2026-09-30' },\n  { id: 'inv-1002', customer: 'Bramble & Co', status: 'Overdue', amount: 1280, due: '2026-08-15' },\n  { id: 'inv-1003', customer: 'Cedar Analytics', status: 'Open', amount: 96, due: '2026-10-04' },\n  { id: 'inv-1004', customer: 'Driftwood Supply', status: 'Paid', amount: 640, due: '2026-09-01' },\n];\n\nconst COLUMNS: TableColumn[] = [\n  { key: 'customer', header: 'Customer', isRowHeader: true },\n  { key: 'status', header: 'Status' },\n  {\n    key: 'amount',\n    header: 'Amount (USD)',\n    abbr: 'Amount',\n    align: 'end',\n    sortable: true,\n    render: (row) => `$${(row as Invoice).amount.toFixed(2)}`,\n  },\n  { key: 'due', header: 'Due date', hideBelow: 'prose' },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={COLUMNS}\n  data={DATA}\n  selectable=\"none\"\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow, TableRowPressDetail, TableSelectionChangeDetail, TableSortChangeDetail } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'id', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n  { key: 'status', header: 'Status', hideBelow: 'content' },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'INV-1001', customer: 'Acme Co.', amount: '$1,240.00', status: 'Open' },\n  { id: 'INV-1002', customer: 'Globex', amount: '$860.50', status: 'Open' },\n  { id: 'INV-1003', customer: 'Initech', amount: '$3,020.00', status: 'Overdue' },\n  { id: 'INV-1004', customer: 'Umbrella Corp.', amount: '$412.75', status: 'Paid' },\n];\n\nhtml`\n    <ds-table\n      caption=\"Open invoices\"\n      .columns=${invoiceColumns}\n      .data=${invoiceRows}\n      selectable=\"none\"\n      empty-message=\"\"\n      @sort-change=${(event: CustomEvent<TableSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<TableSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @row-press=${(event: CustomEvent<TableRowPressDetail>) => console.log('row-press', event.detail)}\n    ></ds-table>\n`;",
-        "rn": "import { Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'name', header: 'Customer', isRowHeader: true },\n  { key: 'invoice', header: 'Invoice', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n  { key: 'status', header: 'Status', sortable: true },\n];\n\nconst data: TableRow[] = [\n  { id: '1', name: 'Acme Co', invoice: 'INV-1001', amount: '1,204.00', status: 'Paid' },\n  { id: '2', name: 'Globex', invoice: 'INV-1002', amount: '389.50', status: 'Overdue' },\n  { id: '3', name: 'Initech', invoice: 'INV-1003', amount: '2,050.00', status: 'Paid' },\n  { id: '4', name: 'Umbrella Corp', invoice: 'INV-1004', amount: '75.00', status: 'Draft' },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={columns}\n  data={data}\n  selectable=\"none\"\n/>",
+        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\nconst INVOICE_COLUMNS: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount', align: 'end', sortable: true },\n];\n\nconst INVOICES: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', due: '12 Sep', amount: 100 },\n  { id: 'b', invoice: 'INV-2', due: '19 Sep', amount: 200 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={INVOICE_COLUMNS}\n  data={INVOICES}\n  selectable=\"none\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'due', header: 'Due', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'a', invoice: 'INV-1001', customer: 'Acme Co.', due: '12 Sep', amount: 1240 },\n  { id: 'b', invoice: 'INV-1002', customer: 'Globex', due: '19 Sep', amount: 860.5 },\n  { id: 'c', invoice: 'INV-1003', customer: 'Initech', due: '26 Sep', amount: 3020 },\n  { id: 'd', invoice: 'INV-1004', customer: 'Umbrella Corp.', due: '3 Oct', amount: 412.75 },\n];\n\nhtml`\n  <ds-table caption=\"Open invoices\" .columns=${invoiceColumns} .data=${invoiceRows} selectable=\"none\"></ds-table>\n`;",
+        "rn": "import { Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer', hideBelow: 'prose' },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n];\n\nconst data: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', customer: 'Acme Co', due: '12 Sep', amount: 1204 },\n  { id: 'b', invoice: 'INV-2', customer: 'Globex', due: '19 Sep', amount: 389.5 },\n  { id: 'c', invoice: 'INV-3', customer: 'Initech', due: '26 Sep', amount: 2050 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={columns}\n  data={data}\n  selectable=\"none\"\n/>",
         "swift": null
       },
       "stories": {
@@ -419,66 +294,41 @@
         "caption": "Open invoices",
         "columns": [
           {
-            "key": "customer",
-            "header": "Customer",
+            "key": "invoice",
+            "header": "Invoice",
             "isRowHeader": true
           },
           {
-            "key": "status",
-            "header": "Status"
+            "key": "due",
+            "header": "Due"
           },
           {
             "key": "amount",
-            "header": "Amount (USD)",
-            "abbr": "Amount",
+            "header": "Amount",
             "align": "end",
-            "sortable": true,
-            "render": {
-              "$unsupported": "(row) => `$${(row as Invoice).amount.toFixed(2)}`"
-            }
-          },
-          {
-            "key": "due",
-            "header": "Due date",
-            "hideBelow": "prose"
+            "sortable": true
           }
         ],
         "data": [
           {
-            "id": "inv-1001",
-            "customer": "Aster Studio",
-            "status": "Open",
-            "amount": 420,
-            "due": "2026-09-30"
+            "id": "a",
+            "invoice": "INV-1",
+            "due": "12 Sep",
+            "amount": 100
           },
           {
-            "id": "inv-1002",
-            "customer": "Bramble & Co",
-            "status": "Overdue",
-            "amount": 1280,
-            "due": "2026-08-15"
-          },
-          {
-            "id": "inv-1003",
-            "customer": "Cedar Analytics",
-            "status": "Open",
-            "amount": 96,
-            "due": "2026-10-04"
-          },
-          {
-            "id": "inv-1004",
-            "customer": "Driftwood Supply",
-            "status": "Paid",
-            "amount": 640,
-            "due": "2026-09-01"
+            "id": "b",
+            "invoice": "INV-2",
+            "due": "19 Sep",
+            "amount": 200
           }
         ],
         "selectable": "single"
       },
       "snippets": {
-        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\ninterface Invoice extends TableRow {\n  customer: string;\n  status: string;\n  amount: number;\n  due: string;\n}\n\nconst DATA: Invoice[] = [\n  { id: 'inv-1001', customer: 'Aster Studio', status: 'Open', amount: 420, due: '2026-09-30' },\n  { id: 'inv-1002', customer: 'Bramble & Co', status: 'Overdue', amount: 1280, due: '2026-08-15' },\n  { id: 'inv-1003', customer: 'Cedar Analytics', status: 'Open', amount: 96, due: '2026-10-04' },\n  { id: 'inv-1004', customer: 'Driftwood Supply', status: 'Paid', amount: 640, due: '2026-09-01' },\n];\n\nconst COLUMNS: TableColumn[] = [\n  { key: 'customer', header: 'Customer', isRowHeader: true },\n  { key: 'status', header: 'Status' },\n  {\n    key: 'amount',\n    header: 'Amount (USD)',\n    abbr: 'Amount',\n    align: 'end',\n    sortable: true,\n    render: (row) => `$${(row as Invoice).amount.toFixed(2)}`,\n  },\n  { key: 'due', header: 'Due date', hideBelow: 'prose' },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={COLUMNS}\n  data={DATA}\n  selectable=\"single\"\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow, TableRowPressDetail, TableSelectionChangeDetail, TableSortChangeDetail } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'id', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n  { key: 'status', header: 'Status', hideBelow: 'content' },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'INV-1001', customer: 'Acme Co.', amount: '$1,240.00', status: 'Open' },\n  { id: 'INV-1002', customer: 'Globex', amount: '$860.50', status: 'Open' },\n  { id: 'INV-1003', customer: 'Initech', amount: '$3,020.00', status: 'Overdue' },\n  { id: 'INV-1004', customer: 'Umbrella Corp.', amount: '$412.75', status: 'Paid' },\n];\n\nhtml`\n    <ds-table\n      caption=\"Open invoices\"\n      .columns=${invoiceColumns}\n      .data=${invoiceRows}\n      selectable=\"single\"\n      empty-message=\"\"\n      @sort-change=${(event: CustomEvent<TableSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<TableSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @row-press=${(event: CustomEvent<TableRowPressDetail>) => console.log('row-press', event.detail)}\n    ></ds-table>\n`;",
-        "rn": "import { Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'name', header: 'Customer', isRowHeader: true },\n  { key: 'invoice', header: 'Invoice', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n  { key: 'status', header: 'Status', sortable: true },\n];\n\nconst data: TableRow[] = [\n  { id: '1', name: 'Acme Co', invoice: 'INV-1001', amount: '1,204.00', status: 'Paid' },\n  { id: '2', name: 'Globex', invoice: 'INV-1002', amount: '389.50', status: 'Overdue' },\n  { id: '3', name: 'Initech', invoice: 'INV-1003', amount: '2,050.00', status: 'Paid' },\n  { id: '4', name: 'Umbrella Corp', invoice: 'INV-1004', amount: '75.00', status: 'Draft' },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={columns}\n  data={data}\n  selectable=\"single\"\n/>",
+        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\nconst INVOICE_COLUMNS: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount', align: 'end', sortable: true },\n];\n\nconst INVOICES: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', due: '12 Sep', amount: 100 },\n  { id: 'b', invoice: 'INV-2', due: '19 Sep', amount: 200 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={INVOICE_COLUMNS}\n  data={INVOICES}\n  selectable=\"single\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'due', header: 'Due', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'a', invoice: 'INV-1001', customer: 'Acme Co.', due: '12 Sep', amount: 1240 },\n  { id: 'b', invoice: 'INV-1002', customer: 'Globex', due: '19 Sep', amount: 860.5 },\n  { id: 'c', invoice: 'INV-1003', customer: 'Initech', due: '26 Sep', amount: 3020 },\n  { id: 'd', invoice: 'INV-1004', customer: 'Umbrella Corp.', due: '3 Oct', amount: 412.75 },\n];\n\nhtml`\n  <ds-table\n    caption=\"Open invoices\"\n    .columns=${invoiceColumns}\n    .data=${invoiceRows}\n    selectable=\"single\"\n  ></ds-table>\n`;",
+        "rn": "import { Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer', hideBelow: 'prose' },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n];\n\nconst data: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', customer: 'Acme Co', due: '12 Sep', amount: 1204 },\n  { id: 'b', invoice: 'INV-2', customer: 'Globex', due: '19 Sep', amount: 389.5 },\n  { id: 'c', invoice: 'INV-3', customer: 'Initech', due: '26 Sep', amount: 2050 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={columns}\n  data={data}\n  selectable=\"single\"\n/>",
         "swift": null
       },
       "stories": {
@@ -501,66 +351,41 @@
         "caption": "Open invoices",
         "columns": [
           {
-            "key": "customer",
-            "header": "Customer",
+            "key": "invoice",
+            "header": "Invoice",
             "isRowHeader": true
           },
           {
-            "key": "status",
-            "header": "Status"
+            "key": "due",
+            "header": "Due"
           },
           {
             "key": "amount",
-            "header": "Amount (USD)",
-            "abbr": "Amount",
+            "header": "Amount",
             "align": "end",
-            "sortable": true,
-            "render": {
-              "$unsupported": "(row) => `$${(row as Invoice).amount.toFixed(2)}`"
-            }
-          },
-          {
-            "key": "due",
-            "header": "Due date",
-            "hideBelow": "prose"
+            "sortable": true
           }
         ],
         "data": [
           {
-            "id": "inv-1001",
-            "customer": "Aster Studio",
-            "status": "Open",
-            "amount": 420,
-            "due": "2026-09-30"
+            "id": "a",
+            "invoice": "INV-1",
+            "due": "12 Sep",
+            "amount": 100
           },
           {
-            "id": "inv-1002",
-            "customer": "Bramble & Co",
-            "status": "Overdue",
-            "amount": 1280,
-            "due": "2026-08-15"
-          },
-          {
-            "id": "inv-1003",
-            "customer": "Cedar Analytics",
-            "status": "Open",
-            "amount": 96,
-            "due": "2026-10-04"
-          },
-          {
-            "id": "inv-1004",
-            "customer": "Driftwood Supply",
-            "status": "Paid",
-            "amount": 640,
-            "due": "2026-09-01"
+            "id": "b",
+            "invoice": "INV-2",
+            "due": "19 Sep",
+            "amount": 200
           }
         ],
         "selectable": "multiple"
       },
       "snippets": {
-        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\ninterface Invoice extends TableRow {\n  customer: string;\n  status: string;\n  amount: number;\n  due: string;\n}\n\nconst DATA: Invoice[] = [\n  { id: 'inv-1001', customer: 'Aster Studio', status: 'Open', amount: 420, due: '2026-09-30' },\n  { id: 'inv-1002', customer: 'Bramble & Co', status: 'Overdue', amount: 1280, due: '2026-08-15' },\n  { id: 'inv-1003', customer: 'Cedar Analytics', status: 'Open', amount: 96, due: '2026-10-04' },\n  { id: 'inv-1004', customer: 'Driftwood Supply', status: 'Paid', amount: 640, due: '2026-09-01' },\n];\n\nconst COLUMNS: TableColumn[] = [\n  { key: 'customer', header: 'Customer', isRowHeader: true },\n  { key: 'status', header: 'Status' },\n  {\n    key: 'amount',\n    header: 'Amount (USD)',\n    abbr: 'Amount',\n    align: 'end',\n    sortable: true,\n    render: (row) => `$${(row as Invoice).amount.toFixed(2)}`,\n  },\n  { key: 'due', header: 'Due date', hideBelow: 'prose' },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={COLUMNS}\n  data={DATA}\n  selectable=\"multiple\"\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow, TableRowPressDetail, TableSelectionChangeDetail, TableSortChangeDetail } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'id', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n  { key: 'status', header: 'Status', hideBelow: 'content' },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'INV-1001', customer: 'Acme Co.', amount: '$1,240.00', status: 'Open' },\n  { id: 'INV-1002', customer: 'Globex', amount: '$860.50', status: 'Open' },\n  { id: 'INV-1003', customer: 'Initech', amount: '$3,020.00', status: 'Overdue' },\n  { id: 'INV-1004', customer: 'Umbrella Corp.', amount: '$412.75', status: 'Paid' },\n];\n\nhtml`\n    <ds-table\n      caption=\"Open invoices\"\n      .columns=${invoiceColumns}\n      .data=${invoiceRows}\n      selectable=\"multiple\"\n      empty-message=\"\"\n      @sort-change=${(event: CustomEvent<TableSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<TableSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @row-press=${(event: CustomEvent<TableRowPressDetail>) => console.log('row-press', event.detail)}\n    ></ds-table>\n`;",
-        "rn": "import { Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'name', header: 'Customer', isRowHeader: true },\n  { key: 'invoice', header: 'Invoice', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n  { key: 'status', header: 'Status', sortable: true },\n];\n\nconst data: TableRow[] = [\n  { id: '1', name: 'Acme Co', invoice: 'INV-1001', amount: '1,204.00', status: 'Paid' },\n  { id: '2', name: 'Globex', invoice: 'INV-1002', amount: '389.50', status: 'Overdue' },\n  { id: '3', name: 'Initech', invoice: 'INV-1003', amount: '2,050.00', status: 'Paid' },\n  { id: '4', name: 'Umbrella Corp', invoice: 'INV-1004', amount: '75.00', status: 'Draft' },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={columns}\n  data={data}\n  selectable=\"multiple\"\n/>",
+        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\nconst INVOICE_COLUMNS: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount', align: 'end', sortable: true },\n];\n\nconst INVOICES: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', due: '12 Sep', amount: 100 },\n  { id: 'b', invoice: 'INV-2', due: '19 Sep', amount: 200 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={INVOICE_COLUMNS}\n  data={INVOICES}\n  selectable=\"multiple\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'due', header: 'Due', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'a', invoice: 'INV-1001', customer: 'Acme Co.', due: '12 Sep', amount: 1240 },\n  { id: 'b', invoice: 'INV-1002', customer: 'Globex', due: '19 Sep', amount: 860.5 },\n  { id: 'c', invoice: 'INV-1003', customer: 'Initech', due: '26 Sep', amount: 3020 },\n  { id: 'd', invoice: 'INV-1004', customer: 'Umbrella Corp.', due: '3 Oct', amount: 412.75 },\n];\n\nhtml`\n  <ds-table\n    caption=\"Open invoices\"\n    .columns=${invoiceColumns}\n    .data=${invoiceRows}\n    selectable=\"multiple\"\n  ></ds-table>\n`;",
+        "rn": "import { Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer', hideBelow: 'prose' },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n];\n\nconst data: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', customer: 'Acme Co', due: '12 Sep', amount: 1204 },\n  { id: 'b', invoice: 'INV-2', customer: 'Globex', due: '19 Sep', amount: 389.5 },\n  { id: 'c', invoice: 'INV-3', customer: 'Initech', due: '26 Sep', amount: 2050 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={columns}\n  data={data}\n  selectable=\"multiple\"\n/>",
         "swift": null
       },
       "stories": {
@@ -583,66 +408,41 @@
         "caption": "Open invoices",
         "columns": [
           {
-            "key": "customer",
-            "header": "Customer",
+            "key": "invoice",
+            "header": "Invoice",
             "isRowHeader": true
           },
           {
-            "key": "status",
-            "header": "Status"
+            "key": "due",
+            "header": "Due"
           },
           {
             "key": "amount",
-            "header": "Amount (USD)",
-            "abbr": "Amount",
+            "header": "Amount",
             "align": "end",
-            "sortable": true,
-            "render": {
-              "$unsupported": "(row) => `$${(row as Invoice).amount.toFixed(2)}`"
-            }
-          },
-          {
-            "key": "due",
-            "header": "Due date",
-            "hideBelow": "prose"
+            "sortable": true
           }
         ],
         "data": [
           {
-            "id": "inv-1001",
-            "customer": "Aster Studio",
-            "status": "Open",
-            "amount": 420,
-            "due": "2026-09-30"
+            "id": "a",
+            "invoice": "INV-1",
+            "due": "12 Sep",
+            "amount": 100
           },
           {
-            "id": "inv-1002",
-            "customer": "Bramble & Co",
-            "status": "Overdue",
-            "amount": 1280,
-            "due": "2026-08-15"
-          },
-          {
-            "id": "inv-1003",
-            "customer": "Cedar Analytics",
-            "status": "Open",
-            "amount": 96,
-            "due": "2026-10-04"
-          },
-          {
-            "id": "inv-1004",
-            "customer": "Driftwood Supply",
-            "status": "Paid",
-            "amount": 640,
-            "due": "2026-09-01"
+            "id": "b",
+            "invoice": "INV-2",
+            "due": "19 Sep",
+            "amount": 200
           }
         ],
         "responsive": "stack"
       },
       "snippets": {
-        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\ninterface Invoice extends TableRow {\n  customer: string;\n  status: string;\n  amount: number;\n  due: string;\n}\n\nconst DATA: Invoice[] = [\n  { id: 'inv-1001', customer: 'Aster Studio', status: 'Open', amount: 420, due: '2026-09-30' },\n  { id: 'inv-1002', customer: 'Bramble & Co', status: 'Overdue', amount: 1280, due: '2026-08-15' },\n  { id: 'inv-1003', customer: 'Cedar Analytics', status: 'Open', amount: 96, due: '2026-10-04' },\n  { id: 'inv-1004', customer: 'Driftwood Supply', status: 'Paid', amount: 640, due: '2026-09-01' },\n];\n\nconst COLUMNS: TableColumn[] = [\n  { key: 'customer', header: 'Customer', isRowHeader: true },\n  { key: 'status', header: 'Status' },\n  {\n    key: 'amount',\n    header: 'Amount (USD)',\n    abbr: 'Amount',\n    align: 'end',\n    sortable: true,\n    render: (row) => `$${(row as Invoice).amount.toFixed(2)}`,\n  },\n  { key: 'due', header: 'Due date', hideBelow: 'prose' },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={COLUMNS}\n  data={DATA}\n  responsive=\"stack\"\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow, TableRowPressDetail, TableSelectionChangeDetail, TableSortChangeDetail } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'id', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n  { key: 'status', header: 'Status', hideBelow: 'content' },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'INV-1001', customer: 'Acme Co.', amount: '$1,240.00', status: 'Open' },\n  { id: 'INV-1002', customer: 'Globex', amount: '$860.50', status: 'Open' },\n  { id: 'INV-1003', customer: 'Initech', amount: '$3,020.00', status: 'Overdue' },\n  { id: 'INV-1004', customer: 'Umbrella Corp.', amount: '$412.75', status: 'Paid' },\n];\n\nhtml`\n    <ds-table\n      caption=\"Open invoices\"\n      .columns=${invoiceColumns}\n      .data=${invoiceRows}\n      responsive=\"stack\"\n      empty-message=\"\"\n      @sort-change=${(event: CustomEvent<TableSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<TableSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @row-press=${(event: CustomEvent<TableRowPressDetail>) => console.log('row-press', event.detail)}\n    ></ds-table>\n`;",
-        "rn": "import { Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'name', header: 'Customer', isRowHeader: true },\n  { key: 'invoice', header: 'Invoice', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n  { key: 'status', header: 'Status', sortable: true },\n];\n\nconst data: TableRow[] = [\n  { id: '1', name: 'Acme Co', invoice: 'INV-1001', amount: '1,204.00', status: 'Paid' },\n  { id: '2', name: 'Globex', invoice: 'INV-1002', amount: '389.50', status: 'Overdue' },\n  { id: '3', name: 'Initech', invoice: 'INV-1003', amount: '2,050.00', status: 'Paid' },\n  { id: '4', name: 'Umbrella Corp', invoice: 'INV-1004', amount: '75.00', status: 'Draft' },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={columns}\n  data={data}\n  responsive=\"stack\"\n/>",
+        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\nconst INVOICE_COLUMNS: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount', align: 'end', sortable: true },\n];\n\nconst INVOICES: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', due: '12 Sep', amount: 100 },\n  { id: 'b', invoice: 'INV-2', due: '19 Sep', amount: 200 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={INVOICE_COLUMNS}\n  data={INVOICES}\n  responsive=\"stack\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'due', header: 'Due', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'a', invoice: 'INV-1001', customer: 'Acme Co.', due: '12 Sep', amount: 1240 },\n  { id: 'b', invoice: 'INV-1002', customer: 'Globex', due: '19 Sep', amount: 860.5 },\n  { id: 'c', invoice: 'INV-1003', customer: 'Initech', due: '26 Sep', amount: 3020 },\n  { id: 'd', invoice: 'INV-1004', customer: 'Umbrella Corp.', due: '3 Oct', amount: 412.75 },\n];\n\nhtml`\n  <ds-table\n    caption=\"Open invoices\"\n    .columns=${invoiceColumns}\n    .data=${invoiceRows}\n    responsive=\"stack\"\n  ></ds-table>\n`;",
+        "rn": "import { Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer', hideBelow: 'prose' },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n];\n\nconst data: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', customer: 'Acme Co', due: '12 Sep', amount: 1204 },\n  { id: 'b', invoice: 'INV-2', customer: 'Globex', due: '19 Sep', amount: 389.5 },\n  { id: 'c', invoice: 'INV-3', customer: 'Initech', due: '26 Sep', amount: 2050 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={columns}\n  data={data}\n  responsive=\"stack\"\n/>",
         "swift": null
       },
       "stories": {
@@ -665,66 +465,41 @@
         "caption": "Open invoices",
         "columns": [
           {
-            "key": "customer",
-            "header": "Customer",
+            "key": "invoice",
+            "header": "Invoice",
             "isRowHeader": true
           },
           {
-            "key": "status",
-            "header": "Status"
+            "key": "due",
+            "header": "Due"
           },
           {
             "key": "amount",
-            "header": "Amount (USD)",
-            "abbr": "Amount",
+            "header": "Amount",
             "align": "end",
-            "sortable": true,
-            "render": {
-              "$unsupported": "(row) => `$${(row as Invoice).amount.toFixed(2)}`"
-            }
-          },
-          {
-            "key": "due",
-            "header": "Due date",
-            "hideBelow": "prose"
+            "sortable": true
           }
         ],
         "data": [
           {
-            "id": "inv-1001",
-            "customer": "Aster Studio",
-            "status": "Open",
-            "amount": 420,
-            "due": "2026-09-30"
+            "id": "a",
+            "invoice": "INV-1",
+            "due": "12 Sep",
+            "amount": 100
           },
           {
-            "id": "inv-1002",
-            "customer": "Bramble & Co",
-            "status": "Overdue",
-            "amount": 1280,
-            "due": "2026-08-15"
-          },
-          {
-            "id": "inv-1003",
-            "customer": "Cedar Analytics",
-            "status": "Open",
-            "amount": 96,
-            "due": "2026-10-04"
-          },
-          {
-            "id": "inv-1004",
-            "customer": "Driftwood Supply",
-            "status": "Paid",
-            "amount": 640,
-            "due": "2026-09-01"
+            "id": "b",
+            "invoice": "INV-2",
+            "due": "19 Sep",
+            "amount": 200
           }
         ],
         "responsive": "scroll"
       },
       "snippets": {
-        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\ninterface Invoice extends TableRow {\n  customer: string;\n  status: string;\n  amount: number;\n  due: string;\n}\n\nconst DATA: Invoice[] = [\n  { id: 'inv-1001', customer: 'Aster Studio', status: 'Open', amount: 420, due: '2026-09-30' },\n  { id: 'inv-1002', customer: 'Bramble & Co', status: 'Overdue', amount: 1280, due: '2026-08-15' },\n  { id: 'inv-1003', customer: 'Cedar Analytics', status: 'Open', amount: 96, due: '2026-10-04' },\n  { id: 'inv-1004', customer: 'Driftwood Supply', status: 'Paid', amount: 640, due: '2026-09-01' },\n];\n\nconst COLUMNS: TableColumn[] = [\n  { key: 'customer', header: 'Customer', isRowHeader: true },\n  { key: 'status', header: 'Status' },\n  {\n    key: 'amount',\n    header: 'Amount (USD)',\n    abbr: 'Amount',\n    align: 'end',\n    sortable: true,\n    render: (row) => `$${(row as Invoice).amount.toFixed(2)}`,\n  },\n  { key: 'due', header: 'Due date', hideBelow: 'prose' },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={COLUMNS}\n  data={DATA}\n  responsive=\"scroll\"\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow, TableRowPressDetail, TableSelectionChangeDetail, TableSortChangeDetail } from '@design-schema/lit';\n\nconst wideColumns: TableColumn[] = [\n  { key: 'month', header: 'Month', isRowHeader: true },\n  { key: 'q1', header: 'Region A', align: 'end' },\n  { key: 'q2', header: 'Region B', align: 'end' },\n  { key: 'q3', header: 'Region C', align: 'end' },\n  { key: 'q4', header: 'Region D', align: 'end' },\n  { key: 'q5', header: 'Region E', align: 'end' },\n];\n\nconst wideRows: TableRow[] = [\n  { id: 'jan', month: 'January', q1: '1,204', q2: '980', q3: '760', q4: '1,102', q5: '640' },\n  { id: 'feb', month: 'February', q1: '1,410', q2: '1,020', q3: '812', q4: '990', q5: '705' },\n  { id: 'mar', month: 'March', q1: '1,330', q2: '1,105', q3: '890', q4: '1,240', q5: '812' },\n];\n\nhtml`\n    <ds-table\n      caption=\"Revenue by region\"\n      .columns=${wideColumns}\n      .data=${wideRows}\n      responsive=\"scroll\"\n      empty-message=\"\"\n      @sort-change=${(event: CustomEvent<TableSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<TableSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @row-press=${(event: CustomEvent<TableRowPressDetail>) => console.log('row-press', event.detail)}\n    ></ds-table>\n`;",
-        "rn": "import { Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'name', header: 'Customer', isRowHeader: true },\n  { key: 'invoice', header: 'Invoice', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n  { key: 'status', header: 'Status', sortable: true },\n];\n\nconst data: TableRow[] = [\n  { id: '1', name: 'Acme Co', invoice: 'INV-1001', amount: '1,204.00', status: 'Paid' },\n  { id: '2', name: 'Globex', invoice: 'INV-1002', amount: '389.50', status: 'Overdue' },\n  { id: '3', name: 'Initech', invoice: 'INV-1003', amount: '2,050.00', status: 'Paid' },\n  { id: '4', name: 'Umbrella Corp', invoice: 'INV-1004', amount: '75.00', status: 'Draft' },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={columns}\n  data={data}\n  responsive=\"scroll\"\n/>",
+        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\nconst INVOICE_COLUMNS: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount', align: 'end', sortable: true },\n];\n\nconst INVOICES: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', due: '12 Sep', amount: 100 },\n  { id: 'b', invoice: 'INV-2', due: '19 Sep', amount: 200 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={INVOICE_COLUMNS}\n  data={INVOICES}\n  responsive=\"scroll\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'due', header: 'Due', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'a', invoice: 'INV-1001', customer: 'Acme Co.', due: '12 Sep', amount: 1240 },\n  { id: 'b', invoice: 'INV-1002', customer: 'Globex', due: '19 Sep', amount: 860.5 },\n  { id: 'c', invoice: 'INV-1003', customer: 'Initech', due: '26 Sep', amount: 3020 },\n  { id: 'd', invoice: 'INV-1004', customer: 'Umbrella Corp.', due: '3 Oct', amount: 412.75 },\n];\n\nhtml`\n  <ds-table\n    caption=\"Open invoices\"\n    .columns=${invoiceColumns}\n    .data=${invoiceRows}\n    responsive=\"scroll\"\n  ></ds-table>\n`;",
+        "rn": "import { Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer', hideBelow: 'prose' },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n];\n\nconst data: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', customer: 'Acme Co', due: '12 Sep', amount: 1204 },\n  { id: 'b', invoice: 'INV-2', customer: 'Globex', due: '19 Sep', amount: 389.5 },\n  { id: 'c', invoice: 'INV-3', customer: 'Initech', due: '26 Sep', amount: 2050 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={columns}\n  data={data}\n  responsive=\"scroll\"\n/>",
         "swift": null
       },
       "stories": {
@@ -747,66 +522,41 @@
         "caption": "Open invoices",
         "columns": [
           {
-            "key": "customer",
-            "header": "Customer",
+            "key": "invoice",
+            "header": "Invoice",
             "isRowHeader": true
           },
           {
-            "key": "status",
-            "header": "Status"
+            "key": "due",
+            "header": "Due"
           },
           {
             "key": "amount",
-            "header": "Amount (USD)",
-            "abbr": "Amount",
+            "header": "Amount",
             "align": "end",
-            "sortable": true,
-            "render": {
-              "$unsupported": "(row) => `$${(row as Invoice).amount.toFixed(2)}`"
-            }
-          },
-          {
-            "key": "due",
-            "header": "Due date",
-            "hideBelow": "prose"
+            "sortable": true
           }
         ],
         "data": [
           {
-            "id": "inv-1001",
-            "customer": "Aster Studio",
-            "status": "Open",
-            "amount": 420,
-            "due": "2026-09-30"
+            "id": "a",
+            "invoice": "INV-1",
+            "due": "12 Sep",
+            "amount": 100
           },
           {
-            "id": "inv-1002",
-            "customer": "Bramble & Co",
-            "status": "Overdue",
-            "amount": 1280,
-            "due": "2026-08-15"
-          },
-          {
-            "id": "inv-1003",
-            "customer": "Cedar Analytics",
-            "status": "Open",
-            "amount": 96,
-            "due": "2026-10-04"
-          },
-          {
-            "id": "inv-1004",
-            "customer": "Driftwood Supply",
-            "status": "Paid",
-            "amount": 640,
-            "due": "2026-09-01"
+            "id": "b",
+            "invoice": "INV-2",
+            "due": "19 Sep",
+            "amount": 200
           }
         ],
         "maxHeight": "none"
       },
       "snippets": {
-        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\ninterface Invoice extends TableRow {\n  customer: string;\n  status: string;\n  amount: number;\n  due: string;\n}\n\nconst DATA: Invoice[] = [\n  { id: 'inv-1001', customer: 'Aster Studio', status: 'Open', amount: 420, due: '2026-09-30' },\n  { id: 'inv-1002', customer: 'Bramble & Co', status: 'Overdue', amount: 1280, due: '2026-08-15' },\n  { id: 'inv-1003', customer: 'Cedar Analytics', status: 'Open', amount: 96, due: '2026-10-04' },\n  { id: 'inv-1004', customer: 'Driftwood Supply', status: 'Paid', amount: 640, due: '2026-09-01' },\n];\n\nconst COLUMNS: TableColumn[] = [\n  { key: 'customer', header: 'Customer', isRowHeader: true },\n  { key: 'status', header: 'Status' },\n  {\n    key: 'amount',\n    header: 'Amount (USD)',\n    abbr: 'Amount',\n    align: 'end',\n    sortable: true,\n    render: (row) => `$${(row as Invoice).amount.toFixed(2)}`,\n  },\n  { key: 'due', header: 'Due date', hideBelow: 'prose' },\n];\n\n<Table caption=\"Open invoices\" columns={COLUMNS} data={DATA} maxHeight=\"none\" />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow, TableRowPressDetail, TableSelectionChangeDetail, TableSortChangeDetail } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'id', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n  { key: 'status', header: 'Status', hideBelow: 'content' },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'INV-1001', customer: 'Acme Co.', amount: '$1,240.00', status: 'Open' },\n  { id: 'INV-1002', customer: 'Globex', amount: '$860.50', status: 'Open' },\n  { id: 'INV-1003', customer: 'Initech', amount: '$3,020.00', status: 'Overdue' },\n  { id: 'INV-1004', customer: 'Umbrella Corp.', amount: '$412.75', status: 'Paid' },\n];\n\nhtml`\n    <ds-table\n      caption=\"Open invoices\"\n      .columns=${invoiceColumns}\n      .data=${invoiceRows}\n      max-height=\"none\"\n      empty-message=\"\"\n      @sort-change=${(event: CustomEvent<TableSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<TableSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @row-press=${(event: CustomEvent<TableRowPressDetail>) => console.log('row-press', event.detail)}\n    ></ds-table>\n`;",
-        "rn": "import { Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'name', header: 'Customer', isRowHeader: true },\n  { key: 'invoice', header: 'Invoice', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n  { key: 'status', header: 'Status', sortable: true },\n];\n\nconst data: TableRow[] = [\n  { id: '1', name: 'Acme Co', invoice: 'INV-1001', amount: '1,204.00', status: 'Paid' },\n  { id: '2', name: 'Globex', invoice: 'INV-1002', amount: '389.50', status: 'Overdue' },\n  { id: '3', name: 'Initech', invoice: 'INV-1003', amount: '2,050.00', status: 'Paid' },\n  { id: '4', name: 'Umbrella Corp', invoice: 'INV-1004', amount: '75.00', status: 'Draft' },\n];\n\n<Table caption=\"Open invoices\" columns={columns} data={data} maxHeight=\"none\" />",
+        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\nconst INVOICE_COLUMNS: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount', align: 'end', sortable: true },\n];\n\nconst INVOICES: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', due: '12 Sep', amount: 100 },\n  { id: 'b', invoice: 'INV-2', due: '19 Sep', amount: 200 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={INVOICE_COLUMNS}\n  data={INVOICES}\n  maxHeight=\"none\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'due', header: 'Due', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'a', invoice: 'INV-1001', customer: 'Acme Co.', due: '12 Sep', amount: 1240 },\n  { id: 'b', invoice: 'INV-1002', customer: 'Globex', due: '19 Sep', amount: 860.5 },\n  { id: 'c', invoice: 'INV-1003', customer: 'Initech', due: '26 Sep', amount: 3020 },\n  { id: 'd', invoice: 'INV-1004', customer: 'Umbrella Corp.', due: '3 Oct', amount: 412.75 },\n];\n\nhtml`\n  <ds-table caption=\"Open invoices\" .columns=${invoiceColumns} .data=${invoiceRows} max-height=\"none\"></ds-table>\n`;",
+        "rn": "import { Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer', hideBelow: 'prose' },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n];\n\nconst data: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', customer: 'Acme Co', due: '12 Sep', amount: 1204 },\n  { id: 'b', invoice: 'INV-2', customer: 'Globex', due: '19 Sep', amount: 389.5 },\n  { id: 'c', invoice: 'INV-3', customer: 'Initech', due: '26 Sep', amount: 2050 },\n];\n\n<Table caption=\"Open invoices\" columns={columns} data={data} maxHeight=\"none\" />",
         "swift": null
       },
       "stories": {
@@ -829,122 +579,41 @@
         "caption": "Open invoices",
         "columns": [
           {
-            "key": "customer",
-            "header": "Customer",
+            "key": "invoice",
+            "header": "Invoice",
             "isRowHeader": true
           },
           {
-            "key": "status",
-            "header": "Status"
+            "key": "due",
+            "header": "Due"
           },
           {
             "key": "amount",
-            "header": "Amount (USD)",
-            "abbr": "Amount",
+            "header": "Amount",
             "align": "end",
-            "sortable": true,
-            "render": {
-              "$unsupported": "(row) => `$${(row as Invoice).amount.toFixed(2)}`"
-            }
-          },
-          {
-            "key": "due",
-            "header": "Due date",
-            "hideBelow": "prose"
+            "sortable": true
           }
         ],
         "data": [
           {
-            "id": "inv-1001",
-            "customer": "Aster Studio",
-            "status": "Open",
-            "amount": 420,
-            "due": "2026-09-30"
+            "id": "a",
+            "invoice": "INV-1",
+            "due": "12 Sep",
+            "amount": 100
           },
           {
-            "id": "inv-1002",
-            "customer": "Bramble & Co",
-            "status": "Overdue",
-            "amount": 1280,
-            "due": "2026-08-15"
-          },
-          {
-            "id": "inv-1003",
-            "customer": "Cedar Analytics",
-            "status": "Open",
-            "amount": 96,
-            "due": "2026-10-04"
-          },
-          {
-            "id": "inv-1004",
-            "customer": "Driftwood Supply",
-            "status": "Paid",
-            "amount": 640,
-            "due": "2026-09-01"
-          },
-          {
-            "id": "inv-1001",
-            "customer": "Aster Studio",
-            "status": "Open",
-            "amount": 420,
-            "due": "2026-09-30"
-          },
-          {
-            "id": "inv-1002",
-            "customer": "Bramble & Co",
-            "status": "Overdue",
-            "amount": 1280,
-            "due": "2026-08-15"
-          },
-          {
-            "id": "inv-1003",
-            "customer": "Cedar Analytics",
-            "status": "Open",
-            "amount": 96,
-            "due": "2026-10-04"
-          },
-          {
-            "id": "inv-1004",
-            "customer": "Driftwood Supply",
-            "status": "Paid",
-            "amount": 640,
-            "due": "2026-09-01"
-          },
-          {
-            "id": "inv-1001",
-            "customer": "Aster Studio",
-            "status": "Open",
-            "amount": 420,
-            "due": "2026-09-30"
-          },
-          {
-            "id": "inv-1002",
-            "customer": "Bramble & Co",
-            "status": "Overdue",
-            "amount": 1280,
-            "due": "2026-08-15"
-          },
-          {
-            "id": "inv-1003",
-            "customer": "Cedar Analytics",
-            "status": "Open",
-            "amount": 96,
-            "due": "2026-10-04"
-          },
-          {
-            "id": "inv-1004",
-            "customer": "Driftwood Supply",
-            "status": "Paid",
-            "amount": 640,
-            "due": "2026-09-01"
+            "id": "b",
+            "invoice": "INV-2",
+            "due": "19 Sep",
+            "amount": 200
           }
         ],
         "maxHeight": "viewport"
       },
       "snippets": {
-        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\ninterface Invoice extends TableRow {\n  customer: string;\n  status: string;\n  amount: number;\n  due: string;\n}\n\nconst DATA: Invoice[] = [\n  { id: 'inv-1001', customer: 'Aster Studio', status: 'Open', amount: 420, due: '2026-09-30' },\n  { id: 'inv-1002', customer: 'Bramble & Co', status: 'Overdue', amount: 1280, due: '2026-08-15' },\n  { id: 'inv-1003', customer: 'Cedar Analytics', status: 'Open', amount: 96, due: '2026-10-04' },\n  { id: 'inv-1004', customer: 'Driftwood Supply', status: 'Paid', amount: 640, due: '2026-09-01' },\n];\n\nconst COLUMNS: TableColumn[] = [\n  { key: 'customer', header: 'Customer', isRowHeader: true },\n  { key: 'status', header: 'Status' },\n  {\n    key: 'amount',\n    header: 'Amount (USD)',\n    abbr: 'Amount',\n    align: 'end',\n    sortable: true,\n    render: (row) => `$${(row as Invoice).amount.toFixed(2)}`,\n  },\n  { key: 'due', header: 'Due date', hideBelow: 'prose' },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={COLUMNS}\n  data={[...DATA, ...DATA, ...DATA]}\n  maxHeight=\"viewport\"\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow, TableRowPressDetail, TableSelectionChangeDetail, TableSortChangeDetail } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'id', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n  { key: 'status', header: 'Status', hideBelow: 'content' },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'INV-1001', customer: 'Acme Co.', amount: '$1,240.00', status: 'Open' },\n  { id: 'INV-1002', customer: 'Globex', amount: '$860.50', status: 'Open' },\n  { id: 'INV-1003', customer: 'Initech', amount: '$3,020.00', status: 'Overdue' },\n  { id: 'INV-1004', customer: 'Umbrella Corp.', amount: '$412.75', status: 'Paid' },\n];\n\nhtml`\n    <ds-table\n      caption=\"Open invoices\"\n      .columns=${invoiceColumns}\n      .data=${[...invoiceRows, ...invoiceRows.map((row) => ({ ...row, id: \\`${row.id}-B\\` }))]}\n      selectable=none\n      responsive=stack\n      ?no-sticky-header=\n      max-height=viewport\n      density=comfortable\n      ?striped=\n      ?loading=\n      empty-message=\n      @sort-change=${(event: CustomEvent<TableSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<TableSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @row-press=${(event: CustomEvent<TableRowPressDetail>) => console.log('row-press', event.detail)}\n    ></ds-table>\n`;",
-        "rn": "import { Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'name', header: 'Customer', isRowHeader: true },\n  { key: 'invoice', header: 'Invoice', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n  { key: 'status', header: 'Status', sortable: true },\n];\n\nconst data: TableRow[] = [\n  { id: '1', name: 'Acme Co', invoice: 'INV-1001', amount: '1,204.00', status: 'Paid' },\n  { id: '2', name: 'Globex', invoice: 'INV-1002', amount: '389.50', status: 'Overdue' },\n  { id: '3', name: 'Initech', invoice: 'INV-1003', amount: '2,050.00', status: 'Paid' },\n  { id: '4', name: 'Umbrella Corp', invoice: 'INV-1004', amount: '75.00', status: 'Draft' },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={columns}\n  data={data}\n  maxHeight=\"viewport\"\n/>",
+        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\nconst INVOICE_COLUMNS: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount', align: 'end', sortable: true },\n];\n\nconst INVOICES: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', due: '12 Sep', amount: 100 },\n  { id: 'b', invoice: 'INV-2', due: '19 Sep', amount: 200 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={INVOICE_COLUMNS}\n  data={INVOICES}\n  maxHeight=\"viewport\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'due', header: 'Due', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'a', invoice: 'INV-1001', customer: 'Acme Co.', due: '12 Sep', amount: 1240 },\n  { id: 'b', invoice: 'INV-1002', customer: 'Globex', due: '19 Sep', amount: 860.5 },\n  { id: 'c', invoice: 'INV-1003', customer: 'Initech', due: '26 Sep', amount: 3020 },\n  { id: 'd', invoice: 'INV-1004', customer: 'Umbrella Corp.', due: '3 Oct', amount: 412.75 },\n];\n\nhtml`\n  <ds-table\n    caption=\"Open invoices\"\n    .columns=${invoiceColumns}\n    .data=${invoiceRows}\n    max-height=\"viewport\"\n  ></ds-table>\n`;",
+        "rn": "import { Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer', hideBelow: 'prose' },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n];\n\nconst data: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', customer: 'Acme Co', due: '12 Sep', amount: 1204 },\n  { id: 'b', invoice: 'INV-2', customer: 'Globex', due: '19 Sep', amount: 389.5 },\n  { id: 'c', invoice: 'INV-3', customer: 'Initech', due: '26 Sep', amount: 2050 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={columns}\n  data={data}\n  maxHeight=\"viewport\"\n/>",
         "swift": null
       },
       "stories": {
@@ -954,9 +623,12 @@
         "swift": null
       },
       "storyId": "table-react--max-height-viewport",
-      "sweep": null,
+      "sweep": {
+        "prop": "maxHeight",
+        "value": "viewport"
+      },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Density Compact",
@@ -964,66 +636,41 @@
         "caption": "Open invoices",
         "columns": [
           {
-            "key": "customer",
-            "header": "Customer",
+            "key": "invoice",
+            "header": "Invoice",
             "isRowHeader": true
           },
           {
-            "key": "status",
-            "header": "Status"
+            "key": "due",
+            "header": "Due"
           },
           {
             "key": "amount",
-            "header": "Amount (USD)",
-            "abbr": "Amount",
+            "header": "Amount",
             "align": "end",
-            "sortable": true,
-            "render": {
-              "$unsupported": "(row) => `$${(row as Invoice).amount.toFixed(2)}`"
-            }
-          },
-          {
-            "key": "due",
-            "header": "Due date",
-            "hideBelow": "prose"
+            "sortable": true
           }
         ],
         "data": [
           {
-            "id": "inv-1001",
-            "customer": "Aster Studio",
-            "status": "Open",
-            "amount": 420,
-            "due": "2026-09-30"
+            "id": "a",
+            "invoice": "INV-1",
+            "due": "12 Sep",
+            "amount": 100
           },
           {
-            "id": "inv-1002",
-            "customer": "Bramble & Co",
-            "status": "Overdue",
-            "amount": 1280,
-            "due": "2026-08-15"
-          },
-          {
-            "id": "inv-1003",
-            "customer": "Cedar Analytics",
-            "status": "Open",
-            "amount": 96,
-            "due": "2026-10-04"
-          },
-          {
-            "id": "inv-1004",
-            "customer": "Driftwood Supply",
-            "status": "Paid",
-            "amount": 640,
-            "due": "2026-09-01"
+            "id": "b",
+            "invoice": "INV-2",
+            "due": "19 Sep",
+            "amount": 200
           }
         ],
         "density": "compact"
       },
       "snippets": {
-        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\ninterface Invoice extends TableRow {\n  customer: string;\n  status: string;\n  amount: number;\n  due: string;\n}\n\nconst DATA: Invoice[] = [\n  { id: 'inv-1001', customer: 'Aster Studio', status: 'Open', amount: 420, due: '2026-09-30' },\n  { id: 'inv-1002', customer: 'Bramble & Co', status: 'Overdue', amount: 1280, due: '2026-08-15' },\n  { id: 'inv-1003', customer: 'Cedar Analytics', status: 'Open', amount: 96, due: '2026-10-04' },\n  { id: 'inv-1004', customer: 'Driftwood Supply', status: 'Paid', amount: 640, due: '2026-09-01' },\n];\n\nconst COLUMNS: TableColumn[] = [\n  { key: 'customer', header: 'Customer', isRowHeader: true },\n  { key: 'status', header: 'Status' },\n  {\n    key: 'amount',\n    header: 'Amount (USD)',\n    abbr: 'Amount',\n    align: 'end',\n    sortable: true,\n    render: (row) => `$${(row as Invoice).amount.toFixed(2)}`,\n  },\n  { key: 'due', header: 'Due date', hideBelow: 'prose' },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={COLUMNS}\n  data={DATA}\n  density=\"compact\"\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow, TableRowPressDetail, TableSelectionChangeDetail, TableSortChangeDetail } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'id', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n  { key: 'status', header: 'Status', hideBelow: 'content' },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'INV-1001', customer: 'Acme Co.', amount: '$1,240.00', status: 'Open' },\n  { id: 'INV-1002', customer: 'Globex', amount: '$860.50', status: 'Open' },\n  { id: 'INV-1003', customer: 'Initech', amount: '$3,020.00', status: 'Overdue' },\n  { id: 'INV-1004', customer: 'Umbrella Corp.', amount: '$412.75', status: 'Paid' },\n];\n\nhtml`\n    <ds-table\n      caption=\"Open invoices\"\n      .columns=${invoiceColumns}\n      .data=${invoiceRows}\n      density=\"compact\"\n      empty-message=\"\"\n      @sort-change=${(event: CustomEvent<TableSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<TableSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @row-press=${(event: CustomEvent<TableRowPressDetail>) => console.log('row-press', event.detail)}\n    ></ds-table>\n`;",
-        "rn": "import { Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'name', header: 'Customer', isRowHeader: true },\n  { key: 'invoice', header: 'Invoice', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n  { key: 'status', header: 'Status', sortable: true },\n];\n\nconst data: TableRow[] = [\n  { id: '1', name: 'Acme Co', invoice: 'INV-1001', amount: '1,204.00', status: 'Paid' },\n  { id: '2', name: 'Globex', invoice: 'INV-1002', amount: '389.50', status: 'Overdue' },\n  { id: '3', name: 'Initech', invoice: 'INV-1003', amount: '2,050.00', status: 'Paid' },\n  { id: '4', name: 'Umbrella Corp', invoice: 'INV-1004', amount: '75.00', status: 'Draft' },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={columns}\n  data={data}\n  density=\"compact\"\n/>",
+        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\nconst INVOICE_COLUMNS: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount', align: 'end', sortable: true },\n];\n\nconst INVOICES: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', due: '12 Sep', amount: 100 },\n  { id: 'b', invoice: 'INV-2', due: '19 Sep', amount: 200 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={INVOICE_COLUMNS}\n  data={INVOICES}\n  density=\"compact\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'due', header: 'Due', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'a', invoice: 'INV-1001', customer: 'Acme Co.', due: '12 Sep', amount: 1240 },\n  { id: 'b', invoice: 'INV-1002', customer: 'Globex', due: '19 Sep', amount: 860.5 },\n  { id: 'c', invoice: 'INV-1003', customer: 'Initech', due: '26 Sep', amount: 3020 },\n  { id: 'd', invoice: 'INV-1004', customer: 'Umbrella Corp.', due: '3 Oct', amount: 412.75 },\n];\n\nhtml`\n  <ds-table caption=\"Open invoices\" .columns=${invoiceColumns} .data=${invoiceRows} density=\"compact\"></ds-table>\n`;",
+        "rn": "import { Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer', hideBelow: 'prose' },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n];\n\nconst data: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', customer: 'Acme Co', due: '12 Sep', amount: 1204 },\n  { id: 'b', invoice: 'INV-2', customer: 'Globex', due: '19 Sep', amount: 389.5 },\n  { id: 'c', invoice: 'INV-3', customer: 'Initech', due: '26 Sep', amount: 2050 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={columns}\n  data={data}\n  density=\"compact\"\n/>",
         "swift": null
       },
       "stories": {
@@ -1046,66 +693,41 @@
         "caption": "Open invoices",
         "columns": [
           {
-            "key": "customer",
-            "header": "Customer",
+            "key": "invoice",
+            "header": "Invoice",
             "isRowHeader": true
           },
           {
-            "key": "status",
-            "header": "Status"
+            "key": "due",
+            "header": "Due"
           },
           {
             "key": "amount",
-            "header": "Amount (USD)",
-            "abbr": "Amount",
+            "header": "Amount",
             "align": "end",
-            "sortable": true,
-            "render": {
-              "$unsupported": "(row) => `$${(row as Invoice).amount.toFixed(2)}`"
-            }
-          },
-          {
-            "key": "due",
-            "header": "Due date",
-            "hideBelow": "prose"
+            "sortable": true
           }
         ],
         "data": [
           {
-            "id": "inv-1001",
-            "customer": "Aster Studio",
-            "status": "Open",
-            "amount": 420,
-            "due": "2026-09-30"
+            "id": "a",
+            "invoice": "INV-1",
+            "due": "12 Sep",
+            "amount": 100
           },
           {
-            "id": "inv-1002",
-            "customer": "Bramble & Co",
-            "status": "Overdue",
-            "amount": 1280,
-            "due": "2026-08-15"
-          },
-          {
-            "id": "inv-1003",
-            "customer": "Cedar Analytics",
-            "status": "Open",
-            "amount": 96,
-            "due": "2026-10-04"
-          },
-          {
-            "id": "inv-1004",
-            "customer": "Driftwood Supply",
-            "status": "Paid",
-            "amount": 640,
-            "due": "2026-09-01"
+            "id": "b",
+            "invoice": "INV-2",
+            "due": "19 Sep",
+            "amount": 200
           }
         ],
         "density": "comfortable"
       },
       "snippets": {
-        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\ninterface Invoice extends TableRow {\n  customer: string;\n  status: string;\n  amount: number;\n  due: string;\n}\n\nconst DATA: Invoice[] = [\n  { id: 'inv-1001', customer: 'Aster Studio', status: 'Open', amount: 420, due: '2026-09-30' },\n  { id: 'inv-1002', customer: 'Bramble & Co', status: 'Overdue', amount: 1280, due: '2026-08-15' },\n  { id: 'inv-1003', customer: 'Cedar Analytics', status: 'Open', amount: 96, due: '2026-10-04' },\n  { id: 'inv-1004', customer: 'Driftwood Supply', status: 'Paid', amount: 640, due: '2026-09-01' },\n];\n\nconst COLUMNS: TableColumn[] = [\n  { key: 'customer', header: 'Customer', isRowHeader: true },\n  { key: 'status', header: 'Status' },\n  {\n    key: 'amount',\n    header: 'Amount (USD)',\n    abbr: 'Amount',\n    align: 'end',\n    sortable: true,\n    render: (row) => `$${(row as Invoice).amount.toFixed(2)}`,\n  },\n  { key: 'due', header: 'Due date', hideBelow: 'prose' },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={COLUMNS}\n  data={DATA}\n  density=\"comfortable\"\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow, TableRowPressDetail, TableSelectionChangeDetail, TableSortChangeDetail } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'id', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n  { key: 'status', header: 'Status', hideBelow: 'content' },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'INV-1001', customer: 'Acme Co.', amount: '$1,240.00', status: 'Open' },\n  { id: 'INV-1002', customer: 'Globex', amount: '$860.50', status: 'Open' },\n  { id: 'INV-1003', customer: 'Initech', amount: '$3,020.00', status: 'Overdue' },\n  { id: 'INV-1004', customer: 'Umbrella Corp.', amount: '$412.75', status: 'Paid' },\n];\n\nhtml`\n    <ds-table\n      caption=\"Open invoices\"\n      .columns=${invoiceColumns}\n      .data=${invoiceRows}\n      density=\"comfortable\"\n      empty-message=\"\"\n      @sort-change=${(event: CustomEvent<TableSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<TableSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @row-press=${(event: CustomEvent<TableRowPressDetail>) => console.log('row-press', event.detail)}\n    ></ds-table>\n`;",
-        "rn": "import { Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'name', header: 'Customer', isRowHeader: true },\n  { key: 'invoice', header: 'Invoice', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n  { key: 'status', header: 'Status', sortable: true },\n];\n\nconst data: TableRow[] = [\n  { id: '1', name: 'Acme Co', invoice: 'INV-1001', amount: '1,204.00', status: 'Paid' },\n  { id: '2', name: 'Globex', invoice: 'INV-1002', amount: '389.50', status: 'Overdue' },\n  { id: '3', name: 'Initech', invoice: 'INV-1003', amount: '2,050.00', status: 'Paid' },\n  { id: '4', name: 'Umbrella Corp', invoice: 'INV-1004', amount: '75.00', status: 'Draft' },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={columns}\n  data={data}\n  density=\"comfortable\"\n/>",
+        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\nconst INVOICE_COLUMNS: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount', align: 'end', sortable: true },\n];\n\nconst INVOICES: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', due: '12 Sep', amount: 100 },\n  { id: 'b', invoice: 'INV-2', due: '19 Sep', amount: 200 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={INVOICE_COLUMNS}\n  data={INVOICES}\n  density=\"comfortable\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'due', header: 'Due', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'a', invoice: 'INV-1001', customer: 'Acme Co.', due: '12 Sep', amount: 1240 },\n  { id: 'b', invoice: 'INV-1002', customer: 'Globex', due: '19 Sep', amount: 860.5 },\n  { id: 'c', invoice: 'INV-1003', customer: 'Initech', due: '26 Sep', amount: 3020 },\n  { id: 'd', invoice: 'INV-1004', customer: 'Umbrella Corp.', due: '3 Oct', amount: 412.75 },\n];\n\nhtml`\n  <ds-table\n    caption=\"Open invoices\"\n    .columns=${invoiceColumns}\n    .data=${invoiceRows}\n    density=\"comfortable\"\n  ></ds-table>\n`;",
+        "rn": "import { Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer', hideBelow: 'prose' },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n];\n\nconst data: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', customer: 'Acme Co', due: '12 Sep', amount: 1204 },\n  { id: 'b', invoice: 'INV-2', customer: 'Globex', due: '19 Sep', amount: 389.5 },\n  { id: 'c', invoice: 'INV-3', customer: 'Initech', due: '26 Sep', amount: 2050 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={columns}\n  data={data}\n  density=\"comfortable\"\n/>",
         "swift": null
       },
       "stories": {
@@ -1123,71 +745,235 @@
       "primary": false
     },
     {
+      "title": "Open Invoices",
+      "args": {
+        "caption": "Open invoices",
+        "columns": [
+          {
+            "key": "invoice",
+            "header": "Invoice",
+            "isRowHeader": true
+          },
+          {
+            "key": "due",
+            "header": "Due"
+          },
+          {
+            "key": "amount",
+            "header": "Amount",
+            "align": "end",
+            "sortable": true
+          }
+        ],
+        "data": [
+          {
+            "id": "a",
+            "invoice": "INV-1",
+            "due": "12 Sep",
+            "amount": 100
+          },
+          {
+            "id": "b",
+            "invoice": "INV-2",
+            "due": "19 Sep",
+            "amount": 200
+          }
+        ]
+      },
+      "snippets": {
+        "react": "import { Table } from '@design-schema/react';\n\n<Table\n  caption=\"Open invoices\"\n  columns={[\n    { key: 'invoice', header: 'Invoice', isRowHeader: true },\n    { key: 'due', header: 'Due' },\n    { key: 'amount', header: 'Amount', align: 'end', sortable: true },\n  ]}\n  data={[\n    { id: 'a', invoice: 'INV-1', due: '12 Sep', amount: 100 },\n    { id: 'b', invoice: 'INV-2', due: '19 Sep', amount: 200 },\n  ]}\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n      <ds-table\n        caption=\"Open invoices\"\n        .columns=${[\n    { key: 'invoice', header: 'Invoice', isRowHeader: true },\n    { key: 'due', header: 'Due' },\n    { key: 'amount', header: 'Amount', align: 'end', sortable: true },\n  ]}\n        .data=${[\n    { id: 'a', invoice: 'INV-1', due: '12 Sep', amount: 100 },\n    { id: 'b', invoice: 'INV-2', due: '19 Sep', amount: 200 },\n  ]}\n      ></ds-table>\n`;",
+        "rn": "import { Table } from '@design-schema/rn';\n\n<Table\n  caption=\"Open invoices\"\n  columns={[\n    { key: 'invoice', header: 'Invoice', isRowHeader: true },\n    { key: 'due', header: 'Due' },\n    { key: 'amount', header: 'Amount', align: 'end', sortable: true },\n  ]}\n  data={[\n    { id: 'a', invoice: 'INV-1', due: '12 Sep', amount: 100 },\n    { id: 'b', invoice: 'INV-2', due: '19 Sep', amount: 200 },\n  ]}\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "OpenInvoices",
+        "lit": "OpenInvoices",
+        "rn": "OpenInvoices",
+        "swift": null
+      },
+      "storyId": "table-react--open-invoices",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Selectable Rows",
+      "args": {
+        "caption": "Members",
+        "columns": [
+          {
+            "key": "person",
+            "header": "Person",
+            "isRowHeader": true
+          },
+          {
+            "key": "role",
+            "header": "Role"
+          }
+        ],
+        "data": [
+          {
+            "id": "a",
+            "person": "Ana Souza",
+            "role": "Admin"
+          },
+          {
+            "id": "b",
+            "person": "Bo Lin",
+            "role": "Editor"
+          }
+        ],
+        "selectable": "multiple",
+        "defaultSelected": [
+          "a"
+        ]
+      },
+      "snippets": {
+        "react": "import { Table } from '@design-schema/react';\n\n<Table\n  caption=\"Members\"\n  columns={[\n    { key: 'person', header: 'Person', isRowHeader: true },\n    { key: 'role', header: 'Role' },\n  ]}\n  data={[\n    { id: 'a', person: 'Ana Souza', role: 'Admin' },\n    { id: 'b', person: 'Bo Lin', role: 'Editor' },\n  ]}\n  selectable=\"multiple\"\n  defaultSelected={['a']}\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n      <ds-table\n        caption=\"Members\"\n        .columns=${[\n    { key: 'person', header: 'Person', isRowHeader: true },\n    { key: 'role', header: 'Role' },\n  ]}\n        .data=${[\n    { id: 'a', person: 'Ana Souza', role: 'Admin' },\n    { id: 'b', person: 'Bo Lin', role: 'Editor' },\n  ]}\n        selectable=\"multiple\"\n        .defaultSelected=${['a']}\n      ></ds-table>\n`;",
+        "rn": "import { Table } from '@design-schema/rn';\n\n<Table\n  caption=\"Members\"\n  columns={[\n    { key: 'person', header: 'Person', isRowHeader: true },\n    { key: 'role', header: 'Role' },\n  ]}\n  data={[\n    { id: 'a', person: 'Ana Souza', role: 'Admin' },\n    { id: 'b', person: 'Bo Lin', role: 'Editor' },\n  ]}\n  selectable=\"multiple\"\n  defaultSelected={['a']}\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "SelectableRows",
+        "lit": "SelectableRows",
+        "rn": "SelectableRows",
+        "swift": null
+      },
+      "storyId": "table-react--selectable-rows",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Dense Data Table That Scrolls",
+      "args": {
+        "caption": "Daily traffic",
+        "columns": [
+          {
+            "key": "day",
+            "header": "Day",
+            "isRowHeader": true
+          },
+          {
+            "key": "visits",
+            "header": "Visits",
+            "align": "end"
+          },
+          {
+            "key": "signups",
+            "header": "Signups",
+            "align": "end"
+          }
+        ],
+        "data": [
+          {
+            "id": "a",
+            "day": "Monday",
+            "visits": 1200,
+            "signups": 30
+          },
+          {
+            "id": "b",
+            "day": "Tuesday",
+            "visits": 1450,
+            "signups": 41
+          }
+        ],
+        "responsive": "scroll",
+        "density": "compact",
+        "maxHeight": "viewport"
+      },
+      "snippets": {
+        "react": "import { Table } from '@design-schema/react';\n\n<Table\n  caption=\"Daily traffic\"\n  columns={[\n    { key: 'day', header: 'Day', isRowHeader: true },\n    { key: 'visits', header: 'Visits', align: 'end' },\n    { key: 'signups', header: 'Signups', align: 'end' },\n  ]}\n  data={[\n    { id: 'a', day: 'Monday', visits: 1200, signups: 30 },\n    { id: 'b', day: 'Tuesday', visits: 1450, signups: 41 },\n  ]}\n  responsive=\"scroll\"\n  density=\"compact\"\n  maxHeight=\"viewport\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n      <ds-table\n        caption=\"Daily traffic\"\n        .columns=${[\n    { key: 'day', header: 'Day', isRowHeader: true },\n    { key: 'visits', header: 'Visits', align: 'end' },\n    { key: 'signups', header: 'Signups', align: 'end' },\n  ]}\n        .data=${[\n    { id: 'a', day: 'Monday', visits: 1200, signups: 30 },\n    { id: 'b', day: 'Tuesday', visits: 1450, signups: 41 },\n  ]}\n        responsive=\"scroll\"\n        max-height=\"viewport\"\n        density=\"compact\"\n      ></ds-table>\n`;",
+        "rn": "import { Table } from '@design-schema/rn';\n\n<Table\n  caption=\"Daily traffic\"\n  columns={[\n    { key: 'day', header: 'Day', isRowHeader: true },\n    { key: 'visits', header: 'Visits', align: 'end' },\n    { key: 'signups', header: 'Signups', align: 'end' },\n  ]}\n  data={[\n    { id: 'a', day: 'Monday', visits: 1200, signups: 30 },\n    { id: 'b', day: 'Tuesday', visits: 1450, signups: 41 },\n  ]}\n  responsive=\"scroll\"\n  density=\"compact\"\n  maxHeight=\"viewport\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "DenseDataTableThatScrolls",
+        "lit": "DenseDataTableThatScrolls",
+        "rn": "DenseDataTableThatScrolls",
+        "swift": null
+      },
+      "storyId": "table-react--dense-data-table-that-scrolls",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Nothing To Show",
+      "args": {
+        "caption": "Open invoices",
+        "columns": [
+          {
+            "key": "invoice",
+            "header": "Invoice",
+            "isRowHeader": true
+          }
+        ],
+        "data": [],
+        "emptyMessage": "No invoices yet."
+      },
+      "snippets": {
+        "react": "import { Table } from '@design-schema/react';\n\n<Table\n  caption=\"Open invoices\"\n  columns={[{ key: 'invoice', header: 'Invoice', isRowHeader: true }]}\n  data={[]}\n  emptyMessage=\"No invoices yet.\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-table\n    caption=\"Open invoices\"\n    .columns=${[{ key: 'invoice', header: 'Invoice', isRowHeader: true }]}\n    .data=${[]}\n    empty-message=\"No invoices yet.\"\n  ></ds-table>\n`;",
+        "rn": "import { Table } from '@design-schema/rn';\n\n<Table\n  caption=\"Open invoices\"\n  columns={[{ key: 'invoice', header: 'Invoice', isRowHeader: true }]}\n  data={[]}\n  emptyMessage=\"No invoices yet.\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "NothingToShow",
+        "lit": "NothingToShow",
+        "rn": "NothingToShow",
+        "swift": null
+      },
+      "storyId": "table-react--nothing-to-show",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
       "title": "Hide Caption",
       "args": {
         "caption": "Open invoices",
         "columns": [
           {
-            "key": "customer",
-            "header": "Customer",
+            "key": "invoice",
+            "header": "Invoice",
             "isRowHeader": true
           },
           {
-            "key": "status",
-            "header": "Status"
+            "key": "due",
+            "header": "Due"
           },
           {
             "key": "amount",
-            "header": "Amount (USD)",
-            "abbr": "Amount",
+            "header": "Amount",
             "align": "end",
-            "sortable": true,
-            "render": {
-              "$unsupported": "(row) => `$${(row as Invoice).amount.toFixed(2)}`"
-            }
-          },
-          {
-            "key": "due",
-            "header": "Due date",
-            "hideBelow": "prose"
+            "sortable": true
           }
         ],
         "data": [
           {
-            "id": "inv-1001",
-            "customer": "Aster Studio",
-            "status": "Open",
-            "amount": 420,
-            "due": "2026-09-30"
+            "id": "a",
+            "invoice": "INV-1",
+            "due": "12 Sep",
+            "amount": 100
           },
           {
-            "id": "inv-1002",
-            "customer": "Bramble & Co",
-            "status": "Overdue",
-            "amount": 1280,
-            "due": "2026-08-15"
-          },
-          {
-            "id": "inv-1003",
-            "customer": "Cedar Analytics",
-            "status": "Open",
-            "amount": 96,
-            "due": "2026-10-04"
-          },
-          {
-            "id": "inv-1004",
-            "customer": "Driftwood Supply",
-            "status": "Paid",
-            "amount": 640,
-            "due": "2026-09-01"
+            "id": "b",
+            "invoice": "INV-2",
+            "due": "19 Sep",
+            "amount": 200
           }
         ],
         "hideCaption": true
       },
       "snippets": {
-        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\ninterface Invoice extends TableRow {\n  customer: string;\n  status: string;\n  amount: number;\n  due: string;\n}\n\nconst DATA: Invoice[] = [\n  { id: 'inv-1001', customer: 'Aster Studio', status: 'Open', amount: 420, due: '2026-09-30' },\n  { id: 'inv-1002', customer: 'Bramble & Co', status: 'Overdue', amount: 1280, due: '2026-08-15' },\n  { id: 'inv-1003', customer: 'Cedar Analytics', status: 'Open', amount: 96, due: '2026-10-04' },\n  { id: 'inv-1004', customer: 'Driftwood Supply', status: 'Paid', amount: 640, due: '2026-09-01' },\n];\n\nconst COLUMNS: TableColumn[] = [\n  { key: 'customer', header: 'Customer', isRowHeader: true },\n  { key: 'status', header: 'Status' },\n  {\n    key: 'amount',\n    header: 'Amount (USD)',\n    abbr: 'Amount',\n    align: 'end',\n    sortable: true,\n    render: (row) => `$${(row as Invoice).amount.toFixed(2)}`,\n  },\n  { key: 'due', header: 'Due date', hideBelow: 'prose' },\n];\n\n<Table caption=\"Open invoices\" columns={COLUMNS} data={DATA} hideCaption />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow, TableRowPressDetail, TableSelectionChangeDetail, TableSortChangeDetail } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'id', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n  { key: 'status', header: 'Status', hideBelow: 'content' },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'INV-1001', customer: 'Acme Co.', amount: '$1,240.00', status: 'Open' },\n  { id: 'INV-1002', customer: 'Globex', amount: '$860.50', status: 'Open' },\n  { id: 'INV-1003', customer: 'Initech', amount: '$3,020.00', status: 'Overdue' },\n  { id: 'INV-1004', customer: 'Umbrella Corp.', amount: '$412.75', status: 'Paid' },\n];\n\nhtml`\n    <ds-table\n      caption=\"Open invoices\"\n      hide-caption\n      .columns=${invoiceColumns}\n      .data=${invoiceRows}\n      empty-message=\"\"\n      @sort-change=${(event: CustomEvent<TableSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<TableSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @row-press=${(event: CustomEvent<TableRowPressDetail>) => console.log('row-press', event.detail)}\n    ></ds-table>\n`;",
-        "rn": "import { Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'name', header: 'Customer', isRowHeader: true },\n  { key: 'invoice', header: 'Invoice', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n  { key: 'status', header: 'Status', sortable: true },\n];\n\nconst data: TableRow[] = [\n  { id: '1', name: 'Acme Co', invoice: 'INV-1001', amount: '1,204.00', status: 'Paid' },\n  { id: '2', name: 'Globex', invoice: 'INV-1002', amount: '389.50', status: 'Overdue' },\n  { id: '3', name: 'Initech', invoice: 'INV-1003', amount: '2,050.00', status: 'Paid' },\n  { id: '4', name: 'Umbrella Corp', invoice: 'INV-1004', amount: '75.00', status: 'Draft' },\n];\n\n<Table caption=\"Open invoices\" hideCaption columns={columns} data={data} />",
+        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\nconst INVOICE_COLUMNS: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount', align: 'end', sortable: true },\n];\n\nconst INVOICES: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', due: '12 Sep', amount: 100 },\n  { id: 'b', invoice: 'INV-2', due: '19 Sep', amount: 200 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={INVOICE_COLUMNS}\n  data={INVOICES}\n  hideCaption\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'due', header: 'Due', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'a', invoice: 'INV-1001', customer: 'Acme Co.', due: '12 Sep', amount: 1240 },\n  { id: 'b', invoice: 'INV-1002', customer: 'Globex', due: '19 Sep', amount: 860.5 },\n  { id: 'c', invoice: 'INV-1003', customer: 'Initech', due: '26 Sep', amount: 3020 },\n  { id: 'd', invoice: 'INV-1004', customer: 'Umbrella Corp.', due: '3 Oct', amount: 412.75 },\n];\n\nhtml`\n  <ds-table caption=\"Open invoices\" hide-caption .columns=${invoiceColumns} .data=${invoiceRows}></ds-table>\n`;",
+        "rn": "import { Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer', hideBelow: 'prose' },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n];\n\nconst data: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', customer: 'Acme Co', due: '12 Sep', amount: 1204 },\n  { id: 'b', invoice: 'INV-2', customer: 'Globex', due: '19 Sep', amount: 389.5 },\n  { id: 'c', invoice: 'INV-3', customer: 'Initech', due: '26 Sep', amount: 2050 },\n];\n\n<Table caption=\"Open invoices\" columns={columns} data={data} hideCaption />",
         "swift": null
       },
       "stories": {
@@ -1210,65 +996,40 @@
         "caption": "Open invoices",
         "columns": [
           {
-            "key": "customer",
-            "header": "Customer",
+            "key": "invoice",
+            "header": "Invoice",
             "isRowHeader": true
           },
           {
-            "key": "status",
-            "header": "Status"
+            "key": "due",
+            "header": "Due"
           },
           {
             "key": "amount",
-            "header": "Amount (USD)",
-            "abbr": "Amount",
+            "header": "Amount",
             "align": "end",
-            "sortable": true,
-            "render": {
-              "$unsupported": "(row) => `$${(row as Invoice).amount.toFixed(2)}`"
-            }
-          },
-          {
-            "key": "due",
-            "header": "Due date",
-            "hideBelow": "prose"
+            "sortable": true
           }
         ],
         "data": [
           {
-            "id": "inv-1001",
-            "customer": "Aster Studio",
-            "status": "Open",
-            "amount": 420,
-            "due": "2026-09-30"
+            "id": "a",
+            "invoice": "INV-1",
+            "due": "12 Sep",
+            "amount": 100
           },
           {
-            "id": "inv-1002",
-            "customer": "Bramble & Co",
-            "status": "Overdue",
-            "amount": 1280,
-            "due": "2026-08-15"
-          },
-          {
-            "id": "inv-1003",
-            "customer": "Cedar Analytics",
-            "status": "Open",
-            "amount": 96,
-            "due": "2026-10-04"
-          },
-          {
-            "id": "inv-1004",
-            "customer": "Driftwood Supply",
-            "status": "Paid",
-            "amount": 640,
-            "due": "2026-09-01"
+            "id": "b",
+            "invoice": "INV-2",
+            "due": "19 Sep",
+            "amount": 200
           }
         ],
         "stickyHeader": false
       },
       "snippets": {
-        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\ninterface Invoice extends TableRow {\n  customer: string;\n  status: string;\n  amount: number;\n  due: string;\n}\n\nconst DATA: Invoice[] = [\n  { id: 'inv-1001', customer: 'Aster Studio', status: 'Open', amount: 420, due: '2026-09-30' },\n  { id: 'inv-1002', customer: 'Bramble & Co', status: 'Overdue', amount: 1280, due: '2026-08-15' },\n  { id: 'inv-1003', customer: 'Cedar Analytics', status: 'Open', amount: 96, due: '2026-10-04' },\n  { id: 'inv-1004', customer: 'Driftwood Supply', status: 'Paid', amount: 640, due: '2026-09-01' },\n];\n\nconst COLUMNS: TableColumn[] = [\n  { key: 'customer', header: 'Customer', isRowHeader: true },\n  { key: 'status', header: 'Status' },\n  {\n    key: 'amount',\n    header: 'Amount (USD)',\n    abbr: 'Amount',\n    align: 'end',\n    sortable: true,\n    render: (row) => `$${(row as Invoice).amount.toFixed(2)}`,\n  },\n  { key: 'due', header: 'Due date', hideBelow: 'prose' },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={COLUMNS}\n  data={DATA}\n  stickyHeader={false}\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow, TableRowPressDetail, TableSelectionChangeDetail, TableSortChangeDetail } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'id', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n  { key: 'status', header: 'Status', hideBelow: 'content' },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'INV-1001', customer: 'Acme Co.', amount: '$1,240.00', status: 'Open' },\n  { id: 'INV-1002', customer: 'Globex', amount: '$860.50', status: 'Open' },\n  { id: 'INV-1003', customer: 'Initech', amount: '$3,020.00', status: 'Overdue' },\n  { id: 'INV-1004', customer: 'Umbrella Corp.', amount: '$412.75', status: 'Paid' },\n];\n\nhtml`\n    <ds-table\n      caption=\"Open invoices\"\n      .columns=${invoiceColumns}\n      .data=${invoiceRows}\n      no-sticky-header\n      empty-message=\"\"\n      @sort-change=${(event: CustomEvent<TableSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<TableSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @row-press=${(event: CustomEvent<TableRowPressDetail>) => console.log('row-press', event.detail)}\n    ></ds-table>\n`;",
+        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\nconst INVOICE_COLUMNS: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount', align: 'end', sortable: true },\n];\n\nconst INVOICES: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', due: '12 Sep', amount: 100 },\n  { id: 'b', invoice: 'INV-2', due: '19 Sep', amount: 200 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={INVOICE_COLUMNS}\n  data={INVOICES}\n  stickyHeader={false}\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'due', header: 'Due', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'a', invoice: 'INV-1001', customer: 'Acme Co.', due: '12 Sep', amount: 1240 },\n  { id: 'b', invoice: 'INV-1002', customer: 'Globex', due: '19 Sep', amount: 860.5 },\n  { id: 'c', invoice: 'INV-1003', customer: 'Initech', due: '26 Sep', amount: 3020 },\n  { id: 'd', invoice: 'INV-1004', customer: 'Umbrella Corp.', due: '3 Oct', amount: 412.75 },\n];\n\nhtml`\n  <ds-table caption=\"Open invoices\" .columns=${invoiceColumns} .data=${invoiceRows} no-sticky-header></ds-table>\n`;",
         "rn": null,
         "swift": null
       },
@@ -1284,7 +1045,7 @@
         "value": false
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Striped",
@@ -1292,66 +1053,41 @@
         "caption": "Open invoices",
         "columns": [
           {
-            "key": "customer",
-            "header": "Customer",
+            "key": "invoice",
+            "header": "Invoice",
             "isRowHeader": true
           },
           {
-            "key": "status",
-            "header": "Status"
+            "key": "due",
+            "header": "Due"
           },
           {
             "key": "amount",
-            "header": "Amount (USD)",
-            "abbr": "Amount",
+            "header": "Amount",
             "align": "end",
-            "sortable": true,
-            "render": {
-              "$unsupported": "(row) => `$${(row as Invoice).amount.toFixed(2)}`"
-            }
-          },
-          {
-            "key": "due",
-            "header": "Due date",
-            "hideBelow": "prose"
+            "sortable": true
           }
         ],
         "data": [
           {
-            "id": "inv-1001",
-            "customer": "Aster Studio",
-            "status": "Open",
-            "amount": 420,
-            "due": "2026-09-30"
+            "id": "a",
+            "invoice": "INV-1",
+            "due": "12 Sep",
+            "amount": 100
           },
           {
-            "id": "inv-1002",
-            "customer": "Bramble & Co",
-            "status": "Overdue",
-            "amount": 1280,
-            "due": "2026-08-15"
-          },
-          {
-            "id": "inv-1003",
-            "customer": "Cedar Analytics",
-            "status": "Open",
-            "amount": 96,
-            "due": "2026-10-04"
-          },
-          {
-            "id": "inv-1004",
-            "customer": "Driftwood Supply",
-            "status": "Paid",
-            "amount": 640,
-            "due": "2026-09-01"
+            "id": "b",
+            "invoice": "INV-2",
+            "due": "19 Sep",
+            "amount": 200
           }
         ],
         "striped": true
       },
       "snippets": {
-        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\ninterface Invoice extends TableRow {\n  customer: string;\n  status: string;\n  amount: number;\n  due: string;\n}\n\nconst DATA: Invoice[] = [\n  { id: 'inv-1001', customer: 'Aster Studio', status: 'Open', amount: 420, due: '2026-09-30' },\n  { id: 'inv-1002', customer: 'Bramble & Co', status: 'Overdue', amount: 1280, due: '2026-08-15' },\n  { id: 'inv-1003', customer: 'Cedar Analytics', status: 'Open', amount: 96, due: '2026-10-04' },\n  { id: 'inv-1004', customer: 'Driftwood Supply', status: 'Paid', amount: 640, due: '2026-09-01' },\n];\n\nconst COLUMNS: TableColumn[] = [\n  { key: 'customer', header: 'Customer', isRowHeader: true },\n  { key: 'status', header: 'Status' },\n  {\n    key: 'amount',\n    header: 'Amount (USD)',\n    abbr: 'Amount',\n    align: 'end',\n    sortable: true,\n    render: (row) => `$${(row as Invoice).amount.toFixed(2)}`,\n  },\n  { key: 'due', header: 'Due date', hideBelow: 'prose' },\n];\n\n<Table caption=\"Open invoices\" columns={COLUMNS} data={DATA} striped />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow, TableRowPressDetail, TableSelectionChangeDetail, TableSortChangeDetail } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'id', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n  { key: 'status', header: 'Status', hideBelow: 'content' },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'INV-1001', customer: 'Acme Co.', amount: '$1,240.00', status: 'Open' },\n  { id: 'INV-1002', customer: 'Globex', amount: '$860.50', status: 'Open' },\n  { id: 'INV-1003', customer: 'Initech', amount: '$3,020.00', status: 'Overdue' },\n  { id: 'INV-1004', customer: 'Umbrella Corp.', amount: '$412.75', status: 'Paid' },\n];\n\nhtml`\n    <ds-table\n      caption=\"Open invoices\"\n      .columns=${invoiceColumns}\n      .data=${invoiceRows}\n      striped\n      empty-message=\"\"\n      @sort-change=${(event: CustomEvent<TableSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<TableSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @row-press=${(event: CustomEvent<TableRowPressDetail>) => console.log('row-press', event.detail)}\n    ></ds-table>\n`;",
-        "rn": "import { Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'name', header: 'Customer', isRowHeader: true },\n  { key: 'invoice', header: 'Invoice', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n  { key: 'status', header: 'Status', sortable: true },\n];\n\nconst data: TableRow[] = [\n  { id: '1', name: 'Acme Co', invoice: 'INV-1001', amount: '1,204.00', status: 'Paid' },\n  { id: '2', name: 'Globex', invoice: 'INV-1002', amount: '389.50', status: 'Overdue' },\n  { id: '3', name: 'Initech', invoice: 'INV-1003', amount: '2,050.00', status: 'Paid' },\n  { id: '4', name: 'Umbrella Corp', invoice: 'INV-1004', amount: '75.00', status: 'Draft' },\n];\n\n<Table caption=\"Open invoices\" columns={columns} data={data} striped />",
+        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\nconst INVOICE_COLUMNS: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount', align: 'end', sortable: true },\n];\n\nconst INVOICES: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', due: '12 Sep', amount: 100 },\n  { id: 'b', invoice: 'INV-2', due: '19 Sep', amount: 200 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={INVOICE_COLUMNS}\n  data={INVOICES}\n  striped\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'due', header: 'Due', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'a', invoice: 'INV-1001', customer: 'Acme Co.', due: '12 Sep', amount: 1240 },\n  { id: 'b', invoice: 'INV-1002', customer: 'Globex', due: '19 Sep', amount: 860.5 },\n  { id: 'c', invoice: 'INV-1003', customer: 'Initech', due: '26 Sep', amount: 3020 },\n  { id: 'd', invoice: 'INV-1004', customer: 'Umbrella Corp.', due: '3 Oct', amount: 412.75 },\n];\n\nhtml`\n  <ds-table caption=\"Open invoices\" .columns=${invoiceColumns} .data=${invoiceRows} striped></ds-table>\n`;",
+        "rn": "import { Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer', hideBelow: 'prose' },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n];\n\nconst data: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', customer: 'Acme Co', due: '12 Sep', amount: 1204 },\n  { id: 'b', invoice: 'INV-2', customer: 'Globex', due: '19 Sep', amount: 389.5 },\n  { id: 'c', invoice: 'INV-3', customer: 'Initech', due: '26 Sep', amount: 2050 },\n];\n\n<Table caption=\"Open invoices\" columns={columns} data={data} striped />",
         "swift": null
       },
       "stories": {
@@ -1366,7 +1102,7 @@
         "value": true
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Empty",
@@ -1374,95 +1110,36 @@
         "caption": "Open invoices",
         "columns": [
           {
-            "key": "customer",
-            "header": "Customer",
+            "key": "invoice",
+            "header": "Invoice",
             "isRowHeader": true
           },
           {
-            "key": "status",
-            "header": "Status"
+            "key": "due",
+            "header": "Due"
           },
           {
             "key": "amount",
-            "header": "Amount (USD)",
-            "abbr": "Amount",
+            "header": "Amount",
             "align": "end",
-            "sortable": true,
-            "render": {
-              "$unsupported": "(row) => `$${(row as Invoice).amount.toFixed(2)}`"
-            }
-          },
-          {
-            "key": "due",
-            "header": "Due date",
-            "hideBelow": "prose"
+            "sortable": true
           }
         ],
         "data": []
       },
       "snippets": {
-        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\ninterface Invoice extends TableRow {\n  customer: string;\n  status: string;\n  amount: number;\n  due: string;\n}\n\nconst COLUMNS: TableColumn[] = [\n  { key: 'customer', header: 'Customer', isRowHeader: true },\n  { key: 'status', header: 'Status' },\n  {\n    key: 'amount',\n    header: 'Amount (USD)',\n    abbr: 'Amount',\n    align: 'end',\n    sortable: true,\n    render: (row) => `$${(row as Invoice).amount.toFixed(2)}`,\n  },\n  { key: 'due', header: 'Due date', hideBelow: 'prose' },\n];\n\n<Table caption=\"Open invoices\" columns={COLUMNS} data={[]} />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRowPressDetail, TableSelectionChangeDetail, TableSortChangeDetail } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'id', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n  { key: 'status', header: 'Status', hideBelow: 'content' },\n];\n\nhtml`\n    <ds-table\n      caption=\"Open invoices\"\n      .columns=${invoiceColumns}\n      .data=${[]}\n      empty-message=\"\"\n      @sort-change=${(event: CustomEvent<TableSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<TableSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @row-press=${(event: CustomEvent<TableRowPressDetail>) => console.log('row-press', event.detail)}\n    ></ds-table>\n`;",
-        "rn": "import { Table, type TableColumn } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'name', header: 'Customer', isRowHeader: true },\n  { key: 'invoice', header: 'Invoice', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n  { key: 'status', header: 'Status', sortable: true },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={columns}\n  data={[]}\n  emptyMessage=\"No invoices match these filters.\"\n/>",
+        "react": "import { Table, type TableColumn } from '@design-schema/react';\n\nconst INVOICE_COLUMNS: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount', align: 'end', sortable: true },\n];\n\n<Table caption=\"Open invoices\" columns={INVOICE_COLUMNS} data={[]} />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'due', header: 'Due', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n];\n\nhtml`\n  <ds-table caption=\"Open invoices\" .columns=${invoiceColumns} .data=${[]}></ds-table>\n`;",
+        "rn": null,
         "swift": null
       },
       "stories": {
         "react": "Empty",
         "lit": "Empty",
-        "rn": "Empty",
+        "rn": null,
         "swift": null
       },
       "storyId": "table-react--empty",
-      "sweep": null,
-      "decorated": false,
-      "primary": true
-    },
-    {
-      "title": "Empty With Message",
-      "args": {
-        "caption": "Open invoices",
-        "columns": [
-          {
-            "key": "customer",
-            "header": "Customer",
-            "isRowHeader": true
-          },
-          {
-            "key": "status",
-            "header": "Status"
-          },
-          {
-            "key": "amount",
-            "header": "Amount (USD)",
-            "abbr": "Amount",
-            "align": "end",
-            "sortable": true,
-            "render": {
-              "$unsupported": "(row) => `$${(row as Invoice).amount.toFixed(2)}`"
-            }
-          },
-          {
-            "key": "due",
-            "header": "Due date",
-            "hideBelow": "prose"
-          }
-        ],
-        "data": [],
-        "emptyMessage": "No invoices match these filters."
-      },
-      "snippets": {
-        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\ninterface Invoice extends TableRow {\n  customer: string;\n  status: string;\n  amount: number;\n  due: string;\n}\n\nconst COLUMNS: TableColumn[] = [\n  { key: 'customer', header: 'Customer', isRowHeader: true },\n  { key: 'status', header: 'Status' },\n  {\n    key: 'amount',\n    header: 'Amount (USD)',\n    abbr: 'Amount',\n    align: 'end',\n    sortable: true,\n    render: (row) => `$${(row as Invoice).amount.toFixed(2)}`,\n  },\n  { key: 'due', header: 'Due date', hideBelow: 'prose' },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={COLUMNS}\n  data={[]}\n  emptyMessage=\"No invoices match these filters.\"\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRowPressDetail, TableSelectionChangeDetail, TableSortChangeDetail } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'id', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n  { key: 'status', header: 'Status', hideBelow: 'content' },\n];\n\nhtml`\n    <ds-table\n      caption=\"Open invoices\"\n      .columns=${invoiceColumns}\n      .data=${[]}\n      empty-message=\"No invoices match these filters.\"\n      @sort-change=${(event: CustomEvent<TableSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<TableSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @row-press=${(event: CustomEvent<TableRowPressDetail>) => console.log('row-press', event.detail)}\n    ></ds-table>\n`;",
-        "rn": null,
-        "swift": null
-      },
-      "stories": {
-        "react": "EmptyWithMessage",
-        "lit": "EmptyMessage",
-        "rn": null,
-        "swift": null
-      },
-      "storyId": "table-react--empty-with-message",
       "sweep": null,
       "decorated": false,
       "primary": false
@@ -1473,66 +1150,41 @@
         "caption": "Open invoices",
         "columns": [
           {
-            "key": "customer",
-            "header": "Customer",
+            "key": "invoice",
+            "header": "Invoice",
             "isRowHeader": true
           },
           {
-            "key": "status",
-            "header": "Status"
+            "key": "due",
+            "header": "Due"
           },
           {
             "key": "amount",
-            "header": "Amount (USD)",
-            "abbr": "Amount",
+            "header": "Amount",
             "align": "end",
-            "sortable": true,
-            "render": {
-              "$unsupported": "(row) => `$${(row as Invoice).amount.toFixed(2)}`"
-            }
-          },
-          {
-            "key": "due",
-            "header": "Due date",
-            "hideBelow": "prose"
+            "sortable": true
           }
         ],
         "data": [
           {
-            "id": "inv-1001",
-            "customer": "Aster Studio",
-            "status": "Open",
-            "amount": 420,
-            "due": "2026-09-30"
+            "id": "a",
+            "invoice": "INV-1",
+            "due": "12 Sep",
+            "amount": 100
           },
           {
-            "id": "inv-1002",
-            "customer": "Bramble & Co",
-            "status": "Overdue",
-            "amount": 1280,
-            "due": "2026-08-15"
-          },
-          {
-            "id": "inv-1003",
-            "customer": "Cedar Analytics",
-            "status": "Open",
-            "amount": 96,
-            "due": "2026-10-04"
-          },
-          {
-            "id": "inv-1004",
-            "customer": "Driftwood Supply",
-            "status": "Paid",
-            "amount": 640,
-            "due": "2026-09-01"
+            "id": "b",
+            "invoice": "INV-2",
+            "due": "19 Sep",
+            "amount": 200
           }
         ],
         "loading": true
       },
       "snippets": {
-        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\ninterface Invoice extends TableRow {\n  customer: string;\n  status: string;\n  amount: number;\n  due: string;\n}\n\nconst DATA: Invoice[] = [\n  { id: 'inv-1001', customer: 'Aster Studio', status: 'Open', amount: 420, due: '2026-09-30' },\n  { id: 'inv-1002', customer: 'Bramble & Co', status: 'Overdue', amount: 1280, due: '2026-08-15' },\n  { id: 'inv-1003', customer: 'Cedar Analytics', status: 'Open', amount: 96, due: '2026-10-04' },\n  { id: 'inv-1004', customer: 'Driftwood Supply', status: 'Paid', amount: 640, due: '2026-09-01' },\n];\n\nconst COLUMNS: TableColumn[] = [\n  { key: 'customer', header: 'Customer', isRowHeader: true },\n  { key: 'status', header: 'Status' },\n  {\n    key: 'amount',\n    header: 'Amount (USD)',\n    abbr: 'Amount',\n    align: 'end',\n    sortable: true,\n    render: (row) => `$${(row as Invoice).amount.toFixed(2)}`,\n  },\n  { key: 'due', header: 'Due date', hideBelow: 'prose' },\n];\n\n<Table caption=\"Open invoices\" columns={COLUMNS} data={DATA} loading />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow, TableRowPressDetail, TableSelectionChangeDetail, TableSortChangeDetail } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'id', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n  { key: 'status', header: 'Status', hideBelow: 'content' },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'INV-1001', customer: 'Acme Co.', amount: '$1,240.00', status: 'Open' },\n  { id: 'INV-1002', customer: 'Globex', amount: '$860.50', status: 'Open' },\n  { id: 'INV-1003', customer: 'Initech', amount: '$3,020.00', status: 'Overdue' },\n  { id: 'INV-1004', customer: 'Umbrella Corp.', amount: '$412.75', status: 'Paid' },\n];\n\nhtml`\n    <ds-table\n      caption=\"Open invoices\"\n      .columns=${invoiceColumns}\n      .data=${invoiceRows}\n      loading\n      empty-message=\"\"\n      @sort-change=${(event: CustomEvent<TableSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<TableSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @row-press=${(event: CustomEvent<TableRowPressDetail>) => console.log('row-press', event.detail)}\n    ></ds-table>\n`;",
-        "rn": "import { Table, type TableColumn } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'name', header: 'Customer', isRowHeader: true },\n  { key: 'invoice', header: 'Invoice', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n  { key: 'status', header: 'Status', sortable: true },\n];\n\n<Table caption=\"Open invoices\" columns={columns} data={[]} loading />",
+        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\nconst INVOICE_COLUMNS: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount', align: 'end', sortable: true },\n];\n\nconst INVOICES: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', due: '12 Sep', amount: 100 },\n  { id: 'b', invoice: 'INV-2', due: '19 Sep', amount: 200 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={INVOICE_COLUMNS}\n  data={INVOICES}\n  loading\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'due', header: 'Due', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'a', invoice: 'INV-1001', customer: 'Acme Co.', due: '12 Sep', amount: 1240 },\n  { id: 'b', invoice: 'INV-1002', customer: 'Globex', due: '19 Sep', amount: 860.5 },\n  { id: 'c', invoice: 'INV-1003', customer: 'Initech', due: '26 Sep', amount: 3020 },\n  { id: 'd', invoice: 'INV-1004', customer: 'Umbrella Corp.', due: '3 Oct', amount: 412.75 },\n];\n\nhtml`\n  <ds-table caption=\"Open invoices\" .columns=${invoiceColumns} .data=${invoiceRows} loading></ds-table>\n`;",
+        "rn": "import { Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer', hideBelow: 'prose' },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n];\n\nconst data: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', customer: 'Acme Co', due: '12 Sep', amount: 1204 },\n  { id: 'b', invoice: 'INV-2', customer: 'Globex', due: '19 Sep', amount: 389.5 },\n  { id: 'c', invoice: 'INV-3', customer: 'Initech', due: '26 Sep', amount: 2050 },\n];\n\n<Table caption=\"Open invoices\" columns={columns} data={data} loading />",
         "swift": null
       },
       "stories": {
@@ -1555,42 +1207,33 @@
         "caption": "Open invoices",
         "columns": [
           {
-            "key": "customer",
-            "header": "Customer",
+            "key": "invoice",
+            "header": "Invoice",
             "isRowHeader": true
           },
           {
-            "key": "status",
-            "header": "Status"
+            "key": "due",
+            "header": "Due"
           },
           {
             "key": "amount",
-            "header": "Amount (USD)",
-            "abbr": "Amount",
+            "header": "Amount",
             "align": "end",
-            "sortable": true,
-            "render": {
-              "$unsupported": "(row) => `$${(row as Invoice).amount.toFixed(2)}`"
-            }
-          },
-          {
-            "key": "due",
-            "header": "Due date",
-            "hideBelow": "prose"
+            "sortable": true
           }
         ],
         "data": [],
         "loading": true
       },
       "snippets": {
-        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\ninterface Invoice extends TableRow {\n  customer: string;\n  status: string;\n  amount: number;\n  due: string;\n}\n\nconst COLUMNS: TableColumn[] = [\n  { key: 'customer', header: 'Customer', isRowHeader: true },\n  { key: 'status', header: 'Status' },\n  {\n    key: 'amount',\n    header: 'Amount (USD)',\n    abbr: 'Amount',\n    align: 'end',\n    sortable: true,\n    render: (row) => `$${(row as Invoice).amount.toFixed(2)}`,\n  },\n  { key: 'due', header: 'Due date', hideBelow: 'prose' },\n];\n\n<Table caption=\"Open invoices\" columns={COLUMNS} data={[]} loading />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRowPressDetail, TableSelectionChangeDetail, TableSortChangeDetail } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'id', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n  { key: 'status', header: 'Status', hideBelow: 'content' },\n];\n\nhtml`\n    <ds-table\n      caption=\"Open invoices\"\n      .columns=${invoiceColumns}\n      .data=${[]}\n      loading\n      empty-message=\"\"\n      @sort-change=${(event: CustomEvent<TableSortChangeDetail>) => console.log('sort-change', event.detail)}\n      @selection-change=${(event: CustomEvent<TableSelectionChangeDetail>) =>\n  console.log('selection-change', event.detail)}\n      @row-press=${(event: CustomEvent<TableRowPressDetail>) => console.log('row-press', event.detail)}\n    ></ds-table>\n`;",
+        "react": "import { Table, type TableColumn } from '@design-schema/react';\n\nconst INVOICE_COLUMNS: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount', align: 'end', sortable: true },\n];\n\n<Table caption=\"Open invoices\" columns={INVOICE_COLUMNS} data={[]} loading />",
+        "lit": null,
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "LoadingEmpty",
-        "lit": "LoadingEmpty",
+        "lit": null,
         "rn": null,
         "swift": null
       },
@@ -1600,63 +1243,38 @@
       "primary": false
     },
     {
-      "title": "Default Sort",
+      "title": "Default Sort Descending",
       "args": {
         "caption": "Open invoices",
         "columns": [
           {
-            "key": "customer",
-            "header": "Customer",
+            "key": "invoice",
+            "header": "Invoice",
             "isRowHeader": true
           },
           {
-            "key": "status",
-            "header": "Status"
+            "key": "due",
+            "header": "Due"
           },
           {
             "key": "amount",
-            "header": "Amount (USD)",
-            "abbr": "Amount",
+            "header": "Amount",
             "align": "end",
-            "sortable": true,
-            "render": {
-              "$unsupported": "(row) => `$${(row as Invoice).amount.toFixed(2)}`"
-            }
-          },
-          {
-            "key": "due",
-            "header": "Due date",
-            "hideBelow": "prose"
+            "sortable": true
           }
         ],
         "data": [
           {
-            "id": "inv-1001",
-            "customer": "Aster Studio",
-            "status": "Open",
-            "amount": 420,
-            "due": "2026-09-30"
+            "id": "a",
+            "invoice": "INV-1",
+            "due": "12 Sep",
+            "amount": 100
           },
           {
-            "id": "inv-1002",
-            "customer": "Bramble & Co",
-            "status": "Overdue",
-            "amount": 1280,
-            "due": "2026-08-15"
-          },
-          {
-            "id": "inv-1003",
-            "customer": "Cedar Analytics",
-            "status": "Open",
-            "amount": 96,
-            "due": "2026-10-04"
-          },
-          {
-            "id": "inv-1004",
-            "customer": "Driftwood Supply",
-            "status": "Paid",
-            "amount": 640,
-            "due": "2026-09-01"
+            "id": "b",
+            "invoice": "INV-2",
+            "due": "19 Sep",
+            "amount": 200
           }
         ],
         "defaultSort": {
@@ -1665,99 +1283,75 @@
         }
       },
       "snippets": {
-        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\ninterface Invoice extends TableRow {\n  customer: string;\n  status: string;\n  amount: number;\n  due: string;\n}\n\nconst DATA: Invoice[] = [\n  { id: 'inv-1001', customer: 'Aster Studio', status: 'Open', amount: 420, due: '2026-09-30' },\n  { id: 'inv-1002', customer: 'Bramble & Co', status: 'Overdue', amount: 1280, due: '2026-08-15' },\n  { id: 'inv-1003', customer: 'Cedar Analytics', status: 'Open', amount: 96, due: '2026-10-04' },\n  { id: 'inv-1004', customer: 'Driftwood Supply', status: 'Paid', amount: 640, due: '2026-09-01' },\n];\n\nconst COLUMNS: TableColumn[] = [\n  { key: 'customer', header: 'Customer', isRowHeader: true },\n  { key: 'status', header: 'Status' },\n  {\n    key: 'amount',\n    header: 'Amount (USD)',\n    abbr: 'Amount',\n    align: 'end',\n    sortable: true,\n    render: (row) => `$${(row as Invoice).amount.toFixed(2)}`,\n  },\n  { key: 'due', header: 'Due date', hideBelow: 'prose' },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={COLUMNS}\n  data={DATA}\n  defaultSort={{ column: 'amount', direction: 'descending' }}\n/>",
+        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\nconst INVOICE_COLUMNS: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount', align: 'end', sortable: true },\n];\n\nconst INVOICES: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', due: '12 Sep', amount: 100 },\n  { id: 'b', invoice: 'INV-2', due: '19 Sep', amount: 200 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={INVOICE_COLUMNS}\n  data={INVOICES}\n  defaultSort={{ column: 'amount', direction: 'descending' }}\n/>",
         "lit": null,
-        "rn": null,
+        "rn": "import { Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer', hideBelow: 'prose' },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n];\n\nconst data: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', customer: 'Acme Co', due: '12 Sep', amount: 1204 },\n  { id: 'b', invoice: 'INV-2', customer: 'Globex', due: '19 Sep', amount: 389.5 },\n  { id: 'c', invoice: 'INV-3', customer: 'Initech', due: '26 Sep', amount: 2050 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={columns}\n  data={data}\n  defaultSort={{ column: 'amount', direction: 'descending' }}\n/>",
         "swift": null
       },
       "stories": {
-        "react": "DefaultSort",
+        "react": "DefaultSortDescending",
         "lit": null,
-        "rn": null,
+        "rn": "DefaultSort",
         "swift": null
       },
-      "storyId": "table-react--default-sort",
+      "storyId": "table-react--default-sort-descending",
       "sweep": null,
       "decorated": false,
       "primary": false
     },
     {
-      "title": "With Row Actions",
+      "title": "Link In Row Header",
       "args": {
         "caption": "Open invoices",
         "columns": [
           {
-            "key": "customer",
-            "header": "Customer",
-            "isRowHeader": true
-          },
-          {
-            "key": "status",
-            "header": "Status"
-          },
-          {
-            "key": "amount",
-            "header": "Amount (USD)",
-            "abbr": "Amount",
-            "align": "end",
-            "sortable": true,
+            "key": "invoice",
+            "header": "Invoice",
+            "isRowHeader": true,
             "render": {
-              "$unsupported": "(row) => `$${(row as Invoice).amount.toFixed(2)}`"
+              "$unsupported": "(row) => <Link href={`#${row.id}`} label={String(row['invoice'])} />"
             }
           },
           {
             "key": "due",
-            "header": "Due date",
+            "header": "Due",
             "hideBelow": "prose"
+          },
+          {
+            "key": "amount",
+            "header": "Amount",
+            "align": "end",
+            "sortable": true
           }
         ],
         "data": [
           {
-            "id": "inv-1001",
-            "customer": "Aster Studio",
-            "status": "Open",
-            "amount": 420,
-            "due": "2026-09-30"
+            "id": "a",
+            "invoice": "INV-1",
+            "due": "12 Sep",
+            "amount": 100
           },
           {
-            "id": "inv-1002",
-            "customer": "Bramble & Co",
-            "status": "Overdue",
-            "amount": 1280,
-            "due": "2026-08-15"
-          },
-          {
-            "id": "inv-1003",
-            "customer": "Cedar Analytics",
-            "status": "Open",
-            "amount": 96,
-            "due": "2026-10-04"
-          },
-          {
-            "id": "inv-1004",
-            "customer": "Driftwood Supply",
-            "status": "Paid",
-            "amount": 640,
-            "due": "2026-09-01"
+            "id": "b",
+            "invoice": "INV-2",
+            "due": "19 Sep",
+            "amount": 200
           }
-        ],
-        "rowActions": {
-          "$unsupported": "(row) => (\n      <Button variant=\"ghost\" size=\"sm\" iconOnly label={`Open ${(row as Invoice).customer}`} leadingIcon={<Icon name=\"ellipsis\" inline />} />\n    )"
-        }
+        ]
       },
       "snippets": {
-        "react": "import { Table, type TableColumn, type TableRow, Button, Icon } from '@design-schema/react';\n\ninterface Invoice extends TableRow {\n  customer: string;\n  status: string;\n  amount: number;\n  due: string;\n}\n\nconst DATA: Invoice[] = [\n  { id: 'inv-1001', customer: 'Aster Studio', status: 'Open', amount: 420, due: '2026-09-30' },\n  { id: 'inv-1002', customer: 'Bramble & Co', status: 'Overdue', amount: 1280, due: '2026-08-15' },\n  { id: 'inv-1003', customer: 'Cedar Analytics', status: 'Open', amount: 96, due: '2026-10-04' },\n  { id: 'inv-1004', customer: 'Driftwood Supply', status: 'Paid', amount: 640, due: '2026-09-01' },\n];\n\nconst COLUMNS: TableColumn[] = [\n  { key: 'customer', header: 'Customer', isRowHeader: true },\n  { key: 'status', header: 'Status' },\n  {\n    key: 'amount',\n    header: 'Amount (USD)',\n    abbr: 'Amount',\n    align: 'end',\n    sortable: true,\n    render: (row) => `$${(row as Invoice).amount.toFixed(2)}`,\n  },\n  { key: 'due', header: 'Due date', hideBelow: 'prose' },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={COLUMNS}\n  data={DATA}\n  rowActions={(row) => (\n    <Button variant=\"ghost\" size=\"sm\" iconOnly label={`Open ${(row as Invoice).customer}`} leadingIcon={<Icon name=\"ellipsis\" inline />} />\n  )}\n/>",
+        "react": "import { Table, type TableRow, Link } from '@design-schema/react';\n\nconst INVOICES: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', due: '12 Sep', amount: 100 },\n  { id: 'b', invoice: 'INV-2', due: '19 Sep', amount: 200 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={[\n    { key: 'invoice', header: 'Invoice', isRowHeader: true, render: (row) => <Link href={`#${row.id}`} label={String(row['invoice'])} /> },\n    { key: 'due', header: 'Due', hideBelow: 'prose' },\n    { key: 'amount', header: 'Amount', align: 'end', sortable: true },\n  ]}\n  data={INVOICES}\n/>",
         "lit": null,
-        "rn": "import { Button, Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'name', header: 'Customer', isRowHeader: true },\n  { key: 'invoice', header: 'Invoice', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n  { key: 'status', header: 'Status', sortable: true },\n];\n\nconst data: TableRow[] = [\n  { id: '1', name: 'Acme Co', invoice: 'INV-1001', amount: '1,204.00', status: 'Paid' },\n  { id: '2', name: 'Globex', invoice: 'INV-1002', amount: '389.50', status: 'Overdue' },\n  { id: '3', name: 'Initech', invoice: 'INV-1003', amount: '2,050.00', status: 'Paid' },\n  { id: '4', name: 'Umbrella Corp', invoice: 'INV-1004', amount: '75.00', status: 'Draft' },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={columns}\n  data={data}\n  rowActions={() => <Button label=\"View\" variant=\"ghost\" size=\"sm\" />}\n/>",
+        "rn": null,
         "swift": null
       },
       "stories": {
-        "react": "WithRowActions",
+        "react": "LinkInRowHeader",
         "lit": null,
-        "rn": "WithRowActions",
+        "rn": null,
         "swift": null
       },
-      "storyId": "table-react--with-row-actions",
+      "storyId": "table-react--link-in-row-header",
       "sweep": null,
       "decorated": false,
       "primary": false
@@ -1768,58 +1362,33 @@
         "caption": "Open invoices",
         "columns": [
           {
-            "key": "customer",
-            "header": "Customer",
+            "key": "invoice",
+            "header": "Invoice",
             "isRowHeader": true
           },
           {
-            "key": "status",
-            "header": "Status"
+            "key": "due",
+            "header": "Due"
           },
           {
             "key": "amount",
-            "header": "Amount (USD)",
-            "abbr": "Amount",
+            "header": "Amount",
             "align": "end",
-            "sortable": true,
-            "render": {
-              "$unsupported": "(row) => `$${(row as Invoice).amount.toFixed(2)}`"
-            }
-          },
-          {
-            "key": "due",
-            "header": "Due date",
-            "hideBelow": "prose"
+            "sortable": true
           }
         ],
         "data": [
           {
-            "id": "inv-1001",
-            "customer": "Aster Studio",
-            "status": "Open",
-            "amount": 420,
-            "due": "2026-09-30"
+            "id": "a",
+            "invoice": "INV-1",
+            "due": "12 Sep",
+            "amount": 100
           },
           {
-            "id": "inv-1002",
-            "customer": "Bramble & Co",
-            "status": "Overdue",
-            "amount": 1280,
-            "due": "2026-08-15"
-          },
-          {
-            "id": "inv-1003",
-            "customer": "Cedar Analytics",
-            "status": "Open",
-            "amount": 96,
-            "due": "2026-10-04"
-          },
-          {
-            "id": "inv-1004",
-            "customer": "Driftwood Supply",
-            "status": "Paid",
-            "amount": 640,
-            "due": "2026-09-01"
+            "id": "b",
+            "invoice": "INV-2",
+            "due": "19 Sep",
+            "amount": 200
           }
         ],
         "onRowPress": {
@@ -1827,9 +1396,9 @@
         }
       },
       "snippets": {
-        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\ninterface Invoice extends TableRow {\n  customer: string;\n  status: string;\n  amount: number;\n  due: string;\n}\n\nconst DATA: Invoice[] = [\n  { id: 'inv-1001', customer: 'Aster Studio', status: 'Open', amount: 420, due: '2026-09-30' },\n  { id: 'inv-1002', customer: 'Bramble & Co', status: 'Overdue', amount: 1280, due: '2026-08-15' },\n  { id: 'inv-1003', customer: 'Cedar Analytics', status: 'Open', amount: 96, due: '2026-10-04' },\n  { id: 'inv-1004', customer: 'Driftwood Supply', status: 'Paid', amount: 640, due: '2026-09-01' },\n];\n\nconst COLUMNS: TableColumn[] = [\n  { key: 'customer', header: 'Customer', isRowHeader: true },\n  { key: 'status', header: 'Status' },\n  {\n    key: 'amount',\n    header: 'Amount (USD)',\n    abbr: 'Amount',\n    align: 'end',\n    sortable: true,\n    render: (row) => `$${(row as Invoice).amount.toFixed(2)}`,\n  },\n  { key: 'due', header: 'Due date', hideBelow: 'prose' },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={COLUMNS}\n  data={DATA}\n  onRowPress={() => undefined}\n/>",
+        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\nconst INVOICE_COLUMNS: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount', align: 'end', sortable: true },\n];\n\nconst INVOICES: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', due: '12 Sep', amount: 100 },\n  { id: 'b', invoice: 'INV-2', due: '19 Sep', amount: 200 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={INVOICE_COLUMNS}\n  data={INVOICES}\n  onRowPress={() => undefined}\n/>",
         "lit": null,
-        "rn": "import { Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'name', header: 'Customer', isRowHeader: true },\n  { key: 'invoice', header: 'Invoice', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n  { key: 'status', header: 'Status', sortable: true },\n];\n\nconst data: TableRow[] = [\n  { id: '1', name: 'Acme Co', invoice: 'INV-1001', amount: '1,204.00', status: 'Paid' },\n  { id: '2', name: 'Globex', invoice: 'INV-1002', amount: '389.50', status: 'Overdue' },\n  { id: '3', name: 'Initech', invoice: 'INV-1003', amount: '2,050.00', status: 'Paid' },\n  { id: '4', name: 'Umbrella Corp', invoice: 'INV-1004', amount: '75.00', status: 'Draft' },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={columns}\n  data={data}\n  onRowPress={() => undefined}\n/>",
+        "rn": "import { Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer', hideBelow: 'prose' },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n];\n\nconst data: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', customer: 'Acme Co', due: '12 Sep', amount: 1204 },\n  { id: 'b', invoice: 'INV-2', customer: 'Globex', due: '19 Sep', amount: 389.5 },\n  { id: 'c', invoice: 'INV-3', customer: 'Initech', due: '26 Sep', amount: 2050 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={columns}\n  data={data}\n  onRowPress={() => undefined}\n/>",
         "swift": null
       },
       "stories": {
@@ -1844,63 +1413,148 @@
       "primary": false
     },
     {
+      "title": "With Row Actions",
+      "args": {
+        "caption": "Open invoices",
+        "columns": [
+          {
+            "key": "invoice",
+            "header": "Invoice",
+            "isRowHeader": true
+          },
+          {
+            "key": "due",
+            "header": "Due"
+          },
+          {
+            "key": "amount",
+            "header": "Amount",
+            "align": "end",
+            "sortable": true
+          }
+        ],
+        "data": [
+          {
+            "id": "a",
+            "invoice": "INV-1",
+            "due": "12 Sep",
+            "amount": 100
+          },
+          {
+            "id": "b",
+            "invoice": "INV-2",
+            "due": "19 Sep",
+            "amount": 200
+          }
+        ],
+        "rowActions": {
+          "$unsupported": "(row) => (\n      <Button variant=\"ghost\" size=\"sm\" iconOnly label={`More for ${String(row['invoice'])}`} leadingIcon={<Icon name=\"ellipsis\" />} />\n    )"
+        }
+      },
+      "snippets": {
+        "react": "import { Table, type TableColumn, type TableRow, Button, Icon } from '@design-schema/react';\n\nconst INVOICE_COLUMNS: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount', align: 'end', sortable: true },\n];\n\nconst INVOICES: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', due: '12 Sep', amount: 100 },\n  { id: 'b', invoice: 'INV-2', due: '19 Sep', amount: 200 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={INVOICE_COLUMNS}\n  data={INVOICES}\n  rowActions={(row) => (\n    <Button variant=\"ghost\" size=\"sm\" iconOnly label={`More for ${String(row['invoice'])}`} leadingIcon={<Icon name=\"ellipsis\" />} />\n  )}\n/>",
+        "lit": null,
+        "rn": "import { Button, Icon, Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer', hideBelow: 'prose' },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n];\n\nconst data: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', customer: 'Acme Co', due: '12 Sep', amount: 1204 },\n  { id: 'b', invoice: 'INV-2', customer: 'Globex', due: '19 Sep', amount: 389.5 },\n  { id: 'c', invoice: 'INV-3', customer: 'Initech', due: '26 Sep', amount: 2050 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={columns}\n  data={data}\n  rowActions={(row) => (\n    <Button label={`More actions for ${String(row.invoice)}`} variant=\"ghost\" size=\"sm\" iconOnly leadingIcon={<Icon name=\"ellipsis\" />} />\n  )}\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "WithRowActions",
+        "lit": null,
+        "rn": "WithRowActions",
+        "swift": null
+      },
+      "storyId": "table-react--with-row-actions",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
       "title": "With Footer",
       "args": {
         "caption": "Open invoices",
         "columns": [
           {
-            "key": "customer",
-            "header": "Customer",
+            "key": "invoice",
+            "header": "Invoice",
             "isRowHeader": true
           },
           {
-            "key": "status",
-            "header": "Status"
+            "key": "due",
+            "header": "Due"
           },
           {
             "key": "amount",
-            "header": "Amount (USD)",
-            "abbr": "Amount",
+            "header": "Amount",
             "align": "end",
-            "sortable": true,
-            "render": {
-              "$unsupported": "(row) => `$${(row as Invoice).amount.toFixed(2)}`"
-            }
-          },
-          {
-            "key": "due",
-            "header": "Due date",
-            "hideBelow": "prose"
+            "sortable": true
           }
         ],
         "data": [
           {
-            "id": "inv-1001",
-            "customer": "Aster Studio",
-            "status": "Open",
-            "amount": 420,
-            "due": "2026-09-30"
+            "id": "a",
+            "invoice": "INV-1",
+            "due": "12 Sep",
+            "amount": 100
           },
           {
-            "id": "inv-1002",
-            "customer": "Bramble & Co",
-            "status": "Overdue",
-            "amount": 1280,
-            "due": "2026-08-15"
+            "id": "b",
+            "invoice": "INV-2",
+            "due": "19 Sep",
+            "amount": 200
+          }
+        ],
+        "footer": "Total due: 300"
+      },
+      "snippets": {
+        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\nconst INVOICE_COLUMNS: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount', align: 'end', sortable: true },\n];\n\nconst INVOICES: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', due: '12 Sep', amount: 100 },\n  { id: 'b', invoice: 'INV-2', due: '19 Sep', amount: 200 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={INVOICE_COLUMNS}\n  data={INVOICES}\n  footer=\"Total due: 300\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'due', header: 'Due', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'a', invoice: 'INV-1001', customer: 'Acme Co.', due: '12 Sep', amount: 1240 },\n  { id: 'b', invoice: 'INV-1002', customer: 'Globex', due: '19 Sep', amount: 860.5 },\n  { id: 'c', invoice: 'INV-1003', customer: 'Initech', due: '26 Sep', amount: 3020 },\n  { id: 'd', invoice: 'INV-1004', customer: 'Umbrella Corp.', due: '3 Oct', amount: 412.75 },\n];\n\nhtml`\n  <ds-table caption=\"Open invoices\" .columns=${invoiceColumns} .data=${invoiceRows}>\n    <ds-text slot=\"footer\" tone=\"muted\" size=\"sm\">4 rows</ds-text>\n  </ds-table>\n`;",
+        "rn": "import { Table, Text, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer', hideBelow: 'prose' },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n];\n\nconst data: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', customer: 'Acme Co', due: '12 Sep', amount: 1204 },\n  { id: 'b', invoice: 'INV-2', customer: 'Globex', due: '19 Sep', amount: 389.5 },\n  { id: 'c', invoice: 'INV-3', customer: 'Initech', due: '26 Sep', amount: 2050 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={columns}\n  data={data}\n  footer={<Text size=\"sm\" tone=\"muted\">\n    3 rows\n  </Text>}\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "WithFooter",
+        "lit": "WithFooter",
+        "rn": "WithFooter",
+        "swift": null
+      },
+      "storyId": "table-react--with-footer",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "With Footer Content",
+      "args": {
+        "caption": "Open invoices",
+        "columns": [
+          {
+            "key": "invoice",
+            "header": "Invoice",
+            "isRowHeader": true
           },
           {
-            "id": "inv-1003",
-            "customer": "Cedar Analytics",
-            "status": "Open",
-            "amount": 96,
-            "due": "2026-10-04"
+            "key": "due",
+            "header": "Due"
           },
           {
-            "id": "inv-1004",
-            "customer": "Driftwood Supply",
-            "status": "Paid",
-            "amount": 640,
-            "due": "2026-09-01"
+            "key": "amount",
+            "header": "Amount",
+            "align": "end",
+            "sortable": true
+          }
+        ],
+        "data": [
+          {
+            "id": "a",
+            "invoice": "INV-1",
+            "due": "12 Sep",
+            "amount": 100
+          },
+          {
+            "id": "b",
+            "invoice": "INV-2",
+            "due": "19 Sep",
+            "amount": 200
           }
         ],
         "footer": {
@@ -1911,27 +1565,23 @@
             "tone": "muted"
           },
           "children": [
-            " Showing ",
-            4,
-            " of ",
-            4,
-            " invoices. "
+            " 2 rows "
           ]
         }
       },
       "snippets": {
-        "react": "import { Table, type TableColumn, type TableRow, Text } from '@design-schema/react';\n\ninterface Invoice extends TableRow {\n  customer: string;\n  status: string;\n  amount: number;\n  due: string;\n}\n\nconst DATA: Invoice[] = [\n  { id: 'inv-1001', customer: 'Aster Studio', status: 'Open', amount: 420, due: '2026-09-30' },\n  { id: 'inv-1002', customer: 'Bramble & Co', status: 'Overdue', amount: 1280, due: '2026-08-15' },\n  { id: 'inv-1003', customer: 'Cedar Analytics', status: 'Open', amount: 96, due: '2026-10-04' },\n  { id: 'inv-1004', customer: 'Driftwood Supply', status: 'Paid', amount: 640, due: '2026-09-01' },\n];\n\nconst COLUMNS: TableColumn[] = [\n  { key: 'customer', header: 'Customer', isRowHeader: true },\n  { key: 'status', header: 'Status' },\n  {\n    key: 'amount',\n    header: 'Amount (USD)',\n    abbr: 'Amount',\n    align: 'end',\n    sortable: true,\n    render: (row) => `$${(row as Invoice).amount.toFixed(2)}`,\n  },\n  { key: 'due', header: 'Due date', hideBelow: 'prose' },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={COLUMNS}\n  data={DATA}\n  footer={<Text element=\"p\" size=\"sm\" tone=\"muted\">\n    Showing {DATA.length} of {DATA.length} invoices.\n  </Text>}\n/>",
+        "react": "import { Table, type TableColumn, type TableRow, Text } from '@design-schema/react';\n\nconst INVOICE_COLUMNS: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount', align: 'end', sortable: true },\n];\n\nconst INVOICES: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', due: '12 Sep', amount: 100 },\n  { id: 'b', invoice: 'INV-2', due: '19 Sep', amount: 200 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={INVOICE_COLUMNS}\n  data={INVOICES}\n  footer={<Text element=\"p\" size=\"sm\" tone=\"muted\">\n    2 rows\n  </Text>}\n/>",
         "lit": null,
-        "rn": "import { Table, Text, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'name', header: 'Customer', isRowHeader: true },\n  { key: 'invoice', header: 'Invoice', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n  { key: 'status', header: 'Status', sortable: true },\n];\n\nconst data: TableRow[] = [\n  { id: '1', name: 'Acme Co', invoice: 'INV-1001', amount: '1,204.00', status: 'Paid' },\n  { id: '2', name: 'Globex', invoice: 'INV-1002', amount: '389.50', status: 'Overdue' },\n  { id: '3', name: 'Initech', invoice: 'INV-1003', amount: '2,050.00', status: 'Paid' },\n  { id: '4', name: 'Umbrella Corp', invoice: 'INV-1004', amount: '75.00', status: 'Draft' },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={columns}\n  data={data}\n  footer={<Text size=\"sm\" tone=\"muted\">4 rows</Text>}\n/>",
+        "rn": null,
         "swift": null
       },
       "stories": {
-        "react": "WithFooter",
+        "react": "WithFooterContent",
         "lit": null,
-        "rn": "WithFooter",
+        "rn": null,
         "swift": null
       },
-      "storyId": "table-react--with-footer",
+      "storyId": "table-react--with-footer-content",
       "sweep": null,
       "decorated": false,
       "primary": false
@@ -1942,79 +1592,54 @@
         "caption": "Open invoices",
         "columns": [
           {
-            "key": "customer",
-            "header": "Customer",
+            "key": "invoice",
+            "header": "Invoice",
             "isRowHeader": true
           },
           {
-            "key": "status",
-            "header": "Status"
+            "key": "due",
+            "header": "Due"
           },
           {
             "key": "amount",
-            "header": "Amount (USD)",
-            "abbr": "Amount",
+            "header": "Amount",
             "align": "end",
-            "sortable": true,
-            "render": {
-              "$unsupported": "(row) => `$${(row as Invoice).amount.toFixed(2)}`"
-            }
-          },
-          {
-            "key": "due",
-            "header": "Due date",
-            "hideBelow": "prose"
+            "sortable": true
           }
         ],
         "data": [
           {
-            "id": "inv-1001",
-            "customer": "Aster Studio",
-            "status": "Open",
-            "amount": 420,
-            "due": "2026-09-30"
+            "id": "a",
+            "invoice": "INV-1",
+            "due": "12 Sep",
+            "amount": 100
           },
           {
-            "id": "inv-1002",
-            "customer": "Bramble & Co",
-            "status": "Overdue",
-            "amount": 1280,
-            "due": "2026-08-15"
-          },
-          {
-            "id": "inv-1003",
-            "customer": "Cedar Analytics",
-            "status": "Open",
-            "amount": 96,
-            "due": "2026-10-04"
-          },
-          {
-            "id": "inv-1004",
-            "customer": "Driftwood Supply",
-            "status": "Paid",
-            "amount": 640,
-            "due": "2026-09-01"
+            "id": "b",
+            "invoice": "INV-2",
+            "due": "19 Sep",
+            "amount": 200
           }
         ],
-        "selectable": "multiple",
-        "rowActions": {
-          "$unsupported": "(row) => <Button variant=\"ghost\" size=\"sm\" label={`View ${(row as Invoice).customer}`} />"
-        }
+        "selectable": "multiple"
       },
       "snippets": {
-        "react": "import { Table, type TableColumn, type TableRow, Button } from '@design-schema/react';\n\ninterface Invoice extends TableRow {\n  customer: string;\n  status: string;\n  amount: number;\n  due: string;\n}\n\nconst DATA: Invoice[] = [\n  { id: 'inv-1001', customer: 'Aster Studio', status: 'Open', amount: 420, due: '2026-09-30' },\n  { id: 'inv-1002', customer: 'Bramble & Co', status: 'Overdue', amount: 1280, due: '2026-08-15' },\n  { id: 'inv-1003', customer: 'Cedar Analytics', status: 'Open', amount: 96, due: '2026-10-04' },\n  { id: 'inv-1004', customer: 'Driftwood Supply', status: 'Paid', amount: 640, due: '2026-09-01' },\n];\n\nconst COLUMNS: TableColumn[] = [\n  { key: 'customer', header: 'Customer', isRowHeader: true },\n  { key: 'status', header: 'Status' },\n  {\n    key: 'amount',\n    header: 'Amount (USD)',\n    abbr: 'Amount',\n    align: 'end',\n    sortable: true,\n    render: (row) => `$${(row as Invoice).amount.toFixed(2)}`,\n  },\n  { key: 'due', header: 'Due date', hideBelow: 'prose' },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={COLUMNS}\n  data={DATA}\n  selectable=\"multiple\"\n  rowActions={(row) => <Button variant=\"ghost\" size=\"sm\" label={`View ${(row as Invoice).customer}`} />}\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'id', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n  { key: 'status', header: 'Status', hideBelow: 'content' },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'INV-1001', customer: 'Acme Co.', amount: '$1,240.00', status: 'Open' },\n  { id: 'INV-1002', customer: 'Globex', amount: '$860.50', status: 'Open' },\n  { id: 'INV-1003', customer: 'Initech', amount: '$3,020.00', status: 'Overdue' },\n  { id: 'INV-1004', customer: 'Umbrella Corp.', amount: '$412.75', status: 'Paid' },\n];\n\nhtml`\n      <ds-table\n        caption=\"Open invoices\"\n        selectable=\"multiple\"\n        .columns=${invoiceColumns}\n        .data=${invoiceRows}\n        .rowActions=${(row: TableRow) => html\\`\n    <ds-button variant=\"ghost\" size=\"sm\" icon-only label=\"Edit ${row.id}\">\n      <ds-icon slot=\"leading-icon\" name=\"chevron-right\" inline></ds-icon>\n    </ds-button>\n  \\`}\n      ></ds-table>\n`;",
-        "rn": null,
+        "react": "import { Table, type TableColumn, type TableRow } from '@design-schema/react';\n\nconst INVOICE_COLUMNS: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount', align: 'end', sortable: true },\n];\n\nconst INVOICES: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', due: '12 Sep', amount: 100 },\n  { id: 'b', invoice: 'INV-2', due: '19 Sep', amount: 200 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={INVOICE_COLUMNS}\n  data={INVOICES}\n  selectable=\"multiple\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { TableColumn, TableRow } from '@design-schema/lit';\n\nconst invoiceColumns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer' },\n  { key: 'due', header: 'Due', hideBelow: 'content' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },\n];\n\nconst invoiceRows: TableRow[] = [\n  { id: 'a', invoice: 'INV-1001', customer: 'Acme Co.', due: '12 Sep', amount: 1240 },\n  { id: 'b', invoice: 'INV-1002', customer: 'Globex', due: '19 Sep', amount: 860.5 },\n  { id: 'c', invoice: 'INV-1003', customer: 'Initech', due: '26 Sep', amount: 3020 },\n  { id: 'd', invoice: 'INV-1004', customer: 'Umbrella Corp.', due: '3 Oct', amount: 412.75 },\n];\n\nconst editAction = (row: TableRow): unknown => html`\n  <ds-button variant=\"ghost\" size=\"sm\" icon-only label=\"Edit ${String(row.invoice ?? row.id)}\">\n    <ds-icon slot=\"leading-icon\" name=\"chevron-right\" inline></ds-icon>\n  </ds-button>\n`;\n\nhtml`\n  <ds-table\n    caption=\"Open invoices\"\n    .columns=${invoiceColumns}\n    .data=${invoiceRows}\n    selectable=\"multiple\"\n    .rowActions=${editAction}\n  ></ds-table>\n`;",
+        "rn": "import { Button, Table, type TableColumn, type TableRow } from '@design-schema/rn';\n\nconst columns: TableColumn[] = [\n  { key: 'invoice', header: 'Invoice', isRowHeader: true },\n  { key: 'customer', header: 'Customer', hideBelow: 'prose' },\n  { key: 'due', header: 'Due' },\n  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true, width: 'fill' },\n];\n\nconst data: TableRow[] = [\n  { id: 'a', invoice: 'INV-1', customer: 'Acme Co', due: '12 Sep', amount: 1204 },\n  { id: 'b', invoice: 'INV-2', customer: 'Globex', due: '19 Sep', amount: 389.5 },\n  { id: 'c', invoice: 'INV-3', customer: 'Initech', due: '26 Sep', amount: 2050 },\n];\n\n<Table\n  caption=\"Open invoices\"\n  columns={columns}\n  data={data}\n  selectable=\"multiple\"\n  rowActions={(row) => <Button label={`Open ${String(row.invoice)}`} variant=\"ghost\" size=\"sm\" />}\n/>",
         "swift": null
       },
       "stories": {
         "react": "Keyboard",
         "lit": "Keyboard",
-        "rn": null,
+        "rn": "Keyboard",
         "swift": null
       },
       "storyId": "table-react--keyboard",
-      "sweep": null,
+      "sweep": {
+        "prop": "selectable",
+        "value": "multiple"
+      },
       "decorated": false,
       "primary": false
     }

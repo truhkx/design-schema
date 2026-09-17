@@ -10,11 +10,6 @@
     {
       "title": "Default",
       "args": {
-        "heading": "Team plan",
-        "headingLevel": "3",
-        "inset": "md",
-        "surface": "default",
-        "interactive": false,
         "children": {
           "$element": "Stack",
           "props": {
@@ -38,24 +33,40 @@
                 "size": "sm"
               },
               "children": [
-                " $24/month, billed annually. "
+                " Billed annually. "
               ]
             }
           ]
         },
+        "heading": "Team plan",
         "footer": {
-          "$element": "Button",
-          "props": {
-            "label": "Choose plan",
-            "variant": "primary",
-            "size": "sm"
-          },
-          "children": []
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Choose plan",
+                "variant": "primary",
+                "size": "sm"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Compare plans",
+                "variant": "secondary",
+                "size": "sm"
+              },
+              "children": []
+            }
+          ]
         }
       },
       "snippets": {
-        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\nconst body = (\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      $24/month, billed annually.\n    </Text>\n  </Stack>\n);\n\nconst footer = <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />;\n\n<Card heading=\"Team plan\" footer={footer}>{body}</Card>",
-        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-card heading=\"Notification settings\">\n    <ds-text>Choose which updates you want to hear about, and how.</ds-text>\n  </ds-card>\n</div>",
+        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\n<Card\n  heading=\"Team plan\"\n  footer={<>\n    <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />\n    <Button label=\"Compare plans\" variant=\"secondary\" size=\"sm\" />\n  </>}\n>\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      Billed annually.\n    </Text>\n  </Stack>\n</Card>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\nimport type { CardHeadingLevel, CardInset, CardSurface } from '@design-schema/lit';\n\ninterface CardArgs {\n  heading?: string | undefined;\n  headingLevel: CardHeadingLevel;\n  inset: CardInset;\n  surface: CardSurface;\n  interactive: boolean;\n  focusable: boolean;\n  children: string;\n}\n\nconst body = (args: CardArgs): TemplateResult =>\n  args.interactive\n    ? html`<ds-link href=\"#card\" label=${args.children}></ds-link>`\n    : html`<ds-text>${args.children}</ds-text>`;\n\nhtml`\n  <div style=\"inline-size: min(100%, 24rem)\">\n    <ds-card heading=\"Notification settings\">\n      ${body({ heading: 'Notification settings', children: 'Choose which updates you want to hear about, and how.' })}\n    </ds-card>\n  </div>\n`;",
         "rn": "import { Card, Text } from '@design-schema/rn';\n\n<Card heading=\"Card title\"><Text>Body content.</Text></Card>",
         "swift": null
       },
@@ -73,11 +84,6 @@
     {
       "title": "Heading Level 2",
       "args": {
-        "heading": "Team plan",
-        "headingLevel": "2",
-        "inset": "md",
-        "surface": "default",
-        "interactive": false,
         "children": {
           "$element": "Stack",
           "props": {
@@ -101,24 +107,41 @@
                 "size": "sm"
               },
               "children": [
-                " $24/month, billed annually. "
+                " Billed annually. "
               ]
             }
           ]
         },
+        "heading": "Team plan",
         "footer": {
-          "$element": "Button",
-          "props": {
-            "label": "Choose plan",
-            "variant": "primary",
-            "size": "sm"
-          },
-          "children": []
-        }
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Choose plan",
+                "variant": "primary",
+                "size": "sm"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Compare plans",
+                "variant": "secondary",
+                "size": "sm"
+              },
+              "children": []
+            }
+          ]
+        },
+        "headingLevel": "2"
       },
       "snippets": {
-        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\nconst body = (\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      $24/month, billed annually.\n    </Text>\n  </Stack>\n);\n\nconst footer = <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />;\n\n<Card heading=\"Team plan\" headingLevel=\"2\" footer={footer}>{body}</Card>",
-        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-card heading=\"Notification settings\" heading-level=\"2\">\n    <ds-text>Choose which updates you want to hear about, and how.</ds-text>\n  </ds-card>\n</div>",
+        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\n<Card\n  heading=\"Team plan\"\n  footer={<>\n    <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />\n    <Button label=\"Compare plans\" variant=\"secondary\" size=\"sm\" />\n  </>}\n  headingLevel=\"2\"\n>\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      Billed annually.\n    </Text>\n  </Stack>\n</Card>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\nimport type { CardHeadingLevel, CardInset, CardSurface } from '@design-schema/lit';\n\ninterface CardArgs {\n  heading?: string | undefined;\n  headingLevel: CardHeadingLevel;\n  inset: CardInset;\n  surface: CardSurface;\n  interactive: boolean;\n  focusable: boolean;\n  children: string;\n}\n\nconst body = (args: CardArgs): TemplateResult =>\n  args.interactive\n    ? html`<ds-link href=\"#card\" label=${args.children}></ds-link>`\n    : html`<ds-text>${args.children}</ds-text>`;\n\nhtml`\n  <div style=\"inline-size: min(100%, 24rem)\">\n    <ds-card heading=\"Notification settings\" heading-level=\"2\">\n      ${body({ heading: 'Notification settings', headingLevel: '2', children: 'Choose which updates you want to hear about, and how.' })}\n    </ds-card>\n  </div>\n`;",
         "rn": "import { Card, Text } from '@design-schema/rn';\n\n<Card heading=\"Card title\" headingLevel=\"2\"><Text>Body content.</Text></Card>",
         "swift": null
       },
@@ -129,21 +152,13 @@
         "swift": null
       },
       "storyId": "card-react--heading-level-2",
-      "sweep": {
-        "prop": "headingLevel",
-        "value": "2"
-      },
+      "sweep": null,
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Heading Level 3",
       "args": {
-        "heading": "Team plan",
-        "headingLevel": "3",
-        "inset": "md",
-        "surface": "default",
-        "interactive": false,
         "children": {
           "$element": "Stack",
           "props": {
@@ -167,24 +182,41 @@
                 "size": "sm"
               },
               "children": [
-                " $24/month, billed annually. "
+                " Billed annually. "
               ]
             }
           ]
         },
+        "heading": "Team plan",
         "footer": {
-          "$element": "Button",
-          "props": {
-            "label": "Choose plan",
-            "variant": "primary",
-            "size": "sm"
-          },
-          "children": []
-        }
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Choose plan",
+                "variant": "primary",
+                "size": "sm"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Compare plans",
+                "variant": "secondary",
+                "size": "sm"
+              },
+              "children": []
+            }
+          ]
+        },
+        "headingLevel": "3"
       },
       "snippets": {
-        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\nconst body = (\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      $24/month, billed annually.\n    </Text>\n  </Stack>\n);\n\nconst footer = <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />;\n\n<Card heading=\"Team plan\" headingLevel=\"3\" footer={footer}>{body}</Card>",
-        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-card heading=\"Notification settings\" heading-level=\"3\">\n    <ds-text>Choose which updates you want to hear about, and how.</ds-text>\n  </ds-card>\n</div>",
+        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\n<Card\n  heading=\"Team plan\"\n  footer={<>\n    <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />\n    <Button label=\"Compare plans\" variant=\"secondary\" size=\"sm\" />\n  </>}\n  headingLevel=\"3\"\n>\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      Billed annually.\n    </Text>\n  </Stack>\n</Card>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\nimport type { CardHeadingLevel, CardInset, CardSurface } from '@design-schema/lit';\n\ninterface CardArgs {\n  heading?: string | undefined;\n  headingLevel: CardHeadingLevel;\n  inset: CardInset;\n  surface: CardSurface;\n  interactive: boolean;\n  focusable: boolean;\n  children: string;\n}\n\nconst body = (args: CardArgs): TemplateResult =>\n  args.interactive\n    ? html`<ds-link href=\"#card\" label=${args.children}></ds-link>`\n    : html`<ds-text>${args.children}</ds-text>`;\n\nhtml`\n  <div style=\"inline-size: min(100%, 24rem)\">\n    <ds-card heading=\"Notification settings\" heading-level=\"3\">\n      ${body({ heading: 'Notification settings', headingLevel: '3', children: 'Choose which updates you want to hear about, and how.' })}\n    </ds-card>\n  </div>\n`;",
         "rn": "import { Card, Text } from '@design-schema/rn';\n\n<Card heading=\"Card title\" headingLevel=\"3\"><Text>Body content.</Text></Card>",
         "swift": null
       },
@@ -195,21 +227,13 @@
         "swift": null
       },
       "storyId": "card-react--heading-level-3",
-      "sweep": {
-        "prop": "headingLevel",
-        "value": "3"
-      },
+      "sweep": null,
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Heading Level 4",
       "args": {
-        "heading": "Team plan",
-        "headingLevel": "4",
-        "inset": "md",
-        "surface": "default",
-        "interactive": false,
         "children": {
           "$element": "Stack",
           "props": {
@@ -233,24 +257,41 @@
                 "size": "sm"
               },
               "children": [
-                " $24/month, billed annually. "
+                " Billed annually. "
               ]
             }
           ]
         },
+        "heading": "Team plan",
         "footer": {
-          "$element": "Button",
-          "props": {
-            "label": "Choose plan",
-            "variant": "primary",
-            "size": "sm"
-          },
-          "children": []
-        }
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Choose plan",
+                "variant": "primary",
+                "size": "sm"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Compare plans",
+                "variant": "secondary",
+                "size": "sm"
+              },
+              "children": []
+            }
+          ]
+        },
+        "headingLevel": "4"
       },
       "snippets": {
-        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\nconst body = (\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      $24/month, billed annually.\n    </Text>\n  </Stack>\n);\n\nconst footer = <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />;\n\n<Card heading=\"Team plan\" headingLevel=\"4\" footer={footer}>{body}</Card>",
-        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-card heading=\"Notification settings\" heading-level=\"4\">\n    <ds-text>Choose which updates you want to hear about, and how.</ds-text>\n  </ds-card>\n</div>",
+        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\n<Card\n  heading=\"Team plan\"\n  footer={<>\n    <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />\n    <Button label=\"Compare plans\" variant=\"secondary\" size=\"sm\" />\n  </>}\n  headingLevel=\"4\"\n>\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      Billed annually.\n    </Text>\n  </Stack>\n</Card>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\nimport type { CardHeadingLevel, CardInset, CardSurface } from '@design-schema/lit';\n\ninterface CardArgs {\n  heading?: string | undefined;\n  headingLevel: CardHeadingLevel;\n  inset: CardInset;\n  surface: CardSurface;\n  interactive: boolean;\n  focusable: boolean;\n  children: string;\n}\n\nconst body = (args: CardArgs): TemplateResult =>\n  args.interactive\n    ? html`<ds-link href=\"#card\" label=${args.children}></ds-link>`\n    : html`<ds-text>${args.children}</ds-text>`;\n\nhtml`\n  <div style=\"inline-size: min(100%, 24rem)\">\n    <ds-card heading=\"Notification settings\" heading-level=\"4\">\n      ${body({ heading: 'Notification settings', headingLevel: '4', children: 'Choose which updates you want to hear about, and how.' })}\n    </ds-card>\n  </div>\n`;",
         "rn": "import { Card, Text } from '@design-schema/rn';\n\n<Card heading=\"Card title\" headingLevel=\"4\"><Text>Body content.</Text></Card>",
         "swift": null
       },
@@ -261,21 +302,13 @@
         "swift": null
       },
       "storyId": "card-react--heading-level-4",
-      "sweep": {
-        "prop": "headingLevel",
-        "value": "4"
-      },
+      "sweep": null,
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Heading Level 5",
       "args": {
-        "heading": "Team plan",
-        "headingLevel": "5",
-        "inset": "md",
-        "surface": "default",
-        "interactive": false,
         "children": {
           "$element": "Stack",
           "props": {
@@ -299,24 +332,41 @@
                 "size": "sm"
               },
               "children": [
-                " $24/month, billed annually. "
+                " Billed annually. "
               ]
             }
           ]
         },
+        "heading": "Team plan",
         "footer": {
-          "$element": "Button",
-          "props": {
-            "label": "Choose plan",
-            "variant": "primary",
-            "size": "sm"
-          },
-          "children": []
-        }
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Choose plan",
+                "variant": "primary",
+                "size": "sm"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Compare plans",
+                "variant": "secondary",
+                "size": "sm"
+              },
+              "children": []
+            }
+          ]
+        },
+        "headingLevel": "5"
       },
       "snippets": {
-        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\nconst body = (\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      $24/month, billed annually.\n    </Text>\n  </Stack>\n);\n\nconst footer = <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />;\n\n<Card heading=\"Team plan\" headingLevel=\"5\" footer={footer}>{body}</Card>",
-        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-card heading=\"Notification settings\" heading-level=\"5\">\n    <ds-text>Choose which updates you want to hear about, and how.</ds-text>\n  </ds-card>\n</div>",
+        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\n<Card\n  heading=\"Team plan\"\n  footer={<>\n    <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />\n    <Button label=\"Compare plans\" variant=\"secondary\" size=\"sm\" />\n  </>}\n  headingLevel=\"5\"\n>\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      Billed annually.\n    </Text>\n  </Stack>\n</Card>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\nimport type { CardHeadingLevel, CardInset, CardSurface } from '@design-schema/lit';\n\ninterface CardArgs {\n  heading?: string | undefined;\n  headingLevel: CardHeadingLevel;\n  inset: CardInset;\n  surface: CardSurface;\n  interactive: boolean;\n  focusable: boolean;\n  children: string;\n}\n\nconst body = (args: CardArgs): TemplateResult =>\n  args.interactive\n    ? html`<ds-link href=\"#card\" label=${args.children}></ds-link>`\n    : html`<ds-text>${args.children}</ds-text>`;\n\nhtml`\n  <div style=\"inline-size: min(100%, 24rem)\">\n    <ds-card heading=\"Notification settings\" heading-level=\"5\">\n      ${body({ heading: 'Notification settings', headingLevel: '5', children: 'Choose which updates you want to hear about, and how.' })}\n    </ds-card>\n  </div>\n`;",
         "rn": "import { Card, Text } from '@design-schema/rn';\n\n<Card heading=\"Card title\" headingLevel=\"5\"><Text>Body content.</Text></Card>",
         "swift": null
       },
@@ -327,21 +377,13 @@
         "swift": null
       },
       "storyId": "card-react--heading-level-5",
-      "sweep": {
-        "prop": "headingLevel",
-        "value": "5"
-      },
+      "sweep": null,
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Heading Level 6",
       "args": {
-        "heading": "Team plan",
-        "headingLevel": "6",
-        "inset": "md",
-        "surface": "default",
-        "interactive": false,
         "children": {
           "$element": "Stack",
           "props": {
@@ -365,24 +407,41 @@
                 "size": "sm"
               },
               "children": [
-                " $24/month, billed annually. "
+                " Billed annually. "
               ]
             }
           ]
         },
+        "heading": "Team plan",
         "footer": {
-          "$element": "Button",
-          "props": {
-            "label": "Choose plan",
-            "variant": "primary",
-            "size": "sm"
-          },
-          "children": []
-        }
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Choose plan",
+                "variant": "primary",
+                "size": "sm"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Compare plans",
+                "variant": "secondary",
+                "size": "sm"
+              },
+              "children": []
+            }
+          ]
+        },
+        "headingLevel": "6"
       },
       "snippets": {
-        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\nconst body = (\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      $24/month, billed annually.\n    </Text>\n  </Stack>\n);\n\nconst footer = <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />;\n\n<Card heading=\"Team plan\" headingLevel=\"6\" footer={footer}>{body}</Card>",
-        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-card heading=\"Notification settings\" heading-level=\"6\">\n    <ds-text>Choose which updates you want to hear about, and how.</ds-text>\n  </ds-card>\n</div>",
+        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\n<Card\n  heading=\"Team plan\"\n  footer={<>\n    <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />\n    <Button label=\"Compare plans\" variant=\"secondary\" size=\"sm\" />\n  </>}\n  headingLevel=\"6\"\n>\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      Billed annually.\n    </Text>\n  </Stack>\n</Card>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\nimport type { CardHeadingLevel, CardInset, CardSurface } from '@design-schema/lit';\n\ninterface CardArgs {\n  heading?: string | undefined;\n  headingLevel: CardHeadingLevel;\n  inset: CardInset;\n  surface: CardSurface;\n  interactive: boolean;\n  focusable: boolean;\n  children: string;\n}\n\nconst body = (args: CardArgs): TemplateResult =>\n  args.interactive\n    ? html`<ds-link href=\"#card\" label=${args.children}></ds-link>`\n    : html`<ds-text>${args.children}</ds-text>`;\n\nhtml`\n  <div style=\"inline-size: min(100%, 24rem)\">\n    <ds-card heading=\"Notification settings\" heading-level=\"6\">\n      ${body({ heading: 'Notification settings', headingLevel: '6', children: 'Choose which updates you want to hear about, and how.' })}\n    </ds-card>\n  </div>\n`;",
         "rn": "import { Card, Text } from '@design-schema/rn';\n\n<Card heading=\"Card title\" headingLevel=\"6\"><Text>Body content.</Text></Card>",
         "swift": null
       },
@@ -393,21 +452,13 @@
         "swift": null
       },
       "storyId": "card-react--heading-level-6",
-      "sweep": {
-        "prop": "headingLevel",
-        "value": "6"
-      },
+      "sweep": null,
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Inset Sm",
       "args": {
-        "heading": "Team plan",
-        "headingLevel": "3",
-        "inset": "sm",
-        "surface": "default",
-        "interactive": false,
         "children": {
           "$element": "Stack",
           "props": {
@@ -431,24 +482,41 @@
                 "size": "sm"
               },
               "children": [
-                " $24/month, billed annually. "
+                " Billed annually. "
               ]
             }
           ]
         },
+        "heading": "Team plan",
         "footer": {
-          "$element": "Button",
-          "props": {
-            "label": "Choose plan",
-            "variant": "primary",
-            "size": "sm"
-          },
-          "children": []
-        }
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Choose plan",
+                "variant": "primary",
+                "size": "sm"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Compare plans",
+                "variant": "secondary",
+                "size": "sm"
+              },
+              "children": []
+            }
+          ]
+        },
+        "inset": "sm"
       },
       "snippets": {
-        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\nconst body = (\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      $24/month, billed annually.\n    </Text>\n  </Stack>\n);\n\nconst footer = <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />;\n\n<Card heading=\"Team plan\" inset=\"sm\" footer={footer}>{body}</Card>",
-        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-card heading=\"Notification settings\" inset=\"sm\">\n    <ds-text>Choose which updates you want to hear about, and how.</ds-text>\n  </ds-card>\n</div>",
+        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\n<Card\n  heading=\"Team plan\"\n  footer={<>\n    <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />\n    <Button label=\"Compare plans\" variant=\"secondary\" size=\"sm\" />\n  </>}\n  inset=\"sm\"\n>\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      Billed annually.\n    </Text>\n  </Stack>\n</Card>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\nimport type { CardHeadingLevel, CardInset, CardSurface } from '@design-schema/lit';\n\ninterface CardArgs {\n  heading?: string | undefined;\n  headingLevel: CardHeadingLevel;\n  inset: CardInset;\n  surface: CardSurface;\n  interactive: boolean;\n  focusable: boolean;\n  children: string;\n}\n\nconst body = (args: CardArgs): TemplateResult =>\n  args.interactive\n    ? html`<ds-link href=\"#card\" label=${args.children}></ds-link>`\n    : html`<ds-text>${args.children}</ds-text>`;\n\nhtml`\n  <div style=\"inline-size: min(100%, 24rem)\">\n    <ds-card heading=\"Notification settings\" inset=\"sm\">\n      ${body({ heading: 'Notification settings', inset: 'sm', children: 'Choose which updates you want to hear about, and how.' })}\n    </ds-card>\n  </div>\n`;",
         "rn": "import { Card, Text } from '@design-schema/rn';\n\n<Card heading=\"Card title\" inset=\"sm\"><Text>Body content.</Text></Card>",
         "swift": null
       },
@@ -459,21 +527,13 @@
         "swift": null
       },
       "storyId": "card-react--inset-sm",
-      "sweep": {
-        "prop": "inset",
-        "value": "sm"
-      },
+      "sweep": null,
       "decorated": false,
       "primary": false
     },
     {
       "title": "Inset Md",
       "args": {
-        "heading": "Team plan",
-        "headingLevel": "3",
-        "inset": "md",
-        "surface": "default",
-        "interactive": false,
         "children": {
           "$element": "Stack",
           "props": {
@@ -497,24 +557,41 @@
                 "size": "sm"
               },
               "children": [
-                " $24/month, billed annually. "
+                " Billed annually. "
               ]
             }
           ]
         },
+        "heading": "Team plan",
         "footer": {
-          "$element": "Button",
-          "props": {
-            "label": "Choose plan",
-            "variant": "primary",
-            "size": "sm"
-          },
-          "children": []
-        }
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Choose plan",
+                "variant": "primary",
+                "size": "sm"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Compare plans",
+                "variant": "secondary",
+                "size": "sm"
+              },
+              "children": []
+            }
+          ]
+        },
+        "inset": "md"
       },
       "snippets": {
-        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\nconst body = (\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      $24/month, billed annually.\n    </Text>\n  </Stack>\n);\n\nconst footer = <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />;\n\n<Card heading=\"Team plan\" inset=\"md\" footer={footer}>{body}</Card>",
-        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-card heading=\"Notification settings\" inset=\"md\">\n    <ds-text>Choose which updates you want to hear about, and how.</ds-text>\n  </ds-card>\n</div>",
+        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\n<Card\n  heading=\"Team plan\"\n  footer={<>\n    <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />\n    <Button label=\"Compare plans\" variant=\"secondary\" size=\"sm\" />\n  </>}\n  inset=\"md\"\n>\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      Billed annually.\n    </Text>\n  </Stack>\n</Card>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\nimport type { CardHeadingLevel, CardInset, CardSurface } from '@design-schema/lit';\n\ninterface CardArgs {\n  heading?: string | undefined;\n  headingLevel: CardHeadingLevel;\n  inset: CardInset;\n  surface: CardSurface;\n  interactive: boolean;\n  focusable: boolean;\n  children: string;\n}\n\nconst body = (args: CardArgs): TemplateResult =>\n  args.interactive\n    ? html`<ds-link href=\"#card\" label=${args.children}></ds-link>`\n    : html`<ds-text>${args.children}</ds-text>`;\n\nhtml`\n  <div style=\"inline-size: min(100%, 24rem)\">\n    <ds-card heading=\"Notification settings\" inset=\"md\">\n      ${body({ heading: 'Notification settings', inset: 'md', children: 'Choose which updates you want to hear about, and how.' })}\n    </ds-card>\n  </div>\n`;",
         "rn": "import { Card, Text } from '@design-schema/rn';\n\n<Card heading=\"Card title\" inset=\"md\"><Text>Body content.</Text></Card>",
         "swift": null
       },
@@ -525,21 +602,13 @@
         "swift": null
       },
       "storyId": "card-react--inset-md",
-      "sweep": {
-        "prop": "inset",
-        "value": "md"
-      },
+      "sweep": null,
       "decorated": false,
       "primary": false
     },
     {
       "title": "Inset Lg",
       "args": {
-        "heading": "Team plan",
-        "headingLevel": "3",
-        "inset": "lg",
-        "surface": "default",
-        "interactive": false,
         "children": {
           "$element": "Stack",
           "props": {
@@ -563,24 +632,41 @@
                 "size": "sm"
               },
               "children": [
-                " $24/month, billed annually. "
+                " Billed annually. "
               ]
             }
           ]
         },
+        "heading": "Team plan",
         "footer": {
-          "$element": "Button",
-          "props": {
-            "label": "Choose plan",
-            "variant": "primary",
-            "size": "sm"
-          },
-          "children": []
-        }
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Choose plan",
+                "variant": "primary",
+                "size": "sm"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Compare plans",
+                "variant": "secondary",
+                "size": "sm"
+              },
+              "children": []
+            }
+          ]
+        },
+        "inset": "lg"
       },
       "snippets": {
-        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\nconst body = (\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      $24/month, billed annually.\n    </Text>\n  </Stack>\n);\n\nconst footer = <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />;\n\n<Card heading=\"Team plan\" inset=\"lg\" footer={footer}>{body}</Card>",
-        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-card heading=\"Notification settings\" inset=\"lg\">\n    <ds-text>Choose which updates you want to hear about, and how.</ds-text>\n  </ds-card>\n</div>",
+        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\n<Card\n  heading=\"Team plan\"\n  footer={<>\n    <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />\n    <Button label=\"Compare plans\" variant=\"secondary\" size=\"sm\" />\n  </>}\n  inset=\"lg\"\n>\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      Billed annually.\n    </Text>\n  </Stack>\n</Card>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\nimport type { CardHeadingLevel, CardInset, CardSurface } from '@design-schema/lit';\n\ninterface CardArgs {\n  heading?: string | undefined;\n  headingLevel: CardHeadingLevel;\n  inset: CardInset;\n  surface: CardSurface;\n  interactive: boolean;\n  focusable: boolean;\n  children: string;\n}\n\nconst body = (args: CardArgs): TemplateResult =>\n  args.interactive\n    ? html`<ds-link href=\"#card\" label=${args.children}></ds-link>`\n    : html`<ds-text>${args.children}</ds-text>`;\n\nhtml`\n  <div style=\"inline-size: min(100%, 24rem)\">\n    <ds-card heading=\"Notification settings\" inset=\"lg\">\n      ${body({ heading: 'Notification settings', inset: 'lg', children: 'Choose which updates you want to hear about, and how.' })}\n    </ds-card>\n  </div>\n`;",
         "rn": "import { Card, Text } from '@design-schema/rn';\n\n<Card heading=\"Card title\" inset=\"lg\"><Text>Body content.</Text></Card>",
         "swift": null
       },
@@ -591,21 +677,13 @@
         "swift": null
       },
       "storyId": "card-react--inset-lg",
-      "sweep": {
-        "prop": "inset",
-        "value": "lg"
-      },
+      "sweep": null,
       "decorated": false,
       "primary": false
     },
     {
       "title": "Surface Default",
       "args": {
-        "heading": "Team plan",
-        "headingLevel": "3",
-        "inset": "md",
-        "surface": "default",
-        "interactive": false,
         "children": {
           "$element": "Stack",
           "props": {
@@ -629,24 +707,41 @@
                 "size": "sm"
               },
               "children": [
-                " $24/month, billed annually. "
+                " Billed annually. "
               ]
             }
           ]
         },
+        "heading": "Team plan",
         "footer": {
-          "$element": "Button",
-          "props": {
-            "label": "Choose plan",
-            "variant": "primary",
-            "size": "sm"
-          },
-          "children": []
-        }
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Choose plan",
+                "variant": "primary",
+                "size": "sm"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Compare plans",
+                "variant": "secondary",
+                "size": "sm"
+              },
+              "children": []
+            }
+          ]
+        },
+        "surface": "default"
       },
       "snippets": {
-        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\nconst body = (\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      $24/month, billed annually.\n    </Text>\n  </Stack>\n);\n\nconst footer = <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />;\n\n<Card heading=\"Team plan\" surface=\"default\" footer={footer}>{body}</Card>",
-        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-card heading=\"Notification settings\" surface=\"default\">\n    <ds-text>Choose which updates you want to hear about, and how.</ds-text>\n  </ds-card>\n</div>",
+        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\n<Card\n  heading=\"Team plan\"\n  footer={<>\n    <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />\n    <Button label=\"Compare plans\" variant=\"secondary\" size=\"sm\" />\n  </>}\n  surface=\"default\"\n>\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      Billed annually.\n    </Text>\n  </Stack>\n</Card>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\nimport type { CardHeadingLevel, CardInset, CardSurface } from '@design-schema/lit';\n\ninterface CardArgs {\n  heading?: string | undefined;\n  headingLevel: CardHeadingLevel;\n  inset: CardInset;\n  surface: CardSurface;\n  interactive: boolean;\n  focusable: boolean;\n  children: string;\n}\n\nconst body = (args: CardArgs): TemplateResult =>\n  args.interactive\n    ? html`<ds-link href=\"#card\" label=${args.children}></ds-link>`\n    : html`<ds-text>${args.children}</ds-text>`;\n\nhtml`\n  <div style=\"inline-size: min(100%, 24rem)\">\n    <ds-card heading=\"Notification settings\" surface=\"default\">\n      ${body({ heading: 'Notification settings', surface: 'default', children: 'Choose which updates you want to hear about, and how.' })}\n    </ds-card>\n  </div>\n`;",
         "rn": "import { Card, Text } from '@design-schema/rn';\n\n<Card heading=\"Card title\" surface=\"default\"><Text>Body content.</Text></Card>",
         "swift": null
       },
@@ -657,21 +752,13 @@
         "swift": null
       },
       "storyId": "card-react--surface-default",
-      "sweep": {
-        "prop": "surface",
-        "value": "default"
-      },
+      "sweep": null,
       "decorated": false,
       "primary": false
     },
     {
       "title": "Surface Subtle",
       "args": {
-        "heading": "Team plan",
-        "headingLevel": "3",
-        "inset": "md",
-        "surface": "subtle",
-        "interactive": false,
         "children": {
           "$element": "Stack",
           "props": {
@@ -695,24 +782,41 @@
                 "size": "sm"
               },
               "children": [
-                " $24/month, billed annually. "
+                " Billed annually. "
               ]
             }
           ]
         },
+        "heading": "Team plan",
         "footer": {
-          "$element": "Button",
-          "props": {
-            "label": "Choose plan",
-            "variant": "primary",
-            "size": "sm"
-          },
-          "children": []
-        }
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Choose plan",
+                "variant": "primary",
+                "size": "sm"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Compare plans",
+                "variant": "secondary",
+                "size": "sm"
+              },
+              "children": []
+            }
+          ]
+        },
+        "surface": "subtle"
       },
       "snippets": {
-        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\nconst body = (\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      $24/month, billed annually.\n    </Text>\n  </Stack>\n);\n\nconst footer = <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />;\n\n<Card heading=\"Team plan\" surface=\"subtle\" footer={footer}>{body}</Card>",
-        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-card heading=\"Notification settings\" surface=\"subtle\">\n    <ds-text>Choose which updates you want to hear about, and how.</ds-text>\n  </ds-card>\n</div>",
+        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\n<Card\n  heading=\"Team plan\"\n  footer={<>\n    <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />\n    <Button label=\"Compare plans\" variant=\"secondary\" size=\"sm\" />\n  </>}\n  surface=\"subtle\"\n>\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      Billed annually.\n    </Text>\n  </Stack>\n</Card>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\nimport type { CardHeadingLevel, CardInset, CardSurface } from '@design-schema/lit';\n\ninterface CardArgs {\n  heading?: string | undefined;\n  headingLevel: CardHeadingLevel;\n  inset: CardInset;\n  surface: CardSurface;\n  interactive: boolean;\n  focusable: boolean;\n  children: string;\n}\n\nconst body = (args: CardArgs): TemplateResult =>\n  args.interactive\n    ? html`<ds-link href=\"#card\" label=${args.children}></ds-link>`\n    : html`<ds-text>${args.children}</ds-text>`;\n\nhtml`\n  <div style=\"inline-size: min(100%, 24rem)\">\n    <ds-card heading=\"Notification settings\" surface=\"subtle\">\n      ${body({ heading: 'Notification settings', surface: 'subtle', children: 'Choose which updates you want to hear about, and how.' })}\n    </ds-card>\n  </div>\n`;",
         "rn": "import { Card, Text } from '@design-schema/rn';\n\n<Card heading=\"Card title\" surface=\"subtle\"><Text>Body content.</Text></Card>",
         "swift": null
       },
@@ -723,74 +827,13 @@
         "swift": null
       },
       "storyId": "card-react--surface-subtle",
-      "sweep": {
-        "prop": "surface",
-        "value": "subtle"
-      },
+      "sweep": null,
       "decorated": false,
       "primary": false
     },
     {
-      "title": "Without Heading",
-      "args": {
-        "headingLevel": "3",
-        "inset": "md",
-        "surface": "default",
-        "interactive": false,
-        "children": {
-          "$element": "Stack",
-          "props": {
-            "gap": "tight"
-          },
-          "children": [
-            {
-              "$element": "Text",
-              "props": {
-                "element": "p"
-              },
-              "children": [
-                "Unlimited projects, priority support and advanced analytics for growing teams."
-              ]
-            },
-            {
-              "$element": "Text",
-              "props": {
-                "element": "p",
-                "tone": "muted",
-                "size": "sm"
-              },
-              "children": [
-                " $24/month, billed annually. "
-              ]
-            }
-          ]
-        }
-      },
-      "snippets": {
-        "react": "import { Card, Stack, Text } from '@design-schema/react';\n\nconst body = (\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      $24/month, billed annually.\n    </Text>\n  </Stack>\n);\n\n<Card>{body}</Card>",
-        "lit": null,
-        "rn": null,
-        "swift": null
-      },
-      "stories": {
-        "react": "WithoutHeading",
-        "lit": null,
-        "rn": null,
-        "swift": null
-      },
-      "storyId": "card-react--without-heading",
-      "sweep": null,
-      "decorated": false,
-      "primary": true
-    },
-    {
       "title": "With Header Actions",
       "args": {
-        "heading": "Team plan",
-        "headingLevel": "3",
-        "inset": "md",
-        "surface": "default",
-        "interactive": false,
         "children": {
           "$element": "Stack",
           "props": {
@@ -814,34 +857,48 @@
                 "size": "sm"
               },
               "children": [
-                " $24/month, billed annually. "
+                " Billed annually. "
               ]
             }
           ]
         },
+        "heading": "Team plan",
         "footer": {
-          "$element": "Button",
-          "props": {
-            "label": "Choose plan",
-            "variant": "primary",
-            "size": "sm"
-          },
-          "children": []
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Choose plan",
+                "variant": "primary",
+                "size": "sm"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Compare plans",
+                "variant": "secondary",
+                "size": "sm"
+              },
+              "children": []
+            }
+          ]
         },
         "headerActions": {
-          "$element": "Button",
+          "$element": "Link",
           "props": {
-            "label": "Dismiss",
-            "variant": "ghost",
-            "size": "sm",
-            "iconOnly": true
+            "href": "#",
+            "label": "Details"
           },
           "children": []
         }
       },
       "snippets": {
-        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\nconst body = (\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      $24/month, billed annually.\n    </Text>\n  </Stack>\n);\n\nconst footer = <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />;\n\n<Card\n  heading=\"Team plan\"\n  footer={footer}\n  headerActions={<Button label=\"Dismiss\" variant=\"ghost\" size=\"sm\" iconOnly />}\n>\n  {body}\n</Card>",
-        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-card heading=\"Notification settings\">\n    <ds-link slot=\"header-actions\" href=\"#details\" label=\"Details\"></ds-link>\n    <ds-button slot=\"header-actions\" variant=\"ghost\" size=\"sm\" icon-only label=\"More options\">\n      <svg slot=\"leading-icon\" aria-hidden=\"true\" focusable=\"false\" viewBox=\"0 0 16 16\" width=\"1em\" height=\"1em\" fill=\"currentColor\">\n        <circle cx=\"3\" cy=\"8\" r=\"1.5\" />\n        <circle cx=\"8\" cy=\"8\" r=\"1.5\" />\n        <circle cx=\"13\" cy=\"8\" r=\"1.5\" />\n      </svg>\n    </ds-button>\n    <ds-text>Choose which updates you want to hear about, and how.</ds-text>\n  </ds-card>\n</div>",
+        "react": "import { Card, Stack, Text, Button, Link } from '@design-schema/react';\n\n<Card\n  heading=\"Team plan\"\n  footer={<>\n    <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />\n    <Button label=\"Compare plans\" variant=\"secondary\" size=\"sm\" />\n  </>}\n  headerActions={<Link href=\"#\" label=\"Details\" />}\n>\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      Billed annually.\n    </Text>\n  </Stack>\n</Card>",
+        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-card heading=\"Notification settings\">\n    <ds-link slot=\"header-actions\" href=\"#details\" label=\"Details\"></ds-link>\n    <ds-button slot=\"header-actions\" variant=\"ghost\" size=\"sm\" icon-only label=\"More options\">\n      <ds-icon slot=\"leading-icon\" name=\"ellipsis\"></ds-icon>\n    </ds-button>\n    <ds-text>Choose which updates you want to hear about, and how.</ds-text>\n  </ds-card>\n</div>",
         "rn": "import { Button, Card, Text } from '@design-schema/rn';\n\n<Card\n  heading=\"Card title\"\n  headerActions={<Button label=\"Edit\" variant=\"ghost\" size=\"sm\" />}\n>\n  <Text>Body content.</Text>\n</Card>",
         "swift": null
       },
@@ -854,34 +911,32 @@
       "storyId": "card-react--with-header-actions",
       "sweep": null,
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Interactive",
       "args": {
-        "headingLevel": "3",
-        "inset": "md",
-        "surface": "default",
-        "interactive": true,
         "children": {
           "$element": "Link",
           "props": {
             "href": "#",
-            "label": "View plan details"
+            "label": "View the September invoice"
           },
           "children": []
-        }
+        },
+        "heading": "September invoice",
+        "interactive": true
       },
       "snippets": {
-        "react": "import { Card, Link } from '@design-schema/react';\n\n<Card interactive><Link href=\"#\" label=\"View plan details\" /></Card>",
-        "lit": null,
-        "rn": "import { Card, Link, Text } from '@design-schema/rn';\n\n<Card heading=\"Growth plan\" interactive>\n  <>\n    <Text>10 seats, unlimited projects, priority support.</Text>\n    <Link href=\"/plans/growth\" label=\"View plan\" />\n  </>\n</Card>",
+        "react": "import { Card, Link } from '@design-schema/react';\n\n<Card heading=\"September invoice\" interactive><Link href=\"#\" label=\"View the September invoice\" /></Card>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\nimport type { CardHeadingLevel, CardInset, CardSurface } from '@design-schema/lit';\n\ninterface CardArgs {\n  heading?: string | undefined;\n  headingLevel: CardHeadingLevel;\n  inset: CardInset;\n  surface: CardSurface;\n  interactive: boolean;\n  focusable: boolean;\n  children: string;\n}\n\nconst body = (args: CardArgs): TemplateResult =>\n  args.interactive\n    ? html`<ds-link href=\"#card\" label=${args.children}></ds-link>`\n    : html`<ds-text>${args.children}</ds-text>`;\n\nhtml`\n  <div style=\"inline-size: min(100%, 24rem)\">\n    <ds-card heading=\"Notification settings\" interactive>\n      ${body({ heading: 'Notification settings', interactive: true, children: 'Manage plan' })}\n    </ds-card>\n  </div>\n`;",
+        "rn": null,
         "swift": null
       },
       "stories": {
         "react": "Interactive",
-        "lit": null,
-        "rn": "Interactive",
+        "lit": "Interactive",
+        "rn": null,
         "swift": null
       },
       "storyId": "card-react--interactive",
@@ -890,74 +945,243 @@
         "value": true
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
-      "title": "Focusable",
+      "title": "Interactive Subtle",
       "args": {
-        "heading": "Team plan",
-        "headingLevel": "3",
-        "inset": "md",
-        "surface": "default",
-        "interactive": false,
         "children": {
-          "$element": "Stack",
+          "$element": "Link",
           "props": {
-            "gap": "tight"
-          },
-          "children": [
-            {
-              "$element": "Text",
-              "props": {
-                "element": "p"
-              },
-              "children": [
-                "Unlimited projects, priority support and advanced analytics for growing teams."
-              ]
-            },
-            {
-              "$element": "Text",
-              "props": {
-                "element": "p",
-                "tone": "muted",
-                "size": "sm"
-              },
-              "children": [
-                " $24/month, billed annually. "
-              ]
-            }
-          ]
-        },
-        "footer": {
-          "$element": "Button",
-          "props": {
-            "label": "Choose plan",
-            "variant": "primary",
-            "size": "sm"
+            "href": "#",
+            "label": "View the September invoice"
           },
           "children": []
         },
-        "focusable": true
+        "heading": "September invoice",
+        "interactive": true,
+        "surface": "subtle"
       },
       "snippets": {
-        "react": "import { Card, Stack, Text, Button } from '@design-schema/react';\n\nconst body = (\n  <Stack gap=\"tight\">\n    <Text element=\"p\">Unlimited projects, priority support and advanced analytics for growing teams.</Text>\n    <Text element=\"p\" tone=\"muted\" size=\"sm\">\n      $24/month, billed annually.\n    </Text>\n  </Stack>\n);\n\nconst footer = <Button label=\"Choose plan\" variant=\"primary\" size=\"sm\" />;\n\n<Card heading=\"Team plan\" footer={footer} focusable>{body}</Card>",
+        "react": "import { Card, Link } from '@design-schema/react';\n\n<Card heading=\"September invoice\" interactive surface=\"subtle\"><Link href=\"#\" label=\"View the September invoice\" /></Card>",
         "lit": null,
-        "rn": "import { Card, Text } from '@design-schema/rn';\n\n<Card heading=\"Card title\" focusable><Text>Body content.</Text></Card>",
+        "rn": null,
         "swift": null
       },
       "stories": {
-        "react": "Focusable",
+        "react": "InteractiveSubtle",
         "lit": null,
-        "rn": "Focusable",
+        "rn": null,
         "swift": null
       },
-      "storyId": "card-react--focusable",
+      "storyId": "card-react--interactive-subtle",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Interactive With Text",
+      "args": {
+        "children": [
+          {
+            "$element": "Text",
+            "props": {
+              "key": "summary",
+              "element": "p",
+              "tone": "muted"
+            },
+            "children": [
+              " Due 30 September. "
+            ]
+          },
+          {
+            "$element": "Link",
+            "props": {
+              "key": "link",
+              "href": "#",
+              "label": "View the September invoice"
+            },
+            "children": []
+          }
+        ],
+        "heading": "September invoice",
+        "interactive": true,
+        "headerActions": {
+          "$element": "Button",
+          "props": {
+            "label": "Download",
+            "variant": "ghost",
+            "size": "sm"
+          },
+          "children": []
+        }
+      },
+      "snippets": {
+        "react": "import { Card, Text, Button, Link } from '@design-schema/react';\n\n<Card\n  heading=\"September invoice\"\n  interactive\n  headerActions={<Button label=\"Download\" variant=\"ghost\" size=\"sm\" />}\n>\n  {[\n    <Text key=\"summary\" element=\"p\" tone=\"muted\">\n      Due 30 September.\n    </Text>,\n    <Link key=\"link\" href=\"#\" label=\"View the September invoice\" />,\n  ]}\n</Card>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "InteractiveWithText",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "card-react--interactive-with-text",
+      "sweep": {
+        "prop": "interactive",
+        "value": true
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Interactive Disabled Button",
+      "args": {
+        "children": {
+          "$element": "Button",
+          "props": {
+            "label": "Choose plan",
+            "variant": "secondary",
+            "disabled": true
+          },
+          "children": []
+        },
+        "heading": "Archived plan",
+        "interactive": true
+      },
+      "snippets": {
+        "react": "import { Card, Button } from '@design-schema/react';\n\n<Card heading=\"Archived plan\" interactive><Button label=\"Choose plan\" variant=\"secondary\" disabled /></Card>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "InteractiveDisabledButton",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "card-react--interactive-disabled-button",
+      "sweep": {
+        "prop": "interactive",
+        "value": true
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Plan Card",
+      "args": {
+        "children": "What the plan includes",
+        "heading": "Team plan",
+        "headingLevel": "3"
+      },
+      "snippets": {
+        "react": "import { Card } from '@design-schema/react';\n\n<Card heading=\"Team plan\" headingLevel=\"3\">What the plan includes</Card>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\nimport type { CardHeadingLevel, CardInset, CardSurface } from '@design-schema/lit';\n\ninterface CardArgs {\n  heading?: string | undefined;\n  headingLevel: CardHeadingLevel;\n  inset: CardInset;\n  surface: CardSurface;\n  interactive: boolean;\n  focusable: boolean;\n  children: string;\n}\n\nconst body = (args: CardArgs): TemplateResult =>\n  args.interactive\n    ? html`<ds-link href=\"#card\" label=${args.children}></ds-link>`\n    : html`<ds-text>${args.children}</ds-text>`;\n\nhtml`\n  <div style=\"inline-size: min(100%, 24rem)\">\n    <ds-card heading=\"Team plan\" heading-level=\"3\">\n      ${body({ heading: 'Team plan', headingLevel: '3', children: 'What the plan includes' })}\n    </ds-card>\n  </div>\n`;",
+        "rn": "import { Card } from '@design-schema/rn';\n\n<Card heading=\"Team plan\" headingLevel=\"3\">What the plan includes</Card>",
+        "swift": null
+      },
+      "stories": {
+        "react": "PlanCard",
+        "lit": "PlanCard",
+        "rn": "PlanCard",
+        "swift": null
+      },
+      "storyId": "card-react--plan-card",
+      "sweep": {
+        "prop": "headingLevel",
+        "value": "3"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Dense Grid Card",
+      "args": {
+        "children": "A search result",
+        "inset": "sm",
+        "surface": "subtle"
+      },
+      "snippets": {
+        "react": "import { Card } from '@design-schema/react';\n\n<Card inset=\"sm\" surface=\"subtle\">A search result</Card>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\nimport type { CardHeadingLevel, CardInset, CardSurface } from '@design-schema/lit';\n\ninterface CardArgs {\n  heading?: string | undefined;\n  headingLevel: CardHeadingLevel;\n  inset: CardInset;\n  surface: CardSurface;\n  interactive: boolean;\n  focusable: boolean;\n  children: string;\n}\n\nconst body = (args: CardArgs): TemplateResult =>\n  args.interactive\n    ? html`<ds-link href=\"#card\" label=${args.children}></ds-link>`\n    : html`<ds-text>${args.children}</ds-text>`;\n\nhtml`\n  <div style=\"inline-size: min(100%, 24rem)\">\n    <ds-card heading=\"Notification settings\" inset=\"sm\" surface=\"subtle\">\n      ${body({ heading: 'Notification settings', inset: 'sm', surface: 'subtle', children: 'A search result' })}\n    </ds-card>\n  </div>\n`;",
+        "rn": "import { Card } from '@design-schema/rn';\n\n<Card inset=\"sm\" surface=\"subtle\">A search result</Card>",
+        "swift": null
+      },
+      "stories": {
+        "react": "DenseGridCard",
+        "lit": "DenseGridCard",
+        "rn": "DenseGridCard",
+        "swift": null
+      },
+      "storyId": "card-react--dense-grid-card",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Whole Card Is A Link",
+      "args": {
+        "children": {
+          "$element": "Link",
+          "props": {
+            "href": "#",
+            "label": "A Link to the invoice"
+          },
+          "children": []
+        },
+        "heading": "September invoice",
+        "interactive": true
+      },
+      "snippets": {
+        "react": "import { Card, Link } from '@design-schema/react';\n\n<Card heading=\"September invoice\" interactive><Link href=\"#\" label=\"A Link to the invoice\" /></Card>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\nimport type { CardHeadingLevel, CardInset, CardSurface } from '@design-schema/lit';\n\ninterface CardArgs {\n  heading?: string | undefined;\n  headingLevel: CardHeadingLevel;\n  inset: CardInset;\n  surface: CardSurface;\n  interactive: boolean;\n  focusable: boolean;\n  children: string;\n}\n\nconst body = (args: CardArgs): TemplateResult =>\n  args.interactive\n    ? html`<ds-link href=\"#card\" label=${args.children}></ds-link>`\n    : html`<ds-text>${args.children}</ds-text>`;\n\nhtml`\n  <div style=\"inline-size: min(100%, 24rem)\">\n    <ds-card heading=\"September invoice\" interactive>\n      ${body({ heading: 'September invoice', interactive: true, children: 'A Link to the invoice' })}\n    </ds-card>\n  </div>\n`;",
+        "rn": "import { Card, Link } from '@design-schema/rn';\n\n<Card heading=\"September invoice\" interactive><Link href=\"#\" label=\"A Link to the invoice\" /></Card>",
+        "swift": null
+      },
+      "stories": {
+        "react": "WholeCardIsALink",
+        "lit": "WholeCardIsALink",
+        "rn": "WholeCardIsALink",
+        "swift": null
+      },
+      "storyId": "card-react--whole-card-is-a-link",
+      "sweep": {
+        "prop": "interactive",
+        "value": true
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Card Focused By A Feed",
+      "args": {
+        "children": "The comment body",
+        "heading": "New comment",
+        "focusable": true
+      },
+      "snippets": {
+        "react": "import { Card } from '@design-schema/react';\n\n<Card heading=\"New comment\" focusable>The comment body</Card>",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\nimport type { CardHeadingLevel, CardInset, CardSurface } from '@design-schema/lit';\n\ninterface CardArgs {\n  heading?: string | undefined;\n  headingLevel: CardHeadingLevel;\n  inset: CardInset;\n  surface: CardSurface;\n  interactive: boolean;\n  focusable: boolean;\n  children: string;\n}\n\nconst body = (args: CardArgs): TemplateResult =>\n  args.interactive\n    ? html`<ds-link href=\"#card\" label=${args.children}></ds-link>`\n    : html`<ds-text>${args.children}</ds-text>`;\n\nhtml`\n  <div style=\"inline-size: min(100%, 24rem)\">\n    <ds-card heading=\"New comment\" focusable>\n      ${body({ heading: 'New comment', focusable: true, children: 'The comment body' })}\n    </ds-card>\n  </div>\n`;",
+        "rn": "import { Card } from '@design-schema/rn';\n\n<Card heading=\"New comment\" focusable>The comment body</Card>",
+        "swift": null
+      },
+      "stories": {
+        "react": "CardFocusedByAFeed",
+        "lit": "CardFocusedByAFeed",
+        "rn": "CardFocusedByAFeed",
+        "swift": null
+      },
+      "storyId": "card-react--card-focused-by-a-feed",
       "sweep": {
         "prop": "focusable",
         "value": true
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     }
   ]
 }

@@ -1,9 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { CtaButton } from './CtaButton';
+import { Icon } from './Icon';
 
 const meta: Meta<typeof CtaButton> = {
   title: 'CtaButton/React',
   component: CtaButton,
+  tags: ['autodocs'],
   args: {
     label: 'Save changes',
     emphasis: 'primary',
@@ -42,17 +44,36 @@ export const TypeSubmit: Story = { args: { type: 'submit', label: 'Sign in' } };
 
 /* notable states */
 export const Disabled: Story = { args: { disabled: true } };
+
 export const Loading: Story = { args: { loading: true, label: 'Saving' } };
+
+export const LoadingIconOnly: Story = {
+  args: { loading: true, iconOnly: true, label: 'Close', emphasis: 'ghost', leadingIcon: <Icon name="close" inline /> },
+};
+
+export const WithIcons: Story = {
+  args: {
+    label: 'Add item',
+    leadingIcon: <Icon name="plus" inline />,
+    trailingIcon: <Icon name="chevron-right" inline />,
+  },
+};
+
 export const IconOnly: Story = {
   args: {
     iconOnly: true,
     label: 'Close',
     emphasis: 'ghost',
-    leadingIcon: (
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M3 3l10 10M13 3L3 13" />
-      </svg>
-    ),
+    leadingIcon: <Icon name="close" inline />,
+  },
+};
+
+export const Expanded: Story = {
+  args: {
+    label: 'Actions',
+    emphasis: 'secondary',
+    expanded: true,
+    trailingIcon: <Icon name="chevron-down" inline />,
   },
 };
 
@@ -68,6 +89,26 @@ export const Inverse: Story = {
   ],
 };
 
-export const Tracked: Story = {
-  args: { track: 'signup', label: 'Sign up' },
+export const Tracked: Story = { args: { track: 'signup', label: 'Sign up' } };
+
+/* examples from the doc */
+
+/** The single most important action in a view, labelled with the outcome. */
+export const PrimarySave: Story = { args: { label: 'Save changes', emphasis: 'primary' } };
+
+/** A destructive, hard-to-undo action, which is the only use of the danger emphasis. */
+export const DestructiveConfirm: Story = { args: { label: 'Delete file', emphasis: 'danger' } };
+
+/** A low-emphasis icon-only control in dense UI, whose label says what it does rather than what the icon depicts. */
+export const IconOnlyInAToolbar: Story = {
+  args: {
+    label: 'Close',
+    iconOnly: true,
+    leadingIcon: <Icon name="close" inline />,
+    emphasis: 'ghost',
+    size: 'sm',
+  },
 };
+
+/** The submit button of a form while the request is in flight - busy, and ignoring repeat activation. */
+export const PendingSubmit: Story = { args: { label: 'Create account', type: 'submit', loading: true } };

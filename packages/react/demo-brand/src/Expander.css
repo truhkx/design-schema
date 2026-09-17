@@ -74,19 +74,14 @@
   opacity: var(--demo-disclosure-disabled-opacity);
 }
 
-/* icon: a chevron, 1em, pointing right when closed and down when open. */
+/* icon: the triggerIcon part wraps the system Icon (chevron-right, inline), so the glyph follows the trigger's font
+   size; the Icon draws in currentColor, which this wrapper sets. Pointing right when closed and down when open. */
 .demo-expander__icon {
   display: inline-flex;
+  align-items: center;
   flex: 0 0 auto;
-  inline-size: 1em;
-  block-size: 1em;
   color: var(--demo-disclosure-icon);
   line-height: 0;
-}
-
-.demo-expander__icon svg {
-  inline-size: 100%;
-  block-size: 100%;
 }
 
 [dir='rtl'] .demo-expander__icon {
@@ -97,10 +92,19 @@
   transform: rotate(90deg);
 }
 
+/* Mirrored and open: rotating the mirrored chevron the other way keeps it pointing down. */
+[dir='rtl'] .demo-expander__trigger[aria-expanded='true'] .demo-expander__icon {
+  transform: scaleX(-1) rotate(90deg);
+}
+
 /* transition: chevron rotation only; the panel does not animate. Instant under reduced motion. */
-@media (prefers-reduced-motion: no-preference) {
+.demo-expander__icon {
+  transition: transform var(--demo-disclosure-transition) var(--motion-easing-standard);
+}
+
+@media (prefers-reduced-motion: reduce) {
   .demo-expander__icon {
-    transition: transform var(--demo-disclosure-transition) var(--motion-easing-standard);
+    transition: none;
   }
 }
 

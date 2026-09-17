@@ -10,7 +10,7 @@
     {
       "title": "Default",
       "args": {
-        "open": false,
+        "open": true,
         "heading": "Filters",
         "hideHeading": false,
         "children": {
@@ -44,14 +44,14 @@
         "dragToDismiss": true
       },
       "snippets": {
-        "react": "import { useState } from 'react';\nimport { BottomSheet, type BottomSheetProps, Button, Input, Stack, Text } from '@design-schema/react';\n\nfunction BottomSheetHarness({ children, footer, onClose, ...rest }: Partial<BottomSheetProps>) {\n  const [open, setOpen] = useState(rest.open ?? false);\n\n  return (\n    <>\n      <Button label=\"Filters\" onClick={() => setOpen(true)} />\n      <BottomSheet\n        heading=\"Filters\"\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n        footer={\n          footer === undefined ? (\n            <>\n              <Button label=\"Apply\" variant=\"primary\" size=\"sm\" onClick={() => setOpen(false)} />\n              <Button label=\"Cancel\" variant=\"secondary\" size=\"sm\" onClick={() => setOpen(false)} />\n            </>\n          ) : (\n            footer || undefined\n          )\n        }\n      >\n        {children}\n      </BottomSheet>\n    </>\n  );\n}\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Input label=\"Days\" name=\"days\" defaultValue=\"30\" />\n  </Stack>\n);\n\n<BottomSheetHarness heading=\"Filters\">{defaultBody}</BottomSheetHarness>",
-        "lit": "<ds-bottom-sheet open heading=\"Filters\">\n  <ds-text>Narrow results by price, distance and rating.</ds-text>\n  <ds-button slot=\"footer\" variant=\"primary\" size=\"sm\" label=\"Apply filters\"></ds-button>\n  <ds-button slot=\"footer\" variant=\"ghost\" size=\"sm\" label=\"Reset\"></ds-button>\n</ds-bottom-sheet>",
+        "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { BottomSheet, type BottomSheetProps, Button, Input, Stack, Text } from '@design-schema/react';\n\nfunction BottomSheetHarness({ open: openArg, onClose, ...args }: BottomSheetProps): ReactElement {\n  const [open, setOpen] = useState(openArg);\n  useEffect(() => setOpen(openArg), [openArg]);\n\n  return (\n    <>\n      <Button label={args.heading} onClick={() => setOpen(true)} />\n      <BottomSheet\n        {...args}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          // A non-dismissible sheet reports Escape; this consumer keeps it open until a footer action.\n          if (reason === 'escape' && args.dismissible === false) return;\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\n<BottomSheetHarness open heading=\"Filters\"><Stack gap=\"normal\">\n<Text size=\"sm\">Show items updated in the last:</Text>\n<Input label=\"Days\" name=\"days\" defaultValue=\"30\" />\n</Stack></BottomSheetHarness>",
+        "lit": null,
         "rn": "import { BottomSheet, Button, Text } from '@design-schema/rn';\n\n<BottomSheet\n  open\n  heading=\"Filters\"\n  footer={<>\n    <Button label=\"Apply\" variant=\"primary\" />\n    <Button label=\"Reset\" variant=\"secondary\" />\n  </>}\n>\n  <Text>Narrow results by price, distance and rating.</Text>\n</BottomSheet>",
         "swift": null
       },
       "stories": {
         "react": "Default",
-        "lit": "Default",
+        "lit": null,
         "rn": "Default",
         "swift": null
       },
@@ -62,366 +62,6 @@
     },
     {
       "title": "Height Content",
-      "args": {
-        "open": false,
-        "heading": "Filters",
-        "hideHeading": false,
-        "children": {
-          "$element": "Stack",
-          "props": {
-            "gap": "normal"
-          },
-          "children": [
-            {
-              "$element": "Text",
-              "props": {
-                "size": "sm"
-              },
-              "children": [
-                "Show items updated in the last:"
-              ]
-            },
-            {
-              "$element": "Input",
-              "props": {
-                "label": "Days",
-                "name": "days",
-                "defaultValue": "30"
-              },
-              "children": []
-            }
-          ]
-        },
-        "height": "content",
-        "dismissible": true,
-        "dragToDismiss": true
-      },
-      "snippets": {
-        "react": "import { useState } from 'react';\nimport { BottomSheet, type BottomSheetProps, Button, Input, Stack, Text } from '@design-schema/react';\n\nfunction BottomSheetHarness({ children, footer, onClose, ...rest }: Partial<BottomSheetProps>) {\n  const [open, setOpen] = useState(rest.open ?? false);\n\n  return (\n    <>\n      <Button label=\"Filters\" onClick={() => setOpen(true)} />\n      <BottomSheet\n        heading=\"Filters\"\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n        footer={\n          footer === undefined ? (\n            <>\n              <Button label=\"Apply\" variant=\"primary\" size=\"sm\" onClick={() => setOpen(false)} />\n              <Button label=\"Cancel\" variant=\"secondary\" size=\"sm\" onClick={() => setOpen(false)} />\n            </>\n          ) : (\n            footer || undefined\n          )\n        }\n      >\n        {children}\n      </BottomSheet>\n    </>\n  );\n}\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Input label=\"Days\" name=\"days\" defaultValue=\"30\" />\n  </Stack>\n);\n\n<BottomSheetHarness heading=\"Filters\" height=\"content\">{defaultBody}</BottomSheetHarness>",
-        "lit": "<ds-bottom-sheet open heading=\"Filters\" height=\"content\">\n  <ds-text>Narrow results by price, distance and rating.</ds-text>\n  <ds-button slot=\"footer\" variant=\"primary\" size=\"sm\" label=\"Apply filters\"></ds-button>\n  <ds-button slot=\"footer\" variant=\"ghost\" size=\"sm\" label=\"Reset\"></ds-button>\n</ds-bottom-sheet>",
-        "rn": "import { BottomSheet, Button, Text } from '@design-schema/rn';\n\n<BottomSheet\n  open\n  heading=\"Filters\"\n  footer={<>\n    <Button label=\"Apply\" variant=\"primary\" />\n    <Button label=\"Reset\" variant=\"secondary\" />\n  </>}\n  height=\"content\"\n>\n  <Text>Narrow results by price, distance and rating.</Text>\n</BottomSheet>",
-        "swift": null
-      },
-      "stories": {
-        "react": "HeightContent",
-        "lit": "HeightContent",
-        "rn": "HeightContent",
-        "swift": null
-      },
-      "storyId": "bottomsheet-react--height-content",
-      "sweep": {
-        "prop": "height",
-        "value": "content"
-      },
-      "decorated": false,
-      "primary": false
-    },
-    {
-      "title": "Height Half",
-      "args": {
-        "open": false,
-        "heading": "Filters",
-        "hideHeading": false,
-        "children": {
-          "$element": "Stack",
-          "props": {
-            "gap": "normal"
-          },
-          "children": [
-            {
-              "$element": "Text",
-              "props": {
-                "size": "sm"
-              },
-              "children": [
-                "Show items updated in the last:"
-              ]
-            },
-            {
-              "$element": "Input",
-              "props": {
-                "label": "Days",
-                "name": "days",
-                "defaultValue": "30"
-              },
-              "children": []
-            }
-          ]
-        },
-        "height": "half",
-        "dismissible": true,
-        "dragToDismiss": true
-      },
-      "snippets": {
-        "react": "import { useState } from 'react';\nimport { BottomSheet, type BottomSheetProps, Button, Input, Stack, Text } from '@design-schema/react';\n\nfunction BottomSheetHarness({ children, footer, onClose, ...rest }: Partial<BottomSheetProps>) {\n  const [open, setOpen] = useState(rest.open ?? false);\n\n  return (\n    <>\n      <Button label=\"Filters\" onClick={() => setOpen(true)} />\n      <BottomSheet\n        heading=\"Filters\"\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n        footer={\n          footer === undefined ? (\n            <>\n              <Button label=\"Apply\" variant=\"primary\" size=\"sm\" onClick={() => setOpen(false)} />\n              <Button label=\"Cancel\" variant=\"secondary\" size=\"sm\" onClick={() => setOpen(false)} />\n            </>\n          ) : (\n            footer || undefined\n          )\n        }\n      >\n        {children}\n      </BottomSheet>\n    </>\n  );\n}\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Input label=\"Days\" name=\"days\" defaultValue=\"30\" />\n  </Stack>\n);\n\n<BottomSheetHarness heading=\"Filters\" height=\"half\">{defaultBody}</BottomSheetHarness>",
-        "lit": "<ds-bottom-sheet open heading=\"Filters\" height=\"half\">\n  <ds-text>Narrow results by price, distance and rating.</ds-text>\n  <ds-button slot=\"footer\" variant=\"primary\" size=\"sm\" label=\"Apply filters\"></ds-button>\n  <ds-button slot=\"footer\" variant=\"ghost\" size=\"sm\" label=\"Reset\"></ds-button>\n</ds-bottom-sheet>",
-        "rn": "import { BottomSheet, Button, Text } from '@design-schema/rn';\n\n<BottomSheet\n  open\n  heading=\"Filters\"\n  footer={<>\n    <Button label=\"Apply\" variant=\"primary\" />\n    <Button label=\"Reset\" variant=\"secondary\" />\n  </>}\n  height=\"half\"\n>\n  <Text>Narrow results by price, distance and rating.</Text>\n</BottomSheet>",
-        "swift": null
-      },
-      "stories": {
-        "react": "HeightHalf",
-        "lit": "HeightHalf",
-        "rn": "HeightHalf",
-        "swift": null
-      },
-      "storyId": "bottomsheet-react--height-half",
-      "sweep": {
-        "prop": "height",
-        "value": "half"
-      },
-      "decorated": false,
-      "primary": false
-    },
-    {
-      "title": "Height Full",
-      "args": {
-        "open": false,
-        "heading": "Filters",
-        "hideHeading": false,
-        "children": {
-          "$element": "Stack",
-          "props": {
-            "gap": "normal"
-          },
-          "children": [
-            {
-              "$element": "Text",
-              "props": {
-                "size": "sm"
-              },
-              "children": [
-                "Show items updated in the last:"
-              ]
-            },
-            {
-              "$element": "Input",
-              "props": {
-                "label": "Days",
-                "name": "days",
-                "defaultValue": "30"
-              },
-              "children": []
-            }
-          ]
-        },
-        "height": "full",
-        "dismissible": true,
-        "dragToDismiss": true
-      },
-      "snippets": {
-        "react": "import { useState } from 'react';\nimport { BottomSheet, type BottomSheetProps, Button, Input, Stack, Text } from '@design-schema/react';\n\nfunction BottomSheetHarness({ children, footer, onClose, ...rest }: Partial<BottomSheetProps>) {\n  const [open, setOpen] = useState(rest.open ?? false);\n\n  return (\n    <>\n      <Button label=\"Filters\" onClick={() => setOpen(true)} />\n      <BottomSheet\n        heading=\"Filters\"\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n        footer={\n          footer === undefined ? (\n            <>\n              <Button label=\"Apply\" variant=\"primary\" size=\"sm\" onClick={() => setOpen(false)} />\n              <Button label=\"Cancel\" variant=\"secondary\" size=\"sm\" onClick={() => setOpen(false)} />\n            </>\n          ) : (\n            footer || undefined\n          )\n        }\n      >\n        {children}\n      </BottomSheet>\n    </>\n  );\n}\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Input label=\"Days\" name=\"days\" defaultValue=\"30\" />\n  </Stack>\n);\n\n<BottomSheetHarness heading=\"Filters\" height=\"full\">{defaultBody}</BottomSheetHarness>",
-        "lit": "<ds-bottom-sheet open heading=\"Filters\" height=\"full\">\n  <ds-text>Narrow results by price, distance and rating.</ds-text>\n  <ds-button slot=\"footer\" variant=\"primary\" size=\"sm\" label=\"Apply filters\"></ds-button>\n  <ds-button slot=\"footer\" variant=\"ghost\" size=\"sm\" label=\"Reset\"></ds-button>\n</ds-bottom-sheet>",
-        "rn": "import { BottomSheet, Button, Text } from '@design-schema/rn';\n\n<BottomSheet\n  open\n  heading=\"Filters\"\n  footer={<>\n    <Button label=\"Apply\" variant=\"primary\" />\n    <Button label=\"Reset\" variant=\"secondary\" />\n  </>}\n  height=\"full\"\n>\n  <Text>Narrow results by price, distance and rating.</Text>\n</BottomSheet>",
-        "swift": null
-      },
-      "stories": {
-        "react": "HeightFull",
-        "lit": "HeightFull",
-        "rn": "HeightFull",
-        "swift": null
-      },
-      "storyId": "bottomsheet-react--height-full",
-      "sweep": {
-        "prop": "height",
-        "value": "full"
-      },
-      "decorated": false,
-      "primary": false
-    },
-    {
-      "title": "Hide Heading True",
-      "args": {
-        "open": false,
-        "heading": "Share",
-        "hideHeading": true,
-        "children": {
-          "$element": "Stack",
-          "props": {
-            "direction": "horizontal",
-            "gap": "normal"
-          },
-          "children": [
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Copy link",
-                "variant": "secondary",
-                "size": "sm"
-              },
-              "children": []
-            },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Email",
-                "variant": "secondary",
-                "size": "sm"
-              },
-              "children": []
-            },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Message",
-                "variant": "secondary",
-                "size": "sm"
-              },
-              "children": []
-            }
-          ]
-        },
-        "height": "content",
-        "dismissible": true,
-        "dragToDismiss": true,
-        "footer": null
-      },
-      "snippets": {
-        "react": "import { useState } from 'react';\nimport { BottomSheet, type BottomSheetProps, Button, Stack } from '@design-schema/react';\n\nfunction BottomSheetHarness({ children, footer, onClose, ...rest }: Partial<BottomSheetProps>) {\n  const [open, setOpen] = useState(rest.open ?? false);\n\n  return (\n    <>\n      <Button label=\"Filters\" onClick={() => setOpen(true)} />\n      <BottomSheet\n        heading=\"Filters\"\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n        footer={\n          footer === undefined ? (\n            <>\n              <Button label=\"Apply\" variant=\"primary\" size=\"sm\" onClick={() => setOpen(false)} />\n              <Button label=\"Cancel\" variant=\"secondary\" size=\"sm\" onClick={() => setOpen(false)} />\n            </>\n          ) : (\n            footer || undefined\n          )\n        }\n      >\n        {children}\n      </BottomSheet>\n    </>\n  );\n}\n\n<BottomSheetHarness heading=\"Share\" hideHeading footer={null}><Stack direction=\"horizontal\" gap=\"normal\">\n<Button label=\"Copy link\" variant=\"secondary\" size=\"sm\" />\n<Button label=\"Email\" variant=\"secondary\" size=\"sm\" />\n<Button label=\"Message\" variant=\"secondary\" size=\"sm\" />\n</Stack></BottomSheetHarness>",
-        "lit": "<ds-bottom-sheet open heading=\"Share\" hide-heading>\n  <ds-text>Share this listing with a link.</ds-text>\n</ds-bottom-sheet>",
-        "rn": "import { BottomSheet, Button, Stack, Text } from '@design-schema/rn';\n\n<BottomSheet\n  open\n  heading=\"Share to\"\n  footer={<>\n    <Button label=\"Apply\" variant=\"primary\" />\n    <Button label=\"Reset\" variant=\"secondary\" />\n  </>}\n  hideHeading\n>\n  <Stack direction=\"horizontal\" gap=\"loose\" justify=\"center\">\n    <Text>Messages</Text>\n    <Text>Mail</Text>\n    <Text>Copy link</Text>\n  </Stack>\n</BottomSheet>",
-        "swift": null
-      },
-      "stories": {
-        "react": "HideHeadingTrue",
-        "lit": "HideHeading",
-        "rn": "HideHeading",
-        "swift": null
-      },
-      "storyId": "bottomsheet-react--hide-heading-true",
-      "sweep": {
-        "prop": "hideHeading",
-        "value": true
-      },
-      "decorated": false,
-      "primary": true
-    },
-    {
-      "title": "Not Dismissible",
-      "args": {
-        "open": false,
-        "heading": "Filters",
-        "hideHeading": false,
-        "children": {
-          "$element": "Text",
-          "props": {},
-          "children": [
-            "Use the footer actions to close this sheet — the scrim, Escape reporting aside, and drag are disabled."
-          ]
-        },
-        "height": "content",
-        "dismissible": false,
-        "dragToDismiss": false
-      },
-      "snippets": {
-        "react": "import { useState } from 'react';\nimport { BottomSheet, type BottomSheetProps, Button, Text } from '@design-schema/react';\n\nfunction BottomSheetHarness({ children, footer, onClose, ...rest }: Partial<BottomSheetProps>) {\n  const [open, setOpen] = useState(rest.open ?? false);\n\n  return (\n    <>\n      <Button label=\"Filters\" onClick={() => setOpen(true)} />\n      <BottomSheet\n        heading=\"Filters\"\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n        footer={\n          footer === undefined ? (\n            <>\n              <Button label=\"Apply\" variant=\"primary\" size=\"sm\" onClick={() => setOpen(false)} />\n              <Button label=\"Cancel\" variant=\"secondary\" size=\"sm\" onClick={() => setOpen(false)} />\n            </>\n          ) : (\n            footer || undefined\n          )\n        }\n      >\n        {children}\n      </BottomSheet>\n    </>\n  );\n}\n\n<BottomSheetHarness heading=\"Filters\" dismissible={false} dragToDismiss={false}><Text>Use the footer actions to close this sheet — the scrim, Escape reporting aside, and drag are disabled.</Text></BottomSheetHarness>",
-        "lit": null,
-        "rn": "import { BottomSheet, Button, Text } from '@design-schema/rn';\n\n<BottomSheet\n  open\n  heading=\"Filters\"\n  footer={<>\n    <Button label=\"Delete account\" variant=\"danger\" />\n    <Button label=\"Keep account\" variant=\"secondary\" />\n  </>}\n  dismissible={false}\n>\n  <Text>Narrow results by price, distance and rating.</Text>\n</BottomSheet>",
-        "swift": null
-      },
-      "stories": {
-        "react": "NotDismissible",
-        "lit": null,
-        "rn": "NotDismissible",
-        "swift": null
-      },
-      "storyId": "bottomsheet-react--not-dismissible",
-      "sweep": null,
-      "decorated": false,
-      "primary": true
-    },
-    {
-      "title": "Drag To Dismiss False",
-      "args": {
-        "open": false,
-        "heading": "Filters",
-        "hideHeading": false,
-        "children": {
-          "$element": "Stack",
-          "props": {
-            "gap": "normal"
-          },
-          "children": [
-            {
-              "$element": "Text",
-              "props": {
-                "size": "sm"
-              },
-              "children": [
-                "Show items updated in the last:"
-              ]
-            },
-            {
-              "$element": "Input",
-              "props": {
-                "label": "Days",
-                "name": "days",
-                "defaultValue": "30"
-              },
-              "children": []
-            }
-          ]
-        },
-        "height": "content",
-        "dismissible": true,
-        "dragToDismiss": false
-      },
-      "snippets": {
-        "react": "import { useState } from 'react';\nimport { BottomSheet, type BottomSheetProps, Button, Input, Stack, Text } from '@design-schema/react';\n\nfunction BottomSheetHarness({ children, footer, onClose, ...rest }: Partial<BottomSheetProps>) {\n  const [open, setOpen] = useState(rest.open ?? false);\n\n  return (\n    <>\n      <Button label=\"Filters\" onClick={() => setOpen(true)} />\n      <BottomSheet\n        heading=\"Filters\"\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n        footer={\n          footer === undefined ? (\n            <>\n              <Button label=\"Apply\" variant=\"primary\" size=\"sm\" onClick={() => setOpen(false)} />\n              <Button label=\"Cancel\" variant=\"secondary\" size=\"sm\" onClick={() => setOpen(false)} />\n            </>\n          ) : (\n            footer || undefined\n          )\n        }\n      >\n        {children}\n      </BottomSheet>\n    </>\n  );\n}\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Input label=\"Days\" name=\"days\" defaultValue=\"30\" />\n  </Stack>\n);\n\n<BottomSheetHarness heading=\"Filters\" dragToDismiss={false}>{defaultBody}</BottomSheetHarness>",
-        "lit": "<ds-bottom-sheet open heading=\"Filters\">\n  <ds-text>Narrow results by price, distance and rating.</ds-text>\n  <ds-button slot=\"footer\" variant=\"primary\" size=\"sm\" label=\"Apply filters\"></ds-button>\n  <ds-button slot=\"footer\" variant=\"ghost\" size=\"sm\" label=\"Reset\"></ds-button>\n</ds-bottom-sheet>",
-        "rn": "import { BottomSheet, Button, Text } from '@design-schema/rn';\n\n<BottomSheet\n  open\n  heading=\"Filters\"\n  footer={<>\n    <Button label=\"Apply\" variant=\"primary\" />\n    <Button label=\"Reset\" variant=\"secondary\" />\n  </>}\n  dragToDismiss={false}\n>\n  <Text>Narrow results by price, distance and rating.</Text>\n</BottomSheet>",
-        "swift": null
-      },
-      "stories": {
-        "react": "DragToDismissFalse",
-        "lit": "DragToDismissFalse",
-        "rn": "DragToDismissFalse",
-        "swift": null
-      },
-      "storyId": "bottomsheet-react--drag-to-dismiss-false",
-      "sweep": {
-        "prop": "dragToDismiss",
-        "value": false
-      },
-      "decorated": false,
-      "primary": true
-    },
-    {
-      "title": "Without Footer",
-      "args": {
-        "open": false,
-        "heading": "Filters",
-        "hideHeading": false,
-        "children": {
-          "$element": "Text",
-          "props": {},
-          "children": [
-            "Use the close button, Escape, a scrim tap, or a drag to dismiss this sheet."
-          ]
-        },
-        "height": "content",
-        "dismissible": true,
-        "dragToDismiss": true,
-        "footer": null
-      },
-      "snippets": {
-        "react": "import { useState } from 'react';\nimport { BottomSheet, type BottomSheetProps, Button, Text } from '@design-schema/react';\n\nfunction BottomSheetHarness({ children, footer, onClose, ...rest }: Partial<BottomSheetProps>) {\n  const [open, setOpen] = useState(rest.open ?? false);\n\n  return (\n    <>\n      <Button label=\"Filters\" onClick={() => setOpen(true)} />\n      <BottomSheet\n        heading=\"Filters\"\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n        footer={\n          footer === undefined ? (\n            <>\n              <Button label=\"Apply\" variant=\"primary\" size=\"sm\" onClick={() => setOpen(false)} />\n              <Button label=\"Cancel\" variant=\"secondary\" size=\"sm\" onClick={() => setOpen(false)} />\n            </>\n          ) : (\n            footer || undefined\n          )\n        }\n      >\n        {children}\n      </BottomSheet>\n    </>\n  );\n}\n\n<BottomSheetHarness heading=\"Filters\" footer={null}><Text>Use the close button, Escape, a scrim tap, or a drag to dismiss this sheet.</Text></BottomSheetHarness>",
-        "lit": null,
-        "rn": null,
-        "swift": null
-      },
-      "stories": {
-        "react": "WithoutFooter",
-        "lit": null,
-        "rn": null,
-        "swift": null
-      },
-      "storyId": "bottomsheet-react--without-footer",
-      "sweep": null,
-      "decorated": false,
-      "primary": true
-    },
-    {
-      "title": "Keyboard",
       "args": {
         "open": true,
         "heading": "Filters",
@@ -457,21 +97,476 @@
         "dragToDismiss": true
       },
       "snippets": {
-        "react": "import { useState } from 'react';\nimport { BottomSheet, type BottomSheetProps, Button, Input, Stack } from '@design-schema/react';\n\nfunction BottomSheetHarness({ children, footer, onClose, ...rest }: Partial<BottomSheetProps>) {\n  const [open, setOpen] = useState(rest.open ?? false);\n\n  return (\n    <>\n      <Button label=\"Filters\" onClick={() => setOpen(true)} />\n      <BottomSheet\n        heading=\"Filters\"\n        {...rest}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          setOpen(false);\n        }}\n        footer={\n          footer === undefined ? (\n            <>\n              <Button label=\"Apply\" variant=\"primary\" size=\"sm\" onClick={() => setOpen(false)} />\n              <Button label=\"Cancel\" variant=\"secondary\" size=\"sm\" onClick={() => setOpen(false)} />\n            </>\n          ) : (\n            footer || undefined\n          )\n        }\n      >\n        {children}\n      </BottomSheet>\n    </>\n  );\n}\n\n<BottomSheetHarness open heading=\"Filters\">\n  <Stack gap=\"normal\">\n    <Input label=\"Search term\" name=\"search\" defaultValue=\"roadmap\" />\n    <Input label=\"Owner\" name=\"owner\" defaultValue=\"Anyone\" />\n  </Stack>\n</BottomSheetHarness>",
-        "lit": "<button type=\"button\" id=\"bottom-sheet-trigger\">Filters</button>\n<ds-bottom-sheet open heading=\"Filters\" height=\"content\">\n  <ds-input label=\"Keyword\" name=\"keyword\" value=\"\"></ds-input>\n  <ds-link href=\"#reset\">Reset all</ds-link>\n  <ds-button slot=\"footer\" variant=\"primary\" size=\"sm\" label=\"Apply filters\"></ds-button>\n  <ds-button slot=\"footer\" variant=\"ghost\" size=\"sm\" label=\"Cancel\"></ds-button>\n</ds-bottom-sheet>",
+        "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { BottomSheet, type BottomSheetProps, Button, Input, Stack, Text } from '@design-schema/react';\n\nfunction BottomSheetHarness({ open: openArg, onClose, ...args }: BottomSheetProps): ReactElement {\n  const [open, setOpen] = useState(openArg);\n  useEffect(() => setOpen(openArg), [openArg]);\n\n  return (\n    <>\n      <Button label={args.heading} onClick={() => setOpen(true)} />\n      <BottomSheet\n        {...args}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          // A non-dismissible sheet reports Escape; this consumer keeps it open until a footer action.\n          if (reason === 'escape' && args.dismissible === false) return;\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\n<BottomSheetHarness open heading=\"Filters\" height=\"content\"><Stack gap=\"normal\">\n<Text size=\"sm\">Show items updated in the last:</Text>\n<Input label=\"Days\" name=\"days\" defaultValue=\"30\" />\n</Stack></BottomSheetHarness>",
+        "lit": null,
+        "rn": "import { BottomSheet, Button, Text } from '@design-schema/rn';\n\n<BottomSheet\n  open\n  heading=\"Filters\"\n  footer={<>\n    <Button label=\"Apply\" variant=\"primary\" />\n    <Button label=\"Reset\" variant=\"secondary\" />\n  </>}\n  height=\"content\"\n>\n  <Text>Narrow results by price, distance and rating.</Text>\n</BottomSheet>",
+        "swift": null
+      },
+      "stories": {
+        "react": "HeightContent",
+        "lit": null,
+        "rn": "HeightContent",
+        "swift": null
+      },
+      "storyId": "bottomsheet-react--height-content",
+      "sweep": {
+        "prop": "height",
+        "value": "content"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Height Half",
+      "args": {
+        "open": true,
+        "heading": "Filters",
+        "hideHeading": false,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Text",
+              "props": {
+                "size": "sm"
+              },
+              "children": [
+                "Show items updated in the last:"
+              ]
+            },
+            {
+              "$element": "Input",
+              "props": {
+                "label": "Days",
+                "name": "days",
+                "defaultValue": "30"
+              },
+              "children": []
+            }
+          ]
+        },
+        "height": "half",
+        "dismissible": true,
+        "dragToDismiss": true
+      },
+      "snippets": {
+        "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { BottomSheet, type BottomSheetProps, Button, Input, Stack, Text } from '@design-schema/react';\n\nfunction BottomSheetHarness({ open: openArg, onClose, ...args }: BottomSheetProps): ReactElement {\n  const [open, setOpen] = useState(openArg);\n  useEffect(() => setOpen(openArg), [openArg]);\n\n  return (\n    <>\n      <Button label={args.heading} onClick={() => setOpen(true)} />\n      <BottomSheet\n        {...args}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          // A non-dismissible sheet reports Escape; this consumer keeps it open until a footer action.\n          if (reason === 'escape' && args.dismissible === false) return;\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\n<BottomSheetHarness open heading=\"Filters\" height=\"half\"><Stack gap=\"normal\">\n<Text size=\"sm\">Show items updated in the last:</Text>\n<Input label=\"Days\" name=\"days\" defaultValue=\"30\" />\n</Stack></BottomSheetHarness>",
+        "lit": null,
+        "rn": "import { BottomSheet, Button, Text } from '@design-schema/rn';\n\n<BottomSheet\n  open\n  heading=\"Filters\"\n  footer={<>\n    <Button label=\"Apply\" variant=\"primary\" />\n    <Button label=\"Reset\" variant=\"secondary\" />\n  </>}\n  height=\"half\"\n>\n  <Text>Narrow results by price, distance and rating.</Text>\n</BottomSheet>",
+        "swift": null
+      },
+      "stories": {
+        "react": "HeightHalf",
+        "lit": null,
+        "rn": "HeightHalf",
+        "swift": null
+      },
+      "storyId": "bottomsheet-react--height-half",
+      "sweep": {
+        "prop": "height",
+        "value": "half"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Height Full",
+      "args": {
+        "open": true,
+        "heading": "Filters",
+        "hideHeading": false,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Text",
+              "props": {
+                "size": "sm"
+              },
+              "children": [
+                "Show items updated in the last:"
+              ]
+            },
+            {
+              "$element": "Input",
+              "props": {
+                "label": "Days",
+                "name": "days",
+                "defaultValue": "30"
+              },
+              "children": []
+            }
+          ]
+        },
+        "height": "full",
+        "dismissible": true,
+        "dragToDismiss": true
+      },
+      "snippets": {
+        "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { BottomSheet, type BottomSheetProps, Button, Input, Stack, Text } from '@design-schema/react';\n\nfunction BottomSheetHarness({ open: openArg, onClose, ...args }: BottomSheetProps): ReactElement {\n  const [open, setOpen] = useState(openArg);\n  useEffect(() => setOpen(openArg), [openArg]);\n\n  return (\n    <>\n      <Button label={args.heading} onClick={() => setOpen(true)} />\n      <BottomSheet\n        {...args}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          // A non-dismissible sheet reports Escape; this consumer keeps it open until a footer action.\n          if (reason === 'escape' && args.dismissible === false) return;\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\n<BottomSheetHarness open heading=\"Filters\" height=\"full\"><Stack gap=\"normal\">\n<Text size=\"sm\">Show items updated in the last:</Text>\n<Input label=\"Days\" name=\"days\" defaultValue=\"30\" />\n</Stack></BottomSheetHarness>",
+        "lit": null,
+        "rn": "import { BottomSheet, Button, Text } from '@design-schema/rn';\n\n<BottomSheet\n  open\n  heading=\"Filters\"\n  footer={<>\n    <Button label=\"Apply\" variant=\"primary\" />\n    <Button label=\"Reset\" variant=\"secondary\" />\n  </>}\n  height=\"full\"\n>\n  <Text>Narrow results by price, distance and rating.</Text>\n</BottomSheet>",
+        "swift": null
+      },
+      "stories": {
+        "react": "HeightFull",
+        "lit": null,
+        "rn": "HeightFull",
+        "swift": null
+      },
+      "storyId": "bottomsheet-react--height-full",
+      "sweep": {
+        "prop": "height",
+        "value": "full"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Hide Heading",
+      "args": {
+        "open": true,
+        "heading": "Filters",
+        "hideHeading": true,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Text",
+              "props": {
+                "size": "sm"
+              },
+              "children": [
+                "Show items updated in the last:"
+              ]
+            },
+            {
+              "$element": "Input",
+              "props": {
+                "label": "Days",
+                "name": "days",
+                "defaultValue": "30"
+              },
+              "children": []
+            }
+          ]
+        },
+        "height": "content",
+        "dismissible": true,
+        "dragToDismiss": true
+      },
+      "snippets": {
+        "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { BottomSheet, type BottomSheetProps, Button, Input, Stack, Text } from '@design-schema/react';\n\nfunction BottomSheetHarness({ open: openArg, onClose, ...args }: BottomSheetProps): ReactElement {\n  const [open, setOpen] = useState(openArg);\n  useEffect(() => setOpen(openArg), [openArg]);\n\n  return (\n    <>\n      <Button label={args.heading} onClick={() => setOpen(true)} />\n      <BottomSheet\n        {...args}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          // A non-dismissible sheet reports Escape; this consumer keeps it open until a footer action.\n          if (reason === 'escape' && args.dismissible === false) return;\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\n<BottomSheetHarness open heading=\"Filters\" hideHeading><Stack gap=\"normal\">\n<Text size=\"sm\">Show items updated in the last:</Text>\n<Input label=\"Days\" name=\"days\" defaultValue=\"30\" />\n</Stack></BottomSheetHarness>",
+        "lit": null,
+        "rn": "import { BottomSheet, Button, Stack, Text } from '@design-schema/rn';\n\n<BottomSheet\n  open\n  heading=\"Share to\"\n  footer={<>\n    <Button label=\"Apply\" variant=\"primary\" />\n    <Button label=\"Reset\" variant=\"secondary\" />\n  </>}\n  hideHeading\n>\n  <Stack direction=\"horizontal\" gap=\"loose\" justify=\"center\">\n    <Text>Messages</Text>\n    <Text>Mail</Text>\n    <Text>Copy link</Text>\n  </Stack>\n</BottomSheet>",
+        "swift": null
+      },
+      "stories": {
+        "react": "HideHeading",
+        "lit": null,
+        "rn": "HideHeading",
+        "swift": null
+      },
+      "storyId": "bottomsheet-react--hide-heading",
+      "sweep": {
+        "prop": "hideHeading",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Not Dismissible",
+      "args": {
+        "open": true,
+        "heading": "Filters",
+        "hideHeading": false,
+        "children": {
+          "$element": "Text",
+          "props": {},
+          "children": [
+            "Only the footer actions close this sheet; Escape still reports."
+          ]
+        },
+        "height": "content",
+        "dismissible": false,
+        "dragToDismiss": true,
+        "footer": {
+          "$element": "Button",
+          "props": {
+            "label": "Done",
+            "variant": "primary",
+            "size": "sm"
+          },
+          "children": []
+        }
+      },
+      "snippets": {
+        "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { BottomSheet, type BottomSheetProps, Button, Text } from '@design-schema/react';\n\nfunction BottomSheetHarness({ open: openArg, onClose, ...args }: BottomSheetProps): ReactElement {\n  const [open, setOpen] = useState(openArg);\n  useEffect(() => setOpen(openArg), [openArg]);\n\n  return (\n    <>\n      <Button label={args.heading} onClick={() => setOpen(true)} />\n      <BottomSheet\n        {...args}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          // A non-dismissible sheet reports Escape; this consumer keeps it open until a footer action.\n          if (reason === 'escape' && args.dismissible === false) return;\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\n<BottomSheetHarness\n  open\n  heading=\"Filters\"\n  dismissible={false}\n  footer={<Button label=\"Done\" variant=\"primary\" size=\"sm\" />}\n><Text>Only the footer actions close this sheet; Escape still reports.</Text></BottomSheetHarness>",
+        "lit": null,
+        "rn": "import { BottomSheet, Button, Text } from '@design-schema/rn';\n\n<BottomSheet\n  open\n  heading=\"Filters\"\n  footer={<>\n    <Button label=\"Delete account\" variant=\"danger\" />\n    <Button label=\"Keep account\" variant=\"secondary\" />\n  </>}\n  dismissible={false}\n>\n  <Text>Narrow results by price, distance and rating.</Text>\n</BottomSheet>",
+        "swift": null
+      },
+      "stories": {
+        "react": "NotDismissible",
+        "lit": null,
+        "rn": "NotDismissible",
+        "swift": null
+      },
+      "storyId": "bottomsheet-react--not-dismissible",
+      "sweep": {
+        "prop": "dismissible",
+        "value": false
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Drag To Dismiss Off",
+      "args": {
+        "open": true,
+        "heading": "Filters",
+        "hideHeading": false,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Text",
+              "props": {
+                "size": "sm"
+              },
+              "children": [
+                "Show items updated in the last:"
+              ]
+            },
+            {
+              "$element": "Input",
+              "props": {
+                "label": "Days",
+                "name": "days",
+                "defaultValue": "30"
+              },
+              "children": []
+            }
+          ]
+        },
+        "height": "content",
+        "dismissible": true,
+        "dragToDismiss": false
+      },
+      "snippets": {
+        "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { BottomSheet, type BottomSheetProps, Button, Input, Stack, Text } from '@design-schema/react';\n\nfunction BottomSheetHarness({ open: openArg, onClose, ...args }: BottomSheetProps): ReactElement {\n  const [open, setOpen] = useState(openArg);\n  useEffect(() => setOpen(openArg), [openArg]);\n\n  return (\n    <>\n      <Button label={args.heading} onClick={() => setOpen(true)} />\n      <BottomSheet\n        {...args}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          // A non-dismissible sheet reports Escape; this consumer keeps it open until a footer action.\n          if (reason === 'escape' && args.dismissible === false) return;\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\n<BottomSheetHarness open heading=\"Filters\" dragToDismiss={false}><Stack gap=\"normal\">\n<Text size=\"sm\">Show items updated in the last:</Text>\n<Input label=\"Days\" name=\"days\" defaultValue=\"30\" />\n</Stack></BottomSheetHarness>",
+        "lit": null,
+        "rn": "import { BottomSheet, Button, Text } from '@design-schema/rn';\n\n<BottomSheet\n  open\n  heading=\"Filters\"\n  footer={<>\n    <Button label=\"Apply\" variant=\"primary\" />\n    <Button label=\"Reset\" variant=\"secondary\" />\n  </>}\n  dragToDismiss={false}\n>\n  <Text>Narrow results by price, distance and rating.</Text>\n</BottomSheet>",
+        "swift": null
+      },
+      "stories": {
+        "react": "DragToDismissOff",
+        "lit": null,
+        "rn": "DragToDismissFalse",
+        "swift": null
+      },
+      "storyId": "bottomsheet-react--drag-to-dismiss-off",
+      "sweep": {
+        "prop": "dragToDismiss",
+        "value": false
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Filters",
+      "args": {
+        "open": true,
+        "heading": "Filters",
+        "hideHeading": false,
+        "children": "A Form of filter controls",
+        "height": "content",
+        "dismissible": true,
+        "dragToDismiss": true,
+        "footer": "Clear and Apply Buttons"
+      },
+      "snippets": {
+        "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { BottomSheet, type BottomSheetProps, Button } from '@design-schema/react';\n\nfunction BottomSheetHarness({ open: openArg, onClose, ...args }: BottomSheetProps): ReactElement {\n  const [open, setOpen] = useState(openArg);\n  useEffect(() => setOpen(openArg), [openArg]);\n\n  return (\n    <>\n      <Button label={args.heading} onClick={() => setOpen(true)} />\n      <BottomSheet\n        {...args}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          // A non-dismissible sheet reports Escape; this consumer keeps it open until a footer action.\n          if (reason === 'escape' && args.dismissible === false) return;\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\n<BottomSheetHarness open heading=\"Filters\" footer=\"Clear and Apply Buttons\">A Form of filter controls</BottomSheetHarness>",
+        "lit": null,
+        "rn": "import { BottomSheet, Button, Input, Stack } from '@design-schema/rn';\n\n<BottomSheet\n  open\n  heading=\"Filters\"\n  footer={<>\n    <Button label=\"Apply\" variant=\"primary\" />\n    <Button label=\"Clear\" variant=\"secondary\" />\n  </>}\n>\n  <Stack gap=\"loose\">\n    <Input label=\"Minimum price\" name=\"min-price\" />\n    <Input label=\"Maximum price\" name=\"max-price\" />\n  </Stack>\n</BottomSheet>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Filters",
+        "lit": null,
+        "rn": "Filters",
+        "swift": null
+      },
+      "storyId": "bottomsheet-react--filters",
+      "sweep": {
+        "prop": "open",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Half Height Results",
+      "args": {
+        "open": true,
+        "heading": "Nearby places",
+        "hideHeading": false,
+        "children": "A scrolling list of results",
+        "height": "half",
+        "dismissible": true,
+        "dragToDismiss": true
+      },
+      "snippets": {
+        "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { BottomSheet, type BottomSheetProps, Button } from '@design-schema/react';\n\nfunction BottomSheetHarness({ open: openArg, onClose, ...args }: BottomSheetProps): ReactElement {\n  const [open, setOpen] = useState(openArg);\n  useEffect(() => setOpen(openArg), [openArg]);\n\n  return (\n    <>\n      <Button label={args.heading} onClick={() => setOpen(true)} />\n      <BottomSheet\n        {...args}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          // A non-dismissible sheet reports Escape; this consumer keeps it open until a footer action.\n          if (reason === 'escape' && args.dismissible === false) return;\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\n<BottomSheetHarness open heading=\"Nearby places\" height=\"half\">A scrolling list of results</BottomSheetHarness>",
+        "lit": null,
+        "rn": "import { BottomSheet, Button, Link, Stack } from '@design-schema/rn';\n\n<BottomSheet\n  open\n  heading=\"Nearby places\"\n  footer={<>\n    <Button label=\"Apply\" variant=\"primary\" />\n    <Button label=\"Reset\" variant=\"secondary\" />\n  </>}\n  height=\"half\"\n>\n  <Stack gap=\"normal\">\n    {['Corner Café', 'City Library', 'Riverside Park', 'Market Hall', 'Bike Repair', 'Post Office', 'Bakery'].map(\n      (place) => (\n        <Link key={place} href=\"#\" label={place} />\n      ),\n    )}\n  </Stack>\n</BottomSheet>",
+        "swift": null
+      },
+      "stories": {
+        "react": "HalfHeightResults",
+        "lit": null,
+        "rn": "HalfHeightResults",
+        "swift": null
+      },
+      "storyId": "bottomsheet-react--half-height-results",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Share Sheet",
+      "args": {
+        "open": true,
+        "heading": "Share to",
+        "hideHeading": true,
+        "children": "A row of share targets",
+        "height": "content",
+        "dismissible": true,
+        "dragToDismiss": true
+      },
+      "snippets": {
+        "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { BottomSheet, type BottomSheetProps, Button } from '@design-schema/react';\n\nfunction BottomSheetHarness({ open: openArg, onClose, ...args }: BottomSheetProps): ReactElement {\n  const [open, setOpen] = useState(openArg);\n  useEffect(() => setOpen(openArg), [openArg]);\n\n  return (\n    <>\n      <Button label={args.heading} onClick={() => setOpen(true)} />\n      <BottomSheet\n        {...args}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          // A non-dismissible sheet reports Escape; this consumer keeps it open until a footer action.\n          if (reason === 'escape' && args.dismissible === false) return;\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\n<BottomSheetHarness open heading=\"Share to\" hideHeading>A row of share targets</BottomSheetHarness>",
+        "lit": null,
+        "rn": "import { BottomSheet, Button, Stack } from '@design-schema/rn';\n\n<BottomSheet\n  open\n  heading=\"Share to\"\n  footer={<>\n    <Button label=\"Apply\" variant=\"primary\" />\n    <Button label=\"Reset\" variant=\"secondary\" />\n  </>}\n  hideHeading\n>\n  <Stack direction=\"horizontal\" gap=\"loose\" justify=\"center\">\n    <Button label=\"Messages\" variant=\"secondary\" />\n    <Button label=\"Mail\" variant=\"secondary\" />\n    <Button label=\"Copy link\" variant=\"secondary\" />\n  </Stack>\n</BottomSheet>",
+        "swift": null
+      },
+      "stories": {
+        "react": "ShareSheet",
+        "lit": null,
+        "rn": "ShareSheet",
+        "swift": null
+      },
+      "storyId": "bottomsheet-react--share-sheet",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Full Screen Task",
+      "args": {
+        "open": true,
+        "heading": "New expense",
+        "hideHeading": false,
+        "children": "A Form of a few fields",
+        "height": "full",
+        "dismissible": true,
+        "dragToDismiss": false,
+        "footer": "Cancel and Save Buttons"
+      },
+      "snippets": {
+        "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { BottomSheet, type BottomSheetProps, Button } from '@design-schema/react';\n\nfunction BottomSheetHarness({ open: openArg, onClose, ...args }: BottomSheetProps): ReactElement {\n  const [open, setOpen] = useState(openArg);\n  useEffect(() => setOpen(openArg), [openArg]);\n\n  return (\n    <>\n      <Button label={args.heading} onClick={() => setOpen(true)} />\n      <BottomSheet\n        {...args}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          // A non-dismissible sheet reports Escape; this consumer keeps it open until a footer action.\n          if (reason === 'escape' && args.dismissible === false) return;\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\n<BottomSheetHarness\n  open\n  heading=\"New expense\"\n  height=\"full\"\n  dragToDismiss={false}\n  footer=\"Cancel and Save Buttons\"\n>A Form of a few fields</BottomSheetHarness>",
+        "lit": null,
+        "rn": "import { BottomSheet, Button, Input, Stack } from '@design-schema/rn';\n\n<BottomSheet\n  open\n  heading=\"New expense\"\n  footer={<>\n    <Button label=\"Save\" variant=\"primary\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </>}\n  height=\"full\"\n  dragToDismiss={false}\n>\n  <Stack gap=\"loose\">\n    <Input label=\"Description\" name=\"description\" />\n    <Input label=\"Amount\" name=\"amount\" />\n    <Input label=\"Date\" name=\"date\" />\n  </Stack>\n</BottomSheet>",
+        "swift": null
+      },
+      "stories": {
+        "react": "FullScreenTask",
+        "lit": null,
+        "rn": "FullScreenTask",
+        "swift": null
+      },
+      "storyId": "bottomsheet-react--full-screen-task",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Keyboard",
+      "args": {
+        "open": true,
+        "heading": "Filters",
+        "hideHeading": false,
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Input",
+              "props": {
+                "label": "Search term",
+                "name": "search",
+                "defaultValue": "roadmap"
+              },
+              "children": []
+            },
+            {
+              "$element": "Input",
+              "props": {
+                "label": "Owner",
+                "name": "owner",
+                "defaultValue": "Anyone"
+              },
+              "children": []
+            },
+            {
+              "$element": "Input",
+              "props": {
+                "label": "Days",
+                "name": "days",
+                "defaultValue": "30"
+              },
+              "children": []
+            }
+          ]
+        },
+        "height": "content",
+        "dismissible": true,
+        "dragToDismiss": true
+      },
+      "snippets": {
+        "react": "import { useEffect, useState, type ReactElement } from 'react';\nimport { BottomSheet, type BottomSheetProps, Button, Input, Stack } from '@design-schema/react';\n\nfunction BottomSheetHarness({ open: openArg, onClose, ...args }: BottomSheetProps): ReactElement {\n  const [open, setOpen] = useState(openArg);\n  useEffect(() => setOpen(openArg), [openArg]);\n\n  return (\n    <>\n      <Button label={args.heading} onClick={() => setOpen(true)} />\n      <BottomSheet\n        {...args}\n        open={open}\n        onClose={(reason) => {\n          onClose?.(reason);\n          // A non-dismissible sheet reports Escape; this consumer keeps it open until a footer action.\n          if (reason === 'escape' && args.dismissible === false) return;\n          setOpen(false);\n        }}\n      />\n    </>\n  );\n}\n\n<BottomSheetHarness open heading=\"Filters\"><Stack gap=\"normal\">\n<Input label=\"Search term\" name=\"search\" defaultValue=\"roadmap\" />\n<Input label=\"Owner\" name=\"owner\" defaultValue=\"Anyone\" />\n<Input label=\"Days\" name=\"days\" defaultValue=\"30\" />\n</Stack></BottomSheetHarness>",
+        "lit": null,
         "rn": "import * as React from 'react';\nimport { BottomSheet, Button, Input, Link, Stack } from '@design-schema/rn';\n\nfunction Open(): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  return (\n    <Stack gap=\"loose\" align=\"start\">\n      <Button label=\"Open filters\" onPress={() => setOpen(true)} />\n      <BottomSheet\n        heading=\"Filters\"\n        open={open}\n        onClose={() => setOpen(false)}\n        footer={\n          <>\n            <Button label=\"Apply\" variant=\"primary\" onPress={() => setOpen(false)} />\n            <Button label=\"Reset\" variant=\"secondary\" onPress={() => setOpen(false)} />\n          </>\n        }\n      >\n        <Stack gap=\"loose\">\n          <Input label=\"Minimum price\" name=\"min-price\" />\n          <Input label=\"Maximum price\" name=\"max-price\" />\n          <Link href=\"#\" label=\"Clear all filters\" />\n        </Stack>\n      </BottomSheet>\n    </Stack>\n  );\n}\n\n<Open />",
         "swift": null
       },
       "stories": {
         "react": "Keyboard",
-        "lit": "Keyboard",
+        "lit": null,
         "rn": "Keyboard",
         "swift": null
       },
       "storyId": "bottomsheet-react--keyboard",
-      "sweep": null,
+      "sweep": {
+        "prop": "open",
+        "value": true
+      },
       "decorated": false,
-      "primary": true
+      "primary": false
     }
   ]
 }

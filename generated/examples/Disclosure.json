@@ -24,8 +24,8 @@
       },
       "snippets": {
         "react": "import { Disclosure, Text } from '@design-schema/react';\n\nconst panel = (\n  <Text>\n    You keep access until the end of the current billing period. Your data is kept for 30 days after that, then\n    deleted.\n  </Text>\n);\n\n<Disclosure summary=\"What happens if I cancel?\">{panel}</Disclosure>",
-        "lit": "<ds-disclosure summary=\"What happens if I cancel?\">\n  <ds-text>Your plan stays active until the end of the billing period. After that, your\n    workspace becomes read-only and you can export your data at any time.</ds-text>\n</ds-disclosure>",
-        "rn": "import { Disclosure, Text } from '@design-schema/rn';\n\n<Disclosure summary=\"Advanced options\">\n  <Text>These settings apply to every project in the workspace and can be changed later.</Text>\n</Disclosure>",
+        "lit": "<ds-disclosure summary=\"What happens if I cancel?\">\n  <ds-text>Your plan stays active until the end of the billing period.</ds-text>\n</ds-disclosure>",
+        "rn": "import { Disclosure } from '@design-schema/rn';\n\n<Disclosure summary=\"Advanced options\">Retry limit, timeout and proxy settings.</Disclosure>",
         "swift": null
       },
       "stories": {
@@ -57,8 +57,8 @@
       },
       "snippets": {
         "react": "import { Disclosure, Text } from '@design-schema/react';\n\nconst panel = (\n  <Text>\n    You keep access until the end of the current billing period. Your data is kept for 30 days after that, then\n    deleted.\n  </Text>\n);\n\n<Disclosure summary=\"What happens if I cancel?\" headingLevel=\"2\">{panel}</Disclosure>",
-        "lit": "<ds-disclosure summary=\"What happens if I cancel?\" heading-level=\"2\">\n  <ds-text>Your plan stays active until the end of the billing period. After that, your\n    workspace becomes read-only and you can export your data at any time.</ds-text>\n</ds-disclosure>",
-        "rn": "import { Disclosure, Text } from '@design-schema/rn';\n\n<Disclosure summary=\"What happens if I cancel?\" headingLevel=\"2\">\n  <Text>These settings apply to every project in the workspace and can be changed later.</Text>\n</Disclosure>",
+        "lit": "<ds-disclosure summary=\"What happens if I cancel?\" heading-level=\"2\">\n  <ds-text>Your plan stays active until the end of the billing period.</ds-text>\n</ds-disclosure>",
+        "rn": "import { Disclosure } from '@design-schema/rn';\n\n<Disclosure summary=\"Advanced options\" headingLevel=\"2\">Retry limit, timeout and proxy settings.</Disclosure>",
         "swift": null
       },
       "stories": {
@@ -93,8 +93,8 @@
       },
       "snippets": {
         "react": "import { Disclosure, Text } from '@design-schema/react';\n\nconst panel = (\n  <Text>\n    You keep access until the end of the current billing period. Your data is kept for 30 days after that, then\n    deleted.\n  </Text>\n);\n\n<Disclosure summary=\"What happens if I cancel?\" headingLevel=\"3\">{panel}</Disclosure>",
-        "lit": "<ds-disclosure summary=\"What happens if I cancel?\" heading-level=\"3\">\n  <ds-text>Your plan stays active until the end of the billing period. After that, your\n    workspace becomes read-only and you can export your data at any time.</ds-text>\n</ds-disclosure>",
-        "rn": "import { Disclosure, Text } from '@design-schema/rn';\n\n<Disclosure summary=\"What happens if I cancel?\" headingLevel=\"3\">\n  <Text>These settings apply to every project in the workspace and can be changed later.</Text>\n</Disclosure>",
+        "lit": "<ds-disclosure summary=\"What happens if I cancel?\" heading-level=\"3\">\n  <ds-text>Your plan stays active until the end of the billing period.</ds-text>\n</ds-disclosure>",
+        "rn": "import { Disclosure } from '@design-schema/rn';\n\n<Disclosure summary=\"Advanced options\" headingLevel=\"3\">Retry limit, timeout and proxy settings.</Disclosure>",
         "swift": null
       },
       "stories": {
@@ -129,8 +129,8 @@
       },
       "snippets": {
         "react": "import { Disclosure, Text } from '@design-schema/react';\n\nconst panel = (\n  <Text>\n    You keep access until the end of the current billing period. Your data is kept for 30 days after that, then\n    deleted.\n  </Text>\n);\n\n<Disclosure summary=\"What happens if I cancel?\" headingLevel=\"4\">{panel}</Disclosure>",
-        "lit": "<ds-disclosure summary=\"What happens if I cancel?\" heading-level=\"4\">\n  <ds-text>Your plan stays active until the end of the billing period. After that, your\n    workspace becomes read-only and you can export your data at any time.</ds-text>\n</ds-disclosure>",
-        "rn": "import { Disclosure, Text } from '@design-schema/rn';\n\n<Disclosure summary=\"What happens if I cancel?\" headingLevel=\"4\">\n  <Text>These settings apply to every project in the workspace and can be changed later.</Text>\n</Disclosure>",
+        "lit": "<ds-disclosure summary=\"What happens if I cancel?\" heading-level=\"4\">\n  <ds-text>Your plan stays active until the end of the billing period.</ds-text>\n</ds-disclosure>",
+        "rn": "import { Disclosure } from '@design-schema/rn';\n\n<Disclosure summary=\"Advanced options\" headingLevel=\"4\">Retry limit, timeout and proxy settings.</Disclosure>",
         "swift": null
       },
       "stories": {
@@ -165,8 +165,8 @@
       },
       "snippets": {
         "react": "import { Disclosure, Text } from '@design-schema/react';\n\nconst panel = (\n  <Text>\n    You keep access until the end of the current billing period. Your data is kept for 30 days after that, then\n    deleted.\n  </Text>\n);\n\n<Disclosure summary=\"What happens if I cancel?\" headingLevel=\"5\">{panel}</Disclosure>",
-        "lit": "<ds-disclosure summary=\"What happens if I cancel?\" heading-level=\"5\">\n  <ds-text>Your plan stays active until the end of the billing period. After that, your\n    workspace becomes read-only and you can export your data at any time.</ds-text>\n</ds-disclosure>",
-        "rn": "import { Disclosure, Text } from '@design-schema/rn';\n\n<Disclosure summary=\"What happens if I cancel?\" headingLevel=\"5\">\n  <Text>These settings apply to every project in the workspace and can be changed later.</Text>\n</Disclosure>",
+        "lit": "<ds-disclosure summary=\"What happens if I cancel?\" heading-level=\"5\">\n  <ds-text>Your plan stays active until the end of the billing period.</ds-text>\n</ds-disclosure>",
+        "rn": "import { Disclosure } from '@design-schema/rn';\n\n<Disclosure summary=\"Advanced options\" headingLevel=\"5\">Retry limit, timeout and proxy settings.</Disclosure>",
         "swift": null
       },
       "stories": {
@@ -201,8 +201,8 @@
       },
       "snippets": {
         "react": "import { Disclosure, Text } from '@design-schema/react';\n\nconst panel = (\n  <Text>\n    You keep access until the end of the current billing period. Your data is kept for 30 days after that, then\n    deleted.\n  </Text>\n);\n\n<Disclosure summary=\"What happens if I cancel?\" headingLevel=\"6\">{panel}</Disclosure>",
-        "lit": "<ds-disclosure summary=\"What happens if I cancel?\" heading-level=\"6\">\n  <ds-text>Your plan stays active until the end of the billing period. After that, your\n    workspace becomes read-only and you can export your data at any time.</ds-text>\n</ds-disclosure>",
-        "rn": "import { Disclosure, Text } from '@design-schema/rn';\n\n<Disclosure summary=\"What happens if I cancel?\" headingLevel=\"6\">\n  <Text>These settings apply to every project in the workspace and can be changed later.</Text>\n</Disclosure>",
+        "lit": "<ds-disclosure summary=\"What happens if I cancel?\" heading-level=\"6\">\n  <ds-text>Your plan stays active until the end of the billing period.</ds-text>\n</ds-disclosure>",
+        "rn": "import { Disclosure } from '@design-schema/rn';\n\n<Disclosure summary=\"Advanced options\" headingLevel=\"6\">Retry limit, timeout and proxy settings.</Disclosure>",
         "swift": null
       },
       "stories": {
@@ -218,6 +218,117 @@
       },
       "decorated": false,
       "primary": false
+    },
+    {
+      "title": "Faq Answer",
+      "args": {
+        "summary": "What happens if I cancel?",
+        "defaultOpen": false,
+        "disabled": false,
+        "keepMounted": false,
+        "children": "You keep access until the end of the current billing period.",
+        "headingLevel": "3"
+      },
+      "snippets": {
+        "react": "import { Disclosure } from '@design-schema/react';\n\n<Disclosure summary=\"What happens if I cancel?\" headingLevel=\"3\">You keep access until the end of the current billing period.</Disclosure>",
+        "lit": "<ds-disclosure summary=\"What happens if I cancel?\" heading-level=\"3\">\n  <ds-text>You keep access until the end of the current billing period.</ds-text>\n</ds-disclosure>",
+        "rn": "import { Disclosure } from '@design-schema/rn';\n\n<Disclosure summary=\"What happens if I cancel?\" headingLevel=\"3\">You keep access until the end of the current billing period.</Disclosure>",
+        "swift": null
+      },
+      "stories": {
+        "react": "FaqAnswer",
+        "lit": "FaqAnswer",
+        "rn": "FaqAnswer",
+        "swift": null
+      },
+      "storyId": "disclosure-react--faq-answer",
+      "sweep": {
+        "prop": "headingLevel",
+        "value": "3"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Advanced Options",
+      "args": {
+        "summary": "Advanced options",
+        "defaultOpen": false,
+        "disabled": false,
+        "keepMounted": false,
+        "children": "Retry limit, timeout and proxy settings."
+      },
+      "snippets": {
+        "react": "import { Disclosure } from '@design-schema/react';\n\n<Disclosure summary=\"Advanced options\">Retry limit, timeout and proxy settings.</Disclosure>",
+        "lit": "<ds-disclosure summary=\"Advanced options\">\n  <ds-text>Retry limit, timeout and proxy settings.</ds-text>\n</ds-disclosure>",
+        "rn": "import { Disclosure } from '@design-schema/rn';\n\n<Disclosure summary=\"Advanced options\">Retry limit, timeout and proxy settings.</Disclosure>",
+        "swift": null
+      },
+      "stories": {
+        "react": "AdvancedOptions",
+        "lit": "AdvancedOptions",
+        "rn": "AdvancedOptions",
+        "swift": null
+      },
+      "storyId": "disclosure-react--advanced-options",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Open With Form Fields",
+      "args": {
+        "summary": "Billing address",
+        "defaultOpen": true,
+        "disabled": false,
+        "keepMounted": true,
+        "children": "Street, city and postcode fields."
+      },
+      "snippets": {
+        "react": "import { Disclosure } from '@design-schema/react';\n\n<Disclosure summary=\"Billing address\" defaultOpen keepMounted>Street, city and postcode fields.</Disclosure>",
+        "lit": "<ds-disclosure summary=\"Billing address\" default-open keep-mounted>\n  <ds-text>Street, city and postcode fields.</ds-text>\n</ds-disclosure>",
+        "rn": "import { Disclosure } from '@design-schema/rn';\n\n<Disclosure summary=\"Billing address\" defaultOpen keepMounted>Street, city and postcode fields.</Disclosure>",
+        "swift": null
+      },
+      "stories": {
+        "react": "OpenWithFormFields",
+        "lit": "OpenWithFormFields",
+        "rn": "OpenWithFormFields",
+        "swift": null
+      },
+      "storyId": "disclosure-react--open-with-form-fields",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Disabled",
+      "args": {
+        "summary": "Shipping details",
+        "defaultOpen": false,
+        "disabled": true,
+        "keepMounted": false,
+        "children": "Choose a delivery address first."
+      },
+      "snippets": {
+        "react": "import { Disclosure } from '@design-schema/react';\n\n<Disclosure summary=\"Shipping details\" disabled>Choose a delivery address first.</Disclosure>",
+        "lit": "<ds-disclosure summary=\"Shipping details\" disabled>\n  <ds-text>Choose a delivery address first.</ds-text>\n</ds-disclosure>",
+        "rn": "import { Disclosure } from '@design-schema/rn';\n\n<Disclosure summary=\"Shipping details\" disabled>Choose a delivery address first.</Disclosure>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Disabled",
+        "lit": "Disabled",
+        "rn": "Disabled",
+        "swift": null
+      },
+      "storyId": "disclosure-react--disabled",
+      "sweep": {
+        "prop": "disabled",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
     },
     {
       "title": "Open",
@@ -236,8 +347,8 @@
       },
       "snippets": {
         "react": "import { Disclosure, Text } from '@design-schema/react';\n\nconst panel = (\n  <Text>\n    You keep access until the end of the current billing period. Your data is kept for 30 days after that, then\n    deleted.\n  </Text>\n);\n\n<Disclosure summary=\"What happens if I cancel?\" defaultOpen>{panel}</Disclosure>",
-        "lit": "<ds-disclosure summary=\"What happens if I cancel?\" default-open>\n  <ds-text>Your plan stays active until the end of the billing period. After that, your\n    workspace becomes read-only and you can export your data at any time.</ds-text>\n</ds-disclosure>",
-        "rn": "import { Disclosure, Text } from '@design-schema/rn';\n\n<Disclosure summary=\"Advanced options\" defaultOpen>\n  <Text>These settings apply to every project in the workspace and can be changed later.</Text>\n</Disclosure>",
+        "lit": "<ds-disclosure summary=\"What happens if I cancel?\" default-open>\n  <ds-text>Your plan stays active until the end of the billing period.</ds-text>\n</ds-disclosure>",
+        "rn": "import { Disclosure } from '@design-schema/rn';\n\n<Disclosure summary=\"Advanced options\" defaultOpen>Retry limit, timeout and proxy settings.</Disclosure>",
         "swift": null
       },
       "stories": {
@@ -249,41 +360,6 @@
       "storyId": "disclosure-react--open",
       "sweep": {
         "prop": "defaultOpen",
-        "value": true
-      },
-      "decorated": false,
-      "primary": true
-    },
-    {
-      "title": "Disabled",
-      "args": {
-        "summary": "What happens if I cancel?",
-        "defaultOpen": false,
-        "disabled": true,
-        "keepMounted": false,
-        "children": {
-          "$element": "Text",
-          "props": {},
-          "children": [
-            " You keep access until the end of the current billing period. Your data is kept for 30 days after that, then deleted. "
-          ]
-        }
-      },
-      "snippets": {
-        "react": "import { Disclosure, Text } from '@design-schema/react';\n\nconst panel = (\n  <Text>\n    You keep access until the end of the current billing period. Your data is kept for 30 days after that, then\n    deleted.\n  </Text>\n);\n\n<Disclosure summary=\"What happens if I cancel?\" disabled>{panel}</Disclosure>",
-        "lit": "<ds-disclosure summary=\"What happens if I cancel?\" disabled>\n  <ds-text>Your plan stays active until the end of the billing period. After that, your\n    workspace becomes read-only and you can export your data at any time.</ds-text>\n</ds-disclosure>",
-        "rn": "import { Disclosure, Text } from '@design-schema/rn';\n\n<Disclosure summary=\"Advanced options\" disabled>\n  <Text>These settings apply to every project in the workspace and can be changed later.</Text>\n</Disclosure>",
-        "swift": null
-      },
-      "stories": {
-        "react": "Disabled",
-        "lit": "DisabledTrue",
-        "rn": "Disabled",
-        "swift": null
-      },
-      "storyId": "disclosure-react--disabled",
-      "sweep": {
-        "prop": "disabled",
         "value": true
       },
       "decorated": false,
@@ -342,13 +418,13 @@
       },
       "snippets": {
         "react": "import { Disclosure, Text } from '@design-schema/react';\n\nconst panel = (\n  <Text>\n    You keep access until the end of the current billing period. Your data is kept for 30 days after that, then\n    deleted.\n  </Text>\n);\n\n<Disclosure summary=\"What happens if I cancel?\" keepMounted>{panel}</Disclosure>",
-        "lit": null,
-        "rn": "import { Disclosure, Text } from '@design-schema/rn';\n\n<Disclosure summary=\"Advanced options\" keepMounted>\n  <Text>These settings apply to every project in the workspace and can be changed later.</Text>\n</Disclosure>",
+        "lit": "<ds-disclosure summary=\"What happens if I cancel?\" keep-mounted>\n  <ds-text>Your plan stays active until the end of the billing period.</ds-text>\n</ds-disclosure>",
+        "rn": "import { Disclosure } from '@design-schema/rn';\n\n<Disclosure summary=\"Advanced options\" keepMounted>Retry limit, timeout and proxy settings.</Disclosure>",
         "swift": null
       },
       "stories": {
         "react": "KeepMounted",
-        "lit": null,
+        "lit": "KeepMountedTrue",
         "rn": "KeepMounted",
         "swift": null
       },
@@ -358,7 +434,7 @@
         "value": true
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Accordion",
@@ -390,7 +466,7 @@
       "storyId": "disclosure-react--accordion",
       "sweep": null,
       "decorated": false,
-      "primary": true
+      "primary": false
     }
   ]
 }

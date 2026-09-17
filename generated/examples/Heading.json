@@ -16,13 +16,13 @@
       },
       "snippets": {
         "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"2\">Account settings</Heading>",
-        "lit": "<ds-heading level=\"2\">Account settings</ds-heading>",
-        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level={2}>Account settings</Heading>",
+        "lit": null,
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level=\"2\">Account settings</Heading>",
         "swift": null
       },
       "stories": {
         "react": "Default",
-        "lit": "Default",
+        "lit": null,
         "rn": "Default",
         "swift": null
       },
@@ -40,13 +40,13 @@
       },
       "snippets": {
         "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"1\">Account settings</Heading>",
-        "lit": "<ds-heading level=\"1\">Account settings</ds-heading>",
-        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level={1}>Account settings</Heading>",
+        "lit": null,
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level=\"1\">Account settings</Heading>",
         "swift": null
       },
       "stories": {
         "react": "Level1",
-        "lit": "Level1",
+        "lit": null,
         "rn": "Level1",
         "swift": null
       },
@@ -67,13 +67,13 @@
       },
       "snippets": {
         "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"2\">Account settings</Heading>",
-        "lit": "<ds-heading level=\"2\">Account settings</ds-heading>",
-        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level={2}>Account settings</Heading>",
+        "lit": null,
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level=\"2\">Account settings</Heading>",
         "swift": null
       },
       "stories": {
         "react": "Level2",
-        "lit": "Level2",
+        "lit": null,
         "rn": "Level2",
         "swift": null
       },
@@ -94,13 +94,13 @@
       },
       "snippets": {
         "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"3\">Account settings</Heading>",
-        "lit": "<ds-heading level=\"3\">Account settings</ds-heading>",
-        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level={3}>Account settings</Heading>",
+        "lit": null,
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level=\"3\">Account settings</Heading>",
         "swift": null
       },
       "stories": {
         "react": "Level3",
-        "lit": "Level3",
+        "lit": null,
         "rn": "Level3",
         "swift": null
       },
@@ -121,13 +121,13 @@
       },
       "snippets": {
         "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"4\">Account settings</Heading>",
-        "lit": "<ds-heading level=\"4\">Account settings</ds-heading>",
-        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level={4}>Account settings</Heading>",
+        "lit": null,
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level=\"4\">Account settings</Heading>",
         "swift": null
       },
       "stories": {
         "react": "Level4",
-        "lit": "Level4",
+        "lit": null,
         "rn": "Level4",
         "swift": null
       },
@@ -148,13 +148,13 @@
       },
       "snippets": {
         "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"5\">Account settings</Heading>",
-        "lit": "<ds-heading level=\"5\">Account settings</ds-heading>",
-        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level={5}>Account settings</Heading>",
+        "lit": null,
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level=\"5\">Account settings</Heading>",
         "swift": null
       },
       "stories": {
         "react": "Level5",
-        "lit": "Level5",
+        "lit": null,
         "rn": "Level5",
         "swift": null
       },
@@ -175,13 +175,13 @@
       },
       "snippets": {
         "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"6\">Account settings</Heading>",
-        "lit": "<ds-heading level=\"6\">Account settings</ds-heading>",
-        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level={6}>Account settings</Heading>",
+        "lit": null,
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level=\"6\">Account settings</Heading>",
         "swift": null
       },
       "stories": {
         "react": "Level6",
-        "lit": "Level6",
+        "lit": null,
         "rn": "Level6",
         "swift": null
       },
@@ -203,13 +203,13 @@
       },
       "snippets": {
         "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"2\" size=\"4xl\">Account settings</Heading>",
-        "lit": "<ds-heading level=\"2\" size=\"4xl\">Account settings</ds-heading>",
-        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level={2} size=\"4xl\">Account settings</Heading>",
+        "lit": null,
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level=\"2\" size=\"4xl\">Account settings</Heading>",
         "swift": null
       },
       "stories": {
         "react": "Size4xl",
-        "lit": "Size4xl",
+        "lit": null,
         "rn": "Size4xl",
         "swift": null
       },
@@ -231,13 +231,13 @@
       },
       "snippets": {
         "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"2\" size=\"3xl\">Account settings</Heading>",
-        "lit": "<ds-heading level=\"2\" size=\"3xl\">Account settings</ds-heading>",
-        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level={2} size=\"3xl\">Account settings</Heading>",
+        "lit": null,
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level=\"2\" size=\"3xl\">Account settings</Heading>",
         "swift": null
       },
       "stories": {
         "react": "Size3xl",
-        "lit": "Size3xl",
+        "lit": null,
         "rn": "Size3xl",
         "swift": null
       },
@@ -259,13 +259,13 @@
       },
       "snippets": {
         "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"2\" size=\"2xl\">Account settings</Heading>",
-        "lit": "<ds-heading level=\"2\" size=\"2xl\">Account settings</ds-heading>",
-        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level={2} size=\"2xl\">Account settings</Heading>",
+        "lit": null,
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level=\"2\" size=\"2xl\">Account settings</Heading>",
         "swift": null
       },
       "stories": {
         "react": "Size2xl",
-        "lit": "Size2xl",
+        "lit": null,
         "rn": "Size2xl",
         "swift": null
       },
@@ -287,13 +287,13 @@
       },
       "snippets": {
         "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"2\" size=\"xl\">Account settings</Heading>",
-        "lit": "<ds-heading level=\"2\" size=\"xl\">Account settings</ds-heading>",
-        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level={2} size=\"xl\">Account settings</Heading>",
+        "lit": null,
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level=\"2\" size=\"xl\">Account settings</Heading>",
         "swift": null
       },
       "stories": {
         "react": "SizeXl",
-        "lit": "SizeXl",
+        "lit": null,
         "rn": "SizeXl",
         "swift": null
       },
@@ -315,13 +315,13 @@
       },
       "snippets": {
         "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"2\" size=\"lg\">Account settings</Heading>",
-        "lit": "<ds-heading level=\"2\" size=\"lg\">Account settings</ds-heading>",
-        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level={2} size=\"lg\">Account settings</Heading>",
+        "lit": null,
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level=\"2\" size=\"lg\">Account settings</Heading>",
         "swift": null
       },
       "stories": {
         "react": "SizeLg",
-        "lit": "SizeLg",
+        "lit": null,
         "rn": "SizeLg",
         "swift": null
       },
@@ -343,13 +343,13 @@
       },
       "snippets": {
         "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"2\" size=\"md\">Account settings</Heading>",
-        "lit": "<ds-heading level=\"2\" size=\"md\">Account settings</ds-heading>",
-        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level={2} size=\"md\">Account settings</Heading>",
+        "lit": null,
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level=\"2\" size=\"md\">Account settings</Heading>",
         "swift": null
       },
       "stories": {
         "react": "SizeMd",
-        "lit": "SizeMd",
+        "lit": null,
         "rn": "SizeMd",
         "swift": null
       },
@@ -370,13 +370,13 @@
       },
       "snippets": {
         "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"2\" align=\"start\">Account settings</Heading>",
-        "lit": "<ds-heading level=\"2\" align=\"start\">Account settings</ds-heading>",
-        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level={2} align=\"start\">Account settings</Heading>",
+        "lit": null,
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level=\"2\" align=\"start\">Account settings</Heading>",
         "swift": null
       },
       "stories": {
         "react": "AlignStart",
-        "lit": "AlignStart",
+        "lit": null,
         "rn": "AlignStart",
         "swift": null
       },
@@ -397,13 +397,13 @@
       },
       "snippets": {
         "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"2\" align=\"center\">Account settings</Heading>",
-        "lit": "<ds-heading level=\"2\" align=\"center\">Account settings</ds-heading>",
-        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level={2} align=\"center\">Account settings</Heading>",
+        "lit": null,
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level=\"2\" align=\"center\">Account settings</Heading>",
         "swift": null
       },
       "stories": {
         "react": "AlignCenter",
-        "lit": "AlignCenter",
+        "lit": null,
         "rn": "AlignCenter",
         "swift": null
       },
@@ -424,13 +424,13 @@
       },
       "snippets": {
         "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"2\" align=\"end\">Account settings</Heading>",
-        "lit": "<ds-heading level=\"2\" align=\"end\">Account settings</ds-heading>",
-        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level={2} align=\"end\">Account settings</Heading>",
+        "lit": null,
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level=\"2\" align=\"end\">Account settings</Heading>",
         "swift": null
       },
       "stories": {
         "react": "AlignEnd",
-        "lit": "AlignEnd",
+        "lit": null,
         "rn": "AlignEnd",
         "swift": null
       },
@@ -452,13 +452,13 @@
       "snippets": {
         "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"1\">Account settings</Heading>",
         "lit": null,
-        "rn": null,
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level=\"1\">Account settings</Heading>",
         "swift": null
       },
       "stories": {
         "react": "PageTitle",
         "lit": null,
-        "rn": null,
+        "rn": "PageTitle",
         "swift": null
       },
       "storyId": "heading-react--page-title",
@@ -479,13 +479,13 @@
       "snippets": {
         "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"2\">Billing</Heading>",
         "lit": null,
-        "rn": null,
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level=\"2\">Billing</Heading>",
         "swift": null
       },
       "stories": {
         "react": "SectionHeading",
         "lit": null,
-        "rn": null,
+        "rn": "SectionHeading",
         "swift": null
       },
       "storyId": "heading-react--section-heading",
@@ -507,13 +507,13 @@
       "snippets": {
         "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"4\" size=\"xl\">Payment methods</Heading>",
         "lit": null,
-        "rn": null,
+        "rn": "import { Heading } from '@design-schema/rn';\n\n<Heading level=\"4\" size=\"xl\">Payment methods</Heading>",
         "swift": null
       },
       "stories": {
         "react": "SubsectionSizedUp",
         "lit": null,
-        "rn": null,
+        "rn": "SubsectionSizedUp",
         "swift": null
       },
       "storyId": "heading-react--subsection-sized-up",

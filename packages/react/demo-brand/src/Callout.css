@@ -27,7 +27,6 @@
   background-color: var(--demo-alert-background);
   color: var(--demo-alert-body-color);
   font-family: var(--demo-alert-font-family);
-  font-size: var(--demo-alert-font-size);
   line-height: var(--demo-alert-line-height);
 }
 
@@ -53,12 +52,22 @@
   --demo-alert-border: var(--color-status-danger-border);
 }
 
-/* icon: decorative, iconSize, aligned to the first line of text. The Icon itself carries color.status.{tone}.icon via its own `overrides`. */
+/*
+ * icon: a box as tall as the first line of text (headingSize × lineHeight with a heading, else
+ * fontSize × lineHeight, or iconSize when larger) with the Icon centred in it. The Icon itself
+ * carries color.status.{tone}.icon and iconSize through its own `overrides`.
+ */
 .demo-callout__icon {
+  --demo-alert-first-line: calc(var(--demo-alert-font-size) * var(--demo-alert-line-height));
   display: inline-flex;
   flex: 0 0 auto;
-  margin-block-start: calc((var(--demo-alert-font-size) * var(--demo-alert-line-height) - var(--demo-alert-icon-size)) / 2);
+  align-items: center;
+  justify-content: center;
+  block-size: max(var(--demo-alert-first-line), var(--demo-alert-icon-size));
   line-height: 0;
+}
+.demo-callout:has(> .demo-callout__content > .demo-callout__heading) > .demo-callout__icon {
+  --demo-alert-first-line: calc(var(--demo-alert-heading-size) * var(--demo-alert-line-height));
 }
 
 .demo-callout__content {
@@ -80,14 +89,7 @@
 /* bodyColor: the page foreground, so long messages read as text. */
 .demo-callout__body {
   color: var(--demo-alert-body-color);
-}
-
-.demo-callout__body > :first-child {
-  margin-block-start: 0;
-}
-
-.demo-callout__body > :last-child {
-  margin-block-end: 0;
+  font-size: var(--demo-alert-font-size);
 }
 
 /* dismissButton: the system CtaButton, unchanged; dismissMargin pulls it into the corner. */

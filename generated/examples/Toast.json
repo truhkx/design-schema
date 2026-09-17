@@ -12,7 +12,6 @@
       "args": {
         "message": "Message sent",
         "tone": "neutral",
-        "duration": "short",
         "dismissible": true
       },
       "snippets": {
@@ -37,12 +36,11 @@
       "args": {
         "message": "Message sent",
         "tone": "neutral",
-        "duration": "short",
         "dismissible": true
       },
       "snippets": {
         "react": "import { Toast } from '@design-schema/react';\n\n<Toast message=\"Message sent\" tone=\"neutral\" />",
-        "lit": "<ds-toast message=\"Preferences updated\" tone=\"neutral\"></ds-toast>",
+        "lit": "<ds-toast message=\"Message sent\" tone=\"neutral\"></ds-toast>",
         "rn": "import { Toast } from '@design-schema/rn';\n\n<Toast message=\"Link copied\" tone=\"neutral\" />",
         "swift": null
       },
@@ -63,13 +61,12 @@
     {
       "title": "Tone Success",
       "args": {
-        "message": "Changes saved",
+        "message": "Message sent",
         "tone": "success",
-        "duration": "short",
         "dismissible": true
       },
       "snippets": {
-        "react": "import { Toast } from '@design-schema/react';\n\n<Toast message=\"Changes saved\" tone=\"success\" />",
+        "react": "import { Toast } from '@design-schema/react';\n\n<Toast message=\"Message sent\" tone=\"success\" />",
         "lit": "<ds-toast message=\"Message sent\" tone=\"success\"></ds-toast>",
         "rn": "import { Toast } from '@design-schema/rn';\n\n<Toast message=\"Changes saved\" tone=\"success\" />",
         "swift": null
@@ -91,14 +88,13 @@
     {
       "title": "Tone Warning",
       "args": {
-        "message": "Storage almost full",
+        "message": "Message sent",
         "tone": "warning",
-        "duration": "short",
         "dismissible": true
       },
       "snippets": {
-        "react": "import { Toast } from '@design-schema/react';\n\n<Toast message=\"Storage almost full\" tone=\"warning\" />",
-        "lit": "<ds-toast message=\"Connection is unstable\" tone=\"warning\"></ds-toast>",
+        "react": "import { Toast } from '@design-schema/react';\n\n<Toast message=\"Message sent\" tone=\"warning\" />",
+        "lit": "<ds-toast message=\"Message sent\" tone=\"warning\"></ds-toast>",
         "rn": "import { Toast } from '@design-schema/rn';\n\n<Toast message=\"Connection unstable\" tone=\"warning\" />",
         "swift": null
       },
@@ -119,14 +115,13 @@
     {
       "title": "Tone Danger",
       "args": {
-        "message": "Upload failed",
+        "message": "Message sent",
         "tone": "danger",
-        "duration": "persistent",
         "dismissible": true
       },
       "snippets": {
-        "react": "import { Toast } from '@design-schema/react';\n\n<Toast message=\"Upload failed\" tone=\"danger\" duration=\"persistent\" />",
-        "lit": "<ds-toast message=\"Export failed\" tone=\"danger\" duration=\"persistent\"></ds-toast>",
+        "react": "import { Toast } from '@design-schema/react';\n\n<Toast message=\"Message sent\" tone=\"danger\" />",
+        "lit": "<ds-toast message=\"Message sent\" tone=\"danger\"></ds-toast>",
         "rn": "import { Toast } from '@design-schema/rn';\n\n<Toast message=\"Upload failed\" tone=\"danger\" duration=\"persistent\" />",
         "swift": null
       },
@@ -137,17 +132,20 @@
         "swift": null
       },
       "storyId": "toast-react--tone-danger",
-      "sweep": null,
+      "sweep": {
+        "prop": "tone",
+        "value": "danger"
+      },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Duration Short",
       "args": {
         "message": "Message sent",
         "tone": "neutral",
-        "duration": "short",
-        "dismissible": true
+        "dismissible": true,
+        "duration": "short"
       },
       "snippets": {
         "react": "import { Toast } from '@design-schema/react';\n\n<Toast message=\"Message sent\" duration=\"short\" />",
@@ -174,8 +172,8 @@
       "args": {
         "message": "Message sent",
         "tone": "neutral",
-        "duration": "long",
-        "dismissible": true
+        "dismissible": true,
+        "duration": "long"
       },
       "snippets": {
         "react": "import { Toast } from '@design-schema/react';\n\n<Toast message=\"Message sent\" duration=\"long\" />",
@@ -202,8 +200,8 @@
       "args": {
         "message": "Message sent",
         "tone": "neutral",
-        "duration": "persistent",
-        "dismissible": true
+        "dismissible": true,
+        "duration": "persistent"
       },
       "snippets": {
         "react": "import { Toast } from '@design-schema/react';\n\n<Toast message=\"Message sent\" duration=\"persistent\" />",
@@ -226,27 +224,27 @@
       "primary": false
     },
     {
-      "title": "With Action",
+      "title": "Undo A Delete",
       "args": {
-        "message": "3 files deleted",
+        "message": "3 files moved to Archive",
         "tone": "neutral",
-        "duration": "persistent",
         "dismissible": true,
-        "actionLabel": "Undo"
+        "actionLabel": "Undo",
+        "duration": "persistent"
       },
       "snippets": {
-        "react": "import { Toast } from '@design-schema/react';\n\n<Toast message=\"3 files deleted\" duration=\"persistent\" actionLabel=\"Undo\" />",
+        "react": "import { Toast } from '@design-schema/react';\n\n<Toast\n  message=\"3 files moved to Archive\"\n  actionLabel=\"Undo\"\n  duration=\"persistent\"\n/>",
         "lit": "<ds-toast message=\"3 files moved to Archive\" action-label=\"Undo\" duration=\"persistent\"></ds-toast>",
         "rn": "import { Toast } from '@design-schema/rn';\n\n<Toast\n  message=\"3 files moved to Archive\"\n  duration=\"persistent\"\n  actionLabel=\"Undo\"\n/>",
         "swift": null
       },
       "stories": {
-        "react": "WithAction",
-        "lit": "WithAction",
-        "rn": "WithAction",
+        "react": "UndoADelete",
+        "lit": "UndoADelete",
+        "rn": "UndoADelete",
         "swift": null
       },
-      "storyId": "toast-react--with-action",
+      "storyId": "toast-react--undo-a-delete",
       "sweep": {
         "prop": "duration",
         "value": "persistent"
@@ -255,16 +253,97 @@
       "primary": false
     },
     {
+      "title": "Saved",
+      "args": {
+        "message": "Changes saved",
+        "tone": "success",
+        "dismissible": true
+      },
+      "snippets": {
+        "react": "import { Toast } from '@design-schema/react';\n\n<Toast message=\"Changes saved\" tone=\"success\" />",
+        "lit": "<ds-toast message=\"Changes saved\" tone=\"success\"></ds-toast>",
+        "rn": "import { Toast } from '@design-schema/rn';\n\n<Toast message=\"Changes saved\" tone=\"success\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Saved",
+        "lit": "Saved",
+        "rn": "Saved",
+        "swift": null
+      },
+      "storyId": "toast-react--saved",
+      "sweep": {
+        "prop": "tone",
+        "value": "success"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Background Result",
+      "args": {
+        "message": "Export ready",
+        "tone": "neutral",
+        "dismissible": true,
+        "actionLabel": "View",
+        "duration": "long"
+      },
+      "snippets": {
+        "react": "import { Toast } from '@design-schema/react';\n\n<Toast message=\"Export ready\" actionLabel=\"View\" duration=\"long\" />",
+        "lit": "<ds-toast message=\"Export ready\" action-label=\"View\" duration=\"long\"></ds-toast>",
+        "rn": "import { Toast } from '@design-schema/rn';\n\n<Toast message=\"Export ready\" duration=\"long\" actionLabel=\"View\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "BackgroundResult",
+        "lit": "BackgroundResult",
+        "rn": "BackgroundResult",
+        "swift": null
+      },
+      "storyId": "toast-react--background-result",
+      "sweep": {
+        "prop": "duration",
+        "value": "long"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Failed Upload",
+      "args": {
+        "message": "Upload failed",
+        "tone": "danger",
+        "dismissible": true,
+        "actionLabel": "Retry",
+        "duration": "persistent"
+      },
+      "snippets": {
+        "react": "import { Toast } from '@design-schema/react';\n\n<Toast\n  message=\"Upload failed\"\n  tone=\"danger\"\n  actionLabel=\"Retry\"\n  duration=\"persistent\"\n/>",
+        "lit": "<ds-toast message=\"Upload failed\" tone=\"danger\" action-label=\"Retry\" duration=\"persistent\"></ds-toast>",
+        "rn": "import { Toast } from '@design-schema/rn';\n\n<Toast\n  message=\"Upload failed\"\n  tone=\"danger\"\n  duration=\"persistent\"\n  actionLabel=\"Retry\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "FailedUpload",
+        "lit": "FailedUpload",
+        "rn": "FailedUpload",
+        "swift": null
+      },
+      "storyId": "toast-react--failed-upload",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
       "title": "Not Dismissible",
       "args": {
         "message": "Message sent",
         "tone": "neutral",
-        "duration": "short",
         "dismissible": false
       },
       "snippets": {
         "react": "import { Toast } from '@design-schema/react';\n\n<Toast message=\"Message sent\" dismissible={false} />",
-        "lit": "<ds-toast message=\"Syncing…\" no-dismiss></ds-toast>",
+        "lit": "<ds-toast message=\"Message sent\" no-dismiss></ds-toast>",
         "rn": "import { Toast } from '@design-schema/rn';\n\n<Toast message=\"Message sent\" dismissible={false} />",
         "swift": null
       },
@@ -287,11 +366,10 @@
       "args": {
         "message": "Message sent",
         "tone": "neutral",
-        "duration": "short",
         "dismissible": true
       },
       "snippets": {
-        "react": "import { useEffect } from 'react';\nimport { ToastRegion, toast } from '@design-schema/react';\n\nfunction ToastKeyboardHarness() {\n  useEffect(() => {\n    toast({ message: '3 files deleted', actionLabel: 'Undo', duration: 'persistent' });\n    toast({ message: 'Export ready', actionLabel: 'View', duration: 'persistent' });\n  }, []);\n  return <ToastRegion />;\n}\n\n<ToastKeyboardHarness />",
+        "react": "import { useEffect, type ReactElement } from 'react';\nimport { ToastRegion, dismiss, toast } from '@design-schema/react';\n\nfunction ToastKeyboardHarness(): ReactElement {\n  useEffect(() => {\n    void toast({ toastId: 'keyboard-undo', message: '3 files moved to Archive', actionLabel: 'Undo', duration: 'persistent' });\n    void toast({ toastId: 'keyboard-view', message: 'Export ready', actionLabel: 'View', duration: 'persistent' });\n    return () => dismiss();\n  }, []);\n  return <ToastRegion />;\n}\n\n<ToastKeyboardHarness />",
         "lit": "<div style=\"display: flex; gap: var(--space-md);\">\n  <button type=\"button\">Before</button>\n  <ds-toast-region style=\"position: static; inset: auto;\">\n    <ds-toast message=\"3 files moved to Archive\" action-label=\"Undo\" duration=\"persistent\"></ds-toast>\n  </ds-toast-region>\n  <button type=\"button\">After</button>\n</div>",
         "rn": "import * as React from 'react';\nimport { Button, Stack, Toast } from '@design-schema/rn';\n\nfunction Demo(): React.JSX.Element {\n  const [visible, setVisible] = React.useState(true);\n  return (\n    <Stack gap=\"loose\" align=\"start\">\n      <Button label=\"Show toasts\" onPress={() => setVisible(true)} />\n      {visible ? (\n        <Stack gap=\"tight\" align=\"start\">\n          <Toast message=\"3 files deleted\" actionLabel=\"Undo\" duration=\"persistent\" onDismiss={() => setVisible(false)} />\n          <Toast message=\"Export ready\" tone=\"success\" actionLabel=\"View\" duration=\"persistent\" />\n        </Stack>\n      ) : null}\n    </Stack>\n  );\n}\n\n<Demo />",
         "swift": null

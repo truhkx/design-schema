@@ -2,16 +2,19 @@ import {
   useEffect,
   useId,
   useImperativeHandle,
+  useLayoutEffect,
   useRef,
   useState,
   type ComponentPropsWithoutRef,
   type CSSProperties,
   type ElementType,
   type MouseEvent,
+  type ReactElement,
   type ReactNode,
-  type Ref, type ReactElement,
+  type Ref,
 } from 'react';
 import { cssVar, type TokenRef } from '@demo/tokens';
+import { Icon } from './Icon';
 import './Expander.css';
 
 /** Accepts the schema's string values and their numeric equivalents. */
@@ -51,8 +54,10 @@ const OVERRIDE_HOOK: Record<ExpanderOverridableBinding, string> = {
 function overridesToStyle(overrides: Partial<Record<ExpanderOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as ExpanderOverridableBinding[]) {
+    // Locked bindings are not in the type; anything passed anyway has no hook and is ignored.
+    const hook = OVERRIDE_HOOK[binding] as string | undefined;
     const ref = overrides[binding];
-    if (ref) style[OVERRIDE_HOOK[binding]] = cssVar(ref);
+    if (hook && ref) style[hook] = cssVar(ref);
   }
   return style as CSSProperties;
 }
@@ -60,11 +65,20 @@ function overridesToStyle(overrides: Partial<Record<ExpanderOverridableBinding, 
 export interface ExpanderProps
   extends Omit<
     ComponentPropsWithoutRef<'button'>,
-    'type' | 'disabled' | 'children' | 'aria-expanded' | 'aria-controls' | 'aria-disabled' | 'onToggle' | 'onClick'
+    | 'type'
+    | 'disabled'
+    | 'children'
+    | 'className'
+    | 'style'
+    | 'aria-expanded'
+    | 'aria-controls'
+    | 'aria-disabled'
+    | 'onToggle'
+    | 'onClick'
   > {
   /** The trigger's label. Also the trigger's accessible name. Says what will be revealed. */
   summary: string;
-  /** The content of the panel. Rendered only while open (not merely hidden) unless `keepMounted`. */
+  /** The content of the panel. Rendered only while open (not merely hidden), so heavy content is not laid out until asked for. */
   children: ReactNode;
   /** Controlled open state. Omit for an uncontrolled disclosure. */
   open?: boolean | undefined;
@@ -72,15 +86,21 @@ export interface ExpanderProps
   defaultOpen?: boolean | undefined;
   /** The trigger cannot be activated. Stays focusable and is announced as disabled; the panel keeps its current state. */
   disabled?: boolean | undefined;
-  /** Keep the panel in the tree while closed (hidden, not unmounted). Required when the panel contains form fields. */
+  /**
+   * Keep the panel in the tree while closed (hidden, not unmounted). Required when the panel contains form fields,
+   * so the Form still collects them while the disclosure is closed.
+   */
   keepMounted?: boolean | undefined;
-  /** When set, the trigger is wrapped in a heading of this level so the disclosure appears in the document outline. */
+  /**
+   * When set, the trigger is wrapped in a heading of this level so the disclosure appears in the document outline —
+   * use for FAQ and accordion sections.
+   */
   headingLevel?: ExpanderHeadingLevel | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<ExpanderOverridableBinding, TokenRef | undefined>> | undefined;
   /**
-   * Fired after the state changes, with the new boolean `open` and a reason: `pointer`,
-   * `keyboard`, or `controlled` (Accordion relies on it).
+   * Fired after the state changes, with the new boolean `open` and a reason: `pointer`, `keyboard`, or `controlled`
+   * (Accordion relies on it). The activation method is read from the native click (`event.detail === 0` means keyboard).
    */
   onToggle?: ((open: boolean, reason: ExpanderToggleReason) => void) | undefined;
 }
@@ -89,13 +109,15 @@ export interface ExpanderProps
  * Expander — Design Schema, category: container.
  *
  * When to use:
- * Use a Expander to hide secondary content that some users need and most do not: optional
- * settings, long explanations, a list of details behind a summary count. Stack several to make an
- * accordion — each is independent; nothing in this component closes its siblings. Set
- * `headingLevel` when the summaries are section titles so they appear in the outline and
- * screen-reader heading lists.
+ * Use a Expander to hide secondary content that some users need and most do not: optional settings, long
+ * explanations, a list of details behind a summary count. Stack several to make an accordion — each is independent;
+ * nothing in this component closes its siblings. Set `headingLevel` when the summaries are section titles so they
+ * appear in the outline and screen-reader heading lists.
+ *
+ * `ref` resolves to the trigger `<button>` (Accordion moves focus between triggers through it); the wrapping `<div>`
+ * carries `data-ds="Disclosure"`.
  */
-export const Expander = function Expander({
+export function Expander({
   ref,
   summary,
   children,
@@ -107,8 +129,6 @@ export const Expander = function Expander({
   overrides,
   onToggle,
   id: idProp,
-  className,
-  style,
   ...rest
 }: ExpanderProps & { ref?: Ref<HTMLButtonElement> | undefined }): ReactElement {
   const generatedId = useId();
@@ -116,64 +136,63 @@ export const Expander = function Expander({
   const panelId = `${id}-panel`;
 
   const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
   useImperativeHandle(ref, () => triggerRef.current as HTMLButtonElement, []);
 
   const isControlled = open !== undefined;
   const [internalOpen, setInternalOpen] = useState(defaultOpen);
   const isOpen = isControlled ? open : internalOpen;
-
   const panelExists = isOpen || keepMounted;
 
-  // Closing unmounts (or hides) the panel; if focus was inside it, it must land on the trigger, not the body.
+  // Closing removes (or hides) the panel, so focus inside it is handed to the trigger — whether the close came from
+  // the trigger or from a controlled `open` change. Removal can blur without a focusout, so the flag is only cleared
+  // when focus demonstrably moved somewhere else.
   const focusWithinPanel = useRef(false);
-  useEffect(() => {
-    if (!isOpen && focusWithinPanel.current) {
-      // Runs for both the trigger's own toggle and a controlled `open` change.
-      focusWithinPanel.current = false;
-      triggerRef.current?.focus();
-    }
+  useLayoutEffect(() => {
+    if (isOpen || !focusWithinPanel.current) return;
+    focusWithinPanel.current = false;
+    const active = document.activeElement;
+    const lost = active === null || active === document.body || (panelRef.current?.contains(active) ?? false);
+    if (lost) triggerRef.current?.focus();
   }, [isOpen]);
 
-  // Distinguishes an `open` prop change the trigger's own click already reported (reason
-  // 'pointer'/'keyboard') from one the consumer made on their own (reason 'controlled').
-  const mountedRef = useRef(false);
+  // Controlled: a user toggle is reported at once (the state changes only when the consumer echoes it), and an `open`
+  // change that echoes that report does not fire again; any other `open` change reports 'controlled'. Uncontrolled:
+  // the toggle is reported after the new state has committed. A pending request is cleared at the next `open` change.
   const previousOpenRef = useRef(isOpen);
   const selfEmittedRef = useRef<boolean | null>(null);
+  const pendingReasonRef = useRef<ExpanderToggleReason | null>(null);
   useEffect(() => {
-    if (!mountedRef.current) {
-      mountedRef.current = true;
-      previousOpenRef.current = isOpen;
-      return;
-    }
-    if (isControlled && previousOpenRef.current !== isOpen) {
-      const wasSelfEcho = selfEmittedRef.current === isOpen;
-      if (!wasSelfEcho) onToggle?.(isOpen, 'controlled');
-    }
-    selfEmittedRef.current = null;
+    if (previousOpenRef.current === isOpen) return;
     previousOpenRef.current = isOpen;
+    const echo = selfEmittedRef.current === isOpen;
+    selfEmittedRef.current = null;
+    const reason = pendingReasonRef.current;
+    pendingReasonRef.current = null;
+    if (isControlled) {
+      if (!echo) onToggle?.(isOpen, 'controlled');
+    } else if (reason !== null) {
+      onToggle?.(isOpen, reason);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, isControlled]);
+  }, [isOpen]);
 
-  const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
+  const handleClick = (event: MouseEvent<HTMLButtonElement>): void => {
     if (disabled) {
       event.preventDefault();
       return;
     }
     const next = !isOpen;
+    // A native button's click carries `detail: 0` when Enter or Space activated it.
+    const reason: ExpanderToggleReason = event.detail === 0 ? 'keyboard' : 'pointer';
     if (isControlled) {
       selfEmittedRef.current = next;
+      onToggle?.(next, reason);
     } else {
+      pendingReasonRef.current = reason;
       setInternalOpen(next);
     }
-    // A native button's click event carries `detail: 0` when it was dispatched by a keyboard
-    // activation (Enter/Space) rather than a pointing device.
-    onToggle?.(next, event.detail === 0 ? 'keyboard' : 'pointer');
   };
-
-  const classes = ['demo-expander', isOpen ? 'demo-expander--open' : null, className ?? null].filter(Boolean).join(' ');
-
-  const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
-  const mergedStyle = overrideStyle || style ? { ...overrideStyle, ...style } : undefined;
 
   const trigger = (
     <button
@@ -182,28 +201,32 @@ export const Expander = function Expander({
       id={id}
       type="button"
       className="demo-expander__trigger"
+      data-part="trigger"
       aria-expanded={isOpen ? 'true' : 'false'}
       aria-controls={panelExists ? panelId : undefined}
       aria-disabled={disabled ? 'true' : undefined}
       onClick={handleClick}
     >
-      <span className="demo-expander__icon" data-part="triggerIcon" aria-hidden="true">
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" focusable="false">
-          <path d="M6 3l5 5-5 5" />
-        </svg>
+      <span className="demo-expander__icon" data-part="triggerIcon">
+        <Icon name="chevron-right" inline />
       </span>
       <span className="demo-expander__summary">{summary}</span>
     </button>
   );
 
   // The heading has no styling of its own; the button carries it.
-  const Heading = headingLevel !== undefined ? (`h${headingLevel}` as ElementType) : null;
+  const HeadingTag = headingLevel !== undefined ? (`h${headingLevel}` as ElementType) : null;
 
   return (
-    <div className={classes} data-ds="Disclosure" style={mergedStyle}>
-      {Heading ? <Heading className="demo-expander__heading">{trigger}</Heading> : trigger}
+    <div
+      className={isOpen ? 'demo-expander demo-expander--open' : 'demo-expander'}
+      data-ds="Disclosure"
+      style={overrides ? overridesToStyle(overrides) : undefined}
+    >
+      {HeadingTag ? <HeadingTag className="demo-expander__heading">{trigger}</HeadingTag> : trigger}
       {panelExists ? (
         <div
+          ref={panelRef}
           id={panelId}
           className="demo-expander__panel"
           data-part="panel"
@@ -212,7 +235,8 @@ export const Expander = function Expander({
             focusWithinPanel.current = true;
           }}
           onBlur={(event) => {
-            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) focusWithinPanel.current = false;
+            const to = event.relatedTarget as Node | null;
+            if (to !== null && !event.currentTarget.contains(to)) focusWithinPanel.current = false;
           }}
         >
           {children}
@@ -220,4 +244,4 @@ export const Expander = function Expander({
       ) : null}
     </div>
   );
-};
+}

@@ -43,3 +43,10 @@
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+
+/* An inline (`span`) Text clips as an inline-block whose width comes from the parent. */
+.demo-text--truncate-inline {
+  display: inline-block;
+  max-inline-size: 100%;
+  vertical-align: bottom;
+}

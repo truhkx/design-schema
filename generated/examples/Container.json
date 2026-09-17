@@ -521,6 +521,114 @@
       },
       "decorated": false,
       "primary": false
+    },
+    {
+      "title": "Application Screen",
+      "args": {
+        "width": "content",
+        "gutter": "default",
+        "align": "center",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "A Stack of page regions"
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Container, Text } from '@design-schema/react';\n\n<Container width=\"content\"><Text element=\"p\">A Stack of page regions</Text></Container>",
+        "lit": "<ds-container width=\"content\">\n  <ds-text>A Stack of page regions</ds-text>\n</ds-container>",
+        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container width=\"content\"><Text>A Stack of page regions</Text></Container>",
+        "swift": null
+      },
+      "stories": {
+        "react": "ApplicationScreen",
+        "lit": "ApplicationScreen",
+        "rn": "ApplicationScreen",
+        "swift": null
+      },
+      "storyId": "container-react--application-screen",
+      "sweep": {
+        "prop": "width",
+        "value": "content"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Reading Measure",
+      "args": {
+        "width": "prose",
+        "gutter": "default",
+        "align": "center",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "An article"
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Container, Text } from '@design-schema/react';\n\n<Container width=\"prose\"><Text element=\"p\">An article</Text></Container>",
+        "lit": "<ds-container width=\"prose\">\n  <ds-text>An article</ds-text>\n</ds-container>",
+        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container width=\"prose\"><Text>An article</Text></Container>",
+        "swift": null
+      },
+      "stories": {
+        "react": "ReadingMeasure",
+        "lit": "ReadingMeasure",
+        "rn": "ReadingMeasure",
+        "swift": null
+      },
+      "storyId": "container-react--reading-measure",
+      "sweep": {
+        "prop": "width",
+        "value": "prose"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Nested Section",
+      "args": {
+        "width": "prose",
+        "gutter": "none",
+        "align": "center",
+        "element": "div",
+        "children": {
+          "$element": "Text",
+          "props": {
+            "element": "p"
+          },
+          "children": [
+            "A narrower section"
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Container, Text } from '@design-schema/react';\n\n<Container width=\"prose\" gutter=\"none\"><Text element=\"p\">A narrower section</Text></Container>",
+        "lit": "<ds-container width=\"prose\" gutter=\"none\">\n  <ds-text>A narrower section</ds-text>\n</ds-container>",
+        "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container width=\"prose\" gutter=\"none\"><Text>A narrower section</Text></Container>",
+        "swift": null
+      },
+      "stories": {
+        "react": "NestedSection",
+        "lit": "NestedSection",
+        "rn": "NestedSection",
+        "swift": null
+      },
+      "storyId": "container-react--nested-section",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
     }
   ]
 }

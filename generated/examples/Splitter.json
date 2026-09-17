@@ -91,13 +91,13 @@
       },
       "snippets": {
         "react": "import { Splitter, Stack, Text, Link } from '@design-schema/react';\n\nconst primaryContent = (\n  <Stack element=\"nav\" gap=\"tight\">\n    <Text element=\"p\" weight=\"medium\">\n      Sections\n    </Text>\n    <Link href=\"#\" label=\"Overview\" />\n    <Link href=\"#\" label=\"Reports\" />\n    <Link href=\"#\" label=\"Settings\" />\n  </Stack>\n);\n\nconst secondaryContent = (\n  <Stack gap=\"normal\">\n    <Text element=\"p\" weight=\"medium\">\n      Overview\n    </Text>\n    <Text element=\"p\">Select a section from the sidebar to see its detail here.</Text>\n  </Stack>\n);\n\n<Splitter\n  label=\"Sidebar width\"\n  primary={primaryContent}\n  secondary={secondaryContent}\n/>",
-        "lit": "<div style=\"block-size: 20rem; border: var(--border-width-thin) solid var(--color-border);\">\n  <ds-splitter label=\"Sidebar width\">\n    <nav slot=\"primary\" style=\"padding: var(--space-3);\">Navigation</nav>\n    <main slot=\"secondary\" style=\"padding: var(--space-3);\">Content</main>\n  </ds-splitter>\n</div>",
-        "rn": "import { View } from 'react-native';\nimport { Splitter, Text } from '@design-schema/rn';\n\n<Splitter\n  label=\"Sidebar width\"\n  primary={<View style={{ height: 240 }}>\n    <Text>Navigation</Text>\n  </View>}\n  secondary={<View style={{ height: 240 }}>\n    <Text>Content</Text>\n  </View>}\n/>",
+        "lit": null,
+        "rn": "import { Splitter } from '@design-schema/rn';\n\n<Splitter label=\"Sidebar width\" primary=\"Navigation\" secondary=\"Content\" />",
         "swift": null
       },
       "stories": {
         "react": "Default",
-        "lit": "Default",
+        "lit": null,
         "rn": "Default",
         "swift": null
       },
@@ -190,13 +190,13 @@
       },
       "snippets": {
         "react": "import { Splitter, Stack, Text, Link } from '@design-schema/react';\n\nconst primaryContent = (\n  <Stack element=\"nav\" gap=\"tight\">\n    <Text element=\"p\" weight=\"medium\">\n      Sections\n    </Text>\n    <Link href=\"#\" label=\"Overview\" />\n    <Link href=\"#\" label=\"Reports\" />\n    <Link href=\"#\" label=\"Settings\" />\n  </Stack>\n);\n\nconst secondaryContent = (\n  <Stack gap=\"normal\">\n    <Text element=\"p\" weight=\"medium\">\n      Overview\n    </Text>\n    <Text element=\"p\">Select a section from the sidebar to see its detail here.</Text>\n  </Stack>\n);\n\n<Splitter\n  label=\"Sidebar width\"\n  orientation=\"horizontal\"\n  primary={primaryContent}\n  secondary={secondaryContent}\n/>",
-        "lit": "<div style=\"block-size: 20rem; border: var(--border-width-thin) solid var(--color-border);\">\n  <ds-splitter label=\"Sidebar width\" orientation=\"horizontal\">\n    <nav slot=\"primary\" style=\"padding: var(--space-3);\">Navigation</nav>\n    <main slot=\"secondary\" style=\"padding: var(--space-3);\">Content</main>\n  </ds-splitter>\n</div>",
-        "rn": "import { View } from 'react-native';\nimport { Splitter, Text } from '@design-schema/rn';\n\n<Splitter\n  label=\"Sidebar width\"\n  orientation=\"horizontal\"\n  primary={<View style={{ height: 240 }}>\n    <Text>Navigation</Text>\n  </View>}\n  secondary={<View style={{ height: 240 }}>\n    <Text>Content</Text>\n  </View>}\n/>",
+        "lit": null,
+        "rn": "import { Splitter } from '@design-schema/rn';\n\n<Splitter\n  label=\"Sidebar width\"\n  orientation=\"horizontal\"\n  primary=\"Navigation\"\n  secondary=\"Content\"\n/>",
         "swift": null
       },
       "stories": {
         "react": "OrientationHorizontal",
-        "lit": "OrientationHorizontal",
+        "lit": null,
         "rn": "OrientationHorizontal",
         "swift": null
       },
@@ -214,57 +214,21 @@
         "label": "Preview height",
         "orientation": "vertical",
         "primary": {
-          "$element": "Stack",
+          "$element": "Text",
           "props": {
-            "gap": "normal"
+            "element": "p"
           },
           "children": [
-            {
-              "$element": "Text",
-              "props": {
-                "element": "p",
-                "weight": "medium"
-              },
-              "children": [
-                " Editor "
-              ]
-            },
-            {
-              "$element": "Text",
-              "props": {
-                "element": "p"
-              },
-              "children": [
-                "Code goes here."
-              ]
-            }
+            "Editor"
           ]
         },
         "secondary": {
-          "$element": "Stack",
+          "$element": "Text",
           "props": {
-            "gap": "normal"
+            "element": "p"
           },
           "children": [
-            {
-              "$element": "Text",
-              "props": {
-                "element": "p",
-                "weight": "medium"
-              },
-              "children": [
-                " Preview "
-              ]
-            },
-            {
-              "$element": "Text",
-              "props": {
-                "element": "p"
-              },
-              "children": [
-                "Rendered output goes here."
-              ]
-            }
+            "Preview"
           ]
         },
         "defaultSize": 30,
@@ -275,14 +239,14 @@
         "stackBelow": "prose"
       },
       "snippets": {
-        "react": "import { Splitter, Stack, Text } from '@design-schema/react';\n\n<Splitter\n  label=\"Preview height\"\n  orientation=\"vertical\"\n  primary={<Stack gap=\"normal\">\n    <Text element=\"p\" weight=\"medium\">\n      Editor\n    </Text>\n    <Text element=\"p\">Code goes here.</Text>\n  </Stack>}\n  secondary={<Stack gap=\"normal\">\n    <Text element=\"p\" weight=\"medium\">\n      Preview\n    </Text>\n    <Text element=\"p\">Rendered output goes here.</Text>\n  </Stack>}\n/>",
-        "lit": "<div style=\"block-size: 20rem; border: var(--border-width-thin) solid var(--color-border);\">\n  <ds-splitter label=\"Sidebar width\" orientation=\"vertical\">\n    <nav slot=\"primary\" style=\"padding: var(--space-3);\">Navigation</nav>\n    <main slot=\"secondary\" style=\"padding: var(--space-3);\">Content</main>\n  </ds-splitter>\n</div>",
-        "rn": "import { View } from 'react-native';\nimport { Splitter, Text } from '@design-schema/rn';\n\n<Splitter\n  label=\"Preview height\"\n  orientation=\"vertical\"\n  primary={<View style={{ height: 120 }}>\n    <Text>Editor</Text>\n  </View>}\n  secondary={<View style={{ height: 120 }}>\n    <Text>Preview</Text>\n  </View>}\n/>",
+        "react": "import { Splitter, Text } from '@design-schema/react';\n\n<Splitter\n  label=\"Preview height\"\n  orientation=\"vertical\"\n  primary={<Text element=\"p\">Editor</Text>}\n  secondary={<Text element=\"p\">Preview</Text>}\n/>",
+        "lit": null,
+        "rn": "import { Splitter } from '@design-schema/rn';\n\n<Splitter\n  label=\"Preview height\"\n  orientation=\"vertical\"\n  primary=\"Navigation\"\n  secondary=\"Content\"\n/>",
         "swift": null
       },
       "stories": {
         "react": "OrientationVertical",
-        "lit": "OrientationVertical",
+        "lit": null,
         "rn": "OrientationVertical",
         "swift": null
       },
@@ -378,13 +342,13 @@
       },
       "snippets": {
         "react": "import { Splitter, Stack, Text, Link } from '@design-schema/react';\n\nconst primaryContent = (\n  <Stack element=\"nav\" gap=\"tight\">\n    <Text element=\"p\" weight=\"medium\">\n      Sections\n    </Text>\n    <Link href=\"#\" label=\"Overview\" />\n    <Link href=\"#\" label=\"Reports\" />\n    <Link href=\"#\" label=\"Settings\" />\n  </Stack>\n);\n\nconst secondaryContent = (\n  <Stack gap=\"normal\">\n    <Text element=\"p\" weight=\"medium\">\n      Overview\n    </Text>\n    <Text element=\"p\">Select a section from the sidebar to see its detail here.</Text>\n  </Stack>\n);\n\n<Splitter\n  label=\"Sidebar width\"\n  primary={primaryContent}\n  secondary={secondaryContent}\n  stackBelow=\"prose\"\n/>",
-        "lit": "<div style=\"block-size: 20rem; border: var(--border-width-thin) solid var(--color-border);\">\n  <ds-splitter label=\"Sidebar width\" stack-below=\"prose\">\n    <nav slot=\"primary\" style=\"padding: var(--space-3);\">Navigation</nav>\n    <main slot=\"secondary\" style=\"padding: var(--space-3);\">Content</main>\n  </ds-splitter>\n</div>",
-        "rn": "import { View } from 'react-native';\nimport { Splitter, Text } from '@design-schema/rn';\n\n<Splitter\n  label=\"Sidebar width\"\n  stackBelow=\"prose\"\n  primary={<View style={{ height: 240 }}>\n    <Text>Navigation</Text>\n  </View>}\n  secondary={<View style={{ height: 240 }}>\n    <Text>Content</Text>\n  </View>}\n/>",
+        "lit": null,
+        "rn": "import { Splitter } from '@design-schema/rn';\n\n<Splitter\n  label=\"Sidebar width\"\n  stackBelow=\"prose\"\n  primary=\"Navigation\"\n  secondary=\"Content\"\n/>",
         "swift": null
       },
       "stories": {
         "react": "StackBelowProse",
-        "lit": "StackBelowProse",
+        "lit": null,
         "rn": "StackBelowProse",
         "swift": null
       },
@@ -480,13 +444,13 @@
       },
       "snippets": {
         "react": "import { Splitter, Stack, Text, Link } from '@design-schema/react';\n\nconst primaryContent = (\n  <Stack element=\"nav\" gap=\"tight\">\n    <Text element=\"p\" weight=\"medium\">\n      Sections\n    </Text>\n    <Link href=\"#\" label=\"Overview\" />\n    <Link href=\"#\" label=\"Reports\" />\n    <Link href=\"#\" label=\"Settings\" />\n  </Stack>\n);\n\nconst secondaryContent = (\n  <Stack gap=\"normal\">\n    <Text element=\"p\" weight=\"medium\">\n      Overview\n    </Text>\n    <Text element=\"p\">Select a section from the sidebar to see its detail here.</Text>\n  </Stack>\n);\n\n<Splitter\n  label=\"Sidebar width\"\n  primary={primaryContent}\n  secondary={secondaryContent}\n  stackBelow=\"content\"\n/>",
-        "lit": "<div style=\"block-size: 20rem; border: var(--border-width-thin) solid var(--color-border);\">\n  <ds-splitter label=\"Sidebar width\" stack-below=\"content\">\n    <nav slot=\"primary\" style=\"padding: var(--space-3);\">Navigation</nav>\n    <main slot=\"secondary\" style=\"padding: var(--space-3);\">Content</main>\n  </ds-splitter>\n</div>",
-        "rn": "import { View } from 'react-native';\nimport { Splitter, Text } from '@design-schema/rn';\n\n<Splitter\n  label=\"Sidebar width\"\n  stackBelow=\"content\"\n  primary={<View style={{ height: 240 }}>\n    <Text>Navigation</Text>\n  </View>}\n  secondary={<View style={{ height: 240 }}>\n    <Text>Content</Text>\n  </View>}\n/>",
+        "lit": null,
+        "rn": "import { Splitter } from '@design-schema/rn';\n\n<Splitter\n  label=\"Sidebar width\"\n  stackBelow=\"content\"\n  primary=\"Navigation\"\n  secondary=\"Content\"\n/>",
         "swift": null
       },
       "stories": {
         "react": "StackBelowContent",
-        "lit": "StackBelowContent",
+        "lit": null,
         "rn": "StackBelowContent",
         "swift": null
       },
@@ -582,13 +546,13 @@
       },
       "snippets": {
         "react": "import { Splitter, Stack, Text, Link } from '@design-schema/react';\n\nconst primaryContent = (\n  <Stack element=\"nav\" gap=\"tight\">\n    <Text element=\"p\" weight=\"medium\">\n      Sections\n    </Text>\n    <Link href=\"#\" label=\"Overview\" />\n    <Link href=\"#\" label=\"Reports\" />\n    <Link href=\"#\" label=\"Settings\" />\n  </Stack>\n);\n\nconst secondaryContent = (\n  <Stack gap=\"normal\">\n    <Text element=\"p\" weight=\"medium\">\n      Overview\n    </Text>\n    <Text element=\"p\">Select a section from the sidebar to see its detail here.</Text>\n  </Stack>\n);\n\n<Splitter\n  label=\"Sidebar width\"\n  primary={primaryContent}\n  secondary={secondaryContent}\n  stackBelow=\"never\"\n/>",
-        "lit": "<div style=\"block-size: 20rem; border: var(--border-width-thin) solid var(--color-border);\">\n  <ds-splitter label=\"Sidebar width\" stack-below=\"never\">\n    <nav slot=\"primary\" style=\"padding: var(--space-3);\">Navigation</nav>\n    <main slot=\"secondary\" style=\"padding: var(--space-3);\">Content</main>\n  </ds-splitter>\n</div>",
-        "rn": "import { View } from 'react-native';\nimport { Splitter, Text } from '@design-schema/rn';\n\n<Splitter\n  label=\"Sidebar width\"\n  stackBelow=\"never\"\n  primary={<View style={{ height: 240 }}>\n    <Text>Navigation</Text>\n  </View>}\n  secondary={<View style={{ height: 240 }}>\n    <Text>Content</Text>\n  </View>}\n/>",
+        "lit": null,
+        "rn": "import { Splitter } from '@design-schema/rn';\n\n<Splitter\n  label=\"Sidebar width\"\n  stackBelow=\"never\"\n  primary=\"Navigation\"\n  secondary=\"Content\"\n/>",
         "swift": null
       },
       "stories": {
         "react": "StackBelowNever",
-        "lit": "StackBelowNever",
+        "lit": null,
         "rn": "StackBelowNever",
         "swift": null
       },
@@ -684,13 +648,13 @@
       },
       "snippets": {
         "react": "import { Splitter, Stack, Text, Link } from '@design-schema/react';\n\nconst primaryContent = (\n  <Stack element=\"nav\" gap=\"tight\">\n    <Text element=\"p\" weight=\"medium\">\n      Sections\n    </Text>\n    <Link href=\"#\" label=\"Overview\" />\n    <Link href=\"#\" label=\"Reports\" />\n    <Link href=\"#\" label=\"Settings\" />\n  </Stack>\n);\n\nconst secondaryContent = (\n  <Stack gap=\"normal\">\n    <Text element=\"p\" weight=\"medium\">\n      Overview\n    </Text>\n    <Text element=\"p\">Select a section from the sidebar to see its detail here.</Text>\n  </Stack>\n);\n\n<Splitter\n  label=\"Sidebar width\"\n  primary={primaryContent}\n  secondary={secondaryContent}\n  collapsible\n/>",
-        "lit": "<div style=\"block-size: 20rem; border: var(--border-width-thin) solid var(--color-border);\">\n  <ds-splitter label=\"Sidebar width\" collapsible>\n    <nav slot=\"primary\" style=\"padding: var(--space-3);\">Navigation</nav>\n    <main slot=\"secondary\" style=\"padding: var(--space-3);\">Content</main>\n  </ds-splitter>\n</div>",
-        "rn": "import { View } from 'react-native';\nimport { Splitter, Text } from '@design-schema/rn';\n\n<Splitter\n  label=\"Sidebar width\"\n  primary={<View style={{ height: 240 }}>\n    <Text>Navigation</Text>\n  </View>}\n  secondary={<View style={{ height: 240 }}>\n    <Text>Content</Text>\n  </View>}\n  collapsible\n/>",
+        "lit": null,
+        "rn": "import { Splitter } from '@design-schema/rn';\n\n<Splitter\n  label=\"Sidebar width\"\n  primary=\"Navigation\"\n  secondary=\"Content\"\n  collapsible\n/>",
         "swift": null
       },
       "stories": {
         "react": "Collapsible",
-        "lit": "Collapsible",
+        "lit": null,
         "rn": "Collapsible",
         "swift": null
       },
@@ -783,12 +747,12 @@
         "step": 2,
         "collapsible": true,
         "stackBelow": "prose",
-        "collapsed": true
+        "defaultCollapsed": true
       },
       "snippets": {
-        "react": "import { Splitter, Stack, Text, Link } from '@design-schema/react';\n\nconst primaryContent = (\n  <Stack element=\"nav\" gap=\"tight\">\n    <Text element=\"p\" weight=\"medium\">\n      Sections\n    </Text>\n    <Link href=\"#\" label=\"Overview\" />\n    <Link href=\"#\" label=\"Reports\" />\n    <Link href=\"#\" label=\"Settings\" />\n  </Stack>\n);\n\nconst secondaryContent = (\n  <Stack gap=\"normal\">\n    <Text element=\"p\" weight=\"medium\">\n      Overview\n    </Text>\n    <Text element=\"p\">Select a section from the sidebar to see its detail here.</Text>\n  </Stack>\n);\n\n<Splitter\n  label=\"Sidebar width\"\n  primary={primaryContent}\n  secondary={secondaryContent}\n  collapsible\n  collapsed\n/>",
+        "react": "import { Splitter, Stack, Text, Link } from '@design-schema/react';\n\nconst primaryContent = (\n  <Stack element=\"nav\" gap=\"tight\">\n    <Text element=\"p\" weight=\"medium\">\n      Sections\n    </Text>\n    <Link href=\"#\" label=\"Overview\" />\n    <Link href=\"#\" label=\"Reports\" />\n    <Link href=\"#\" label=\"Settings\" />\n  </Stack>\n);\n\nconst secondaryContent = (\n  <Stack gap=\"normal\">\n    <Text element=\"p\" weight=\"medium\">\n      Overview\n    </Text>\n    <Text element=\"p\">Select a section from the sidebar to see its detail here.</Text>\n  </Stack>\n);\n\n<Splitter\n  label=\"Sidebar width\"\n  primary={primaryContent}\n  secondary={secondaryContent}\n  collapsible\n  defaultCollapsed\n/>",
         "lit": null,
-        "rn": "import { View } from 'react-native';\nimport { Splitter, Text } from '@design-schema/rn';\n\n<Splitter\n  label=\"Sidebar width\"\n  primary={<View style={{ height: 240 }}>\n    <Text>Navigation</Text>\n  </View>}\n  secondary={<View style={{ height: 240 }}>\n    <Text>Content</Text>\n  </View>}\n  collapsible\n  collapsed\n/>",
+        "rn": "import { Splitter } from '@design-schema/rn';\n\n<Splitter\n  label=\"Sidebar width\"\n  primary=\"Navigation\"\n  secondary=\"Content\"\n  collapsible\n  defaultCollapsed\n/>",
         "swift": null
       },
       "stories": {
@@ -799,109 +763,6 @@
       },
       "storyId": "splitter-react--collapsed",
       "sweep": null,
-      "decorated": false,
-      "primary": true
-    },
-    {
-      "title": "With Persist Key",
-      "args": {
-        "label": "Sidebar width",
-        "orientation": "horizontal",
-        "primary": {
-          "$element": "Stack",
-          "props": {
-            "element": "nav",
-            "gap": "tight"
-          },
-          "children": [
-            {
-              "$element": "Text",
-              "props": {
-                "element": "p",
-                "weight": "medium"
-              },
-              "children": [
-                " Sections "
-              ]
-            },
-            {
-              "$element": "Link",
-              "props": {
-                "href": "#",
-                "label": "Overview"
-              },
-              "children": []
-            },
-            {
-              "$element": "Link",
-              "props": {
-                "href": "#",
-                "label": "Reports"
-              },
-              "children": []
-            },
-            {
-              "$element": "Link",
-              "props": {
-                "href": "#",
-                "label": "Settings"
-              },
-              "children": []
-            }
-          ]
-        },
-        "secondary": {
-          "$element": "Stack",
-          "props": {
-            "gap": "normal"
-          },
-          "children": [
-            {
-              "$element": "Text",
-              "props": {
-                "element": "p",
-                "weight": "medium"
-              },
-              "children": [
-                " Overview "
-              ]
-            },
-            {
-              "$element": "Text",
-              "props": {
-                "element": "p"
-              },
-              "children": [
-                "Select a section from the sidebar to see its detail here."
-              ]
-            }
-          ]
-        },
-        "defaultSize": 30,
-        "minSize": 10,
-        "maxSize": 90,
-        "step": 2,
-        "collapsible": true,
-        "stackBelow": "prose",
-        "persistKey": "demo-splitter-sidebar"
-      },
-      "snippets": {
-        "react": "import { Splitter, Stack, Text, Link } from '@design-schema/react';\n\nconst primaryContent = (\n  <Stack element=\"nav\" gap=\"tight\">\n    <Text element=\"p\" weight=\"medium\">\n      Sections\n    </Text>\n    <Link href=\"#\" label=\"Overview\" />\n    <Link href=\"#\" label=\"Reports\" />\n    <Link href=\"#\" label=\"Settings\" />\n  </Stack>\n);\n\nconst secondaryContent = (\n  <Stack gap=\"normal\">\n    <Text element=\"p\" weight=\"medium\">\n      Overview\n    </Text>\n    <Text element=\"p\">Select a section from the sidebar to see its detail here.</Text>\n  </Stack>\n);\n\n<Splitter\n  label=\"Sidebar width\"\n  primary={primaryContent}\n  secondary={secondaryContent}\n  collapsible\n  persistKey=\"demo-splitter-sidebar\"\n/>",
-        "lit": "<div style=\"block-size: 20rem; border: var(--border-width-thin) solid var(--color-border);\">\n  <ds-splitter label=\"Sidebar width\" persist-key=\"storybook-splitter-demo\">\n    <nav slot=\"primary\" style=\"padding: var(--space-3);\">Navigation</nav>\n    <main slot=\"secondary\" style=\"padding: var(--space-3);\">Content</main>\n  </ds-splitter>\n</div>",
-        "rn": "import { View } from 'react-native';\nimport { Splitter, Text } from '@design-schema/rn';\n\n<Splitter\n  label=\"Sidebar width\"\n  primary={<View style={{ height: 240 }}>\n    <Text>Navigation</Text>\n  </View>}\n  secondary={<View style={{ height: 240 }}>\n    <Text>Content</Text>\n  </View>}\n  persistKey=\"demo-sidebar\"\n/>",
-        "swift": null
-      },
-      "stories": {
-        "react": "WithPersistKey",
-        "lit": "WithPersistKey",
-        "rn": "WithPersistKey",
-        "swift": null
-      },
-      "storyId": "splitter-react--with-persist-key",
-      "sweep": {
-        "prop": "collapsible",
-        "value": true
-      },
       "decorated": false,
       "primary": true
     },
@@ -953,13 +814,13 @@
       },
       "snippets": {
         "react": "import { Splitter, Stack, Link, Button } from '@design-schema/react';\n\n<Splitter\n  label=\"Sidebar width\"\n  primary={<Stack element=\"nav\" gap=\"tight\">\n    <Link href=\"#\" label=\"Overview\" />\n    <Link href=\"#\" label=\"Reports\" />\n  </Stack>}\n  secondary={<Button label=\"Detail action\" variant=\"secondary\" size=\"sm\" />}\n  collapsible\n/>",
-        "lit": "<div style=\"block-size: 20rem; border: var(--border-width-thin) solid var(--color-border);\">\n  <ds-splitter label=\"Sidebar width\" collapsible>\n    <nav slot=\"primary\" style=\"padding: var(--space-3);\">\n      <ds-button label=\"First\"></ds-button>\n      <ds-button label=\"Second\"></ds-button>\n    </nav>\n    <main slot=\"secondary\" style=\"padding: var(--space-3);\">\n      <ds-button label=\"Third\"></ds-button>\n    </main>\n  </ds-splitter>\n</div>",
-        "rn": "import { View } from 'react-native';\nimport { Button, Splitter } from '@design-schema/rn';\n\n<Splitter\n  label=\"Sidebar width\"\n  primary={<View style={{ height: 240 }}>\n    <Button label=\"First action\" variant=\"secondary\" />\n  </View>}\n  secondary={<View style={{ height: 240 }}>\n    <Button label=\"Second action\" variant=\"secondary\" />\n  </View>}\n  collapsible\n/>",
+        "lit": null,
+        "rn": "import { Button, Splitter, Stack } from '@design-schema/rn';\n\n<Splitter\n  label=\"Sidebar width\"\n  stackBelow=\"never\"\n  primary={<Stack gap=\"tight\">\n    <Button label=\"First action\" variant=\"secondary\" />\n    <Button label=\"Second action\" variant=\"secondary\" />\n  </Stack>}\n  secondary={<Stack gap=\"tight\">\n    <Button label=\"Third action\" variant=\"secondary\" />\n    <Button label=\"Fourth action\" variant=\"secondary\" />\n  </Stack>}\n  collapsible\n/>",
         "swift": null
       },
       "stories": {
         "react": "Keyboard",
-        "lit": "Keyboard",
+        "lit": null,
         "rn": "Keyboard",
         "swift": null
       },
@@ -970,6 +831,131 @@
       },
       "decorated": false,
       "primary": true
+    },
+    {
+      "title": "Sidebar And Content",
+      "args": {
+        "label": "Sidebar width",
+        "orientation": "horizontal",
+        "primary": "A navigation tree",
+        "secondary": "The selected document",
+        "defaultSize": 25,
+        "minSize": 10,
+        "maxSize": 90,
+        "step": 2,
+        "collapsible": false,
+        "stackBelow": "prose",
+        "persistKey": "app-sidebar"
+      },
+      "snippets": {
+        "react": "import { Splitter } from '@design-schema/react';\n\n<Splitter\n  label=\"Sidebar width\"\n  primary=\"A navigation tree\"\n  secondary=\"The selected document\"\n  defaultSize={25}\n  persistKey=\"app-sidebar\"\n/>",
+        "lit": null,
+        "rn": "import { Splitter } from '@design-schema/rn';\n\n<Splitter\n  label=\"Sidebar width\"\n  defaultSize={25}\n  primary=\"A navigation tree\"\n  secondary=\"The selected document\"\n  persistKey=\"app-sidebar\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "SidebarAndContent",
+        "lit": null,
+        "rn": "SidebarAndContent",
+        "swift": null
+      },
+      "storyId": "splitter-react--sidebar-and-content",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Collapsible Navigation",
+      "args": {
+        "label": "Sidebar width",
+        "orientation": "horizontal",
+        "primary": "A navigation tree",
+        "secondary": "The selected document",
+        "defaultSize": 30,
+        "minSize": 15,
+        "maxSize": 90,
+        "step": 2,
+        "collapsible": true,
+        "stackBelow": "prose"
+      },
+      "snippets": {
+        "react": "import { Splitter } from '@design-schema/react';\n\n<Splitter\n  label=\"Sidebar width\"\n  primary=\"A navigation tree\"\n  secondary=\"The selected document\"\n  minSize={15}\n  collapsible\n/>",
+        "lit": null,
+        "rn": "import { Splitter } from '@design-schema/rn';\n\n<Splitter\n  label=\"Sidebar width\"\n  minSize={15}\n  primary=\"A navigation tree\"\n  secondary=\"The selected document\"\n  collapsible\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "CollapsibleNavigation",
+        "lit": null,
+        "rn": "CollapsibleNavigation",
+        "swift": null
+      },
+      "storyId": "splitter-react--collapsible-navigation",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Editor Over Preview",
+      "args": {
+        "label": "Editor height",
+        "orientation": "vertical",
+        "primary": "The editor",
+        "secondary": "The preview",
+        "defaultSize": 60,
+        "minSize": 10,
+        "maxSize": 90,
+        "step": 2,
+        "collapsible": false,
+        "stackBelow": "prose"
+      },
+      "snippets": {
+        "react": "import { Splitter } from '@design-schema/react';\n\n<Splitter\n  label=\"Editor height\"\n  orientation=\"vertical\"\n  primary=\"The editor\"\n  secondary=\"The preview\"\n  defaultSize={60}\n/>",
+        "lit": null,
+        "rn": "import { Splitter } from '@design-schema/rn';\n\n<Splitter\n  label=\"Editor height\"\n  orientation=\"vertical\"\n  defaultSize={60}\n  primary=\"The editor\"\n  secondary=\"The preview\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "EditorOverPreview",
+        "lit": null,
+        "rn": "EditorOverPreview",
+        "swift": null
+      },
+      "storyId": "splitter-react--editor-over-preview",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Never Stacking Workbench",
+      "args": {
+        "label": "List width",
+        "orientation": "horizontal",
+        "primary": "The result list",
+        "secondary": "The detail view",
+        "defaultSize": 30,
+        "minSize": 10,
+        "maxSize": 90,
+        "step": 5,
+        "collapsible": false,
+        "stackBelow": "never"
+      },
+      "snippets": {
+        "react": "import { Splitter } from '@design-schema/react';\n\n<Splitter\n  label=\"List width\"\n  primary=\"The result list\"\n  secondary=\"The detail view\"\n  step={5}\n  stackBelow=\"never\"\n/>",
+        "lit": null,
+        "rn": "import { Splitter } from '@design-schema/rn';\n\n<Splitter\n  label=\"List width\"\n  step={5}\n  stackBelow=\"never\"\n  primary=\"The result list\"\n  secondary=\"The detail view\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "NeverStackingWorkbench",
+        "lit": null,
+        "rn": "NeverStackingWorkbench",
+        "swift": null
+      },
+      "storyId": "splitter-react--never-stacking-workbench",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
     }
   ]
 }

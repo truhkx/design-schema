@@ -12,9 +12,6 @@
       "args": {
         "name": "sign-in",
         "label": "Sign in",
-        "validate": "submit",
-        "disabled": false,
-        "errorSummary": true,
         "children": {
           "$element": "Stack",
           "props": {
@@ -24,11 +21,10 @@
             {
               "$element": "Input",
               "props": {
-                "label": "Email address",
+                "label": "Email",
                 "name": "email",
                 "type": "email",
-                "required": true,
-                "autocomplete": "email"
+                "required": true
               },
               "children": []
             },
@@ -38,50 +34,30 @@
                 "label": "Password",
                 "name": "password",
                 "type": "password",
-                "required": true,
-                "autocomplete": "current-password",
-                "description": "At least 8 characters."
+                "required": true
               },
               "children": []
             }
           ]
         },
         "actions": {
-          "$element": "Stack",
+          "$element": "Button",
           "props": {
-            "direction": "horizontal",
-            "gap": "tight",
-            "align": "start"
+            "label": "Sign in",
+            "type": "submit"
           },
-          "children": [
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Sign in",
-                "type": "submit"
-              },
-              "children": []
-            },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Cancel",
-                "variant": "secondary"
-              },
-              "children": []
-            }
-          ]
+          "children": []
         }
       },
       "snippets": {
-        "react": "import { Form, Input, Button, Stack } from '@design-schema/react';\n\nconst fields = (\n  <Stack gap=\"normal\">\n    <Input label=\"Email address\" name=\"email\" type=\"email\" required autocomplete=\"email\" />\n    <Input\n      label=\"Password\"\n      name=\"password\"\n      type=\"password\"\n      required\n      autocomplete=\"current-password\"\n      description=\"At least 8 characters.\"\n    />\n  </Stack>\n);\n\nconst actions = (\n  <Stack direction=\"horizontal\" gap=\"tight\" align=\"start\">\n    <Button label=\"Sign in\" type=\"submit\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </Stack>\n);\n\n<Form name=\"sign-in\" label=\"Sign in\" actions={actions}>{fields}</Form>",
-        "lit": "<ds-form name=\"sign-in\" label=\"Sign in\">\n  <ds-stack gap=\"normal\">\n    <ds-input label=\"Email address\" name=\"email\" type=\"email\" required autocomplete=\"email\"></ds-input>\n    <ds-input\n      label=\"Password\"\n      name=\"password\"\n      type=\"password\"\n      required\n      autocomplete=\"current-password\"\n      description=\"At least 8 characters.\"\n    ></ds-input>\n  </ds-stack>\n  <ds-stack slot=\"actions\" direction=\"horizontal\" gap=\"tight\" align=\"start\">\n    <ds-button label=\"Sign in\" type=\"submit\"></ds-button>\n    <ds-button label=\"Cancel\" variant=\"secondary\"></ds-button>\n  </ds-stack>\n</ds-form>",
+        "react": "import { Form, Input, Button, Stack } from '@design-schema/react';\n\nconst signInFields = (\n  <Stack gap=\"normal\">\n    <Input label=\"Email\" name=\"email\" type=\"email\" required />\n    <Input label=\"Password\" name=\"password\" type=\"password\" required />\n  </Stack>\n);\n\nconst signInActions = <Button label=\"Sign in\" type=\"submit\" />;\n\n<Form name=\"sign-in\" label=\"Sign in\" actions={signInActions}>{signInFields}</Form>",
+        "lit": null,
         "rn": "import { Button, Form, Input, Stack } from '@design-schema/rn';\n\n<Form\n  name=\"profile\"\n  label=\"Profile\"\n  actions={\n    <Stack direction=\"horizontal\" gap=\"normal\" align=\"start\">\n      <Button label=\"Save changes\" type=\"submit\" />\n      <Button label=\"Cancel\" variant=\"secondary\" />\n    </Stack>\n  }\n>\n  <Input label=\"Full name\" name=\"name\" required />\n  <Input label=\"Email address\" name=\"email\" type=\"email\" required description=\"Use the email you signed up with.\" />\n</Form>",
         "swift": null
       },
       "stories": {
         "react": "Default",
-        "lit": "Default",
+        "lit": null,
         "rn": "Default",
         "swift": null
       },
@@ -95,9 +71,6 @@
       "args": {
         "name": "sign-in",
         "label": "Sign in",
-        "validate": "submit",
-        "disabled": false,
-        "errorSummary": true,
         "children": {
           "$element": "Stack",
           "props": {
@@ -107,11 +80,10 @@
             {
               "$element": "Input",
               "props": {
-                "label": "Email address",
+                "label": "Email",
                 "name": "email",
                 "type": "email",
-                "required": true,
-                "autocomplete": "email"
+                "required": true
               },
               "children": []
             },
@@ -121,50 +93,31 @@
                 "label": "Password",
                 "name": "password",
                 "type": "password",
-                "required": true,
-                "autocomplete": "current-password",
-                "description": "At least 8 characters."
+                "required": true
               },
               "children": []
             }
           ]
         },
         "actions": {
-          "$element": "Stack",
+          "$element": "Button",
           "props": {
-            "direction": "horizontal",
-            "gap": "tight",
-            "align": "start"
+            "label": "Sign in",
+            "type": "submit"
           },
-          "children": [
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Sign in",
-                "type": "submit"
-              },
-              "children": []
-            },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Cancel",
-                "variant": "secondary"
-              },
-              "children": []
-            }
-          ]
-        }
+          "children": []
+        },
+        "validate": "submit"
       },
       "snippets": {
-        "react": "import { Form, Input, Button, Stack } from '@design-schema/react';\n\nconst fields = (\n  <Stack gap=\"normal\">\n    <Input label=\"Email address\" name=\"email\" type=\"email\" required autocomplete=\"email\" />\n    <Input\n      label=\"Password\"\n      name=\"password\"\n      type=\"password\"\n      required\n      autocomplete=\"current-password\"\n      description=\"At least 8 characters.\"\n    />\n  </Stack>\n);\n\nconst actions = (\n  <Stack direction=\"horizontal\" gap=\"tight\" align=\"start\">\n    <Button label=\"Sign in\" type=\"submit\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </Stack>\n);\n\n<Form name=\"sign-in\" label=\"Sign in\" validate=\"submit\" actions={actions}>{fields}</Form>",
-        "lit": "<ds-form name=\"sign-in\" label=\"Sign in\" validate=\"submit\">\n  <ds-stack gap=\"normal\">\n    <ds-input label=\"Email address\" name=\"email\" type=\"email\" required autocomplete=\"email\"></ds-input>\n    <ds-input\n      label=\"Password\"\n      name=\"password\"\n      type=\"password\"\n      required\n      autocomplete=\"current-password\"\n      description=\"At least 8 characters.\"\n    ></ds-input>\n  </ds-stack>\n  <ds-stack slot=\"actions\" direction=\"horizontal\" gap=\"tight\" align=\"start\">\n    <ds-button label=\"Sign in\" type=\"submit\"></ds-button>\n    <ds-button label=\"Cancel\" variant=\"secondary\"></ds-button>\n  </ds-stack>\n</ds-form>",
+        "react": "import { Form, Input, Button, Stack } from '@design-schema/react';\n\nconst signInFields = (\n  <Stack gap=\"normal\">\n    <Input label=\"Email\" name=\"email\" type=\"email\" required />\n    <Input label=\"Password\" name=\"password\" type=\"password\" required />\n  </Stack>\n);\n\nconst signInActions = <Button label=\"Sign in\" type=\"submit\" />;\n\n<Form\n  name=\"sign-in\"\n  label=\"Sign in\"\n  actions={signInActions}\n  validate=\"submit\"\n>\n  {signInFields}\n</Form>",
+        "lit": null,
         "rn": "import { Button, Form, Input, Stack } from '@design-schema/rn';\n\n<Form\n  name=\"profile\"\n  label=\"Profile\"\n  validate=\"submit\"\n  actions={\n    <Stack direction=\"horizontal\" gap=\"normal\" align=\"start\">\n      <Button label=\"Save changes\" type=\"submit\" />\n      <Button label=\"Cancel\" variant=\"secondary\" />\n    </Stack>\n  }\n>\n  <Input label=\"Full name\" name=\"name\" required />\n  <Input label=\"Email address\" name=\"email\" type=\"email\" required description=\"Use the email you signed up with.\" />\n</Form>",
         "swift": null
       },
       "stories": {
         "react": "ValidateSubmit",
-        "lit": "ValidateSubmit",
+        "lit": null,
         "rn": "ValidateSubmit",
         "swift": null
       },
@@ -174,16 +127,13 @@
         "value": "submit"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Validate Blur",
       "args": {
         "name": "sign-in",
         "label": "Sign in",
-        "validate": "blur",
-        "disabled": false,
-        "errorSummary": true,
         "children": {
           "$element": "Stack",
           "props": {
@@ -193,11 +143,10 @@
             {
               "$element": "Input",
               "props": {
-                "label": "Email address",
+                "label": "Email",
                 "name": "email",
                 "type": "email",
-                "required": true,
-                "autocomplete": "email"
+                "required": true
               },
               "children": []
             },
@@ -207,50 +156,31 @@
                 "label": "Password",
                 "name": "password",
                 "type": "password",
-                "required": true,
-                "autocomplete": "current-password",
-                "description": "At least 8 characters."
+                "required": true
               },
               "children": []
             }
           ]
         },
         "actions": {
-          "$element": "Stack",
+          "$element": "Button",
           "props": {
-            "direction": "horizontal",
-            "gap": "tight",
-            "align": "start"
+            "label": "Sign in",
+            "type": "submit"
           },
-          "children": [
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Sign in",
-                "type": "submit"
-              },
-              "children": []
-            },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Cancel",
-                "variant": "secondary"
-              },
-              "children": []
-            }
-          ]
-        }
+          "children": []
+        },
+        "validate": "blur"
       },
       "snippets": {
-        "react": "import { Form, Input, Button, Stack } from '@design-schema/react';\n\nconst fields = (\n  <Stack gap=\"normal\">\n    <Input label=\"Email address\" name=\"email\" type=\"email\" required autocomplete=\"email\" />\n    <Input\n      label=\"Password\"\n      name=\"password\"\n      type=\"password\"\n      required\n      autocomplete=\"current-password\"\n      description=\"At least 8 characters.\"\n    />\n  </Stack>\n);\n\nconst actions = (\n  <Stack direction=\"horizontal\" gap=\"tight\" align=\"start\">\n    <Button label=\"Sign in\" type=\"submit\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </Stack>\n);\n\n<Form name=\"sign-in\" label=\"Sign in\" validate=\"blur\" actions={actions}>{fields}</Form>",
-        "lit": "<ds-form name=\"sign-in\" label=\"Sign in\" validate=\"blur\">\n  <ds-stack gap=\"normal\">\n    <ds-input label=\"Email address\" name=\"email\" type=\"email\" required autocomplete=\"email\"></ds-input>\n    <ds-input\n      label=\"Password\"\n      name=\"password\"\n      type=\"password\"\n      required\n      autocomplete=\"current-password\"\n      description=\"At least 8 characters.\"\n    ></ds-input>\n  </ds-stack>\n  <ds-stack slot=\"actions\" direction=\"horizontal\" gap=\"tight\" align=\"start\">\n    <ds-button label=\"Sign in\" type=\"submit\"></ds-button>\n    <ds-button label=\"Cancel\" variant=\"secondary\"></ds-button>\n  </ds-stack>\n</ds-form>",
+        "react": "import { Form, Input, Button, Stack } from '@design-schema/react';\n\nconst signInFields = (\n  <Stack gap=\"normal\">\n    <Input label=\"Email\" name=\"email\" type=\"email\" required />\n    <Input label=\"Password\" name=\"password\" type=\"password\" required />\n  </Stack>\n);\n\nconst signInActions = <Button label=\"Sign in\" type=\"submit\" />;\n\n<Form name=\"sign-in\" label=\"Sign in\" actions={signInActions} validate=\"blur\">{signInFields}</Form>",
+        "lit": null,
         "rn": "import { Button, Form, Input, Stack } from '@design-schema/rn';\n\n<Form\n  name=\"profile\"\n  label=\"Profile\"\n  validate=\"blur\"\n  actions={\n    <Stack direction=\"horizontal\" gap=\"normal\" align=\"start\">\n      <Button label=\"Save changes\" type=\"submit\" />\n      <Button label=\"Cancel\" variant=\"secondary\" />\n    </Stack>\n  }\n>\n  <Input label=\"Full name\" name=\"name\" required />\n  <Input label=\"Email address\" name=\"email\" type=\"email\" required description=\"Use the email you signed up with.\" />\n</Form>",
         "swift": null
       },
       "stories": {
         "react": "ValidateBlur",
-        "lit": "ValidateBlur",
+        "lit": null,
         "rn": "ValidateBlur",
         "swift": null
       },
@@ -260,16 +190,13 @@
         "value": "blur"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Validate Change",
       "args": {
         "name": "sign-in",
         "label": "Sign in",
-        "validate": "change",
-        "disabled": false,
-        "errorSummary": true,
         "children": {
           "$element": "Stack",
           "props": {
@@ -279,11 +206,10 @@
             {
               "$element": "Input",
               "props": {
-                "label": "Email address",
+                "label": "Email",
                 "name": "email",
                 "type": "email",
-                "required": true,
-                "autocomplete": "email"
+                "required": true
               },
               "children": []
             },
@@ -293,50 +219,31 @@
                 "label": "Password",
                 "name": "password",
                 "type": "password",
-                "required": true,
-                "autocomplete": "current-password",
-                "description": "At least 8 characters."
+                "required": true
               },
               "children": []
             }
           ]
         },
         "actions": {
-          "$element": "Stack",
+          "$element": "Button",
           "props": {
-            "direction": "horizontal",
-            "gap": "tight",
-            "align": "start"
+            "label": "Sign in",
+            "type": "submit"
           },
-          "children": [
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Sign in",
-                "type": "submit"
-              },
-              "children": []
-            },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Cancel",
-                "variant": "secondary"
-              },
-              "children": []
-            }
-          ]
-        }
+          "children": []
+        },
+        "validate": "change"
       },
       "snippets": {
-        "react": "import { Form, Input, Button, Stack } from '@design-schema/react';\n\nconst fields = (\n  <Stack gap=\"normal\">\n    <Input label=\"Email address\" name=\"email\" type=\"email\" required autocomplete=\"email\" />\n    <Input\n      label=\"Password\"\n      name=\"password\"\n      type=\"password\"\n      required\n      autocomplete=\"current-password\"\n      description=\"At least 8 characters.\"\n    />\n  </Stack>\n);\n\nconst actions = (\n  <Stack direction=\"horizontal\" gap=\"tight\" align=\"start\">\n    <Button label=\"Sign in\" type=\"submit\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </Stack>\n);\n\n<Form name=\"sign-in\" label=\"Sign in\" validate=\"change\" actions={actions}>{fields}</Form>",
-        "lit": "<ds-form name=\"sign-in\" label=\"Sign in\" validate=\"change\">\n  <ds-stack gap=\"normal\">\n    <ds-input label=\"Email address\" name=\"email\" type=\"email\" required autocomplete=\"email\"></ds-input>\n    <ds-input\n      label=\"Password\"\n      name=\"password\"\n      type=\"password\"\n      required\n      autocomplete=\"current-password\"\n      description=\"At least 8 characters.\"\n    ></ds-input>\n  </ds-stack>\n  <ds-stack slot=\"actions\" direction=\"horizontal\" gap=\"tight\" align=\"start\">\n    <ds-button label=\"Sign in\" type=\"submit\"></ds-button>\n    <ds-button label=\"Cancel\" variant=\"secondary\"></ds-button>\n  </ds-stack>\n</ds-form>",
+        "react": "import { Form, Input, Button, Stack } from '@design-schema/react';\n\nconst signInFields = (\n  <Stack gap=\"normal\">\n    <Input label=\"Email\" name=\"email\" type=\"email\" required />\n    <Input label=\"Password\" name=\"password\" type=\"password\" required />\n  </Stack>\n);\n\nconst signInActions = <Button label=\"Sign in\" type=\"submit\" />;\n\n<Form\n  name=\"sign-in\"\n  label=\"Sign in\"\n  actions={signInActions}\n  validate=\"change\"\n>\n  {signInFields}\n</Form>",
+        "lit": null,
         "rn": "import { Button, Form, Input, Stack } from '@design-schema/rn';\n\n<Form\n  name=\"profile\"\n  label=\"Profile\"\n  validate=\"change\"\n  actions={\n    <Stack direction=\"horizontal\" gap=\"normal\" align=\"start\">\n      <Button label=\"Save changes\" type=\"submit\" />\n      <Button label=\"Cancel\" variant=\"secondary\" />\n    </Stack>\n  }\n>\n  <Input label=\"Full name\" name=\"name\" required />\n  <Input label=\"Email address\" name=\"email\" type=\"email\" required description=\"Use the email you signed up with.\" />\n</Form>",
         "swift": null
       },
       "stories": {
         "react": "ValidateChange",
-        "lit": "ValidateChange",
+        "lit": null,
         "rn": "ValidateChange",
         "swift": null
       },
@@ -346,16 +253,13 @@
         "value": "change"
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
-      "title": "Disabled",
+      "title": "Sign In",
       "args": {
         "name": "sign-in",
         "label": "Sign in",
-        "validate": "submit",
-        "disabled": true,
-        "errorSummary": true,
         "children": {
           "$element": "Stack",
           "props": {
@@ -365,11 +269,10 @@
             {
               "$element": "Input",
               "props": {
-                "label": "Email address",
+                "label": "Email",
                 "name": "email",
                 "type": "email",
-                "required": true,
-                "autocomplete": "email"
+                "required": true
               },
               "children": []
             },
@@ -379,54 +282,173 @@
                 "label": "Password",
                 "name": "password",
                 "type": "password",
-                "required": true,
-                "autocomplete": "current-password",
-                "description": "At least 8 characters."
+                "required": true
               },
               "children": []
             }
           ]
         },
         "actions": {
+          "$element": "Button",
+          "props": {
+            "label": "Sign in",
+            "type": "submit"
+          },
+          "children": []
+        }
+      },
+      "snippets": {
+        "react": "import { Form, Input, Button, Stack } from '@design-schema/react';\n\nconst signInFields = (\n  <Stack gap=\"normal\">\n    <Input label=\"Email\" name=\"email\" type=\"email\" required />\n    <Input label=\"Password\" name=\"password\" type=\"password\" required />\n  </Stack>\n);\n\nconst signInActions = <Button label=\"Sign in\" type=\"submit\" />;\n\n<Form name=\"sign-in\" label=\"Sign in\" actions={signInActions}>{signInFields}</Form>",
+        "lit": null,
+        "rn": "import { Button, Form, Input, Stack } from '@design-schema/rn';\n\nconst signInFields = (\n  <Stack gap=\"loose\">\n    <Input label=\"Email\" name=\"email\" type=\"email\" required />\n    <Input label=\"Password\" name=\"password\" type=\"password\" required />\n  </Stack>\n);\n\n<Form name=\"sign-in\" label=\"Sign in\" actions={<Button label=\"Sign in\" type=\"submit\" />}>\n  {signInFields}\n</Form>",
+        "swift": null
+      },
+      "stories": {
+        "react": "SignIn",
+        "lit": null,
+        "rn": "SignIn",
+        "swift": null
+      },
+      "storyId": "form-react--sign-in",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Long Form Validated On Blur",
+      "args": {
+        "name": "profile",
+        "label": "Profile details",
+        "children": {
           "$element": "Stack",
           "props": {
-            "direction": "horizontal",
-            "gap": "tight",
-            "align": "start"
+            "gap": "normal"
           },
           "children": [
             {
-              "$element": "Button",
+              "$element": "Input",
               "props": {
-                "label": "Sign in",
-                "type": "submit"
+                "label": "Full name",
+                "name": "fullName",
+                "required": true
               },
               "children": []
             },
             {
-              "$element": "Button",
+              "$element": "Input",
               "props": {
-                "label": "Cancel",
-                "variant": "secondary"
+                "label": "Email",
+                "name": "email",
+                "required": true
+              },
+              "children": []
+            },
+            {
+              "$element": "Input",
+              "props": {
+                "label": "Phone",
+                "name": "phone",
+                "required": true
+              },
+              "children": []
+            },
+            {
+              "$element": "Input",
+              "props": {
+                "label": "City",
+                "name": "city",
+                "required": true
               },
               "children": []
             }
           ]
-        }
+        },
+        "actions": {
+          "$element": "Button",
+          "props": {
+            "label": "Save profile",
+            "type": "submit"
+          },
+          "children": []
+        },
+        "validate": "blur"
       },
       "snippets": {
-        "react": "import { Form, Input, Button, Stack } from '@design-schema/react';\n\nconst fields = (\n  <Stack gap=\"normal\">\n    <Input label=\"Email address\" name=\"email\" type=\"email\" required autocomplete=\"email\" />\n    <Input\n      label=\"Password\"\n      name=\"password\"\n      type=\"password\"\n      required\n      autocomplete=\"current-password\"\n      description=\"At least 8 characters.\"\n    />\n  </Stack>\n);\n\nconst actions = (\n  <Stack direction=\"horizontal\" gap=\"tight\" align=\"start\">\n    <Button label=\"Sign in\" type=\"submit\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </Stack>\n);\n\n<Form name=\"sign-in\" label=\"Sign in\" disabled actions={actions}>{fields}</Form>",
-        "lit": "<ds-form name=\"sign-in\" label=\"Sign in\" disabled>\n  <ds-stack gap=\"normal\">\n    <ds-input label=\"Email address\" name=\"email\" type=\"email\" required autocomplete=\"email\"></ds-input>\n    <ds-input\n      label=\"Password\"\n      name=\"password\"\n      type=\"password\"\n      required\n      autocomplete=\"current-password\"\n      description=\"At least 8 characters.\"\n    ></ds-input>\n  </ds-stack>\n  <ds-stack slot=\"actions\" direction=\"horizontal\" gap=\"tight\" align=\"start\">\n    <ds-button label=\"Sign in\" type=\"submit\"></ds-button>\n    <ds-button label=\"Cancel\" variant=\"secondary\"></ds-button>\n  </ds-stack>\n</ds-form>",
-        "rn": null,
+        "react": "import { Form, Input, Button, Stack } from '@design-schema/react';\n\n<Form\n  name=\"profile\"\n  label=\"Profile details\"\n  actions={<Button label=\"Save profile\" type=\"submit\" />}\n  validate=\"blur\"\n>\n  <Stack gap=\"normal\">\n    <Input label=\"Full name\" name=\"fullName\" required />\n    <Input label=\"Email\" name=\"email\" required />\n    <Input label=\"Phone\" name=\"phone\" required />\n    <Input label=\"City\" name=\"city\" required />\n  </Stack>\n</Form>",
+        "lit": null,
+        "rn": "import { Button, Form, Input, Stack } from '@design-schema/rn';\n\n<Form name=\"profile\" label=\"Profile details\" validate=\"blur\" actions={<Button label=\"Save profile\" type=\"submit\" />}>\n  <Stack gap=\"loose\">\n    <Input label=\"Full name\" name=\"fullName\" required />\n    <Input label=\"Email\" name=\"email\" required />\n    <Input label=\"Phone\" name=\"phone\" required />\n    <Input label=\"City\" name=\"city\" required />\n  </Stack>\n</Form>",
         "swift": null
       },
       "stories": {
-        "react": "Disabled",
-        "lit": "Disabled",
-        "rn": null,
+        "react": "LongFormValidatedOnBlur",
+        "lit": null,
+        "rn": "LongFormValidatedOnBlur",
         "swift": null
       },
-      "storyId": "form-react--disabled",
+      "storyId": "form-react--long-form-validated-on-blur",
+      "sweep": {
+        "prop": "validate",
+        "value": "blur"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Submitting",
+      "args": {
+        "name": "sign-in",
+        "label": "Sign in",
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Input",
+              "props": {
+                "label": "Email",
+                "name": "email",
+                "type": "email",
+                "required": true
+              },
+              "children": []
+            },
+            {
+              "$element": "Input",
+              "props": {
+                "label": "Password",
+                "name": "password",
+                "type": "password",
+                "required": true
+              },
+              "children": []
+            }
+          ]
+        },
+        "actions": {
+          "$element": "Button",
+          "props": {
+            "label": "Sign in",
+            "type": "submit"
+          },
+          "children": []
+        },
+        "disabled": true
+      },
+      "snippets": {
+        "react": "import { Form, Input, Button, Stack } from '@design-schema/react';\n\nconst signInFields = (\n  <Stack gap=\"normal\">\n    <Input label=\"Email\" name=\"email\" type=\"email\" required />\n    <Input label=\"Password\" name=\"password\" type=\"password\" required />\n  </Stack>\n);\n\nconst signInActions = <Button label=\"Sign in\" type=\"submit\" />;\n\n<Form name=\"sign-in\" label=\"Sign in\" actions={signInActions} disabled>{signInFields}</Form>",
+        "lit": null,
+        "rn": "import { Button, Form, Input, Stack } from '@design-schema/rn';\n\nconst signInFields = (\n  <Stack gap=\"loose\">\n    <Input label=\"Email\" name=\"email\" type=\"email\" required />\n    <Input label=\"Password\" name=\"password\" type=\"password\" required />\n  </Stack>\n);\n\n<Form name=\"sign-in\" label=\"Sign in\" disabled actions={<Button label=\"Sign in\" type=\"submit\" />}>\n  {signInFields}\n</Form>",
+        "swift": null
+      },
+      "stories": {
+        "react": "Submitting",
+        "lit": null,
+        "rn": "Submitting",
+        "swift": null
+      },
+      "storyId": "form-react--submitting",
       "sweep": {
         "prop": "disabled",
         "value": true
@@ -435,84 +457,42 @@
       "primary": true
     },
     {
-      "title": "Without Error Summary",
+      "title": "Without A Summary",
       "args": {
-        "name": "sign-in",
-        "label": "Sign in",
-        "validate": "submit",
-        "disabled": false,
-        "errorSummary": false,
+        "name": "rename",
+        "label": "Rename file",
         "children": {
-          "$element": "Stack",
+          "$element": "Input",
           "props": {
-            "gap": "normal"
+            "label": "File name",
+            "name": "fileName",
+            "required": true
           },
-          "children": [
-            {
-              "$element": "Input",
-              "props": {
-                "label": "Email address",
-                "name": "email",
-                "type": "email",
-                "required": true,
-                "autocomplete": "email"
-              },
-              "children": []
-            },
-            {
-              "$element": "Input",
-              "props": {
-                "label": "Password",
-                "name": "password",
-                "type": "password",
-                "required": true,
-                "autocomplete": "current-password",
-                "description": "At least 8 characters."
-              },
-              "children": []
-            }
-          ]
+          "children": []
         },
         "actions": {
-          "$element": "Stack",
+          "$element": "Button",
           "props": {
-            "direction": "horizontal",
-            "gap": "tight",
-            "align": "start"
+            "label": "Rename",
+            "type": "submit"
           },
-          "children": [
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Sign in",
-                "type": "submit"
-              },
-              "children": []
-            },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Cancel",
-                "variant": "secondary"
-              },
-              "children": []
-            }
-          ]
-        }
+          "children": []
+        },
+        "errorSummary": false
       },
       "snippets": {
-        "react": "import { Form, Input, Button, Stack } from '@design-schema/react';\n\nconst fields = (\n  <Stack gap=\"normal\">\n    <Input label=\"Email address\" name=\"email\" type=\"email\" required autocomplete=\"email\" />\n    <Input\n      label=\"Password\"\n      name=\"password\"\n      type=\"password\"\n      required\n      autocomplete=\"current-password\"\n      description=\"At least 8 characters.\"\n    />\n  </Stack>\n);\n\nconst actions = (\n  <Stack direction=\"horizontal\" gap=\"tight\" align=\"start\">\n    <Button label=\"Sign in\" type=\"submit\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </Stack>\n);\n\n<Form name=\"sign-in\" label=\"Sign in\" errorSummary={false} actions={actions}>{fields}</Form>",
-        "lit": "<ds-form name=\"sign-in\" label=\"Sign in\">\n  <ds-stack gap=\"normal\">\n    <ds-input label=\"Email address\" name=\"email\" type=\"email\" required autocomplete=\"email\"></ds-input>\n    <ds-input\n      label=\"Password\"\n      name=\"password\"\n      type=\"password\"\n      required\n      autocomplete=\"current-password\"\n      description=\"At least 8 characters.\"\n    ></ds-input>\n  </ds-stack>\n  <ds-stack slot=\"actions\" direction=\"horizontal\" gap=\"tight\" align=\"start\">\n    <ds-button label=\"Sign in\" type=\"submit\"></ds-button>\n    <ds-button label=\"Cancel\" variant=\"secondary\"></ds-button>\n  </ds-stack>\n</ds-form>",
-        "rn": null,
+        "react": "import { Form, Input, Button } from '@design-schema/react';\n\n<Form\n  name=\"rename\"\n  label=\"Rename file\"\n  actions={<Button label=\"Rename\" type=\"submit\" />}\n  errorSummary={false}\n>\n  <Input label=\"File name\" name=\"fileName\" required />\n</Form>",
+        "lit": null,
+        "rn": "import { Button, Form, Input } from '@design-schema/rn';\n\n<Form name=\"rename\" label=\"Rename file\" errorSummary={false} actions={<Button label=\"Rename\" type=\"submit\" />}>\n  <Input label=\"File name\" name=\"fileName\" required />\n</Form>",
         "swift": null
       },
       "stories": {
-        "react": "WithoutErrorSummary",
-        "lit": "WithoutErrorSummary",
-        "rn": null,
+        "react": "WithoutASummary",
+        "lit": null,
+        "rn": "WithoutASummary",
         "swift": null
       },
-      "storyId": "form-react--without-error-summary",
+      "storyId": "form-react--without-a-summary",
       "sweep": {
         "prop": "errorSummary",
         "value": false
@@ -524,9 +504,7 @@
       "title": "Labelled By",
       "args": {
         "name": "sign-in",
-        "validate": "submit",
-        "disabled": false,
-        "errorSummary": true,
+        "label": "Sign in",
         "children": {
           "$element": "Stack",
           "props": {
@@ -536,11 +514,10 @@
             {
               "$element": "Input",
               "props": {
-                "label": "Email address",
+                "label": "Email",
                 "name": "email",
                 "type": "email",
-                "required": true,
-                "autocomplete": "email"
+                "required": true
               },
               "children": []
             },
@@ -550,44 +527,24 @@
                 "label": "Password",
                 "name": "password",
                 "type": "password",
-                "required": true,
-                "autocomplete": "current-password",
-                "description": "At least 8 characters."
+                "required": true
               },
               "children": []
             }
           ]
         },
         "actions": {
-          "$element": "Stack",
+          "$element": "Button",
           "props": {
-            "direction": "horizontal",
-            "gap": "tight",
-            "align": "start"
+            "label": "Sign in",
+            "type": "submit"
           },
-          "children": [
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Sign in",
-                "type": "submit"
-              },
-              "children": []
-            },
-            {
-              "$element": "Button",
-              "props": {
-                "label": "Cancel",
-                "variant": "secondary"
-              },
-              "children": []
-            }
-          ]
+          "children": []
         },
         "labelledBy": "form-labelled-by-heading"
       },
       "snippets": {
-        "react": "import { Form, Input, Button, Stack, Heading } from '@design-schema/react';\n\nconst fields = (\n  <Stack gap=\"normal\">\n    <Input label=\"Email address\" name=\"email\" type=\"email\" required autocomplete=\"email\" />\n    <Input\n      label=\"Password\"\n      name=\"password\"\n      type=\"password\"\n      required\n      autocomplete=\"current-password\"\n      description=\"At least 8 characters.\"\n    />\n  </Stack>\n);\n\nconst actions = (\n  <Stack direction=\"horizontal\" gap=\"tight\" align=\"start\">\n    <Button label=\"Sign in\" type=\"submit\" />\n    <Button label=\"Cancel\" variant=\"secondary\" />\n  </Stack>\n);\n\n<Stack gap=\"normal\">\n  <Heading id=\"form-labelled-by-heading\" level=\"2\">\n    Sign in\n  </Heading>\n  <Form\n    name=\"sign-in\"\n    actions={actions}\n    labelledBy=\"form-labelled-by-heading\"\n  >{fields}</Form>\n</Stack>",
+        "react": "import { Form, Input, Button, Stack, Heading } from '@design-schema/react';\n\nconst signInFields = (\n  <Stack gap=\"normal\">\n    <Input label=\"Email\" name=\"email\" type=\"email\" required />\n    <Input label=\"Password\" name=\"password\" type=\"password\" required />\n  </Stack>\n);\n\nconst signInActions = <Button label=\"Sign in\" type=\"submit\" />;\n\n<Stack gap=\"normal\">\n  <Heading id=\"form-labelled-by-heading\" level=\"2\">\n    Sign in\n  </Heading>\n  <Form\n    name=\"sign-in\"\n    label=\"Sign in\"\n    actions={signInActions}\n    labelledBy=\"form-labelled-by-heading\"\n  >{signInFields}</Form>\n</Stack>",
         "lit": null,
         "rn": null,
         "swift": null

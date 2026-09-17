@@ -4,11 +4,12 @@ import { createContext, useContext, type Context } from 'react';
 export type FormValidateMode = 'submit' | 'blur' | 'change';
 
 /**
- * What a field contributes to the collected values. Input contributes a string, Switch a
- * boolean, Checkbox its `value` when checked, Listbox an array of values when `multiple`, and
- * `undefined` when not; `undefined` is omitted.
+ * What a field contributes to the collected values. Input and RadioGroup contribute a string,
+ * Switch a boolean, Checkbox its `value` when checked, NumberInput and Slider a number,
+ * multi-select Listbox, Select and Combobox a string array, a range Slider or DatePicker a pair;
+ * `undefined` (unchecked, unselected, empty) is omitted.
  */
-export type FormFieldValue = string | string[] | boolean | undefined;
+export type FormFieldValue = string | number | boolean | string[] | [number, number] | undefined;
 
 /**
  * What an Input registers with its enclosing Form so the Form can collect
@@ -19,7 +20,7 @@ export interface FormFieldRegistration {
   name: string;
   /** DOM id of the field, used by the error summary links. */
   id: string;
-  /** Visible label, repeated in the error summary. */
+  /** Visible label; the error summary shows it when the field is invalid with an empty message. */
   label: string;
   /** Current value read from the field. `undefined` leaves the field out of the submitted values. */
   getValue(): FormFieldValue;

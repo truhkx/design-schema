@@ -19,7 +19,7 @@
   cursor: pointer;
 }
 
-/* tone → default uses the link colors; inherit takes the surrounding text color. */
+/* tone → default uses the link colors; inherit takes the surrounding text color and skips color, colorHover and colorVisited. */
 .demo-link--tone-default {
   --demo-link-color: var(--color-link);
   --demo-link-color-hover: var(--color-link-hover);
@@ -31,14 +31,13 @@
   --demo-link-color-visited: currentColor;
 }
 
-/* colorVisited (web only) */
+/* colorVisited (web and Lit only) */
 .demo-link:visited {
   color: var(--demo-link-color-visited);
 }
 
-/* colorHover: pointer hover and active state. */
-.demo-link:hover,
-.demo-link:active {
+/* colorHover: pointer hover only, not :active. */
+.demo-link:hover {
   color: var(--demo-link-color-hover);
 }
 
@@ -49,13 +48,16 @@
 }
 
 /* transition: color on hover, with motion.easing.standard; removed under reduced motion. */
-@media (prefers-reduced-motion: no-preference) {
+.demo-link {
+  transition: color var(--demo-link-transition) var(--motion-easing-standard);
+}
+@media (prefers-reduced-motion: reduce) {
   .demo-link {
-    transition: color var(--demo-link-transition) var(--motion-easing-standard);
+    transition: none;
   }
 }
 
-/* externalIconGap: gap before the icon, which is 1em of the surrounding font size (no size token by design). */
+/* externalIconGap: gap before the icon, on Link's own wrapper, never on the Icon. The icon is 1em of the surrounding text. */
 .demo-link__external-icon {
   display: inline;
   margin-inline-start: var(--demo-link-external-icon-gap);

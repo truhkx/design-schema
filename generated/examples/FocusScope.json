@@ -9,16 +9,45 @@
   "examples": [
     {
       "title": "Default",
-      "args": {},
+      "args": {
+        "trapped": true,
+        "children": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "Text",
+              "props": {},
+              "children": [
+                "Confirm your changes"
+              ]
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Cancel"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Continue"
+              },
+              "children": []
+            }
+          ]
+        }
+      },
       "snippets": {
-        "react": "import { FocusScope, Button } from '@design-schema/react';\n\nconst ThreeButtons = () => (\n  <>\n    <Button label=\"First\" />\n    <Button label=\"Second\" />\n    <Button label=\"Third\" />\n  </>\n);\n\n<FocusScope>\n  <ThreeButtons />\n</FocusScope>",
-        "lit": "<ds-focus-scope>\n  <button type=\"button\">One</button>\n  <button type=\"button\">Two</button>\n  <button type=\"button\">Three</button>\n</ds-focus-scope>",
-        "rn": "import * as React from 'react';\nimport { View } from 'react-native';\nimport { Button, FocusScope, type FocusScopeProps, Stack, Text } from '@design-schema/rn';\n\nfunction FocusScopeDemo(props: FocusScopeProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(false);\n  return (\n    <Stack gap=\"loose\" align=\"start\">\n      <Button label=\"Open panel\" onPress={() => setOpen(true)} />\n      {open ? (\n        <FocusScope {...props}>\n          <View>\n            <Stack gap=\"normal\" align=\"start\">\n              <Text>Panel content</Text>\n              <Button label=\"First action\" />\n              <Button label=\"Second action\" />\n              <Button label=\"Close\" onPress={() => setOpen(false)} />\n            </Stack>\n          </View>\n        </FocusScope>\n      ) : null}\n    </Stack>\n  );\n}\n\n<FocusScopeDemo />",
+        "react": "import { FocusScope, Button, Text } from '@design-schema/react';\n\n<FocusScope>\n  <>\n    <Text>Confirm your changes</Text>\n    <Button label=\"Cancel\" />\n    <Button label=\"Continue\" />\n  </>\n</FocusScope>",
+        "lit": null,
+        "rn": "import * as React from 'react';\nimport { View, type ViewInstance } from 'react-native';\nimport { Button, FocusScope, type FocusScopeProps, Stack, Text } from '@design-schema/rn';\n\nfunction ConfirmContent({ onClose }: { onClose?: (() => void) | undefined }): React.JSX.Element {\n  return (\n    <Stack gap=\"normal\" align=\"start\">\n      <Text>Confirm your changes</Text>\n      <Button label=\"Cancel\" onPress={onClose} />\n      <Button label=\"Continue\" onPress={onClose} />\n    </Stack>\n  );\n}\n\nfunction FocusScopeDemo({ children, ...props }: Partial<FocusScopeProps>): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  const triggerRef = React.useRef<ViewInstance>(null);\n  const close = (): void => setOpen(false);\n  return (\n    <Stack gap=\"loose\" align=\"start\">\n      <View ref={triggerRef} collapsable={false}>\n        <Button label=\"Open panel\" onPress={() => setOpen(true)} />\n      </View>\n      {open ? (\n        <FocusScope returnFocusTo={triggerRef} {...props}>\n          {typeof children === 'string' ? (\n            <Stack gap=\"normal\" align=\"start\">\n              <Text>{children}</Text>\n              <Button label=\"Cancel\" onPress={close} />\n              <Button label=\"Continue\" onPress={close} />\n            </Stack>\n          ) : (\n            <ConfirmContent onClose={close} />\n          )}\n        </FocusScope>\n      ) : null}\n    </Stack>\n  );\n}\n\n<FocusScopeDemo><ConfirmContent /></FocusScopeDemo>",
         "swift": null
       },
       "stories": {
         "react": "Default",
-        "lit": "Default",
+        "lit": null,
         "rn": "Default",
         "swift": null
       },
@@ -29,116 +58,416 @@
     },
     {
       "title": "Auto Focus First",
-      "args": {},
+      "args": {
+        "trapped": true,
+        "children": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "Text",
+              "props": {},
+              "children": [
+                "Confirm your changes"
+              ]
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Cancel"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Continue"
+              },
+              "children": []
+            }
+          ]
+        },
+        "autoFocus": "first"
+      },
       "snippets": {
-        "react": "import { FocusScope, Button } from '@design-schema/react';\n\nconst ThreeButtons = () => (\n  <>\n    <Button label=\"First\" />\n    <Button label=\"Second\" />\n    <Button label=\"Third\" />\n  </>\n);\n\n<FocusScope autoFocus=\"first\">\n  <ThreeButtons />\n</FocusScope>",
-        "lit": "<ds-focus-scope auto-focus=\"first\">\n  <button type=\"button\">One</button>\n  <button type=\"button\">Two</button>\n  <button type=\"button\">Three</button>\n</ds-focus-scope>",
-        "rn": "import * as React from 'react';\nimport { View } from 'react-native';\nimport { Button, FocusScope, type FocusScopeProps, Stack, Text } from '@design-schema/rn';\n\nfunction FocusScopeDemo(props: FocusScopeProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(false);\n  return (\n    <Stack gap=\"loose\" align=\"start\">\n      <Button label=\"Open panel\" onPress={() => setOpen(true)} />\n      {open ? (\n        <FocusScope {...props}>\n          <View>\n            <Stack gap=\"normal\" align=\"start\">\n              <Text>Panel content</Text>\n              <Button label=\"First action\" />\n              <Button label=\"Second action\" />\n              <Button label=\"Close\" onPress={() => setOpen(false)} />\n            </Stack>\n          </View>\n        </FocusScope>\n      ) : null}\n    </Stack>\n  );\n}\n\n<FocusScopeDemo autoFocus=\"first\" />",
+        "react": "import { FocusScope, Button, Text } from '@design-schema/react';\n\n<FocusScope autoFocus=\"first\">\n  <>\n    <Text>Confirm your changes</Text>\n    <Button label=\"Cancel\" />\n    <Button label=\"Continue\" />\n  </>\n</FocusScope>",
+        "lit": null,
+        "rn": "import * as React from 'react';\nimport { View, type ViewInstance } from 'react-native';\nimport { Button, FocusScope, type FocusScopeProps, Stack, Text } from '@design-schema/rn';\n\nfunction ConfirmContent({ onClose }: { onClose?: (() => void) | undefined }): React.JSX.Element {\n  return (\n    <Stack gap=\"normal\" align=\"start\">\n      <Text>Confirm your changes</Text>\n      <Button label=\"Cancel\" onPress={onClose} />\n      <Button label=\"Continue\" onPress={onClose} />\n    </Stack>\n  );\n}\n\nfunction FocusScopeDemo({ children, ...props }: Partial<FocusScopeProps>): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  const triggerRef = React.useRef<ViewInstance>(null);\n  const close = (): void => setOpen(false);\n  return (\n    <Stack gap=\"loose\" align=\"start\">\n      <View ref={triggerRef} collapsable={false}>\n        <Button label=\"Open panel\" onPress={() => setOpen(true)} />\n      </View>\n      {open ? (\n        <FocusScope returnFocusTo={triggerRef} {...props}>\n          {typeof children === 'string' ? (\n            <Stack gap=\"normal\" align=\"start\">\n              <Text>{children}</Text>\n              <Button label=\"Cancel\" onPress={close} />\n              <Button label=\"Continue\" onPress={close} />\n            </Stack>\n          ) : (\n            <ConfirmContent onClose={close} />\n          )}\n        </FocusScope>\n      ) : null}\n    </Stack>\n  );\n}\n\n<FocusScopeDemo autoFocus=\"first\"><ConfirmContent /></FocusScopeDemo>",
         "swift": null
       },
       "stories": {
         "react": "AutoFocusFirst",
-        "lit": "AutoFocusFirst",
+        "lit": null,
         "rn": "AutoFocusFirst",
         "swift": null
       },
       "storyId": "focusscope-react--auto-focus-first",
-      "sweep": null,
+      "sweep": {
+        "prop": "autoFocus",
+        "value": "first"
+      },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Auto Focus Last",
-      "args": {},
+      "args": {
+        "trapped": true,
+        "children": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "Text",
+              "props": {},
+              "children": [
+                "Confirm your changes"
+              ]
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Cancel"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Continue"
+              },
+              "children": []
+            }
+          ]
+        },
+        "autoFocus": "last"
+      },
       "snippets": {
-        "react": "import { FocusScope, Button } from '@design-schema/react';\n\nconst ThreeButtons = () => (\n  <>\n    <Button label=\"First\" />\n    <Button label=\"Second\" />\n    <Button label=\"Third\" />\n  </>\n);\n\n<FocusScope autoFocus=\"last\">\n  <ThreeButtons />\n</FocusScope>",
-        "lit": "<ds-focus-scope auto-focus=\"last\">\n  <button type=\"button\">One</button>\n  <button type=\"button\">Two</button>\n  <button type=\"button\">Three</button>\n</ds-focus-scope>",
-        "rn": "import * as React from 'react';\nimport { View } from 'react-native';\nimport { Button, FocusScope, type FocusScopeProps, Stack, Text } from '@design-schema/rn';\n\nfunction FocusScopeDemo(props: FocusScopeProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(false);\n  return (\n    <Stack gap=\"loose\" align=\"start\">\n      <Button label=\"Open panel\" onPress={() => setOpen(true)} />\n      {open ? (\n        <FocusScope {...props}>\n          <View>\n            <Stack gap=\"normal\" align=\"start\">\n              <Text>Panel content</Text>\n              <Button label=\"First action\" />\n              <Button label=\"Second action\" />\n              <Button label=\"Close\" onPress={() => setOpen(false)} />\n            </Stack>\n          </View>\n        </FocusScope>\n      ) : null}\n    </Stack>\n  );\n}\n\n<FocusScopeDemo autoFocus=\"last\" />",
+        "react": "import { FocusScope, Button, Text } from '@design-schema/react';\n\n<FocusScope autoFocus=\"last\">\n  <>\n    <Text>Confirm your changes</Text>\n    <Button label=\"Cancel\" />\n    <Button label=\"Continue\" />\n  </>\n</FocusScope>",
+        "lit": null,
+        "rn": "import * as React from 'react';\nimport { View, type ViewInstance } from 'react-native';\nimport { Button, FocusScope, type FocusScopeProps, Stack, Text } from '@design-schema/rn';\n\nfunction ConfirmContent({ onClose }: { onClose?: (() => void) | undefined }): React.JSX.Element {\n  return (\n    <Stack gap=\"normal\" align=\"start\">\n      <Text>Confirm your changes</Text>\n      <Button label=\"Cancel\" onPress={onClose} />\n      <Button label=\"Continue\" onPress={onClose} />\n    </Stack>\n  );\n}\n\nfunction FocusScopeDemo({ children, ...props }: Partial<FocusScopeProps>): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  const triggerRef = React.useRef<ViewInstance>(null);\n  const close = (): void => setOpen(false);\n  return (\n    <Stack gap=\"loose\" align=\"start\">\n      <View ref={triggerRef} collapsable={false}>\n        <Button label=\"Open panel\" onPress={() => setOpen(true)} />\n      </View>\n      {open ? (\n        <FocusScope returnFocusTo={triggerRef} {...props}>\n          {typeof children === 'string' ? (\n            <Stack gap=\"normal\" align=\"start\">\n              <Text>{children}</Text>\n              <Button label=\"Cancel\" onPress={close} />\n              <Button label=\"Continue\" onPress={close} />\n            </Stack>\n          ) : (\n            <ConfirmContent onClose={close} />\n          )}\n        </FocusScope>\n      ) : null}\n    </Stack>\n  );\n}\n\n<FocusScopeDemo autoFocus=\"last\"><ConfirmContent /></FocusScopeDemo>",
         "swift": null
       },
       "stories": {
         "react": "AutoFocusLast",
-        "lit": "AutoFocusLast",
+        "lit": null,
         "rn": "AutoFocusLast",
         "swift": null
       },
       "storyId": "focusscope-react--auto-focus-last",
-      "sweep": null,
+      "sweep": {
+        "prop": "autoFocus",
+        "value": "last"
+      },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Auto Focus Container",
-      "args": {},
+      "args": {
+        "trapped": true,
+        "children": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "Text",
+              "props": {},
+              "children": [
+                "Confirm your changes"
+              ]
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Cancel"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Continue"
+              },
+              "children": []
+            }
+          ]
+        },
+        "autoFocus": "container"
+      },
       "snippets": {
-        "react": "import { FocusScope, Button } from '@design-schema/react';\n\nconst ThreeButtons = () => (\n  <>\n    <Button label=\"First\" />\n    <Button label=\"Second\" />\n    <Button label=\"Third\" />\n  </>\n);\n\n<FocusScope autoFocus=\"container\">\n  <ThreeButtons />\n</FocusScope>",
-        "lit": "<ds-focus-scope auto-focus=\"container\">\n  <button type=\"button\">One</button>\n  <button type=\"button\">Two</button>\n  <button type=\"button\">Three</button>\n</ds-focus-scope>",
-        "rn": "import * as React from 'react';\nimport { View } from 'react-native';\nimport { Button, FocusScope, type FocusScopeProps, Stack, Text } from '@design-schema/rn';\n\nfunction FocusScopeDemo(props: FocusScopeProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(false);\n  return (\n    <Stack gap=\"loose\" align=\"start\">\n      <Button label=\"Open panel\" onPress={() => setOpen(true)} />\n      {open ? (\n        <FocusScope {...props}>\n          <View>\n            <Stack gap=\"normal\" align=\"start\">\n              <Text>Panel content</Text>\n              <Button label=\"First action\" />\n              <Button label=\"Second action\" />\n              <Button label=\"Close\" onPress={() => setOpen(false)} />\n            </Stack>\n          </View>\n        </FocusScope>\n      ) : null}\n    </Stack>\n  );\n}\n\n<FocusScopeDemo autoFocus=\"container\" />",
+        "react": "import { FocusScope, Button, Text } from '@design-schema/react';\n\n<FocusScope autoFocus=\"container\">\n  <>\n    <Text>Confirm your changes</Text>\n    <Button label=\"Cancel\" />\n    <Button label=\"Continue\" />\n  </>\n</FocusScope>",
+        "lit": null,
+        "rn": "import * as React from 'react';\nimport { View, type ViewInstance } from 'react-native';\nimport { Button, FocusScope, type FocusScopeProps, Stack, Text } from '@design-schema/rn';\n\nfunction ConfirmContent({ onClose }: { onClose?: (() => void) | undefined }): React.JSX.Element {\n  return (\n    <Stack gap=\"normal\" align=\"start\">\n      <Text>Confirm your changes</Text>\n      <Button label=\"Cancel\" onPress={onClose} />\n      <Button label=\"Continue\" onPress={onClose} />\n    </Stack>\n  );\n}\n\nfunction FocusScopeDemo({ children, ...props }: Partial<FocusScopeProps>): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  const triggerRef = React.useRef<ViewInstance>(null);\n  const close = (): void => setOpen(false);\n  return (\n    <Stack gap=\"loose\" align=\"start\">\n      <View ref={triggerRef} collapsable={false}>\n        <Button label=\"Open panel\" onPress={() => setOpen(true)} />\n      </View>\n      {open ? (\n        <FocusScope returnFocusTo={triggerRef} {...props}>\n          {typeof children === 'string' ? (\n            <Stack gap=\"normal\" align=\"start\">\n              <Text>{children}</Text>\n              <Button label=\"Cancel\" onPress={close} />\n              <Button label=\"Continue\" onPress={close} />\n            </Stack>\n          ) : (\n            <ConfirmContent onClose={close} />\n          )}\n        </FocusScope>\n      ) : null}\n    </Stack>\n  );\n}\n\n<FocusScopeDemo autoFocus=\"container\"><ConfirmContent /></FocusScopeDemo>",
         "swift": null
       },
       "stories": {
         "react": "AutoFocusContainer",
-        "lit": "AutoFocusContainer",
+        "lit": null,
         "rn": "AutoFocusContainer",
         "swift": null
       },
       "storyId": "focusscope-react--auto-focus-container",
-      "sweep": null,
+      "sweep": {
+        "prop": "autoFocus",
+        "value": "container"
+      },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Auto Focus None",
-      "args": {},
+      "args": {
+        "trapped": true,
+        "children": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "Text",
+              "props": {},
+              "children": [
+                "Confirm your changes"
+              ]
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Cancel"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Continue"
+              },
+              "children": []
+            }
+          ]
+        },
+        "autoFocus": "none"
+      },
       "snippets": {
-        "react": "import { FocusScope, Button } from '@design-schema/react';\n\nconst ThreeButtons = () => (\n  <>\n    <Button label=\"First\" />\n    <Button label=\"Second\" />\n    <Button label=\"Third\" />\n  </>\n);\n\n<FocusScope autoFocus=\"none\">\n  <ThreeButtons />\n</FocusScope>",
-        "lit": "<ds-focus-scope auto-focus=\"none\">\n  <button type=\"button\">One</button>\n  <button type=\"button\">Two</button>\n  <button type=\"button\">Three</button>\n</ds-focus-scope>",
-        "rn": "import * as React from 'react';\nimport { View } from 'react-native';\nimport { Button, FocusScope, type FocusScopeProps, Stack, Text } from '@design-schema/rn';\n\nfunction FocusScopeDemo(props: FocusScopeProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(false);\n  return (\n    <Stack gap=\"loose\" align=\"start\">\n      <Button label=\"Open panel\" onPress={() => setOpen(true)} />\n      {open ? (\n        <FocusScope {...props}>\n          <View>\n            <Stack gap=\"normal\" align=\"start\">\n              <Text>Panel content</Text>\n              <Button label=\"First action\" />\n              <Button label=\"Second action\" />\n              <Button label=\"Close\" onPress={() => setOpen(false)} />\n            </Stack>\n          </View>\n        </FocusScope>\n      ) : null}\n    </Stack>\n  );\n}\n\n<FocusScopeDemo autoFocus=\"none\" />",
+        "react": "import { FocusScope, Button, Text } from '@design-schema/react';\n\n<FocusScope autoFocus=\"none\">\n  <>\n    <Text>Confirm your changes</Text>\n    <Button label=\"Cancel\" />\n    <Button label=\"Continue\" />\n  </>\n</FocusScope>",
+        "lit": null,
+        "rn": "import * as React from 'react';\nimport { View, type ViewInstance } from 'react-native';\nimport { Button, FocusScope, type FocusScopeProps, Stack, Text } from '@design-schema/rn';\n\nfunction ConfirmContent({ onClose }: { onClose?: (() => void) | undefined }): React.JSX.Element {\n  return (\n    <Stack gap=\"normal\" align=\"start\">\n      <Text>Confirm your changes</Text>\n      <Button label=\"Cancel\" onPress={onClose} />\n      <Button label=\"Continue\" onPress={onClose} />\n    </Stack>\n  );\n}\n\nfunction FocusScopeDemo({ children, ...props }: Partial<FocusScopeProps>): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  const triggerRef = React.useRef<ViewInstance>(null);\n  const close = (): void => setOpen(false);\n  return (\n    <Stack gap=\"loose\" align=\"start\">\n      <View ref={triggerRef} collapsable={false}>\n        <Button label=\"Open panel\" onPress={() => setOpen(true)} />\n      </View>\n      {open ? (\n        <FocusScope returnFocusTo={triggerRef} {...props}>\n          {typeof children === 'string' ? (\n            <Stack gap=\"normal\" align=\"start\">\n              <Text>{children}</Text>\n              <Button label=\"Cancel\" onPress={close} />\n              <Button label=\"Continue\" onPress={close} />\n            </Stack>\n          ) : (\n            <ConfirmContent onClose={close} />\n          )}\n        </FocusScope>\n      ) : null}\n    </Stack>\n  );\n}\n\n<FocusScopeDemo autoFocus=\"none\"><ConfirmContent /></FocusScopeDemo>",
         "swift": null
       },
       "stories": {
         "react": "AutoFocusNone",
-        "lit": "AutoFocusNone",
+        "lit": null,
         "rn": "AutoFocusNone",
         "swift": null
       },
       "storyId": "focusscope-react--auto-focus-none",
-      "sweep": null,
+      "sweep": {
+        "prop": "autoFocus",
+        "value": "none"
+      },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
-      "title": "Not Trapped",
-      "args": {},
+      "title": "Trapped False",
+      "args": {
+        "trapped": false,
+        "children": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "Text",
+              "props": {},
+              "children": [
+                "Confirm your changes"
+              ]
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Cancel"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Continue"
+              },
+              "children": []
+            }
+          ]
+        }
+      },
       "snippets": {
-        "react": "import { FocusScope, Button } from '@design-schema/react';\n\nconst ThreeButtons = () => (\n  <>\n    <Button label=\"First\" />\n    <Button label=\"Second\" />\n    <Button label=\"Third\" />\n  </>\n);\n\n<FocusScope trapped={false}>\n  <ThreeButtons />\n</FocusScope>",
+        "react": "import { FocusScope, Button, Text } from '@design-schema/react';\n\n<FocusScope trapped={false}>\n  <>\n    <Text>Confirm your changes</Text>\n    <Button label=\"Cancel\" />\n    <Button label=\"Continue\" />\n  </>\n</FocusScope>",
         "lit": null,
-        "rn": "import * as React from 'react';\nimport { View } from 'react-native';\nimport { Button, FocusScope, type FocusScopeProps, Stack, Text } from '@design-schema/rn';\n\nfunction FocusScopeDemo(props: FocusScopeProps): React.JSX.Element {\n  const [open, setOpen] = React.useState(false);\n  return (\n    <Stack gap=\"loose\" align=\"start\">\n      <Button label=\"Open panel\" onPress={() => setOpen(true)} />\n      {open ? (\n        <FocusScope {...props}>\n          <View>\n            <Stack gap=\"normal\" align=\"start\">\n              <Text>Panel content</Text>\n              <Button label=\"First action\" />\n              <Button label=\"Second action\" />\n              <Button label=\"Close\" onPress={() => setOpen(false)} />\n            </Stack>\n          </View>\n        </FocusScope>\n      ) : null}\n    </Stack>\n  );\n}\n\n<FocusScopeDemo trapped={false} />",
+        "rn": "import * as React from 'react';\nimport { View, type ViewInstance } from 'react-native';\nimport { Button, FocusScope, type FocusScopeProps, Stack, Text } from '@design-schema/rn';\n\nfunction ConfirmContent({ onClose }: { onClose?: (() => void) | undefined }): React.JSX.Element {\n  return (\n    <Stack gap=\"normal\" align=\"start\">\n      <Text>Confirm your changes</Text>\n      <Button label=\"Cancel\" onPress={onClose} />\n      <Button label=\"Continue\" onPress={onClose} />\n    </Stack>\n  );\n}\n\nfunction FocusScopeDemo({ children, ...props }: Partial<FocusScopeProps>): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  const triggerRef = React.useRef<ViewInstance>(null);\n  const close = (): void => setOpen(false);\n  return (\n    <Stack gap=\"loose\" align=\"start\">\n      <View ref={triggerRef} collapsable={false}>\n        <Button label=\"Open panel\" onPress={() => setOpen(true)} />\n      </View>\n      {open ? (\n        <FocusScope returnFocusTo={triggerRef} {...props}>\n          {typeof children === 'string' ? (\n            <Stack gap=\"normal\" align=\"start\">\n              <Text>{children}</Text>\n              <Button label=\"Cancel\" onPress={close} />\n              <Button label=\"Continue\" onPress={close} />\n            </Stack>\n          ) : (\n            <ConfirmContent onClose={close} />\n          )}\n        </FocusScope>\n      ) : null}\n    </Stack>\n  );\n}\n\n<FocusScopeDemo trapped={false}><ConfirmContent /></FocusScopeDemo>",
         "swift": null
       },
       "stories": {
-        "react": "NotTrapped",
+        "react": "TrappedFalse",
         "lit": null,
         "rn": "NotTrapped",
         "swift": null
       },
-      "storyId": "focusscope-react--not-trapped",
-      "sweep": null,
+      "storyId": "focusscope-react--trapped-false",
+      "sweep": {
+        "prop": "trapped",
+        "value": false
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Restore Focus False",
+      "args": {
+        "trapped": true,
+        "children": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "Text",
+              "props": {},
+              "children": [
+                "Confirm your changes"
+              ]
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Cancel"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Continue"
+              },
+              "children": []
+            }
+          ]
+        },
+        "restoreFocus": false
+      },
+      "snippets": {
+        "react": "import { FocusScope, Button, Text } from '@design-schema/react';\n\n<FocusScope restoreFocus={false}>\n  <>\n    <Text>Confirm your changes</Text>\n    <Button label=\"Cancel\" />\n    <Button label=\"Continue\" />\n  </>\n</FocusScope>",
+        "lit": null,
+        "rn": "import * as React from 'react';\nimport { View, type ViewInstance } from 'react-native';\nimport { Button, FocusScope, type FocusScopeProps, Stack, Text } from '@design-schema/rn';\n\nfunction ConfirmContent({ onClose }: { onClose?: (() => void) | undefined }): React.JSX.Element {\n  return (\n    <Stack gap=\"normal\" align=\"start\">\n      <Text>Confirm your changes</Text>\n      <Button label=\"Cancel\" onPress={onClose} />\n      <Button label=\"Continue\" onPress={onClose} />\n    </Stack>\n  );\n}\n\nfunction FocusScopeDemo({ children, ...props }: Partial<FocusScopeProps>): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  const triggerRef = React.useRef<ViewInstance>(null);\n  const close = (): void => setOpen(false);\n  return (\n    <Stack gap=\"loose\" align=\"start\">\n      <View ref={triggerRef} collapsable={false}>\n        <Button label=\"Open panel\" onPress={() => setOpen(true)} />\n      </View>\n      {open ? (\n        <FocusScope returnFocusTo={triggerRef} {...props}>\n          {typeof children === 'string' ? (\n            <Stack gap=\"normal\" align=\"start\">\n              <Text>{children}</Text>\n              <Button label=\"Cancel\" onPress={close} />\n              <Button label=\"Continue\" onPress={close} />\n            </Stack>\n          ) : (\n            <ConfirmContent onClose={close} />\n          )}\n        </FocusScope>\n      ) : null}\n    </Stack>\n  );\n}\n\n<FocusScopeDemo restoreFocus={false}><ConfirmContent /></FocusScopeDemo>",
+        "swift": null
+      },
+      "stories": {
+        "react": "RestoreFocusFalse",
+        "lit": null,
+        "rn": "NoRestoreFocus",
+        "swift": null
+      },
+      "storyId": "focusscope-react--restore-focus-false",
+      "sweep": {
+        "prop": "restoreFocus",
+        "value": false
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Active False",
+      "args": {
+        "trapped": true,
+        "children": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "Text",
+              "props": {},
+              "children": [
+                "Confirm your changes"
+              ]
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Cancel"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Continue"
+              },
+              "children": []
+            }
+          ]
+        },
+        "active": false
+      },
+      "snippets": {
+        "react": "import { FocusScope, Button, Text } from '@design-schema/react';\n\n<FocusScope active={false}>\n  <>\n    <Text>Confirm your changes</Text>\n    <Button label=\"Cancel\" />\n    <Button label=\"Continue\" />\n  </>\n</FocusScope>",
+        "lit": null,
+        "rn": "import * as React from 'react';\nimport { View, type ViewInstance } from 'react-native';\nimport { Button, FocusScope, type FocusScopeProps, Stack, Text } from '@design-schema/rn';\n\nfunction ConfirmContent({ onClose }: { onClose?: (() => void) | undefined }): React.JSX.Element {\n  return (\n    <Stack gap=\"normal\" align=\"start\">\n      <Text>Confirm your changes</Text>\n      <Button label=\"Cancel\" onPress={onClose} />\n      <Button label=\"Continue\" onPress={onClose} />\n    </Stack>\n  );\n}\n\nfunction FocusScopeDemo({ children, ...props }: Partial<FocusScopeProps>): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  const triggerRef = React.useRef<ViewInstance>(null);\n  const close = (): void => setOpen(false);\n  return (\n    <Stack gap=\"loose\" align=\"start\">\n      <View ref={triggerRef} collapsable={false}>\n        <Button label=\"Open panel\" onPress={() => setOpen(true)} />\n      </View>\n      {open ? (\n        <FocusScope returnFocusTo={triggerRef} {...props}>\n          {typeof children === 'string' ? (\n            <Stack gap=\"normal\" align=\"start\">\n              <Text>{children}</Text>\n              <Button label=\"Cancel\" onPress={close} />\n              <Button label=\"Continue\" onPress={close} />\n            </Stack>\n          ) : (\n            <ConfirmContent onClose={close} />\n          )}\n        </FocusScope>\n      ) : null}\n    </Stack>\n  );\n}\n\n<FocusScopeDemo active={false}><ConfirmContent /></FocusScopeDemo>",
+        "swift": null
+      },
+      "stories": {
+        "react": "ActiveFalse",
+        "lit": null,
+        "rn": "Inactive",
+        "swift": null
+      },
+      "storyId": "focusscope-react--active-false",
+      "sweep": {
+        "prop": "active",
+        "value": false
+      },
       "decorated": false,
       "primary": true
     },
     {
       "title": "Keyboard",
-      "args": {},
+      "args": {
+        "trapped": true,
+        "children": {
+          "$element": "Fragment",
+          "props": {},
+          "children": [
+            {
+              "$element": "Button",
+              "props": {
+                "label": "First"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Second"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Third"
+              },
+              "children": []
+            }
+          ]
+        },
+        "autoFocus": "first"
+      },
       "snippets": {
-        "react": "import { FocusScope, Button } from '@design-schema/react';\n\nconst ThreeButtons = () => (\n  <>\n    <Button label=\"First\" />\n    <Button label=\"Second\" />\n    <Button label=\"Third\" />\n  </>\n);\n\n<FocusScope trapped autoFocus=\"first\">\n  <ThreeButtons />\n</FocusScope>",
-        "lit": "<ds-focus-scope trapped auto-focus=\"first\">\n  <button type=\"button\">One</button>\n  <button type=\"button\">Two</button>\n  <button type=\"button\">Three</button>\n</ds-focus-scope>",
-        "rn": "import * as React from 'react';\nimport { View } from 'react-native';\nimport { Button, FocusScope, Stack } from '@design-schema/rn';\n\nfunction Open(): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  return (\n    <Stack gap=\"loose\" align=\"start\">\n      <Button label=\"Open panel\" onPress={() => setOpen(true)} />\n      {open ? (\n        <FocusScope trapped autoFocus=\"first\" restoreFocus active>\n          <View>\n            <Stack gap=\"normal\" align=\"start\">\n              <Button label=\"First action\" />\n              <Button label=\"Second action\" />\n              <Button label=\"Close\" onPress={() => setOpen(false)} />\n            </Stack>\n          </View>\n        </FocusScope>\n      ) : null}\n    </Stack>\n  );\n}\n\n<Open />",
+        "react": "import { FocusScope, Button } from '@design-schema/react';\n\n<FocusScope trapped autoFocus=\"first\">\n  <>\n    <Button label=\"First\" />\n    <Button label=\"Second\" />\n    <Button label=\"Third\" />\n  </>\n</FocusScope>",
+        "lit": null,
+        "rn": "import * as React from 'react';\nimport { View, type ViewInstance } from 'react-native';\nimport { Button, FocusScope, Stack } from '@design-schema/rn';\n\nfunction Open(): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  const triggerRef = React.useRef<ViewInstance>(null);\n  return (\n    <Stack gap=\"loose\" align=\"start\">\n      <View ref={triggerRef} collapsable={false}>\n        <Button label=\"Open panel\" onPress={() => setOpen(true)} />\n      </View>\n      {open ? (\n        <FocusScope trapped autoFocus=\"first\" restoreFocus active returnFocusTo={triggerRef}>\n          <Stack gap=\"normal\" align=\"start\">\n            <Button label=\"First action\" />\n            <Button label=\"Second action\" />\n            <Button label=\"Close\" onPress={() => setOpen(false)} />\n          </Stack>\n        </FocusScope>\n      ) : null}\n    </Stack>\n  );\n}\n\n<Open />",
         "swift": null
       },
       "stories": {
         "react": "Keyboard",
-        "lit": "Keyboard",
+        "lit": null,
         "rn": "Keyboard",
         "swift": null
       },
@@ -146,6 +475,102 @@
       "sweep": null,
       "decorated": false,
       "primary": true
+    },
+    {
+      "title": "Modal Takeover",
+      "args": {
+        "trapped": true,
+        "children": "A full-screen onboarding overlay with its own close Button",
+        "autoFocus": "first"
+      },
+      "snippets": {
+        "react": "import { FocusScope, Button, Text } from '@design-schema/react';\n\n<FocusScope trapped autoFocus=\"first\">\n  <Text>{'A full-screen onboarding overlay with its own close Button'}</Text>\n  <Button label=\"Close\" />\n</FocusScope>",
+        "lit": null,
+        "rn": "import * as React from 'react';\nimport { View, type ViewInstance } from 'react-native';\nimport { Button, FocusScope, type FocusScopeProps, Stack, Text } from '@design-schema/rn';\n\nfunction ConfirmContent({ onClose }: { onClose?: (() => void) | undefined }): React.JSX.Element {\n  return (\n    <Stack gap=\"normal\" align=\"start\">\n      <Text>Confirm your changes</Text>\n      <Button label=\"Cancel\" onPress={onClose} />\n      <Button label=\"Continue\" onPress={onClose} />\n    </Stack>\n  );\n}\n\nfunction FocusScopeDemo({ children, ...props }: Partial<FocusScopeProps>): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  const triggerRef = React.useRef<ViewInstance>(null);\n  const close = (): void => setOpen(false);\n  return (\n    <Stack gap=\"loose\" align=\"start\">\n      <View ref={triggerRef} collapsable={false}>\n        <Button label=\"Open panel\" onPress={() => setOpen(true)} />\n      </View>\n      {open ? (\n        <FocusScope returnFocusTo={triggerRef} {...props}>\n          {typeof children === 'string' ? (\n            <Stack gap=\"normal\" align=\"start\">\n              <Text>{children}</Text>\n              <Button label=\"Cancel\" onPress={close} />\n              <Button label=\"Continue\" onPress={close} />\n            </Stack>\n          ) : (\n            <ConfirmContent onClose={close} />\n          )}\n        </FocusScope>\n      ) : null}\n    </Stack>\n  );\n}\n\n<FocusScopeDemo trapped autoFocus=\"first\">A full-screen onboarding overlay with its own close Button</FocusScopeDemo>",
+        "swift": null
+      },
+      "stories": {
+        "react": "ModalTakeover",
+        "lit": null,
+        "rn": "ModalTakeover",
+        "swift": null
+      },
+      "storyId": "focusscope-react--modal-takeover",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Non Modal Drawer",
+      "args": {
+        "trapped": false,
+        "children": "A slide-in filter drawer",
+        "autoFocus": "first"
+      },
+      "snippets": {
+        "react": "import { FocusScope, Button, Text } from '@design-schema/react';\n\n<FocusScope trapped={false} autoFocus=\"first\">\n  <Text>{'A slide-in filter drawer'}</Text>\n  <Button label=\"Apply filters\" />\n</FocusScope>",
+        "lit": null,
+        "rn": "import * as React from 'react';\nimport { View, type ViewInstance } from 'react-native';\nimport { Button, FocusScope, type FocusScopeProps, Stack, Text } from '@design-schema/rn';\n\nfunction ConfirmContent({ onClose }: { onClose?: (() => void) | undefined }): React.JSX.Element {\n  return (\n    <Stack gap=\"normal\" align=\"start\">\n      <Text>Confirm your changes</Text>\n      <Button label=\"Cancel\" onPress={onClose} />\n      <Button label=\"Continue\" onPress={onClose} />\n    </Stack>\n  );\n}\n\nfunction FocusScopeDemo({ children, ...props }: Partial<FocusScopeProps>): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  const triggerRef = React.useRef<ViewInstance>(null);\n  const close = (): void => setOpen(false);\n  return (\n    <Stack gap=\"loose\" align=\"start\">\n      <View ref={triggerRef} collapsable={false}>\n        <Button label=\"Open panel\" onPress={() => setOpen(true)} />\n      </View>\n      {open ? (\n        <FocusScope returnFocusTo={triggerRef} {...props}>\n          {typeof children === 'string' ? (\n            <Stack gap=\"normal\" align=\"start\">\n              <Text>{children}</Text>\n              <Button label=\"Cancel\" onPress={close} />\n              <Button label=\"Continue\" onPress={close} />\n            </Stack>\n          ) : (\n            <ConfirmContent onClose={close} />\n          )}\n        </FocusScope>\n      ) : null}\n    </Stack>\n  );\n}\n\n<FocusScopeDemo trapped={false} autoFocus=\"first\">A slide-in filter drawer</FocusScopeDemo>",
+        "swift": null
+      },
+      "stories": {
+        "react": "NonModalDrawer",
+        "lit": null,
+        "rn": "NonModalDrawer",
+        "swift": null
+      },
+      "storyId": "focusscope-react--non-modal-drawer",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Reading First",
+      "args": {
+        "trapped": true,
+        "children": "A long terms-of-service body with Accept and Decline Buttons",
+        "autoFocus": "container"
+      },
+      "snippets": {
+        "react": "import { FocusScope, Button, Text } from '@design-schema/react';\n\n<FocusScope autoFocus=\"container\">\n  <Text>{'A long terms-of-service body with Accept and Decline Buttons'}</Text>\n  <Button label=\"Accept\" variant=\"primary\" />\n  <Button label=\"Decline\" />\n</FocusScope>",
+        "lit": null,
+        "rn": "import * as React from 'react';\nimport { View, type ViewInstance } from 'react-native';\nimport { Button, FocusScope, type FocusScopeProps, Stack, Text } from '@design-schema/rn';\n\nfunction ConfirmContent({ onClose }: { onClose?: (() => void) | undefined }): React.JSX.Element {\n  return (\n    <Stack gap=\"normal\" align=\"start\">\n      <Text>Confirm your changes</Text>\n      <Button label=\"Cancel\" onPress={onClose} />\n      <Button label=\"Continue\" onPress={onClose} />\n    </Stack>\n  );\n}\n\nfunction FocusScopeDemo({ children, ...props }: Partial<FocusScopeProps>): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  const triggerRef = React.useRef<ViewInstance>(null);\n  const close = (): void => setOpen(false);\n  return (\n    <Stack gap=\"loose\" align=\"start\">\n      <View ref={triggerRef} collapsable={false}>\n        <Button label=\"Open panel\" onPress={() => setOpen(true)} />\n      </View>\n      {open ? (\n        <FocusScope returnFocusTo={triggerRef} {...props}>\n          {typeof children === 'string' ? (\n            <Stack gap=\"normal\" align=\"start\">\n              <Text>{children}</Text>\n              <Button label=\"Cancel\" onPress={close} />\n              <Button label=\"Continue\" onPress={close} />\n            </Stack>\n          ) : (\n            <ConfirmContent onClose={close} />\n          )}\n        </FocusScope>\n      ) : null}\n    </Stack>\n  );\n}\n\n<FocusScopeDemo autoFocus=\"container\">A long terms-of-service body with Accept and Decline Buttons</FocusScopeDemo>",
+        "swift": null
+      },
+      "stories": {
+        "react": "ReadingFirst",
+        "lit": null,
+        "rn": "ReadingFirst",
+        "swift": null
+      },
+      "storyId": "focusscope-react--reading-first",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Paused Outer Scope",
+      "args": {
+        "trapped": true,
+        "children": "A dialog body with a Menu open inside it",
+        "active": false
+      },
+      "snippets": {
+        "react": "import { FocusScope, Button, Text } from '@design-schema/react';\n\n<FocusScope active={false}>\n  <Text>{'A dialog body with a Menu open inside it'}</Text>\n  <Button label=\"Options\" />\n</FocusScope>",
+        "lit": null,
+        "rn": "import * as React from 'react';\nimport { View, type ViewInstance } from 'react-native';\nimport { Button, FocusScope, type FocusScopeProps, Stack, Text } from '@design-schema/rn';\n\nfunction ConfirmContent({ onClose }: { onClose?: (() => void) | undefined }): React.JSX.Element {\n  return (\n    <Stack gap=\"normal\" align=\"start\">\n      <Text>Confirm your changes</Text>\n      <Button label=\"Cancel\" onPress={onClose} />\n      <Button label=\"Continue\" onPress={onClose} />\n    </Stack>\n  );\n}\n\nfunction FocusScopeDemo({ children, ...props }: Partial<FocusScopeProps>): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  const triggerRef = React.useRef<ViewInstance>(null);\n  const close = (): void => setOpen(false);\n  return (\n    <Stack gap=\"loose\" align=\"start\">\n      <View ref={triggerRef} collapsable={false}>\n        <Button label=\"Open panel\" onPress={() => setOpen(true)} />\n      </View>\n      {open ? (\n        <FocusScope returnFocusTo={triggerRef} {...props}>\n          {typeof children === 'string' ? (\n            <Stack gap=\"normal\" align=\"start\">\n              <Text>{children}</Text>\n              <Button label=\"Cancel\" onPress={close} />\n              <Button label=\"Continue\" onPress={close} />\n            </Stack>\n          ) : (\n            <ConfirmContent onClose={close} />\n          )}\n        </FocusScope>\n      ) : null}\n    </Stack>\n  );\n}\n\n<FocusScopeDemo active={false}>A dialog body with a Menu open inside it</FocusScopeDemo>",
+        "swift": null
+      },
+      "stories": {
+        "react": "PausedOuterScope",
+        "lit": null,
+        "rn": "PausedOuterScope",
+        "swift": null
+      },
+      "storyId": "focusscope-react--paused-outer-scope",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
     }
   ]
 }

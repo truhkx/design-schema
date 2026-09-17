@@ -18,7 +18,7 @@
               "$element": "Text",
               "props": {},
               "children": [
-                " You keep access until the end of the current billing period. Your data is kept for 30 days after that, then deleted. "
+                "You keep access until the end of the billing period."
               ]
             }
           },
@@ -43,18 +43,6 @@
                 "Within 14 days of a charge, in full."
               ]
             }
-          },
-          {
-            "id": "support",
-            "summary": "How do I contact support?",
-            "content": {
-              "$element": "Text",
-              "props": {},
-              "children": [
-                "Email support@example.com — a real product would link this."
-              ]
-            },
-            "disabled": true
           }
         ],
         "headingLevel": "3",
@@ -63,9 +51,9 @@
         "keepMounted": false
       },
       "snippets": {
-        "react": "import { Accordion, type AccordionItem, Text } from '@design-schema/react';\n\nconst ITEMS: AccordionItem[] = [\n  {\n    id: 'cancel',\n    summary: 'What happens if I cancel?',\n    content: (\n      <Text>\n        You keep access until the end of the current billing period. Your data is kept for 30 days after that, then\n        deleted.\n      </Text>\n    ),\n  },\n  {\n    id: 'plans',\n    summary: 'Can I change plans later?',\n    content: <Text>Yes. Changes take effect at the next billing date.</Text>,\n  },\n  {\n    id: 'refunds',\n    summary: 'Do you offer refunds?',\n    content: <Text>Within 14 days of a charge, in full.</Text>,\n  },\n  {\n    id: 'support',\n    summary: 'How do I contact support?',\n    content: <Text>Email support@example.com — a real product would link this.</Text>,\n    disabled: true,\n  },\n];\n\n<Accordion items={ITEMS} />",
-        "lit": "<ds-accordion>\n  <ds-disclosure id=\"plans\" summary=\"Can I change plans later?\">\n    <ds-text>Upgrades apply immediately; downgrades apply at the next renewal.</ds-text>\n  </ds-disclosure>\n  <ds-disclosure id=\"refunds\" summary=\"Do you offer refunds?\">\n    <ds-text>Annual plans can be refunded within 14 days of purchase.</ds-text>\n  </ds-disclosure>\n  <ds-disclosure id=\"cancel\" summary=\"What happens if I cancel?\">\n    <ds-text>Your workspace becomes read-only at the end of the billing period.</ds-text>\n  </ds-disclosure>\n</ds-accordion>",
-        "rn": "import { Accordion, type AccordionItem, Text } from '@design-schema/rn';\n\nconst ITEMS: AccordionItem[] = [\n  { id: 'shipping', summary: 'How long does shipping take?', content: <Text>Orders ship within two business days.</Text> },\n  { id: 'returns', summary: 'What is your return policy?', content: <Text>Items can be returned within 30 days.</Text> },\n  { id: 'payment', summary: 'What payment methods are accepted?', content: <Text>We accept all major credit cards.</Text> },\n  { id: 'support', summary: 'How do I contact support?', content: <Text>Email support@example.com.</Text>, disabled: true },\n];\n\n<Accordion items={ITEMS} />",
+        "react": "import { Accordion, type AccordionItem, Text } from '@design-schema/react';\n\nconst ITEMS: AccordionItem[] = [\n  {\n    id: 'cancel',\n    summary: 'What happens if I cancel?',\n    content: <Text>You keep access until the end of the billing period.</Text>,\n  },\n  {\n    id: 'plans',\n    summary: 'Can I change plans later?',\n    content: <Text>Yes. Changes take effect at the next billing date.</Text>,\n  },\n  {\n    id: 'refunds',\n    summary: 'Do you offer refunds?',\n    content: <Text>Within 14 days of a charge, in full.</Text>,\n  },\n];\n\n<Accordion items={ITEMS} />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\ninterface StoryItem {\n  id: string;\n  summary: string;\n  content: string;\n  disabled?: boolean | undefined;\n}\n\nconst FAQ: StoryItem[] = [\n  { id: 'cancel', summary: 'What happens if I cancel?', content: 'You keep access until the end of the billing period.' },\n  { id: 'refunds', summary: 'Do you offer refunds?', content: 'Within 14 days of a charge, in full.' },\n];\n\nhtml`\n  <ds-accordion\n    .items=${FAQ.map(({ id, summary, disabled }) => ({ id, summary, disabled }))}\n    heading-level=3\n    ?exclusive=\n    .divided=\n    ?keep-mounted=\n    .defaultValue=\n  >\n    <div slot=\"cancel\"><ds-text>You keep access until the end of the billing period.</ds-text></div>\n    <div slot=\"refunds\"><ds-text>Within 14 days of a charge, in full.</ds-text></div>\n  </ds-accordion>\n`;",
+        "rn": "import { Accordion, type AccordionItem } from '@design-schema/rn';\n\nconst ITEMS: AccordionItem[] = [\n  { id: 'shipping', summary: 'How long does shipping take?', content: 'Orders ship within two business days.' },\n  { id: 'returns', summary: 'What is your return policy?', content: 'Items can be returned within 30 days.' },\n  { id: 'payment', summary: 'Which payment methods are accepted?', content: 'All major credit cards.' },\n  { id: 'support', summary: 'How do I contact support?', content: 'From the Help page.', disabled: true },\n];\n\n<Accordion items={ITEMS} />",
         "swift": null
       },
       "stories": {
@@ -90,7 +78,7 @@
               "$element": "Text",
               "props": {},
               "children": [
-                " You keep access until the end of the current billing period. Your data is kept for 30 days after that, then deleted. "
+                "You keep access until the end of the billing period."
               ]
             }
           },
@@ -115,18 +103,6 @@
                 "Within 14 days of a charge, in full."
               ]
             }
-          },
-          {
-            "id": "support",
-            "summary": "How do I contact support?",
-            "content": {
-              "$element": "Text",
-              "props": {},
-              "children": [
-                "Email support@example.com — a real product would link this."
-              ]
-            },
-            "disabled": true
           }
         ],
         "headingLevel": "2",
@@ -135,9 +111,9 @@
         "keepMounted": false
       },
       "snippets": {
-        "react": "import { Accordion, type AccordionItem, Text } from '@design-schema/react';\n\nconst ITEMS: AccordionItem[] = [\n  {\n    id: 'cancel',\n    summary: 'What happens if I cancel?',\n    content: (\n      <Text>\n        You keep access until the end of the current billing period. Your data is kept for 30 days after that, then\n        deleted.\n      </Text>\n    ),\n  },\n  {\n    id: 'plans',\n    summary: 'Can I change plans later?',\n    content: <Text>Yes. Changes take effect at the next billing date.</Text>,\n  },\n  {\n    id: 'refunds',\n    summary: 'Do you offer refunds?',\n    content: <Text>Within 14 days of a charge, in full.</Text>,\n  },\n  {\n    id: 'support',\n    summary: 'How do I contact support?',\n    content: <Text>Email support@example.com — a real product would link this.</Text>,\n    disabled: true,\n  },\n];\n\n<Accordion items={ITEMS} headingLevel=\"2\" />",
-        "lit": "<ds-accordion heading-level=\"2\">\n  <ds-disclosure id=\"plans\" summary=\"Can I change plans later?\">\n    <ds-text>Upgrades apply immediately; downgrades apply at the next renewal.</ds-text>\n  </ds-disclosure>\n  <ds-disclosure id=\"refunds\" summary=\"Do you offer refunds?\">\n    <ds-text>Annual plans can be refunded within 14 days of purchase.</ds-text>\n  </ds-disclosure>\n  <ds-disclosure id=\"cancel\" summary=\"What happens if I cancel?\">\n    <ds-text>Your workspace becomes read-only at the end of the billing period.</ds-text>\n  </ds-disclosure>\n</ds-accordion>",
-        "rn": "import { Accordion, type AccordionItem, Text } from '@design-schema/rn';\n\nconst ITEMS: AccordionItem[] = [\n  { id: 'shipping', summary: 'How long does shipping take?', content: <Text>Orders ship within two business days.</Text> },\n  { id: 'returns', summary: 'What is your return policy?', content: <Text>Items can be returned within 30 days.</Text> },\n  { id: 'payment', summary: 'What payment methods are accepted?', content: <Text>We accept all major credit cards.</Text> },\n  { id: 'support', summary: 'How do I contact support?', content: <Text>Email support@example.com.</Text>, disabled: true },\n];\n\n<Accordion items={ITEMS} headingLevel=\"2\" />",
+        "react": "import { Accordion, type AccordionItem, Text } from '@design-schema/react';\n\nconst ITEMS: AccordionItem[] = [\n  {\n    id: 'cancel',\n    summary: 'What happens if I cancel?',\n    content: <Text>You keep access until the end of the billing period.</Text>,\n  },\n  {\n    id: 'plans',\n    summary: 'Can I change plans later?',\n    content: <Text>Yes. Changes take effect at the next billing date.</Text>,\n  },\n  {\n    id: 'refunds',\n    summary: 'Do you offer refunds?',\n    content: <Text>Within 14 days of a charge, in full.</Text>,\n  },\n];\n\n<Accordion items={ITEMS} headingLevel=\"2\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\ninterface StoryItem {\n  id: string;\n  summary: string;\n  content: string;\n  disabled?: boolean | undefined;\n}\n\nconst FAQ: StoryItem[] = [\n  { id: 'cancel', summary: 'What happens if I cancel?', content: 'You keep access until the end of the billing period.' },\n  { id: 'refunds', summary: 'Do you offer refunds?', content: 'Within 14 days of a charge, in full.' },\n];\n\nhtml`\n  <ds-accordion\n    .items=${FAQ.map(({ id, summary, disabled }) => ({ id, summary, disabled }))}\n    heading-level=2\n    ?exclusive=\n    .divided=\n    ?keep-mounted=\n    .defaultValue=\n  >\n    <div slot=\"cancel\"><ds-text>You keep access until the end of the billing period.</ds-text></div>\n    <div slot=\"refunds\"><ds-text>Within 14 days of a charge, in full.</ds-text></div>\n  </ds-accordion>\n`;",
+        "rn": "import { Accordion, type AccordionItem } from '@design-schema/rn';\n\nconst ITEMS: AccordionItem[] = [\n  { id: 'shipping', summary: 'How long does shipping take?', content: 'Orders ship within two business days.' },\n  { id: 'returns', summary: 'What is your return policy?', content: 'Items can be returned within 30 days.' },\n  { id: 'payment', summary: 'Which payment methods are accepted?', content: 'All major credit cards.' },\n  { id: 'support', summary: 'How do I contact support?', content: 'From the Help page.', disabled: true },\n];\n\n<Accordion items={ITEMS} headingLevel=\"2\" />",
         "swift": null
       },
       "stories": {
@@ -165,7 +141,7 @@
               "$element": "Text",
               "props": {},
               "children": [
-                " You keep access until the end of the current billing period. Your data is kept for 30 days after that, then deleted. "
+                "You keep access until the end of the billing period."
               ]
             }
           },
@@ -190,18 +166,6 @@
                 "Within 14 days of a charge, in full."
               ]
             }
-          },
-          {
-            "id": "support",
-            "summary": "How do I contact support?",
-            "content": {
-              "$element": "Text",
-              "props": {},
-              "children": [
-                "Email support@example.com — a real product would link this."
-              ]
-            },
-            "disabled": true
           }
         ],
         "headingLevel": "3",
@@ -210,9 +174,9 @@
         "keepMounted": false
       },
       "snippets": {
-        "react": "import { Accordion, type AccordionItem, Text } from '@design-schema/react';\n\nconst ITEMS: AccordionItem[] = [\n  {\n    id: 'cancel',\n    summary: 'What happens if I cancel?',\n    content: (\n      <Text>\n        You keep access until the end of the current billing period. Your data is kept for 30 days after that, then\n        deleted.\n      </Text>\n    ),\n  },\n  {\n    id: 'plans',\n    summary: 'Can I change plans later?',\n    content: <Text>Yes. Changes take effect at the next billing date.</Text>,\n  },\n  {\n    id: 'refunds',\n    summary: 'Do you offer refunds?',\n    content: <Text>Within 14 days of a charge, in full.</Text>,\n  },\n  {\n    id: 'support',\n    summary: 'How do I contact support?',\n    content: <Text>Email support@example.com — a real product would link this.</Text>,\n    disabled: true,\n  },\n];\n\n<Accordion items={ITEMS} headingLevel=\"3\" />",
-        "lit": "<ds-accordion heading-level=\"3\">\n  <ds-disclosure id=\"plans\" summary=\"Can I change plans later?\">\n    <ds-text>Upgrades apply immediately; downgrades apply at the next renewal.</ds-text>\n  </ds-disclosure>\n  <ds-disclosure id=\"refunds\" summary=\"Do you offer refunds?\">\n    <ds-text>Annual plans can be refunded within 14 days of purchase.</ds-text>\n  </ds-disclosure>\n  <ds-disclosure id=\"cancel\" summary=\"What happens if I cancel?\">\n    <ds-text>Your workspace becomes read-only at the end of the billing period.</ds-text>\n  </ds-disclosure>\n</ds-accordion>",
-        "rn": "import { Accordion, type AccordionItem, Text } from '@design-schema/rn';\n\nconst ITEMS: AccordionItem[] = [\n  { id: 'shipping', summary: 'How long does shipping take?', content: <Text>Orders ship within two business days.</Text> },\n  { id: 'returns', summary: 'What is your return policy?', content: <Text>Items can be returned within 30 days.</Text> },\n  { id: 'payment', summary: 'What payment methods are accepted?', content: <Text>We accept all major credit cards.</Text> },\n  { id: 'support', summary: 'How do I contact support?', content: <Text>Email support@example.com.</Text>, disabled: true },\n];\n\n<Accordion items={ITEMS} headingLevel=\"3\" />",
+        "react": "import { Accordion, type AccordionItem, Text } from '@design-schema/react';\n\nconst ITEMS: AccordionItem[] = [\n  {\n    id: 'cancel',\n    summary: 'What happens if I cancel?',\n    content: <Text>You keep access until the end of the billing period.</Text>,\n  },\n  {\n    id: 'plans',\n    summary: 'Can I change plans later?',\n    content: <Text>Yes. Changes take effect at the next billing date.</Text>,\n  },\n  {\n    id: 'refunds',\n    summary: 'Do you offer refunds?',\n    content: <Text>Within 14 days of a charge, in full.</Text>,\n  },\n];\n\n<Accordion items={ITEMS} headingLevel=\"3\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\ninterface StoryItem {\n  id: string;\n  summary: string;\n  content: string;\n  disabled?: boolean | undefined;\n}\n\nconst FAQ: StoryItem[] = [\n  { id: 'cancel', summary: 'What happens if I cancel?', content: 'You keep access until the end of the billing period.' },\n  { id: 'refunds', summary: 'Do you offer refunds?', content: 'Within 14 days of a charge, in full.' },\n];\n\nhtml`\n  <ds-accordion\n    .items=${FAQ.map(({ id, summary, disabled }) => ({ id, summary, disabled }))}\n    heading-level=3\n    ?exclusive=\n    .divided=\n    ?keep-mounted=\n    .defaultValue=\n  >\n    <div slot=\"cancel\"><ds-text>You keep access until the end of the billing period.</ds-text></div>\n    <div slot=\"refunds\"><ds-text>Within 14 days of a charge, in full.</ds-text></div>\n  </ds-accordion>\n`;",
+        "rn": "import { Accordion, type AccordionItem } from '@design-schema/rn';\n\nconst ITEMS: AccordionItem[] = [\n  { id: 'shipping', summary: 'How long does shipping take?', content: 'Orders ship within two business days.' },\n  { id: 'returns', summary: 'What is your return policy?', content: 'Items can be returned within 30 days.' },\n  { id: 'payment', summary: 'Which payment methods are accepted?', content: 'All major credit cards.' },\n  { id: 'support', summary: 'How do I contact support?', content: 'From the Help page.', disabled: true },\n];\n\n<Accordion items={ITEMS} headingLevel=\"3\" />",
         "swift": null
       },
       "stories": {
@@ -240,7 +204,7 @@
               "$element": "Text",
               "props": {},
               "children": [
-                " You keep access until the end of the current billing period. Your data is kept for 30 days after that, then deleted. "
+                "You keep access until the end of the billing period."
               ]
             }
           },
@@ -265,18 +229,6 @@
                 "Within 14 days of a charge, in full."
               ]
             }
-          },
-          {
-            "id": "support",
-            "summary": "How do I contact support?",
-            "content": {
-              "$element": "Text",
-              "props": {},
-              "children": [
-                "Email support@example.com — a real product would link this."
-              ]
-            },
-            "disabled": true
           }
         ],
         "headingLevel": "4",
@@ -285,9 +237,9 @@
         "keepMounted": false
       },
       "snippets": {
-        "react": "import { Accordion, type AccordionItem, Text } from '@design-schema/react';\n\nconst ITEMS: AccordionItem[] = [\n  {\n    id: 'cancel',\n    summary: 'What happens if I cancel?',\n    content: (\n      <Text>\n        You keep access until the end of the current billing period. Your data is kept for 30 days after that, then\n        deleted.\n      </Text>\n    ),\n  },\n  {\n    id: 'plans',\n    summary: 'Can I change plans later?',\n    content: <Text>Yes. Changes take effect at the next billing date.</Text>,\n  },\n  {\n    id: 'refunds',\n    summary: 'Do you offer refunds?',\n    content: <Text>Within 14 days of a charge, in full.</Text>,\n  },\n  {\n    id: 'support',\n    summary: 'How do I contact support?',\n    content: <Text>Email support@example.com — a real product would link this.</Text>,\n    disabled: true,\n  },\n];\n\n<Accordion items={ITEMS} headingLevel=\"4\" />",
-        "lit": "<ds-accordion heading-level=\"4\">\n  <ds-disclosure id=\"plans\" summary=\"Can I change plans later?\">\n    <ds-text>Upgrades apply immediately; downgrades apply at the next renewal.</ds-text>\n  </ds-disclosure>\n  <ds-disclosure id=\"refunds\" summary=\"Do you offer refunds?\">\n    <ds-text>Annual plans can be refunded within 14 days of purchase.</ds-text>\n  </ds-disclosure>\n  <ds-disclosure id=\"cancel\" summary=\"What happens if I cancel?\">\n    <ds-text>Your workspace becomes read-only at the end of the billing period.</ds-text>\n  </ds-disclosure>\n</ds-accordion>",
-        "rn": "import { Accordion, type AccordionItem, Text } from '@design-schema/rn';\n\nconst ITEMS: AccordionItem[] = [\n  { id: 'shipping', summary: 'How long does shipping take?', content: <Text>Orders ship within two business days.</Text> },\n  { id: 'returns', summary: 'What is your return policy?', content: <Text>Items can be returned within 30 days.</Text> },\n  { id: 'payment', summary: 'What payment methods are accepted?', content: <Text>We accept all major credit cards.</Text> },\n  { id: 'support', summary: 'How do I contact support?', content: <Text>Email support@example.com.</Text>, disabled: true },\n];\n\n<Accordion items={ITEMS} headingLevel=\"4\" />",
+        "react": "import { Accordion, type AccordionItem, Text } from '@design-schema/react';\n\nconst ITEMS: AccordionItem[] = [\n  {\n    id: 'cancel',\n    summary: 'What happens if I cancel?',\n    content: <Text>You keep access until the end of the billing period.</Text>,\n  },\n  {\n    id: 'plans',\n    summary: 'Can I change plans later?',\n    content: <Text>Yes. Changes take effect at the next billing date.</Text>,\n  },\n  {\n    id: 'refunds',\n    summary: 'Do you offer refunds?',\n    content: <Text>Within 14 days of a charge, in full.</Text>,\n  },\n];\n\n<Accordion items={ITEMS} headingLevel=\"4\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\ninterface StoryItem {\n  id: string;\n  summary: string;\n  content: string;\n  disabled?: boolean | undefined;\n}\n\nconst FAQ: StoryItem[] = [\n  { id: 'cancel', summary: 'What happens if I cancel?', content: 'You keep access until the end of the billing period.' },\n  { id: 'refunds', summary: 'Do you offer refunds?', content: 'Within 14 days of a charge, in full.' },\n];\n\nhtml`\n  <ds-accordion\n    .items=${FAQ.map(({ id, summary, disabled }) => ({ id, summary, disabled }))}\n    heading-level=4\n    ?exclusive=\n    .divided=\n    ?keep-mounted=\n    .defaultValue=\n  >\n    <div slot=\"cancel\"><ds-text>You keep access until the end of the billing period.</ds-text></div>\n    <div slot=\"refunds\"><ds-text>Within 14 days of a charge, in full.</ds-text></div>\n  </ds-accordion>\n`;",
+        "rn": "import { Accordion, type AccordionItem } from '@design-schema/rn';\n\nconst ITEMS: AccordionItem[] = [\n  { id: 'shipping', summary: 'How long does shipping take?', content: 'Orders ship within two business days.' },\n  { id: 'returns', summary: 'What is your return policy?', content: 'Items can be returned within 30 days.' },\n  { id: 'payment', summary: 'Which payment methods are accepted?', content: 'All major credit cards.' },\n  { id: 'support', summary: 'How do I contact support?', content: 'From the Help page.', disabled: true },\n];\n\n<Accordion items={ITEMS} headingLevel=\"4\" />",
         "swift": null
       },
       "stories": {
@@ -315,7 +267,7 @@
               "$element": "Text",
               "props": {},
               "children": [
-                " You keep access until the end of the current billing period. Your data is kept for 30 days after that, then deleted. "
+                "You keep access until the end of the billing period."
               ]
             }
           },
@@ -340,18 +292,6 @@
                 "Within 14 days of a charge, in full."
               ]
             }
-          },
-          {
-            "id": "support",
-            "summary": "How do I contact support?",
-            "content": {
-              "$element": "Text",
-              "props": {},
-              "children": [
-                "Email support@example.com — a real product would link this."
-              ]
-            },
-            "disabled": true
           }
         ],
         "headingLevel": "5",
@@ -360,9 +300,9 @@
         "keepMounted": false
       },
       "snippets": {
-        "react": "import { Accordion, type AccordionItem, Text } from '@design-schema/react';\n\nconst ITEMS: AccordionItem[] = [\n  {\n    id: 'cancel',\n    summary: 'What happens if I cancel?',\n    content: (\n      <Text>\n        You keep access until the end of the current billing period. Your data is kept for 30 days after that, then\n        deleted.\n      </Text>\n    ),\n  },\n  {\n    id: 'plans',\n    summary: 'Can I change plans later?',\n    content: <Text>Yes. Changes take effect at the next billing date.</Text>,\n  },\n  {\n    id: 'refunds',\n    summary: 'Do you offer refunds?',\n    content: <Text>Within 14 days of a charge, in full.</Text>,\n  },\n  {\n    id: 'support',\n    summary: 'How do I contact support?',\n    content: <Text>Email support@example.com — a real product would link this.</Text>,\n    disabled: true,\n  },\n];\n\n<Accordion items={ITEMS} headingLevel=\"5\" />",
-        "lit": "<ds-accordion heading-level=\"5\">\n  <ds-disclosure id=\"plans\" summary=\"Can I change plans later?\">\n    <ds-text>Upgrades apply immediately; downgrades apply at the next renewal.</ds-text>\n  </ds-disclosure>\n  <ds-disclosure id=\"refunds\" summary=\"Do you offer refunds?\">\n    <ds-text>Annual plans can be refunded within 14 days of purchase.</ds-text>\n  </ds-disclosure>\n  <ds-disclosure id=\"cancel\" summary=\"What happens if I cancel?\">\n    <ds-text>Your workspace becomes read-only at the end of the billing period.</ds-text>\n  </ds-disclosure>\n</ds-accordion>",
-        "rn": "import { Accordion, type AccordionItem, Text } from '@design-schema/rn';\n\nconst ITEMS: AccordionItem[] = [\n  { id: 'shipping', summary: 'How long does shipping take?', content: <Text>Orders ship within two business days.</Text> },\n  { id: 'returns', summary: 'What is your return policy?', content: <Text>Items can be returned within 30 days.</Text> },\n  { id: 'payment', summary: 'What payment methods are accepted?', content: <Text>We accept all major credit cards.</Text> },\n  { id: 'support', summary: 'How do I contact support?', content: <Text>Email support@example.com.</Text>, disabled: true },\n];\n\n<Accordion items={ITEMS} headingLevel=\"5\" />",
+        "react": "import { Accordion, type AccordionItem, Text } from '@design-schema/react';\n\nconst ITEMS: AccordionItem[] = [\n  {\n    id: 'cancel',\n    summary: 'What happens if I cancel?',\n    content: <Text>You keep access until the end of the billing period.</Text>,\n  },\n  {\n    id: 'plans',\n    summary: 'Can I change plans later?',\n    content: <Text>Yes. Changes take effect at the next billing date.</Text>,\n  },\n  {\n    id: 'refunds',\n    summary: 'Do you offer refunds?',\n    content: <Text>Within 14 days of a charge, in full.</Text>,\n  },\n];\n\n<Accordion items={ITEMS} headingLevel=\"5\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\ninterface StoryItem {\n  id: string;\n  summary: string;\n  content: string;\n  disabled?: boolean | undefined;\n}\n\nconst FAQ: StoryItem[] = [\n  { id: 'cancel', summary: 'What happens if I cancel?', content: 'You keep access until the end of the billing period.' },\n  { id: 'refunds', summary: 'Do you offer refunds?', content: 'Within 14 days of a charge, in full.' },\n];\n\nhtml`\n  <ds-accordion\n    .items=${FAQ.map(({ id, summary, disabled }) => ({ id, summary, disabled }))}\n    heading-level=5\n    ?exclusive=\n    .divided=\n    ?keep-mounted=\n    .defaultValue=\n  >\n    <div slot=\"cancel\"><ds-text>You keep access until the end of the billing period.</ds-text></div>\n    <div slot=\"refunds\"><ds-text>Within 14 days of a charge, in full.</ds-text></div>\n  </ds-accordion>\n`;",
+        "rn": "import { Accordion, type AccordionItem } from '@design-schema/rn';\n\nconst ITEMS: AccordionItem[] = [\n  { id: 'shipping', summary: 'How long does shipping take?', content: 'Orders ship within two business days.' },\n  { id: 'returns', summary: 'What is your return policy?', content: 'Items can be returned within 30 days.' },\n  { id: 'payment', summary: 'Which payment methods are accepted?', content: 'All major credit cards.' },\n  { id: 'support', summary: 'How do I contact support?', content: 'From the Help page.', disabled: true },\n];\n\n<Accordion items={ITEMS} headingLevel=\"5\" />",
         "swift": null
       },
       "stories": {
@@ -390,7 +330,7 @@
               "$element": "Text",
               "props": {},
               "children": [
-                " You keep access until the end of the current billing period. Your data is kept for 30 days after that, then deleted. "
+                "You keep access until the end of the billing period."
               ]
             }
           },
@@ -415,18 +355,6 @@
                 "Within 14 days of a charge, in full."
               ]
             }
-          },
-          {
-            "id": "support",
-            "summary": "How do I contact support?",
-            "content": {
-              "$element": "Text",
-              "props": {},
-              "children": [
-                "Email support@example.com — a real product would link this."
-              ]
-            },
-            "disabled": true
           }
         ],
         "headingLevel": "6",
@@ -435,9 +363,9 @@
         "keepMounted": false
       },
       "snippets": {
-        "react": "import { Accordion, type AccordionItem, Text } from '@design-schema/react';\n\nconst ITEMS: AccordionItem[] = [\n  {\n    id: 'cancel',\n    summary: 'What happens if I cancel?',\n    content: (\n      <Text>\n        You keep access until the end of the current billing period. Your data is kept for 30 days after that, then\n        deleted.\n      </Text>\n    ),\n  },\n  {\n    id: 'plans',\n    summary: 'Can I change plans later?',\n    content: <Text>Yes. Changes take effect at the next billing date.</Text>,\n  },\n  {\n    id: 'refunds',\n    summary: 'Do you offer refunds?',\n    content: <Text>Within 14 days of a charge, in full.</Text>,\n  },\n  {\n    id: 'support',\n    summary: 'How do I contact support?',\n    content: <Text>Email support@example.com — a real product would link this.</Text>,\n    disabled: true,\n  },\n];\n\n<Accordion items={ITEMS} headingLevel=\"6\" />",
-        "lit": "<ds-accordion heading-level=\"6\">\n  <ds-disclosure id=\"plans\" summary=\"Can I change plans later?\">\n    <ds-text>Upgrades apply immediately; downgrades apply at the next renewal.</ds-text>\n  </ds-disclosure>\n  <ds-disclosure id=\"refunds\" summary=\"Do you offer refunds?\">\n    <ds-text>Annual plans can be refunded within 14 days of purchase.</ds-text>\n  </ds-disclosure>\n  <ds-disclosure id=\"cancel\" summary=\"What happens if I cancel?\">\n    <ds-text>Your workspace becomes read-only at the end of the billing period.</ds-text>\n  </ds-disclosure>\n</ds-accordion>",
-        "rn": "import { Accordion, type AccordionItem, Text } from '@design-schema/rn';\n\nconst ITEMS: AccordionItem[] = [\n  { id: 'shipping', summary: 'How long does shipping take?', content: <Text>Orders ship within two business days.</Text> },\n  { id: 'returns', summary: 'What is your return policy?', content: <Text>Items can be returned within 30 days.</Text> },\n  { id: 'payment', summary: 'What payment methods are accepted?', content: <Text>We accept all major credit cards.</Text> },\n  { id: 'support', summary: 'How do I contact support?', content: <Text>Email support@example.com.</Text>, disabled: true },\n];\n\n<Accordion items={ITEMS} headingLevel=\"6\" />",
+        "react": "import { Accordion, type AccordionItem, Text } from '@design-schema/react';\n\nconst ITEMS: AccordionItem[] = [\n  {\n    id: 'cancel',\n    summary: 'What happens if I cancel?',\n    content: <Text>You keep access until the end of the billing period.</Text>,\n  },\n  {\n    id: 'plans',\n    summary: 'Can I change plans later?',\n    content: <Text>Yes. Changes take effect at the next billing date.</Text>,\n  },\n  {\n    id: 'refunds',\n    summary: 'Do you offer refunds?',\n    content: <Text>Within 14 days of a charge, in full.</Text>,\n  },\n];\n\n<Accordion items={ITEMS} headingLevel=\"6\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\ninterface StoryItem {\n  id: string;\n  summary: string;\n  content: string;\n  disabled?: boolean | undefined;\n}\n\nconst FAQ: StoryItem[] = [\n  { id: 'cancel', summary: 'What happens if I cancel?', content: 'You keep access until the end of the billing period.' },\n  { id: 'refunds', summary: 'Do you offer refunds?', content: 'Within 14 days of a charge, in full.' },\n];\n\nhtml`\n  <ds-accordion\n    .items=${FAQ.map(({ id, summary, disabled }) => ({ id, summary, disabled }))}\n    heading-level=6\n    ?exclusive=\n    .divided=\n    ?keep-mounted=\n    .defaultValue=\n  >\n    <div slot=\"cancel\"><ds-text>You keep access until the end of the billing period.</ds-text></div>\n    <div slot=\"refunds\"><ds-text>Within 14 days of a charge, in full.</ds-text></div>\n  </ds-accordion>\n`;",
+        "rn": "import { Accordion, type AccordionItem } from '@design-schema/rn';\n\nconst ITEMS: AccordionItem[] = [\n  { id: 'shipping', summary: 'How long does shipping take?', content: 'Orders ship within two business days.' },\n  { id: 'returns', summary: 'What is your return policy?', content: 'Items can be returned within 30 days.' },\n  { id: 'payment', summary: 'Which payment methods are accepted?', content: 'All major credit cards.' },\n  { id: 'support', summary: 'How do I contact support?', content: 'From the Help page.', disabled: true },\n];\n\n<Accordion items={ITEMS} headingLevel=\"6\" />",
         "swift": null
       },
       "stories": {
@@ -455,126 +383,129 @@
       "primary": false
     },
     {
-      "title": "Exclusive",
+      "title": "Faq",
       "args": {
         "items": [
           {
             "id": "cancel",
             "summary": "What happens if I cancel?",
-            "content": {
-              "$element": "Text",
-              "props": {},
-              "children": [
-                " You keep access until the end of the current billing period. Your data is kept for 30 days after that, then deleted. "
-              ]
-            }
-          },
-          {
-            "id": "plans",
-            "summary": "Can I change plans later?",
-            "content": {
-              "$element": "Text",
-              "props": {},
-              "children": [
-                "Yes. Changes take effect at the next billing date."
-              ]
-            }
+            "content": "You keep access until the end of the billing period."
           },
           {
             "id": "refunds",
             "summary": "Do you offer refunds?",
-            "content": {
-              "$element": "Text",
-              "props": {},
-              "children": [
-                "Within 14 days of a charge, in full."
-              ]
-            }
-          },
-          {
-            "id": "support",
-            "summary": "How do I contact support?",
-            "content": {
-              "$element": "Text",
-              "props": {},
-              "children": [
-                "Email support@example.com — a real product would link this."
-              ]
-            },
-            "disabled": true
+            "content": "Within 14 days of a charge, in full."
           }
         ],
         "headingLevel": "3",
-        "exclusive": true,
+        "exclusive": false,
         "divided": true,
-        "keepMounted": false,
-        "defaultValue": "cancel"
+        "keepMounted": false
       },
       "snippets": {
-        "react": "import { Accordion, type AccordionItem, Text } from '@design-schema/react';\n\nconst ITEMS: AccordionItem[] = [\n  {\n    id: 'cancel',\n    summary: 'What happens if I cancel?',\n    content: (\n      <Text>\n        You keep access until the end of the current billing period. Your data is kept for 30 days after that, then\n        deleted.\n      </Text>\n    ),\n  },\n  {\n    id: 'plans',\n    summary: 'Can I change plans later?',\n    content: <Text>Yes. Changes take effect at the next billing date.</Text>,\n  },\n  {\n    id: 'refunds',\n    summary: 'Do you offer refunds?',\n    content: <Text>Within 14 days of a charge, in full.</Text>,\n  },\n  {\n    id: 'support',\n    summary: 'How do I contact support?',\n    content: <Text>Email support@example.com — a real product would link this.</Text>,\n    disabled: true,\n  },\n];\n\n<Accordion items={ITEMS} exclusive defaultValue=\"cancel\" />",
-        "lit": null,
-        "rn": "import { Accordion, type AccordionItem, Text } from '@design-schema/rn';\n\nconst ITEMS: AccordionItem[] = [\n  { id: 'shipping', summary: 'How long does shipping take?', content: <Text>Orders ship within two business days.</Text> },\n  { id: 'returns', summary: 'What is your return policy?', content: <Text>Items can be returned within 30 days.</Text> },\n  { id: 'payment', summary: 'What payment methods are accepted?', content: <Text>We accept all major credit cards.</Text> },\n  { id: 'support', summary: 'How do I contact support?', content: <Text>Email support@example.com.</Text>, disabled: true },\n];\n\n<Accordion items={ITEMS} exclusive defaultValue=\"shipping\" />",
+        "react": "import { Accordion } from '@design-schema/react';\n\n<Accordion\n  items={[\n    { id: 'cancel', summary: 'What happens if I cancel?', content: 'You keep access until the end of the billing period.' },\n    { id: 'refunds', summary: 'Do you offer refunds?', content: 'Within 14 days of a charge, in full.' },\n  ]}\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n      <ds-accordion\n        .items=${[\n    { id: 'cancel', summary: 'What happens if I cancel?', content: 'You keep access until the end of the billing period.' },\n    { id: 'refunds', summary: 'Do you offer refunds?', content: 'Within 14 days of a charge, in full.' },\n  ].map(({ id, summary, disabled }) => ({ id, summary, disabled }))}\n        heading-level=3\n        ?exclusive=\n        .divided=\n        ?keep-mounted=\n        .defaultValue=\n      >\n        <div slot=\"cancel\"><ds-text>You keep access until the end of the billing period.</ds-text></div>\n        <div slot=\"refunds\"><ds-text>Within 14 days of a charge, in full.</ds-text></div>\n      </ds-accordion>\n`;",
+        "rn": "import { Accordion } from '@design-schema/rn';\n\n<Accordion\n  items={[\n    { id: 'cancel', summary: 'What happens if I cancel?', content: 'You keep access until the end of the billing period.' },\n    { id: 'refunds', summary: 'Do you offer refunds?', content: 'Within 14 days of a charge, in full.' },\n  ]}\n/>",
         "swift": null
       },
       "stories": {
-        "react": "Exclusive",
-        "lit": null,
-        "rn": "Exclusive",
+        "react": "Faq",
+        "lit": "Faq",
+        "rn": "Faq",
         "swift": null
       },
-      "storyId": "accordion-react--exclusive",
+      "storyId": "accordion-react--faq",
       "sweep": null,
       "decorated": false,
       "primary": true
     },
     {
-      "title": "Not Divided",
+      "title": "One Open At A Time",
       "args": {
         "items": [
           {
-            "id": "cancel",
-            "summary": "What happens if I cancel?",
-            "content": {
-              "$element": "Text",
-              "props": {},
-              "children": [
-                " You keep access until the end of the current billing period. Your data is kept for 30 days after that, then deleted. "
-              ]
-            }
+            "id": "free",
+            "summary": "Free",
+            "content": "One project and community support."
           },
           {
-            "id": "plans",
-            "summary": "Can I change plans later?",
-            "content": {
-              "$element": "Text",
-              "props": {},
-              "children": [
-                "Yes. Changes take effect at the next billing date."
-              ]
-            }
+            "id": "pro",
+            "summary": "Pro",
+            "content": "Unlimited projects and email support."
+          }
+        ],
+        "headingLevel": "3",
+        "exclusive": true,
+        "divided": true,
+        "keepMounted": false
+      },
+      "snippets": {
+        "react": "import { Accordion } from '@design-schema/react';\n\n<Accordion\n  items={[\n    { id: 'free', summary: 'Free', content: 'One project and community support.' },\n    { id: 'pro', summary: 'Pro', content: 'Unlimited projects and email support.' },\n  ]}\n  exclusive\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n      <ds-accordion\n        .items=${[\n    { id: 'free', summary: 'Free', content: 'One project and community support.' },\n    { id: 'pro', summary: 'Pro', content: 'Unlimited projects and email support.' },\n  ].map(({ id, summary, disabled }) => ({ id, summary, disabled }))}\n        heading-level=3\n        ?exclusive=\n        .divided=\n        ?keep-mounted=\n        .defaultValue=\n      >\n        <div slot=\"free\"><ds-text>One project and community support.</ds-text></div>\n        <div slot=\"pro\"><ds-text>Unlimited projects and email support.</ds-text></div>\n      </ds-accordion>\n`;",
+        "rn": "import { Accordion } from '@design-schema/rn';\n\n<Accordion\n  items={[\n    { id: 'free', summary: 'Free', content: 'One project and community support.' },\n    { id: 'pro', summary: 'Pro', content: 'Unlimited projects and email support.' },\n  ]}\n  exclusive\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "OneOpenAtATime",
+        "lit": "OneOpenAtATime",
+        "rn": "OneOpenAtATime",
+        "swift": null
+      },
+      "storyId": "accordion-react--one-open-at-a-time",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Form Sections",
+      "args": {
+        "items": [
+          {
+            "id": "contact",
+            "summary": "Contact details",
+            "content": "Name and email fields."
           },
           {
-            "id": "refunds",
-            "summary": "Do you offer refunds?",
-            "content": {
-              "$element": "Text",
-              "props": {},
-              "children": [
-                "Within 14 days of a charge, in full."
-              ]
-            }
+            "id": "billing",
+            "summary": "Billing address",
+            "content": "Street and city fields."
+          }
+        ],
+        "headingLevel": "2",
+        "exclusive": false,
+        "divided": true,
+        "keepMounted": true
+      },
+      "snippets": {
+        "react": "import { Accordion } from '@design-schema/react';\n\n<Accordion\n  items={[\n    { id: 'contact', summary: 'Contact details', content: 'Name and email fields.' },\n    { id: 'billing', summary: 'Billing address', content: 'Street and city fields.' },\n  ]}\n  headingLevel=\"2\"\n  keepMounted\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n      <ds-accordion\n        .items=${[\n    { id: 'contact', summary: 'Contact details', content: 'Name and email fields.' },\n    { id: 'billing', summary: 'Billing address', content: 'Street and city fields.' },\n  ].map(({ id, summary, disabled }) => ({ id, summary, disabled }))}\n        heading-level=2\n        ?exclusive=\n        .divided=\n        ?keep-mounted=\n        .defaultValue=\n      >\n        <div slot=\"contact\"><ds-text>Name and email fields.</ds-text></div>\n        <div slot=\"billing\"><ds-text>Street and city fields.</ds-text></div>\n      </ds-accordion>\n`;",
+        "rn": "import { Accordion } from '@design-schema/rn';\n\n<Accordion\n  items={[\n    { id: 'contact', summary: 'Contact details', content: 'Name and email fields.' },\n    { id: 'billing', summary: 'Billing address', content: 'Street and city fields.' },\n  ]}\n  keepMounted\n  headingLevel=\"2\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "FormSections",
+        "lit": "FormSections",
+        "rn": "FormSections",
+        "swift": null
+      },
+      "storyId": "accordion-react--form-sections",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Undivided",
+      "args": {
+        "items": [
+          {
+            "id": "shipping",
+            "summary": "Shipping",
+            "content": "Orders ship within two business days."
           },
           {
-            "id": "support",
-            "summary": "How do I contact support?",
-            "content": {
-              "$element": "Text",
-              "props": {},
-              "children": [
-                "Email support@example.com — a real product would link this."
-              ]
-            },
-            "disabled": true
+            "id": "returns",
+            "summary": "Returns",
+            "content": "Items can be returned within 30 days."
           }
         ],
         "headingLevel": "3",
@@ -583,97 +514,19 @@
         "keepMounted": false
       },
       "snippets": {
-        "react": "import { Accordion, type AccordionItem, Text } from '@design-schema/react';\n\nconst ITEMS: AccordionItem[] = [\n  {\n    id: 'cancel',\n    summary: 'What happens if I cancel?',\n    content: (\n      <Text>\n        You keep access until the end of the current billing period. Your data is kept for 30 days after that, then\n        deleted.\n      </Text>\n    ),\n  },\n  {\n    id: 'plans',\n    summary: 'Can I change plans later?',\n    content: <Text>Yes. Changes take effect at the next billing date.</Text>,\n  },\n  {\n    id: 'refunds',\n    summary: 'Do you offer refunds?',\n    content: <Text>Within 14 days of a charge, in full.</Text>,\n  },\n  {\n    id: 'support',\n    summary: 'How do I contact support?',\n    content: <Text>Email support@example.com — a real product would link this.</Text>,\n    disabled: true,\n  },\n];\n\n<Accordion items={ITEMS} divided={false} />",
-        "lit": "<ds-accordion>\n  <ds-disclosure id=\"plans\" summary=\"Can I change plans later?\">\n    <ds-text>Upgrades apply immediately; downgrades apply at the next renewal.</ds-text>\n  </ds-disclosure>\n  <ds-disclosure id=\"refunds\" summary=\"Do you offer refunds?\">\n    <ds-text>Annual plans can be refunded within 14 days of purchase.</ds-text>\n  </ds-disclosure>\n  <ds-disclosure id=\"cancel\" summary=\"What happens if I cancel?\">\n    <ds-text>Your workspace becomes read-only at the end of the billing period.</ds-text>\n  </ds-disclosure>\n</ds-accordion>",
-        "rn": "import { Accordion, type AccordionItem, Text } from '@design-schema/rn';\n\nconst ITEMS: AccordionItem[] = [\n  { id: 'shipping', summary: 'How long does shipping take?', content: <Text>Orders ship within two business days.</Text> },\n  { id: 'returns', summary: 'What is your return policy?', content: <Text>Items can be returned within 30 days.</Text> },\n  { id: 'payment', summary: 'What payment methods are accepted?', content: <Text>We accept all major credit cards.</Text> },\n  { id: 'support', summary: 'How do I contact support?', content: <Text>Email support@example.com.</Text>, disabled: true },\n];\n\n<Accordion items={ITEMS} divided={false} />",
+        "react": "import { Accordion } from '@design-schema/react';\n\n<Accordion\n  items={[\n    { id: 'shipping', summary: 'Shipping', content: 'Orders ship within two business days.' },\n    { id: 'returns', summary: 'Returns', content: 'Items can be returned within 30 days.' },\n  ]}\n  divided={false}\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n      <ds-accordion\n        .items=${[\n    { id: 'shipping', summary: 'Shipping', content: 'Orders ship within two business days.' },\n    { id: 'returns', summary: 'Returns', content: 'Items can be returned within 30 days.' },\n  ].map(({ id, summary, disabled }) => ({ id, summary, disabled }))}\n        heading-level=3\n        ?exclusive=\n        .divided=\n        ?keep-mounted=\n        .defaultValue=\n      >\n        <div slot=\"shipping\"><ds-text>Orders ship within two business days.</ds-text></div>\n        <div slot=\"returns\"><ds-text>Items can be returned within 30 days.</ds-text></div>\n      </ds-accordion>\n`;",
+        "rn": "import { Accordion } from '@design-schema/rn';\n\n<Accordion\n  items={[\n    { id: 'shipping', summary: 'Shipping', content: 'Orders ship within two business days.' },\n    { id: 'returns', summary: 'Returns', content: 'Items can be returned within 30 days.' },\n  ]}\n  divided={false}\n/>",
         "swift": null
       },
       "stories": {
-        "react": "NotDivided",
-        "lit": "DividedFalse",
-        "rn": "NotDivided",
+        "react": "Undivided",
+        "lit": "Undivided",
+        "rn": "Undivided",
         "swift": null
       },
-      "storyId": "accordion-react--not-divided",
-      "sweep": {
-        "prop": "divided",
-        "value": false
-      },
-      "decorated": false,
-      "primary": true
-    },
-    {
-      "title": "Keep Mounted",
-      "args": {
-        "items": [
-          {
-            "id": "cancel",
-            "summary": "What happens if I cancel?",
-            "content": {
-              "$element": "Text",
-              "props": {},
-              "children": [
-                " You keep access until the end of the current billing period. Your data is kept for 30 days after that, then deleted. "
-              ]
-            }
-          },
-          {
-            "id": "plans",
-            "summary": "Can I change plans later?",
-            "content": {
-              "$element": "Text",
-              "props": {},
-              "children": [
-                "Yes. Changes take effect at the next billing date."
-              ]
-            }
-          },
-          {
-            "id": "refunds",
-            "summary": "Do you offer refunds?",
-            "content": {
-              "$element": "Text",
-              "props": {},
-              "children": [
-                "Within 14 days of a charge, in full."
-              ]
-            }
-          },
-          {
-            "id": "support",
-            "summary": "How do I contact support?",
-            "content": {
-              "$element": "Text",
-              "props": {},
-              "children": [
-                "Email support@example.com — a real product would link this."
-              ]
-            },
-            "disabled": true
-          }
-        ],
-        "headingLevel": "3",
-        "exclusive": false,
-        "divided": true,
-        "keepMounted": true
-      },
-      "snippets": {
-        "react": "import { Accordion, type AccordionItem, Text } from '@design-schema/react';\n\nconst ITEMS: AccordionItem[] = [\n  {\n    id: 'cancel',\n    summary: 'What happens if I cancel?',\n    content: (\n      <Text>\n        You keep access until the end of the current billing period. Your data is kept for 30 days after that, then\n        deleted.\n      </Text>\n    ),\n  },\n  {\n    id: 'plans',\n    summary: 'Can I change plans later?',\n    content: <Text>Yes. Changes take effect at the next billing date.</Text>,\n  },\n  {\n    id: 'refunds',\n    summary: 'Do you offer refunds?',\n    content: <Text>Within 14 days of a charge, in full.</Text>,\n  },\n  {\n    id: 'support',\n    summary: 'How do I contact support?',\n    content: <Text>Email support@example.com — a real product would link this.</Text>,\n    disabled: true,\n  },\n];\n\n<Accordion items={ITEMS} keepMounted />",
-        "lit": "<ds-accordion keep-mounted>\n  <ds-disclosure id=\"plans\" summary=\"Can I change plans later?\">\n    <ds-text>Upgrades apply immediately; downgrades apply at the next renewal.</ds-text>\n  </ds-disclosure>\n  <ds-disclosure id=\"refunds\" summary=\"Do you offer refunds?\">\n    <ds-text>Annual plans can be refunded within 14 days of purchase.</ds-text>\n  </ds-disclosure>\n  <ds-disclosure id=\"cancel\" summary=\"What happens if I cancel?\">\n    <ds-text>Your workspace becomes read-only at the end of the billing period.</ds-text>\n  </ds-disclosure>\n</ds-accordion>",
-        "rn": "import { Accordion, type AccordionItem, Text } from '@design-schema/rn';\n\nconst ITEMS: AccordionItem[] = [\n  { id: 'shipping', summary: 'How long does shipping take?', content: <Text>Orders ship within two business days.</Text> },\n  { id: 'returns', summary: 'What is your return policy?', content: <Text>Items can be returned within 30 days.</Text> },\n  { id: 'payment', summary: 'What payment methods are accepted?', content: <Text>We accept all major credit cards.</Text> },\n  { id: 'support', summary: 'How do I contact support?', content: <Text>Email support@example.com.</Text>, disabled: true },\n];\n\n<Accordion items={ITEMS} keepMounted />",
-        "swift": null
-      },
-      "stories": {
-        "react": "KeepMounted",
-        "lit": "KeepMountedTrue",
-        "rn": "KeepMounted",
-        "swift": null
-      },
-      "storyId": "accordion-react--keep-mounted",
-      "sweep": {
-        "prop": "keepMounted",
-        "value": true
-      },
+      "storyId": "accordion-react--undivided",
+      "sweep": null,
       "decorated": false,
       "primary": true
     },
@@ -688,7 +541,7 @@
               "$element": "Text",
               "props": {},
               "children": [
-                " You keep access until the end of the current billing period. Your data is kept for 30 days after that, then deleted. "
+                "You keep access until the end of the billing period."
               ]
             }
           },
@@ -713,18 +566,6 @@
                 "Within 14 days of a charge, in full."
               ]
             }
-          },
-          {
-            "id": "support",
-            "summary": "How do I contact support?",
-            "content": {
-              "$element": "Text",
-              "props": {},
-              "children": [
-                "Email support@example.com — a real product would link this."
-              ]
-            },
-            "disabled": true
           }
         ],
         "headingLevel": "3",
@@ -737,7 +578,7 @@
         ]
       },
       "snippets": {
-        "react": "import { Accordion, type AccordionItem, Text } from '@design-schema/react';\n\nconst ITEMS: AccordionItem[] = [\n  {\n    id: 'cancel',\n    summary: 'What happens if I cancel?',\n    content: (\n      <Text>\n        You keep access until the end of the current billing period. Your data is kept for 30 days after that, then\n        deleted.\n      </Text>\n    ),\n  },\n  {\n    id: 'plans',\n    summary: 'Can I change plans later?',\n    content: <Text>Yes. Changes take effect at the next billing date.</Text>,\n  },\n  {\n    id: 'refunds',\n    summary: 'Do you offer refunds?',\n    content: <Text>Within 14 days of a charge, in full.</Text>,\n  },\n  {\n    id: 'support',\n    summary: 'How do I contact support?',\n    content: <Text>Email support@example.com — a real product would link this.</Text>,\n    disabled: true,\n  },\n];\n\n<Accordion items={ITEMS} value={['cancel', 'plans']} />",
+        "react": "import { Accordion, type AccordionItem, Text } from '@design-schema/react';\n\nconst ITEMS: AccordionItem[] = [\n  {\n    id: 'cancel',\n    summary: 'What happens if I cancel?',\n    content: <Text>You keep access until the end of the billing period.</Text>,\n  },\n  {\n    id: 'plans',\n    summary: 'Can I change plans later?',\n    content: <Text>Yes. Changes take effect at the next billing date.</Text>,\n  },\n  {\n    id: 'refunds',\n    summary: 'Do you offer refunds?',\n    content: <Text>Within 14 days of a charge, in full.</Text>,\n  },\n];\n\n<Accordion items={ITEMS} value={['cancel', 'plans']} />",
         "lit": null,
         "rn": null,
         "swift": null
@@ -754,7 +595,7 @@
       "primary": true
     },
     {
-      "title": "Keyboard",
+      "title": "Disabled Item",
       "args": {
         "items": [
           {
@@ -764,7 +605,7 @@
               "$element": "Text",
               "props": {},
               "children": [
-                " You keep access until the end of the current billing period. Your data is kept for 30 days after that, then deleted. "
+                "You keep access until the end of the billing period."
               ]
             }
           },
@@ -797,7 +638,7 @@
               "$element": "Text",
               "props": {},
               "children": [
-                "Email support@example.com — a real product would link this."
+                "Write to the support team."
               ]
             },
             "disabled": true
@@ -806,13 +647,72 @@
         "headingLevel": "3",
         "exclusive": false,
         "divided": true,
-        "keepMounted": false,
-        "defaultValue": "cancel"
+        "keepMounted": false
       },
       "snippets": {
-        "react": "import { Accordion, type AccordionItem, Text } from '@design-schema/react';\n\nconst ITEMS: AccordionItem[] = [\n  {\n    id: 'cancel',\n    summary: 'What happens if I cancel?',\n    content: (\n      <Text>\n        You keep access until the end of the current billing period. Your data is kept for 30 days after that, then\n        deleted.\n      </Text>\n    ),\n  },\n  {\n    id: 'plans',\n    summary: 'Can I change plans later?',\n    content: <Text>Yes. Changes take effect at the next billing date.</Text>,\n  },\n  {\n    id: 'refunds',\n    summary: 'Do you offer refunds?',\n    content: <Text>Within 14 days of a charge, in full.</Text>,\n  },\n  {\n    id: 'support',\n    summary: 'How do I contact support?',\n    content: <Text>Email support@example.com — a real product would link this.</Text>,\n    disabled: true,\n  },\n];\n\n<Accordion items={ITEMS} defaultValue=\"cancel\" />",
-        "lit": "<ds-accordion>\n  <ds-disclosure id=\"plans\" summary=\"Can I change plans later?\">\n    <ds-text>Upgrades apply immediately; downgrades apply at the next renewal.</ds-text>\n  </ds-disclosure>\n  <ds-disclosure id=\"refunds\" summary=\"Do you offer refunds?\">\n    <ds-text>Annual plans can be refunded within 14 days of purchase.</ds-text>\n  </ds-disclosure>\n  <ds-disclosure id=\"cancel\" summary=\"What happens if I cancel?\">\n    <ds-text>Your workspace becomes read-only at the end of the billing period.</ds-text>\n  </ds-disclosure>\n</ds-accordion>",
-        "rn": "import { Accordion, type AccordionItem, Text } from '@design-schema/rn';\n\nconst ITEMS: AccordionItem[] = [\n  { id: 'shipping', summary: 'How long does shipping take?', content: <Text>Orders ship within two business days.</Text> },\n  { id: 'returns', summary: 'What is your return policy?', content: <Text>Items can be returned within 30 days.</Text> },\n  { id: 'payment', summary: 'What payment methods are accepted?', content: <Text>We accept all major credit cards.</Text> },\n  { id: 'support', summary: 'How do I contact support?', content: <Text>Email support@example.com.</Text>, disabled: true },\n];\n\n<Accordion items={ITEMS} />",
+        "react": "import { Accordion, type AccordionItem, Text } from '@design-schema/react';\n\nconst ITEMS: AccordionItem[] = [\n  {\n    id: 'cancel',\n    summary: 'What happens if I cancel?',\n    content: <Text>You keep access until the end of the billing period.</Text>,\n  },\n  {\n    id: 'plans',\n    summary: 'Can I change plans later?',\n    content: <Text>Yes. Changes take effect at the next billing date.</Text>,\n  },\n  {\n    id: 'refunds',\n    summary: 'Do you offer refunds?',\n    content: <Text>Within 14 days of a charge, in full.</Text>,\n  },\n];\n\n<Accordion\n  items={[\n    ...ITEMS,\n    { id: 'support', summary: 'How do I contact support?', content: <Text>Write to the support team.</Text>, disabled: true },\n  ]}\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n      <ds-accordion\n        .items=${[\n    { id: 'cancel', summary: 'What happens if I cancel?', content: 'You keep access until the end of the billing period.' },\n    { id: 'refunds', summary: 'Do you offer refunds?', content: 'Within 14 days of a charge, in full.', disabled: true },\n  ].map(({ id, summary, disabled }) => ({ id, summary, disabled }))}\n        heading-level=3\n        ?exclusive=\n        .divided=\n        ?keep-mounted=\n        .defaultValue=\n      >\n        <div slot=\"cancel\"><ds-text>You keep access until the end of the billing period.</ds-text></div>\n        <div slot=\"refunds\"><ds-text>Within 14 days of a charge, in full.</ds-text></div>\n      </ds-accordion>\n`;",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "DisabledItem",
+        "lit": "DisabledItem",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "accordion-react--disabled-item",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Keyboard",
+      "args": {
+        "items": [
+          {
+            "id": "cancel",
+            "summary": "What happens if I cancel?",
+            "content": {
+              "$element": "Text",
+              "props": {},
+              "children": [
+                "You keep access until the end of the billing period."
+              ]
+            }
+          },
+          {
+            "id": "plans",
+            "summary": "Can I change plans later?",
+            "content": {
+              "$element": "Text",
+              "props": {},
+              "children": [
+                "Yes. Changes take effect at the next billing date."
+              ]
+            }
+          },
+          {
+            "id": "refunds",
+            "summary": "Do you offer refunds?",
+            "content": {
+              "$element": "Text",
+              "props": {},
+              "children": [
+                "Within 14 days of a charge, in full."
+              ]
+            }
+          }
+        ],
+        "headingLevel": "3",
+        "exclusive": false,
+        "divided": true,
+        "keepMounted": false
+      },
+      "snippets": {
+        "react": "import { Accordion, type AccordionItem, Text } from '@design-schema/react';\n\nconst ITEMS: AccordionItem[] = [\n  {\n    id: 'cancel',\n    summary: 'What happens if I cancel?',\n    content: <Text>You keep access until the end of the billing period.</Text>,\n  },\n  {\n    id: 'plans',\n    summary: 'Can I change plans later?',\n    content: <Text>Yes. Changes take effect at the next billing date.</Text>,\n  },\n  {\n    id: 'refunds',\n    summary: 'Do you offer refunds?',\n    content: <Text>Within 14 days of a charge, in full.</Text>,\n  },\n];\n\n<Accordion items={ITEMS} />",
+        "lit": "<ds-accordion>\n  <ds-disclosure id=\"cancel\" summary=\"What happens if I cancel?\">\n    <ds-text>You keep access until the end of the billing period.</ds-text>\n  </ds-disclosure>\n  <ds-disclosure id=\"refunds\" summary=\"Do you offer refunds?\">\n    <ds-text>Within 14 days of a charge, in full.</ds-text>\n  </ds-disclosure>\n  <ds-disclosure id=\"shipping\" summary=\"Shipping\">\n    <ds-text>Orders ship within two business days.</ds-text>\n  </ds-disclosure>\n</ds-accordion>",
+        "rn": "import { Accordion, type AccordionItem } from '@design-schema/rn';\n\nconst ITEMS: AccordionItem[] = [\n  { id: 'shipping', summary: 'How long does shipping take?', content: 'Orders ship within two business days.' },\n  { id: 'returns', summary: 'What is your return policy?', content: 'Items can be returned within 30 days.' },\n  { id: 'payment', summary: 'Which payment methods are accepted?', content: 'All major credit cards.' },\n  { id: 'support', summary: 'How do I contact support?', content: 'From the Help page.', disabled: true },\n];\n\n<Accordion items={ITEMS} defaultValue=\"shipping\" />",
         "swift": null
       },
       "stories": {
@@ -824,7 +724,7 @@
       "storyId": "accordion-react--keyboard",
       "sweep": null,
       "decorated": false,
-      "primary": true
+      "primary": false
     }
   ]
 }

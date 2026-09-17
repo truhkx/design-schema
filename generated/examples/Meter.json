@@ -11,16 +11,11 @@
       "title": "Default",
       "args": {
         "label": "Storage used",
-        "value": 32,
-        "min": 0,
-        "max": 100,
-        "valueText": "3.2 GB of 10 GB",
-        "tone": "info",
-        "hideValue": false
+        "value": 32
       },
       "snippets": {
-        "react": "import { Meter } from '@design-schema/react';\n\n<Meter label=\"Storage used\" value={32} valueText=\"3.2 GB of 10 GB\" />",
-        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-meter label=\"Storage used\" value=\"32\" value-text=\"3.2 GB of 10 GB\"></ds-meter>\n</div>",
+        "react": "import { Meter } from '@design-schema/react';\n\n<Meter label=\"Storage used\" value={32} />",
+        "lit": "<ds-meter label=\"Storage used\" value=\"32\"></ds-meter>",
         "rn": "import { Meter } from '@design-schema/rn';\n\n<Meter label=\"Storage used\" value={32} valueText=\"3.2 GB of 10 GB\" />",
         "swift": null
       },
@@ -40,15 +35,11 @@
       "args": {
         "label": "Storage used",
         "value": 32,
-        "min": 0,
-        "max": 100,
-        "valueText": "3.2 GB of 10 GB",
-        "tone": "info",
-        "hideValue": false
+        "tone": "info"
       },
       "snippets": {
-        "react": "import { Meter } from '@design-schema/react';\n\n<Meter\n  label=\"Storage used\"\n  value={32}\n  valueText=\"3.2 GB of 10 GB\"\n  tone=\"info\"\n/>",
-        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-meter label=\"Storage used\" value=\"32\" value-text=\"3.2 GB of 10 GB\" tone=\"info\"></ds-meter>\n</div>",
+        "react": "import { Meter } from '@design-schema/react';\n\n<Meter label=\"Storage used\" value={32} tone=\"info\" />",
+        "lit": "<ds-meter label=\"Storage used\" value=\"32\" tone=\"info\"></ds-meter>",
         "rn": "import { Meter } from '@design-schema/rn';\n\n<Meter\n  label=\"Storage used\"\n  value={32}\n  valueText=\"3.2 GB of 10 GB\"\n  tone=\"info\"\n/>",
         "swift": null
       },
@@ -69,17 +60,13 @@
     {
       "title": "Tone Success",
       "args": {
-        "label": "Password strength",
-        "value": 4,
-        "min": 0,
-        "max": 4,
-        "valueText": "Strong",
-        "tone": "success",
-        "hideValue": false
+        "label": "Storage used",
+        "value": 32,
+        "tone": "success"
       },
       "snippets": {
-        "react": "import { Meter } from '@design-schema/react';\n\n<Meter\n  label=\"Password strength\"\n  value={4}\n  max={4}\n  valueText=\"Strong\"\n  tone=\"success\"\n/>",
-        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-meter label=\"Password strength\" value=\"4\" min=\"0\" max=\"4\" value-text=\"Strong\" tone=\"success\"></ds-meter>\n</div>",
+        "react": "import { Meter } from '@design-schema/react';\n\n<Meter label=\"Storage used\" value={32} tone=\"success\" />",
+        "lit": "<ds-meter label=\"Storage used\" value=\"32\" tone=\"success\"></ds-meter>",
         "rn": "import { Meter } from '@design-schema/rn';\n\n<Meter\n  label=\"Password strength\"\n  value={4}\n  max={4}\n  valueText=\"Strong\"\n  tone=\"success\"\n/>",
         "swift": null
       },
@@ -90,24 +77,23 @@
         "swift": null
       },
       "storyId": "meter-react--tone-success",
-      "sweep": null,
+      "sweep": {
+        "prop": "tone",
+        "value": "success"
+      },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Tone Warning",
       "args": {
         "label": "Storage used",
         "value": 82,
-        "min": 0,
-        "max": 100,
-        "valueText": "8.2 GB of 10 GB",
-        "tone": "warning",
-        "hideValue": false
+        "tone": "warning"
       },
       "snippets": {
-        "react": "import { Meter } from '@design-schema/react';\n\n<Meter\n  label=\"Storage used\"\n  value={82}\n  valueText=\"8.2 GB of 10 GB\"\n  tone=\"warning\"\n/>",
-        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-meter label=\"Storage used\" value=\"82\" value-text=\"8.2 GB of 10 GB\" tone=\"warning\"></ds-meter>\n</div>",
+        "react": "import { Meter } from '@design-schema/react';\n\n<Meter label=\"Storage used\" value={82} tone=\"warning\" />",
+        "lit": "<ds-meter label=\"Storage used\" value=\"32\" tone=\"warning\"></ds-meter>",
         "rn": "import { Meter } from '@design-schema/rn';\n\n<Meter\n  label=\"Storage used\"\n  value={82}\n  valueText=\"8.2 GB of 10 GB\"\n  tone=\"warning\"\n/>",
         "swift": null
       },
@@ -127,15 +113,11 @@
       "args": {
         "label": "Storage used",
         "value": 95,
-        "min": 0,
-        "max": 100,
-        "valueText": "9.5 GB of 10 GB",
-        "tone": "danger",
-        "hideValue": false
+        "tone": "danger"
       },
       "snippets": {
-        "react": "import { Meter } from '@design-schema/react';\n\n<Meter\n  label=\"Storage used\"\n  value={95}\n  valueText=\"9.5 GB of 10 GB\"\n  tone=\"danger\"\n/>",
-        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-meter label=\"Storage used\" value=\"95\" value-text=\"9.5 GB of 10 GB\" tone=\"danger\"></ds-meter>\n</div>",
+        "react": "import { Meter } from '@design-schema/react';\n\n<Meter label=\"Storage used\" value={95} tone=\"danger\" />",
+        "lit": "<ds-meter label=\"Storage used\" value=\"32\" tone=\"danger\"></ds-meter>",
         "rn": "import { Meter } from '@design-schema/rn';\n\n<Meter\n  label=\"Storage used\"\n  value={95}\n  valueText=\"9.5 GB of 10 GB\"\n  tone=\"danger\"\n/>",
         "swift": null
       },
@@ -151,87 +133,101 @@
       "primary": true
     },
     {
-      "title": "Percent Value",
+      "title": "Storage Quota",
       "args": {
         "label": "Storage used",
-        "value": 64,
-        "min": 0,
-        "max": 100,
-        "tone": "info",
-        "hideValue": false
+        "value": 32,
+        "valueText": "3.2 GB of 10 GB"
       },
       "snippets": {
-        "react": "import { Meter } from '@design-schema/react';\n\n<Meter label=\"Storage used\" value={64} />",
-        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-meter label=\"Battery\" value=\"64\"></ds-meter>\n</div>",
-        "rn": "import { Meter } from '@design-schema/rn';\n\n<Meter label=\"Storage used\" value={64} />",
+        "react": "import { Meter } from '@design-schema/react';\n\n<Meter label=\"Storage used\" value={32} valueText=\"3.2 GB of 10 GB\" />",
+        "lit": "<ds-meter label=\"Storage used\" value=\"32\" value-text=\"3.2 GB of 10 GB\"></ds-meter>",
+        "rn": "import { Meter } from '@design-schema/rn';\n\n<Meter label=\"Storage used\" value={32} valueText=\"3.2 GB of 10 GB\" />",
         "swift": null
       },
       "stories": {
-        "react": "PercentValue",
-        "lit": "PercentOnly",
-        "rn": "Percentage",
+        "react": "StorageQuota",
+        "lit": "StorageQuota",
+        "rn": "StorageQuota",
         "swift": null
       },
-      "storyId": "meter-react--percent-value",
+      "storyId": "meter-react--storage-quota",
       "sweep": null,
       "decorated": false,
       "primary": true
     },
     {
-      "title": "Hidden Value",
+      "title": "Nearly Full",
       "args": {
         "label": "Storage used",
-        "value": 32,
-        "min": 0,
-        "max": 100,
-        "valueText": "3.2 GB of 10 GB",
-        "tone": "info",
-        "hideValue": true
+        "value": 95,
+        "tone": "danger",
+        "valueText": "9.5 GB of 10 GB"
       },
       "snippets": {
-        "react": "import { Meter } from '@design-schema/react';\n\n<Meter label=\"Storage used\" value={32} valueText=\"3.2 GB of 10 GB\" hideValue />",
-        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-meter label=\"Storage used\" value=\"32\" value-text=\"3.2 GB of 10 GB\" hide-value></ds-meter>\n</div>",
-        "rn": "import { Meter } from '@design-schema/rn';\n\n<Meter label=\"Storage used\" value={32} valueText=\"3.2 GB of 10 GB\" hideValue />",
+        "react": "import { Meter } from '@design-schema/react';\n\n<Meter\n  label=\"Storage used\"\n  value={95}\n  tone=\"danger\"\n  valueText=\"9.5 GB of 10 GB\"\n/>",
+        "lit": "<ds-meter label=\"Storage used\" value=\"95\" value-text=\"9.5 GB of 10 GB\" tone=\"danger\"></ds-meter>",
+        "rn": "import { Meter } from '@design-schema/rn';\n\n<Meter\n  label=\"Storage used\"\n  value={95}\n  valueText=\"9.5 GB of 10 GB\"\n  tone=\"danger\"\n/>",
         "swift": null
       },
       "stories": {
-        "react": "HiddenValue",
-        "lit": "HideValue",
-        "rn": "HideValue",
+        "react": "NearlyFull",
+        "lit": "NearlyFull",
+        "rn": "NearlyFull",
         "swift": null
       },
-      "storyId": "meter-react--hidden-value",
-      "sweep": {
-        "prop": "hideValue",
-        "value": true
-      },
+      "storyId": "meter-react--nearly-full",
+      "sweep": null,
       "decorated": false,
       "primary": true
     },
     {
-      "title": "Custom Range",
+      "title": "Password Strength",
       "args": {
-        "label": "Score",
-        "value": 7,
+        "label": "Password strength",
+        "value": 3,
         "min": 0,
-        "max": 10,
-        "valueText": "7 of 10",
-        "tone": "info",
-        "hideValue": false
+        "max": 4,
+        "valueText": "Strong",
+        "tone": "success"
       },
       "snippets": {
-        "react": "import { Meter } from '@design-schema/react';\n\n<Meter label=\"Score\" value={7} min={0} max={10} valueText=\"7 of 10\" />",
-        "lit": "<div style=\"inline-size: min(100%, 24rem)\">\n  <ds-meter label=\"Score\" value=\"7\" min=\"0\" max=\"10\" value-text=\"7 of 10\" tone=\"success\"></ds-meter>\n</div>",
-        "rn": "import { Meter } from '@design-schema/rn';\n\n<Meter\n  label=\"Score\"\n  value={7}\n  min={0}\n  max={10}\n  valueText=\"7 of 10\"\n  tone=\"success\"\n/>",
+        "react": "import { Meter } from '@design-schema/react';\n\n<Meter\n  label=\"Password strength\"\n  value={3}\n  min={0}\n  max={4}\n  valueText=\"Strong\"\n  tone=\"success\"\n/>",
+        "lit": "<ds-meter label=\"Password strength\" value=\"3\" min=\"0\" max=\"4\" value-text=\"Strong\" tone=\"success\"></ds-meter>",
+        "rn": "import { Meter } from '@design-schema/rn';\n\n<Meter\n  label=\"Password strength\"\n  value={3}\n  min={0}\n  max={4}\n  valueText=\"Strong\"\n  tone=\"success\"\n/>",
         "swift": null
       },
       "stories": {
-        "react": "CustomRange",
-        "lit": "CustomRange",
-        "rn": "CustomRange",
+        "react": "PasswordStrength",
+        "lit": "PasswordStrength",
+        "rn": "PasswordStrength",
         "swift": null
       },
-      "storyId": "meter-react--custom-range",
+      "storyId": "meter-react--password-strength",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Bar Only",
+      "args": {
+        "label": "Battery",
+        "value": 64,
+        "hideValue": true
+      },
+      "snippets": {
+        "react": "import { Meter } from '@design-schema/react';\n\n<Meter label=\"Battery\" value={64} hideValue />",
+        "lit": "<ds-meter label=\"Battery\" value=\"64\" hide-value></ds-meter>",
+        "rn": "import { Meter } from '@design-schema/rn';\n\n<Meter label=\"Battery\" value={64} valueText=\"3.2 GB of 10 GB\" hideValue />",
+        "swift": null
+      },
+      "stories": {
+        "react": "BarOnly",
+        "lit": "BarOnly",
+        "rn": "BarOnly",
+        "swift": null
+      },
+      "storyId": "meter-react--bar-only",
       "sweep": null,
       "decorated": false,
       "primary": false
@@ -240,15 +236,10 @@
       "title": "Empty",
       "args": {
         "label": "Storage used",
-        "value": 0,
-        "min": 0,
-        "max": 100,
-        "valueText": "0 GB of 10 GB",
-        "tone": "info",
-        "hideValue": false
+        "value": 0
       },
       "snippets": {
-        "react": "import { Meter } from '@design-schema/react';\n\n<Meter label=\"Storage used\" value={0} valueText=\"0 GB of 10 GB\" />",
+        "react": "import { Meter } from '@design-schema/react';\n\n<Meter label=\"Storage used\" value={0} />",
         "lit": null,
         "rn": null,
         "swift": null
@@ -268,15 +259,10 @@
       "title": "Full",
       "args": {
         "label": "Storage used",
-        "value": 100,
-        "min": 0,
-        "max": 100,
-        "valueText": "10 GB of 10 GB",
-        "tone": "danger",
-        "hideValue": false
+        "value": 100
       },
       "snippets": {
-        "react": "import { Meter } from '@design-schema/react';\n\n<Meter\n  label=\"Storage used\"\n  value={100}\n  valueText=\"10 GB of 10 GB\"\n  tone=\"danger\"\n/>",
+        "react": "import { Meter } from '@design-schema/react';\n\n<Meter label=\"Storage used\" value={100} />",
         "lit": null,
         "rn": null,
         "swift": null
@@ -288,6 +274,29 @@
         "swift": null
       },
       "storyId": "meter-react--full",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Above Maximum",
+      "args": {
+        "label": "Storage used",
+        "value": 150
+      },
+      "snippets": {
+        "react": "import { Meter } from '@design-schema/react';\n\n<Meter label=\"Storage used\" value={150} />",
+        "lit": "<ds-meter label=\"Storage used\" value=\"150\"></ds-meter>",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "AboveMaximum",
+        "lit": "ClampedAboveMax",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "meter-react--above-maximum",
       "sweep": null,
       "decorated": false,
       "primary": false

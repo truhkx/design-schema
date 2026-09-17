@@ -19,85 +19,71 @@
           "children": []
         },
         "children": {
-          "$element": "Stack",
+          "$element": "Form",
           "props": {
-            "gap": "normal"
+            "label": "Filters",
+            "actions": {
+              "$element": "Button",
+              "props": {
+                "label": "Apply",
+                "type": "submit",
+                "size": "sm"
+              },
+              "children": []
+            }
           },
           "children": [
             {
-              "$element": "Text",
-              "props": {
-                "size": "sm"
-              },
-              "children": [
-                "Show items updated in the last:"
-              ]
-            },
-            {
               "$element": "Stack",
               "props": {
-                "direction": "horizontal",
-                "gap": "tight"
+                "gap": "normal"
               },
               "children": [
                 {
-                  "$element": "Button",
+                  "$element": "Switch",
                   "props": {
-                    "label": "7 days",
-                    "variant": "secondary",
-                    "size": "sm"
+                    "label": "Only open items",
+                    "name": "openOnly"
                   },
                   "children": []
                 },
                 {
-                  "$element": "Button",
+                  "$element": "Switch",
                   "props": {
-                    "label": "30 days",
-                    "variant": "secondary",
-                    "size": "sm"
-                  },
-                  "children": []
-                },
-                {
-                  "$element": "Button",
-                  "props": {
-                    "label": "90 days",
-                    "variant": "secondary",
-                    "size": "sm"
+                    "label": "Assigned to me",
+                    "name": "mine"
                   },
                   "children": []
                 }
               ]
-            },
-            {
-              "$element": "Link",
-              "props": {
-                "href": "#",
-                "label": "Reset filters"
-              },
-              "children": []
             }
           ]
         },
-        "placement": "bottom",
+        "heading": "Filters",
+        "headingLevel": "3",
+        "placement": "bottom-start",
         "modal": false,
         "showArrow": false,
-        "dismissible": true
+        "dismissible": true,
+        "open": true
       },
       "snippets": {
-        "react": "import { Popover, Button, Link, Stack, Text } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Stack direction=\"horizontal\" gap=\"tight\">\n      <Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"90 days\" variant=\"secondary\" size=\"sm\" />\n    </Stack>\n    <Link href=\"#\" label=\"Reset filters\" />\n  </Stack>\n);\n\n<Popover trigger={<Button label=\"Filters\" variant=\"secondary\" />}>{defaultBody}</Popover>",
-        "lit": "<ds-popover heading=\"Filters\">\n  <ds-button slot=\"trigger\" variant=\"secondary\" size=\"sm\" label=\"Filters\"></ds-button>\n  <ds-text size=\"sm\" tone=\"muted\">Show items matching every condition below.</ds-text>\n  <ds-input label=\"Status\" name=\"status\" value=\"Active\"></ds-input>\n  <ds-button variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n</ds-popover>",
-        "rn": "import { Button, Popover, Text } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n>\n  <Text>Filter results by status and date.</Text>\n</Popover>",
+        "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-start\"\n  open\n>{filterForm}</OpenHarness>",
+        "lit": null,
+        "rn": null,
         "swift": null
       },
       "stories": {
         "react": "Default",
-        "lit": "Default",
-        "rn": "Default",
+        "lit": null,
+        "rn": null,
         "swift": null
       },
       "storyId": "popover-react--default",
-      "sweep": null,
+      "sweep": {
+        "prop": "open",
+        "value": true
+      },
       "decorated": false,
       "primary": true
     },
@@ -113,83 +99,63 @@
           "children": []
         },
         "children": {
-          "$element": "Stack",
+          "$element": "Form",
           "props": {
-            "gap": "normal"
+            "label": "Filters",
+            "actions": {
+              "$element": "Button",
+              "props": {
+                "label": "Apply",
+                "type": "submit",
+                "size": "sm"
+              },
+              "children": []
+            }
           },
           "children": [
             {
-              "$element": "Text",
-              "props": {
-                "size": "sm"
-              },
-              "children": [
-                "Show items updated in the last:"
-              ]
-            },
-            {
               "$element": "Stack",
               "props": {
-                "direction": "horizontal",
-                "gap": "tight"
+                "gap": "normal"
               },
               "children": [
                 {
-                  "$element": "Button",
+                  "$element": "Switch",
                   "props": {
-                    "label": "7 days",
-                    "variant": "secondary",
-                    "size": "sm"
+                    "label": "Only open items",
+                    "name": "openOnly"
                   },
                   "children": []
                 },
                 {
-                  "$element": "Button",
+                  "$element": "Switch",
                   "props": {
-                    "label": "30 days",
-                    "variant": "secondary",
-                    "size": "sm"
-                  },
-                  "children": []
-                },
-                {
-                  "$element": "Button",
-                  "props": {
-                    "label": "90 days",
-                    "variant": "secondary",
-                    "size": "sm"
+                    "label": "Assigned to me",
+                    "name": "mine"
                   },
                   "children": []
                 }
               ]
-            },
-            {
-              "$element": "Link",
-              "props": {
-                "href": "#",
-                "label": "Reset filters"
-              },
-              "children": []
             }
           ]
         },
-        "placement": "bottom",
+        "heading": "Filters",
+        "headingLevel": "2",
+        "placement": "bottom-start",
         "modal": false,
         "showArrow": false,
-        "dismissible": true,
-        "heading": "Filters",
-        "headingLevel": "2"
+        "dismissible": true
       },
       "snippets": {
-        "react": "import { Popover, Button, Link, Stack, Text } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Stack direction=\"horizontal\" gap=\"tight\">\n      <Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"90 days\" variant=\"secondary\" size=\"sm\" />\n    </Stack>\n    <Link href=\"#\" label=\"Reset filters\" />\n  </Stack>\n);\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  headingLevel=\"2\"\n>\n  {defaultBody}\n</Popover>",
-        "lit": "<ds-popover heading=\"Filters\" heading-level=\"2\" open>\n  <ds-button slot=\"trigger\" variant=\"secondary\" size=\"sm\" label=\"Filters\"></ds-button>\n  <ds-text size=\"sm\" tone=\"muted\">Show items matching every condition below.</ds-text>\n  <ds-input label=\"Status\" name=\"status\" value=\"Active\"></ds-input>\n  <ds-button variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n</ds-popover>",
-        "rn": "import { Button, Popover, Text } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  headingLevel=\"2\"\n>\n  <Text>Filter results by status and date.</Text>\n</Popover>",
+        "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  headingLevel=\"2\"\n  placement=\"bottom-start\"\n>{filterForm}</OpenHarness>",
+        "lit": null,
+        "rn": null,
         "swift": null
       },
       "stories": {
         "react": "HeadingLevel2",
-        "lit": "HeadingLevel2",
-        "rn": "HeadingLevel2",
+        "lit": null,
+        "rn": null,
         "swift": null
       },
       "storyId": "popover-react--heading-level-2",
@@ -212,83 +178,63 @@
           "children": []
         },
         "children": {
-          "$element": "Stack",
+          "$element": "Form",
           "props": {
-            "gap": "normal"
+            "label": "Filters",
+            "actions": {
+              "$element": "Button",
+              "props": {
+                "label": "Apply",
+                "type": "submit",
+                "size": "sm"
+              },
+              "children": []
+            }
           },
           "children": [
             {
-              "$element": "Text",
-              "props": {
-                "size": "sm"
-              },
-              "children": [
-                "Show items updated in the last:"
-              ]
-            },
-            {
               "$element": "Stack",
               "props": {
-                "direction": "horizontal",
-                "gap": "tight"
+                "gap": "normal"
               },
               "children": [
                 {
-                  "$element": "Button",
+                  "$element": "Switch",
                   "props": {
-                    "label": "7 days",
-                    "variant": "secondary",
-                    "size": "sm"
+                    "label": "Only open items",
+                    "name": "openOnly"
                   },
                   "children": []
                 },
                 {
-                  "$element": "Button",
+                  "$element": "Switch",
                   "props": {
-                    "label": "30 days",
-                    "variant": "secondary",
-                    "size": "sm"
-                  },
-                  "children": []
-                },
-                {
-                  "$element": "Button",
-                  "props": {
-                    "label": "90 days",
-                    "variant": "secondary",
-                    "size": "sm"
+                    "label": "Assigned to me",
+                    "name": "mine"
                   },
                   "children": []
                 }
               ]
-            },
-            {
-              "$element": "Link",
-              "props": {
-                "href": "#",
-                "label": "Reset filters"
-              },
-              "children": []
             }
           ]
         },
-        "placement": "bottom",
+        "heading": "Filters",
+        "headingLevel": "3",
+        "placement": "bottom-start",
         "modal": false,
         "showArrow": false,
-        "dismissible": true,
-        "heading": "Filters",
-        "headingLevel": "3"
+        "dismissible": true
       },
       "snippets": {
-        "react": "import { Popover, Button, Link, Stack, Text } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Stack direction=\"horizontal\" gap=\"tight\">\n      <Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"90 days\" variant=\"secondary\" size=\"sm\" />\n    </Stack>\n    <Link href=\"#\" label=\"Reset filters\" />\n  </Stack>\n);\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  headingLevel=\"3\"\n>\n  {defaultBody}\n</Popover>",
-        "lit": "<ds-popover heading=\"Filters\" heading-level=\"3\" open>\n  <ds-button slot=\"trigger\" variant=\"secondary\" size=\"sm\" label=\"Filters\"></ds-button>\n  <ds-text size=\"sm\" tone=\"muted\">Show items matching every condition below.</ds-text>\n  <ds-input label=\"Status\" name=\"status\" value=\"Active\"></ds-input>\n  <ds-button variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n</ds-popover>",
-        "rn": "import { Button, Popover, Text } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  headingLevel=\"3\"\n>\n  <Text>Filter results by status and date.</Text>\n</Popover>",
+        "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  headingLevel=\"3\"\n  placement=\"bottom-start\"\n>{filterForm}</OpenHarness>",
+        "lit": null,
+        "rn": null,
         "swift": null
       },
       "stories": {
         "react": "HeadingLevel3",
-        "lit": "HeadingLevel3",
-        "rn": "HeadingLevel3",
+        "lit": null,
+        "rn": null,
         "swift": null
       },
       "storyId": "popover-react--heading-level-3",
@@ -311,83 +257,63 @@
           "children": []
         },
         "children": {
-          "$element": "Stack",
+          "$element": "Form",
           "props": {
-            "gap": "normal"
+            "label": "Filters",
+            "actions": {
+              "$element": "Button",
+              "props": {
+                "label": "Apply",
+                "type": "submit",
+                "size": "sm"
+              },
+              "children": []
+            }
           },
           "children": [
             {
-              "$element": "Text",
-              "props": {
-                "size": "sm"
-              },
-              "children": [
-                "Show items updated in the last:"
-              ]
-            },
-            {
               "$element": "Stack",
               "props": {
-                "direction": "horizontal",
-                "gap": "tight"
+                "gap": "normal"
               },
               "children": [
                 {
-                  "$element": "Button",
+                  "$element": "Switch",
                   "props": {
-                    "label": "7 days",
-                    "variant": "secondary",
-                    "size": "sm"
+                    "label": "Only open items",
+                    "name": "openOnly"
                   },
                   "children": []
                 },
                 {
-                  "$element": "Button",
+                  "$element": "Switch",
                   "props": {
-                    "label": "30 days",
-                    "variant": "secondary",
-                    "size": "sm"
-                  },
-                  "children": []
-                },
-                {
-                  "$element": "Button",
-                  "props": {
-                    "label": "90 days",
-                    "variant": "secondary",
-                    "size": "sm"
+                    "label": "Assigned to me",
+                    "name": "mine"
                   },
                   "children": []
                 }
               ]
-            },
-            {
-              "$element": "Link",
-              "props": {
-                "href": "#",
-                "label": "Reset filters"
-              },
-              "children": []
             }
           ]
         },
-        "placement": "bottom",
+        "heading": "Filters",
+        "headingLevel": "4",
+        "placement": "bottom-start",
         "modal": false,
         "showArrow": false,
-        "dismissible": true,
-        "heading": "Filters",
-        "headingLevel": "4"
+        "dismissible": true
       },
       "snippets": {
-        "react": "import { Popover, Button, Link, Stack, Text } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Stack direction=\"horizontal\" gap=\"tight\">\n      <Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"90 days\" variant=\"secondary\" size=\"sm\" />\n    </Stack>\n    <Link href=\"#\" label=\"Reset filters\" />\n  </Stack>\n);\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  headingLevel=\"4\"\n>\n  {defaultBody}\n</Popover>",
-        "lit": "<ds-popover heading=\"Filters\" heading-level=\"4\" open>\n  <ds-button slot=\"trigger\" variant=\"secondary\" size=\"sm\" label=\"Filters\"></ds-button>\n  <ds-text size=\"sm\" tone=\"muted\">Show items matching every condition below.</ds-text>\n  <ds-input label=\"Status\" name=\"status\" value=\"Active\"></ds-input>\n  <ds-button variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n</ds-popover>",
-        "rn": "import { Button, Popover, Text } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  headingLevel=\"4\"\n>\n  <Text>Filter results by status and date.</Text>\n</Popover>",
+        "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  headingLevel=\"4\"\n  placement=\"bottom-start\"\n>{filterForm}</OpenHarness>",
+        "lit": null,
+        "rn": null,
         "swift": null
       },
       "stories": {
         "react": "HeadingLevel4",
-        "lit": "HeadingLevel4",
-        "rn": "HeadingLevel4",
+        "lit": null,
+        "rn": null,
         "swift": null
       },
       "storyId": "popover-react--heading-level-4",
@@ -410,80 +336,62 @@
           "children": []
         },
         "children": {
-          "$element": "Stack",
+          "$element": "Form",
           "props": {
-            "gap": "normal"
+            "label": "Filters",
+            "actions": {
+              "$element": "Button",
+              "props": {
+                "label": "Apply",
+                "type": "submit",
+                "size": "sm"
+              },
+              "children": []
+            }
           },
           "children": [
             {
-              "$element": "Text",
-              "props": {
-                "size": "sm"
-              },
-              "children": [
-                "Show items updated in the last:"
-              ]
-            },
-            {
               "$element": "Stack",
               "props": {
-                "direction": "horizontal",
-                "gap": "tight"
+                "gap": "normal"
               },
               "children": [
                 {
-                  "$element": "Button",
+                  "$element": "Switch",
                   "props": {
-                    "label": "7 days",
-                    "variant": "secondary",
-                    "size": "sm"
+                    "label": "Only open items",
+                    "name": "openOnly"
                   },
                   "children": []
                 },
                 {
-                  "$element": "Button",
+                  "$element": "Switch",
                   "props": {
-                    "label": "30 days",
-                    "variant": "secondary",
-                    "size": "sm"
-                  },
-                  "children": []
-                },
-                {
-                  "$element": "Button",
-                  "props": {
-                    "label": "90 days",
-                    "variant": "secondary",
-                    "size": "sm"
+                    "label": "Assigned to me",
+                    "name": "mine"
                   },
                   "children": []
                 }
               ]
-            },
-            {
-              "$element": "Link",
-              "props": {
-                "href": "#",
-                "label": "Reset filters"
-              },
-              "children": []
             }
           ]
         },
+        "heading": "Filters",
+        "headingLevel": "3",
         "placement": "bottom-start",
         "modal": false,
         "showArrow": false,
         "dismissible": true
       },
       "snippets": {
-        "react": "import { Popover, Button, Link, Stack, Text } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Stack direction=\"horizontal\" gap=\"tight\">\n      <Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"90 days\" variant=\"secondary\" size=\"sm\" />\n    </Stack>\n    <Link href=\"#\" label=\"Reset filters\" />\n  </Stack>\n);\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  placement=\"bottom-start\"\n>\n  {defaultBody}\n</Popover>",
-        "lit": "<ds-popover heading=\"Filters\" placement=\"bottom-start\" open>\n  <ds-button slot=\"trigger\" variant=\"secondary\" size=\"sm\" label=\"Filters\"></ds-button>\n  <ds-text size=\"sm\" tone=\"muted\">Show items matching every condition below.</ds-text>\n  <ds-input label=\"Status\" name=\"status\" value=\"Active\"></ds-input>\n  <ds-button variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n</ds-popover>",
-        "rn": "import { Button, Popover, Text } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-start\"\n>\n  <Text>Filter results by status and date.</Text>\n</Popover>",
+        "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-start\"\n>{filterForm}</OpenHarness>",
+        "lit": null,
+        "rn": "import { Button, Checkbox, Form, Popover } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-start\"\n>\n  <Form actions={<Button label=\"Apply\" type=\"submit\" />}>\n    <Checkbox label=\"Open\" name=\"open\" />\n    <Checkbox label=\"Closed\" name=\"closed\" />\n  </Form>\n</Popover>",
         "swift": null
       },
       "stories": {
         "react": "PlacementBottomStart",
-        "lit": "PlacementBottomStart",
+        "lit": null,
         "rn": "PlacementBottomStart",
         "swift": null
       },
@@ -507,80 +415,62 @@
           "children": []
         },
         "children": {
-          "$element": "Stack",
+          "$element": "Form",
           "props": {
-            "gap": "normal"
+            "label": "Filters",
+            "actions": {
+              "$element": "Button",
+              "props": {
+                "label": "Apply",
+                "type": "submit",
+                "size": "sm"
+              },
+              "children": []
+            }
           },
           "children": [
             {
-              "$element": "Text",
-              "props": {
-                "size": "sm"
-              },
-              "children": [
-                "Show items updated in the last:"
-              ]
-            },
-            {
               "$element": "Stack",
               "props": {
-                "direction": "horizontal",
-                "gap": "tight"
+                "gap": "normal"
               },
               "children": [
                 {
-                  "$element": "Button",
+                  "$element": "Switch",
                   "props": {
-                    "label": "7 days",
-                    "variant": "secondary",
-                    "size": "sm"
+                    "label": "Only open items",
+                    "name": "openOnly"
                   },
                   "children": []
                 },
                 {
-                  "$element": "Button",
+                  "$element": "Switch",
                   "props": {
-                    "label": "30 days",
-                    "variant": "secondary",
-                    "size": "sm"
-                  },
-                  "children": []
-                },
-                {
-                  "$element": "Button",
-                  "props": {
-                    "label": "90 days",
-                    "variant": "secondary",
-                    "size": "sm"
+                    "label": "Assigned to me",
+                    "name": "mine"
                   },
                   "children": []
                 }
               ]
-            },
-            {
-              "$element": "Link",
-              "props": {
-                "href": "#",
-                "label": "Reset filters"
-              },
-              "children": []
             }
           ]
         },
+        "heading": "Filters",
+        "headingLevel": "3",
         "placement": "bottom",
         "modal": false,
         "showArrow": false,
         "dismissible": true
       },
       "snippets": {
-        "react": "import { Popover, Button, Link, Stack, Text } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Stack direction=\"horizontal\" gap=\"tight\">\n      <Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"90 days\" variant=\"secondary\" size=\"sm\" />\n    </Stack>\n    <Link href=\"#\" label=\"Reset filters\" />\n  </Stack>\n);\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  placement=\"bottom\"\n>\n  {defaultBody}\n</Popover>",
-        "lit": "<ds-popover heading=\"Filters\" placement=\"bottom\" open>\n  <ds-button slot=\"trigger\" variant=\"secondary\" size=\"sm\" label=\"Filters\"></ds-button>\n  <ds-text size=\"sm\" tone=\"muted\">Show items matching every condition below.</ds-text>\n  <ds-input label=\"Status\" name=\"status\" value=\"Active\"></ds-input>\n  <ds-button variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n</ds-popover>",
-        "rn": "import { Button, Popover, Text } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom\"\n>\n  <Text>Filter results by status and date.</Text>\n</Popover>",
+        "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom\"\n>{filterForm}</OpenHarness>",
+        "lit": null,
+        "rn": "import { Button, Checkbox, Form, Popover } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom\"\n>\n  <Form actions={<Button label=\"Apply\" type=\"submit\" />}>\n    <Checkbox label=\"Open\" name=\"open\" />\n    <Checkbox label=\"Closed\" name=\"closed\" />\n  </Form>\n</Popover>",
         "swift": null
       },
       "stories": {
         "react": "PlacementBottom",
-        "lit": "PlacementBottom",
+        "lit": null,
         "rn": "PlacementBottom",
         "swift": null
       },
@@ -604,80 +494,62 @@
           "children": []
         },
         "children": {
-          "$element": "Stack",
+          "$element": "Form",
           "props": {
-            "gap": "normal"
+            "label": "Filters",
+            "actions": {
+              "$element": "Button",
+              "props": {
+                "label": "Apply",
+                "type": "submit",
+                "size": "sm"
+              },
+              "children": []
+            }
           },
           "children": [
             {
-              "$element": "Text",
-              "props": {
-                "size": "sm"
-              },
-              "children": [
-                "Show items updated in the last:"
-              ]
-            },
-            {
               "$element": "Stack",
               "props": {
-                "direction": "horizontal",
-                "gap": "tight"
+                "gap": "normal"
               },
               "children": [
                 {
-                  "$element": "Button",
+                  "$element": "Switch",
                   "props": {
-                    "label": "7 days",
-                    "variant": "secondary",
-                    "size": "sm"
+                    "label": "Only open items",
+                    "name": "openOnly"
                   },
                   "children": []
                 },
                 {
-                  "$element": "Button",
+                  "$element": "Switch",
                   "props": {
-                    "label": "30 days",
-                    "variant": "secondary",
-                    "size": "sm"
-                  },
-                  "children": []
-                },
-                {
-                  "$element": "Button",
-                  "props": {
-                    "label": "90 days",
-                    "variant": "secondary",
-                    "size": "sm"
+                    "label": "Assigned to me",
+                    "name": "mine"
                   },
                   "children": []
                 }
               ]
-            },
-            {
-              "$element": "Link",
-              "props": {
-                "href": "#",
-                "label": "Reset filters"
-              },
-              "children": []
             }
           ]
         },
+        "heading": "Filters",
+        "headingLevel": "3",
         "placement": "bottom-end",
         "modal": false,
         "showArrow": false,
         "dismissible": true
       },
       "snippets": {
-        "react": "import { Popover, Button, Link, Stack, Text } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Stack direction=\"horizontal\" gap=\"tight\">\n      <Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"90 days\" variant=\"secondary\" size=\"sm\" />\n    </Stack>\n    <Link href=\"#\" label=\"Reset filters\" />\n  </Stack>\n);\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  placement=\"bottom-end\"\n>\n  {defaultBody}\n</Popover>",
-        "lit": "<ds-popover heading=\"Filters\" placement=\"bottom-end\" open>\n  <ds-button slot=\"trigger\" variant=\"secondary\" size=\"sm\" label=\"Filters\"></ds-button>\n  <ds-text size=\"sm\" tone=\"muted\">Show items matching every condition below.</ds-text>\n  <ds-input label=\"Status\" name=\"status\" value=\"Active\"></ds-input>\n  <ds-button variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n</ds-popover>",
-        "rn": "import { Button, Popover, Text } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-end\"\n>\n  <Text>Filter results by status and date.</Text>\n</Popover>",
+        "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-end\"\n>{filterForm}</OpenHarness>",
+        "lit": null,
+        "rn": "import { Button, Checkbox, Form, Popover } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-end\"\n>\n  <Form actions={<Button label=\"Apply\" type=\"submit\" />}>\n    <Checkbox label=\"Open\" name=\"open\" />\n    <Checkbox label=\"Closed\" name=\"closed\" />\n  </Form>\n</Popover>",
         "swift": null
       },
       "stories": {
         "react": "PlacementBottomEnd",
-        "lit": "PlacementBottomEnd",
+        "lit": null,
         "rn": "PlacementBottomEnd",
         "swift": null
       },
@@ -701,80 +573,62 @@
           "children": []
         },
         "children": {
-          "$element": "Stack",
+          "$element": "Form",
           "props": {
-            "gap": "normal"
+            "label": "Filters",
+            "actions": {
+              "$element": "Button",
+              "props": {
+                "label": "Apply",
+                "type": "submit",
+                "size": "sm"
+              },
+              "children": []
+            }
           },
           "children": [
             {
-              "$element": "Text",
-              "props": {
-                "size": "sm"
-              },
-              "children": [
-                "Show items updated in the last:"
-              ]
-            },
-            {
               "$element": "Stack",
               "props": {
-                "direction": "horizontal",
-                "gap": "tight"
+                "gap": "normal"
               },
               "children": [
                 {
-                  "$element": "Button",
+                  "$element": "Switch",
                   "props": {
-                    "label": "7 days",
-                    "variant": "secondary",
-                    "size": "sm"
+                    "label": "Only open items",
+                    "name": "openOnly"
                   },
                   "children": []
                 },
                 {
-                  "$element": "Button",
+                  "$element": "Switch",
                   "props": {
-                    "label": "30 days",
-                    "variant": "secondary",
-                    "size": "sm"
-                  },
-                  "children": []
-                },
-                {
-                  "$element": "Button",
-                  "props": {
-                    "label": "90 days",
-                    "variant": "secondary",
-                    "size": "sm"
+                    "label": "Assigned to me",
+                    "name": "mine"
                   },
                   "children": []
                 }
               ]
-            },
-            {
-              "$element": "Link",
-              "props": {
-                "href": "#",
-                "label": "Reset filters"
-              },
-              "children": []
             }
           ]
         },
+        "heading": "Filters",
+        "headingLevel": "3",
         "placement": "top-start",
         "modal": false,
         "showArrow": false,
         "dismissible": true
       },
       "snippets": {
-        "react": "import { Popover, Button, Link, Stack, Text } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Stack direction=\"horizontal\" gap=\"tight\">\n      <Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"90 days\" variant=\"secondary\" size=\"sm\" />\n    </Stack>\n    <Link href=\"#\" label=\"Reset filters\" />\n  </Stack>\n);\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  placement=\"top-start\"\n>\n  {defaultBody}\n</Popover>",
-        "lit": "<ds-popover heading=\"Filters\" placement=\"top-start\" open>\n  <ds-button slot=\"trigger\" variant=\"secondary\" size=\"sm\" label=\"Filters\"></ds-button>\n  <ds-text size=\"sm\" tone=\"muted\">Show items matching every condition below.</ds-text>\n  <ds-input label=\"Status\" name=\"status\" value=\"Active\"></ds-input>\n  <ds-button variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n</ds-popover>",
-        "rn": "import { Button, Popover, Text } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"top-start\"\n>\n  <Text>Filter results by status and date.</Text>\n</Popover>",
+        "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"top-start\"\n>{filterForm}</OpenHarness>",
+        "lit": null,
+        "rn": "import { Button, Checkbox, Form, Popover } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"top-start\"\n>\n  <Form actions={<Button label=\"Apply\" type=\"submit\" />}>\n    <Checkbox label=\"Open\" name=\"open\" />\n    <Checkbox label=\"Closed\" name=\"closed\" />\n  </Form>\n</Popover>",
         "swift": null
       },
       "stories": {
         "react": "PlacementTopStart",
-        "lit": "PlacementTopStart",
+        "lit": null,
         "rn": "PlacementTopStart",
         "swift": null
       },
@@ -798,80 +652,62 @@
           "children": []
         },
         "children": {
-          "$element": "Stack",
+          "$element": "Form",
           "props": {
-            "gap": "normal"
+            "label": "Filters",
+            "actions": {
+              "$element": "Button",
+              "props": {
+                "label": "Apply",
+                "type": "submit",
+                "size": "sm"
+              },
+              "children": []
+            }
           },
           "children": [
             {
-              "$element": "Text",
-              "props": {
-                "size": "sm"
-              },
-              "children": [
-                "Show items updated in the last:"
-              ]
-            },
-            {
               "$element": "Stack",
               "props": {
-                "direction": "horizontal",
-                "gap": "tight"
+                "gap": "normal"
               },
               "children": [
                 {
-                  "$element": "Button",
+                  "$element": "Switch",
                   "props": {
-                    "label": "7 days",
-                    "variant": "secondary",
-                    "size": "sm"
+                    "label": "Only open items",
+                    "name": "openOnly"
                   },
                   "children": []
                 },
                 {
-                  "$element": "Button",
+                  "$element": "Switch",
                   "props": {
-                    "label": "30 days",
-                    "variant": "secondary",
-                    "size": "sm"
-                  },
-                  "children": []
-                },
-                {
-                  "$element": "Button",
-                  "props": {
-                    "label": "90 days",
-                    "variant": "secondary",
-                    "size": "sm"
+                    "label": "Assigned to me",
+                    "name": "mine"
                   },
                   "children": []
                 }
               ]
-            },
-            {
-              "$element": "Link",
-              "props": {
-                "href": "#",
-                "label": "Reset filters"
-              },
-              "children": []
             }
           ]
         },
+        "heading": "Filters",
+        "headingLevel": "3",
         "placement": "top",
         "modal": false,
         "showArrow": false,
         "dismissible": true
       },
       "snippets": {
-        "react": "import { Popover, Button, Link, Stack, Text } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Stack direction=\"horizontal\" gap=\"tight\">\n      <Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"90 days\" variant=\"secondary\" size=\"sm\" />\n    </Stack>\n    <Link href=\"#\" label=\"Reset filters\" />\n  </Stack>\n);\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  placement=\"top\"\n>\n  {defaultBody}\n</Popover>",
-        "lit": "<ds-popover heading=\"Filters\" placement=\"top\" open>\n  <ds-button slot=\"trigger\" variant=\"secondary\" size=\"sm\" label=\"Filters\"></ds-button>\n  <ds-text size=\"sm\" tone=\"muted\">Show items matching every condition below.</ds-text>\n  <ds-input label=\"Status\" name=\"status\" value=\"Active\"></ds-input>\n  <ds-button variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n</ds-popover>",
-        "rn": "import { Button, Popover, Text } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"top\"\n>\n  <Text>Filter results by status and date.</Text>\n</Popover>",
+        "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"top\"\n>{filterForm}</OpenHarness>",
+        "lit": null,
+        "rn": "import { Button, Checkbox, Form, Popover } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"top\"\n>\n  <Form actions={<Button label=\"Apply\" type=\"submit\" />}>\n    <Checkbox label=\"Open\" name=\"open\" />\n    <Checkbox label=\"Closed\" name=\"closed\" />\n  </Form>\n</Popover>",
         "swift": null
       },
       "stories": {
         "react": "PlacementTop",
-        "lit": "PlacementTop",
+        "lit": null,
         "rn": "PlacementTop",
         "swift": null
       },
@@ -895,80 +731,62 @@
           "children": []
         },
         "children": {
-          "$element": "Stack",
+          "$element": "Form",
           "props": {
-            "gap": "normal"
+            "label": "Filters",
+            "actions": {
+              "$element": "Button",
+              "props": {
+                "label": "Apply",
+                "type": "submit",
+                "size": "sm"
+              },
+              "children": []
+            }
           },
           "children": [
             {
-              "$element": "Text",
-              "props": {
-                "size": "sm"
-              },
-              "children": [
-                "Show items updated in the last:"
-              ]
-            },
-            {
               "$element": "Stack",
               "props": {
-                "direction": "horizontal",
-                "gap": "tight"
+                "gap": "normal"
               },
               "children": [
                 {
-                  "$element": "Button",
+                  "$element": "Switch",
                   "props": {
-                    "label": "7 days",
-                    "variant": "secondary",
-                    "size": "sm"
+                    "label": "Only open items",
+                    "name": "openOnly"
                   },
                   "children": []
                 },
                 {
-                  "$element": "Button",
+                  "$element": "Switch",
                   "props": {
-                    "label": "30 days",
-                    "variant": "secondary",
-                    "size": "sm"
-                  },
-                  "children": []
-                },
-                {
-                  "$element": "Button",
-                  "props": {
-                    "label": "90 days",
-                    "variant": "secondary",
-                    "size": "sm"
+                    "label": "Assigned to me",
+                    "name": "mine"
                   },
                   "children": []
                 }
               ]
-            },
-            {
-              "$element": "Link",
-              "props": {
-                "href": "#",
-                "label": "Reset filters"
-              },
-              "children": []
             }
           ]
         },
+        "heading": "Filters",
+        "headingLevel": "3",
         "placement": "top-end",
         "modal": false,
         "showArrow": false,
         "dismissible": true
       },
       "snippets": {
-        "react": "import { Popover, Button, Link, Stack, Text } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Stack direction=\"horizontal\" gap=\"tight\">\n      <Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"90 days\" variant=\"secondary\" size=\"sm\" />\n    </Stack>\n    <Link href=\"#\" label=\"Reset filters\" />\n  </Stack>\n);\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  placement=\"top-end\"\n>\n  {defaultBody}\n</Popover>",
-        "lit": "<ds-popover heading=\"Filters\" placement=\"top-end\" open>\n  <ds-button slot=\"trigger\" variant=\"secondary\" size=\"sm\" label=\"Filters\"></ds-button>\n  <ds-text size=\"sm\" tone=\"muted\">Show items matching every condition below.</ds-text>\n  <ds-input label=\"Status\" name=\"status\" value=\"Active\"></ds-input>\n  <ds-button variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n</ds-popover>",
-        "rn": "import { Button, Popover, Text } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"top-end\"\n>\n  <Text>Filter results by status and date.</Text>\n</Popover>",
+        "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"top-end\"\n>{filterForm}</OpenHarness>",
+        "lit": null,
+        "rn": "import { Button, Checkbox, Form, Popover } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"top-end\"\n>\n  <Form actions={<Button label=\"Apply\" type=\"submit\" />}>\n    <Checkbox label=\"Open\" name=\"open\" />\n    <Checkbox label=\"Closed\" name=\"closed\" />\n  </Form>\n</Popover>",
         "swift": null
       },
       "stories": {
         "react": "PlacementTopEnd",
-        "lit": "PlacementTopEnd",
+        "lit": null,
         "rn": "PlacementTopEnd",
         "swift": null
       },
@@ -992,80 +810,62 @@
           "children": []
         },
         "children": {
-          "$element": "Stack",
+          "$element": "Form",
           "props": {
-            "gap": "normal"
+            "label": "Filters",
+            "actions": {
+              "$element": "Button",
+              "props": {
+                "label": "Apply",
+                "type": "submit",
+                "size": "sm"
+              },
+              "children": []
+            }
           },
           "children": [
             {
-              "$element": "Text",
-              "props": {
-                "size": "sm"
-              },
-              "children": [
-                "Show items updated in the last:"
-              ]
-            },
-            {
               "$element": "Stack",
               "props": {
-                "direction": "horizontal",
-                "gap": "tight"
+                "gap": "normal"
               },
               "children": [
                 {
-                  "$element": "Button",
+                  "$element": "Switch",
                   "props": {
-                    "label": "7 days",
-                    "variant": "secondary",
-                    "size": "sm"
+                    "label": "Only open items",
+                    "name": "openOnly"
                   },
                   "children": []
                 },
                 {
-                  "$element": "Button",
+                  "$element": "Switch",
                   "props": {
-                    "label": "30 days",
-                    "variant": "secondary",
-                    "size": "sm"
-                  },
-                  "children": []
-                },
-                {
-                  "$element": "Button",
-                  "props": {
-                    "label": "90 days",
-                    "variant": "secondary",
-                    "size": "sm"
+                    "label": "Assigned to me",
+                    "name": "mine"
                   },
                   "children": []
                 }
               ]
-            },
-            {
-              "$element": "Link",
-              "props": {
-                "href": "#",
-                "label": "Reset filters"
-              },
-              "children": []
             }
           ]
         },
+        "heading": "Filters",
+        "headingLevel": "3",
         "placement": "start",
         "modal": false,
         "showArrow": false,
         "dismissible": true
       },
       "snippets": {
-        "react": "import { Popover, Button, Link, Stack, Text } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Stack direction=\"horizontal\" gap=\"tight\">\n      <Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"90 days\" variant=\"secondary\" size=\"sm\" />\n    </Stack>\n    <Link href=\"#\" label=\"Reset filters\" />\n  </Stack>\n);\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  placement=\"start\"\n>\n  {defaultBody}\n</Popover>",
-        "lit": "<ds-popover heading=\"Filters\" placement=\"start\" open>\n  <ds-button slot=\"trigger\" variant=\"secondary\" size=\"sm\" label=\"Filters\"></ds-button>\n  <ds-text size=\"sm\" tone=\"muted\">Show items matching every condition below.</ds-text>\n  <ds-input label=\"Status\" name=\"status\" value=\"Active\"></ds-input>\n  <ds-button variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n</ds-popover>",
-        "rn": "import { Button, Popover, Text } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"start\"\n>\n  <Text>Filter results by status and date.</Text>\n</Popover>",
+        "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"start\"\n>{filterForm}</OpenHarness>",
+        "lit": null,
+        "rn": "import { Button, Checkbox, Form, Popover } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"start\"\n>\n  <Form actions={<Button label=\"Apply\" type=\"submit\" />}>\n    <Checkbox label=\"Open\" name=\"open\" />\n    <Checkbox label=\"Closed\" name=\"closed\" />\n  </Form>\n</Popover>",
         "swift": null
       },
       "stories": {
         "react": "PlacementStart",
-        "lit": "PlacementStart",
+        "lit": null,
         "rn": "PlacementStart",
         "swift": null
       },
@@ -1089,80 +889,62 @@
           "children": []
         },
         "children": {
-          "$element": "Stack",
+          "$element": "Form",
           "props": {
-            "gap": "normal"
+            "label": "Filters",
+            "actions": {
+              "$element": "Button",
+              "props": {
+                "label": "Apply",
+                "type": "submit",
+                "size": "sm"
+              },
+              "children": []
+            }
           },
           "children": [
             {
-              "$element": "Text",
-              "props": {
-                "size": "sm"
-              },
-              "children": [
-                "Show items updated in the last:"
-              ]
-            },
-            {
               "$element": "Stack",
               "props": {
-                "direction": "horizontal",
-                "gap": "tight"
+                "gap": "normal"
               },
               "children": [
                 {
-                  "$element": "Button",
+                  "$element": "Switch",
                   "props": {
-                    "label": "7 days",
-                    "variant": "secondary",
-                    "size": "sm"
+                    "label": "Only open items",
+                    "name": "openOnly"
                   },
                   "children": []
                 },
                 {
-                  "$element": "Button",
+                  "$element": "Switch",
                   "props": {
-                    "label": "30 days",
-                    "variant": "secondary",
-                    "size": "sm"
-                  },
-                  "children": []
-                },
-                {
-                  "$element": "Button",
-                  "props": {
-                    "label": "90 days",
-                    "variant": "secondary",
-                    "size": "sm"
+                    "label": "Assigned to me",
+                    "name": "mine"
                   },
                   "children": []
                 }
               ]
-            },
-            {
-              "$element": "Link",
-              "props": {
-                "href": "#",
-                "label": "Reset filters"
-              },
-              "children": []
             }
           ]
         },
+        "heading": "Filters",
+        "headingLevel": "3",
         "placement": "end",
         "modal": false,
         "showArrow": false,
         "dismissible": true
       },
       "snippets": {
-        "react": "import { Popover, Button, Link, Stack, Text } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Stack direction=\"horizontal\" gap=\"tight\">\n      <Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"90 days\" variant=\"secondary\" size=\"sm\" />\n    </Stack>\n    <Link href=\"#\" label=\"Reset filters\" />\n  </Stack>\n);\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  placement=\"end\"\n>\n  {defaultBody}\n</Popover>",
-        "lit": "<ds-popover heading=\"Filters\" placement=\"end\" open>\n  <ds-button slot=\"trigger\" variant=\"secondary\" size=\"sm\" label=\"Filters\"></ds-button>\n  <ds-text size=\"sm\" tone=\"muted\">Show items matching every condition below.</ds-text>\n  <ds-input label=\"Status\" name=\"status\" value=\"Active\"></ds-input>\n  <ds-button variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n</ds-popover>",
-        "rn": "import { Button, Popover, Text } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"end\"\n>\n  <Text>Filter results by status and date.</Text>\n</Popover>",
+        "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"end\"\n>{filterForm}</OpenHarness>",
+        "lit": null,
+        "rn": "import { Button, Checkbox, Form, Popover } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"end\"\n>\n  <Form actions={<Button label=\"Apply\" type=\"submit\" />}>\n    <Checkbox label=\"Open\" name=\"open\" />\n    <Checkbox label=\"Closed\" name=\"closed\" />\n  </Form>\n</Popover>",
         "swift": null
       },
       "stories": {
         "react": "PlacementEnd",
-        "lit": "PlacementEnd",
+        "lit": null,
         "rn": "PlacementEnd",
         "swift": null
       },
@@ -1173,278 +955,6 @@
       },
       "decorated": false,
       "primary": false
-    },
-    {
-      "title": "With Heading",
-      "args": {
-        "trigger": {
-          "$element": "Button",
-          "props": {
-            "label": "Filters",
-            "variant": "secondary"
-          },
-          "children": []
-        },
-        "children": {
-          "$element": "Stack",
-          "props": {
-            "gap": "normal"
-          },
-          "children": [
-            {
-              "$element": "Text",
-              "props": {
-                "size": "sm"
-              },
-              "children": [
-                "Show items updated in the last:"
-              ]
-            },
-            {
-              "$element": "Stack",
-              "props": {
-                "direction": "horizontal",
-                "gap": "tight"
-              },
-              "children": [
-                {
-                  "$element": "Button",
-                  "props": {
-                    "label": "7 days",
-                    "variant": "secondary",
-                    "size": "sm"
-                  },
-                  "children": []
-                },
-                {
-                  "$element": "Button",
-                  "props": {
-                    "label": "30 days",
-                    "variant": "secondary",
-                    "size": "sm"
-                  },
-                  "children": []
-                },
-                {
-                  "$element": "Button",
-                  "props": {
-                    "label": "90 days",
-                    "variant": "secondary",
-                    "size": "sm"
-                  },
-                  "children": []
-                }
-              ]
-            },
-            {
-              "$element": "Link",
-              "props": {
-                "href": "#",
-                "label": "Reset filters"
-              },
-              "children": []
-            }
-          ]
-        },
-        "placement": "bottom",
-        "modal": false,
-        "showArrow": false,
-        "dismissible": true,
-        "heading": "Filters"
-      },
-      "snippets": {
-        "react": "import { Popover, Button, Link, Stack, Text } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Stack direction=\"horizontal\" gap=\"tight\">\n      <Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"90 days\" variant=\"secondary\" size=\"sm\" />\n    </Stack>\n    <Link href=\"#\" label=\"Reset filters\" />\n  </Stack>\n);\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n>\n  {defaultBody}\n</Popover>",
-        "lit": null,
-        "rn": null,
-        "swift": null
-      },
-      "stories": {
-        "react": "WithHeading",
-        "lit": null,
-        "rn": null,
-        "swift": null
-      },
-      "storyId": "popover-react--with-heading",
-      "sweep": null,
-      "decorated": false,
-      "primary": true
-    },
-    {
-      "title": "Show Arrow True",
-      "args": {
-        "trigger": {
-          "$element": "Button",
-          "props": {
-            "label": "Filters",
-            "variant": "secondary"
-          },
-          "children": []
-        },
-        "children": {
-          "$element": "Stack",
-          "props": {
-            "gap": "normal"
-          },
-          "children": [
-            {
-              "$element": "Text",
-              "props": {
-                "size": "sm"
-              },
-              "children": [
-                "Show items updated in the last:"
-              ]
-            },
-            {
-              "$element": "Stack",
-              "props": {
-                "direction": "horizontal",
-                "gap": "tight"
-              },
-              "children": [
-                {
-                  "$element": "Button",
-                  "props": {
-                    "label": "7 days",
-                    "variant": "secondary",
-                    "size": "sm"
-                  },
-                  "children": []
-                },
-                {
-                  "$element": "Button",
-                  "props": {
-                    "label": "30 days",
-                    "variant": "secondary",
-                    "size": "sm"
-                  },
-                  "children": []
-                },
-                {
-                  "$element": "Button",
-                  "props": {
-                    "label": "90 days",
-                    "variant": "secondary",
-                    "size": "sm"
-                  },
-                  "children": []
-                }
-              ]
-            },
-            {
-              "$element": "Link",
-              "props": {
-                "href": "#",
-                "label": "Reset filters"
-              },
-              "children": []
-            }
-          ]
-        },
-        "placement": "bottom",
-        "modal": false,
-        "showArrow": true,
-        "dismissible": true,
-        "heading": "Filters"
-      },
-      "snippets": {
-        "react": "import { Popover, Button, Link, Stack, Text } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Stack direction=\"horizontal\" gap=\"tight\">\n      <Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"90 days\" variant=\"secondary\" size=\"sm\" />\n    </Stack>\n    <Link href=\"#\" label=\"Reset filters\" />\n  </Stack>\n);\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  showArrow\n  heading=\"Filters\"\n>\n  {defaultBody}\n</Popover>",
-        "lit": "<ds-popover heading=\"Filters\" show-arrow open>\n  <ds-button slot=\"trigger\" variant=\"secondary\" size=\"sm\" label=\"Filters\"></ds-button>\n  <ds-text size=\"sm\" tone=\"muted\">Show items matching every condition below.</ds-text>\n  <ds-input label=\"Status\" name=\"status\" value=\"Active\"></ds-input>\n  <ds-button variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n</ds-popover>",
-        "rn": null,
-        "swift": null
-      },
-      "stories": {
-        "react": "ShowArrowTrue",
-        "lit": "ShowArrowTrue",
-        "rn": null,
-        "swift": null
-      },
-      "storyId": "popover-react--show-arrow-true",
-      "sweep": {
-        "prop": "showArrow",
-        "value": true
-      },
-      "decorated": false,
-      "primary": true
-    },
-    {
-      "title": "Modal True",
-      "args": {
-        "trigger": {
-          "$element": "Button",
-          "props": {
-            "label": "Add link",
-            "variant": "secondary"
-          },
-          "children": []
-        },
-        "children": {
-          "$element": "Stack",
-          "props": {
-            "gap": "normal"
-          },
-          "children": [
-            {
-              "$element": "Input",
-              "props": {
-                "label": "URL",
-                "name": "url",
-                "placeholder": "https://example.com"
-              },
-              "children": []
-            },
-            {
-              "$element": "Stack",
-              "props": {
-                "direction": "horizontal",
-                "gap": "tight",
-                "justify": "end"
-              },
-              "children": [
-                {
-                  "$element": "Button",
-                  "props": {
-                    "label": "Cancel",
-                    "variant": "secondary",
-                    "size": "sm"
-                  },
-                  "children": []
-                },
-                {
-                  "$element": "Button",
-                  "props": {
-                    "label": "Add",
-                    "variant": "primary",
-                    "size": "sm"
-                  },
-                  "children": []
-                }
-              ]
-            }
-          ]
-        },
-        "placement": "bottom",
-        "modal": true,
-        "showArrow": false,
-        "dismissible": false,
-        "heading": "Add link"
-      },
-      "snippets": {
-        "react": "import { Popover, Button, Input, Stack } from '@design-schema/react';\n\n<Popover\n  trigger={<Button label=\"Add link\" variant=\"secondary\" />}\n  modal\n  dismissible={false}\n  heading=\"Add link\"\n>\n  <Stack gap=\"normal\">\n    <Input label=\"URL\" name=\"url\" placeholder=\"https://example.com\" />\n    <Stack direction=\"horizontal\" gap=\"tight\" justify=\"end\">\n      <Button label=\"Cancel\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"Add\" variant=\"primary\" size=\"sm\" />\n    </Stack>\n  </Stack>\n</Popover>",
-        "lit": "<ds-popover heading=\"Confirm export\" modal open>\n  <ds-button slot=\"trigger\" variant=\"secondary\" size=\"sm\" label=\"Export\"></ds-button>\n  <ds-text size=\"sm\">This can't be undone once started.</ds-text>\n  <ds-button variant=\"primary\" size=\"sm\" label=\"Start export\"></ds-button>\n</ds-popover>",
-        "rn": null,
-        "swift": null
-      },
-      "stories": {
-        "react": "ModalTrue",
-        "lit": "ModalTrue",
-        "rn": null,
-        "swift": null
-      },
-      "storyId": "popover-react--modal-true",
-      "sweep": null,
-      "decorated": false,
-      "primary": true
     },
     {
       "title": "Not Dismissible",
@@ -1458,82 +968,63 @@
           "children": []
         },
         "children": {
-          "$element": "Stack",
+          "$element": "Form",
           "props": {
-            "gap": "normal"
+            "label": "Filters",
+            "actions": {
+              "$element": "Button",
+              "props": {
+                "label": "Apply",
+                "type": "submit",
+                "size": "sm"
+              },
+              "children": []
+            }
           },
           "children": [
             {
-              "$element": "Text",
-              "props": {
-                "size": "sm"
-              },
-              "children": [
-                "Show items updated in the last:"
-              ]
-            },
-            {
               "$element": "Stack",
               "props": {
-                "direction": "horizontal",
-                "gap": "tight"
+                "gap": "normal"
               },
               "children": [
                 {
-                  "$element": "Button",
+                  "$element": "Switch",
                   "props": {
-                    "label": "7 days",
-                    "variant": "secondary",
-                    "size": "sm"
+                    "label": "Only open items",
+                    "name": "openOnly"
                   },
                   "children": []
                 },
                 {
-                  "$element": "Button",
+                  "$element": "Switch",
                   "props": {
-                    "label": "30 days",
-                    "variant": "secondary",
-                    "size": "sm"
-                  },
-                  "children": []
-                },
-                {
-                  "$element": "Button",
-                  "props": {
-                    "label": "90 days",
-                    "variant": "secondary",
-                    "size": "sm"
+                    "label": "Assigned to me",
+                    "name": "mine"
                   },
                   "children": []
                 }
               ]
-            },
-            {
-              "$element": "Link",
-              "props": {
-                "href": "#",
-                "label": "Reset filters"
-              },
-              "children": []
             }
           ]
         },
-        "placement": "bottom",
+        "heading": "Filters",
+        "headingLevel": "3",
+        "placement": "bottom-start",
         "modal": false,
         "showArrow": false,
-        "dismissible": false,
-        "heading": "Filters"
+        "dismissible": false
       },
       "snippets": {
-        "react": "import { Popover, Button, Link, Stack, Text } from '@design-schema/react';\n\nconst defaultBody = (\n  <Stack gap=\"normal\">\n    <Text size=\"sm\">Show items updated in the last:</Text>\n    <Stack direction=\"horizontal\" gap=\"tight\">\n      <Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n      <Button label=\"90 days\" variant=\"secondary\" size=\"sm\" />\n    </Stack>\n    <Link href=\"#\" label=\"Reset filters\" />\n  </Stack>\n);\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  dismissible={false}\n  heading=\"Filters\"\n>\n  {defaultBody}\n</Popover>",
+        "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-start\"\n  dismissible={false}\n>{filterForm}</OpenHarness>",
         "lit": null,
-        "rn": "import { Button, Popover, Text } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  dismissible={false}\n  open\n>\n  <Text>Filter results by status and date.</Text>\n</Popover>",
+        "rn": null,
         "swift": null
       },
       "stories": {
         "react": "NotDismissible",
         "lit": null,
-        "rn": "NotDismissible",
+        "rn": null,
         "swift": null
       },
       "storyId": "popover-react--not-dismissible",
@@ -1543,6 +1034,521 @@
       },
       "decorated": false,
       "primary": true
+    },
+    {
+      "title": "With Arrow",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Filters",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "children": {
+          "$element": "Form",
+          "props": {
+            "label": "Filters",
+            "actions": {
+              "$element": "Button",
+              "props": {
+                "label": "Apply",
+                "type": "submit",
+                "size": "sm"
+              },
+              "children": []
+            }
+          },
+          "children": [
+            {
+              "$element": "Stack",
+              "props": {
+                "gap": "normal"
+              },
+              "children": [
+                {
+                  "$element": "Switch",
+                  "props": {
+                    "label": "Only open items",
+                    "name": "openOnly"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Switch",
+                  "props": {
+                    "label": "Assigned to me",
+                    "name": "mine"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        "heading": "Filters",
+        "headingLevel": "3",
+        "placement": "bottom-start",
+        "modal": false,
+        "showArrow": true,
+        "dismissible": true
+      },
+      "snippets": {
+        "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-start\"\n  showArrow\n>{filterForm}</OpenHarness>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "WithArrow",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "popover-react--with-arrow",
+      "sweep": {
+        "prop": "showArrow",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Modal",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Filters",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "children": {
+          "$element": "Form",
+          "props": {
+            "label": "Filters",
+            "actions": {
+              "$element": "Button",
+              "props": {
+                "label": "Apply",
+                "type": "submit",
+                "size": "sm"
+              },
+              "children": []
+            }
+          },
+          "children": [
+            {
+              "$element": "Stack",
+              "props": {
+                "gap": "normal"
+              },
+              "children": [
+                {
+                  "$element": "Switch",
+                  "props": {
+                    "label": "Only open items",
+                    "name": "openOnly"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Switch",
+                  "props": {
+                    "label": "Assigned to me",
+                    "name": "mine"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        "heading": "Filters",
+        "headingLevel": "3",
+        "placement": "bottom-start",
+        "modal": true,
+        "showArrow": false,
+        "dismissible": true
+      },
+      "snippets": {
+        "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-start\"\n  modal\n>{filterForm}</OpenHarness>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "Modal",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "popover-react--modal",
+      "sweep": {
+        "prop": "modal",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Uncontrolled",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Filters",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "children": {
+          "$element": "Form",
+          "props": {
+            "label": "Filters",
+            "actions": {
+              "$element": "Button",
+              "props": {
+                "label": "Apply",
+                "type": "submit",
+                "size": "sm"
+              },
+              "children": []
+            }
+          },
+          "children": [
+            {
+              "$element": "Stack",
+              "props": {
+                "gap": "normal"
+              },
+              "children": [
+                {
+                  "$element": "Switch",
+                  "props": {
+                    "label": "Only open items",
+                    "name": "openOnly"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Switch",
+                  "props": {
+                    "label": "Assigned to me",
+                    "name": "mine"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        "heading": "Filters",
+        "headingLevel": "3",
+        "placement": "bottom-start",
+        "modal": false,
+        "showArrow": false,
+        "dismissible": true
+      },
+      "snippets": {
+        "react": "import { Popover, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-start\"\n>{filterForm}</Popover>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "Uncontrolled",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "popover-react--uncontrolled",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Filter Panel",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Filters",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "children": {
+          "$element": "Form",
+          "props": {
+            "label": "Filters",
+            "actions": {
+              "$element": "Button",
+              "props": {
+                "label": "Apply",
+                "type": "submit",
+                "size": "sm"
+              },
+              "children": []
+            }
+          },
+          "children": [
+            {
+              "$element": "Stack",
+              "props": {
+                "gap": "normal"
+              },
+              "children": [
+                {
+                  "$element": "Switch",
+                  "props": {
+                    "label": "Only open items",
+                    "name": "openOnly"
+                  },
+                  "children": []
+                },
+                {
+                  "$element": "Switch",
+                  "props": {
+                    "label": "Assigned to me",
+                    "name": "mine"
+                  },
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        "heading": "Filters",
+        "headingLevel": "3",
+        "placement": "bottom-start",
+        "modal": false,
+        "showArrow": false,
+        "dismissible": true
+      },
+      "snippets": {
+        "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Form, Stack, Switch } from '@design-schema/react';\n\nconst filterForm = (\n  <Form label=\"Filters\" actions={<Button label=\"Apply\" type=\"submit\" size=\"sm\" />}>\n    <Stack gap=\"normal\">\n      <Switch label=\"Only open items\" name=\"openOnly\" />\n      <Switch label=\"Assigned to me\" name=\"mine\" />\n    </Stack>\n  </Form>\n);\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-start\"\n>{filterForm}</OpenHarness>",
+        "lit": null,
+        "rn": "import { Button, Checkbox, Form, Popover } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-start\"\n>\n  <Form actions={<Button label=\"Apply\" type=\"submit\" />}>\n    <Checkbox label=\"Open\" name=\"open\" />\n    <Checkbox label=\"Closed\" name=\"closed\" />\n  </Form>\n</Popover>",
+        "swift": null
+      },
+      "stories": {
+        "react": "FilterPanel",
+        "lit": null,
+        "rn": "FilterPanel",
+        "swift": null
+      },
+      "storyId": "popover-react--filter-panel",
+      "sweep": {
+        "prop": "placement",
+        "value": "bottom-start"
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Date Picker Panel",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "16 September 2026",
+            "variant": "secondary",
+            "leadingIcon": {
+              "$element": "Icon",
+              "props": {
+                "name": "calendar",
+                "inline": true
+              },
+              "children": []
+            }
+          },
+          "children": []
+        },
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "tight"
+          },
+          "children": [
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Today",
+                "variant": "ghost",
+                "size": "sm"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Tomorrow",
+                "variant": "ghost",
+                "size": "sm"
+              },
+              "children": []
+            },
+            {
+              "$element": "Button",
+              "props": {
+                "label": "Next week",
+                "variant": "ghost",
+                "size": "sm"
+              },
+              "children": []
+            }
+          ]
+        },
+        "headingLevel": "3",
+        "placement": "bottom-start",
+        "modal": false,
+        "showArrow": false,
+        "dismissible": true
+      },
+      "snippets": {
+        "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Icon, Stack } from '@design-schema/react';\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"16 September 2026\" variant=\"secondary\" leadingIcon={<Icon name=\"calendar\" inline />} />}\n  placement=\"bottom-start\"\n><Stack gap=\"tight\">\n<Button label=\"Today\" variant=\"ghost\" size=\"sm\" />\n<Button label=\"Tomorrow\" variant=\"ghost\" size=\"sm\" />\n<Button label=\"Next week\" variant=\"ghost\" size=\"sm\" />\n</Stack></OpenHarness>",
+        "lit": null,
+        "rn": "import * as React from 'react';\nimport { Button, Icon, Popover, Stack, useTheme } from '@design-schema/rn';\n\nfunction CalendarIcon(): React.JSX.Element {\n  const { tokens: t } = useTheme();\n  return <Icon name=\"calendar\" color={t.colorActionSecondaryForeground} />;\n}\n\n<Popover\n  trigger={<Button label=\"17 September 2026\" variant=\"secondary\" leadingIcon={<CalendarIcon />} />}\n  placement=\"bottom-start\"\n>\n  <Stack gap=\"tight\" align=\"start\">\n    <Button label=\"Today\" variant=\"ghost\" />\n    <Button label=\"Tomorrow\" variant=\"ghost\" />\n    <Button label=\"Next week\" variant=\"ghost\" />\n  </Stack>\n</Popover>",
+        "swift": null
+      },
+      "stories": {
+        "react": "DatePickerPanel",
+        "lit": null,
+        "rn": "DatePickerPanel",
+        "swift": null
+      },
+      "storyId": "popover-react--date-picker-panel",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Required Step",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Add member",
+            "variant": "secondary"
+          },
+          "children": []
+        },
+        "children": {
+          "$element": "Form",
+          "props": {
+            "label": "Add member",
+            "actions": {
+              "$element": "Button",
+              "props": {
+                "label": "Save",
+                "type": "submit",
+                "size": "sm"
+              },
+              "children": []
+            }
+          },
+          "children": [
+            {
+              "$element": "Input",
+              "props": {
+                "label": "Email",
+                "name": "email",
+                "type": "email",
+                "required": true
+              },
+              "children": []
+            }
+          ]
+        },
+        "heading": "Add member",
+        "headingLevel": "3",
+        "placement": "bottom-start",
+        "modal": true,
+        "showArrow": false,
+        "dismissible": true
+      },
+      "snippets": {
+        "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Form, Input } from '@design-schema/react';\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Add member\" variant=\"secondary\" />}\n  heading=\"Add member\"\n  placement=\"bottom-start\"\n  modal\n><Form label=\"Add member\" actions={<Button label=\"Save\" type=\"submit\" size=\"sm\" />}>\n<Input label=\"Email\" name=\"email\" type=\"email\" required />\n</Form></OpenHarness>",
+        "lit": null,
+        "rn": "import { Button, Input, Popover, Stack } from '@design-schema/rn';\n\n<Popover\n  trigger={<Button label=\"Add member\" />}\n  heading=\"Add member\"\n  placement=\"bottom-start\"\n  modal\n>\n  <Stack gap=\"normal\" align=\"start\">\n    <Input label=\"Email\" name=\"email\" type=\"email\" />\n    <Button label=\"Save\" />\n  </Stack>\n</Popover>",
+        "swift": null
+      },
+      "stories": {
+        "react": "RequiredStep",
+        "lit": null,
+        "rn": "RequiredStep",
+        "swift": null
+      },
+      "storyId": "popover-react--required-step",
+      "sweep": {
+        "prop": "modal",
+        "value": true
+      },
+      "decorated": false,
+      "primary": false
+    },
+    {
+      "title": "Contextual Help",
+      "args": {
+        "trigger": {
+          "$element": "Button",
+          "props": {
+            "label": "Help",
+            "variant": "ghost",
+            "iconOnly": true,
+            "leadingIcon": {
+              "$element": "Icon",
+              "props": {
+                "name": "info",
+                "inline": true
+              },
+              "children": []
+            }
+          },
+          "children": []
+        },
+        "children": {
+          "$element": "Text",
+          "props": {
+            "size": "sm"
+          },
+          "children": [
+            " Filters apply to every view in this project. ",
+            {
+              "$element": "Link",
+              "props": {
+                "href": "#",
+                "label": "Read the guide"
+              },
+              "children": []
+            }
+          ]
+        },
+        "headingLevel": "3",
+        "placement": "end",
+        "modal": false,
+        "showArrow": true,
+        "dismissible": true
+      },
+      "snippets": {
+        "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Icon, Link, Text } from '@design-schema/react';\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Help\" variant=\"ghost\" iconOnly leadingIcon={<Icon name=\"info\" inline />} />}\n  placement=\"end\"\n  showArrow\n><Text size=\"sm\">\nFilters apply to every view in this project. <Link href=\"#\" label=\"Read the guide\" />\n</Text></OpenHarness>",
+        "lit": null,
+        "rn": "import * as React from 'react';\nimport { Button, Icon, Link, Popover, Text, useTheme } from '@design-schema/rn';\n\nfunction HelpIcon(): React.JSX.Element {\n  const { tokens: t } = useTheme();\n  return <Icon name=\"info\" color={t.colorActionGhostForeground} />;\n}\n\n<Popover\n  trigger={<Button label=\"Help\" variant=\"ghost\" iconOnly leadingIcon={<HelpIcon />} />}\n  placement=\"end\"\n  showArrow\n>\n  <Text>\n    Filters apply to every view in this project. <Link href=\"https://example.com/guide\" label=\"Read the guide\" />\n  </Text>\n</Popover>",
+        "swift": null
+      },
+      "stories": {
+        "react": "ContextualHelp",
+        "lit": null,
+        "rn": "ContextualHelp",
+        "swift": null
+      },
+      "storyId": "popover-react--contextual-help",
+      "sweep": null,
+      "decorated": false,
+      "primary": false
     },
     {
       "title": "Keyboard",
@@ -1587,34 +1593,27 @@
                 "size": "sm"
               },
               "children": []
-            },
-            {
-              "$element": "Link",
-              "props": {
-                "href": "#",
-                "label": "Reset filters"
-              },
-              "children": []
             }
           ]
         },
-        "placement": "bottom",
+        "heading": "Filters",
+        "headingLevel": "3",
+        "placement": "bottom-start",
         "modal": false,
         "showArrow": false,
         "dismissible": true,
-        "open": true,
-        "heading": "Filters"
+        "open": true
       },
       "snippets": {
-        "react": "import { Popover, Button, Link, Stack } from '@design-schema/react';\n\n<Popover\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  open\n  heading=\"Filters\"\n>\n  <Stack gap=\"normal\">\n    <Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n    <Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n    <Button label=\"90 days\" variant=\"secondary\" size=\"sm\" />\n    <Link href=\"#\" label=\"Reset filters\" />\n  </Stack>\n</Popover>",
-        "lit": "<ds-popover heading=\"Filters\" open>\n  <ds-button slot=\"trigger\" variant=\"secondary\" size=\"sm\" label=\"Filters\"></ds-button>\n  <ds-input label=\"Status\" name=\"status\" value=\"Active\"></ds-input>\n  <ds-input label=\"Owner\" name=\"owner\" value=\"Me\"></ds-input>\n  <ds-button variant=\"primary\" size=\"sm\" label=\"Apply\"></ds-button>\n</ds-popover>",
-        "rn": "import * as React from 'react';\nimport { Button, Input, Link, Popover, Stack } from '@design-schema/rn';\n\nfunction Open(): React.JSX.Element {\n  const [open, setOpen] = React.useState(true);\n  return (\n    <Popover\n      heading=\"Filters\"\n      trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n      open={open}\n      onOpenChange={(next) => setOpen(next)}\n    >\n      <Stack gap=\"normal\" align=\"start\">\n        <Input label=\"Search\" name=\"search\" />\n        <Link href=\"https://example.com/filters\" label=\"Reset filters\" />\n        <Button label=\"Apply\" onPress={() => setOpen(false)} />\n      </Stack>\n    </Popover>\n  );\n}\n\n<Open />",
+        "react": "import { useState, type ReactElement } from 'react';\nimport { Popover, type PopoverOpenChangeReason, type PopoverProps, Button, Stack } from '@design-schema/react';\n\nfunction OpenHarness(props: PopoverProps): ReactElement {\n  const [open, setOpen] = useState(props.open ?? true);\n  const handleOpenChange = (next: boolean, reason: PopoverOpenChangeReason): void => {\n    setOpen(next);\n    props.onOpenChange?.(next, reason);\n  };\n  return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;\n}\n\n<OpenHarness\n  trigger={<Button label=\"Filters\" variant=\"secondary\" />}\n  heading=\"Filters\"\n  placement=\"bottom-start\"\n  open\n><Stack gap=\"normal\">\n<Button label=\"7 days\" variant=\"secondary\" size=\"sm\" />\n<Button label=\"30 days\" variant=\"secondary\" size=\"sm\" />\n<Button label=\"90 days\" variant=\"secondary\" size=\"sm\" />\n</Stack></OpenHarness>",
+        "lit": null,
+        "rn": null,
         "swift": null
       },
       "stories": {
         "react": "Keyboard",
-        "lit": "Keyboard",
-        "rn": "Keyboard",
+        "lit": null,
+        "rn": null,
         "swift": null
       },
       "storyId": "popover-react--keyboard",
@@ -1623,7 +1622,7 @@
         "value": true
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     }
   ]
 }

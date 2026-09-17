@@ -13,6 +13,7 @@
         "label": "Send me product updates",
         "name": "updates",
         "value": "on",
+        "hideLabel": false,
         "defaultChecked": false,
         "indeterminate": false,
         "disabled": false,
@@ -37,11 +38,142 @@
       "primary": true
     },
     {
+      "title": "Consent",
+      "args": {
+        "label": "I accept the terms of service",
+        "name": "terms",
+        "value": "on",
+        "hideLabel": false,
+        "defaultChecked": false,
+        "indeterminate": false,
+        "disabled": false,
+        "required": true,
+        "invalid": false
+      },
+      "snippets": {
+        "react": "import { Checkbox } from '@design-schema/react';\n\n<Checkbox label=\"I accept the terms of service\" name=\"terms\" required />",
+        "lit": "<ds-checkbox label=\"I accept the terms of service\" name=\"terms\" required></ds-checkbox>",
+        "rn": "import { Checkbox } from '@design-schema/rn';\n\n<Checkbox label=\"I accept the terms of service\" name=\"terms\" required />",
+        "swift": null
+      },
+      "stories": {
+        "react": "Consent",
+        "lit": "Consent",
+        "rn": "Consent",
+        "swift": null
+      },
+      "storyId": "checkbox-react--consent",
+      "sweep": {
+        "prop": "required",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Select All Parent",
+      "args": {
+        "label": "Select all",
+        "name": "selectAll",
+        "value": "on",
+        "hideLabel": false,
+        "defaultChecked": false,
+        "indeterminate": true,
+        "disabled": false,
+        "required": false,
+        "invalid": false
+      },
+      "snippets": {
+        "react": "import { Checkbox } from '@design-schema/react';\n\n<Checkbox label=\"Select all\" name=\"selectAll\" indeterminate />",
+        "lit": "<ds-checkbox label=\"Select all\" name=\"selectAll\" indeterminate></ds-checkbox>",
+        "rn": "import { Checkbox } from '@design-schema/rn';\n\n<Checkbox label=\"Select all\" name=\"selectAll\" indeterminate />",
+        "swift": null
+      },
+      "stories": {
+        "react": "SelectAllParent",
+        "lit": "SelectAllParent",
+        "rn": "SelectAllParent",
+        "swift": null
+      },
+      "storyId": "checkbox-react--select-all-parent",
+      "sweep": {
+        "prop": "indeterminate",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "With Description",
+      "args": {
+        "label": "Send me product updates",
+        "name": "updates",
+        "value": "on",
+        "hideLabel": false,
+        "defaultChecked": false,
+        "indeterminate": false,
+        "disabled": false,
+        "required": false,
+        "invalid": false,
+        "description": "One email a month about new features."
+      },
+      "snippets": {
+        "react": "import { Checkbox } from '@design-schema/react';\n\n<Checkbox\n  label=\"Send me product updates\"\n  name=\"updates\"\n  description=\"One email a month about new features.\"\n/>",
+        "lit": "<ds-checkbox\n  label=\"Send me product updates\"\n  name=\"updates\"\n  description=\"One email a month about new features.\"\n></ds-checkbox>",
+        "rn": "import { Checkbox } from '@design-schema/rn';\n\n<Checkbox\n  label=\"Send me product updates\"\n  name=\"updates\"\n  description=\"One email a month about new features.\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "WithDescription",
+        "lit": "WithDescription",
+        "rn": "WithDescription",
+        "swift": null
+      },
+      "storyId": "checkbox-react--with-description",
+      "sweep": null,
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Selection Column",
+      "args": {
+        "label": "Select row",
+        "name": "select",
+        "value": "on",
+        "hideLabel": true,
+        "defaultChecked": false,
+        "indeterminate": false,
+        "disabled": false,
+        "required": false,
+        "invalid": false
+      },
+      "snippets": {
+        "react": "import { Checkbox } from '@design-schema/react';\n\n<Checkbox label=\"Select row\" name=\"select\" hideLabel />",
+        "lit": "<ds-checkbox label=\"Select row\" name=\"select\" hide-label></ds-checkbox>",
+        "rn": "import { Checkbox } from '@design-schema/rn';\n\n<Checkbox label=\"Select row\" name=\"select\" hideLabel />",
+        "swift": null
+      },
+      "stories": {
+        "react": "SelectionColumn",
+        "lit": "SelectionColumn",
+        "rn": "SelectionColumn",
+        "swift": null
+      },
+      "storyId": "checkbox-react--selection-column",
+      "sweep": {
+        "prop": "hideLabel",
+        "value": true
+      },
+      "decorated": false,
+      "primary": true
+    },
+    {
       "title": "Checked",
       "args": {
         "label": "Send me product updates",
         "name": "updates",
         "value": "on",
+        "hideLabel": false,
         "defaultChecked": true,
         "indeterminate": false,
         "disabled": false,
@@ -69,43 +201,12 @@
       "primary": true
     },
     {
-      "title": "Indeterminate",
-      "args": {
-        "label": "Select all",
-        "name": "all",
-        "value": "on",
-        "defaultChecked": false,
-        "indeterminate": true,
-        "disabled": false,
-        "required": false,
-        "invalid": false
-      },
-      "snippets": {
-        "react": "import { Checkbox } from '@design-schema/react';\n\n<Checkbox label=\"Select all\" name=\"all\" indeterminate />",
-        "lit": "<ds-checkbox label=\"Select all\" name=\"all\" indeterminate></ds-checkbox>",
-        "rn": "import { Checkbox } from '@design-schema/rn';\n\n<Checkbox label=\"Select all\" name=\"all\" indeterminate />",
-        "swift": null
-      },
-      "stories": {
-        "react": "Indeterminate",
-        "lit": "IndeterminateTrue",
-        "rn": "Indeterminate",
-        "swift": null
-      },
-      "storyId": "checkbox-react--indeterminate",
-      "sweep": {
-        "prop": "indeterminate",
-        "value": true
-      },
-      "decorated": false,
-      "primary": true
-    },
-    {
       "title": "Disabled",
       "args": {
         "label": "Send me product updates",
         "name": "updates",
         "value": "on",
+        "hideLabel": false,
         "defaultChecked": false,
         "indeterminate": false,
         "disabled": true,
@@ -130,7 +231,7 @@
         "value": true
       },
       "decorated": false,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Disabled Checked",
@@ -138,6 +239,7 @@
         "label": "Send me product updates",
         "name": "updates",
         "value": "on",
+        "hideLabel": false,
         "defaultChecked": true,
         "indeterminate": false,
         "disabled": true,
@@ -159,68 +261,6 @@
       "storyId": "checkbox-react--disabled-checked",
       "sweep": null,
       "decorated": false,
-      "primary": true
-    },
-    {
-      "title": "Required",
-      "args": {
-        "label": "I agree to the terms",
-        "name": "terms",
-        "value": "on",
-        "defaultChecked": false,
-        "indeterminate": false,
-        "disabled": false,
-        "required": true,
-        "invalid": false
-      },
-      "snippets": {
-        "react": "import { Checkbox } from '@design-schema/react';\n\n<Checkbox label=\"I agree to the terms\" name=\"terms\" required />",
-        "lit": null,
-        "rn": "import { Checkbox } from '@design-schema/rn';\n\n<Checkbox label=\"I agree to the terms\" name=\"terms\" required />",
-        "swift": null
-      },
-      "stories": {
-        "react": "Required",
-        "lit": null,
-        "rn": "Required",
-        "swift": null
-      },
-      "storyId": "checkbox-react--required",
-      "sweep": {
-        "prop": "required",
-        "value": true
-      },
-      "decorated": false,
-      "primary": true
-    },
-    {
-      "title": "With Description",
-      "args": {
-        "label": "Send me product updates",
-        "name": "updates",
-        "value": "on",
-        "defaultChecked": false,
-        "indeterminate": false,
-        "disabled": false,
-        "required": false,
-        "invalid": false,
-        "description": "One email a month about new features. No marketing."
-      },
-      "snippets": {
-        "react": "import { Checkbox } from '@design-schema/react';\n\n<Checkbox\n  label=\"Send me product updates\"\n  name=\"updates\"\n  description=\"One email a month about new features. No marketing.\"\n/>",
-        "lit": "<ds-checkbox\n  label=\"Send me product updates\"\n  name=\"updates\"\n  description=\"About one email a month. Unsubscribe any time.\"\n></ds-checkbox>",
-        "rn": "import { Checkbox } from '@design-schema/rn';\n\n<Checkbox\n  label=\"Send me product updates\"\n  name=\"updates\"\n  description=\"One email a month; no marketing from partners.\"\n/>",
-        "swift": null
-      },
-      "stories": {
-        "react": "WithDescription",
-        "lit": "WithDescription",
-        "rn": "WithDescription",
-        "swift": null
-      },
-      "storyId": "checkbox-react--with-description",
-      "sweep": null,
-      "decorated": false,
       "primary": false
     },
     {
@@ -229,6 +269,7 @@
         "label": "Send me product updates",
         "name": "updates",
         "value": "on",
+        "hideLabel": false,
         "defaultChecked": false,
         "indeterminate": false,
         "disabled": false,
@@ -237,13 +278,13 @@
       },
       "snippets": {
         "react": "import { Checkbox } from '@design-schema/react';\n\n<Checkbox label=\"Send me product updates\" name=\"updates\" invalid />",
-        "lit": null,
+        "lit": "<ds-checkbox label=\"Send me product updates\" name=\"updates\" invalid></ds-checkbox>",
         "rn": "import { Checkbox } from '@design-schema/rn';\n\n<Checkbox label=\"Send me product updates\" name=\"updates\" invalid />",
         "swift": null
       },
       "stories": {
         "react": "Invalid",
-        "lit": null,
+        "lit": "InvalidTrue",
         "rn": "Invalid",
         "swift": null
       },
@@ -258,9 +299,10 @@
     {
       "title": "With Error",
       "args": {
-        "label": "I agree to the terms",
+        "label": "I accept the terms of service",
         "name": "terms",
         "value": "on",
+        "hideLabel": false,
         "defaultChecked": false,
         "indeterminate": false,
         "disabled": false,
@@ -269,14 +311,14 @@
         "error": "Accept the terms to continue."
       },
       "snippets": {
-        "react": "import { Checkbox } from '@design-schema/react';\n\n<Checkbox\n  label=\"I agree to the terms\"\n  name=\"terms\"\n  required\n  error=\"Accept the terms to continue.\"\n/>",
-        "lit": null,
-        "rn": "import { Checkbox } from '@design-schema/rn';\n\n<Checkbox\n  label=\"I agree to the terms\"\n  name=\"terms\"\n  required\n  error=\"Accept the terms to continue.\"\n/>",
+        "react": "import { Checkbox } from '@design-schema/react';\n\n<Checkbox\n  label=\"I accept the terms of service\"\n  name=\"terms\"\n  required\n  error=\"Accept the terms to continue.\"\n/>",
+        "lit": "<ds-checkbox label=\"Send me product updates\" name=\"updates\" required></ds-checkbox>",
+        "rn": "import { Checkbox } from '@design-schema/rn';\n\n<Checkbox\n  label=\"I accept the terms of service\"\n  name=\"terms\"\n  required\n  error=\"Accept the terms to continue.\"\n/>",
         "swift": null
       },
       "stories": {
         "react": "WithError",
-        "lit": null,
+        "lit": "RequiredTrue",
         "rn": "WithError",
         "swift": null
       },
@@ -294,6 +336,7 @@
         "label": "Send me product updates",
         "name": "updates",
         "value": "on",
+        "hideLabel": false,
         "defaultChecked": false,
         "indeterminate": false,
         "disabled": false,
@@ -316,39 +359,6 @@
       "storyId": "checkbox-react--controlled",
       "sweep": {
         "prop": "checked",
-        "value": true
-      },
-      "decorated": false,
-      "primary": false
-    },
-    {
-      "title": "Hide Label",
-      "args": {
-        "label": "Select row",
-        "name": "select-row",
-        "value": "on",
-        "defaultChecked": false,
-        "indeterminate": false,
-        "disabled": false,
-        "required": false,
-        "invalid": false,
-        "hideLabel": true
-      },
-      "snippets": {
-        "react": "import { Checkbox } from '@design-schema/react';\n\n<Checkbox label=\"Select row\" name=\"select-row\" hideLabel />",
-        "lit": null,
-        "rn": "import { Checkbox } from '@design-schema/rn';\n\n<Checkbox label=\"Select row\" name=\"row-1\" hideLabel />",
-        "swift": null
-      },
-      "stories": {
-        "react": "HideLabel",
-        "lit": null,
-        "rn": "HideLabel",
-        "swift": null
-      },
-      "storyId": "checkbox-react--hide-label",
-      "sweep": {
-        "prop": "hideLabel",
         "value": true
       },
       "decorated": false,

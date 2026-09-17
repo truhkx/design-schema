@@ -5,6 +5,8 @@ import './Button.js';
 import './Icon.js';
 import './Link.js';
 import './Input.js';
+import './Checkbox.js';
+import './Card.js';
 import './Stack.js';
 import './Text.js';
 import type {
@@ -129,9 +131,9 @@ export const ScrimFalse: Story = { args: { scrim: false } };
 export const DismissibleFalse: Story = { args: { dismissible: false } };
 export const SwipeableFalse: Story = { args: { swipeable: false } };
 
-/* examples */
+/* examples: `open` is not in their `given`, so the panel starts closed behind its trigger. */
 export const NavigationDrawer: Story = {
-  args: { heading: 'Menu', hideHeading: true, landmark: 'navigation', persistent: 'content' },
+  args: { open: false, heading: 'Menu', hideHeading: true, landmark: 'navigation', persistent: 'content' },
 };
 
 export const Filters: Story = {
@@ -142,8 +144,9 @@ export const Filters: Story = {
       html`<ds-button slot="trigger" variant="secondary" label="Filters"></ds-button>`,
       html`
         <ds-stack gap="normal">
-          <ds-input label="Keyword" name="keyword"></ds-input>
-          <ds-input label="Maximum price" name="maxPrice" type="number"></ds-input>
+          <ds-checkbox label="In stock" name="inStock"></ds-checkbox>
+          <ds-checkbox label="On sale" name="onSale"></ds-checkbox>
+          <ds-checkbox label="Free shipping" name="freeShipping"></ds-checkbox>
         </ds-stack>
       `,
       html`
@@ -161,8 +164,8 @@ export const Cart: Story = {
       html``,
       html`
         <ds-stack gap="normal">
-          <ds-text>Notebook × 2</ds-text>
-          <ds-text>Pen × 1</ds-text>
+          <ds-card inset="md"><ds-text>Notebook × 2</ds-text></ds-card>
+          <ds-card inset="md"><ds-text>Pen × 1</ds-text></ds-card>
         </ds-stack>
       `,
       html`<ds-button slot="footer" variant="primary" label="Checkout"></ds-button>`,

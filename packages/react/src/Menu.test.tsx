@@ -1,21 +1,36 @@
 /**
  * Menu — behavior scenarios from the component doc, one test each, in the doc's order.
  * `given` overrides the Default story's args; the doc
- * (site/src/content/docs/components/menu.md) is the source of truth.
+ * (site/src/content/docs/components/menu.md) is the source of truth. A scenario that gives `open`
+ * renders through a wrapper that owns it and writes onOpenChange back, acting as the consumer.
  */
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import type { ComponentProps } from 'react';
-import { Menu } from './Menu';
+import { useState, type ComponentProps, type ReactElement } from 'react';
+import { Menu, type MenuOpenChangeReason } from './Menu';
 import meta from './Menu.stories';
 
 type Props = ComponentProps<typeof Menu>;
+
+function Consumer(props: Props): ReactElement {
+  const [open, setOpen] = useState(props.open ?? false);
+  return (
+    <Menu
+      {...props}
+      open={open}
+      onOpenChange={(next: boolean, reason: MenuOpenChangeReason) => {
+        setOpen(next);
+        props.onOpenChange?.(next, reason);
+      }}
+    />
+  );
+}
 
 function setup(given: Partial<Props> = {}) {
   const onAction = vi.fn();
   const onOpenChange = vi.fn();
   const props = { ...meta.args, onAction, onOpenChange, ...given } as Props;
-  const utils = render(<Menu {...props} />);
+  const utils = render(given.open !== undefined ? <Consumer {...props} /> : <Menu {...props} />);
   const root = (): HTMLElement | null => document.querySelector('[data-ds="Menu"]');
   const items = (): HTMLElement[] => screen.getAllByRole('menuitem');
   return { ...utils, onAction, onOpenChange, props, root, items };
@@ -63,6 +78,7 @@ describe('Menu', () => {
     });
     fireEvent.keyDown(document.activeElement ?? screen.getByRole('menu'), { key: 'Escape' });
     expect(m.onAction).not.toHaveBeenCalled();
+    expect(screen.queryByRole('menu')).toBeNull();
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'More actions' }));
   });
 

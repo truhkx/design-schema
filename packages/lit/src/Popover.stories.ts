@@ -6,10 +6,10 @@ import './Button.js';
 import './Icon.js';
 import './Input.js';
 import './Checkbox.js';
+import './Form.js';
 import './Stack.js';
 import './Text.js';
 import './Link.js';
-import './DatePicker.js';
 import type { DsPopover, PopoverHeadingLevel, PopoverOpenChangeDetail, PopoverPlacement } from './Popover.js';
 
 interface PopoverArgs {
@@ -18,17 +18,17 @@ interface PopoverArgs {
   /** Example description of the panel content; the render supplies the elements. */
   children?: string | undefined;
   heading?: string | undefined;
-  headingLevel: PopoverHeadingLevel;
-  placement: PopoverPlacement;
-  modal: boolean;
-  showArrow: boolean;
-  dismissible: boolean;
+  headingLevel?: PopoverHeadingLevel | undefined;
+  placement?: PopoverPlacement | undefined;
+  modal?: boolean | undefined;
+  showArrow?: boolean | undefined;
+  dismissible?: boolean | undefined;
   open?: boolean | undefined;
 }
 
 /**
- * Stories that set `open` are controlled: the story plays the consumer and writes
- * `open-change` back into `open`, so the popover still closes and reopens.
+ * Stories that set `open` render through a wrapper that owns it: the story plays the
+ * consumer and writes `open-change` back into `open`, so the popover still closes and reopens.
  */
 function followOpenChange(args: PopoverArgs): ((event: CustomEvent<PopoverOpenChangeDetail>) => void) | undefined {
   if (args.open === undefined) {
@@ -43,11 +43,11 @@ function popover(args: PopoverArgs, trigger: TemplateResult, body: TemplateResul
   return html`
     <ds-popover
       heading=${ifDefined(args.heading)}
-      heading-level=${args.headingLevel}
-      placement=${args.placement}
-      ?modal=${args.modal}
-      ?show-arrow=${args.showArrow}
-      .dismissible=${args.dismissible}
+      heading-level=${ifDefined(args.headingLevel)}
+      placement=${ifDefined(args.placement)}
+      ?modal=${args.modal ?? false}
+      ?show-arrow=${args.showArrow ?? false}
+      .dismissible=${args.dismissible ?? true}
       .open=${args.open}
       @open-change=${ifDefined(followOpenChange(args))}
     >
@@ -59,13 +59,23 @@ function popover(args: PopoverArgs, trigger: TemplateResult, body: TemplateResul
 
 const filtersTrigger = html`<ds-button slot="trigger" variant="secondary" size="sm" label="Filters"></ds-button>`;
 
+/** Three focusable children, for the keyboard gate. */
 const filtersBody = html`
-  <ds-stack gap="normal">
-    <ds-checkbox label="Open issues" name="open-issues" default-checked></ds-checkbox>
-    <ds-checkbox label="Assigned to me" name="assigned"></ds-checkbox>
-    <ds-button variant="primary" size="sm" label="Apply"></ds-button>
-  </ds-stack>
+  <ds-form label="Filters" name="filters">
+    <ds-stack gap="normal">
+      <ds-checkbox label="Open issues" name="open-issues" default-checked></ds-checkbox>
+      <ds-checkbox label="Assigned to me" name="assigned"></ds-checkbox>
+    </ds-stack>
+    <ds-button slot="actions" type="submit" variant="primary" size="sm" label="Apply"></ds-button>
+  </ds-form>
 `;
+
+const filterPanelArgs: PopoverArgs = {
+  trigger: 'A Filters Button',
+  children: 'A Form of filter controls',
+  heading: 'Filters',
+  placement: 'bottom-start',
+};
 
 const meta: Meta<PopoverArgs> = {
   title: 'Popover/Lit',
@@ -82,13 +92,10 @@ const meta: Meta<PopoverArgs> = {
       control: 'select',
       options: ['2', '3', '4'],
     },
-  },
-  args: {
-    headingLevel: '3',
-    placement: 'bottom',
-    modal: false,
-    showArrow: false,
-    dismissible: true,
+    modal: { control: 'boolean' },
+    showArrow: { control: 'boolean' },
+    dismissible: { control: 'boolean' },
+    open: { control: 'boolean' },
   },
   render: (args) => popover(args, filtersTrigger, filtersBody),
 };
@@ -96,7 +103,8 @@ const meta: Meta<PopoverArgs> = {
 export default meta;
 type Story = StoryObj<PopoverArgs>;
 
-export const Default: Story = {};
+/** Open, with the filter-panel example's args, so the derived scenarios find the named panel. */
+export const Default: Story = { args: { ...filterPanelArgs, open: true } };
 
 /* headingLevel */
 export const HeadingLevel2: Story = { args: { heading: 'Filters', headingLevel: '2', open: true } };
@@ -113,35 +121,30 @@ export const PlacementTopEnd: Story = { args: { placement: 'top-end', open: true
 export const PlacementStart: Story = { args: { placement: 'start', open: true } };
 export const PlacementEnd: Story = { args: { placement: 'end', open: true } };
 
-/* booleans */
+/* notable states */
 export const Modal: Story = { args: { heading: 'Filters', modal: true, open: true } };
 export const ShowArrow: Story = { args: { showArrow: true, open: true } };
 export const NotDismissible: Story = { args: { dismissible: false, open: true } };
+export const Uncontrolled: Story = { args: { heading: 'Filters' } };
 
 /**
  * Open with its trigger and three focusable children, for the keyboard gate:
- * Escape, Tab past the last element (`modal: false`), Shift+Tab from the first.
+ * Escape, Tab past the last element (`args=modal:!false`), Shift+Tab from the first.
  */
 export const Keyboard: Story = {
-  args: { heading: 'Filters', open: true, modal: false },
+  args: { ...filterPanelArgs, open: true, modal: false },
 };
 
 /* examples */
 
 export const FilterPanel: Story = {
-  args: {
-    trigger: 'A Filters Button',
-    children: 'A Form of filter controls',
-    heading: 'Filters',
-    placement: 'bottom-start',
-  },
-  render: (args) => popover(args, filtersTrigger, filtersBody),
+  args: filterPanelArgs,
 };
 
 export const DatePickerPanel: Story = {
   args: {
-    trigger: 'A date field Button showing the current date',
-    children: 'A DatePicker calendar',
+    trigger: 'A date field Button with the calendar Icon showing the current date',
+    children: 'Three quick-pick date Buttons: Today, Tomorrow, Next week',
   },
   render: (args) =>
     popover(
@@ -149,7 +152,13 @@ export const DatePickerPanel: Story = {
       html`<ds-button slot="trigger" variant="secondary" size="sm" label=${new Date().toLocaleDateString()}>
         <ds-icon slot="leading-icon" name="calendar"></ds-icon>
       </ds-button>`,
-      html`<ds-date-picker label="Date" name="date"></ds-date-picker>`,
+      html`
+        <ds-stack gap="tight">
+          <ds-button variant="ghost" size="sm" label="Today"></ds-button>
+          <ds-button variant="ghost" size="sm" label="Tomorrow"></ds-button>
+          <ds-button variant="ghost" size="sm" label="Next week"></ds-button>
+        </ds-stack>
+      `,
     ),
 };
 
@@ -165,17 +174,17 @@ export const RequiredStep: Story = {
       args,
       html`<ds-button slot="trigger" variant="secondary" size="sm" label="Add member"></ds-button>`,
       html`
-        <ds-stack gap="normal">
+        <ds-form label="Add member" name="add-member">
           <ds-input label="Email" name="email" type="email" required></ds-input>
-          <ds-button variant="primary" size="sm" label="Save"></ds-button>
-        </ds-stack>
+          <ds-button slot="actions" type="submit" variant="primary" size="sm" label="Save"></ds-button>
+        </ds-form>
       `,
     ),
 };
 
 export const ContextualHelp: Story = {
   args: {
-    trigger: 'An icon-only help Button',
+    trigger: 'An icon-only Button labelled "Help" with the info Icon',
     children: 'One sentence of help ending in a Link to the guide',
     showArrow: true,
     placement: 'end',

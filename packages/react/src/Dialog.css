@@ -1,5 +1,6 @@
 /* Dialog — styled only through Design Schema token custom properties. */
 
+/* The <dialog> fills the viewport; the scrim is a real element inside it and ::backdrop stays transparent. */
 .ds-dialog {
   --ds-dialog-scrim: var(--color-overlay-scrim);
   --ds-dialog-border: var(--color-border);
@@ -12,25 +13,40 @@
   --ds-dialog-footer-gap: var(--layout-gap-tight);
   --ds-dialog-description-gap: var(--layout-gap-tight);
   --ds-dialog-width-sm: var(--layout-max-width-prose);
+  --ds-dialog-width-md: var(--layout-max-width-content);
+  --ds-dialog-width-lg: var(--layout-max-width-content);
   --ds-dialog-layer: var(--layer-dialog);
   --ds-dialog-enter: var(--motion-duration-base);
   --ds-dialog-exit: var(--motion-duration-fast);
   box-sizing: border-box;
-  margin: auto;
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 100%;
+  block-size: 100%;
+  max-inline-size: none;
+  max-block-size: none;
+  margin: 0;
   padding: 0;
   border: 0;
-  inline-size: auto;
-  max-inline-size: calc(100vw - 2 * var(--layout-gutter));
-  max-block-size: calc(100vh - 2 * var(--layout-gutter));
-  overflow: visible;
+  overflow: hidden;
   background: transparent;
   color: var(--color-foreground);
   font-family: var(--font-family-body);
+  /* layer: no effect in the top layer; applies to a non-top-layer fallback only. */
   z-index: var(--ds-dialog-layer);
 }
 
-/* scrim → color.overlay.scrim; the ::backdrop is the scrim and fades with the surface. */
 .ds-dialog::backdrop {
+  background: transparent;
+}
+
+/* scrim → color.overlay.scrim; fades with the surface (exit duration and easing when leaving). */
+.ds-dialog__scrim {
+  position: fixed;
+  inset: 0;
   background-color: var(--ds-dialog-scrim);
   opacity: 0;
   transition-property: opacity;
@@ -38,7 +54,7 @@
   transition-timing-function: var(--motion-easing-exit);
 }
 
-.ds-dialog--visible::backdrop {
+.ds-dialog--visible .ds-dialog__scrim {
   opacity: 1;
   transition-duration: var(--ds-dialog-enter);
   transition-timing-function: var(--motion-easing-standard);
@@ -47,12 +63,12 @@
 /* surface → color.overlay.surface (locked); border, borderWidth, radius, shadow, partGap. */
 .ds-dialog__surface {
   box-sizing: border-box;
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--ds-dialog-part-gap);
-  inline-size: 100%;
+  max-inline-size: calc(100vw - 2 * var(--layout-gutter));
   max-block-size: calc(100vh - 2 * var(--layout-gutter));
-  padding-block: var(--ds-dialog-inset);
   background-color: var(--color-overlay-surface);
   border-style: solid;
   border-width: var(--ds-dialog-border-width);
@@ -76,21 +92,22 @@
   transition-timing-function: var(--motion-easing-standard);
 }
 
-/* size → surface width; sm reads widthSm, md is 3/4 of content and lg is content. Full width below that measure. */
-.ds-dialog--sm { inline-size: var(--ds-dialog-width-sm); }
-.ds-dialog--md { inline-size: calc(var(--layout-max-width-content) * 3 / 4); }
-.ds-dialog--lg { inline-size: var(--layout-max-width-content); }
+/* size → surface width; md is layout.maxWidth.content × 0.75 (an override replaces the base). */
+.ds-dialog--sm .ds-dialog__surface { inline-size: var(--ds-dialog-width-sm); }
+.ds-dialog--md .ds-dialog__surface { inline-size: calc(var(--ds-dialog-width-md) * 0.75); }
+.ds-dialog--lg .ds-dialog__surface { inline-size: var(--ds-dialog-width-lg); }
 
+/* header: inset padding; headerGap between the titles group and the close button. */
 .ds-dialog__header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--ds-dialog-header-gap);
-  padding-inline: var(--ds-dialog-inset);
+  padding: var(--ds-dialog-inset);
   flex: 0 0 auto;
 }
 
-/* descriptionGap → between the heading and the description. */
+/* descriptionGap → the titles group, between the heading and the description. */
 .ds-dialog__titles {
   display: flex;
   flex-direction: column;
@@ -98,10 +115,14 @@
   min-inline-size: 0;
 }
 
-/* focus-visible: the heading is focused programmatically for initialFocus="title". */
+/* focusRing / focusRingWidth (locked): drawn by the heading wrapper when the heading holds focus. */
 .ds-dialog__heading:has(:focus-visible) {
   outline: var(--border-width-focus) solid var(--color-border-focus);
   outline-offset: var(--border-width-focus);
+}
+
+.ds-dialog__heading :focus-visible {
+  outline: none;
 }
 
 /* hideHeading: visually hidden, still the accessible name and a focus target — sanctioned 1px clip pattern. */
@@ -128,17 +149,26 @@
   flex: 1 1 auto;
   min-block-size: 0;
   overflow: auto;
-  padding-inline: var(--ds-dialog-inset);
 }
 
-/* footer: end-aligned action row; footerGap is forwarded to the Stack's own `gap` override. */
+/* inset reaches the body Box through its own hooks, as footerGap reaches the Stack below. */
+.ds-dialog__scroll > .ds-box {
+  --ds-box-padding-block: var(--ds-dialog-inset);
+  --ds-box-padding-inline: var(--ds-dialog-inset);
+}
+
+/* footer: end-aligned action row; the Stack's own gap hook reads footerGap. */
 .ds-dialog__footer {
   flex: 0 0 auto;
-  padding-inline: var(--ds-dialog-inset);
+  padding: var(--ds-dialog-inset);
+}
+
+.ds-dialog__footer > .ds-stack {
+  --ds-stack-gap: var(--ds-dialog-footer-gap);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ds-dialog::backdrop,
+  .ds-dialog__scrim,
   .ds-dialog__surface {
     transition: none;
   }

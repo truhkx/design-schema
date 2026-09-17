@@ -23,19 +23,18 @@
     }
   },
   "ActionSheet.lit": {
-    "hash": "e6ff8be0c88e6c9f",
-    "lastAttemptHash": "e6ff8be0c88e6c9f",
-    "generatedAt": "2026-09-16T11:23:08+00:00",
+    "hash": "a50dc9f74b8bca4b",
+    "lastAttemptHash": "a50dc9f74b8bca4b",
+    "generatedAt": "2026-09-17T15:07:01+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.8788,
+    "costUsd": 2.1727,
     "files": [
-      "packages/lit/src/ActionSheet.stories.ts",
       "packages/lit/src/ActionSheet.test.ts",
       "packages/lit/src/ActionSheet.ts"
     ],
-    "gaps": 15,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -69,19 +68,20 @@
     }
   },
   "AlertDialog.lit": {
-    "hash": "6b3d401855fc4849",
-    "lastAttemptHash": "6b3d401855fc4849",
-    "generatedAt": "2026-09-16T10:35:10+00:00",
+    "hash": "d51dd8c7407cb3f1",
+    "lastAttemptHash": "d51dd8c7407cb3f1",
+    "generatedAt": "2026-09-17T14:28:47+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.9778,
+    "costUsd": 1.8636,
     "files": [
       "packages/lit/src/AlertDialog.stories.ts",
       "packages/lit/src/AlertDialog.test.ts",
-      "packages/lit/src/AlertDialog.ts"
+      "packages/lit/src/AlertDialog.ts",
+      "packages/lit/src/index.ts"
     ],
-    "gaps": 12,
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -92,19 +92,20 @@
     }
   },
   "BottomSheet.lit": {
-    "hash": "2f15ecf190f2a829",
-    "lastAttemptHash": "2f15ecf190f2a829",
-    "generatedAt": "2026-09-16T11:11:47+00:00",
+    "hash": "b90bf0ab05212a8e",
+    "lastAttemptHash": "b90bf0ab05212a8e",
+    "generatedAt": "2026-09-17T14:58:59+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.5127,
+    "costUsd": 2.2154,
     "files": [
       "packages/lit/src/BottomSheet.stories.ts",
       "packages/lit/src/BottomSheet.test.ts",
-      "packages/lit/src/BottomSheet.ts"
+      "packages/lit/src/BottomSheet.ts",
+      "packages/lit/src/index.ts"
     ],
-    "gaps": 15,
+    "gaps": 11,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -344,19 +345,18 @@
     }
   },
   "Dialog.lit": {
-    "hash": "cd47a5c362bbc6d7",
-    "lastAttemptHash": "cd47a5c362bbc6d7",
-    "generatedAt": "2026-09-16T10:28:17+00:00",
+    "hash": "6d1ca16ebdb7e97a",
+    "lastAttemptHash": "6d1ca16ebdb7e97a",
+    "generatedAt": "2026-09-17T14:20:00+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 3.0895,
+    "costUsd": 2.09,
     "files": [
-      "packages/lit/src/Dialog.stories.ts",
       "packages/lit/src/Dialog.test.ts",
       "packages/lit/src/Dialog.ts"
     ],
-    "gaps": 13,
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -643,20 +643,18 @@
     }
   },
   "Menu.lit": {
-    "hash": "20462483d9c8a3a3",
-    "lastAttemptHash": "20462483d9c8a3a3",
-    "generatedAt": "2026-09-16T10:45:04+00:00",
+    "hash": "1f37cc86754f9f12",
+    "lastAttemptHash": "1f37cc86754f9f12",
+    "generatedAt": "2026-09-17T14:38:11+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.2271,
+    "costUsd": 1.999,
     "files": [
-      "packages/lit/src/Menu.stories.ts",
       "packages/lit/src/Menu.test.ts",
-      "packages/lit/src/Menu.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/Menu.ts"
     ],
-    "gaps": 14,
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -734,19 +732,19 @@
     }
   },
   "Popover.lit": {
-    "hash": "35541cc6bb315679",
-    "lastAttemptHash": "35541cc6bb315679",
-    "generatedAt": "2026-09-16T10:59:34+00:00",
+    "hash": "49d15e73fb167525",
+    "lastAttemptHash": "49d15e73fb167525",
+    "generatedAt": "2026-09-17T14:48:28+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.8601,
+    "costUsd": 3.0507,
     "files": [
       "packages/lit/src/Popover.stories.ts",
       "packages/lit/src/Popover.test.ts",
       "packages/lit/src/Popover.ts"
     ],
-    "gaps": 14,
+    "gaps": 12,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -870,19 +868,18 @@
     }
   },
   "SidePanel.lit": {
-    "hash": "e8d51cb41fe88a8e",
-    "lastAttemptHash": "e8d51cb41fe88a8e",
-    "generatedAt": "2026-09-16T11:39:45+00:00",
+    "hash": "6d43167378a74e4b",
+    "lastAttemptHash": "6d43167378a74e4b",
+    "generatedAt": "2026-09-17T15:15:51+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.9734,
+    "costUsd": 1.4794,
     "files": [
       "packages/lit/src/SidePanel.stories.ts",
-      "packages/lit/src/SidePanel.test.ts",
       "packages/lit/src/SidePanel.ts"
     ],
-    "gaps": 12,
+    "gaps": 11,
     "gates": {
       "parse": true,
       "contrast": true,

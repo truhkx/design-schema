@@ -12,6 +12,7 @@
   --ds-popover-max-width: var(--layout-max-width-prose);
   --ds-popover-layer: var(--layer-dropdown);
   --ds-popover-enter: var(--motion-duration-fast);
+  --ds-popover-enter-distance: var(--space-1);
   --ds-popover-exit: var(--motion-duration-fast);
 
   /* Coordinates come from the trigger rect in JS; this resets the UA [popover] and dialog:modal boxes. */
@@ -34,14 +35,13 @@
   border-radius: var(--ds-popover-radius);
   box-shadow: var(--ds-popover-shadow);
 
-  /* enter/exit: fade and a space.1 slide from the trigger side. */
+  /* exit: fade out with the exit easing; enter (below) fades and slides enterDistance from the trigger side. */
   --ds-popover-slide-x: 0;
   --ds-popover-slide-y: 0;
   opacity: 0;
-  translate: var(--ds-popover-slide-x) var(--ds-popover-slide-y);
-  transition-property: opacity, translate, display, overlay;
+  transition-property: opacity, display, overlay;
   transition-duration: var(--ds-popover-exit);
-  transition-timing-function: var(--motion-easing-standard);
+  transition-timing-function: var(--motion-easing-exit);
   transition-behavior: allow-discrete;
 }
 
@@ -53,7 +53,9 @@
 .ds-popover[data-state='open'] {
   opacity: 1;
   translate: 0 0;
+  transition-property: opacity, translate, display, overlay;
   transition-duration: var(--ds-popover-enter);
+  transition-timing-function: var(--motion-easing-standard);
 }
 
 @starting-style {
@@ -71,26 +73,27 @@
 /* offset: the gap between trigger and panel, on the trigger side. */
 .ds-popover[data-side='bottom'] {
   margin-top: var(--ds-popover-offset);
-  --ds-popover-slide-y: calc(-1 * var(--space-1));
+  --ds-popover-slide-y: calc(-1 * var(--ds-popover-enter-distance));
 }
 
 .ds-popover[data-side='top'] {
   margin-bottom: var(--ds-popover-offset);
-  --ds-popover-slide-y: var(--space-1);
+  --ds-popover-slide-y: var(--ds-popover-enter-distance);
 }
 
 .ds-popover[data-side='left'] {
   margin-right: var(--ds-popover-offset);
-  --ds-popover-slide-x: var(--space-1);
+  --ds-popover-slide-x: var(--ds-popover-enter-distance);
 }
 
 .ds-popover[data-side='right'] {
   margin-left: var(--ds-popover-offset);
-  --ds-popover-slide-x: calc(-1 * var(--space-1));
+  --ds-popover-slide-x: calc(-1 * var(--ds-popover-enter-distance));
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ds-popover {
+  .ds-popover,
+  .ds-popover[data-state='open'] {
     transition: none;
     translate: none;
   }
@@ -105,11 +108,13 @@
 .ds-popover__header {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
+  /* The close button stays at the inline end even without a heading. */
+  justify-content: flex-end;
   gap: var(--ds-popover-part-gap);
 }
 
 .ds-popover__heading {
+  flex: 1 1 auto;
   min-inline-size: 0;
 }
 
@@ -122,7 +127,6 @@
 .ds-popover__close {
   display: inline-flex;
   flex: 0 0 auto;
-  margin-inline-start: auto;
 }
 
 /* arrow: a rotated square centered on the panel edge facing the trigger. */

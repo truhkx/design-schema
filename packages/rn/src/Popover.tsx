@@ -40,6 +40,7 @@ export type PopoverOverridableBinding =
   | 'maxWidth'
   | 'layer'
   | 'enter'
+  | 'enterDistance'
   | 'exit';
 
 export interface PopoverProps {
@@ -47,25 +48,25 @@ export interface PopoverProps {
   trigger: React.ReactElement;
   /** The panel content. May contain controls, links and a short Form; keep it to what fits without scrolling. */
   children: React.ReactNode;
-  /** Optional heading at the top of the panel, also the accessible name. Without it, the panel is named by the trigger's `label`. */
+  /** Optional heading at the top of the panel, also the accessible name. Without it, the panel is named by the trigger's `accessibleName`, else its string `label`. */
   heading?: string | undefined;
-  /** Heading level of the panel heading, so it fits the page outline. React Native has no heading levels: this only selects the Heading's typography. */
+  /** Heading level of the panel heading. React Native has no heading levels: this only selects the Heading's typography, and has no effect in the phone (BottomSheet) presentation. */
   headingLevel?: PopoverHeadingLevel | undefined;
-  /** Controlled open state. Omit for uncontrolled (the trigger toggles it). */
+  /** Controlled open state. Omit for uncontrolled (the trigger toggles it); the uncontrolled popover starts closed. */
   open?: boolean | undefined;
   /** Preferred side and alignment; flips and shifts to stay in the window. `start`/`end` mirror in right-to-left layouts. */
   placement?: PopoverPlacement | undefined;
-  /** False (default): tapping outside closes. True: behaves as a small Dialog anchored to the trigger — a scrim, focus trapped, only Escape and the close button close it. */
+  /** False (default): tapping outside closes. True: a small Dialog anchored to the trigger — focus trapped, a press outside does nothing, no scrim. No effect on phones, where the sheet is always modal. */
   modal?: boolean | undefined;
   /** A small pointer toward the trigger. Off by default. */
   showArrow?: boolean | undefined;
-  /** Show the close button. Escape and (non-modal) an outside tap work regardless. */
+  /** Show the close button. Escape and (non-modal) an outside tap work regardless. No effect on phones, where the sheet always shows it. */
   dismissible?: boolean | undefined;
   /** Fired when the popover opens or closes, with the new state and a reason. */
   onOpenChange?: ((open: boolean, reason: PopoverCloseReason) => void) | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<PopoverOverridableBinding, TokenRef | undefined>> | undefined;
-  /** The root view. */
+  /** The root view (wraps the trigger; the Modal itself exposes no ref). */
   ref?: React.Ref<ViewInstance> | undefined;
 }
 
@@ -73,13 +74,13 @@ const COPY = {
   closeLabel: 'Close',
 } as const;
 
-// Bindings Popover shares by name with BottomSheet, forwarded on phone widths.
+// Bindings Popover shares by name with BottomSheet, forwarded on phone widths. Not
+// `maxWidth`, which BottomSheet reads as its breakpoint rather than a panel width.
 const SHEET_BINDINGS: readonly (PopoverOverridableBinding & BottomSheetOverridableBinding)[] = [
   'shadow',
   'radius',
   'inset',
   'partGap',
-  'maxWidth',
   'layer',
   'enter',
   'exit',
@@ -90,8 +91,12 @@ const SHEET_REASON: Record<BottomSheetCloseReason, PopoverCloseReason> = {
   'close-button': 'close-button',
   scrim: 'outside',
   drag: 'outside',
+  // BottomSheet never raises `action` itself; the key exists only to complete the map.
   action: 'close-button',
 };
+
+// Closes that hand focus back to the trigger; an outside press leaves focus where it landed.
+const RESTORE_REASONS: ReadonlySet<PopoverCloseReason> = new Set<PopoverCloseReason>(['trigger', 'escape', 'close-button']);
 
 type Rect = { x: number; y: number; width: number; height: number };
 type WindowSize = { width: number; height: number };
@@ -171,18 +176,21 @@ function computePopoverPosition(
  *
  * The trigger is cloned with the toggle `onPress` and Button's `expanded`, so the
  * state is announced. At or below `layout.maxWidth.prose` (phones) the panel is the
- * package's `BottomSheet` with `height="content"`, titled by `heading` or the
- * trigger's `label`. Above it (tablets, react-native-web) a transparent `Modal` holds
- * a full-screen backdrop `Pressable` (tinted with `color.overlay.scrim` only when
+ * package's `BottomSheet` with `height="content"`, titled by `heading`, else the
+ * trigger's `accessibleName`, else its string `label`; there it is always modal and
+ * always shows its close button. Above it (tablets, react-native-web) a transparent
+ * `Modal` holds a full-screen transparent backdrop `Pressable` (no scrim, even when
  * `modal`) and a `role="dialog"` panel positioned from the trigger's
  * `measureInWindow()` rect, flipped and shifted to stay in the window. The panel
  * composes `FocusScope` (`trapped` when `modal`), `Heading`, `Button` for the close
- * control and `Box` for the body. It fades and slides `space.1` from the trigger side
- * over `enter`/`exit`; instantly under reduced motion.
+ * control and `Box` for the body. It fades and slides `enterDistance` from the trigger
+ * side over `enter` (motion.easing.standard) and fades out over `exit`
+ * (motion.easing.exit); instantly under reduced motion.
  *
  * Dismissal: Escape (`onRequestClose`: Android back, Esc on react-native-web) always
  * closes; a backdrop tap closes when not `modal`; the close button when `dismissible`.
- * Every close returns accessibility focus to the trigger. On open, focus lands on the
+ * Closing by the trigger, Escape or the close button returns accessibility focus to the
+ * trigger once `open` goes false; an outside tap does not. On open, focus lands on the
  * body wrapper — native has no descendant walker to find the first control.
  *
  * Acknowledged native limits: `Modal` intercepts every touch behind it, so non-modal
@@ -212,10 +220,12 @@ export function Popover({
   const triggerRef = React.useRef<ViewInstance>(null);
   const bodyRef = React.useRef<ViewInstance>(null);
   const hasEnteredRef = React.useRef(false);
+  const closeReasonRef = React.useRef<PopoverCloseReason | null>(null);
 
   const isControlled = open !== undefined;
   const [internalOpen, setInternalOpen] = React.useState(false);
   const isOpen = isControlled ? open : internalOpen;
+  const wasOpenRef = React.useRef(isOpen);
 
   const [mounted, setMounted] = React.useState(isOpen);
   const [triggerRect, setTriggerRect] = React.useState<Rect | null>(null);
@@ -233,16 +243,28 @@ export function Popover({
   const maxWidth = overrides?.maxWidth ? (resolveToken(t, overrides.maxWidth) as number) : t.layoutMaxWidthProse;
   const layer = overrides?.layer ? (resolveToken(t, overrides.layer) as number) : t.layerDropdown;
   const enterDuration = overrides?.enter ? (resolveToken(t, overrides.enter) as number) : t.motionDurationFast;
+  const enterDistance = overrides?.enterDistance ? (resolveToken(t, overrides.enterDistance) as number) : t.space1;
   const exitDuration = overrides?.exit ? (resolveToken(t, overrides.exit) as number) : t.motionDurationFast;
   const surfaceColor = t.colorOverlaySurface;
 
-  const triggerProps = trigger.props as { label?: unknown; onPress?: ((...args: unknown[]) => void) | undefined };
-  const triggerLabel = typeof triggerProps.label === 'string' ? triggerProps.label : undefined;
-  const accessibleName = heading ?? triggerLabel;
+  const triggerProps = trigger.props as {
+    accessibleName?: unknown;
+    label?: unknown;
+    onPress?: ((...args: unknown[]) => void) | undefined;
+  };
+  const triggerName =
+    typeof triggerProps.accessibleName === 'string'
+      ? triggerProps.accessibleName
+      : typeof triggerProps.label === 'string'
+        ? triggerProps.label
+        : undefined;
+  const accessibleName = heading ?? triggerName;
 
   React.useEffect(() => {
     if (__DEV__ && accessibleName === undefined) {
-      console.warn('Popover: without `heading`, the trigger needs a string `label` to name the panel.');
+      console.warn(
+        'Popover: without `heading`, the trigger needs an `accessibleName` or a string `label` to name the panel; the panel has no accessible name.',
+      );
     }
   }, [accessibleName]);
 
@@ -251,7 +273,18 @@ export function Popover({
     if (handle != null) AccessibilityInfo.setAccessibilityFocus(handle);
   }, []);
 
+  // Focus returns to the trigger as soon as `open` goes false (controlled or not), for the reasons that restore.
+  React.useEffect(() => {
+    if (wasOpenRef.current && !isOpen) {
+      const reason = closeReasonRef.current;
+      closeReasonRef.current = null;
+      if (reason !== null && RESTORE_REASONS.has(reason)) focusNode(triggerRef.current);
+    }
+    wasOpenRef.current = isOpen;
+  }, [isOpen, focusNode]);
+
   const changeOpen = (next: boolean, reason: PopoverCloseReason): void => {
+    closeReasonRef.current = next ? null : reason;
     if (!isControlled) setInternalOpen(next);
     onOpenChange?.(next, reason);
   };
@@ -259,7 +292,6 @@ export function Popover({
   const closePopover = (reason: PopoverCloseReason): void => {
     if (!isOpen) return;
     changeOpen(false, reason);
-    focusNode(triggerRef.current);
   };
 
   const handleTriggerPress = (...args: unknown[]): void => {
@@ -319,7 +351,7 @@ export function Popover({
     const animation = Animated.timing(progress, {
       toValue: 0,
       duration: exitDuration,
-      easing: toEasing(t.motionEasingStandard),
+      easing: toEasing(t.motionEasingExit),
       useNativeDriver: false,
     });
     animation.start(({ finished }) => {
@@ -368,13 +400,8 @@ export function Popover({
       : null;
   const edge: ArrowEdge = position?.edge ?? 'top';
 
-  const slideFrom = edge === 'top' || edge === 'left' ? -t.space1 : t.space1;
+  const slideFrom = edge === 'top' || edge === 'left' ? -enterDistance : enterDistance;
   const slide = progress.interpolate({ inputRange: [0, 1], outputRange: [slideFrom, 0] });
-
-  const backdropStyle: ViewStyle = {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: modal ? t.colorOverlayScrim : 'transparent',
-  };
 
   // Rendered transparent before it is measured, so its own size is known before it is placed.
   const panelStyle: Animated.WithAnimatedValue<ViewStyle> = {
@@ -399,12 +426,12 @@ export function Popover({
     overflow: 'hidden',
   };
 
+  // The heading fills the row and the close button sits at its inline end, with or without a heading.
   const headerStyle: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    justifyContent: heading !== undefined ? 'space-between' : 'flex-end',
-    // Not `partGap` (heading-to-body); the header's own gap has no binding.
-    gap: t.layoutGapNormal,
+    justifyContent: 'flex-end',
+    gap: partGap,
   };
 
   const arrowAlong = (length: number | undefined): number => (length ?? arrowSize * 2) / 2 - arrowSize / 2;
@@ -436,8 +463,9 @@ export function Popover({
         statusBarTranslucent
       >
         <View style={styles.host}>
+          {/* Transparent in both modes: a modal popover has no scrim. */}
           <Pressable
-            style={backdropStyle}
+            style={styles.backdrop}
             onPress={() => {
               if (!modal) closePopover('outside');
             }}
@@ -458,7 +486,7 @@ export function Popover({
                 {heading !== undefined || dismissible ? (
                   <View style={headerStyle}>
                     {heading !== undefined ? (
-                      <View style={styles.heading}>
+                      <View style={styles.heading} testID="Popover.heading">
                         <Heading level={headingLevel}>{heading}</Heading>
                       </View>
                     ) : null}
@@ -488,5 +516,6 @@ export function Popover({
 
 const styles = StyleSheet.create({
   host: { flex: 1 },
-  heading: { flexShrink: 1 },
+  backdrop: { ...StyleSheet.absoluteFill, backgroundColor: 'transparent' },
+  heading: { flex: 1 },
 });

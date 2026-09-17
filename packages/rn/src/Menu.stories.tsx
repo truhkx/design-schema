@@ -1,3 +1,4 @@
+import * as React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Menu } from './Menu';
 import type { MenuItem } from './Menu';
@@ -125,7 +126,16 @@ export const WithOverrides: Story = {
   },
 };
 
-/** Open with its trigger and several focusable items, for the axe gate and manual keyboard checks. */
+/**
+ * Open with its trigger and several focusable items, for the axe gate and manual keyboard
+ * checks. A wrapper owns `open`, starting true, and writes onOpenChange back.
+ */
 export const Keyboard: Story = {
-  args: { open: true },
+  render: (args) => {
+    function Open(): React.JSX.Element {
+      const [open, setOpen] = React.useState(true);
+      return <Menu {...args} open={open} onOpenChange={(next) => setOpen(next)} />;
+    }
+    return <Open />;
+  },
 };

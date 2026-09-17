@@ -69,8 +69,11 @@ describe('AlertDialog', () => {
   });
 
   it('the-cancel-button-is-named-from-copy', () => {
-    setup({ open: true, cancelLabel: undefined });
-    expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
+    const d = setup({ open: true, cancelLabel: undefined });
+    const button = d.dialog()!.querySelector<HTMLElement>('[data-part="cancelButton"] button');
+    expect(button).not.toBeNull();
+    expect(button).toHaveTextContent('Cancel');
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBe(button);
   });
 
   it('renders', () => {

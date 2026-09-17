@@ -12,14 +12,27 @@ import type { PopoverProps } from './Popover';
 import meta from './Popover.stories';
 import { ThemeProvider } from './theme';
 
-/** The Default story's args plus the scenario's `given`, with the event spied. */
+/** The Default story's consumer: owns `open`, starting true, and writes `onOpenChange` back into it. */
+function OpenPopover(props: PopoverProps): React.JSX.Element {
+  const [open, setOpen] = React.useState(true);
+  return (
+    <Popover
+      {...props}
+      open={open}
+      onOpenChange={(next, reason) => {
+        setOpen(next);
+        props.onOpenChange?.(next, reason);
+      }}
+    />
+  );
+}
+
+/** The Default story (open, filter-panel args) plus the scenario's `given`, with the event spied. A given `open` controls it directly. */
 function setup(given: Partial<PopoverProps> = {}) {
   const onOpenChange = jest.fn();
   const props: PopoverProps = { ...(meta.args as PopoverProps), onOpenChange, ...given };
   const utils = render(
-    <ThemeProvider mode="light">
-      <Popover {...props} />
-    </ThemeProvider>,
+    <ThemeProvider mode="light">{given.open !== undefined ? <Popover {...props} /> : <OpenPopover {...props} />}</ThemeProvider>,
   );
   return { ...utils, props, onOpenChange };
 }
@@ -101,9 +114,10 @@ describe('Popover', () => {
     expect(screen.getByTestId('Popover')).toBeOnTheScreen();
   });
 
-  /* derived: a11y.requires — closed, the trigger names the popover */
+  /* derived: a11y.requires — the open Default panel is named */
   it('has-accessible-name', () => {
     setup();
-    expect(screen.getByLabelText('Filters')).toBeOnTheScreen();
+    const panel = screen.getByTestId('Popover.panel');
+    expect(panel.props.accessibilityLabel).toBe('Filters');
   });
 });

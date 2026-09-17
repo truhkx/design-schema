@@ -40,3 +40,15 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Menu: the doc says the window losing focus closes (Behavior) but overlay.dismiss lists only escape, outside-press and focus-out; I implemented the window blur close as well, reason `outside`.
 - Menu: the enter description says 'a space.1 rise' but the rise has no binding of its own; it uses var(--space-1) directly rather than the popupOffset hook, so overriding popupOffset does not change the rise.
 - Menu: groups may contain separators per the recursive shape but the doc only says groups 'hold action items only'; separators inside a group are rendered, nested groups are dropped.
+
+## 2026-09-17 10:34 — round 1
+
+- Menu: `anchor` mode — Escape/action 'return focus to the trigger', but there is no trigger; chose the element that was focused when the menu opened, and for Tab/Shift+Tab used the anchor's document position (first tabbable following it / last preceding it, excluding the anchor's own descendants), since the anchor itself need not be tabbable.
+- Menu: a controlled menu closed by the consumer (open → false with no close the menu requested) — doc says it 'returns focus to the trigger' but not whether that applies when focus was already elsewhere; chose to restore only when focus was inside the popup.
+- Menu: which reasons move focus is only stated for escape, action and tab-out; chose no focus move for `outside`, `focus-out` and `trigger` (focus already went where the user put it).
+- Menu: popupOffset — 'the flip check includes it' but not how a token (possibly rem) is resolved for the check; chose to apply it as the popup's block margin on both sides and read the resolved margin-block-start in px.
+- Menu: the behavior scenarios with `open: true` pass `open` as a prop, which makes the menu controlled; Escape then only 'closes and returns focus' if something writes onOpenChange back. Followed the Behavior section's 'wrapper that owns open' for the Keyboard story and those tests; the scenario format itself doesn't say this.
+- Menu: aria-controls is set on the trigger only while open (the popup id does not exist in the DOM while closed); spec lists aria-controls without saying whether it may dangle.
+- Menu: the ref resolves to the popup, but `...rest` goes to the wrapper root; the doc does not say which element receives pass-through div props (id, data-*, event handlers) — chose the root wrapper.
+- Menu: `enter` (motion.duration.fast) also drives the item hover background transition, since no item transition binding exists; spec names `enter` for the popup only.
+- Menu: typeahead `a-z` — only ASCII letters are matched (no digits or non-Latin labels); spec lists 'a-z' literally.

@@ -37,6 +37,7 @@ export type AlertDialogOverridableBinding =
   | 'footerGap'
   | 'iconSize'
   | 'width'
+  | 'gutter'
   | 'layer'
   | 'enter'
   | 'exit';
@@ -54,27 +55,14 @@ const HOOKS: Record<AlertDialogOverridableBinding, string> = {
   footerGap: '--ds-alert-dialog-footer-gap',
   iconSize: '--ds-alert-dialog-icon-size',
   width: '--ds-alert-dialog-width',
+  gutter: '--ds-alert-dialog-gutter',
   layer: '--ds-alert-dialog-layer',
   enter: '--ds-alert-dialog-enter',
   exit: '--ds-alert-dialog-exit',
 };
 
-/** footerGap's token, forwarded to the footer Stack as `overrides.gap` when no override is set. */
-const FOOTER_GAP_TOKEN: TokenRef = 'layout.gap.tight';
-
-/** iconSize's token, forwarded to the tone Icon as `overrides.size` when no override is set. */
-const ICON_SIZE_TOKEN: TokenRef = 'font.size.lg';
-
 /** copy.cancelLabel */
 const COPY_CANCEL_LABEL = 'Cancel';
-
-function getDeepActiveElement(): Element | null {
-  let active = document.activeElement;
-  while (active?.shadowRoot?.activeElement) {
-    active = active.shadowRoot.activeElement;
-  }
-  return active;
-}
 
 /** How many open `<ds-alert-dialog>`s hold the page-scroll lock, so a second one does not release it early. */
 let scrollLocks = 0;
@@ -110,8 +98,10 @@ function unlockPageScroll(): void {
  * properties, so the element is fully described by attributes. The same shadow
  * `<dialog>` approach as `<ds-dialog>`, with `role="alertdialog"`: opened with
  * `showModal()` for the top layer and background inertness, the page scroll
- * locked while open, and `<ds-focus-scope>` wrapping Tab between the two
- * buttons and returning focus to the opener on close.
+ * locked while open, and `<ds-focus-scope>` (trapped, restoring focus)
+ * wrapping Tab between the two buttons and returning focus to the opener on
+ * close. Each anatomy part is an AlertDialog-owned wrapper carrying
+ * `data-part`, since the composed children write their own.
  *
  * There is no close button and a scrim click does nothing, so the only ways
  * out are the two named ones. Escape and Cancel fire `cancel`; Confirm fires
@@ -158,6 +148,7 @@ export class DsAlertDialog extends LitElement {
       --ds-alert-dialog-footer-gap: var(--layout-gap-tight);
       --ds-alert-dialog-icon-size: var(--font-size-lg);
       --ds-alert-dialog-width: var(--layout-max-width-prose);
+      --ds-alert-dialog-gutter: var(--layout-gutter);
       --ds-alert-dialog-layer: var(--layer-dialog);
       --ds-alert-dialog-enter: var(--motion-duration-base);
       --ds-alert-dialog-exit: var(--motion-duration-fast);
@@ -181,6 +172,7 @@ export class DsAlertDialog extends LitElement {
       background: transparent;
       color: inherit;
       overflow: hidden;
+      /* Only a non-top-layer fallback honours this; the top layer ignores z-index. */
       z-index: var(--ds-alert-dialog-layer);
     }
 
@@ -206,8 +198,8 @@ export class DsAlertDialog extends LitElement {
       position: relative;
       display: flex;
       box-sizing: border-box;
-      inline-size: min(var(--ds-alert-dialog-width), calc(100% - 2 * var(--layout-gutter)));
-      max-block-size: calc(100% - 2 * var(--layout-gutter));
+      inline-size: min(var(--ds-alert-dialog-width), calc(100% - 2 * var(--ds-alert-dialog-gutter)));
+      max-block-size: calc(100% - 2 * var(--ds-alert-dialog-gutter));
     }
 
     .surface {
@@ -246,11 +238,12 @@ export class DsAlertDialog extends LitElement {
       }
     }
 
-    /* exit: motion.duration.fast */
+    /* exit: motion.duration.fast with motion.easing.exit, scrim and surface alike */
     .closing .scrim,
     .closing .surface {
       opacity: 0;
       transition-duration: var(--ds-alert-dialog-exit);
+      transition-timing-function: var(--motion-easing-exit);
     }
     .closing .surface {
       transform: translateY(var(--space-2));
@@ -270,19 +263,14 @@ export class DsAlertDialog extends LitElement {
       gap: var(--ds-alert-dialog-icon-gap);
     }
 
-    /* icon: color.status.{tone}.icon, locked — no hook. The Icon draws in currentColor. */
-    .lead {
+    /* icon: color.status.{tone}.icon, locked — no hook; forwarded to the Icon's overrides.color. */
+    .icon {
       display: flex;
       flex: none;
     }
-    :host([tone='danger']) .lead {
-      color: var(--color-status-danger-icon);
-    }
-    :host([tone='warning']) .lead {
-      color: var(--color-status-warning-icon);
-    }
-    :host([tone='info']) .lead {
-      color: var(--color-status-info-icon);
+    /* iconSize reaches the Icon through its own hook (and through overrides when set). */
+    .icon > ds-icon {
+      --ds-icon-size: var(--ds-alert-dialog-icon-size);
     }
 
     .text {
@@ -290,6 +278,11 @@ export class DsAlertDialog extends LitElement {
       flex-direction: column;
       gap: var(--ds-alert-dialog-text-gap);
       min-inline-size: 0;
+    }
+
+    /* footerGap reaches the Stack through its own hook (and through overrides when set). */
+    .footer > ds-stack {
+      --ds-stack-gap: var(--ds-alert-dialog-footer-gap);
     }
   `;
 
@@ -326,11 +319,12 @@ export class DsAlertDialog extends LitElement {
   @query('.scope') private accessor scopeEl!: DsFocusScope | null;
   @query('.scrim') private accessor scrimEl!: HTMLElement | null;
   @query('.surface') private accessor surfaceEl!: HTMLElement | null;
-  @query('[data-part="cancelButton"]') private accessor cancelButtonEl!: HTMLElement | null;
+  @query('[data-part="cancelButton"] ds-button') private accessor cancelButtonEl!: HTMLElement | null;
 
   private scrollLocked = false;
   private closingProgrammatically = false;
-  private focusBeforeCancel: HTMLElement | null = null;
+  /** Escape was already reported from a non-cancelable `cancel` that the native close follows. */
+  private escapeReported = false;
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -375,12 +369,15 @@ export class DsAlertDialog extends LitElement {
     if (!this.open && !this.closing) {
       return nothing;
     }
-    const iconOverrides: Partial<Record<IconOverridableBinding, TokenRef | undefined>> = {
-      size: this.overrides?.iconSize ?? ICON_SIZE_TOKEN,
-    };
-    const footerOverrides: Partial<Record<StackOverridableBinding, TokenRef | undefined>> = {
-      gap: this.overrides?.footerGap ?? FOOTER_GAP_TOKEN,
-    };
+    // icon is locked: the tone's status color always reaches the Icon's own color hook.
+    const iconColor: TokenRef = `color.status.${this.tone}.icon`;
+    // Other forwards reach the child's overrides only when set, so the CSS hook route keeps working otherwise.
+    const iconSize = this.overrides?.iconSize;
+    const iconOverrides: Partial<Record<IconOverridableBinding, TokenRef | undefined>> =
+      iconSize === undefined ? { color: iconColor } : { color: iconColor, size: iconSize };
+    const footerGap = this.overrides?.footerGap;
+    const footerOverrides: Partial<Record<StackOverridableBinding, TokenRef | undefined>> | undefined =
+      footerGap === undefined ? undefined : { gap: footerGap };
     const confirmVariant = this.tone === 'danger' ? 'danger' : 'primary';
 
     return html`
@@ -394,52 +391,42 @@ export class DsAlertDialog extends LitElement {
         @close=${this.handleNativeClose}
       >
         <div class="scrim" part="scrim" data-part="scrim"></div>
-        <ds-focus-scope
-          class="scope"
-          part="focusScope"
-          data-part="focusScope"
-          auto-focus="none"
-          .active=${!this.closing}
-        >
+        <ds-focus-scope class="scope" part="focusScope" data-part="focusScope" .trapped=${true} .restoreFocus=${true}>
           <div class="surface" part="surface" data-part="surface">
             <div class="row">
-              <span class="lead">
-                <ds-icon
-                  part="icon"
-                  data-part="icon"
-                  name=${this.tone}
-                  aria-hidden="true"
-                  .overrides=${iconOverrides}
-                ></ds-icon>
-              </span>
+              <div class="icon" part="icon" data-part="icon" aria-hidden="true">
+                <ds-icon name=${this.tone} .overrides=${iconOverrides}></ds-icon>
+              </div>
               <div class="text">
-                <ds-heading part="heading" data-part="heading" level="2">${this.heading}</ds-heading>
-                <ds-text part="description" data-part="description" tone="muted">${this.description}</ds-text>
+                <div part="heading" data-part="heading">
+                  <ds-heading level="2">${this.heading}</ds-heading>
+                </div>
+                <div part="description" data-part="description">
+                  <ds-text tone="muted">${this.description}</ds-text>
+                </div>
               </div>
             </div>
-            <ds-stack
-              part="footer"
-              data-part="footer"
-              direction="horizontal"
-              justify="end"
-              .overrides=${footerOverrides}
-            >
-              <ds-button
-                part="cancelButton"
-                data-part="cancelButton"
-                variant="secondary"
-                label=${this.cancelLabel ?? COPY_CANCEL_LABEL}
-                @press=${this.handleCancelPress}
-              ></ds-button>
-              <ds-button
-                part="confirmButton"
-                data-part="confirmButton"
-                variant=${confirmVariant}
-                label=${this.confirmLabel}
-                ?disabled=${this.confirmDisabled}
-                @press=${this.handleConfirmPress}
-              ></ds-button>
-            </ds-stack>
+            <div class="footer" part="footer" data-part="footer">
+              <ds-stack direction="horizontal" justify="end" .overrides=${footerOverrides}>
+                <div part="cancelButton" data-part="cancelButton">
+                  <ds-button
+                    variant="secondary"
+                    size="md"
+                    label=${this.cancelLabel ?? COPY_CANCEL_LABEL}
+                    @press=${this.handleCancelPress}
+                  ></ds-button>
+                </div>
+                <div part="confirmButton" data-part="confirmButton">
+                  <ds-button
+                    variant=${confirmVariant}
+                    size="md"
+                    label=${this.confirmLabel}
+                    ?disabled=${this.confirmDisabled}
+                    @press=${this.handleConfirmPress}
+                  ></ds-button>
+                </div>
+              </ds-stack>
+            </div>
           </div>
         </ds-focus-scope>
       </dialog>
@@ -449,8 +436,8 @@ export class DsAlertDialog extends LitElement {
   private readonly handleCancel = (event: Event): void => {
     // The consumer owns `open`: never let the browser close the <dialog> on its own.
     event.preventDefault();
-    const active = getDeepActiveElement();
-    this.focusBeforeCancel = active instanceof HTMLElement ? active : null;
+    // A non-cancelable cancel (Chromium without user activation) is followed by a native close.
+    this.escapeReported = !event.cancelable;
     this.dispatchCancel('escape');
   };
 
@@ -459,19 +446,17 @@ export class DsAlertDialog extends LitElement {
       this.closingProgrammatically = false;
       return;
     }
-    // Chromium closes without a cancelable `cancel` when Escape arrives with no user activation.
-    // `escape` was already reported from `cancel`; stay open until the consumer flips `open`.
+    // The browser closed the <dialog> itself. If no `cancel` announced it, that was Escape too.
+    if (!this.escapeReported) {
+      this.dispatchCancel('escape');
+    }
+    this.escapeReported = false;
+    // Stay open until the consumer flips `open`.
     const dialog = this.dialogEl;
     if (this.open && dialog && !dialog.open) {
       dialog.showModal();
-      const previous = this.focusBeforeCancel;
-      if (previous?.isConnected) {
-        previous.focus();
-      } else {
-        this.cancelButtonEl?.focus();
-      }
+      this.cancelButtonEl?.focus();
     }
-    this.focusBeforeCancel = null;
   };
 
   private readonly handleCancelPress = (event: Event): void => {

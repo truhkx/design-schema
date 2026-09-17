@@ -4,7 +4,7 @@
  * test here. See generated/prompts/ActionSheet.rn.md.
  */
 import * as React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, within } from '@testing-library/react-native';
 import { ActionSheet } from './ActionSheet';
 import type { ActionSheetProps } from './ActionSheet';
 import meta from './ActionSheet.stories';
@@ -47,7 +47,7 @@ describe('ActionSheet', () => {
         { id: 'rename', label: 'Rename' },
       ],
     });
-    fireEvent.press(screen.getByLabelText('Cancel'));
+    fireEvent.press(within(screen.getByTestId('ActionSheet.cancelButton')).getByRole('button'));
     expect(d.onClose).toHaveBeenCalledWith('cancel');
     expect(d.onAction).not.toHaveBeenCalled();
   });
@@ -61,7 +61,7 @@ describe('ActionSheet', () => {
         { id: 'rename', label: 'Rename' },
       ],
     });
-    expect(screen.getByLabelText('Cancel')).toBeTruthy();
+    expect(within(screen.getByTestId('ActionSheet.cancelButton')).getByLabelText('Cancel')).toBeTruthy();
   });
 
   it('the-list-is-a-menu', () => {
@@ -94,6 +94,6 @@ describe('ActionSheet', () => {
   /* derived: a11y.requires */
   it('has-accessible-name', () => {
     const d = setup();
-    expect(screen.getByLabelText(d.props.heading!)).toBeTruthy();
+    expect(screen.getByTestId('ActionSheet').props.accessibilityLabel).toBe(d.props.heading);
   });
 });

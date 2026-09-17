@@ -43,7 +43,8 @@ export interface ActionSheetCloseDetail {
 
 /**
  * Overridable style hooks; see the `overrides` property. `surface`, `handle`, `itemHover`, `itemColor`,
- * `itemDangerColor`, `titleColor`, `minTarget`, `focusRing` and `focusRingWidth` are locked and excluded.
+ * `itemDangerColor`, `titleColor`, `minTarget`, `maxWidth`, `focusRing` and `focusRingWidth` are locked
+ * and excluded.
  */
 export type ActionSheetOverridableBinding =
   | 'scrim'
@@ -63,7 +64,6 @@ export type ActionSheetOverridableBinding =
   | 'lineHeight'
   | 'divider'
   | 'dividerWidth'
-  | 'maxWidth'
   | 'layer'
   | 'enter'
   | 'exit';
@@ -86,7 +86,6 @@ const HOOKS: Partial<Record<ActionSheetOverridableBinding, string>> = {
   lineHeight: '--ds-action-sheet-line-height',
   divider: '--ds-action-sheet-divider',
   dividerWidth: '--ds-action-sheet-divider-width',
-  maxWidth: '--ds-action-sheet-max-width',
   layer: '--ds-action-sheet-layer',
   enter: '--ds-action-sheet-enter',
   exit: '--ds-action-sheet-exit',
@@ -103,10 +102,11 @@ const MENU_FORWARDS: ReadonlyArray<readonly [ActionSheetOverridableBinding, Menu
   ['fontSize', 'fontSize'],
   ['lineHeight', 'lineHeight'],
   ['divider', 'separator'],
+  ['layer', 'layer'],
   ['enter', 'enter'],
 ];
 
-/** The theme's maxWidth breakpoint, used when the host hook cannot be read. */
+/** maxWidth (locked): the theme token the presentation breakpoint is built from, read from the root. */
 const MAX_WIDTH_PROPERTY = '--layout-max-width-prose';
 
 /** constants.dismissDistance: fraction of the sheet height a release must pass to dismiss. */
@@ -185,8 +185,8 @@ function toMenuItem(action: ActionSheetAction): MenuActionItem {
  * divider. Escape, the scrim, Cancel and a downward drag on the header request close.
  *
  * Above the breakpoint the same actions render as `<ds-menu>` anchored to the element that was
- * focused when `open` became true; Menu's close reasons map `escape` → `escape`, `outside` → `scrim`,
- * and `action` → nothing, so a choice only ever reports `action`.
+ * focused when `open` became true; Menu's close reasons map `escape` → `escape`, `outside`, `tab-out`
+ * and `focus-out` → `scrim`, and `action` → nothing, so a choice only ever reports `action`.
  *
  * `open` is controlled: the element never closes itself, the consumer flips `open` from `action`
  * and `close`. Focus returns to the opener on close in both presentations.
@@ -231,7 +231,6 @@ export class DsActionSheet extends LitElement {
       --ds-action-sheet-line-height: var(--font-line-height-normal);
       --ds-action-sheet-divider: var(--color-border);
       --ds-action-sheet-divider-width: var(--border-width-thin);
-      --ds-action-sheet-max-width: var(--layout-max-width-prose);
       --ds-action-sheet-layer: var(--layer-sheet);
       --ds-action-sheet-enter: var(--motion-duration-base);
       --ds-action-sheet-exit: var(--motion-duration-fast);
@@ -314,16 +313,28 @@ export class DsActionSheet extends LitElement {
 
     .closing .scrim {
       opacity: 0;
-      transition-duration: var(--ds-action-sheet-exit);
+      transition: opacity var(--ds-action-sheet-exit) var(--motion-easing-exit);
     }
     .closing .surface {
       transform: translateY(100%);
-      transition-duration: var(--ds-action-sheet-exit);
+      transition: transform var(--ds-action-sheet-exit) var(--motion-easing-exit);
+    }
+
+    /* A below-threshold drag release springs back with the exit duration and the standard easing. */
+    .surface.springing {
+      transition: transform var(--ds-action-sheet-exit) var(--motion-easing-standard);
+    }
+
+    .surface.dragging {
+      transition: none;
     }
 
     @media (prefers-reduced-motion: reduce) {
       .scrim,
       .surface,
+      .closing .scrim,
+      .closing .surface,
+      .surface.springing,
       .item {
         transition: none;
       }
@@ -409,6 +420,7 @@ export class DsActionSheet extends LitElement {
     }
 
     .item-icon {
+      display: inline-flex;
       flex: none;
     }
 
@@ -470,7 +482,7 @@ export class DsActionSheet extends LitElement {
   @query('.scope') private accessor scopeEl!: DsFocusScope | null;
   @query('.scrim') private accessor scrimEl!: HTMLElement | null;
   @query('.surface') private accessor surfaceEl!: HTMLElement | null;
-  @query('[data-part="cancelButton"]') private accessor cancelButtonEl!: HTMLElement | null;
+  @query('[data-part="cancelButton"] ds-button') private accessor cancelButtonEl!: HTMLElement | null;
 
   /** The element focused when `open` became true: the wide Menu's anchor and the focus-restore target. */
   private opener: HTMLElement | null = null;
@@ -480,10 +492,19 @@ export class DsActionSheet extends LitElement {
   private focusBeforeCancel: HTMLElement | null = null;
   private wideQuery: MediaQueryList | null = null;
   private drag: DragSample | null = null;
+  /** The wide Menu reported a choice since `open` became true: no later (or earlier, pending) close is a dismissal. */
+  private menuChoiceMade = false;
+  /** A wide dismissal is already queued in this task (Menu can follow `outside` with `focus-out`). */
+  private menuCloseQueued = false;
 
   private readonly handleWideChange = (event: MediaQueryListEvent): void => {
     this.wide = event.matches;
   };
+
+  /** The sheet presentation's shadow `<dialog>` (the forwarded ref); null while closed and in the wide presentation. */
+  get dialog(): HTMLDialogElement | null {
+    return this.wide || !this.open ? null : (this.dialogEl ?? null);
+  }
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -500,13 +521,11 @@ export class DsActionSheet extends LitElement {
   protected override willUpdate(changed: PropertyValues): void {
     if (changed.has('overrides')) {
       this.applyOverrides();
-      if (this.isConnected && (changed.get('overrides') as this['overrides'])?.maxWidth !== this.overrides?.maxWidth) {
-        this.unwatchBreakpoint();
-        this.watchBreakpoint();
-      }
     }
     if (changed.has('open')) {
       if (this.open) {
+        this.menuChoiceMade = false;
+        this.menuCloseQueued = false;
         const active = getDeepActiveElement();
         this.opener = active instanceof HTMLElement && active !== document.body ? active : null;
       } else if (changed.get('open') === true && this.wide) {
@@ -593,8 +612,9 @@ export class DsActionSheet extends LitElement {
           class="scope"
           part="focusScope"
           data-part="focusScope"
+          .trapped=${true}
+          .restoreFocus=${true}
           auto-focus="none"
-          .active=${!this.closing}
         >
           <div class="surface" part="surface" data-part="surface">
             <div
@@ -606,13 +626,16 @@ export class DsActionSheet extends LitElement {
               @pointerup=${this.handlePointerUp}
               @pointercancel=${this.handlePointerCancel}
             >
-              <span class="handle" part="handle" data-part="handle" aria-hidden="true"></span>
+              ${draggable
+                ? html`<span class="handle" part="handle" data-part="handle" aria-hidden="true"></span>`
+                : nothing}
               ${this.heading
                 ? html`<ds-text
                     part="heading"
                     data-part="heading"
-                    size="sm"
+                    element="p"
                     tone="muted"
+                    size="sm"
                     .overrides=${this.headingOverrides()}
                     >${this.heading}</ds-text
                   >`
@@ -621,17 +644,15 @@ export class DsActionSheet extends LitElement {
             <div class="list" part="list" data-part="list" role="menu" aria-label=${name} @keydown=${this.handleListKeydown}>
               ${regular.map((action) => this.renderItem(action))}
               ${regular.length > 0 && danger.length > 0
-                ? html`<div class="divider" role="separator"></div>`
+                ? html`<div class="divider" part="divider" data-part="divider" role="separator"></div>`
                 : nothing}
               ${danger.map((action) => this.renderItem(action))}
             </div>
             ${this.dismissible
               ? html`
-                  <div class="divider" aria-hidden="true"></div>
-                  <div class="cancel-row">
+                  <div class="divider" part="divider" data-part="divider" aria-hidden="true"></div>
+                  <div class="cancel-row" part="cancelButton" data-part="cancelButton">
                     <ds-button
-                      part="cancelButton"
-                      data-part="cancelButton"
                       variant="secondary"
                       label=${this.cancelLabel ?? COPY_CANCEL_LABEL}
                       @press=${this.handleCancelPress}
@@ -661,7 +682,7 @@ export class DsActionSheet extends LitElement {
         @click=${() => this.handleItemClick(action)}
       >
         ${action.icon
-          ? html`<ds-icon class="item-icon" part="itemIcon" data-part="itemIcon" name=${action.icon}></ds-icon>`
+          ? html`<span class="item-icon" part="itemIcon" data-part="itemIcon"><ds-icon name=${action.icon}></ds-icon></span>`
           : nothing}
         <span class="item-label">${action.label}</span>
       </button>
@@ -822,7 +843,8 @@ export class DsActionSheet extends LitElement {
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
     this.drag = { startY: event.clientY, lastY: event.clientY, lastTime: event.timeStamp, velocity: 0 };
     // The drag follows the finger directly, even under reduced motion.
-    surface.style.transition = 'none';
+    surface.classList.remove('springing');
+    surface.classList.add('dragging');
   };
 
   private readonly handlePointerMove = (event: PointerEvent): void => {
@@ -853,7 +875,7 @@ export class DsActionSheet extends LitElement {
     const pastDistance = sheetHeight > 0 && deltaY > sheetHeight * DISMISS_DISTANCE;
     const pastVelocity = drag.velocity > DISMISS_VELOCITY;
 
-    surface.style.removeProperty('transition');
+    surface.classList.remove('dragging');
     if (deltaY > 0 && (pastDistance || pastVelocity)) {
       this.dispatchClose('drag');
       if (!this.open) {
@@ -861,21 +883,43 @@ export class DsActionSheet extends LitElement {
         return;
       }
     }
-    // Spring back.
-    surface.style.removeProperty('transform');
+    this.springBack(surface);
   };
 
   private readonly handlePointerCancel = (): void => {
     this.drag = null;
     const surface = this.surfaceEl;
-    surface?.style.removeProperty('transition');
-    surface?.style.removeProperty('transform');
+    if (surface) {
+      surface.classList.remove('dragging');
+      this.springBack(surface);
+    }
   };
+
+  /** Below the threshold (a tap included): back in place with the exit duration and the standard easing. */
+  private springBack(surface: HTMLElement): void {
+    if (!surface.style.getPropertyValue('transform')) {
+      return;
+    }
+    surface.classList.add('springing');
+    surface.style.removeProperty('transform');
+    const settle = (): void => {
+      surface.classList.remove('springing');
+    };
+    // Flush style so the transition exists before it is looked up.
+    void getComputedStyle(surface).transform;
+    const running = surface.getAnimations();
+    if (running.length === 0) {
+      settle();
+      return;
+    }
+    void Promise.all(running.map((animation) => animation.finished.catch(() => undefined))).then(settle);
+  }
 
   /* ---- wide Menu handlers ---- */
 
   private readonly handleMenuAction = (event: CustomEvent<MenuActionDetail>): void => {
     event.stopPropagation();
+    this.menuChoiceMade = true;
     this.dispatchAction(event.detail.id);
   };
 
@@ -884,12 +928,28 @@ export class DsActionSheet extends LitElement {
     if (event.detail.open) {
       return;
     }
-    // A close that accompanies a choice (`action`) is never a dismissal.
-    if (event.detail.reason === 'escape') {
-      this.dispatchClose('escape');
-    } else if (event.detail.reason === 'outside') {
-      this.dispatchClose('scrim');
+    const { reason } = event.detail;
+    if (reason === 'action') {
+      this.menuChoiceMade = true;
+      return;
     }
+    const mapped: ActionSheetCloseReason | null =
+      reason === 'escape' ? 'escape' : reason === 'outside' || reason === 'tab-out' || reason === 'focus-out' ? 'scrim' : null;
+    if (mapped === null || this.menuChoiceMade || this.menuCloseQueued) {
+      return;
+    }
+    // A close that accompanies a choice is never a dismissal, whichever of the two Menu reports first:
+    // wait out the current task's synchronous dispatches before reporting it. One report per task, so
+    // an `outside` followed by the `focus-out` of the same pointer press reports once.
+    this.menuCloseQueued = true;
+    queueMicrotask(() => {
+      if (!this.menuChoiceMade && this.open && this.wide) {
+        this.dispatchClose(mapped);
+      }
+    });
+    setTimeout(() => {
+      this.menuCloseQueued = false;
+    });
   };
 
   /* ---- lifecycle helpers ---- */
@@ -951,9 +1011,8 @@ export class DsActionSheet extends LitElement {
   }
 
   private watchBreakpoint(): void {
-    const breakpoint =
-      getComputedStyle(this).getPropertyValue(HOOKS.maxWidth!).trim() ||
-      getComputedStyle(document.documentElement).getPropertyValue(MAX_WIDTH_PROPERTY).trim();
+    // maxWidth is locked: the breakpoint is the theme token, never a per-instance value.
+    const breakpoint = getComputedStyle(document.documentElement).getPropertyValue(MAX_WIDTH_PROPERTY).trim();
     if (!breakpoint) {
       return;
     }

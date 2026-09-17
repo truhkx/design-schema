@@ -1,15 +1,13 @@
 import {
+  useCallback,
   useEffect,
   useId,
-  useImperativeHandle,
   useLayoutEffect,
   useRef,
   useState,
   type ComponentPropsWithoutRef,
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
-  type MouseEvent as ReactMouseEvent,
-  type PointerEvent as ReactPointerEvent,
   type ReactElement,
   type ReactNode,
   type Ref,
@@ -43,6 +41,8 @@ export type DialogOverridableBinding =
   | 'footerGap'
   | 'descriptionGap'
   | 'widthSm'
+  | 'widthMd'
+  | 'widthLg'
   | 'layer'
   | 'enter'
   | 'exit';
@@ -59,6 +59,8 @@ const OVERRIDE_HOOK: Record<DialogOverridableBinding, string> = {
   footerGap: '--ds-dialog-footer-gap',
   descriptionGap: '--ds-dialog-description-gap',
   widthSm: '--ds-dialog-width-sm',
+  widthMd: '--ds-dialog-width-md',
+  widthLg: '--ds-dialog-width-lg',
   layer: '--ds-dialog-layer',
   enter: '--ds-dialog-enter',
   exit: '--ds-dialog-exit',
@@ -117,11 +119,8 @@ function lockScroll(): () => void {
 }
 
 export interface DialogProps
-  extends Omit<
-    ComponentPropsWithoutRef<'dialog'>,
-    'children' | 'title' | 'onCancel' | 'onClose' | 'open'
-  > {
-  /** Controlled visibility. The consumer owns it; the dialog requests changes through `onClose`. */
+  extends Omit<ComponentPropsWithoutRef<'dialog'>, 'children' | 'title' | 'onCancel' | 'onClose' | 'open'> {
+  /** Controlled only — there is no uncontrolled mode and no initial-state prop; the consumer owns `open` and the dialog never closes itself, it requests changes through `onClose`. */
   open: boolean;
   /** The dialog's title, rendered as a level-2 Heading and used as the accessible name. Says what the task is ("Rename project"). */
   heading: string;
@@ -130,18 +129,18 @@ export interface DialogProps
   /** The body — a Form, Text, or controls. Scrolls inside the surface when taller than the viewport; header and footer stay put. */
   children: ReactNode;
   /** The action row. Primary action first, then one secondary; follows Form's action-order rule. A dialog with no footer must be dismissable from its body. */
-  footer?: ReactNode;
+  footer?: ReactNode | undefined;
   /** Visually hide the heading while it remains the accessible name (BottomSheet forwards its own hideHeading here above the breakpoint). */
   hideHeading?: boolean | undefined;
   /** Surface width on wide viewports. Full-width below the content measure on every size. */
   size?: DialogSize | undefined;
   /** Escape, the close button and a scrim click all request close. Set false for a dialog that must be answered (then provide the answers in the footer): the close button is not rendered and the scrim does nothing; Escape still fires `onClose` with reason `escape` so the consumer can decide. */
   dismissible?: boolean | undefined;
-  /** Where focus lands on open: the first focusable control in the body (default), the title (for long or reading dialogs), or the close button. */
+  /** Where focus lands on open: the first focusable control (default), the title (for long or reading dialogs), or the close button. `first` looks in the body, then the footer, then the close button, then the heading (tabindex -1); `close` with no close button rendered (not dismissible) takes the same order without the close button. */
   initialFocus?: DialogInitialFocus | undefined;
   /** Fired when the user requests to close, with a reason: `escape`, `close-button`, `scrim`, or `action`. The consumer sets `open` to false (or not). */
   onClose?: ((reason: DialogCloseReason) => void) | undefined;
-  /** Fired after the open transition ends and focus has moved in. Use to start work that needs the dialog visible. */
+  /** Fired after the open transition ends and focus has moved in. When there is no transition to wait for (reduced motion, or a zero computed duration), it fires on the next frame after focus moves in. Use to start work that needs the dialog visible. */
   onOpened?: (() => void) | undefined;
   /** Portal target. Defaults to `document.body`. A platform prop, not part of the schema. */
   container?: HTMLElement | undefined;
@@ -159,7 +158,7 @@ export interface DialogProps
  * page. Give it a `heading` that names the task and a `footer` with the completing action first.
  *
  * The dialog never closes itself: Escape, the close button and a scrim click call `onClose` with a
- * reason and the consumer flips `open`.
+ * reason and the consumer flips `open`. The ref resolves to the `<dialog>`, null while closed.
  */
 export function Dialog({
   ref,
@@ -186,22 +185,30 @@ export function Dialog({
   const descriptionId = `ds-dialog${generatedId}-description`;
 
   const dialogRef = useRef<HTMLDialogElement | null>(null);
-  useImperativeHandle(ref, () => dialogRef.current as HTMLDialogElement, []);
+  const setDialogNode = useCallback(
+    (node: HTMLDialogElement | null): void => {
+      dialogRef.current = node;
+      if (typeof ref === 'function') ref(node);
+      else if (ref) ref.current = node;
+    },
+    [ref],
+  );
 
   const surfaceRef = useRef<HTMLDivElement | null>(null);
   const bodyRef = useRef<HTMLElement | null>(null);
+  const footerRef = useRef<HTMLDivElement | null>(null);
   const headingRef = useRef<HTMLHeadingElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
-  const pointerDownInsideRef = useRef(false);
   const escapeHandledRef = useRef(false);
+  const selfClosingRef = useRef(false);
 
   // Mounted while open, and while the exit transition finishes after `open` goes false.
   const [present, setPresent] = useState(open);
   // Drives the entered/exited CSS state; set a frame after mount so the enter transition runs.
   const [visible, setVisible] = useState(false);
 
-  const latest = useRef({ initialFocus, dismissible, onOpened });
-  latest.current = { initialFocus, dismissible, onOpened };
+  const latest = useRef({ open, initialFocus, dismissible, onOpened });
+  latest.current = { open, initialFocus, dismissible, onOpened };
 
   const warnedRef = useRef(false);
   if (process.env.NODE_ENV !== 'production' && !heading && !warnedRef.current) {
@@ -211,38 +218,39 @@ export function Dialog({
 
   if (open && !present) setPresent(true);
 
+  /** Body, footer, close button (unless `close` was asked for and there is none), heading; `title` goes straight to the heading. */
+  const placeInitialFocus = (): void => {
+    const { initialFocus: focusTarget } = latest.current;
+    const headingElement = headingRef.current;
+    const closeButton = closeButtonRef.current;
+    let target: HTMLElement | null = null;
+    if (focusTarget === 'close') target = closeButton;
+    if (!target && focusTarget !== 'title') {
+      target = firstFocusableIn(bodyRef.current) ?? firstFocusableIn(footerRef.current) ?? closeButton;
+    }
+    if (target) {
+      target.focus();
+      return;
+    }
+    if (!headingElement) return;
+    if (headingElement.tabIndex !== -1) headingElement.tabIndex = -1;
+    headingElement.focus();
+  };
+
   // Open: showModal(), move focus in per `initialFocus`, then reveal on the next frame.
   useLayoutEffect(() => {
     if (!present) return undefined;
     const dialog = dialogRef.current;
     const surface = surfaceRef.current;
     if (!dialog || !surface) return undefined;
+    selfClosingRef.current = false;
     if (!dialog.open) {
       // showModal() gives the top layer, Escape and background inertness. jsdom implements the
       // `open` IDL attribute but not showModal(), so the assignment is the fallback there.
       if (typeof dialog.showModal === 'function') dialog.showModal();
       else dialog.open = true;
     }
-
-    const { initialFocus: focusTarget, dismissible: canDismiss } = latest.current;
-    const headingElement = headingRef.current;
-    const focusHeading = (): void => {
-      if (!headingElement) return;
-      if (headingElement.tabIndex !== -1) headingElement.tabIndex = -1;
-      headingElement.focus();
-    };
-    const bodyFirst = firstFocusableIn(bodyRef.current);
-    if (focusTarget === 'title') {
-      focusHeading();
-    } else if (focusTarget === 'close' && canDismiss && closeButtonRef.current) {
-      closeButtonRef.current.focus();
-    } else if (bodyFirst) {
-      bodyFirst.focus();
-    } else if (focusTarget === 'first' && closeButtonRef.current) {
-      closeButtonRef.current.focus();
-    } else {
-      focusHeading();
-    }
+    placeInitialFocus();
 
     let fired = false;
     const fireOpened = (): void => {
@@ -272,12 +280,14 @@ export function Dialog({
     const surface = surfaceRef.current;
     const finish = (): void => {
       if (dialog?.open) {
+        selfClosingRef.current = true;
         if (typeof dialog.close === 'function') dialog.close();
         else dialog.open = false;
       }
       setPresent(false);
     };
-    if (!surface || hasNoTransition(surface)) {
+    // A dialog the browser already closed is display: none, so no transitionend would ever arrive.
+    if (!surface || !dialog?.open || hasNoTransition(surface)) {
       finish();
       return undefined;
     }
@@ -294,12 +304,7 @@ export function Dialog({
     return lockScroll();
   }, [present]);
 
-  const requestClose = (reason: DialogCloseReason): void => {
-    if (reason !== 'escape' && !dismissible) return;
-    onClose?.(reason);
-  };
-
-  // Escape arrives as keydown; the native `cancel` also covers other close requests (Android back).
+  // Escape arrives as keydown; the native `cancel` covers any other close request the browser raises.
   const handleKeyDown = (event: ReactKeyboardEvent<HTMLDialogElement>): void => {
     rest.onKeyDown?.(event);
     if (event.key !== 'Escape' || event.defaultPrevented || !open) return;
@@ -309,28 +314,35 @@ export function Dialog({
     setTimeout(() => {
       escapeHandledRef.current = false;
     }, 0);
-    requestClose('escape');
+    // Reported even when not dismissible: Escape is the keyboard user's exit.
+    onClose?.('escape');
   };
 
   const handleCancel = (event: SyntheticEvent<HTMLDialogElement>): void => {
     // The consumer owns `open`: never let the browser close the dialog, dismissible or not.
     event.preventDefault();
     if (escapeHandledRef.current || !open) return;
-    requestClose('escape');
+    onClose?.('escape');
   };
 
-  const handlePointerDown = (event: ReactPointerEvent<HTMLDialogElement>): void => {
-    rest.onPointerDown?.(event);
-    pointerDownInsideRef.current = event.target !== dialogRef.current;
+  // A non-cancelable `cancel` closes the native dialog anyway; reopen unless the consumer set `open` false.
+  const handleNativeClose = (): void => {
+    if (selfClosingRef.current) {
+      selfClosingRef.current = false;
+      return;
+    }
+    requestAnimationFrame(() => {
+      const dialog = dialogRef.current;
+      if (!dialog || dialog.open || !latest.current.open) return;
+      if (typeof dialog.showModal === 'function') dialog.showModal();
+      else dialog.open = true;
+      placeInitialFocus();
+    });
   };
 
-  // ::backdrop clicks target the <dialog> itself; a drag that started on the surface does not count.
-  const handleClick = (event: ReactMouseEvent<HTMLDialogElement>): void => {
-    rest.onClick?.(event);
-    const startedInside = pointerDownInsideRef.current;
-    pointerDownInsideRef.current = false;
-    if (event.target !== dialogRef.current || startedInside || !open) return;
-    requestClose('scrim');
+  const handleScrimClick = (): void => {
+    if (!open || !dismissible) return;
+    onClose?.('scrim');
   };
 
   if (!present) return null;
@@ -339,12 +351,14 @@ export function Dialog({
     .filter(Boolean)
     .join(' ');
 
-  const footerGap = overrides?.footerGap;
+  const insetOverride = overrides?.inset;
+  const footerGapOverride = overrides?.footerGap;
+  const hasFooter = footer !== undefined && footer !== null && footer !== false;
 
   const node = (
     <dialog
       {...rest}
-      ref={dialogRef}
+      ref={setDialogNode}
       data-ds="Dialog"
       className={classes}
       style={overrides ? overridesToStyle(overrides) : undefined}
@@ -353,10 +367,10 @@ export function Dialog({
       aria-describedby={description ? descriptionId : undefined}
       onKeyDown={handleKeyDown}
       onCancel={handleCancel}
-      onPointerDown={handlePointerDown}
-      onClick={handleClick}
+      onClose={handleNativeClose}
     >
-      <FocusScope trapped autoFocus="none" restoreFocus data-part="focusScope">
+      <div className="ds-dialog__scrim" data-part="scrim" onClick={handleScrimClick} />
+      <FocusScope trapped autoFocus="none" restoreFocus>
         <div className="ds-dialog__surface" ref={surfaceRef} data-part="surface">
           <div className="ds-dialog__header" data-part="header">
             <div className="ds-dialog__titles">
@@ -365,7 +379,7 @@ export function Dialog({
                 data-part="heading"
               >
                 <Heading
-                  level={2}
+                  level="2"
                   id={headingId}
                   ref={headingRef}
                   tabIndex={initialFocus === 'title' ? -1 : undefined}
@@ -374,7 +388,7 @@ export function Dialog({
                 </Heading>
               </div>
               {description ? (
-                <Text id={descriptionId} tone="muted" data-part="description">
+                <Text id={descriptionId} data-part="description">
                   {description}
                 </Text>
               ) : null}
@@ -388,24 +402,26 @@ export function Dialog({
                   iconOnly
                   label={COPY.closeLabel}
                   leadingIcon={<Icon name="close" inline />}
-                  onClick={() => requestClose('close-button')}
+                  onClick={() => onClose?.('close-button')}
                 />
               </span>
             ) : null}
           </div>
           <div className="ds-dialog__scroll">
-            <Box data-part="body" ref={bodyRef}>
+            <Box
+              data-part="body"
+              ref={bodyRef}
+              overrides={insetOverride ? { paddingBlock: insetOverride, paddingInline: insetOverride } : undefined}
+            >
               {children}
             </Box>
           </div>
-          {footer !== undefined && footer !== null && footer !== false ? (
-            <div className="ds-dialog__footer" data-part="footer">
+          {hasFooter ? (
+            <div className="ds-dialog__footer" data-part="footer" ref={footerRef}>
               <Stack
                 direction="horizontal"
-                gap="tight"
                 justify="end"
-                wrap
-                overrides={footerGap ? { gap: footerGap } : undefined}
+                overrides={footerGapOverride ? { gap: footerGapOverride } : undefined}
               >
                 {footer}
               </Stack>

@@ -1,5 +1,6 @@
 /* ActionSheet — styled only through Design Schema token custom properties. */
 
+/* The <dialog> fills the viewport and stacks the sheet at the bottom edge; the scrim is a real element inside it. */
 .ds-action-sheet {
   --ds-action-sheet-scrim: var(--color-overlay-scrim);
   --ds-action-sheet-shadow: var(--shadow-overlay);
@@ -17,58 +18,94 @@
   --ds-action-sheet-line-height: var(--font-line-height-normal);
   --ds-action-sheet-divider: var(--color-border);
   --ds-action-sheet-divider-width: var(--border-width-thin);
-  --ds-action-sheet-max-width: var(--layout-max-width-prose);
   --ds-action-sheet-layer: var(--layer-sheet);
   --ds-action-sheet-enter: var(--motion-duration-base);
   --ds-action-sheet-exit: var(--motion-duration-fast);
   box-sizing: border-box;
   position: fixed;
-  inset-block-start: auto;
-  inset-block-end: 0;
-  inset-inline: 0;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  inline-size: 100%;
+  block-size: 100%;
+  max-inline-size: none;
+  max-block-size: none;
   margin: 0;
   padding: 0;
   border: 0;
-  inline-size: 100%;
-  max-inline-size: none;
-  max-block-size: 100dvh;
-  overflow: visible;
+  overflow: hidden;
   background: transparent;
-  color: inherit;
+  color: var(--color-foreground);
+  /* layer: no effect in the top layer; applies to a non-top-layer fallback only. */
   z-index: var(--ds-action-sheet-layer);
 }
 
-/* scrim: ::backdrop inherits custom properties from its dialog. */
 .ds-action-sheet::backdrop {
-  background-color: var(--ds-action-sheet-scrim);
+  background: transparent;
 }
 
-/* surface (locked) + shadow + radius; height: content. */
+/* scrim → color.overlay.scrim; fades in with the enter duration, out with the exit duration and easing. */
+.ds-action-sheet__scrim {
+  position: fixed;
+  inset: 0;
+  background-color: var(--ds-action-sheet-scrim);
+  opacity: 0;
+  transition-property: opacity;
+  transition-duration: var(--ds-action-sheet-exit);
+  transition-timing-function: var(--motion-easing-exit);
+}
+
+.ds-action-sheet--visible .ds-action-sheet__scrim {
+  opacity: 1;
+  transition-duration: var(--ds-action-sheet-enter);
+  transition-timing-function: var(--motion-easing-standard);
+}
+
+/* surface → color.overlay.surface (locked); shadow; radius on the top corners only; height: content, capped at 90% of the viewport. */
 .ds-action-sheet__surface {
   --ds-action-sheet-drag: 0;
   box-sizing: border-box;
+  position: relative;
   display: flex;
   flex-direction: column;
+  inline-size: 100%;
+  max-block-size: 90dvh; /* literal-ok: BottomSheet height content cap from the doc */
+  padding-block-end: env(safe-area-inset-bottom);
   background-color: var(--color-overlay-surface);
   border-start-start-radius: var(--ds-action-sheet-radius);
   border-start-end-radius: var(--ds-action-sheet-radius);
   box-shadow: var(--ds-action-sheet-shadow);
-  padding-block-end: env(safe-area-inset-bottom);
+  overflow: hidden;
+  /* exit: slide down with motion.easing.exit */
   transform: translateY(100%);
-  transition: transform var(--ds-action-sheet-exit) var(--motion-easing-standard);
+  transition-property: transform;
+  transition-duration: var(--ds-action-sheet-exit);
+  transition-timing-function: var(--motion-easing-exit);
 }
 
+/* enter: slide up with motion.easing.standard */
 .ds-action-sheet--visible .ds-action-sheet__surface {
   transform: translateY(var(--ds-action-sheet-drag));
   transition-duration: var(--ds-action-sheet-enter);
+  transition-timing-function: var(--motion-easing-standard);
 }
 
-.ds-action-sheet__surface--dragging {
+/* The drag-follow tracks the pointer with no transition, and holds a dismissed release position. */
+.ds-action-sheet--dragging .ds-action-sheet__surface {
   transition: none;
 }
 
-/* header: handle + heading; headerPaddingBlock also pads the cancel row. */
+/* A below-threshold release springs back with the exit duration and motion.easing.standard. */
+.ds-action-sheet--settling .ds-action-sheet__surface {
+  transition-property: transform;
+  transition-duration: var(--ds-action-sheet-exit);
+  transition-timing-function: var(--motion-easing-standard);
+}
+
+/* header: handle + heading; its inline padding is itemPaddingInline. */
 .ds-action-sheet__header {
+  flex: none;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -87,12 +124,16 @@
   background-color: var(--color-foreground-muted);
 }
 
+/* list: scrolls inside the capped surface. */
 .ds-action-sheet__list {
+  flex: 1 1 auto;
+  min-block-size: 0;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
 }
 
+/* item: itemColor (locked), padding, gap, type; 44px target (minTarget, locked). */
 .ds-action-sheet__item {
   box-sizing: border-box;
   display: flex;
@@ -113,10 +154,12 @@
   transition: background-color var(--motion-duration-fast) var(--motion-easing-standard);
 }
 
+/* itemDangerColor (locked) */
 .ds-action-sheet__item--danger {
   color: var(--color-foreground-danger);
 }
 
+/* itemHover (locked): paint only. */
 .ds-action-sheet__item:hover:not([aria-disabled='true']) {
   background-color: var(--color-background-subtle);
 }
@@ -141,23 +184,27 @@
   min-inline-size: 0;
 }
 
-/* divider: above the danger group. */
+/* divider: above the danger group and above the cancel row. */
 .ds-action-sheet__divider {
   flex: none;
   block-size: 0;
   border-block-start: var(--ds-action-sheet-divider-width) solid var(--ds-action-sheet-divider);
 }
 
-/* divider: above the cancel row. The grid stretches the Button without restyling it. */
+/* cancel row: headerPaddingBlock + itemPaddingInline. The grid stretches the Button without restyling it. */
 .ds-action-sheet__cancel-row {
+  flex: none;
   display: grid;
   padding-block: var(--ds-action-sheet-header-padding-block);
   padding-inline: var(--ds-action-sheet-item-padding-inline);
-  border-block-start: var(--ds-action-sheet-divider-width) solid var(--ds-action-sheet-divider);
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .ds-action-sheet__scrim,
   .ds-action-sheet__surface,
+  .ds-action-sheet--visible .ds-action-sheet__scrim,
+  .ds-action-sheet--visible .ds-action-sheet__surface,
+  .ds-action-sheet--settling .ds-action-sheet__surface,
   .ds-action-sheet__item {
     transition: none;
   }

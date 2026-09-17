@@ -17,6 +17,7 @@ export type SidePanelOpenChangeReason =
   | 'escape'
   | 'close-button'
   | 'scrim'
+  | 'outside'
   | 'swipe'
   | 'action'
   | 'navigation';
@@ -158,7 +159,7 @@ function transitionTimeMs(element: Element): number {
  *
  * @fires open-change - `{ open, reason }` when a user action opens or closes the panel.
  * @slot trigger - The APG disclosure button. Omit to control `open` from elsewhere.
- * @slot - The body: a List, Tree, Form or Stack. Scrolls inside the panel.
+ * @slot - The body: a Stack or Tree of Links, a Stack of filter controls, a Stack of Cards. Scrolls inside the panel.
  * @slot footer - Pinned to the bottom of the panel above the safe area.
  */
 @customElement('ds-side-panel')
@@ -207,7 +208,6 @@ export class DsSidePanel extends LitElement {
     :host([data-persistent]) {
       display: block;
       inline-size: var(--ds-side-panel-active-width);
-      block-size: 100%;
     }
     :host([data-persistent]) ::slotted([slot='trigger']) {
       display: none;
@@ -316,9 +316,10 @@ export class DsSidePanel extends LitElement {
       }
     }
 
+    /* Natural height: the page scrolls, not the body. */
     .sidebar {
+      position: relative;
       inline-size: 100%;
-      block-size: 100%;
     }
     :host([side='start']) .sidebar {
       border-inline-end: var(--ds-side-panel-border-width) solid var(--ds-side-panel-border);
@@ -456,7 +457,6 @@ export class DsSidePanel extends LitElement {
   private openerEl: HTMLElement | null = null;
   private focusTriggerOnClose = false;
   private exitTimer: ReturnType<typeof setTimeout> | undefined;
-  private closingProgrammatically = false;
 
   /** Whether the panel is currently open, controlled or not. */
   get currentOpen(): boolean {
@@ -466,11 +466,13 @@ export class DsSidePanel extends LitElement {
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('data-ds', 'SidePanel');
+    this.addEventListener('submit', this.handleSubmit);
     this.setupPersistentQuery();
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
+    this.removeEventListener('submit', this.handleSubmit);
     this.persistentQuery?.removeEventListener('change', this.handlePersistentChange);
     this.persistentQuery = null;
     this.removeOutsideListener();
@@ -517,6 +519,39 @@ export class DsSidePanel extends LitElement {
     const useDialog = this.modal && !isPersistent;
     const closingClass = this.closing ? ' closing' : '';
 
+    const showCloseButton = this.dismissible && !isPersistent;
+    const headingTemplate = html`<ds-heading
+      id="heading"
+      part="heading"
+      data-part="heading"
+      class=${this.hideHeading ? 'visually-hidden' : ''}
+      level="2"
+      size="lg"
+      tabindex="-1"
+      >${this.heading}</ds-heading
+    >`;
+    // hideHeading with no close button leaves the header empty: drop it, and the hidden title sits at the top of the surface.
+    const header =
+      this.hideHeading && !showCloseButton
+        ? headingTemplate
+        : html`<div part="header" data-part="header" class=${this.hideHeading ? 'heading-hidden' : ''}>
+            ${headingTemplate}
+            ${showCloseButton
+              ? html`
+                  <ds-button
+                    part="closeButton"
+                    data-part="closeButton"
+                    variant="ghost"
+                    icon-only
+                    label=${COPY_CLOSE_LABEL}
+                    @press=${this.handleCloseButtonPress}
+                  >
+                    <ds-icon slot="leading-icon" name="close"></ds-icon>
+                  </ds-button>
+                `
+              : nothing}
+          </div>`;
+
     const content = html`
       <ds-focus-scope
         part="focusScope"
@@ -526,32 +561,7 @@ export class DsSidePanel extends LitElement {
         auto-focus="none"
         .restoreFocus=${false}
       >
-        <div part="header" data-part="header" class=${this.hideHeading ? 'heading-hidden' : ''}>
-          <ds-heading
-            id="heading"
-            part="heading"
-            data-part="heading"
-            class=${this.hideHeading ? 'visually-hidden' : ''}
-            level="2"
-            size="lg"
-            tabindex="-1"
-            >${this.heading}</ds-heading
-          >
-          ${this.dismissible && !isPersistent
-            ? html`
-                <ds-button
-                  part="closeButton"
-                  data-part="closeButton"
-                  variant="ghost"
-                  icon-only
-                  label=${COPY_CLOSE_LABEL}
-                  @press=${this.handleCloseButtonPress}
-                >
-                  <ds-icon slot="leading-icon" name="close"></ds-icon>
-                </ds-button>
-              `
-            : nothing}
-        </div>
+        ${header}
         <ds-box part="body" data-part="body" inset="lg" .overrides=${this.bodyOverrides()} @click=${this.handleBodyClick}>
           <slot></slot>
         </ds-box>
@@ -613,7 +623,6 @@ export class DsSidePanel extends LitElement {
             aria-labelledby="heading"
             @keydown=${this.handleSurfaceKeydown}
             @cancel=${this.handleCancel}
-            @close=${this.handleNativeClose}
             @click=${this.handleDialogClick}
           >
             ${content}
@@ -622,9 +631,9 @@ export class DsSidePanel extends LitElement {
     `;
   }
 
-  private bodyOverrides(): { paddingBlock: TokenRef; paddingInline: TokenRef } | undefined {
+  private bodyOverrides(): { paddingBlock: TokenRef } | undefined {
     const inset = this.overrides?.inset;
-    return inset ? { paddingBlock: inset, paddingInline: inset } : undefined;
+    return inset ? { paddingBlock: inset } : undefined;
   }
 
   private footerOverrides(): { gap: TokenRef } | undefined {
@@ -751,22 +760,33 @@ export class DsSidePanel extends LitElement {
     this.requestOpenChange(false, 'scrim', { apply: true, focusTrigger: false });
   };
 
+  /** With no scrim to catch it, a press outside the panel and trigger (both inside the host) closes with `outside`. */
   private readonly handleOutsidePointerDown = (event: PointerEvent): void => {
-    if (!this.dismissible || !this.currentOpen || this.isPersistent || event.composedPath().includes(this)) {
+    if (
+      this.scrim ||
+      this.modal ||
+      !this.dismissible ||
+      !this.currentOpen ||
+      this.isPersistent ||
+      event.composedPath().includes(this)
+    ) {
       return;
     }
-    this.requestOpenChange(false, 'scrim', { apply: true, focusTrigger: false });
+    this.requestOpenChange(false, 'outside', { apply: true, focusTrigger: false });
   };
 
-  private readonly handleNativeClose = (): void => {
-    if (this.closingProgrammatically) {
-      this.closingProgrammatically = false;
+  /** A slotted `<form method="dialog">` submitted inside the panel asks it to close. */
+  private readonly handleSubmit = (event: SubmitEvent): void => {
+    const form = event.target;
+    if (!(form instanceof HTMLFormElement) || !this.currentOpen || this.isPersistent) {
       return;
     }
-    if (this.currentOpen) {
-      // Something else closed the dialog (a direct close() call); report it as an action.
-      this.requestOpenChange(false, 'action', { apply: true, focusTrigger: true });
+    const method = event.submitter?.getAttribute('formmethod') ?? form.method;
+    if (method.toLowerCase() !== 'dialog') {
+      return;
     }
+    event.preventDefault();
+    this.requestOpenChange(false, 'action', { apply: true, focusTrigger: true });
   };
 
   /**
@@ -843,7 +863,6 @@ export class DsSidePanel extends LitElement {
     const surface = this.surfaceEl;
     const focusWasInside = surface !== null && surface.matches(':focus-within');
     if (surface instanceof HTMLDialogElement && surface.open) {
-      this.closingProgrammatically = true;
       surface.close();
     }
     this.releaseScrollLock();
@@ -908,7 +927,8 @@ export class DsSidePanel extends LitElement {
       this.isPersistent = false;
       return;
     }
-    this.persistentQuery = matchMedia(`(min-width: ${breakpoint})`);
+    // `(width > token)`: exactly the token width is still the overlay.
+    this.persistentQuery = matchMedia(`(width > ${breakpoint})`);
     this.isPersistent = this.persistentQuery.matches;
     this.persistentQuery.addEventListener('change', this.handlePersistentChange);
   }

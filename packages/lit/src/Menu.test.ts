@@ -33,6 +33,8 @@ async function setup(given: Given = {}) {
   el.addEventListener('open-change', ((event: CustomEvent<MenuOpenChangeDetail>) => {
     events.push('open-change');
     openChange(event);
+    // A scenario that gives `open` renders through a consumer that owns it and writes open-change back.
+    if (el.open !== undefined) el.open = event.detail.open;
   }) as EventListener);
 
   document.body.append(el);
@@ -95,7 +97,9 @@ describe('ds-menu', () => {
     const m = await setup({ open: true, label: 'More actions', items: TWO_ITEMS });
     await userEvent.keyboard('{Escape}');
     expect(m.action).not.toHaveBeenCalled();
-    expect(m.el.shadowRoot!.activeElement).toBe(m.part('trigger'));
+    await m.el.updateComplete;
+    expect(m.el.open).toBe(false);
+    expect(m.el.shadowRoot!.activeElement).toBe(m.part('trigger')!.querySelector('ds-button'));
   });
 
   it('the-popup-is-a-menu', async () => {

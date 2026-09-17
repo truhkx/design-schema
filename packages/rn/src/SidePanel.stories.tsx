@@ -1,5 +1,6 @@
 import * as React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { SidePanelProps } from './SidePanel';
 import { Button } from './Button';
 import { Card } from './Card';
 import { Checkbox } from './Checkbox';
@@ -8,12 +9,37 @@ import { Link } from './Link';
 import { SidePanel } from './SidePanel';
 import { Stack } from './Stack';
 import { Text } from './Text';
+import { useTheme } from './theme';
 import { withTheme } from './decorators';
+
+/** Stories that start open act as the consumer: they own `open`, starting from the arg, and write `onOpenChange` back. */
+function Controlled(args: SidePanelProps): React.JSX.Element {
+  const [open, setOpen] = React.useState(args.open);
+  React.useEffect(() => setOpen(args.open), [args.open]);
+  return (
+    <SidePanel
+      {...args}
+      open={open}
+      onOpenChange={(next, reason) => {
+        if (open !== undefined) {
+          setOpen(next);
+        }
+        args.onOpenChange?.(next, reason);
+      }}
+    />
+  );
+}
+
+function MenuTrigger(): React.JSX.Element {
+  const { tokens: t } = useTheme();
+  return <Button label="Menu" variant="ghost" iconOnly leadingIcon={<Icon name="menu" color={t.colorActionGhostForeground} />} />;
+}
 
 const meta: Meta<typeof SidePanel> = {
   title: 'SidePanel/React Native',
   component: SidePanel,
   decorators: [withTheme()],
+  render: (args) => <Controlled {...args} />,
   args: {
     open: true,
     heading: 'Menu',
@@ -101,7 +127,7 @@ export const WithOverrides: Story = {
 export const NavigationDrawer: Story = {
   args: {
     open: undefined,
-    trigger: <Button label="Menu" variant="ghost" iconOnly leadingIcon={<Icon name="menu" />} />,
+    trigger: <MenuTrigger />,
     heading: 'Menu',
     children: (
       <Stack gap="tight" align="start">

@@ -34,8 +34,7 @@ describe('Dialog', () => {
 
   it('non-dismissible-scrim-click-does-nothing', () => {
     const d = setup({ open: true, dismissible: false });
-    const scrim = d.dialog()!;
-    fireEvent.pointerDown(scrim);
+    const scrim = d.dialog()!.querySelector<HTMLElement>('[data-part="scrim"]')!;
     fireEvent.click(scrim);
     expect(d.onClose).not.toHaveBeenCalled();
   });

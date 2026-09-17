@@ -2,6 +2,7 @@ import * as React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button } from './Button';
 import { Dialog } from './Dialog';
+import type { DialogProps } from './Dialog';
 import { Input } from './Input';
 import { RadioGroup } from './RadioGroup';
 import { Select } from './Select';
@@ -9,24 +10,38 @@ import { Stack } from './Stack';
 import { Text } from './Text';
 import { withTheme } from './decorators';
 
+/** Acts as the consumer: owns `open` (starting from the args) and writes `onClose` back. */
+function Consumer(args: DialogProps): React.JSX.Element {
+  const [open, setOpen] = React.useState(args.open);
+  React.useEffect(() => setOpen(args.open), [args.open]);
+  return (
+    <Dialog
+      {...args}
+      open={open}
+      onClose={(reason) => {
+        args.onClose?.(reason);
+        setOpen(false);
+      }}
+    />
+  );
+}
+
 const meta: Meta<typeof Dialog> = {
   title: 'Dialog/React Native',
   component: Dialog,
   decorators: [withTheme()],
+  render: (args) => <Consumer {...args} />,
+  // The rename-project example.
   args: {
     open: true,
     heading: 'Rename project',
-    description: 'This changes the name everywhere it appears.',
-    children: <Text>The project name is visible to everyone with access.</Text>,
+    children: <Input label="Project name" name="name" defaultValue="Marketing site" />,
     footer: (
       <>
         <Button label="Rename" variant="primary" />
         <Button label="Cancel" variant="secondary" />
       </>
     ),
-    size: 'md',
-    dismissible: true,
-    initialFocus: 'first',
   },
 };
 
@@ -47,11 +62,19 @@ export const InitialFocusTitle: Story = { args: { initialFocus: 'title' } };
 export const InitialFocusClose: Story = { args: { initialFocus: 'close' } };
 
 // notable states
-export const NoDescription: Story = { args: { description: undefined } };
+export const WithDescription: Story = { args: { description: 'The new name appears everywhere the project is listed.' } };
 
 export const NoFooter: Story = { args: { footer: undefined } };
 
 export const HideHeading: Story = { args: { hideHeading: true } };
+
+export const NotDismissible: Story = { args: { dismissible: false } };
+
+export const WithOverrides: Story = {
+  args: {
+    overrides: { radius: 'radius.md', border: 'color.border.strong', widthMd: 'layout.maxWidth.prose' },
+  },
+};
 
 // examples
 export const RenameProject: Story = {
@@ -134,12 +157,6 @@ export const ReadingDialog: Story = {
   },
 };
 
-export const WithOverrides: Story = {
-  args: {
-    overrides: { radius: 'radius.full', border: 'color.border.strong' },
-  },
-};
-
 /** Open with its trigger and several focusable children, for the axe gate and manual keyboard checks. */
 export const Keyboard: Story = {
   render: (args) => {
@@ -151,10 +168,13 @@ export const Keyboard: Story = {
           <Dialog
             {...args}
             open={open}
-            onClose={() => setOpen(false)}
+            onClose={(reason) => {
+              args.onClose?.(reason);
+              setOpen(false);
+            }}
             footer={
               <>
-                <Button label="Rename" variant="primary" />
+                <Button label="Rename" variant="primary" onPress={() => setOpen(false)} />
                 <Button label="Cancel" variant="secondary" onPress={() => setOpen(false)} />
               </>
             }

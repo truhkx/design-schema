@@ -31,3 +31,16 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - SidePanel: `layer` (`layer.sheet`) as zIndex inside a native Modal has no effect (the Modal is its own window); applied to the anchor view for parity only.
 - SidePanel: modal focus trap, inert background and scroll lock (a11y.requires) have no full native equivalent under Modal; FocusScope `trapped={modal}` plus `accessibilityViewIsModal` is the extent of it, and non-modal 'page stays live' is impossible because Modal takes every touch.
 - SidePanel: the `navigation` and `action` reasons are never emitted by the rn component (there is no router hook, and the footer is opaque content); they exist on the type so a consumer can report them.
+
+## 2026-09-17 11:19 — round 1
+
+- SidePanel: anatomy nests focusScope inside surface and puts `partGap` on the focusScope column, but RN FocusScope renders an unstyleable wrapper View whose height would not be constrained (the body could not scroll). Chose FocusScope outside the Animated surface and `partGap` as the surface column's gap, which holds header/body/footer directly.
+- SidePanel: Guidance says the persistent sidebar View has `accessibilityRole="none"` and a label; platforms.rn.notes and the role prop's description say it carries the RN `role` prop. Followed the notes (role={role} plus accessibilityLabel={heading}).
+- SidePanel: `ref` has no web-style resolution on RN in the doc. Chose the positioned surface (the Animated.View while the overlay is mounted, null when closed; the sidebar View when persistent), mirroring the web note.
+- SidePanel: no token or constant names the swipe thresholds (dismiss distance ratio, flick velocity, drag slop, decay floor) or the edge zone for useSidePanelEdgeSwipe. Chose 25% of panel width / 1.5 px/ms / 4px (marked literal-ok) and `size.target.comfortable` as the edge zone; the doc should declare them as constants.
+- SidePanel: `exit` says a swipe dismiss 'continues at the swipe velocity' without naming the curve. Chose Animated.decay seeded with the release velocity; with controlled `open` that the consumer does not flip, the surface stays swiped off-screen while open — the doc does not say whether it should spring back.
+- SidePanel: the non-modal close button's 44px target is assumed to come from Button's default size; the composition lists no size, so none is passed.
+- SidePanel: persistent sidebar safe area — the web note pads the top/bottom safe-area insets; RN has no core inset API beyond iOS SafeAreaView, so only the footer uses SafeAreaView (as BottomSheet does).
+- SidePanel: 'crossing the breakpoint while open keeps the content' is only specified for web non-modal; on RN the root changes between Modal and View, so children remount. Documented as a native limit.
+- SidePanel: `hideHeading` with `dismissible` true leaves a header holding only the close button; the doc does not say how it aligns. Chose end-justified.
+- SidePanel: the Keyboard story and the open-at-start stories are wrappers that own `open`, but the doc does not say what an `open: undefined` example story (NavigationDrawer, Filters) should pass through the wrapper; it leaves them uncontrolled.

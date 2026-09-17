@@ -10,7 +10,13 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import type { LayoutChangeEvent, PanResponderGestureState, ViewStyle } from 'react-native';
+import type {
+  GestureResponderEvent,
+  LayoutChangeEvent,
+  PanResponderGestureState,
+  PanResponderInstance,
+  ViewStyle,
+} from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Box } from './Box';
@@ -24,26 +30,29 @@ import { Stack } from './Stack';
 import { toEasing, useReducedMotion, useTheme } from './theme';
 
 export type BottomSheetHeight = 'content' | 'half' | 'full';
-/** Why `onClose` fired. `action` is never emitted by BottomSheet itself — it exists for a consumer whose footer action also wants to report a close through the same callback. */
+/** Why `onClose` fired. `action` is never emitted by BottomSheet itself — it exists for a consumer's footer action reusing the same handler. */
 export type BottomSheetCloseReason = 'escape' | 'close-button' | 'scrim' | 'drag' | 'action';
 
-/** The style bindings a caller may replace with a different token; see the component's overrides contract. */
+/** The style bindings a caller may replace with a different token; `surface`, `handle`, `maxWidth`, `minTarget`, `focusRing` and `focusRingWidth` are locked. */
 export type BottomSheetOverridableBinding =
   | 'scrim'
   | 'shadow'
   | 'radius'
   | 'handleHeight'
   | 'handleWidth'
+  | 'handleRadius'
+  | 'headerPaddingTop'
+  | 'handleGap'
+  | 'headerGap'
   | 'inset'
   | 'partGap'
   | 'footerGap'
-  | 'maxWidth'
   | 'layer'
   | 'enter'
   | 'exit';
 
 export interface BottomSheetProps {
-  /** Controlled visibility, as in Dialog. */
+  /** Controlled visibility, as in Dialog. Controlled only — the consumer owns `open` and the sheet requests changes through `onClose`, never changing `open` itself. */
   open: boolean;
   /** The sheet's title and accessible name. May be visually hidden with `hideHeading` when the content is self-explanatory (a share sheet). */
   heading: string;
@@ -53,15 +62,15 @@ export interface BottomSheetProps {
   children: React.ReactNode;
   /** Action row, pinned to the bottom of the sheet above the safe area. */
   footer?: React.ReactNode;
-  /** `content` sizes to the body up to 90% of the viewport; `half` is a fixed half-height; `full` is a near-full-screen sheet with the top gutter visible so the scrim still shows. */
+  /** `content` sizes to the body up to 90% of the window; `half` is a fixed half-height; `full` is a near-full-screen sheet with the top gutter visible so the scrim still shows. */
   height?: BottomSheetHeight | undefined;
-  /** Escape, the close button, a scrim tap and the drag gesture all request close. When false, only the footer actions close it; Escape still reports. */
+  /** Escape, the close button, a scrim tap and the drag gesture all request close. When false the close button and handle are not rendered, a scrim tap and a drag do nothing, and Escape still reports with reason `escape`. */
   dismissible?: boolean | undefined;
-  /** Drag the handle (or the header) downward to dismiss: release past 25% of the sheet height, or faster than 1.5 px/ms, dismisses; otherwise the sheet springs back. Purely additive: the close button and Escape always exist. */
+  /** Drag the handle or header downward to dismiss: release past 25% of the sheet height, or faster than 1.5 px/ms, dismisses; otherwise the sheet springs back. Purely additive: Escape always exists, and the close button exists whenever the gesture does. */
   dragToDismiss?: boolean | undefined;
   /** Requested close with reason: `escape`, `close-button`, `scrim`, `drag`, or `action`. */
   onClose?: ((reason: BottomSheetCloseReason) => void) | undefined;
-  /** The user dragged the sheet past the dismiss threshold. Fired before `onClose` with reason drag; carries no payload. */
+  /** The user dragged the sheet past the dismiss threshold. Fired before `onClose('drag')`; carries no payload. */
   onDragDismiss?: (() => void) | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<BottomSheetOverridableBinding, TokenRef | undefined>> | undefined;
@@ -71,69 +80,61 @@ const COPY = {
   closeLabel: 'Close',
 } as const;
 
-/** Schema constants: `dismissDistance` (ratio of sheet height) and `dismissVelocity` (px/ms, PanResponder's own unit). */
+/** Schema constants without a token; `dragSlop` is read from `space.1` at render time. */
 const CONSTANTS = {
-  dismissDistance: 0.25, // literal-ok: schema constant dismissDistance
-  dismissVelocity: 1.5, // literal-ok: schema constant dismissVelocity
+  dismissDistance: 0.25, // literal-ok: schema constant dismissDistance (ratio of sheet height)
+  dismissVelocity: 1.5, // literal-ok: schema constant dismissVelocity (px/ms)
 } as const;
 
-// A move must be this many px downward (and more vertical than horizontal) before the
-// header claims the responder, so a tap on the close button is never stolen.
-const DRAG_SLOP = 4; // literal-ok: gesture recognition slop, not a visual size
+// Overrides whose binding shares a name with a Dialog binding, forwarded in the wide
+// presentation; the handle bindings, `headerPaddingTop` and `handleGap` have no effect there.
+const DIALOG_BINDINGS: readonly (BottomSheetOverridableBinding & DialogOverridableBinding)[] = [
+  'scrim',
+  'shadow',
+  'radius',
+  'inset',
+  'partGap',
+  'headerGap',
+  'footerGap',
+  'layer',
+  'enter',
+  'exit',
+];
 
-// The bindings BottomSheet shares with Dialog's own overrides contract, forwarded
-// when the sheet presents as a Dialog above `maxWidth`; `handleHeight`, `handleWidth`
-// and `maxWidth` have no Dialog equivalent and are dropped.
-const SHARED_DIALOG_BINDING: Partial<Record<BottomSheetOverridableBinding, DialogOverridableBinding | undefined>> = {
-  scrim: 'scrim',
-  shadow: 'shadow',
-  radius: 'radius',
-  inset: 'inset',
-  partGap: 'partGap',
-  footerGap: 'footerGap',
-  layer: 'layer',
-  enter: 'enter',
-  exit: 'exit',
-};
+interface DragSample {
+  dy: number;
+  time: number;
+}
 
 /**
- * BottomSheet — the phone's dialog. Rises from the edge the thumb can reach, keeps
- * the page visible behind a scrim, and goes away with a swipe, a tap outside, the
- * close button or Escape.
+ * BottomSheet — the phone's dialog. Rises from the edge the thumb can reach, keeps the
+ * page visible behind a scrim, and goes away with a swipe, a tap outside, the close
+ * button or Escape.
  *
- * When to use: on phones for a task or a set of choices that would otherwise be a
- * Dialog: filters, a form of a few fields, details of a selected item, a picker with
- * many options. `height: content` by default; `full` for a task that needs the whole
- * screen but should still feel dismissable; `half` for a browsable list where seeing
- * the page behind matters. Not a menu (ActionSheet/Menu), not a persistent panel
- * (Landmark), not for long reading. Do not stack sheets.
+ * At window width <= `layout.maxWidth.prose`: a native `Modal` (`transparent`,
+ * `animationType="none"`, `statusBarTranslucent`) holding a scrim that fades with the
+ * surface, a full-screen scrim `Pressable`, and inside a `FocusScope` (`trapped`,
+ * `autoFocus="first"`, `restoreFocus`) an `Animated.View` surface anchored to the bottom
+ * with `role="dialog"`, `accessibilityViewIsModal` and `accessibilityLabel={heading}`.
+ * It slides up with `enter` and `motion.easing.standard` and down with `exit` and
+ * `motion.easing.exit`, instantly under reduced motion. Android back (`onRequestClose`)
+ * and the VoiceOver escape gesture report `onClose('escape')`, even when not dismissible.
  *
- * Renders a native `Modal` (`transparent`, `statusBarTranslucent`) with a full-screen
- * scrim `Pressable` and an `Animated.View` surface (`role="dialog"`,
- * `accessibilityViewIsModal`, `accessibilityLabel={heading}` whether or not the
- * heading is shown) anchored to the bottom, sliding up with `enter` and
- * `motion.easing.standard` and down with `exit` and `motion.easing.exit` (instant
- * under reduced motion). The surface composes `FocusScope` (`trapped`,
- * `autoFocus="first"`, `restoreFocus`), `Heading` (level 2), `Button` for the close
- * control (the Button itself reaches `size.target.comfortable` through its hitSlop),
- * `Box` for the scrollable body and `Stack` for the footer row — never restyled.
+ * A `PanResponder` on the header (handle and heading row, never the body `ScrollView`)
+ * claims a move once it passes `space.1` downward, follows the finger (also under reduced
+ * motion), and on release past `dismissDistance` of the measured sheet height, or faster
+ * than `dismissVelocity` between the last two move samples, fires `onDragDismiss` then
+ * `onClose('drag')`. The sheet holds the release position until the consumer's update
+ * renders: `open` false plays the exit from there; `open` still true springs back with
+ * `exit` and `motion.easing.standard`. The handle is decorative and rendered only when
+ * the gesture is live.
  *
- * A `PanResponder` on the header (handle plus heading row) follows a downward drag
- * with the finger, also under reduced motion. Released past `dismissDistance` of the
- * measured surface height or faster than `dismissVelocity`, it fires `onDragDismiss`
- * then `onClose('drag')` and leaves the surface where the finger left it: when the
- * consumer sets `open` to false, the ordinary exit transition plays from there (no
- * momentum). If the consumer keeps the sheet open, or the release is short, it
- * springs back. The body `ScrollView` never starts the gesture. With `dismissible`
- * false the close button is not rendered and the scrim and drag do nothing, as in
- * Dialog; `onRequestClose` (Android back, hardware Escape) always reports
- * `onClose('escape')`.
- *
- * `height` sizes the surface from `useWindowDimensions()`: `half` is half the window,
- * `full` the window less `layout.gutter`, `content` sizes to content up to 90%.
- * Bottom padding uses `SafeAreaView`, the inset mechanism core React Native offers.
- * Above `maxWidth` the component renders `Dialog size="md"` with the same props and
- * the shared overrides. Scroll lock has no native meaning and is not implemented.
+ * The closeButton part is a View sized to `size.target.comfortable` around a ghost icon
+ * Button, whose own hitSlop covers the extra area. The bottom inset comes from
+ * `SafeAreaView` (iOS only; Android adds none). Scroll lock has no native meaning and is
+ * not implemented. Above the breakpoint the component renders `Dialog size="md"` alone
+ * with the same props and the shared overrides. The Modal is its own window, so no ref
+ * is exposed.
  */
 export function BottomSheet({
   open,
@@ -152,34 +153,52 @@ export function BottomSheet({
   const reducedMotion = useReducedMotion();
   const { height: windowHeight, width: windowWidth } = useWindowDimensions();
 
+  // Kept mounted while the exit animation runs; derived during render so the Modal content exists on the open commit.
   const [mounted, setMounted] = React.useState(open);
-  const progress = React.useRef(new Animated.Value(open ? 1 : 0)).current;
+  if (open && !mounted) {
+    setMounted(true);
+  }
+  // Bumped after a drag dismiss so an effect can check `open` once the consumer's update has rendered.
+  const [dragReleases, setDragReleases] = React.useState(0);
+
+  const progress = React.useRef(new Animated.Value(0)).current;
   const dragY = React.useRef(new Animated.Value(0)).current;
-  const surfaceHeightRef = React.useRef(0);
-  const openRef = React.useRef(open);
-  openRef.current = open;
+  const sheetHeightRef = React.useRef(0);
+  const samplesRef = React.useRef<DragSample[]>([]);
 
   const scrimColor = overrides?.scrim ? (resolveToken(t, overrides.scrim) as string) : t.colorOverlayScrim;
-  const surfaceColor = t.colorOverlaySurface;
   const shadow = overrides?.shadow ? (resolveToken(t, overrides.shadow) as typeof t.shadowOverlay) : t.shadowOverlay;
   const radius = overrides?.radius ? (resolveToken(t, overrides.radius) as number) : t.radiusLg;
   const handleHeight = overrides?.handleHeight ? (resolveToken(t, overrides.handleHeight) as number) : t.space1;
   const handleWidth = overrides?.handleWidth ? (resolveToken(t, overrides.handleWidth) as number) : t.space10;
+  const handleRadius = overrides?.handleRadius ? (resolveToken(t, overrides.handleRadius) as number) : t.radiusFull;
+  const headerPaddingTop = overrides?.headerPaddingTop
+    ? (resolveToken(t, overrides.headerPaddingTop) as number)
+    : t.spaceSm;
+  const handleGap = overrides?.handleGap ? (resolveToken(t, overrides.handleGap) as number) : t.layoutGapTight;
+  const headerGap = overrides?.headerGap ? (resolveToken(t, overrides.headerGap) as number) : t.layoutGapNormal;
   const inset = overrides?.inset ? (resolveToken(t, overrides.inset) as number) : t.layoutInsetLg;
   const partGap = overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.layoutGapLoose;
-  const maxWidth = overrides?.maxWidth ? (resolveToken(t, overrides.maxWidth) as number) : t.layoutMaxWidthProse;
   const layer = overrides?.layer ? (resolveToken(t, overrides.layer) as number) : t.layerSheet;
   const enterDuration = overrides?.enter ? (resolveToken(t, overrides.enter) as number) : t.motionDurationBase;
   const exitDuration = overrides?.exit ? (resolveToken(t, overrides.exit) as number) : t.motionDurationFast;
+  const dragSlop = t.space1;
 
-  const isWide = windowWidth > maxWidth;
+  const isWide = windowWidth > t.layoutMaxWidthProse;
   const canDrag = dragToDismiss && dismissible;
 
-  React.useEffect(() => {
-    if (open) {
-      setMounted(true);
+  const springBack = (): void => {
+    if (reducedMotion || exitDuration === 0) {
+      dragY.setValue(0);
+      return;
     }
-  }, [open]);
+    Animated.timing(dragY, {
+      toValue: 0,
+      duration: exitDuration,
+      easing: toEasing(t.motionEasingStandard),
+      useNativeDriver: false,
+    }).start();
+  };
 
   React.useEffect(() => {
     if (!mounted) {
@@ -187,7 +206,7 @@ export function BottomSheet({
     }
     if (open) {
       dragY.setValue(0);
-      if (reducedMotion) {
+      if (reducedMotion || enterDuration === 0) {
         progress.setValue(1);
         return undefined;
       }
@@ -201,12 +220,12 @@ export function BottomSheet({
       animation.start();
       return () => animation.stop();
     }
-    if (reducedMotion) {
+    if (reducedMotion || exitDuration === 0) {
       progress.setValue(0);
       setMounted(false);
       return undefined;
     }
-    // Plays from wherever the surface is, including a drag offset left by a dismiss.
+    // Plays from wherever the surface is, including the position a drag dismiss left it at.
     const animation = Animated.timing(progress, {
       toValue: 0,
       duration: exitDuration,
@@ -219,85 +238,69 @@ export function BottomSheet({
       }
     });
     return () => animation.stop();
-    // Reacts to the open/closed transition and the mount gate it drives; the
-    // animation's own config is read fresh each run rather than tracked as a dep.
+    // Runs on the open/closed transition and the mount gate it drives; the
+    // animation config is read fresh each run.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, mounted, reducedMotion]);
 
   React.useEffect(() => {
-    if (__DEV__ && footer === undefined && !dismissible) {
-      console.warn('BottomSheet: with no footer and dismissible={false}, provide a way to close the sheet in its body.');
+    if (dragReleases > 0 && open) {
+      springBack();
     }
-  }, [footer, dismissible]);
+    // Only a drag release triggers this check; `open` is read as rendered with the consumer's update.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dragReleases]);
 
-  const handleScrimPress = (): void => {
-    if (dismissible) {
-      onClose?.('scrim');
-    }
-  };
+  // The responder is created once; it reads the current render's values through this ref.
+  const latest = React.useRef({ dragSlop, windowHeight, onClose, onDragDismiss, springBack });
+  latest.current = { dragSlop, windowHeight, onClose, onDragDismiss, springBack };
 
-  const handleCloseButtonPress = (): void => {
-    onClose?.('close-button');
-  };
-
-  const handleRequestClose = (): void => {
-    onClose?.('escape');
-  };
-
-  const handleSurfaceLayout = (event: LayoutChangeEvent): void => {
-    surfaceHeightRef.current = event.nativeEvent.layout.height;
-  };
-
-  const panResponder = React.useMemo(() => {
-    const springBack = (): void => {
-      if (reducedMotion) {
-        dragY.setValue(0);
-        return;
-      }
-      Animated.timing(dragY, {
-        toValue: 0,
-        duration: exitDuration,
-        easing: toEasing(t.motionEasingStandard),
-        useNativeDriver: false,
-      }).start();
-    };
-    return PanResponder.create({
-      onStartShouldSetPanResponder: () => false,
-      onMoveShouldSetPanResponder: (_, g: PanResponderGestureState) =>
-        g.dy > DRAG_SLOP && Math.abs(g.dy) > Math.abs(g.dx),
-      // The drag follows the finger even under reduced motion: it is user-driven.
-      onPanResponderMove: (_, g: PanResponderGestureState) => {
-        dragY.setValue(Math.max(0, g.dy));
+  const panResponder = React.useRef<PanResponderInstance | null>(null);
+  if (panResponder.current === null) {
+    const claims = (_: GestureResponderEvent, g: PanResponderGestureState): boolean =>
+      g.dy > latest.current.dragSlop && Math.abs(g.dy) > Math.abs(g.dx);
+    panResponder.current = PanResponder.create({
+      // Capture so a drag that starts on the heading or close button can still claim, but only past the slop.
+      onMoveShouldSetPanResponderCapture: claims,
+      onMoveShouldSetPanResponder: claims,
+      onPanResponderGrant: () => {
+        samplesRef.current = [];
       },
-      onPanResponderRelease: (_, g: PanResponderGestureState) => {
-        const sheetHeight = surfaceHeightRef.current > 0 ? surfaceHeightRef.current : windowHeight;
-        const dismiss = g.dy > sheetHeight * CONSTANTS.dismissDistance || g.vy > CONSTANTS.dismissVelocity;
+      // Follows the finger even under reduced motion: the drag is user-driven.
+      onPanResponderMove: (event: GestureResponderEvent, g: PanResponderGestureState) => {
+        dragY.setValue(Math.max(0, g.dy));
+        const sample: DragSample = { dy: g.dy, time: event.nativeEvent.timestamp };
+        samplesRef.current = [samplesRef.current[samplesRef.current.length - 1] ?? sample, sample];
+      },
+      onPanResponderRelease: (_: GestureResponderEvent, g: PanResponderGestureState) => {
+        const [previous, last] = samplesRef.current;
+        const elapsed = previous !== undefined && last !== undefined ? last.time - previous.time : 0;
+        // Only downward speed counts.
+        const velocity = previous !== undefined && last !== undefined && elapsed > 0 ? Math.max(0, (last.dy - previous.dy) / elapsed) : 0;
+        const sheetHeight = sheetHeightRef.current > 0 ? sheetHeightRef.current : latest.current.windowHeight;
+        const dismiss = g.dy > sheetHeight * CONSTANTS.dismissDistance || velocity > CONSTANTS.dismissVelocity;
         if (!dismiss) {
-          springBack();
+          latest.current.springBack();
           return;
         }
-        onDragDismiss?.();
-        onClose?.('drag');
-        // Hold the release position for the exit transition; if the consumer keeps
-        // the sheet open, spring back once the update has rendered.
-        setTimeout(() => {
-          if (openRef.current) {
-            springBack();
-          }
-        }, 0);
+        latest.current.onDragDismiss?.();
+        latest.current.onClose?.('drag');
+        setDragReleases((count) => count + 1);
       },
-      onPanResponderTerminate: springBack,
+      onPanResponderTerminate: () => latest.current.springBack(),
     });
-  }, [dragY, windowHeight, onDragDismiss, onClose, reducedMotion, exitDuration, t.motionEasingStandard]);
+  }
 
   if (isWide) {
-    const dialogOverrides = overrides
-      ? (Object.fromEntries(
-          Object.entries(overrides)
-            .map(([key, value]) => [SHARED_DIALOG_BINDING[key as BottomSheetOverridableBinding], value] as const)
-            .filter((entry): entry is [DialogOverridableBinding, TokenRef] => entry[0] !== undefined && entry[1] !== undefined),
-        ) as Partial<Record<DialogOverridableBinding, TokenRef | undefined>>)
-      : undefined;
+    let dialogOverrides: Partial<Record<DialogOverridableBinding, TokenRef | undefined>> | undefined;
+    if (overrides) {
+      dialogOverrides = {};
+      for (const binding of DIALOG_BINDINGS) {
+        if (overrides[binding] !== undefined) {
+          dialogOverrides[binding] = overrides[binding];
+        }
+      }
+    }
     return (
       <Dialog
         open={open}
@@ -314,9 +317,28 @@ export function BottomSheet({
     );
   }
 
-  if (!mounted && !open) {
+  if (!mounted) {
     return null;
   }
+
+  const handleScrimPress = (): void => {
+    if (dismissible) {
+      onClose?.('scrim');
+    }
+  };
+
+  const handleCloseButtonPress = (): void => {
+    onClose?.('close-button');
+  };
+
+  // Android back, a hardware Escape and the VoiceOver escape gesture: always reported, the consumer decides.
+  const handleEscape = (): void => {
+    onClose?.('escape');
+  };
+
+  const handleSurfaceLayout = (event: LayoutChangeEvent): void => {
+    sheetHeightRef.current = event.nativeEvent.layout.height;
+  };
 
   const hostStyle: ViewStyle = { flex: 1 };
 
@@ -328,119 +350,142 @@ export function BottomSheet({
 
   const anchorStyle: ViewStyle = { flex: 1, justifyContent: 'flex-end', zIndex: layer };
 
-  const entryTranslateY = progress.interpolate({ inputRange: [0, 1], outputRange: [windowHeight, 0] });
-
-  const surfaceHeight: Record<BottomSheetHeight, number | undefined> = {
+  const sheetHeight: Record<BottomSheetHeight, number | undefined> = {
     content: undefined,
-    half: windowHeight * 0.5, // literal-ok: half the viewport per spec
+    half: windowHeight * 0.5, // literal-ok: half the window, per the height enum
     full: windowHeight - t.layoutGutter,
   };
 
   const surfaceStyle: Animated.WithAnimatedValue<ViewStyle> = {
     width: '100%',
-    height: surfaceHeight[height],
-    maxHeight: height === 'content' ? windowHeight * 0.9 : undefined, // literal-ok: 90% of the viewport per spec
+    height: sheetHeight[height],
+    maxHeight: height === 'content' ? windowHeight * 0.9 : undefined, // literal-ok: 90% of the window, per height content
     borderTopLeftRadius: radius,
     borderTopRightRadius: radius,
     ...shadow,
-    backgroundColor: surfaceColor,
+    backgroundColor: t.colorOverlaySurface,
     overflow: 'hidden',
     gap: partGap,
-    transform: [{ translateY: Animated.add(entryTranslateY, dragY) }],
+    transform: [
+      {
+        translateY: Animated.add(
+          progress.interpolate({ inputRange: [0, 1], outputRange: [windowHeight, 0] }),
+          dragY,
+        ),
+      },
+    ],
   };
 
   const headerStyle: ViewStyle = {
+    paddingTop: canDrag ? headerPaddingTop : inset,
     paddingHorizontal: inset,
-    paddingTop: t.spaceSm,
-    gap: t.layoutGapTight,
+    gap: handleGap,
   };
 
   const handleStyle: ViewStyle = {
     alignSelf: 'center',
     width: handleWidth,
     height: handleHeight,
-    borderRadius: t.radiusFull,
+    borderRadius: handleRadius,
     backgroundColor: t.colorForegroundMuted,
   };
 
   const headingRowStyle: ViewStyle = {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: hideHeading ? 'flex-end' : 'space-between',
-    gap: t.layoutGapNormal,
+    gap: headerGap,
   };
 
-  const bodyFlexStyle: ViewStyle = { flexShrink: 1 };
-  const bodyContentStyle: ViewStyle = { flexGrow: 1 };
+  const headingStyle: ViewStyle = { flexShrink: 1 };
+
+  const closeButtonStyle: ViewStyle = {
+    minWidth: t.sizeTargetComfortable,
+    minHeight: t.sizeTargetComfortable,
+    alignItems: 'center',
+    justifyContent: 'center',
+  };
+
+  // `half` and `full` fix the height, so the body takes the free space and the footer stays pinned.
+  const bodyStyle: ViewStyle = { flexShrink: 1, flexGrow: height === 'content' ? 0 : 1 };
 
   const footerStyle: ViewStyle = {
     paddingHorizontal: inset,
     paddingBottom: inset,
   };
 
+  const bodyOverrides = overrides?.inset ? { paddingBlock: overrides.inset, paddingInline: overrides.inset } : undefined;
+  const footerOverrides = overrides?.footerGap ? { gap: overrides.footerGap } : undefined;
+
+  const body = (
+    <ScrollView style={bodyStyle} keyboardShouldPersistTaps="handled" testID="BottomSheet.body">
+      <Box inset="lg" overrides={bodyOverrides}>
+        {children}
+      </Box>
+    </ScrollView>
+  );
+
   return (
-    <Modal visible={mounted} transparent animationType="none" onRequestClose={handleRequestClose} statusBarTranslucent>
+    <Modal visible transparent animationType="none" onRequestClose={handleEscape} statusBarTranslucent>
       <View style={hostStyle}>
-        <Animated.View style={scrimStyle} />
-        <Pressable
-          style={StyleSheet.absoluteFill}
-          onPress={handleScrimPress}
-          accessible={false}
-          testID="BottomSheet.scrim"
-        />
+        <Animated.View style={scrimStyle} pointerEvents="none" />
+        <Pressable style={StyleSheet.absoluteFill} onPress={handleScrimPress} accessible={false} testID="BottomSheet.scrim" />
         <View style={anchorStyle} pointerEvents="box-none">
-          <FocusScope trapped active={mounted} autoFocus="first" restoreFocus>
+          <FocusScope trapped active={open} autoFocus="first" restoreFocus>
             <Animated.View
               style={surfaceStyle}
               onLayout={handleSurfaceLayout}
               role="dialog"
               accessibilityViewIsModal
               accessibilityLabel={heading}
+              onAccessibilityEscape={handleEscape}
               testID="BottomSheet"
             >
-              <View {...(canDrag ? panResponder.panHandlers : null)} style={headerStyle} testID="BottomSheet.header">
-                <View
-                  style={handleStyle}
-                  accessibilityElementsHidden
-                  importantForAccessibility="no"
-                  testID="BottomSheet.handle"
-                />
+              <View
+                {...(canDrag ? panResponder.current.panHandlers : undefined)}
+                style={headerStyle}
+                testID="BottomSheet.header"
+              >
+                {canDrag ? (
+                  <View
+                    style={handleStyle}
+                    accessibilityElementsHidden
+                    importantForAccessibility="no"
+                    testID="BottomSheet.handle"
+                  />
+                ) : null}
                 <View style={headingRowStyle}>
-                  {!hideHeading ? <Heading level={2}>{heading}</Heading> : null}
+                  {!hideHeading ? (
+                    <View style={headingStyle} testID="BottomSheet.heading">
+                      <Heading level="2">{heading}</Heading>
+                    </View>
+                  ) : null}
                   {dismissible ? (
-                    <Button
-                      label={COPY.closeLabel}
-                      variant="ghost"
-                      size="sm"
-                      iconOnly
-                      leadingIcon={<Icon name="close" color={t.colorActionGhostForeground} />}
-                      onPress={handleCloseButtonPress}
-                    />
+                    <View style={closeButtonStyle} testID="BottomSheet.closeButton">
+                      <Button
+                        label={COPY.closeLabel}
+                        variant="ghost"
+                        size="sm"
+                        iconOnly
+                        leadingIcon={<Icon name="close" color={t.colorActionGhostForeground} />}
+                        onPress={handleCloseButtonPress}
+                      />
+                    </View>
                   ) : null}
                 </View>
               </View>
-              <ScrollView
-                testID="BottomSheet.body"
-                style={bodyFlexStyle}
-                contentContainerStyle={bodyContentStyle}
-                keyboardShouldPersistTaps="handled"
-              >
-                <Box inset="lg" overrides={overrides?.inset ? { paddingBlock: overrides.inset, paddingInline: overrides.inset } : undefined}>
-                  {children}
-                </Box>
-              </ScrollView>
               {footer !== undefined ? (
-                <SafeAreaView style={footerStyle} testID="BottomSheet.footer">
-                  <Stack
-                    direction="horizontal"
-                    gap="tight"
-                    justify="end"
-                    overrides={overrides?.footerGap ? { gap: overrides.footerGap } : undefined}
-                  >
-                    {footer}
-                  </Stack>
-                </SafeAreaView>
-              ) : null}
+                <>
+                  {body}
+                  <SafeAreaView style={footerStyle} testID="BottomSheet.footer">
+                    <Stack direction="horizontal" gap="tight" justify="end" overrides={footerOverrides}>
+                      {footer}
+                    </Stack>
+                  </SafeAreaView>
+                </>
+              ) : (
+                <SafeAreaView style={bodyStyle}>{body}</SafeAreaView>
+              )}
             </Animated.View>
           </FocusScope>
         </View>

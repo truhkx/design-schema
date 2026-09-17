@@ -4,6 +4,10 @@
   display: inline-block;
 }
 
+.ds-menu__trigger {
+  display: inline-flex;
+}
+
 .ds-menu__popup {
   --ds-menu-border: var(--color-border);
   --ds-menu-border-width: var(--border-width-thin);
@@ -28,8 +32,14 @@
   --ds-menu-line-height: var(--font-line-height-normal);
   --ds-menu-layer: var(--layer-dropdown);
   --ds-menu-enter: var(--motion-duration-fast);
+  --ds-menu-enter-distance: var(--space-1);
   box-sizing: border-box;
   position: fixed;
+  /* popupOffset: top/bottom come from the trigger rect in JS with no gap. Only the margin on the side
+     facing the trigger moves a fixed box (the other side has an auto inset), so both sides carry it and
+     a flipped popup keeps the gap; Menu.tsx reads the resolved margin for the flip check. */
+  margin: 0;
+  margin-block: var(--ds-menu-popup-offset);
   display: flex;
   flex-direction: column;
   gap: var(--ds-menu-item-gap);
@@ -53,24 +63,18 @@
   color: var(--color-foreground);
   z-index: var(--ds-menu-layer);
   opacity: 0;
-  /* enter: fade and a space.1 rise from `--ds-menu-enter-offset`, set per `data-vertical` below; kept
-     in its own custom property (rather than competing `transform` rules) so `--entered` always wins. */
-  --ds-menu-enter-offset: calc(-1 * var(--space-1));
+  /* enter: fade and an enterDistance slide from the trigger side — downward for bottom placements,
+     upward for top. The direction lives in `--ds-menu-enter-offset` (set per `data-vertical`) rather
+     than in competing `transform` rules, so `--entered` always wins. */
+  --ds-menu-enter-offset: calc(-1 * var(--ds-menu-enter-distance));
   transform: translateY(var(--ds-menu-enter-offset));
   transition-property: opacity, transform;
   transition-duration: var(--ds-menu-enter);
   transition-timing-function: var(--motion-easing-standard);
 }
 
-/* popupOffset: the fixed top/bottom placement is set from the trigger rect in JS with no gap;
-   this margin (on the side the popup grows away from the trigger) adds the gap itself. */
-.ds-menu__popup[data-vertical='bottom'] {
-  margin-block-start: var(--ds-menu-popup-offset);
-}
-
 .ds-menu__popup[data-vertical='top'] {
-  margin-block-end: var(--ds-menu-popup-offset);
-  --ds-menu-enter-offset: var(--space-1);
+  --ds-menu-enter-offset: var(--ds-menu-enter-distance);
 }
 
 /* Instant under reduced motion. */

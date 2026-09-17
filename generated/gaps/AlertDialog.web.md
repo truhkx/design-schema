@@ -38,3 +38,13 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - AlertDialog: `description` Text size is unspecified (Dialog uses tone=muted at default size); I used tone=muted at default size to match the contrast pair color.foreground.muted on color.overlay.surface.
 - AlertDialog: `role` is fixed to alertdialog, so it is omitted from the dialog prop passthrough type; the doc does not say whether consumers may override it.
 - AlertDialog: swiftui notes mention a `destructive` prop ('or confirm when destructive is false') that does not exist in the schema props; not relevant to web but contradictory in the doc.
+
+## 2026-09-17 10:25 — round 1
+
+- AlertDialog: web notes say FocusScope takes autoFocus `first` (Cancel), but FocusScope's layout effect runs before the parent's showModal(), while the <dialog> is still closed and display:none, so its focus() can't land in a real browser. I kept autoFocus="first" and also focus Cancel by ref after showModal() (and after a native re-open). The doc should say which one owns initial focus on web.
+- AlertDialog: `footer` composition lists only the `footerGap` forward, but the web guidance says the Stack is horizontal with `gap: tight` and `justify: end`. I passed direction="horizontal" gap="tight" justify="end"; these should be listed as composition `props`.
+- AlertDialog: `iconSize` and `footerGap` are forwarded to child overrides, and the doc doesn't say whether they also get a root `--ds-alert-dialog-*` hook. I gave them no root hook, so consumer CSS can't set them on the root. Always passing `size: font.size.lg` to Icon (as Alert does) is my choice too.
+- AlertDialog: `layer` says it applies only to a non-top-layer fallback, but web always uses showModal() when it exists and has no other fallback. I set z-index from the hook on the <dialog>, where it has no effect in the top layer.
+- AlertDialog: `focusScope` is an anatomy part, but the web notes' wrapper list leaves it out. I passed data-part="focusScope" straight to FocusScope, which spreads it onto its own wrapper div.
+- AlertDialog: the Keyboard story needs a trigger, but copy has no trigger label, so the story harness labels its opener Button with `confirmLabel`. That puts a second, inert button with the same name behind the modal.
+- AlertDialog: the `width` description says min(width, viewport − 2×gutter) but not which element gets the width, since the surface lives inside the <dialog>. I sized the <dialog> and set the surface to 100% of it.

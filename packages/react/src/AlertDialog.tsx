@@ -39,11 +39,13 @@ export type AlertDialogOverridableBinding =
   | 'footerGap'
   | 'iconSize'
   | 'width'
+  | 'gutter'
   | 'layer'
   | 'enter'
   | 'exit';
 
-const OVERRIDE_HOOK: Record<AlertDialogOverridableBinding, string> = {
+/** Hooks on the root. `footerGap` and `iconSize` are forwarded to the Stack and Icon `overrides` instead. */
+const OVERRIDE_HOOK: Partial<Record<AlertDialogOverridableBinding, string>> = {
   scrim: '--ds-alert-dialog-scrim',
   border: '--ds-alert-dialog-border',
   borderWidth: '--ds-alert-dialog-border-width',
@@ -53,9 +55,8 @@ const OVERRIDE_HOOK: Record<AlertDialogOverridableBinding, string> = {
   partGap: '--ds-alert-dialog-part-gap',
   textGap: '--ds-alert-dialog-text-gap',
   iconGap: '--ds-alert-dialog-icon-gap',
-  footerGap: '--ds-alert-dialog-footer-gap',
-  iconSize: '--ds-alert-dialog-icon-size',
   width: '--ds-alert-dialog-width',
+  gutter: '--ds-alert-dialog-gutter',
   layer: '--ds-alert-dialog-layer',
   enter: '--ds-alert-dialog-enter',
   exit: '--ds-alert-dialog-exit',
@@ -66,7 +67,7 @@ function overridesToStyle(overrides: Partial<Record<AlertDialogOverridableBindin
   for (const binding of Object.keys(overrides) as AlertDialogOverridableBinding[]) {
     const ref = overrides[binding];
     const hook = OVERRIDE_HOOK[binding];
-    // Locked bindings are not in the type; anything passed anyway has no hook and is ignored.
+    // Locked and forwarded bindings have no hook here; anything passed for them is ignored.
     if (ref && hook) style[hook] = cssVar(ref);
   }
   return style as CSSProperties;
@@ -75,7 +76,7 @@ function overridesToStyle(overrides: Partial<Record<AlertDialogOverridableBindin
 /** copy.* — used verbatim. */
 const COPY = { cancelLabel: 'Cancel' };
 
-/** iconSize default (font.size.lg), forwarded to the Icon's own `size` override. */
+/** iconSize default (font.size.lg), forwarded to the Icon as `overrides.size`. */
 const ICON_SIZE_TOKEN = 'font.size.lg' as TokenRef;
 
 /** tone → confirm Button variant: danger → danger; warning and info → primary. */
@@ -107,19 +108,19 @@ function lockScroll(): () => void {
 
 export interface AlertDialogProps
   extends Omit<ComponentPropsWithoutRef<'dialog'>, 'children' | 'title' | 'onCancel' | 'onClose' | 'open' | 'role'> {
-  /** Controlled visibility, as in Dialog. */
+  /** Controlled only — there is no uncontrolled mode; the consumer owns `open` and sets it false after handling `onConfirm` or `onCancel`, as in Dialog. */
   open: boolean;
-  /** The question or statement, as a level-2 Heading and the accessible name ("Delete 3 files?"). */
+  /** The question or statement, as a level-2 Heading at the size Heading reads from level 2 (no explicit `size`), and the accessible name ("Delete 3 files?"). */
   heading: string;
-  /** What will happen and whether it can be undone, in one or two sentences. Required: a decision without consequences stated is not a decision. */
+  /** What will happen and whether it can be undone, in one or two sentences, rendered as Text `tone="muted"` at Text's default size. Required: a decision without consequences stated is not a decision. */
   description: string;
-  /** The nature of the decision. Sets the status icon and the confirm button's variant (danger → danger Button; warning and info → primary). */
+  /** The nature of the decision. Sets the status icon (Icon `name` equal to the tone) and the confirm button's variant (danger → danger Button; warning and info → primary). Both buttons are Button size md. */
   tone?: AlertDialogTone | undefined;
   /** The confirming action, restating it ("Delete files"). Never "OK" or "Yes". */
   confirmLabel: string;
   /** The declining action. Defaults to `copy.cancelLabel`. */
   cancelLabel?: string | undefined;
-  /** Blocks confirm while a precondition is unmet (a typed confirmation, a loading state). Cancel always works. Forwarded to the confirm Button's own `disabled`. */
+  /** Blocks confirm while a precondition is unmet (a typed confirmation, a loading state). Cancel always works. Forwarded to the confirm Button's own `disabled`, which keeps it focusable-but-inert. */
   confirmDisabled?: boolean | undefined;
   /** The user chose the confirming action. The consumer performs it and closes. */
   onConfirm?: (() => void) | undefined;
@@ -127,7 +128,7 @@ export interface AlertDialogProps
   onCancel?: ((reason: AlertDialogCancelReason) => void) | undefined;
   /** Portal target. Defaults to `document.body`. A platform prop, not part of the schema. */
   container?: HTMLElement | undefined;
-  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
+  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline (`footerGap` and `iconSize` reach the Stack and Icon `overrides`). */
   overrides?: Partial<Record<AlertDialogOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
@@ -142,7 +143,8 @@ export interface AlertDialogProps
  * is `warning`).
  *
  * The alert dialog never closes itself: Cancel and Escape fire `onCancel`, Confirm fires
- * `onConfirm`, a scrim click does nothing, and the consumer flips `open`.
+ * `onConfirm`, a scrim click does nothing, and the consumer flips `open`. The ref resolves to the
+ * `<dialog>`, null while closed.
  */
 export function AlertDialog({
   ref,
@@ -172,11 +174,15 @@ export function AlertDialog({
   const surfaceRef = useRef<HTMLDivElement | null>(null);
   const cancelButtonRef = useRef<HTMLButtonElement | null>(null);
   const escapeHandledRef = useRef(false);
+  const selfClosingRef = useRef(false);
 
   // Mounted while open, and while the exit transition finishes after `open` goes false.
   const [present, setPresent] = useState(open);
   // Drives the entered/exited CSS state; set a frame after mount so the enter transition runs.
   const [visible, setVisible] = useState(false);
+
+  const latestOpen = useRef(open);
+  latestOpen.current = open;
 
   const warnedRef = useRef(false);
   if (process.env.NODE_ENV !== 'production' && !warnedRef.current && (!heading || !description || !confirmLabel)) {
@@ -188,20 +194,26 @@ export function AlertDialog({
 
   if (open && !present) setPresent(true);
 
-  // Open: showModal(), focus Cancel so Enter never confirms by momentum, then reveal on the next frame.
+  /** Cancel, so Enter never confirms by momentum. FocusScope's autoFocus `first` targets the same button. */
+  const focusCancel = (): void => {
+    const cancelButton = cancelButtonRef.current;
+    if (cancelButton && document.activeElement !== cancelButton) cancelButton.focus();
+  };
+
+  // Open: showModal(), then reveal on the next frame. FocusScope's layout effect runs first (a child's
+  // fires before its parent's) while the <dialog> is still closed, so focus is confirmed on Cancel after.
   useLayoutEffect(() => {
     if (!present) return undefined;
     const dialog = dialogRef.current;
-    const surface = surfaceRef.current;
-    if (!dialog || !surface) return undefined;
+    if (!dialog) return undefined;
+    selfClosingRef.current = false;
     if (!dialog.open) {
       // showModal() gives the top layer, Escape and background inertness. jsdom implements the
       // `open` IDL attribute but not showModal(), so the assignment is the fallback there.
       if (typeof dialog.showModal === 'function') dialog.showModal();
       else dialog.open = true;
     }
-    cancelButtonRef.current?.focus();
-
+    focusCancel();
     const frame = requestAnimationFrame(() => setVisible(true));
     return () => cancelAnimationFrame(frame);
   }, [present]);
@@ -214,12 +226,14 @@ export function AlertDialog({
     const surface = surfaceRef.current;
     const finish = (): void => {
       if (dialog?.open) {
+        selfClosingRef.current = true;
         if (typeof dialog.close === 'function') dialog.close();
         else dialog.open = false;
       }
       setPresent(false);
     };
-    if (!surface || hasNoTransition(surface)) {
+    // A dialog the browser already closed is display: none, so no transitionend would ever arrive.
+    if (!surface || !dialog?.open || hasNoTransition(surface)) {
       finish();
       return undefined;
     }
@@ -236,7 +250,7 @@ export function AlertDialog({
     return lockScroll();
   }, [present]);
 
-  // Escape arrives as keydown; the native `cancel` also covers other close requests (Android back).
+  // Escape arrives as keydown; the native `cancel` covers any other close request the browser raises.
   const handleKeyDown = (event: ReactKeyboardEvent<HTMLDialogElement>): void => {
     rest.onKeyDown?.(event);
     if (event.key !== 'Escape' || event.defaultPrevented || !open) return;
@@ -256,15 +270,24 @@ export function AlertDialog({
     onCancel?.('escape');
   };
 
+  // A non-cancelable `cancel` closes the native dialog anyway; reopen unless the consumer set `open` false.
+  const handleNativeClose = (): void => {
+    if (selfClosingRef.current) {
+      selfClosingRef.current = false;
+      return;
+    }
+    requestAnimationFrame(() => {
+      const dialog = dialogRef.current;
+      if (!dialog || dialog.open || !latestOpen.current) return;
+      if (typeof dialog.showModal === 'function') dialog.showModal();
+      else dialog.open = true;
+      focusCancel();
+    });
+  };
+
   if (!present) return null;
 
-  const classes = [
-    'ds-alert-dialog',
-    `ds-alert-dialog--${tone}`,
-    visible && open ? 'ds-alert-dialog--visible' : null,
-  ]
-    .filter(Boolean)
-    .join(' ');
+  const classes = ['ds-alert-dialog', visible && open ? 'ds-alert-dialog--visible' : null].filter(Boolean).join(' ');
 
   const node = (
     <dialog
@@ -279,23 +302,33 @@ export function AlertDialog({
       aria-describedby={descriptionId}
       onKeyDown={handleKeyDown}
       onCancel={handleNativeCancel}
+      onClose={handleNativeClose}
     >
-      {/* No scrim click handler: a stray click on ::backdrop cannot answer the decision. */}
-      <FocusScope trapped autoFocus="none" restoreFocus data-part="focusScope">
+      {/* The scrim is ::backdrop. No click handler: a click on it targets the <dialog> and answers nothing. */}
+      <FocusScope trapped autoFocus="first" restoreFocus data-part="focusScope">
         <div className="ds-alert-dialog__surface" ref={surfaceRef} data-part="surface">
           <div className="ds-alert-dialog__row">
+            {/* Decorative: the heading and description already carry the tone. */}
             <span className="ds-alert-dialog__icon" data-part="icon" aria-hidden="true">
-              <Icon name={tone} overrides={{ size: overrides?.iconSize ?? ICON_SIZE_TOKEN }} />
+              <Icon
+                name={tone}
+                overrides={{
+                  color: `color.status.${tone}.icon` as TokenRef,
+                  size: overrides?.iconSize ?? ICON_SIZE_TOKEN,
+                }}
+              />
             </span>
             <div className="ds-alert-dialog__text">
               <div className="ds-alert-dialog__heading" data-part="heading">
-                <Heading level={2} id={headingId}>
+                <Heading level="2" id={headingId}>
                   {heading}
                 </Heading>
               </div>
-              <Text id={descriptionId} tone="muted" data-part="description">
-                {description}
-              </Text>
+              <div className="ds-alert-dialog__description" data-part="description">
+                <Text id={descriptionId} tone="muted">
+                  {description}
+                </Text>
+              </div>
             </div>
           </div>
           <div className="ds-alert-dialog__footer" data-part="footer">
@@ -303,14 +336,14 @@ export function AlertDialog({
               direction="horizontal"
               gap="tight"
               justify="end"
-              wrap
               overrides={overrides?.footerGap ? { gap: overrides.footerGap } : undefined}
             >
-              {/* Cancel first in DOM order so it is the first focusable and focused on open. */}
+              {/* Cancel first in DOM order: the first focusable, focused on open; Confirm sits at the end. */}
               <span className="ds-alert-dialog__action" data-part="cancelButton">
                 <Button
                   ref={cancelButtonRef}
                   variant="secondary"
+                  size="md"
                   label={cancelLabel ?? COPY.cancelLabel}
                   onClick={() => onCancel?.('cancel')}
                 />
@@ -318,6 +351,7 @@ export function AlertDialog({
               <span className="ds-alert-dialog__action" data-part="confirmButton">
                 <Button
                   variant={CONFIRM_VARIANT[tone]}
+                  size="md"
                   label={confirmLabel}
                   disabled={confirmDisabled}
                   onClick={() => onConfirm?.()}

@@ -27,7 +27,7 @@ describe('Dialog', () => {
   it('close-button-fires-on-close', () => {
     const d = setup({ open: true });
     fireEvent.press(screen.getByLabelText('Close'));
-    expect(d.onClose).toHaveBeenCalled();
+    expect(d.onClose).toHaveBeenCalledWith('close-button');
   });
 
   it('non-dismissible-scrim-click-does-nothing', () => {

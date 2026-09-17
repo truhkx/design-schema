@@ -121,6 +121,7 @@ export type {
   MenuTriggerIcon,
   MenuPlacement,
   MenuItemTone,
+  MenuOpenChangeReason,
   MenuOverridableBinding,
 } from './Menu';
 

@@ -11,7 +11,7 @@ import {
   View,
   findNodeHandle,
 } from 'react-native';
-import type { ScrollViewInstance, ViewInstance, ViewStyle } from 'react-native';
+import type { ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Box } from './Box';
@@ -25,10 +25,10 @@ import { toEasing, useReducedMotion, useTheme } from './theme';
 
 export type DialogSize = 'sm' | 'md' | 'lg';
 export type DialogInitialFocus = 'first' | 'title' | 'close';
-/** Why `onClose` fired. `action` is never emitted by Dialog itself — it exists for a consumer whose footer action also wants to report a close through the same callback. */
+/** Why `onClose` fired. `action` is never emitted by Dialog itself — it exists for a footer action that reports a close through the same handler. */
 export type DialogCloseReason = 'escape' | 'close-button' | 'scrim' | 'action';
 
-/** The style bindings a caller may replace with a different token; see the component's overrides contract. */
+/** The style bindings a caller may replace with a different token; `surface`, `focusRing` and `focusRingWidth` are locked. */
 export type DialogOverridableBinding =
   | 'scrim'
   | 'border'
@@ -41,12 +41,14 @@ export type DialogOverridableBinding =
   | 'footerGap'
   | 'descriptionGap'
   | 'widthSm'
+  | 'widthMd'
+  | 'widthLg'
   | 'layer'
   | 'enter'
   | 'exit';
 
 export interface DialogProps {
-  /** Controlled visibility. The consumer owns it; the dialog requests changes through `onClose`. */
+  /** Controlled only — there is no uncontrolled mode. The consumer owns `open`; the dialog never closes itself and requests changes through `onClose`. */
   open: boolean;
   /** The dialog's title, rendered as a level-2 Heading and used as the accessible name. Says what the task is ("Rename project"). */
   heading: string;
@@ -56,17 +58,17 @@ export interface DialogProps {
   children: React.ReactNode;
   /** The action row. Primary action first, then one secondary; follows Form's action-order rule. A dialog with no footer must be dismissable from its body. */
   footer?: React.ReactNode;
-  /** Visually hide the heading while it remains the accessible name (BottomSheet forwards its own hideHeading here above the breakpoint). */
+  /** Visually hide the heading while it remains the accessible name. RN has no visually hidden primitive, so the Heading is not rendered and the surface's accessibilityLabel stays the name. */
   hideHeading?: boolean | undefined;
   /** Surface width on wide viewports. Full-width below the content measure on every size. */
   size?: DialogSize | undefined;
-  /** Escape, the close button and a scrim click all request close. Set `false` for a dialog that must be answered (then provide the answers in the footer); Escape still fires `onClose` with reason `escape` so the consumer can decide. */
+  /** Escape, the close button and a scrim press all request close. When `false` the close button is not rendered and the scrim does nothing; Escape (Android back, VoiceOver escape) still fires `onClose('escape')`. */
   dismissible?: boolean | undefined;
-  /** Where focus lands on open: the first focusable control in the body (default), the title (for long or reading dialogs), or the close button. */
+  /** Where accessibility focus lands on open: the body (default), the title, or the close button. */
   initialFocus?: DialogInitialFocus | undefined;
   /** Fired when the user requests to close, with a reason. The consumer sets `open` to false (or not). */
   onClose?: ((reason: DialogCloseReason) => void) | undefined;
-  /** Fired after the open transition ends and focus has moved in. Use to start work that needs the dialog visible. */
+  /** Fired after the open transition ends and focus has moved in; on the next frame after focus when there is no transition. */
   onOpened?: (() => void) | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<DialogOverridableBinding, TokenRef | undefined>> | undefined;
@@ -77,36 +79,19 @@ const COPY = {
 } as const;
 
 /**
- * Dialog — interrupts for one task and gives the screen back when it's done or
- * abandoned. The scrim, trapped focus, inert background, Escape and focus-restore
- * exist to make that interruption safe and reversible.
+ * Dialog — interrupts for one task and gives the screen back when it is done or
+ * abandoned.
  *
- * When to use: Use for a short task that must complete before the user continues:
- * rename, create-with-a-few-fields, choose from options with consequences. Keep it
- * to one screen of content. Do not use it for a message needing no decision (Alert),
- * a destructive confirmation (AlertDialog), or content that benefits from the page
- * staying visible (Popover/Disclosure).
- *
- * Renders a native `Modal` (`transparent`, `animationType="none"` — the component
- * animates itself) containing a full-screen scrim `Pressable` and a centered surface.
- * The surface composes `FocusScope` (`trapped`, `restoreFocus`) for the trap and
- * focus-restore-on-close; on native there is no descendant walker, so `initialFocus`
- * is implemented by hand with `AccessibilityInfo.setAccessibilityFocus` on the title,
- * the close button, or the body, once the enter animation finishes (or immediately
- * under reduced motion). `onRequestClose` (the Android back gesture) always reports
- * `onClose('escape')`, even when `dismissible` is `false` — the consumer decides,
- * because a keyboard/switch-access user must always have a reported way out; with
- * `dismissible` false the close button is not rendered and the scrim does nothing. The
- * accessible name comes from `accessibilityLabel={heading}` on the modal surface
- * regardless of `hideHeading`, so hiding the heading only removes its visible
- * `Heading`, never the announced name. The surface also carries the RN >= 0.74
- * `role="dialog"` prop alongside `accessibilityViewIsModal`, as Landmark and
- * Fieldset use `role` for their own semantics. The `size` widths and `enter`/`exit`
- * durations are the same tokens as web; `widthSm` is the only overridable width, per
- * the schema. Scroll-lock has no native equivalent — there is no page scroll for a
- * modal window to suppress — so it is not implemented; the acknowledged limit is
- * `initialFocus` targeting a wrapping `View` rather than the first real focusable
- * descendant, the same limit `FocusScope` documents for itself.
+ * A native `Modal` (`transparent`, `animationType="none"` — the component animates
+ * itself, `statusBarTranslucent`) holding a full-screen scrim `Pressable` and, inside
+ * a `FocusScope`, the surface `View` with `role="dialog"`, `accessibilityViewIsModal`,
+ * `accessibilityLabel={heading}` and `accessibilityHint={description}`. Android back
+ * (`onRequestClose`) and the VoiceOver escape gesture (`onAccessibilityEscape`) both
+ * report `onClose('escape')`, even when not dismissible. Native has no descendant
+ * walker, so `initialFocus` calls `setAccessibilityFocus` on the View wrapping the
+ * title, the close button or the body, after the enter animation; there is no visible
+ * focus ring on those targets. Scroll lock has no native meaning and is not
+ * implemented. The Dialog is rooted in a Modal and exposes no ref.
  */
 export function Dialog({
   open,
@@ -125,15 +110,19 @@ export function Dialog({
   const { tokens: t } = useTheme();
   const reducedMotion = useReducedMotion();
 
+  // Kept mounted while the exit animation runs; derived during render so the Modal content exists on the open commit.
   const [mounted, setMounted] = React.useState(open);
-  const progress = React.useRef(new Animated.Value(open ? 1 : 0)).current;
+  if (open && !mounted) {
+    setMounted(true);
+  }
+  const progress = React.useRef(new Animated.Value(0)).current;
 
+  const surfaceRef = React.useRef<ViewInstance>(null);
   const titleGroupRef = React.useRef<ViewInstance>(null);
   const closeButtonRef = React.useRef<ViewInstance>(null);
-  const bodyRef = React.useRef<ScrollViewInstance>(null);
+  const bodyRef = React.useRef<ViewInstance>(null);
 
   const scrimColor = overrides?.scrim ? (resolveToken(t, overrides.scrim) as string) : t.colorOverlayScrim;
-  const surfaceColor = t.colorOverlaySurface;
   const borderColor = overrides?.border ? (resolveToken(t, overrides.border) as string) : t.colorBorder;
   const borderWidth = overrides?.borderWidth ? (resolveToken(t, overrides.borderWidth) as number) : t.borderWidthThin;
   const shadow = overrides?.shadow ? (resolveToken(t, overrides.shadow) as typeof t.shadowOverlay) : t.shadowOverlay;
@@ -148,39 +137,42 @@ export function Dialog({
   const enterDuration = overrides?.enter ? (resolveToken(t, overrides.enter) as number) : t.motionDurationBase;
   const exitDuration = overrides?.exit ? (resolveToken(t, overrides.exit) as number) : t.motionDurationFast;
   const widthSm = overrides?.widthSm ? (resolveToken(t, overrides.widthSm) as number) : t.layoutMaxWidthProse;
-  // md/lg are 3/4 of and equal to layout.maxWidth.content — derived, not new tokens, and not independently overridable.
+  // An override replaces the base; the × 0.75 stays in the rule.
+  const widthMdBase = overrides?.widthMd ? (resolveToken(t, overrides.widthMd) as number) : t.layoutMaxWidthContent;
+  const widthLg = overrides?.widthLg ? (resolveToken(t, overrides.widthLg) as number) : t.layoutMaxWidthContent;
   const sizeWidth: Record<DialogSize, number> = {
     sm: widthSm,
-    md: t.layoutMaxWidthContent * 0.75, // literal-ok: 3/4 of the content token per spec, not a design literal
-    lg: t.layoutMaxWidthContent,
+    md: widthMdBase * 0.75, // literal-ok: the schema's computed multiplier for widthMd
+    lg: widthLg,
   };
 
-  const focusInitial = React.useCallback(() => {
-    // A non-dismissible dialog renders no close button, so `close` falls back to the body.
-    const targetRef =
-      initialFocus === 'title' ? titleGroupRef : initialFocus === 'close' && dismissible ? closeButtonRef : bodyRef;
-    const node = targetRef.current ? findNodeHandle(targetRef.current) : null;
+  const focusInitial = (): void => {
+    let target: ViewInstance | null;
+    if (initialFocus === 'title') {
+      // With hideHeading the Heading is not rendered, so the surface (which carries the name) takes focus.
+      target = hideHeading ? surfaceRef.current : titleGroupRef.current;
+    } else if (initialFocus === 'close' && dismissible) {
+      target = closeButtonRef.current;
+    } else {
+      // `first`, and `close` without a close button: body, then footer, then close button, then heading — the body always renders.
+      target = bodyRef.current;
+    }
+    const node = target ? findNodeHandle(target) : null;
     if (node != null) {
       AccessibilityInfo.setAccessibilityFocus(node);
     }
-  }, [initialFocus, dismissible]);
-
-  React.useEffect(() => {
-    if (open) {
-      setMounted(true);
-    }
-  }, [open]);
+  };
 
   React.useEffect(() => {
     if (!mounted) {
       return undefined;
     }
     if (open) {
-      if (reducedMotion) {
+      if (reducedMotion || enterDuration === 0) {
         progress.setValue(1);
         focusInitial();
-        onOpened?.();
-        return undefined;
+        const frame = requestAnimationFrame(() => onOpened?.());
+        return () => cancelAnimationFrame(frame);
       }
       const animation = Animated.timing(progress, {
         toValue: 1,
@@ -197,7 +189,7 @@ export function Dialog({
       });
       return () => animation.stop();
     }
-    if (reducedMotion) {
+    if (reducedMotion || exitDuration === 0) {
       progress.setValue(0);
       setMounted(false);
       return undefined;
@@ -214,16 +206,10 @@ export function Dialog({
       }
     });
     return () => animation.stop();
-    // Reacts to the open/closed transition and the mount gate it drives; the
-    // animation's own config is read fresh each run rather than tracked as a dep.
+    // Runs on the open/closed transition and the mount gate it drives; the
+    // animation config and handlers are read fresh each run.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, mounted, reducedMotion]);
-
-  React.useEffect(() => {
-    if (__DEV__ && footer === undefined && !dismissible) {
-      console.warn('Dialog: with no footer and dismissible={false}, provide a way to close the dialog in its body.');
-    }
-  }, [footer, dismissible]);
 
   const handleScrimPress = (): void => {
     if (dismissible) {
@@ -235,11 +221,12 @@ export function Dialog({
     onClose?.('close-button');
   };
 
-  const handleRequestClose = (): void => {
+  // Android back and the VoiceOver escape gesture: always reported, the consumer decides.
+  const handleEscape = (): void => {
     onClose?.('escape');
   };
 
-  if (!mounted && !open) {
+  if (!mounted) {
     return null;
   }
 
@@ -259,22 +246,22 @@ export function Dialog({
     zIndex: layer,
   };
 
-  const outerSurfaceStyle: Animated.WithAnimatedValue<ViewStyle> = {
+  const motionStyle: Animated.WithAnimatedValue<ViewStyle> = {
     width: '100%',
     maxWidth: sizeWidth[size],
-    maxHeight: '90%', // literal-ok: a proportion of the viewport, not a design token
+    maxHeight: '90%', // literal-ok: a proportion of the viewport so the surface never fills it edge to edge
     borderRadius: radius,
     ...shadow,
     opacity: progress,
     transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [t.space2, 0] }) }],
   };
 
-  const innerSurfaceStyle: ViewStyle = {
+  const surfaceStyle: ViewStyle = {
     flexShrink: 1,
     borderRadius: radius,
     borderWidth,
     borderColor,
-    backgroundColor: surfaceColor,
+    backgroundColor: t.colorOverlaySurface,
     overflow: 'hidden',
     gap: partGap,
   };
@@ -284,8 +271,7 @@ export function Dialog({
     alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: headerGap,
-    paddingHorizontal: inset,
-    paddingTop: inset,
+    padding: inset,
   };
 
   const titleGroupStyle: ViewStyle = {
@@ -293,44 +279,40 @@ export function Dialog({
     gap: descriptionGap,
   };
 
-  const bodyFlexStyle: ViewStyle = { flexShrink: 1 };
-  const bodyContentStyle: ViewStyle = { flexGrow: 1 };
+  const bodyStyle: ViewStyle = { flexShrink: 1 };
 
   const footerStyle: ViewStyle = {
-    paddingHorizontal: inset,
-    paddingBottom: inset,
+    padding: inset,
   };
 
+  const bodyOverrides = overrides?.inset ? { paddingBlock: overrides.inset, paddingInline: overrides.inset } : undefined;
+  const footerOverrides = overrides?.footerGap ? { gap: overrides.footerGap } : undefined;
+
   return (
-    <Modal
-      visible={mounted}
-      transparent
-      animationType="none"
-      onRequestClose={handleRequestClose}
-      statusBarTranslucent
-    >
+    <Modal visible transparent animationType="none" onRequestClose={handleEscape} statusBarTranslucent>
       <View style={hostStyle}>
-        <Animated.View style={scrimStyle} />
-        <Pressable
-          style={StyleSheet.absoluteFill}
-          onPress={handleScrimPress}
-          accessible={false}
-          testID="Dialog.scrim"
-        />
-        <View style={centerStyle} pointerEvents="box-none">
-          <FocusScope trapped active={mounted} autoFocus="none" restoreFocus>
-            <Animated.View
-              style={outerSurfaceStyle}
-              role="dialog"
-              accessibilityViewIsModal
-              accessibilityLabel={heading}
-              accessibilityHint={description}
-              testID="Dialog"
-            >
-              <View style={innerSurfaceStyle}>
+        <Animated.View style={scrimStyle} pointerEvents="none" />
+        <Pressable style={StyleSheet.absoluteFill} onPress={handleScrimPress} accessible={false} testID="Dialog.scrim" />
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={centerStyle}
+          pointerEvents="box-none"
+        >
+          <FocusScope trapped active={open} autoFocus="none" restoreFocus>
+            <Animated.View style={motionStyle}>
+              <View
+                ref={surfaceRef}
+                style={surfaceStyle}
+                role="dialog"
+                accessibilityViewIsModal
+                accessibilityLabel={heading}
+                accessibilityHint={description}
+                onAccessibilityEscape={handleEscape}
+                testID="Dialog"
+              >
                 <View style={headerStyle} testID="Dialog.header">
                   <View ref={titleGroupRef} style={titleGroupStyle}>
-                    {!hideHeading ? <Heading level={2}>{heading}</Heading> : null}
+                    {!hideHeading ? <Heading level="2">{heading}</Heading> : null}
                     {description !== undefined ? <Text tone="muted">{description}</Text> : null}
                   </View>
                   {dismissible ? (
@@ -346,27 +328,16 @@ export function Dialog({
                     </View>
                   ) : null}
                 </View>
-                <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={bodyFlexStyle}>
-                  <ScrollView
-                    ref={bodyRef}
-                    testID="Dialog.body"
-                    style={bodyFlexStyle}
-                    contentContainerStyle={bodyContentStyle}
-                    keyboardShouldPersistTaps="handled"
-                  >
-                    <Box inset="lg" overrides={overrides?.inset ? { paddingBlock: overrides.inset, paddingInline: overrides.inset } : undefined}>
+                <View ref={bodyRef} style={bodyStyle} testID="Dialog.body">
+                  <ScrollView style={bodyStyle} keyboardShouldPersistTaps="handled">
+                    <Box inset="lg" overrides={bodyOverrides}>
                       {children}
                     </Box>
                   </ScrollView>
-                </KeyboardAvoidingView>
+                </View>
                 {footer !== undefined ? (
                   <View style={footerStyle} testID="Dialog.footer">
-                    <Stack
-                      direction="horizontal"
-                      gap="tight"
-                      justify="end"
-                      overrides={overrides?.footerGap ? { gap: overrides.footerGap } : undefined}
-                    >
+                    <Stack direction="horizontal" gap="tight" justify="end" overrides={footerOverrides}>
                       {footer}
                     </Stack>
                   </View>
@@ -374,7 +345,7 @@ export function Dialog({
               </View>
             </Animated.View>
           </FocusScope>
-        </View>
+        </KeyboardAvoidingView>
       </View>
     </Modal>
   );

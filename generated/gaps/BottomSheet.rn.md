@@ -48,3 +48,15 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - BottomSheet: Guidance says drag begins 'when the body is at its scroll top' but the RN note says the PanResponder lives only on the header/handle so no arbitration is needed; followed the RN note (header-only, no scroll-top check).
 - BottomSheet: safe-area bottom inset — SafeAreaView from react-native is iOS-only and the no-dependency rule rules out react-native-safe-area-context; Android gets no bottom inset.
 - BottomSheet: example givens are prose descriptions ('A Form of filter controls', 'Clear and Apply Buttons'); RN cannot render bare strings in a View, so stories realize them as real Inputs/Buttons/Links rather than the literal strings.
+
+## 2026-09-17 11:01 — round 1
+
+- BottomSheet: `inset` is described as inline padding of header/body/footer plus block-end padding of the last part, but the composed body is a Box whose only symmetric option is `inset="lg"` (padding on all four sides), so the body also gets block-start padding on top of `partGap`; chose Dialog's existing Box inset="lg" composition for parity and forwarded the `inset` override to Box paddingBlock/paddingInline.
+- BottomSheet: the header's block-end padding is not specified (only top via headerPaddingTop/inset and inline via inset); chose none, relying on partGap.
+- BottomSheet: `SafeAreaView` is named as the inset source but is deprecated in core RN since 0.81 and pads every unsafe edge it intersects, not only the bottom; kept it, wrapping the last part (footer, or the body when there is no footer).
+- BottomSheet: dragSlop is claimed via onMoveShouldSetPanResponderCapture so a drag that starts on the heading or close button still works past the slop; the spec says the header claims the move but not whether it may take it over from a child Pressable.
+- BottomSheet: dismissVelocity sample timing uses `nativeEvent.timestamp`; the spec says 'between the last two move samples' without naming a clock.
+- BottomSheet: `full` height is the window height minus `layout.gutter` and `half` is window height × 0.5 — the spec's web notes give 100dvh - gutter and 50dvh, and the rn notes only say 'a fraction of useWindowDimensions().height'; with statusBarTranslucent the full sheet can reach under the status bar when the gutter is smaller than it.
+- BottomSheet: the heading row's alignment when hideHeading is true (close button alone) is unspecified; chose flex-end.
+- BottomSheet: the spring-back after a below-threshold release, and after a drag dismiss the consumer did not honor, animates only the drag offset; the spec does not say whether a spring-back should also reset an interrupted enter animation.
+- BottomSheet: the `Keyboard` story's Tab/Shift+Tab wrap is FocusScope's on react-native-web; native has no Tab model, so the keyboard rules other than Escape (onRequestClose / onAccessibilityEscape) cannot be expressed here and have no rn test.

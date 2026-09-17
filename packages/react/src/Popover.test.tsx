@@ -3,21 +3,20 @@
  * `given` overrides the Default story's args; the doc
  * (site/src/content/docs/components/popover.md) is the source of truth.
  *
- * The Default story is closed (uncontrolled), and a closed popover renders only its trigger, so
- * the `renders-*` scenarios assert the trigger with its disclosure state, and `has-accessible-name`
- * opens through the trigger before reading the panel's name.
+ * The Default story is open with the filter-panel example's args (heading "Filters"), so the
+ * `renders-*` scenarios find the panel, and `has-accessible-name` reads the panel's name.
  */
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { ComponentProps } from 'react';
 import { Popover } from './Popover';
-import meta from './Popover.stories';
+import meta, { Default } from './Popover.stories';
 
 type Props = ComponentProps<typeof Popover>;
 
 function setup(given: Partial<Props> = {}) {
   const onOpenChange = vi.fn();
-  const props = { ...meta.args, onOpenChange, ...given } as Props;
+  const props = { ...meta.args, ...Default.args, onOpenChange, ...given } as Props;
   const utils = render(<Popover {...props} />);
   const panel = (): HTMLElement | null => document.body.querySelector('[data-ds="Popover"]');
   const trigger = (): HTMLElement => screen.getByRole('button', { name: 'Filters' });
@@ -25,8 +24,8 @@ function setup(given: Partial<Props> = {}) {
 }
 
 function expectRendered(d: ReturnType<typeof setup>): void {
-  expect(d.trigger().getAttribute('aria-expanded')).toBe('false');
-  expect(d.panel()).toBeNull();
+  expect(d.trigger().getAttribute('aria-expanded')).toBe('true');
+  expect(screen.getByRole('dialog')).toBe(d.panel());
 }
 
 describe('Popover', () => {
@@ -97,8 +96,6 @@ describe('Popover', () => {
 
   it('has-accessible-name', () => {
     const d = setup();
-    fireEvent.click(d.trigger());
-    expect(d.onOpenChange).toHaveBeenCalledWith(true, 'trigger');
     expect(screen.getByRole('dialog', { name: 'Filters' })).toBe(d.panel());
   });
 

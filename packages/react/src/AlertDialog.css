@@ -10,9 +10,8 @@
   --ds-alert-dialog-part-gap: var(--layout-gap-loose);
   --ds-alert-dialog-text-gap: var(--layout-gap-tight);
   --ds-alert-dialog-icon-gap: var(--layout-gap-normal);
-  --ds-alert-dialog-footer-gap: var(--layout-gap-tight);
-  --ds-alert-dialog-icon-size: var(--font-size-lg);
   --ds-alert-dialog-width: var(--layout-max-width-prose);
+  --ds-alert-dialog-gutter: var(--layout-gutter);
   --ds-alert-dialog-layer: var(--layer-dialog);
   --ds-alert-dialog-enter: var(--motion-duration-base);
   --ds-alert-dialog-exit: var(--motion-duration-fast);
@@ -20,39 +19,41 @@
   margin: auto;
   padding: 0;
   border: 0;
-  /* width: always the small size — an alert dialog with more content is a Dialog. */
-  inline-size: var(--ds-alert-dialog-width);
-  max-inline-size: calc(100vw - 2 * var(--layout-gutter));
-  max-block-size: calc(100vh - 2 * var(--layout-gutter));
+  /* width: always the small size, capped at viewport width − 2 × gutter. */
+  inline-size: min(var(--ds-alert-dialog-width), calc(100vw - 2 * var(--ds-alert-dialog-gutter)));
+  max-inline-size: none;
+  max-block-size: calc(100vh - 2 * var(--ds-alert-dialog-gutter));
   overflow: visible;
   background: transparent;
   color: var(--color-foreground);
   font-family: var(--font-family-body);
+  /* layer: no effect in the top layer; applies to a non-top-layer fallback only. */
   z-index: var(--ds-alert-dialog-layer);
 }
 
-/* scrim → color.overlay.scrim; the ::backdrop is the scrim and fades with the surface. */
+/* scrim → color.overlay.scrim on ::backdrop (no data-part hook); fades with the surface. */
 .ds-alert-dialog::backdrop {
   background-color: var(--ds-alert-dialog-scrim);
   opacity: 0;
   transition-property: opacity;
   transition-duration: var(--ds-alert-dialog-exit);
-  transition-timing-function: var(--motion-easing-standard);
+  transition-timing-function: var(--motion-easing-exit);
 }
 
 .ds-alert-dialog--visible::backdrop {
   opacity: 1;
   transition-duration: var(--ds-alert-dialog-enter);
+  transition-timing-function: var(--motion-easing-standard);
 }
 
-/* surface → color.overlay.surface (locked); border, borderWidth, radius, shadow, inset, partGap. */
+/* surface → color.overlay.surface (locked); border, borderWidth, radius, shadow, inset, partGap, gutter. */
 .ds-alert-dialog__surface {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: var(--ds-alert-dialog-part-gap);
   inline-size: 100%;
-  max-block-size: calc(100vh - 2 * var(--layout-gutter));
+  max-block-size: calc(100vh - 2 * var(--ds-alert-dialog-gutter));
   padding: var(--ds-alert-dialog-inset);
   background-color: var(--color-overlay-surface);
   border-style: solid;
@@ -61,12 +62,12 @@
   border-radius: var(--ds-alert-dialog-radius);
   box-shadow: var(--ds-alert-dialog-shadow);
   overflow: auto;
-  /* exit: motion.duration.fast */
+  /* exit: motion.duration.fast with motion.easing.exit */
   opacity: 0;
   transform: translateY(var(--space-2));
   transition-property: opacity, transform;
   transition-duration: var(--ds-alert-dialog-exit);
-  transition-timing-function: var(--motion-easing-standard);
+  transition-timing-function: var(--motion-easing-exit);
 }
 
 /* enter: fade-and-rise over motion.duration.base with motion.easing.standard */
@@ -74,24 +75,21 @@
   opacity: 1;
   transform: translateY(0);
   transition-duration: var(--ds-alert-dialog-enter);
+  transition-timing-function: var(--motion-easing-standard);
 }
 
-/* iconGap: between the icon and the text block. */
+/* iconGap: the row inside the surface holding the icon and the text block. */
 .ds-alert-dialog__row {
   display: flex;
   align-items: flex-start;
   gap: var(--ds-alert-dialog-icon-gap);
 }
 
-/* icon → color.status.{tone}.icon (locked). Icon draws in currentColor; iconSize is forwarded to Icon's own `size` override. */
+/* icon: color (locked) and iconSize reach the Icon through its own overrides. */
 .ds-alert-dialog__icon {
   display: inline-flex;
   flex: 0 0 auto;
 }
-
-.ds-alert-dialog--danger .ds-alert-dialog__icon { color: var(--color-status-danger-icon); }
-.ds-alert-dialog--warning .ds-alert-dialog__icon { color: var(--color-status-warning-icon); }
-.ds-alert-dialog--info .ds-alert-dialog__icon { color: var(--color-status-info-icon); }
 
 /* textGap: between title and description. */
 .ds-alert-dialog__text {

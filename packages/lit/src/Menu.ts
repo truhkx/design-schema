@@ -20,7 +20,7 @@ export interface MenuActionItem {
   disabled?: boolean | undefined;
 }
 
-/** A labelled group of entries (anatomy: group, groupLabel). */
+/** A labelled group of entries (anatomy: group, groupLabel). Nested groups and separators inside a group are dropped. */
 export interface MenuGroup {
   group: string;
   items: MenuItem[];
@@ -33,7 +33,7 @@ export interface MenuSeparator {
 
 export type MenuItem = MenuActionItem | MenuGroup | MenuSeparator;
 
-export type MenuOpenChangeReason = 'trigger' | 'escape' | 'outside' | 'action' | 'controlled';
+export type MenuOpenChangeReason = 'trigger' | 'escape' | 'outside' | 'action' | 'controlled' | 'tab-out' | 'focus-out';
 
 /** Detail carried by the `action` CustomEvent. */
 export interface MenuActionDetail {
@@ -46,7 +46,7 @@ export interface MenuOpenChangeDetail {
   reason: MenuOpenChangeReason;
 }
 
-/** Overridable style hooks; see the `overrides` property. `surface`, `itemHover`, `itemColor`, `itemDangerColor`, `groupLabelColor`, `shortcutColor`, `minTarget`, `focusRing` and `focusRingWidth` are locked and excluded. */
+/** Overridable style hooks; see the `overrides` property. `surface`, `phoneBreakpoint`, `itemHover`, `itemColor`, `itemDangerColor`, `groupLabelColor`, `shortcutColor`, `minTarget`, `focusRing` and `focusRingWidth` are locked and excluded. */
 export type MenuOverridableBinding =
   | 'border'
   | 'borderWidth'
@@ -70,7 +70,8 @@ export type MenuOverridableBinding =
   | 'fontSize'
   | 'lineHeight'
   | 'layer'
-  | 'enter';
+  | 'enter'
+  | 'enterDistance';
 
 const HOOKS: Record<MenuOverridableBinding, string> = {
   border: '--ds-menu-border',
@@ -97,6 +98,7 @@ const HOOKS: Record<MenuOverridableBinding, string> = {
   lineHeight: '--ds-menu-line-height',
   layer: '--ds-menu-layer',
   enter: '--ds-menu-enter',
+  enterDistance: '--ds-menu-enter-distance',
 };
 
 /** Whether the running browser implements the Popover API. Evaluated once. */
@@ -110,18 +112,18 @@ function isGroup(item: MenuItem): item is MenuGroup {
   return 'group' in item;
 }
 
+/** A group's drawable children: action items only (nested groups and separators are dropped). */
+function groupActions(group: MenuGroup): MenuActionItem[] {
+  return group.items.filter((child): child is MenuActionItem => !isSeparator(child) && !isGroup(child));
+}
+
 /** Every action item in visual order: groups flattened one level, separators dropped. */
 function flattenActionItems(items: MenuItem[]): MenuActionItem[] {
   const result: MenuActionItem[] = [];
   for (const item of items) {
     if (isSeparator(item)) continue;
-    if (isGroup(item)) {
-      for (const child of item.items) {
-        if (!isSeparator(child) && !isGroup(child)) result.push(child);
-      }
-    } else {
-      result.push(item);
-    }
+    if (isGroup(item)) result.push(...groupActions(item));
+    else result.push(item);
   }
   return result;
 }
@@ -138,18 +140,18 @@ function parseDuration(value: string): number {
  * `<ds-menu>` — Menu (category: overlay, APG pattern: menu-button).
  *
  * `<ds-menu label="More actions" .items=${items}>` composes a `<ds-button>`
- * trigger and a `role="menu"` popup in the shadow root. The popup uses the
- * Popover API (`popover="manual"`, `showPopover()`) for top-layer rendering
- * when available, and `position: fixed` with `layer.dropdown` otherwise; either
- * way it is placed from the trigger's `getBoundingClientRect()` for
- * `placement` and flipped at the viewport edge. Items use one roving tabindex
- * with real focus, and hover moves that focus, so pointer and keyboard never
- * highlight two things.
+ * trigger (wrapped in the overlay-owned `data-part="trigger"` element) and a
+ * `role="menu"` popup in the shadow root. The popup uses the Popover API
+ * (`popover="manual"`, `showPopover()`) for top-layer rendering when available,
+ * and `position: fixed` with `layer.dropdown` otherwise; either way it is placed
+ * from the trigger's `getBoundingClientRect()` for `placement` and flipped at
+ * the viewport edge. Items use one roving tabindex with real focus, and hover
+ * moves that focus, so pointer and keyboard never highlight two things.
  *
  * `open` is controlled when set: the element reports `open-change` and shows
- * the new state only once the property changes. Omit it for an uncontrolled
- * menu. Choosing an item fires `open-change` (reason `action`) and then
- * `action`.
+ * the new state (hiding, and returning focus to the trigger) only once the
+ * property changes. Omit it for an uncontrolled menu, which starts closed.
+ * Choosing an item fires `open-change` (reason `action`) and then `action`.
  *
  * Setting `anchor` positions the popup relative to that element and omits the
  * trigger; `open` must then be controlled.
@@ -175,7 +177,7 @@ export class DsMenu extends LitElement {
       --ds-menu-popup-offset: var(--space-1);
       --ds-menu-typeahead-reset: var(--motion-duration-loop);
       --ds-menu-max-height: var(--layout-max-width-prose);
-      --ds-menu-min-width: calc(var(--space-20) * 2.5);
+      --ds-menu-min-width: var(--space-20);
       --ds-menu-item-padding-block: var(--space-sm);
       --ds-menu-item-padding-inline: var(--space-md);
       --ds-menu-item-gap: var(--layout-gap-normal);
@@ -190,10 +192,15 @@ export class DsMenu extends LitElement {
       --ds-menu-line-height: var(--font-line-height-normal);
       --ds-menu-layer: var(--layer-dropdown);
       --ds-menu-enter: var(--motion-duration-fast);
+      --ds-menu-enter-distance: var(--space-1);
     }
 
     :host([hidden]) {
       display: none;
+    }
+
+    [data-part='trigger'] {
+      display: inline-flex;
     }
 
     [data-part='popup'] {
@@ -211,7 +218,8 @@ export class DsMenu extends LitElement {
       box-shadow: var(--ds-menu-shadow);
       color: var(--color-foreground);
       z-index: var(--ds-menu-layer);
-      min-inline-size: var(--ds-menu-min-width);
+      /* minWidth: an override replaces the base; the × 2.5 stays in the rule */
+      min-inline-size: calc(var(--ds-menu-min-width) * 2.5);
       max-inline-size: calc(100vw - 2 * var(--layout-gutter));
       max-block-size: min(var(--ds-menu-max-height), calc(100vh - 2 * var(--layout-gutter)));
       overflow-y: auto;
@@ -239,10 +247,16 @@ export class DsMenu extends LitElement {
       display: none;
     }
 
+    /* enter: fade plus an enterDistance slide from the trigger side */
     @starting-style {
-      [data-part='popup']:popover-open {
+      [data-part='popup'][data-side='bottom'] {
         opacity: 0;
-        transform: translateY(var(--space-1));
+        transform: translateY(calc(-1 * var(--ds-menu-enter-distance)));
+      }
+
+      [data-part='popup'][data-side='top'] {
+        opacity: 0;
+        transform: translateY(var(--ds-menu-enter-distance));
       }
     }
 
@@ -266,8 +280,9 @@ export class DsMenu extends LitElement {
       color: var(--color-foreground-muted);
     }
 
+    /* borderWidth also sets the separator thickness */
     [data-part='separator'] {
-      block-size: var(--border-width-thin);
+      block-size: var(--ds-menu-border-width);
       margin-block: var(--ds-menu-separator-margin);
       background: var(--ds-menu-separator);
     }
@@ -341,7 +356,7 @@ export class DsMenu extends LitElement {
   /** Variant of the trigger Button. */
   @property({ attribute: 'trigger-variant' }) accessor triggerVariant: MenuTriggerVariant = 'ghost';
 
-  /** Trailing icon on the trigger: `ellipsis` for an icon-only overflow button, `chevron-down` for a labelled dropdown, `none`. */
+  /** Icon on the trigger: the Button's leading icon with `iconOnly`, its trailing icon otherwise; `none` for no icon. */
   @property({ attribute: 'trigger-icon' }) accessor triggerIcon: MenuTriggerIcon = 'chevron-down';
 
   /** Render the trigger as an icon-only Button using `triggerIcon`; `label` is still required. */
@@ -371,10 +386,12 @@ export class DsMenu extends LitElement {
   @state() private accessor activeId: string | null = null;
 
   @query('[data-part="trigger"]') private accessor triggerEl!: HTMLElement | null;
+  @query('[data-part="trigger"] ds-button') private accessor buttonEl!: HTMLElement | null;
   @query('[data-part="popup"]') private accessor popupEl!: HTMLElement | null;
 
   private wasOpen = false;
   private pendingFocus: 'first' | 'last' = 'first';
+  private restoreOnClose = false;
   private typeaheadBuffer = '';
   private typeaheadTimer: ReturnType<typeof setTimeout> | undefined;
   private warnedNothingToPress = false;
@@ -427,7 +444,7 @@ export class DsMenu extends LitElement {
         role="menuitem"
         data-id=${item.id}
         data-tone=${ifDefined(item.tone === 'danger' ? 'danger' : undefined)}
-        tabindex=${rovingId === item.id ? 0 : -1}
+        tabindex=${rovingId === item.id && !item.disabled ? 0 : -1}
         aria-disabled=${ifDefined(item.disabled ? 'true' : undefined)}
         @click=${() => this.handleItemClick(item)}
         @pointerenter=${() => this.handleItemPointerEnter(item)}
@@ -446,35 +463,37 @@ export class DsMenu extends LitElement {
       }
       if (isGroup(item)) {
         const labelId = `group-label-${groupIndex++}`;
-        const children = item.items.filter((child): child is MenuActionItem => !isSeparator(child) && !isGroup(child));
         return html`
           <div part="group" data-part="group" role="group" aria-labelledby=${labelId}>
             <div part="groupLabel" data-part="groupLabel" id=${labelId} role="presentation">${item.group}</div>
-            ${children.map(renderItem)}
+            ${groupActions(item).map(renderItem)}
           </div>
         `;
       }
       return renderItem(item);
     });
 
+    const icon =
+      this.triggerIcon === 'none'
+        ? nothing
+        : html`<ds-icon slot=${this.iconOnly ? 'leading-icon' : 'trailing-icon'} name=${this.triggerIcon}></ds-icon>`;
+
     return html`
       ${this.anchor
         ? nothing
         : html`
-            <ds-button
-              part="trigger"
-              data-part="trigger"
-              variant=${this.triggerVariant}
-              label=${this.label}
-              ?icon-only=${this.iconOnly}
-              .expanded=${isOpen}
-              @press=${this.handleTriggerPress}
-              @keydown=${this.handleTriggerKeydown}
-            >
-              ${this.triggerIcon === 'none'
-                ? nothing
-                : html`<ds-icon slot="trailing-icon" name=${this.triggerIcon}></ds-icon>`}
-            </ds-button>
+            <span part="trigger" data-part="trigger">
+              <ds-button
+                variant=${this.triggerVariant}
+                label=${this.label}
+                ?icon-only=${this.iconOnly}
+                .expanded=${isOpen}
+                @press=${this.handleTriggerPress}
+                @keydown=${this.handleTriggerKeydown}
+              >
+                ${icon}
+              </ds-button>
+            </span>
           `}
       <div
         id="menu"
@@ -517,7 +536,12 @@ export class DsMenu extends LitElement {
 
   private handleClosed(): void {
     this.removeGlobalListeners();
+    // Focus still inside the popup would be lost when it hides, so it goes back to the trigger too.
+    const active = this.shadowRoot?.activeElement ?? null;
+    const focusInPopup = active !== null && (this.popupEl?.contains(active) ?? false);
     this.hidePopup();
+    if (this.restoreOnClose || focusInPopup) this.restoreFocus();
+    this.restoreOnClose = false;
     this.activeId = null;
     this.typeaheadBuffer = '';
   }
@@ -533,7 +557,13 @@ export class DsMenu extends LitElement {
   }
 
   private restoreFocus(): void {
-    (this.anchor ?? this.triggerEl)?.focus();
+    (this.anchor ?? this.buttonEl)?.focus();
+  }
+
+  /** Closes and returns focus to the trigger once the menu actually closes (controlled: when `open` becomes false). */
+  private closeAndRestore(reason: MenuOpenChangeReason): void {
+    this.restoreOnClose = true;
+    this.requestOpen(false, reason);
   }
 
   /* ---- handlers ---- */
@@ -542,8 +572,7 @@ export class DsMenu extends LitElement {
     // The trigger's press stays internal; the menu reports open-change instead.
     event.stopPropagation();
     if (this.currentOpen) {
-      this.requestOpen(false, 'trigger');
-      this.restoreFocus();
+      this.closeAndRestore('trigger');
     } else {
       this.pendingFocus = 'first';
       this.requestOpen(true, 'trigger');
@@ -551,15 +580,11 @@ export class DsMenu extends LitElement {
   };
 
   private readonly handleTriggerKeydown = (event: KeyboardEvent): void => {
-    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-      event.preventDefault();
-      this.pendingFocus = event.key === 'ArrowDown' ? 'first' : 'last';
-      if (this.currentOpen) void this.focusItem(this.pendingFocus);
-      else this.requestOpen(true, 'trigger');
-    } else if (event.key === 'Escape' && this.currentOpen) {
-      event.preventDefault();
-      this.requestOpen(false, 'escape');
-    }
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+    event.preventDefault();
+    this.pendingFocus = event.key === 'ArrowDown' ? 'first' : 'last';
+    if (this.currentOpen) void this.focusItem(this.pendingFocus);
+    else this.requestOpen(true, 'trigger');
   };
 
   private readonly handleMenuKeydown = (event: KeyboardEvent): void => {
@@ -583,14 +608,14 @@ export class DsMenu extends LitElement {
     } else if (key === 'Escape') {
       event.preventDefault();
       event.stopPropagation();
-      this.requestOpen(false, 'escape');
-      this.restoreFocus();
+      this.closeAndRestore('escape');
     } else if (key === 'Tab') {
-      // Hide first and park focus on the trigger, then let the browser's own
-      // Tab / Shift+Tab move on from there, past the trigger in either direction.
-      this.hidePopup();
+      // Park focus on the trigger (or anchor) and let the browser's own Tab /
+      // Shift+Tab move on from there, to the tabbable after or before it.
+      // An uncontrolled popup hides first so Tab cannot land back inside it.
       this.restoreFocus();
-      this.requestOpen(false, 'outside');
+      if (this.open === undefined) this.hidePopup();
+      this.requestOpen(false, 'tab-out');
     } else if (key.length === 1 && /^[a-z]$/i.test(key) && !event.ctrlKey && !event.metaKey && !event.altKey) {
       event.preventDefault();
       this.typeahead(key);
@@ -607,17 +632,25 @@ export class DsMenu extends LitElement {
     void this.focusItem(item.id);
   }
 
+  /** The menu, its trigger, and the anchor standing in for a trigger. */
+  private isInside(node: EventTarget | null): boolean {
+    if (!(node instanceof Node)) return false;
+    return node === this || this.contains(node) || this.renderRoot.contains(node) || (this.anchor?.contains(node) ?? false);
+  }
+
   private readonly handleOutsidePointerDown = (event: PointerEvent): void => {
-    if (event.composedPath().includes(this)) return;
+    if (event.composedPath().some((target) => this.isInside(target))) return;
     this.requestOpen(false, 'outside');
   };
 
   private readonly handleFocusOut = (event: FocusEvent): void => {
     if (!this.currentOpen) return;
-    const next = event.relatedTarget as Node | null;
-    if (next && (next === this || this.contains(next) || this.renderRoot.contains(next))) return;
-    // Focus left the menu (or the window lost focus).
-    this.requestOpen(false, 'outside');
+    if (this.isInside(event.relatedTarget)) return;
+    this.requestOpen(false, 'focus-out');
+  };
+
+  private readonly handleWindowBlur = (): void => {
+    this.requestOpen(false, 'focus-out');
   };
 
   private readonly handleReposition = (): void => {
@@ -628,12 +661,14 @@ export class DsMenu extends LitElement {
     document.addEventListener('pointerdown', this.handleOutsidePointerDown, true);
     window.addEventListener('scroll', this.handleReposition, true);
     window.addEventListener('resize', this.handleReposition);
+    window.addEventListener('blur', this.handleWindowBlur);
   }
 
   private removeGlobalListeners(): void {
     document.removeEventListener('pointerdown', this.handleOutsidePointerDown, true);
     window.removeEventListener('scroll', this.handleReposition, true);
     window.removeEventListener('resize', this.handleReposition);
+    window.removeEventListener('blur', this.handleWindowBlur);
   }
 
   /* ---- items ---- */
@@ -661,8 +696,7 @@ export class DsMenu extends LitElement {
 
   private selectItem(item: MenuActionItem): void {
     // The menu closes itself first (open-change, reason action), then reports the choice.
-    this.requestOpen(false, 'action');
-    this.restoreFocus();
+    this.closeAndRestore('action');
     this.dispatchEvent(
       new CustomEvent<MenuActionDetail>('action', { detail: { id: item.id }, bubbles: true, composed: true }),
     );
@@ -682,7 +716,9 @@ export class DsMenu extends LitElement {
         break;
       }
     }
-    const reset = parseDuration(getComputedStyle(this).getPropertyValue(HOOKS.typeaheadReset));
+    // typeaheadReset is read at runtime from the popup.
+    const source = this.popupEl ?? this;
+    const reset = parseDuration(getComputedStyle(source).getPropertyValue(HOOKS.typeaheadReset));
     this.typeaheadTimer = setTimeout(() => {
       this.typeaheadBuffer = '';
     }, reset);
@@ -699,7 +735,7 @@ export class DsMenu extends LitElement {
     const viewportHeight = document.documentElement.clientHeight;
     const [vertical, horizontal] = this.placement.split('-') as ['top' | 'bottom', 'start' | 'end'];
 
-    popup.style.minInlineSize = `max(var(${HOOKS.minWidth}), ${rect.width}px)`;
+    popup.style.minInlineSize = `max(calc(var(${HOOKS.minWidth}) * 2.5), ${rect.width}px)`;
     popup.dataset['side'] = vertical;
     const style = getComputedStyle(popup);
     const offset = Math.max(parseFloat(style.marginBlockStart) || 0, parseFloat(style.marginBlockEnd) || 0);

@@ -1,6 +1,7 @@
 import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Heading.js';
 import './Button.js';
@@ -24,17 +25,23 @@ export interface BottomSheetCloseDetail {
 /** Detail carried by the `drag-dismiss` CustomEvent (none: distance and velocity are not part of the contract). */
 export type BottomSheetDragDismissDetail = void;
 
-/** Overridable style hooks; see the `overrides` property. `surface`, `handle`, `minTarget`, `focusRing` and `focusRingWidth` are locked and excluded. */
+/**
+ * Overridable style hooks; see the `overrides` property. `surface`, `handle`, `maxWidth`,
+ * `minTarget`, `focusRing` and `focusRingWidth` are locked and excluded.
+ */
 export type BottomSheetOverridableBinding =
   | 'scrim'
   | 'shadow'
   | 'radius'
   | 'handleHeight'
   | 'handleWidth'
+  | 'handleRadius'
+  | 'headerPaddingTop'
+  | 'handleGap'
+  | 'headerGap'
   | 'inset'
   | 'partGap'
   | 'footerGap'
-  | 'maxWidth'
   | 'layer'
   | 'enter'
   | 'exit';
@@ -45,25 +52,42 @@ const HOOKS: Record<BottomSheetOverridableBinding, string> = {
   radius: '--ds-bottom-sheet-radius',
   handleHeight: '--ds-bottom-sheet-handle-height',
   handleWidth: '--ds-bottom-sheet-handle-width',
+  handleRadius: '--ds-bottom-sheet-handle-radius',
+  headerPaddingTop: '--ds-bottom-sheet-header-padding-top',
+  handleGap: '--ds-bottom-sheet-handle-gap',
+  headerGap: '--ds-bottom-sheet-header-gap',
   inset: '--ds-bottom-sheet-inset',
   partGap: '--ds-bottom-sheet-part-gap',
   footerGap: '--ds-bottom-sheet-footer-gap',
-  maxWidth: '--ds-bottom-sheet-max-width',
   layer: '--ds-bottom-sheet-layer',
   enter: '--ds-bottom-sheet-enter',
   exit: '--ds-bottom-sheet-exit',
 };
 
-/** footerGap's token, forwarded to the footer Stack as `overrides.gap` when no override is set. */
-const FOOTER_GAP_TOKEN: TokenRef = 'layout.gap.tight';
+/** The overrides whose binding Dialog shares by name; forwarded to its `overrides` in the wide presentation. */
+const DIALOG_SHARED_BINDINGS = [
+  'scrim',
+  'shadow',
+  'radius',
+  'inset',
+  'partGap',
+  'headerGap',
+  'footerGap',
+  'layer',
+  'enter',
+  'exit',
+] as const satisfies readonly (BottomSheetOverridableBinding & DialogOverridableBinding)[];
 
-/** The maxWidth breakpoint, read once from the theme (not per-instance). */
+/** maxWidth (layout.maxWidth.prose): the breakpoint, read from the theme token, not per instance. */
 const MAX_WIDTH_PROPERTY = '--layout-max-width-prose';
+
+/** constants.dragSlop (space.1): read through the token at gesture time. */
+const DRAG_SLOP_PROPERTY = '--space-1';
 
 /** constants.dismissDistance: fraction of the sheet height a release must pass to dismiss. */
 const DISMISS_DISTANCE = 0.25;
 
-/** constants.dismissVelocity: release speed, in px/ms, that dismisses whatever the distance. */
+/** constants.dismissVelocity: downward release speed, in px/ms, that dismisses whatever the distance. */
 const DISMISS_VELOCITY = 1.5;
 
 /** copy.closeLabel */
@@ -117,12 +141,23 @@ function firstFocusableIn(node: Element): HTMLElement | null {
   return null;
 }
 
-function getDeepActiveElement(): Element | null {
-  let active = document.activeElement;
-  while (active?.shadowRoot?.activeElement) {
-    active = active.shadowRoot.activeElement;
+/** A resolved length custom property (`4px`, `0.25rem`) in CSS pixels. */
+function lengthInPx(element: Element, value: string): number {
+  const amount = Number.parseFloat(value);
+  if (!Number.isFinite(amount)) {
+    return 0;
   }
-  return active;
+  if (value.endsWith('rem')) {
+    return amount * Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
+  }
+  if (value.endsWith('em')) {
+    return amount * Number.parseFloat(getComputedStyle(element).fontSize);
+  }
+  return amount;
+}
+
+function nextFrame(): Promise<void> {
+  return new Promise((resolve) => requestAnimationFrame(() => resolve()));
 }
 
 /** How many open sheets hold the page-scroll lock, so a second one does not release it early. */
@@ -150,11 +185,15 @@ function unlockPageScroll(): void {
   }
 }
 
-interface DragSample {
+/** A pointer that went down on the header; it becomes a drag only once it has moved `dragSlop` downward. */
+interface DragGesture {
+  pointerId: number;
   startY: number;
+  claimed: boolean;
+  previousY: number;
+  previousTime: number;
   lastY: number;
   lastTime: number;
-  velocity: number;
 }
 
 /**
@@ -163,9 +202,9 @@ interface DragSample {
  * `<ds-bottom-sheet open heading="Filters" height="half">…</ds-bottom-sheet>`. The phone's
  * dialog: a native `<dialog>` in the shadow root opened with `showModal()` (top layer, inert
  * background, Escape), covering the viewport with a scrim element and the surface anchored to the
- * bottom edge. `<ds-focus-scope>` wraps the surface and returns focus to the opener on close.
- * Above the `layout.maxWidth.prose` viewport width (a `matchMedia` listener) the same props render
- * `<ds-dialog size="md">` instead, so screens are written once.
+ * bottom edge. `<ds-focus-scope>` wraps the surface, wraps Tab and returns focus to the opener on
+ * close. Above the `layout.maxWidth.prose` viewport width (a `matchMedia` listener) the same props
+ * render `<ds-dialog size="md">` instead, so screens are written once.
  *
  * Escape, the close button, a scrim click and a downward drag on the handle or header each request
  * close through the composed `close` event; the sheet never closes itself, the consumer flips
@@ -204,10 +243,13 @@ export class DsBottomSheet extends LitElement {
       --ds-bottom-sheet-radius: var(--radius-lg);
       --ds-bottom-sheet-handle-height: var(--space-1);
       --ds-bottom-sheet-handle-width: var(--space-10);
+      --ds-bottom-sheet-handle-radius: var(--radius-full);
+      --ds-bottom-sheet-header-padding-top: var(--space-sm);
+      --ds-bottom-sheet-handle-gap: var(--layout-gap-tight);
+      --ds-bottom-sheet-header-gap: var(--layout-gap-normal);
       --ds-bottom-sheet-inset: var(--layout-inset-lg);
       --ds-bottom-sheet-part-gap: var(--layout-gap-loose);
       --ds-bottom-sheet-footer-gap: var(--layout-gap-tight);
-      --ds-bottom-sheet-max-width: var(--layout-max-width-prose);
       --ds-bottom-sheet-layer: var(--layer-sheet);
       --ds-bottom-sheet-enter: var(--motion-duration-base);
       --ds-bottom-sheet-exit: var(--motion-duration-fast);
@@ -231,6 +273,7 @@ export class DsBottomSheet extends LitElement {
       background: transparent;
       color: inherit;
       overflow: hidden;
+      /* layer: only a non-top-layer fallback honours this; the top layer ignores z-index. */
       z-index: var(--ds-bottom-sheet-layer);
     }
 
@@ -279,9 +322,6 @@ export class DsBottomSheet extends LitElement {
       min-inline-size: 0;
       max-block-size: 100%;
       gap: var(--ds-bottom-sheet-part-gap);
-      padding-inline: var(--ds-bottom-sheet-inset);
-      padding-block-start: var(--layout-gap-tight);
-      padding-block-end: calc(var(--ds-bottom-sheet-inset) + env(safe-area-inset-bottom));
       font-family: var(--font-family-body);
       color: var(--color-foreground);
       /* surface: color.overlay.surface, locked — no hook */
@@ -291,6 +331,7 @@ export class DsBottomSheet extends LitElement {
       border-start-end-radius: var(--ds-bottom-sheet-radius);
       box-shadow: var(--ds-bottom-sheet-shadow);
       transform: translateY(0);
+      /* enter: slide up with the scrim, same duration and easing */
       transition: transform var(--ds-bottom-sheet-enter) var(--motion-easing-standard);
     }
 
@@ -303,7 +344,7 @@ export class DsBottomSheet extends LitElement {
       }
     }
 
-    /* exit: motion.duration.fast with motion.easing.exit, from wherever the surface is */
+    /* exit: slide down with motion.easing.exit, from wherever the surface is; the scrim fades alike */
     .closing .scrim {
       opacity: 0;
       transition-duration: var(--ds-bottom-sheet-exit);
@@ -315,9 +356,20 @@ export class DsBottomSheet extends LitElement {
       transition-timing-function: var(--motion-easing-exit);
     }
 
+    /* The drag follows the finger directly, even under reduced motion. */
+    .surface.dragging {
+      transition: none;
+    }
+
+    /* A below-threshold release returns to rest with the exit duration and the standard easing. */
+    .surface.springing {
+      transition: transform var(--ds-bottom-sheet-exit) var(--motion-easing-standard);
+    }
+
     @media (prefers-reduced-motion: reduce) {
       .scrim,
-      .surface {
+      .surface,
+      .surface.springing {
         transition: none;
       }
     }
@@ -325,11 +377,14 @@ export class DsBottomSheet extends LitElement {
     .header {
       display: flex;
       flex-direction: column;
-      gap: var(--layout-gap-tight);
+      gap: var(--ds-bottom-sheet-handle-gap);
       flex: none;
+      padding-inline: var(--ds-bottom-sheet-inset);
+      /* No handle: the header's block-start padding is inset. */
+      padding-block-start: var(--ds-bottom-sheet-inset);
     }
-
     .header.draggable {
+      padding-block-start: var(--ds-bottom-sheet-header-padding-top);
       touch-action: none;
       cursor: grab;
     }
@@ -339,7 +394,7 @@ export class DsBottomSheet extends LitElement {
       align-self: center;
       inline-size: var(--ds-bottom-sheet-handle-width);
       block-size: var(--ds-bottom-sheet-handle-height);
-      border-radius: var(--radius-full);
+      border-radius: var(--ds-bottom-sheet-handle-radius);
       background: var(--color-foreground-muted);
     }
 
@@ -347,28 +402,32 @@ export class DsBottomSheet extends LitElement {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: var(--layout-gap-normal);
+      gap: var(--ds-bottom-sheet-header-gap);
       min-inline-size: 0;
     }
 
     /* minTarget: size.target.comfortable, locked — the Button keeps its own size and colors */
     .close-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
       flex: none;
       margin-inline-start: auto;
       min-inline-size: var(--size-target-comfortable);
       min-block-size: var(--size-target-comfortable);
+      cursor: pointer;
     }
 
-    /* The heading takes focus when nothing else can. */
-    .heading:focus {
+    /* The heading wrapper draws the ring when the heading holds focus (tabindex -1). */
+    .heading ds-heading:focus {
       outline: none;
     }
-    .heading:focus-visible {
+    .heading:has(:focus-visible) {
       outline: var(--border-width-focus) solid var(--color-border-focus);
       outline-offset: var(--border-width-focus);
     }
 
-    /* hideHeading: out of view, still the accessible name. */
+    /* hideHeading: out of view, still the accessible name and still a focus target. */
     .heading.visually-hidden {
       /* literal-ok: standard visually-hidden clip pattern */
       position: absolute;
@@ -386,6 +445,21 @@ export class DsBottomSheet extends LitElement {
       flex: 1 1 auto;
       min-block-size: 0;
       overflow-y: auto;
+      padding-inline: var(--ds-bottom-sheet-inset);
+    }
+
+    .footer {
+      flex: none;
+      padding-inline: var(--ds-bottom-sheet-inset);
+    }
+    /* footerGap reaches the Stack through its own hook (and through overrides when set). */
+    .footer > ds-stack {
+      --ds-stack-gap: var(--ds-bottom-sheet-footer-gap);
+    }
+
+    /* inset: the last part's block-end padding, plus the bottom safe area. */
+    .surface > :last-child {
+      padding-block-end: calc(var(--ds-bottom-sheet-inset) + env(safe-area-inset-bottom));
     }
   `;
 
@@ -403,14 +477,15 @@ export class DsBottomSheet extends LitElement {
 
   /**
    * Escape, the close button, a scrim tap and the drag gesture all request close. When false,
-   * only the footer actions close it; Escape still reports. Attribute: `no-dismiss`.
+   * the close button and handle are not rendered, a scrim tap and a drag do nothing, and Escape
+   * still reports. Attribute: `no-dismiss`.
    */
   @property({ attribute: 'no-dismiss', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
   accessor dismissible = true;
 
   /**
-   * Drag the handle or header downward to dismiss. Purely additive: the close button and Escape
-   * always exist. Attribute: `no-drag-to-dismiss`.
+   * Drag the handle or header downward to dismiss. Purely additive: Escape always exists and the
+   * close button exists whenever the gesture does. Attribute: `no-drag-to-dismiss`.
    */
   @property({ attribute: 'no-drag-to-dismiss', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
   accessor dragToDismiss = true;
@@ -426,22 +501,30 @@ export class DsBottomSheet extends LitElement {
   /** The exit transition is playing: the sheet stays rendered a beat past `open` turning false. */
   @state() private accessor closing = false;
 
+  /** A light-DOM child is assigned to the `footer` slot; the footer part renders only then. */
   @state() private accessor hasFooter = false;
+
+  /** Nothing else could take initial focus, so the heading takes tabindex -1. */
+  @state() private accessor headingIsFallback = false;
 
   @query('dialog') private accessor dialogEl!: HTMLDialogElement | null;
   @query('.scope') private accessor scopeEl!: DsFocusScope | null;
   @query('.scrim') private accessor scrimEl!: HTMLElement | null;
   @query('.surface') private accessor surfaceEl!: HTMLElement | null;
-  @query('.heading') private accessor headingEl!: HTMLElement | null;
-  @query('.close-button') private accessor closeButtonEl!: HTMLElement | null;
+  @query('.heading ds-heading') private accessor headingEl!: HTMLElement | null;
+  @query('.close-button ds-button') private accessor closeButtonEl!: HTMLElement | null;
   @query('slot:not([name])') private accessor bodySlotEl!: HTMLSlotElement | null;
   @query('slot[name="footer"]') private accessor footerSlotEl!: HTMLSlotElement | null;
 
   private scrollLocked = false;
   private closingProgrammatically = false;
-  private focusBeforeCancel: HTMLElement | null = null;
+  /** Escape was already reported from a non-cancelable `cancel` that the native close follows. */
+  private escapeReported = false;
   private wideQuery: MediaQueryList | null = null;
-  private drag: DragSample | null = null;
+  private gesture: DragGesture | null = null;
+
+  /** Watches light-DOM children for `slot="footer"`; the callback only compares and sets state. */
+  private readonly footerObserver: MutationObserver = new MutationObserver(() => this.syncHasFooter());
 
   private readonly handleWideChange = (event: MediaQueryListEvent): void => {
     this.wide = event.matches;
@@ -451,6 +534,8 @@ export class DsBottomSheet extends LitElement {
     super.connectedCallback();
     this.setAttribute('data-ds', 'BottomSheet');
     this.addEventListener('submit', this.handleSubmit);
+    this.syncHasFooter();
+    this.footerObserver.observe(this, { childList: true, subtree: true, attributeFilter: ['slot'] });
     const breakpoint = getComputedStyle(document.documentElement).getPropertyValue(MAX_WIDTH_PROPERTY).trim();
     if (breakpoint) {
       this.wideQuery = matchMedia(`(width > ${breakpoint})`);
@@ -462,14 +547,19 @@ export class DsBottomSheet extends LitElement {
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.removeEventListener('submit', this.handleSubmit);
+    this.footerObserver.disconnect();
     this.wideQuery?.removeEventListener('change', this.handleWideChange);
     this.wideQuery = null;
+    this.gesture = null;
     this.releaseScroll();
   }
 
   protected override willUpdate(changed: PropertyValues): void {
     if (changed.has('overrides')) {
       this.applyOverrides();
+    }
+    if (changed.has('dismissible') || (changed.has('open') && this.open)) {
+      this.headingIsFallback = false;
     }
     if (this.wide) {
       this.closing = false;
@@ -487,6 +577,7 @@ export class DsBottomSheet extends LitElement {
   protected override updated(changed: PropertyValues): void {
     if (changed.has('wide') && this.wide) {
       // The Dialog presentation owns scroll lock and focus from here.
+      this.gesture = null;
       this.releaseScroll();
     }
     if (!this.wide && (changed.has('open') || changed.has('wide'))) {
@@ -525,16 +616,17 @@ export class DsBottomSheet extends LitElement {
         @opened=${this.stopInnerEvent}
       >
         <slot></slot>
-        <slot name="footer" slot="footer"></slot>
+        ${this.hasFooter ? html`<slot name="footer" slot="footer"></slot>` : nothing}
       </ds-dialog>
     `;
   }
 
   private renderSheet(): TemplateResult {
-    const footerOverrides: Partial<Record<StackOverridableBinding, TokenRef | undefined>> = {
-      gap: this.overrides?.footerGap ?? FOOTER_GAP_TOKEN,
-    };
     const draggable = this.dismissible && this.dragToDismiss;
+    // Forwards reach the child's overrides only when set, so the CSS hook route keeps working otherwise.
+    const footerGap = this.overrides?.footerGap;
+    const footerOverrides: Partial<Record<StackOverridableBinding, TokenRef | undefined>> | undefined =
+      footerGap === undefined ? undefined : { gap: footerGap };
 
     return html`
       <dialog
@@ -562,55 +654,61 @@ export class DsBottomSheet extends LitElement {
               @pointerup=${this.handlePointerUp}
               @pointercancel=${this.handlePointerCancel}
             >
-              <span class="handle" part="handle" data-part="handle" aria-hidden="true"></span>
+              ${draggable ? html`<span class="handle" part="handle" data-part="handle" aria-hidden="true"></span>` : nothing}
               <div class="title-row">
-                <ds-heading
+                <div
                   id="heading"
                   class=${classMap({ heading: true, 'visually-hidden': this.hideHeading })}
                   part="heading"
                   data-part="heading"
-                  level="2"
-                  tabindex="-1"
-                  >${this.heading}</ds-heading
                 >
+                  <ds-heading level="2" tabindex=${ifDefined(this.headingIsFallback ? '-1' : undefined)}
+                    >${this.heading}</ds-heading
+                  >
+                </div>
                 ${this.dismissible
-                  ? html`<ds-button
+                  ? html`<div
                       class="close-button"
                       part="closeButton"
                       data-part="closeButton"
-                      variant="ghost"
-                      icon-only
-                      label=${COPY_CLOSE_LABEL}
-                      @press=${this.handleCloseButtonPress}
-                      ><ds-icon slot="leading-icon" name="close"></ds-icon
-                    ></ds-button>`
+                      @click=${this.handleCloseWrapperClick}
+                    >
+                      <ds-button
+                        variant="ghost"
+                        size="sm"
+                        icon-only
+                        label=${COPY_CLOSE_LABEL}
+                        @press=${this.handleCloseButtonPress}
+                        ><ds-icon slot="leading-icon" name="close"></ds-icon
+                      ></ds-button>
+                    </div>`
                   : nothing}
               </div>
             </div>
-            <ds-box class="body" part="body" data-part="body"><slot></slot></ds-box>
-            <ds-stack
-              part="footer"
-              data-part="footer"
-              direction="horizontal"
-              justify="end"
-              .overrides=${footerOverrides}
-              ?hidden=${!this.hasFooter}
-              ><slot name="footer" @slotchange=${this.handleFooterSlotChange}></slot
-            ></ds-stack>
+            <div class="body" part="body" data-part="body">
+              <ds-box><slot></slot></ds-box>
+            </div>
+            ${this.hasFooter
+              ? html`<div class="footer" part="footer" data-part="footer">
+                  <ds-stack direction="horizontal" justify="end" .overrides=${footerOverrides}
+                    ><slot name="footer"></slot
+                  ></ds-stack>
+                </div>`
+              : nothing}
           </div>
         </ds-focus-scope>
       </dialog>
     `;
   }
 
-  /** inset, radius, partGap and footerGap reach Dialog's own overrides; sheet-only bindings are no-ops there. */
+  /** Every set override whose binding Dialog shares by name reaches Dialog's own overrides. */
   private dialogOverrides(): Partial<Record<DialogOverridableBinding, TokenRef | undefined>> | undefined {
     const overrides = this.overrides;
     if (!overrides) {
       return undefined;
     }
     const forwarded: Partial<Record<DialogOverridableBinding, TokenRef | undefined>> = {};
-    for (const binding of ['inset', 'radius', 'partGap', 'footerGap'] as const) {
+    for (const binding of DIALOG_SHARED_BINDINGS) {
       const ref = overrides[binding];
       if (ref !== undefined) {
         forwarded[binding] = ref;
@@ -632,8 +730,8 @@ export class DsBottomSheet extends LitElement {
   private readonly handleCancel = (event: Event): void => {
     // The consumer owns `open`: never let the browser close the <dialog> on its own.
     event.preventDefault();
-    const active = getDeepActiveElement();
-    this.focusBeforeCancel = active instanceof HTMLElement ? active : null;
+    // A non-cancelable cancel (Chromium without user activation) is followed by a native close.
+    this.escapeReported = !event.cancelable;
     this.dispatchClose('escape');
   };
 
@@ -642,19 +740,16 @@ export class DsBottomSheet extends LitElement {
       this.closingProgrammatically = false;
       return;
     }
-    // Chromium closes without a cancelable `cancel` when Escape arrives with no user activation.
-    // `escape` was already reported from `cancel`; stay open until the consumer flips `open`.
+    // The browser closed the <dialog> itself. If no `cancel` announced it, that was Escape too.
+    if (!this.escapeReported) {
+      this.dispatchClose('escape');
+    }
+    this.escapeReported = false;
     const dialog = this.dialogEl;
     if (this.open && dialog && !dialog.open) {
       dialog.showModal();
-      const previous = this.focusBeforeCancel;
-      if (previous?.isConnected) {
-        previous.focus();
-      } else {
-        this.applyInitialFocus();
-      }
+      void this.applyInitialFocus();
     }
-    this.focusBeforeCancel = null;
   };
 
   private readonly handleScrimClick = (event: MouseEvent): void => {
@@ -667,6 +762,16 @@ export class DsBottomSheet extends LitElement {
   private readonly handleCloseButtonPress = (event: Event): void => {
     // The composite reports `close`; the inner button's `press` stays inside.
     event.stopPropagation();
+    this.dispatchClose('close-button');
+  };
+
+  /** The wrapper's extra target area activates the close button. */
+  private readonly handleCloseWrapperClick = (event: MouseEvent): void => {
+    const button = this.closeButtonEl;
+    if (!button || event.composedPath().includes(button)) {
+      return;
+    }
+    button.focus();
     this.dispatchClose('close-button');
   };
 
@@ -692,81 +797,112 @@ export class DsBottomSheet extends LitElement {
     }
   };
 
-  private readonly handleFooterSlotChange = (): void => {
-    const next = (this.footerSlotEl?.assignedNodes({ flatten: true }) ?? []).some(
-      (node) => node.nodeType === Node.ELEMENT_NODE || Boolean(node.textContent?.trim()),
-    );
+  private syncHasFooter(): void {
+    const next = Array.from(this.children).some((child) => child.slot === 'footer');
     if (next !== this.hasFooter) {
       this.hasFooter = next;
     }
-  };
+  }
 
   private readonly handlePointerDown = (event: PointerEvent): void => {
     if (!this.dismissible || !this.dragToDismiss || this.closing || !event.isPrimary || event.button !== 0) {
       return;
     }
-    // The close button is a control, not a drag origin.
-    if (event.composedPath().some((node) => node === this.closeButtonEl)) {
-      return;
-    }
-    const surface = this.surfaceEl;
-    if (!surface) {
-      return;
-    }
-    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
-    this.drag = { startY: event.clientY, lastY: event.clientY, lastTime: event.timeStamp, velocity: 0 };
-    // The drag follows the finger directly, even under reduced motion.
-    surface.style.transition = 'none';
+    // Not claimed yet: a tap on the close button still activates it.
+    this.gesture = {
+      pointerId: event.pointerId,
+      startY: event.clientY,
+      claimed: false,
+      previousY: event.clientY,
+      previousTime: event.timeStamp,
+      lastY: event.clientY,
+      lastTime: event.timeStamp,
+    };
   };
 
   private readonly handlePointerMove = (event: PointerEvent): void => {
-    const drag = this.drag;
+    const gesture = this.gesture;
     const surface = this.surfaceEl;
-    if (!drag || !surface) {
+    if (!gesture || !surface || event.pointerId !== gesture.pointerId) {
       return;
     }
-    const elapsed = event.timeStamp - drag.lastTime;
-    if (elapsed > 0) {
-      drag.velocity = (event.clientY - drag.lastY) / elapsed;
+    const deltaY = event.clientY - gesture.startY;
+    if (!gesture.claimed) {
+      const slop = lengthInPx(this, getComputedStyle(this).getPropertyValue(DRAG_SLOP_PROPERTY).trim());
+      if (deltaY < slop || deltaY <= 0) {
+        return;
+      }
+      gesture.claimed = true;
+      (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+      surface.classList.remove('springing');
+      surface.classList.add('dragging');
     }
-    drag.lastY = event.clientY;
-    drag.lastTime = event.timeStamp;
-    const deltaY = Math.max(0, event.clientY - drag.startY);
-    surface.style.transform = `translateY(${deltaY}px)`;
+    gesture.previousY = gesture.lastY;
+    gesture.previousTime = gesture.lastTime;
+    gesture.lastY = event.clientY;
+    gesture.lastTime = event.timeStamp;
+    surface.style.transform = `translateY(${Math.max(0, deltaY)}px)`;
   };
 
   private readonly handlePointerUp = (event: PointerEvent): void => {
-    const drag = this.drag;
+    const gesture = this.gesture;
     const surface = this.surfaceEl;
-    this.drag = null;
-    if (!drag || !surface) {
+    if (!gesture || event.pointerId !== gesture.pointerId) {
       return;
     }
-    const deltaY = Math.max(0, event.clientY - drag.startY);
-    const sheetHeight = surface.getBoundingClientRect().height;
-    const pastDistance = sheetHeight > 0 && deltaY > sheetHeight * DISMISS_DISTANCE;
-    const pastVelocity = drag.velocity > DISMISS_VELOCITY;
-
-    // Hand the transform back to the stylesheet's transitions.
-    surface.style.removeProperty('transition');
-    if (deltaY > 0 && (pastDistance || pastVelocity)) {
-      this.dispatchEvent(new CustomEvent<BottomSheetDragDismissDetail>('drag-dismiss', { bubbles: true, composed: true }));
-      this.dispatchClose('drag');
-      if (!this.open) {
-        // The consumer closed: the exit transition plays from where the finger left the sheet.
-        return;
-      }
+    this.gesture = null;
+    if (!gesture.claimed || !surface) {
+      return;
     }
-    // Spring back.
-    surface.style.removeProperty('transform');
+    surface.classList.remove('dragging');
+    const deltaY = Math.max(0, event.clientY - gesture.startY);
+    const sheetHeight = surface.getBoundingClientRect().height;
+    const elapsed = gesture.lastTime - gesture.previousTime;
+    // Measured between the last two move samples; only downward speed counts.
+    const velocity = elapsed > 0 ? Math.max(0, (gesture.lastY - gesture.previousY) / elapsed) : 0;
+    const pastDistance = sheetHeight > 0 && deltaY > sheetHeight * DISMISS_DISTANCE;
+    const pastVelocity = velocity > DISMISS_VELOCITY;
+
+    if (deltaY > 0 && (pastDistance || pastVelocity)) {
+      this.dispatchEvent(
+        new CustomEvent<BottomSheetDragDismissDetail>('drag-dismiss', { bubbles: true, composed: true }),
+      );
+      this.dispatchClose('drag');
+      // Hold the release position until the consumer's update renders.
+      void this.settleRelease(surface);
+      return;
+    }
+    void this.springBack(surface);
   };
 
   private readonly handlePointerCancel = (): void => {
-    this.drag = null;
+    const gesture = this.gesture;
+    this.gesture = null;
     const surface = this.surfaceEl;
-    surface?.style.removeProperty('transition');
-    surface?.style.removeProperty('transform');
+    if (gesture?.claimed && surface) {
+      surface.classList.remove('dragging');
+      void this.springBack(surface);
+    }
   };
+
+  /** After a drag dismiss: `open` false plays the exit from here (handleClose); still true springs back. */
+  private async settleRelease(surface: HTMLElement): Promise<void> {
+    await this.updateComplete;
+    await nextFrame();
+    if (this.open && !this.closing && !this.wide && surface.isConnected) {
+      await this.springBack(surface);
+    }
+  }
+
+  private async springBack(surface: HTMLElement): Promise<void> {
+    surface.classList.add('springing');
+    surface.style.removeProperty('transform');
+    void getComputedStyle(surface).transform;
+    await Promise.all(surface.getAnimations().map((animation) => animation.finished.catch(() => undefined)));
+    if (!this.gesture?.claimed) {
+      surface.classList.remove('springing');
+    }
+  }
 
   private async handleOpen(): Promise<void> {
     const dialog = this.dialogEl;
@@ -785,13 +921,16 @@ export class DsBottomSheet extends LitElement {
     if (!this.open || this.closing || this.wide) {
       return;
     }
-    this.applyInitialFocus();
+    await this.applyInitialFocus();
   }
 
   private async handleClose(): Promise<void> {
     await this.updateComplete;
+    this.gesture = null;
+    const surface = this.surfaceEl;
+    surface?.classList.remove('dragging', 'springing');
     // A released drag left an inline transform: dropping it lets the exit run from that position.
-    this.surfaceEl?.style.removeProperty('transform');
+    surface?.style.removeProperty('transform');
     await this.transitionsSettled();
     if (this.open || this.wide) {
       return;
@@ -816,10 +955,18 @@ export class DsBottomSheet extends LitElement {
     await Promise.all(running.map((animation) => animation.finished.catch(() => undefined)));
   }
 
-  /** FocusScope's `first`: the body's first control, else the close button, else the heading. */
-  private applyInitialFocus(): void {
+  /** The first focusable in the body, then in the footer, then the close button, then the heading. */
+  private async applyInitialFocus(): Promise<void> {
     const bodyFirst = this.bodySlotEl ? firstFocusableIn(this.bodySlotEl) : null;
-    const target = bodyFirst ?? (this.dismissible ? this.closeButtonEl : null) ?? this.headingEl;
+    const footerFirst = this.footerSlotEl ? firstFocusableIn(this.footerSlotEl) : null;
+    let target = bodyFirst ?? footerFirst ?? (this.dismissible ? this.closeButtonEl : null);
+    if (!target) {
+      if (!this.headingIsFallback) {
+        this.headingIsFallback = true;
+        await this.updateComplete;
+      }
+      target = this.headingEl;
+    }
     target?.focus();
   }
 

@@ -12,6 +12,7 @@ import './Stack.js';
 import './FocusScope.js';
 import type { DsFocusScope } from './FocusScope.js';
 import type { StackOverridableBinding } from './Stack.js';
+import type { BoxOverridableBinding } from './Box.js';
 
 export type DialogSize = 'sm' | 'md' | 'lg';
 export type DialogInitialFocus = 'first' | 'title' | 'close';
@@ -38,6 +39,8 @@ export type DialogOverridableBinding =
   | 'footerGap'
   | 'descriptionGap'
   | 'widthSm'
+  | 'widthMd'
+  | 'widthLg'
   | 'layer'
   | 'enter'
   | 'exit';
@@ -54,13 +57,12 @@ const HOOKS: Record<DialogOverridableBinding, string> = {
   footerGap: '--ds-dialog-footer-gap',
   descriptionGap: '--ds-dialog-description-gap',
   widthSm: '--ds-dialog-width-sm',
+  widthMd: '--ds-dialog-width-md',
+  widthLg: '--ds-dialog-width-lg',
   layer: '--ds-dialog-layer',
   enter: '--ds-dialog-enter',
   exit: '--ds-dialog-exit',
 };
-
-/** footerGap's token, forwarded to the footer Stack as `overrides.gap` when no override is set. */
-const FOOTER_GAP_TOKEN: TokenRef = 'layout.gap.tight';
 
 /** copy.closeLabel */
 const COPY_CLOSE_LABEL = 'Close';
@@ -113,12 +115,8 @@ function firstFocusableIn(node: Element): HTMLElement | null {
   return null;
 }
 
-function getDeepActiveElement(): Element | null {
-  let active = document.activeElement;
-  while (active?.shadowRoot?.activeElement) {
-    active = active.shadowRoot.activeElement;
-  }
-  return active;
+function nextFrame(): Promise<void> {
+  return new Promise((resolve) => requestAnimationFrame(() => resolve()));
 }
 
 /** How many open `<ds-dialog>`s hold the page-scroll lock, so a second one does not release it early. */
@@ -152,12 +150,13 @@ function unlockPageScroll(): void {
  * `<ds-dialog open heading="Rename project">…</ds-dialog>`. A native `<dialog>`
  * in the shadow root is opened with `showModal()` / `close()` as the reflected
  * `open` property changes, which gives the top layer, background inertness and
- * Escape. The `<dialog>` covers the viewport; the scrim is a real element
- * filling it and the surface sits centred above it, so a click that lands on
- * the scrim is the scrim click. `<ds-focus-scope>` (auto-focus `none`) wraps
- * the surface: it wraps Tab across the shadow content and the slotted body
- * and footer, and returns focus to the opener when the dialog closes; the
- * dialog places initial focus itself per `initialFocus`.
+ * Escape. The `<dialog>` covers the viewport with a transparent `::backdrop`;
+ * the scrim is a real element filling it and the surface sits centred above
+ * it, so a click whose target is the scrim is the scrim click.
+ * `<ds-focus-scope>` (auto-focus `none`) wraps the surface: it wraps Tab
+ * across the shadow content and the slotted body and footer, and returns focus
+ * to the opener when the dialog closes; the dialog places initial focus itself
+ * per `initialFocus`.
  *
  * Escape, the close button and a scrim click each request close through the
  * composed `close` event with a reason; the dialog never closes itself, the
@@ -204,25 +203,15 @@ export class DsDialog extends LitElement {
       --ds-dialog-footer-gap: var(--layout-gap-tight);
       --ds-dialog-description-gap: var(--layout-gap-tight);
       --ds-dialog-width-sm: var(--layout-max-width-prose);
+      --ds-dialog-width-md: var(--layout-max-width-content);
+      --ds-dialog-width-lg: var(--layout-max-width-content);
       --ds-dialog-layer: var(--layer-dialog);
       --ds-dialog-enter: var(--motion-duration-base);
       --ds-dialog-exit: var(--motion-duration-fast);
-      /* md is 3/4 of content, lg is content: derived from layout.maxWidth.content, not new tokens */
-      --ds-dialog-width: calc(var(--layout-max-width-content) * 0.75);
     }
 
     :host([hidden]) {
       display: none;
-    }
-
-    :host([size='sm']) {
-      --ds-dialog-width: var(--ds-dialog-width-sm);
-    }
-    :host([size='md']) {
-      --ds-dialog-width: calc(var(--layout-max-width-content) * 0.75);
-    }
-    :host([size='lg']) {
-      --ds-dialog-width: var(--layout-max-width-content);
     }
 
     dialog {
@@ -239,6 +228,7 @@ export class DsDialog extends LitElement {
       background: transparent;
       color: inherit;
       overflow: hidden;
+      /* Only a non-top-layer fallback honours this; the top layer ignores z-index. */
       z-index: var(--ds-dialog-layer);
     }
 
@@ -264,8 +254,16 @@ export class DsDialog extends LitElement {
       position: relative;
       display: flex;
       box-sizing: border-box;
+      /* widthMd: layout.maxWidth.content × 0.75; an override replaces the base, the × 0.75 stays. */
+      --ds-dialog-width: calc(var(--ds-dialog-width-md) * 0.75);
       inline-size: min(var(--ds-dialog-width), calc(100% - 2 * var(--layout-gutter)));
       max-block-size: calc(100% - 2 * var(--layout-gutter));
+    }
+    :host([size='sm']) .scope {
+      --ds-dialog-width: var(--ds-dialog-width-sm);
+    }
+    :host([size='lg']) .scope {
+      --ds-dialog-width: var(--ds-dialog-width-lg);
     }
 
     .surface {
@@ -276,7 +274,6 @@ export class DsDialog extends LitElement {
       min-inline-size: 0;
       max-block-size: 100%;
       gap: var(--ds-dialog-part-gap);
-      padding: var(--ds-dialog-inset);
       font-family: var(--font-family-body);
       color: var(--color-foreground);
       /* surface: color.overlay.surface, locked — no hook */
@@ -303,7 +300,7 @@ export class DsDialog extends LitElement {
       }
     }
 
-    /* exit: motion.duration.fast with motion.easing.exit */
+    /* exit: motion.duration.fast with motion.easing.exit, scrim and surface alike */
     .closing .scrim,
     .closing .surface {
       opacity: 0;
@@ -326,8 +323,10 @@ export class DsDialog extends LitElement {
       align-items: flex-start;
       justify-content: space-between;
       gap: var(--ds-dialog-header-gap);
+      padding: var(--ds-dialog-inset);
     }
 
+    /* The titles group: Dialog-owned, not an anatomy part. */
     .titles {
       display: flex;
       flex-direction: column;
@@ -339,11 +338,11 @@ export class DsDialog extends LitElement {
       flex: none;
     }
 
-    /* The heading takes focus for initialFocus: title. */
-    .heading:focus {
+    /* The heading wrapper draws the ring when the heading holds focus (tabindex -1). */
+    .heading ds-heading:focus {
       outline: none;
     }
-    .heading:focus-visible {
+    .heading:has(:focus-visible) {
       outline: var(--border-width-focus) solid var(--color-border-focus);
       outline-offset: var(--border-width-focus);
     }
@@ -366,6 +365,19 @@ export class DsDialog extends LitElement {
       flex: 1 1 auto;
       min-block-size: 0;
       overflow-y: auto;
+    }
+    /* inset reaches the body Box through its own hooks (and through overrides when set). */
+    .body > ds-box {
+      --ds-box-padding-block: var(--ds-dialog-inset);
+      --ds-box-padding-inline: var(--ds-dialog-inset);
+    }
+
+    .footer {
+      padding: var(--ds-dialog-inset);
+    }
+    /* footerGap reaches the Stack through its own hook (and through overrides when set). */
+    .footer > ds-stack {
+      --ds-stack-gap: var(--ds-dialog-footer-gap);
     }
   `;
 
@@ -392,7 +404,7 @@ export class DsDialog extends LitElement {
   @property({ attribute: 'no-dismiss', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
   accessor dismissible = true;
 
-  /** Where focus lands on open: the first focusable control in the body, the title, or the close button. */
+  /** Where focus lands on open: the first focusable control, the title, or the close button. */
   @property({ type: String, attribute: 'initial-focus', reflect: true }) accessor initialFocus: DialogInitialFocus =
     'first';
 
@@ -402,30 +414,41 @@ export class DsDialog extends LitElement {
   /** The exit transition is playing: the dialog stays rendered a beat past `open` turning false. */
   @state() private accessor closing = false;
 
+  /** A light-DOM child is assigned to the `footer` slot; the footer wrapper renders only then. */
   @state() private accessor hasFooter = false;
+
+  /** The heading became the focus fallback of `first` / `close`, so it takes tabindex -1 too. */
+  @state() private accessor headingIsFallback = false;
 
   @query('dialog') private accessor dialogEl!: HTMLDialogElement | null;
   @query('.scope') private accessor scopeEl!: DsFocusScope | null;
   @query('.scrim') private accessor scrimEl!: HTMLElement | null;
   @query('.surface') private accessor surfaceEl!: HTMLElement | null;
-  @query('.heading') private accessor headingEl!: HTMLElement | null;
-  @query('.close-button') private accessor closeButtonEl!: HTMLElement | null;
+  @query('ds-heading') private accessor headingEl!: HTMLElement | null;
+  @query('.close-button ds-button') private accessor closeButtonEl!: HTMLElement | null;
   @query('slot:not([name])') private accessor bodySlotEl!: HTMLSlotElement | null;
   @query('slot[name="footer"]') private accessor footerSlotEl!: HTMLSlotElement | null;
 
   private scrollLocked = false;
   private closingProgrammatically = false;
-  private focusBeforeCancel: HTMLElement | null = null;
+  /** Escape was already reported from a non-cancelable `cancel` that the native close follows. */
+  private escapeReported = false;
+
+  /** Watches light-DOM children for `slot="footer"`; the callback only compares and sets state. */
+  private readonly footerObserver: MutationObserver = new MutationObserver(() => this.syncHasFooter());
 
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('data-ds', 'Dialog');
     this.addEventListener('submit', this.handleSubmit);
+    this.syncHasFooter();
+    this.footerObserver.observe(this, { childList: true, subtree: true, attributeFilter: ['slot'] });
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.removeEventListener('submit', this.handleSubmit);
+    this.footerObserver.disconnect();
     this.releaseScroll();
   }
 
@@ -439,6 +462,9 @@ export class DsDialog extends LitElement {
       } else if (changed.get('open') === true) {
         this.closing = true;
       }
+    }
+    if (changed.has('initialFocus') || changed.has('dismissible') || (changed.has('open') && this.open)) {
+      this.headingIsFallback = false;
     }
   }
 
@@ -460,8 +486,14 @@ export class DsDialog extends LitElement {
       return nothing;
     }
     const description = this.description || undefined;
-    const footerGap = this.overrides?.footerGap ?? FOOTER_GAP_TOKEN;
-    const footerOverrides: Partial<Record<StackOverridableBinding, TokenRef | undefined>> = { gap: footerGap };
+    const headingFocusable = this.initialFocus === 'title' || this.headingIsFallback;
+    // Forwards reach the child's overrides only when set, so the CSS hook route keeps working otherwise.
+    const inset = this.overrides?.inset;
+    const bodyOverrides: Partial<Record<BoxOverridableBinding, TokenRef | undefined>> | undefined =
+      inset === undefined ? undefined : { paddingBlock: inset, paddingInline: inset };
+    const footerGap = this.overrides?.footerGap;
+    const footerOverrides: Partial<Record<StackOverridableBinding, TokenRef | undefined>> | undefined =
+      footerGap === undefined ? undefined : { gap: footerGap };
 
     return html`
       <dialog
@@ -483,42 +515,42 @@ export class DsDialog extends LitElement {
           <div class="surface" part="surface" data-part="surface">
             <div class="header" part="header" data-part="header">
               <div class="titles">
-                <ds-heading
+                <div
                   class=${classMap({ heading: true, 'visually-hidden': this.hideHeading })}
                   part="heading"
                   data-part="heading"
-                  level="2"
-                  tabindex="-1"
-                  >${this.heading}</ds-heading
                 >
+                  <ds-heading level="2" tabindex=${ifDefined(headingFocusable ? '-1' : undefined)}
+                    >${this.heading}</ds-heading
+                  >
+                </div>
                 ${description
                   ? html`<ds-text part="description" data-part="description">${description}</ds-text>`
                   : nothing}
               </div>
               ${this.dismissible
-                ? html`<ds-button
-                    class="close-button"
-                    part="closeButton"
-                    data-part="closeButton"
-                    variant="ghost"
-                    size="sm"
-                    icon-only
-                    label=${COPY_CLOSE_LABEL}
-                    @press=${this.handleCloseButtonPress}
-                    ><ds-icon slot="leading-icon" name="close"></ds-icon
-                  ></ds-button>`
+                ? html`<div class="close-button" part="closeButton" data-part="closeButton">
+                    <ds-button
+                      variant="ghost"
+                      size="sm"
+                      icon-only
+                      label=${COPY_CLOSE_LABEL}
+                      @press=${this.handleCloseButtonPress}
+                      ><ds-icon slot="leading-icon" name="close"></ds-icon
+                    ></ds-button>
+                  </div>`
                 : nothing}
             </div>
-            <ds-box class="body" part="body" data-part="body"><slot></slot></ds-box>
-            <ds-stack
-              part="footer"
-              data-part="footer"
-              direction="horizontal"
-              justify="end"
-              .overrides=${footerOverrides}
-              ?hidden=${!this.hasFooter}
-              ><slot name="footer" @slotchange=${this.handleFooterSlotChange}></slot
-            ></ds-stack>
+            <div class="body" part="body" data-part="body">
+              <ds-box .overrides=${bodyOverrides}><slot></slot></ds-box>
+            </div>
+            ${this.hasFooter
+              ? html`<div class="footer" part="footer" data-part="footer">
+                  <ds-stack direction="horizontal" justify="end" .overrides=${footerOverrides}
+                    ><slot name="footer"></slot
+                  ></ds-stack>
+                </div>`
+              : nothing}
           </div>
         </ds-focus-scope>
       </dialog>
@@ -528,8 +560,8 @@ export class DsDialog extends LitElement {
   private readonly handleCancel = (event: Event): void => {
     // The consumer owns `open`: never let the browser close the <dialog> on its own.
     event.preventDefault();
-    const active = getDeepActiveElement();
-    this.focusBeforeCancel = active instanceof HTMLElement ? active : null;
+    // A non-cancelable cancel (Chromium without user activation) is followed by a native close.
+    this.escapeReported = !event.cancelable;
     this.dispatchClose('escape');
   };
 
@@ -538,19 +570,16 @@ export class DsDialog extends LitElement {
       this.closingProgrammatically = false;
       return;
     }
-    // Chromium closes without a cancelable `cancel` when Escape arrives with no user activation.
-    // `escape` was already reported from `cancel`; stay open until the consumer flips `open`.
+    // The browser closed the <dialog> itself. If no `cancel` announced it, that was Escape too.
+    if (!this.escapeReported) {
+      this.dispatchClose('escape');
+    }
+    this.escapeReported = false;
     const dialog = this.dialogEl;
     if (this.open && dialog && !dialog.open) {
       dialog.showModal();
-      const previous = this.focusBeforeCancel;
-      if (previous?.isConnected) {
-        previous.focus();
-      } else {
-        this.applyInitialFocus();
-      }
+      void this.applyInitialFocus();
     }
-    this.focusBeforeCancel = null;
   };
 
   private readonly handleScrimClick = (event: MouseEvent): void => {
@@ -584,14 +613,12 @@ export class DsDialog extends LitElement {
     }
   };
 
-  private readonly handleFooterSlotChange = (): void => {
-    const next = (this.footerSlotEl?.assignedNodes({ flatten: true }) ?? []).some(
-      (node) => node.nodeType === Node.ELEMENT_NODE || Boolean(node.textContent?.trim()),
-    );
+  private syncHasFooter(): void {
+    const next = Array.from(this.children).some((child) => child.slot === 'footer');
     if (next !== this.hasFooter) {
       this.hasFooter = next;
     }
-  };
+  }
 
   private async handleOpen(): Promise<void> {
     const dialog = this.dialogEl;
@@ -610,8 +637,12 @@ export class DsDialog extends LitElement {
     if (!this.open || this.closing) {
       return;
     }
-    this.applyInitialFocus();
-    await this.transitionsSettled();
+    await this.applyInitialFocus();
+    const ran = await this.transitionsSettled();
+    if (ran === 0) {
+      // Nothing to wait for (reduced motion, zero duration): the next frame after focus moves in.
+      await nextFrame();
+    }
     if (!this.open || this.closing) {
       return;
     }
@@ -634,7 +665,8 @@ export class DsDialog extends LitElement {
     this.closing = false;
   }
 
-  private async transitionsSettled(): Promise<void> {
+  /** Waits for the scrim and surface transitions; resolves with how many were running. */
+  private async transitionsSettled(): Promise<number> {
     const parts = [this.scrimEl, this.surfaceEl].filter((el): el is HTMLElement => el !== null);
     // Flush style so transitions started by @starting-style or the closing class are registered.
     for (const part of parts) {
@@ -642,21 +674,30 @@ export class DsDialog extends LitElement {
     }
     const running = parts.flatMap((part) => part.getAnimations());
     await Promise.all(running.map((animation) => animation.finished.catch(() => undefined)));
+    return running.length;
   }
 
-  private applyInitialFocus(): void {
-    const heading = this.headingEl;
+  /**
+   * `title` → the heading. `first` → body, footer, close button, heading.
+   * `close` → the close button; without one (not dismissible), the `first` order.
+   */
+  private async applyInitialFocus(): Promise<void> {
     const close = this.dismissible ? this.closeButtonEl : null;
-    const bodyFirst = this.bodySlotEl ? firstFocusableIn(this.bodySlotEl) : null;
-    let target: HTMLElement | null;
-    if (this.initialFocus === 'title') {
-      target = heading;
-    } else if (this.initialFocus === 'close') {
-      // A non-dismissible dialog has no close button: the body's first control, then the heading.
-      target = close ?? bodyFirst ?? heading;
-    } else {
+    let target: HTMLElement | null = null;
+    if (this.initialFocus === 'close') {
+      target = close;
+    }
+    if (this.initialFocus !== 'title' && !target) {
+      const bodyFirst = this.bodySlotEl ? firstFocusableIn(this.bodySlotEl) : null;
       const footerFirst = this.footerSlotEl ? firstFocusableIn(this.footerSlotEl) : null;
-      target = bodyFirst ?? footerFirst ?? close ?? heading;
+      target = bodyFirst ?? footerFirst ?? close;
+    }
+    if (!target) {
+      if (this.initialFocus !== 'title' && !this.headingIsFallback) {
+        this.headingIsFallback = true;
+        await this.updateComplete;
+      }
+      target = this.headingEl;
     }
     target?.focus();
   }
@@ -693,7 +734,7 @@ export class DsDialog extends LitElement {
     if (!this.heading) {
       console.warn('<ds-dialog> requires a `heading`; it is the accessible name.', this);
     }
-    if (!this.dismissible && this.querySelector(':scope > [slot="footer"]') === null) {
+    if (!this.dismissible && !this.hasFooter) {
       console.warn('<ds-dialog no-dismiss> has no footer: provide the answers in the footer.', this);
     }
   }

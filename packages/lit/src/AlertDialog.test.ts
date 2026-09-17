@@ -84,7 +84,7 @@ describe('ds-alert-dialog', () => {
 
   it('focus-starts-on-the-cancel-button', async () => {
     const d = await setup({ open: true });
-    await expect.poll(() => activeChain()).toContain(d.part('cancelButton'));
+    await expect.poll(() => activeChain()).toContain(d.part('cancelButton')!.querySelector('ds-button'));
   });
 
   it('a-scrim-click-does-nothing', async () => {
@@ -119,7 +119,7 @@ describe('ds-alert-dialog', () => {
   it('the-cancel-button-is-named-from-copy', async () => {
     const d = await setup({ open: true });
     const cancelButton = d.part('cancelButton')!;
-    const inner = cancelButton.shadowRoot!.querySelector('button')!;
+    const inner = cancelButton.querySelector('ds-button')!.shadowRoot!.querySelector('button')!;
     expect(inner).toHaveAccessibleName('Cancel');
   });
 

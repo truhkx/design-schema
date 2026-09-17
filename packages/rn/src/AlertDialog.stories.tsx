@@ -2,7 +2,6 @@ import * as React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { AlertDialog } from './AlertDialog';
 import { Button } from './Button';
-import { Input } from './Input';
 import { Stack } from './Stack';
 import { withTheme } from './decorators';
 
@@ -95,7 +94,11 @@ export const WithOverrides: Story = {
   },
 };
 
-/** Open with its trigger and several focusable children, for the axe gate and manual keyboard checks. */
+/**
+ * Open with its trigger, for the axe gate and manual keyboard checks. The dialog has
+ * exactly two focusable children (Cancel, Confirm) and the trigger behind is inert, so
+ * the three-focusable-children rule does not apply. The wrapper owns `open` as a consumer.
+ */
 export const Keyboard: Story = {
   render: (args) => {
     function Open(): React.JSX.Element {
@@ -103,8 +106,6 @@ export const Keyboard: Story = {
       return (
         <Stack gap="loose" align="start">
           <Button label="Delete files" variant="danger" onPress={() => setOpen(true)} />
-          <Input label="Project name" name="name" defaultValue="Marketing site" />
-          <Input label="Description" name="description" />
           <AlertDialog
             {...args}
             open={open}

@@ -18,9 +18,14 @@ import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
 import { FocusScope } from './FocusScope';
 import { Icon, type IconName } from './Icon';
-import { Menu, type MenuAction, type MenuItem, type MenuOpenChangeReason } from './Menu';
-import type { TextOverridableBinding } from './Text';
-import { Text } from './Text';
+import {
+  Menu,
+  type MenuAction,
+  type MenuItem,
+  type MenuOpenChangeReason,
+  type MenuOverridableBinding,
+} from './Menu';
+import { Text, type TextOverridableBinding } from './Text';
 import './ActionSheet.css';
 
 export type ActionSheetActionTone = 'default' | 'danger';
@@ -30,10 +35,9 @@ export type ActionSheetCloseReason = 'escape' | 'scrim' | 'cancel' | 'drag';
 export type ActionSheetAction = { id: string; label: string; icon?: IconName; tone?: "default" | "danger"; disabled?: boolean };
 
 /**
- * Style bindings that can be overridden per instance; accessibility-bearing bindings are never in
- * this list. `titleSize` is forwarded to the composed heading Text as its `fontSize`; `fontFamily`
- * and `lineHeight` style the rows and are forwarded to the heading Text as well. They apply to the
- * sheet presentation; the wide presentation is Menu, with Menu's own contract.
+ * Style bindings that can be overridden per instance; accessibility-bearing bindings (surface,
+ * handle, itemHover, itemColor, itemDangerColor, titleColor, minTarget, maxWidth, focusRing,
+ * focusRingWidth) are never in this list.
  */
 export type ActionSheetOverridableBinding =
   | 'scrim'
@@ -53,11 +57,11 @@ export type ActionSheetOverridableBinding =
   | 'lineHeight'
   | 'divider'
   | 'dividerWidth'
-  | 'maxWidth'
   | 'layer'
   | 'enter'
   | 'exit';
 
+/** Host hooks. `titleSize` has none: it reaches the heading Text only. */
 const OVERRIDE_HOOK: Partial<Record<ActionSheetOverridableBinding, string>> = {
   scrim: '--ds-action-sheet-scrim',
   shadow: '--ds-action-sheet-shadow',
@@ -75,7 +79,6 @@ const OVERRIDE_HOOK: Partial<Record<ActionSheetOverridableBinding, string>> = {
   lineHeight: '--ds-action-sheet-line-height',
   divider: '--ds-action-sheet-divider',
   dividerWidth: '--ds-action-sheet-divider-width',
-  maxWidth: '--ds-action-sheet-max-width',
   layer: '--ds-action-sheet-layer',
   enter: '--ds-action-sheet-enter',
   exit: '--ds-action-sheet-exit',
@@ -86,6 +89,21 @@ const TEXT_FORWARD: Partial<Record<ActionSheetOverridableBinding, TextOverridabl
   titleSize: 'fontSize',
   fontFamily: 'fontFamily', // literal-ok: Text binding name, not a font stack
   lineHeight: 'lineHeight',
+};
+
+/** Bindings forwarded to the wide Menu: the ones sharing a name, plus divider → separator. */
+const MENU_FORWARD: Partial<Record<ActionSheetOverridableBinding, MenuOverridableBinding>> = {
+  shadow: 'shadow',
+  radius: 'radius',
+  itemPaddingBlock: 'itemPaddingBlock',
+  itemPaddingInline: 'itemPaddingInline',
+  itemGap: 'itemGap',
+  fontFamily: 'fontFamily', // literal-ok: Menu binding name, not a font stack
+  fontSize: 'fontSize',
+  lineHeight: 'lineHeight',
+  layer: 'layer',
+  enter: 'enter',
+  divider: 'separator',
 };
 
 const COPY = { cancelLabel: 'Cancel', defaultLabel: 'Actions' } as const;
@@ -101,11 +119,11 @@ function prefersReducedMotion(): boolean {
     : false;
 }
 
-/** The `maxWidth` breakpoint query, read from the loaded token stylesheet rather than a number. */
+/** Wide when the viewport is strictly wider than `layout.maxWidth.prose`, read from the theme stylesheet. */
 function wideQuery(): MediaQueryList | null {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return null;
   const breakpoint = getComputedStyle(document.documentElement).getPropertyValue('--layout-max-width-prose').trim();
-  return breakpoint ? window.matchMedia(`(min-width: ${breakpoint})`) : null;
+  return breakpoint ? window.matchMedia(`(width > ${breakpoint})`) : null;
 }
 
 function useIsWide(): boolean {
@@ -143,19 +161,28 @@ function toMenuItems(actions: ActionSheetAction[]): MenuItem[] {
 
 export interface ActionSheetProps
   extends Omit<ComponentPropsWithoutRef<'dialog'>, 'children' | 'title' | 'onClose' | 'open' | 'className' | 'style'> {
-  /** Controlled visibility. */
+  /**
+   * Controlled only — there is no uncontrolled mode; the consumer owns `open`, the sheet requests a
+   * dismissal through `onClose` and reports a choice through `onAction`, and the consumer sets
+   * `open` to false for both.
+   */
   open: boolean;
   /**
    * What the actions apply to ("Photo.jpg"), shown muted above the list. Also the accessible name;
    * when omitted the name is `copy.defaultLabel`.
    */
   heading?: string | undefined;
-  /** Two to about eight actions. `danger` actions are visually distinct and grouped last. */
+  /**
+   * Two to about eight actions. `danger` actions are visually distinct and grouped last. The count
+   * is guidance, not enforced: no dev warning outside that range.
+   */
   actions: ActionSheetAction[];
   /**
-   * Escape, the scrim, the cancel row and the drag all request close; Escape still reports through
-   * onClose when false, as in Dialog. It gates the sheet presentation only — the wide Menu
-   * presentation has no scrim, drag or cancel row, and clicking outside always closes it.
+   * Escape, the scrim, the cancel row and the drag all request close. When false, as in Dialog: the
+   * Cancel row and the divider above it are not rendered, the drag handle is not rendered, the scrim
+   * and the drag do nothing, and Escape still reports through onClose. It gates the sheet
+   * presentation only — the wide Menu presentation has no scrim, drag or cancel row, and clicking
+   * outside always closes it.
    */
   dismissible?: boolean | undefined;
   /** Label of the explicit cancel row on phones. Defaults to `copy.cancelLabel`. */
@@ -171,8 +198,8 @@ export interface ActionSheetProps
 }
 
 /**
- * ActionSheet — contextual actions on an item: a bottom sheet of menu items on narrow screens, a
- * Menu anchored to the opener above `layout.maxWidth.prose`.
+ * ActionSheet — contextual actions on an item: a bottom sheet of menu items at or below
+ * `layout.maxWidth.prose`, a Menu anchored to the opener above it.
  *
  * When to use: Use an ActionSheet for contextual actions on an item — share, rename, duplicate,
  * delete — opened from an overflow Button (`iconOnly`, label "More actions") or a long-press. Keep
@@ -195,8 +222,6 @@ export function ActionSheet({
   const isWide = useIsWide();
 
   const dialogRef = useRef<HTMLDialogElement | null>(null);
-  useImperativeHandle(ref, () => dialogRef.current as HTMLDialogElement, [isWide, open]);
-
   const surfaceRef = useRef<HTMLDivElement | null>(null);
   const itemRefs = useRef(new Map<string, HTMLButtonElement>());
   const dragRef = useRef<{ startY: number; startTime: number } | null>(null);
@@ -205,9 +230,12 @@ export function ActionSheet({
   // presentations return focus to it. Captured during render, before any child effect moves focus.
   const openerRef = useRef<HTMLElement | null>(null);
   const wasOpenRef = useRef(false);
+  // A choice was made in the wide Menu during this opening: no close reason may follow it.
+  const choseRef = useRef(false);
   if (open && !wasOpenRef.current && typeof document !== 'undefined') {
     const active = document.activeElement;
-    openerRef.current = active instanceof HTMLElement && active !== document.body ? active : null;
+    openerRef.current = active instanceof HTMLElement ? active : document.body;
+    choseRef.current = false;
   }
   useEffect(() => {
     wasOpenRef.current = open;
@@ -216,9 +244,14 @@ export function ActionSheet({
   // Mounted while open, and while the exit transition finishes after `open` goes false.
   const [present, setPresent] = useState(open);
   const [visible, setVisible] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const [settling, setSettling] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
 
   if (open && !present) setPresent(true);
+
+  // The sheet's <dialog>, null while closed and in the wide presentation.
+  useImperativeHandle(ref, () => dialogRef.current as HTMLDialogElement, [isWide, open, present]);
 
   const accessibleLabel = heading || COPY.defaultLabel;
   const { normal, danger } = partition(actions);
@@ -252,6 +285,7 @@ export function ActionSheet({
   useEffect(() => {
     if (open || !present) return undefined;
     setVisible(false);
+    setSettling(false);
     const dialog = dialogRef.current;
     const surface = surfaceRef.current;
     const finish = (): void => {
@@ -260,6 +294,7 @@ export function ActionSheet({
         else dialog.removeAttribute('open');
       }
       setPresent(false);
+      setDragging(false);
     };
     const duration = surface ? Number.parseFloat(getComputedStyle(surface).transitionDuration || '0') : 0;
     if (isWide || !surface || prefersReducedMotion() || !(duration > 0)) {
@@ -298,17 +333,13 @@ export function ActionSheet({
     requestClose('escape');
   };
 
-  const handleScrimClick = (event: ReactMouseEvent<HTMLDialogElement>): void => {
-    if (event.target === dialogRef.current) requestClose('scrim');
-  };
-
-  // Drag lives on the header (handle + heading), as in BottomSheet.
+  // Drag lives on the header (handle + heading), as in BottomSheet; only while dismissible.
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>): void => {
-    const surface = surfaceRef.current;
-    if (!surface) return;
+    if (!dismissible || !surfaceRef.current) return;
     event.currentTarget.setPointerCapture?.(event.pointerId);
     dragRef.current = { startY: event.clientY, startTime: event.timeStamp };
-    surface.classList.add('ds-action-sheet__surface--dragging');
+    setSettling(false);
+    setDragging(true);
   };
 
   const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>): void => {
@@ -326,10 +357,15 @@ export function ActionSheet({
     const distance = Math.max(0, event.clientY - drag.startY);
     const elapsed = Math.max(1, event.timeStamp - drag.startTime);
     const height = surface.getBoundingClientRect().height;
-    surface.classList.remove('ds-action-sheet__surface--dragging');
-    surface.style.removeProperty('--ds-action-sheet-drag');
     const pastDistance = height > 0 && distance / height > DISMISS_DISTANCE;
-    if (pastDistance || distance / elapsed > DISMISS_VELOCITY) requestClose('drag');
+    if (pastDistance || distance / elapsed > DISMISS_VELOCITY) {
+      // Hold the released position; the exit slides on from there once the consumer closes.
+      requestClose('drag');
+      return;
+    }
+    surface.style.removeProperty('--ds-action-sheet-drag');
+    setDragging(false);
+    setSettling(!prefersReducedMotion());
   };
 
   const focusAction = (action: ActionSheetAction | undefined): void => {
@@ -372,24 +408,40 @@ export function ActionSheet({
     onAction?.(action.id);
   };
 
-  // Menu's reasons map to ours; a close that accompanies a choice (`action`) is never onClose.
+  // Menu's reasons map to ours; a close that accompanies a choice never fires onClose.
   const handleMenuOpenChange = (next: boolean, reason: MenuOpenChangeReason): void => {
     if (next) return;
+    if (reason === 'action') {
+      choseRef.current = true;
+      return;
+    }
+    if (choseRef.current) return;
     if (reason === 'escape') onClose?.('escape');
-    else if (reason === 'outside') onClose?.('scrim');
+    else if (reason === 'outside' || reason === 'tab-out' || reason === 'focus-out') onClose?.('scrim');
+  };
+
+  const handleMenuAction = (id: string): void => {
+    choseRef.current = true;
+    onAction?.(id);
   };
 
   if (isWide) {
     if (!open || typeof document === 'undefined') return null;
+    const menuOverrides: Partial<Record<MenuOverridableBinding, TokenRef | undefined>> = {};
+    for (const [binding, token] of Object.entries(overrides ?? {}) as [ActionSheetOverridableBinding, TokenRef | undefined][]) {
+      const forward = MENU_FORWARD[binding];
+      if (token && forward) menuOverrides[forward] = token;
+    }
     return (
       <Menu
         label={accessibleLabel}
         items={toMenuItems(actions)}
         open
         anchor={openerRef}
-        onAction={(id) => onAction?.(id)}
+        onAction={handleMenuAction}
         onOpenChange={handleMenuOpenChange}
         container={container}
+        overrides={Object.keys(menuOverrides).length > 0 ? menuOverrides : undefined}
       />
     );
   }
@@ -439,41 +491,60 @@ export function ActionSheet({
     </button>
   );
 
+  const className = [
+    'ds-action-sheet',
+    visible ? 'ds-action-sheet--visible' : '',
+    dragging ? 'ds-action-sheet--dragging' : '',
+    settling ? 'ds-action-sheet--settling' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return createPortal(
     <dialog
       {...rest}
       ref={dialogRef}
       data-ds="ActionSheet"
-      className={visible ? 'ds-action-sheet ds-action-sheet--visible' : 'ds-action-sheet'}
+      className={className}
       style={Object.keys(rootStyle).length > 0 ? (rootStyle as CSSProperties) : undefined}
       aria-modal="true"
       aria-label={accessibleLabel}
       onKeyDown={handleKeyDown}
       onCancel={handleCancel}
-      onClick={handleScrimClick}
     >
+      <div className="ds-action-sheet__scrim" data-part="scrim" aria-hidden="true" onClick={() => requestClose('scrim')} />
       <FocusScope trapped autoFocus="none" restoreFocus returnFocusTo={openerRef} data-part="focusScope">
-        <div ref={surfaceRef} className="ds-action-sheet__surface" data-part="surface">
-          <div
-            className="ds-action-sheet__header"
-            data-part="header"
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={finishDrag}
-            onPointerCancel={finishDrag}
-          >
-            <span className="ds-action-sheet__handle" data-part="handle" aria-hidden="true" />
-            {heading ? (
-              <Text
-                size="sm"
-                tone="muted"
-                data-part="heading"
-                overrides={Object.keys(textOverrides).length > 0 ? textOverrides : undefined}
-              >
-                {heading}
-              </Text>
-            ) : null}
-          </div>
+        <div
+          ref={surfaceRef}
+          className="ds-action-sheet__surface"
+          data-part="surface"
+          onTransitionEnd={(event) => {
+            if (event.target === event.currentTarget && settling) setSettling(false);
+          }}
+        >
+          {dismissible || heading ? (
+            <div
+              className="ds-action-sheet__header"
+              data-part="header"
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={finishDrag}
+              onPointerCancel={finishDrag}
+            >
+              {dismissible ? <span className="ds-action-sheet__handle" data-part="handle" aria-hidden="true" /> : null}
+              {heading ? (
+                <Text
+                  element="p"
+                  size="sm"
+                  tone="muted"
+                  data-part="heading"
+                  overrides={Object.keys(textOverrides).length > 0 ? textOverrides : undefined}
+                >
+                  {heading}
+                </Text>
+              ) : null}
+            </div>
+          ) : null}
           <div
             role="menu"
             aria-label={accessibleLabel}
@@ -483,18 +554,23 @@ export function ActionSheet({
           >
             {normal.map(renderItem)}
             {normal.length > 0 && danger.length > 0 ? (
-              <div role="separator" className="ds-action-sheet__divider" />
+              <div role="separator" className="ds-action-sheet__divider" data-part="divider" />
             ) : null}
             {danger.map(renderItem)}
           </div>
-          {/* Button stamps its own data-part, so the part hook sits on the row that wraps it. */}
-          <div className="ds-action-sheet__cancel-row" data-part="cancelButton">
-            <Button
-              variant="secondary"
-              label={cancelLabel || COPY.cancelLabel}
-              onClick={() => requestClose('cancel')}
-            />
-          </div>
+          {dismissible ? (
+            <>
+              <div className="ds-action-sheet__divider" data-part="divider" aria-hidden="true" />
+              {/* Button stamps its own data-part, so the part hook sits on the row that wraps it. */}
+              <div className="ds-action-sheet__cancel-row" data-part="cancelButton">
+                <Button
+                  variant="secondary"
+                  label={cancelLabel || COPY.cancelLabel}
+                  onClick={() => requestClose('cancel')}
+                />
+              </div>
+            </>
+          ) : null}
         </div>
       </FocusScope>
     </dialog>,

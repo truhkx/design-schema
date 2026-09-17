@@ -48,3 +48,15 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Menu: the item shape is recursive but groups hold only action items, so nested groups and separators inside a group are dropped silently, with no dev warning. The spec doesn't say whether to warn.
 - Menu: the only dev warning the doc asks for is iconOnly with triggerIcon none (issued once). The old checks for a missing label, empty items, and anchor without controlled open were dropped because the doc doesn't ask for them.
 - Menu: behavior scenario `a-disabled-item-does-nothing` needs a forced click in the browser test, because Playwright won't click an aria-disabled element.
+
+## 2026-09-17 10:38 — round 1
+
+- Menu: keyboard rule for Tab says focus moves to the tabbable after/before the trigger, but on Lit the popup sits after the trigger in shadow-tree order; a controlled menu whose parent does not flip `open` synchronously leaves the popup visible, so the browser's Tab from the trigger lands back on the roving item. Chose: park focus on the trigger (or anchor) and let native Tab move on; uncontrolled hides the popup immediately, controlled relies on the parent flipping `open`.
+- Menu: with `anchor`, the spec does not say whether a pointerdown or focus move onto the anchor counts as outside/focus-out. Chose: the anchor stands in for the trigger (as the Tab rule says), so neither closes the menu; the consumer toggles `open` from the anchor.
+- Menu: `iconOnly` + `triggerIcon: none` must warn in development, but with `anchor` there is no trigger to press. Chose: no warning when `anchor` is set.
+- Menu: after focus-out/outside the spec is silent on focus restore; controlled close from the parent (reason not raised by the menu) is also unspecified. Chose: restore to trigger for trigger/escape/action, and additionally whenever focus is still inside the popup when it hides (so it is never dropped to body); never for outside/focus-out/tab-out.
+- Menu: when the menu is already open and focus is on the trigger, the keyboard table lists no Escape rule and ArrowDown/ArrowUp only as 'opens'. Chose: Escape on the trigger does nothing; ArrowDown/ArrowUp on an open menu focus the first/last item.
+- Menu: `window` blur also produces a host `focusout` with a null relatedTarget, so a controlled menu whose parent does not flip `open` synchronously can see two `open-change` (focus-out) events. Not deduplicated.
+- Menu: `minWidth` computed `calc(var(--space-20) * 2.5)` must also be at least the trigger width; Lit writes `max(calc(var(--ds-menu-min-width) * 2.5), <trigger width>px)` inline on the popup, since the trigger width is only known at runtime.
+- Menu: `maxHeight` says 'the viewport minus the gutter' without naming the gutter token. Chose `layout.gutter` (2× for both edges).
+- Menu: `part` attributes (`item`, `separator`, `group`, `groupLabel`, `itemIcon`, `itemShortcut`, `trigger`) are kept on shadow elements alongside `data-part`, though the overrides contract says no ::part is exposed for styling; the lit notes only specify `part="popup list"`.

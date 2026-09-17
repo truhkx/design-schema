@@ -79,6 +79,8 @@ export const Modal: Story = { args: { open: true, modal: true } };
 export const NoScrim: Story = { args: { open: true, scrim: false } };
 export const NotDismissible: Story = { args: { open: true, dismissible: false } };
 export const HiddenHeading: Story = { args: { open: true, hideHeading: true } };
+/** hideHeading with no close button: the header part is not rendered and the hidden title leads the column. */
+export const HiddenHeadingNotDismissible: Story = { args: { open: true, hideHeading: true, dismissible: false } };
 
 /* examples */
 export const NavigationDrawer: Story = {

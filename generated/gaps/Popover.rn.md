@@ -35,3 +35,16 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Popover: the arrow's color and border aren't specified. It is a rotated square with the overlay surface color and the panel's border/borderWidth, centered on the panel edge.
 - Popover: the examples' `given` values are prose ('A Filters Button', 'A DatePicker calendar'), so the example stories use invented stand-in content: a Form with two Checkboxes and an Apply button, a date-labelled Button, an Email Input with Save, and an `info` icon for the help trigger, since there is no help/question glyph.
 - Popover: the scenario `escape-closes-a-modal-popover` is limited to web and lit and has no rn test. `tab-out` is never emitted on rn (the notes say so), and Escape on native is only onRequestClose (Android back button, Esc on react-native-web).
+
+## 2026-09-17 10:51 — round 1
+
+- Popover: Behavior lists which closes restore focus (trigger, escape, close-button) and that outside press does not, but says nothing about a controlled consumer setting open=false programmatically (no reason) — chose not to restore focus in that case.
+- Popover: rn notes list surface, focusRing and focusRingWidth among the overrides forwarded to BottomSheet, but all three are locked on Popover (not in the overrides type), so there is nothing to forward; only shadow, radius, inset, partGap, layer, enter, exit are forwarded.
+- Popover: BottomSheet's close-reason map needs an `action` key for exhaustiveness although the notes say BottomSheet never raises it; mapped it to `close-button`.
+- Popover: rn notes say the phone sheet title falls back to the trigger's accessibleName/label and warns in __DEV__ when empty, and separately that the tablet panel is named the same way, but do not say whether the warning applies in the tablet presentation too; chose to warn in both whenever the panel has no name.
+- Popover: the closeButton part has a testID convention (`Popover.closeButton`) but Button accepts no testID prop and the composition says to pass exactly the listed props, so the close button carries no part testID (tests find it by its `Close` label).
+- Popover: the doc says stories that start open render through a consumer wrapper, naming Default, Keyboard and 'the gates', but does not say whether the headingLevel/state stories should also be open; chose open for headingLevel and state stories (where the difference is only visible open) and closed for placement stories and the four examples (whose given has no open).
+- Popover: example `date-picker-panel` says the trigger shows 'the current date' but a story needs a fixed string; used a literal date label rather than computing today's date.
+- Popover: examples `date-picker-panel` and `contextual-help` have no heading in `given`, but story args inherit meta's filter-panel `heading: 'Filters'`; set heading: undefined explicitly so they match their given exactly.
+- Popover: the `enter` binding describes the slide 'from the trigger side' but not its direction sign for start/end placements under RTL; the slide follows the resolved physical edge after RTL mirroring.
+- Popover: `heading-hierarchy` rule says RN has no heading levels, but the doc does not say what headingLevel does on tablets; it only selects Heading's typography there (documented in JSDoc).

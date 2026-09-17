@@ -111,7 +111,10 @@ describe('ds-action-sheet', () => {
         { id: 'rename', label: 'Rename' },
       ],
     });
-    const cancel = d.part<HTMLElement & { label: string; updateComplete: Promise<boolean> }>('cancelButton')!;
+    // The cancelButton part is the overlay-owned row wrapping the composed ds-button.
+    const cancel = d
+      .part('cancelButton')!
+      .querySelector<HTMLElement & { label: string; updateComplete: Promise<boolean> }>('ds-button')!;
     await cancel.updateComplete;
     expect(cancel.label).toBe('Cancel');
     expect(cancel.shadowRoot!.querySelector('button')).toHaveAccessibleName('Cancel');

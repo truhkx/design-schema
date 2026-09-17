@@ -1,7 +1,7 @@
 import * as React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ActionSheet } from './ActionSheet';
-import type { ActionSheetAction } from './ActionSheet';
+import type { ActionSheetAction, ActionSheetProps } from './ActionSheet';
 import { Button } from './Button';
 import { Stack } from './Stack';
 import { withTheme } from './decorators';
@@ -13,10 +13,34 @@ const ACTIONS: ActionSheetAction[] = [
   { id: 'delete', label: 'Delete photo', icon: 'danger', tone: 'danger' },
 ];
 
+/** Acts as the consumer: owns `open` (starting from the args) and closes on `onAction` and `onClose`. */
+function ActionSheetConsumer(args: ActionSheetProps): React.JSX.Element {
+  const [open, setOpen] = React.useState(args.open);
+  React.useEffect(() => setOpen(args.open), [args.open]);
+  return (
+    <Stack gap="loose" align="start">
+      <Button label="More actions" onPress={() => setOpen(true)} />
+      <ActionSheet
+        {...args}
+        open={open}
+        onAction={(id) => {
+          args.onAction?.(id);
+          setOpen(false);
+        }}
+        onClose={(reason) => {
+          args.onClose?.(reason);
+          setOpen(false);
+        }}
+      />
+    </Stack>
+  );
+}
+
 const meta: Meta<typeof ActionSheet> = {
   title: 'ActionSheet/React Native',
   component: ActionSheet,
   decorators: [withTheme()],
+  render: (args) => <ActionSheetConsumer {...args} />,
   args: {
     open: true,
     heading: 'Photo.jpg',
@@ -68,6 +92,8 @@ export const WithAnUnavailableAction: Story = {
 };
 
 // notable states
+export const Closed: Story = { args: { open: false } };
+
 export const NotDismissible: Story = { args: { dismissible: false } };
 
 export const WithOverrides: Story = {
@@ -76,18 +102,5 @@ export const WithOverrides: Story = {
   },
 };
 
-/** Open with its trigger and several focusable children, for the axe gate and manual keyboard checks. */
-export const Keyboard: Story = {
-  render: (args) => {
-    function Open(): React.JSX.Element {
-      const [open, setOpen] = React.useState(true);
-      return (
-        <Stack gap="loose" align="start">
-          <Button label="More actions" onPress={() => setOpen(true)} />
-          <ActionSheet {...args} open={open} onClose={() => setOpen(false)} onAction={() => setOpen(false)} />
-        </Stack>
-      );
-    }
-    return <Open />;
-  },
-};
+/** Open with its trigger, four rows and the Cancel row, for the axe gate and manual keyboard checks. */
+export const Keyboard: Story = {};

@@ -1,39 +1,52 @@
 /* BottomSheet — styled only through Design Schema token custom properties. */
 
+/* The <dialog> fills the viewport and stacks its content at the bottom edge; the scrim is a real element inside it. */
 .ds-bottom-sheet {
   --ds-bottom-sheet-scrim: var(--color-overlay-scrim);
   --ds-bottom-sheet-shadow: var(--shadow-overlay);
   --ds-bottom-sheet-radius: var(--radius-lg);
   --ds-bottom-sheet-handle-height: var(--space-1);
   --ds-bottom-sheet-handle-width: var(--space-10);
+  --ds-bottom-sheet-handle-radius: var(--radius-full);
+  --ds-bottom-sheet-header-padding-top: var(--space-sm);
+  --ds-bottom-sheet-handle-gap: var(--layout-gap-tight);
+  --ds-bottom-sheet-header-gap: var(--layout-gap-normal);
   --ds-bottom-sheet-inset: var(--layout-inset-lg);
   --ds-bottom-sheet-part-gap: var(--layout-gap-loose);
   --ds-bottom-sheet-footer-gap: var(--layout-gap-tight);
-  /* maxWidth: the breakpoint is read once from the theme token by the component; this hook is declared for the contract only. */
-  --ds-bottom-sheet-max-width: var(--layout-max-width-prose);
   --ds-bottom-sheet-layer: var(--layer-sheet);
   --ds-bottom-sheet-enter: var(--motion-duration-base);
   --ds-bottom-sheet-exit: var(--motion-duration-fast);
   box-sizing: border-box;
   position: fixed;
-  inset-block-start: auto;
+  inset: 0;
   inset-block-end: 0;
-  inset-inline: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  inline-size: 100%;
+  block-size: 100%;
+  max-inline-size: none;
+  max-block-size: none;
   margin: 0;
   padding: 0;
   border: 0;
-  inline-size: 100%;
-  max-inline-size: none;
-  max-block-size: none;
-  overflow: visible;
+  overflow: hidden;
   background: transparent;
   color: var(--color-foreground);
   font-family: var(--font-family-body);
+  /* layer: no effect in the top layer; applies to a non-top-layer fallback only. */
   z-index: var(--ds-bottom-sheet-layer);
 }
 
-/* scrim → color.overlay.scrim; the ::backdrop is the scrim and fades with the slide. */
 .ds-bottom-sheet::backdrop {
+  background: transparent;
+}
+
+/* scrim → color.overlay.scrim; fades in with the enter duration, out with the exit duration and easing. */
+.ds-bottom-sheet__scrim {
+  position: fixed;
+  inset: 0;
   background-color: var(--ds-bottom-sheet-scrim);
   opacity: 0;
   transition-property: opacity;
@@ -41,15 +54,16 @@
   transition-timing-function: var(--motion-easing-exit);
 }
 
-.ds-bottom-sheet--visible::backdrop {
+.ds-bottom-sheet--visible .ds-bottom-sheet__scrim {
   opacity: 1;
   transition-duration: var(--ds-bottom-sheet-enter);
   transition-timing-function: var(--motion-easing-standard);
 }
 
-/* surface → color.overlay.surface (locked); radius (top corners only), shadow, partGap; safe area below the footer. */
+/* surface → color.overlay.surface (locked); radius (top corners only), shadow, partGap; the last part's block-end padding adds the safe area. */
 .ds-bottom-sheet__surface {
   box-sizing: border-box;
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--ds-bottom-sheet-part-gap);
@@ -60,17 +74,29 @@
   border-start-end-radius: var(--ds-bottom-sheet-radius);
   box-shadow: var(--ds-bottom-sheet-shadow);
   overflow: hidden;
-  /* exit: slide down over motion.duration.fast with motion.easing.exit */
+  /* exit: slide down with motion.easing.exit */
   transform: translateY(100%);
   transition-property: transform;
   transition-duration: var(--ds-bottom-sheet-exit);
   transition-timing-function: var(--motion-easing-exit);
 }
 
-/* enter: slide up over motion.duration.base with motion.easing.standard */
+/* enter: slide up with motion.easing.standard */
 .ds-bottom-sheet--visible .ds-bottom-sheet__surface {
   transform: translateY(0);
   transition-duration: var(--ds-bottom-sheet-enter);
+  transition-timing-function: var(--motion-easing-standard);
+}
+
+/* The drag-follow tracks the finger with no transition, and holds a dismissed release position. */
+.ds-bottom-sheet--dragging .ds-bottom-sheet__surface {
+  transition: none;
+}
+
+/* A below-threshold release springs back with the exit duration and motion.easing.standard. */
+.ds-bottom-sheet--settling .ds-bottom-sheet__surface {
+  transition-property: transform;
+  transition-duration: var(--ds-bottom-sheet-exit);
   transition-timing-function: var(--motion-easing-standard);
 }
 
@@ -87,10 +113,11 @@
   block-size: calc(100dvh - var(--layout-gutter)); /* literal-ok: height full from the doc */
 }
 
+/* header: inline padding is inset; block-start is inset when there is no handle, headerPaddingTop above the handle. */
 .ds-bottom-sheet__header {
   display: flex;
   flex-direction: column;
-  gap: var(--layout-gap-tight);
+  gap: var(--ds-bottom-sheet-handle-gap);
   padding-block-start: var(--ds-bottom-sheet-inset);
   padding-inline: var(--ds-bottom-sheet-inset);
   flex: 0 0 auto;
@@ -98,23 +125,25 @@
 
 /* The header starts the drag gesture, so the browser must not pan on it. */
 .ds-bottom-sheet--draggable .ds-bottom-sheet__header {
+  padding-block-start: var(--ds-bottom-sheet-header-padding-top);
   touch-action: none;
 }
 
-/* handle → color.foreground.muted (locked), handleHeight × handleWidth: a decorative pill, aria-hidden, never a stop. */
+/* handle → color.foreground.muted (locked), handleHeight × handleWidth, handleRadius: decorative, aria-hidden, never a stop. */
 .ds-bottom-sheet__handle {
   align-self: center;
   inline-size: var(--ds-bottom-sheet-handle-width);
   block-size: var(--ds-bottom-sheet-handle-height);
-  border-radius: var(--radius-full);
+  border-radius: var(--ds-bottom-sheet-handle-radius);
   background-color: var(--color-foreground-muted);
 }
 
+/* headerGap: between the heading and the close button. */
 .ds-bottom-sheet__title-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--layout-gap-normal);
+  gap: var(--ds-bottom-sheet-header-gap);
   min-inline-size: 0;
 }
 
@@ -122,10 +151,14 @@
   min-inline-size: 0;
 }
 
-/* focus-visible: the heading is focused programmatically when the sheet has no control to focus. */
+/* focusRing / focusRingWidth (locked): drawn by the heading wrapper when the heading holds focus. */
 .ds-bottom-sheet__heading:has(:focus-visible) {
   outline: var(--border-width-focus) solid var(--color-border-focus);
   outline-offset: var(--border-width-focus);
+}
+
+.ds-bottom-sheet__heading :focus-visible {
+  outline: none;
 }
 
 /* hideHeading: visually hidden, still the accessible name — sanctioned 1px clip pattern. */
@@ -161,22 +194,21 @@
   padding-inline: var(--ds-bottom-sheet-inset);
 }
 
-/* footer: end-aligned action row; footerGap is forwarded to the Stack's own `gap` override. */
+/* footer: end-aligned action row; the Stack's own gap hook reads footerGap. */
 .ds-bottom-sheet__footer {
   flex: 0 0 auto;
   padding-inline: var(--ds-bottom-sheet-inset);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .ds-bottom-sheet::backdrop,
-  .ds-bottom-sheet__surface {
-    transition: none;
-  }
+.ds-bottom-sheet__footer > .ds-stack {
+  --ds-stack-gap: var(--ds-bottom-sheet-footer-gap);
 }
 
-/* Wide presentation: the always-present wrapper around the composed Dialog takes no box of its own. */
-.ds-bottom-sheet-host {
-  display: contents;
+@media (prefers-reduced-motion: reduce) {
+  .ds-bottom-sheet .ds-bottom-sheet__scrim,
+  .ds-bottom-sheet .ds-bottom-sheet__surface {
+    transition: none;
+  }
 }
 
 /* scroll-lock while a narrow BottomSheet is present; the gutter keeps the page from shifting. */

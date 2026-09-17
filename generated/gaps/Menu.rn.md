@@ -54,3 +54,14 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Menu: `enter` says 'a space.1 rise' but not the direction for top placements; the popup rises (translateY from space.1 to 0) for every placement.
 - Menu: conventions digest shows `toLineHeight(t.fontLineHeightNormal, t.fontSizeMd)` but theme.tsx's signature is `toLineHeight(fontSize, multiplier)`; followed the code.
 - Menu: the Keyboard story renders with `open: true` controlled and no onOpenChange wiring, so it cannot be closed in Storybook; the doc does not say whether that story should be uncontrolled.
+
+## 2026-09-17 10:39 — round 1
+
+- Menu: the `maxHeight` description says the popup never exceeds 'the viewport minus the gutter' but names no gutter token; I kept popupOffset × 2 (window height − 2 × popupOffset) as the gutter.
+- Menu: platform rules say a component exposing its root declares `ref`, and web says the forwarded ref resolves to the popup (null while closed), but the rn notes don't say whether MenuProps takes a `ref` or what it points to; I added none.
+- Menu: the rn popup's flip covers the vertical edge only (the spec says 'flipped when it would overflow useWindowDimensions()'); I also flip start/end horizontally when the popup would cross the side edge, and resolve start/end with I18nManager.isRTL — neither is stated.
+- Menu: phone presentation — the notes don't say whether ActionSheet's `heading` should be the Menu `label`, or whether Menu or ActionSheet returns accessibility focus to the trigger after the sheet closes; I pass `heading={label}` and restore focus from Menu in both presentations.
+- Menu: `enter` says the popup slides 'from the trigger side' but not whether a flipped popup slides from its placed side or its preferred side; I use the side it ends up on.
+- Menu: the scenario `a-disabled-item-does-nothing` says 'click: item' without saying which item; the test presses the first (disabled) one.
+- Menu: `escape-closes-without-choosing` is limited to web/lit, and the rn keyboard section lists Escape (closes, focus-trigger) with no scenario; on rn it's onRequestClose → `escape`, which the RN test renderer can't trigger, so it isn't tested.
+- Menu: the transparent Modal's backdrop has no color binding (non-modal), so the scrim Pressable is left transparent; the overlay defaults' `color.overlay.scrim` is not applied because this overlay section replaces them.

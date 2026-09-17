@@ -1,6 +1,6 @@
-import { useRef } from 'react';
+import { useRef, useState, type ComponentProps, type ReactElement } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Menu, type MenuItem } from './Menu';
+import { Menu, type MenuItem, type MenuOpenChangeReason } from './Menu';
 
 const ITEMS: MenuItem[] = [
   { id: 'open', label: 'Open', icon: 'external' },
@@ -17,6 +17,24 @@ const ITEMS: MenuItem[] = [
   { id: 'archive', label: 'Archive', disabled: true },
   { id: 'delete', label: 'Delete', tone: 'danger' },
 ];
+
+/**
+ * Acts as the consumer for stories that need the menu open: owns `open`, starting from the `open`
+ * arg, and writes onOpenChange back.
+ */
+function OpenMenu(args: ComponentProps<typeof Menu>): ReactElement {
+  const [open, setOpen] = useState(args.open ?? true);
+  return (
+    <Menu
+      {...args}
+      open={open}
+      onOpenChange={(next: boolean, reason: MenuOpenChangeReason) => {
+        setOpen(next);
+        args.onOpenChange?.(next, reason);
+      }}
+    />
+  );
+}
 
 const meta: Meta<typeof Menu> = {
   title: 'Menu/React',
@@ -59,6 +77,7 @@ export const IconOnly: Story = { args: { iconOnly: true, triggerIcon: 'ellipsis'
 /** Open with its trigger and more than three enabled items, for the keyboard gate. */
 export const Keyboard: Story = {
   args: { open: true },
+  render: (args) => <OpenMenu {...args} />,
 };
 
 /* examples */
@@ -137,8 +156,8 @@ export const AnchorPositioned: Story = {
         ref={anchor}
         style={{ display: 'inline-block', padding: '2rem', border: '1px dashed currentColor' }} // literal-ok: Storybook canvas decoration, not a component style
       >
-        Right-click target (anchor)
-        <Menu {...args} anchor={anchor} open />
+        Anchor element
+        <OpenMenu {...args} anchor={anchor} open />
       </div>
     );
   },

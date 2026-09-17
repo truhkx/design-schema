@@ -19,7 +19,6 @@ import { ActionSheet } from './ActionSheet';
 import type { ActionSheetAction, ActionSheetCloseReason } from './ActionSheet';
 import { Button } from './Button';
 import type { ButtonVariant } from './Button';
-import { FocusScope } from './FocusScope';
 import { Icon } from './Icon';
 import type { IconName } from './Icon';
 import { toEasing, toFontWeight, toLineHeight, useReducedMotion, useTheme } from './theme';
@@ -32,9 +31,10 @@ export type MenuItemTone = 'default' | 'danger';
 /**
  * Why `onOpenChange` fired. `action` (an item was chosen) always fires before `onAction`.
  * `controlled` is never raised by the menu itself; it exists so a composing component can
- * forward its own reason through.
+ * forward its own reason through. `tab-out` and `focus-out` are part of the shared contract
+ * but never fire on native: there is no Tab key event and no focus-out signal.
  */
-export type MenuOpenChangeReason = 'trigger' | 'escape' | 'outside' | 'action' | 'controlled';
+export type MenuOpenChangeReason = 'trigger' | 'escape' | 'outside' | 'action' | 'controlled' | 'tab-out' | 'focus-out';
 
 /** A single actionable row. */
 export type MenuAction = {
@@ -75,7 +75,8 @@ export type MenuOverridableBinding =
   | 'fontSize'
   | 'lineHeight'
   | 'layer'
-  | 'enter';
+  | 'enter'
+  | 'enterDistance';
 
 export interface MenuProps {
   /** The trigger's label and the menu's accessible name ("More actions", "Sort by"). */
@@ -90,10 +91,10 @@ export interface MenuProps {
   iconOnly?: boolean | undefined;
   /** Preferred position of the popup relative to the trigger; flips automatically when it would overflow the viewport. */
   placement?: MenuPlacement | undefined;
-  /** Controlled open state (the parent flips it from onOpenChange). Omit for an uncontrolled menu. */
+  /** Controlled open state (the parent flips it from onOpenChange). Omit for an uncontrolled menu, which starts closed. A controlled menu hides, and returns focus to the trigger, only when `open` becomes false. */
   open?: boolean | undefined;
-  /** Position the popup relative to this element instead of rendering a trigger; the trigger part is omitted and `open` must be controlled. */
-  anchor?: React.RefObject<ViewInstance | null> | undefined;
+  /** Position the popup relative to this element instead of rendering a trigger; the trigger part is omitted and `open` must be controlled. Measured with measureInWindow(). */
+  anchor?: React.RefObject<React.ComponentRef<typeof View> | null> | undefined;
   /** An item was chosen; receives its `id`. The menu closes itself first. */
   onAction?: ((id: string) => void) | undefined;
   /** Fired when the menu opens or closes, with the new state and why. */
@@ -149,7 +150,7 @@ function computeMenuPosition(
   placement: MenuPlacement,
   windowSize: WindowSize,
   offset: number,
-): { top: number; left: number } {
+): { top: number; left: number; side: 'bottom' | 'top' } {
   const [vert, horiz] = placement.split('-') as ['bottom' | 'top', 'start' | 'end'];
 
   let vertical = vert;
@@ -173,6 +174,7 @@ function computeMenuPosition(
   return {
     top: vertical === 'bottom' ? anchor.y + anchor.height + offset : anchor.y - offset - popupHeight,
     left: alignLeft ? anchor.x : anchor.x + anchor.width - popupWidth,
+    side: vertical,
   };
 }
 
@@ -186,13 +188,14 @@ function computeMenuPosition(
  * `group` label past about six items; separate a danger action with a `separator`.
  * Not for navigation, for a value that stays selected, or for a single item.
  *
- * Below `layout.maxWidth.prose` (phones) the popup is the package's `ActionSheet`
+ * At or below `layout.maxWidth.prose` (phones) the popup is the package's `ActionSheet`
  * with the items flattened: group labels, separators and shortcut hints are dropped.
- * At or above it (tablets and react-native-web) a transparent `Modal` holds a
+ * Above it (tablets and react-native-web) a transparent `Modal` holds a
  * full-screen scrim `Pressable` and a popup `View` (`role="menu"`) positioned from the
  * trigger's (or `anchor`'s) `measureInWindow()` rect, flipped on overflow via
  * `useWindowDimensions()`. The list scrolls within `maxHeight`. The popup fades and
- * rises by `space.1` over `enter`; under reduced motion it appears at once.
+ * slides `enterDistance` from the trigger side over `enter`; under reduced motion it
+ * appears at once. The Modal is not modal: nothing is trapped, the backdrop closes.
  *
  * Items are `Pressable`s with `role="menuitem"` and `accessibilityState.disabled`;
  * never the native `disabled` prop, which would drop them from the focus order — a
@@ -262,6 +265,7 @@ export function Menu({
   const lineHeightMultiplier = overrides?.lineHeight ? (resolveToken(t, overrides.lineHeight) as number) : t.fontLineHeightNormal;
   const layer = overrides?.layer ? (resolveToken(t, overrides.layer) as number) : t.layerDropdown;
   const enterDuration = overrides?.enter ? (resolveToken(t, overrides.enter) as number) : t.motionDurationFast;
+  const enterDistance = overrides?.enterDistance ? (resolveToken(t, overrides.enterDistance) as number) : t.space1;
 
   const surfaceColor = t.colorOverlaySurface;
   const itemHoverColor = t.colorBackgroundSubtle;
@@ -273,17 +277,14 @@ export function Menu({
   const focusRingWidth = t.borderWidthFocus;
   const triggerIconColor = t[TRIGGER_FOREGROUND[triggerVariant]];
 
+  // The only development warning Menu issues.
+  const hasWarnedRef = React.useRef(false);
   React.useEffect(() => {
-    if (__DEV__ && iconOnly && triggerIcon === 'none') {
+    if (__DEV__ && iconOnly && triggerIcon === 'none' && !hasWarnedRef.current) {
+      hasWarnedRef.current = true;
       console.warn('Menu: `iconOnly` with `triggerIcon` "none" leaves the trigger with nothing visible to press.');
     }
   }, [iconOnly, triggerIcon]);
-
-  React.useEffect(() => {
-    if (__DEV__ && anchor !== undefined && !isControlled) {
-      console.warn('Menu: `anchor` omits the trigger, so `open` must be controlled.');
-    }
-  }, [anchor, isControlled]);
 
   const registerItemRef = (id: string) => (node: ViewInstance | null): void => {
     if (node) itemRefs.current.set(id, node);
@@ -311,8 +312,15 @@ export function Menu({
   const closeMenu = (reason: MenuOpenChangeReason): void => {
     if (!isOpen) return;
     changeOpen(false, reason);
-    focusReturnTarget();
   };
+
+  // Focus returns when the menu actually hides: at once when uncontrolled, and only once
+  // the parent flips `open` to false when controlled.
+  const wasOpenRef = React.useRef(isOpen);
+  React.useEffect(() => {
+    if (wasOpenRef.current && !isOpen) focusReturnTarget();
+    wasOpenRef.current = isOpen;
+  }, [isOpen, focusReturnTarget]);
 
   const handleTriggerPress = (): void => {
     if (isOpen) closeMenu('trigger');
@@ -405,7 +413,7 @@ export function Menu({
   const popupWidth = anchorRect ? Math.max(minWidth, anchorRect.width) : minWidth;
   const position = anchorRect
     ? computeMenuPosition(anchorRect, popupWidth, popupSize?.height ?? 0, placement, windowSize, popupOffset)
-    : { top: 0, left: 0 };
+    : { top: 0, left: 0, side: placement.startsWith('top') ? ('top' as const) : ('bottom' as const) };
   const maxListHeight = Math.max(0, Math.min(maxHeightCap, windowSize.height - popupOffset * 2));
   const lineHeight = toLineHeight(fontSize, lineHeightMultiplier);
 
@@ -422,7 +430,15 @@ export function Menu({
     ...shadow,
     zIndex: layer,
     opacity: progress,
-    transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [t.space1, 0] }) }],
+    // Slides in from the trigger side: downward below the trigger, upward above it.
+    transform: [
+      {
+        translateY: progress.interpolate({
+          inputRange: [0, 1],
+          outputRange: [position.side === 'bottom' ? -enterDistance : enterDistance, 0],
+        }),
+      },
+    ],
   };
 
   const listContentStyle: ViewStyle = { padding: popupPadding };
@@ -518,13 +534,12 @@ export function Menu({
             accessible={false}
             testID="Menu.scrim"
           />
-          <FocusScope trapped={false} active={isOpen} autoFocus="none" restoreFocus={false}>
-            <Animated.View style={popupStyle} onLayout={handlePopupLayout} role="menu" accessibilityLabel={label} testID="Menu.popup">
-              <ScrollView style={{ maxHeight: maxListHeight }} contentContainerStyle={listContentStyle} testID="Menu.list">
-                {items.map((item, index) => renderNode(item, String(index)))}
-              </ScrollView>
-            </Animated.View>
-          </FocusScope>
+          {/* Non-modal: no FocusScope trap and no accessibilityViewIsModal. */}
+          <Animated.View style={popupStyle} onLayout={handlePopupLayout} role="menu" accessibilityLabel={label} testID="Menu.popup">
+            <ScrollView style={{ maxHeight: maxListHeight }} contentContainerStyle={listContentStyle} testID="Menu.list">
+              {items.map((item, index) => renderNode(item, String(index)))}
+            </ScrollView>
+          </Animated.View>
         </View>
       </Modal>
     </View>

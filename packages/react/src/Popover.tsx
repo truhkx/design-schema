@@ -52,6 +52,7 @@ export type PopoverOverridableBinding =
   | 'maxWidth'
   | 'layer'
   | 'enter'
+  | 'enterDistance'
   | 'exit';
 
 const OVERRIDE_HOOK: Record<PopoverOverridableBinding, string> = {
@@ -66,6 +67,7 @@ const OVERRIDE_HOOK: Record<PopoverOverridableBinding, string> = {
   maxWidth: '--ds-popover-max-width',
   layer: '--ds-popover-layer',
   enter: '--ds-popover-enter',
+  enterDistance: '--ds-popover-enter-distance',
   exit: '--ds-popover-exit',
 };
 
@@ -213,7 +215,7 @@ export interface PopoverProps {
   heading?: string | undefined;
   /** Heading level of the panel heading, so it fits the page outline (a popover usually sits under a level-2 section). */
   headingLevel?: PopoverHeadingLevel | undefined;
-  /** Controlled open state. Omit for uncontrolled (the trigger toggles it). */
+  /** Controlled open state. Omit for uncontrolled (the trigger toggles it); the uncontrolled popover starts closed and there is no defaultOpen. */
   open?: boolean | undefined;
   /**
    * Preferred side and alignment; flips and shifts to stay in the viewport. All eight values are
@@ -435,18 +437,10 @@ export function Popover({
       triggerRef.current?.focus();
       changeOpen(false, 'tab-out');
     } else if (!event.shiftKey && atEnd) {
-      const anchor = triggerRef.current;
+      // No preventDefault: focus the trigger and let this Tab continue from it to the element after
+      // it (or out of the page, as a native Tab would), without waiting for `open` to go false.
+      triggerRef.current?.focus();
       changeOpen(false, 'tab-out');
-      if (!anchor) return;
-      const order = tabbablesIn(document).filter((element) => !panel.contains(element));
-      const next = order[order.indexOf(anchor) + 1];
-      if (next) {
-        event.preventDefault();
-        next.focus();
-      } else {
-        // Nothing after the trigger on the page: let the browser continue from the trigger.
-        anchor.focus();
-      }
     }
   };
 

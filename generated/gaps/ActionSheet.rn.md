@@ -36,3 +36,15 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - ActionSheet: the `itemHover` state is `hover`; rn has no hover on touch, so it also shows while pressed (react-native-web gets onHoverIn/Out).
 - ActionSheet: the doc asks for dev warnings nowhere but says 'two to about eight actions'; added __DEV__ warnings for fewer than 2 and more than 8. The closed-sheet scenario's single-action `given` triggers the first.
 - ActionSheet: the package digest gives `toLineHeight(t.fontLineHeightNormal, t.fontSizeMd)`, but theme.tsx's signature is (fontSize, multiplier); followed the code.
+
+## 2026-09-17 11:09 — round 1
+
+- ActionSheet: composition.heading sets `element: p`, but the RN Text has no `element` prop (Text.tsx says so); I left it out and passed only tone="muted" and size="sm".
+- ActionSheet: the `actions` shape `{ icon?: IconName; tone?: ...; disabled?: boolean }` can't be used verbatim on RN: with exactOptionalPropertyTypes, Menu.tsx (which builds ActionSheetAction objects with explicit undefined values) fails to typecheck. I kept `?: T | undefined` on each field.
+- ActionSheet: the `divider` binding description packs both dividers into one sentence (danger-group divider 'as a role=separator inside the menu', and the cancel divider 'decorative and hidden from assistive technology'), so it's unclear which rule covers which. I gave the danger divider role="separator" and hid the cancel divider from assistive tech.
+- ActionSheet: with dismissible=false and no heading, the header would be an empty padded box, and the spec doesn't say whether to render it. I skip the header when it has neither a handle nor a heading.
+- ActionSheet: the `heading` forwards (fontFamily, titleSize, lineHeight to Text overrides) don't say whether the default token is forwarded or only a caller override. I forward only the overrides the caller gives, so Text keeps its own size="sm" defaults otherwise.
+- ActionSheet: dismissVelocity is 1.5 px/ms, but the spec doesn't say how to measure speed on RN. BottomSheet samples event timestamps; ActionSheet uses PanResponder's gestureState.vy (also px/ms, averaged by RN). The two sheets can disagree on borderline flicks.
+- ActionSheet: 'no separate slop' plus a header-wide responder means any touch on the heading text claims the gesture. That's harmless today, since the header holds no pressables, but BottomSheet still uses a slop, so 'as BottomSheet' and 'no separate slop' conflict. I followed the ActionSheet spec.
+- ActionSheet: platforms.rn.props lists `accessibilityViewIsModal` as a Modal prop, but it's a View prop. It's on the surface View, and Modal gets visible/transparent/onRequestClose.
+- ActionSheet: the Behavior section asks for a wrapper that owns `open` but doesn't say whether it should also forward to the story's onAction/onClose args or render a trigger. The wrapper calls both arg handlers and renders a 'More actions' Button trigger (label taken from the When-to-use prose, since no copy key exists).

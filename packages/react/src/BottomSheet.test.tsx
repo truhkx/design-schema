@@ -40,8 +40,7 @@ describe('BottomSheet', () => {
 
   it('non-dismissible-scrim-tap-does-nothing', () => {
     const d = setup({ open: true, dismissible: false });
-    const scrim = d.sheet()!;
-    fireEvent.pointerDown(scrim);
+    const scrim = d.sheet()!.querySelector<HTMLElement>('[data-part="scrim"]')!;
     fireEvent.click(scrim);
     expect(d.onClose).not.toHaveBeenCalled();
   });

@@ -21,6 +21,7 @@ export type PopoverPlacement =
   | 'start'
   | 'end';
 
+/** Why `open-change` fired. */
 export type PopoverCloseReason = 'trigger' | 'escape' | 'outside' | 'close-button' | 'tab-out';
 
 /** Detail carried by the `open-change` CustomEvent. */
@@ -29,7 +30,7 @@ export interface PopoverOpenChangeDetail {
   reason: PopoverCloseReason;
 }
 
-/** Overridable style hooks; see the `overrides` property. `surface`, `focusRing` and `focusRingWidth` are locked and excluded. */
+/** Overridable style hooks; see the `overrides` property. `surface`, `breakpoint`, `focusRing` and `focusRingWidth` are locked and excluded. */
 export type PopoverOverridableBinding =
   | 'border'
   | 'borderWidth'
@@ -42,6 +43,7 @@ export type PopoverOverridableBinding =
   | 'maxWidth'
   | 'layer'
   | 'enter'
+  | 'enterDistance'
   | 'exit';
 
 const HOOKS: Record<PopoverOverridableBinding, string> = {
@@ -56,6 +58,7 @@ const HOOKS: Record<PopoverOverridableBinding, string> = {
   maxWidth: '--ds-popover-max-width',
   layer: '--ds-popover-layer',
   enter: '--ds-popover-enter',
+  enterDistance: '--ds-popover-enter-distance',
   exit: '--ds-popover-exit',
 };
 
@@ -65,11 +68,11 @@ const COPY_CLOSE_LABEL = 'Close';
 /** Whether the running browser implements the Popover API. Evaluated once. */
 const POPOVER_SUPPORTED = typeof HTMLElement !== 'undefined' && typeof HTMLElement.prototype.showPopover === 'function';
 
-/** Elements considered a focusable control inside the panel body. */
+/** Elements considered a focusable control. */
 const FOCUSABLE_SELECTOR = [
   'a[href]',
   'button:not([disabled])',
-  'input:not([disabled])',
+  'input:not([disabled]):not([type="hidden"])',
   'select:not([disabled])',
   'textarea:not([disabled])',
   '[tabindex]:not([tabindex="-1"])',
@@ -105,10 +108,16 @@ type Align = 'start' | 'center' | 'end';
 
 const OPPOSITE: Record<Side, Side> = { top: 'bottom', bottom: 'top', left: 'right', right: 'left' };
 
+/** The panel margin that carries `offset`: the side facing the trigger. */
+const OFFSET_MARGIN: Record<Side, 'marginTop' | 'marginBottom' | 'marginLeft' | 'marginRight'> = {
+  bottom: 'marginTop',
+  top: 'marginBottom',
+  right: 'marginLeft',
+  left: 'marginRight',
+};
+
 /** Resolves a logical placement against the trigger's writing direction. */
 function resolvePlacement(placement: PopoverPlacement, rtl: boolean): { side: Side; align: Align } {
-  const start: Side = rtl ? 'right' : 'left';
-  const end: Side = rtl ? 'left' : 'right';
   switch (placement) {
     case 'bottom-start':
       return { side: 'bottom', align: 'start' };
@@ -123,24 +132,24 @@ function resolvePlacement(placement: PopoverPlacement, rtl: boolean): { side: Si
     case 'top-end':
       return { side: 'top', align: 'end' };
     case 'start':
-      return { side: start, align: 'center' };
+      return { side: rtl ? 'right' : 'left', align: 'center' };
     case 'end':
     default:
-      return { side: end, align: 'center' };
+      return { side: rtl ? 'left' : 'right', align: 'center' };
   }
 }
 
-/** How many modal `<ds-popover>` instances currently hold the body-scroll lock. */
+/** How many modal `<ds-popover>` instances currently hold the page-scroll lock. */
 let openModalCount = 0;
 
-function lockBodyScroll(): void {
+function lockPageScroll(): void {
   openModalCount += 1;
   if (openModalCount === 1) {
     document.documentElement.style.overflow = 'hidden';
   }
 }
 
-function unlockBodyScroll(): void {
+function unlockPageScroll(): void {
   openModalCount = Math.max(0, openModalCount - 1);
   if (openModalCount === 0) {
     document.documentElement.style.removeProperty('overflow');
@@ -169,24 +178,25 @@ interface OpenRequest {
  * `<ds-popover placement="bottom-start"><ds-button slot="trigger"
  * label="Filters"></ds-button><div>…</div></ds-popover>`. The `trigger` slot
  * holds exactly one focusable element (usually a Button); activating it toggles
- * the popover and marks it expanded (a `ds-button` through its `expanded`
- * property, any other element through `aria-expanded`). `aria-controls` cannot
- * cross the shadow boundary, so it is never set; the panel is named by
- * `aria-label`, from `heading` or copied from the trigger's own text.
+ * the popover and marks it expanded (through its `expanded` property when it
+ * has one, `aria-expanded` otherwise). `aria-controls` cannot cross the shadow
+ * boundary, so it is never set; the panel is named by `aria-label`, from
+ * `heading` or copied from the trigger's name.
  *
- * Non-modal (`modal` false, the default): the panel uses the Popover API
- * (`popover="manual"`, top layer) when supported and a `position: fixed`
- * fallback otherwise. Escape, the close button, a pointerdown outside and Tab
- * past the last element close it; Shift+Tab from the first element returns to
- * the trigger and closes. Modal (`modal` true): the panel is a native
- * `<dialog>` opened with `showModal()`, trapped by `<ds-focus-scope>`, with the
- * page inert and scroll locked; Escape and the close button are the only ways
- * out. Either way the panel is positioned from the trigger's rect for
- * `placement` (logical, mirrored in right-to-left), flipped and shifted to stay
- * in the viewport, and repositioned on scroll and resize while open.
+ * Non-modal (the default): the panel uses the Popover API (`popover="manual"`,
+ * top layer) when supported and a `position: fixed` fallback otherwise.
+ * Escape, the close button, a pointerdown outside and Tab past the last element
+ * close it; Shift+Tab from the first element returns to the trigger and closes.
+ * Modal: the panel is a native `<dialog>` opened with `showModal()`, trapped by
+ * `<ds-focus-scope>`, with the page inert and scroll locked and no scrim; Escape
+ * and the close button are the only ways out. Either way the panel is
+ * positioned from the trigger's rect for `placement` (logical, mirrored in
+ * right-to-left), flipped and shifted to stay in the viewport, and repositioned
+ * on scroll and resize while open.
  *
  * `open` is controlled when set: the element reports `open-change` and shows
- * the new state only once the property changes. Omit it for uncontrolled use.
+ * the new state only once the property changes. Omit it for uncontrolled use;
+ * the uncontrolled popover starts closed.
  *
  * @fires open-change - `{ open, reason }`; `reason` is `trigger`, `escape`,
  *   `outside`, `close-button` or `tab-out`. User interaction only.
@@ -214,6 +224,7 @@ export class DsPopover extends LitElement {
       --ds-popover-max-width: var(--layout-max-width-prose);
       --ds-popover-layer: var(--layer-dropdown);
       --ds-popover-enter: var(--motion-duration-fast);
+      --ds-popover-enter-distance: var(--space-1);
       --ds-popover-exit: var(--motion-duration-fast);
     }
 
@@ -235,85 +246,107 @@ export class DsPopover extends LitElement {
       background: var(--color-overlay-surface);
       box-shadow: var(--ds-popover-shadow);
       max-inline-size: min(var(--ds-popover-max-width), calc(100vw - 2 * var(--layout-gutter)));
+      max-block-size: none;
       overflow: visible;
       color: var(--color-foreground);
       font-family: var(--font-family-body);
       z-index: var(--ds-popover-layer);
     }
 
-    /* enter: fade and a space.1 slide from the trigger side */
-    div[data-part='panel'] {
+    /* offset: a margin on the side facing the trigger, read back by the flip check. */
+    [data-part='panel'][data-side='bottom'] {
+      margin-top: var(--ds-popover-offset);
+      --ds-popover-slide: translateY(calc(-1 * var(--ds-popover-enter-distance)));
+    }
+    [data-part='panel'][data-side='top'] {
+      margin-bottom: var(--ds-popover-offset);
+      --ds-popover-slide: translateY(var(--ds-popover-enter-distance));
+    }
+    [data-part='panel'][data-side='right'] {
+      margin-left: var(--ds-popover-offset);
+      --ds-popover-slide: translateX(calc(-1 * var(--ds-popover-enter-distance)));
+    }
+    [data-part='panel'][data-side='left'] {
+      margin-right: var(--ds-popover-offset);
+      --ds-popover-slide: translateX(var(--ds-popover-enter-distance));
+    }
+
+    [data-part='panel']:focus-visible {
+      outline: var(--border-width-focus) solid var(--color-border-focus);
+      outline-offset: var(--border-width-focus);
+    }
+
+    /* exit: fade out with motion.easing.exit. */
+    [data-part='panel'] {
       opacity: 0;
-      transform: translate(var(--ds-popover-slide-x, 0), var(--ds-popover-slide-y, 0));
+      transform: none;
       transition:
-        opacity var(--ds-popover-exit) var(--motion-easing-standard),
-        transform var(--ds-popover-exit) var(--motion-easing-standard),
+        opacity var(--ds-popover-exit) var(--motion-easing-exit),
         overlay var(--ds-popover-exit) allow-discrete,
         display var(--ds-popover-exit) allow-discrete;
     }
 
+    /* enter: fade and an enterDistance slide from the trigger side, with motion.easing.standard. */
     div[data-part='panel']:popover-open,
-    div[data-part='panel'].fallback-open {
+    div[data-part='panel'].fallback-open,
+    dialog[data-part='panel'][open] {
       opacity: 1;
       transform: none;
       transition:
         opacity var(--ds-popover-enter) var(--motion-easing-standard),
-        transform var(--ds-popover-enter) var(--motion-easing-standard);
+        transform var(--ds-popover-enter) var(--motion-easing-standard),
+        overlay var(--ds-popover-enter) allow-discrete,
+        display var(--ds-popover-enter) allow-discrete;
+    }
+
+    @starting-style {
+      div[data-part='panel']:popover-open,
+      div[data-part='panel'].fallback-open,
+      dialog[data-part='panel'][open] {
+        opacity: 0;
+        transform: var(--ds-popover-slide, none);
+      }
+    }
+
+    div[data-part='panel']:not([popover]):not(.fallback-open) {
+      pointer-events: none;
     }
 
     div[data-part='panel'][hidden] {
       display: none;
     }
 
-    @starting-style {
-      div[data-part='panel']:popover-open,
-      div[data-part='panel'].fallback-open {
-        opacity: 0;
-        transform: translate(var(--ds-popover-slide-x, 0), var(--ds-popover-slide-y, 0));
-      }
-    }
-
-    dialog[data-part='panel'] {
-      opacity: 1;
-      transform: none;
-      transition:
-        opacity var(--ds-popover-enter) var(--motion-easing-standard),
-        transform var(--ds-popover-enter) var(--motion-easing-standard);
-    }
-
+    /* A modal popover does not dim the page. */
     dialog[data-part='panel']::backdrop {
       background: transparent;
     }
 
-    dialog[data-part='panel'].closing {
-      opacity: 0;
-      transform: translate(var(--ds-popover-slide-x, 0), var(--ds-popover-slide-y, 0));
-      transition-duration: var(--ds-popover-exit);
-    }
-
-    @starting-style {
-      dialog[data-part='panel'][open] {
-        opacity: 0;
-        transform: translate(var(--ds-popover-slide-x, 0), var(--ds-popover-slide-y, 0));
-      }
-    }
-
     @media (prefers-reduced-motion: reduce) {
-      [data-part='panel'] {
+      [data-part='panel'],
+      div[data-part='panel']:popover-open,
+      div[data-part='panel'].fallback-open,
+      dialog[data-part='panel'][open] {
         transition: none;
       }
     }
 
     .content {
-      box-sizing: border-box;
       display: flex;
       flex-direction: column;
       gap: var(--ds-popover-part-gap);
     }
 
-    /* Reserves room so the heading never runs under the close button. */
-    .content.has-close {
-      padding-inline-end: calc(var(--size-target-min) + var(--ds-popover-part-gap));
+    /* The header row: the heading fills it, the close button sits at its inline end. */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: var(--ds-popover-part-gap);
+    }
+
+    [data-part='heading'] {
+      flex: 1 1 auto;
+      min-inline-size: 0;
     }
 
     [data-part='heading']:focus-visible {
@@ -322,12 +355,10 @@ export class DsPopover extends LitElement {
     }
 
     [data-part='closeButton'] {
-      position: absolute;
-      inset-block-start: var(--ds-popover-inset);
-      inset-inline-end: var(--ds-popover-inset);
+      flex: none;
     }
 
-    /* arrowSize: a rotated square centered on the panel edge that faces the trigger. */
+    /* arrowSize: a rotated square centered on the panel edge that faces the trigger, edged on its two outer sides. */
     [data-part='arrow'] {
       position: absolute;
       box-sizing: border-box;
@@ -339,28 +370,28 @@ export class DsPopover extends LitElement {
     }
 
     [data-side='bottom'] > [data-part='arrow'] {
-      top: calc(var(--ds-popover-arrow-size) / -2);
+      top: calc((var(--ds-popover-arrow-size) + var(--ds-popover-border-width)) / -2);
       left: calc(50% - var(--ds-popover-arrow-size) / 2);
       border-top-width: var(--ds-popover-border-width);
       border-left-width: var(--ds-popover-border-width);
     }
 
     [data-side='top'] > [data-part='arrow'] {
-      bottom: calc(var(--ds-popover-arrow-size) / -2);
+      bottom: calc((var(--ds-popover-arrow-size) + var(--ds-popover-border-width)) / -2);
       left: calc(50% - var(--ds-popover-arrow-size) / 2);
       border-bottom-width: var(--ds-popover-border-width);
       border-right-width: var(--ds-popover-border-width);
     }
 
     [data-side='right'] > [data-part='arrow'] {
-      left: calc(var(--ds-popover-arrow-size) / -2);
+      left: calc((var(--ds-popover-arrow-size) + var(--ds-popover-border-width)) / -2);
       top: calc(50% - var(--ds-popover-arrow-size) / 2);
       border-bottom-width: var(--ds-popover-border-width);
       border-left-width: var(--ds-popover-border-width);
     }
 
     [data-side='left'] > [data-part='arrow'] {
-      right: calc(var(--ds-popover-arrow-size) / -2);
+      right: calc((var(--ds-popover-arrow-size) + var(--ds-popover-border-width)) / -2);
       top: calc(50% - var(--ds-popover-arrow-size) / 2);
       border-top-width: var(--ds-popover-border-width);
       border-right-width: var(--ds-popover-border-width);
@@ -373,7 +404,7 @@ export class DsPopover extends LitElement {
   /** Heading level of the panel heading, so it fits the page outline. */
   @property({ attribute: 'heading-level', reflect: true }) accessor headingLevel: PopoverHeadingLevel = '3';
 
-  /** Controlled open state. Omit for uncontrolled (the trigger toggles it). */
+  /** Controlled open state. Omit for uncontrolled (the trigger toggles it); there is no default-open. */
   @property({ type: Boolean, reflect: true }) accessor open: boolean | undefined;
 
   /** Preferred side and alignment; flips and shifts to stay in the viewport. Logical: mirrors in right-to-left. */
@@ -386,22 +417,22 @@ export class DsPopover extends LitElement {
   @property({ type: Boolean, reflect: true, attribute: 'show-arrow' }) accessor showArrow = false;
 
   /**
-   * Show the close button. Escape and outside click work regardless (non-modal).
-   * Attribute: the negated `no-dismiss`.
+   * Show the close button. Escape and outside click work regardless (non-modal),
+   * so this is a visibility switch. Attribute: the negated `no-dismiss`.
    */
   @property({ attribute: 'no-dismiss', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
   accessor dismissible = true;
 
-  /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings (surface, focusRing, focusRingWidth) are not accepted. */
+  /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings are not accepted. */
   @property({ attribute: false }) accessor overrides: Partial<Record<PopoverOverridableBinding, TokenRef | undefined>> | undefined;
 
   /** Uncontrolled open state, used when `open` is omitted. */
   @state() private accessor internalOpen = false;
 
-  /** Whether the modal exit transition is playing. */
-  @state() private accessor closing = false;
+  /** Whether the panel content is rendered: while open, and through the exit transition. */
+  @state() private accessor mounted = false;
 
-  /** The trigger's own accessible text, the panel's `aria-label` when `heading` is unset. */
+  /** The trigger's name, the panel's `aria-label` when `heading` is unset. */
   @state() private accessor triggerAccessibleName = '';
 
   /** Physical side the panel resolved to on the last positioning pass. */
@@ -415,7 +446,9 @@ export class DsPopover extends LitElement {
   private readonly popoverSupported = POPOVER_SUPPORTED;
   private triggerEl: HTMLElement | null = null;
   private wasOpen = false;
+  private scrollLocked = false;
   private request: OpenRequest | null = null;
+  private exitGeneration = 0;
   private warned = false;
 
   /** Whether the popover is currently open, controlled or not. */
@@ -426,21 +459,25 @@ export class DsPopover extends LitElement {
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('data-ds', 'Popover');
+    if (this.hasUpdated) {
+      this.requestUpdate();
+    }
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.detachTrigger();
     this.removeOpenListeners();
-    if (this.modal && this.wasOpen) {
-      unlockBodyScroll();
-    }
+    this.releaseScrollLock();
     this.wasOpen = false;
   }
 
   protected override willUpdate(changed: PropertyValues): void {
     if (changed.has('overrides')) {
       this.applyOverrides();
+    }
+    if (this.currentOpen && !this.mounted) {
+      this.mounted = true;
     }
   }
 
@@ -451,7 +488,7 @@ export class DsPopover extends LitElement {
   }
 
   protected override updated(changed: PropertyValues): void {
-    const isOpen = this.currentOpen;
+    const isOpen = this.currentOpen && this.isConnected;
     if (isOpen !== this.wasOpen) {
       this.wasOpen = isOpen;
       this.updateTriggerExpanded();
@@ -460,7 +497,7 @@ export class DsPopover extends LitElement {
       } else {
         this.handleClosed();
       }
-    } else if (isOpen && changed.has('placement')) {
+    } else if (isOpen && (changed.has('placement') || changed.has('heading') || changed.has('showArrow'))) {
       this.updatePosition();
     }
   }
@@ -469,41 +506,49 @@ export class DsPopover extends LitElement {
     const isOpen = this.currentOpen;
     const ariaLabel = this.heading || this.triggerAccessibleName || undefined;
 
-    const panelContent = html`
-      <ds-focus-scope
-        data-part="focusScope"
-        part="focusScope"
-        .trapped=${this.modal}
-        .active=${isOpen}
-        .autoFocus=${'none'}
-        .restoreFocus=${false}
-      >
-        <div class=${classMap({ content: true, 'has-close': this.dismissible })}>
-          ${this.heading
-            ? html`<ds-heading data-part="heading" part="heading" level=${this.headingLevel} tabindex="-1"
-                >${this.heading}</ds-heading
-              >`
-            : nothing}
-          <ds-box data-part="body" part="body"><slot></slot></ds-box>
-          ${this.dismissible
-            ? html`
-                <ds-button
-                  data-part="closeButton"
-                  part="closeButton"
-                  variant="ghost"
-                  size="sm"
-                  icon-only
-                  label=${COPY_CLOSE_LABEL}
-                  @press=${this.handleCloseButtonPress}
-                >
-                  <ds-icon slot="leading-icon" name="close"></ds-icon>
-                </ds-button>
-              `
-            : nothing}
-        </div>
-      </ds-focus-scope>
-      ${this.showArrow ? html`<span data-part="arrow" part="arrow" aria-hidden="true"></span>` : nothing}
-    `;
+    const panelContent = this.mounted
+      ? html`
+          ${this.showArrow ? html`<span data-part="arrow" part="arrow" aria-hidden="true"></span>` : nothing}
+          <ds-focus-scope
+            data-part="focusScope"
+            part="focusScope"
+            .trapped=${this.modal}
+            .autoFocus=${'none'}
+            .restoreFocus=${false}
+            .active=${isOpen}
+          >
+            <div class="content">
+              ${this.heading || this.dismissible
+                ? html`
+                    <div class="header">
+                      ${this.heading
+                        ? html`<ds-heading data-part="heading" part="heading" level=${this.headingLevel} tabindex="-1"
+                            >${this.heading}</ds-heading
+                          >`
+                        : nothing}
+                      ${this.dismissible
+                        ? html`
+                            <ds-button
+                              data-part="closeButton"
+                              part="closeButton"
+                              variant="ghost"
+                              size="sm"
+                              icon-only
+                              label=${COPY_CLOSE_LABEL}
+                              @press=${this.handleCloseButtonPress}
+                            >
+                              <ds-icon slot="leading-icon" name="close"></ds-icon>
+                            </ds-button>
+                          `
+                        : nothing}
+                    </div>
+                  `
+                : nothing}
+              <ds-box data-part="body" part="body"><slot></slot></ds-box>
+            </div>
+          </ds-focus-scope>
+        `
+      : nothing;
 
     return html`
       <slot name="trigger" data-part="trigger" @slotchange=${this.handleTriggerSlotChange}></slot>
@@ -513,7 +558,7 @@ export class DsPopover extends LitElement {
               data-part="panel"
               part="panel"
               data-side=${this.side}
-              class=${classMap({ closing: this.closing })}
+              tabindex="-1"
               aria-label=${ifDefined(ariaLabel)}
               aria-modal="true"
               @cancel=${this.handleDialogCancel}
@@ -530,9 +575,10 @@ export class DsPopover extends LitElement {
               data-side=${this.side}
               class=${classMap({ 'fallback-open': !this.popoverSupported && isOpen })}
               role="dialog"
+              tabindex="-1"
               aria-label=${ifDefined(ariaLabel)}
               popover=${this.popoverSupported ? 'manual' : nothing}
-              ?hidden=${this.popoverSupported ? false : !isOpen}
+              ?hidden=${!this.popoverSupported && !isOpen && !this.mounted}
               @keydown=${this.handlePanelKeydown}
             >
               ${panelContent}
@@ -579,12 +625,15 @@ export class DsPopover extends LitElement {
       return;
     }
     const fromProp = (value: unknown): string => (typeof value === 'string' ? value : '');
-    this.triggerAccessibleName =
+    const name =
       trigger.getAttribute('aria-label') ||
       fromProp(trigger.accessibleName) ||
       fromProp(trigger.label) ||
       trigger.textContent?.trim() ||
       '';
+    if (this.triggerAccessibleName !== name) {
+      this.triggerAccessibleName = name;
+    }
   }
 
   private updateTriggerExpanded(): void {
@@ -604,8 +653,7 @@ export class DsPopover extends LitElement {
   }
 
   private readonly handleTriggerClick = (): void => {
-    // Focus is already on the trigger when it closes the popover.
-    this.requestOpenChange(!this.currentOpen, 'trigger', false);
+    this.requestOpenChange(!this.currentOpen, 'trigger', true);
   };
 
   /* ---- dismissal ---- */
@@ -617,7 +665,7 @@ export class DsPopover extends LitElement {
   };
 
   private readonly handleDialogCancel = (event: Event): void => {
-    // Escape is handled on keydown; this catches other close requests. The element owns `open`, not the <dialog>.
+    // Escape pressed before focus reached the panel: keydown never saw it. The element owns `open`, not the <dialog>.
     event.preventDefault();
     if (this.currentOpen) {
       this.requestOpenChange(false, 'escape', true);
@@ -625,42 +673,45 @@ export class DsPopover extends LitElement {
   };
 
   private readonly handleDialogClose = (): void => {
-    // The browser closed the <dialog> without us (an ignored cancel): report it rather than drift out of sync.
-    if (this.currentOpen) {
-      this.requestOpenChange(false, 'escape', true);
-      if (this.currentOpen && this.panelEl && !(this.panelEl as HTMLDialogElement).open) {
-        (this.panelEl as HTMLDialogElement).showModal();
-      }
+    // The browser closed the <dialog> without us (a close request it would not let us cancel): report it and stay in sync.
+    const panel = this.panelEl;
+    if (!this.currentOpen || !(panel instanceof HTMLDialogElement)) {
+      return;
+    }
+    this.requestOpenChange(false, 'escape', true);
+    if (this.currentOpen && !panel.open) {
+      panel.showModal();
     }
   };
 
   private readonly handlePanelKeydown = (event: KeyboardEvent): void => {
+    if (!this.currentOpen) {
+      return;
+    }
     if (event.key === 'Escape') {
       event.preventDefault();
       event.stopPropagation();
       this.requestOpenChange(false, 'escape', true);
       return;
     }
+    // Modal: FocusScope wraps Tab within the panel.
     if (this.modal || event.key !== 'Tab' || event.defaultPrevented) {
       return;
     }
     const focusables = this.getPanelFocusables();
+    const active = getDeepActiveElement();
     const first = focusables[0];
     const last = focusables[focusables.length - 1];
-    if (!first || !last) {
-      return;
-    }
-    const active = getDeepActiveElement();
-    if (event.shiftKey && this.isWithin(active, first)) {
+    const onPanelItself = active === this.panelEl || this.isWithin(active, this.headingEl);
+    if (event.shiftKey && (onPanelItself || (first !== undefined && this.isWithin(active, first)))) {
       event.preventDefault();
       this.triggerEl?.focus();
       this.requestOpenChange(false, 'tab-out', false);
-    } else if (!event.shiftKey && this.isWithin(active, last)) {
+    } else if (!event.shiftKey && ((onPanelItself && !last) || (last !== undefined && this.isWithin(active, last)))) {
+      // The panel follows the trigger slot in the tab order, so the browser's own Tab would not leave it.
+      event.preventDefault();
+      this.focusAfterHost();
       this.requestOpenChange(false, 'tab-out', false);
-      if (!this.currentOpen) {
-        // Hide before the browser's own Tab traversal runs, so focus continues past the popover.
-        this.hidePanelNow();
-      }
     }
   };
 
@@ -699,15 +750,19 @@ export class DsPopover extends LitElement {
 
   private handleOpened(): void {
     this.request = null;
+    this.exitGeneration += 1;
+    this.updateTriggerAccessibleName();
     const panel = this.panelEl;
     if (!panel) {
       return;
     }
-    if (this.modal) {
-      this.closing = false;
-      lockBodyScroll();
-      if (!(panel as HTMLDialogElement).open) {
-        (panel as HTMLDialogElement).showModal();
+    if (panel instanceof HTMLDialogElement) {
+      if (!this.scrollLocked) {
+        lockPageScroll();
+        this.scrollLocked = true;
+      }
+      if (!panel.open) {
+        panel.showModal();
       }
     } else {
       document.addEventListener('pointerdown', this.handleOutsidePointerDown, true);
@@ -724,70 +779,60 @@ export class DsPopover extends LitElement {
   private handleClosed(): void {
     const request = this.request;
     this.request = null;
-    const focusInside = this.isWithin(getDeepActiveElement(), this.panelEl);
-    const focusTrigger = request ? request.open === false && request.focusTrigger : focusInside;
+    const focusInside = this.isWithin(getDeepActiveElement(), this);
+    // Trigger, Escape and the close button return focus; outside press and Tab out leave it where it went.
+    const focusTrigger = request && request.open === false ? request.focusTrigger : focusInside;
     this.removeOpenListeners();
-    if (this.modal) {
-      this.playModalExit(focusTrigger);
-    } else {
-      this.hidePanelNow();
-      if (focusTrigger) {
-        this.triggerEl?.focus();
+    const panel = this.panelEl;
+    if (panel instanceof HTMLDialogElement) {
+      if (panel.open) {
+        panel.close();
       }
+    } else if (panel && this.popoverSupported && panel.matches(':popover-open')) {
+      panel.hidePopover();
     }
+    this.releaseScrollLock();
+    if (focusTrigger) {
+      this.triggerEl?.focus();
+    }
+    this.unmountAfterExit();
   }
 
-  private playModalExit(focusTrigger: boolean): void {
-    const panel = this.panelEl as HTMLDialogElement | null;
-    const finish = (): void => {
-      panel?.close();
-      this.closing = false;
-      unlockBodyScroll();
-      if (focusTrigger) {
-        this.triggerEl?.focus();
-      }
-    };
-    if (!panel || matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      finish();
-      return;
-    }
-    this.closing = true;
+  /** Keeps the content rendered through the exit transition, then drops it. */
+  private unmountAfterExit(): void {
+    const panel = this.panelEl;
+    const generation = ++this.exitGeneration;
     let done = false;
     const complete = (): void => {
       if (done) {
         return;
       }
       done = true;
-      panel.removeEventListener('transitionend', handleTransitionEnd);
-      if (this.currentOpen) {
-        // Reopened during the exit: the dialog stays up and the reopen took its own scroll lock.
-        unlockBodyScroll();
-      } else {
-        finish();
+      panel?.removeEventListener('transitionend', handleTransitionEnd);
+      panel?.removeEventListener('transitioncancel', handleTransitionEnd);
+      if (generation === this.exitGeneration && !this.currentOpen) {
+        this.mounted = false;
       }
     };
-    const handleTransitionEnd = (event: TransitionEvent): void => {
-      if (event.target === panel && event.propertyName === 'opacity') {
+    const handleTransitionEnd = (event: Event): void => {
+      if (event.target === panel) {
         complete();
       }
     };
-    panel.addEventListener('transitionend', handleTransitionEnd);
-    // A transition that never runs (zero duration, hidden tab) must not leave the page inert.
-    const exit = parseFloat(getComputedStyle(panel).transitionDuration) || 0;
-    setTimeout(complete, exit * 1000 + 50);
-  }
-
-  private hidePanelNow(): void {
-    const panel = this.panelEl;
-    if (this.modal || !panel) {
+    if (!panel) {
+      complete();
       return;
     }
-    if (this.popoverSupported) {
-      if (panel.matches(':popover-open')) {
-        panel.hidePopover();
-      }
-    } else {
-      panel.hidden = true;
+    panel.addEventListener('transitionend', handleTransitionEnd);
+    panel.addEventListener('transitioncancel', handleTransitionEnd);
+    const duration = Math.max(...getComputedStyle(panel).transitionDuration.split(',').map((d) => parseFloat(d) || 0));
+    setTimeout(complete, duration * 1000);
+  }
+
+  private releaseScrollLock(): void {
+    if (this.scrollLocked) {
+      unlockPageScroll();
+      this.scrollLocked = false;
     }
   }
 
@@ -799,33 +844,52 @@ export class DsPopover extends LitElement {
 
   /* ---- focus ---- */
 
-  /** The first control in the panel, else the heading. */
+  /** The first control in the body, then the close button, then the heading, then the panel itself. */
   private async applyInitialFocus(): Promise<void> {
     // Slotted elements render their focusable internals in their own update: wait for them first.
     const slotted = (this.bodySlotEl?.assignedElements({ flatten: true }) ?? []).flatMap((el) => [
       el,
       ...Array.from(el.querySelectorAll('*')),
     ]);
-    await Promise.all([...slotted, this.headingEl, this.closeButtonEl].map((el) => (el as Partial<LitElement> | null)?.updateComplete));
+    await Promise.all(
+      [...slotted, this.headingEl, this.closeButtonEl].map((el) => (el as Partial<LitElement> | null)?.updateComplete),
+    );
     if (!this.currentOpen) {
       return;
     }
-    const target = this.getPanelFocusables()[0] ?? this.headingEl;
+    // Content that rendered after the first pass changes the panel's size.
+    this.updatePosition();
+    const target = this.getBodyFocusables()[0] ?? this.closeButtonEl ?? this.headingEl ?? this.panelEl;
     target?.focus();
   }
 
-  /** Focusable elements in panel order: body content, then the close button. */
-  private getPanelFocusables(): HTMLElement[] {
+  private getBodyFocusables(): HTMLElement[] {
     const results: HTMLElement[] = [];
     for (const element of this.bodySlotEl?.assignedElements({ flatten: true }) ?? []) {
       if (element instanceof HTMLElement) {
         collectFocusable(element, results);
       }
     }
-    if (this.closeButtonEl) {
-      results.push(this.closeButtonEl);
-    }
     return results;
+  }
+
+  /** Tabbable elements in panel order: the close button in the header row, then the body content. */
+  private getPanelFocusables(): HTMLElement[] {
+    const body = this.getBodyFocusables();
+    return this.closeButtonEl ? [this.closeButtonEl, ...body] : body;
+  }
+
+  /** Focuses the first focusable element after the host in document order, else the trigger. */
+  private focusAfterHost(): void {
+    const next = Array.from(document.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).find(
+      (el) =>
+        !this.contains(el) &&
+        (this.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0 &&
+        el.getAttribute('tabindex') !== '-1' &&
+        el.closest('[inert]') === null &&
+        el.getClientRects().length > 0,
+    );
+    (next ?? this.triggerEl)?.focus();
   }
 
   /** Composed-tree containment: focus inside a child's shadow root counts as inside it. */
@@ -859,7 +923,8 @@ export class DsPopover extends LitElement {
     const panelRect = panel.getBoundingClientRect();
     const viewportWidth = document.documentElement.clientWidth;
     const viewportHeight = document.documentElement.clientHeight;
-    const gap = this.readLength('--ds-popover-offset', panel);
+    // offset is the margin on the side currently facing the trigger; every side carries the same hook.
+    const gap = parseFloat(getComputedStyle(panel)[OFFSET_MARGIN[this.side]]) || 0;
     const gutter = this.readLength('--layout-gutter', panel);
     const rtl = getComputedStyle(trigger).direction === 'rtl';
 
@@ -882,34 +947,30 @@ export class DsPopover extends LitElement {
     const alignStartX = rtl ? triggerRect.right - panelRect.width : triggerRect.left;
     const alignEndX = rtl ? triggerRect.left : triggerRect.right - panelRect.width;
 
+    // `top`/`left` place the margin box, whose facing-side margin is the offset.
     let top: number;
     let left: number;
     if (side === 'bottom' || side === 'top') {
-      top = side === 'bottom' ? triggerRect.bottom + gap : triggerRect.top - gap - panelRect.height;
+      top = side === 'bottom' ? triggerRect.bottom : triggerRect.top - gap - panelRect.height;
       left =
         align === 'start'
           ? alignStartX
           : align === 'end'
             ? alignEndX
             : triggerRect.left + triggerRect.width / 2 - panelRect.width / 2;
+      left = Math.min(Math.max(left, gutter), Math.max(gutter, viewportWidth - panelRect.width - gutter));
     } else {
-      left = side === 'right' ? triggerRect.right + gap : triggerRect.left - gap - panelRect.width;
+      left = side === 'right' ? triggerRect.right : triggerRect.left - gap - panelRect.width;
       top = triggerRect.top + triggerRect.height / 2 - panelRect.height / 2;
+      top = Math.min(Math.max(top, gutter), Math.max(gutter, viewportHeight - panelRect.height - gutter));
     }
-
-    // Shift along both axes to stay inside the viewport gutters.
-    left = Math.min(Math.max(left, gutter), Math.max(gutter, viewportWidth - panelRect.width - gutter));
-    top = Math.min(Math.max(top, gutter), Math.max(gutter, viewportHeight - panelRect.height - gutter));
 
     panel.style.top = `${top}px`;
     panel.style.left = `${left}px`;
 
-    const slide = 'var(--space-1)';
-    const away = `calc(-1 * ${slide})`;
-    panel.style.setProperty('--ds-popover-slide-x', side === 'right' ? away : side === 'left' ? slide : '0');
-    panel.style.setProperty('--ds-popover-slide-y', side === 'bottom' ? away : side === 'top' ? slide : '0');
-
     if (this.side !== side) {
+      // Move the offset margin now, so the placement above holds before the next render.
+      panel.setAttribute('data-side', side);
       this.side = side;
     }
   }
@@ -949,7 +1010,10 @@ export class DsPopover extends LitElement {
       this.warned = true;
       console.warn('<ds-popover> needs exactly one element in its `trigger` slot: the focusable element that opens it.', this);
     }
-    if ((this.bodySlotEl?.assignedNodes({ flatten: true }) ?? []).length === 0) {
+    const hasBody = Array.from(this.childNodes).some((node) =>
+      node instanceof Element ? node.slot === '' : node.nodeType === Node.TEXT_NODE && (node.textContent ?? '').trim() !== '',
+    );
+    if (!hasBody) {
       this.warned = true;
       console.warn('<ds-popover> needs panel content in its default slot.', this);
     }

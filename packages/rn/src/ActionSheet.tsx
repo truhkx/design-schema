@@ -11,7 +11,15 @@ import {
   findNodeHandle,
   useWindowDimensions,
 } from 'react-native';
-import type { LayoutChangeEvent, PanResponderGestureState, TextStyle, ViewInstance, ViewStyle } from 'react-native';
+import type {
+  GestureResponderEvent,
+  LayoutChangeEvent,
+  PanResponderGestureState,
+  PanResponderInstance,
+  TextStyle,
+  ViewInstance,
+  ViewStyle,
+} from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
@@ -19,6 +27,7 @@ import { FocusScope } from './FocusScope';
 import { Icon } from './Icon';
 import type { IconName } from './Icon';
 import { Text } from './Text';
+import type { TextOverridableBinding } from './Text';
 import { toEasing, toLineHeight, useReducedMotion, useTheme } from './theme';
 
 export type ActionSheetActionTone = 'default' | 'danger';
@@ -35,7 +44,7 @@ export type ActionSheetAction = {
 /** Why `onClose` fired. */
 export type ActionSheetCloseReason = 'escape' | 'scrim' | 'cancel' | 'drag';
 
-/** The style bindings a caller may replace with a different token; see the component's overrides contract. */
+/** The style bindings a caller may replace with a different token; `surface`, `handle`, `itemHover`, `itemColor`, `itemDangerColor`, `titleColor`, `minTarget`, `maxWidth`, `focusRing` and `focusRingWidth` are locked. */
 export type ActionSheetOverridableBinding =
   | 'scrim'
   | 'shadow'
@@ -54,19 +63,18 @@ export type ActionSheetOverridableBinding =
   | 'lineHeight'
   | 'divider'
   | 'dividerWidth'
-  | 'maxWidth'
   | 'layer'
   | 'enter'
   | 'exit';
 
 export interface ActionSheetProps {
-  /** Controlled visibility. */
+  /** Controlled only — there is no uncontrolled mode; the consumer owns `open`, the sheet requests a dismissal through `onClose` and reports a choice through `onAction`, and the consumer sets `open` to false for both. */
   open: boolean;
   /** What the actions apply to ("Photo.jpg"), shown muted above the list. Also the accessible name; when omitted the name is `copy.defaultLabel`. */
   heading?: string | undefined;
-  /** Two to about eight actions. `danger` actions are visually distinct and grouped last. */
+  /** Two to about eight actions. `danger` actions are visually distinct and grouped last. The count is guidance, not enforced. */
   actions: ActionSheetAction[];
-  /** Escape, the scrim, the cancel row and the drag all request close; Escape still reports through `onClose` when false, as in Dialog. */
+  /** Escape, the scrim, the cancel row and the drag all request close. When false the Cancel row, the divider above it and the drag handle are not rendered, the scrim and the drag do nothing, and Escape still reports through `onClose`. */
   dismissible?: boolean | undefined;
   /** Label of the explicit cancel row. Defaults to `copy.cancelLabel`. */
   cancelLabel?: string | undefined;
@@ -89,10 +97,6 @@ const CONSTANTS = {
   dismissVelocity: 1.5, // literal-ok: schema constant dismissVelocity
 } as const;
 
-// A move must be this many px downward (and more vertical than horizontal) before the
-// header claims the responder, so a tap on the heading is never stolen.
-const DRAG_SLOP = 4; // literal-ok: gesture recognition slop, not a visual size
-
 /**
  * ActionSheet — "what can I do with this?" A short list of verbs for one item,
  * reached from an overflow button or a long-press, with the dangerous one grouped
@@ -105,32 +109,36 @@ const DRAG_SLOP = 4; // literal-ok: gesture recognition slop, not a visual size
  * navigation, settings with state, choosing a value, or confirming — a danger row
  * opens an `AlertDialog`, it does not itself confirm.
  *
- * Renders a native `Modal` (`transparent`, `statusBarTranslucent`) with a full-screen
- * scrim `Pressable` and an `Animated.View` surface (`role="menu"`,
- * `accessibilityViewIsModal`, `accessibilityLabel={heading ?? copy.defaultLabel}`)
- * anchored to the bottom, sliding up with `enter` and `motion.easing.standard` and
- * down with `exit` and `motion.easing.exit` (instant under reduced motion). The
- * surface composes `FocusScope` (`trapped`, `restoreFocus`), `Text` (`size="sm"`,
- * `tone="muted"`, with `titleSize`, `fontFamily` and `lineHeight` forwarded as its
- * overrides) for the heading, `Icon` for each row's glyph and `Button`
+ * Renders a native `Modal` (`visible`, `transparent`, `onRequestClose`,
+ * `statusBarTranslucent`) with a full-screen scrim `Pressable` and an `Animated.View`
+ * surface (`testID="ActionSheet"`, `role="menu"`, `accessibilityViewIsModal`,
+ * `accessibilityLabel={heading ?? copy.defaultLabel}`) anchored to the bottom, sliding
+ * up with `enter` and `motion.easing.standard` and down with `exit` and
+ * `motion.easing.exit`, the scrim fading alongside (instant under reduced motion). The
+ * surface composes `FocusScope` (`trapped`, `restoreFocus`, `autoFocus="none"`), `Text`
+ * (`size="sm"`, `tone="muted"`, with `fontFamily`, `titleSize` and `lineHeight`
+ * forwarded as its overrides) for the heading, `Icon` for each row's glyph and `Button`
  * (`variant="secondary"`) for the Cancel row — never restyled. Rows are `Pressable`s
  * with `role="menuitem"` and `accessibilityState={{ disabled }}`; a press guard, not
- * the native `disabled` prop, makes disabled rows inert so they stay reachable and
- * are announced as disabled. Once the enter transition ends, accessibility focus
- * moves to the first enabled action.
+ * the native `disabled` prop, makes disabled rows inert so they stay reachable and are
+ * announced as disabled. Once the enter transition ends, accessibility focus moves to
+ * the first enabled action in display order.
  *
- * A `PanResponder` on the header (handle plus heading) follows a downward drag;
- * released past `dismissDistance` of the measured surface height or faster than
- * `dismissVelocity` it fires `onClose('drag')`, otherwise it springs back.
- * `dismissible` (default `true`) gates the scrim, the Cancel row (shown disabled) and
- * the drag; `onRequestClose` (Android back, hardware Escape) always reports
- * `onClose('escape')`. Choosing an action never closes the sheet itself.
+ * A `PanResponder` on the header (handle plus heading) tracks from the first touch with
+ * no slop; released past `dismissDistance` of the measured surface height or faster
+ * than `dismissVelocity` it fires `onClose('drag')`, otherwise it springs back with
+ * `exit` and `motion.easing.standard` (a tap passes neither threshold, so nothing
+ * fires). `dismissible={false}` removes the handle, the drag, the Cancel row and its
+ * divider and makes the scrim inert; `onRequestClose` (Android back, hardware Escape)
+ * and the VoiceOver escape gesture always report `onClose('escape')`. Choosing an
+ * action never closes the sheet itself.
  *
  * Native limits: `Pressable` has no key events, so there are no arrow keys, Home/End
  * or roving tabindex — each row is its own accessibility focus stop and Enter/Space
  * are the platform's own activation. There is no wide presentation: the package's
  * `Menu` renders its own trigger and cannot anchor to an external element, so tablets
- * get the sheet too and the `maxWidth` override is a no-op.
+ * get the sheet too and `maxWidth` has no effect. Rooted in a native `Modal`, the
+ * sheet exposes no ref; callers ref their opener.
  */
 export function ActionSheet({
   open,
@@ -157,7 +165,6 @@ export function ActionSheet({
   openRef.current = open;
 
   const scrimColor = overrides?.scrim ? (resolveToken(t, overrides.scrim) as string) : t.colorOverlayScrim;
-  const surfaceColor = t.colorOverlaySurface;
   const shadow = overrides?.shadow ? (resolveToken(t, overrides.shadow) as typeof t.shadowOverlay) : t.shadowOverlay;
   const radius = overrides?.radius ? (resolveToken(t, overrides.radius) as number) : t.radiusLg;
   const itemPaddingBlock = overrides?.itemPaddingBlock ? (resolveToken(t, overrides.itemPaddingBlock) as number) : t.spaceSm;
@@ -245,14 +252,6 @@ export function ActionSheet({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, mounted, reducedMotion]);
 
-  React.useEffect(() => {
-    if (__DEV__ && actions.length < 2) {
-      console.warn('ActionSheet: fewer than two actions; a single action belongs on a Button.');
-    } else if (__DEV__ && actions.length > 8) {
-      console.warn('ActionSheet: more than eight actions; consider giving this item its own screen instead.');
-    }
-  }, [actions.length]);
-
   const handleScrimPress = (): void => {
     if (dismissible) {
       onClose?.('scrim');
@@ -260,12 +259,10 @@ export function ActionSheet({
   };
 
   const handleCancelPress = (): void => {
-    if (dismissible) {
-      onClose?.('cancel');
-    }
+    onClose?.('cancel');
   };
 
-  const handleRequestClose = (): void => {
+  const handleEscape = (): void => {
     onClose?.('escape');
   };
 
@@ -277,46 +274,52 @@ export function ActionSheet({
     onAction?.(id);
   };
 
-  const panResponder = React.useMemo(() => {
-    const springBack = (): void => {
-      if (reducedMotion) {
-        dragY.setValue(0);
-        return;
-      }
-      Animated.timing(dragY, {
-        toValue: 0,
-        duration: exitDuration,
-        easing: toEasing(t.motionEasingStandard),
-        useNativeDriver: false,
-      }).start();
-    };
-    return PanResponder.create({
-      onStartShouldSetPanResponder: () => false,
-      onMoveShouldSetPanResponder: (_, g: PanResponderGestureState) =>
-        g.dy > DRAG_SLOP && Math.abs(g.dy) > Math.abs(g.dx),
-      // The drag follows the finger even under reduced motion: it is user-driven.
-      onPanResponderMove: (_, g: PanResponderGestureState) => {
+  const springBack = (): void => {
+    if (reducedMotion) {
+      dragY.setValue(0);
+      return;
+    }
+    Animated.timing(dragY, {
+      toValue: 0,
+      duration: exitDuration,
+      easing: toEasing(t.motionEasingStandard),
+      useNativeDriver: false,
+    }).start();
+  };
+
+  // The responder is created once; it reads the current render's values through this ref.
+  const latest = React.useRef({ windowHeight, onClose, springBack });
+  latest.current = { windowHeight, onClose, springBack };
+
+  const panResponder = React.useRef<PanResponderInstance | null>(null);
+  if (panResponder.current === null) {
+    panResponder.current = PanResponder.create({
+      // No separate slop: a touch on the header starts tracking, and a tap passes neither threshold.
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      // Follows the finger even under reduced motion: the drag is user-driven.
+      onPanResponderMove: (_: GestureResponderEvent, g: PanResponderGestureState) => {
         dragY.setValue(Math.max(0, g.dy));
       },
-      onPanResponderRelease: (_, g: PanResponderGestureState) => {
-        const sheetHeight = surfaceHeightRef.current > 0 ? surfaceHeightRef.current : windowHeight;
+      onPanResponderRelease: (_: GestureResponderEvent, g: PanResponderGestureState) => {
+        const sheetHeight = surfaceHeightRef.current > 0 ? surfaceHeightRef.current : latest.current.windowHeight;
         const dismiss = g.dy > sheetHeight * CONSTANTS.dismissDistance || g.vy > CONSTANTS.dismissVelocity;
         if (!dismiss) {
-          springBack();
+          latest.current.springBack();
           return;
         }
-        onClose?.('drag');
+        latest.current.onClose?.('drag');
         // Hold the release position for the exit transition; if the consumer keeps
         // the sheet open, spring back once the update has rendered.
         setTimeout(() => {
           if (openRef.current) {
-            springBack();
+            latest.current.springBack();
           }
         }, 0);
       },
-      onPanResponderTerminate: springBack,
+      onPanResponderTerminate: () => latest.current.springBack(),
     });
-  }, [dragY, windowHeight, onClose, reducedMotion, exitDuration, t.motionEasingStandard]);
+  }
 
   if (!mounted && !open) {
     return null;
@@ -336,11 +339,11 @@ export function ActionSheet({
 
   const surfaceStyle: Animated.WithAnimatedValue<ViewStyle> = {
     width: '100%',
-    maxHeight: windowHeight * 0.9, // literal-ok: 90% of the viewport, as BottomSheet's content height
+    maxHeight: windowHeight * 0.9, // literal-ok: 90% of the viewport, BottomSheet's height: content cap
     borderTopLeftRadius: radius,
     borderTopRightRadius: radius,
     ...shadow,
-    backgroundColor: surfaceColor,
+    backgroundColor: t.colorOverlaySurface,
     overflow: 'hidden',
     transform: [{ translateY: Animated.add(entryTranslateY, dragY) }],
   };
@@ -412,13 +415,15 @@ export function ActionSheet({
     );
   }
 
-  const headingOverrides =
-    overrides?.titleSize || overrides?.fontFamily || overrides?.lineHeight
-      ? { fontSize: overrides?.titleSize, fontFamily: overrides?.fontFamily, lineHeight: overrides?.lineHeight }
-      : undefined;
+  let headingOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> | undefined;
+  if (overrides?.fontFamily !== undefined || overrides?.titleSize !== undefined || overrides?.lineHeight !== undefined) {
+    headingOverrides = { fontFamily: overrides.fontFamily, fontSize: overrides.titleSize, lineHeight: overrides.lineHeight };
+  }
+
+  const showHeader = dismissible || heading !== undefined;
 
   return (
-    <Modal visible={mounted} transparent animationType="none" onRequestClose={handleRequestClose} statusBarTranslucent>
+    <Modal visible={mounted} transparent animationType="none" onRequestClose={handleEscape} statusBarTranslucent>
       <View style={hostStyle}>
         <Animated.View style={scrimStyle} />
         <Pressable style={StyleSheet.absoluteFill} onPress={handleScrimPress} accessible={false} testID="ActionSheet.scrim" />
@@ -430,27 +435,43 @@ export function ActionSheet({
               role="menu"
               accessibilityViewIsModal
               accessibilityLabel={accessibleName}
+              onAccessibilityEscape={handleEscape}
               testID="ActionSheet"
             >
-              <View {...(dismissible ? panResponder.panHandlers : null)} style={headerStyle} testID="ActionSheet.header">
-                <View style={handleStyle} accessibilityElementsHidden importantForAccessibility="no" testID="ActionSheet.handle" />
-                {heading !== undefined ? (
-                  <View testID="ActionSheet.heading">
-                    <Text size="sm" tone="muted" overrides={headingOverrides}>
-                      {heading}
-                    </Text>
-                  </View>
-                ) : null}
-              </View>
+              {showHeader ? (
+                <View {...(dismissible ? panResponder.current.panHandlers : null)} style={headerStyle} testID="ActionSheet.header">
+                  {dismissible ? (
+                    <View style={handleStyle} accessibilityElementsHidden importantForAccessibility="no" testID="ActionSheet.handle" />
+                  ) : null}
+                  {heading !== undefined ? (
+                    <View testID="ActionSheet.heading">
+                      <Text size="sm" tone="muted" overrides={headingOverrides}>
+                        {heading}
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+              ) : null}
               <View testID="ActionSheet.list">
                 {normalActions.map(renderAction)}
-                {dangerActions.length > 0 && normalActions.length > 0 ? <View style={dividerStyle} /> : null}
+                {dangerActions.length > 0 && normalActions.length > 0 ? (
+                  <View style={dividerStyle} role="separator" testID="ActionSheet.divider" />
+                ) : null}
                 {dangerActions.map(renderAction)}
               </View>
-              <View style={dividerStyle} />
-              <View style={cancelRowStyle} testID="ActionSheet.cancelButton">
-                <Button label={resolvedCancelLabel} variant="secondary" disabled={!dismissible} onPress={handleCancelPress} />
-              </View>
+              {dismissible ? (
+                <>
+                  <View
+                    style={dividerStyle}
+                    accessibilityElementsHidden
+                    importantForAccessibility="no"
+                    testID="ActionSheet.divider"
+                  />
+                  <View style={cancelRowStyle} testID="ActionSheet.cancelButton">
+                    <Button label={resolvedCancelLabel} variant="secondary" onPress={handleCancelPress} />
+                  </View>
+                </>
+              ) : null}
             </Animated.View>
           </FocusScope>
         </View>
@@ -495,6 +516,7 @@ function ActionSheetItemRow({
       onBlur={() => setFocused(false)}
       onHoverIn={() => setHovered(true)}
       onHoverOut={() => setHovered(false)}
+      // itemHover is paint only; RN has no hover on touch, so pressed paints it too.
       style={({ pressed }) => rowStyle(!disabled && (hovered || pressed), focused, disabled)}
       testID="ActionSheet.item"
     >

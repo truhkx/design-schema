@@ -35,3 +35,17 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - SidePanel: the `partGap` and `inset` bindings have no part; I apply partGap as CSS gap on the focusScope column and inset as header/footer padding plus the body ds-box inset (override forwarded as paddingBlock/paddingInline).
 - SidePanel: modal initial focus is 'the first control (or the title)' without saying whether footer controls count or whether the close button comes before body content. I pick the first focusable in the body slot, then the footer, then the close button, then the heading.
 - SidePanel: the exit binding describes motion.easing.exit and enter uses motion.easing.standard, but neither easing is a style binding or overridable; hard-wired to those tokens. The scrim fade reuses enter/exit durations.
+
+## 2026-09-17 11:15 — round 1
+
+- SidePanel: the swipe dismiss is not wired on Lit (the doc says so), yet `swipe` stays in the reason union and in overlay.dismiss; kept the value in the type with nothing that emits it.
+- SidePanel: the `open-change` reasons say the scrim fires on click, the web notes say pointerdown; Lit kept `click` on the scrim (the behavior scenario says `click: scrim`) and `pointerdown` for `outside`.
+- SidePanel: with `scrim: true` the fixed scrim covers the trigger, so pressing the trigger while open lands on the scrim and reports `scrim`, not `trigger`; the doc never says whether the trigger should sit above the scrim.
+- SidePanel: the `navigation` reason on Lit has no router hook; chose any click in the body whose composed path holds an `<a href>` or `ds-link` (not default-prevented), without moving focus to the trigger.
+- SidePanel: `action` on Lit: the doc names a slotted `form method="dialog"` but not a submitter's `formmethod="dialog"`; both are treated as `action`, and it is ignored while persistent.
+- SidePanel: the doc says nothing about what happens when something other than the component closes the modal `<dialog>`; removed the old `action` report there (SidePanel never raises `action` on its own) and rely on `cancel` being prevented.
+- SidePanel: the persistent sidebar's border is 'the inner edge'; the web notes say `border-inline-end` only, which is wrong for `side: end`. Lit draws it on the edge facing the content (inline-end for start, inline-start for end).
+- SidePanel: the body forward lists only `inset → paddingBlock`, while the `inset` description says the same padding also goes on the header and footer; the header and footer read the hook directly, and the Box's own inline padding keeps `inset="lg"` with no override path.
+- SidePanel: examples without `open` in their given (navigation-drawer, filters) would pick up the stories' `open: true` meta default; set `open: false` on them, which goes beyond their exact given. The doc should say whether the example args are merged over Default.
+- SidePanel: `layer` for the non-modal scrim has no binding of its own; the scrim uses `calc(var(--ds-side-panel-layer) - 1)` so it sits under the panel.
+- SidePanel: the breakpoint is read from the resolved `--layout-max-width-content/page` value on `<html>` when the element connects; a theme change after that doesn't re-read it (the doc says 'read from the theme token' but not when).

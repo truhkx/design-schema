@@ -110,7 +110,9 @@ describe('ds-dialog', () => {
 
   it('initial-focus-lands-on-the-close-button', async () => {
     const d = await setup({ open: true, initialFocus: 'close' });
-    await expect.poll(() => activeChain()).toContain(d.part('closeButton'));
+    // closeButton is the Dialog-owned wrapper around <ds-button>: focus rests inside it.
+    const wrapper = d.part('closeButton')!;
+    await expect.poll(() => activeChain().some((el) => el !== wrapper && wrapper.contains(el))).toBe(true);
   });
 
   it('hidden-heading-is-still-the-accessible-name', async () => {

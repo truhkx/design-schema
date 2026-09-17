@@ -1,6 +1,6 @@
-# Gap digest — phase Primitives
+# Gap digest — phase Core
 
-Generated 2026-09-17T04:05 by tools/gap_digest.ts. DOC lines belong in the named doc; fold them, run `pnpm parse`, and the affected targets become stale by prompt hash.
+Generated 2026-09-17T04:47 by tools/gap_digest.ts. DOC lines belong in the named doc; fold them, run `pnpm parse`, and the affected targets become stale by prompt hash.
 
 ## Accordion
 
@@ -745,6 +745,42 @@ Doc: `site/src/content/docs/components/breadcrumb.md`
 
 Doc: `site/src/content/docs/components/button.md`
 
+### 2026-09-17 04:18 — rn round 1
+
+- **DOC** Button: `loading` says the spinner takes the leading icon slot whether or not `leadingIcon` is set, and also that the layout stays unchanged. Without a leadingIcon, adding the spinner (plus iconGap) makes the button wider. I followed the slot rule, so the layout shifts in that case. → `site/src/content/docs/components/button.md`
+- **DOC** Button: `inverseHoverOpacity` is overridable and has `computed: times 0.25`. The spec doesn't say whether the ×0.25 applies to an overriding token too. I multiply the resolved override by 0.25 as well. → `site/src/content/docs/components/button.md`
+- **DOC** Button: `spinnerSize` defaults to font.size.{size}, but the spec doesn't say whether a `fontSize` override should move it. I kept them independent: the spinner follows only its own binding. → `site/src/content/docs/components/button.md`
+- **DOC** Button: `onTrack` changed from an object to positional (name, label). That breaks the exported `ButtonTrackEvent` type. I removed it from index.ts, and there were no other users in packages/rn. → `site/src/content/docs/components/button.md`
+- **DOC** Button: the generic rule says `disabled` sets accessibilityState in addition to passing `disabled`. The rn notes say never pass `disabled` to Pressable. I followed the notes: a press guard plus accessibilityState.disabled. → `site/src/content/docs/components/button.md`
+- **DOC** Button: the React Native guidance says callers color icons through Icon's `overrides.color`, but the package digest says Icon takes a `color` prop. The stories keep using `color`. → `site/src/content/docs/components/button.md`
+- **DOC** Button: the `icon-only-in-a-toolbar` example gives `leadingIcon: "The close Icon"` as prose, not a value. I rendered `<Icon name="close">` colored with the ghost foreground. → `site/src/content/docs/components/button.md`
+- **DOC** Button: `loadingSpin` gives the rotation length but no easing, and motion.easing.standard is specified for `transition` only. The continuous spin uses Easing.linear. → `site/src/content/docs/components/button.md`
+- **DOC** Button: `backgroundHover` is now locked, and the spec gives no replacement override for the non-inverse pressed fill. Feed only overrides fontFamily, so nothing broke. → `site/src/content/docs/components/button.md`
+
+### 2026-09-17 04:17 — lit round 1
+
+- **DOC** Button: loading says copy.loading is referenced by aria-describedby 'merged with any caller aria-describedby', but on Lit the caller's aria-describedby sits on the host and IDs cannot cross the shadow boundary. Only the internal id is referenced; the doc should say how (or whether) Lit merges the caller's value. → `site/src/content/docs/components/button.md`
+- **DOC** Button: the Overrides section says every binding gets a hook, and spinnerStroke explicitly keeps its hook while locked. It doesn't say whether the other locked bindings (background, backgroundHover, foreground, focusRing, focusRingWidth, inverseForeground, inverseFocusRing, minTarget) also get document-overridable --ds-button-* hooks. I gave them all hooks, which means page CSS can still replace a locked colour; the doc should confirm or forbid this. → `site/src/content/docs/components/button.md`
+- **DOC** Button: leadingIcon/trailingIcon are 'decorative — hidden from assistive technology', but the Lit notes don't say whether the button hides the slot or relies on an unlabelled ds-icon being decorative. I left the slots unhidden (aria-hidden on a <slot> is unreliable in Chromium) and rely on the Icon. → `site/src/content/docs/components/button.md`
+- **DOC** Button: spinnerSize is font.size.{size} ('1em of the label font'), but a fontSize override doesn't move spinnerSize, so the ring and the label can drift apart. I kept them as separate hooks as the bindings list them. → `site/src/content/docs/components/button.md`
+- **DOC** Button: 'Inside a disabled Form the button is disabled whatever this prop says' has no Lit mechanism in the Button doc. ds-form already sets .disabled on ds-button descendants, so Button does nothing itself; the Lit notes could say so. → `site/src/content/docs/components/button.md`
+- **DOC** Button: the inverseHoverOpacity computed value is an opacity factor, but color-mix needs a percentage. I wrote calc(var(--ds-button-inverse-hover-opacity) * 100%); the doc doesn't give the conversion. → `site/src/content/docs/components/button.md`
+- **DOC** Button: backgroundHover has state 'hover' but its description says 'hover and pressed'. I applied it to :hover and :active. → `site/src/content/docs/components/button.md`
+- **DOC** Button: the press event has no payload and the Events contract says detail has 'exactly the listed keys' (none). Kept ButtonPressDetail = void with no detail. → `site/src/content/docs/components/button.md`
+- **DOC** Button: the disabled-does-not-fire scenario 'click: container' can't run as written on Lit/web: Playwright's actionability check rejects an aria-disabled button, so the test uses click({ force: true }). The scenario schema could state that blocked-activation clicks are forced. → `site/src/content/docs/components/button.md`
+
+### 2026-09-17 04:14 — web round 1
+
+- **DOC** Button: onPress says 'No payload', but the web name is `onClick`, and callers such as Menu and Popover triggers expect React's native signature. I kept `onClick(event: MouseEvent<HTMLButtonElement>)` rather than a no-argument handler. → `site/src/content/docs/components/button.md`
+- **DOC** Button: inverseHoverOpacity has `computed: times 0.25`, but the overrides contract says an entry sets the hook to `var(--token)`. It doesn't say whether the multiplier applies before or after an override. I made the hook hold the base token (`--ds-button-inverse-hover-opacity: var(--opacity-disabled)`) and apply `* 0.25` where the rule reads it, so an override also gets the multiplier. → `site/src/content/docs/components/button.md`
+- **DOC** Button: the inverseHoverOpacity opacity is a 0–1 number, but color-mix needs a percentage. The spec gives no conversion, so I wrote `calc(calc(var(--hook) * 0.25) * 100%)`. → `site/src/content/docs/components/button.md`
+- **DOC** Button: the conventions say `...rest` never forwards `className`/`style`, but ButtonProps still extends button props that include them. I drop them silently rather than removing them from the type, which could break callers; there's no dev warning either. The doc should say which. → `site/src/content/docs/components/button.md`
+- **DOC** Button: a disabled parent Form disables the button through `useFormContext().disabled`. That field isn't in the Form contract the digest gives (`{ name, label, id, getValue, validate, focus }`); I used the existing field. → `site/src/content/docs/components/button.md`
+- **DOC** Button: the spinner 'takes the leadingIcon position' but 'carries no part name'. I rendered it without a data-part, in place of the leadingIcon wrapper, so there's no leadingIcon part while loading. → `site/src/content/docs/components/button.md`
+- **DOC** Button: the `icon-only-in-a-toolbar` example gives `leadingIcon: "The close Icon"` as prose. The story renders `<Icon name="close" inline />`. → `site/src/content/docs/components/button.md`
+- **DOC** Button: there's no `Keyboard` story because Button has no `keyboard` block; activation is native, as the scenarios say. → `site/src/content/docs/components/button.md`
+- **DOC** Button: demo-brand/src/CtaButton.tsx still lists `backgroundHover` as overridable, which the schema now locks. I didn't touch it; `pnpm demo:naming` may need a rerun. → `site/src/content/docs/components/button.md`
+
 ### 2026-09-16 03:57 — rn round 1
 
 - **DOC** Button: `copy.loading` has no declared surface on rn. The SwiftUI notes spend it on `.accessibilityValue`, but `platforms.rn` and `a11y` never say where the string goes, and `accessibilityState.busy` already carries busy-ness. Chose `accessibilityValue={{ text: 'Loading' }}` on the root alongside `busy`. Say where rn spends it, or mark the string web/lit/swiftui-only. → `site/src/content/docs/components/button.md`
@@ -862,6 +898,39 @@ Doc: `site/src/content/docs/components/code.md`
 ## Card
 
 Doc: `site/src/content/docs/components/card.md`
+
+### 2026-09-17 04:43 — rn round 1
+
+- **DOC** Card: The rules say `disabled` sets accessibilityState plus the `disabled` prop, but the package conventions say never pass `disabled` to Pressable (it removes focus). I followed the package: accessibilityState.disabled plus a press guard. → `site/src/content/docs/components/card.md`
+- **DOC** Card: `focusable` is a no-op when `interactive` is set, but the spec doesn't say what happens when `interactive` finds zero or several targets and the card falls back to non-interactive. I let `focusable` apply then, since the card has no target. The warning still fires whenever both props are set. → `site/src/content/docs/components/card.md`
+- **DOC** Card: 'top-level children' is not defined for React Fragments. A Link inside a top-level `<>...</>` is not found (only arrays are looked into). → `site/src/content/docs/components/card.md`
+- **DOC** Card: the spec wraps a plain string body in Text but doesn't say what happens to strings in an array body. I wrap each top-level string or number too. → `site/src/content/docs/components/card.md`
+- **DOC** Card: the notes say the card takes the child's accessibilityRole and accessibilityLabel but don't say which of Button's label sources wins (`accessibleName`, `accessibilityLabel`, `label`), or whether pressing the card runs Button's `track`/`onTrack`, `type=submit` and `loading` handling. I copied Button's own order and press handler, including the form's disabled state. → `site/src/content/docs/components/card.md`
+- **DOC** Card: the heading part has no testID (the guidance says it keeps its own hook), and neither the anatomy nor the rn notes give the surface a `Card.surface` hook. The root keeps `testID="Card"`. → `site/src/content/docs/components/card.md`
+- **DOC** Card: the `dense-grid-card` example's `given` has no heading, but the Default args set one. 'Exactly its given as args' cannot hold without clearing it, so the story sets `heading: undefined`. → `site/src/content/docs/components/card.md`
+- **DOC** Card: the `transition` binding is overridable but has no runtime effect on native (the pressed style swaps instantly), so the override is accepted and ignored. → `site/src/content/docs/components/card.md`
+- **DOC** Card: no rn behavior scenario covers interactive or focusable (those scenarios are web/lit only), so the new target logic has no test on this platform. → `site/src/content/docs/components/card.md`
+
+### 2026-09-17 04:41 — lit round 1
+
+- **DOC** Card: `interactive` says a disabled child disables the card, but not what counts as disabled on Lit (ds-link has no `disabled`, a raw a[href] cannot be disabled). Chose: a `disabled` attribute or aria-disabled="true" on the target, watched by a MutationObserver that writes nothing back. → `site/src/content/docs/components/card.md`
+- **DOC** Card: the lit notes name only the `target-focus` custom state; the 'no hover background without a single target' and 'disabled target' rules need a selector too. Chose: extra custom states `has-target` and `target-disabled` for the hover rules. → `site/src/content/docs/components/card.md`
+- **DOC** Card: 'warns once in development' for zero/several interactive children doesn't say when to judge 'zero' if the body is added after connection. Chose: no warning on the first update; the check runs again, with a warning, on the body's slotchange and when `interactive` changes later. → `site/src/content/docs/components/card.md`
+- **DOC** Card: `focusable` says 'draws its ring as an outline … no offset' but not on which element; the host has no radius. Chose: outline on the surface part while the host matches :focus-visible, with the host's own outline removed. → `site/src/content/docs/components/card.md`
+- **DOC** Card: the Behavior section says aria attributes passed through `...rest` land on the root, and the lit notes protect a consumer's role; neither says whether a consumer's aria-label survives a heading. Chose: the card writes and removes only an aria-label it set itself. → `site/src/content/docs/components/card.md`
+- **DOC** Card: the lit notes put header-actions/footer rows at position: relative; z-index: 1 without saying whether that's only for interactive cards (the web notes tie it to the hit area). Chose: only under [interactive], to avoid a stacking context on plain cards. → `site/src/content/docs/components/card.md`
+- **DOC** Card: the scenario `a-card-with-a-heading-is-an-article` expects role article 'labelled by that heading', but on Lit the name is aria-label (ids don't cross the shadow root). Test checks role="article" plus aria-label equal to the heading text. → `site/src/content/docs/components/card.md`
+- **DOC** Card: the anatomy lists `heading` as a part but Behavior says it keeps the Heading's own hook and carries no data-part; the prior Lit output put data-part="heading" on ds-heading. Chose the Behavior rule (no data-part on the heading). → `site/src/content/docs/components/card.md`
+
+### 2026-09-17 04:38 — web round 1
+
+- **DOC** Card: web notes say Card marks the child by cloning it with an extra class because 'both Link and Button merge a passed className by contract', but in the package Link overwrites className (it comes after the ...rest spread) and Button destructures and drops it, so a class never reaches the DOM. I chose a cloned `data-ds-card-target` attribute, which both pass through ...rest, and the CSS matches on it. The doc should either name the attribute or make Link and Button actually merge className. → `site/src/content/docs/components/card.md`
+- **DOC** Card: 'If the child is disabled the card is disabled with it: no hover background, pressing does nothing' doesn't say how web tells the child is disabled (Button's `disabled` prop, a disabled Form, a native :disabled button). I used CSS `:has([data-ds-card-target]:is([aria-disabled='true'], :disabled))`, so every source counts. Pressing is already blocked by Button's own handler or by native :disabled, so the pseudo-element is left in place. → `site/src/content/docs/components/card.md`
+- **DOC** Card: `focusable` with `interactive` is a no-op, but the spec doesn't say whether that still holds when `interactive` fell back to non-interactive (zero or several targets). I kept it a no-op whenever `interactive` is set. → `site/src/content/docs/components/card.md`
+- **DOC** Card: 'a plain string is rendered inside the system Text' doesn't say which Text element or size. I used Text's defaults and wrap numbers as well as strings. → `site/src/content/docs/components/card.md`
+- **DOC** Card: the interactive-adds-no-focus-stop scenario runs on the Default story, whose body is a Stack with no top-level Link, so the card falls back to non-interactive and the test never covers a real interactive card. The scenario's given should include a top-level Link child. → `site/src/content/docs/components/card.md`
+- **DOC** Card: 'warns once in development' doesn't say once per instance or once per page. I chose once per mounted card. → `site/src/content/docs/components/card.md`
+- **DOC** Card: hoverBackground says 'on pointer hover' without saying whether to add `@media (hover: hover)`. I used a plain `:hover`. → `site/src/content/docs/components/card.md`
 
 ### 2026-09-16 04:28 — rn round 1
 
@@ -1341,6 +1410,29 @@ Doc: `site/src/content/docs/components/combobox.md`
 ## Container
 
 Doc: `site/src/content/docs/components/container.md`
+
+### 2026-09-17 04:36 — rn round 1
+
+- **DOC** Container: anatomy names one part, `column`, and web/Lit mark it with data-part="column", but the rn notes don't say whether the root should also carry `testID="Container.column"`. The root is the part and a View takes only one testID, so I kept `testID="Container"` and added no part testID, as Box does for `surface`. → `site/src/content/docs/components/container.md`
+- **DOC** Container: the paddingInline description says the responsive `default` gutter measures the viewport. On native, useWindowDimensions gives the window width, not the width of the parent, while SwiftUI measures the container's own width with GeometryReader. So a nested `gutter: default` Container inside a narrower parent picks its gutter from the window width on RN but from its own width on SwiftUI. I used the window width, as the rn notes say. → `site/src/content/docs/components/container.md`
+- **DOC** Container: the rn notes say `width: 100%` together with alignSelf, but not what happens inside a row-direction parent, where a 100% width combined with alignSelf crosses axes. I applied both as written. → `site/src/content/docs/components/container.md`
+- **DOC** Container: the Default story's `children` isn't given. The spec says string children are drawn inside a Text but gives no Default text, so I used `<Text>Container content</Text>`. → `site/src/content/docs/components/container.md`
+- **DOC** Container: all 11 scenarios only check that it renders. None checks maxWidth, alignSelf or the gutter breakpoints, so the style contract isn't covered by tests on native. → `site/src/content/docs/components/container.md`
+
+### 2026-09-17 04:35 — lit round 1
+
+- **DOC** Container: the package conventions ('Names tests can read') say a role the tests must observe goes on the host as a plain attribute, but the Lit platform notes say the `main` role stays on ElementInternals with no `role` attribute. I followed the platform notes, so no Lit test can check `element: main`. The renders-element-* scenarios only confirm the element renders, and the main-landmark scenario is web-only. → `site/src/content/docs/components/container.md`
+- **DOC** Container: the doc gives no host rule for when the `width`/`gutter` attributes are absent before the first update. The `:host` defaults use the content max-width and the narrow gutter, which matches the prop defaults until reflection adds the attributes, but the doc doesn't specify this. → `site/src/content/docs/components/container.md`
+- **DOC** Container: the scenarios are all `renders: true`, with nothing about how max-width or padding should be checked. The tests check the reflected attributes and the shadow slot, not the computed styles, so the breakpoint and override rules in the styles descriptions aren't tested. → `site/src/content/docs/components/container.md`
+- **CODE** Container: `element` is missing from `platforms.lit.reflect`, so `element` is a property that doesn't reflect. The doc doesn't say whether it should reflect for attribute selectors or debugging.
+
+### 2026-09-17 04:34 — web round 1
+
+- **DOC** Container: the rule 'every example is a story with exactly its given as args' conflicts with the children description (a string children renders inside a Text); followed the children description and wrapped each example string in <Text element="p">, which makes the args differ from the literal given. → `site/src/content/docs/components/container.md`
+- **DOC** Container: the spec doesn't say which Text element or variant should hold illustrative children; chose Text element="p" with defaults. → `site/src/content/docs/components/container.md`
+- **DOC** Container: the 'renders' scenarios don't say what to assert on web; the tests check that the root element exists and nothing about styles (jsdom can't evaluate the media queries or custom properties). → `site/src/content/docs/components/container.md`
+- **DOC** Container: the spec names no Default-story children; kept a single Text paragraph 'Container content.' as the Default arg, which isn't schema copy. → `site/src/content/docs/components/container.md`
+- **DOC** Container: the spec doesn't say whether an override on gutter: default should also replace the value inside the media queries; the hook is set inline, which beats the class rules at every viewport, so it replaces the whole responsive gutter as the paddingInline description requires. → `site/src/content/docs/components/container.md`
 
 ### 2026-09-16 04:21 — rn round 1
 
@@ -1967,6 +2059,33 @@ Doc: `site/src/content/docs/components/disclosure.md`
 
 Doc: `site/src/content/docs/components/divider.md`
 
+### 2026-09-17 04:47 — rn round 1
+
+- **DOC** Divider: composition gives the label Text `element: span`, but the RN Text has no `element` prop; I left it out. → `site/src/content/docs/components/divider.md`
+- **DOC** Divider: the testability hook asks for `testID="Divider.label"` on the label part, but the RN Text takes no `testID` prop (it always renders `testID="Text"`); the label has no part testID. → `site/src/content/docs/components/divider.md`
+- **DOC** Divider: the RN notes don't say how `spacing` pads a labelled divider; I used paddingVertical on the labelled row, the same as the unlabelled horizontal one. → `site/src/content/docs/components/divider.md`
+- **DOC** Divider: the labelled row's line pieces need a width and the notes don't give one; I used `flex: 1` on each (web says flex-grow). → `site/src/content/docs/components/divider.md`
+- **DOC** Divider: the notes say a vertical line stretches to the row height but don't say how the padded root does; the root is a row with `alignSelf: 'stretch'` and the inner line also uses `alignSelf: 'stretch'`. → `site/src/content/docs/components/divider.md`
+- **DOC** Divider: the second semantic warning's trigger isn't keyed like the label warning's; I keyed it on `semantic` and whether a label is in effect, so it also fires for `semantic` on a vertical divider with an ignored label. → `site/src/content/docs/components/divider.md`
+- **DOC** Divider: the section-boundary example (`semantic: true`, no label) is described as a boundary 'a screen-reader user should hear', but on RN it is silent by design and warns; the example description contradicts the RN platform notes. → `site/src/content/docs/components/divider.md`
+
+### 2026-09-17 04:46 — lit round 1
+
+- **DOC** Divider: the `fontFamily` binding says 'the root sets no font hook' and `labelSize` says 'Divider writes no label … size rule of its own', but the Overrides section says every overridable binding becomes a `--ds-divider-*` hook on :host. I kept `--ds-divider-label-size` and `--ds-divider-font-family` on :host, passed to ds-text's own `--ds-text-font-size` / `--ds-text-font-family` hooks so page CSS can still set them. The `overrides` property is also passed to Text's `overrides` (fontSize, fontFamily), and only the bindings the author actually overrode are passed on. → `site/src/content/docs/components/divider.md`
+- **DOC** Divider: `orientation` says a vertical divider uses 'block-size 100% and align-self stretch'. In CSS, flex stretch only applies when the cross size is `auto`, so `block-size: 100%` inside a flex row with no set height (like the ToolbarGroups example in a horizontal Stack) would give height 0. I used `block-size: auto; align-self: stretch; min-block-size: 100%`, which stretches in a flex/grid row and fills a parent with a set height. The doc should say this instead of block-size 100%. → `site/src/content/docs/components/divider.md`
+- **DOC** Divider: the Lit platform note says '`label` is a property', but the Lit guidance shows `<ds-divider semantic label="or">` as markup. I made it a property that also reads the attribute (`@property({ type: String })`, not reflected). → `site/src/content/docs/components/divider.md`
+- **DOC** Divider: the doc names the parts (`line`, `label`) but does not say whether the Lit shadow elements carry `part` as well as `data-part`, while the conventions say 'No ::part for styling'. I kept both, set to the anatomy names, as before. → `site/src/content/docs/components/divider.md`
+- **DOC** Divider: `spacing` renders nothing and sets no hook at `none`, but the doc does not say whether `overrides.spacing` given while spacing is `none` should still be written to the host. I always write it to `--ds-divider-spacing`; it does nothing because no margin rule reads the hook at `none`. → `site/src/content/docs/components/divider.md`
+
+### 2026-09-17 04:44 — web round 1
+
+- **DOC** Divider: the composition says the label Text receives exactly `size`, `tone`, `element` (plus forwards), but the web platform notes also require an `id` on it for `aria-labelledby` and `data-part="label"`; I pass `id` and `data-part` as platform necessities. → `site/src/content/docs/components/divider.md`
+- **DOC** Divider: the `toolbar-groups` example says to show the divider in a horizontal Stack with align stretch, but it doesn't say what the siblings are or what gives the row its height; I used two `Text` siblings ('Bold Italic', 'Align left') and gap `tight`, and applied the same wrapper to `OrientationVertical`. → `site/src/content/docs/components/divider.md`
+- **DOC** Divider: the label scenario only checks the text and the separator role, not that the separator's accessible name is the label, which is the point of the `aria-labelledby` note; the test doesn't check the name. → `site/src/content/docs/components/divider.md`
+- **DOC** Divider: the spec doesn't say which element the root `ref` is typed to when the root switches between `<hr>` and `<div>`; I typed it `Ref<HTMLElement>`. → `site/src/content/docs/components/divider.md`
+- **DOC** Divider: `...rest` takes div attributes but a decorative divider renders an `<hr>`; the spec doesn't say which attributes belong on the decorative root. I forward the same rest to both. → `site/src/content/docs/components/divider.md`
+- **DOC** Divider: the spec never says whether a labelled horizontal divider's lines should be vertically centered on the label or sit on the text baseline; I used `align-items: center`. → `site/src/content/docs/components/divider.md`
+
 ### 2026-09-16 04:33 — rn round 1
 
 - **DOC** Divider: platforms.rn.props lists `accessibilityRole`, but the rn notes say there is no separator role on native and the divider stays hidden or reads as its label Text. I set no accessibilityRole anywhere; the doc should drop it from the list or name the role it means. → `site/src/content/docs/components/divider.md`
@@ -2364,6 +2483,42 @@ Doc: `site/src/content/docs/components/focusscope.md`
 
 Doc: `site/src/content/docs/components/form.md`
 
+### 2026-09-17 04:33 — rn round 1
+
+- **DOC** Form: the onSubmit contract says NumberInput and Slider give a number and a range Slider or DatePicker gives [number, number]. On RN, NumberInput and Slider still register String(value) or a string pair, Combobox joins multiple values with commas, and DatePicker registers a range as two keys (`name`, `name-end`). I widened FormFieldValue in FormContext.ts to the contract, but those fields must change when they are next regenerated; Form cannot enforce it. → `site/src/content/docs/components/form.md`
+- **DOC** Form: the doc says every field's registration carries its `label`, but FormFieldHandle.label is still optional because not every field sets it. For an invalid field with an empty message and no label, the summary shows the field's `name`. The doc does not cover this case. → `site/src/content/docs/components/form.md`
+- **DOC** Form: packages/rn/src/FormContext.tsx is an older, unused copy (string | boolean values, no label) sitting next to FormContext.ts, which is the file imports actually load. I left it alone; it should be deleted. → `site/src/content/docs/components/form.md`
+- **DOC** Form: summary items are Links, but Link requires `href` and falls back to opening the URL when nothing stops it. I pass the field name as href and return false from onPress so it only moves focus. The doc does not say what href to use on native, where a field has no id. → `site/src/content/docs/components/form.md`
+- **DOC** Form: Link with tone inherit only picks up a color when nested in Text, so each item is wrapped in `<Text tone="danger">`. The doc says the summary's danger color 'reaches' the Link without saying how on a platform with no inherited styles. → `site/src/content/docs/components/form.md`
+- **DOC** Form: the doc does not say whether the summary view should use role="alert" on RN (web uses a role="alert" div). I used accessibilityLiveRegion on Android and announceForAccessibility on iOS only, as the platform notes say, and did not make the view `accessible`, so each item Link stays separately focusable. Screen-reader focus lands on a view that is not itself an accessible element, and the doc does not say whether that works on iOS. → `site/src/content/docs/components/form.md`
+- **DOC** Form: the spec says 'Enum props whose values are quoted digits accept both string and number' and 'disabled sets accessibilityState plus disabled'. The Form description forbids opacity on the container. I set only accessibilityState.disabled, since RN View has no disabled prop. → `site/src/content/docs/components/form.md`
+- **DOC** Form: the doc does not say whether `gap` spaces the individual fields inside `children` or only the fields block from the actions. I apply it to both (a flex column with gap on the fields part), and the examples also put their fields in a Stack with gap loose, so there are two nested gaps. → `site/src/content/docs/components/form.md`
+
+### 2026-09-17 04:31 — lit round 1
+
+- **DOC** Form: the package digest types `DsFormField.currentValue` as `string | boolean | null`, but the doc's Lit notes say it uses the full onSubmit value contract; I widened it to `string | number | boolean | string[] | [number, number] | null` (null = contributes no key). The digest should be updated. → `site/src/content/docs/components/form.md`
+- **DOC** Form: 'an empty field contributes no key' does not define empty for a field; Form omits `null` and `''` but not an empty array, so an empty multi-select Listbox would submit `[]`. Chose field-reported null plus the empty string. → `site/src/content/docs/components/form.md`
+- **DOC** Form: `errorSummaryGap` is 'gap between the heading and the list and between list items' with the list as a Stack, but Stack's gap is an enum and its override lives in Stack; I forwarded it by setting Stack's `--ds-stack-gap` hook from `--ds-form-error-summary-gap` on the composed `ds-stack`s. The doc should say which forwarding mechanism is sanctioned (the child's `overrides` property or its hook). → `site/src/content/docs/components/form.md`
+- **DOC** Form: the summary's outer arrangement (heading + list) is not named as a part or element; I used a `<ds-stack gap=tight>` inside the `errorSummary` div. → `site/src/content/docs/components/form.md`
+- **DOC** Form: `role="alert"`, `tabindex="-1"` and the Link `href` for summary items are given only in the Web notes; Lit reuses them (`href="#<field id>"`, with the click default prevented so the hash never changes). If there is no field id, the href is `#`. → `site/src/content/docs/components/form.md`
+- **DOC** Form: in `validate: change` mode the doc does not say whether fields also validate on blur; I validate only on change (plus blur and change after a failed submission). → `site/src/content/docs/components/form.md`
+- **DOC** Form: the doc gives no text for an item whose field has an empty message AND an empty `label`; I fall back to the field `name`. → `site/src/content/docs/components/form.md`
+- **DOC** Form: the behavior scenario `label-names-the-form-landmark` is checked through host `role`/`aria-label` attributes rather than a computed accessible name; the lit tests have no accessible-name helper. → `site/src/content/docs/components/form.md`
+- **DOC** Form: example `long-form-validated-on-blur` names the fields but not input types (phone/email); stories use the default Input type for them, following the `given` literally. → `site/src/content/docs/components/form.md`
+
+### 2026-09-17 04:29 — web round 1
+
+- **DOC** Form: `disabled` says the container 'only exposes the disabled state' (accessibilityState.disabled on RN) but names no web attribute; chose aria-disabled="true" on the <form>, which ARIA 1.2 deprecates as a global on non-widget roles. → `site/src/content/docs/components/form.md`
+- **DOC** Form: `errorSummaryGap` says the list is a Stack, but a composed child's binding must be forwarded to its `overrides`, so the CSS hook `--ds-form-error-summary-gap` has nothing to read; chose to forward `overrides.errorSummaryGap` to both summary Stacks' `gap` (heading↔list and between items) and emit no CSS hook, so a consumer setting the hook from their own CSS has no effect for this binding. → `site/src/content/docs/components/form.md`
+- **DOC** Form: `errorSummary` says 'when submission fails validation, render a summary', but under validate: blur/change errors exist before any submit; chose to show the summary only after a failed submit (it then shrinks as fields are fixed and is reset on a successful submit). → `site/src/content/docs/components/form.md`
+- **DOC** Form: the plural locale comes from 'the nearest lang ancestor' but no timing is given; chose to read it at failed submit time (closest('[lang]') from the form), falling back to the runtime default if Intl.PluralRules rejects the tag. → `site/src/content/docs/components/form.md`
+- **DOC** Form: summary item order is unspecified; items follow document order at submit, and errors added later by blur/change validation are appended to the end. → `site/src/content/docs/components/form.md`
+- **DOC** Form: the doc says a field inside a closed Disclosure isn't collected unless `keepMounted`; on web this relies on the unmounted field having unregistered, and Form does no Disclosure check of its own. → `site/src/content/docs/components/form.md`
+- **DOC** Form: the web platform note says `data-ds-field` sorts fields into document order, but the registration carries the control's `id`, not the field root; chose getElementById(id).closest('[data-ds-field]') and put fields with no such host last, in registration order. → `site/src/content/docs/components/form.md`
+- **DOC** Form: the value contract widens FormFieldValue to number and [number, number]; this lives in FormContext.ts (shared with fields), which the Form spec doesn't name as an output file. → `site/src/content/docs/components/form.md`
+- **DOC** Form: examples give children/actions as prose ('A submit Button labelled Sign in'); rendered the actions as a bare Button with no wrapping Stack, although 'When to use' says to place actions in a Stack. → `site/src/content/docs/components/form.md`
+- **DOC** Form: `name` is 'the base of generated ids' but only the summary id uses it; an unnamed form falls back to useId(), and two forms with the same name would produce duplicate summary ids. → `site/src/content/docs/components/form.md`
+
 ### 2026-09-16 04:17 — rn round 1
 
 - **DOC** Form: the errorSummary part has border/text/background bindings but no border width, radius or padding tokens; kept border.width.thin, radius.md, space.md horizontal / space.sm vertical, and Stack gap=tight between heading and items (matching the React summary). → `site/src/content/docs/components/form.md`
@@ -2727,6 +2882,34 @@ Doc: `site/src/content/docs/components/icon.md`
 
 Doc: `site/src/content/docs/components/input.md`
 
+### 2026-09-17 04:27 — rn round 1
+
+- **DOC** Input: platforms.rn.notes says the label, description and errorMessage parts are 'the composed Text with testID="Input.<part>" passed to it, not a wrapper View', but Text's schema has no testID prop (and no accessibilityLiveRegion for the error announcement). Chose to keep the wrapper Views carrying testID (and the live region on the error wrapper) rather than restyle or extend Text; Text's schema needs testID (and a live-region prop) before the note can be met. → `site/src/content/docs/components/input.md`
+- **DOC** Input: the `transition` binding is overridable, but the rn note in its description says 'native swaps instantly'. Chose to accept `transition` in InputOverridableBinding and ignore it on native; the doc should say the override is a no-op on React Native, or remove it from the native override type. → `site/src/content/docs/components/input.md`
+- **DOC** Input: onFocus/onBlur carry no payload per the events contract, but platforms.rn.notes says they are forwarded so Tooltip can attach, and Tooltip's chain() passes the event through. Chose `() => void` (the extra argument is harmless at runtime); the doc should confirm that forwarded handlers get no event on native. → `site/src/content/docs/components/input.md`
+- **DOC** Input: the error-slot rule ('a message only while invalid is true: copy.required for an empty required field, else copy.invalid') doesn't say where the RN Form's per-field message (FormContext errors[name]) comes in the order. Chose error prop, then the Form's message, then the invalid-derived copy. → `site/src/content/docs/components/input.md`
+- **DOC** Input: constant longPressDelay has no token expression, so 'logic reads each constant through its token expression' can't apply; kept a named module constant (500, marked literal-ok) matching Pressable's delayLongPress. → `site/src/content/docs/components/input.md`
+- **DOC** Input: behavior scenario disabled-stays-focusable-and-is-announced keeps only `state: disabled` for rn, but the rn note says the field is not focusable on native (editable={false}). The test asserts accessibilityState.disabled and that RNTL treats the field as disabled; the scenario name contradicts native behavior and should be narrowed or renamed for rn. → `site/src/content/docs/components/input.md`
+
+### 2026-09-17 04:25 — lit round 1
+
+- **DOC** Input: the `transition` binding became overridable, but its description doesn't say whether an override changes the duration only or the easing too; chose duration only (`--ds-input-transition` defaults to motion.duration.fast, easing stays motion.easing.standard). → `site/src/content/docs/components/input.md`
+- **DOC** Input: setting `error` implies `invalid`, and clearing `error` 'removes the invalid state', but the doc doesn't say what happens when the Form had set `invalid` separately before `error` was set and cleared; chose to clear `invalid` whenever a non-empty `error` is cleared, relying on the Form to set it again on its next validation. → `site/src/content/docs/components/input.md`
+- **DOC** Input: the constant `longPressDelay` is native-only and has no meaning on Lit; not used. → `site/src/content/docs/components/input.md`
+- **DOC** Input: `formResetCallback` isn't specified beyond the Forms convention; chose to restore the uncontrolled value to `defaultValue` and leave `invalid`/`error` untouched (the Form owns `invalid`, the consumer owns `error`). → `site/src/content/docs/components/input.md`
+- **DOC** Input: the scenario `disabled-stays-focusable-and-is-announced` expects `state: disabled` to be true but doesn't say which observable carries it on Lit; the test checks `aria-disabled="true"` on the inner input, plus that it has no native `disabled` attribute. → `site/src/content/docs/components/input.md`
+
+### 2026-09-17 04:24 — web round 1
+
+- **DOC** Input: Behavior says 'The Form marks a failing field by setting its `invalid`', but the React FormContext hands errors down as `errors[name]` strings and has no per-field `invalid` channel. Kept the context contract: a Form-held error shows like `error`, and a directly set `invalid` shows copy.required/copy.invalid. → `site/src/content/docs/components/input.md`
+- **DOC** Input: 'required' is never defined for whitespace-only text. The old code trimmed; I switched to native parity (only '' counts as empty), so '   ' passes required. → `site/src/content/docs/components/input.md`
+- **DOC** Input: 'validationMessage/validity always follow the full precedence' doesn't say how on web. I used setCustomValidity with the copy message (cleared when disabled). Because a custom error makes validity.valid false, the type check reads the specific flags (typeMismatch, badInput, pattern/range/step/length) instead of validity.valid. → `site/src/content/docs/components/input.md`
+- **DOC** Input: the error-area message for `invalid` checks for an empty required field using the rendered value (controlled or uncontrolled state), while Form validation reads the live DOM value. These only differ for a controlled field whose parent hasn't re-rendered yet. → `site/src/content/docs/components/input.md`
+- **DOC** Input: the spec says Fieldset disables the field 'through the `disabled` prop Fieldset passes to its children', but the package also exports FieldsetContext. I didn't read it, so a Fieldset that only sets context wouldn't disable Input. Worth confirming which one Fieldset actually uses. → `site/src/content/docs/components/input.md`
+- **DOC** Input: the constant longPressDelay is native-only and has no web meaning, so nothing reads it on web. → `site/src/content/docs/components/input.md`
+- **DOC** Input: the `helperSize` override is forwarded as Text `fontSize`, and `fontFamily`/`lineHeight` go both to the root hooks (label, input) and to Text overrides. The spec says fontFamily and lineHeight are 'forwarded the same way' but doesn't say whether the root hooks remain too; I kept both. → `site/src/content/docs/components/input.md`
+- **DOC** Input: `readOnly` is not a schema prop but is accepted from the native input props (the Behavior text mentions a read-only field). Disabled forces readOnly on, per 'aria-disabled + readOnly on web'. → `site/src/content/docs/components/input.md`
+
 ### 2026-09-16 04:11 — rn round 1
 
 - **DOC** Input: platforms.rn says it forwards onHoverIn, onHoverOut and onLongPress to the native element, but in RN 0.87 TextInput has none of them. I mapped onHoverIn/onHoverOut to onPointerEnter/onPointerLeave and built onLongPress from onPressIn plus a 500 ms timer (Pressable's default delayLongPress, marked literal-ok, since no token exists). The doc should say how a TextInput-based field exposes long press and hover. → `site/src/content/docs/components/input.md`
@@ -2878,6 +3061,37 @@ Doc: `site/src/content/docs/components/landmark.md`
 ## Link
 
 Doc: `site/src/content/docs/components/link.md`
+
+### 2026-09-17 04:23 — rn round 1
+
+- **DOC** Link: `tone: inherit` on native standalone (not inside a system Text) has no color to inherit; the spec only says Icon falls back to color.foreground, leaving the label's own color unstated (RN's default text color would differ from the icon). Chose color.foreground on the label as well. → `site/src/content/docs/components/link.md`
+- **DOC** Link: `tone: inherit` says the underline follows the inherited color; nested in a system Text, Link sets no textDecorationColor and relies on RN inheriting color into the decoration. Not stated how that should be done explicitly. → `site/src/content/docs/components/link.md`
+- **DOC** Link: no `given` story args for the ToneInherit story's surrounding text; the spec names the muted-text wrapper only for the InsideMutedText example. Chose to wrap ToneInherit in a muted Text too, so the inherited color is visible. → `site/src/content/docs/components/link.md`
+- **DOC** Link: the rn package digest writes `toLineHeight(t.fontLineHeightNormal, t.fontSizeMd)`, but theme.tsx's signature is `toLineHeight(fontSize, multiplier)`; followed the source. → `site/src/content/docs/components/link.md`
+- **DOC** Link: the digest says Text provides `TextNestingContext`; the component doc correctly says `TextStyleContext` (`nested` field) — the digest is stale. → `site/src/content/docs/components/link.md`
+- **DOC** Link: the spec says Link forwards `onFocus`, `onBlur`, `onHoverIn` and `onHoverOut` to Text, but RN 0.87's strict Text types do not declare them; passed them through an untyped props bag, as the previous file did. → `site/src/content/docs/components/link.md`
+- **DOC** Link: the Default story args are not given by the spec; chose the inline-in-a-paragraph example's href/label. → `site/src/content/docs/components/link.md`
+- **DOC** Link: the pressed color crossfades with Animated, which makes the press test log React act() warnings under Jest (tests still pass); the doc does not say whether the test should use fake timers or reduced motion. → `site/src/content/docs/components/link.md`
+
+### 2026-09-17 04:21 — lit round 1
+
+- **DOC** Link: the Overrides section says 'No ::part is exposed for styling' while the package convention says 'part and data-part values are the anatomy names verbatim'; kept part="anchor"/"label"/"externalIcon" alongside data-part, which does technically expose ::part to consumers. → `site/src/content/docs/components/link.md`
+- **DOC** Link: `label` is in the anatomy but no style binding or platform note says what element carries it; rendered a <span data-part="label"> inside the anchor. → `site/src/content/docs/components/link.md`
+- **DOC** Link: the focus ring's outline-offset has no binding (focusRing, focusRingWidth, focusRingRadius cover color, width, radius only); used var(--border-width-focus) as the offset. → `site/src/content/docs/components/link.md`
+- **DOC** Link: focusRingRadius is described as applying to the ring, but a radius on an inline anchor also rounds its background/hit area at rest; applied border-radius only under :focus-visible. → `site/src/content/docs/components/link.md`
+- **DOC** Link: the doc asks for one story per enum value plus notable states, but external and download are booleans with only example stories (ExternalDestination, DownloadableFile) covering them; did not add separate External/Download stories. → `site/src/content/docs/components/link.md`
+- **DOC** Link: the web note's visually hidden pattern lists 'absolute, 1px box, clip-path inset 50%, white-space nowrap' but not margin/overflow/border; kept the standard margin:-1px, overflow:hidden, border:0 and dropped the legacy clip:rect. → `site/src/content/docs/components/link.md`
+- **DOC** Link: the `renders`/`renders-tone-*` derived scenarios say only `renders: true` with no observable to assert for tone; the tests check the anchor part exists, which cannot distinguish tones. → `site/src/content/docs/components/link.md`
+
+### 2026-09-17 04:20 — web round 1
+
+- **DOC** Link: web notes say Link's `data-part="anchor"` wins over a parent's, but Breadcrumb (`data-part="link"`) and Tree (`data-part="link"`, and Tree.tsx activated its link with `querySelector('[data-part="link"]')`) both stamp a part onto Link's root. I made Link's hooks win and changed Tree's lookup to `[data-ds="Link"]`; the Breadcrumb and Tree docs should name a wrapper element for their `link` part, or drop it. → `site/src/content/docs/components/link.md`
+- **DOC** Link: web notes say Link accepts no `className`, but the old code kept `className` with a comment saying Tree passed one. Tree no longer does, so I removed it from the props type (`Omit`). → `site/src/content/docs/components/link.md`
+- **DOC** Link: `colorHover` says 'pointer hover only (not :active)'. I used a plain `:hover` rule with no `@media (hover: hover)` guard, so touch browsers that apply sticky `:hover` after a tap will show the hover color. The doc doesn't say whether that guard is wanted. → `site/src/content/docs/components/link.md`
+- **DOC** Link: `focusRingRadius` is a border radius on an inline anchor, but the doc gives no `outline-offset` for the ring. I used `outline-offset: var(--border-width-focus)`, the same token as the ring width. → `site/src/content/docs/components/link.md`
+- **DOC** Link: `copy.external` ('opens in new tab') is only used on SwiftUI. On web it is kept only as a comment, and the doc doesn't say that web leaves it unused. → `site/src/content/docs/components/link.md`
+- **DOC** Link: the Default story args are not given anywhere. I used the `inline-in-a-paragraph` values (href `/billing/history`, label `View the billing history`), so the has-accessible-name and renders scenarios run against those. → `site/src/content/docs/components/link.md`
+- **DOC** Link: the `external` and `download` booleans get no story from the 'one story per enum value' rule. I added `External` and `Download` state stories alongside the `ExternalDestination` and `DownloadableFile` example stories, which cover the same states. → `site/src/content/docs/components/link.md`
 
 ### 2026-09-16 04:01 — rn round 1
 
@@ -5470,7 +5684,7 @@ Doc: `site/src/content/docs/components/treegrid.md`
 
 ## Totals
 
-DOC: 3475 · CODE: 92 · TOOLING: 2 · NOISE: 42
+DOC: 3625 · CODE: 93 · TOOLING: 2 · NOISE: 42
 
 ## Gates to fix
 

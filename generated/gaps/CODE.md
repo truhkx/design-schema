@@ -57,3 +57,8 @@ Gaps where a sibling component's generated code is wrong. The docs are already r
 ## 2026-09-17
 
 - Button and other React siblings still accept and merge `className`/`style` although the package convention forbids forwarding them; Icon now drops them, so the package is inconsistent until those regenerate (found in Icon, web).
+- demo-brand/src/CtaButton.tsx still lists `backgroundHover` as overridable, which button.md locks; run `pnpm demo:naming` after fixing (found in Button, web).
+- Breadcrumb.tsx (react) stamps `data-part="link"` onto Link's root; breadcrumb.md already puts that part on a wrapper span (found in Link, web).
+- packages/react exports a FieldsetContext, but fieldset.md says none is exported (web Fieldset passes `disabled` to child fields) (found in Input, web).
+- packages/rn: NumberInput and Slider register `String(value)`, Combobox joins multiple values with commas, and DatePicker registers a range as two keys; form.md's contract is a number, a string array and a `[number, number]` pair (found in Form, rn).
+- packages/rn/src/FormContext.tsx is a stale, unused copy beside FormContext.ts (string | boolean values, no label); delete it (found in Form, rn).

@@ -590,16 +590,18 @@ component:
         path; on a disabled node it is disabled too, and clicks on a disabled row
         do nothing (a disabled parent stays closed, so do not disable a parent whose
         children must stay reachable). Heading and Button keep their own data-part,
-        so the `heading` and `expandButton` parts are wrappers the tree owns; Text
-        and Link take data-part directly. Nodes with href render the label as a Link
-        inside the treeitem; Enter activates it. Multiple mode uses aria-checked with
-        an indeterminate value for cascading parents and a Checkbox glyph (not the
-        Checkbox component: the treeitem itself is the control). Type-ahead buffers
-        keys for 500 ms. Pointer: click on a node focuses it and does what Space does
-        (select in single, toggle in multiple); double-click does what Enter does,
-        and a click whose `detail` is 2 or more does not toggle again (a double-click
-        toggles once, then activates); click on the chevron toggles expansion and
-        focuses the node without changing selection. Lazy placeholder: a <li role="treeitem"
+        so the `heading` and `expandButton` parts are wrappers the tree owns; Link
+        keeps its own `data-part="anchor"` too, so the `link` part is a `<span data-part="link">`
+        the tree owns around it (activation finds the anchor inside that span); Text
+        takes data-part directly. Nodes with href render the label as a Link inside
+        the treeitem; Enter activates it. Multiple mode uses aria-checked with an
+        indeterminate value for cascading parents and a Checkbox glyph (not the Checkbox
+        component: the treeitem itself is the control). Type-ahead buffers keys for
+        500 ms. Pointer: click on a node focuses it and does what Space does (select
+        in single, toggle in multiple); double-click does what Enter does, and a click
+        whose `detail` is 2 or more does not toggle again (a double-click toggles
+        once, then activates); click on the chevron toggles expansion and focuses
+        the node without changing selection. Lazy placeholder: a <li role="treeitem"
         aria-disabled="true"> holding copy.loading inside the group, not navigable,
         with no data-part, and aria-busy on the parent treeitem. Empty `nodes`: the
         <ul> renders with no items and copy.empty is a `Text tone="muted"` below it
@@ -1233,7 +1235,9 @@ notes: "A <div data-ds=\"Tree\" data-part=\"container\"> holding the Heading whe
   \ and clicks on a disabled row do nothing (a disabled parent stays closed, so do\
   \ not disable a parent whose children must stay reachable). Heading and Button keep\
   \ their own data-part, so the `heading` and `expandButton` parts are wrappers the\
-  \ tree owns; Text and Link take data-part directly. Nodes with href render the label\
+  \ tree owns; Link keeps its own `data-part=\"anchor\"` too, so the `link` part is\
+  \ a `<span data-part=\"link\">` the tree owns around it (activation finds the anchor\
+  \ inside that span); Text takes data-part directly. Nodes with href render the label\
   \ as a Link inside the treeitem; Enter activates it. Multiple mode uses aria-checked\
   \ with an indeterminate value for cascading parents and a Checkbox glyph (not the\
   \ Checkbox component: the treeitem itself is the control). Type-ahead buffers keys\

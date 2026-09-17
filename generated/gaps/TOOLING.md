@@ -88,3 +88,14 @@ Gaps a fold cannot answer because they are about the tools, not the docs.
 - The story-naming rule covers only enum values: no name for a boolean prop's story (`Wrap`, `Border`) or a digit-led value (`Size4xl`) (Stack, Box, Heading; web).
 - No precedent for asserting a computed role across a Lit shadow root; the Stack nav test checks the native `<nav>` instead, and exposure under the host is untested (Stack, lit).
 - RN `resolveToken` returns a general token value, so every component casts overrides by hand; a typed resolver per binding kind would remove the casts (Box, rn).
+- Blocked-activation scenarios (`disabled-does-not-fire`, `click: container`) cannot run as written under Playwright, whose actionability check rejects an aria-disabled button; the scenario schema or harness should force such clicks (Button, lit).
+- The rn package digest disagrees with the docs on how native Icon is colored (`overrides.color` versus the `color` prop); icon.md's order is the `color` prop first (Button, rn).
+- Derived `renders-tone-*` scenarios carry only `renders: true`, so tests cannot tell tones apart (Link, lit).
+- The rn package digest still names `TextNestingContext` and the old `toLineHeight` argument order (Link, rn).
+- Link's Animated pressed-color crossfade logs React act() warnings under Jest; the rn test template should say fake timers or reduced motion (Link, rn).
+- "Logic reads each constant through its token expression" cannot apply to a constant with a plain value and unit (`longPressDelay: 500 ms`); the rule should exempt non-token constants (Input, rn).
+- FormContext.ts is shared by every field but is not named as an output file of the Form job (Form, web).
+- The Lit package digest types `DsFormField.currentValue` as `string | boolean | null`; form.md's contract is wider (Form, lit).
+- The Lit test harness has no accessible-name helper, so `name` expectations are checked through host role/aria-label attributes (Form, lit).
+- Container `renders` scenarios assert only existence; jsdom and RNTL cannot evaluate max-width, the gutter media queries or window-width breakpoints, so the style contract is untested (Container, web/lit/rn).
+- No rn behavior scenario covers Card `interactive` or `focusable`, so the native target logic has no test (Card, rn).

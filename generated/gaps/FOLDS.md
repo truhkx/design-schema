@@ -1627,3 +1627,99 @@ One line per decision: `<date> <Component> <platform>: <gap> → <what the doc n
 2026-09-17 Pattern.SettingsPage lit: Notifications controls outside Form, save path → page state, neither saved nor reset; Switch controlled
 2026-09-17 Pattern.SettingsPage rn: where ToastProvider comes from on native → adopter app root; the story mounts one in a decorator
 2026-09-17 Pattern.SettingsPage rn: AlertDialog placement and ScrollView versus Landmark order → AlertDialog after Container in main; ScrollView wraps Landmark main
+2026-09-17 Button web: onClick signature versus onPress with no payload → web onClick receives the MouseEvent unchanged; contract adds no payload
+2026-09-17 Button web: inverseHoverOpacity multiplier before or after an override → ×0.25 applies to the resolved token, override included; calc given
+2026-09-17 Button web: className/style in props while conventions forbid forwarding → ButtonProps omits className and style
+2026-09-17 Button web: disabled Form mechanism missing from the Form contract → web/rn read Form context disabled; Lit relies on ds-form
+2026-09-17 Button web: icon-only example gives leadingIcon as prose → given reads `Icon name=close`
+2026-09-17 Button lit: caller aria-describedby merge across the shadow root → Lit references only its internal id
+2026-09-17 Button lit: whether locked bindings get --ds-button-* hooks → no hook for locked bindings; spinnerStroke the exception
+2026-09-17 Button lit: how icon slots are hidden from assistive technology → slots not aria-hidden; unlabelled ds-icon hides itself
+2026-09-17 Button lit: fontSize override does not move spinnerSize → spinnerSize independent; override both
+2026-09-17 Button lit: backgroundHover state hover versus hover and pressed → :hover and :active on web/Lit, pressed on rn
+2026-09-17 Button rn: spinner without leadingIcon widens the button → height kept; width grows by spinner plus iconGap, accepted
+2026-09-17 Button rn: loadingSpin easing unspecified → linear
+2026-09-17 Button rn: Icon color prop versus overrides.color for caller icons → callers pass Icon's `color` prop
+2026-09-17 Link web: Tree stamps data-part onto Link's root → tree.md: `link` part is a span wrapper the tree owns
+2026-09-17 Link web: colorHover with or without a hover media guard → plain :hover, no @media (hover: hover)
+2026-09-17 Link web: focus ring outline-offset has no binding → new focusRingOffset binding on border.width.focus
+2026-09-17 Link web: copy.external unused on web → YAML comment: SwiftUI only
+2026-09-17 Link web: Default story args not given → inline-in-a-paragraph href/label are the Default args
+2026-09-17 Link web: separate External/Download stories or not → the examples are those state stories
+2026-09-17 Link lit: part attributes exposed while no ::part for styling → part and data-part both; names tests read
+2026-09-17 Link lit: which element carries the label part → span data-part=label inside the anchor; none on rn
+2026-09-17 Link lit: focusRingRadius rounding the resting inline anchor → radius only under :focus-visible
+2026-09-17 Link lit: visually hidden pattern incomplete → full pattern listed, no legacy clip
+2026-09-17 Link rn: tone inherit standalone label color → color.foreground for label and icon
+2026-09-17 Link rn: underline color under tone inherit → no textDecorationColor; follows the Text color
+2026-09-17 Link rn: ToneInherit story surrounding text → uses the inside-muted-text wrapper
+2026-09-17 Input web: Form sets invalid versus context errors[name] → context entry is a Form-set invalid; order error, entry, copy
+2026-09-17 Input web: whitespace-only text under required → only the empty string is empty
+2026-09-17 Input web: how validity follows the precedence on web → setCustomValidity with copy; type step reads specific flags
+2026-09-17 Input web: root font hooks kept when forwarded to Text → root hooks kept for label and field
+2026-09-17 Input web: readOnly is not a schema prop → passes through native props; disabled forces it
+2026-09-17 Input lit: transition override changes duration or easing → duration only; easing stays standard
+2026-09-17 Input lit: clearing error with a separately set invalid → clears only error's implied invalid; Lit writes reflected false
+2026-09-17 Input lit: formResetCallback behaviour unspecified → restores defaultValue; leaves invalid and error
+2026-09-17 Input lit: which observable carries the disabled state → aria-disabled=true on the inner input
+2026-09-17 Input rn: Text has no testID for part hooks → wrapper Views carry Input.<part> testIDs and the live region
+2026-09-17 Input rn: transition override on native → kept in the type for parity, no effect
+2026-09-17 Input rn: forwarded focus handlers receive an event or not → no arguments on web and rn
+2026-09-17 Input rn: disabled-stays-focusable scenario contradicts native → description: rn asserts only the disabled state
+2026-09-17 Form web: which web attribute exposes disabled → none on the form element; fields and actions report
+2026-09-17 Form web: errorSummaryGap forwarding and hook → both Stacks' overrides.gap; no --ds-form hook
+2026-09-17 Form web: summary shown before any submit → only after a failed submit; shrinks; removed on success
+2026-09-17 Form web: plural locale read timing → at the failed submit
+2026-09-17 Form web: summary item order → document order at submit; later errors appended
+2026-09-17 Form web: closed Disclosure exclusion mechanism → field unmounted and unregistered; no Disclosure check
+2026-09-17 Form web: sorting registrations by data-ds-field host → getElementById(id).closest; hostless fields last
+2026-09-17 Form web: single action wrapped in a Stack or bare → single action bare; several in a consumer Stack
+2026-09-17 Form web: unnamed or duplicate-named form ids → generated id fallback; duplicates an undetected authoring error
+2026-09-17 Form lit: whether an empty array counts as empty → null, empty string and empty array contribute no key
+2026-09-17 Form lit: summary heading and list arrangement → a Stack of heading and list Stack inside errorSummary
+2026-09-17 Form lit: summary role, tabindex and href on Lit → web markup reused; href #id with default prevented
+2026-09-17 Form lit: validate change also validating on blur → change only; every mode revalidates after a failed submit
+2026-09-17 Form lit: empty message and empty label fallback → the field name
+2026-09-17 Form lit: example input types for email and phone → given names type=email and type=tel
+2026-09-17 Form rn: summary Link href on native → field name; onPress focuses the field and returns false
+2026-09-17 Form rn: danger color reaching an inherit Link natively → each Link nested in Text tone=danger
+2026-09-17 Form rn: summary alert role and focus target → View not accessible; focus to the summary heading Text
+2026-09-17 Form rn: gap between fields or only fields block → direct children of the fields part; a Stack spaces itself
+2026-09-17 Container web: example string Text element and Default children → Text defaults (p); Default children "Container content."
+2026-09-17 Container lit: element missing from the reflect list → attribute-settable property, not reflected
+2026-09-17 Container lit: host defaults before the first update → plain :host rules equal the prop defaults
+2026-09-17 Container rn: column part testID → root keeps testID Container, no part testID
+2026-09-17 Container rn: window width versus own width for the gutter → window width on rn; SwiftUI difference stated
+2026-09-17 Container rn: width 100% inside a row parent → column parents only; row placement unsupported
+2026-09-17 Card web: className clone fails since Link/Button drop it → clone with a data-ds-card-target attribute
+2026-09-17 Card web: how web detects a disabled child → :has target with aria-disabled or :disabled
+2026-09-17 Card web: focusable no-op when interactive fell back → no-op whenever interactive is set
+2026-09-17 Card web: plain string Text element and numbers → Text defaults; numbers and array strings wrapped too
+2026-09-17 Card web: interactive scenario on Default lacks a Link → scenario given has a top-level Link child
+2026-09-17 Card web: scope of warns once → once per mounted card
+2026-09-17 Card web: hoverBackground hover media guard → plain :hover, as Link
+2026-09-17 Card lit: disabled target detection on Lit → disabled attribute or aria-disabled, MutationObserver
+2026-09-17 Card lit: selectors for single-target and disabled hover rules → custom states has-target and target-disabled
+2026-09-17 Card lit: warning timing when the body arrives late → on slotchange and interactive change, not first update
+2026-09-17 Card lit: element that draws the focusable ring → outline on the surface part while host :focus-visible
+2026-09-17 Card lit: consumer aria-label versus the heading label → card writes and removes only its own aria-label
+2026-09-17 Card lit: z-index rows on plain cards → interactive cards only, web and Lit
+2026-09-17 Card rn: Fragments among top-level children → a top-level Fragment is flattened
+2026-09-17 Card rn: label source and Button press behaviour → child's full press behaviour; Button's label order
+2026-09-17 Card rn: surface part hook on native → root is surface with testID Card
+2026-09-17 Card rn: dense-grid example versus the Default heading arg → the story clears the Default heading
+2026-09-17 Divider web: id and data-part on the composed label Text → platform attributes beyond the composition props
+2026-09-17 Divider web: toolbar-groups siblings and row → Stack gap tight between "Bold Italic" and "Align left" Texts
+2026-09-17 Divider web: label scenario never checks the accessible name → scenario adds name: or on web and Lit
+2026-09-17 Divider web: ref type and rest target across hr/div → Ref<HTMLElement>; rest on whichever root renders
+2026-09-17 Divider web: labelled lines centered or on the baseline → align-items center
+2026-09-17 Divider lit: labelSize/fontFamily hooks versus forwarding only → no --ds-divider hooks; only overridden bindings forwarded
+2026-09-17 Divider lit: block-size 100% collapses in an auto-height row → block-size auto, min-block-size 100%, align-self stretch
+2026-09-17 Divider lit: label property versus markup attribute → property reading the attribute, not reflected
+2026-09-17 Divider lit: part alongside data-part → both, anatomy names, not styling
+2026-09-17 Divider lit: spacing override written at none → not written to the hook at none
+2026-09-17 Divider rn: element span on native Text → not passed on native
+2026-09-17 Divider rn: label testID when Text takes none → wrapper View with testID Divider.label
+2026-09-17 Divider rn: spacing, line width and vertical stretch natively → root padding always; flex 1 lines; both stretch
+2026-09-17 Divider rn: key of the second semantic warning → semantic plus label in effect
+2026-09-17 Divider rn: section-boundary example contradicts rn silence → description says rn is silent and warns

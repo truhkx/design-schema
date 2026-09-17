@@ -85,12 +85,16 @@ component:
       required: true
       description: 'The action row: at least one Button with `type: submit`, primary
         first (Form''s action-order rule). Rendered after the fields with the form
-        gap; a named slot on Lit and the `actions` anatomy part on every platform.'
+        gap; a named slot on Lit and the `actions` anatomy part on every platform.
+        A single action renders bare; two or more go in a horizontal Stack the consumer
+        supplies.'
     name:
       type: string
       description: Identifier for the form, used for analytics and as the base of
         generated ids. React Native has no ids and focuses by ref, so it is inert
-        there and exists for parity.
+        there and exists for parity. An unnamed form bases its ids on a generated
+        unique id (useId on web); two forms given the same `name` on one page is an
+        authoring error Form does not detect.
     label:
       type: string
       description: Accessible name for the form landmark, e.g. "Sign in". Required
@@ -113,14 +117,18 @@ component:
       - change
       default: submit
       description: When field-level validation runs. `submit` is the least noisy;
-        `blur` is the usual choice for longer forms.
+        `blur` is the usual choice for longer forms. `change` validates on change
+        only, not also on blur; after a failed submission every mode re-validates
+        on blur and change.
     disabled:
       type: boolean
       default: false
       description: Disables every field and action inside. Use while submitting. Each
         field and action dims itself with its own disabled style; the Form container
         applies no opacity of its own (it would compound) and only exposes the disabled
-        state (accessibilityState.disabled on RN).
+        state (accessibilityState.disabled on RN). Web and Lit put no disabled attribute
+        on the form element (aria-disabled is not valid on role form); each field
+        and action reports its own.
     errorSummary:
       type: boolean
       default: true
@@ -128,8 +136,14 @@ component:
         the fields that links to each field. Each item's text is the field's own message
         verbatim (a field's own required message already names the field, "Email is
         required."), never prefixed with the label; a field that is invalid with an
-        empty message shows its `label` instead. Every field's registration carries
-        its `label` for that fallback, on all three platforms.
+        empty message shows its `label` instead, and its `name` when the label is
+        empty too. Every field's registration carries its `label` for that fallback,
+        on all three platforms. The summary appears only after a failed submission
+        (not for errors that blur or change validation finds before one), shrinks
+        as fields are fixed, and is removed by a successful submission. Items follow
+        document order at the failed submit; an error found later by blur or change
+        validation is appended at the end. The plural locale is read at the failed
+        submit.
       a11y: The summary receives focus and is announced, so users find every error
         without hunting.
   events:
@@ -140,7 +154,8 @@ component:
         contribute strings, Switch a boolean, Checkbox its `value` when checked, NumberInput
         and Slider a number, multi-select Listbox, Select and Combobox a string array,
         a range Slider or DatePicker a pair; an unchecked Checkbox, an unselected
-        RadioGroup, an empty field and a disabled field contribute no key at all.'
+        RadioGroup, an empty field (a null, empty-string or empty-array value) and
+        a disabled field contribute no key at all.'
       platforms:
         web: onSubmit
         lit: submit
@@ -171,8 +186,10 @@ component:
   styles:
     gap:
       token: layout.gap.loose
-      description: Vertical gap between fields and between fields and actions — the
-        rhythm preset, so a theme's `layout.rhythm` reaches every form.
+      description: Vertical gap between the direct children of the fields part and
+        between fields and actions — the rhythm preset, so a theme's `layout.rhythm`
+        reaches every form. A Stack given as children spaces its own fields with its
+        own gap; Form does not reach inside it.
       locked: false
     errorSummaryBorder:
       token: color.border.danger
@@ -202,8 +219,12 @@ component:
     errorSummaryGap:
       token: layout.gap.tight
       part: errorSummary
-      description: Gap between the heading and the list and between list items; the
-        list is a Stack (element ul on web and Lit) with no markers and no indent.
+      description: Gap between the heading and the list and between list items. Inside
+        the errorSummary box a Stack holds the heading and the list, and the list
+        is a second Stack (element ul on web and Lit) with no markers and no indent;
+        Form forwards this binding to both Stacks' `overrides.gap` (the `overrides`
+        property on Lit) and has no --ds-form-* hook for it, as Input's helperSize
+        has none.
       locked: false
   copy:
     summaryHeading:
@@ -240,7 +261,11 @@ component:
         type=submit triggers it. `novalidate` is set so the system''s own error UI
         is used instead of browser bubbles. Fields register through React context
         (`discovery: context`); the `data-ds-field` attribute on each field element
-        is used only to sort the registered fields into document order.'
+        is used only to sort the registered fields into document order: Form finds
+        each field''s host as getElementById(registered id).closest(''[data-ds-field]''),
+        and fields with no such host go last in registration order. A field inside
+        a closed Disclosure is left out because it unmounted and unregistered; Form
+        does no Disclosure check of its own (web and rn).'
     lit:
       tag: ds-form
       reflect:
@@ -260,12 +285,15 @@ component:
         true, so its attribute is the negated `no-error-summary`. A field missing
         an `id` is given `{name}-{field.name}` at submit time so the error summary
         can link to it. Dispatches `submit` with `{ values }` and `invalid` with `{
-        errors }` in detail. Never nest inside a native form.'
+        errors }` in detail. Never nest inside a native form. The summary reuses the
+        web markup: role="alert" and tabindex="-1" on the errorSummary box, and each
+        item Link has href="#<field id>" with the click default prevented, so the
+        hash never changes.'
     rn:
       element: View
       props:
       - accessibilityLabel
-      notes: No native form on iOS/Android. Form provides a context { register, unregister,
+      notes: 'No native form on iOS/Android. Form provides a context { register, unregister,
         submit, errors, validateMode, disabled, focusField }; fields call register(name,
         { label, getValue, validate, focus }) in mount order (name is the argument,
         not a handle property); a Button with type=submit calls submit(). Non-last
@@ -274,9 +302,14 @@ component:
         (accessibilityLiveRegion="assertive" on Android, announceForAccessibility
         on iOS) and focus moves to the summary when errorSummary is on, otherwise
         to the first invalid field — same as web. The iOS announcement is the summary
-        heading followed by each item. The View keeps role="form", which only has
-        landmark meaning on react-native-web; iOS and Android have no form landmark,
-        so accessibilityLabel naming the group is the native alternative.
+        heading followed by each item. The summary View is not itself `accessible`,
+        so each item Link stays separately focusable, and accessibility focus moves
+        to the summary heading Text. Each item Link has the field''s `name` as its
+        href and an onPress that focuses the field and returns false, so nothing opens;
+        each Link is nested in a `Text tone="danger"`, which is how the danger color
+        reaches a `tone: inherit` Link on native. The View keeps role="form", which
+        only has landmark meaning on react-native-web; iOS and Android have no form
+        landmark, so accessibilityLabel naming the group is the native alternative.'
     swiftui:
       element: VStack
       props:
@@ -325,7 +358,7 @@ component:
       label: Profile details
       validate: blur
       children: A Stack of required Inputs name=fullName label=Full name, name=email
-        label=Email, name=phone label=Phone, name=city label=City
+        label=Email type=email, name=phone label=Phone type=tel, name=city label=City
       actions: A submit Button labelled Save profile
   - name: submitting
     description: A form while its request is in flight - every field and action disabled,
@@ -391,7 +424,7 @@ form:
 ## Constants and examples
 
 - example `sign-in`, story `SignIn`: given `name: "sign-in"`, `label: "Sign in"`, `children: "A required Input name=email label=Email type=email and a required Input name=password label=Password type=password, in a Stack"`, `actions: "A submit Button labelled Sign in"`; The smallest real form - two fields and one submit action, validated on submit.
-- example `long-form-validated-on-blur`, story `LongFormValidatedOnBlur`: given `name: "profile"`, `label: "Profile details"`, `validate: "blur"`, `children: "A Stack of required Inputs name=fullName label=Full name, name=email label=Email, name=phone label=Phone, name=city label=City"`, `actions: "A submit Button labelled Save profile"`; A longer form where feedback per field as focus leaves it beats one report at the end.
+- example `long-form-validated-on-blur`, story `LongFormValidatedOnBlur`: given `name: "profile"`, `label: "Profile details"`, `validate: "blur"`, `children: "A Stack of required Inputs name=fullName label=Full name, name=email label=Email type=email, name=phone label=Phone type=tel, name=city label=City"`, `actions: "A submit Button labelled Save profile"`; A longer form where feedback per field as focus leaves it beats one report at the end.
 - example `submitting`, story `Submitting`: given `name: "sign-in"`, `label: "Sign in"`, `disabled: true`, `children: "A required Input name=email label=Email type=email and a required Input name=password label=Password type=password, in a Stack"`, `actions: "A submit Button labelled Sign in"`; A form while its request is in flight - every field and action disabled, so it cannot be submitted twice.
 - example `without-a-summary`, story `WithoutASummary`: given `name: "rename"`, `label: "Rename file"`, `errorSummary: false`, `children: "A required Input name=fileName label=File name"`, `actions: "A submit Button labelled Rename"`; A short form that reports errors at the fields alone, moving focus to the first invalid one.
 
@@ -450,9 +483,13 @@ notes: "No native form on iOS/Android. Form provides a context { register, unreg
   assertive\" on Android, announceForAccessibility on iOS) and focus moves to the\
   \ summary when errorSummary is on, otherwise to the first invalid field \u2014 same\
   \ as web. The iOS announcement is the summary heading followed by each item. The\
-  \ View keeps role=\"form\", which only has landmark meaning on react-native-web;\
-  \ iOS and Android have no form landmark, so accessibilityLabel naming the group\
-  \ is the native alternative."
+  \ summary View is not itself `accessible`, so each item Link stays separately focusable,\
+  \ and accessibility focus moves to the summary heading Text. Each item Link has\
+  \ the field's `name` as its href and an onPress that focuses the field and returns\
+  \ false, so nothing opens; each Link is nested in a `Text tone=\"danger\"`, which\
+  \ is how the danger color reaches a `tone: inherit` Link on native. The View keeps\
+  \ role=\"form\", which only has landmark meaning on react-native-web; iOS and Android\
+  \ have no form landmark, so accessibilityLabel naming the group is the native alternative."
 ```
 
 ## Guidance

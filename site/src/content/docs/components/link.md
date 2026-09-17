@@ -25,7 +25,7 @@ component:
       type: enum
       values: [default, inherit]
       default: default
-      description: '`default` uses the link colors. `inherit` takes the surrounding text color and relies on the underline alone — for links inside muted or on-action text. Under `inherit` the color, colorHover and colorVisited bindings are not applied: rest, hover, visited and (on native) pressed all resolve to the inherited color (currentColor on web and Lit, the enclosing TextStyleContext color on native), and the underline and the external icon follow that same color, so an inherited link has no hover or visited color change by design.'
+      description: '`default` uses the link colors. `inherit` takes the surrounding text color and relies on the underline alone — for links inside muted or on-action text. Under `inherit` the color, colorHover and colorVisited bindings are not applied: rest, hover, visited and (on native) pressed all resolve to the inherited color (currentColor on web and Lit, the enclosing TextStyleContext color on native), and the underline and the external icon follow that same color, so an inherited link has no hover or visited color change by design. On native Link sets no textDecorationColor (the underline takes the Text color); a standalone inherit link outside any system Text has nothing to inherit, so its label and icon both use color.foreground.'
     download:
       type: boolean
       default: false
@@ -39,17 +39,19 @@ component:
       fires: [user]
   styles:
     color: { token: color.link }
-    colorHover: { token: color.link.hover, state: hover, description: 'Pointer hover only on web and Lit (not :active); on native, which has no hover, the pressed color.' }
+    colorHover: { token: color.link.hover, state: hover, description: 'Pointer hover only on web and Lit (not :active), as a plain `:hover` rule with no `@media (hover: hover)` guard; a sticky hover color after a tap is an accepted, proven pair. On native, which has no hover, the pressed color.' }
     colorVisited: { token: color.link.visited, description: 'Web and Lit only; native has no visited state.' }
     underlineThickness: { token: border.width.thin, description: 'Text-decoration thickness; the underline is always present at rest.' }
     underlineOffset: { token: space.1 }
     externalIconGap: { token: space.1, part: externalIcon, description: 'Gap before the trailing icon, applied as margin-inline-start on Link''s own `externalIcon` wrapper span (inline text has no Stack to use), never on the Icon inside it. The icon is 1em of the surrounding font size (no token: it scales with the text). On React Native nested Text ignores margins, so the gap is a single literal space and this binding is not applied.' }
     focusRing: { token: color.border.focus }
     focusRingWidth: { token: border.width.focus }
-    focusRingRadius: { token: radius.sm }
+    focusRingRadius: { token: radius.sm, description: 'Applied (as border-radius) only under :focus-visible, so a resting inline anchor is not rounded.' }
+    focusRingOffset: { token: border.width.focus, description: 'outline-offset of the focus ring on web and Lit, the same token as its width. Not applied on native, where the ring is the platform''s own.' }
     transition: { token: motion.duration.fast, description: 'Color transition on hover, with motion.easing.standard.' }
   copy:
     externalSuffix: ' (opens in new tab)'
+    # external is SwiftUI's accessibility label only; web, Lit and RN never render it (they use externalSuffix).
     external: opens in new tab
   a11y:
     role: link
@@ -62,7 +64,7 @@ component:
     web:
       element: a
       attributes: [href, target, rel, download]
-      notes: 'A native <a href>. `external` sets target="_blank" and rel="noopener noreferrer". The visible label stays as-is; the external suffix is added in visually hidden text, not aria-label, so the accessible name still starts with the visible text. Link accepts no `className` or `style`: a composite that shows a link inside its own row uses `tone: inherit` and keeps the underline. The root <a> carries `data-ds="Link"` and `data-part="anchor"`, and those win: a parent never stamps its own `data-part` onto Link''s root, it puts its part on a wrapper element it owns.'
+      notes: 'A native <a href>. `external` sets target="_blank" and rel="noopener noreferrer". The visible label stays as-is; the external suffix is added in visually hidden text, not aria-label, so the accessible name still starts with the visible text. Link accepts no `className` or `style`: a composite that shows a link inside its own row uses `tone: inherit` and keeps the underline. The root <a> carries `data-ds="Link"` and `data-part="anchor"`, and those win: a parent never stamps its own `data-part` onto Link''s root, it puts its part on a wrapper element it owns. The `label` part is a `<span data-part="label">` holding the visible text inside the anchor (web and Lit); on native the root Text is the anchor and the label is its string content, with no element of its own. Lit shadow elements carry `part` as well as `data-part`, both the anatomy names: they are names tests read, not a styling surface.'
     lit:
       tag: ds-link
       reflect: [tone, external, download]
@@ -101,13 +103,13 @@ component:
         - { attribute: download, is: '', platforms: [web, lit] }
   examples:
     - name: inline-in-a-paragraph
-      description: 'The default link inside body text, underlined and taking the paragraph''s typography. The story renders it inside a default Text paragraph reading "Invoices from the last twelve months are kept. " followed by the link and a full stop.'
+      description: 'The default link inside body text, underlined and taking the paragraph''s typography. The story renders it inside a default Text paragraph reading "Invoices from the last twelve months are kept. " followed by the link and a full stop. Its href and label are also the Default story''s args, so the derived renders and accessible-name scenarios run against them.'
       given: { href: '/billing/history', label: 'View the billing history' }
     - name: external-destination
-      description: A link that leaves the product, so the name says so before it is activated.
+      description: 'A link that leaves the product, so the name says so before it is activated. This example is the `external` state story (and downloadable-file the `download` one); no separate External or Download story is added.'
       given: { href: 'https://status.example.com', label: 'Status page', external: true }
     - name: inside-muted-text
-      description: 'A link in muted or on-action text, where the color is inherited and the underline alone marks it. The story renders it inside a Text with `tone: muted` reading "For how charges are calculated, read " followed by the link and a full stop.'
+      description: 'A link in muted or on-action text, where the color is inherited and the underline alone marks it. The story renders it inside a Text with `tone: muted` reading "For how charges are calculated, read " followed by the link and a full stop. The `tone: inherit` enum story uses the same muted wrapper, so the inherited color is visible.'
       given: { href: '/help/billing', label: 'the billing guide', tone: inherit }
     - name: downloadable-file
       description: A link to a file the browser should save rather than open.
@@ -142,7 +144,7 @@ The accessible name is the visible text (WCAG 2.4.4, 2.5.3), plus `copy.external
 ## Platform notes
 
 ### Web
-Render `<a href>` with the visible label as content. For `external`, render, in order: the label, a visually hidden `<span>` containing `copy.externalSuffix`, then the decorative icon: a `<span data-part="externalIcon">` wrapper carrying the `externalIconGap` margin, containing the system `<Icon name="external" inline />` with no label (so it hides itself). Icon's `inline` sizes it at 1em of the surrounding text, and its color is currentColor, so it follows the anchor's rest, hover and visited colors; no hand-drawn SVG. The visually hidden span uses the standard clip pattern (absolute, 1px box, clip-path inset 50%, white-space nowrap) — the one place where 1px literals are sanctioned. `font: inherit` on the anchor. Prefer `text-underline-offset` and `text-decoration-thickness` from the tokens over border tricks so the underline behaves in wrapped text.
+Render `<a href>` with the visible label as content. For `external`, render, in order: the label, a visually hidden `<span>` containing `copy.externalSuffix`, then the decorative icon: a `<span data-part="externalIcon">` wrapper carrying the `externalIconGap` margin, containing the system `<Icon name="external" inline />` with no label (so it hides itself). Icon's `inline` sizes it at 1em of the surrounding text, and its color is currentColor, so it follows the anchor's rest, hover and visited colors; no hand-drawn SVG. The visually hidden span uses the standard clip pattern (position absolute, 1px box, margin -1px, overflow hidden, border 0, clip-path inset(50%), white-space nowrap; no legacy clip: rect) — the one place where 1px literals are sanctioned. `font: inherit` on the anchor. Prefer `text-underline-offset` and `text-decoration-thickness` from the tokens over border tricks so the underline behaves in wrapped text.
 
 ### Lit
 `<ds-link>` hosts a shadow root with `delegatesFocus: true` and a native `<a>` inside. Do not dispatch a CustomEvent named `click`; the native click retargets to the host and consumers listen for it there. The host defaults to `display: inline` so it can sit inside a `<ds-text>` paragraph; reflect `tone` and `external` so consumers can style from outside.

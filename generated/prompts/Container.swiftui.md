@@ -63,8 +63,11 @@ component:
       required: true
       description: 'The page or region content, usually a Stack with `gap: section`
         between regions. A string given as `children` in an example is an illustrative
-        label, not content to build: stories render it inside a Text on every platform
-        (native requires one) and do not construct the Stack it names.'
+        label, not content to build: stories render it inside a Text with its defaults
+        (element `p` on web and Lit) on every platform (native requires one) and do
+        not construct the Stack it names; that wrapper is the one sanctioned difference
+        from the literal `given`. The Default story''s children is the string "Container
+        content." in the same Text.'
     width:
       type: enum
       values:
@@ -160,17 +163,27 @@ component:
         since a section is a region only when it is named. The role stays on ElementInternals,
         as in Box, with no `role` attribute added to the host; the main-landmark scenario
         is web-only because the test accessibility lookup cannot read ElementInternals.
-        The host carries `data-part="column"`.'
+        The host carries `data-part="column"`. `element` is an attribute-settable
+        property that does not reflect: it changes no styling. Before the first update,
+        when the width and gutter attributes are not yet reflected, the plain `:host`
+        rules are the prop defaults (the content max-width and the responsive default
+        gutter).'
     rn:
       element: View
       props: []
-      notes: View with maxWidth, alignSelf (center → center, start → flex-start),
+      notes: 'View with maxWidth, alignSelf (center → center, start → flex-start),
         width 100%, paddingHorizontal. `element` is web and Lit only and is absent
         from the native props entirely, as in Box. The responsive gutter uses useWindowDimensions
-        against the active theme's maxWidth tokens, with the same inclusive `>=` boundaries
-        as web. The component forwards a ref to its root View, typed as Box types
-        its ref. On phones the cap rarely applies; on tablets and react-native-web
-        it does.
+        against the active theme''s maxWidth tokens, with the same inclusive `>=`
+        boundaries as web. The component forwards a ref to its root View, typed as
+        Box types its ref. The root is the `column` part and keeps `testID="Container"`
+        with no separate part testID, as Box does for `surface`. On phones the cap
+        rarely applies; on tablets and react-native-web it does. The gutter reads
+        the window width, never the parent''s, so a nested `gutter: default` Container
+        picks its gutter by the window here while SwiftUI measures its own width —
+        one more reason a nested Container uses `gutter: none`. Container belongs
+        in a column-direction parent (a screen, a vertical Stack); inside a row parent
+        `width: 100%` and alignSelf cross axes and that placement is not supported.'
     swiftui:
       element: VStack
       props:

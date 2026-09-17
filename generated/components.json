@@ -4282,7 +4282,7 @@
         "disabled": {
           "type": "boolean",
           "default": false,
-          "description": "Prevents activation. The button stays in the tab order and is announced as disabled. A press blocked by `disabled` or `loading` is not a press: onPress does not fire and nothing chained from it (an extension's tracking) runs. Inside a disabled Form the button is disabled whatever this prop says."
+          "description": "Prevents activation. The button stays in the tab order and is announced as disabled. A press blocked by `disabled` or `loading` is not a press: onPress does not fire and nothing chained from it (an extension's tracking) runs. Inside a disabled Form the button is disabled whatever this prop says: on web and rn Button reads `disabled` from the Form context and ORs it with this prop; on Lit ds-form sets `.disabled` on the ds-buttons it finds, so ds-button has no mechanism of its own."
         },
         "accessibleName": {
           "type": "string",
@@ -4300,7 +4300,7 @@
         "loading": {
           "type": "boolean",
           "default": false,
-          "description": "Shows a ring spinner (spinnerSize across, spinnerStroke thick, in the resolved foreground: `currentColor` on web/Lit) in the leading icon slot (whether or not `leadingIcon` is set; for `iconOnly` it replaces the sole glyph), hides `trailingIcon`, keeps the label visible and the layout unchanged, and blocks repeat activation while an action is pending. The spinner is not an anatomy part and carries no part name; it only takes the leadingIcon position. `copy.loading` is announced as a description, never as part of the name, so it survives aria-label: web and Lit render it in a visually hidden node inside the button's own tree referenced by aria-describedby (merged with any caller aria-describedby); rn sets `accessibilityValue={{ text: copy.loading }}` beside `busy`; SwiftUI uses `.accessibilityValue`.",
+          "description": "Shows a ring spinner (spinnerSize across, spinnerStroke thick, in the resolved foreground: `currentColor` on web/Lit) in the leading icon slot (whether or not `leadingIcon` is set; for `iconOnly` it replaces the sole glyph), hides `trailingIcon`, keeps the label visible and the button's height unchanged, and blocks repeat activation while an action is pending. With a `leadingIcon` the spinner swaps in at the same width; without one the spinner and iconGap widen the button, a shift that is accepted. The spinner is not an anatomy part and carries no part name; it only takes the leadingIcon position, so no leadingIcon part is present while loading. `copy.loading` is announced as a description, never as part of the name, so it survives aria-label: web and Lit render it in a visually hidden node inside the button's own tree referenced by aria-describedby (web merges it with any caller aria-describedby; on Lit only the internal id is referenced, since a caller's aria-describedby on the host cannot cross the shadow root); rn sets `accessibilityValue={{ text: copy.loading }}` beside `busy`; SwiftUI uses `.accessibilityValue`.",
           "platforms": [
             "web",
             "lit",
@@ -4320,7 +4320,7 @@
       },
       "events": {
         "onPress": {
-          "description": "Fired when the button is activated by pointer, keyboard (Enter/Space), or assistive technology. No payload: pointer position and modifiers are not part of the contract, so the rn handler takes no arguments (the GestureResponderEvent is not passed).",
+          "description": "Fired when the button is activated by pointer, keyboard (Enter/Space), or assistive technology. No payload: pointer position and modifiers are not part of the contract, so the rn handler takes no arguments (the GestureResponderEvent is not passed). Web is the exception by name: `onClick` keeps React's native signature and receives the MouseEvent unchanged, so a composing parent (a Menu or Popover trigger) chains its handler as on any button; Lit `press` has no detail.",
           "platforms": {
             "web": "onClick",
             "lit": "press",
@@ -4363,7 +4363,7 @@
           "token": "color.action.{variant}.backgroundHover",
           "state": "hover",
           "locked": true,
-          "description": "Pointer hover and pressed state. Locked like background and foreground, so an override cannot put an unproven fill behind the locked foreground."
+          "description": "Pointer hover and pressed state (`:hover` and `:active` on web and Lit; pressed on rn). Locked like background and foreground, so an override cannot put an unproven fill behind the locked foreground."
         },
         "foreground": {
           "token": "color.action.{variant}.foreground",
@@ -4428,7 +4428,7 @@
             "times": 0.25
           },
           "state": "hover",
-          "description": "The alpha of inverseBackgroundHover: color-mix percentage on web/Lit, the alpha of the resolved color on native.",
+          "description": "The alpha of inverseBackgroundHover: color-mix percentage on web/Lit (`calc(var(--ds-button-inverse-hover-opacity) * 0.25 * 100%)`), the alpha of the resolved color on native. The ×0.25 applies to whatever token the binding resolves to, an override included: the hook holds the base token and the rule that reads it multiplies.",
           "locked": false
         },
         "minTarget": {
@@ -4457,12 +4457,12 @@
         },
         "loadingSpin": {
           "token": "motion.duration.loop",
-          "description": "One rotation of the loading indicator; disabled under prefers-reduced-motion.",
+          "description": "One rotation of the loading indicator, at linear easing (a continuous spin; motion.easing.standard is for `transition` only); disabled under prefers-reduced-motion.",
           "locked": false
         },
         "spinnerSize": {
           "token": "font.size.{size}",
-          "description": "Diameter of the loading ring: 1em of the label font. On rn, which has no em, the ring is this size and its radius is half of it.",
+          "description": "Diameter of the loading ring: 1em of the label font. On rn, which has no em, the ring is this size and its radius is half of it. Its own binding: a fontSize override does not move it, and a consumer who changes one overrides both.",
           "locked": false
         },
         "spinnerStroke": {
@@ -4511,7 +4511,7 @@
             "aria-busy",
             "aria-label"
           ],
-          "notes": "Use aria-disabled rather than the disabled attribute so the button remains discoverable by keyboard and screen readers. `expanded` is a React prop mapped to aria-expanded; when it is undefined, an `aria-expanded` arriving through `...rest` still applies, which is how Menu, Popover, Disclosure, SidePanel, Combobox and Search already set it."
+          "notes": "Use aria-disabled rather than the disabled attribute so the button remains discoverable by keyboard and screen readers. `expanded` is a React prop mapped to aria-expanded; when it is undefined, an `aria-expanded` arriving through `...rest` still applies, which is how Menu, Popover, Disclosure, SidePanel, Combobox and Search already set it. `ButtonProps` omits `className` and `style` from the native button props, so passing either is a type error rather than a silent drop: `overrides` is the only per-instance styling."
         },
         "lit": {
           "tag": "ds-button",
@@ -4525,7 +4525,7 @@
             "inverse",
             "overflow-label"
           ],
-          "notes": "Wraps a native <button> in the shadow root with delegatesFocus so the host element is focusable. `press` is a composed CustomEvent. Icons are named slots `leading-icon` / `trailing-icon`; the part names stay the anatomy names verbatim (`part=\"leadingIcon\"`, `part=\"trailingIcon\"`), so slot names are kebab-case and part names camelCase. A blocked activation (disabled or loading) is swallowed on the inner button with preventDefault() and stopPropagation(): neither `press` nor the native click leaves the host, and no form submits. ds-button is NOT form-associated (a FACE with a reflected disabled attribute becomes truly disabled and unfocusable); `type=submit` is handled by ds-form listening for `press`, and by `closest('form')?.requestSubmit()` only when no ds-form encloses the button, so a ds-form nested in a native form submits once. `expanded` is a JS property only (`attribute: false`) and stays tri-state — undefined means the button discloses nothing, so no aria-expanded is set at all. A disclosing parent sets `.expanded=`; a raw `aria-expanded` attribute on the host does not reach the inner button."
+          "notes": "Wraps a native <button> in the shadow root with delegatesFocus so the host element is focusable. `press` is a composed CustomEvent. Icons are named slots `leading-icon` / `trailing-icon`; the part names stay the anatomy names verbatim (`part=\"leadingIcon\"`, `part=\"trailingIcon\"`), so slot names are kebab-case and part names camelCase. The slots are not aria-hidden (aria-hidden on a <slot> is unreliable): a ds-icon with no label hides itself, which is what makes the icons decorative. Locked bindings get no `--ds-button-*` hook (the rule reads the token directly, per the overrides contract); spinnerStroke is the one exception its binding names. A blocked activation (disabled or loading) is swallowed on the inner button with preventDefault() and stopPropagation(): neither `press` nor the native click leaves the host, and no form submits. ds-button is NOT form-associated (a FACE with a reflected disabled attribute becomes truly disabled and unfocusable); `type=submit` is handled by ds-form listening for `press`, and by `closest('form')?.requestSubmit()` only when no ds-form encloses the button, so a ds-form nested in a native form submits once. `expanded` is a JS property only (`attribute: false`) and stays tri-state — undefined means the button discloses nothing, so no aria-expanded is set at all. A disclosing parent sets `.expanded=`; a raw `aria-expanded` attribute on the host does not reach the inner button."
         },
         "rn": {
           "element": "Pressable",
@@ -4635,7 +4635,7 @@
         },
         {
           "name": "loading-announces-busy-and-ignores-activation",
-          "description": "While loading is true the button announces itself as busy and ignores further activation, but keeps its size so the layout does not shift.",
+          "description": "While loading is true the button announces itself as busy and ignores further activation, but keeps its height and its label in view.",
           "given": {
             "loading": true
           },
@@ -4726,7 +4726,7 @@
           "given": {
             "label": "Close",
             "iconOnly": true,
-            "leadingIcon": "The close Icon",
+            "leadingIcon": "Icon name=close",
             "variant": "ghost",
             "size": "sm"
           }
@@ -4893,10 +4893,10 @@
       "Overview": "Buttons let people take actions and make choices with a single tap or click. They communicate what will happen through their label, and their emphasis through their variant.",
       "When to use": "Use a Button when the user needs to **do something**: submit, save, confirm, open, add, delete. The label should be a verb or verb phrase that describes the outcome (\"Save changes\", not \"OK\").\n\nUse the `primary` variant for the single most important action in a view. Use `secondary` for the alternatives beside it, `ghost` for low-emphasis actions in dense UI such as toolbars, and `danger` only for destructive, hard-to-undo actions.",
       "When not to use": "Do not use a Button to **navigate** to another page or screen; use a Link, so the destination is exposed to assistive technology and works with open-in-new-tab. Button has no `href` and never renders an anchor. A navigation that wants a button's visual weight — a landing page's call to action — is today a plain Link: giving it that weight would be an appearance prop on Link's own schema, and it is never page CSS restating Button's fill, which would drift from the component at the first token change. Do not use more than one `primary` button in the same region — if everything is emphasized, nothing is. Do not use `disabled` to communicate *why* an action is unavailable; prefer keeping the button enabled and explaining the problem on activation, or show the reason inline.",
-      "Behavior": "Activation fires `onPress` exactly once per pointer click, Enter key, Space key, or assistive-technology activation. While `loading` is true the button announces itself as busy and ignores further activation, but keeps its size so the layout does not shift. `disabled` buttons remain focusable so that keyboard and screen-reader users can discover them; they are announced as \"dimmed\" or \"disabled\" and do not fire `onPress`.",
+      "Behavior": "Activation fires `onPress` exactly once per pointer click, Enter key, Space key, or assistive-technology activation. While `loading` is true the button announces itself as busy and ignores further activation, but keeps its height and its label in view (see `loading` for the one width change). `disabled` buttons remain focusable so that keyboard and screen-reader users can discover them; they are announced as \"dimmed\" or \"disabled\" and do not fire `onPress`.",
       "Content guidelines": "Labels are sentence case, one to three words, and start with a verb. Avoid \"Yes\"/\"No\"; restate the action (\"Delete file\" / \"Keep file\"). Icon-only buttons must set `label` to what the button does, not what the icon depicts (\"Close\", not \"X\").",
       "Accessibility": "Every button must have an accessible name (WCAG 4.1.2). The name comes from the visible label or, for `iconOnly`, from the `label` prop rendered as `aria-label` / `accessibilityLabel`. Focus must be visible (WCAG 2.4.7 and 2.4.11): the focus ring uses `color.border.focus` at `border.width.focus` and is never removed without a replacement. The interactive target is at least 24×24 CSS px (WCAG 2.5.8, AA) at every `size`, and 44×44 on touch platforms following iOS and Android guidelines. Text and background pairs for every variant meet 4.5:1 (WCAG 1.4.3) in both light and dark themes — the build checks this against the tokens. Buttons are activated with Enter and Space, and never rely on hover alone to convey state.",
-      "Platform notes": "### Web\nRender a native `<button>` with `type` from the prop (default `button`, so a button inside a form never submits by accident). Use `aria-disabled=\"true\"` for the disabled state; the button stays in the tab order. Set `aria-busy=\"true\"` while loading.\n\n### Lit\nThe host element `<ds-button>` reflects `variant`, `size`, `disabled`, `icon-only` and `loading` as attributes so consumers can style states from outside the shadow root. The inner element is a real `<button>`; the shadow root is created with `delegatesFocus: true`. Activation dispatches a composed, bubbling `press` CustomEvent. Consumers can also listen to the native `click` that bubbles out of the shadow root; a click blocked by `disabled` or `loading` never leaves it.\n\n### React Native\nRender a `Pressable` with `accessibilityRole=\"button\"`, `accessibilityLabel={label}` and `accessibilityState={{ disabled, busy: loading }}`. There is no CSS cascade, so every style binding is applied explicitly from the token object. Because there is no hover on touch, `backgroundHover` is used for the pressed state. Icons passed as `leadingIcon`/`trailingIcon` are the system `Icon` and are rendered as given: there is no cascade, so Button cannot recolor them, and callers pass the variant's foreground to the Icon's own `overrides.color`. When the visual footprint is smaller than 44px, add `hitSlop` to reach the comfortable target size.",
+      "Platform notes": "### Web\nRender a native `<button>` with `type` from the prop (default `button`, so a button inside a form never submits by accident). Use `aria-disabled=\"true\"` for the disabled state; the button stays in the tab order. Set `aria-busy=\"true\"` while loading.\n\n### Lit\nThe host element `<ds-button>` reflects `variant`, `size`, `disabled`, `icon-only` and `loading` as attributes so consumers can style states from outside the shadow root. The inner element is a real `<button>`; the shadow root is created with `delegatesFocus: true`. Activation dispatches a composed, bubbling `press` CustomEvent. Consumers can also listen to the native `click` that bubbles out of the shadow root; a click blocked by `disabled` or `loading` never leaves it.\n\n### React Native\nRender a `Pressable` with `accessibilityRole=\"button\"`, `accessibilityLabel={label}` and `accessibilityState={{ disabled, busy: loading }}`. There is no CSS cascade, so every style binding is applied explicitly from the token object. Because there is no hover on touch, `backgroundHover` is used for the pressed state. Icons passed as `leadingIcon`/`trailingIcon` are the system `Icon` and are rendered as given: there is no cascade, so Button cannot recolor them, and callers pass the variant's foreground to the Icon's own `color` prop (native Icon's first color source). When the visual footprint is smaller than 44px, add `hitSlop` to reach the comfortable target size.",
       "Related": "Form, Link, Icon, Toolbar, ButtonGroup (planned)."
     },
     "extensions": [
@@ -4977,7 +4977,7 @@
         "children": {
           "type": "content",
           "required": true,
-          "description": "The body. Usually a Stack of Text and controls; a plain string is rendered inside the system Text (a bare string cannot sit in a native View)."
+          "description": "The body. Usually a Stack of Text and controls; a plain string or number is rendered inside the system Text with its defaults (a bare string cannot sit in a native View), including each top-level string or number in an array body."
         },
         "heading": {
           "type": "string",
@@ -5026,13 +5026,13 @@
         "interactive": {
           "type": "boolean",
           "default": false,
-          "description": "The whole card is one link or button target. Requires exactly one interactive child (a Link or Button) whose action the card extends to its full area; the card itself is not focusable. The child is looked for among the top-level children of the body only (web and Lit also accept a native a[href] or button there); controls nested inside a wrapper such as a Stack are not searched, so place the link at the top level beside any Text. With zero or several such children the card stays non-interactive (no hit area, no hover background, no press) and warns once in development. If the child is disabled the card is disabled with it: no hover background, pressing does nothing, and on native the Pressable reports disabled. Controls in `headerActions` and `footer` are never the target; they sit above the hit area and keep their own targets.",
+          "description": "The whole card is one link or button target. Requires exactly one interactive child (a Link or Button) whose action the card extends to its full area; the card itself is not focusable. The child is looked for among the top-level children of the body only (web and Lit also accept a native a[href] or button there); controls nested inside a wrapper such as a Stack are not searched, so place the link at the top level beside any Text. A top-level Fragment is flattened, so its children count as top-level. With zero or several such children the card stays non-interactive (no hit area, no hover background, no press) and warns once per mounted card in development. If the child is disabled the card is disabled with it: no hover background, pressing does nothing, and on native the Pressable reports disabled. Controls in `headerActions` and `footer` are never the target; they sit above the hit area and keep their own targets.",
           "a11y": "The card never becomes a second focus stop; its single child link or button is the target, and the card enlarges the hit area only (pseudo-element on web, wrapping Pressable on native)."
         },
         "focusable": {
           "type": "boolean",
           "default": false,
-          "description": "The card root takes tabindex=-1 so a container (Feed) can move focus to it by script, and draws its own focus ring when focused that way. Not a tab stop; not for making cards clickable (`interactive`). With `interactive` also set, `interactive` wins and this is a no-op — the card already has a target — and a development warning says so.",
+          "description": "The card root takes tabindex=-1 so a container (Feed) can move focus to it by script, and draws its own focus ring when focused that way. Not a tab stop; not for making cards clickable (`interactive`). With `interactive` also set, `interactive` wins and this is a no-op — the card already has a target — and a development warning says so. It stays a no-op whenever `interactive` is set, even when that card fell back to non-interactive for want of a single target.",
           "a11y": "Only scripted focus (PageUp/PageDown in a Feed) lands here; the ring is drawn on the card via :focus-visible."
         }
       },
@@ -5088,7 +5088,7 @@
         "hoverBackground": {
           "token": "color.background.subtle",
           "state": "hover",
-          "description": "Interactive cards only, on pointer hover; subtle cards use color.background.strong. Native has no hover, so the Pressable shows it while pressed, and on pointer hover where the platform reports one (iPad pointer, react-native-web).",
+          "description": "Interactive cards only, on pointer hover (a plain `:hover` on web and Lit, no `@media (hover: hover)` guard, as Link); subtle cards use color.background.strong. Native has no hover, so the Pressable shows it while pressed, and on pointer hover where the platform reports one (iPad pointer, react-native-web).",
           "locked": true
         },
         "focusRing": {
@@ -5136,7 +5136,7 @@
           "attributes": [
             "aria-labelledby"
           ],
-          "notes": "An <article> when it has a heading (aria-labelledby the heading id), a <div> otherwise. Header, body and footer are plain flex rows/columns styled from this component's own gap bindings (not the Stack component: Stack owns page rhythm and its gap enum, while these gaps are Card's bindings and must stay overridable per instance). Interactive: the single child link/button gets a ::after pseudo-element covering the card (position: relative on the card), so the hit area grows without adding a focus stop; the focus ring is drawn on the card only while that target has keyboard focus (`:has(.target:focus-visible)` with the extending class as `.target`), never for mouse focus or a focused headerActions or footer control. The header-actions and footer rows get position: relative and z-index: 1 so their controls stay above the ::after. `focusable` draws its ring as an outline of focusRingWidth in focusRing, no offset, on :focus-visible, so a focusable card reserves no border. The Heading gets `overrides={{ marginBlockEnd: 'space.0' }}` so its own bottom margin adds no space inside the header row (every platform). Card reaches the child by cloning it with an extra class — the one sanctioned exception to \"never touch a child\", because the hit area is the card's own geometry, and both Link and Button merge a passed className by contract. The schema's a11y.role is `none` because a card without a heading has none; with a heading the element is an <article> named by it, and that is the specific rule."
+          "notes": "An <article> when it has a heading (aria-labelledby the heading id), a <div> otherwise. Header, body and footer are plain flex rows/columns styled from this component's own gap bindings (not the Stack component: Stack owns page rhythm and its gap enum, while these gaps are Card's bindings and must stay overridable per instance). Interactive: the single child link/button gets a ::after pseudo-element covering the card (position: relative on the card), so the hit area grows without adding a focus stop; the focus ring is drawn on the card only while that target has keyboard focus (`:has([data-ds-card-target]:focus-visible)`), never for mouse focus or a focused headerActions or footer control. A disabled target is `:has([data-ds-card-target]:is([aria-disabled='true'], :disabled))`, which covers Button's `disabled`, a disabled Form and a native disabled button; pressing is already blocked by the child, so the ::after stays. On interactive cards only, the header-actions and footer rows get position: relative and z-index: 1 so their controls stay above the ::after (plain cards get no stacking context). `focusable` draws its ring as an outline of focusRingWidth in focusRing, no offset, on :focus-visible, so a focusable card reserves no border. The Heading gets `overrides={{ marginBlockEnd: 'space.0' }}` so its own bottom margin adds no space inside the header row (every platform). Card reaches the child by cloning it with a `data-ds-card-target` attribute — the one sanctioned exception to \"never touch a child\", because the hit area is the card's own geometry. It is an attribute, not a class, because Link and Button accept no className; both pass data attributes through `...rest` to their root. The schema's a11y.role is `none` because a card without a heading has none; with a heading the element is an <article> named by it, and that is the specific rule."
         },
         "lit": {
           "tag": "ds-card",
@@ -5147,7 +5147,7 @@
             "focusable",
             "heading-level"
           ],
-          "notes": "Shadow root with named slots `header-actions` and `footer`, default slot for the body, and the heading rendered from the `heading` property as a <ds-heading>. The rows are the card's own flex rows, not ds-stack, so their gaps stay overridable. The host is named with aria-label={heading} rather than an idref, since ids do not cross the shadow root. The interactive hit-area trick works across the shadow boundary only if the link is slotted: the host gets position: relative and the slotted link is told (via a class the card adds on slotchange) to extend. The rule for that class is the card's own to install — inject it once per root node (document head, or the nearest ancestor shadow root) rather than expecting a global stylesheet. With no interactive child, or more than one, the card stays non-interactive and warns in development. The target is looked for among the default slot's assigned elements only, not their descendants. A click on the extended area lands on the ds-link/ds-button host, not its inner native element, so the card forwards a click whose target is that host by calling click() on the inner a[href]/button in the child's open shadow root — the same sanctioned exception as the class. The ring shows only while that target has keyboard focus: the card toggles a `target-focus` custom state on focusin/focusout when the focused element matches :focus-visible and draws on :host(:state(target-focus)); a focused header-actions or footer control does not ring the card. The header-actions and footer rows get position: relative and z-index: 1 above the hit area. `focusable`: the host itself takes tabindex=\"-1\" and the shadow root does not use delegatesFocus, so scripted focus lands on the card rather than its first focusable child. With a heading the host gets role=\"article\" as a plain attribute unless the consumer already set a role; the card removes only a role it wrote itself."
+          "notes": "Shadow root with named slots `header-actions` and `footer`, default slot for the body, and the heading rendered from the `heading` property as a <ds-heading>. The rows are the card's own flex rows, not ds-stack, so their gaps stay overridable. The host is named with aria-label={heading} rather than an idref, since ids do not cross the shadow root. The interactive hit-area trick works across the shadow boundary only if the link is slotted: the host gets position: relative and the slotted link is told (via a class the card adds on slotchange) to extend. The rule for that class is the card's own to install — inject it once per root node (document head, or the nearest ancestor shadow root) rather than expecting a global stylesheet. With no interactive child, or more than one, the card stays non-interactive and warns in development. The target is looked for among the default slot's assigned elements only, not their descendants. A click on the extended area lands on the ds-link/ds-button host, not its inner native element, so the card forwards a click whose target is that host by calling click() on the inner a[href]/button in the child's open shadow root — the same sanctioned exception as the class. The ring shows only while that target has keyboard focus: the card toggles a `target-focus` custom state on focusin/focusout when the focused element matches :focus-visible and draws on :host(:state(target-focus)); a focused header-actions or footer control does not ring the card. On interactive cards only, the header-actions and footer rows get position: relative and z-index: 1 above the hit area. The hover rules use two more custom states: `has-target` (exactly one target found) and `target-disabled` (the target has a `disabled` attribute or aria-disabled=\"true\", watched with a MutationObserver that writes nothing back). The zero-or-several warning is not judged on the first update: it runs on the default slot's slotchange and when `interactive` changes. `focusable`: the host itself takes tabindex=\"-1\" and the shadow root does not use delegatesFocus, so scripted focus lands on the card rather than its first focusable child; the ring is an outline on the surface part while the host matches :focus-visible, and the host's own outline is removed. With a heading the host gets role=\"article\" as a plain attribute unless the consumer already set a role, and aria-label with the heading text unless the consumer already set one; the card removes only a role or aria-label it wrote itself."
         },
         "rn": {
           "element": "View",
@@ -5155,7 +5155,7 @@
             "accessibilityRole",
             "accessibilityLabel"
           ],
-          "notes": "View with padding/background/border/radius from tokens; header and footer are plain row Views styled from this component's gap bindings, not Stack. Interactive: the card wraps its content in a Pressable that forwards onPress to the single child Link/Button's handler and takes accessibilityRole and accessibilityLabel from it. That Pressable is the card's single target and single focus stop — \"the card adds no second stop\" means exactly one, not zero, here. Button and Link do not forward an `accessible` prop, so the child is neutralised by wrapping it in a View with pointerEvents=\"none\", accessibilityElementsHidden and importantForAccessibility=\"no\". Only `children` is searched for that child: a Button or Link in `headerActions` or `footer` keeps its own target and is not collapsed. hoverBackground shows while the Pressable is pressed, and on hover where a pointer exists (iPad, react-native-web). A disabled child makes the Pressable disabled (accessibilityState disabled, press ignored). A focusable card reserves border.width.focus like an interactive one. `focusable` is a react-native-web capability: RN core types View without onFocus/onBlur and Android treats tabIndex -1 as not focusable, so on iOS and Android no container can move focus to the card by script; screen-reader users reach each card by swiping, its Heading being a header. The Heading gets `level` from headingLevel and `size: lg`; native has no heading levels, so headingLevel changes nothing visible or announced there and is passed for parity."
+          "notes": "View with padding/background/border/radius from tokens; header and footer are plain row Views styled from this component's gap bindings, not Stack. The root View is the `surface` part and keeps `testID=\"Card\"`; there is no `Card.surface`, and the heading keeps Heading's own hook. Interactive: the card wraps its content in a Pressable whose press runs the single child Link/Button's own press behavior (for Button that includes its tracking, `type: submit` and its disabled/loading guard, with a disabled Form counting as disabled) and takes accessibilityRole and the child's resolved accessibilityLabel from it (Button's `accessibleName ?? accessibilityLabel ?? label`). That Pressable is the card's single target and single focus stop — \"the card adds no second stop\" means exactly one, not zero, here. Button and Link do not forward an `accessible` prop, so the child is neutralised by wrapping it in a View with pointerEvents=\"none\", accessibilityElementsHidden and importantForAccessibility=\"no\". Only `children` is searched for that child: a Button or Link in `headerActions` or `footer` keeps its own target and is not collapsed. hoverBackground shows while the Pressable is pressed, and on hover where a pointer exists (iPad, react-native-web). A disabled child makes the Pressable disabled (accessibilityState disabled, press ignored). A focusable card reserves border.width.focus like an interactive one. `focusable` is a react-native-web capability: RN core types View without onFocus/onBlur and Android treats tabIndex -1 as not focusable, so on iOS and Android no container can move focus to the card by script; screen-reader users reach each card by swiping, its Heading being a header. The Heading gets `level` from headingLevel and `size: lg`; native has no heading levels, so headingLevel changes nothing visible or announced there and is passed for parity."
         },
         "swiftui": {
           "element": "VStack",
@@ -5210,8 +5210,10 @@
         },
         {
           "name": "interactive-adds-no-focus-stop",
-          "description": "An interactive card extends its single child link or button to the whole area; the card itself is never a second tab stop.",
+          "description": "An interactive card extends its single child link or button to the whole area; the card itself is never a second tab stop. As in whole-card-is-a-link, the children string is rendered as a top-level Link with that label (href #), so the card has a real target.",
           "given": {
+            "heading": "September invoice",
+            "children": "A Link to the invoice",
             "interactive": true
           },
           "then": [
@@ -5260,7 +5262,7 @@
         },
         {
           "name": "dense-grid-card",
-          "description": "A card in a dense grid, on the tinted surface and with the tighter inset.",
+          "description": "A card in a dense grid, on the tinted surface and with the tighter inset, and no heading: the story clears any Default heading.",
           "given": {
             "children": "A search result",
             "inset": "sm",
@@ -5425,7 +5427,7 @@
       "Behavior": "The header renders when `heading` or `headerActions` is present, the footer when `footer` is present; body always. Header, body and footer are separated by `partGap`, and the card pads all of it by `inset`. `surface: default` draws a border, `subtle` does not. An `interactive` card grows its single child link or button's hit area to the whole card, shows `hoverBackground` on pointer hover, and draws the focus ring around the card when that child has keyboard focus — but adds no focus stop of its own. A `focusable` card carries `tabIndex={-1}` on its root and draws the same ring on its own `:focus-visible`; `tabIndex` is not a Card prop, and a caller who wants scripted focus sets `focusable` (which wins over any `tabIndex` in `...rest`). Every anatomy part carries `data-part` with its name on the element that holds it — the root is `surface`, and `header`, `headerActions`, `body` and `footer` are the row or wrapper around their content, not a slot element — except `heading`: it is the system Heading, which keeps its own hook, and is located by role heading or its text. Aria attributes passed through `...rest` (role, aria-posinset, aria-setsize, aria-describedby) land on the root, which is how Feed makes a Card an article.",
       "Content guidelines": "Headings are short noun phrases, sentence case, one line. Footers hold one primary action at most, placed first, then one secondary; a card with more choices than that is a form. Body text keeps to a few lines; a card is a summary, and the detail lives where its action goes.",
       "Accessibility": "A card with a heading is an `article` labelled by that heading, so screen-reader users can navigate card by card and hear each one's name (WCAG 1.3.1, 2.4.6); heading levels are consistent within a list and fit the page outline (heading-hierarchy). Interactive cards keep exactly one tab stop — the child link or button — and show a visible focus ring on the card (2.4.7), so keyboard users get the same large target as pointer users (2.5.8) without a redundant stop. Text on either surface meets 4.5:1 in both modes; the build checks body, muted and link foreground against both.",
-      "Platform notes": "### Web\nRender `<article aria-labelledby={headingId}>` (or `<div>` without a heading) with `ds-card` classes for `inset`, `surface` and `interactive`. Header: a flex row with `justify-content: space-between` and `gap` from `headerGap`, containing the Heading (level from `headingLevel`, `size: lg` so a card heading reads smaller than a page heading) and the actions in a row with `gap` from `actionsGap`. Footer: a flex row with `gap` from `footerGap`. The rows are Card's own markup, not Stack, so their gaps stay per-instance overridable. Interactive: `position: relative` on the card; the single link/button child receives a class that adds `::after { content: ''; position: absolute; inset: 0 }`; `:has(.target:focus-visible)` draws the ring on the card, and the header-actions and footer rows sit above the hit area with `position: relative; z-index: 1`.\n\n### Lit\n`<ds-card heading=\"Plan\" heading-level=\"3\" inset=\"md\">` with slots `header-actions`, default, and `footer`. Renders `<ds-heading size=\"lg\">` internally (same size on every platform); header and footer rows are Card's own flex rows, not `<ds-stack>`. For `interactive`, on `slotchange` find the single `ds-link`/`ds-button` among the default slot's assigned elements (not their descendants), add the extending class to it, forward clicks on its host to its inner native element, and draw the ring on `:host(:state(target-focus))` while it has keyboard focus. Because the class lands in the light DOM, the card injects the rule for it once into whichever root node the slotted element resolves in, rather than depending on a stylesheet it does not own. The selector matches a raw `a[href]` or `button` too, so a plain anchor gets the same hit area.\n\n### React Native\n`View` with padding, background, border and radius from tokens; header and footer are plain row Views styled from Card's own gap bindings; the heading is the system `Heading` at `size: lg`. For `interactive`, wrap the content in a `Pressable` whose `onPress` calls the single child's handler and whose `accessibilityRole` and `accessibilityLabel` are copied from it; render the child with `accessible={false}` so it collapses into the Pressable.",
+      "Platform notes": "### Web\nRender `<article aria-labelledby={headingId}>` (or `<div>` without a heading) with `ds-card` classes for `inset`, `surface` and `interactive`. Header: a flex row with `justify-content: space-between` and `gap` from `headerGap`, containing the Heading (level from `headingLevel`, `size: lg` so a card heading reads smaller than a page heading) and the actions in a row with `gap` from `actionsGap`. Footer: a flex row with `gap` from `footerGap`. The rows are Card's own markup, not Stack, so their gaps stay per-instance overridable. Interactive: `position: relative` on the card; the single link/button child receives a `data-ds-card-target` attribute whose rule adds `::after { content: ''; position: absolute; inset: 0 }`; `:has([data-ds-card-target]:focus-visible)` draws the ring on the card, and the header-actions and footer rows sit above the hit area with `position: relative; z-index: 1`.\n\n### Lit\n`<ds-card heading=\"Plan\" heading-level=\"3\" inset=\"md\">` with slots `header-actions`, default, and `footer`. Renders `<ds-heading size=\"lg\">` internally (same size on every platform); header and footer rows are Card's own flex rows, not `<ds-stack>`. For `interactive`, on `slotchange` find the single `ds-link`/`ds-button` among the default slot's assigned elements (not their descendants), add the extending class to it, forward clicks on its host to its inner native element, and draw the ring on `:host(:state(target-focus))` while it has keyboard focus. Because the class lands in the light DOM, the card injects the rule for it once into whichever root node the slotted element resolves in, rather than depending on a stylesheet it does not own. The selector matches a raw `a[href]` or `button` too, so a plain anchor gets the same hit area.\n\n### React Native\n`View` with padding, background, border and radius from tokens; header and footer are plain row Views styled from Card's own gap bindings; the heading is the system `Heading` at `size: lg`. For `interactive`, wrap the content in a `Pressable` whose `onPress` calls the single child's handler and whose `accessibilityRole` and `accessibilityLabel` are copied from it; render the child with `accessible={false}` so it collapses into the Pressable.",
       "Related": "Box, Stack, Heading, Button, Link, Container."
     },
     "extensions": [],
@@ -7840,7 +7842,7 @@
         "children": {
           "type": "content",
           "required": true,
-          "description": "The page or region content, usually a Stack with `gap: section` between regions. A string given as `children` in an example is an illustrative label, not content to build: stories render it inside a Text on every platform (native requires one) and do not construct the Stack it names."
+          "description": "The page or region content, usually a Stack with `gap: section` between regions. A string given as `children` in an example is an illustrative label, not content to build: stories render it inside a Text with its defaults (element `p` on web and Lit) on every platform (native requires one) and do not construct the Stack it names; that wrapper is the one sanctioned difference from the literal `given`. The Default story's children is the string \"Container content.\" in the same Text."
         },
         "width": {
           "type": "enum",
@@ -7917,12 +7919,12 @@
             "gutter",
             "align"
           ],
-          "notes": "The host is the column (`:host { display: block }`) with a default slot. Same media-query note as web. A custom element cannot retag its host, so `element` sets an ElementInternals role for `main` only; `div` and `section` set none, since a section is a region only when it is named. The role stays on ElementInternals, as in Box, with no `role` attribute added to the host; the main-landmark scenario is web-only because the test accessibility lookup cannot read ElementInternals. The host carries `data-part=\"column\"`."
+          "notes": "The host is the column (`:host { display: block }`) with a default slot. Same media-query note as web. A custom element cannot retag its host, so `element` sets an ElementInternals role for `main` only; `div` and `section` set none, since a section is a region only when it is named. The role stays on ElementInternals, as in Box, with no `role` attribute added to the host; the main-landmark scenario is web-only because the test accessibility lookup cannot read ElementInternals. The host carries `data-part=\"column\"`. `element` is an attribute-settable property that does not reflect: it changes no styling. Before the first update, when the width and gutter attributes are not yet reflected, the plain `:host` rules are the prop defaults (the content max-width and the responsive default gutter)."
         },
         "rn": {
           "element": "View",
           "props": [],
-          "notes": "View with maxWidth, alignSelf (center → center, start → flex-start), width 100%, paddingHorizontal. `element` is web and Lit only and is absent from the native props entirely, as in Box. The responsive gutter uses useWindowDimensions against the active theme's maxWidth tokens, with the same inclusive `>=` boundaries as web. The component forwards a ref to its root View, typed as Box types its ref. On phones the cap rarely applies; on tablets and react-native-web it does."
+          "notes": "View with maxWidth, alignSelf (center → center, start → flex-start), width 100%, paddingHorizontal. `element` is web and Lit only and is absent from the native props entirely, as in Box. The responsive gutter uses useWindowDimensions against the active theme's maxWidth tokens, with the same inclusive `>=` boundaries as web. The component forwards a ref to its root View, typed as Box types its ref. The root is the `column` part and keeps `testID=\"Container\"` with no separate part testID, as Box does for `surface`. On phones the cap rarely applies; on tablets and react-native-web it does. The gutter reads the window width, never the parent's, so a nested `gutter: default` Container picks its gutter by the window here while SwiftUI measures its own width — one more reason a nested Container uses `gutter: none`. Container belongs in a column-direction parent (a screen, a vertical Stack); inside a row parent `width: 100%` and alignSelf cross axes and that placement is not supported."
         },
         "swiftui": {
           "element": "VStack",
@@ -11963,11 +11965,11 @@
             "vertical"
           ],
           "default": "horizontal",
-          "description": "Vertical dividers sit between inline siblings (toolbar groups) and stretch to the row height: inline-block with block-size 100% and align-self stretch. They need a flex or grid row (a horizontal Stack with align stretch) or a parent with a definite height; in plain block flow a vertical divider has no height and draws nothing."
+          "description": "Vertical dividers sit between inline siblings (toolbar groups) and stretch to the row height: inline-block with `block-size: auto; align-self: stretch; min-block-size: 100%` (flex stretch applies only to an auto cross size, and the min fills a parent with a set height). They need a flex or grid row (a horizontal Stack with align stretch) or a parent with a definite height; in plain block flow a vertical divider has no height and draws nothing."
         },
         "label": {
           "type": "string",
-          "description": "Optional text in the middle of a horizontal divider (\"or\", \"Earlier today\"). Turns the divider from decorative into a labelled separator (`semantic` is implied). Ignored on a vertical divider, with a development warning: a vertical line has no room for centered text. An ignored label implies nothing either — a vertical divider is semantic only when `semantic` says so. An empty string is no label: the divider stays decorative and nothing warns. The development warning fires when the ignored combination appears or changes (an effect keyed on `label` and `orientation`), not on every render; on React Native a vertical divider with an ignored label and `semantic: true` gets both warnings. When in effect, the label is the separator's accessible name (see the platform notes), and the two line pieces on either side are hidden from assistive technology."
+          "description": "Optional text in the middle of a horizontal divider (\"or\", \"Earlier today\"). Turns the divider from decorative into a labelled separator (`semantic` is implied). Ignored on a vertical divider, with a development warning: a vertical line has no room for centered text. An ignored label implies nothing either — a vertical divider is semantic only when `semantic` says so. An empty string is no label: the divider stays decorative and nothing warns. On Lit `label` is a property that also reads the `label` attribute and does not reflect. The development warning fires when the ignored combination appears or changes (an effect keyed on `label` and `orientation`), not on every render; on React Native a vertical divider with an ignored label and `semantic: true` gets both warnings. When in effect, the label is the separator's accessible name (see the platform notes), and the two line pieces on either side are hidden from assistive technology."
         },
         "semantic": {
           "type": "boolean",
@@ -11998,7 +12000,7 @@
         },
         "spacing": {
           "token": "layout.gap.{spacing}",
-          "description": "`spacing: none` is the off state: it renders no space and sets no hook (not a `layout.gap.none` value), so an override of this binding does nothing until a spacing value is chosen — overrides change values, never presence.",
+          "description": "`spacing: none` is the off state: it renders no space and sets no hook (not a `layout.gap.none` value, and an `overrides.spacing` is not written to the hook either), so an override of this binding does nothing until a spacing value is chosen — overrides change values, never presence.",
           "locked": false
         },
         "labelColor": {
@@ -12009,7 +12011,7 @@
         "labelSize": {
           "token": "font.size.sm",
           "part": "label",
-          "description": "Passed to the composed Text as its `fontSize` override, along with `fontFamily`; Divider does not style the Text itself. The label color and default size come from the Text props `size=\"sm\" tone=\"muted\"`, so Divider writes no label color or size rule of its own.",
+          "description": "Passed to the composed Text as its `fontSize` override, along with `fontFamily`; Divider does not style the Text itself. The label color and default size come from the Text props `size=\"sm\" tone=\"muted\"`, so Divider writes no label color or size rule of its own. Neither labelSize nor fontFamily has a --ds-divider-* hook on web or Lit: only the bindings the author overrode are passed on, into Text's `overrides`, and page CSS reaches the label through Text's own hooks.",
           "locked": false
         },
         "labelGap": {
@@ -12046,7 +12048,7 @@
             "role=separator",
             "aria-orientation"
           ],
-          "notes": "A decorative divider is <hr aria-hidden=\"true\"> (hr has an implicit separator role, so hiding it is deliberate); every semantic divider, labelled or not, is <div role=\"separator\" aria-orientation>, so the semantic and labelled cases share one element. With a label the div is a flex row of two aria-hidden line spans (data-part=\"line\") around the composed Text (data-part=\"label\"), and the separator takes its accessible name from the label through aria-labelledby pointing at the Text id (from useId) — separator children are presentational, so containment alone does not name it. Unlabelled, the root paints itself and is the `line` part; it carries no data-part. The line is a background-color box of the thickness, not a border. Vertical: display inline-block, inline-size thin, block-size 100% / align-self stretch."
+          "notes": "A decorative divider is <hr aria-hidden=\"true\"> (hr has an implicit separator role, so hiding it is deliberate); every semantic divider, labelled or not, is <div role=\"separator\" aria-orientation>, so the semantic and labelled cases share one element. With a label the div is a flex row of two aria-hidden line spans (data-part=\"line\") around the composed Text (data-part=\"label\"), and the separator takes its accessible name from the label through aria-labelledby pointing at the Text id (from useId) — separator children are presentational, so containment alone does not name it. Beyond the composition props, the label Text also receives the platform attributes `id` and `data-part=\"label\"`. The labelled row uses align-items center, so the lines sit at the label's vertical center. Unlabelled, the root paints itself and is the `line` part; it carries no data-part. The line is a background-color box of the thickness, not a border. Vertical: display inline-block, inline-size thin, block-size auto, min-block-size 100%, align-self stretch. The ref is `Ref<HTMLElement>`, since the root is an hr or a div, and `...rest` lands on whichever root renders."
         },
         "lit": {
           "tag": "ds-divider",
@@ -12055,7 +12057,7 @@
             "semantic",
             "spacing"
           ],
-          "notes": "Host is the line when unlabelled (`:host { display: block }`, `:host([orientation=\"vertical\"]) { display: inline-block }`). When a label is in effect the host switches to a flex row through an internal `data-labelled` host attribute and the shadow root renders line segment, label Text, line segment, the segments aria-hidden. role, aria-orientation and aria-hidden are plain host attributes, not ElementInternals, because tests read them (dom-accessibility-api ignores internals). A labelled host also sets aria-label to the label text: ids do not cross the shadow root, and separator children are presentational. `label` is a property."
+          "notes": "Host is the line when unlabelled (`:host { display: block }`, `:host([orientation=\"vertical\"]) { display: inline-block }`). When a label is in effect the host switches to a flex row through an internal `data-labelled` host attribute and the shadow root renders line segment, label Text, line segment, the segments aria-hidden. role, aria-orientation and aria-hidden are plain host attributes, not ElementInternals, because tests read them (dom-accessibility-api ignores internals). A labelled host also sets aria-label to the label text: ids do not cross the shadow root, and separator children are presentational. `label` is a property. Shadow elements carry `part` as well as `data-part`, both the anatomy names: names tests read, not a styling surface."
         },
         "rn": {
           "element": "View",
@@ -12063,7 +12065,7 @@
             "accessibilityElementsHidden",
             "importantForAccessibility"
           ],
-          "notes": "A View with height (or width) = border.width.thin and backgroundColor color.border, inside a root View that carries `spacing` as padding. Decorative: accessibilityElementsHidden + importantForAccessibility=\"no-hide-descendants\" on the root, since it wraps the inner line View. No accessibilityRole is set: there is none for a separator. Labelled: the root is a row (flexDirection row, alignItems center, `gap` from labelGap) of two line Views, each hidden (accessibilityElementsHidden + importantForAccessibility=\"no\"), around the label Text, which stays readable. Semantic: there is no separator role on native; render the label (if any) as Text so it is read, otherwise the divider stays hidden — announcing \"separator\" has no native idiom. `semantic: true` with no label therefore has no observable effect here, and warns in development so the author knows the boundary is silent on this platform."
+          "notes": "A View with height (or width) = border.width.thin and backgroundColor color.border, inside a root View that carries `spacing` as padding. Decorative: accessibilityElementsHidden + importantForAccessibility=\"no-hide-descendants\" on the root, since it wraps the inner line View. No accessibilityRole is set: there is none for a separator. Labelled: the root is a row (flexDirection row, alignItems center, `gap` from labelGap) of two line Views, each hidden (accessibilityElementsHidden + importantForAccessibility=\"no\"), around the label Text, which stays readable. Semantic: there is no separator role on native; render the label (if any) as Text so it is read, otherwise the divider stays hidden — announcing \"separator\" has no native idiom. `semantic: true` with no label therefore has no observable effect here, and warns in development so the author knows the boundary is silent on this platform; that warning is keyed on `semantic` and whether a label is in effect, so it also fires for a semantic vertical divider whose label is ignored. The composition's `element: span` is not passed (native Text has no `element`). The label Text sits in a plain View carrying `testID=\"Divider.label\"`, since Text takes no testID. `spacing` pads the root on the cross axis whether or not it is the labelled row, each labelled line piece takes `flex: 1`, and a vertical divider's root and its inner line both use `alignSelf: stretch`."
         },
         "swiftui": {
           "element": "Rectangle",
@@ -12139,6 +12141,13 @@
                 "web",
                 "lit"
               ]
+            },
+            {
+              "name": "or",
+              "platforms": [
+                "web",
+                "lit"
+              ]
             }
           ]
         }
@@ -12161,14 +12170,14 @@
         },
         {
           "name": "toolbar-groups",
-          "description": "A vertical line between groups of toolbar controls, stretching to the row height; shown inside a horizontal Stack with align stretch so the row has a height to fill.",
+          "description": "A vertical line between groups of toolbar controls, stretching to the row height; shown inside a horizontal Stack with align stretch and gap tight, between the Texts \"Bold Italic\" and \"Align left\", so the row has a height to fill. The `orientation: vertical` enum story uses the same wrapper.",
           "given": {
             "orientation": "vertical"
           }
         },
         {
           "name": "section-boundary",
-          "description": "An unlabelled line that still marks a real boundary a screen-reader user should hear.",
+          "description": "An unlabelled line that still marks a real boundary a screen-reader user should hear on web, Lit and SwiftUI; on React Native it is silent by design and warns (see the rn notes).",
           "given": {
             "semantic": true,
             "spacing": "loose"
@@ -12266,7 +12275,7 @@
       "Behavior": "Renders a one-token-thick line in the border color along the chosen axis, with optional symmetric spacing. With `label`, the text is centered with a line on each side and the divider becomes semantic. Nothing is interactive.",
       "Content guidelines": "Labels are one to three words, sentence case or lowercase for conjunctions (\"or\"), no punctuation. Date and group labels match the headings elsewhere on the screen.",
       "Accessibility": "Decorative dividers are hidden from assistive technology so lists do not announce \"separator\" between every row (WCAG 1.3.1 — structure is conveyed by the list, not the line). Semantic dividers expose role `separator` with `aria-orientation`, and labelled ones take the label as their accessible name (separator children are presentational, so the name is set explicitly: `aria-labelledby` on web, `aria-label` on Lit) with the flanking line pieces hidden. The line is below the 3:1 non-text threshold on purpose — it is not required to identify anything (1.4.11 exemption), and the label, when present, meets 4.5:1.",
-      "Platform notes": "### Web\nDecorative: `<hr aria-hidden=\"true\" class=\"ds-divider\">`. Semantic: `<div role=\"separator\" aria-orientation={orientation}>` with, for a label, two aria-hidden flex-grow line spans around a `Text size=\"sm\" tone=\"muted\"` that names the separator through `aria-labelledby`. Vertical uses `inline-size: var(--border-width-thin); align-self: stretch`.\n\n### Lit\n`<ds-divider>`; `<ds-divider semantic label=\"or\">`. Host carries the styles and, when semantic, plain `role=\"separator\"` and `aria-orientation` attributes (plus `aria-label` with a label); decorative hosts get `aria-hidden=\"true\"`. The label renders in the shadow root.\n\n### React Native\n`View` with `height: t.borderWidthThin, backgroundColor: t.colorBorder` (or width for vertical, `alignSelf: 'stretch'`). Decorative: hidden from AT. Labelled: a row of two hidden lines with a `Text size=\"sm\" tone=\"muted\"` between; the text is what gets read.",
+      "Platform notes": "### Web\nDecorative: `<hr aria-hidden=\"true\" class=\"ds-divider\">`. Semantic: `<div role=\"separator\" aria-orientation={orientation}>` with, for a label, two aria-hidden flex-grow line spans around a `Text size=\"sm\" tone=\"muted\"` that names the separator through `aria-labelledby`. Vertical uses `inline-size: var(--border-width-thin); block-size: auto; min-block-size: 100%; align-self: stretch`.\n\n### Lit\n`<ds-divider>`; `<ds-divider semantic label=\"or\">`. Host carries the styles and, when semantic, plain `role=\"separator\"` and `aria-orientation` attributes (plus `aria-label` with a label); decorative hosts get `aria-hidden=\"true\"`. The label renders in the shadow root.\n\n### React Native\n`View` with `height: t.borderWidthThin, backgroundColor: t.colorBorder` (or width for vertical, `alignSelf: 'stretch'`). Decorative: hidden from AT. Labelled: a row of two hidden lines with a `Text size=\"sm\" tone=\"muted\"` between; the text is what gets read.",
       "Related": "Stack, Menu, List (planned), Heading."
     },
     "extensions": [],
@@ -13756,11 +13765,11 @@
         "actions": {
           "type": "content",
           "required": true,
-          "description": "The action row: at least one Button with `type: submit`, primary first (Form's action-order rule). Rendered after the fields with the form gap; a named slot on Lit and the `actions` anatomy part on every platform."
+          "description": "The action row: at least one Button with `type: submit`, primary first (Form's action-order rule). Rendered after the fields with the form gap; a named slot on Lit and the `actions` anatomy part on every platform. A single action renders bare; two or more go in a horizontal Stack the consumer supplies."
         },
         "name": {
           "type": "string",
-          "description": "Identifier for the form, used for analytics and as the base of generated ids. React Native has no ids and focuses by ref, so it is inert there and exists for parity."
+          "description": "Identifier for the form, used for analytics and as the base of generated ids. React Native has no ids and focuses by ref, so it is inert there and exists for parity. An unnamed form bases its ids on a generated unique id (useId on web); two forms given the same `name` on one page is an authoring error Form does not detect."
         },
         "label": {
           "type": "string",
@@ -13784,23 +13793,23 @@
             "change"
           ],
           "default": "submit",
-          "description": "When field-level validation runs. `submit` is the least noisy; `blur` is the usual choice for longer forms."
+          "description": "When field-level validation runs. `submit` is the least noisy; `blur` is the usual choice for longer forms. `change` validates on change only, not also on blur; after a failed submission every mode re-validates on blur and change."
         },
         "disabled": {
           "type": "boolean",
           "default": false,
-          "description": "Disables every field and action inside. Use while submitting. Each field and action dims itself with its own disabled style; the Form container applies no opacity of its own (it would compound) and only exposes the disabled state (accessibilityState.disabled on RN)."
+          "description": "Disables every field and action inside. Use while submitting. Each field and action dims itself with its own disabled style; the Form container applies no opacity of its own (it would compound) and only exposes the disabled state (accessibilityState.disabled on RN). Web and Lit put no disabled attribute on the form element (aria-disabled is not valid on role form); each field and action reports its own."
         },
         "errorSummary": {
           "type": "boolean",
           "default": true,
-          "description": "When submission fails validation, render a summary of errors above the fields that links to each field. Each item's text is the field's own message verbatim (a field's own required message already names the field, \"Email is required.\"), never prefixed with the label; a field that is invalid with an empty message shows its `label` instead. Every field's registration carries its `label` for that fallback, on all three platforms.",
+          "description": "When submission fails validation, render a summary of errors above the fields that links to each field. Each item's text is the field's own message verbatim (a field's own required message already names the field, \"Email is required.\"), never prefixed with the label; a field that is invalid with an empty message shows its `label` instead, and its `name` when the label is empty too. Every field's registration carries its `label` for that fallback, on all three platforms. The summary appears only after a failed submission (not for errors that blur or change validation finds before one), shrinks as fields are fixed, and is removed by a successful submission. Items follow document order at the failed submit; an error found later by blur or change validation is appended at the end. The plural locale is read at the failed submit.",
           "a11y": "The summary receives focus and is announced, so users find every error without hunting."
         }
       },
       "events": {
         "onSubmit": {
-          "description": "Fired when the form is submitted and every field is valid. Receives the collected values keyed by field name: `Record<string, string | number | boolean | string[] | [number, number]>` on every platform — Input and RadioGroup contribute strings, Switch a boolean, Checkbox its `value` when checked, NumberInput and Slider a number, multi-select Listbox, Select and Combobox a string array, a range Slider or DatePicker a pair; an unchecked Checkbox, an unselected RadioGroup, an empty field and a disabled field contribute no key at all.",
+          "description": "Fired when the form is submitted and every field is valid. Receives the collected values keyed by field name: `Record<string, string | number | boolean | string[] | [number, number]>` on every platform — Input and RadioGroup contribute strings, Switch a boolean, Checkbox its `value` when checked, NumberInput and Slider a number, multi-select Listbox, Select and Combobox a string array, a range Slider or DatePicker a pair; an unchecked Checkbox, an unselected RadioGroup, an empty field (a null, empty-string or empty-array value) and a disabled field contribute no key at all.",
           "platforms": {
             "web": "onSubmit",
             "lit": "submit",
@@ -13843,7 +13852,7 @@
       "styles": {
         "gap": {
           "token": "layout.gap.loose",
-          "description": "Vertical gap between fields and between fields and actions — the rhythm preset, so a theme's `layout.rhythm` reaches every form.",
+          "description": "Vertical gap between the direct children of the fields part and between fields and actions — the rhythm preset, so a theme's `layout.rhythm` reaches every form. A Stack given as children spaces its own fields with its own gap; Form does not reach inside it.",
           "locked": false
         },
         "errorSummaryBorder": {
@@ -13880,7 +13889,7 @@
         "errorSummaryGap": {
           "token": "layout.gap.tight",
           "part": "errorSummary",
-          "description": "Gap between the heading and the list and between list items; the list is a Stack (element ul on web and Lit) with no markers and no indent.",
+          "description": "Gap between the heading and the list and between list items. Inside the errorSummary box a Stack holds the heading and the list, and the list is a second Stack (element ul on web and Lit) with no markers and no indent; Form forwards this binding to both Stacks' `overrides.gap` (the `overrides` property on Lit) and has no --ds-form-* hook for it, as Input's helperSize has none.",
           "locked": false
         }
       },
@@ -13927,21 +13936,21 @@
             "aria-label",
             "aria-labelledby"
           ],
-          "notes": "Native submit semantics — Enter in a field submits, and a Button with type=submit triggers it. `novalidate` is set so the system's own error UI is used instead of browser bubbles. Fields register through React context (`discovery: context`); the `data-ds-field` attribute on each field element is used only to sort the registered fields into document order."
+          "notes": "Native submit semantics — Enter in a field submits, and a Button with type=submit triggers it. `novalidate` is set so the system's own error UI is used instead of browser bubbles. Fields register through React context (`discovery: context`); the `data-ds-field` attribute on each field element is used only to sort the registered fields into document order: Form finds each field's host as getElementById(registered id).closest('[data-ds-field]'), and fields with no such host go last in registration order. A field inside a closed Disclosure is left out because it unmounted and unregistered; Form does no Disclosure check of its own (web and rn)."
         },
         "lit": {
           "tag": "ds-form",
           "reflect": [
             "disabled"
           ],
-          "notes": "Wraps a native <form novalidate> in the shadow root, but form ownership is DOM-tree based, so slotted light-DOM ds-inputs are NOT owned by it. ds-form therefore collects its fields itself, by the `data-ds-field` attribute every field component sets on its host — never by a tag list, so a new field type needs no change here. This attribute discovery over the light-DOM subtree is the Lit form of `discovery: context`. A field with no useful blur moment (Checkbox, Switch) sets `data-ds-field=\"change\"` and validates on change under `validate: blur`; every other field sets it empty. It submits on a composed `press` from a ds-button[type=submit] and on Enter in any `data-ds-field` field, except when the keydown originates in a textarea, a button or a link, and propagates `disabled` to the fields it found and to every ds-button slotted into `actions` (remembering which it disabled). `errorSummary` defaults to true, so its attribute is the negated `no-error-summary`. A field missing an `id` is given `{name}-{field.name}` at submit time so the error summary can link to it. Dispatches `submit` with `{ values }` and `invalid` with `{ errors }` in detail. Never nest inside a native form."
+          "notes": "Wraps a native <form novalidate> in the shadow root, but form ownership is DOM-tree based, so slotted light-DOM ds-inputs are NOT owned by it. ds-form therefore collects its fields itself, by the `data-ds-field` attribute every field component sets on its host — never by a tag list, so a new field type needs no change here. This attribute discovery over the light-DOM subtree is the Lit form of `discovery: context`. A field with no useful blur moment (Checkbox, Switch) sets `data-ds-field=\"change\"` and validates on change under `validate: blur`; every other field sets it empty. It submits on a composed `press` from a ds-button[type=submit] and on Enter in any `data-ds-field` field, except when the keydown originates in a textarea, a button or a link, and propagates `disabled` to the fields it found and to every ds-button slotted into `actions` (remembering which it disabled). `errorSummary` defaults to true, so its attribute is the negated `no-error-summary`. A field missing an `id` is given `{name}-{field.name}` at submit time so the error summary can link to it. Dispatches `submit` with `{ values }` and `invalid` with `{ errors }` in detail. Never nest inside a native form. The summary reuses the web markup: role=\"alert\" and tabindex=\"-1\" on the errorSummary box, and each item Link has href=\"#<field id>\" with the click default prevented, so the hash never changes."
         },
         "rn": {
           "element": "View",
           "props": [
             "accessibilityLabel"
           ],
-          "notes": "No native form on iOS/Android. Form provides a context { register, unregister, submit, errors, validateMode, disabled, focusField }; fields call register(name, { label, getValue, validate, focus }) in mount order (name is the argument, not a handle property); a Button with type=submit calls submit(). Non-last fields get returnKeyType=\"next\" (focusField), the last gets \"done\" (submit). Disabled Inputs do not register. On failed submit the summary is announced (accessibilityLiveRegion=\"assertive\" on Android, announceForAccessibility on iOS) and focus moves to the summary when errorSummary is on, otherwise to the first invalid field — same as web. The iOS announcement is the summary heading followed by each item. The View keeps role=\"form\", which only has landmark meaning on react-native-web; iOS and Android have no form landmark, so accessibilityLabel naming the group is the native alternative."
+          "notes": "No native form on iOS/Android. Form provides a context { register, unregister, submit, errors, validateMode, disabled, focusField }; fields call register(name, { label, getValue, validate, focus }) in mount order (name is the argument, not a handle property); a Button with type=submit calls submit(). Non-last fields get returnKeyType=\"next\" (focusField), the last gets \"done\" (submit). Disabled Inputs do not register. On failed submit the summary is announced (accessibilityLiveRegion=\"assertive\" on Android, announceForAccessibility on iOS) and focus moves to the summary when errorSummary is on, otherwise to the first invalid field — same as web. The iOS announcement is the summary heading followed by each item. The summary View is not itself `accessible`, so each item Link stays separately focusable, and accessibility focus moves to the summary heading Text. Each item Link has the field's `name` as its href and an onPress that focuses the field and returns false, so nothing opens; each Link is nested in a `Text tone=\"danger\"`, which is how the danger color reaches a `tone: inherit` Link on native. The View keeps role=\"form\", which only has landmark meaning on react-native-web; iOS and Android have no form landmark, so accessibilityLabel naming the group is the native alternative."
         },
         "swiftui": {
           "element": "VStack",
@@ -13998,7 +14007,7 @@
             "name": "profile",
             "label": "Profile details",
             "validate": "blur",
-            "children": "A Stack of required Inputs name=fullName label=Full name, name=email label=Email, name=phone label=Phone, name=city label=City",
+            "children": "A Stack of required Inputs name=fullName label=Full name, name=email label=Email type=email, name=phone label=Phone type=tel, name=city label=City",
             "actions": "A submit Button labelled Save profile"
           }
         },
@@ -15295,7 +15304,7 @@
           ]
         },
         "onFocus": {
-          "description": "Fired when the field receives focus. No payload: web handlers are called with no arguments, not the FocusEvent.",
+          "description": "Fired when the field receives focus. No payload: web and rn handlers are called with no arguments, not the FocusEvent (a forwarded Tooltip handler gets none either).",
           "platforms": {
             "web": "onFocus",
             "lit": "focus (native, retargeted — no CustomEvent)",
@@ -15307,7 +15316,7 @@
           ]
         },
         "onBlur": {
-          "description": "Fired when the field loses focus. The usual moment to validate. No payload: web handlers are called with no arguments, not the FocusEvent.",
+          "description": "Fired when the field loses focus. The usual moment to validate. No payload: web and rn handlers are called with no arguments, not the FocusEvent.",
           "platforms": {
             "web": "onBlur",
             "lit": "blur (native, retargeted — no CustomEvent)",
@@ -15400,7 +15409,7 @@
         },
         "helperSize": {
           "token": "font.size.sm",
-          "description": "Description and error text size. Reaches them only through the composed Text's `overrides` (fontSize), with fontFamily and lineHeight forwarded the same way; it has no --ds-input-* hook, so page CSS sizes helper text through Text's own hooks.",
+          "description": "Description and error text size. Reaches them only through the composed Text's `overrides` (fontSize), with fontFamily and lineHeight forwarded the same way; it has no --ds-input-* hook, so page CSS sizes helper text through Text's own hooks. fontFamily and lineHeight keep their root hooks as well, for the label and the field.",
           "locked": false
         },
         "lineHeight": {
@@ -15428,7 +15437,7 @@
         },
         "transition": {
           "token": "motion.duration.fast",
-          "description": "Border color on focus and invalid, with motion.easing.standard. Border width and padding change instantly (no layout animation). Instant under reduced motion; native swaps instantly.",
+          "description": "Border color on focus and invalid, with motion.easing.standard. Border width and padding change instantly (no layout animation). Instant under reduced motion. An override changes the duration only; the easing stays motion.easing.standard. Native swaps instantly, so the binding stays in the native overrides type for parity and an override of it has no effect there.",
           "locked": false
         }
       },
@@ -15505,7 +15514,7 @@
             "aria-required",
             "autocomplete"
           ],
-          "notes": "The label is a real <label for=id>. Description and error are linked with aria-describedby; the error element has role=\"alert\". The forwarded ref targets the <input> (so focus() and select() work), not the root wrapper."
+          "notes": "The label is a real <label for=id>. Description and error are linked with aria-describedby; the error element has role=\"alert\". The forwarded ref targets the <input> (so focus() and select() work), not the root wrapper. validity follows the full precedence through setCustomValidity with the copy message (cleared when the field passes or is disabled); because a custom error makes validity.valid false, the browser/type step reads the specific flags (typeMismatch, badInput, patternMismatch, range, step, length). `readOnly` is not a schema prop but passes through the native input props; `disabled` forces it on."
         },
         "lit": {
           "tag": "ds-input",
@@ -15516,7 +15525,7 @@
             "disabled",
             "invalid"
           ],
-          "notes": "Uses ElementInternals (formAssociated = true) so a native <form> that directly contains ds-input sees its value and validity. A disabled field is left out of setFormValue and out of validity, as a native disabled control is, while staying focusable and read-only — the field is never given the native disabled attribute. On web the native `<input size>` attribute (character width) is dropped from the prop surface: this schema's `size` enum is the meaning that wins. Inside ds-form the association is by `name` (see Form); the host carries `data-ds-field`. `value` is property-only (no attribute, since a native `value` attribute means the default): undefined = uncontrolled; consumers control by rebinding `.value`. The initial value's attribute is `default-value`. Controlled mode reverts like React: after dispatching `change` the field shows `.value` again unless a listener rebound it synchronously, so rebind in the handler, not asynchronously. `hideLabel` is the `hide-label` attribute, not reflected. Inside a native fieldset or form, the group's disabled arrives through formDisabledCallback; ds-fieldset sets `disabled` on the field itself. Exposes `currentValue`, `form`, `validity`, `checkValidity()`, `reportValidity()`."
+          "notes": "Uses ElementInternals (formAssociated = true) so a native <form> that directly contains ds-input sees its value and validity. A disabled field is left out of setFormValue and out of validity, as a native disabled control is, while staying focusable and read-only — the field is never given the native disabled attribute. On web the native `<input size>` attribute (character width) is dropped from the prop surface: this schema's `size` enum is the meaning that wins. Inside ds-form the association is by `name` (see Form); the host carries `data-ds-field`. `value` is property-only (no attribute, since a native `value` attribute means the default): undefined = uncontrolled; consumers control by rebinding `.value`. The initial value's attribute is `default-value`. Controlled mode reverts like React: after dispatching `change` the field shows `.value` again unless a listener rebound it synchronously, so rebind in the handler, not asynchronously. `hideLabel` is the `hide-label` attribute, not reflected. Inside a native fieldset or form, the group's disabled arrives through formDisabledCallback; ds-fieldset sets `disabled` on the field itself. Exposes `currentValue`, `form`, `validity`, `checkValidity()`, `reportValidity()`. `formResetCallback` restores the uncontrolled value to `defaultValue` and leaves `invalid` and `error` alone (the Form owns one, the consumer the other). The disabled state tests read is `aria-disabled=\"true\"` on the inner input, which never has the native `disabled` attribute."
         },
         "rn": {
           "element": "TextInput",
@@ -15528,7 +15537,7 @@
             "textContentType",
             "secureTextEntry"
           ],
-          "notes": "No label element — the label is rendered as Text and also passed as accessibilityLabel; description as accessibilityHint. `type` maps to keyboardType and textContentType. Errors use accessibilityLiveRegion (Android) / AccessibilityInfo.announceForAccessibility (iOS). Forwards `accessibilityHint`, `accessibilityLabel` (when set by a parent such as Tooltip), `onHoverIn`, `onHoverOut`, `onFocus`, `onBlur`, `onPressOut` and `onLongPress` to the native element, so Tooltip can attach to it. TextInput has no hover or long-press handlers: `onHoverIn`/`onHoverOut` map to `onPointerEnter`/`onPointerLeave`, and `onLongPress` fires from `onPressIn` after the longPressDelay constant unless `onPressOut` comes first. The accessibilityHint is `description` then a forwarded hint, joined with a space; a forwarded accessibilityLabel replaces `label` as the name, and a Fieldset legend still goes in front (\"Shipping address, <label>\"). Disabled uses `editable={false}` with `accessibilityState.disabled`: iOS cannot keep a non-editable TextInput focusable, so the field is not focusable on native and the disabled state is announced instead. `hideLabel` does not render the label Text, so the `label` part has no native home while hidden and the name lives only in accessibilityLabel. There is no required accessibility state: required is conveyed by the copy.requiredIndicator label text alone, and the error by the live region / announcement, not role=alert. The label, description and errorMessage parts are the composed Text with `testID=\"Input.<part>\"` passed to it, not a wrapper View."
+          "notes": "No label element — the label is rendered as Text and also passed as accessibilityLabel; description as accessibilityHint. `type` maps to keyboardType and textContentType. Errors use accessibilityLiveRegion (Android) / AccessibilityInfo.announceForAccessibility (iOS). Forwards `accessibilityHint`, `accessibilityLabel` (when set by a parent such as Tooltip), `onHoverIn`, `onHoverOut`, `onFocus`, `onBlur`, `onPressOut` and `onLongPress` to the native element, so Tooltip can attach to it. TextInput has no hover or long-press handlers: `onHoverIn`/`onHoverOut` map to `onPointerEnter`/`onPointerLeave`, and `onLongPress` fires from `onPressIn` after the longPressDelay constant unless `onPressOut` comes first. The accessibilityHint is `description` then a forwarded hint, joined with a space; a forwarded accessibilityLabel replaces `label` as the name, and a Fieldset legend still goes in front (\"Shipping address, <label>\"). Disabled uses `editable={false}` with `accessibilityState.disabled`: iOS cannot keep a non-editable TextInput focusable, so the field is not focusable on native and the disabled state is announced instead. `hideLabel` does not render the label Text, so the `label` part has no native home while hidden and the name lives only in accessibilityLabel. There is no required accessibility state: required is conveyed by the copy.requiredIndicator label text alone, and the error by the live region / announcement, not role=alert. The label, description and errorMessage parts are plain wrapper Views carrying `testID=\"Input.<part>\"` around the composed Text, because Text takes no testID (as in Fieldset); the error wrapper also carries the Android accessibilityLiveRegion."
         },
         "swiftui": {
           "element": "TextField",
@@ -15612,7 +15621,7 @@
         },
         {
           "name": "disabled-stays-focusable-and-is-announced",
-          "description": "Disabled fields are visible, readable and focusable (aria-disabled, never the native disabled attribute).",
+          "description": "Disabled fields are visible, readable and focusable (aria-disabled, never the native disabled attribute). On rn only the disabled state holds: the field is not focusable there (see the rn notes).",
           "given": {
             "disabled": true
           },
@@ -15831,7 +15840,7 @@
       "Overview": "Input collects a single line of text. It bundles the label, helper text, field, and error message so that the association between them is always correct — the most common accessibility failure in forms is a field whose label or error is only visually nearby.",
       "When to use": "Use Input for names, emails, passwords, search terms, and short free-text values. Choose `type` for the value so touch keyboards and browser validation match. Provide `description` when the format matters (\"Use the email you signed up with\"). Set `autocomplete` on web whenever the value is personal data so browsers and assistive tools can fill it.",
       "When not to use": "Do not use Input for multi-line content (use TextArea, planned), for choosing from a fixed set (use Select or RadioGroup, planned), or for on/off values (use Checkbox or Switch, planned). Do not use `placeholder` as the label; it vanishes as soon as the user types and fails contrast in most systems.",
-      "Behavior": "The field is uncontrolled unless `value` is provided. `onChange` fires with the string value on every keystroke; `onBlur` is the recommended moment to validate so users are not shouted at mid-word. Setting `error` marks the field invalid, shows the message in the error slot, and announces it. Clearing `error` removes the message and the invalid state. `disabled` fields are visible, readable, focusable (aria-disabled + readOnly on web — never the native disabled attribute), and skipped by the Form; `required` appends `copy.requiredIndicator` to the visible label and sets `aria-required`; the indicator is plain label text (not aria-hidden) and stays part of the accessible name. A read-only field that is not disabled is still submitted and validated, as a native one is. Validation precedence: `error` prop, then `required` (renders `copy.required`), then `invalid` (renders `copy.invalid`), then browser/type validity where the platform has it — which also reports `copy.invalid`, never the browser's own validationMessage, so all user-facing text comes from the copy block. The error slot shows `error` when set; otherwise it shows a message only while `invalid` is true (set directly or by the Form): `copy.required` for an empty required field, else `copy.invalid`. An empty required field that is not yet invalid shows nothing, so the user is not flagged before typing. `validationMessage`/validity always follow the full precedence. The Form marks a failing field by setting its `invalid` and clears it when the field passes; it never sets `error`, which stays the consumer's. Inside a Fieldset `disabled` from the group applies as if set on the field — on web through the `disabled` prop Fieldset passes to its children, on Lit through the property ds-fieldset sets (or formDisabledCallback from a native fieldset/form), and on native through `FieldsetContext`, which also carries the legend that prefixes the accessibility label (\"Shipping address, Street\"). The label is a native `<label for>` (web/Lit) styled from Input's label bindings, not a Text; description and error are Text. `hideLabel` keeps the `<label>` in the DOM, visually hidden (web/Lit; see the native note). `size: sm` swaps paddingBlock/paddingInline/minTarget for their Sm bindings and the type of the field and the label to font.size.sm (description and error stay at helperSize); nothing else changes.",
+      "Behavior": "The field is uncontrolled unless `value` is provided. `onChange` fires with the string value on every keystroke; `onBlur` is the recommended moment to validate so users are not shouted at mid-word. Setting `error` marks the field invalid, shows the message in the error slot, and announces it. Clearing `error` removes the message and the invalid state that `error` implied; an `invalid` set by the Form or the consumer stays until they clear it (on Lit, where setting `error` also writes the reflected `invalid`, clearing a non-empty `error` writes it back to false and ds-form sets it again on its next validation). `required` counts only the empty string as empty, as a native field does: whitespace passes. `disabled` fields are visible, readable, focusable (aria-disabled + readOnly on web — never the native disabled attribute), and skipped by the Form; `required` appends `copy.requiredIndicator` to the visible label and sets `aria-required`; the indicator is plain label text (not aria-hidden) and stays part of the accessible name. A read-only field that is not disabled is still submitted and validated, as a native one is. Validation precedence: `error` prop, then `required` (renders `copy.required`), then `invalid` (renders `copy.invalid`), then browser/type validity where the platform has it — which also reports `copy.invalid`, never the browser's own validationMessage, so all user-facing text comes from the copy block. The error slot shows `error` when set; otherwise it shows a message only while `invalid` is true (set directly or by the Form): `copy.required` for an empty required field, else `copy.invalid`. An empty required field that is not yet invalid shows nothing, so the user is not flagged before typing. `validationMessage`/validity always follow the full precedence. The Form marks a failing field by setting its `invalid` and clears it when the field passes; it never sets `error`, which stays the consumer's. On web and native that mark is the field's entry in the Form context (`errors[name]`), which the field treats exactly as a Form-set `invalid`; on Lit ds-form sets the property. The error slot's order is then: the `error` prop, the Form's context entry, the `invalid`-derived copy. Inside a Fieldset `disabled` from the group applies as if set on the field — on web through the `disabled` prop Fieldset passes to its children, on Lit through the property ds-fieldset sets (or formDisabledCallback from a native fieldset/form), and on native through `FieldsetContext`, which also carries the legend that prefixes the accessibility label (\"Shipping address, Street\"). The label is a native `<label for>` (web/Lit) styled from Input's label bindings, not a Text; description and error are Text. `hideLabel` keeps the `<label>` in the DOM, visually hidden (web/Lit; see the native note). `size: sm` swaps paddingBlock/paddingInline/minTarget for their Sm bindings and the type of the field and the label to font.size.sm (description and error stay at helperSize); nothing else changes.",
       "Content guidelines": "Labels are short nouns in sentence case (\"Email address\", not \"Enter your email\"). Descriptions are one sentence and state the rule, not the error. Errors say what is wrong and how to fix it (\"Enter an email address like name@example.com\") and never blame the user.",
       "Accessibility": "The label is always visible and programmatically associated with the field (WCAG 1.3.1, 3.3.2). Description and error are linked with `aria-describedby` so they are read with the field, and the error region uses `role=\"alert\"` so it is announced when it appears (3.3.1 Error Identification). Required and invalid states are conveyed by text and attributes, not by color alone (1.4.1). Focus is visible using the focus ring token (2.4.7): the `focus-visible` requirement is met by the border itself (borderFocus at focusRingWidth, padding compensating), with no separate outline. The field reaches the 44px comfortable target height. Personal-data fields carry `autocomplete` (1.3.5). Placeholder, description, and error text all meet AA contrast; the border meets 3:1 as a non-text UI boundary (1.4.11).",
       "Platform notes": "### Web\nRender `<label for>` + `<input id>` with `aria-describedby` pointing to the description and error ids. Use `aria-invalid=\"true\"` when invalid. Never set `disabled` on the label.\n\n### Lit\n`<ds-input name=\"email\" type=\"email\" label=\"Email address\">`. The element is form-associated via `ElementInternals`, so a surrounding native `<form>` (or `<ds-form>`) collects its value and reads its validity. Dispatches `change`, `focus`, and `blur` as composed events; `change` carries `{ value }` in `detail`.\n\n### React Native\nRenders a `Text` label, optional description, a `TextInput`, and an error `Text`. The label is also passed as `accessibilityLabel`, description as `accessibilityHint`, and `accessibilityState={{ disabled }}`. `type` maps to `keyboardType` (`email-address`, `numeric`, `phone-pad`, `url`) and `secureTextEntry` for password. The enclosing Form registers the input by `name` via context so it can collect values on submit.",
@@ -16403,7 +16412,7 @@
             "inherit"
           ],
           "default": "default",
-          "description": "`default` uses the link colors. `inherit` takes the surrounding text color and relies on the underline alone — for links inside muted or on-action text. Under `inherit` the color, colorHover and colorVisited bindings are not applied: rest, hover, visited and (on native) pressed all resolve to the inherited color (currentColor on web and Lit, the enclosing TextStyleContext color on native), and the underline and the external icon follow that same color, so an inherited link has no hover or visited color change by design."
+          "description": "`default` uses the link colors. `inherit` takes the surrounding text color and relies on the underline alone — for links inside muted or on-action text. Under `inherit` the color, colorHover and colorVisited bindings are not applied: rest, hover, visited and (on native) pressed all resolve to the inherited color (currentColor on web and Lit, the enclosing TextStyleContext color on native), and the underline and the external icon follow that same color, so an inherited link has no hover or visited color change by design. On native Link sets no textDecorationColor (the underline takes the Text color); a standalone inherit link outside any system Text has nothing to inherit, so its label and icon both use color.foreground."
         },
         "download": {
           "type": "boolean",
@@ -16438,7 +16447,7 @@
         "colorHover": {
           "token": "color.link.hover",
           "state": "hover",
-          "description": "Pointer hover only on web and Lit (not :active); on native, which has no hover, the pressed color.",
+          "description": "Pointer hover only on web and Lit (not :active), as a plain `:hover` rule with no `@media (hover: hover)` guard; a sticky hover color after a tap is an accepted, proven pair. On native, which has no hover, the pressed color.",
           "locked": true
         },
         "colorVisited": {
@@ -16471,6 +16480,12 @@
         },
         "focusRingRadius": {
           "token": "radius.sm",
+          "description": "Applied (as border-radius) only under :focus-visible, so a resting inline anchor is not rounded.",
+          "locked": true
+        },
+        "focusRingOffset": {
+          "token": "border.width.focus",
+          "description": "outline-offset of the focus ring on web and Lit, the same token as its width. Not applied on native, where the ring is the platform's own.",
           "locked": true
         },
         "transition": {
@@ -16518,7 +16533,7 @@
             "rel",
             "download"
           ],
-          "notes": "A native <a href>. `external` sets target=\"_blank\" and rel=\"noopener noreferrer\". The visible label stays as-is; the external suffix is added in visually hidden text, not aria-label, so the accessible name still starts with the visible text. Link accepts no `className` or `style`: a composite that shows a link inside its own row uses `tone: inherit` and keeps the underline. The root <a> carries `data-ds=\"Link\"` and `data-part=\"anchor\"`, and those win: a parent never stamps its own `data-part` onto Link's root, it puts its part on a wrapper element it owns."
+          "notes": "A native <a href>. `external` sets target=\"_blank\" and rel=\"noopener noreferrer\". The visible label stays as-is; the external suffix is added in visually hidden text, not aria-label, so the accessible name still starts with the visible text. Link accepts no `className` or `style`: a composite that shows a link inside its own row uses `tone: inherit` and keeps the underline. The root <a> carries `data-ds=\"Link\"` and `data-part=\"anchor\"`, and those win: a parent never stamps its own `data-part` onto Link's root, it puts its part on a wrapper element it owns. The `label` part is a `<span data-part=\"label\">` holding the visible text inside the anchor (web and Lit); on native the root Text is the anchor and the label is its string content, with no element of its own. Lit shadow elements carry `part` as well as `data-part`, both the anatomy names: they are names tests read, not a styling surface."
         },
         "lit": {
           "tag": "ds-link",
@@ -16635,7 +16650,7 @@
       "examples": [
         {
           "name": "inline-in-a-paragraph",
-          "description": "The default link inside body text, underlined and taking the paragraph's typography. The story renders it inside a default Text paragraph reading \"Invoices from the last twelve months are kept. \" followed by the link and a full stop.",
+          "description": "The default link inside body text, underlined and taking the paragraph's typography. The story renders it inside a default Text paragraph reading \"Invoices from the last twelve months are kept. \" followed by the link and a full stop. Its href and label are also the Default story's args, so the derived renders and accessible-name scenarios run against them.",
           "given": {
             "href": "/billing/history",
             "label": "View the billing history"
@@ -16643,7 +16658,7 @@
         },
         {
           "name": "external-destination",
-          "description": "A link that leaves the product, so the name says so before it is activated.",
+          "description": "A link that leaves the product, so the name says so before it is activated. This example is the `external` state story (and downloadable-file the `download` one); no separate External or Download story is added.",
           "given": {
             "href": "https://status.example.com",
             "label": "Status page",
@@ -16652,7 +16667,7 @@
         },
         {
           "name": "inside-muted-text",
-          "description": "A link in muted or on-action text, where the color is inherited and the underline alone marks it. The story renders it inside a Text with `tone: muted` reading \"For how charges are calculated, read \" followed by the link and a full stop.",
+          "description": "A link in muted or on-action text, where the color is inherited and the underline alone marks it. The story renders it inside a Text with `tone: muted` reading \"For how charges are calculated, read \" followed by the link and a full stop. The `tone: inherit` enum story uses the same muted wrapper, so the inherited color is visible.",
           "given": {
             "href": "/help/billing",
             "label": "the billing guide",
@@ -16739,7 +16754,7 @@
       "Behavior": "A Link has no typography of its own: it inherits font family, size, weight and line height from the text it sits in, so it looks right inside a paragraph, a caption, or a breadcrumb without configuration. Standalone, it inherits from the page body.\n\nActivation with pointer, Enter, or assistive technology navigates to `href`. `onPress` fires first; on web the consumer may prevent the default to route client-side, and on native the consumer's handler is the navigation (an `external` link still hands off to the system afterwards unless the handler returns `false`). With `external`, web opens a new tab and native hands the URL to the system. `download` asks the browser to save rather than open and does nothing on native. The link is never disabled: a destination that is not available is not rendered as a link.",
       "Content guidelines": "Link text describes the destination and makes sense out of context, because screen-reader users navigate by pulling up a list of links: \"View the billing history\", not \"click here\" or \"more\". Keep links short and do not link whole sentences. When an external link's text is a product name, that is enough — the external suffix already says it leaves. Do not repeat \"(opens in new tab)\" in the visible text; the component adds it to the accessible name.",
       "Accessibility": "The accessible name is the visible text (WCAG 2.4.4, 2.5.3), plus `copy.externalSuffix` for external links. Links are distinguishable from surrounding text by the underline, not by color alone (1.4.1). Link color meets 4.5:1 on the page background in both modes for the rest, hover and visited colors (1.4.3); the build checks all three. Focus is visible with the focus ring (2.4.7); because links are inline, the ring uses `focusRingRadius` and follows the text box rather than the line box. Links are keyboard operable with Enter (2.1.1). Opening a new tab is a change of context that the user is warned about in advance (3.2.5).",
-      "Platform notes": "### Web\nRender `<a href>` with the visible label as content. For `external`, render, in order: the label, a visually hidden `<span>` containing `copy.externalSuffix`, then the decorative icon: a `<span data-part=\"externalIcon\">` wrapper carrying the `externalIconGap` margin, containing the system `<Icon name=\"external\" inline />` with no label (so it hides itself). Icon's `inline` sizes it at 1em of the surrounding text, and its color is currentColor, so it follows the anchor's rest, hover and visited colors; no hand-drawn SVG. The visually hidden span uses the standard clip pattern (absolute, 1px box, clip-path inset 50%, white-space nowrap) — the one place where 1px literals are sanctioned. `font: inherit` on the anchor. Prefer `text-underline-offset` and `text-decoration-thickness` from the tokens over border tricks so the underline behaves in wrapped text.\n\n### Lit\n`<ds-link>` hosts a shadow root with `delegatesFocus: true` and a native `<a>` inside. Do not dispatch a CustomEvent named `click`; the native click retargets to the host and consumers listen for it there. The host defaults to `display: inline` so it can sit inside a `<ds-text>` paragraph; reflect `tone` and `external` so consumers can style from outside.\n\n### React Native\nRender `Text` with `accessibilityRole=\"link\"` and `accessibilityLabel` (label plus the external suffix when `external`). Nested inside a parent `Text` it flows inline; standalone it is its own line. `onPress(href)` is the navigation when provided; otherwise call `Linking.openURL(href)`. The one exception is `external`: after the handler runs, Link still calls `Linking.openURL(href)` unless the handler returned `false`. Standalone, the Link sets the body typography (`font.size.md`, `font.weight.regular`, `font.lineHeight.normal` via Text's helpers) since there is no cascade; nested in the system Text it inherits, which Text signals through its exported `TextStyleContext` (its `nested` field; there is no `TextNestingContext`) — inside a raw RN Text the Link is standalone. Put a single space before the external glyph, since nested Text ignores margins. Platform limits, all acknowledged: no visited state (`colorVisited` unused), no hover (`colorHover` is the pressed color), no underline offset or thickness, and no focus events on `Text`, so the focus ring is the platform's own — `focusRing*` bindings are not applied.",
+      "Platform notes": "### Web\nRender `<a href>` with the visible label as content. For `external`, render, in order: the label, a visually hidden `<span>` containing `copy.externalSuffix`, then the decorative icon: a `<span data-part=\"externalIcon\">` wrapper carrying the `externalIconGap` margin, containing the system `<Icon name=\"external\" inline />` with no label (so it hides itself). Icon's `inline` sizes it at 1em of the surrounding text, and its color is currentColor, so it follows the anchor's rest, hover and visited colors; no hand-drawn SVG. The visually hidden span uses the standard clip pattern (position absolute, 1px box, margin -1px, overflow hidden, border 0, clip-path inset(50%), white-space nowrap; no legacy clip: rect) — the one place where 1px literals are sanctioned. `font: inherit` on the anchor. Prefer `text-underline-offset` and `text-decoration-thickness` from the tokens over border tricks so the underline behaves in wrapped text.\n\n### Lit\n`<ds-link>` hosts a shadow root with `delegatesFocus: true` and a native `<a>` inside. Do not dispatch a CustomEvent named `click`; the native click retargets to the host and consumers listen for it there. The host defaults to `display: inline` so it can sit inside a `<ds-text>` paragraph; reflect `tone` and `external` so consumers can style from outside.\n\n### React Native\nRender `Text` with `accessibilityRole=\"link\"` and `accessibilityLabel` (label plus the external suffix when `external`). Nested inside a parent `Text` it flows inline; standalone it is its own line. `onPress(href)` is the navigation when provided; otherwise call `Linking.openURL(href)`. The one exception is `external`: after the handler runs, Link still calls `Linking.openURL(href)` unless the handler returned `false`. Standalone, the Link sets the body typography (`font.size.md`, `font.weight.regular`, `font.lineHeight.normal` via Text's helpers) since there is no cascade; nested in the system Text it inherits, which Text signals through its exported `TextStyleContext` (its `nested` field; there is no `TextNestingContext`) — inside a raw RN Text the Link is standalone. Put a single space before the external glyph, since nested Text ignores margins. Platform limits, all acknowledged: no visited state (`colorVisited` unused), no hover (`colorHover` is the pressed color), no underline offset or thickness, and no focus events on `Text`, so the focus ring is the platform's own — `focusRing*` bindings are not applied.",
       "Related": "Button, Text, Breadcrumb."
     },
     "extensions": [],
@@ -33270,7 +33285,7 @@
             "aria-disabled",
             "tabindex"
           ],
-          "notes": "A <div data-ds=\"Tree\" data-part=\"container\"> holding the Heading when showLabel and the <ul role=\"tree\" aria-labelledby={headingId} | aria-label aria-multiselectable> of <li role=\"treeitem\" aria-level aria-setsize aria-posinset aria-expanded (parents only) aria-selected|aria-checked> whose children are in a nested <ul role=\"group\">. Roving tabindex on the treeitems (one tab stop; the item, not the row div, is focused); no aria-activedescendant. The <ul role=\"tree\"> has no data-part (address it by role). The expand chevron is a Button with aria-hidden and tabindex=-1 — ArrowLeft/Right are the keyboard path; on a disabled node it is disabled too, and clicks on a disabled row do nothing (a disabled parent stays closed, so do not disable a parent whose children must stay reachable). Heading and Button keep their own data-part, so the `heading` and `expandButton` parts are wrappers the tree owns; Text and Link take data-part directly. Nodes with href render the label as a Link inside the treeitem; Enter activates it. Multiple mode uses aria-checked with an indeterminate value for cascading parents and a Checkbox glyph (not the Checkbox component: the treeitem itself is the control). Type-ahead buffers keys for 500 ms. Pointer: click on a node focuses it and does what Space does (select in single, toggle in multiple); double-click does what Enter does, and a click whose `detail` is 2 or more does not toggle again (a double-click toggles once, then activates); click on the chevron toggles expansion and focuses the node without changing selection. Lazy placeholder: a <li role=\"treeitem\" aria-disabled=\"true\"> holding copy.loading inside the group, not navigable, with no data-part, and aria-busy on the parent treeitem. Empty `nodes`: the <ul> renders with no items and copy.empty is a `Text tone=\"muted\"` below it inside the container."
+          "notes": "A <div data-ds=\"Tree\" data-part=\"container\"> holding the Heading when showLabel and the <ul role=\"tree\" aria-labelledby={headingId} | aria-label aria-multiselectable> of <li role=\"treeitem\" aria-level aria-setsize aria-posinset aria-expanded (parents only) aria-selected|aria-checked> whose children are in a nested <ul role=\"group\">. Roving tabindex on the treeitems (one tab stop; the item, not the row div, is focused); no aria-activedescendant. The <ul role=\"tree\"> has no data-part (address it by role). The expand chevron is a Button with aria-hidden and tabindex=-1 — ArrowLeft/Right are the keyboard path; on a disabled node it is disabled too, and clicks on a disabled row do nothing (a disabled parent stays closed, so do not disable a parent whose children must stay reachable). Heading and Button keep their own data-part, so the `heading` and `expandButton` parts are wrappers the tree owns; Link keeps its own `data-part=\"anchor\"` too, so the `link` part is a `<span data-part=\"link\">` the tree owns around it (activation finds the anchor inside that span); Text takes data-part directly. Nodes with href render the label as a Link inside the treeitem; Enter activates it. Multiple mode uses aria-checked with an indeterminate value for cascading parents and a Checkbox glyph (not the Checkbox component: the treeitem itself is the control). Type-ahead buffers keys for 500 ms. Pointer: click on a node focuses it and does what Space does (select in single, toggle in multiple); double-click does what Enter does, and a click whose `detail` is 2 or more does not toggle again (a double-click toggles once, then activates); click on the chevron toggles expansion and focuses the node without changing selection. Lazy placeholder: a <li role=\"treeitem\" aria-disabled=\"true\"> holding copy.loading inside the group, not navigable, with no data-part, and aria-busy on the parent treeitem. Empty `nodes`: the <ul> renders with no items and copy.empty is a `Text tone=\"muted\"` below it inside the container."
         },
         "lit": {
           "tag": "ds-tree",

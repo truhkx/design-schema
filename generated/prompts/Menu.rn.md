@@ -113,9 +113,9 @@ component:
       default: false
       description: 'Render the trigger as an icon-only Button using `triggerIcon`;
         `label` is still required. With `triggerIcon: none` there would be nothing
-        visible to press, so that pairing warns in development (once). It is the only
-        development warning Menu issues — no warning for empty items, a missing label
-        or an uncontrolled anchor.'
+        visible to press, so that pairing warns in development (once), unless `anchor`
+        is set (there is no trigger then). It is the only development warning Menu
+        issues — no warning for empty items, a missing label or an uncontrolled anchor.'
     placement:
       type: enum
       values:
@@ -124,14 +124,20 @@ component:
       - top-start
       - top-end
       default: bottom-start
-      description: Preferred position of the popup relative to the trigger; flips
-        automatically when it would overflow the viewport.
+      description: Preferred position of the popup relative to the trigger (or `anchor`).
+        Only the block side flips (bottom and top swap) when the popup would overflow
+        the viewport; `start` and `end` never flip. They resolve against the layout
+        direction (in right-to-left `start` is the right edge; rn reads I18nManager.isRTL),
+        and the popup is shifted inline instead so it stays `gutter` away from the
+        side edges.
     open:
       type: boolean
       description: Controlled open state (the parent flips it from onOpenChange).
         Omit for an uncontrolled menu, which starts closed; there is no defaultOpen.
-        A controlled menu hides, and returns focus to the trigger, only when `open`
-        becomes false — a parent that never flips it keeps the menu open.
+        A controlled menu hides only when `open` becomes false — a parent that never
+        flips it keeps the menu open. Focus on close follows the reason (Behavior);
+        a close the menu did not request moves focus to the trigger only when focus
+        is inside the popup at that moment.
       controls:
         event: onOpenChange
         state: open
@@ -144,7 +150,10 @@ component:
         platform: web a `RefObject<HTMLElement | null>`; Lit an `anchor` property
         holding the element itself (`HTMLElement | undefined`, not an attribute);
         rn a ref to the host View instance (`RefObject<React.ComponentRef<typeof View>
-        | null>`), measured with measureInWindow().'
+        | null>`), measured with measureInWindow(). The anchor stands in for the trigger:
+        a pointerdown on it is not `outside` and focus moving onto it is not `focus-out`
+        (the consumer toggles `open` from it), and focus that would return to the
+        trigger returns to the element that had focus when the menu opened.'
   events:
     onAction:
       description: An item was chosen; receives its `id`. The menu closes itself first.
@@ -196,7 +205,8 @@ component:
           can forward its own reason through
         tab-out: Tab or Shift+Tab pressed while open
         focus-out: focus moved outside the menu and trigger by other means, or the
-          window lost focus
+          window lost focus; a window blur and the focusout it causes are one focus
+          loss and report once
       fires:
       - user
       - controlled
@@ -209,13 +219,15 @@ component:
     - Enter
     - ' '
     - ArrowDown
-    action: Opens the menu and focuses the first item.
+    action: Opens the menu and focuses the first item (ArrowDown on an already open
+      menu just focuses the first item).
     when: focus on trigger
     from: trigger
     expect: manual
   - keys:
     - ArrowUp
-    action: Opens the menu and focuses the last item.
+    action: Opens the menu and focuses the last item (on an already open menu it just
+      focuses the last item).
     when: focus on trigger
     from: trigger
     expect: manual
@@ -258,7 +270,8 @@ component:
     expect: closes
   - keys:
     - Escape
-    action: Closes and returns focus to the trigger.
+    action: Closes and returns focus to the trigger; pressed on the trigger while
+      the menu is open it also closes (reason `escape`) and focus stays there.
     when: menu open
     from: inside
     expect:
@@ -267,15 +280,23 @@ component:
   - keys:
     - Tab
     - Shift+Tab
-    action: Closes; Tab moves focus to the tabbable element after the trigger, Shift+Tab
+    action: 'Closes; Tab moves focus to the tabbable element after the trigger, Shift+Tab
       to the one before it, in document order (the anchor stands in for the trigger
-      when there is none).
+      when there is none). The key is not prevented: the menu sets every item to tabindex
+      -1 and moves focus to the trigger, so the browser''s own Tab continues from
+      there and a popup a controlled parent still shows holds no tab stop (web and
+      Lit alike). With `anchor`, focus is parked on the anchor when it is focusable;
+      otherwise the menu prevents the key and focuses the first tabbable after (Tab)
+      or the last before (Shift+Tab) the anchor in document order, excluding its descendants.'
     when: menu open
     from: inside
     expect: closes
   - keys:
     - a-z
-    action: Typeahead — moves to the next item whose label starts with the typed characters.
+    action: Typeahead — moves to the next enabled item whose label starts with the
+      typed characters. Any single printable character counts (letters of any script
+      and digits, not only a–z), compared case-insensitively; Space stays activation,
+      and keys held with Ctrl, Meta or Alt are ignored.
     when: menu open
     from: first
     expect: manual
@@ -312,7 +333,9 @@ component:
       part: popup
       description: Gap between trigger and popup, on the side facing the trigger;
         the flip check includes it, and a flipped popup keeps the same gap on its
-        new side.
+        new side. On web and Lit the token length is read in px from the popup's resolved
+        hook when the popup opens and repositions (rem × root font size); rn uses
+        the resolved theme value.
       locked: false
     typeaheadReset:
       token: motion.duration.loop
@@ -323,8 +346,16 @@ component:
     maxHeight:
       token: layout.maxWidth.prose
       part: popup
-      description: The popup never exceeds the viewport minus the gutter; beyond that
-        the list scrolls (the token is the cap used on wide screens).
+      description: The popup's block size never exceeds the viewport height minus
+        `gutter` at each edge (2 × gutter); beyond that the list scrolls (the token
+        is the cap used on wide screens).
+      locked: false
+    gutter:
+      token: layout.gutter
+      part: popup
+      description: 'Space kept between the popup and each viewport edge: it caps maxHeight
+        (viewport height − 2 × gutter) and bounds the inline shift. Read in px the
+        same way as popupOffset.'
       locked: false
     minWidth:
       token: space.20
@@ -333,7 +364,9 @@ component:
       part: popup
       description: Popup is at least this wide (200px at comfortable density) and
         at least the trigger width. An override replaces the base; the × 2.5 stays
-        in the rule.
+        in the rule. The trigger width is only known at runtime, so it is measured
+        when the popup opens and repositions and the popup gets `max(<the × 2.5 rule>,
+        <trigger width>px)`; with `anchor` there is no trigger-width floor.
       locked: false
     phoneBreakpoint:
       token: layout.maxWidth.prose
@@ -428,9 +461,10 @@ component:
     enter:
       token: motion.duration.fast
       part: popup
-      description: Fade and an enterDistance slide from the trigger side (downward
-        for bottom placements, upward for top), with motion.easing.standard; instant
-        under reduced motion.
+      description: 'Fade and an enterDistance slide from the side facing the trigger
+        after any flip (downward for a popup placed below, upward for one placed above),
+        with motion.easing.standard; instant under reduced motion. Popup only: the
+        item highlight changes instantly, with no transition.'
       locked: false
     enterDistance:
       token: space.1
@@ -503,18 +537,19 @@ component:
       - aria-labelledby
       - tabindex
       notes: 'Trigger is the system Button with aria-haspopup="menu", aria-expanded
-        and aria-controls. The popup is rendered through a portal with position: fixed,
-        placed from the trigger''s getBoundingClientRect() and flipped on overflow;
-        z-index layer.dropdown. Outside click (pointerdown outside popup and trigger)
-        closes. Items are <div role="menuitem" tabindex="-1"> with one roving tabindex;
-        the menu uses real focus (not aria-activedescendant) so screen readers follow.
-        Keyboard-focused and hovered items share the itemHover style; hover moves
-        the roving focus so the two never diverge. Shortcuts are display-only and
-        aria-hidden — the menu does not bind them, and it does not put them in `aria-keyshortcuts`
-        either, since a display string like "⌘S" is not that attribute''s syntax.
-        One element carries `data-part="popup"` and the `role="menu"` list: the popup
-        and list parts are the same node, as the markup here shows. Disabled items
-        stay in the DOM with `aria-disabled="true"` and are skipped by the arrows,
+        and aria-controls (aria-controls is set only while open, so it never names
+        a popup that is not in the DOM). The popup is rendered through a portal with
+        position: fixed, placed from the trigger''s getBoundingClientRect() and flipped
+        on overflow; z-index layer.dropdown. Outside click (pointerdown outside popup
+        and trigger) closes. Items are <div role="menuitem" tabindex="-1"> with one
+        roving tabindex; the menu uses real focus (not aria-activedescendant) so screen
+        readers follow. Keyboard-focused and hovered items share the itemHover style;
+        hover moves the roving focus so the two never diverge. Shortcuts are display-only
+        and aria-hidden — the menu does not bind them, and it does not put them in
+        `aria-keyshortcuts` either, since a display string like "⌘S" is not that attribute''s
+        syntax. One element carries `data-part="popup"` and the `role="menu"` list:
+        the popup and list parts are the same node, as the markup here shows. Disabled
+        items stay in the DOM with `aria-disabled="true"` and are skipped by the arrows,
         Home/End and typeahead. `container?: HTMLElement` (default document.body)
         is the portal target — a platform prop, not a schema prop. Page scroll is
         not locked: a menu is not modal, and the popup repositions on scroll. Clicking
@@ -525,8 +560,9 @@ component:
         Button; aria-haspopup, aria-expanded and aria-controls still reach the Button''s
         element. The popup is portaled out of the root, so the override hooks and
         inline overrides are applied on the popup (`data-part="popup"`), not on the
-        root. The forwarded ref resolves to the popup element and is null while closed.
-        A `window` blur while open closes with reason `focus-out`.'
+        root. The forwarded ref resolves to the popup element and is null while closed;
+        pass-through div props (id, data-*, event handlers) go on the root wrapper,
+        not the popup. A `window` blur while open closes with reason `focus-out`.'
     lit:
       tag: ds-menu
       reflect:
@@ -545,10 +581,12 @@ component:
         IDREF cannot cross its shadow root, so on Lit the trigger exposes aria-expanded
         only — aria-haspopup and aria-controls are waived here; the popup''s role="menu"
         and its aria-label carry the relationship. As on web, one element is both
-        parts: `role="menu"` with `data-part="popup"` and `part="popup list"`. The
-        trigger part is an overlay-owned wrapper element carrying `data-part="trigger"`
-        around the ds-button. `anchor` is a property (the element), not an attribute.
-        Focus leaving the host, or the window losing focus, closes with reason `focus-out`.'
+        parts: `role="menu"` with `data-part="popup"` and `part="popup list"`. That
+        is the only `part` attribute: trigger, group, groupLabel, item, itemIcon,
+        itemShortcut and separator carry `data-part` only. The trigger part is an
+        overlay-owned wrapper element carrying `data-part="trigger"` around the ds-button.
+        `anchor` is a property (the element), not an attribute. Focus leaving the
+        host, or the window losing focus, closes with reason `focus-out`.'
     rn:
       element: Modal
       props:
@@ -588,7 +626,11 @@ component:
         has no Tab key event and no focus-out signal, so `tab-out` and `focus-out`
         never fire on this platform — the backdrop and back are the ways out. Hover
         is tracked with onHoverIn/onHoverOut (Pressable''s style callback reports
-        only `pressed`), and hover, focus and press share itemHover.'
+        only `pressed`), and hover, focus and press share itemHover. Menu exposes
+        no ref on rn. In the phone presentation the ActionSheet gets `heading` = `label`
+        (the same accessible name), and Menu itself returns accessibility focus to
+        its trigger after either presentation closes. The backdrop Pressable is transparent:
+        a non-modal menu has no scrim colour, and color.overlay.scrim is not applied.'
     swiftui:
       element: Menu
       props:
@@ -626,8 +668,8 @@ component:
     - event: onAction
     - event: onOpenChange
   - name: a-disabled-item-does-nothing
-    description: Disabled items are visible and announced disabled, and do nothing
-      on click.
+    description: 'Disabled items are visible and announced disabled, and do nothing
+      on click; `click: item` presses the first item, which is the disabled one.'
     given:
       open: true
       label: More actions
@@ -744,7 +786,7 @@ component:
   - fires on: user
 - `onOpenChange`: emit `onOpenChange`
   - payload, positional, in this order: `open: boolean`, `reason: 'trigger' | 'escape' | 'outside' | 'action' | 'controlled' | 'tab-out' | 'focus-out'`
-  - reasons: `trigger` (the trigger was activated); `escape` (Escape pressed while open); `outside` (a pointer press landed outside the menu); `action` (an item was chosen); `controlled` (the consumer changed the open prop — the menu never raises this itself, and changing `open` fires nothing; it exists so a composing component can forward its own reason through); `tab-out` (Tab or Shift+Tab pressed while open); `focus-out` (focus moved outside the menu and trigger by other means, or the window lost focus)
+  - reasons: `trigger` (the trigger was activated); `escape` (Escape pressed while open); `outside` (a pointer press landed outside the menu); `action` (an item was chosen); `controlled` (the consumer changed the open prop — the menu never raises this itself, and changing `open` fires nothing; it exists so a composing component can forward its own reason through); `tab-out` (Tab or Shift+Tab pressed while open); `focus-out` (focus moved outside the menu and trigger by other means, or the window lost focus; a window blur and the focusout it causes are one focus loss and report once)
   - fires on: user, controlled
   - timing: after-change, fired before `onAction`
 
@@ -763,6 +805,7 @@ component:
 - `popupOffset`: token `space.1`; part `popup`
 - `typeaheadReset`: token `motion.duration.loop`; part `popup`
 - `maxHeight`: token `layout.maxWidth.prose`; part `popup`
+- `gutter`: token `layout.gutter`; part `popup`
 - `minWidth`: token `space.20`; part `popup`; computed `t.space20 * 2.5`
 - `itemPaddingBlock`: token `space.sm`; part `item`
 - `itemPaddingInline`: token `space.md`; part `item`
@@ -790,7 +833,7 @@ component:
 
 ## Keyboard
 
-- `Escape` (Closes and returns focus to the trigger.): expect closes, then focus-trigger
+- `Escape` (Closes and returns focus to the trigger; pressed on the trigger while the menu is open it also closes (reason `escape`) and focus stays there.): expect closes, then focus-trigger
 
 ## Form and overlay
 
@@ -826,7 +869,7 @@ Overrides change values, never presence: a prop that turns a part off (`surface:
 
 The `platforms.rn.props` list names the native props the schema cares about; `overrides` and `testID` apply to every component regardless of whether that list mentions them.
 
-Overridable: `border`, `borderWidth`, `shadow`, `radius`, `popupPadding`, `popupOffset`, `typeaheadReset`, `maxHeight`, `minWidth`, `itemPaddingBlock`, `itemPaddingInline`, `itemGap`, `itemRadius`, `groupLabelSize`, `groupLabelWeight`, `shortcutSize`, `separator`, `separatorMargin`, `fontFamily`, `fontSize`, `lineHeight`, `layer`, `enter`, `enterDistance`
+Overridable: `border`, `borderWidth`, `shadow`, `radius`, `popupPadding`, `popupOffset`, `typeaheadReset`, `maxHeight`, `gutter`, `minWidth`, `itemPaddingBlock`, `itemPaddingInline`, `itemGap`, `itemRadius`, `groupLabelSize`, `groupLabelWeight`, `shortcutSize`, `separator`, `separatorMargin`, `fontFamily`, `fontSize`, `lineHeight`, `layer`, `enter`, `enterDistance`
 Locked (accessibility-bearing, never overridable): `surface`, `phoneBreakpoint`, `itemHover`, `itemColor`, `itemDangerColor`, `groupLabelColor`, `shortcutColor`, `minTarget`, `focusRing`, `focusRingWidth`
 
 ## Behavior scenarios (15)
@@ -851,8 +894,8 @@ Each scenario below becomes one test. They are platform-neutral: `given` are pro
   - event: onAction
   - event: onOpenChange
 - name: a-disabled-item-does-nothing
-  description: Disabled items are visible and announced disabled, and do nothing on
-    click.
+  description: 'Disabled items are visible and announced disabled, and do nothing
+    on click; `click: item` presses the first item, which is the disabled one.'
   given:
     open: true
     label: More actions
@@ -988,7 +1031,11 @@ notes: "Menus on touch are ActionSheets: on phones Menu renders an ActionSheet w
   \ Native has no Tab key event and no focus-out signal, so `tab-out` and `focus-out`\
   \ never fire on this platform \u2014 the backdrop and back are the ways out. Hover\
   \ is tracked with onHoverIn/onHoverOut (Pressable's style callback reports only\
-  \ `pressed`), and hover, focus and press share itemHover."
+  \ `pressed`), and hover, focus and press share itemHover. Menu exposes no ref on\
+  \ rn. In the phone presentation the ActionSheet gets `heading` = `label` (the same\
+  \ accessible name), and Menu itself returns accessibility focus to its trigger after\
+  \ either presentation closes. The backdrop Pressable is transparent: a non-modal\
+  \ menu has no scrim colour, and color.overlay.scrim is not applied."
 ```
 
 ## Guidance
@@ -1007,7 +1054,7 @@ Do not use a Menu for navigation between pages; use Links in a nav Landmark (a "
 
 ## Behavior
 
-Activating the trigger opens the popup at `placement` (flipped if it would overflow) with focus on the first item; ArrowUp from the trigger opens with the last item focused. Arrow keys move through enabled items and wrap; Home and End jump; typing letters moves to the next matching label; Enter or Space activates the focused item, which closes the menu, returns focus to the trigger and fires `onAction(id)`. Escape closes without action and returns focus. Tab closes and lets focus move on (reason `tab-out`). A pointer click outside closes (`outside`); focus leaving otherwise, or the window losing focus, closes (`focus-out`). An uncontrolled menu starts closed; stories that need it open (the Keyboard story, scenarios with `open: true`) render through a wrapper that owns `open`, starting true, and writes onOpenChange back, acting as the consumer. Hovering an item moves the roving focus to it so keyboard and pointer never highlight two things. Disabled items are visible, announced disabled, skipped by arrows and typeahead, and do nothing on click.
+Activating the trigger opens the popup at `placement` (flipped if it would overflow) with focus on the first item; ArrowUp from the trigger opens with the last item focused. Arrow keys move through enabled items and wrap; Home and End jump; typing letters moves to the next matching label; Enter or Space activates the focused item, which closes the menu, returns focus to the trigger and fires `onAction(id)`. Escape closes without action and returns focus. Tab closes and lets focus move on (reason `tab-out`). A pointer click outside closes (`outside`); focus leaving otherwise, or the window losing focus, closes (`focus-out`). Focus on close follows the reason: `escape` and `action` return it to the trigger, `tab-out` follows the Tab rule, `trigger` leaves it on the trigger, and `outside` and `focus-out` do not move it — except that whenever the popup hides with focus still inside it (including a controlled close the menu did not request), focus goes to the trigger so it never drops to the page body. With `anchor`, "the trigger" here is the element that had focus when the menu opened. An uncontrolled menu starts closed; stories that need it open (the Keyboard story, scenarios with `open: true`) render through a wrapper that owns `open`, starting true, and writes onOpenChange back, acting as the consumer. Example stories start from blank args: a prop absent from `given` takes its default, so an example with no `open` renders closed. Hovering an item moves the roving focus to it so keyboard and pointer never highlight two things. Disabled items are visible, announced disabled, skipped by arrows and typeahead, and do nothing on click.
 
 ## Content guidelines
 

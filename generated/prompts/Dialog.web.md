@@ -76,7 +76,10 @@ component:
       component: Heading
       props:
         level: '2'
-    description: Text
+    description:
+      component: Text
+      props:
+        tone: muted
     closeButton:
       component: Button
       props:
@@ -86,12 +89,13 @@ component:
     body:
       component: Box
       forwards:
-        inset: paddingBlock
+        inset: paddingInline
     footer:
       component: Stack
       props:
         direction: horizontal
         justify: end
+        wrap: true
       forwards:
         footerGap: gap
   props:
@@ -196,8 +200,9 @@ component:
     onOpened:
       description: Fired after the open transition ends and focus has moved in. When
         there is no transition to wait for (reduced motion, or a zero computed duration),
-        it fires on the next frame after focus moves in. Use to start work that needs
-        the dialog visible.
+        it fires on the next frame (requestAnimationFrame on every platform) after
+        focus moves in. It does not fire when `open` becomes false before the enter
+        transition finishes. Use to start work that needs the dialog visible.
       platforms:
         web: onOpened
         lit: opened
@@ -250,13 +255,26 @@ component:
       locked: false
     inset:
       token: layout.inset.lg
-      description: Padding of header, body and footer. The header and the footer wrapper
-        apply it themselves; the body Box receives it as both `overrides.paddingBlock`
-        and `overrides.paddingInline`.
+      description: 'Inline padding of header, body and footer, plus the block padding
+        of the surface column that holds them (once at the top, once at the bottom),
+        so nothing doubles between parts. The header and the footer wrapper apply
+        the inline padding themselves; the body Box receives it as `overrides.paddingInline`
+        and keeps zero block padding. The forward always reaches the Box with the
+        resolved value: on web and Lit through the stylesheet setting the Box''s `--ds-box-padding-inline`
+        to `--ds-dialog-inset`, with `overrides.paddingInline` passed only when the
+        caller overrides `inset`; on rn the resolved value is always passed.'
       locked: false
     partGap:
       token: layout.gap.loose
-      description: Gap between header, body and footer.
+      description: Gap between header, body and footer, and the only space between
+        them.
+      locked: false
+    gutter:
+      token: layout.gutter
+      description: 'Minimum space between the surface and the viewport edge: web and
+        Lit cap the <dialog> at `100vw - 2 × gutter` wide and `100dvh - 2 × gutter`
+        tall; rn pads the centring container horizontally with it (never a margin)
+        and caps the surface at the window height − 2 × gutter.'
       locked: false
     headerGap:
       token: layout.gap.normal
@@ -298,24 +316,27 @@ component:
       token: layer.dialog
       description: 'Kept as the hook, but it has no effect inside the browser top
         layer or a native Modal window; it applies to a non-top-layer fallback (position:
-        fixed) only.'
+        fixed) only. rn ignores it.'
       locked: false
     enter:
       token: motion.duration.base
-      description: Scrim fade and surface fade-and-rise (translateY of space.2), motion.easing.standard;
-        instant under reduced motion.
+      description: 'Scrim fade and surface fade-and-rise, motion.easing.standard:
+        the surface starts space.2 below its resting place (translateY +space.2 →
+        0) and rises into it; the scrim fades in with the same duration and easing.
+        Runs also when the dialog mounts already open. Instant under reduced motion.'
       locked: false
     exit:
       token: motion.duration.fast
-      description: With motion.easing.exit; the scrim fades out with the same duration
-        and easing as the surface.
+      description: Fade only, with motion.easing.exit; the scrim fades out with the
+        same duration and easing as the surface.
       locked: false
     focusRing:
       token: color.border.focus
       part: heading
-      description: The ring on the heading when it holds focus (tabindex -1), drawn
+      description: 'The ring on the heading when it holds focus (tabindex -1), drawn
         by the Dialog-owned heading wrapper with `:has(:focus-visible)` — Heading
-        has no focus style of its own.
+        has no focus style of its own. Web and Lit only: rn draws no ring, the platform''s
+        screen-reader focus indicator stands in.'
       locked: true
     focusRingWidth:
       token: border.width.focus
@@ -377,28 +398,37 @@ component:
         fires a non-cancelable `cancel` (Chromium without user activation) and closes
         the native dialog anyway, still report `escape`, then call showModal() again
         and move focus back in per `initialFocus` if the consumer has not set `open`
-        false. Rendered through a portal into document.body. The <dialog> fills the
-        viewport with a transparent ::backdrop; the scrim is a real element inside
-        it (`data-part="scrim"`, behind the surface, fading with the surface), and
-        a click whose target is that element is the scrim click. Heading, Button and
-        Stack write their own data-part, so the heading, closeButton and footer parts
-        are Dialog-owned wrapper elements around those components (the heading wrapper
-        does the visual hiding for `hideHeading` and draws the focus ring); Box and
-        Text keep a passed data-part, so body and description carry it themselves.
-        The footer wrapper is not rendered when there is no footer. The ref resolves
-        to the <dialog> element, null while closed. Focus trap: showModal() traps
-        by inertness; Tab wrap is implemented explicitly because the browser lets
-        Tab leave to the URL bar. Body scroll locked with overflow: hidden on <html>
-        while open, compensating for scrollbar width via scrollbar-gutter. Focus restore
-        to document.activeElement at open time. `container?: HTMLElement` (default
-        document.body) is the portal target — a platform prop every portaled overlay
-        accepts, not a schema prop. FocusScope has no autoFocus value for `title`
-        or `close`, so Dialog sets it to `none` and places initial focus itself while
-        FocusScope keeps ownership of capturing and restoring the opener. `initialFocus:
-        close` on a non-dismissible dialog has no close button to land on and falls
-        back in the `initialFocus` description''s order. The heading takes `tabindex="-1"`
-        for `initialFocus: title` and keeps it when `hideHeading` is set — a visually
-        hidden heading is still a focus target and still announced.'
+        false. A close watcher can also close the <dialog> with no `cancel` at all
+        (repeated Escape): a native `close` event while `open` is still true that
+        no `cancel` announced is reported as `escape` too, so each Escape is reported
+        exactly once, and the dialog is reopened the same way. Rendered through a
+        portal into document.body. The <dialog> fills the viewport with a transparent
+        ::backdrop; the scrim is a real element inside it (`data-part="scrim"`, behind
+        the surface, fading with the surface), and a click whose target is that element
+        is the scrim click. Heading, Button and Stack write their own data-part, so
+        the heading, closeButton and footer parts are Dialog-owned wrapper elements
+        around those components (the heading wrapper does the visual hiding for `hideHeading`
+        and draws the focus ring); Text keeps a passed data-part, so the description
+        carries it itself. The body part is a Dialog-owned scroll container (overflow:
+        auto, the only element that scrolls) holding the Box, since Box never scrolls.
+        FocusScope writes its own `data-part="scope"`, so the focusScope part is a
+        Dialog-owned element directly inside FocusScope wrapping the surface. The
+        footer wrapper is not rendered when there is no footer. The ref resolves to
+        the <dialog> element, null while closed. Focus trap: showModal() traps by
+        inertness, and FocusScope (trapped) implements the Tab wrap the browser would
+        otherwise let leave to the URL bar; Dialog adds no Tab handler of its own.
+        Body scroll locked with overflow: hidden on <html> while open, compensating
+        for scrollbar width via scrollbar-gutter. Focus restore to document.activeElement
+        at open time. `container?: HTMLElement` (default document.body) is the portal
+        target — a platform prop every portaled overlay accepts, not a schema prop.
+        FocusScope has no autoFocus value for `title` or `close`, so Dialog sets it
+        to `none` and places initial focus itself, right after showModal() (and after
+        a native re-open), while FocusScope keeps ownership of capturing and restoring
+        the opener. `initialFocus: close` on a non-dismissible dialog has no close
+        button to land on and falls back in the `initialFocus` description''s order.
+        The heading takes `tabindex="-1"` for `initialFocus: title` and whenever it
+        is the last fallback of `first` or `close`, and keeps it when `hideHeading`
+        is set — a visually hidden heading is still a focus target and still announced.'
     lit:
       tag: ds-dialog
       reflect:
@@ -418,11 +448,20 @@ component:
         from the description text) rather than aria-labelledby. The heading happens
         to share the shadow root, so an idref would resolve — the literal text is
         still used, so the name does not depend on where the heading is rendered,
-        as in AlertDialog. The scrim, the part wrappers, the non-cancelable `cancel`
-        handling and the ref are as on web: a real scrim element in a full-viewport
-        <dialog> with a transparent ::backdrop, and wrapper elements carrying the
-        heading, closeButton and footer parts. While closed (and not animating out)
-        the shadow root renders nothing — no <dialog> and no element children.'
+        as in AlertDialog. The scrim, the part wrappers, the `cancel`/`close` escape
+        handling, initial focus and the Tab wrap are as on web: a real scrim element
+        in a full-viewport <dialog> with a transparent ::backdrop, and wrapper elements
+        carrying the heading, closeButton and footer parts. On Lit the description
+        and body parts are Dialog-owned wrappers too (ds-box overwrites its own data-part
+        with `surface`, ds-text carries none): `data-part="body"` is the scroll container
+        around the <ds-box>. Lit exposes no ref-like property. For `initialFocus:
+        title` and the heading fallback, `tabindex="-1"` goes on the <ds-heading>
+        itself, so the heading wrapper''s `:has(:focus-visible)` ring matches. The
+        footer is present when a light-DOM element child has `slot="footer"` (watched
+        with a MutationObserver over children and their slot attribute); footer content
+        must be elements, a bare text node is not a footer. While closed (and not
+        animating out) the shadow root renders nothing — no <dialog> and no element
+        children.'
     rn:
       element: Modal
       props:
@@ -437,27 +476,33 @@ component:
         with accessibilityViewIsModal so VoiceOver/TalkBack ignore the page behind.
         onRequestClose (Android back) → onClose reason escape. Focus: AccessibilityInfo.setAccessibilityFocus
         on the title or first control after the enter animation. Keyboard avoidance
-        with KeyboardAvoidingView so a Form in the body stays visible. Enter/exit
-        animated with Animated (opacity + translateY), skipped under reduce motion.
-        Size maps to maxWidth from the same tokens; on phones the surface is full-width
-        with the gutter as margin. The surface carries the RN >= 0.74 `role="dialog"`
-        prop (as Landmark and Fieldset use `role`), alongside accessibilityViewIsModal;
-        the legacy accessibilityRole union has no dialog value. Scroll lock has no
-        native meaning and is not implemented. `accessibilityViewIsModal` goes on
-        the surface View, not on Modal, which does not accept it. testIDs are the
-        root plus scrim, header, body and footer; heading, description, closeButton
+        with a KeyboardAvoidingView wrapping the whole centring container, so the
+        footer as well as a Form in the body stays above the keyboard. Enter/exit
+        animated with Animated (opacity + translateY; the scrim is an Animated.View
+        whose opacity follows the same value), skipped under reduce motion. Size maps
+        to maxWidth from the same tokens; on phones the surface is full-width inside
+        the centring container''s `gutter` padding. The surface carries the RN >=
+        0.74 `role="dialog"` prop (as Landmark and Fieldset use `role`), alongside
+        accessibilityViewIsModal; the legacy accessibilityRole union has no dialog
+        value. Scroll lock has no native meaning and is not implemented. `accessibilityViewIsModal`
+        goes on the surface View, not on Modal, which does not accept it. testIDs
+        are the root plus scrim, header, body and footer; heading, description, closeButton
         and focusScope are reached through their own roles and names and take none,
-        as in AlertDialog. Stack writes its own testID, so the footer testID sits
-        on a wrapping View; the body Box takes its testID directly. iOS has no hardware-Escape
-        hook, so the surface View also handles `onAccessibilityEscape` (the VoiceOver
-        two-finger scrub) as onClose reason escape, even when not dismissible. RN
-        has no visually hidden primitive: with `hideHeading` the Heading is not rendered,
-        the surface''s accessibilityLabel stays the name, and `initialFocus: title`
-        focuses the surface View. The Dialog is rooted in a native Modal and exposes
-        no ref; callers ref their trigger. Native has no descendant walker, so `initialFocus`
-        calls setAccessibilityFocus on the View wrapping the title, the close button
-        or the body, not on a literal first focusable descendant, and there is no
-        visible focus ring on those targets.'
+        as in AlertDialog. The root testID `Dialog` sits on the surface View (with
+        the role and name), since a closed Modal renders no content. Stack and Box
+        write their own testIDs, so the footer and body testIDs sit on wrapping Views;
+        the body wrapper holds the ScrollView and is also the setAccessibilityFocus
+        target for the body. On rn `initialFocus: first` therefore always lands on
+        the body wrapper (children is required, so a body is always present). iOS
+        has no hardware-Escape hook, so the surface View also handles `onAccessibilityEscape`
+        (the VoiceOver two-finger scrub) as onClose reason escape, even when not dismissible.
+        RN has no visually hidden primitive: with `hideHeading` the Heading is not
+        rendered, the surface''s accessibilityLabel stays the name, and `initialFocus:
+        title` focuses the surface View. The Dialog is rooted in a native Modal and
+        exposes no ref; callers ref their trigger. Native has no descendant walker,
+        so `initialFocus` calls setAccessibilityFocus on the View wrapping the title,
+        the close button or the body, not on a literal first focusable descendant,
+        and there is no visible focus ring on those targets.'
     swiftui:
       element: sheet
       props:
@@ -598,9 +643,9 @@ component:
 - `focusScope`: component `FocusScope`
 - `header`: element
 - `heading`: component `Heading`; props `level` = "2"
-- `description`: component `Text`
-- `body`: component `Box`; forwards `inset` → `overrides.paddingBlock`
-- `footer`: component `Stack`; props `direction` = "horizontal", `justify` = "end"; forwards `footerGap` → `overrides.gap`
+- `description`: component `Text`; props `tone` = "muted"
+- `body`: component `Box`; forwards `inset` → `overrides.paddingInline`
+- `footer`: component `Stack`; props `direction` = "horizontal", `justify` = "end", `wrap` = true; forwards `footerGap` → `overrides.gap`
 - `closeButton`: component `Button`; props `variant` = "ghost", `size` = "sm", `iconOnly` = true
 
 ## Style bindings
@@ -645,7 +690,7 @@ The component accepts `overrides?: Partial<Record<OverridableBinding, TokenRef>>
 
 Overrides change values, never presence: a prop that turns a part off (`surface: none`, `border: false`, `radius: none`) makes the matching overrides no-ops; apply an override only where the binding is in effect.
 
-Overridable: `scrim`, `border`, `borderWidth`, `shadow`, `radius`, `inset`, `partGap`, `headerGap`, `footerGap`, `descriptionGap`, `widthSm`, `widthMd`, `widthLg`, `layer`, `enter`, `exit`
+Overridable: `scrim`, `border`, `borderWidth`, `shadow`, `radius`, `inset`, `partGap`, `gutter`, `headerGap`, `footerGap`, `descriptionGap`, `widthSm`, `widthMd`, `widthLg`, `layer`, `enter`, `exit`
 Locked (accessibility-bearing, never overridable): `surface`, `focusRing`, `focusRingWidth`
 
 ## Behavior scenarios (15)
@@ -782,28 +827,37 @@ notes: "A native <dialog> opened with showModal(), which gives the top layer, Es
   \ owns `open`), and background inertness for free. Where the browser fires a non-cancelable\
   \ `cancel` (Chromium without user activation) and closes the native dialog anyway,\
   \ still report `escape`, then call showModal() again and move focus back in per\
-  \ `initialFocus` if the consumer has not set `open` false. Rendered through a portal\
-  \ into document.body. The <dialog> fills the viewport with a transparent ::backdrop;\
-  \ the scrim is a real element inside it (`data-part=\"scrim\"`, behind the surface,\
-  \ fading with the surface), and a click whose target is that element is the scrim\
-  \ click. Heading, Button and Stack write their own data-part, so the heading, closeButton\
-  \ and footer parts are Dialog-owned wrapper elements around those components (the\
-  \ heading wrapper does the visual hiding for `hideHeading` and draws the focus ring);\
-  \ Box and Text keep a passed data-part, so body and description carry it themselves.\
-  \ The footer wrapper is not rendered when there is no footer. The ref resolves to\
-  \ the <dialog> element, null while closed. Focus trap: showModal() traps by inertness;\
-  \ Tab wrap is implemented explicitly because the browser lets Tab leave to the URL\
-  \ bar. Body scroll locked with overflow: hidden on <html> while open, compensating\
-  \ for scrollbar width via scrollbar-gutter. Focus restore to document.activeElement\
-  \ at open time. `container?: HTMLElement` (default document.body) is the portal\
-  \ target \u2014 a platform prop every portaled overlay accepts, not a schema prop.\
-  \ FocusScope has no autoFocus value for `title` or `close`, so Dialog sets it to\
-  \ `none` and places initial focus itself while FocusScope keeps ownership of capturing\
-  \ and restoring the opener. `initialFocus: close` on a non-dismissible dialog has\
-  \ no close button to land on and falls back in the `initialFocus` description's\
-  \ order. The heading takes `tabindex=\"-1\"` for `initialFocus: title` and keeps\
-  \ it when `hideHeading` is set \u2014 a visually hidden heading is still a focus\
-  \ target and still announced."
+  \ `initialFocus` if the consumer has not set `open` false. A close watcher can also\
+  \ close the <dialog> with no `cancel` at all (repeated Escape): a native `close`\
+  \ event while `open` is still true that no `cancel` announced is reported as `escape`\
+  \ too, so each Escape is reported exactly once, and the dialog is reopened the same\
+  \ way. Rendered through a portal into document.body. The <dialog> fills the viewport\
+  \ with a transparent ::backdrop; the scrim is a real element inside it (`data-part=\"\
+  scrim\"`, behind the surface, fading with the surface), and a click whose target\
+  \ is that element is the scrim click. Heading, Button and Stack write their own\
+  \ data-part, so the heading, closeButton and footer parts are Dialog-owned wrapper\
+  \ elements around those components (the heading wrapper does the visual hiding for\
+  \ `hideHeading` and draws the focus ring); Text keeps a passed data-part, so the\
+  \ description carries it itself. The body part is a Dialog-owned scroll container\
+  \ (overflow: auto, the only element that scrolls) holding the Box, since Box never\
+  \ scrolls. FocusScope writes its own `data-part=\"scope\"`, so the focusScope part\
+  \ is a Dialog-owned element directly inside FocusScope wrapping the surface. The\
+  \ footer wrapper is not rendered when there is no footer. The ref resolves to the\
+  \ <dialog> element, null while closed. Focus trap: showModal() traps by inertness,\
+  \ and FocusScope (trapped) implements the Tab wrap the browser would otherwise let\
+  \ leave to the URL bar; Dialog adds no Tab handler of its own. Body scroll locked\
+  \ with overflow: hidden on <html> while open, compensating for scrollbar width via\
+  \ scrollbar-gutter. Focus restore to document.activeElement at open time. `container?:\
+  \ HTMLElement` (default document.body) is the portal target \u2014 a platform prop\
+  \ every portaled overlay accepts, not a schema prop. FocusScope has no autoFocus\
+  \ value for `title` or `close`, so Dialog sets it to `none` and places initial focus\
+  \ itself, right after showModal() (and after a native re-open), while FocusScope\
+  \ keeps ownership of capturing and restoring the opener. `initialFocus: close` on\
+  \ a non-dismissible dialog has no close button to land on and falls back in the\
+  \ `initialFocus` description's order. The heading takes `tabindex=\"-1\"` for `initialFocus:\
+  \ title` and whenever it is the last fallback of `first` or `close`, and keeps it\
+  \ when `hideHeading` is set \u2014 a visually hidden heading is still a focus target\
+  \ and still announced."
 ```
 
 ## Guidance
@@ -824,7 +878,9 @@ Do not use a Dialog for a message that needs no decision (Alert or Toast), for a
 
 Setting `open` true renders the dialog in the top layer with the scrim, moves focus in per `initialFocus`, locks page scroll and makes the page behind inert. Tab and Shift+Tab cycle within the dialog. Escape, the close button and a scrim click each call `onClose` with a reason; the dialog does not close itself — the consumer flips `open`, so an unsaved form can ask first. When `dismissible` is false, the close button is not rendered, the scrim does nothing and Escape still reports (the consumer decides), because trapping a keyboard user with no way out is never acceptable. On close, the exit animation runs, scroll and inertness are restored, and focus returns to the element that opened the dialog (or the next focusable element if it is gone). The body scrolls independently when content exceeds the viewport; header and footer are always visible.
 
-The parts nest as: the scrim and a FocusScope side by side, the FocusScope wrapping the surface, and the surface holding the header (the titles group of heading and description, then the close button), the body and the footer. The Default story is open, with the rename-project example's args; stories that need to start open render through a wrapper that owns `open` (starting true) and writes `onClose` back, acting as the consumer.
+The parts nest as: the scrim and a FocusScope side by side, the FocusScope wrapping the surface, and the surface holding the header (the titles group of heading and description, then the close button), the body and the footer. The Default story is open, with the rename-project example's args; stories that need to start open render through a wrapper that owns `open` (starting true) and writes `onClose` back, acting as the consumer. Example stories start from blank args, not Default's: a prop absent from an example's `given` (reading-dialog's `footer`) takes its default, so that dialog has no footer.
+
+`open` is controlled only; there is no uncontrolled mode. Focus restore runs when `open` becomes false, at the start of the exit transition. Beyond the listed composition props, the Heading's id, ref and tabindex, the close Button's label (`copy.closeLabel`), its `close` Icon as `leadingIcon` and its press handler are wiring every platform passes, not composition props.
 
 ## Content guidelines
 
@@ -837,13 +893,13 @@ The dialog has role `dialog`, `aria-modal`, an accessible name from the title an
 ## Platform notes
 
 ### Web
-Render through a portal into `document.body`: `<dialog aria-labelledby aria-describedby>` containing the surface. Call `showModal()` when `open` becomes true and `close()` when false; listen to `cancel` (Escape) and call `preventDefault()` on it always, reporting through `onClose('escape')` — the consumer owns `open`. Leave `::backdrop` transparent and render the scrim as a real element inside the full-viewport `<dialog>`, styled with the scrim token and `@media (prefers-reduced-motion: no-preference)` transitions. Detect a scrim click as a `click` whose target is the scrim element. Implement Tab wrapping with a keydown handler over the dialog's focusable elements. Lock scroll with a class on `<html>` (`overflow: hidden; scrollbar-gutter: stable`). Store `document.activeElement` on open; on close, focus it if still connected. Size classes set `inline-size` from the width tokens with `max-inline-size: calc(100vw - 2 * var(--layout-gutter))`.
+Render through a portal into `document.body`: `<dialog aria-labelledby aria-describedby>` containing the surface. Call `showModal()` when `open` becomes true and `close()` when false; listen to `cancel` (Escape) and call `preventDefault()` on it always, reporting through `onClose('escape')` — the consumer owns `open`. Leave `::backdrop` transparent and render the scrim as a real element inside the full-viewport `<dialog>`, styled with the scrim token and `@media (prefers-reduced-motion: no-preference)` transitions. Detect a scrim click as a `click` whose target is the scrim element. Tab wrapping comes from FocusScope (`trapped`); add no handler of your own. Lock scroll with a class on `<html>` (`overflow: hidden; scrollbar-gutter: stable`). Store `document.activeElement` on open; on close, focus it if still connected. Size classes set `inline-size` from the width tokens with `max-inline-size: calc(100vw - 2 * var(--layout-gutter))`.
 
 ### Lit
-`<ds-dialog open heading="Rename project">` with a `<dialog>` in the shadow root; `showModal()` works from a shadow root and the element is placed in the top layer. Because the light-DOM slotted content is not inside the shadow `<dialog>` in the composed tree only visually, the Tab-wrap handler must collect focusable elements from both the shadow root and assigned slot nodes. Dispatch composed `close` and `opened`. Reflect `open` so `ds-dialog[open]` can be styled. Compose `<ds-heading>`, `<ds-text>`, `<ds-button>`, `<ds-icon>`, `<ds-box>`, `<ds-stack>`.
+`<ds-dialog open heading="Rename project">` with a `<dialog>` in the shadow root; `showModal()` works from a shadow root and the element is placed in the top layer. The light-DOM slotted content is part of the dialog's focus order, so the Tab wrap (FocusScope's walker) covers both the shadow root and assigned slot nodes. Dispatch composed `close` and `opened`. Reflect `open` so `ds-dialog[open]` can be styled. Compose `<ds-heading>`, `<ds-text>`, `<ds-button>`, `<ds-icon>`, `<ds-box>`, `<ds-stack>`.
 
 ### React Native
-`Modal` with `transparent`, `animationType="none"` (the component animates itself), `onRequestClose` → `onClose('escape')`, `statusBarTranslucent`. Inside: an `Animated.View` scrim (`Pressable` for the scrim click, `accessible={false}`), and the surface `View` with `accessibilityViewIsModal`, `accessibilityLabel={heading}`, `accessibilityHint={description}`. Wrap the body in `ScrollView` inside `KeyboardAvoidingView`. After the enter animation, `setAccessibilityFocus` on the title (or first control). Size uses `maxWidth` from the width tokens and `marginHorizontal: layout.gutter`; below the content measure the surface is full width. The close button is the system `Button` with `leadingIcon` an `Icon name="close"`.
+`Modal` with `transparent`, `animationType="none"` (the component animates itself), `onRequestClose` → `onClose('escape')`, `statusBarTranslucent`. Inside: an `Animated.View` scrim (`Pressable` for the scrim click, `accessible={false}`), and the surface `View` with `accessibilityViewIsModal`, `accessibilityLabel={heading}`, `accessibilityHint={description}`. Wrap the body in `ScrollView`, and the whole centring container in `KeyboardAvoidingView`. After the enter animation, `setAccessibilityFocus` on the title (or first control). Size uses `maxWidth` from the width tokens, with `paddingHorizontal` of `gutter` on the centring container and `maxHeight` of the window height − 2 × `gutter` on the surface; below the content measure the surface is full width. The close button is the system `Button` with `leadingIcon` an `Icon name="close"`.
 
 ## Related
 

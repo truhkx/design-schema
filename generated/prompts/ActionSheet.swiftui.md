@@ -75,6 +75,8 @@ component:
         trapped: true
         restoreFocus: true
         autoFocus: none
+        active:
+          from: open
     heading:
       component: Text
       props:
@@ -111,16 +113,19 @@ component:
         disabled?: boolean }[]'
       description: 'Two to about eight actions. `danger` actions are visually distinct
         and grouped last. The count is guidance, not enforced: no dev warning outside
-        that range.'
+        that range. Every optional field also accepts an explicit `undefined` (`icon?:
+        IconName | undefined`, and so on) wherever the type is written out, since
+        rn Menu builds these objects with explicit undefined values under exactOptionalPropertyTypes.'
     dismissible:
       type: boolean
       default: true
       description: 'Escape, the scrim, the cancel row and the drag all request close.
         When false, as in Dialog: the Cancel row and the divider above it are not
         rendered, the drag handle is not rendered, the scrim and the drag do nothing,
-        and Escape still reports through onClose. It gates the sheet presentation
-        only — the wide Menu presentation has no scrim, drag or cancel row, and clicking
-        outside always closes it.'
+        and Escape still reports through onClose; with no `heading` either, the header
+        has nothing to show and is not rendered at all (no empty padded strip). It
+        gates the sheet presentation only — the wide Menu presentation has no scrim,
+        drag or cancel row, and clicking outside always closes it.'
     cancelLabel:
       type: string
       description: Label of the explicit cancel row on phones. Defaults to `copy.cancelLabel`.
@@ -282,7 +287,9 @@ component:
       state: hover
       description: 'Paint only: hovering a row does not move focus, which stays on
         the roving item. React Native has no hover on touch, so the pressed state
-        paints it too (react-native-web also gets hover in/out).'
+        paints it too (react-native-web also gets hover in/out). The paint change
+        has no binding of its own: on web and Lit it transitions over motion.duration.fast
+        with motion.easing.standard, removed under reduced motion.'
       locked: true
     itemColor:
       token: color.foreground
@@ -301,14 +308,20 @@ component:
     titleSize:
       token: font.size.sm
       part: heading
-      description: The composed heading Text's size="sm", forwarded to its fontSize
-        override; no host hook of its own.
+      description: 'The composed heading Text''s size="sm", forwarded to its fontSize
+        override; no host hook of its own. The forward always reaches Text with ActionSheet''s
+        resolved value: on web and Lit through Text''s CSS hook (`--ds-text-font-size`)
+        set to `--ds-action-sheet-title-size` in the sheet''s stylesheet, with `overrides.fontSize`
+        passed only when the caller set this override, so consumer CSS on the sheet
+        hook still works; on rn the resolved value (the default token or the override)
+        is always passed in Text''s `overrides`.'
       locked: false
     fontFamily:
       token: font.family.body
       part: item
       description: Applied to each row (not the list) and forwarded to the composed
-        heading Text as an override, since Text always sets its own family.
+        heading Text as an override, since Text always sets its own family; delivered
+        the way titleSize describes.
       locked: false
     fontSize:
       token: font.size.md
@@ -318,15 +331,17 @@ component:
       token: font.lineHeight.normal
       part: item
       description: Applied to each row and forwarded to the composed heading Text
-        as an override, as fontFamily is.
+        as an override, as fontFamily is (delivered the way titleSize describes).
       locked: false
     divider:
       token: color.border
       part: divider
-      description: Above the danger group — drawn only when there are both default
-        and danger actions, as a role="separator" inside the menu — and above the
-        cancel row whenever that row is rendered, decorative and hidden from assistive
-        technology.
+      description: 'Two dividers, two rules. The danger-group divider is drawn only
+        when there are both default and danger actions; it sits inside the menu and
+        is exposed as role="separator" (rn: a View with role="separator" among the
+        rows). The cancel divider sits above the cancel row whenever that row is rendered,
+        outside the menu; it is decorative and hidden from assistive technology (aria-hidden;
+        rn: importantForAccessibility="no-hide-descendants" and accessibilityElementsHidden).'
       locked: false
     dividerWidth:
       token: border.width.thin
@@ -358,9 +373,14 @@ component:
     exit:
       token: motion.duration.fast
       part: surface
-      description: Slide down with motion.easing.exit, the scrim fading with the same
-        duration and easing. A below-threshold drag release springs back with this
-        duration and motion.easing.standard, instant under reduced motion.
+      description: 'Slide down with motion.easing.exit, the scrim fading with the
+        same duration and easing. A below-threshold drag release springs back with
+        this duration and motion.easing.standard, instant under reduced motion. One
+        duration hook serves both; the two easings are fixed tokens chosen per case,
+        with no hooks of their own. After a dismissing release the surface holds the
+        released offset until the consumer''s next render: `open` false plays this
+        exit from there; `open` still true springs back (motion.easing.standard over
+        this duration), and an interrupted enter animation is finished by that spring-back.'
       locked: false
     focusRing:
       token: color.border.focus
@@ -371,14 +391,27 @@ component:
   constants:
     dismissDistance:
       description: Fraction of the sheet height a downward drag must pass for release
-        to dismiss it rather than spring back.
+        to dismiss it rather than spring back. No token expresses a ratio, so it stays
+        a documented module constant marked `literal-ok`, the same value as BottomSheet.
       value: 0.25
       unit: ratio
     dismissVelocity:
-      description: Drag speed at release that dismisses the sheet whatever the distance
-        travelled.
+      description: 'Drag speed at release that dismisses the sheet whatever the distance
+        travelled. Measured exactly as BottomSheet: between the last two move samples
+        before release, from the event timestamps (web and Lit `event.timeStamp`,
+        rn `nativeEvent.timestamp`, not PanResponder''s averaged `gestureState.vy`);
+        only downward speed counts. No token expresses px/ms, so it stays a documented
+        module constant marked `literal-ok`.'
       value: 1.5
       unit: px/ms
+    dragSlop:
+      description: Downward distance a pointer must move on the handle or header before
+        the drag claims it, as BottomSheet; a shorter press is not a drag and nothing
+        fires. The drag offset is measured from where the slop was crossed, so the
+        surface does not jump. On web and Lit the length is read from the resolved
+        custom property at gesture start and converted to px (rem × root font size).
+      token: space.1
+      unit: px
   copy:
     cancelLabel: Cancel
     defaultLabel: Actions
@@ -444,7 +477,9 @@ component:
         wrapper: the Cancel row element carries `data-part="cancelButton"` and wraps
         the Button, and `itemIcon` is a span wrapping Icon. In the wide presentation
         Menu owns every part and its own hooks; no ActionSheet `data-part` values
-        appear.'
+        appear. The inert background is showModal()''s guarantee: where showModal()
+        does not exist (jsdom) the `open`-attribute fallback exists only so tests
+        can render, and makes nothing inert; it is not a supported browser path.'
     lit:
       tag: ds-action-sheet
       reflect:
@@ -454,8 +489,12 @@ component:
         the wide presentation renders <ds-menu> with its `anchor` property set to
         the opener (document.body when nothing had focus), so it renders no trigger,
         as on web. The breakpoint media query is built from the theme token (maxWidth
-        is locked). The forwarded ref resolves to the shadow <dialog>, null while
-        closed. The heading is named by `aria-label` rather than an id reference,
+        is locked). Lit exposes no ref-like property (no `dialog` getter); the web
+        ref sentence is web-only. As on web, a part realized by a composed component
+        lives on an overlay-owned wrapper carrying `data-part`: `[data-part="cancelButton"]`
+        is the row wrapping the <ds-button>, `itemIcon` is a span wrapping <ds-icon>,
+        and the heading is a wrapper around <ds-text> (ds-* hosts carry no data-part
+        of their own). The heading is named by `aria-label` rather than an id reference,
         since ids do not cross the shadow root.'
     rn:
       element: Modal
@@ -477,9 +516,12 @@ component:
         (the Cancel Button in `ActionSheet.cancelButton`). After the enter transition,
         accessibility focus moves to the first enabled row in display order (the default
         group, then danger). The surface uses the RN >= 0.74 `role="menu"` prop with
-        accessibilityViewIsModal; rows are `role="menuitem"`. Pressable has no key
-        events, so there are no arrow keys, no Home/End and no roving tabindex; each
-        row is its own accessibility focus stop reached by swipe, and Enter/Space
+        accessibilityViewIsModal; rows are `role="menuitem"`. `accessibilityViewIsModal`
+        is a View prop set on the surface View; the Modal itself takes visible, transparent
+        and onRequestClose. The heading Text gets tone="muted" and size="sm" only:
+        `element: p` is web and Lit only, since rn Text has no element prop. Pressable
+        has no key events, so there are no arrow keys, no Home/End and no roving tabindex;
+        each row is its own accessibility focus stop reached by swipe, and Enter/Space
         are the platform''s own activation.'
     swiftui:
       element: confirmationDialog
@@ -646,7 +688,7 @@ component:
 
 - `scrim`: element
 - `surface`: element
-- `focusScope`: component `FocusScope`; props `trapped` = true, `restoreFocus` = true, `autoFocus` = "none"
+- `focusScope`: component `FocusScope`; props `trapped` = true, `restoreFocus` = true, `autoFocus` = "none", `active` ← prop `open`
 - `handle`: element
 - `header`: element
 - `heading`: component `Text`; props `element` = "p", `tone` = "muted", `size` = "sm"; forwards `fontFamily` → `overrides.fontFamily`, `titleSize` → `overrides.fontSize`, `lineHeight` → `overrides.lineHeight`
@@ -706,6 +748,7 @@ overlay:
 
 - constant `dismissDistance`: 0.25 ratio
 - constant `dismissVelocity`: 1.5 px/ms
+- constant `dragSlop`: `theme.space1` (`space.1`) px
 - example `photo-actions`, story `PhotoActions`: given `open: true`, `heading: "Photo.jpg"`, `actions: [{"id":"share","label":"Share","icon":"external"},{"id":"rename","label":"Rename"},{"id":"duplicate","label":"Duplicate"},{"id":"delete","label":"Delete photo","icon":"danger","tone":"danger"}]`; Contextual actions on an item, with the destructive one last.
 - example `unnamed-sheet`, story `UnnamedSheet`: given `open: true`, `actions: [{"id":"copy","label":"Copy link"},{"id":"open","label":"Open in new tab"}]`; A sheet with no heading, named by copy.defaultLabel for assistive technology.
 - example `with-an-unavailable-action`, story `WithAnUnavailableAction`: given `open: true`, `heading: "Invoice 4821"`, `cancelLabel: "Not now"`, `actions: [{"id":"download","label":"Download"},{"id":"void","label":"Void invoice","tone":"danger","disabled":true}]`; An action that is shown but cannot be used here, announced as disabled rather than hidden.
@@ -753,11 +796,11 @@ Do not use it for navigation (Menu in a nav Landmark, or Links), for settings wi
 
 ## Behavior
 
-Opening presents the list with focus on the first enabled action; arrow keys move between actions, Enter or Space chooses and fires `onAction(id)`, Escape, the scrim, the Cancel row, or a drag close it with `onClose`. Disabled actions are shown, skipped by arrow navigation, and announced as disabled. On wide screens the sheet becomes a Menu anchored to the opener: same actions, same events, no Cancel row (clicking outside closes). Focus returns to the opener on close in both presentations. On phones the sheet has BottomSheet's handle and header, and the drag-to-dismiss gesture lives on them (the same 25% / 1.5 px/ms rule). A pointer-down on the header or handle starts tracking with no separate slop: a tap travels past neither threshold, so it springs back in place and nothing fires. The sheet sizes to its content up to BottomSheet's `height: content` cap (90% of the viewport) and the list scrolls inside it. In the sheet, the FocusScope traps Tab between the menu's single tab stop and the Cancel row (with `dismissible` false there is no Cancel row, so Tab stays on the menu). The `overlay.dismiss` values are the shared category vocabulary; the event reports its own reasons: `close-button` is the Cancel row, reported as `cancel`, and `swipe` is the drag, reported as `drag`.
+Opening presents the list with focus on the first enabled action; arrow keys move between actions, Enter or Space chooses and fires `onAction(id)`, Escape, the scrim, the Cancel row, or a drag close it with `onClose`. Disabled actions are shown, skipped by arrow navigation, and announced as disabled. On wide screens the sheet becomes a Menu anchored to the opener: same actions, same events, no Cancel row (clicking outside closes). Focus returns to the opener on close in both presentations. `open` is controlled only; there is no uncontrolled mode. On phones the sheet has BottomSheet's handle and header, and the drag-to-dismiss gesture lives on them (the same 25% / 1.5 px/ms rule, the same `dragSlop`): a press on the header or handle becomes a drag only once it moves past `dragSlop`, so a tap is not a drag and nothing fires. After a dismissing release the sheet holds the released offset until the consumer's next render, as the `exit` binding describes. When `open` becomes false, focus returns to the opener at the start of the exit transition and the FocusScope is inactive from that moment (`active` follows `open`), so a mounted scope never pulls focus back during the exit. The sheet sizes to its content up to BottomSheet's `height: content` cap (90% of the viewport) and the list scrolls inside it. In the sheet, the FocusScope traps Tab between the menu's single tab stop and the Cancel row (with `dismissible` false there is no Cancel row, so Tab stays on the menu). The `overlay.dismiss` values are the shared category vocabulary; the event reports its own reasons: `close-button` is the Cancel row, reported as `cancel`, and `swipe` is the drag, reported as `drag`.
 
-Above the breakpoint it renders Menu through Menu's `anchor`, set to the element that was focused when `open` became true, and maps Menu's close reasons to its own: `escape` → escape, `outside`, `tab-out` and `focus-out` → scrim, `action` → nothing. A close that accompanies a chosen action never fires `onClose`, whatever order the two arrive in — `onAction` is the only event for a choice. Menu events ActionSheet does not have are not re-emitted. Every override whose binding shares a name with a Menu binding is forwarded to Menu's `overrides` (surface, shadow, radius, itemPaddingBlock, itemPaddingInline, itemGap, itemHover, itemColor, itemDangerColor, fontFamily, fontSize, lineHeight, minTarget, layer, enter, focusRing, focusRingWidth), plus `divider` → Menu's `separator`; the danger group gets a Menu separator under the same rule as the sheet's divider. The rest (scrim, header, handle, title, dividerWidth, exit) have no effect there.
+Above the breakpoint it renders Menu through Menu's `anchor`, set to the element that was focused when `open` became true, and maps Menu's close reasons to its own: `escape` → escape, `outside`, `tab-out` and `focus-out` → scrim, `action` → nothing. A close that accompanies a chosen action never fires `onClose` — `onAction` is the only event for a choice. Menu guarantees the order: `onOpenChange(false, 'action')` fires synchronously before `onAction`, in the same task. So ActionSheet needs no delay: the `action` reason (or `onAction`, whichever it sees first) marks the current opening as chosen, and every mapped close after it, including a later `focus-out`, is dropped until `open` next becomes true. Menu events ActionSheet does not have are not re-emitted. Only overridable shared bindings are forwarded, and only when the caller set that override (otherwise Menu keeps its own tokens, including its own layer): shadow, radius, itemPaddingBlock, itemPaddingInline, itemGap, fontFamily, fontSize, lineHeight, layer and enter go to Menu's `overrides`, plus `divider` → Menu's `separator`; the danger group gets a Menu separator under the same rule as the sheet's divider. Bindings locked by an accessibility guarantee (surface, itemHover, itemColor, itemDangerColor, minTarget, focusRing, focusRingWidth) are never forwarded. The rest (scrim, header, handle, title, dividerWidth, exit) have no effect there.
 
-The Default story is open, with the photo-actions example's args. Stories that need the sheet open render through a wrapper that owns `open` (starting true) and sets it false on `onAction` and `onClose`, acting as the consumer. The authored behavior scenarios describe the sheet presentation; the wide Menu presentation is Menu's own contract. The accessible name (`heading`, else `copy.defaultLabel`) is on the `role="menu"` list, and the `<dialog>` carries the same `aria-label`; the Cancel row's name is its Button's label.
+The Default story is open, with the photo-actions example's args. Stories that need the sheet open render through a wrapper that owns `open` (starting true) and sets it false on `onAction` and `onClose`, acting as the consumer; the wrapper first calls the story's own `onAction`/`onClose` args, and renders no trigger (there is no copy key for one). Example stories start from blank args, never from Default's or meta args: a prop absent from `given` takes its default, an example with no `open` in `given` renders closed, and a `given` with `open: true` renders through the wrapper. The authored behavior scenarios describe the sheet presentation; the wide Menu presentation is Menu's own contract. The accessible name (`heading`, else `copy.defaultLabel`) is on the `role="menu"` list, and the `<dialog>` carries the same `aria-label`; the Cancel row's name is its Button's label.
 
 ## Content guidelines
 

@@ -72,6 +72,8 @@ component:
           from: modal
         autoFocus: none
         restoreFocus: false
+        active:
+          from: open
     heading:
       component: Heading
       props:
@@ -118,7 +120,9 @@ component:
       default: '3'
       description: Heading level of the panel heading, so it fits the page outline
         (a popover usually sits under a level-2 section). No effect in the React Native
-        phone presentation, where BottomSheet's heading is always level 2.
+        phone presentation, where BottomSheet's heading is always level 2. In the
+        React Native tablet and react-native-web presentation the level is passed
+        to Heading, which uses it only for typography (native has no heading levels).
     open:
       type: boolean
       description: Controlled open state. Omit for uncontrolled (the trigger toggles
@@ -165,7 +169,9 @@ component:
   events:
     onOpenChange:
       description: 'Fired when the popover opens or closes, with the new state and
-        a reason: `trigger`, `escape`, `outside`, `close-button`, `tab-out`.'
+        a reason: `trigger`, `escape`, `outside`, `close-button`, `tab-out`. The reason
+        type keeps its existing exported name, `PopoverCloseReason`, although the
+        union includes `trigger`, which also opens; it is not renamed to `PopoverOpenChangeReason`.'
       platforms:
         web: onOpenChange
         lit: open-change
@@ -261,7 +267,11 @@ component:
       description: Gap between trigger and panel. Web and Lit apply it as a margin
         on the panel side facing the trigger (the `--ds-popover-offset` hook), which
         the flip check reads back from the computed style — a positioning offset,
-        not sibling spacing; React Native adds it to the position measured from the
+        not sibling spacing. Under top/left positioning the margin moves the box only
+        when the facing side is the panel's top or left edge (`data-side` bottom or
+        right); when it is its bottom or right edge (`data-side` top or left), the
+        position math subtracts the read-back value itself, so the gap is the same
+        on all four sides. React Native adds it to the position measured from the
         trigger.
       locked: false
     arrowSize:
@@ -269,7 +279,10 @@ component:
       part: arrow
       description: A square rotated 45°, filled with `surface` and edged with `border`
         at `borderWidth` on its two outer sides, centered on the panel edge facing
-        the trigger on every platform.
+        the trigger on every platform. The square's center sits on the centerline
+        of the panel's border on that edge (half `borderWidth` in from the outer edge),
+        drawn above the panel, so its edged sides meet the panel border and its fill
+        covers the border beneath its base.
       locked: false
     maxWidth:
       token: layout.maxWidth.prose
@@ -290,8 +303,11 @@ component:
       locked: false
     enter:
       token: motion.duration.fast
-      description: Fade and an `enterDistance` slide from the trigger side, with motion.easing.standard;
-        instant under reduced motion.
+      description: 'Fade and an `enterDistance` slide from the trigger side, with
+        motion.easing.standard; instant under reduced motion. The slide follows the
+        resolved physical side after right-to-left mirroring (`data-side` on web and
+        Lit, the resolved edge on React Native): the panel starts `enterDistance`
+        toward the trigger and moves away from it to rest.'
       locked: false
     enterDistance:
       token: space.1
@@ -299,7 +315,8 @@ component:
       locked: false
     exit:
       token: motion.duration.fast
-      description: Fade out with motion.easing.exit; instant under reduced motion.
+      description: Fade out with motion.easing.exit and no slide (the enter slide
+        does not reverse); instant under reduced motion.
       locked: false
     focusRing:
       token: color.border.focus
@@ -363,10 +380,16 @@ component:
         last element closes, focuses the trigger without preventDefault and lets the
         Tab continue from it to the element after the trigger (the portaled panel
         is not next in order, so this does not wait for `open` to go false; with nothing
-        after the trigger, focus leaves the page as a native Tab would). Modal: uses
-        a native <dialog> with showModal() positioned at the trigger; its exit plays
-        through `transition-behavior: allow-discrete` on display and overlay, and
-        its enter through `@starting-style` (browsers without them show and hide instantly),
+        after the trigger, focus leaves the page as a native Tab would); Shift+Tab
+        from the first element calls preventDefault and focuses the trigger. In both
+        directions focus moves before `onOpenChange` fires, so the consumer''s handler
+        already sees focus on the trigger. The `heading` part is a popover-owned <div
+        data-part="heading"> wrapping the Heading, which receives `id` (for aria-labelledby)
+        and tabIndex -1; the wrapper draws the ring (`focusRing` at `focusRingWidth`)
+        with `:has(:focus-visible)`, so Heading is not restyled. Modal: uses a native
+        <dialog> with showModal() positioned at the trigger; its exit plays through
+        `transition-behavior: allow-discrete` on display and overlay, and its enter
+        through `@starting-style` (browsers without them show and hide instantly),
         and the panel unmounts on transitionend/transitioncancel or a timer from the
         computed duration. `data-ds`, the `ref` and the override hooks are on the
         panel, which exists only while open or closing (the ref is null while closed);
@@ -402,8 +425,17 @@ component:
         then its `label`, then its textContent. The panel follows the trigger slot
         in the tab order, so Tab from the last element prevents default and focuses
         the first focusable element after the host (the trigger if there is none)
-        without waiting for `open` to go false. A panel `data-side` holds the resolved
-        physical side, as on web. Composed `open-change`.'
+        without waiting for `open` to go false; "focusable" there is FocusScope''s
+        walker run over the document in DOM order (descending open shadow roots and
+        slots, skipping disabled, inert, aria-hidden and tabindex=-1 elements; a positive
+        tabindex is not reordered). Shift+Tab from the first element prevents default
+        and focuses the trigger; in both directions focus moves before `open-change`
+        fires. The close button''s glyph is `<ds-icon name="close">` in ds-button''s
+        `leading-icon` slot, since ds-button has no leadingIcon property. Every composed
+        part (heading, body, close button) is a popover-owned wrapper element carrying
+        `data-part`; tabindex -1 goes on the <ds-heading> itself and the heading wrapper
+        draws the ring with `:has(:focus-visible)`. A panel `data-side` holds the
+        resolved physical side, as on web. Composed `open-change`.'
     rn:
       element: Modal
       props:
@@ -417,31 +449,41 @@ component:
         have no effect there; its title is `heading`, else the trigger element''s
         `accessibleName` prop, else its string `label` prop (native cannot read rendered
         text), and with none of them the title is empty and a __DEV__ warning fires,
-        since the sheet would have no accessible name. BottomSheet''s close reasons
-        map to Popover''s: `scrim` and `drag` report `outside`, `escape` and `close-button`
-        report themselves (BottomSheet never raises `action` itself). Popover forwards
-        the overrides whose bindings share a name with BottomSheet''s — surface, shadow,
-        radius, inset, partGap, layer, enter, exit, focusRing, focusRingWidth — but
-        not `maxWidth`, which BottomSheet reads as its theme breakpoint rather than
-        a panel width; border, borderWidth, offset, arrowSize, enterDistance and maxWidth
-        have no effect in that presentation. Tablets and react-native-web: a transparent
-        Modal with the panel positioned from measureInWindow() of the trigger and
-        a backdrop Pressable. Non-modal: a backdrop press closes with `outside`. modal=true:
-        the backdrop stays transparent (no scrim, as on web), a press on it does nothing
-        and FocusScope is trapped. The panel''s own name without `heading` is the
-        trigger element''s `accessibleName`, else its string `label`. Escape is onRequestClose
-        (the Android back button, Esc on react-native-web), reported as `escape`;
-        the modal-Escape scenario is web and Lit only because there is no key to press
-        in a native test. The Modal exposes no ref; callers ref their trigger. Modal
-        intercepts every touch behind it, so `modal: false` cannot leave the page
-        interactive here — it means only that tapping outside closes, and that is
-        the native reading of non-modal. The trigger Button receives `expanded`, so
-        the state is announced. Focus on open lands on the panel body wrapper: native
-        has no descendant walker, so "the first control, else the heading" resolves
-        to the one target there is. Pressable sees no key events, so Tab never leaves
-        the panel by key and `onOpenChange` never fires with reason `tab-out` on this
-        platform. The panel is measured once per open, so it does not follow a scrolling
-        page.'
+        since the sheet would have no accessible name; the same warning fires in the
+        tablet presentation whenever the panel has no name. BottomSheet close reason
+        → Popover reason, as one exhaustive map: `scrim` → `outside`, `drag` → `outside`,
+        `escape` → `escape`, `close-button` → `close-button`, `action` → `close-button`
+        (BottomSheet never raises `action` itself; the key exists only for exhaustiveness).
+        Popover forwards only the overridable bindings it shares with BottomSheet
+        — shadow, radius, inset, partGap, layer, enter, exit — passing Popover''s
+        resolved value (default token or override) for each except `layer`, which
+        is passed only when the caller overrode it, so the sheet otherwise keeps its
+        own layer token. `surface`, `focusRing` and `focusRingWidth` are locked on
+        Popover (the surface is in a contrast pair; focus rings always lock), so they
+        are not forwarded; neither is `maxWidth`, which BottomSheet reads as its theme
+        breakpoint rather than a panel width; border, borderWidth, offset, arrowSize,
+        enterDistance and maxWidth have no effect in that presentation. Tablets and
+        react-native-web: a transparent Modal with the panel positioned from measureInWindow()
+        of the trigger and a backdrop Pressable. Non-modal: a backdrop press closes
+        with `outside`. modal=true: the backdrop stays transparent (no scrim, as on
+        web), a press on it does nothing and FocusScope is trapped. The panel''s own
+        name without `heading` is the trigger element''s `accessibleName`, else its
+        string `label`. Escape is onRequestClose (the Android back button, Esc on
+        react-native-web), reported as `escape`; the modal-Escape scenario is web
+        and Lit only because there is no key to press in a native test. The Modal
+        exposes no ref; callers ref their trigger. Modal intercepts every touch behind
+        it, so `modal: false` cannot leave the page interactive here — it means only
+        that tapping outside closes, and that is the native reading of non-modal.
+        The trigger Button receives `expanded`, so the state is announced. Focus on
+        open lands on the panel body wrapper: native has no descendant walker, so
+        "the first control, else the heading" resolves to the one target there is.
+        Pressable sees no key events, so Tab never leaves the panel by key and `onOpenChange`
+        never fires with reason `tab-out` on this platform. The panel is measured
+        once per open, so it does not follow a scrolling page. In the tablet presentation
+        the root testID `Popover` is on the panel View (a closed Modal renders nothing),
+        and the composed parts'' testIDs (`Popover.heading`, `Popover.body`, `Popover.closeButton`)
+        sit on popover-owned Views wrapping the Heading, Box and Button, since Button
+        takes no testID.'
     swiftui:
       element: popover
       props:
@@ -494,21 +536,22 @@ component:
       start of the trigger.
     given:
       trigger: A Filters Button
-      children: A Form of filter controls
+      children: A Form of filter controls with an Apply Button in the Form's `actions`
       heading: Filters
       placement: bottom-start
   - name: date-picker-panel
     description: Quick date choices anchored under a date field. A full calendar is
       DatePicker's own popup, and popovers do not nest.
     given:
-      trigger: A date field Button with the calendar Icon showing the current date
+      trigger: A date field Button with the calendar Icon showing a fixed literal
+        date label (the story does not compute today)
       children: 'Three quick-pick date Buttons: Today, Tomorrow, Next week'
   - name: required-step
     description: A short form that must be submitted or cancelled, so the panel traps
       focus like a Dialog.
     given:
       trigger: An Add member Button
-      children: An email Input and a Save Button
+      children: A Form with an email Input and a Save Button in the Form's `actions`
       heading: Add member
       modal: true
   - name: contextual-help
@@ -536,7 +579,7 @@ component:
 
 - `trigger`: slot, `@ViewBuilder` parameter `trigger`, required
 - `panel`: element
-- `focusScope`: component `FocusScope`; props `trapped` ← prop `modal`, `autoFocus` = "none", `restoreFocus` = false
+- `focusScope`: component `FocusScope`; props `trapped` ← prop `modal`, `autoFocus` = "none", `restoreFocus` = false, `active` ← prop `open`
 - `heading`: component `Heading`; props `level` ← prop `headingLevel`
 - `body`: component `Box`
 - `closeButton`: component `Button`; props `variant` = "ghost", `size` = "sm", `iconOnly` = true, `leadingIcon` = "close"
@@ -574,9 +617,9 @@ overlay:
 
 ## Constants and examples
 
-- example `filter-panel`, story `FilterPanel`: given `trigger: "A Filters Button"`, `children: "A Form of filter controls"`, `heading: "Filters"`, `placement: "bottom-start"`; A compact panel of controls behind a Filters button, aligned to the start of the trigger.
-- example `date-picker-panel`, story `DatePickerPanel`: given `trigger: "A date field Button with the calendar Icon showing the current date"`, `children: "Three quick-pick date Buttons: Today, Tomorrow, Next week"`; Quick date choices anchored under a date field. A full calendar is DatePicker's own popup, and popovers do not nest.
-- example `required-step`, story `RequiredStep`: given `trigger: "An Add member Button"`, `children: "An email Input and a Save Button"`, `heading: "Add member"`, `modal: true`; A short form that must be submitted or cancelled, so the panel traps focus like a Dialog.
+- example `filter-panel`, story `FilterPanel`: given `trigger: "A Filters Button"`, `children: "A Form of filter controls with an Apply Button in the Form's `actions`"`, `heading: "Filters"`, `placement: "bottom-start"`; A compact panel of controls behind a Filters button, aligned to the start of the trigger.
+- example `date-picker-panel`, story `DatePickerPanel`: given `trigger: "A date field Button with the calendar Icon showing a fixed literal date label (the story does not compute today)"`, `children: "Three quick-pick date Buttons: Today, Tomorrow, Next week"`; Quick date choices anchored under a date field. A full calendar is DatePicker's own popup, and popovers do not nest.
+- example `required-step`, story `RequiredStep`: given `trigger: "An Add member Button"`, `children: "A Form with an email Input and a Save Button in the Form's `actions`"`, `heading: "Add member"`, `modal: true`; A short form that must be submitted or cancelled, so the panel traps focus like a Dialog.
 - example `contextual-help`, story `ContextualHelp`: given `trigger: "An icon-only Button labelled \"Help\" with the info Icon"`, `children: "One sentence of help ending in a Link to the guide"`, `showArrow: true`, `placement: "end"`; A help note with a link, pointed at its trigger.
 
 ## Overrides (per-instance styling contract)
@@ -622,9 +665,13 @@ Do not use a Popover for text-only hints (Tooltip), for a list of actions (Menu)
 
 ## Behavior
 
-The trigger toggles the popover; opening positions the panel at `placement`, flipping or shifting to stay in view, moves focus to the first control, and marks the trigger expanded. The first control is the first focusable element in the body, then the close button, then the heading (made focusable with tabindex -1), then the panel itself. The close button is labelled `copy.closeLabel` and keeps Button's own ghost colors. Non-modal: the page stays live; Escape, the close button, a click outside, and tabbing past the last element close it; Shift+Tab from the first element returns to the trigger and closes. There is no focusout listener on any platform: the overlay block's `focus-out` is realized by the Tab and Shift+Tab handlers, reported as `tab-out`, and `outside-press` is reported as `outside`; focus moved out programmatically leaves the popover open. Modal: the panel is a small Dialog — trapped focus, inert page, Escape and close only. Closing by the trigger, Escape or the close button returns focus to the trigger as soon as `open` goes false; an outside press leaves focus where the press put it, and Tab out moves it to the element after the trigger. The panel repositions on scroll and resize while open.
+The trigger toggles the popover; opening positions the panel at `placement`, flipping or shifting to stay in view, moves focus to the first control, and marks the trigger expanded. The first control is the first focusable element in the body, then the close button, then the heading (made focusable with tabindex -1), then the panel itself. The close button is labelled `copy.closeLabel` and keeps Button's own ghost colors. Non-modal: the page stays live; Escape, the close button, a click outside, and tabbing past the last element close it; Shift+Tab from the first element returns to the trigger and closes. There is no focusout listener on any platform: the overlay block's `focus-out` is realized by the Tab and Shift+Tab handlers, reported as `tab-out`, and `outside-press` is reported as `outside`; focus moved out programmatically leaves the popover open. Modal: the panel is a small Dialog — trapped focus, inert page, Escape and close only. Closing by the trigger, Escape or the close button returns focus to the trigger as soon as `open` goes false; an outside press leaves focus where the press put it, and Tab out moves it to the element after the trigger. When a controlled consumer sets `open` false with no reason from the popover, focus returns to the trigger only if it is inside the panel at that moment; otherwise it stays where it is. FocusScope's `active` follows `open`, so from the moment `open` is false a panel still mounted for its exit transition never pulls focus back. The panel repositions on scroll and resize while open.
 
-The Default story is open, with the filter-panel example's args, so the derived scenarios (accessible name, renders) find the named panel. Stories that need to start open (Default, Keyboard, the gates) render through a wrapper that owns `open`, starting true, and writes `onOpenChange` back into it, acting as the consumer; the uncontrolled popover always starts closed.
+Initial focus uses the order above (body control, close button, heading, panel). The keyboard rules' "first" and "last element in the panel" mean something else: the first and last tabbable elements in panel DOM order, where the header row (with the close button) comes before the body, so with a close button Shift+Tab-out starts from the close button. With no tabbable element in the panel (focus on the heading or the panel itself), non-modal Tab closes as a Tab out past the last element and Shift+Tab closes as a Shift+Tab back to the trigger, both reported `tab-out`; a modal panel keeps focus where it is. A modal popover's native <dialog> may raise `cancel` on Escape before focus has moved in, or close without a `cancel` at all; both are reported as `escape`, and if the consumer still holds `open` true the dialog is shown again.
+
+The parts get wiring every platform passes, not composition props: the Heading's id (web), ref and tabindex -1 for naming and the focus fallback; the close Button's `label` from `copy.closeLabel`, its system Icon `close` glyph and its press handler; the trigger's expanded state, controls link and toggle handler.
+
+The Default story is open, with the filter-panel example's args, so the derived scenarios (accessible name, renders) find the named panel; the derived accessible-name scenario targets the panel, not the trigger. Every story except the examples — Default, Keyboard, the gates, and the enum and state stories (headingLevel, placement, modal, showArrow, dismissible), whose difference is only visible open — renders through a wrapper that owns `open`, starting true, and writes `onOpenChange` back into it, acting as the consumer; there is no meta-level open wrapper. Example stories start from blank args, never from Default's or meta args: a prop absent from `given` takes its default (so date-picker-panel and contextual-help have no heading), and since no example gives `open`, the four examples render closed and uncontrolled, which is intended; the uncontrolled popover always starts closed.
 
 ## Content guidelines
 
@@ -637,7 +684,7 @@ The panel is a `dialog` named by its heading or trigger, and the trigger exposes
 ## Platform notes
 
 ### Web
-Clone the trigger with `aria-expanded`, `aria-controls={panelId}` and an `onClick` toggle. Render the panel through a portal: `<div role="dialog" id aria-labelledby>` with `position: fixed`, computed from the trigger's rect for `placement` (flip when overflowing, shift along the cross axis), `z-index: var(--layer-dropdown)`, `max-inline-size` from the token, wrapped in `FocusScope trapped={modal} autoFocus="none" restoreFocus={false}` (the component focuses the first control and restores focus itself). Non-modal: `pointerdown` on document outside panel and trigger closes; there is no `focusout` listener; keydown Tab on the last focusable element closes, focuses the trigger and lets the Tab continue; Shift+Tab on the first focuses the trigger and closes. Modal: render inside a `<dialog>` opened with `showModal()` and positioned at the trigger. Optional arrow as a rotated square `<span aria-hidden>` on the `data-side` edge.
+Clone the trigger with `aria-expanded`, `aria-controls={panelId}` and an `onClick` toggle. Render the panel through a portal: `<div role="dialog" id aria-labelledby>` with `position: fixed`, computed from the trigger's rect for `placement` (flip when overflowing, shift along the cross axis), `z-index: var(--layer-dropdown)`, `max-inline-size` from the token, wrapped in `FocusScope trapped={modal} autoFocus="none" restoreFocus={false} active={open}` (the component focuses the first control and restores focus itself). Non-modal: `pointerdown` on document outside panel and trigger closes; there is no `focusout` listener; keydown Tab on the last focusable element closes, focuses the trigger and lets the Tab continue; Shift+Tab on the first focuses the trigger and closes. Modal: render inside a `<dialog>` opened with `showModal()` and positioned at the trigger. Optional arrow as a rotated square `<span aria-hidden>` on the `data-side` edge.
 
 ### Lit
 `<ds-popover placement="bottom-start"><ds-button slot="trigger" label="Filters"></ds-button><div>…</div></ds-popover>`; the panel uses `popover="manual"` and `showPopover()` with fixed positioning as fallback; composes `<ds-focus-scope>`, `<ds-heading>`, `<ds-button>`; composed `open-change`.

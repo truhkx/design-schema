@@ -76,6 +76,7 @@ component:
       props:
         trapped: true
         restoreFocus: true
+        autoFocus: none
     icon:
       component: Icon
       forwards:
@@ -91,6 +92,10 @@ component:
         tone: muted
     footer:
       component: Stack
+      props:
+        direction: horizontal
+        gap: tight
+        justify: end
       forwards:
         footerGap: gap
     cancelButton:
@@ -206,8 +211,10 @@ component:
     expect: focus-wraps-to-last
   - keys:
     - Enter
-    action: Activates the focused button. Initial focus is on Cancel so Enter never
-      confirms by momentum.
+    action: Activates the focused button as a native button activation, which on Cancel
+      fires onCancel with reason cancel. Initial focus is on Cancel so Enter never
+      confirms by momentum. `closes` here means the close request fires; the dialog
+      itself stays open until the consumer sets `open` false.
     when: focus on a button
     from: first
     expect: closes
@@ -234,6 +241,10 @@ component:
       locked: false
     inset:
       token: layout.inset.lg
+      description: 'Pads the inline edges of every part; the block edges are padded
+        once, on the surface column that holds the parts (padding-block: inset), not
+        per part, so nothing doubles. partGap is the only space between the icon-and-text
+        row and the footer.'
       locked: false
     partGap:
       token: layout.gap.loose
@@ -256,45 +267,75 @@ component:
     footerGap:
       token: layout.gap.tight
       part: footer
-      description: Forwarded to the footer Stack as `overrides.gap`.
+      description: 'Forwarded to the footer Stack''s `gap`. The forward always reaches
+        the Stack with AlertDialog''s resolved value: on web and Lit the AlertDialog
+        stylesheet sets the Stack''s own `--ds-stack-gap` hook on the Stack element
+        to `--ds-alert-dialog-footer-gap`, and `overrides.gap` is passed only when
+        the caller set the `footerGap` override, so consumer CSS on the AlertDialog
+        hook still works; on rn the resolved value (the token or the override) is
+        always passed as `overrides.gap`. It has no hook beyond `--ds-alert-dialog-footer-gap`.'
       locked: false
     iconSize:
       token: font.size.lg
       part: icon
-      description: Forwarded to the tone Icon as `overrides.size`.
+      description: 'Forwarded to the tone Icon''s `size`; the Icon gets no `size`
+        prop. Delivered as `footerGap` is: on web and Lit the stylesheet sets the
+        Icon''s `--ds-icon-size` hook to `--ds-alert-dialog-icon-size` and `overrides.size`
+        is passed only when the caller set the override; on rn the resolved value
+        is always passed as `overrides.size`. No hook beyond `--ds-alert-dialog-icon-size`.'
       locked: false
     icon:
       token: color.status.{tone}.icon
       part: icon
-      description: Forwarded to the tone Icon as `overrides.color` (Icon's own color
-        hook wins over any color set on an ancestor), as in Alert and Toast.
+      description: 'Forwarded to the tone Icon''s `color`. It is the foreground of
+        the non-text contrast pair and so is not a member of the overrides type; the
+        caller never overrides it and it is always delivered: on web and Lit a per-tone
+        rule in the AlertDialog stylesheet sets the Icon''s own `--ds-icon-color`
+        hook on the Icon element (setting `color` on an ancestor or wrapper has no
+        effect, because Icon''s own rule wins); on rn `overrides.color` is always
+        passed. As in Alert and Toast.'
       locked: true
     width:
       token: layout.maxWidth.prose
-      description: Always the small size; an alert dialog with more content is a Dialog.
-        On narrow viewports the surface is min(width, viewport width − 2 × gutter).
+      part: surface
+      description: 'Always the small size; an alert dialog with more content is a
+        Dialog. The width sits on the surface itself: inline-size min(width, viewport
+        width − 2 × gutter). On web and Lit the <dialog> fills the viewport and centers
+        the surface; the focusScope element only wraps it.'
       locked: false
     gutter:
       token: layout.gutter
       part: surface
       description: 'The least space between the surface and each viewport edge: caps
-        the width at viewport width − 2 × gutter and the height at viewport height
-        − 2 × gutter (on rn, the horizontal margin and the max height).'
+        the surface width at viewport width − 2 × gutter and its max height at viewport
+        height − 2 × gutter, both set on the surface. On rn spacing is never a margin:
+        the gutter is paddingHorizontal on the centering View, and the surface maxHeight
+        is window height − 2 × gutter from useWindowDimensions.'
       locked: false
     layer:
       token: layer.dialog
-      description: 'No effect inside the browser top layer or a native Modal window;
-        applies to the non-top-layer fallback (position: fixed).'
+      description: 'Kept as the hook for consistency with Dialog, but it has no effect
+        anywhere this component renders: web and Lit always open with showModal()
+        into the top layer and have no non-top-layer fallback (the hook is written
+        as z-index on the <dialog>, where the top layer ignores it), and rn renders
+        in a native Modal window.'
+      locked: false
+    rise:
+      token: space.2
+      part: surface
+      description: The distance the surface rises during enter (translateY from rise
+        to 0); zero under reduced motion.
       locked: false
     enter:
       token: motion.duration.base
-      description: Scrim fade and surface fade-and-rise (translateY of space.2), with
-        motion.easing.standard; instant under reduced motion.
+      description: One duration shared by the scrim fade and the surface fade-and-rise
+        (translateY of `rise`), with motion.easing.standard; instant under reduced
+        motion.
       locked: false
     exit:
       token: motion.duration.fast
-      description: Scrim and surface fade out with motion.easing.exit; instant under
-        reduced motion.
+      description: One duration shared by the scrim and surface fade-out, with motion.easing.exit;
+        instant under reduced motion.
       locked: false
     focusRing:
       token: color.border.focus
@@ -354,14 +395,21 @@ component:
         The icon is decorative and `aria-hidden`: the tone is already carried by the
         heading and description, so labelling it would only repeat them. Tab and Shift+Tab
         wrap because FocusScope traps and wraps; AlertDialog adds no key handler of
-        its own for them. FocusScope takes autoFocus `first`, which is Cancel. The
-        scrim is the <dialog>''s ::backdrop and has no data-part hook; a scrim click
-        lands on the <dialog> element itself (event.target === dialog) and is ignored.
-        Icon, Heading, Text, Stack and the two Buttons write their own data-part,
-        so the icon, heading, description, footer, cancelButton and confirmButton
-        parts each live on an AlertDialog-owned wrapper element carrying `data-part`;
-        the icon-and-text row is an unhooked element inside the surface. `role` is
-        fixed to alertdialog and not accepted from the consumer.'
+        its own for them. FocusScope takes autoFocus `none`, because its effect runs
+        before showModal() while the <dialog> is still closed and cannot take focus:
+        AlertDialog focuses Cancel itself right after showModal() (and after a native
+        re-open), and FocusScope keeps the trap and focus restore. As in Dialog, the
+        <dialog> fills the viewport with a transparent ::backdrop and the scrim is
+        a real element inside it carrying `data-part="scrim"`, behind the surface
+        and fading with it; it has no click listener, so a scrim click does nothing.
+        FocusScope writes its own `data-part="scope"`, so the `focusScope` part is
+        an AlertDialog-owned element directly inside FocusScope wrapping the surface,
+        carrying `data-part="focusScope"`. Icon, Heading, Text, Stack and the two
+        Buttons write their own data-part, so the icon, heading, description, footer,
+        cancelButton and confirmButton parts each live on an AlertDialog-owned wrapper
+        element carrying `data-part`; the icon-and-text row is an unhooked element
+        inside the surface. `role` is fixed to alertdialog and not accepted from the
+        consumer.'
     lit:
       tag: ds-alert-dialog
       reflect:
@@ -375,7 +423,15 @@ component:
         An idref would resolve here, since the heading shares the shadow root, but
         the package names every Lit overlay with the literal text so the name does
         not depend on where the heading is rendered. Cancel is `<ds-button variant="secondary">`
-        and the footer `<ds-stack>` is `justify="end"`, as on web.'
+        and the footer `<ds-stack>` is `direction="horizontal" gap="tight" justify="end"`,
+        as on web. The scrim, focusScope and initial focus are as on web: a real `data-part="scrim"`
+        element in the full-viewport <dialog> (transparent ::backdrop, no click listener);
+        the `focusScope` part is an element directly inside <ds-focus-scope> carrying
+        `data-part="focusScope"`; <ds-focus-scope> takes autoFocus `none` and the
+        element focuses the Cancel <ds-button> right after showModal(). Every composed
+        part (icon, heading, description, footer, cancelButton, confirmButton) is
+        an AlertDialog-owned wrapper element carrying `data-part`: ds-* hosts carry
+        no data-part of their own.'
     rn:
       element: Modal
       props:
@@ -384,11 +440,17 @@ component:
       - onRequestClose
       - accessibilityViewIsModal
       notes: 'Native Modal as in Dialog; the scrim Pressable is absent (no scrim dismissal)
-        — the scrim is a plain View. onRequestClose → onCancel reason escape. Initial
-        accessibility focus on the title so the question is read, then the buttons
-        follow in order Cancel, Confirm. iOS also offers Alert.alert() natively; this
-        component does not use it, so the look matches the theme and the buttons follow
-        the system''s order and variants. The surface uses the RN >= 0.74 `role="alertdialog"`
+        — the scrim is an Animated.View whose opacity follows the enter and exit animation,
+        with no press handler or responder. onRequestClose → onCancel reason escape;
+        iOS has no hardware-Escape hook, so the surface View also handles `onAccessibilityEscape`
+        (the VoiceOver two-finger scrub) as onCancel reason escape, as in Dialog.
+        The surface View carries `role="alertdialog"`, `accessibilityLabel={heading}`,
+        `accessibilityHint={description}` and accessibilityViewIsModal, so the accessible-name
+        scenario targets `AlertDialog.surface`, not the outer View with the root testID.
+        Initial accessibility focus on the title so the question is read, then the
+        buttons follow in order Cancel, Confirm. iOS also offers Alert.alert() natively;
+        this component does not use it, so the look matches the theme and the buttons
+        follow the system''s order and variants. The surface uses the RN >= 0.74 `role="alertdialog"`
         prop with accessibilityViewIsModal. `confirmDisabled` maps to Button''s `disabled`,
         which on native is accessibilityState.disabled plus a press guard (the control
         stays focusable), per Button''s own contract. Scroll lock has no native meaning
@@ -400,10 +462,10 @@ component:
         takes autoFocus `none` (focus is placed on the heading by hand) with no testID
         of its own. The Modal takes no testID: `testID="AlertDialog"` is on the outermost
         View inside the Modal and `AlertDialog.surface` on the inner bordered View;
-        the scrim is a plain View with `testID="AlertDialog.scrim"` and no press handler
-        or responder, so a press on it reaches nothing — a Pressable there would break
-        the contract. Icon, Heading, Text, Stack and Button write their own testIDs,
-        so the icon, heading, description, footer, cancelButton and confirmButton
+        the scrim is that Animated.View with `testID="AlertDialog.scrim"` and no press
+        handler or responder, so a press on it reaches nothing — a Pressable there
+        would break the contract. Icon, Heading, Text, Stack and Button write their
+        own testIDs, so the icon, heading, description, footer, cancelButton and confirmButton
         parts are each a wrapping View with `testID="AlertDialog.<part>"`. The icon
         is decorative, as on web: the Icon has no label, and its wrapper sets accessibilityElementsHidden
         and importantForAccessibility="no-hide-descendants". AlertDialog is rooted
@@ -556,11 +618,11 @@ component:
 
 - `scrim`: element
 - `surface`: element
-- `focusScope`: component `FocusScope`; props `trapped` = true, `restoreFocus` = true
+- `focusScope`: component `FocusScope`; props `trapped` = true, `restoreFocus` = true, `autoFocus` = "none"
 - `icon`: component `Icon`; forwards `icon` → `overrides.color`, `iconSize` → `overrides.size`
 - `heading`: component `Heading`; props `level` = "2"
 - `description`: component `Text`; props `tone` = "muted"
-- `footer`: component `Stack`; forwards `footerGap` → `overrides.gap`
+- `footer`: component `Stack`; props `direction` = "horizontal", `gap` = "tight", `justify` = "end"; forwards `footerGap` → `overrides.gap`
 - `cancelButton`: component `Button`; props `variant` = "secondary", `size` = "md"
 - `confirmButton`: component `Button`; props `size` = "md"
 
@@ -573,7 +635,9 @@ component:
 - `footerGap`: token `layout.gap.tight`; part `footer`
 - `iconSize`: token `font.size.lg`; part `icon`
 - `icon`: token `color.status.{tone}.icon`; part `icon`; locked
+- `width`: token `layout.maxWidth.prose`; part `surface`
 - `gutter`: token `layout.gutter`; part `surface`
+- `rise`: token `space.2`; part `surface`
 
 ## Form and overlay
 
@@ -605,7 +669,7 @@ The component accepts `overrides?: Partial<Record<OverridableBinding, TokenRef>>
 
 Overrides change values, never presence: a prop that turns a part off (`surface: none`, `border: false`, `radius: none`) makes the matching overrides no-ops; apply an override only where the binding is in effect.
 
-Overridable: `scrim`, `border`, `borderWidth`, `shadow`, `radius`, `inset`, `partGap`, `textGap`, `iconGap`, `footerGap`, `iconSize`, `width`, `gutter`, `layer`, `enter`, `exit`
+Overridable: `scrim`, `border`, `borderWidth`, `shadow`, `radius`, `inset`, `partGap`, `textGap`, `iconGap`, `footerGap`, `iconSize`, `width`, `gutter`, `layer`, `rise`, `enter`, `exit`
 Locked (accessibility-bearing, never overridable): `surface`, `icon`, `focusRing`, `focusRingWidth`
 
 ## Behavior scenarios (14)
@@ -748,13 +812,19 @@ notes: "The same native <dialog> mechanics as Dialog (showModal, cancel event, p
   \ `aria-hidden`: the tone is already carried by the heading and description, so\
   \ labelling it would only repeat them. Tab and Shift+Tab wrap because FocusScope\
   \ traps and wraps; AlertDialog adds no key handler of its own for them. FocusScope\
-  \ takes autoFocus `first`, which is Cancel. The scrim is the <dialog>'s ::backdrop\
-  \ and has no data-part hook; a scrim click lands on the <dialog> element itself\
-  \ (event.target === dialog) and is ignored. Icon, Heading, Text, Stack and the two\
-  \ Buttons write their own data-part, so the icon, heading, description, footer,\
-  \ cancelButton and confirmButton parts each live on an AlertDialog-owned wrapper\
-  \ element carrying `data-part`; the icon-and-text row is an unhooked element inside\
-  \ the surface. `role` is fixed to alertdialog and not accepted from the consumer."
+  \ takes autoFocus `none`, because its effect runs before showModal() while the <dialog>\
+  \ is still closed and cannot take focus: AlertDialog focuses Cancel itself right\
+  \ after showModal() (and after a native re-open), and FocusScope keeps the trap\
+  \ and focus restore. As in Dialog, the <dialog> fills the viewport with a transparent\
+  \ ::backdrop and the scrim is a real element inside it carrying `data-part=\"scrim\"\
+  `, behind the surface and fading with it; it has no click listener, so a scrim click\
+  \ does nothing. FocusScope writes its own `data-part=\"scope\"`, so the `focusScope`\
+  \ part is an AlertDialog-owned element directly inside FocusScope wrapping the surface,\
+  \ carrying `data-part=\"focusScope\"`. Icon, Heading, Text, Stack and the two Buttons\
+  \ write their own data-part, so the icon, heading, description, footer, cancelButton\
+  \ and confirmButton parts each live on an AlertDialog-owned wrapper element carrying\
+  \ `data-part`; the icon-and-text row is an unhooked element inside the surface.\
+  \ `role` is fixed to alertdialog and not accepted from the consumer."
 ```
 
 ## Guidance
@@ -773,7 +843,7 @@ Do not confirm reversible actions; provide undo (a Toast with an action) instead
 
 ## Behavior
 
-Opens like a Dialog: scrim, trapped focus, inert page, locked scroll. Focus lands on the Cancel button. Escape and Cancel fire `onCancel`; Confirm fires `onConfirm`. A scrim click does nothing, so a stray tap cannot dismiss a decision, and there is no close button, so the only ways out are the two named ones. The consumer closes by setting `open` false after handling the event; stories that need it open render through a wrapper that owns `open` (starting true) and writes the events back, acting as the consumer. The Default story is open, with the delete-files example's args, so the DeleteFiles example story repeating it is expected. `confirmDisabled` keeps Confirm inert until a precondition is met, through the composed Button's own `disabled` — focusable-but-inert on every platform, so it stays in the Tab cycle. The dialog has exactly two focusable children, Cancel and Confirm, and no slot for more; its Keyboard story exercises Tab wrap across those two (the trigger behind is inert), and the three-focusable-children story rule does not apply.
+Opens like a Dialog: scrim, trapped focus, inert page, locked scroll. Focus lands on the Cancel button, placed by AlertDialog itself (FocusScope takes autoFocus `none` and keeps the trap and the restore). Escape and Cancel fire `onCancel`; Confirm fires `onConfirm`. A scrim click does nothing, so a stray tap cannot dismiss a decision, and there is no close button, so the only ways out are the two named ones. `open` is controlled only; there is no uncontrolled mode. The consumer closes by setting `open` false after handling the event — Enter on a button fires its event and nothing closes until then. The heading's id, ref and tabindex, the Buttons' labels and press handlers, the tone Icon's `name` and the aria wiring are wiring every platform passes, not composition props. Example stories start from blank args, never from Default's or the meta args: a prop absent from `given` takes its default, and every example here gives `open: true`, so it renders through a wrapper that owns `open` (starting true) and writes the events back, acting as the consumer. The Default story is open, with the delete-files example's args, so the DeleteFiles example story repeating it is expected. `confirmDisabled` keeps Confirm inert until a precondition is met, through the composed Button's own `disabled` — focusable-but-inert on every platform, so it stays in the Tab cycle. The dialog has exactly two focusable children, Cancel and Confirm, and no slot for more; its Keyboard story exercises Tab wrap across those two (the trigger behind is inert, and is labelled with the `heading` text, never `confirmLabel`, so no second button shares Confirm's name), and the three-focusable-children story rule does not apply.
 
 ## Content guidelines
 
@@ -786,13 +856,13 @@ Role `alertdialog` tells assistive technology this is a decision, and the title 
 ## Platform notes
 
 ### Web
-Native `<dialog role="alertdialog" aria-modal="true" aria-labelledby aria-describedby>` through a portal, opened with `showModal()`. Handle `cancel` (preventDefault, then `onCancel('escape')`). Do not attach a scrim click handler. Footer is a horizontal Stack, `gap: tight`, Cancel then Confirm in DOM order (Cancel first so it is focused first; visually the primary sits at the end via `justify: end`). Cancel is `variant="secondary"` on every platform; Confirm's variant follows `tone`. The icon is `<Icon name={tone}>` colored by the tone token through Icon's `overrides.color`, `aria-hidden`.
+Native `<dialog role="alertdialog" aria-modal="true" aria-labelledby aria-describedby>` through a portal, opened with `showModal()`. Handle `cancel` (preventDefault, then `onCancel('escape')`). Do not attach a scrim click handler. Footer is a horizontal Stack, `gap: tight`, Cancel then Confirm in DOM order (Cancel first so it is focused first; visually the primary sits at the end via `justify: end`). Cancel is `variant="secondary"` on every platform; Confirm's variant follows `tone`. The icon is `<Icon name={tone}>` colored by the tone token through Icon's own `--ds-icon-color` hook (see the `icon` binding), `aria-hidden`. The scrim is a real element inside the full-viewport `<dialog>`, as in Dialog, with no click handler.
 
 ### Lit
 `<ds-alert-dialog open tone="danger" heading="Delete 3 files?" description="…" confirm-label="Delete files">`. Shadow `<dialog>` with `showModal()`; composed `confirm` and `cancel` events. Renders `<ds-heading>`, `<ds-text>`, `<ds-icon>`, `<ds-stack>` and two `<ds-button>`s.
 
 ### React Native
-`Modal` as in Dialog, no scrim `Pressable`. `onRequestClose` → `onCancel('escape')`. Set accessibility focus to the title after the enter animation; Cancel precedes Confirm in the accessibility order. Buttons are the system `Button` (`secondary` for cancel; `danger` or `primary` for confirm by tone).
+`Modal` as in Dialog, no scrim `Pressable` (an `Animated.View` scrim with no press handler). `onRequestClose` and the surface's `onAccessibilityEscape` → `onCancel('escape')`. Set accessibility focus to the title after the enter animation; Cancel precedes Confirm in the accessibility order. Buttons are the system `Button` (`secondary` for cancel; `danger` or `primary` for confirm by tone).
 
 ## Related
 

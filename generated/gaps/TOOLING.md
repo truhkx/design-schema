@@ -116,3 +116,12 @@ Gaps a fold cannot answer because they are about the tools, not the docs.
 - The rn prompt contradicts switch.md: Overridable list includes track/thumb bindings, the generic rules say `onChange` and Pressable focus-visible styling, and stories use ThemeProvider instead of withTheme() (Switch, rn).
 - The React/rn conventions digest says every component declares `ref`, overriding docs that say a component exposes none (Tooltip; web, rn).
 - A fold session cannot run `node logs/*.mjs` (approval required), so gap-file staleness against folded.json was read from `ls -lt` by hand (fold, all).
+- The generator's controlled-state template says `open` is "uncontrolled from its initial state when omitted", contradicting every overlay doc whose `open` is controlled only; the template should defer to the prop (Dialog, AlertDialog, BottomSheet, ActionSheet; web/lit/rn).
+- The "a composed part receives exactly the listed props" rule has no exception for wiring (ids, refs, tabindex, copy labels, glyphs, handlers); docs now name it in Behavior, but the rule should say so (Dialog, Popover, SidePanel, BottomSheet; web).
+- The scenario vocabulary's `focused: <part>` should mean focus within when the part is a wrapper around a composed control (Dialog, lit).
+- Escape scenarios stay web/lit because the rn runner has no mapping from `key: Escape` to onRequestClose/onAccessibilityEscape (Dialog, Menu; rn).
+- The rules template says "wrap in ThemeProvider"; the rn package uses the withTheme decorator (AlertDialog, rn).
+- The scenario format doesn't say that `given: { open: true }` renders through the wrapper that owns `open` (Menu, web).
+- The has-accessible-name scenario the parser derives runs on the closed Default story, so the named region is hidden; for overlays it should use `open: true` (SidePanel, web).
+- Persistent mode reads the breakpoint token through getComputedStyle, so without the token stylesheet (jsdom) the renders-persistent scenarios only exercise the overlay path (SidePanel, web).
+- The parser's prose-forward check matches any composed child named anywhere in a binding description, so mentioning the body Box inside `footerGap` raised a false "Box has no gap binding" error (BottomSheet, fold).

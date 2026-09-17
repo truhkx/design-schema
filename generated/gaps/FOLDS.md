@@ -1938,3 +1938,165 @@ One line per decision: `<date> <Component> <platform>: <gap> → <what the doc n
 2026-09-17 Toast rn: region accessible name on rn → accessibilityLabel from copy.regionLabel
 2026-09-17 Toast rn: Button label/icon/onPress beyond listed props → data every platform passes; close Icon colored color.inverse.link on rn
 2026-09-17 Toast rn: does Toast expose a ref → no ref; toasts are created by toast()
+2026-09-17 Dialog web,lit,rn: open controlled-only contradicts uncontrolled-when-omitted template → Behavior: open is controlled only, no uncontrolled mode
+2026-09-17 Dialog rn: body Box has no testID prop → body testID on a wrapping View, also the body focus target
+2026-09-17 Dialog rn: which element carries the root testID → surface View with role and name; closed Modal renders nothing
+2026-09-17 Dialog web,lit,rn: inset per part plus partGap doubles space between parts → inset pads inline edges plus the surface column's block edges once; partGap is the only space between parts
+2026-09-17 Dialog lit: body forward lists paddingBlock only → body forward is inset → paddingInline; Box keeps zero block padding
+2026-09-17 Dialog web,lit: forward via overrides versus CSS hook conflict → CSS hook always; overrides only when the caller overrides inset; rn always passes the resolved value
+2026-09-17 Dialog rn: initialFocus first order never applies on native → rn first always lands on the body wrapper
+2026-09-17 Dialog rn: layer has no effect in native Modal → layer: rn ignores it
+2026-09-17 Dialog rn: focusRing bindings but no ring on rn → focusRing is web and Lit only; rn uses the screen-reader indicator
+2026-09-17 Dialog rn: enter rise direction unstated → surface starts space.2 below and rises into place; exit is fade only
+2026-09-17 Dialog rn: gutter as margin overflows; maxHeight literal → new gutter binding (layout.gutter): rn container padding, max height window − 2 × gutter; web/Lit cap 100vw/100dvh − 2 × gutter
+2026-09-17 Dialog rn: KeyboardAvoidingView around body or whole container → wraps the whole centring container
+2026-09-17 Dialog rn: onOpened primitive and interrupted enter → requestAnimationFrame; not fired if closed before enter finishes
+2026-09-17 Dialog rn: enter animation when mounted already open → enter runs on first mount too
+2026-09-17 Dialog rn: focus restore at exit start or end → restore runs when open becomes false (exit start)
+2026-09-17 Dialog lit: ds-box overwrites data-part so body loses its part → Lit body and description parts are Dialog-owned wrappers; body is the scroll container
+2026-09-17 Dialog lit: close watcher closes dialog without cancel → an unannounced native close while open is reported as escape exactly once, and reopened
+2026-09-17 Dialog lit: heading tabindex on wrapper or ds-heading → tabindex -1 on the ds-heading; wrapper draws the ring
+2026-09-17 Dialog lit: footer presence without a rendered slot → element children with slot=footer via MutationObserver; bare text is not a footer
+2026-09-17 Dialog web: focusScope part cannot carry data-part → Dialog-owned element inside FocusScope wrapping the surface carries it
+2026-09-17 Dialog web: Heading id/ref/tabIndex, close Button label beyond listed props → wiring every platform passes, not composition props
+2026-09-17 Dialog web: description Text tone unspecified despite muted contrast pair → composition description is Text tone muted
+2026-09-17 Dialog web: Box never scrolls, body needs a scroll wrapper → body part is a Dialog-owned scroll container holding the Box
+2026-09-17 Dialog web: footer Stack cannot wrap on narrow viewports → footer composition props add wrap: true
+2026-09-17 Dialog web,lit: Tab wrap said explicit but FocusScope provides it → FocusScope trapped implements the wrap; Dialog adds no handler
+2026-09-17 Dialog web: heading tabindex only granted for title → also when the heading is the last fallback of first or close
+2026-09-17 Dialog web: example stories inherit Default slots? → example stories start from blank args; reading-dialog has no footer
+2026-09-17 Dialog web: scrim enter/exit timing → scrim fades with the surface, enter on open and exit on close
+2026-09-17 Dialog web: initial focus placement vs showModal → Dialog focuses right after showModal and after a native re-open
+2026-09-17 AlertDialog web,lit,rn: footer Stack direction/gap/justify not listed → footer composition props direction horizontal, gap tight, justify end
+2026-09-17 AlertDialog web,lit,rn: default iconSize forwarded or Icon size prop → no Icon size prop; CSS hook on web/Lit, overrides only when set; rn always
+2026-09-17 AlertDialog web,lit: footerGap unset case and root hook → forward delivery per CSS hook; only hook is --ds-alert-dialog-footer-gap
+2026-09-17 AlertDialog lit,rn: locked icon color forwarded, unset case → always sent: --ds-icon-color per tone on web/Lit, overrides.color on rn
+2026-09-17 AlertDialog rn: which element the accessible-name test targets → role, label, hint and viewIsModal on AlertDialog.surface
+2026-09-17 AlertDialog rn: gutter called a margin → paddingHorizontal on centering View; maxHeight window − 2 × gutter
+2026-09-17 AlertDialog rn: VoiceOver escape gesture unlisted → onAccessibilityEscape on the surface → onCancel('escape')
+2026-09-17 AlertDialog rn: does the scrim fade → Animated.View opacity follows enter/exit, no press handler
+2026-09-17 AlertDialog lit: where data-part lives on Lit → every composed part is an AlertDialog-owned wrapper
+2026-09-17 AlertDialog web,lit: scrim ::backdrop vs clickable scrim part → real data-part=scrim element, transparent ::backdrop, no listener
+2026-09-17 AlertDialog web,lit: who places initial focus before showModal → FocusScope autoFocus none; AlertDialog focuses Cancel after showModal
+2026-09-17 AlertDialog web,lit: focusScope part has no home → owned element inside FocusScope wrapping the surface
+2026-09-17 AlertDialog web,lit: which element width and gutter size → width and gutter on the surface; dialog fills viewport
+2026-09-17 AlertDialog lit: rise distance a prose literal → new rise binding space.2; enter/exit one duration for scrim and surface
+2026-09-17 AlertDialog lit: Enter expect closes but element never closes → Enter activates the button; the request fires, the consumer closes
+2026-09-17 AlertDialog web: layer names a nonexistent fallback → layer has no effect on any platform
+2026-09-17 AlertDialog web: Keyboard story opener borrows confirmLabel → opener labelled with the heading text
+2026-09-17 AlertDialog all: shared wiring, inset, blank-args example stories → Behavior wiring sentence, S3 inset description, blank-args sentence
+2026-09-17 ActionSheet rn: heading Text element p has no rn prop → rn passes tone muted and size sm only
+2026-09-17 ActionSheet rn: actions optional fields fail exactOptionalPropertyTypes → each optional field also accepts explicit undefined
+2026-09-17 ActionSheet web,rn: divider sentence mixes the two dividers → danger divider role=separator in menu; cancel divider hidden from AT
+2026-09-17 ActionSheet web,rn: empty header when not dismissible and no heading → header not rendered
+2026-09-17 ActionSheet rn: heading forwards default or override only → CSS hook on web/Lit, overrides only when set; rn always resolved
+2026-09-17 ActionSheet rn: velocity measurement via gestureState.vy → last two move samples by event timestamps, as BottomSheet
+2026-09-17 ActionSheet rn: no separate slop conflicts with BottomSheet → new dragSlop constant space.1; offset from slop crossing
+2026-09-17 ActionSheet rn: accessibilityViewIsModal listed as Modal prop → View prop on the surface
+2026-09-17 ActionSheet rn: story wrapper args and trigger → wrapper calls onAction/onClose args, renders no trigger; blank-args examples
+2026-09-17 ActionSheet lit: forwarded ref claim on Lit → Lit exposes no ref-like property
+2026-09-17 ActionSheet lit: wrapper-part rule only in web notes → Lit parts are owned wrappers (cancelButton row, itemIcon span, heading)
+2026-09-17 ActionSheet web,lit: action/close suppression mechanism → Menu fires action close before onAction; later mapped closes dropped until reopen
+2026-09-17 ActionSheet lit: trap paused while closing → focusScope active from open; restore at exit start
+2026-09-17 ActionSheet lit: dismiss constants lack token expression → documented literal-ok module constants
+2026-09-17 ActionSheet lit: exit binding covers two easings → one duration hook; easings fixed tokens
+2026-09-17 ActionSheet web: forwarding locked bindings to Menu → only caller-set overridable shared bindings forwarded
+2026-09-17 ActionSheet web: controlled-state prose vs controlled-only open → open is controlled only
+2026-09-17 ActionSheet web: no transition binding for row hover → motion.duration.fast, easing standard, none under reduced motion
+2026-09-17 ActionSheet web: holding released drag position unstated → hold until next render; exit or spring back
+2026-09-17 ActionSheet web: setAttribute open fallback not inert → fallback exists only for jsdom, not a supported path
+2026-09-17 BottomSheet web,lit,rn: body Box inset doubles block padding → body forwards inset → paddingInline; column pads block edges once
+2026-09-17 BottomSheet rn: header block-end padding unspecified → no part has block padding; partGap only
+2026-09-17 BottomSheet web,lit,rn: header top padding without handle → headerPaddingTop is the column's block-start padding when the handle renders
+2026-09-17 BottomSheet rn: SafeAreaView pads every edge → empty SafeAreaView last in the column, bottom only
+2026-09-17 BottomSheet rn: header taking drag from child Pressable → yes, past the slop (capture)
+2026-09-17 BottomSheet web,lit,rn: velocity clock unnamed → event timestamps
+2026-09-17 BottomSheet rn: full/half heights and status bar → half window × 0.5, full window − gutter; Android translucent subtracts status bar
+2026-09-17 BottomSheet rn,lit: hideHeading row alignment and header gaps → close button end-aligned; handleGap column, headerGap row
+2026-09-17 BottomSheet web,lit,rn: spring-back, hold wait, async open → hold to next render (Lit updateComplete + frame); spring back finishes enter
+2026-09-17 BottomSheet web,lit: drag from pointerdown or slop crossing → from slop crossing, no jump
+2026-09-17 BottomSheet web,lit: dragSlop token to px → resolved --space-1 at gesture start, rem × root font size
+2026-09-17 BottomSheet lit: Lit hosts' data-part → every composed part a sheet-owned wrapper
+2026-09-17 BottomSheet web,lit: wrapper click outside the Button → focus the Button, request close-button
+2026-09-17 BottomSheet lit: close Button size unspecified → ghost sm iconOnly as Dialog
+2026-09-17 BottomSheet lit: aria-labelledby vs aria-label → aria-label from heading text
+2026-09-17 BottomSheet lit: footer slot gives wide Dialog an empty footer → forward footer slot only with footer children
+2026-09-17 BottomSheet lit: controlled template vs prop → open is controlled only
+2026-09-17 BottomSheet web,lit: wide media query chosen in JS → resolved --layout-max-width-prose into matchMedia; unresolved renders the sheet
+2026-09-17 BottomSheet web: scrim ::backdrop or element → real data-part=scrim element
+2026-09-17 BottomSheet web: footerGap CSS hook vs restyling → forward delivery, not restyling; overrides only when set
+2026-09-17 BottomSheet web: container not in forwarded list → container passes through to Dialog
+2026-09-17 BottomSheet web: wide Dialog layer → Dialog keeps layer.dialog; caller overrides only
+2026-09-17 BottomSheet all: wiring vs composition props → Behavior wiring sentence
+2026-09-17 Menu rn,lit: maxHeight gutter has no token → new gutter binding layout.gutter
+2026-09-17 Menu rn: ref on rn → Menu exposes no ref on rn
+2026-09-17 Menu rn: horizontal flip and RTL → only top/bottom flip; start/end follow layout direction, inline shift within gutter
+2026-09-17 Menu rn: phone ActionSheet heading and focus restore → heading = label; Menu restores focus in both presentations
+2026-09-17 Menu web,lit,rn: enter slide side after flip → from the side facing the trigger after flip
+2026-09-17 Menu rn: which item the disabled scenario clicks → the first item, the disabled one
+2026-09-17 Menu rn: transparent backdrop color → transparent; scrim token not applied
+2026-09-17 Menu web,lit: Tab out while controlled popup stays shown → focus moves to trigger (or anchor rule), native Tab continues
+2026-09-17 Menu lit: anchor press counts as outside → anchor stands in for trigger; no close
+2026-09-17 Menu lit: iconOnly warning with anchor → no warning when anchor set
+2026-09-17 Menu web,lit: which close reasons move focus → escape/action to trigger; outside/focus-out none; focus inside popup always restored
+2026-09-17 Menu lit: Escape/Arrow keys on trigger while open → Escape closes, Arrows focus first/last item
+2026-09-17 Menu lit: window blur doubles focus-out → one focus loss fires once
+2026-09-17 Menu lit: minWidth trigger-width floor → measured at open/reposition, max() with trigger width; none with anchor
+2026-09-17 Menu lit: extra part attributes → part=popup list only; others data-part
+2026-09-17 Menu web: popupOffset token resolution → read in px from resolved hook at open/reposition
+2026-09-17 Menu web: aria-controls while closed → set only while open
+2026-09-17 Menu web: which element gets rest props → root wrapper; ref is the popup
+2026-09-17 Menu web: enter drives item hover transition → popup only; item highlight instant
+2026-09-17 Menu web: typeahead ASCII only → any printable character, case-insensitive
+2026-09-17 Menu web: examples and the open wrapper → examples start from blank args
+2026-09-17 Popover rn: controlled close with no reason → restore to trigger only if focus is inside
+2026-09-17 Popover rn: locked bindings listed as forwarded → forward only overridable ones; locked named as not forwarded
+2026-09-17 Popover rn: BottomSheet action reason mapping → one reason map, action → close-button
+2026-09-17 Popover rn: no-name warning on tablets → warns in both presentations
+2026-09-17 Popover rn: closeButton testID without Button testID → part testIDs on owned wrapper Views
+2026-09-17 Popover web,lit,rn: which stories start open, meta args → non-example stories open via wrapper; examples blank args, closed
+2026-09-17 Popover rn: date-picker current date → fixed literal date label
+2026-09-17 Popover web,lit,rn: enter slide under RTL, exit slide → physical side after mirroring; exit fade only
+2026-09-17 Popover rn: headingLevel on tablets → typography only
+2026-09-17 Popover lit: trapped scope pulls focus back on exit → focusScope active from open
+2026-09-17 Popover lit: ds-button has no leadingIcon → ds-icon close in leading-icon slot
+2026-09-17 Popover web,lit: initial-focus order vs Tab first element → Tab uses DOM order, header before body
+2026-09-17 Popover lit: focusable after the host undefined → FocusScope walker, document order, skips inert/-1
+2026-09-17 Popover lit: Tab with nothing tabbable in panel → non-modal tab-out; modal keeps focus
+2026-09-17 Popover web,lit: native dialog cancel or close without cancel → escape, reshown if still open
+2026-09-17 Popover lit: PopoverCloseReason naming → existing name kept
+2026-09-17 Popover web,lit: arrow alignment with border → centered on border centerline, drawn above
+2026-09-17 Popover lit: offset margin on top/left sides → position math subtracts the read-back margin
+2026-09-17 Popover lit: examples' submit control placement → Form actions
+2026-09-17 Popover lit: has-accessible-name target → the panel
+2026-09-17 Popover web: Heading id/tabIndex, close label beyond props → Behavior wiring sentence
+2026-09-17 Popover web,lit: focus before onOpenChange on tab-out → focus moves first
+2026-09-17 Popover web,lit: Shift+Tab preventDefault → yes, then focus trigger
+2026-09-17 Popover web,lit: heading data-part and ring → owned wrapper with :has(:focus-visible); Lit tabindex on ds-heading
+2026-09-17 SidePanel rn: FocusScope wrapper can't hold partGap → FocusScope outside surface; column View carries gap and block padding
+2026-09-17 SidePanel web,lit: focusScope part can't exist → owned column element inside FocusScope carries data-part
+2026-09-17 SidePanel rn: accessibilityRole none vs role prop → role={role} plus accessibilityLabel
+2026-09-17 SidePanel rn: ref on rn → exposes no ref on rn
+2026-09-17 SidePanel rn: swipe thresholds and edge zone unnamed → constants dismissDistance, dismissVelocity, dragSlop, edgeZone
+2026-09-17 SidePanel rn: swipe dismiss curve and unhonored close → hold offset, then timing exit or spring back
+2026-09-17 SidePanel web,rn: close button size unlisted → default size; Button keeps 44px target
+2026-09-17 SidePanel web,lit,rn: safe area for persistent sidebar → overlay only; persistent pads none
+2026-09-17 SidePanel rn: breakpoint crossing remounts children → stated as native limit
+2026-09-17 SidePanel rn: header with only close button → end-aligned
+2026-09-17 SidePanel lit,rn: examples without open → blank args, closed, opened by trigger
+2026-09-17 SidePanel lit: swipe reason never emitted on Lit → rn only; stays in shared type
+2026-09-17 SidePanel web,lit: scrim click vs pointerdown → click on scrim element; outside stays pointerdown
+2026-09-17 SidePanel lit: scrim covers the trigger → press there is scrim; trigger from keyboard or no scrim
+2026-09-17 SidePanel web,lit: navigation detection and focus → click path with a[href] or ds-link; no focus move
+2026-09-17 SidePanel lit: formmethod=dialog and action while persistent → both count; ignored while persistent
+2026-09-17 SidePanel web,lit: something else closes the modal dialog → non-cancelable cancel reports escape, reshows
+2026-09-17 SidePanel web,lit: border-inline-end wrong for side end → border on the edge facing the content
+2026-09-17 SidePanel web,lit: inset forward paddingBlock doubles with partGap → inset → paddingInline; column block padding once
+2026-09-17 SidePanel web: Heading margin unbalances header → new headingGap binding space.0 forwarded to marginBlockEnd
+2026-09-17 SidePanel lit: non-modal scrim layer → shares one layer; DOM order puts surface above
+2026-09-17 SidePanel web,lit: when breakpoint token is read → at mount; theme change applies next mount
+2026-09-17 SidePanel web: scrim sibling can't inherit hooks → scrim declares same hook defaults and inline overrides
+2026-09-17 SidePanel web: ref null while closed vs hidden → ref null when closed and not persistent
+2026-09-17 SidePanel web,lit: modal scrim → real data-part=scrim in full-viewport dialog
+2026-09-17 SidePanel web: close Button label and icon unlisted → Behavior wiring sentence
+2026-09-17 SidePanel web: 100vw includes scrollbar gutter → 100% of the fixed containing block

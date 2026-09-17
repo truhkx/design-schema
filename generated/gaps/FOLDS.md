@@ -2479,3 +2479,49 @@ One line per decision: `<date> <Component> <platform>: <gap> → <what the doc n
 2026-09-17 TreeGrid rn: pressing a parent row header under `selectable: cell` → toggles only, never selects the cell
 2026-09-17 TreeGrid rn: no native path for a dozen keyboard rules → the stand-in actions listed, escape-dismiss named among them
 2026-09-17 TreeGrid rn: `body` and the guide lines have no element on rn → stated, with the guide lines called decoration
+2026-09-17 Feed web: no wording for the empty-label development warning → the sentence is in the label description, once per mount, whitespace counts as empty
+2026-09-17 Feed rn: day seven exactly between daysAgo and the absolute date → strictly under seven days is daysAgo; day seven shows the date
+2026-09-17 Feed web: does a prepend that leaves the last id re-arm load-more → no; the ask is keyed on the last id, hasMore and loading
+2026-09-17 Feed lit: what zero or a negative newItemsCount renders → no button, and the live row stays in the DOM unpadded
+2026-09-17 Feed rn: headingLevel has no observable effect on native → stated; passed to Card for parity and it controls nothing there
+2026-09-17 Feed web+lit: the pending show-new focus request never expires → it lives until the next items change and no further
+2026-09-17 Feed rn: onShowNew cannot move focus on native → the move is web, Lit and SwiftUI only; native keeps focus on the button
+2026-09-17 Feed rn: onItemVisible dedupe missing from the rn notes → the dedupe is the component's, applied on top of onViewableItemsChanged
+2026-09-17 Feed web+lit: is Ctrl+End swallowed while loading → yes; always consumed from inside an article
+2026-09-17 Feed web: articles are tabindex -1 so feed commands are unreachable by Tab → confirmed as the design; the Tab row now says articles are never tab stops
+2026-09-17 Feed rn: newItemsLayer has no visual effect on native → declared inert there, still applied so an override resolves
+2026-09-17 Feed rn: unreadBorder cannot overlay the Card on native → a start border on the wrapper that insets the Card
+2026-09-17 Feed lit: timestampSize names a part the font size cannot live on → the size applies to the wrapping Text, the part to the time element
+2026-09-17 Feed lit: focusRing and focusRingWidth have nothing for Feed to draw → marked child-owned, drawn by Card and Button
+2026-09-17 Feed lit: the loading, end and empty precedence is only implied → written out as one ordered sentence in Behavior
+2026-09-17 Feed web: Stack writes its own data-part so articleBody cannot be the Stack → Feed-owned display-contents wrappers carry the part
+2026-09-17 Feed lit: the article part element is not the role=article element → stated; the wrapper carries part and bar, the Card the role
+2026-09-17 Feed web: the empty state has no placement or liveness rule → a Feed-owned wrapper in the items column, not a live region
+2026-09-17 Feed lit: delegatesFocus required but the host is not focusable → omitted; the rule is for focusable hosts only
+2026-09-17 Feed lit: reduced-motion is required but Lit has no motion → the show-new scroll is the motion, instant under reduced motion
+2026-09-17 Feed rn: the live row mounts together with its text → always rendered and padded only while shown, as web
+2026-09-17 Feed rn: a Keyboard story for a platform with no feed commands → named as a visual and axe fixture in the rn notes
+2026-09-17 Splitter rn: separator has no native role and tests query it → the rn notes state the role here is adjustable
+2026-09-17 Splitter rn: the minSize step rules are written for keys only → they belong to the decrement action; setMinimum never collapses
+2026-09-17 Splitter rn: the at-a-bound silence rule is stated only for keys → extended to increment, decrement, setMinimum and setMaximum
+2026-09-17 Splitter rn: does a tap that never moved fire the end event → no; a cancelled gesture counts as a release
+2026-09-17 Splitter rn: should native also get hitSlop → yes, both the overflowing child View and hitSlop
+2026-09-17 Splitter web+lit+rn: how the collapse button is anchored when expanded → centered across the separator, start-aligned while collapsed
+2026-09-17 Splitter rn: focusRing and separatorHover have no native expression → stated; they reach only the composed collapse Button
+2026-09-17 Splitter rn: which pane wins when both floors exceed the container → the secondary gives way, being the flexible track
+2026-09-17 Splitter rn+lit: does persistKey apply to a controlled splitter → it always records; a controlled prop wins over the store on mount
+2026-09-17 Splitter rn: stacking and collapsing overlap unresolved → stacked shows both panes, collapse stays latent and returns
+2026-09-17 Splitter rn: aria-valuemax while collapsed unstated → stays maxSize; only the text and valuenow round
+2026-09-17 Splitter rn: grip has no part and no anatomy entry → named a mark inside the separator, which is why it takes no part
+2026-09-17 Splitter rn: a Keyboard story where no key reaches the View → named a visual and axe fixture in the rn notes
+2026-09-17 Splitter lit+web: copy.setMinimum and setMaximum have no web consumer → scoped in the web notes to the native and SwiftUI actions
+2026-09-17 Splitter lit: not-inherited property versus a host custom property → set on the shadow container that reads it, not the host
+2026-09-17 Splitter lit: has-accessible-name fails because the Default story stacks → the default example now pins stackBelow never
+2026-09-17 Splitter web+lit: handle has a binding but no part hook → declared a pseudo-element part on web and Lit, a child View on native
+2026-09-17 Splitter lit: the collapse Button has no props and no controls property → composition lists its props; Lit sets expanded and no aria-controls
+2026-09-17 Splitter lit: Shift+F6 ambiguous between reverse cycle and ignore → ignored entirely, no preventDefault
+2026-09-17 Splitter web+lit: how RTL direction is detected → read once at mount, not observed afterwards
+2026-09-17 Splitter web+lit: the animating state hook is unnamed → named: a ds-splitter--animate class on web, data-animating on Lit
+2026-09-17 Splitter web+lit: a shrink step at minSize without collapsible → clamps and fires nothing; a drag collapses only strictly below
+2026-09-17 Splitter web+lit: stackBelow is a container query in one place and a ResizeObserver in another → one wording, and the comparison is strict
+2026-09-17 Splitter web+lit: what F6 does from outside the splitter → handled only from inside; from the container the cycle starts at primary

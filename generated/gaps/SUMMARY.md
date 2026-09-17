@@ -1,6 +1,6 @@
-# Gap digest — phase Controls
+# Gap digest — phase Focus
 
-Generated 2026-09-17T05:36 by tools/gap_digest.ts. DOC lines belong in the named doc; fold them, run `pnpm parse`, and the affected targets become stale by prompt hash.
+Generated 2026-09-17T10:07 by tools/gap_digest.ts. DOC lines belong in the named doc; fold them, run `pnpm parse`, and the affected targets become stale by prompt hash.
 
 ## Accordion
 
@@ -2534,6 +2534,38 @@ Doc: `site/src/content/docs/components/fieldset.md`
 ## FocusScope
 
 Doc: `site/src/content/docs/components/focusscope.md`
+
+### 2026-09-17 09:50 — rn round 1
+
+- **DOC** FocusScope: the rn notes call setAccessibilityFocus on the wrapper View for first/last/container, but that View cannot be marked `accessible` (it would merge its children into one element), and iOS VoiceOver generally won't focus a non-accessible container, so the call may do nothing on iOS. I kept the documented call and added collapsable={false} so a native view exists; the doc should say what happens on iOS, or name a child to receive focus. → `site/src/content/docs/components/focusscope.md`
+- **DOC** FocusScope: restoreFocus says to fall back to 'the next focusable element in the document if that one is gone'; React Native has no document order to walk, so if the opener is gone nothing is restored. The rn notes don't mention this limit. → `site/src/content/docs/components/focusscope.md`
+- **DOC** FocusScope: the rn notes don't say when the TextInput opener is captured. The web text says 'on mount', but a child TextInput with autoFocus focuses before the parent's effect runs, so I capture it on the first render, before children mount. → `site/src/content/docs/components/focusscope.md`
+- **DOC** FocusScope: the `scope` part is the root, but the rn conventions put testID="FocusScope" on the root and testID="<Name>.<part>" on parts; one View can carry only one testID. I kept testID="FocusScope" (the rn locator falls back to the root); the doc should say the root part uses the bare name on rn. → `site/src/content/docs/components/focusscope.md`
+- **DOC** FocusScope: on react-native-web, accessibilityViewIsModal may render as aria-modal on a div with no role, even though the doc says 'the scope adds no role' and on web 'never makes anything inert'. What the rn wrapper should output under react-native-web is not stated; I left the prop as the notes specify. → `site/src/content/docs/components/focusscope.md`
+- **DOC** FocusScope: the Default story content (Text 'Confirm your changes', Buttons 'Cancel' and 'Continue') is in the guidance prose, not in `examples`, so it is not in the generated args. I put it in meta.args.children. For the four examples, whose `children` is a text description, I show the description as Text above the same two Buttons; the examples don't say what real content to render. → `site/src/content/docs/components/focusscope.md`
+- **DOC** FocusScope: returnFocusTo's shape is RefObject<ViewInstance | null>, but a system Button doesn't take a ref, so stories wrap the trigger in a <View collapsable={false} ref>. Overlay triggers will need the same wrapper until Button exposes a ref. → `site/src/content/docs/components/focusscope.md`
+
+### 2026-09-17 09:48 — lit round 1
+
+- **DOC** FocusScope: the Default story has only two focusable children (Cancel, Continue), but a component with a keyboard block needs a Keyboard story with at least three; the doc gives no copy for a third control, so Keyboard uses three Buttons labelled First/Second/Third, the same labels the React story uses. → `site/src/content/docs/components/focusscope.md`
+- **DOC** FocusScope: examples give `children` as a prose description ('A full-screen onboarding overlay with its own close Button'); the doc has no copy for the controls it names, so the stories render the description as Text plus Buttons labelled Close, Apply filters, Accept/Decline and Options, matching React. The labels are not doc copy. → `site/src/content/docs/components/focusscope.md`
+- **DOC** FocusScope: the third keyboard rule (Tab from first → focus-next) has no platforms list, while the two wrap rules list web/lit/swiftui; it was treated as applying to lit (it needs no code, being native movement) but the doc should say whether rn is included. → `site/src/content/docs/components/focusscope.md`
+- **DOC** FocusScope: 'Stack order follows tree nesting' is phrased for React context; on Lit there is no context, so a mounting scope is inserted below the first stacked scope it contains in the composed tree. The doc does not say how Lit should find the parent link. → `site/src/content/docs/components/focusscope.md`
+- **DOC** FocusScope: the Lit notes say the anchor carries tabindex=-1, while the web notes and the the-wrapper-is-not-focusable scenario say the wrapper carries tabindex only while autoFocus is container; Lit now sets it only for container. The Lit note should say so. → `site/src/content/docs/components/focusscope.md`
+- **DOC** FocusScope: the behavior says 'Tab from the wrapper goes to the first descendant' for autoFocus container, but not whether that Tab fires onEscapeAttempt or applies when the scope is untrapped; Lit handles it only while trapped/active/top and fires nothing for forward Tab. → `site/src/content/docs/components/focusscope.md`
+- **DOC** FocusScope: behavior says Lit's `active` is reflected 'so the outer scope can be styled', but the reflected attribute is the negated `no-active`, so a paused scope is styled with `[no-active]`; the prose should name the attribute. → `site/src/content/docs/components/focusscope.md`
+- **DOC** FocusScope: autoFocus waits for the slotted elements' updateComplete, but the doc does not say how deep; Lit awaits every light-DOM descendant of the slotted elements, not system elements rendered inside their shadow roots. → `site/src/content/docs/components/focusscope.md`
+
+### 2026-09-17 09:45 — web round 1
+
+- **DOC** FocusScope: 'FocusScope's own data-part="scope" wins, and a composing overlay puts its own part on an element it owns' conflicts with Dialog, AlertDialog, BottomSheet, ActionSheet, Popover and SidePanel, which all pass data-part="focusScope" to FocusScope; I made scope win, so those overlays' focusScope part no longer shows up on the web until their docs/regens move the part to an element they own. → `site/src/content/docs/components/focusscope.md`
+- **DOC** FocusScope: 'everything inside a fieldset[disabled]' is excluded, but browsers keep links and tabindex elements inside a disabled fieldset focusable (and the first legend's controls stay enabled); I excluded the whole subtree as written, so the walker can disagree with the browser's real Tab order there. → `site/src/content/docs/components/focusscope.md`
+- **DOC** FocusScope: 'a scope whose active turns back on moves to the top' can raise an outer scope above a still-active inner scope (e.g. Popover active={open} nested in a Dialog, reopened while a deeper scope is up); I implemented it literally. The doc should say whether reactivation should respect tree nesting. → `site/src/content/docs/components/focusscope.md`
+- **DOC** FocusScope: the focusin pull-back target when the last focused descendant is gone is unspecified beyond 'last focused descendant'; I fall back to the first focusable descendant, then to the wrapper when autoFocus is container, else leave focus where it went. → `site/src/content/docs/components/focusscope.md`
+- **DOC** FocusScope: Tab (not Shift+Tab) from the wrapper under autoFocus container is said to go to the first descendant but not whether onEscapeAttempt fires; I fire nothing for it (only backward fires, as stated). → `site/src/content/docs/components/focusscope.md`
+- **DOC** FocusScope: the empty-scope dev warning says 'a trapped scope with no focusable descendants' but autoFocus container gives the wrapper as a pull-back target, so it is not strictly inescapable-without-target; I kept the warning for every trapped empty scope. → `site/src/content/docs/components/focusscope.md`
+- **DOC** FocusScope: the restore marker is placed as the opener's sibling, so if the opener was removed together with its parent the marker is gone too and nothing is restored; the doc doesn't cover that case, and I leave focus alone there. → `site/src/content/docs/components/focusscope.md`
+- **DOC** FocusScope: the example stories' `children` are prose descriptions ("A full-screen onboarding overlay with its own close Button"); I pass the text as args and render the named controls (Close, Apply filters, Accept/Decline, Options) in a custom render, which is more than 'exactly its given as args'. → `site/src/content/docs/components/focusscope.md`
 
 ### 2026-09-16 05:50 — rn round 1
 
@@ -5392,6 +5424,45 @@ Doc: `site/src/content/docs/components/text.md`
 
 Doc: `site/src/content/docs/components/toast.md`
 
+### 2026-09-17 10:07 — rn round 1
+
+- **DOC** Toast: composition gives the message part `element: span`, but RN Text has no `element` prop; passed only `size="md"`. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: rn notes say toasts are centered, but web centers only below the content width and uses bottom-start on wide screens; kept centered at every width on native, as the rn notes say. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: the spec says `programmatic` toasts leave via dismiss(toastId) and that only `replaced` skips the exit transition, but not whether a programmatic dismiss animates; chose to animate it (internal exit context from ToastProvider), with `replaced`/evicted still removed immediately. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: the duration description says both durations are computed at region mount; on native they are computed from `t.motionDurationLoop` when each toast mounts, so a standalone Toast outside a provider also works. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: the dev warning names the prop explicitly passed as short/long, so any story or test args carrying `duration: 'short'` plus actionLabel or danger tone warn; the doc does not say whether examples should omit `duration` to avoid it. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: the rn `props` list names only accessibilityLiveRegion/accessibilityRole, but the region also needs an accessible name (copy.regionLabel); applied as accessibilityLabel on the region View. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: dismissButton props list `variant, inverse, size, iconOnly` and says Button receives only its listed props, yet it also needs `label` (copy.dismissLabel), `leadingIcon` (Icon close) and `onPress`; passed those too, with the Icon colored `color.inverse.link` because RN has no currentColor. The same applies to the actionButton label/onPress. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: the React 19 rule asks a component that exposes its root to declare `ref`, but the schema does not say whether Toast exposes its root (an Animated.View); declared no ref. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: keyboard Tab rule applies on rn but needs no code (native focus order); nothing implemented beyond the visible buttons. → `site/src/content/docs/components/toast.md`
+
+### 2026-09-17 10:04 — lit round 1
+
+- **DOC** Toast: the Overrides section lists stackGap, regionInset and layer as overridable on the toast, but the stackGap description says they belong to the region's own `overrides`; I kept them only on `<ds-toast-region>`'s `overrides`. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: the region's hook names are not given. The rule `--ds-<tag-without-ds>-<binding>` gives `--ds-toast-stack-gap` / `--ds-toast-region-inset` / `--ds-toast-layer` (as React uses), not `--ds-toast-region-*` from the region's tag; I used the toast-prefixed names, which renames the previous Lit hooks. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: the `text` binding names part `message`, but its description says the foreground is re-scoped on the toast's own container; I set `--color-foreground` on the `toast` part so Text inherits it unchanged. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: the `duration` doc covers timing only for toasts inside a region; for a `<ds-toast>` rendered outside a region I measure motion.duration.loop on the toast itself. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: 'the next focusable element after the region' is not defined for elements inside shadow roots; the fallback searches light-DOM native focusables and `[tabindex]` only, so a custom element that takes focus through delegatesFocus is skipped. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: the doc does not say whether focus returns when the action, dismiss button, or a replaced/programmatic dismissal removes a focused toast; I restore focus for any reason whenever focus was inside the toast when it left. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: 'newest at the bottom on wide screens' implies a different order on phones, but none is specified; the region keeps newest at the bottom at every width. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: 'pauses while touched' has no event named for Lit; I use pointerenter/pointerleave/pointercancel, which cover touch contact. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: the forwarded Text bindings (fontFamily, fontSize, lineHeight) have toast-level default tokens, but the doc does not say whether to forward those defaults or only explicit overrides; I always forward the resolved token (override or the binding's default). → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: the eviction count is unclear on whether a toast still in its exit transition counts toward the three; I count only toasts not already leaving. → `site/src/content/docs/components/toast.md`
+
+### 2026-09-17 10:00 — web round 1
+
+- **DOC** Toast: the spec never names the region component or the dismiss function's export; kept the existing `ToastRegion` and `toast`, and added `dismiss(toastId?: string): void` beside them. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: `dismiss(toastId)` has no stated animation; the doc only says `replaced` skips the exit transition, so programmatic dismissals play the exit transition and fire onDismiss afterwards. With no region mounted they settle immediately. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: a programmatic dismissal needs to reach a toast rendered by the region, but the schema props have no channel for it; used a private context (not a prop) so the public API stays as specified. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: `fontFamily`/`fontSize`/`lineHeight` are forwarded to Text, yet the Overrides section says every binding is a `--ds-toast-*` hook on the root; forwarded bindings get no root hook, following the 'forward to the child, never CSS on the child' rule. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: `stackGap`, `regionInset` and `layer` are listed as Toast overridables but described as region-only; they are typed on `ToastRegionProps.overrides` only, not on `ToastProps.overrides`. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: the `text` binding names `part: message`, but its description says to re-scope `--color-foreground` on the container; set it on the toast root (like Tooltip), not on the message part. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: the exit transition's direction isn't specified (only enter 'rise and fade'); exit reverses enter, sinking by `enterOffset` while fading over `exit`. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: 'wide' is layout.maxWidth.content resolved at generation time; used 960px to match Container's existing breakpoint, without re-reading the theme. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: the spec doesn't say whether the dev warning fires once per instance or on every change; it fires when `duration`, `actionLabel` or `tone` changes into the override case. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: the `escape-dismisses-the-focused-toast` scenario has no `given` or focus step; the test focuses the dismiss button first, since Escape only acts when focus is inside a toast. → `site/src/content/docs/components/toast.md`
+- **DOC** Toast: with toast() auto-mounting the region in its own React root, the enter frame between region creation and the first push is a requestAnimationFrame; the spec doesn't say how long the empty live region must exist before content. → `site/src/content/docs/components/toast.md`
+
 ### 2026-09-16 06:12 — rn round 1
 
 - **DOC** Toast: the rn notes say the region sits 'above the bottom safe-area inset', but core React Native has no safe-area inset API (SafeAreaView is iOS-only and adds no value to an absolutely positioned view) and no third-party dependency is allowed; chose bottom: regionInset (layout.gutter) with no safe-area term. → `site/src/content/docs/components/toast.md`
@@ -5598,6 +5669,38 @@ Doc: `site/src/content/docs/components/toolbar.md`
 ## Tooltip
 
 Doc: `site/src/content/docs/components/tooltip.md`
+
+### 2026-09-17 09:57 — rn round 1
+
+- **DOC** Tooltip: the rn rules say a component exposing its root declares `ref`, but the Behavior prose says Tooltip exposes no ref; followed the prose and removed `ref` from TooltipProps (breaking for any caller that passed one). → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: the rn notes list onFocus/onBlur among the handlers cloned onto the child, but don't say whether focus shows the bubble on native (hardware keyboard / tapping an Input focuses it) or only on react-native-web; kept focus and hover handlers web-only, so on native only long-press shows the bubble, per 'on native the text becomes a hint and is not visible'. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: 'stops that Escape in the capture phase' names no target on rn; used a capture-phase keydown listener on window with stopPropagation (not stopImmediatePropagation), attached only while visible, react-native-web only. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: the renders scenarios say they find the always-present visually-hidden role=tooltip node, but rn has no such node (the notes say no hidden copy on rn); the rn test asserts the root testID='Tooltip' instead. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: example givens describe children in prose ('A table column header Button labelled "Items"'); rendered a ghost size-sm Button labelled Items, since rn has no table-header context; the warm-toolbar example is one Tooltip in a Toolbar labelled View, so the 'sibling already open' part cannot be seen from its args alone. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: 'the pointer may cross to the tooltip within one motion.duration.fast before it hides' plus onPressOut ending the press source: after a long-press on native the bubble hides at once on release (no grace); the spec only defines the grace for pointer leave. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: the Text composition says `element: span`, but rn Text has no `element` prop; omitted it and passed only size='sm'. → `site/src/content/docs/components/tooltip.md`
+
+### 2026-09-17 09:55 — lit round 1
+
+- **DOC** Tooltip: the lit notes say system triggers (ds-button, ds-link, ds-input) forward aria-label/aria-description from their host to the inner control, but packages/lit/src/Button.ts does not (its inner button's aria-label comes only from accessibleName/iconOnly label), and aria-label on a role-less host is ignored by Chromium. Tooltip sets the attributes as specified; the link does not reach the accessibility tree until Button/Link/Input's docs require the forwarding. The scenario tests only assert the attribute on the host. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: 'custom element with a shadow root' has no stated detection rule; chose `trigger.shadowRoot !== null` (open roots only). A custom element with a closed shadow root, or one not yet upgraded at slotchange, falls back to aria-describedby, which won't resolve. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: Guidance and the web notes say the bubble is mounted only while shown, while the lit notes describe a popover='manual' bubble appended to the host. Mounting and unmounting would kill the `exit` fade and re-fire slotchange on every show, so lit keeps the bubble mounted, closed (display: none, aria-hidden) while hidden. The doc should say which one lit follows. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: controlled `open` only says Escape hides and it stays hidden until `open` changes. It does not say whether hover, focus or blur still change visibility while `open` is set. Chose: while `open` is defined, only Escape and changes to `open` affect visibility. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: 'stops that Escape in the capture phase' does not say whether to call preventDefault. A native <dialog> closes on Escape unless keydown is default-prevented, so the listener calls both stopPropagation and preventDefault. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: the lit notes say the host carries data-ds, while the web notes and Guidance put data-ds on the visually-hidden role=tooltip copy. Lit puts it on the host only. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: the offset has to be read in px for positioning, but a custom property's computed value may be in rem. The bubble carries `scroll-margin-top: var(--ds-tooltip-offset)` and logic reads it resolved from there. The doc names no mechanism. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: the warm-toolbar example's given names one tooltip, but showing the warm state needs a sibling tooltip. The story adds a 'List view' sibling (not in the given) inside the 'View' toolbar, and 'Grid view' keeps the default describes: true as given, so an icon-only button with the same name also gets it as aria-description. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: the Default story's trigger variant is not specified (only 'a Button labelled "Items"'); chose variant secondary. → `site/src/content/docs/components/tooltip.md`
+
+### 2026-09-17 09:52 — web round 1
+
+- **DOC** Tooltip: the generator rules say every component takes `ref` on its root, but the Behavior section says Tooltip exposes no `ref`; I followed the Behavior section and dropped the prop. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: the rules say the override hooks `--ds-tooltip-*` go on the component root, and the root (`data-ds`) is now the visually-hidden span. The bubble is rendered in a portal, so hooks set on the span would never reach it. I kept the hooks, the `ds-tooltip` class and inline overrides on the popup element, and gave the hidden span the element class `ds-tooltip__description`. The doc should say which element carries the class and the hooks when `data-ds` and the styled surface are different nodes. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: `children` has type `content` (ReactNode), but the notes require exactly one element that gets cloned. I typed it `ReactElement` so the clone type-checks; the doc could state that on web the slot is a single element. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: the composed Text part is given `data-part="text"` and an `overrides` object. The composition lists only `element` and `size` as props, and 'receives exactly the listed props' does not say whether the data-part hook and forwarded overrides count as props. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: `open` has no default and no change event. I read 'stays hidden until the `open` prop next changes' as: an Escape dismissal is cleared only by a change to `open` while controlled, and by losing hover and focus while uncontrolled. The doc does not say what happens to a dismissed uncontrolled tooltip that is re-hovered before the pointer leaves; I chose to keep it hidden. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: the `enter` and `exit` fades need the bubble to stay mounted while it fades out, but the notes say the bubble is 'rendered through a portal only while shown'. I keep it mounted until the exit duration ends, which is 0 under reduced motion. → `site/src/content/docs/components/tooltip.md`
+- **DOC** Tooltip: the offset gap is read by resolving `var(--ds-tooltip-offset)` through a hidden probe's `padding-left`. The notes say to resolve constants 'through getComputedStyle' but do not say which property to use for a length. → `site/src/content/docs/components/tooltip.md`
 
 ### 2026-09-16 06:00 — rn round 1
 
@@ -5957,7 +6060,7 @@ Doc: `site/src/content/docs/components/treegrid.md`
 
 ## Totals
 
-DOC: 3817 · CODE: 93 · TOOLING: 2 · NOISE: 42
+DOC: 3893 · CODE: 93 · TOOLING: 2 · NOISE: 42
 
 ## Gates to fix
 

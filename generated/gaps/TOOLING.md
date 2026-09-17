@@ -114,3 +114,5 @@ Gaps a fold cannot answer because they are about the tools, not the docs.
 - The Keyboard-story rule ("a trigger plus three focusable children") does not fit a one-tab-stop radio group (RadioGroup, lit/rn).
 - The conventions digest's ":focus-visible outline" rule does not fit drawn controls that thicken their border (RadioGroup, web).
 - The rn prompt contradicts switch.md: Overridable list includes track/thumb bindings, the generic rules say `onChange` and Pressable focus-visible styling, and stories use ThemeProvider instead of withTheme() (Switch, rn).
+- The React/rn conventions digest says every component declares `ref`, overriding docs that say a component exposes none (Tooltip; web, rn).
+- A fold session cannot run `node logs/*.mjs` (approval required), so gap-file staleness against folded.json was read from `ls -lt` by hand (fold, all).

@@ -1883,3 +1883,58 @@ One line per decision: `<date> <Component> <platform>: <gap> → <what the doc n
 2026-09-17 Switch web: disabledOpacity on composed description Text → on track and text column wrappers
 2026-09-17 Switch web: RTL selector misses inherited dir → :dir(rtl); Lit :host(:dir(rtl))
 2026-09-17 Switch web: nameless switch inside a Form → does not register; id from useId
+2026-09-17 FocusScope web: fieldset[disabled] exclusion disagrees with browser Tab order → walker uses :disabled only; links/tabindex in a disabled fieldset stay
+2026-09-17 FocusScope web: reactivated scope can rise above still-active inner scope → stack is containment first, then activation order
+2026-09-17 FocusScope web: pull-back target when last focused descendant is gone → first focusable, then wrapper under container, else leave
+2026-09-17 FocusScope web: forward Tab from container wrapper, onEscapeAttempt unspecified → fires nothing; only while trapped, active, on top
+2026-09-17 FocusScope web: empty-scope warning under autoFocus container → still warns, Tab has nowhere to go
+2026-09-17 FocusScope web: restore marker removed along with opener's parent → restore after nearest surviving recorded ancestor
+2026-09-17 FocusScope web: data-part scope wins, overlays pass focusScope → kept scope wins; overlays logged to CODE
+2026-09-17 FocusScope web,lit,rn: example children are prose, story controls unnamed → Behavior names Close, Apply filters, Accept/Decline, Options; Keyboard First/Second/Third; Default passes children in args
+2026-09-17 FocusScope lit: third keyboard rule has no platforms list → platforms web, lit, rn, swiftui; native order, no handler
+2026-09-17 FocusScope lit: no context on Lit for stack parent link → containment walks composed tree (parentNode, shadow host)
+2026-09-17 FocusScope lit: anchor tabindex static vs conditional on container → tabindex=-1 only while autoFocus is container
+2026-09-17 FocusScope lit: active reflected but attribute is negated → styled with [no-active]
+2026-09-17 FocusScope lit: autoFocus waits for slotted updateComplete, depth unstated → slotted elements plus light-DOM custom descendants, not their shadow roots
+2026-09-17 FocusScope rn: setAccessibilityFocus on non-accessible wrapper may no-op on iOS → stated as platform limit; collapsable false; accessibilityViewIsModal is the alternative
+2026-09-17 FocusScope rn: next-focusable fallback has no document order → nothing restored when opener is gone
+2026-09-17 FocusScope rn: when TextInput opener is captured → during first render, before children mount
+2026-09-17 FocusScope rn: root scope part testID naming → bare testID "FocusScope"
+2026-09-17 FocusScope rn: accessibilityViewIsModal renders aria-modal on react-native-web → omitted on react-native-web
+2026-09-17 FocusScope rn: returnFocusTo when trigger Button takes no ref → ref a View collapsable false wrapping the trigger
+2026-09-17 Tooltip web: class and hooks when data-ds and surface differ → bubble carries class/hooks/overrides; hidden span data-ds + ds-tooltip__description
+2026-09-17 Tooltip web: children content type but must be one cloned element → web types it ReactElement
+2026-09-17 Tooltip web: composed Text data-part and overrides beyond listed props → Text gets part hook and forwards; font bindings forward-only, value always passed
+2026-09-17 Tooltip web: re-hovering dismissed uncontrolled tooltip before leaving → stays hidden until hover and focus both lost
+2026-09-17 Tooltip web: exit fade needs bubble mounted after hide → stays mounted through exit fade
+2026-09-17 Tooltip web,lit: which CSS property resolves a length token → hidden probe's padding-left, read in px
+2026-09-17 Tooltip lit: custom-element trigger detection rule unstated → tag name contains a hyphen
+2026-09-17 Tooltip lit: bubble mounted only while shown vs popover → Lit keeps it mounted, closed and aria-hidden
+2026-09-17 Tooltip lit: controlled open vs hover/focus/blur changes → while open is set only Escape and open changes count
+2026-09-17 Tooltip lit,rn: capture-phase Escape preventDefault and target → stopPropagation + preventDefault; window on react-native-web
+2026-09-17 Tooltip lit,rn: warm-toolbar example has no sibling tooltip → example names a "List view" sibling with its own Tooltip
+2026-09-17 Tooltip lit: Default story trigger variant unspecified → secondary Button
+2026-09-17 Tooltip rn: does focus show the bubble on native → hover/focus handlers react-native-web only; native long-press only
+2026-09-17 Tooltip rn: renders scenarios target hidden node rn lacks → root testID "Tooltip"
+2026-09-17 Tooltip rn: grace after long-press release → hides at once; pointerGrace only on pointer leave
+2026-09-17 Tooltip rn: Text element span has no rn prop → rn passes only size sm
+2026-09-17 Toast web: region and dismiss export names unstated → ToastRegion, toast, dismiss
+2026-09-17 Toast web,rn: does programmatic dismiss play exit transition → yes; only replaced skips it
+2026-09-17 Toast web,lit: forwarded font bindings vs root hooks → forward-only, no --ds-toast hook, value always passed
+2026-09-17 Toast web,lit: text binding part message vs container → foreground re-scoped on toast container, not message part
+2026-09-17 Toast web: exit transition direction unspecified → reverse of enter, sinks by enterOffset while fading
+2026-09-17 Toast web: dev warning once or on every change → each time a change enters the override case
+2026-09-17 Toast web: escape scenario lacks focus step → description says the test focuses the dismiss button first
+2026-09-17 Toast web: how long empty live region precedes content → one animation frame after auto-mount
+2026-09-17 Toast lit: region hook names from tag or toast prefix → --ds-toast-stack-gap, -region-inset, -layer
+2026-09-17 Toast lit,rn: durations for toast outside region or native → computed at the toast's own mount
+2026-09-17 Toast lit: next focusable after region ignores shadow roots → FocusScope's walker, descends open shadow roots
+2026-09-17 Toast lit: focus restore on action/replaced/programmatic removal → restore whenever a focused toast leaves, any reason
+2026-09-17 Toast lit: stack order on phones unspecified → newest at the bottom at every width
+2026-09-17 Toast lit: pause-while-touched event for Lit → pointerenter until pointerleave/pointercancel
+2026-09-17 Toast lit: eviction count includes leaving toasts → toasts in exit transition do not count
+2026-09-17 Toast rn: Text element span has no rn prop → rn passes only size md
+2026-09-17 Toast rn: example duration long with action warns → background-result drops duration; examples pass persistent or none
+2026-09-17 Toast rn: region accessible name on rn → accessibilityLabel from copy.regionLabel
+2026-09-17 Toast rn: Button label/icon/onPress beyond listed props → data every platform passes; close Icon colored color.inverse.link on rn
+2026-09-17 Toast rn: does Toast expose a ref → no ref; toasts are created by toast()

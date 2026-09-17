@@ -30,7 +30,7 @@ component:
       type: enum
       values: [short, long, persistent]
       default: short
-      description: '`short` ≈ 5s, `long` ≈ 10s (both computed from motion.duration.loop × 6 / × 12 so themes without motion still get sensible times), `persistent` until dismissed. When `actionLabel` is set or `tone` is danger the toast is persistent regardless of this prop (a dev warning notes the override only when `duration` was passed explicitly as `short` or `long` — on Lit, when the property or attribute was assigned; the default never warns). If motion.duration.loop resolves to 0 or cannot be resolved (no theme CSS, jsdom), both durations are treated as persistent. The two durations are computed at region mount from the resolved motion.duration.loop (getComputedStyle on the region on web/Lit; the token value on native), never hardcoded.'
+      description: '`short` ≈ 5s, `long` ≈ 10s (both computed from motion.duration.loop × 6 / × 12 so themes without motion still get sensible times), `persistent` until dismissed. When `actionLabel` is set or `tone` is danger the toast is persistent regardless of this prop (a dev warning notes the override only when `duration` was passed explicitly as `short` or `long` — on Lit, when the property or attribute was assigned; the default never warns. It fires each time a change to `duration`, `actionLabel` or `tone` enters that case, and examples and stories with an action or danger tone pass `persistent` or no `duration`). If motion.duration.loop resolves to 0 or cannot be resolved (no theme CSS, jsdom), both durations are treated as persistent. The two durations are computed at region mount from the resolved motion.duration.loop (getComputedStyle on the region on web/Lit), never hardcoded; a toast rendered outside a region, and every toast on native (from the theme''s token value), computes them when it mounts.'
     dismissible:
       type: boolean
       default: true
@@ -45,7 +45,7 @@ component:
       fires: [user]
       timing: { phase: before-change, before: [onDismiss] }
     onDismiss:
-      description: 'The toast left the screen: reason `timeout`, `dismiss-button`, `escape`, `action`, `replaced` (a replaced or evicted toast leaves immediately, without its exit transition), or `programmatic`. It fires after the exit transition ends and just before the toast is removed (so on Lit it still bubbles to the region); immediately under reduced motion or when the exit time cannot be resolved.'
+      description: 'The toast left the screen: reason `timeout`, `dismiss-button`, `escape`, `action`, `replaced` (a replaced or evicted toast leaves immediately, without its exit transition), or `programmatic` (which plays the exit transition like every reason but `replaced`). It fires after the exit transition ends and just before the toast is removed (so on Lit it still bubbles to the region); immediately under reduced motion or when the exit time cannot be resolved.'
       platforms: { web: onDismiss, lit: dismiss, rn: onDismiss, swiftui: onDismiss }
       payload:
         - { name: reason, type: enum, values: [timeout, dismiss-button, escape, action, replaced, programmatic] }
@@ -64,7 +64,7 @@ component:
     - { keys: [Tab], action: 'Moves between the action and dismiss buttons, then out of the region.', when: focus inside a toast, from: first, expect: focus-next }
   styles:
     surface: { token: color.inverse.surface, description: 'Inverted like Tooltip: dark on light, light on dark, so it floats above any page surface.' }
-    text: { token: color.inverse.foreground, part: message, description: 'Text''s `color` is locked and has no inverse tone, so the toast re-scopes the foreground on its own container (`--color-foreground` on web and Lit, TextForegroundContext on React Native) and composes Text unchanged, as Tooltip does.' }
+    text: { token: color.inverse.foreground, part: message, description: 'Text''s `color` is locked and has no inverse tone, so the toast re-scopes the foreground on its own `toast` container, not on the message part (`--color-foreground` on web and Lit, TextForegroundContext on React Native) and composes Text unchanged, as Tooltip does.' }
     icon: { token: 'color.inverse.status.{tone}', part: icon, description: '`neutral` renders no icon; the other tones render Icon `name={tone}` at its default size, with this token forwarded to Icon''s `overrides.color`, using the status step chosen to read on the inverse surface.' }
     actionColor: { token: color.inverse.link, description: 'The action and dismiss Buttons are rendered with Button''s `inverse` prop (ghost variant), which is how a composite gets an on-inverse child without restyling it.' }
     dismissColor: { token: color.inverse.link, description: 'The dismiss and action Buttons are `ghost` + `inverse`, whose text is color.inverse.link; Toast never restyles them.' }
@@ -74,17 +74,17 @@ component:
     paddingBlock: { token: space.sm }
     paddingInline: { token: space.md }
     gap: { token: layout.gap.normal, description: 'Between icon, message, action and dismiss.' }
-    stackGap: { token: layout.gap.tight, description: 'Between stacked toasts in the region. stackGap, regionInset and layer belong to the region (ToastRegion / ds-toast-region / ToastProvider) and are overridable through the region''s own `overrides`, not on a toast.' }
+    stackGap: { token: layout.gap.tight, description: 'Between stacked toasts in the region. stackGap, regionInset and layer belong to the region (ToastRegion / ds-toast-region / ToastProvider) and are overridable through the region''s own `overrides`, not on a toast; their CSS hooks keep the toast prefix on web and Lit: `--ds-toast-stack-gap`, `--ds-toast-region-inset`, `--ds-toast-layer`.' }
     regionInset: { token: layout.gutter, part: region, description: 'Distance of the region from the viewport edge (bottom-start on wide screens, bottom center on phones; on web and Lit plus env(safe-area-inset-bottom)). "Wide" is the resolved px of layout.maxWidth.content read from the default theme at generation time and marked literal-ok, as Container does, since custom properties cannot be used in media queries.' }
     maxWidth: { token: layout.maxWidth.prose }
-    fontFamily: { token: font.family.body }
+    fontFamily: { token: font.family.body, description: 'fontFamily, fontSize and lineHeight are forward-only: they reach the message Text through its `overrides`, have no `--ds-toast-*` hook, and the value (override or this default) is always passed.' }
     fontSize: { token: font.size.md }
     lineHeight: { token: font.lineHeight.normal }
     minTarget: { token: size.target.min }
     layer: { token: layer.toast }
     enter: { token: motion.duration.base, description: Rise and fade; instant under reduced motion. }
     enterOffset: { token: space.2, description: 'Distance the toast rises during `enter`; none under reduced motion.' }
-    exit: { token: motion.duration.fast }
+    exit: { token: motion.duration.fast, description: 'The reverse of `enter`: sinks by `enterOffset` while fading; instant under reduced motion.' }
   constants:
     shortDuration:
       description: 'How long a toast with `duration: short` stays before it dismisses itself.'
@@ -111,15 +111,15 @@ component:
     web:
       element: div
       attributes: [role=region, aria-label, role=status, role=alert, aria-live]
-      notes: 'One persistent <div role="region" aria-label="Notifications" aria-live="polite"> per document (created on first use, fixed at the region inset, layer.toast) holds the toasts; the region exists before content so announcements fire. Each toast is a <div role="status"> (danger: role="alert"). Timers pause on hover and on focus-within. F6 handler at document level moves focus into the region. Toasts are shown through an imperative API (`toast({ message })`) exposed alongside the component, since a notification is an event, not a place in the tree.'
+      notes: 'One persistent <div role="region" aria-label="Notifications" aria-live="polite"> per document (created on first use, fixed at the region inset, layer.toast) holds the toasts; the region exists before content so announcements fire. Each toast is a <div role="status"> (danger: role="alert"). Timers pause on hover and on focus-within. F6 handler at document level moves focus into the region. Toasts are shown through an imperative API (`toast({ message })`) exposed alongside the component, since a notification is an event, not a place in the tree. The exports are `ToastRegion`, `toast` and `dismiss`. A region that `toast()` auto-mounts waits one animation frame after it is in the document before inserting its first toast, so the empty live region exists first.'
     lit:
       tag: ds-toast
       reflect: [tone, duration]
-      notes: 'A <ds-toast-region> element (auto-created in document.body by the `toast()` function) holds <ds-toast> children in the light DOM so the live region is in the document tree. The region sets `role`, `aria-label` and `aria-live` as plain attributes, and each toast a plain `role` attribute, because tests read them. `dismiss` and `action` are composed CustomEvents.'
+      notes: 'A <ds-toast-region> element (auto-created in document.body by the `toast()` function) holds <ds-toast> children in the light DOM so the live region is in the document tree. The region sets `role`, `aria-label` and `aria-live` as plain attributes, and each toast a plain `role` attribute, because tests read them. `dismiss` and `action` are composed CustomEvents. Timers pause on pointerenter until pointerleave or pointercancel, which covers touch contact.'
     rn:
       element: View
       props: [accessibilityLiveRegion, accessibilityRole]
-      notes: 'A ToastProvider mounted once at the app root renders the region as an absolutely positioned View (layer.toast zIndex, left/right/bottom at regionInset, toasts centered at every width). Core React Native has no safe-area inset API and the package takes no dependency, so there is no safe-area term; an app that needs one pads the provider. The API is `useToast()` / `toast()` returning `Promise<{ reason }>`, and `dismiss(toastId?)`. Timers also pause while AppState is not `active` (the native "page hidden"); Button exposes no focus events to a composer, so native pauses on touch and backgrounding, not focus. `escape` stays in the reason type for cross-platform handlers but never fires here; dismissal without Escape is the dismiss button, always shown for persistent toasts. The iOS announcement uses announceForAccessibilityWithOptions with `queue: true` for polite tones and plain announceForAccessibility (interrupting) for danger. The actionButton and dismissButton parts are wrapping Views that carry the testIDs; Button receives only its listed props. Android: accessibilityLiveRegion="polite" (danger: "assertive"); iOS: AccessibilityInfo.announceForAccessibility on show. Timers pause while a toast is being touched. No F6; toasts are reached by swiping through the accessibility order. Android''s native ToastAndroid is not used, so actions and theming work. React Native has no `status` role: danger toasts use accessibilityRole="alert", others no role, with accessibilityLiveRegion (assertive/polite) and a one-time AccessibilityInfo announcement. Timers pause while a toast is touched; F6 and Escape have no native equivalent.'
+      notes: 'A ToastProvider mounted once at the app root renders the region as an absolutely positioned View (layer.toast zIndex, left/right/bottom at regionInset, toasts centered at every width). Core React Native has no safe-area inset API and the package takes no dependency, so there is no safe-area term; an app that needs one pads the provider. The API is `useToast()` / `toast()` returning `Promise<{ reason }>`, and `dismiss(toastId?)`. Timers also pause while AppState is not `active` (the native "page hidden"); Button exposes no focus events to a composer, so native pauses on touch and backgrounding, not focus. `escape` stays in the reason type for cross-platform handlers but never fires here; dismissal without Escape is the dismiss button, always shown for persistent toasts. The iOS announcement uses announceForAccessibilityWithOptions with `queue: true` for polite tones and plain announceForAccessibility (interrupting) for danger. The actionButton and dismissButton parts are wrapping Views that carry the testIDs. The region View takes accessibilityLabel from `copy.regionLabel`. The message Text receives only `size: md`, since React Native Text has no `element`. The dismiss Button''s `close` Icon gets `overrides.color` color.inverse.link (dismissColor), because native has no currentColor. Android: accessibilityLiveRegion="polite" (danger: "assertive"); iOS: AccessibilityInfo.announceForAccessibility on show. Timers pause while a toast is being touched. No F6; toasts are reached by swiping through the accessibility order. Android''s native ToastAndroid is not used, so actions and theming work. React Native has no `status` role: danger toasts use accessibilityRole="alert", others no role, with accessibilityLiveRegion (assertive/polite) and a one-time AccessibilityInfo announcement. Timers pause while a toast is touched; F6 and Escape have no native equivalent.'
     swiftui:
       element: VStack
       props: [Portal, .zIndex, AccessibilityNotification, Button, withAnimation, .accessibilityElement=combine]
@@ -138,7 +138,7 @@ component:
       then:
         - { event: onAction }
     - name: escape-dismisses-the-focused-toast
-      description: Keyboard users reach a toast with F6 and leave with Escape, so an Undo is never pointer-only (keyboard rule 2).
+      description: 'Keyboard users reach a toast with F6 and leave with Escape, so an Undo is never pointer-only (keyboard rule 2). Escape acts only with focus inside a toast, so the test focuses the dismiss button first.'
       when: { key: Escape }
       then:
         - { event: onDismiss }
@@ -162,7 +162,7 @@ component:
       given: { message: 'Changes saved', tone: success }
     - name: background-result
       description: A result that arrived on its own, with one way to look at it.
-      given: { message: 'Export ready', actionLabel: 'View', duration: long }
+      given: { message: 'Export ready', actionLabel: 'View' }
     - name: failed-upload
       description: A danger toast, persistent so nobody misses the one they needed.
       given: { message: 'Upload failed', tone: danger, actionLabel: 'Retry', duration: persistent }
@@ -180,7 +180,7 @@ Do not toast errors that need fixing (an Alert next to the problem), information
 
 ## Behavior
 
-Toasts are shown through an imperative call, since a notification is an event: `toast({ message, tone, actionLabel, duration, dismissible, toastId, onAction })`, which returns a promise resolving to `{ reason }` when the toast leaves; `dismiss(toastId)` exported beside it removes one toast, and `dismiss()` with no id clears them all (stories call it on cleanup), both with reason `programmatic`. Each appears in the notification region, is announced politely (assertively for `danger`), and dismisses after `duration`, when its action is used, when dismissed, or when a toast with the same `toastId` replaces it. Timers pause while the toast is hovered, focused or touched, and while the page is hidden. Focus never moves to a toast on its own; F6 brings it there when the user wants it, and Escape, the dismiss button or the action sends it back: to the element focus came from when it entered the region (by F6 or by Tab), or, if that element is gone, to the next focusable element after the region (the previous one if there is none). Up to three toasts stack, newest at the bottom on wide screens; three is a fixed count, not a token. The `actionButton` and `dismissButton` parts are wrappers the toast owns around each Button, since Button keeps its own `data-part`; the action Button's label is `actionLabel`, and the dismiss Button's label is `copy.dismissLabel` with the system Icon `close` as its glyph.
+Toasts are shown through an imperative call, since a notification is an event: `toast({ message, tone, actionLabel, duration, dismissible, toastId, onAction })`, which returns a promise resolving to `{ reason }` when the toast leaves; `dismiss(toastId)` exported beside it removes one toast, and `dismiss()` with no id clears them all (stories call it on cleanup), both with reason `programmatic`. Each appears in the notification region, is announced politely (assertively for `danger`), and dismisses after `duration`, when its action is used, when dismissed, or when a toast with the same `toastId` replaces it. Timers pause while the toast is hovered, focused or touched, and while the page is hidden. Focus never moves to a toast on its own; F6 brings it there when the user wants it, and Escape, the dismiss button or the action sends it back: to the element focus came from when it entered the region (by F6 or by Tab), or, if that element is gone, to the next focusable element after the region (the previous one if there is none), found with FocusScope's focusable walker so it descends open shadow roots. The same restore runs whenever a toast holding focus leaves for any reason, including `replaced` and `programmatic`. Up to three toasts stack, newest at the bottom at every width; a toast already in its exit transition does not count toward the three; three is a fixed count, not a token. Toast exposes no `ref`: toasts are created by `toast()`, not placed by callers. The action Button's label, the dismiss Button's label and glyph, and both press handlers are data every platform passes, not composition props. The `actionButton` and `dismissButton` parts are wrappers the toast owns around each Button, since Button keeps its own `data-part`; the action Button's label is `actionLabel`, and the dismiss Button's label is `copy.dismissLabel` with the system Icon `close` as its glyph.
 
 ## Content guidelines
 

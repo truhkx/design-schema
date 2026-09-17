@@ -56,7 +56,8 @@ describe('ds-feed behavior', () => {
 
   it('pressing-show-new-asks-for-the-newer-items', async () => {
     const { part, showNew } = await setup({ newItemsCount: 3, items: ONE_ITEM });
-    const button = part('newItemsButton');
+    // `newItemsButton` is the sticky live row; the Button hosts its own anatomy inside it.
+    const button = part('newItemsButton')?.querySelector('ds-button');
     expect(button).not.toBeNull();
     await userEvent.click(button!);
     expect(showNew).toHaveBeenCalledTimes(1);
@@ -75,6 +76,11 @@ describe('ds-feed behavior', () => {
   it('an-empty-feed-that-is-not-loading-says-so', async () => {
     const { part } = await setup({ items: [], hasMore: false, loading: false });
     expect(part('emptyState')?.textContent?.trim()).toBe('Nothing here yet.');
+  });
+
+  it('loading-marks-the-feed-busy', async () => {
+    const { el } = await setup({ loading: true, hasMore: true });
+    expect(el.getAttribute('aria-busy')).toBe('true');
   });
 
   it('renders', async () => {

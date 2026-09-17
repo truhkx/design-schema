@@ -14,7 +14,7 @@ import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Button, type ButtonOverridableBinding } from './Button';
 import { Card, type CardOverridableBinding } from './Card';
 import { ProgressBar } from './ProgressBar';
-import { Stack } from './Stack';
+import { Stack, type StackOverridableBinding } from './Stack';
 import { Text, type TextOverridableBinding } from './Text';
 import './Feed.css';
 
@@ -47,19 +47,25 @@ const COPY = {
 export type FeedOverridableBinding =
   | 'itemGap'
   | 'articleInset'
+  | 'articleBodyGap'
   | 'timestampSize'
   | 'newItemsOffset'
+  | 'newItemsLayer'
   | 'loadingInset'
   | 'endMessageInset'
   | 'endMessageSize'
+  | 'emptyStateInset'
+  | 'emptyStateSize'
   | 'fontFamily';
 
 /** Bindings Feed owns as hooks on its root. The rest forward to composed children's `overrides`. */
 const ROOT_HOOK: Partial<Record<FeedOverridableBinding, string>> = {
   itemGap: '--ds-feed-item-gap',
   newItemsOffset: '--ds-feed-new-items-offset',
+  newItemsLayer: '--ds-feed-new-items-layer',
   loadingInset: '--ds-feed-loading-inset',
   endMessageInset: '--ds-feed-end-message-inset',
+  emptyStateInset: '--ds-feed-empty-state-inset',
   fontFamily: '--ds-feed-font-family',
 };
 
@@ -68,6 +74,7 @@ type TextOverrides = Partial<Record<TextOverridableBinding, TokenRef | undefined
 interface ResolvedOverrides {
   rootStyle: CSSProperties | undefined;
   card: Partial<Record<CardOverridableBinding, TokenRef | undefined>> | undefined;
+  articleBody: Partial<Record<StackOverridableBinding, TokenRef | undefined>> | undefined;
   timestamp: TextOverrides | undefined;
   endMessage: TextOverrides | undefined;
   emptyState: TextOverrides | undefined;
@@ -79,6 +86,7 @@ function resolveOverrides(overrides: Partial<Record<FeedOverridableBinding, Toke
     return {
       rootStyle: undefined,
       card: undefined,
+      articleBody: undefined,
       timestamp: undefined,
       endMessage: undefined,
       emptyState: undefined,
@@ -87,6 +95,7 @@ function resolveOverrides(overrides: Partial<Record<FeedOverridableBinding, Toke
   }
   const rootStyle: Record<string, string> = {};
   const card: Partial<Record<CardOverridableBinding, TokenRef | undefined>> = {};
+  const articleBody: Partial<Record<StackOverridableBinding, TokenRef | undefined>> = {};
   const timestamp: TextOverrides = {};
   const endMessage: TextOverrides = {};
   const emptyState: TextOverrides = {};
@@ -101,11 +110,17 @@ function resolveOverrides(overrides: Partial<Record<FeedOverridableBinding, Toke
         card.paddingBlock = tokenRef;
         card.paddingInline = tokenRef;
         break;
+      case 'articleBodyGap':
+        articleBody.gap = tokenRef;
+        break;
       case 'timestampSize':
         timestamp.fontSize = tokenRef;
         break;
       case 'endMessageSize':
         endMessage.fontSize = tokenRef;
+        break;
+      case 'emptyStateSize':
+        emptyState.fontSize = tokenRef;
         break;
       case 'fontFamily':
         timestamp.fontFamily = tokenRef;
@@ -118,8 +133,12 @@ function resolveOverrides(overrides: Partial<Record<FeedOverridableBinding, Toke
         break;
     }
   }
-  return { rootStyle: rootStyle as CSSProperties, card, timestamp, endMessage, emptyState, newItemsButton };
+  return { rootStyle: rootStyle as CSSProperties, card, articleBody, timestamp, endMessage, emptyState, newItemsButton };
 }
+
+/* Only declared when the bundler defines it; never assumed. */
+declare const process: { env: Record<string, string | undefined> } | undefined;
+const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
 
 const SECOND = 1000;
 const MINUTE = 60 * SECOND;
@@ -229,6 +248,16 @@ export const Feed = function Feed({
   const articleRefs = useRef(new Map<string, HTMLElement>());
   const newItemsButtonRef = useRef<HTMLButtonElement | null>(null);
 
+  // The label is the feed's only accessible name; there is no default.
+  const warnedLabelRef = useRef(false);
+  const warnEmptyLabel = isDev && label.trim() === '';
+  useEffect(() => {
+    if (warnEmptyLabel && !warnedLabelRef.current) {
+      warnedLabelRef.current = true;
+      console.warn('Feed: `label` is the accessible name of the feed and must not be empty.');
+    }
+  }, [warnEmptyLabel]);
+
   const onLoadMoreRef = useRef(onLoadMore);
   const onItemVisibleRef = useRef(onItemVisible);
   useEffect(() => {
@@ -275,9 +304,13 @@ export const Feed = function Feed({
     if (!hasMore || loading || lastId === undefined || typeof IntersectionObserver === 'undefined') return undefined;
     const node = articleRefs.current.get(lastId);
     if (!node) return undefined;
+    // While the last article stays in view the feed asks at most once per change of items, hasMore or loading.
+    let asked = false;
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) onLoadMoreRef.current?.();
+        if (asked || !entries.some((entry) => entry.isIntersecting)) return;
+        asked = true;
+        onLoadMoreRef.current?.();
       },
       { rootMargin: '100% 0px' },
     );
@@ -352,7 +385,8 @@ export const Feed = function Feed({
     if (event.key === 'End' && event.ctrlKey) {
       event.preventDefault();
       if (hasMore) {
-        onLoadMoreRef.current?.();
+        // Nothing to ask for while a page is already on its way; press again once it has landed.
+        if (!loading) onLoadMoreRef.current?.();
       } else {
         outsideFocusables(root)
           .find((el) => (root.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0)
@@ -441,6 +475,7 @@ export const Feed = function Feed({
                 focusable
                 heading={item.heading}
                 headingLevel={headingLevel}
+                inset="md"
                 overrides={resolved.card}
                 role="article"
                 aria-describedby={timestampId}
@@ -448,34 +483,40 @@ export const Feed = function Feed({
                 aria-setsize={totalKnown ? total : -1}
                 footer={
                   item.actions !== undefined && item.actions !== null ? (
-                    <Stack direction="horizontal" gap="tight" data-part="articleActions">
-                      {item.actions}
-                    </Stack>
+                    <div className="ds-feed__part" data-part="articleActions">
+                      <Stack direction="horizontal" gap="tight">
+                        {item.actions}
+                      </Stack>
+                    </div>
                   ) : undefined
                 }
               >
-                <div className="ds-feed__article-body" data-part="articleBody">
-                  {item.unread ? <span className="ds-feed__visually-hidden">{COPY.unread}</span> : null}
-                  <Text element="span" tone="muted" size="xs" overrides={resolved.timestamp}>
-                    <time id={timestampId} data-part="timestamp" dateTime={item.timestamp} title={absolute}>
-                      {formatRelative(item.timestamp, now)}
-                    </time>
-                  </Text>
-                  {totalKnown ? (
-                    <span className="ds-feed__visually-hidden">
-                      {COPY.position.replace('{index}', String(index + 1)).replace('{total}', String(total))}
-                    </span>
-                  ) : null}
-                  {item.content}
+                <div className="ds-feed__part" data-part="articleBody">
+                  <Stack gap="tight" overrides={resolved.articleBody}>
+                    {item.unread ? <span className="ds-feed__visually-hidden">{COPY.unread}</span> : null}
+                    <Text element="span" tone="muted" size="xs" overrides={resolved.timestamp}>
+                      <time id={timestampId} data-part="timestamp" dateTime={item.timestamp} title={absolute}>
+                        {formatRelative(item.timestamp, now)}
+                      </time>
+                    </Text>
+                    {totalKnown ? (
+                      <span className="ds-feed__visually-hidden">
+                        {COPY.position.replace('{index}', String(index + 1)).replace('{total}', String(total))}
+                      </span>
+                    ) : null}
+                    {item.content}
+                  </Stack>
                 </div>
               </Card>
             </div>
           );
         })}
         {total === 0 && !loading && !hasMore ? (
-          <Text data-part="emptyState" overrides={resolved.emptyState}>
-            {COPY.empty}
-          </Text>
+          <div className="ds-feed__empty-state" data-part="emptyState">
+            <Text tone="muted" size="sm" overrides={resolved.emptyState}>
+              {COPY.empty}
+            </Text>
+          </div>
         ) : null}
         {footer}
       </div>

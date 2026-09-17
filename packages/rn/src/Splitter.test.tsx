@@ -32,7 +32,7 @@ function setup(given: Partial<SplitterProps> = {}) {
 
 describe('Splitter', () => {
   it('the-collapse-button-collapses-the-pane', () => {
-    const s = setup({ collapsible: true, defaultSize: 40 });
+    const s = setup({ collapsible: true, defaultSize: 40, stackBelow: 'never' });
     fireEvent.press(screen.getByRole('button', { name: `Collapse ${s.props.label}` }));
     expect(s.onCollapseChange).toHaveBeenCalled();
   });

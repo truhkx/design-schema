@@ -1,6 +1,7 @@
 import { LitElement, css, html, nothing, unsafeCSS, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
+import { styleMap } from 'lit/directives/style-map.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Button.js';
 import './Icon.js';
@@ -19,26 +20,57 @@ export interface SplitterCollapseChangeDetail {
   collapsed: boolean;
 }
 
-/** copy.collapse */
-const COPY_COLLAPSE = (label: string): string => `Collapse ${label}`;
-/** copy.expand */
-const COPY_EXPAND = (label: string): string => `Expand ${label}`;
-/** copy.sizeText */
-const COPY_SIZE_TEXT = (percent: number): string => `${percent}%`;
+/**
+ * copy.* — used verbatim; `{label}` and `{percent}` are the only substitutions. `setMinimum` and
+ * `setMaximum` name the Home/End accessibility actions, which only the native platforms expose:
+ * on Lit, Home and End are the keys themselves and carry no separate label, so nothing renders
+ * them. They are kept here so the contract stays visible, as the web package does.
+ */
+const COPY = {
+  collapse: 'Collapse {label}',
+  expand: 'Expand {label}',
+  setMinimum: 'Minimum {label}',
+  setMaximum: 'Maximum {label}',
+  sizeText: '{percent}%',
+} as const;
 
-/** layout.maxWidth.prose / layout.maxWidth.content: `@container` conditions cannot read custom properties, so the
-    built breakpoints are duplicated here, as Carousel does, and read again by the ResizeObserver that stops rendering
-    the separator. literal-ok: breakpoint from layout.maxWidth.* */
-const PROSE_BREAKPOINT_PX = 572;
-const CONTENT_BREAKPOINT_PX = 960;
+/** stackBelow → the layout.maxWidth.* custom property whose resolved length is the breakpoint. */
+const BREAKPOINT_PROPERTY: Record<Exclude<SplitterStackBelow, 'never'>, string> = {
+  prose: '--layout-max-width-prose',
+  content: '--layout-max-width-content',
+};
 
-/** The primary size channel on the host. Registered so collapse and restore can transition the grid track; where
-    registration is unavailable the change is instant. */
+/**
+ * The breakpoint in CSS pixels, read from the loaded token stylesheet — `@container` conditions
+ * cannot read custom properties, so stacking is measured in JS and no breakpoint is written here.
+ * `null` when the tokens are not loaded, which means the splitter never stacks.
+ */
+function readBreakpoint(el: Element, stackBelow: Exclude<SplitterStackBelow, 'never'>): number | null {
+  const raw = getComputedStyle(el).getPropertyValue(BREAKPOINT_PROPERTY[stackBelow]).trim();
+  const value = Number.parseFloat(raw);
+  if (!Number.isFinite(value) || value <= 0) {
+    return null;
+  }
+  if (raw.endsWith('rem')) {
+    return value * Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
+  }
+  if (raw.endsWith('em')) {
+    return value * Number.parseFloat(getComputedStyle(el).fontSize);
+  }
+  return value;
+}
+
+/**
+ * The primary size channel, set on the container and read by its grid template. Registered so a
+ * collapse or restore can transition the track; `@property` does not apply inside a shadow root,
+ * so Lit registers it imperatively, with the same descriptor the web package uses. Where
+ * registration is unavailable the change is instant and only the separator colour transitions.
+ */
 const PRIMARY_SIZE_PROPERTY = '--ds-splitter-primary-size';
 try {
-  CSS.registerProperty({ name: PRIMARY_SIZE_PROPERTY, syntax: '<percentage>', inherits: true, initialValue: '0%' });
+  CSS.registerProperty({ name: PRIMARY_SIZE_PROPERTY, syntax: '<percentage>', inherits: false, initialValue: '0%' });
 } catch {
-  /* Already registered (another copy of the element, or the web build) or unsupported: no size transition. */
+  /* Already registered (the web package, or a second copy of this module) or unsupported. */
 }
 
 const FOCUSABLE_SELECTOR = [
@@ -47,16 +79,17 @@ const FOCUSABLE_SELECTOR = [
   'input:not([disabled])',
   'select:not([disabled])',
   'textarea:not([disabled])',
+  '[contenteditable]:not([contenteditable="false"])',
   '[tabindex]:not([tabindex="-1"])',
 ].join(',');
 
-/** First focusable element among `elements` or their light-DOM descendants, in order. A custom element that
-    delegates focus (a `ds-button`) counts as focusable. */
+/** First focusable element among `elements` or their light-DOM descendants, in order. A custom
+    element that delegates focus (a `ds-button`) counts as focusable. */
 function firstFocusable(elements: Element[]): HTMLElement | null {
   for (const root of elements) {
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
     for (let node: Node | null = root; node; node = walker.nextNode()) {
-      if (!(node instanceof HTMLElement) || node.hasAttribute('disabled')) {
+      if (!(node instanceof HTMLElement) || node.hasAttribute('disabled') || node.closest('[inert]')) {
         continue;
       }
       if (node.matches(FOCUSABLE_SELECTOR) || node.shadowRoot?.delegatesFocus) {
@@ -73,13 +106,17 @@ function nextSplitterId(): string {
   return `ds-splitter-${idCounter}`;
 }
 
-/** Overridable style hooks; see the `overrides` property. `separatorHover`, `separatorActive`, `grip`,
-    `paneMinTarget`, `minTarget`, `focusRing` and `focusRingWidth` are locked and excluded. */
+/** The three regions F6 cycles through. */
+type SplitterZone = 'primary' | 'separator' | 'secondary';
+
+/** Overridable style hooks; see the `overrides` property. `separatorHover`, `separatorActive`,
+    `grip`, `paneMinTarget`, `minTarget`, `focusRing` and `focusRingWidth` are locked and excluded. */
 export type SplitterOverridableBinding =
   | 'separatorSize'
   | 'separatorColor'
   | 'handleSize'
   | 'gripLength'
+  | 'gripRadius'
   | 'collapseButtonOffset'
   | 'transition';
 
@@ -88,27 +125,9 @@ const HOOKS: Record<SplitterOverridableBinding, string> = {
   separatorColor: '--ds-splitter-separator-color',
   handleSize: '--ds-splitter-handle-size',
   gripLength: '--ds-splitter-grip-length',
+  gripRadius: '--ds-splitter-grip-radius',
   collapseButtonOffset: '--ds-splitter-collapse-button-offset',
   transition: '--ds-splitter-transition',
-};
-
-/** The stacked layout, shared by both `stackBelow` container queries. */
-const STACKED_RULES = (stackBelow: SplitterStackBelow): CSSResult => {
-  const host = unsafeCSS(`:host([orientation='horizontal'][stack-below='${stackBelow}'])`);
-  return css`
-    ${host} .container {
-      grid-template-columns: minmax(0, 1fr);
-      grid-template-rows: auto auto;
-    }
-    ${host} .secondary-pane {
-      grid-column: 1;
-      grid-row: 2;
-    }
-    ${host} .separator,
-    ${host} .collapse-button {
-      display: none;
-    }
-  `;
 };
 
 /**
@@ -116,13 +135,14 @@ const STACKED_RULES = (stackBelow: SplitterStackBelow): CSSResult => {
  *
  * `<ds-splitter label="Sidebar width" collapsible persist-key="app-sidebar"><nav slot="primary">…</nav>
  * <main slot="secondary">…</main></ds-splitter>` renders a grid of the primary pane, a focusable
- * `role="separator"` and the secondary pane in its shadow root; the primary size is the host custom property
- * `--ds-splitter-primary-size`, in percent. Pointer Events with `setPointerCapture` drag the separator; arrows,
- * Home, End, Enter and F6 follow the APG window splitter. Below `stackBelow` (a container query on `:host`) a
- * horizontal splitter stacks its panes and the separator is not rendered.
+ * `role="separator"` and the secondary pane in its shadow root; the primary size is the custom
+ * property `--ds-splitter-primary-size`, in percent. Pointer Events with `setPointerCapture` drag the
+ * separator; arrows, Home, End, Enter and F6 follow the APG window splitter. Below `stackBelow` — the
+ * splitter's own inline size, measured with a ResizeObserver against the loaded `--layout-max-width-*`
+ * value — a horizontal splitter stacks its panes and the separator is not rendered.
  *
- * `size` and `collapsed` are controlled when set, uncontrolled from `defaultSize` / `defaultCollapsed` otherwise;
- * the events fire in both modes.
+ * `size` and `collapsed` are controlled when set, uncontrolled from `defaultSize` / `defaultCollapsed`
+ * otherwise; the events fire in both modes.
  *
  * @fires size-change - Continuously while dragging and on each key press, with `{ size }` (percent).
  * @fires size-change-end - Once when a drag ends and after each key press, with `{ size }`.
@@ -140,11 +160,11 @@ export class DsSplitter extends LitElement {
   static override styles: CSSResult = css`
     :host {
       display: block;
-      container-type: inline-size;
       --ds-splitter-separator-size: var(--space-1);
       --ds-splitter-separator-color: var(--color-border);
       --ds-splitter-handle-size: var(--space-3);
       --ds-splitter-grip-length: var(--space-6);
+      --ds-splitter-grip-radius: var(--radius-full);
       --ds-splitter-collapse-button-offset: var(--space-2);
       --ds-splitter-transition: var(--motion-duration-fast);
     }
@@ -153,7 +173,8 @@ export class DsSplitter extends LitElement {
       display: none;
     }
 
-    /* paneMinTarget (size.target.comfortable, locked): a minmax() floor on both tracks beneath the percent clamp. */
+    /* paneMinTarget (size.target.comfortable, locked): a minmax() floor on both tracks beneath the
+       percent clamp, so a pane's scrollbar and content stay usable in a very narrow container. */
     .container {
       display: grid;
       block-size: 100%;
@@ -173,7 +194,7 @@ export class DsSplitter extends LitElement {
         minmax(var(--size-target-comfortable), 1fr);
     }
 
-    /* The floor is dropped for the primary track while collapsed, so collapse reaches zero. */
+    /* Collapsed: the primary track drops its floor so collapse reaches zero. */
     .container.is-collapsed {
       grid-template-columns:
         minmax(0, var(--ds-splitter-primary-size))
@@ -189,7 +210,18 @@ export class DsSplitter extends LitElement {
         minmax(var(--size-target-comfortable), 1fr);
     }
 
-    /* transition: collapse and restore only; dragging and keys have none. */
+    /* Stacked (below stackBelow): one column, both panes in full, in source order; no separator. */
+    .container.is-stacked {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: auto auto;
+    }
+
+    .container.is-stacked .secondary-pane {
+      grid-column: 1;
+      grid-row: 2;
+    }
+
+    /* transition: collapse and restore only; dragging and key steps resize instantly. */
     .container.is-animating {
       transition: ${unsafeCSS(PRIMARY_SIZE_PROPERTY)} var(--ds-splitter-transition) var(--motion-easing-standard);
     }
@@ -219,31 +251,50 @@ export class DsSplitter extends LitElement {
       grid-row: 3;
     }
 
-    .separator {
+    /* role=separator has presentational children, so the collapse Button is not inside it: the middle
+       grid item is a track wrapper holding the separator and the Button wrapper as siblings. */
+    .track {
       position: relative;
       z-index: 1;
       grid-column: 2;
       grid-row: 1;
+    }
+
+    :host([orientation='vertical']) .track {
+      grid-column: 1;
+      grid-row: 2;
+    }
+
+    /* separatorSize / separatorColor: the visible line. */
+    .separator {
+      position: relative;
+      inline-size: 100%;
+      block-size: 100%;
       background: var(--ds-splitter-separator-color);
       transition: background-color var(--ds-splitter-transition) var(--motion-easing-standard);
+      cursor: col-resize;
       touch-action: none;
       outline: none;
     }
 
     :host([orientation='vertical']) .separator {
-      grid-column: 1;
-      grid-row: 2;
+      cursor: row-resize;
     }
 
-    /* separatorHover: color.border.strong, locked */
+    .container.is-collapsed .separator {
+      cursor: default;
+    }
+
+    /* separatorHover: color.border.strong, locked. The grab area is the separator's ::before, so
+       the hover state follows the wider hit area, not the thin line. */
     .separator:hover {
-      background: var(--color-border-strong);
+      background-color: var(--color-border-strong);
     }
 
-    /* separatorActive: color.control.selectedBackground, locked; while dragging or focused */
+    /* separatorActive: color.control.selectedBackground, locked; while dragging or focused. */
     .separator[data-dragging],
     .separator:focus-visible {
-      background: var(--color-control-selected-background);
+      background-color: var(--color-control-selected-background);
     }
 
     /* focusRing / focusRingWidth: color.border.focus / border.width.focus, locked */
@@ -252,19 +303,20 @@ export class DsSplitter extends LitElement {
       outline-offset: var(--border-width-focus);
     }
 
-    /* handleSize: the grab area centered on the separator, overlapping both panes;
-       minTarget (size.target.min, locked) is its floor. */
-    .handle {
+    /* handle / handleSize: the grab area centered on the line and overlapping both panes, so the
+       panes keep their full width; minTarget (size.target.min, locked) is its floor. Drawn as the
+       separator's ::before, so it carries no data-part hook. */
+    .separator::before {
+      content: '';
       position: absolute;
-      cursor: col-resize;
       inset-block: 0;
       inset-inline-start: 50%;
       inline-size: max(var(--ds-splitter-handle-size), var(--size-target-min));
       transform: translateX(-50%);
     }
 
-    :host([orientation='vertical']) .handle {
-      cursor: row-resize;
+    :host([orientation='vertical']) .separator::before {
+      inset-block: auto;
       inset-inline: 0;
       inset-block-start: 50%;
       inline-size: auto;
@@ -272,55 +324,54 @@ export class DsSplitter extends LitElement {
       transform: translateY(-50%);
     }
 
-    .container.is-collapsed-interaction .handle {
-      cursor: default;
-    }
-
-    /* grip: color.border.strong, locked; gripLength along the separator, separatorSize across it. */
-    .grip {
+    /* grip (color.border.strong, locked), gripLength, gripRadius: a short rounded bar, gripLength
+       along the separator and separatorSize across it, so the divider reads as draggable. */
+    .separator::after {
+      content: '';
       position: absolute;
       inset-block-start: 50%;
       inset-inline-start: 50%;
       transform: translate(-50%, -50%);
-      background: var(--color-border-strong);
-      border-radius: var(--radius-full);
+      background-color: var(--color-border-strong);
+      border-radius: var(--ds-splitter-grip-radius);
       inline-size: var(--ds-splitter-separator-size);
       block-size: var(--ds-splitter-grip-length);
       pointer-events: none;
     }
 
-    :host([orientation='vertical']) .grip {
+    :host([orientation='vertical']) .separator::after {
       inline-size: var(--ds-splitter-grip-length);
       block-size: var(--ds-splitter-separator-size);
     }
 
-    /* collapseButtonOffset: from the separator's start edge along it, centered across it. */
+    /* collapseButtonOffset: from the separator's start edge along it (top of a vertical separator,
+       inline-start of a horizontal one), centered across the line so it overlaps both panes. */
     .collapse-button {
-      position: relative;
-      z-index: 2;
-      grid-column: 2;
-      grid-row: 1;
-      justify-self: center;
-      align-self: start;
+      position: absolute;
+      z-index: 1;
+      display: flex;
       inset-block-start: var(--ds-splitter-collapse-button-offset);
+      inset-inline-start: 50%;
+      transform: translateX(-50%);
     }
 
     :host([orientation='vertical']) .collapse-button {
-      grid-column: 1;
-      grid-row: 2;
-      justify-self: start;
-      align-self: center;
-      inset-block-start: auto;
+      inset-block-start: 50%;
       inset-inline-start: var(--ds-splitter-collapse-button-offset);
+      transform: translateY(-50%);
     }
 
-    /* A collapsed pane has no width to overlap, so the button stays inside the container. */
-    :host([orientation='horizontal']) .container.is-collapsed .collapse-button {
-      justify-self: start;
+    /* While collapsed the primary pane has no size, so the button aligns to the secondary pane's
+       start edge instead of hanging outside the container. */
+    .container.is-collapsed .collapse-button {
+      inset-inline-start: 100%;
+      transform: none;
     }
 
     :host([orientation='vertical']) .container.is-collapsed .collapse-button {
-      align-self: start;
+      inset-block-start: 100%;
+      inset-inline-start: var(--ds-splitter-collapse-button-offset);
+      transform: none;
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -329,20 +380,13 @@ export class DsSplitter extends LitElement {
         transition: none;
       }
     }
-
-    @container (max-width: ${unsafeCSS(CONTENT_BREAKPOINT_PX)}px) {
-      ${STACKED_RULES('content')}
-    }
-
-    @container (max-width: ${unsafeCSS(PROSE_BREAKPOINT_PX)}px) {
-      ${STACKED_RULES('prose')}
-    }
   `;
 
   /** What the divider resizes ("Sidebar width", "Preview height"). The separator's accessible name. */
   @property({ type: String }) accessor label: string = '';
 
-  /** `horizontal` places panes side by side (the separator is vertical); `vertical` stacks them. */
+  /** `horizontal` places panes side by side (the separator is vertical); `vertical` stacks them. The
+      splitter fills its parent, so a vertical splitter needs a parent with a definite height. */
   @property({ type: String, reflect: true }) accessor orientation: SplitterOrientation = 'horizontal';
 
   /** Controlled size of the primary pane as a percentage of the container (0–100). */
@@ -351,8 +395,8 @@ export class DsSplitter extends LitElement {
   /** Initial primary size, percent. */
   @property({ type: Number, attribute: 'default-size' }) accessor defaultSize: number = 30;
 
-  /** Smallest primary size, percent. With `collapsible`, dragging or stepping below it collapses the pane instead
-      of clamping; otherwise it is the hard floor. */
+  /** Smallest primary size, percent. With `collapsible`, stepping below it collapses the pane
+      instead of clamping; otherwise it is the hard floor. */
   @property({ type: Number, attribute: 'min-size' }) accessor minSize: number = 10;
 
   /** Largest primary size, percent. */
@@ -361,20 +405,23 @@ export class DsSplitter extends LitElement {
   /** Arrow-key increment, percent. */
   @property({ type: Number }) accessor step: number = 2;
 
-  /** The primary pane can collapse to nothing: drag past the minimum, press Enter on the separator, or use the
-      collapse button. Enter again restores the last size. */
+  /** The primary pane can collapse to nothing: drag past the minimum, press Enter on the separator,
+      or use the collapse button. Enter again restores the last size. */
   @property({ type: Boolean, reflect: true }) accessor collapsible: boolean = false;
 
-  /** Controlled collapsed state. Undefined leaves the element uncontrolled from `defaultCollapsed`. */
+  /** Controlled collapsed state, ignored unless `collapsible`. Reflected when true; an absent
+      attribute means uncontrolled, and a controlled `false` is set as a property. */
   @property({ type: Boolean, reflect: true }) accessor collapsed: boolean | undefined;
 
   /** Initial collapsed state when uncontrolled. */
   @property({ type: Boolean, attribute: 'default-collapsed' }) accessor defaultCollapsed: boolean = false;
 
-  /** When set, the size and collapsed state are remembered in localStorage under this key. */
+  /** When set, the size and collapsed state are remembered in localStorage under this key, so a
+      sidebar stays where it was left. */
   @property({ type: String, attribute: 'persist-key' }) accessor persistKey: string | undefined;
 
-  /** Below this width of the splitter's own box a horizontal splitter stacks its panes and renders no separator. */
+  /** Below this width of the splitter's own box a horizontal splitter stacks its panes and renders
+      no separator. A vertical splitter never stacks. */
   @property({ type: String, reflect: true, attribute: 'stack-below' }) accessor stackBelow: SplitterStackBelow =
     'prose';
 
@@ -383,44 +430,54 @@ export class DsSplitter extends LitElement {
     | Partial<Record<SplitterOverridableBinding, TokenRef | undefined>>
     | undefined;
 
-  /** Uncontrolled size; undefined until the user moves the separator or a persisted value is restored. */
+  /** Uncontrolled size; undefined until the user moves the separator or a persisted value is read. */
   @state() private accessor internalSize: number | undefined;
 
-  /** Uncontrolled collapsed state; undefined until the user collapses or restores, or a persisted value is read. */
+  /** Uncontrolled collapsed state; undefined until the user collapses, or a persisted value is read. */
   @state() private accessor internalCollapsed: boolean | undefined;
 
   /** True while a pointer drag is in progress (separatorActive). */
   @state() private accessor dragging = false;
 
-  /** True below `stackBelow` on a horizontal splitter: the separator and collapse button are not rendered. */
+  /** True below `stackBelow` on a horizontal splitter: the separator is not rendered. */
   @state() private accessor stacked = false;
 
   /** True for the render that collapses or restores, so only that change transitions the track. */
   @state() private accessor animating = false;
 
+  /** Writing direction, measured once: a horizontal splitter swaps its arrow keys, its drag axis and
+      its chevron in RTL, so the separator always moves the way the arrow points. */
+  @state() private accessor rtl = false;
+
   private readonly instanceId = nextSplitterId();
   private resizeObserver: ResizeObserver | undefined;
+  private observedWidth = -1;
+  /** The last committed expanded size during a drag; the size a collapse keeps for restoring. */
+  private dragSize = 0;
 
   @query('.container') private accessor containerEl!: HTMLDivElement | null;
+  @query('.track') private accessor trackEl!: HTMLDivElement | null;
   @query('[data-part="separator"]') private accessor separatorEl!: HTMLDivElement | null;
   @query('[data-part="primaryPane"]') private accessor primaryPaneEl!: HTMLDivElement | null;
   @query('[data-part="secondaryPane"]') private accessor secondaryPaneEl!: HTMLDivElement | null;
-  @query('[data-part="collapseButton"]') private accessor collapseButtonEl!: HTMLElement | null;
+  @query('[data-part="collapseButton"] > ds-button') private accessor collapseButtonEl!: HTMLElement | null;
   @query('slot[name="primary"]') private accessor primarySlotEl!: HTMLSlotElement | null;
   @query('slot[name="secondary"]') private accessor secondarySlotEl!: HTMLSlotElement | null;
 
-  /** The primary size (percent) when expanded: `size`, else the uncontrolled value, else `defaultSize`, clamped. */
+  /** The primary size (percent) when expanded: `size`, else the uncontrolled value, else
+      `defaultSize`, clamped to `minSize`–`maxSize`. */
   private get currentSize(): number {
     return this.clamp(this.size ?? this.internalSize ?? this.defaultSize);
   }
 
+  /** The collapsed state the props ask for. `collapsed` is ignored unless `collapsible`. */
   private get isCollapsed(): boolean {
     return this.collapsible && (this.collapsed ?? this.internalCollapsed ?? this.defaultCollapsed);
   }
 
-  /** The rendered primary size: 0 while collapsed. */
-  private get effectiveSize(): number {
-    return this.isCollapsed ? 0 : this.currentSize;
+  /** The collapsed state that renders: a stacked splitter shows both panes in full. */
+  private get effectiveCollapsed(): boolean {
+    return this.isCollapsed && !this.stacked;
   }
 
   private get primaryPaneId(): string {
@@ -435,8 +492,21 @@ export class DsSplitter extends LitElement {
     super.connectedCallback();
     this.setAttribute('data-ds', 'Splitter');
     this.addEventListener('keydown', this.handleHostKeydown);
+    // No ResizeObserver (an old browser, a server render): the splitter simply never stacks.
     if (typeof ResizeObserver !== 'undefined') {
-      this.resizeObserver ??= new ResizeObserver(() => this.updateStacked());
+      this.resizeObserver ??= new ResizeObserver((entries) => {
+        const entry = entries[0];
+        if (!entry) {
+          return;
+        }
+        // observe() always delivers an initial notification; only a changed width may set state.
+        const width = entry.contentRect.width;
+        if (width === this.observedWidth) {
+          return;
+        }
+        this.observedWidth = width;
+        this.updateStacked(width);
+      });
       this.resizeObserver.observe(this);
     }
   }
@@ -445,6 +515,7 @@ export class DsSplitter extends LitElement {
     super.disconnectedCallback();
     this.removeEventListener('keydown', this.handleHostKeydown);
     this.resizeObserver?.disconnect();
+    this.observedWidth = -1;
   }
 
   protected override willUpdate(changed: PropertyValues): void {
@@ -454,81 +525,94 @@ export class DsSplitter extends LitElement {
     if (changed.has('overrides')) {
       this.applyOverrides();
     }
-    if (changed.has('orientation') || changed.has('stackBelow')) {
-      this.updateStacked();
-    }
-    if (changed.has('collapsed') && changed.get('collapsed') !== undefined && !changed.has('animating')) {
+    // A controlled collapse animates too; the uncontrolled path sets `animating` as it changes.
+    if (changed.has('collapsed') && changed.get('collapsed') !== undefined) {
       this.animating = true;
     }
-    const next = `${this.effectiveSize}%`;
-    if (this.style.getPropertyValue(PRIMARY_SIZE_PROPERTY) !== next) {
-      this.style.setProperty(PRIMARY_SIZE_PROPERTY, next);
+    // Measured before the first render, so the separator is never rendered and then taken away.
+    if (!this.hasUpdated) {
+      this.rtl = getComputedStyle(this).direction === 'rtl';
+    }
+    if (!this.hasUpdated || changed.has('orientation') || changed.has('stackBelow')) {
+      this.updateStacked(this.getBoundingClientRect().width);
     }
     this.warnInDev(changed);
   }
 
+  protected override updated(): void {
+    this.persist();
+  }
+
   protected override render(): TemplateResult {
     const horizontal = this.orientation === 'horizontal';
-    const collapsed = this.isCollapsed;
-    const inertPrimary = collapsed && !this.stacked;
-    const size = Math.round(this.effectiveSize);
+    const collapsed = this.effectiveCollapsed;
+    const percent = collapsed ? 0 : Math.round(this.currentSize);
+    // The chevron points toward the primary pane while expanded and away from it while collapsed;
+    // on a horizontal splitter that is mirrored in RTL, where the primary pane sits on the right.
+    const pointsAtPrimary = !collapsed;
     const chevron: IconName = horizontal
-      ? collapsed
-        ? 'chevron-right'
-        : 'chevron-left'
-      : collapsed
-        ? 'chevron-down'
-        : 'chevron-up';
+      ? pointsAtPrimary !== this.rtl
+        ? 'chevron-left'
+        : 'chevron-right'
+      : pointsAtPrimary
+        ? 'chevron-up'
+        : 'chevron-down';
 
     return html`
       <div
         class=${classMap({
           container: true,
-          'is-collapsed': inertPrimary,
-          'is-collapsed-interaction': collapsed,
+          'is-collapsed': collapsed,
+          'is-stacked': this.stacked,
           'is-animating': this.animating,
         })}
         data-part="container"
+        style=${styleMap({ [PRIMARY_SIZE_PROPERTY]: `${collapsed ? 0 : this.currentSize}%` })}
       >
-        <div class="pane primary-pane" data-part="primaryPane" id=${this.primaryPaneId} ?inert=${inertPrimary}>
+        <div class="pane primary-pane" data-part="primaryPane" id=${this.primaryPaneId} ?inert=${collapsed}>
           <slot name="primary"></slot>
         </div>
         ${this.stacked
           ? nothing
-          : html`<div
-              class="separator"
-              data-part="separator"
-              role="separator"
-              tabindex="0"
-              aria-orientation=${horizontal ? 'vertical' : 'horizontal'}
-              aria-valuenow=${size}
-              aria-valuemin=${this.minSize}
-              aria-valuemax=${this.maxSize}
-              aria-valuetext=${COPY_SIZE_TEXT(size)}
-              aria-label=${this.label}
-              aria-controls=${this.primaryPaneId}
-              ?data-dragging=${this.dragging}
-              @pointerdown=${this.handlePointerDown}
-              @pointermove=${this.handlePointerMove}
-              @pointerup=${this.handlePointerUp}
-              @pointercancel=${this.handlePointerUp}
-              @keydown=${this.handleSeparatorKeydown}
-            >
-              <div class="handle" data-part="handle" aria-hidden="true"><div class="grip"></div></div>
+          : html`<div class="track">
+              <div
+                class="separator"
+                data-part="separator"
+                role="separator"
+                tabindex="0"
+                aria-orientation=${horizontal ? 'vertical' : 'horizontal'}
+                aria-valuenow=${percent}
+                aria-valuemin=${collapsed ? 0 : this.minSize}
+                aria-valuemax=${this.maxSize}
+                aria-valuetext=${COPY.sizeText.replace('{percent}', String(percent))}
+                aria-label=${this.label}
+                aria-controls=${this.primaryPaneId}
+                ?data-dragging=${this.dragging}
+                @pointerdown=${this.handlePointerDown}
+                @pointermove=${this.handlePointerMove}
+                @pointerup=${this.handlePointerEnd}
+                @pointercancel=${this.handlePointerEnd}
+                @keydown=${this.handleSeparatorKeydown}
+              ></div>
+              ${this.collapsible
+                ? html`<span
+                    class="collapse-button"
+                    data-part="collapseButton"
+                    @click=${this.handleCollapseTargetClick}
+                  >
+                    <ds-button
+                      variant="ghost"
+                      size="sm"
+                      icon-only
+                      .expanded=${!collapsed}
+                      label=${(collapsed ? COPY.expand : COPY.collapse).replace('{label}', this.label)}
+                      @press=${this.handleCollapsePress}
+                    >
+                      <ds-icon slot="leading-icon" name=${chevron}></ds-icon>
+                    </ds-button>
+                  </span>`
+                : nothing}
             </div>`}
-        ${this.collapsible && !this.stacked
-          ? html`<ds-button
-              class="collapse-button"
-              data-part="collapseButton"
-              variant="ghost"
-              size="sm"
-              icon-only
-              label=${collapsed ? COPY_EXPAND(this.label) : COPY_COLLAPSE(this.label)}
-              @press=${this.handleCollapseButtonPress}
-            >
-              <ds-icon slot="leading-icon" name=${chevron}></ds-icon>
-            </ds-button>`
-          : nothing}
         <div class="pane secondary-pane" data-part="secondaryPane">
           <slot name="secondary"></slot>
         </div>
@@ -536,59 +620,97 @@ export class DsSplitter extends LitElement {
     `;
   }
 
-  private readonly handlePointerDown = (event: PointerEvent): void => {
+  // ── Pointer ─────────────────────────────────────────────────────────────────
+
+  private handlePointerDown(event: PointerEvent): void {
     if (this.isCollapsed || event.button !== 0 || !this.separatorEl) {
       return;
     }
     event.preventDefault();
+    this.separatorEl.focus();
     this.separatorEl.setPointerCapture(event.pointerId);
     this.animating = false;
     this.dragging = true;
-  };
+    this.dragSize = this.currentSize;
+  }
 
-  private readonly handlePointerMove = (event: PointerEvent): void => {
-    if (!this.dragging || !this.containerEl) {
-      return;
-    }
-    const rect = this.containerEl.getBoundingClientRect();
-    const horizontal = this.orientation === 'horizontal';
-    const extent = horizontal ? rect.width : rect.height;
-    if (extent === 0) {
-      return;
-    }
-    const offset = horizontal ? event.clientX - rect.left : event.clientY - rect.top;
-    const raw = Math.min(100, Math.max(0, (offset / extent) * 100));
-    if (this.collapsible && raw < this.minSize) {
-      this.requestCollapsed(true, false);
-      return;
-    }
-    if (this.isCollapsed) {
-      this.requestCollapsed(false, false);
-    }
-    this.requestSize(this.clamp(raw));
-  };
-
-  private readonly handlePointerUp = (event: PointerEvent): void => {
+  private handlePointerMove(event: PointerEvent): void {
     if (!this.dragging) {
       return;
     }
-    if (this.separatorEl?.hasPointerCapture(event.pointerId)) {
-      this.separatorEl.releasePointerCapture(event.pointerId);
+    const raw = this.percentFromPoint(event.clientX, event.clientY);
+    if (raw === undefined) {
+      return;
     }
+    if (this.collapsible && raw < this.minSize) {
+      // Dragging past the minimum collapses: the gesture ends here and the last expanded size is
+      // kept for restoring, so the end event carries it and the rest of the drag is ignored.
+      this.stopDrag(event.pointerId);
+      this.dispatchSize('size-change-end', this.dragSize);
+      this.setCollapsed(true);
+      return;
+    }
+    const committed = this.changeSize(raw);
+    if (committed !== undefined) {
+      this.dragSize = committed;
+    }
+  }
+
+  private handlePointerEnd(event: PointerEvent): void {
+    if (!this.dragging) {
+      return;
+    }
+    this.stopDrag(event.pointerId);
+    this.dispatchSize('size-change-end', this.dragSize);
+  }
+
+  private stopDrag(pointerId: number): void {
     this.dragging = false;
-    this.dispatchSize('size-change-end', this.effectiveSize);
-    this.persist();
-  };
+    if (this.separatorEl?.hasPointerCapture(pointerId)) {
+      this.separatorEl.releasePointerCapture(pointerId);
+    }
+  }
+
+  /** The pointer as a percentage of the container along the drag axis, mirrored in RTL. */
+  private percentFromPoint(clientX: number, clientY: number): number | undefined {
+    const rect = this.containerEl?.getBoundingClientRect();
+    if (!rect) {
+      return undefined;
+    }
+    if (this.orientation === 'horizontal') {
+      if (rect.width === 0) {
+        return undefined;
+      }
+      const ratio = (clientX - rect.left) / rect.width;
+      return (this.rtl ? 1 - ratio : ratio) * 100;
+    }
+    if (rect.height === 0) {
+      return undefined;
+    }
+    return ((clientY - rect.top) / rect.height) * 100;
+  }
+
+  // ── Keyboard ────────────────────────────────────────────────────────────────
 
   private handleSeparatorKeydown(event: KeyboardEvent): void {
-    const horizontal = this.orientation === 'horizontal';
-    const collapsed = this.isCollapsed;
-    let next: number | undefined;
+    if (event.key === 'Enter') {
+      if (!this.collapsible) {
+        return;
+      }
+      event.preventDefault();
+      this.setCollapsed(!this.isCollapsed);
+      return;
+    }
+    // In RTL a horizontal splitter swaps ArrowLeft and ArrowRight, as dragging does.
+    const vertical = this.orientation === 'vertical';
+    const growKey = vertical ? 'ArrowDown' : this.rtl ? 'ArrowLeft' : 'ArrowRight';
+    const shrinkKey = vertical ? 'ArrowUp' : this.rtl ? 'ArrowRight' : 'ArrowLeft';
+    let next: number;
     switch (event.key) {
-      case horizontal ? 'ArrowRight' : 'ArrowDown':
+      case growKey:
         next = this.currentSize + this.step;
         break;
-      case horizontal ? 'ArrowLeft' : 'ArrowUp':
+      case shrinkKey:
         next = this.currentSize - this.step;
         break;
       case 'Home':
@@ -597,64 +719,62 @@ export class DsSplitter extends LitElement {
       case 'End':
         next = this.maxSize;
         break;
-      case 'Enter':
-        if (this.collapsible) {
-          event.preventDefault();
-          this.requestCollapsed(!collapsed, true);
-          this.persist();
-        }
-        return;
       default:
         return;
     }
     event.preventDefault();
-    if (collapsed) {
+    // While collapsed, arrows, Home and End do nothing; only Enter or the collapse button restores.
+    if (this.isCollapsed) {
       return;
     }
-    if (this.collapsible && next < this.minSize) {
-      this.requestCollapsed(true, true);
-      this.persist();
+    // A shrink step that would cross the floor clamps to minSize first; the next one collapses.
+    // Home sets minSize and never collapses.
+    if (this.collapsible && event.key === shrinkKey && this.currentSize <= this.minSize) {
+      this.setCollapsed(true);
       return;
     }
-    next = this.clamp(next);
-    if (next === this.currentSize) {
-      return;
+    const committed = this.changeSize(next);
+    if (committed !== undefined) {
+      // A key press is a complete interaction, so the end event fires too.
+      this.dispatchSize('size-change-end', committed);
     }
-    this.animating = false;
-    this.requestSize(next);
-    this.dispatchSize('size-change-end', next);
-    this.persist();
   }
 
-  private handleCollapseButtonPress(event: Event): void {
-    event.stopPropagation();
-    this.requestCollapsed(!this.isCollapsed, true);
-    this.persist();
-  }
-
-  /** F6 cycles primary pane → separator → secondary pane, wrapping; a nested splitter handles it first. */
+  /** F6 cycles primary pane → separator → secondary pane → primary pane, wrapping. Shift+F6 is not
+      handled, and a collapsed (inert) primary pane or an unrendered separator is skipped. */
   private readonly handleHostKeydown = (event: KeyboardEvent): void => {
-    if (event.key !== 'F6' || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) {
+    if (
+      event.key !== 'F6' ||
+      event.defaultPrevented ||
+      event.shiftKey ||
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey
+    ) {
       return;
     }
-    const zones: Array<'primary' | 'separator' | 'secondary'> = [];
-    if (!(this.isCollapsed && !this.stacked)) zones.push('primary');
-    if (!this.stacked) zones.push('separator');
+    const zones: SplitterZone[] = [];
+    if (!this.effectiveCollapsed) {
+      zones.push('primary');
+    }
+    if (!this.stacked) {
+      zones.push('separator');
+    }
     zones.push('secondary');
 
+    // The collapse Button belongs to the separator zone, so the whole track counts as the separator.
     const path = event.composedPath();
-    const current: 'primary' | 'separator' | 'secondary' | undefined =
+    const current: SplitterZone | undefined =
       this.primaryPaneEl && path.includes(this.primaryPaneEl)
         ? 'primary'
-        : (this.separatorEl && path.includes(this.separatorEl)) ||
-            (this.collapseButtonEl && path.includes(this.collapseButtonEl))
+        : this.trackEl && path.includes(this.trackEl)
           ? 'separator'
           : this.secondaryPaneEl && path.includes(this.secondaryPaneEl)
             ? 'secondary'
             : undefined;
-    const index = current === undefined ? -1 : zones.indexOf(current);
-    const direction = event.shiftKey ? -1 : 1;
-    const target = zones[(index + direction + zones.length) % zones.length];
+    // Focus outside the splitter starts from the last zone, so the first press lands on the primary.
+    const index = current === undefined ? zones.length - 1 : zones.indexOf(current);
+    const target = zones[(index + 1) % zones.length];
     if (target === undefined) {
       return;
     }
@@ -662,7 +782,7 @@ export class DsSplitter extends LitElement {
     this.focusZone(target);
   };
 
-  private focusZone(zone: 'primary' | 'separator' | 'secondary'): void {
+  private focusZone(zone: SplitterZone): void {
     if (zone === 'separator') {
       this.separatorEl?.focus();
       return;
@@ -683,21 +803,49 @@ export class DsSplitter extends LitElement {
     pane.focus();
   }
 
-  private requestSize(next: number): void {
-    if (this.size === undefined) {
-      this.internalSize = next;
-    }
-    this.dispatchSize('size-change', next);
+  // ── Collapse button ─────────────────────────────────────────────────────────
+
+  private handleCollapsePress(event: Event): void {
+    // The composite dispatches its own collapse-change; the inner Button's press stops here.
+    event.stopPropagation();
+    this.setCollapsed(!this.isCollapsed);
   }
 
-  private requestCollapsed(next: boolean, animate: boolean): void {
+  /** The collapseButton part is a wrapper; a click on it reaches the composed Button. */
+  private handleCollapseTargetClick(event: MouseEvent): void {
+    const button = this.collapseButtonEl;
+    if (!button || event.composedPath().includes(button)) {
+      return;
+    }
+    button.click();
+  }
+
+  // ── State ───────────────────────────────────────────────────────────────────
+
+  /** Applies a new size and fires `size-change`; returns the committed value, or undefined when the
+      size did not change (a key press at a bound fires nothing). */
+  private changeSize(next: number): number | undefined {
+    const clamped = this.clamp(next);
+    this.animating = false;
+    if (clamped === this.currentSize) {
+      return undefined;
+    }
+    if (this.size === undefined) {
+      this.internalSize = clamped;
+    }
+    this.dispatchSize('size-change', clamped);
+    return clamped;
+  }
+
+  private setCollapsed(next: boolean): void {
     if (this.isCollapsed === next) {
       return;
     }
-    this.animating = animate;
+    this.animating = true;
     if (this.collapsed === undefined) {
       this.internalCollapsed = next;
     }
+    // A collapse fires only collapse-change; the size is kept for restoring, so no size events.
     this.dispatchEvent(
       new CustomEvent<SplitterCollapseChangeDetail>('collapse-change', {
         detail: { collapsed: next },
@@ -713,17 +861,18 @@ export class DsSplitter extends LitElement {
     );
   }
 
-  private updateStacked(): void {
+  private updateStacked(width: number): void {
     let next = false;
-    if (this.orientation === 'horizontal' && this.stackBelow !== 'never' && this.isConnected) {
-      const breakpoint = this.stackBelow === 'prose' ? PROSE_BREAKPOINT_PX : CONTENT_BREAKPOINT_PX;
-      const width = this.getBoundingClientRect().width;
-      next = width > 0 && width <= breakpoint;
+    if (this.orientation === 'horizontal' && this.stackBelow !== 'never' && this.isConnected && width > 0) {
+      const breakpoint = readBreakpoint(this, this.stackBelow);
+      next = breakpoint !== null && width < breakpoint;
     }
     if (this.stacked !== next) {
       this.stacked = next;
     }
   }
+
+  // ── persistKey ──────────────────────────────────────────────────────────────
 
   private loadPersisted(): void {
     if (!this.persistKey) {
@@ -734,12 +883,16 @@ export class DsSplitter extends LitElement {
       if (!raw) {
         return;
       }
-      const parsed = JSON.parse(raw) as { size?: unknown; collapsed?: unknown } | null;
-      if (typeof parsed?.size === 'number') {
-        this.internalSize = parsed.size;
+      const parsed = JSON.parse(raw) as unknown;
+      if (!parsed || typeof parsed !== 'object') {
+        return;
       }
-      if (typeof parsed?.collapsed === 'boolean') {
-        this.internalCollapsed = parsed.collapsed;
+      const { size, collapsed } = parsed as Record<string, unknown>;
+      if (typeof size === 'number' && Number.isFinite(size)) {
+        this.internalSize = size;
+      }
+      if (typeof collapsed === 'boolean') {
+        this.internalCollapsed = collapsed;
       }
     } catch {
       /* storage unavailable or malformed: the splitter keeps its defaults */
@@ -751,13 +904,7 @@ export class DsSplitter extends LitElement {
       return;
     }
     try {
-      localStorage.setItem(
-        this.persistKey,
-        JSON.stringify({
-          size: this.internalSize ?? this.currentSize,
-          collapsed: this.internalCollapsed ?? this.isCollapsed,
-        }),
-      );
+      localStorage.setItem(this.persistKey, JSON.stringify({ size: this.currentSize, collapsed: this.isCollapsed }));
     } catch {
       /* storage unavailable (private mode, quota): the size just does not stick */
     }

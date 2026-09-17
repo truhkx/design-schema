@@ -9,6 +9,7 @@ import { Card } from './Card';
 import type { CardOverridableBinding } from './Card';
 import { ProgressBar } from './ProgressBar';
 import { Stack } from './Stack';
+import type { StackOverridableBinding } from './Stack';
 import { Text } from './Text';
 import type { TextOverridableBinding } from './Text';
 import { useTheme } from './theme';
@@ -25,27 +26,40 @@ export type FeedItem = {
   unread?: boolean;
 };
 
-/** The style bindings a caller may replace with a different token. Locked: unreadBorder, unreadBorderWidth, timestampColor, endMessageColor, focusRing, focusRingWidth. */
+/**
+ * The style bindings a caller may replace with a different token. Locked: unreadBorder,
+ * unreadBorderWidth, timestampColor, endMessageColor, emptyStateColor, focusRing, focusRingWidth.
+ */
 export type FeedOverridableBinding =
   | 'itemGap'
   | 'articleInset'
+  | 'articleBodyGap'
   | 'timestampSize'
   | 'newItemsOffset'
+  | 'newItemsLayer'
   | 'loadingInset'
   | 'endMessageInset'
   | 'endMessageSize'
+  | 'emptyStateInset'
+  | 'emptyStateSize'
   | 'fontFamily';
 
 export interface FeedProps {
-  /** What the feed contains ("Activity", "Notifications"). The list's accessible name. */
+  /** What the feed contains ("Activity", "Notifications"). The list's accessible name; an empty label warns in development. */
   label: string;
   /**
    * Articles, newest first. `heading` names the article (the Card's heading); `timestamp`
-   * is ISO and rendered relative ("3 min ago", or the absolute date after seven days);
-   * `unread` marks items the user has not seen.
+   * is ISO and rendered relative from the copy strings ("3 min ago", the absolute date from
+   * seven days on), computed at render and not ticking; `unread` marks items the user has
+   * not seen. String or number `content` is wrapped in the package `Text`; other content
+   * renders as given. The absolute time is not exposed on native.
    */
   items: FeedItem[];
-  /** More items exist beyond the last; the feed asks for them with `onEndReached` as the end approaches, and once on mount when `items` is empty and not `loading`. */
+  /**
+   * More items exist beyond the last; the feed asks for them with `onEndReached` as the end
+   * approaches, and whenever `items` is empty and not `loading` — on mount and again if the
+   * caller clears `items` — so an empty feed fetches its first page itself. Never while `loading`.
+   */
   hasMore?: boolean | undefined;
   /** More items are being fetched; a loading indicator is shown after the last article and the list is marked busy. */
   loading?: boolean | undefined;
@@ -59,7 +73,7 @@ export interface FeedProps {
   overrides?: Partial<Record<FeedOverridableBinding, TokenRef | undefined>> | undefined;
   /** The root `View`. */
   ref?: React.Ref<ViewInstance> | undefined;
-  /** Load more (`onLoadMore`): the last article is within one screen of view with `hasMore`, or an empty feed mounted with `hasMore` and not `loading`. */
+  /** Load more (`onLoadMore`): the last article is within one screen of view with `hasMore`, or an empty feed with `hasMore` and not `loading`. */
   onEndReached?: (() => void) | undefined;
   /** The new-items button was pressed; the caller prepends the items and clears `newItemsCount`. */
   onShowNew?: (() => void) | undefined;
@@ -91,7 +105,11 @@ const HOUR = 60 * MINUTE; // literal-ok: minutes in an hour
 const DAY = 24 * HOUR; // literal-ok: hours in a day
 const WEEK = 7 * DAY; // literal-ok: days in a week
 
-/** Relative time from the copy strings; the absolute date in the user's locale from seven days on. The raw string when it does not parse. */
+/**
+ * Relative time from the copy strings, floored (90 seconds is "1 min ago"); a future
+ * timestamp reads as `justNow`; the absolute date in the user's locale from seven days on.
+ * The raw string when it does not parse.
+ */
 function formatTimestamp(timestamp: string, now: number): string {
   const then = new Date(timestamp).getTime();
   if (!Number.isFinite(then)) {
@@ -120,11 +138,16 @@ function formatTimestamp(timestamp: string, now: number): string {
  * Renders a `FlatList` (`accessibilityRole="list"`, `accessibilityLabel={label}`, busy
  * while `loading`) of `Card`s. Cards are left un-collapsed so action Buttons and Links in
  * an article stay individually focusable; the hidden "unread" word and, when the total
- * is known (`hasMore` false), the "{index} of {total}" position sit before each Card.
+ * is known (`hasMore` false), the "{index} of {total}" position sit before each Card,
+ * because Card takes a heading string and a footer slot with nothing between them.
  * `onEndReached` fires with threshold one screen; `maintainVisibleContentPosition` keeps
- * the reader's place when the caller prepends after `onShowNew`. There is no hardware
- * keyboard feed model on native (no Page or Ctrl keys); screen readers browse with their
- * own gestures. The absolute time is not exposed on native.
+ * the reader's place when the caller prepends after `onShowNew`. The new-items row is a
+ * `View` above the list, so it never scrolls away, and is `accessibilityLiveRegion="polite"`
+ * — Android announces the count; on iOS VoiceOver users reach the button at the top.
+ * While `loading` with no items the indicator shows, not `copy.empty`, so an empty feed
+ * about to fetch stays blank rather than flashing it. There is no hardware keyboard feed
+ * model on native (no Page or Ctrl keys); screen readers browse with their own gestures.
+ * The absolute time is not exposed on native.
  */
 export function Feed({
   label,
@@ -142,21 +165,31 @@ export function Feed({
 }: FeedProps): React.JSX.Element {
   const { tokens: t } = useTheme();
 
-  const itemGap = overrides?.itemGap ? (resolveToken(t, overrides.itemGap) as number) : t.layoutGapNormal;
-  const newItemsOffset = overrides?.newItemsOffset ? (resolveToken(t, overrides.newItemsOffset) as number) : t.space3;
-  const loadingInset = overrides?.loadingInset ? (resolveToken(t, overrides.loadingInset) as number) : t.layoutInsetMd;
-  const endMessageInset = overrides?.endMessageInset
-    ? (resolveToken(t, overrides.endMessageInset) as number)
-    : t.layoutInsetMd;
+  const token = <V,>(override: TokenRef | undefined, fallback: V): V =>
+    override ? (resolveToken(t, override) as V) : fallback;
 
+  const itemGap = token<number>(overrides?.itemGap, t.layoutGapNormal);
+  const newItemsOffset = token<number>(overrides?.newItemsOffset, t.space3);
+  const newItemsLayer = token<number>(overrides?.newItemsLayer, t.layerRaised);
+  const loadingInset = token<number>(overrides?.loadingInset, t.layoutInsetMd);
+  const endMessageInset = token<number>(overrides?.endMessageInset, t.layoutInsetMd);
+  const emptyStateInset = token<number>(overrides?.emptyStateInset, t.layoutInsetMd);
+
+  // Forwarded to the composed child's own `overrides` rather than resolved here.
   const articleInset = overrides?.articleInset;
+  const articleBodyGap = overrides?.articleBodyGap;
   const timestampSize = overrides?.timestampSize;
   const endMessageSize = overrides?.endMessageSize;
+  const emptyStateSize = overrides?.emptyStateSize;
   const fontFamily = overrides?.fontFamily;
 
   const cardOverrides = React.useMemo<Partial<Record<CardOverridableBinding, TokenRef | undefined>> | undefined>(
     () => (articleInset ? { paddingBlock: articleInset, paddingInline: articleInset } : undefined),
     [articleInset],
+  );
+  const articleBodyOverrides = React.useMemo<Partial<Record<StackOverridableBinding, TokenRef | undefined>>>(
+    () => ({ gap: articleBodyGap }),
+    [articleBodyGap],
   );
   const timestampOverrides = React.useMemo<Partial<Record<TextOverridableBinding, TokenRef | undefined>>>(
     () => ({ fontSize: timestampSize, fontFamily }),
@@ -165,6 +198,10 @@ export function Feed({
   const endMessageOverrides = React.useMemo<Partial<Record<TextOverridableBinding, TokenRef | undefined>>>(
     () => ({ fontSize: endMessageSize, fontFamily }),
     [endMessageSize, fontFamily],
+  );
+  const emptyStateOverrides = React.useMemo<Partial<Record<TextOverridableBinding, TokenRef | undefined>>>(
+    () => ({ fontSize: emptyStateSize, fontFamily }),
+    [emptyStateSize, fontFamily],
   );
   const textOverrides = React.useMemo<Partial<Record<TextOverridableBinding, TokenRef | undefined>>>(
     () => ({ fontFamily }),
@@ -175,18 +212,30 @@ export function Feed({
     [fontFamily],
   );
 
-  // An empty FlatList has no last article to observe, so an empty feed asks for its
-  // first page once, on mount.
+  const warnedLabel = React.useRef(false);
   React.useEffect(() => {
-    if (items.length === 0 && hasMore && !loading) {
-      onEndReached?.();
+    if (__DEV__ && label === '' && !warnedLabel.current) {
+      warnedLabel.current = true;
+      console.warn('Feed: `label` is empty; the feed has no accessible name. Say what the feed contains ("Activity").');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [label]);
+
+  // An empty list has no last article to observe, so an empty feed asks for its first page
+  // itself — on mount, and again whenever the caller clears `items`. Never while loading.
+  const requestRef = React.useRef(onEndReached);
+  React.useEffect(() => {
+    requestRef.current = onEndReached;
+  }, [onEndReached]);
+  const empty = items.length === 0;
+  React.useEffect(() => {
+    if (empty && hasMore && !loading) {
+      requestRef.current?.();
+    }
+  }, [empty, hasMore, loading]);
 
   const handleEndReached = (): void => {
-    // The empty case is the mount request above; the list asks only once it has articles.
-    if (hasMore && !loading && items.length > 0) {
+    // The empty case is the request above; the list asks only once it has articles.
+    if (hasMore && !loading && !empty) {
       onEndReached?.();
     }
   };
@@ -196,10 +245,16 @@ export function Feed({
   React.useEffect(() => {
     onVisibleRef.current = onViewableItemsChanged;
   }, [onViewableItemsChanged]);
+  // Once per item id per mount: an item that scrolls out and back does not fire again.
+  const announced = React.useRef(new Set<string>());
   const handleViewableItemsChanged = React.useRef(({ changed }: { changed: ListViewToken[] }): void => {
     for (const entry of changed) {
       if (entry.isViewable && entry.item != null) {
-        onVisibleRef.current?.((entry.item as FeedItem).id);
+        const { id } = entry.item as FeedItem;
+        if (!announced.current.has(id)) {
+          announced.current.add(id);
+          onVisibleRef.current?.(id);
+        }
       }
     }
   }).current;
@@ -232,7 +287,7 @@ export function Feed({
           footer={item.actions != null ? <View testID="Feed.articleActions">{item.actions}</View> : undefined}
         >
           <View testID="Feed.articleBody">
-            <Stack gap="tight">
+            <Stack gap="tight" overrides={articleBodyOverrides}>
               <View testID="Feed.timestamp">
                 <Text size="xs" tone="muted" overrides={timestampOverrides}>
                   {formatTimestamp(item.timestamp, Date.now())}
@@ -249,14 +304,23 @@ export function Feed({
         </Card>
       </View>
     ),
-    [cardOverrides, headingLevel, textOverrides, timestampOverrides, total, unreadColor, unreadWidth],
+    [
+      articleBodyOverrides,
+      cardOverrides,
+      headingLevel,
+      textOverrides,
+      timestampOverrides,
+      total,
+      unreadColor,
+      unreadWidth,
+    ],
   );
 
   const footer = loading ? (
     <View testID="Feed.loadingIndicator" style={{ padding: loadingInset }}>
       <ProgressBar label={COPY.loading} hideLabel />
     </View>
-  ) : !hasMore && items.length > 0 ? (
+  ) : !hasMore && !empty ? (
     <View testID="Feed.endMessage" style={{ padding: endMessageInset }}>
       <Text size="sm" tone="muted" overrides={endMessageOverrides}>
         {endMessage ?? COPY.end}
@@ -264,21 +328,26 @@ export function Feed({
     </View>
   ) : undefined;
 
-  // While loading with no items the loading indicator shows, not copy.empty.
-  const empty = loading ? undefined : (
-    <View testID="Feed.emptyState">
-      <Text tone="muted" overrides={textOverrides}>
+  // copy.empty shows only with no items, not loading and nothing more to fetch: a feed
+  // about to ask for its first page stays blank rather than flashing it.
+  const emptyState = !hasMore && !loading ? (
+    <View testID="Feed.emptyState" style={{ padding: emptyStateInset }}>
+      <Text size="sm" tone="muted" overrides={emptyStateOverrides}>
         {COPY.empty}
       </Text>
     </View>
-  );
+  ) : undefined;
 
   const showNewItems = newItemsCount !== undefined && newItemsCount > 0;
 
   return (
     <View ref={ref} testID="Feed">
       {showNewItems ? (
-        <View testID="Feed.newItemsButton" style={{ alignSelf: 'flex-start', paddingTop: newItemsOffset }}>
+        <View
+          testID="Feed.newItemsButton"
+          accessibilityLiveRegion="polite"
+          style={{ alignSelf: 'flex-start', paddingTop: newItemsOffset, zIndex: newItemsLayer }}
+        >
           <Button
             label={COPY.showNew(Math.trunc(newItemsCount))}
             variant="secondary"
@@ -303,7 +372,7 @@ export function Feed({
         onViewableItemsChanged={handleViewableItemsChanged}
         maintainVisibleContentPosition={{ minIndexForVisible: 0 }}
         ListFooterComponent={footer}
-        ListEmptyComponent={empty}
+        ListEmptyComponent={emptyState}
       />
     </View>
   );

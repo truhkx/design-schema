@@ -21,10 +21,16 @@ import './Splitter.css';
 export type SplitterOrientation = 'horizontal' | 'vertical';
 export type SplitterStackBelow = 'prose' | 'content' | 'never';
 
-/** copy.* — used verbatim; `{label}` and `{percent}` are the only substitutions. */
+/**
+ * copy.* — used verbatim; `{label}` and `{percent}` are the only substitutions. `setMinimum` and
+ * `setMaximum` name the Home/End accessibility actions, which only the native platforms expose:
+ * on web Home and End are the keys themselves and carry no separate label.
+ */
 const COPY = {
   collapse: 'Collapse {label}',
   expand: 'Expand {label}',
+  setMinimum: 'Minimum {label}',
+  setMaximum: 'Maximum {label}',
   sizeText: '{percent}%',
 } as const;
 
@@ -34,6 +40,7 @@ export type SplitterOverridableBinding =
   | 'separatorColor'
   | 'handleSize'
   | 'gripLength'
+  | 'gripRadius'
   | 'collapseButtonOffset'
   | 'transition';
 
@@ -42,6 +49,7 @@ const OVERRIDE_HOOK: Record<SplitterOverridableBinding, string> = {
   separatorColor: '--ds-splitter-separator-color',
   handleSize: '--ds-splitter-handle-size',
   gripLength: '--ds-splitter-grip-length',
+  gripRadius: '--ds-splitter-grip-radius',
   collapseButtonOffset: '--ds-splitter-collapse-button-offset',
   transition: '--ds-splitter-transition',
 };
@@ -224,6 +232,16 @@ export function Splitter({
   );
   const collapsedState = collapsible && (collapsed !== undefined ? collapsed : internalCollapsed);
 
+  // Writing direction: a horizontal splitter swaps its arrow keys, its drag axis and the collapse
+  // chevron in RTL, so the separator always moves the way the arrow points. Direction does not
+  // change at runtime, so this is measured once.
+  const [isRtl, setIsRtl] = useState(false);
+  useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    setIsRtl(getComputedStyle(el).direction === 'rtl');
+  }, []);
+
   // Stacking: a container query on the splitter's own inline size, measured with a ResizeObserver.
   const canStack = orientation === 'horizontal' && stackBelow !== 'never';
   const [isStacked, setIsStacked] = useState(false);
@@ -300,7 +318,7 @@ export function Splitter({
     if (orientation === 'horizontal') {
       if (rect.width === 0) return latestSizeRef.current;
       const ratio = (clientX - rect.left) / rect.width;
-      return (getComputedStyle(el).direction === 'rtl' ? 1 - ratio : ratio) * 100;
+      return (isRtl ? 1 - ratio : ratio) * 100;
     }
     if (rect.height === 0) return latestSizeRef.current;
     return ((clientY - rect.top) / rect.height) * 100;
@@ -349,8 +367,9 @@ export function Splitter({
       setCollapsed(!collapsedState);
       return;
     }
-    const growKey = orientation === 'horizontal' ? 'ArrowRight' : 'ArrowDown';
-    const shrinkKey = orientation === 'horizontal' ? 'ArrowLeft' : 'ArrowUp';
+    // In RTL a horizontal splitter swaps ArrowLeft and ArrowRight, as dragging does.
+    const growKey = orientation === 'vertical' ? 'ArrowDown' : isRtl ? 'ArrowLeft' : 'ArrowRight';
+    const shrinkKey = orientation === 'vertical' ? 'ArrowUp' : isRtl ? 'ArrowRight' : 'ArrowLeft';
     let next: number;
     switch (event.key) {
       case growKey:
@@ -445,14 +464,17 @@ export function Splitter({
     .filter(Boolean)
     .join(' ');
 
+  // The chevron points toward the primary pane while expanded and away from it while collapsed;
+  // on a horizontal splitter that is mirrored in RTL, where the primary pane sits on the right.
+  const pointsAtPrimary = !effectiveCollapsed;
   const collapseIcon: IconName =
-    orientation === 'horizontal'
-      ? effectiveCollapsed
-        ? 'chevron-right'
-        : 'chevron-left'
-      : effectiveCollapsed
-        ? 'chevron-down'
-        : 'chevron-up';
+    orientation === 'vertical'
+      ? pointsAtPrimary
+        ? 'chevron-up'
+        : 'chevron-down'
+      : pointsAtPrimary !== isRtl
+        ? 'chevron-left'
+        : 'chevron-right';
 
   return (
     <div

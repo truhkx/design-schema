@@ -18,23 +18,24 @@ export type SplitterOverridableBinding =
   | 'separatorColor'
   | 'handleSize'
   | 'gripLength'
+  | 'gripRadius'
   | 'collapseButtonOffset'
   | 'transition';
 
 export interface SplitterProps {
   /** What the divider resizes ("Sidebar width", "Preview height"). The separator's accessible name. */
   label: string;
-  /** `horizontal` places panes side by side (the separator is vertical); `vertical` stacks them. */
+  /** `horizontal` places panes side by side (the separator is vertical); `vertical` stacks them. A vertical splitter needs a parent with a definite height. */
   orientation?: SplitterOrientation | undefined;
-  /** The first pane (start or top). Its size is what the separator controls and reports. */
+  /** The first pane (start or top). Its size is what the separator controls and reports. A string or number is wrapped in `Text`. */
   primary: React.ReactNode;
-  /** The second pane, which takes the remaining space. */
+  /** The second pane, which takes the remaining space. A string or number is wrapped in `Text`, as `primary`. */
   secondary: React.ReactNode;
   /** Controlled size of the primary pane as a percentage of the container (0–100). */
   size?: number | undefined;
   /** Initial primary size, percent. */
   defaultSize?: number | undefined;
-  /** Smallest primary size, percent. With `collapsible`, dragging or stepping below it collapses the pane instead of clamping; otherwise it is the hard floor. */
+  /** Smallest primary size, percent. With `collapsible`, a step that would cross it clamps here first and the next shrink step collapses; otherwise it is the hard floor. */
   minSize?: number | undefined;
   /** Largest primary size, percent. */
   maxSize?: number | undefined;
@@ -42,7 +43,7 @@ export interface SplitterProps {
   step?: number | undefined;
   /** The primary pane can collapse to nothing: drag past the minimum, the separator's activate action, or the collapse button. Activating again restores the last size. */
   collapsible?: boolean | undefined;
-  /** Controlled collapsed state. */
+  /** Controlled collapsed state. Ignored unless `collapsible`. */
   collapsed?: boolean | undefined;
   /** Initial collapsed state when uncontrolled. */
   defaultCollapsed?: boolean | undefined;
@@ -54,9 +55,9 @@ export interface SplitterProps {
   overrides?: Partial<Record<SplitterOverridableBinding, TokenRef | undefined>> | undefined;
   /** The root view. */
   ref?: React.Ref<ViewInstance> | undefined;
-  /** Fired continuously while dragging and on each step action, with the primary size in percent. */
+  /** Fired continuously while dragging and on each step action, with the primary size in percent (unrounded). */
   onSizeChange?: ((size: number) => void) | undefined;
-  /** Fired with the final size once when a drag ends and after each step action. */
+  /** Fired with the final size once when a drag ends and after each step action that changed the size. */
   onSizeChangeEnd?: ((size: number) => void) | undefined;
   /** Fired when the primary pane collapses or restores. */
   onCollapseChange?: ((collapsed: boolean) => void) | undefined;
@@ -65,6 +66,8 @@ export interface SplitterProps {
 const COPY = {
   collapse: (label: string): string => `Collapse ${label}`,
   expand: (label: string): string => `Expand ${label}`,
+  setMinimum: (label: string): string => `Minimum ${label}`,
+  setMaximum: (label: string): string => `Maximum ${label}`,
   sizeText: (percent: number): string => `${percent}%`,
 } as const;
 
@@ -95,16 +98,23 @@ function renderPane(content: React.ReactNode): React.ReactNode {
  * sidebars. Not for phone-only screens (it stacks below `stackBelow`) or static layout.
  *
  * A `View` row (or column): the primary pane at `flexBasis` percent, the separator
- * `View` carrying a `PanResponder` (as Slider's thumb) with `accessibilityRole="adjustable"`,
- * `accessibilityValue` and `accessibilityActions` — increment/decrement by `step`,
- * setMinimum/setMaximum (Home/End) and, when `collapsible`, activate (Enter) — the
- * gesture alternative; then the secondary pane at `flex: 1`. The collapse `Button`
- * (ghost, sm, iconOnly) sits on the separator. While collapsed the pane is hidden from
- * assistive tech and touch, and drag and the step actions do nothing; only activate or
- * the button restores. Collapse and restore animate over `transition` (skipped under
- * reduced motion); dragging has no transition. Known platform limits: the separator is
- * a plain `View`, so it shows no keyboard focus ring (the Button does), and F6 pane
- * cycling has no native equivalent.
+ * `View` carrying a `PanResponder` (as Slider's thumb — `panHandlers` on a `Pressable`
+ * fight its own responder) with `accessibilityRole="adjustable"`, `accessibilityValue`
+ * and `accessibilityActions` — increment/decrement by `step`, setMinimum/setMaximum
+ * (Home/End) and, when `collapsible`, activate (Enter) — the gesture alternative; then
+ * the secondary pane at `flex: 1`. The collapse `Button` (ghost, sm, iconOnly) is a
+ * positioned sibling of the separator, placed from its measured position rather than a
+ * child, because Android drops touches outside a parent's bounds. While collapsed the
+ * pane is hidden from assistive tech and touch, and drag and the step actions do
+ * nothing; only activate or the button restores. Collapse and restore animate over
+ * `transition` (skipped under reduced motion); dragging and step actions resize
+ * instantly and the separator colour switches instantly.
+ *
+ * Known platform limits: a `View` has no typed key handler, so hardware arrows, Home,
+ * End and Enter do nothing (including on react-native-web) — the accessibility actions
+ * and the collapse Button are the keyboard and screen-reader route; the separator is a
+ * plain `View`, so it shows no keyboard focus ring (the Button has full focus
+ * treatment); and F6 pane cycling has no native equivalent.
  */
 export function Splitter({
   label,
@@ -160,22 +170,33 @@ export function Splitter({
     }
   };
 
-  const applySize = (raw: number, end: boolean): void => {
+  const applySize = (raw: number, commit: boolean): void => {
     const next = clamp(raw, minSize, maxSize);
     if (size === undefined) {
       setInternalSize(next);
     }
     persist(next, false);
     onSizeChange?.(next);
-    if (end) {
+    if (commit) {
       onSizeChangeEnd?.(next);
     }
+  };
+
+  /** A step action is a complete interaction: it reports the change and the commit, and
+   * a step already at a bound (setMaximum at `maxSize`) reports nothing. */
+  const stepTo = (raw: number): void => {
+    const next = clamp(raw, minSize, maxSize);
+    if (next === baseSize) {
+      return;
+    }
+    applySize(next, true);
   };
 
   const setCollapsedState = (next: boolean): void => {
     if (collapsed === undefined) {
       setInternalCollapsed(next);
     }
+    // A collapsed pane keeps its size for restoring.
     persist(baseSize, next);
     onCollapseChange?.(next);
   };
@@ -193,35 +214,58 @@ export function Splitter({
       return;
     }
     if (isCollapsed) {
+      // While collapsed only activate or the collapse button does anything.
       return;
     }
     if (name === 'increment') {
-      applySize(baseSize + step, true);
+      stepTo(baseSize + step);
     } else if (name === 'decrement') {
-      if (collapsible && baseSize - step < minSize) {
+      if (collapsible && baseSize <= minSize) {
+        // At the minimum the next shrink step collapses; crossing it from above clamps first.
         setCollapsedState(true);
       } else {
-        applySize(baseSize - step, true);
+        stepTo(baseSize - step);
       }
     } else if (name === 'setMinimum') {
-      applySize(minSize, true);
+      // Home sets `minSize` and never collapses.
+      stepTo(minSize);
     } else if (name === 'setMaximum') {
-      applySize(maxSize, true);
+      stepTo(maxSize);
     }
   };
 
   // The PanResponder is created once; it reads the current render through these refs.
-  const latest = React.useRef({ baseSize, isCollapsed, horizontal, collapsible, minSize, applySize, setCollapsedState });
-  latest.current = { baseSize, isCollapsed, horizontal, collapsible, minSize, applySize, setCollapsedState };
+  const latest = React.useRef({
+    baseSize,
+    isCollapsed,
+    horizontal,
+    collapsible,
+    minSize,
+    maxSize,
+    applySize,
+    setCollapsedState,
+    onSizeChangeEnd,
+  });
+  latest.current = {
+    baseSize,
+    isCollapsed,
+    horizontal,
+    collapsible,
+    minSize,
+    maxSize,
+    applySize,
+    setCollapsedState,
+    onSizeChangeEnd,
+  };
   const containerExtentRef = React.useRef(0);
-  const dragRef = React.useRef({ active: false, start: 0, last: 0, moved: false });
+  const dragRef = React.useRef({ active: false, start: 0, last: 0 });
 
   const panResponder = React.useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => !latest.current.isCollapsed,
       onMoveShouldSetPanResponder: () => !latest.current.isCollapsed,
       onPanResponderGrant: () => {
-        dragRef.current = { active: true, start: latest.current.baseSize, last: latest.current.baseSize, moved: false };
+        dragRef.current = { active: true, start: latest.current.baseSize, last: latest.current.baseSize };
         setDragging(true);
       },
       onPanResponderMove: (_event, gesture) => {
@@ -232,22 +276,21 @@ export function Splitter({
         }
         const raw = drag.start + ((latest.current.horizontal ? gesture.dx : gesture.dy) / extent) * 100;
         if (latest.current.collapsible && raw < latest.current.minSize) {
-          // Past the minimum: collapse, and the rest of this drag does nothing.
+          // Past the minimum: collapse, and the rest of this gesture is ignored. `last`
+          // keeps the last expanded size, which the release event carries.
           drag.active = false;
           setDragging(false);
           latest.current.setCollapsedState(true);
           return;
         }
         drag.last = raw;
-        drag.moved = true;
         latest.current.applySize(raw, false);
       },
       onPanResponderRelease: () => {
-        const drag = dragRef.current;
-        if (drag.active && drag.moved) {
-          latest.current.applySize(drag.last, true);
-        }
-        drag.active = false;
+        // A drag always commits once on release, carrying the last expanded size even
+        // when the gesture collapsed the pane.
+        latest.current.onSizeChangeEnd?.(clamp(dragRef.current.last, latest.current.minSize, latest.current.maxSize));
+        dragRef.current.active = false;
         setDragging(false);
       },
       onPanResponderTerminate: () => {
@@ -262,6 +305,7 @@ export function Splitter({
   const separatorColor = overrides?.separatorColor ? (resolveToken(t, overrides.separatorColor) as string) : t.colorBorder;
   const handleSize = overrides?.handleSize ? (resolveToken(t, overrides.handleSize) as number) : t.space3;
   const gripLength = overrides?.gripLength ? (resolveToken(t, overrides.gripLength) as number) : t.space6;
+  const gripRadius = overrides?.gripRadius ? (resolveToken(t, overrides.gripRadius) as number) : t.radiusFull;
   const collapseButtonOffset = overrides?.collapseButtonOffset
     ? (resolveToken(t, overrides.collapseButtonOffset) as number)
     : t.space2;
@@ -321,6 +365,7 @@ export function Splitter({
         flexBasis: sizeAnim.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] }),
         flexGrow: 0,
         flexShrink: isCollapsed ? 1 : 0,
+        // The pane floor is dropped while collapsed so collapse reaches zero.
         minWidth: horizontal && !isCollapsed ? paneMinTarget : 0,
         minHeight: !horizontal && !isCollapsed ? paneMinTarget : 0,
         overflow: 'hidden',
@@ -344,7 +389,8 @@ export function Splitter({
     zIndex: 1,
   };
 
-  // The grab area overlaps both panes; on native `hitSlop` carries it, on react-native-web the overflowing child does.
+  // The grab area overlaps both panes; on native `hitSlop` carries it, and on
+  // react-native-web (which ignores `hitSlop`) the overflowing child View does.
   const handleStyle: ViewStyle = horizontal
     ? { position: 'absolute', top: 0, bottom: 0, left: -hitExtra, right: -hitExtra }
     : { position: 'absolute', left: 0, right: 0, top: -hitExtra, bottom: -hitExtra };
@@ -356,11 +402,15 @@ export function Splitter({
     left: horizontal ? 0 : '50%',
     top: horizontal ? '50%' : 0,
     transform: horizontal ? [{ translateY: -gripLength / 2 }] : [{ translateX: -gripLength / 2 }],
-    borderRadius: t.radiusFull,
+    borderRadius: gripRadius,
     backgroundColor: grip,
   };
 
-  const buttonCross = separatorOffset + separatorSize / 2 - buttonExtent / 2;
+  // Centred across the separator; while collapsed the primary pane has no size, so the
+  // button aligns to the secondary pane's start edge instead of hanging outside.
+  const buttonCross = isCollapsed
+    ? separatorOffset + separatorSize
+    : separatorOffset + separatorSize / 2 - buttonExtent / 2;
   const collapseButtonStyle: ViewStyle = horizontal
     ? { position: 'absolute', top: collapseButtonOffset, left: buttonCross, zIndex: 1 }
     : { position: 'absolute', left: collapseButtonOffset, top: buttonCross, zIndex: 1 };
@@ -374,13 +424,17 @@ export function Splitter({
       : 'chevron-up';
   const toggleLabel = isCollapsed ? COPY.expand(label) : COPY.collapse(label);
 
+  // increment/decrement are named by the system; the rest carry their own copy.
   const separatorActions = [
     { name: 'increment' },
     { name: 'decrement' },
-    { name: 'setMinimum' },
-    { name: 'setMaximum' },
+    { name: 'setMinimum', label: COPY.setMinimum(label) },
+    { name: 'setMaximum', label: COPY.setMaximum(label) },
     ...(collapsible ? [{ name: 'activate', label: toggleLabel }] : []),
   ];
+
+  // `aria-valuemin` is 0 while collapsed so the reported value stays in range.
+  const reportedSize = Math.round(effectiveSize);
 
   return (
     <View ref={ref} testID="Splitter" style={containerStyle} onLayout={handleContainerLayout}>
@@ -400,7 +454,12 @@ export function Splitter({
           focusable
           accessibilityRole="adjustable"
           accessibilityLabel={label}
-          accessibilityValue={{ min: minSize, max: maxSize, now: effectiveSize, text: COPY.sizeText(effectiveSize) }}
+          accessibilityValue={{
+            min: isCollapsed ? 0 : minSize,
+            max: maxSize,
+            now: reportedSize,
+            text: COPY.sizeText(reportedSize),
+          }}
           accessibilityActions={separatorActions}
           onAccessibilityAction={handleSeparatorAction}
           hitSlop={horizontal ? { left: hitExtra, right: hitExtra } : { top: hitExtra, bottom: hitExtra }}

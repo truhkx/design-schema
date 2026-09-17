@@ -25,7 +25,7 @@ describe('Splitter', () => {
   it('arrow-grows-the-primary-pane', () => {
     const onSizeChange = vi.fn();
     const onSizeChangeEnd = vi.fn();
-    setup({ defaultSize: 50, onSizeChange, onSizeChangeEnd });
+    setup({ defaultSize: 50, stackBelow: 'never', onSizeChange, onSizeChangeEnd });
     fireEvent.keyDown(separator(), { key: 'ArrowRight' });
     expect(onSizeChange).toHaveBeenCalled();
     expect(onSizeChangeEnd).toHaveBeenCalled();
@@ -34,7 +34,7 @@ describe('Splitter', () => {
   it('arrow-shrinks-the-primary-pane', () => {
     const onSizeChange = vi.fn();
     const onSizeChangeEnd = vi.fn();
-    setup({ defaultSize: 50, onSizeChange, onSizeChangeEnd });
+    setup({ defaultSize: 50, stackBelow: 'never', onSizeChange, onSizeChangeEnd });
     fireEvent.keyDown(separator(), { key: 'ArrowLeft' });
     expect(onSizeChange).toHaveBeenCalled();
     expect(onSizeChangeEnd).toHaveBeenCalled();
@@ -42,35 +42,35 @@ describe('Splitter', () => {
 
   it('home-sets-the-primary-pane-to-its-minimum', () => {
     const onSizeChange = vi.fn();
-    setup({ defaultSize: 50, minSize: 20, onSizeChange });
+    setup({ defaultSize: 50, minSize: 20, stackBelow: 'never', onSizeChange });
     fireEvent.keyDown(separator(), { key: 'Home' });
     expect(onSizeChange).toHaveBeenCalled();
   });
 
   it('end-sets-the-primary-pane-to-its-maximum', () => {
     const onSizeChange = vi.fn();
-    setup({ defaultSize: 50, maxSize: 80, onSizeChange });
+    setup({ defaultSize: 50, maxSize: 80, stackBelow: 'never', onSizeChange });
     fireEvent.keyDown(separator(), { key: 'End' });
     expect(onSizeChange).toHaveBeenCalled();
   });
 
   it('enter-collapses-a-collapsible-pane', () => {
     const onCollapseChange = vi.fn();
-    setup({ collapsible: true, defaultSize: 40, onCollapseChange });
+    setup({ collapsible: true, defaultSize: 40, stackBelow: 'never', onCollapseChange });
     fireEvent.keyDown(separator(), { key: 'Enter' });
     expect(onCollapseChange).toHaveBeenCalled();
   });
 
   it('enter-does-nothing-when-the-pane-cannot-collapse', () => {
     const onCollapseChange = vi.fn();
-    setup({ onCollapseChange });
+    setup({ stackBelow: 'never', onCollapseChange });
     fireEvent.keyDown(separator(), { key: 'Enter' });
     expect(onCollapseChange).not.toHaveBeenCalled();
   });
 
   it('the-collapse-button-collapses-the-pane', () => {
     const onCollapseChange = vi.fn();
-    setup({ collapsible: true, defaultSize: 40, onCollapseChange });
+    setup({ collapsible: true, defaultSize: 40, stackBelow: 'never', onCollapseChange });
     const part = document.querySelector<HTMLElement>('[data-part="collapseButton"]');
     expect(part).not.toBeNull();
     fireEvent.click(part!);
@@ -79,20 +79,20 @@ describe('Splitter', () => {
 
   it('a-collapsed-pane-ignores-the-arrow-keys', () => {
     const onSizeChange = vi.fn();
-    setup({ collapsible: true, defaultCollapsed: true, onSizeChange });
+    setup({ collapsible: true, defaultCollapsed: true, stackBelow: 'never', onSizeChange });
     fireEvent.keyDown(separator(), { key: 'ArrowRight' });
     expect(onSizeChange).not.toHaveBeenCalled();
   });
 
   it('the-separator-reports-its-size-and-bounds', () => {
-    setup({ defaultSize: 40, minSize: 15, maxSize: 85 });
+    setup({ defaultSize: 40, minSize: 15, maxSize: 85, stackBelow: 'never' });
     expect(separator()).toHaveAttribute('aria-valuenow', '40');
     expect(separator()).toHaveAttribute('aria-valuemin', '15');
     expect(separator()).toHaveAttribute('aria-valuemax', '85');
   });
 
   it('the-separator-is-a-focusable-widget', () => {
-    setup();
+    setup({ stackBelow: 'never' });
     const el = separator();
     expect(el.tabIndex).toBe(0);
     el.focus();

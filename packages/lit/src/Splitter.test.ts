@@ -74,48 +74,48 @@ beforeEach(() => {
 
 describe('ds-splitter', () => {
   it('arrow-grows-the-primary-pane', async () => {
-    const s = await setup({ defaultSize: 50 });
+    const s = await setup({ defaultSize: 50, stackBelow: 'never' });
     await pressOn(s.separator(), 'ArrowRight');
     expect(s.sizeChange).toHaveBeenCalled();
     expect(s.sizeChangeEnd).toHaveBeenCalled();
   });
 
   it('arrow-shrinks-the-primary-pane', async () => {
-    const s = await setup({ defaultSize: 50 });
+    const s = await setup({ defaultSize: 50, stackBelow: 'never' });
     await pressOn(s.separator(), 'ArrowLeft');
     expect(s.sizeChange).toHaveBeenCalled();
     expect(s.sizeChangeEnd).toHaveBeenCalled();
   });
 
   it('home-sets-the-primary-pane-to-its-minimum', async () => {
-    const s = await setup({ defaultSize: 50, minSize: 20 });
+    const s = await setup({ defaultSize: 50, minSize: 20, stackBelow: 'never' });
     await pressOn(s.separator(), 'Home');
     expect(s.sizeChange).toHaveBeenCalled();
     expect(s.sizeChange.mock.calls.at(-1)?.[0].detail.size).toBe(20);
   });
 
   it('end-sets-the-primary-pane-to-its-maximum', async () => {
-    const s = await setup({ defaultSize: 50, maxSize: 80 });
+    const s = await setup({ defaultSize: 50, maxSize: 80, stackBelow: 'never' });
     await pressOn(s.separator(), 'End');
     expect(s.sizeChange).toHaveBeenCalled();
     expect(s.sizeChange.mock.calls.at(-1)?.[0].detail.size).toBe(80);
   });
 
   it('enter-collapses-a-collapsible-pane', async () => {
-    const s = await setup({ collapsible: true, defaultSize: 40 });
+    const s = await setup({ collapsible: true, defaultSize: 40, stackBelow: 'never' });
     await pressOn(s.separator(), 'Enter');
     expect(s.collapseChange).toHaveBeenCalled();
     expect(s.collapseChange.mock.calls.at(-1)?.[0].detail.collapsed).toBe(true);
   });
 
   it('enter-does-nothing-when-the-pane-cannot-collapse', async () => {
-    const s = await setup();
+    const s = await setup({ stackBelow: 'never' });
     await pressOn(s.separator(), 'Enter');
     expect(s.collapseChange).not.toHaveBeenCalled();
   });
 
   it('the-collapse-button-collapses-the-pane', async () => {
-    const s = await setup({ collapsible: true, defaultSize: 40 });
+    const s = await setup({ collapsible: true, defaultSize: 40, stackBelow: 'never' });
     const button = s.part('collapseButton');
     expect(button).toBeTruthy();
     await userEvent.click(button!);
@@ -123,7 +123,7 @@ describe('ds-splitter', () => {
   });
 
   it('a-collapsed-pane-ignores-the-arrow-keys', async () => {
-    const s = await setup({ collapsible: true, defaultCollapsed: true });
+    const s = await setup({ collapsible: true, defaultCollapsed: true, stackBelow: 'never' });
     await pressOn(s.separator(), 'ArrowRight');
     expect(s.sizeChange).not.toHaveBeenCalled();
   });

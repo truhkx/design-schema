@@ -1,5 +1,5 @@
 import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
-import { customElement, property, query } from 'lit/decorators.js';
+import { customElement, property } from 'lit/decorators.js';
 import { repeat } from 'lit/directives/repeat.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Card.js';
@@ -32,27 +32,35 @@ export interface FeedItemVisibleDetail {
 
 /**
  * Overridable style hooks; see the `overrides` property. `unreadBorder`,
- * `unreadBorderWidth`, `timestampColor`, `endMessageColor`, `focusRing` and
- * `focusRingWidth` are locked and excluded.
+ * `unreadBorderWidth`, `timestampColor`, `endMessageColor`, `emptyStateColor`,
+ * `focusRing` and `focusRingWidth` are locked and excluded.
  */
 export type FeedOverridableBinding =
   | 'itemGap'
   | 'articleInset'
+  | 'articleBodyGap'
   | 'timestampSize'
   | 'newItemsOffset'
+  | 'newItemsLayer'
   | 'loadingInset'
   | 'endMessageInset'
   | 'endMessageSize'
+  | 'emptyStateInset'
+  | 'emptyStateSize'
   | 'fontFamily';
 
 const HOOKS: Record<FeedOverridableBinding, string> = {
   itemGap: '--ds-feed-item-gap',
   articleInset: '--ds-feed-article-inset',
+  articleBodyGap: '--ds-feed-article-body-gap',
   timestampSize: '--ds-feed-timestamp-size',
   newItemsOffset: '--ds-feed-new-items-offset',
+  newItemsLayer: '--ds-feed-new-items-layer',
   loadingInset: '--ds-feed-loading-inset',
   endMessageInset: '--ds-feed-end-message-inset',
   endMessageSize: '--ds-feed-end-message-size',
+  emptyStateInset: '--ds-feed-empty-state-inset',
+  emptyStateSize: '--ds-feed-empty-state-size',
   fontFamily: '--ds-feed-font-family',
 };
 
@@ -81,7 +89,11 @@ const MINUTE_MS = 60_000;
 /** How long an article must stay 50% visible before `item-visible` fires ("a moment"). */
 const VISIBLE_DWELL_MS = 1000;
 
-/** justNow under a minute, minutesAgo/hoursAgo/daysAgo up to a week, else the absolute date in the user's locale. */
+/**
+ * justNow under a minute (and for a future timestamp), minutesAgo/hoursAgo/daysAgo
+ * up to a week, else the absolute date in the user's locale. Counts are floored, so
+ * 90 seconds is `1 min ago`. An unparseable timestamp is shown as given.
+ */
 function formatRelativeTime(iso: string): string {
   const time = new Date(iso).getTime();
   if (Number.isNaN(time)) {
@@ -105,10 +117,11 @@ function formatRelativeTime(iso: string): string {
   return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(time);
 }
 
-function formatAbsoluteTime(iso: string): string {
+/** The `<time>` title; an unparseable timestamp gets no title. */
+function formatAbsoluteTime(iso: string): string | undefined {
   const time = new Date(iso).getTime();
   return Number.isNaN(time)
-    ? iso
+    ? undefined
     : new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(time);
 }
 
@@ -176,16 +189,23 @@ function documentHost(el: Element): Element {
  * `<ds-card focusable>` articles built from `items`, newest first. Card gives
  * each article `role="article"`, its heading name, `tabindex="-1"` and its own
  * focus ring; Feed adds `aria-describedby` (the article's `<time>`, in the same
- * tree) and `aria-posinset`/`aria-setsize` (`-1` while `hasMore`).
- * `IntersectionObserver`s drive `load-more` (the last article within one
- * viewport, while `hasMore` and not `loading`) and `item-visible` (50% visible
- * for one second, once per id). An empty feed with `hasMore` that is not
- * `loading` fires `load-more` once on mount. The new-items button never
- * inserts items itself — pressing it fires `show-new`, and once the caller's
- * next `items` update lands focus moves to the new first article. With focus
- * inside an article, PageDown/PageUp move between articles, Ctrl+End requests
- * more when `hasMore` (otherwise leaves the feed forward), and Ctrl+Home goes to
- * the new-items button when shown, otherwise leaves the feed backward.
+ * tree) and `aria-posinset`/`aria-setsize` (`-1` while `hasMore`). The `article`
+ * part is a Feed-owned wrapper around each Card that draws the unread bar, and
+ * `newItemsButton` is the sticky `role="status"` row around the Button — Card and
+ * Button host their own anatomy.
+ *
+ * `IntersectionObserver`s drive `load-more` (the last article within one viewport,
+ * while `hasMore` and not `loading`) and `item-visible` (50% visible for one
+ * second, once per id per mount). An empty feed with `hasMore` that is not
+ * `loading` asks for its first page itself — on mount and again whenever the
+ * caller clears `items` — since there is no last article to observe. The
+ * new-items row is always rendered so its count is announced when the button
+ * appears; pressing it never inserts items, it fires `show-new`, and focus moves
+ * to the first article once the caller's prepend changes the first item's id.
+ * With focus inside an article, PageDown/PageUp move between articles, Ctrl+End
+ * requests more when `hasMore` (nothing while `loading`, otherwise it leaves the
+ * feed forward), and Ctrl+Home goes to the new-items button when shown, otherwise
+ * leaves the feed backward.
  *
  * ## When to use
  *
@@ -201,7 +221,7 @@ function documentHost(el: Element): Element {
  * is at the bottom. Do not use it for content that must be complete on load;
  * paginate instead.
  *
- * @fires load-more - Fired when the last rendered article is within one screen of view (or on Ctrl+End with `hasMore`).
+ * @fires load-more - Fired when the last rendered article is within one screen of view (or on Ctrl+End with `hasMore` and not `loading`).
  * @fires show-new - Fired when the new-items button is pressed; the caller prepends the items and clears `newItemsCount`.
  * @fires item-visible - Fired with `{ id }` once an item has been substantially visible for a moment.
  */
@@ -213,11 +233,17 @@ export class DsFeed extends LitElement {
       font-family: var(--ds-feed-font-family);
       --ds-feed-item-gap: var(--layout-gap-normal);
       --ds-feed-article-inset: var(--layout-inset-md);
+      --ds-feed-article-body-gap: var(--layout-gap-tight);
+      --ds-feed-unread-border: var(--color-control-selected-background);
+      --ds-feed-unread-border-width: var(--border-width-focus);
       --ds-feed-timestamp-size: var(--font-size-xs);
       --ds-feed-new-items-offset: var(--space-3);
+      --ds-feed-new-items-layer: var(--layer-raised);
       --ds-feed-loading-inset: var(--layout-inset-md);
       --ds-feed-end-message-inset: var(--layout-inset-md);
       --ds-feed-end-message-size: var(--font-size-sm);
+      --ds-feed-empty-state-inset: var(--layout-inset-md);
+      --ds-feed-empty-state-size: var(--font-size-sm);
       --ds-feed-font-family: var(--font-family-body);
     }
 
@@ -225,59 +251,92 @@ export class DsFeed extends LitElement {
       display: none;
     }
 
-    /* itemGap: layout.gap.normal, between the rows of the feed */
-    [data-part='container'] {
+    /* newItemsOffset / newItemsLayer: the live row is always rendered so the count is announced
+       when the button appears, and takes space only while it is shown (padding, not a margin:
+       the row is the first child). It stays over the scrolling articles. */
+    .new-items-row {
+      position: sticky;
+      inset-block-start: 0;
+      z-index: var(--ds-feed-new-items-layer);
+      display: flex;
+      justify-content: center;
+    }
+
+    .new-items-row.shown {
+      padding-block-start: var(--ds-feed-new-items-offset);
+    }
+
+    /* itemGap: layout.gap.normal, between the articles and the footer row */
+    .items {
       display: flex;
       flex-direction: column;
       gap: var(--ds-feed-item-gap);
     }
 
-    /* newItemsOffset: space.3, padding above the sticky button (it is the first child) */
-    .new-items-row {
-      display: flex;
-      justify-content: center;
-      position: sticky;
-      inset-block-start: 0;
-      z-index: 1;
-      padding-block-start: var(--ds-feed-new-items-offset);
+    [data-part='article'] {
+      position: relative;
     }
 
-    /* articleInset: layout.inset.md, forwarded through Card's documented padding hooks */
-    [data-part='article'] {
+    /* articleInset: layout.inset.md, forwarded to the Card's own padding hooks rather than
+       restyling its shadow tree (Card's inset is an sm/md/lg choice and takes no token) */
+    [data-part='article'] > ds-card {
       --ds-card-padding-block: var(--ds-feed-article-inset);
       --ds-card-padding-inline: var(--ds-feed-article-inset);
     }
 
-    /* unreadBorder / unreadBorderWidth: locked start-edge bar, drawn on Feed's own row beside the Card */
-    .article-row[data-unread] {
-      border-inline-start: var(--border-width-focus) solid var(--color-control-selected-background);
+    /* unreadBorder / unreadBorderWidth (locked): a start-edge bar drawn by Feed's own wrapper over
+       the Card's start edge (mirrored in RTL), paired with the visually-hidden "unread" word. */
+    [data-part='article'][data-unread]::before {
+      content: '';
+      position: absolute;
+      inset-block: 0;
+      inset-inline-start: 0;
+      inline-size: var(--ds-feed-unread-border-width);
+      background: var(--ds-feed-unread-border);
+      pointer-events: none;
     }
 
-    /* timestampSize: font.size.xs through Text's documented hook; timestampColor is Text tone="muted" (locked) */
-    [data-part='timestamp'] {
+    /* articleBodyGap: layout.gap.tight, forwarded to the body Stack's own gap hook */
+    [data-part='articleBody'] {
+      --ds-stack-gap: var(--ds-feed-article-body-gap);
+    }
+
+    /* timestampSize: font.size.xs through Text's hook; timestampColor is Text tone="muted" (locked) */
+    .timestamp-text {
       --ds-text-font-size: var(--ds-feed-timestamp-size);
     }
 
-    /* fontFamily: font.family.body, reaching composed Text through its documented hook */
+    /* fontFamily: font.family.body, reaching every composed Text and the new-items Button
+       through their own hooks; the hidden runs inherit it from :host */
     ds-text {
       --ds-text-font-family: var(--ds-feed-font-family);
     }
 
-    /* loadingInset: layout.inset.md */
+    ds-button {
+      --ds-button-font-family: var(--ds-feed-font-family);
+    }
+
+    /* loadingInset: layout.inset.md around the ProgressBar */
     [data-part='loadingIndicator'] {
-      padding-block: var(--ds-feed-loading-inset);
-      padding-inline: var(--ds-feed-loading-inset);
+      padding: var(--ds-feed-loading-inset);
     }
 
-    /* endMessageInset: layout.inset.md, around the end message */
-    .end-message-row {
-      padding-block: var(--ds-feed-end-message-inset);
-      padding-inline: var(--ds-feed-end-message-inset);
-    }
-
-    /* endMessageSize: font.size.sm through Text's hook; endMessageColor is Text tone="muted" (locked) */
+    /* endMessageInset / endMessageSize; endMessageColor is Text tone="muted" (locked) */
     [data-part='endMessage'] {
+      padding: var(--ds-feed-end-message-inset);
+    }
+
+    [data-part='endMessage'] > ds-text {
       --ds-text-font-size: var(--ds-feed-end-message-size);
+    }
+
+    /* emptyStateInset / emptyStateSize; emptyStateColor is Text tone="muted" (locked) */
+    [data-part='emptyState'] {
+      padding: var(--ds-feed-empty-state-inset);
+    }
+
+    [data-part='emptyState'] > ds-text {
+      --ds-text-font-size: var(--ds-feed-empty-state-size);
     }
 
     .visually-hidden {
@@ -294,13 +353,13 @@ export class DsFeed extends LitElement {
     }
   `;
 
-  /** What the feed contains ("Activity", "Notifications"). The feed's accessible name. */
+  /** What the feed contains ("Activity", "Notifications"). The feed's accessible name; an empty label warns in development. */
   @property({ type: String }) accessor label = '';
 
   /** Articles, newest first. */
   @property({ attribute: false }) accessor items: FeedItem[] = [];
 
-  /** More items exist beyond the last; the feed asks for them with `load-more` as the end approaches, and once on mount when empty and not `loading`. */
+  /** More items exist beyond the last; the feed asks for them with `load-more` as the end approaches, and whenever `items` is empty and not `loading`. */
   @property({ type: Boolean, reflect: true, attribute: 'has-more' }) accessor hasMore = false;
 
   /** More items are being fetched; a loading indicator is shown after the last article and the feed is `aria-busy`. */
@@ -316,16 +375,18 @@ export class DsFeed extends LitElement {
   @property({ type: String, attribute: 'end-message' }) accessor endMessage: string | undefined;
 
   /** Per-instance style overrides: `{ itemGap: 'layout.gap.loose' }`. Locked bindings are not accepted. */
-  @property({ attribute: false }) accessor overrides: Partial<Record<FeedOverridableBinding, TokenRef | undefined>> | undefined;
-
-  @query('[data-part="newItemsButton"]') private accessor newItemsButtonEl!: HTMLElement | null;
+  @property({ attribute: false }) accessor overrides:
+    | Partial<Record<FeedOverridableBinding, TokenRef | undefined>>
+    | undefined;
 
   private loadMoreObserver: IntersectionObserver | undefined;
   private visibilityObserver: IntersectionObserver | undefined;
   private readonly visibilityTimers = new Map<string, number>();
   private readonly reportedVisible = new Set<string>();
-  private pendingShowNewFocus = false;
+  /** The first item's id when `show-new` was fired; focus moves once the caller's prepend changes it. */
+  private showNewFirstId: string | null = null;
   private mounted = false;
+  private warnedLabel = false;
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -350,60 +411,68 @@ export class DsFeed extends LitElement {
 
   protected override render(): TemplateResult {
     const count = this.newItemsCount ?? 0;
-    const isEmpty = this.items.length === 0;
+    const shown = count > 0;
 
     return html`
       <div part="container" data-part="container" @keydown=${this.handleKeydown}>
-        ${count > 0
-          ? html`
-              <div class="new-items-row">
-                <ds-button
-                  part="newItemsButton"
-                  data-part="newItemsButton"
-                  variant="secondary"
-                  size="sm"
-                  label=${COPY_SHOW_NEW(count)}
-                  @press=${this.handleShowNewPress}
-                ></ds-button>
-              </div>
-            `
-          : nothing}
-        ${repeat(
-          this.items,
-          (item) => item.id,
-          (item, index) => this.renderArticle(item, index),
-        )}
-        ${this.renderFooter(isEmpty)}
+        <div
+          class=${shown ? 'new-items-row shown' : 'new-items-row'}
+          part=${shown ? 'newItemsButton' : nothing}
+          data-part=${shown ? 'newItemsButton' : nothing}
+          role="status"
+        >
+          ${shown
+            ? html`<ds-button
+                variant="secondary"
+                size="sm"
+                label=${COPY_SHOW_NEW(count)}
+                @press=${this.handleShowNewPress}
+              ></ds-button>`
+            : nothing}
+        </div>
+        <div class="items">
+          ${repeat(
+            this.items,
+            (item) => item.id,
+            (item, index) => this.renderArticle(item, index),
+          )}
+          ${this.renderFooter()}
+        </div>
       </div>
     `;
   }
 
   protected override updated(changed: PropertyValues): void {
-    if (changed.has('items') || changed.has('hasMore') || changed.has('loading')) {
+    const streamChanged = changed.has('items') || changed.has('hasMore') || changed.has('loading');
+    if (streamChanged || !this.mounted) {
       this.syncObservers();
-    }
-    if (!this.mounted) {
-      this.mounted = true;
-      // An empty feed has no last article to observe, so it fetches its first page itself.
+      // An empty feed has no last article to observe, so it asks for its first page itself.
       if (this.items.length === 0 && this.hasMore && !this.loading) {
         this.dispatchLoadMore();
       }
     }
-    if (this.pendingShowNewFocus && changed.has('items')) {
-      this.pendingShowNewFocus = false;
+    this.mounted = true;
+    if (this.showNewFirstId !== null && changed.has('items') && this.items[0]?.id !== this.showNewFirstId) {
+      // The caller prepended; the first new article takes focus. Nothing prepended, nothing to move to.
+      this.showNewFirstId = null;
       this.getArticles()[0]?.focus();
     }
   }
 
   private renderArticle(item: FeedItem, index: number): TemplateResult {
     const timestampId = `feed-ts-${item.id}`;
+    // The total is unknown while more may arrive; APG spells that aria-setsize="-1".
     const total = this.hasMore ? -1 : this.items.length;
+    const absolute = formatAbsoluteTime(item.timestamp);
     return html`
-      <div class="article-row" ?data-unread=${item.unread === true}>
+      <div
+        part="article"
+        data-part="article"
+        data-item-id=${item.id}
+        ?data-unread=${item.unread === true}
+      >
         <ds-card
-          part="article"
-          data-part="article"
-          data-item-id=${item.id}
+          class="article-card"
           heading=${item.heading}
           heading-level=${this.headingLevel}
           inset="md"
@@ -413,13 +482,18 @@ export class DsFeed extends LitElement {
           aria-setsize=${total}
         >
           <ds-stack part="articleBody" data-part="articleBody" gap="tight">
-            ${item.unread ? html`<span class="visually-hidden">${COPY_UNREAD}</span>` : nothing}
-            ${total !== -1 ? html`<span class="visually-hidden">${COPY_POSITION(index + 1, total)}</span>` : nothing}
-            <ds-text part="timestamp" data-part="timestamp" element="span" tone="muted" size="xs"
-              ><time id=${timestampId} datetime=${item.timestamp} title=${formatAbsoluteTime(item.timestamp)}
+            ${item.unread === true ? html`<span class="visually-hidden">${COPY_UNREAD}</span>` : nothing}
+            <ds-text class="timestamp-text" element="span" tone="muted" size="xs"
+              ><time
+                id=${timestampId}
+                part="timestamp"
+                data-part="timestamp"
+                datetime=${item.timestamp}
+                title=${absolute ?? nothing}
                 >${formatRelativeTime(item.timestamp)}</time
               ></ds-text
             >
+            ${total !== -1 ? html`<span class="visually-hidden">${COPY_POSITION(index + 1, total)}</span>` : nothing}
             <div>${item.content}</div>
           </ds-stack>
           ${item.actions !== undefined && item.actions !== null
@@ -437,7 +511,12 @@ export class DsFeed extends LitElement {
     `;
   }
 
-  private renderFooter(isEmpty: boolean): TemplateResult | typeof nothing {
+  /**
+   * While `loading` the indicator shows rather than the empty state, so a feed
+   * about to fetch never flashes `copy.empty`; an empty feed with more to come
+   * stays blank for the same reason.
+   */
+  private renderFooter(): TemplateResult | typeof nothing {
     if (this.loading) {
       return html`
         <div part="loadingIndicator" data-part="loadingIndicator">
@@ -445,23 +524,37 @@ export class DsFeed extends LitElement {
         </div>
       `;
     }
-    if (isEmpty) {
-      return html`<ds-text part="emptyState" data-part="emptyState" tone="muted">${COPY_EMPTY}</ds-text>`;
+    if (this.items.length === 0) {
+      return this.hasMore
+        ? nothing
+        : html`
+            <div part="emptyState" data-part="emptyState">
+              <ds-text tone="muted" size="sm">${COPY_EMPTY}</ds-text>
+            </div>
+          `;
     }
     if (!this.hasMore) {
       return html`
-        <div class="end-message-row">
-          <ds-text part="endMessage" data-part="endMessage" tone="muted" size="sm"
-            >${this.endMessage ?? COPY_END}</ds-text
-          >
+        <div part="endMessage" data-part="endMessage">
+          <ds-text tone="muted" size="sm">${this.endMessage ?? COPY_END}</ds-text>
         </div>
       `;
     }
     return nothing;
   }
 
+  /** The focusable Cards, in document order. */
   private getArticles(): HTMLElement[] {
+    return Array.from(this.renderRoot.querySelectorAll<HTMLElement>('.article-card'));
+  }
+
+  /** The Feed-owned wrappers the observers watch. */
+  private getArticleWrappers(): HTMLElement[] {
     return Array.from(this.renderRoot.querySelectorAll<HTMLElement>('[data-part="article"]'));
+  }
+
+  private get newItemsButtonEl(): HTMLElement | null {
+    return this.renderRoot.querySelector<HTMLElement>('.new-items-row ds-button');
   }
 
   private dispatchLoadMore(): void {
@@ -471,7 +564,7 @@ export class DsFeed extends LitElement {
   private readonly handleShowNewPress = (event: Event): void => {
     // Feed announces its own request; the inner Button's press stays internal.
     event.stopPropagation();
-    this.pendingShowNewFocus = true;
+    this.showNewFirstId = this.items[0]?.id ?? null;
     this.dispatchEvent(new CustomEvent<void>('show-new', { bubbles: true, composed: true }));
   };
 
@@ -480,7 +573,7 @@ export class DsFeed extends LitElement {
     const current = event
       .composedPath()
       .find((el): el is HTMLElement => el instanceof HTMLElement && articles.includes(el));
-    // The feed commands apply only while focus is within an article.
+    // The feed commands act only from inside an article, not from the new-items button.
     if (current === undefined) {
       return;
     }
@@ -494,14 +587,18 @@ export class DsFeed extends LitElement {
     } else if (event.key === 'End' && event.ctrlKey) {
       event.preventDefault();
       if (this.hasMore) {
-        this.dispatchLoadMore();
+        // Nothing while a page is already on its way; press again once it has landed.
+        if (!this.loading) {
+          this.dispatchLoadMore();
+        }
       } else {
         this.focusOutside(1);
       }
     } else if (event.key === 'Home' && event.ctrlKey) {
       event.preventDefault();
-      if (this.newItemsButtonEl !== null) {
-        this.newItemsButtonEl.focus();
+      const button = this.newItemsButtonEl;
+      if (button !== null) {
+        button.focus();
       } else {
         this.focusOutside(-1);
       }
@@ -536,8 +633,9 @@ export class DsFeed extends LitElement {
       if (this.getAttribute('aria-label') !== this.label) this.setAttribute('aria-label', this.label);
     } else {
       this.removeAttribute('aria-label');
-      if (import.meta.env.DEV) {
-        console.warn('<ds-feed>: `label` is required; it is the feed\'s accessible name.');
+      if (import.meta.env.DEV && !this.warnedLabel) {
+        this.warnedLabel = true;
+        console.warn("<ds-feed>: `label` is required; it is the feed's accessible name.");
       }
     }
     if (this.loading) {
@@ -550,8 +648,8 @@ export class DsFeed extends LitElement {
   /** (Re)builds the load-more and visibility observers against the current articles. */
   private syncObservers(): void {
     this.teardownObservers();
-    const articles = this.getArticles();
-    const last = articles[articles.length - 1];
+    const wrappers = this.getArticleWrappers();
+    const last = wrappers[wrappers.length - 1];
     if (last === undefined) {
       return;
     }
@@ -562,9 +660,9 @@ export class DsFeed extends LitElement {
     }
 
     this.visibilityObserver = new IntersectionObserver(this.handleVisibilityIntersect, { threshold: 0.5 });
-    for (const article of articles) {
-      if (!this.reportedVisible.has(article.dataset.itemId ?? '')) {
-        this.visibilityObserver.observe(article);
+    for (const wrapper of wrappers) {
+      if (!this.reportedVisible.has(wrapper.dataset.itemId ?? '')) {
+        this.visibilityObserver.observe(wrapper);
       }
     }
   }
@@ -582,7 +680,7 @@ export class DsFeed extends LitElement {
 
   private readonly handleLoadMoreIntersect = (entries: IntersectionObserverEntry[]): void => {
     if (entries.some((entry) => entry.isIntersecting)) {
-      // One request per approach: the observer is rebuilt when `items` or `loading` change.
+      // One request per approach: the observer is rebuilt when `items`, `hasMore` or `loading` change.
       this.loadMoreObserver?.disconnect();
       this.loadMoreObserver = undefined;
       this.dispatchLoadMore();
@@ -604,6 +702,7 @@ export class DsFeed extends LitElement {
       if (entry.isIntersecting) {
         const timer = window.setTimeout(() => {
           this.visibilityTimers.delete(id);
+          // Once per id per mount: an item that scrolls out and back does not fire again.
           this.reportedVisible.add(id);
           this.visibilityObserver?.unobserve(target);
           this.dispatchEvent(

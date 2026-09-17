@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Button } from './Button';
 import { Splitter } from './Splitter';
+import { Stack } from './Stack';
 import { withTheme } from './decorators';
 
 const meta: Meta<typeof Splitter> = {
@@ -85,12 +86,26 @@ export const NeverStackingWorkbench: Story = {
   },
 };
 
-/** Both panes with focusable content around the separator and collapse Button, for the axe gate and manual keyboard checks. */
+/**
+ * Both panes with focusable content around the separator and collapse Button, for the axe
+ * gate and manual keyboard checks. Hardware arrows, Home, End and Enter do nothing on a
+ * React Native `View`: the accessibility actions and the collapse Button are the route.
+ */
 export const Keyboard: Story = {
   args: {
     collapsible: true,
     stackBelow: 'never',
-    primary: <Button label="First action" variant="secondary" />,
-    secondary: <Button label="Second action" variant="secondary" />,
+    primary: (
+      <Stack gap="tight">
+        <Button label="First action" variant="secondary" />
+        <Button label="Second action" variant="secondary" />
+      </Stack>
+    ),
+    secondary: (
+      <Stack gap="tight">
+        <Button label="Third action" variant="secondary" />
+        <Button label="Fourth action" variant="secondary" />
+      </Stack>
+    ),
   },
 };

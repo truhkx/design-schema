@@ -5,8 +5,10 @@
   --ds-feed-unread-border: var(--color-control-selected-background);
   --ds-feed-unread-border-width: var(--border-width-focus);
   --ds-feed-new-items-offset: var(--space-3);
+  --ds-feed-new-items-layer: var(--layer-raised);
   --ds-feed-loading-inset: var(--layout-inset-md);
   --ds-feed-end-message-inset: var(--layout-inset-md);
+  --ds-feed-empty-state-inset: var(--layout-inset-md);
   --ds-feed-font-family: var(--font-family-body);
   font-family: var(--ds-feed-font-family);
 }
@@ -16,7 +18,7 @@
 .ds-feed__new-items {
   position: sticky;
   inset-block-start: 0;
-  z-index: var(--layer-raised);
+  z-index: var(--ds-feed-new-items-layer);
   display: flex;
   justify-content: center;
 }
@@ -47,10 +49,10 @@
   pointer-events: none;
 }
 
-.ds-feed__article-body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--layout-gap-tight);
+/* articleBody / articleActions are Stacks, and Stack writes its own data-part, so the part hook is a
+   Feed-owned wrapper with no box of its own; articleBodyGap is the Stack's gap (override forwarded). */
+.ds-feed__part {
+  display: contents;
 }
 
 .ds-feed__visually-hidden {
@@ -71,4 +73,8 @@
 
 .ds-feed__end-message {
   padding: var(--ds-feed-end-message-inset);
+}
+
+.ds-feed__empty-state {
+  padding: var(--ds-feed-empty-state-inset);
 }

@@ -430,20 +430,18 @@
     }
   },
   "Feed.web": {
-    "hash": "009a4e8db52d1311",
-    "lastAttemptHash": "009a4e8db52d1311",
-    "generatedAt": "2026-09-16T16:57:37+00:00",
+    "hash": "854e03a5214ef413",
+    "lastAttemptHash": "854e03a5214ef413",
+    "generatedAt": "2026-09-17T20:22:07+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.6088,
+    "costUsd": 4.2129,
     "files": [
       "packages/react/src/Feed.css",
-      "packages/react/src/Feed.stories.tsx",
-      "packages/react/src/Feed.test.tsx",
       "packages/react/src/Feed.tsx"
     ],
-    "gaps": 17,
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -958,20 +956,19 @@
     }
   },
   "Splitter.web": {
-    "hash": "04a35c81e3cbe94b",
-    "lastAttemptHash": "04a35c81e3cbe94b",
-    "generatedAt": "2026-09-16T16:45:39+00:00",
+    "hash": "4f7fb7a7b5608e2a",
+    "lastAttemptHash": "4f7fb7a7b5608e2a",
+    "generatedAt": "2026-09-17T19:51:45+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.5027,
+    "costUsd": 3.2267,
     "files": [
       "packages/react/src/Splitter.css",
-      "packages/react/src/Splitter.stories.tsx",
       "packages/react/src/Splitter.test.tsx",
       "packages/react/src/Splitter.tsx"
     ],
-    "gaps": 15,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,

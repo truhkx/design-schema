@@ -16,6 +16,7 @@
   --ds-splitter-handle-size: var(--space-3);
   --ds-splitter-grip: var(--color-border-strong);
   --ds-splitter-grip-length: var(--space-6);
+  --ds-splitter-grip-radius: var(--radius-full);
   --ds-splitter-collapse-button-offset: var(--space-2);
   --ds-splitter-pane-min-target: var(--size-target-comfortable);
   --ds-splitter-min-target: var(--size-target-min);
@@ -33,7 +34,7 @@
 .ds-splitter--horizontal {
   grid-template-columns:
     minmax(var(--ds-splitter-pane-min-target), var(--ds-splitter-primary-size))
-    auto
+    var(--ds-splitter-separator-size)
     minmax(var(--ds-splitter-pane-min-target), 1fr);
   grid-template-rows: minmax(0, 1fr);
 }
@@ -42,17 +43,23 @@
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows:
     minmax(var(--ds-splitter-pane-min-target), var(--ds-splitter-primary-size))
-    auto
+    var(--ds-splitter-separator-size)
     minmax(var(--ds-splitter-pane-min-target), 1fr);
 }
 
 /* Collapsed: the primary track drops its floor so collapse reaches zero. */
 .ds-splitter--collapsed.ds-splitter--horizontal {
-  grid-template-columns: minmax(0, var(--ds-splitter-primary-size)) auto minmax(var(--ds-splitter-pane-min-target), 1fr);
+  grid-template-columns:
+    minmax(0, var(--ds-splitter-primary-size))
+    var(--ds-splitter-separator-size)
+    minmax(var(--ds-splitter-pane-min-target), 1fr);
 }
 
 .ds-splitter--collapsed.ds-splitter--vertical {
-  grid-template-rows: minmax(0, var(--ds-splitter-primary-size)) auto minmax(var(--ds-splitter-pane-min-target), 1fr);
+  grid-template-rows:
+    minmax(0, var(--ds-splitter-primary-size))
+    var(--ds-splitter-separator-size)
+    minmax(var(--ds-splitter-pane-min-target), 1fr);
 }
 
 /* Stacked (below stackBelow): one column, both panes in full, in source order; no separator. */
@@ -132,11 +139,12 @@
   );
 }
 
-/* grip, gripLength: a short rounded bar, gripLength along the separator and separatorSize across. */
+/* grip, gripLength, gripRadius: a short rounded bar, gripLength along the separator and
+   separatorSize across, its ends rounded by gripRadius. */
 .ds-splitter__separator::after {
   content: '';
   background-color: var(--ds-splitter-grip);
-  border-radius: var(--radius-full);
+  border-radius: var(--ds-splitter-grip-radius);
 }
 
 .ds-splitter--horizontal .ds-splitter__separator::after {
@@ -185,6 +193,18 @@
   inset-inline-start: var(--ds-splitter-collapse-button-offset);
   inset-block-start: calc(var(--ds-splitter-separator-size) / 2);
   block-size: 0;
+}
+
+/* Collapsed the primary pane has no size, so the Button aligns to the secondary pane's start edge
+   instead of half-hanging outside the container. */
+.ds-splitter--collapsed.ds-splitter--horizontal .ds-splitter__collapse-button {
+  inset-inline-start: var(--ds-splitter-separator-size);
+  justify-content: flex-start;
+}
+
+.ds-splitter--collapsed.ds-splitter--vertical .ds-splitter__collapse-button {
+  inset-block-start: var(--ds-splitter-separator-size);
+  align-items: flex-start;
 }
 
 /* transition: collapse and restore, and the separator colour; dragging and key steps are instant. */

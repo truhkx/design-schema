@@ -41,15 +41,27 @@ describe('Accordion', () => {
     const first = s.props.items[0]!.id;
     expect(s.onChange).toHaveBeenCalledWith([first]);
     expect(s.onOpenChange).toHaveBeenCalledWith(first, true, 'trigger');
+    expect(s.onChange.mock.invocationCallOrder[0]!).toBeLessThan(s.onOpenChange.mock.invocationCallOrder[0]!);
     expect(s.trigger()).toHaveAttribute('aria-expanded', 'true');
   });
 
   it('exclusive-still-reports-both-events', async () => {
-    const s = setup({ exclusive: true });
+    const s = setup({
+      exclusive: true,
+      defaultValue: 'pro',
+      items: [
+        { id: 'free', summary: 'Free', content: 'One project and community support.' },
+        { id: 'pro', summary: 'Pro', content: 'Unlimited projects and email support.' },
+      ],
+    });
     await s.user.click(s.trigger());
-    const first = s.props.items[0]!.id;
-    expect(s.onChange).toHaveBeenCalledWith([first]);
-    expect(s.onOpenChange).toHaveBeenCalledWith(first, true, 'trigger');
+    expect(s.onChange).toHaveBeenCalledTimes(1);
+    expect(s.onChange).toHaveBeenCalledWith(['free']);
+    expect(s.onOpenChange.mock.calls).toEqual([
+      ['free', true, 'trigger'],
+      ['pro', false, 'exclusive'],
+    ]);
+    expect(s.onChange.mock.invocationCallOrder[0]!).toBeLessThan(s.onOpenChange.mock.invocationCallOrder[0]!);
   });
 
   it('renders', () => {

@@ -37,3 +37,14 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Combobox: statusDebounce reads --motion-duration-base from the host's computed style at run time (× 2); under a reduced-motion theme that zeroes the token, the announcement would not be debounced. Doc should say whether this constant follows reduced motion.
 - Combobox: Intl.PluralRules needs a locale and the component has no locale prop; used the nearest [lang] ancestor, else the runtime default.
 - Combobox: required indicator copy ' (required)' is rendered inside the label (so it is part of the accessible name), as Select does; the doc doesn't say whether it belongs in the name.
+
+## 2026-09-17 11:58 — round 1
+
+- Combobox: statusDebounce must be computed from the theme's standard motion.duration.base, 'never from a reduced-motion override that zeroes the token', but Lit can only read the resolved --motion-duration-base custom property (as NumberInput does); if the token stylesheet zeroes it under reduced motion, the debounce drops to 0. Chose getComputedStyle, as the package already does; the doc should say where a non-reduced value is readable on web and Lit.
+- Combobox: the web notes make the toggle Button tabIndex=-1 (the input is the only tab stop, per APG), but the Lit notes say nothing and ds-button exposes no tabindex prop. Left the toggle tabbable on Lit.
+- Combobox: copy.done is not rendered on web and is only used by the RN sheet footer; the Lit notes don't say. Not rendered on Lit.
+- Combobox: with multiple + allowCustom, committing typed text that matches an already-selected option could mean toggle it off (as Enter on that option does) or leave it selected. Chose to leave it selected and clear the text.
+- Combobox: Alt+ArrowDown while the list is already open has no rule. Chose to do nothing.
+- Combobox: a controlled open and the effective-state `open` attribute share one attribute name: the element suppresses its own mirror writes, but a consumer who sets the attribute makes the element controlled. The doc should say whether that is intended.
+- Combobox: popupBorderWidth was missing from the previous Lit type, and the Listbox was given a `labelledBy` attribute the Listbox never reads (its attribute is `labelled-by`, and label IDREFs cannot cross its shadow root anyway). Passed `label` instead; the doc could state that the Lit listbox is named by the combobox label.
+- Combobox: guidance says the Default story's args are the fruit-picker example, while the Keyboard gate needs at least three focusable children; with the three fruit options that only holds when a value is set (so the clear button renders). The Keyboard story sets defaultValue 'apple' for that reason.

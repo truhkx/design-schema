@@ -1,20 +1,17 @@
 {
   "Accordion.web": {
-    "hash": "00e494c8171c1a08",
-    "lastAttemptHash": "00e494c8171c1a08",
-    "generatedAt": "2026-09-16T12:56:14+00:00",
+    "hash": "1136a5f17755013a",
+    "lastAttemptHash": "1136a5f17755013a",
+    "generatedAt": "2026-09-17T16:03:08+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.3957,
+    "costUsd": 1.6148,
     "files": [
-      "packages/react/src/Accordion.css",
-      "packages/react/src/Accordion.stories.tsx",
       "packages/react/src/Accordion.test.tsx",
-      "packages/react/src/Accordion.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Accordion.tsx"
     ],
-    "gaps": 10,
+    "gaps": 6,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -264,20 +261,21 @@
     }
   },
   "Combobox.web": {
-    "hash": "c9103d2907677298",
-    "lastAttemptHash": "c9103d2907677298",
-    "generatedAt": "2026-09-16T12:44:17+00:00",
+    "hash": "052488a3d1991603",
+    "lastAttemptHash": "052488a3d1991603",
+    "generatedAt": "2026-09-17T15:56:57+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 4.1577,
+    "costUsd": 1.1836,
     "files": [
       "packages/react/src/Combobox.css",
       "packages/react/src/Combobox.stories.tsx",
       "packages/react/src/Combobox.test.tsx",
-      "packages/react/src/Combobox.tsx"
+      "packages/react/src/Combobox.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 15,
+    "gaps": 6,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -651,21 +649,24 @@
     }
   },
   "Listbox.web": {
-    "hash": "7acb485349cd55e7",
-    "lastAttemptHash": "7acb485349cd55e7",
-    "generatedAt": "2026-09-16T12:13:53+00:00",
+    "hash": "968da388432a7dec",
+    "lastAttemptHash": "968da388432a7dec",
+    "generatedAt": "2026-09-17T15:42:20+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.5196,
+    "costUsd": 2.6635,
     "files": [
+      "packages/react/src/Combobox.tsx",
       "packages/react/src/Listbox.css",
       "packages/react/src/Listbox.stories.tsx",
       "packages/react/src/Listbox.test.tsx",
       "packages/react/src/Listbox.tsx",
-      "packages/react/src/Select.tsx"
+      "packages/react/src/Select.stories.tsx",
+      "packages/react/src/Select.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 15,
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -862,19 +863,21 @@
     }
   },
   "SegmentedControl.web": {
-    "hash": "bcdc44ad8525f064",
-    "lastAttemptHash": "bcdc44ad8525f064",
-    "generatedAt": "2026-09-16T12:04:05+00:00",
+    "hash": "da55465db3725fbe",
+    "lastAttemptHash": "da55465db3725fbe",
+    "generatedAt": "2026-09-17T15:35:16+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.2764,
+    "costUsd": 1.0089,
     "files": [
+      "packages/react/src/SegmentedControl.css",
       "packages/react/src/SegmentedControl.stories.tsx",
       "packages/react/src/SegmentedControl.test.tsx",
-      "packages/react/src/SegmentedControl.tsx"
+      "packages/react/src/SegmentedControl.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 12,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -885,20 +888,18 @@
     }
   },
   "Select.web": {
-    "hash": "57c77a06be87ebd2",
-    "lastAttemptHash": "57c77a06be87ebd2",
-    "generatedAt": "2026-09-16T12:26:46+00:00",
+    "hash": "d607dd63e5ac56f6",
+    "lastAttemptHash": "d607dd63e5ac56f6",
+    "generatedAt": "2026-09-17T15:51:48+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.6285,
+    "costUsd": 2.0098,
     "files": [
       "packages/react/src/Select.css",
-      "packages/react/src/Select.stories.tsx",
-      "packages/react/src/Select.test.tsx",
       "packages/react/src/Select.tsx"
     ],
-    "gaps": 16,
+    "gaps": 11,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1074,20 +1075,20 @@
     }
   },
   "Tabs.web": {
-    "hash": "5bfb2b620e622e36",
-    "lastAttemptHash": "5bfb2b620e622e36",
-    "generatedAt": "2026-09-16T11:54:56+00:00",
+    "hash": "cb628460aef2c370",
+    "lastAttemptHash": "cb628460aef2c370",
+    "generatedAt": "2026-09-17T15:30:23+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.4209,
+    "costUsd": 1.5862,
     "files": [
       "packages/react/src/Tabs.css",
       "packages/react/src/Tabs.stories.tsx",
       "packages/react/src/Tabs.test.tsx",
       "packages/react/src/Tabs.tsx"
     ],
-    "gaps": 9,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,

@@ -215,6 +215,10 @@ export class DsAccordion extends LitElement {
       this.warnExclusive(this.value);
       this.reportControlledChange();
     } else if (changed.has('exclusive')) {
+      // Turning `exclusive` on trims the open set to its first id, silently.
+      if (this.exclusive && this.internalOpenIds.length > 1) {
+        this.internalOpenIds = this.internalOpenIds.slice(0, 1);
+      }
       this.renderedIds = this.openIds;
     }
     if (changed.has('overrides')) {
@@ -348,7 +352,8 @@ export class DsAccordion extends LitElement {
     let next: string[];
     let closed: string[] = [];
     if (open) {
-      closed = this.exclusive ? current.filter((existing) => existing !== id) : [];
+      // Sections `exclusive` closes are reported in item order.
+      closed = this.exclusive ? this.inItemOrder(current.filter((existing) => existing !== id)) : [];
       next = this.exclusive ? [id] : current.includes(id) ? current : [...current, id];
     } else {
       next = current.filter((existing) => existing !== id);
@@ -375,12 +380,20 @@ export class DsAccordion extends LitElement {
     this.renderedIds = next;
     this.emittedIds = undefined;
     if (emitted !== undefined && sameMembers(emitted, next)) return;
-    for (const id of next) {
-      if (!previous.includes(id)) this.dispatchOpenChange(id, true, 'controlled');
+    for (const id of this.inItemOrder([...next, ...previous])) {
+      const open = next.includes(id);
+      if (open !== previous.includes(id)) this.dispatchOpenChange(id, open, 'controlled');
     }
-    for (const id of previous) {
-      if (!next.includes(id)) this.dispatchOpenChange(id, false, 'controlled');
-    }
+  }
+
+  /** The given ids sorted by section order; ids naming no section keep their relative order at the end. */
+  private inItemOrder(ids: readonly string[]): string[] {
+    const order = this.items ? this.items.map((item) => item.id) : this.slottedItems.map((el) => el.id);
+    const rank = (id: string): number => {
+      const index = order.indexOf(id);
+      return index === -1 ? order.length : index;
+    };
+    return [...new Set(ids)].sort((a, b) => rank(a) - rank(b));
   }
 
   private dispatchChange(openIds: string[]): void {

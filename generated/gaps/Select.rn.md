@@ -36,3 +36,18 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Select: accessibilityValue is omitted when nothing is selected; the rn notes say text is the selected label(s) but not what to expose when empty (SwiftUI uses the placeholder).
 - Select: the anatomy parts label, description, value and chevron have no testIDs because Text and Icon take none; only Select, Select.trigger, Select.popup, Select.scrim and Select.errorMessage are addressable.
 - Select: the `Enter`/`Escape` behavior scenarios are web/lit only, so there is no rn test proving Escape (onRequestClose) keeps the value and restores focus.
+
+## 2026-09-17 11:55 — round 1
+
+- Select: the parts' `element: span` prop can't be passed on React Native. The package's Text has no `element` prop, so I left it out; the spec should say the prop is web/Lit only.
+- Select: the RN notes say to pass `testID="Select.<part>"` to the composed Text and Icon, but neither component accepts `testID`. As Input does, I wrapped each part in a `View` carrying the testID. Either Text and Icon should accept testID, or the notes should describe the wrapper.
+- Select: the chevron's locked `chevron` binding is only reachable through Icon's `overrides.color`. I forwarded `color.foreground.muted` there instead of using Icon's `color` prop, which would win over the override. The spec doesn't say which of the two to use.
+- Select: the value Text's color comes from its `tone` (`default`/`muted`, per valueColor/placeholderColor), but the composition lists only `element` as the value part's props. 'Exactly the listed props' contradicts that, so I passed `tone` anyway. `tone` should be added to the value part's props.
+- Select: the spec doesn't say whether a forward sends the binding's default token or only a caller's override. I always send the token (override or default), because `fontSize` must follow `size` (`font.size.{size}`) and Text has no size prop in the composition.
+- Select: guidance says the Listbox gets `initialActiveValue` and Select's own `onChange`/`onActiveChange`, but the composition's listbox props list neither. It also doesn't mention Listbox's required `label`. I passed `label`, `initialActiveValue` and `onChange` and left out `onActiveChange`, since RN has no activedescendant to track.
+- Select: `focusRingWidth` says the width changes while 'keyboard-focused', but Pressable's onFocus/onBlur can't tell keyboard focus from touch focus. The ring shows on any focus.
+- Select: `enter` describes only the opening fade. I reused the same duration and easing for the closing fade on the popup Modal. The spec doesn't say how closing should animate; BottomSheet runs its own animation.
+- Select: whether the tablet/web popup is modal isn't declared (the form/overlay section has no `modal` or `dismiss`). I kept a transparent Modal with a scrim for outside-tap, `onRequestClose` for Android back, and a trapped FocusScope with `accessibilityViewIsModal` on the popup.
+- Select: guidance says Tab commits and closes and that focus leaving the Select closes it. Neither has a native form here, which the RN notes acknowledge for Tab; nothing handles focus leaving beyond the modal trap.
+- Select: `hideLabel` says 'visually hide'. On RN I don't render the label Text at all, and the trigger's accessibilityLabel stays the accessible name, so `Select.label` is absent when it's hidden.
+- Select: `copy.selectedCount` is formatted with `Intl.NumberFormat()` using the default locale. The spec doesn't name a locale source for RN.

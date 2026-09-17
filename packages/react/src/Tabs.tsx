@@ -1,14 +1,17 @@
 import {
   Children,
-  cloneElement,
+  createContext,
   isValidElement,
+  useContext,
   useEffect,
   useId,
   useLayoutEffect,
   useRef,
   useState,
   type ComponentPropsWithoutRef,
+  type Context,
   type CSSProperties,
+  type FocusEvent as ReactFocusEvent,
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactElement,
   type ReactNode,
@@ -80,23 +83,47 @@ function firstEnabledId(items: TabsItem[]): string | undefined {
 declare const process: { env: Record<string, string | undefined> } | undefined;
 const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
 
-export interface TabPanelProps extends Omit<ComponentPropsWithoutRef<'div'>, 'id' | 'className' | 'style'> {
-  /** Matches the `id` of the tab this panel belongs to. */
+interface TabsPanelContextValue {
+  tabDomId: (id: string) => string;
+  panelDomId: (id: string) => string;
+  selected: string | undefined;
+}
+
+/** Gives each TabPanel its prefixed DOM id, its labelling tab and its hidden state. */
+const TabsPanelContext: Context<TabsPanelContextValue | null> = createContext<TabsPanelContextValue | null>(null);
+
+export interface TabPanelProps extends Omit<ComponentPropsWithoutRef<'div'>, 'id' | 'className' | 'style' | 'hidden'> {
+  /** Matches the `id` of the tab this panel belongs to. The DOM id is this value prefixed per Tabs instance. */
   id: string;
   children: ReactNode;
 }
 
 /** The wrapper for one tab's content — a child of `Tabs`, one per tab, in the same order. */
 export function TabPanel({ ref, id, children, ...rest }: TabPanelProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
+  const ctx = useContext(TabsPanelContext);
   return (
-    <div {...rest} ref={ref} id={id} role="tabpanel" tabIndex={0} data-ds="TabPanel" data-part="panel" className="ds-tabs__panel">
+    <div
+      {...rest}
+      ref={ref}
+      id={ctx ? ctx.panelDomId(id) : id}
+      role="tabpanel"
+      aria-labelledby={ctx ? ctx.tabDomId(id) : undefined}
+      tabIndex={0}
+      hidden={ctx ? id !== ctx.selected : undefined}
+      data-ds="TabPanel"
+      data-part="panel"
+      className="ds-tabs__panel"
+    >
       {children}
     </div>
   );
 }
 
 export interface TabsProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children' | 'onChange' | 'defaultValue' | 'className' | 'style'> {
-  /** The tabs in order. `badge` is a short count or status shown after the label ("3", "New"). */
+  /**
+   * The tabs in order. `badge` is a short count or status shown after the label ("3", "New"). The
+   * icon is an Icon at `size: md` (the label's size) in the tab's current foreground color.
+   */
   tabs: TabsItem[];
   /**
    * One panel per tab, in the same order, each wrapped in the exported `TabPanel` with a matching
@@ -116,7 +143,10 @@ export interface TabsProps extends Omit<ComponentPropsWithoutRef<'div'>, 'childr
   activation?: TabsActivation | undefined;
   /** Vertical tab lists sit beside their panels and use Up/Down arrows. */
   orientation?: TabsOrientation | undefined;
-  /** `start` packs tabs at the start; `fill` stretches them across the width (phones, two to four tabs). */
+  /**
+   * `start` packs tabs at the start; `fill` stretches them across the width (phones, two to four
+   * tabs). Horizontal only: vertical tabs always span the list's inline size.
+   */
   fit?: TabsFit | undefined;
   /** Keep unselected panels in the tree (hidden) so their state survives switching. */
   keepMounted?: boolean | undefined;
@@ -151,40 +181,41 @@ export function Tabs({
   ...rest
 }: TabsProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
   const baseId = `ds-tabs${useId()}`;
+  const tabDomId = (id: string): string => `${baseId}-tab-${id}`;
+  const panelDomId = (id: string): string => `${baseId}-panel-${id}`;
   const listRef = useRef<HTMLDivElement>(null);
   const tabRefs = useRef(new Map<string, HTMLButtonElement>());
 
-  const items = tabs;
   const allPanels = Children.toArray(children).filter(isValidElement) as ReactElement<TabPanelProps>[];
   const panelIds = new Set(allPanels.map((panel) => panel.props.id));
-  const tabIds = new Set(items.map((tab) => tab.id));
-  // A tab without a matching panel, or a panel without a tab, is not rendered.
-  const renderTabs = items.filter((tab) => panelIds.has(tab.id));
+  const tabIds = new Set(tabs.map((tab) => tab.id));
+  // A tab without a panel is still rendered (its panel region is empty); a panel without a tab is not shown.
   const panels = allPanels.filter((panel) => tabIds.has(panel.props.id));
 
   const orphanKey = [
-    ...items.filter((tab) => !panelIds.has(tab.id)).map((tab) => `tab:${tab.id}`),
+    ...tabs.filter((tab) => !panelIds.has(tab.id)).map((tab) => `tab:${tab.id}`),
     ...allPanels.filter((panel) => !tabIds.has(panel.props.id)).map((panel) => `panel:${panel.props.id}`),
   ].join('|');
 
   useEffect(() => {
     if (!isDev || !orphanKey) return;
     for (const entry of orphanKey.split('|')) {
-      const [kind, id] = entry.split(':');
+      const kind = entry.slice(0, entry.indexOf(':'));
+      const id = entry.slice(entry.indexOf(':') + 1);
       console.warn(
         kind === 'tab'
-          ? `Tabs: tab "${id}" has no matching TabPanel; it is not rendered.`
-          : `Tabs: TabPanel "${id}" has no matching tab; it is not rendered.`,
+          ? `Tabs: tab "${id}" has no matching TabPanel; its panel region is empty.`
+          : `Tabs: TabPanel "${id}" has no matching tab; it is not shown.`,
       );
     }
   }, [orphanKey]);
 
   const isControlled = value !== undefined;
-  const [internalValue, setInternalValue] = useState<string | undefined>(() => defaultValue ?? firstEnabledId(renderTabs));
+  const [internalValue, setInternalValue] = useState<string | undefined>(() => defaultValue ?? firstEnabledId(tabs));
   const selected = isControlled ? value : internalValue;
 
   // The roving-tabindex target: follows the selection, but under manual activation leads it until
-  // Enter/Space catches the selection up.
+  // Enter/Space catches the selection up, or focus leaves the list.
   const [activeId, setActiveId] = useState<string | undefined>(selected);
   const [indicatorStyle, setIndicatorStyle] = useState<CSSProperties | undefined>(undefined);
 
@@ -192,8 +223,8 @@ export function Tabs({
     setActiveId(selected);
   }, [selected]);
 
-  // Only enabled, rendered tabs can hold the tab stop; fall back to the first enabled one.
-  const enabled = renderTabs.filter((tab) => !tab.disabled);
+  // Only enabled tabs can hold the tab stop; fall back to the first enabled one.
+  const enabled = tabs.filter((tab) => !tab.disabled);
   const tabStopId = enabled.some((tab) => tab.id === activeId) ? activeId : enabled[0]?.id;
 
   const selectTab = (id: string): void => {
@@ -202,7 +233,7 @@ export function Tabs({
     onChange?.(id);
   };
 
-  // Position the indicator on the selected tab and keep that tab scrolled into view within the list.
+  // Position the indicator on the selected tab and keep that tab in view within the list.
   useLayoutEffect(() => {
     const list = listRef.current;
     const tabEl = selected ? tabRefs.current.get(selected) : undefined;
@@ -224,19 +255,24 @@ export function Tabs({
     };
     measure();
 
-    // Scroll the list only, never the page.
+    // Scroll the list only, never the page (no scrollIntoView).
     if (orientation === 'horizontal') {
       const start = tabEl.offsetLeft;
       const end = start + tabEl.offsetWidth;
       if (start < list.scrollLeft) list.scrollLeft = start;
       else if (end > list.scrollLeft + list.clientWidth) list.scrollLeft = end - list.clientWidth;
+    } else {
+      const start = tabEl.offsetTop;
+      const end = start + tabEl.offsetHeight;
+      if (start < list.scrollTop) list.scrollTop = start;
+      else if (end > list.scrollTop + list.clientHeight) list.scrollTop = end - list.clientHeight;
     }
 
     if (typeof ResizeObserver === 'undefined') return undefined;
     const observer = new ResizeObserver(measure);
     observer.observe(list);
     return () => observer.disconnect();
-  }, [selected, orientation, fit, renderTabs.length]);
+  }, [selected, orientation, fit, tabs.length]);
 
   const handleListKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>): void => {
     if (enabled.length === 0) return;
@@ -281,6 +317,14 @@ export function Tabs({
     }
   };
 
+  // Tab from outside lands on the selected tab: once focus leaves the list, the stop returns to it.
+  const handleListBlur = (event: ReactFocusEvent<HTMLDivElement>): void => {
+    const next = event.relatedTarget as Node | null;
+    if (!next || !listRef.current?.contains(next)) {
+      if (activeId !== selected) setActiveId(selected);
+    }
+  };
+
   const mountedPanelIds = new Set(panels.map((panel) => panel.props.id).filter((id) => keepMounted || id === selected));
 
   return (
@@ -297,10 +341,11 @@ export function Tabs({
         aria-label={label}
         aria-orientation={orientation}
         data-part="tablist"
-        className="ds-tabs__list"
+        className="ds-tabs__tablist"
         onKeyDown={handleListKeyDown}
+        onBlur={handleListBlur}
       >
-        {renderTabs.map((tab, index) => {
+        {tabs.map((tab) => {
           const isSelected = tab.id === selected;
           return (
             <button
@@ -311,13 +356,11 @@ export function Tabs({
               }}
               type="button"
               role="tab"
-              id={`${baseId}-tab-${tab.id}`}
+              id={tabDomId(tab.id)}
               data-tab-id={tab.id}
               aria-selected={isSelected ? 'true' : 'false'}
-              aria-controls={mountedPanelIds.has(tab.id) ? tab.id : undefined}
+              aria-controls={mountedPanelIds.has(tab.id) ? panelDomId(tab.id) : undefined}
               aria-disabled={tab.disabled ? 'true' : undefined}
-              aria-posinset={index + 1}
-              aria-setsize={renderTabs.length}
               tabIndex={tab.id === tabStopId ? 0 : -1}
               data-part="tab"
               className={[
@@ -335,14 +378,14 @@ export function Tabs({
             >
               {tab.icon ? (
                 <span className="ds-tabs__tab-icon" data-part="tabIcon">
-                  <Icon name={tab.icon} inline />
+                  <Icon name={tab.icon} size="md" />
                 </span>
               ) : null}
               <span className="ds-tabs__tab-label" data-part="tabLabel">
                 {tab.label}
               </span>
               {tab.badge ? (
-                <span className="ds-tabs__badge" data-part="tabBadge">
+                <span className="ds-tabs__tab-badge" data-part="tabBadge">
                   {/* Keeps the badge a separate word in the tab's name ("Inbox 3"). */}
                   {' '}
                   {tab.badge}
@@ -354,15 +397,9 @@ export function Tabs({
         <span aria-hidden="true" data-part="indicator" className="ds-tabs__indicator" style={indicatorStyle} />
       </div>
       <div className="ds-tabs__panels">
-        {panels.map((panel) => {
-          const panelId = panel.props.id;
-          if (!mountedPanelIds.has(panelId)) return null;
-          return cloneElement(panel, {
-            key: panelId,
-            'aria-labelledby': `${baseId}-tab-${panelId}`,
-            hidden: panelId !== selected,
-          });
-        })}
+        <TabsPanelContext.Provider value={{ tabDomId, panelDomId, selected }}>
+          {panels.filter((panel) => mountedPanelIds.has(panel.props.id))}
+        </TabsPanelContext.Provider>
       </div>
     </div>
   );

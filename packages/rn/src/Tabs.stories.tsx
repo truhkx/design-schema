@@ -1,11 +1,11 @@
 import type * as React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Tabs, TabPanel } from './Tabs';
-import type { TabsProps, TabsTab } from './Tabs';
+import type { TabsItem, TabsProps } from './Tabs';
 import { Text } from './Text';
 import { withTheme } from './decorators';
 
-const TABS: TabsTab[] = [
+const TABS: TabsItem[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'activity', label: 'Activity', badge: '3' },
   { id: 'files', label: 'Files', icon: 'external' },
@@ -13,7 +13,7 @@ const TABS: TabsTab[] = [
 ];
 
 /** One TabPanel per tab, matching ids — the examples' `children`. */
-function panelsFor(tabs: TabsTab[]): React.JSX.Element[] {
+function panelsFor(tabs: TabsItem[]): React.JSX.Element[] {
   return tabs.map((tab) => (
     <TabPanel key={tab.id} id={tab.id}>
       <Text>{`${tab.label} panel.`}</Text>
@@ -57,8 +57,22 @@ export const WithOverrides: Story = {
   args: { overrides: { radius: 'radius.md', tabPaddingInline: 'space.lg' } },
 };
 
-/** At least three focusable tabs, for the axe gate and manual keyboard checks on react-native-web; accepts `orientation` as an arg. */
-export const Keyboard: Story = { args: { orientation: 'horizontal' } };
+/**
+ * `activation: manual` with three enabled tabs, for the axe gate and manual keyboard checks on
+ * react-native-web; `orientation` comes from the args so the vertical rules run against it too.
+ */
+export const Keyboard: Story = {
+  args: {
+    activation: 'manual',
+    orientation: 'horizontal',
+    tabs: [
+      { id: 'overview', label: 'Overview' },
+      { id: 'activity', label: 'Activity', badge: '3' },
+      { id: 'files', label: 'Files' },
+    ],
+  },
+  argTypes: { orientation: { control: 'inline-radio', options: ['horizontal', 'vertical'] } },
+};
 
 // examples
 export const AccountSections: Story = {

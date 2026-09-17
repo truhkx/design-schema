@@ -31,3 +31,13 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Tabs: the icon size inside a tab is unspecified; chose Icon `size="sm"` with the tab's foreground color.
 - Tabs: for `orientation: vertical` with `fit: start` the rn notes only describe a horizontal ScrollView; used a vertical ScrollView so a long vertical list also scrolls with the selected tab kept in view.
 - Tabs: `tabs` shape `icon?: IconName` is used verbatim, so under exactOptionalPropertyTypes callers cannot pass an explicit `undefined` for icon/disabled/badge, unlike the package's usual `?: T | undefined`.
+
+## 2026-09-17 11:33 — round 1
+
+- Tabs: the doc names the exported item type `TabsItem`, but the package already exported `TabsTab`; I renamed it without a deprecated alias (the schema lists no deprecation) and updated the RN demo, so anyone importing `TabsTab` breaks.
+- Tabs: `fit` says fill has no effect when vertical, and the RN note says a 'vertical list with fit: start' is a ScrollView, which leaves vertical + fill unspecified; I treat vertical + fill exactly like vertical + start (a scrolling list).
+- Tabs: 'a tab without a matching panel is still rendered (its panel region is empty)' does not say whether an empty panel View (with its accessibilityLabel) should exist; RN renders no panel View for it, so screen readers get no empty region.
+- Tabs: the Enter/Space keyboard rule (manual activation) has no RN-specific instruction; it relies on react-native-web's Pressable turning Enter/Space into a press, with no explicit key handling in the list's onKeyDown.
+- Tabs: `badgeSize` gives only a font size and line height; the badge's font weight is unspecified, so it uses the platform default weight rather than the tab label's `fontWeight`.
+- Tabs: the RN note says a disabled tab is 'non-focusable on react-native-web only' but not what the roving tab stop is when the selected tab is disabled or nothing is selected; I use the first enabled tab.
+- Tabs: the behavior scenarios cover no RN keyboard behavior, and `the-selected-tab-is-marked-selected` is web-only, although RN has an equivalent (accessibilityState.selected); the click scenarios assert toBeSelected on RN as a stand-in.

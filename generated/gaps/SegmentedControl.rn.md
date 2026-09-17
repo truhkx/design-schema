@@ -31,3 +31,13 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - SegmentedControl: `iconOnly` requires every option to have an icon but doesn't say what happens when one is missing; RN warns under __DEV__ and renders that segment empty.
 - SegmentedControl: the options count ('Two to five') has no stated enforcement; no warning added.
 - SegmentedControl: the `segmentGap` part is `segment`, but that is the icon-to-label gap; with `iconOnly` there's only one child, so it has no effect.
+
+## 2026-09-17 11:38 — round 1
+
+- SegmentedControl: the segmentIcon size is not given (Tabs uses Icon size md). I kept size sm for both control sizes, because every RN segment already reaches size.target.comfortable and sm keeps the pill tight at toolbar height.
+- SegmentedControl: 'warns in development (once)' does not say once per instance, once per option or once per app. I chose once per instance, with one message listing every option that has no icon.
+- SegmentedControl: the options `shape` has `icon?: IconName; disabled?: boolean` with no `| undefined`. Under exactOptionalPropertyTypes a caller cannot pass `icon: undefined`. I used the shape verbatim as the rule says, but it contradicts the package convention `name?: T | undefined`.
+- SegmentedControl: when the value matches no option, the spec says 'draws no pill' but not whether it should animate out or vanish. I unmount it, and the next selection snaps it into place without sliding.
+- SegmentedControl: the spec says arrows move 'from there' (the tab stop) when the value names a disabled option or none. On react-native-web, a key only reaches the group after a segment has focus, so the tab-stop fallback only matters if focus tracking misses. I read from the focused segment first, then the tab stop.
+- SegmentedControl: the has-accessible-name scenario cannot use getByRole('radiogroup'). The group is not `accessible`, because that would merge the segments into one accessibility stop, so the test reads role and name from testID `SegmentedControl`.
+- SegmentedControl: the `Keyboard` story rule asks for 'at least three focusable children', but roving `focusable` on react-native-web leaves one tab stop. The story has three segments and one of them is focusable.

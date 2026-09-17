@@ -35,13 +35,24 @@ export type SegmentedControlOverridableBinding =
 export interface SegmentedControlProps {
   /** Accessible name of the control ("View mode"). Not shown; put a visible Text label beside it when the meaning is not obvious from context. */
   label: string;
-  /** Two to five options. Labels are one word; with `iconOnly` the label becomes the accessible name. */
+  /**
+   * Two to five options (guidance, not enforced: any count renders, with no warning). Labels
+   * are one word; with `iconOnly` the label becomes the accessible name.
+   */
   options: { value: string; label: string; icon?: IconName; disabled?: boolean }[];
   /** Controlled selected value. Omit for uncontrolled. */
   value?: string | undefined;
-  /** Initially selected value. Defaults to the first enabled option — a segmented control always has a selection. */
+  /**
+   * Initially selected value. Defaults to the first enabled option — a segmented control
+   * always has a selection. A `value` or `defaultValue` is taken as given, never corrected:
+   * one naming a disabled option keeps that segment checked with the pill under it; one
+   * matching no option checks nothing and draws no pill.
+   */
   defaultValue?: string | undefined;
-  /** Show icons only (every option must have one); labels become accessible names. */
+  /**
+   * Show icons only (every option must have one); labels become accessibility labels. An
+   * option without `icon` warns in development (once) and shows its label as text instead.
+   */
   iconOnly?: boolean | undefined;
   /** Toolbar (`sm`) or standard (`md`) height. */
   size?: SegmentedControlSize | undefined;
@@ -115,13 +126,16 @@ export function SegmentedControl({
   const [internalValue, setInternalValue] = React.useState<string | undefined>(defaultValue ?? firstEnabledValue);
   const currentValue = isControlled ? value : internalValue;
 
+  const hasWarnedIconRef = React.useRef(false);
   React.useEffect(() => {
-    if (__DEV__ && iconOnly) {
-      options.forEach((option) => {
-        if (option.icon === undefined) {
-          console.warn(`SegmentedControl: option "${option.value}" has no icon, but iconOnly is set.`);
-        }
-      });
+    if (__DEV__ && iconOnly && !hasWarnedIconRef.current) {
+      const missing = options.filter((option) => option.icon === undefined).map((option) => `"${option.value}"`);
+      if (missing.length > 0) {
+        hasWarnedIconRef.current = true;
+        console.warn(
+          `SegmentedControl: iconOnly is set but option ${missing.join(', ')} has no icon; its label is shown as text instead.`,
+        );
+      }
     }
   }, [iconOnly, options]);
 
@@ -175,11 +189,17 @@ export function SegmentedControl({
     [reducedMotion, transitionDuration, t.motionEasingStandard, pillX, pillWidth, pillY, pillHeight],
   );
 
+  // A value matching no option checks nothing and draws no pill (never corrected).
+  const hasSelectedOption = options.some((option) => option.value === currentValue);
+
   React.useEffect(() => {
-    if (currentValue !== undefined) {
+    if (currentValue !== undefined && hasSelectedOption) {
       updatePill(currentValue);
+    } else {
+      // The pill unmounts; the next selection places it without sliding in from a stale spot.
+      hasMeasuredRef.current = false;
     }
-  }, [currentValue, updatePill]);
+  }, [currentValue, hasSelectedOption, updatePill]);
 
   const handleSegmentLayout = (optionValue: string, event: LayoutChangeEvent): void => {
     const { x, y, width, height } = event.nativeEvent.layout;
@@ -200,13 +220,18 @@ export function SegmentedControl({
     onChange?.(optionValue);
   };
 
+  // The roving tab stop on web: the selected segment when it is enabled, else the first enabled one.
+  const tabStopValue = enabledOptions.some((option) => option.value === currentValue) ? currentValue : firstEnabledValue;
+
   // react-native-web only: View has no key events on iOS/Android.
   const handleKeyDown = (event: { key?: string; nativeEvent?: { key?: string }; preventDefault?: () => void }): void => {
     const key = event.key ?? event.nativeEvent?.key;
     if (enabledOptions.length === 0 || key === undefined) {
       return;
     }
-    const fromValue = focusedValueRef.current ?? currentValue;
+    // Arrows move from the focused segment, else from the tab stop (the first enabled segment
+    // when the value names a disabled option or none).
+    const fromValue = focusedValueRef.current ?? tabStopValue;
     const fromIndex = enabledOptions.findIndex((option) => option.value === fromValue);
     const nextKeys = rtl ? ['ArrowLeft', 'ArrowDown'] : ['ArrowRight', 'ArrowDown'];
     const prevKeys = rtl ? ['ArrowRight', 'ArrowUp'] : ['ArrowLeft', 'ArrowUp'];
@@ -230,9 +255,6 @@ export function SegmentedControl({
 
   const keyProps: Record<string, unknown> = isWeb ? { onKeyDown: handleKeyDown } : {};
 
-  // The roving tab stop on web: the selected segment, or the first enabled one.
-  const tabStopValue = enabledOptions.some((option) => option.value === currentValue) ? currentValue : firstEnabledValue;
-
   const styleTokens: SegmentStyleTokens = {
     paddingInline: segmentPaddingInline,
     paddingBlock: size === 'sm' ? paddingBlockSm : paddingBlockMd,
@@ -242,6 +264,8 @@ export function SegmentedControl({
     disabledOpacity,
     focusRingColor: t.colorBorderFocus,
     focusRingWidth: t.borderWidthFocus,
+    // segmentRadius: the pill's corners, which the focus ring shares.
+    radius: segmentRadius,
     fontFamily,
     fontSize,
     fontWeight,
@@ -283,13 +307,15 @@ export function SegmentedControl({
       accessibilityLabel={label}
       style={groupStyle}
     >
-      <Animated.View
-        testID="SegmentedControl.indicator"
-        style={pillStyle}
-        pointerEvents="none"
-        accessibilityElementsHidden
-        importantForAccessibility="no"
-      />
+      {hasSelectedOption ? (
+        <Animated.View
+          testID="SegmentedControl.indicator"
+          style={pillStyle}
+          pointerEvents="none"
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        />
+      ) : null}
       {options.map((option) => (
         <Segment
           key={option.value}
@@ -329,6 +355,7 @@ interface SegmentStyleTokens {
   disabledOpacity: number;
   focusRingColor: string;
   focusRingWidth: number;
+  radius: number;
   fontFamily: string;
   fontSize: number;
   fontWeight: number;
@@ -382,8 +409,13 @@ function Segment({
     paddingVertical: s.paddingBlock,
     borderWidth: s.focusRingWidth,
     borderColor: focused ? s.focusRingColor : 'transparent',
+    borderRadius: s.radius,
     opacity: disabled ? s.disabledOpacity : 1,
   });
+
+  // With `iconOnly`, a segment whose option has no icon shows its label so it never renders empty.
+  const showIcon = option.icon !== undefined;
+  const showLabel = !iconOnly || !showIcon;
 
   const labelStyle: TextStyle = {
     fontFamily: s.fontFamily,
@@ -421,12 +453,12 @@ function Segment({
       onLayout={(event) => onMeasured(option.value, event)}
       style={rowStyle}
     >
-      {option.icon !== undefined ? (
+      {showIcon ? (
         <View testID="SegmentedControl.segmentIcon" accessibilityElementsHidden importantForAccessibility="no">
-          <Icon name={option.icon} size="sm" color={foreground} />
+          <Icon name={option.icon!} size="sm" color={foreground} />
         </View>
       ) : null}
-      {iconOnly ? null : (
+      {!showLabel ? null : (
         <RNText numberOfLines={1} style={labelStyle} testID="SegmentedControl.segmentLabel">
           {option.label}
         </RNText>

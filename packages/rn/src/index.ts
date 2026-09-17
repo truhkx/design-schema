@@ -143,7 +143,7 @@ export type {
   TabsOrientation,
   TabsOverridableBinding,
   TabsProps,
-  TabsTab,
+  TabsItem,
   TabPanelProps,
 } from './Tabs';
 

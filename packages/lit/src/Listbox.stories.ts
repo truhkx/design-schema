@@ -2,12 +2,12 @@ import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Listbox.js';
-import type { ListboxMaxVisible, ListboxOption, ListboxValue } from './Listbox.js';
+import type { ListboxMaxVisible, ListboxItem, ListboxValue } from './Listbox.js';
 
 interface ListboxArgs {
   label: string;
   labelledBy?: string | undefined;
-  options: ListboxOption[];
+  options: ListboxItem[];
   multiple: boolean;
   value?: ListboxValue | undefined;
   defaultValue?: ListboxValue | undefined;
@@ -24,19 +24,19 @@ interface ListboxArgs {
   maxVisible: ListboxMaxVisible;
 }
 
-const FRUIT_OPTIONS: ListboxOption[] = [
+const FRUIT_OPTIONS: ListboxItem[] = [
   { value: 'apple', label: 'Apple' },
   { value: 'banana', label: 'Banana' },
   { value: 'cherry', label: 'Cherry' },
 ];
 
-const PLAN_OPTIONS: ListboxOption[] = [
+const PLAN_OPTIONS: ListboxItem[] = [
   { value: 'starter', label: 'Starter', description: 'For individuals trying things out' },
   { value: 'team', label: 'Team', description: 'For small teams shipping together' },
   { value: 'enterprise', label: 'Enterprise', description: 'For organizations with custom needs', icon: 'info' },
 ];
 
-const MANY_OPTIONS: ListboxOption[] = Array.from({ length: 20 }, (_, index) => ({
+const MANY_OPTIONS: ListboxItem[] = Array.from({ length: 20 }, (_, index) => ({
   value: `option-${index + 1}`,
   label: `Option ${index + 1}`,
 }));
@@ -65,7 +65,7 @@ const meta: Meta<ListboxArgs> = {
   render: (args) => html`
     <ds-listbox
       label=${args.label}
-      labelledBy=${ifDefined(args.labelledBy)}
+      labelled-by=${ifDefined(args.labelledBy)}
       .options=${args.options}
       ?multiple=${args.multiple}
       .value=${args.value}

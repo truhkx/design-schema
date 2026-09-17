@@ -3,12 +3,12 @@ import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Select.js';
 import type { SelectNative, SelectSize, SelectValue } from './Select.js';
-import type { ListboxOption } from './Listbox.js';
+import type { ListboxItem } from './Listbox.js';
 
 interface SelectArgs {
   label: string;
   name: string;
-  options: ListboxOption[];
+  options: ListboxItem[];
   value?: SelectValue | undefined;
   defaultValue?: SelectValue | undefined;
   placeholder?: string | undefined;
@@ -24,7 +24,7 @@ interface SelectArgs {
   native: SelectNative;
 }
 
-const COUNTRY_OPTIONS: ListboxOption[] = [
+const COUNTRY_OPTIONS: ListboxItem[] = [
   { value: 'ca', label: 'Canada' },
   { value: 'fr', label: 'France' },
   { value: 'jp', label: 'Japan' },

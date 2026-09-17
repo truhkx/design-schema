@@ -27,3 +27,14 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Tabs: the web tabpanel notes list no styling for panel text; I kept the existing panel font-size/line-height from the tabs' fontSize/lineHeight bindings and color from --color-foreground, which no binding names.
 - Tabs: the `tabs` shape is used verbatim, except optional fields also take `| undefined` for exactOptionalPropertyTypes (exported as TabsItem).
 - Tabs: `fit: fill` stretches tabs along the orientation axis in both orientations, but a vertical list is only as tall as its content, so fill has no visible effect when vertical.
+
+## 2026-09-17 11:30 — round 1
+
+- Tabs: the React panel DOM id is `id` prefixed with a useId base, but the spec does not say how TabPanel learns that base; chose an internal (unexported) context from Tabs that gives each TabPanel its DOM id, aria-labelledby and hidden state, and a TabPanel rendered outside Tabs falls back to its raw id.
+- Tabs: 'indicator flush against the list border' does not say whether the bar overlaps the border or sits inside it; because the list scrolls (overflow auto clips anything beyond the padding box), a negative offset over the border would be clipped, so the bar sits at inset 0 on top of the border.
+- Tabs: keyboard rule 'Tab moves focus to the selected tab' does not cover manual activation after arrows moved focus without selecting; chose to return the roving tab stop to the selected tab when focus leaves the list.
+- Tabs: native button Enter/Space still clicks under automatic activation; the keyboard table lists Enter/Space only for manual. Left native behaviour alone (under automatic the focused tab is already selected, so it is a no-op) and preventDefault only under manual.
+- Tabs: the web notes say the indicator is placed with inset-inline-start from the tab's offsetLeft, which is a physical (left) measurement, so in RTL the bar would be misplaced; kept the documented logical property, and the doc should say whether RTL is in scope.
+- Tabs: tab and panel ids are built from the consumer's `id` strings; an id containing whitespace makes an invalid IDREF. The spec gives no constraint on tab ids; chose none.
+- Tabs: the `a11y.requires` list says target-24px but the minTarget binding is size.target.comfortable (44px); followed the binding.
+- Tabs: the `overrides` prop is in the overrides contract but not in the schema props list; kept it as in every other component.

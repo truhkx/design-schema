@@ -287,6 +287,7 @@ export type {
   TabsActivation,
   TabsOrientation,
   TabsFit,
+  TabsItem,
   TabsTab,
   TabsChangeDetail,
   TabsOverridableBinding,
@@ -303,9 +304,9 @@ export type {
 export { DsListbox } from './Listbox.js';
 export type {
   ListboxMaxVisible,
-  ListboxItem,
-  ListboxGroupOption,
   ListboxOption,
+  ListboxGroup,
+  ListboxItem,
   ListboxValue,
   ListboxChangeDetail,
   ListboxActiveChangeDetail,

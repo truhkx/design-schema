@@ -23,3 +23,14 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - SegmentedControl: `selectedWeight`, `paddingBlockSm`, `fontFamily`, `fontSize`, `fontWeight`, `lineHeight`, `minTarget`, `focusRing`, `focusRingWidth`, `transition` and `disabledOpacity` have no `part`. Chose: set the hooks on the group root; the font, target, focus and disabled rules apply to segments and `transition` to the indicator.
 - SegmentedControl: for `iconOnly`, the doc says to wrap in Tooltip with `describes: false` (Tooltip supplies aria-labelledby) and also that 'labels become accessible names'; it doesn't say whether the button carries its own label. Chose: add `aria-label={option.label}` as a fallback while keeping Tooltip's labelledby.
 - SegmentedControl: the doc doesn't say what the pill does when a disabled segment is selected (e.g. `defaultValue` names a disabled option). Chose: the pill still sits under it and it shows aria-checked=true, but arrow navigation skips it.
+
+## 2026-09-17 11:35 — round 1
+
+- SegmentedControl: the `click-selects-a-segment` then-list has an `onChange` expectation with `with: list` restricted to lit/rn, so web only asserts the event fired; the React test also asserts `list`, since that is what the description implies.
+- SegmentedControl: `iconOnly` with an option lacking `icon` says the segment 'shows its label as text instead' but not whether it keeps the Tooltip wrap and `aria-label`; chose no Tooltip and no `aria-label` for that segment (the visible text names it).
+- SegmentedControl: Home/End appear in the schema keyboard block but not in the resolved Keyboard section (only the arrow pairs); implemented Home/End per the schema and Behavior prose.
+- SegmentedControl: RTL arrow swap is in the Behavior prose only, not the keyboard table; direction is read with getComputedStyle(group).direction at keydown.
+- SegmentedControl: the toolbar exception doesn't say what happens when focus sits on no enabled segment (tab stop fallback) and an arrow points outward; chose to move to the first/last enabled segment, which is inside the control.
+- SegmentedControl: 'warns in development (once)' does not say once per instance or once per page; chose a module-level flag (once per page load).
+- SegmentedControl: under controlled `value`, the arrow moves focus to a segment whose tabindex stays -1 until the parent updates `value`; the spec does not say whether the tab stop follows focus or the checked state — chose the checked state.
+- SegmentedControl: the `label` description says only Lit warns on empty; React has no warning (removed the previous one). `label` is required by type, but an empty string is not caught.

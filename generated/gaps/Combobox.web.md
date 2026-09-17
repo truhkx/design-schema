@@ -41,3 +41,12 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Combobox: the keyboard block marks Escape `when: list open`, but its action also describes the closed case; both are implemented (closed + clearable clears the text only, not the value).
 - Combobox: pressing the already-selected option in single mode produces no Listbox onChange (Listbox skips same-value commits), so the popup detects that click itself to restore the label and close.
 - Combobox: status copy for count 0 with the allowCustom row visible is unspecified; it announces copy.empty (the count excludes the synthetic row).
+
+## 2026-09-17 11:56 — round 1
+
+- Combobox: constant `statusDebounce` must come from the theme's standard `motion.duration.base`, 'never from a reduced-motion override that zeroes the token', but web has no way to read the non-reduced value at run time other than getComputedStyle of `--motion-duration-base`, which a reduced-motion media query would zero; kept the computed-style read (falls back to 0 when unreadable) — the doc should name a source for the unreduced value (a JS token export or a separate custom property).
+- Combobox: allowCustom says text matching an option commits that option's value, but does not say what happens when the matching option is disabled; chose to commit nothing (no custom string, no option).
+- Combobox: allowCustom + multiple where the typed text matches an already-selected option — Enter/comma is 'commit', not 'toggle'; chose to keep it selected (no onChange) and clear the text, unlike Enter on an active row, which toggles.
+- Combobox: onInputChange fires for 'the text a commit, Escape-to-clear or the clear button leaves behind', but the doc does not say whether it fires when that text equals the text already in the input; chose to fire only on an actual change.
+- Combobox: the `popupOffset` binding has no platform mechanism named for a position: fixed popup; applied as margin-block on the side the popup opened, which the 'spacing is never a margin' convention otherwise forbids.
+- Combobox: `iconColor` is locked and 'forwarded to each composed Icon's own color override', but Icon's color override type needs a TokenRef cast from the binding's token; the locked binding therefore has no root hook and is written as the literal token path color.foreground.muted at each Icon.

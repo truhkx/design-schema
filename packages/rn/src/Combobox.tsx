@@ -22,7 +22,7 @@ import { Icon } from './Icon';
 import { Listbox } from './Listbox';
 import type { ListboxGroup, ListboxItem, ListboxOption, ListboxValue } from './Listbox';
 import { Text } from './Text';
-import { toEasing, useReducedMotion, useTheme } from './theme';
+import { toEasing, toLineHeight, useReducedMotion, useTheme } from './theme';
 
 /** How typing narrows `options`. `none` never filters (type-ahead only); `async` leaves filtering to the consumer. */
 export type ComboboxFilter = 'startsWith' | 'contains' | 'none' | 'async';
@@ -47,6 +47,7 @@ export type ComboboxOverridableBinding =
   | 'helperSize'
   | 'popupSurface'
   | 'popupBorder'
+  | 'popupBorderWidth'
   | 'popupShadow'
   | 'popupRadius'
   | 'popupOffset'
@@ -218,7 +219,14 @@ export function Combobox({
 
   const emptyValue: ComboboxValue = multiple ? [] : '';
   const [internalValue, setInternalValue] = React.useState<ComboboxValue>(defaultValue ?? emptyValue);
-  const [internalInputText, setInternalInputText] = React.useState<string>('');
+  // Single mode shows the selected option's label in the input.
+  const [internalInputText, setInternalInputText] = React.useState<string>(() => {
+    const initial = value ?? defaultValue;
+    if (multiple || typeof initial !== 'string' || initial === '') {
+      return '';
+    }
+    return flattenOptions(options).find((option) => option.value === initial)?.label ?? initial;
+  });
   const [internalOpen, setInternalOpen] = React.useState(false);
   // The toggle button opens the full, unfiltered list for that opening; the next keystroke filters again.
   const [showAll, setShowAll] = React.useState(false);
@@ -254,6 +262,16 @@ export function Combobox({
   const selectedValue: string | undefined = !multiple && typeof currentValue === 'string' && currentValue !== '' ? currentValue : undefined;
   const hasSelection = multiple ? selectedValues.length > 0 : selectedValue !== undefined;
 
+  // A controlled `value` change rewrites the label without firing onInputChange.
+  const lastSingleValue = React.useRef(multiple ? undefined : currentValue);
+  React.useEffect(() => {
+    if (multiple || isInputControlled || typeof currentValue !== 'string' || lastSingleValue.current === currentValue) {
+      return;
+    }
+    lastSingleValue.current = currentValue;
+    setInternalInputText(currentValue === '' ? '' : labelFor(currentValue));
+  }, [multiple, isInputControlled, currentValue, labelFor]);
+
   const trimmedInput = currentInputText.trim();
   const needle = fold(trimmedInput);
 
@@ -280,14 +298,22 @@ export function Combobox({
   const typeAheadValue =
     filter === 'none' && needle !== '' ? flatOptions.find((option) => !option.disabled && fold(option.label).startsWith(needle))?.value : undefined;
 
-  const exactMatch = flatOptions.find((option) => fold(option.label) === needle || fold(option.value) === needle);
-  const showCustomRow = allowCustom && trimmedInput !== '' && exactMatch === undefined;
+  const isLoading = filter === 'async' && loading;
+  // One predicate for suppressing the custom row and for committing typed text: label or value, folded.
+  const findExactMatch = (text: string): ListboxOption | undefined => {
+    const key = fold(text);
+    return flatOptions.find((option) => fold(option.label) === key || fold(option.value) === key);
+  };
+  const exactMatch = findExactMatch(trimmedInput);
+  // While loading, stale results and the custom row are hidden; Listbox shows copy.loading in place of emptyMessage.
+  const showCustomRow = allowCustom && !isLoading && trimmedInput !== '' && exactMatch === undefined;
   const customOption: ListboxOption | null = showCustomRow
     ? { value: `${CUSTOM_PREFIX}${trimmedInput}`, label: COPY.addCustom.replace('{value}', trimmedInput) }
     : null;
-  const listboxItems: ListboxItem[] = customOption !== null ? [customOption, ...filteredItems] : filteredItems;
-  const resultCount = flattenOptions(filteredItems).length;
-  const isLoading = filter === 'async' && loading;
+  const visibleItems: ListboxItem[] = isLoading ? [] : filteredItems;
+  const listboxItems: ListboxItem[] = customOption !== null ? [customOption, ...visibleItems] : visibleItems;
+  // The count excludes the synthetic custom row.
+  const resultCount = flattenOptions(visibleItems).length;
 
   const validateValue = React.useCallback(
     (candidate: ComboboxValue): string | null => {
@@ -379,8 +405,8 @@ export function Combobox({
     const text = isLoading ? COPY.loading : resultCount === 0 ? COPY.empty : resultCountText(resultCount);
     const timeout = setTimeout(() => {
       setStatusText(text);
-      // Android reads the polite live region below; iOS needs the explicit announcement.
-      if (Platform.OS !== 'android') {
+      // Android (and react-native-web) read the polite live region; iOS has none, so only there is it announced.
+      if (Platform.OS === 'ios') {
         AccessibilityInfo.announceForAccessibility(text);
       }
     }, statusDebounce);
@@ -438,16 +464,6 @@ export function Combobox({
     closePopup(!usesSheet);
   };
 
-  const handleActiveChange = (active: string | null): void => {
-    if (active === null) {
-      return;
-    }
-    const option = listboxItems.length > 0 ? flattenOptions(listboxItems).find((o) => o.value === active) : undefined;
-    if (option !== undefined) {
-      AccessibilityInfo.announceForAccessibility(COPY.activeOption.replace('{option}', option.label));
-    }
-  };
-
   const handleTogglePress = (): void => {
     if (isDisabled) {
       return;
@@ -475,17 +491,19 @@ export function Combobox({
     commitValue(selectedValues.filter((v) => v !== chipValue));
   };
 
-  /** Commits `raw` as typed text: an option it names exactly, otherwise (allowCustom) a custom entry. */
-  const commitTyped = (raw: string): void => {
+  /**
+   * Commits `raw` as typed text: an option it names exactly (its `value`, never a custom string), otherwise
+   * (allowCustom) a custom entry. Multiple clears the input and stays open; single shows the committed text and closes.
+   * Returns false when nothing was committed.
+   */
+  const commitTyped = (raw: string): boolean => {
     const text = raw.trim();
     if (text === '') {
-      commitInputText('');
-      return;
+      return false;
     }
-    const key = fold(text);
-    const match = flatOptions.find((option) => !option.disabled && (fold(option.label) === key || fold(option.value) === key));
-    if (match === undefined && !allowCustom) {
-      return;
+    const match = findExactMatch(text);
+    if (match?.disabled === true || (match === undefined && !allowCustom)) {
+      return false;
     }
     const committed = match?.value ?? text;
     if (multiple) {
@@ -494,18 +512,23 @@ export function Combobox({
       }
       commitInputText('');
     } else {
-      commitValue(committed);
+      if (committed !== selectedValue) {
+        commitValue(committed);
+      }
       commitInputText(match?.label ?? text);
       closePopup(false);
     }
+    return true;
   };
 
   const handleChangeText = (text: string): void => {
     setShowAll(false);
     if (allowCustom && text.includes(',')) {
-      // A comma commits the text before it as a custom value and clears the input.
-      commitTyped(text.slice(0, text.indexOf(',')));
-      commitInputText('');
+      // A comma commits the text before it exactly as Enter does; with nothing to commit the comma is dropped.
+      const before = text.slice(0, text.indexOf(','));
+      if (!commitTyped(before)) {
+        commitInputText(before.trim() === '' ? '' : before);
+      }
       return;
     }
     commitInputText(text);
@@ -575,6 +598,7 @@ export function Combobox({
   const partGap = overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.space1;
   const popupSurface = overrides?.popupSurface ? (resolveToken(t, overrides.popupSurface) as string) : t.colorOverlaySurface;
   const popupBorder = overrides?.popupBorder ? (resolveToken(t, overrides.popupBorder) as string) : t.colorBorder;
+  const popupBorderWidth = overrides?.popupBorderWidth ? (resolveToken(t, overrides.popupBorderWidth) as number) : t.borderWidthThin;
   const popupShadow = overrides?.popupShadow ? (resolveToken(t, overrides.popupShadow) as typeof t.shadowOverlay) : t.shadowOverlay;
   const popupRadius = overrides?.popupRadius ? (resolveToken(t, overrides.popupRadius) as number) : t.radiusMd;
   const popupOffset = overrides?.popupOffset ? (resolveToken(t, overrides.popupOffset) as number) : t.space1;
@@ -668,13 +692,16 @@ export function Combobox({
     paddingVertical: chipPaddingBlock,
   };
 
+  const inputFontSize = overrides?.fontSize ? (resolveToken(t, overrides.fontSize) as number) : t.fontSizeMd;
+  const inputLineHeight = overrides?.lineHeight ? (resolveToken(t, overrides.lineHeight) as number) : t.fontLineHeightNormal;
   const inputTextStyle: TextStyle = {
     flexGrow: 1,
     flexShrink: 1,
     flexBasis: 0,
     minHeight: t.sizeTargetMin,
     fontFamily: overrides?.fontFamily ? (resolveToken(t, overrides.fontFamily) as string) : t.fontFamilyBody,
-    fontSize: overrides?.fontSize ? (resolveToken(t, overrides.fontSize) as number) : t.fontSizeMd,
+    fontSize: inputFontSize,
+    lineHeight: toLineHeight(inputFontSize, inputLineHeight),
     color: t.colorForeground,
   };
 
@@ -757,7 +784,6 @@ export function Combobox({
         emptyMessage={COPY.empty}
         initialActiveValue={typeAheadValue}
         onChange={handleListboxChange}
-        onActiveChange={handleActiveChange}
         overrides={listboxOverrides}
       />
     </View>
@@ -795,7 +821,7 @@ export function Combobox({
 
   const popupInnerStyle: ViewStyle = {
     borderRadius: popupRadius,
-    borderWidth: t.borderWidthThin,
+    borderWidth: popupBorderWidth,
     borderColor: popupBorder,
     backgroundColor: popupSurface,
     overflow: 'hidden',
@@ -881,7 +907,7 @@ export function Combobox({
           </View>
         </View>
       )}
-      {status}
+      {usesSheet ? null : status}
       {displayedError !== undefined ? (
         <View accessibilityLiveRegion={summarised ? 'none' : 'assertive'} testID="Combobox.errorMessage">
           <Text size="sm" tone="danger" overrides={helperOverrides}>
@@ -907,6 +933,7 @@ export function Combobox({
               {textInput}
               {clearButton}
             </View>
+            {status}
             {listbox}
           </View>
         </BottomSheet>

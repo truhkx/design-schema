@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Select } from './Select';
-import type { ListboxOption } from './Listbox';
+import type { ListboxItem, ListboxOption } from './Listbox';
 
 const COUNTRIES: ListboxOption[] = [
   { value: 'ca', label: 'Canada' },
@@ -12,7 +12,7 @@ const COUNTRIES: ListboxOption[] = [
   { value: 'us', label: 'United States' },
 ];
 
-const ROLES: ListboxOption[] = [
+const ROLES: ListboxItem[] = [
   {
     group: 'Engineering',
     options: [

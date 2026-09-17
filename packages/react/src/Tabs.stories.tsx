@@ -59,8 +59,13 @@ export const FitFill: Story = {
 export const KeepMounted: Story = { args: { keepMounted: true } };
 export const Controlled: Story = { args: { value: 'activity' } };
 
-/** Present with four tabs (three enabled); accepts `orientation` from the story URL. */
-export const Keyboard: Story = {};
+/** Manual activation over three enabled tabs; takes `orientation` from its args (story URL). */
+export const Keyboard: Story = {
+  args: { activation: 'manual', tabs: TABS.slice(0, 3), children: panelsFor(TABS.slice(0, 3)) },
+};
+
+/** A tab without a matching TabPanel is still rendered; its panel region is empty (dev warning). */
+export const TabWithoutPanel: Story = { args: { defaultValue: 'files', children: panelsFor(TABS.slice(0, 2)) } };
 
 /* examples */
 const ACCOUNT: TabsItem[] = [

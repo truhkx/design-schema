@@ -1,7 +1,6 @@
 import {
   useEffect,
   useId,
-  useImperativeHandle,
   useMemo,
   useRef,
   useState,
@@ -21,12 +20,8 @@ import './Listbox.css';
 
 declare const process: { env: { NODE_ENV?: string } };
 
-/** One selectable row, or a labelled cluster of rows. The schema shape, verbatim. */
-export type ListboxOption =
-  | { value: string; label: string; description?: string | undefined; icon?: IconName | undefined; disabled?: boolean | undefined }
-  | { group: string; options: ListboxOption[] };
-
-type ListboxRow = {
+/** One selectable row. */
+export type ListboxOption = {
   value: string;
   label: string;
   description?: string | undefined;
@@ -34,14 +29,17 @@ type ListboxRow = {
   disabled?: boolean | undefined;
 };
 
+/** A labelled cluster of rows; groups do not nest. */
+export type ListboxGroup = { group: string; options: ListboxOption[] };
+
+/** The element type of `options`: a row or a group (Select and Combobox take the same `ListboxItem[]`). */
+export type ListboxItem = ListboxOption | ListboxGroup;
+
 /** A value, or with `multiple` an array of values. */
 export type ListboxValue = string | string[];
 export type ListboxMaxVisible = '5' | '8' | '12' | 'all' | 5 | 8 | 12;
 
-/**
- * copy.* — used verbatim; `{label}` is replaced by the `label` prop. `selectedCount` belongs to the
- * surrounding UI (a Select trigger, chips), not this list.
- */
+/** copy.* — used verbatim; `{label}` is replaced by the `label` prop. */
 const COPY = {
   empty: 'No options',
   required: '{label} is required.',
@@ -50,12 +48,11 @@ const COPY = {
   loading: 'Loading…',
 } as const;
 
-/** Typeahead buffer lifetime. Not a token: it is interaction timing, never rendered. */
-const TYPEAHEAD_RESET = 500;
-
 /** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
 export type ListboxOverridableBinding =
   | 'border'
+  | 'borderInvalid'
+  | 'partGap'
   | 'borderWidth'
   | 'radius'
   | 'listPadding'
@@ -71,10 +68,13 @@ export type ListboxOverridableBinding =
   | 'fontFamily'
   | 'fontSize'
   | 'lineHeight'
-  | 'disabledOpacity';
+  | 'disabledOpacity'
+  | 'typeaheadReset';
 
 const OVERRIDE_HOOK: Record<ListboxOverridableBinding, string> = {
   border: '--ds-listbox-border',
+  borderInvalid: '--ds-listbox-border-invalid',
+  partGap: '--ds-listbox-part-gap',
   borderWidth: '--ds-listbox-border-width',
   radius: '--ds-listbox-radius',
   listPadding: '--ds-listbox-list-padding',
@@ -91,10 +91,11 @@ const OVERRIDE_HOOK: Record<ListboxOverridableBinding, string> = {
   fontSize: '--ds-listbox-font-size',
   lineHeight: '--ds-listbox-line-height',
   disabledOpacity: '--ds-listbox-disabled-opacity',
+  typeaheadReset: '--ds-listbox-typeahead-reset',
 };
 
 /** Surface chrome the host popup owns while `embedded`: overrides change values, never presence. */
-const EMBEDDED_NO_OP: ReadonlySet<ListboxOverridableBinding> = new Set(['border', 'borderWidth', 'radius']);
+const EMBEDDED_NO_OP: ReadonlySet<ListboxOverridableBinding> = new Set(['border', 'borderInvalid', 'borderWidth', 'radius']);
 
 function overridesToStyle(
   overrides: Partial<Record<ListboxOverridableBinding, TokenRef | undefined>>,
@@ -111,16 +112,16 @@ function overridesToStyle(
   return style as CSSProperties;
 }
 
-function isGroup(option: ListboxOption): option is { group: string; options: ListboxOption[] } {
-  return 'group' in option;
+function isGroup(item: ListboxItem): item is ListboxGroup {
+  return 'group' in item;
 }
 
-/** Depth-first rows in document order, dropping group wrappers — the unit navigation and typeahead move over. */
-function flattenRows(options: ListboxOption[]): ListboxRow[] {
-  const result: ListboxRow[] = [];
-  for (const option of options) {
-    if (isGroup(option)) result.push(...flattenRows(option.options));
-    else result.push(option);
+/** Rows in document order, dropping group wrappers — the unit navigation and typeahead move over. */
+function flattenRows(items: ListboxItem[]): ListboxOption[] {
+  const result: ListboxOption[] = [];
+  for (const item of items) {
+    if (isGroup(item)) result.push(...item.options);
+    else result.push(item);
   }
   return result;
 }
@@ -128,6 +129,14 @@ function flattenRows(options: ListboxOption[]): ListboxRow[] {
 function toArray(value: ListboxValue | undefined): string[] {
   if (Array.isArray(value)) return value;
   return value === undefined ? [] : [value];
+}
+
+/** A CSS time (`120ms`, `1.2s`) in milliseconds; 0 when it cannot be read (no stylesheet loaded). */
+function parseDuration(raw: string): number {
+  const match = /^(-?[\d.]+)(ms|s)$/.exec(raw.trim());
+  if (!match) return 0;
+  const amount = Number(match[1]);
+  return match[2] === 's' ? amount * 1000 : amount;
 }
 
 export interface ListboxProps
@@ -150,12 +159,16 @@ export interface ListboxProps
     | 'aria-busy'
     | 'aria-disabled'
   > {
-  /** Accessible name of the list. When a visible Text label exists, pass its id via `labelledBy` instead and this is ignored. */
+  /**
+   * Accessible name of the list. When a visible Text label exists, pass its id via `labelledBy` as
+   * well; on web `aria-labelledby` then wins. Always pass `label` even with `labelledBy`: it is the
+   * `{label}` in `copy.required` and `copy.invalid`.
+   */
   label: string;
   /** Id of a visible element that labels the list. */
   labelledBy?: string | undefined;
-  /** Flat or grouped options. */
-  options: ListboxOption[];
+  /** Flat or grouped options; groups do not nest. */
+  options: ListboxItem[];
   /**
    * Allow any number of selections. The value becomes an array; each option shows a check
    * indicator; selection toggles rather than moves. This is the same engine Combobox uses for
@@ -173,9 +186,17 @@ export interface ListboxProps
   selectionFollowsFocus?: boolean | undefined;
   /** At least one option must be selected to submit when inside a Form. */
   required?: boolean | undefined;
-  /** Marks the list invalid (aria-invalid) with `copy.invalid`. */
+  /**
+   * Marks the list invalid (aria-invalid, and `borderInvalid` when not `embedded`) with
+   * `copy.invalid`. The list is invalid while this is true OR `error` is non-empty; clearing
+   * `error` never clears an explicitly set `invalid`.
+   */
   invalid?: boolean | undefined;
-  /** Error message rendered below the list and linked by aria-describedby; implies invalid. */
+  /**
+   * Error message rendered below the list and linked by aria-describedby; implies invalid. The
+   * displayed message is `error`, then the Form's message, then while invalid `copy.required`
+   * (required and nothing selected) else `copy.invalid`.
+   */
   error?: string | undefined;
   /**
    * The list lives inside a popup (Select, Combobox) that owns the border, surface and radius; the
@@ -191,9 +212,15 @@ export interface ListboxProps
   initialActiveValue?: string | undefined;
   /** Options are being fetched (async Combobox); the list shows `copy.loading` in place of the empty message and is aria-busy. */
   loading?: boolean | undefined;
-  /** The whole list is inert but readable. */
+  /**
+   * The whole list is inert but readable: it stays focusable (tabindex=0, aria-disabled=true), keys,
+   * hover and clicks do nothing, and `disabledOpacity` dims the list once.
+   */
   disabled?: boolean | undefined;
-  /** Field name for Form collection. Multiple values are collected as an array. */
+  /**
+   * Field name for Form collection. The submitted value is a string in single-select and an array
+   * of strings with `multiple`; nothing selected submits no key.
+   */
   name?: string | undefined;
   /** Shown when `options` is empty (a filtered Combobox with no matches). Defaults to `copy.empty`. */
   emptyMessage?: string | undefined;
@@ -203,7 +230,7 @@ export interface ListboxProps
   overrides?: Partial<Record<ListboxOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the selection changes, with the new value (array when `multiple`). */
   onChange?: ((value: string | string[]) => void) | undefined;
-  /** Fired as the focused (active) option changes, with its value; null when no option is active. */
+  /** Fired as the focused (active) option changes, with its value; null when the list loses focus. */
   onActiveChange?: ((value: string | null) => void) | undefined;
 }
 
@@ -212,8 +239,12 @@ export interface ListboxProps
  *
  * When to use:
  * Use a standalone Listbox when the options should stay visible: a settings picker with five to twenty entries, a transfer list, the sidebar of a two-pane chooser. Use `multiple` for "pick any": tags, recipients, filters. Set `selectionFollowsFocus: false` when selecting has side effects (loading a preview), so arrow-key browsing does not trigger them. Everywhere else, use Select (short lists, form fields) or Combobox (long lists, typing to filter) — both open a Listbox.
+ *
+ * The root is a wrapper `div` (data-ds, data-ds-field) holding the `role="listbox"` list and the
+ * error message. `id` names the list, and option ids are `${id}-option-${value}`. Keyboard and focus
+ * handlers sit on the wrapper, so a host (Select) may dispatch `keydown`/`focusin` on the ref.
  */
-export const Listbox = function Listbox({
+export function Listbox({
   ref,
   label,
   labelledBy,
@@ -246,8 +277,7 @@ export const Listbox = function Listbox({
   const id = idProp ?? (form?.idBase && name ? `${form.idBase}-${name}` : `ds-listbox${generatedId}`);
   const errorId = `${id}-error`;
 
-  const rootRef = useRef<HTMLDivElement | null>(null);
-  useImperativeHandle(ref, () => rootRef.current as HTMLDivElement, []);
+  const listRef = useRef<HTMLDivElement | null>(null);
   const optionRefs = useRef(new Map<string, HTMLDivElement>());
   const typeahead = useRef<{ buffer: string; timer: ReturnType<typeof setTimeout> | null }>({ buffer: '', timer: null });
 
@@ -259,10 +289,10 @@ export const Listbox = function Listbox({
   );
 
   useEffect(() => {
-    if (process.env.NODE_ENV !== 'production' && !label && !labelledBy) {
-      console.warn('Listbox: `label` or `labelledBy` is required so the list has an accessible name.');
+    if (process.env.NODE_ENV !== 'production' && !label) {
+      console.warn('Listbox: `label` is required, even with `labelledBy` — it is the {label} in the validation copy.');
     }
-  }, [label, labelledBy]);
+  }, [label]);
 
   const isControlled = value !== undefined;
   const [internalValue, setInternalValue] = useState<ListboxValue | undefined>(defaultValue);
@@ -272,10 +302,15 @@ export const Listbox = function Listbox({
   const [activeValue, setActiveValueState] = useState<string | null>(null);
 
   const isDisabled = disabled || (form?.disabled ?? false);
-  // Precedence: error prop → the Form's error (copy.required on a failed submit) → invalid (copy.invalid).
+  const nothingSelected = selectedValues.length === 0;
+  const formError = name ? form?.errors[name] : undefined;
+  const isInvalid = invalid || (error !== undefined && error !== '');
+  // Precedence: error → the Form's message → while invalid, copy.required (required, nothing selected) else copy.invalid.
   const resolvedError =
-    error ?? (name ? form?.errors[name] : undefined) ?? (invalid ? COPY.invalid.replace('{label}', label) : undefined);
-  const isInvalid = invalid || resolvedError !== undefined;
+    (error !== undefined && error !== '' ? error : undefined) ??
+    formError ??
+    (isInvalid ? (required && nothingSelected ? COPY.required : COPY.invalid).replace('{label}', label) : undefined);
+  const showsInvalid = isInvalid || resolvedError !== undefined;
 
   const rows = useMemo(() => flattenRows(options), [options]);
   const enabledRows = useMemo(() => rows.filter((row) => !row.disabled), [rows]);
@@ -285,7 +320,7 @@ export const Listbox = function Listbox({
   latest.current = { label, required, invalid, error, disabled: isDisabled, selected, multiple };
 
   useEffect(() => {
-    // Without `name` the list does not register with a Form.
+    // Without `name` the list submits nothing (Form skips unnamed fields).
     if (!form || !name) return undefined;
     return form.register({
       name,
@@ -303,12 +338,12 @@ export const Listbox = function Listbox({
       validate: () => {
         const { label: currentLabel, required: isRequired, invalid: isInvalidProp, error: errorProp, selected: current } =
           latest.current;
-        if (errorProp !== undefined) return errorProp;
+        if (errorProp !== undefined && errorProp !== '') return errorProp;
         if (isRequired && toArray(current).length === 0) return COPY.required.replace('{label}', currentLabel);
         if (isInvalidProp) return COPY.invalid.replace('{label}', currentLabel);
         return null;
       },
-      focus: () => rootRef.current?.focus(),
+      focus: () => listRef.current?.focus(),
     });
   }, [form, name, id]);
 
@@ -347,7 +382,7 @@ export const Listbox = function Listbox({
     );
   };
 
-  const selectRow = (row: ListboxRow) => {
+  const selectRow = (row: ListboxOption) => {
     if (isDisabled || row.disabled) return;
     if (multiple) toggle(row.value);
     else commitValue(row.value);
@@ -365,16 +400,19 @@ export const Listbox = function Listbox({
     const state = typeahead.current;
     if (state.timer) clearTimeout(state.timer);
     state.buffer += char.toLowerCase();
+    // typeaheadReset is read at runtime from the list, never a number written here.
+    const list = listRef.current;
+    const reset = list ? parseDuration(getComputedStyle(list).getPropertyValue('--ds-listbox-typeahead-reset')) : 0;
     state.timer = setTimeout(() => {
       state.buffer = '';
-    }, TYPEAHEAD_RESET);
+    }, reset);
 
     const count = enabledRows.length;
     // A repeated single letter cycles; a longer prefix keeps matching the current option first.
     const startOffset = state.buffer.length > 1 || currentIndex === -1 ? 0 : 1;
     const start = currentIndex === -1 ? 0 : currentIndex;
     for (let offset = startOffset; offset < count + startOffset; offset++) {
-      const candidate = enabledRows[(((start + offset) % count) + count) % count];
+      const candidate = enabledRows[(start + offset) % count];
       if (candidate && candidate.label.toLowerCase().startsWith(state.buffer)) {
         moveActive(candidate.value);
         return;
@@ -398,6 +436,7 @@ export const Listbox = function Listbox({
           currentIndex === -1 ? (down ? 0 : last) : Math.min(Math.max(currentIndex + (down ? 1 : -1), 0), last);
         const target = enabledRows[targetIndex]!;
         if (multiple && event.shiftKey) {
+          // Add only: an already-selected option stays selected.
           setActiveValue(target.value);
           if (!selectedValues.includes(target.value)) commitValue(inOptionOrder([...selectedValues, target.value]));
         } else {
@@ -416,10 +455,13 @@ export const Listbox = function Listbox({
       case 'PageDown':
       case 'PageUp': {
         event.preventDefault();
-        const page = maxVisibleKey === 'all' ? enabledRows.length : Number(maxVisibleKey);
-        const direction = event.key === 'PageDown' ? 1 : -1;
-        const base = currentIndex === -1 ? (direction === 1 ? -1 : enabledRows.length) : currentIndex;
-        moveActive(enabledRows[Math.min(Math.max(base + direction * page, 0), last)]!.value);
+        const down = event.key === 'PageDown';
+        let targetIndex: number;
+        // With no active option PageDown lands on the first enabled option and PageUp on the last.
+        if (currentIndex === -1) targetIndex = down ? 0 : last;
+        else if (maxVisibleKey === 'all') targetIndex = down ? last : 0;
+        else targetIndex = Math.min(Math.max(currentIndex + (down ? 1 : -1) * Number(maxVisibleKey), 0), last);
+        moveActive(enabledRows[targetIndex]!.value);
         break;
       }
       case ' ': {
@@ -442,11 +484,11 @@ export const Listbox = function Listbox({
         break;
       }
       default: {
-        if (multiple && (event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === 'a') {
+        if (multiple && event.ctrlKey && !event.altKey && !event.metaKey && event.key.toLowerCase() === 'a') {
           event.preventDefault();
           const all = enabledRows.map((row) => row.value);
           const allSelected = all.every((v) => selectedValues.includes(v));
-          // Disabled options keep whatever selection they already had.
+          // Selected disabled options stay selected either way.
           const keep = selectedValues.filter((v) => !all.includes(v));
           commitValue(inOptionOrder(allSelected ? keep : [...keep, ...all]));
         } else if (/^[a-z]$/i.test(event.key) && !event.ctrlKey && !event.metaKey && !event.altKey) {
@@ -458,22 +500,25 @@ export const Listbox = function Listbox({
 
   const handleFocus = (event: FocusEvent<HTMLDivElement>) => {
     onFocus?.(event);
-    if (event.target !== event.currentTarget || activeValue !== null) return;
+    // The list itself, or a host signalling focus on the root (Select keeps DOM focus on its trigger).
+    if ((event.target !== listRef.current && event.target !== event.currentTarget) || activeValue !== null) return;
     const initial = resolveInitialActive();
     if (initial !== undefined) setActiveValue(initial);
   };
 
   const handleBlur = (event: FocusEvent<HTMLDivElement>) => {
     onBlur?.(event);
+    if (event.target !== listRef.current) return;
+    setActiveValue(null);
     if (form && name && (form.validate === 'blur' || form.validate === 'change')) form.validateField(name);
   };
 
-  const handleRowPointerMove = (row: ListboxRow) => {
+  const handleRowPointerMove = (row: ListboxOption) => {
     if (isDisabled || row.disabled) return;
     setActiveValue(row.value);
   };
 
-  const handleRowClick = (row: ListboxRow) => (event: ReactMouseEvent<HTMLDivElement>) => {
+  const handleRowClick = (row: ListboxOption) => (event: ReactMouseEvent<HTMLDivElement>) => {
     if (isDisabled || row.disabled) {
       event.preventDefault();
       return;
@@ -487,7 +532,7 @@ export const Listbox = function Listbox({
     else optionRefs.current.delete(rowValue);
   };
 
-  const renderRow = (row: ListboxRow) => {
+  const renderRow = (row: ListboxOption) => {
     const optionId = `${id}-option-${row.value}`;
     const descriptionId = row.description ? `${optionId}-description` : undefined;
     const rowSelected = isSelected(row.value);
@@ -496,7 +541,7 @@ export const Listbox = function Listbox({
       'ds-listbox__option',
       row.value === activeValue ? 'ds-listbox__option--active' : null,
       rowSelected ? 'ds-listbox__option--selected' : null,
-      rowDisabled ? 'ds-listbox__option--disabled' : null,
+      row.disabled ? 'ds-listbox__option--disabled' : null,
     ]
       .filter(Boolean)
       .join(' ');
@@ -516,7 +561,7 @@ export const Listbox = function Listbox({
         onClick={handleRowClick(row)}
       >
         {multiple ? (
-          // Always rendered with `multiple` (invisible when unselected) so labels align.
+          // Always present with `multiple` (invisible when unselected) so labels align.
           <span className="ds-listbox__check" data-part="optionCheck" aria-hidden="true">
             <Icon name="check" size="sm" overrides={{ color: 'color.control.selectedBackground' as TokenRef }} />
           </span>
@@ -540,17 +585,17 @@ export const Listbox = function Listbox({
     );
   };
 
-  const renderNode = (node: ListboxOption, path: string): ReactElement | null => {
-    if (!isGroup(node)) return renderRow(node);
+  const renderItem = (item: ListboxItem, index: number): ReactElement | null => {
+    if (!isGroup(item)) return renderRow(item);
     // Empty groups are omitted.
-    if (flattenRows(node.options).length === 0) return null;
-    const groupLabelId = `${id}-group-${path}`;
+    if (item.options.length === 0) return null;
+    const groupLabelId = `${id}-group-${index}`;
     return (
-      <div key={`${path}-group`} role="group" aria-labelledby={groupLabelId} className="ds-listbox__group">
+      <div key={`group-${index}`} role="group" aria-labelledby={groupLabelId} data-part="group" className="ds-listbox__group">
         <div id={groupLabelId} data-part="groupLabel" className="ds-listbox__group-label">
-          {node.group}
+          {item.group}
         </div>
-        {node.options.map((child, index) => renderNode(child, `${path}-${index}`))}
+        {item.options.map(renderRow)}
       </div>
     );
   };
@@ -560,54 +605,55 @@ export const Listbox = function Listbox({
     `ds-listbox--max-visible-${maxVisibleKey}`,
     embedded ? 'ds-listbox--embedded' : null,
     isDisabled ? 'ds-listbox--disabled' : null,
-    isInvalid ? 'ds-listbox--invalid' : null,
+    showsInvalid ? 'ds-listbox--invalid' : null,
   ]
     .filter(Boolean)
     .join(' ');
 
-  const rootStyle = overrides ? overridesToStyle(overrides, embedded) : undefined;
-
   return (
-    <>
+    <div
+      {...rest}
+      ref={ref}
+      data-ds="Listbox"
+      data-ds-field=""
+      className={classes}
+      style={overrides ? overridesToStyle(overrides, embedded) : undefined}
+      onKeyDown={handleKeyDown}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+    >
       <div
-        {...rest}
-        ref={rootRef}
+        ref={listRef}
         id={id}
-        data-ds="Listbox"
-        data-ds-field={name ? '' : undefined}
         data-part="list"
         role="listbox"
         tabIndex={0}
-        className={classes}
-        style={rootStyle}
-        aria-label={labelledBy ? undefined : label}
+        className="ds-listbox__list"
+        aria-label={label}
         aria-labelledby={labelledBy}
         aria-multiselectable={multiple ? 'true' : undefined}
         aria-activedescendant={activeValue !== null ? `${id}-option-${activeValue}` : undefined}
-        aria-invalid={isInvalid ? 'true' : undefined}
+        aria-invalid={showsInvalid ? 'true' : undefined}
         aria-required={required ? 'true' : undefined}
         aria-describedby={resolvedError !== undefined ? errorId : undefined}
         aria-busy={loading ? 'true' : undefined}
         aria-disabled={isDisabled ? 'true' : undefined}
-        onKeyDown={handleKeyDown}
-        onFocus={handleFocus}
-        onBlur={handleBlur}
       >
         {rows.length === 0 ? (
           <div className="ds-listbox__empty">
-            <Text element="span" data-part="emptyState" size="sm" tone="muted">
+            <Text data-part="emptyState" tone="muted">
               {loading ? COPY.loading : (emptyMessage ?? COPY.empty)}
             </Text>
           </div>
         ) : (
-          options.map((node, index) => renderNode(node, String(index)))
+          options.map(renderItem)
         )}
       </div>
       {resolvedError !== undefined ? (
-        <Text element="p" id={errorId} role="alert" data-part="errorMessage" size="sm" tone="danger">
+        <Text id={errorId} data-part="errorMessage" size="sm" tone="danger">
           {resolvedError}
         </Text>
       ) : null}
-    </>
+    </div>
   );
-};
+}

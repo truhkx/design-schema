@@ -21,9 +21,9 @@ import {
   Text,
   toast,
 } from '../src';
-import type { FormValues, RadioGroupOption, SegmentedControlOption, TabsTab } from '../src';
+import type { FormValues, RadioGroupOption, SegmentedControlOption, TabsItem } from '../src';
 
-const SETTINGS_TABS: TabsTab[] = [
+const SETTINGS_TABS: TabsItem[] = [
   { id: 'profile', label: 'Profile' },
   { id: 'notifications', label: 'Notifications' },
   { id: 'appearance', label: 'Appearance' },

@@ -1,8 +1,11 @@
 /* Listbox — styled only through Design Schema token custom properties. */
 
+/* The root wrapper (not an anatomy part): holds the hooks, the list and the error message. */
 .ds-listbox {
   --ds-listbox-surface: var(--color-background);
   --ds-listbox-border: var(--color-border-strong);
+  --ds-listbox-border-invalid: var(--color-border-danger);
+  --ds-listbox-part-gap: var(--space-1);
   --ds-listbox-border-width: var(--border-width-thin);
   --ds-listbox-radius: var(--radius-md);
   --ds-listbox-list-padding: var(--space-1);
@@ -20,7 +23,6 @@
   --ds-listbox-group-label-size: var(--font-size-xs);
   --ds-listbox-group-label-weight: var(--font-weight-semibold);
   --ds-listbox-group-label-padding-block: var(--space-1);
-  --ds-listbox-empty-color: var(--color-foreground-muted);
   --ds-listbox-font-family: var(--font-family-body);
   --ds-listbox-font-size: var(--font-size-md);
   --ds-listbox-line-height: var(--font-line-height-normal);
@@ -28,25 +30,50 @@
   --ds-listbox-focus-ring: var(--color-border-focus);
   --ds-listbox-focus-ring-width: var(--border-width-focus);
   --ds-listbox-disabled-opacity: var(--opacity-disabled);
+  --ds-listbox-typeahead-reset: var(--motion-duration-loop);
+  /* The border drawn around the list: absent (a zero length) while embedded. */
+  --ds-listbox-frame-width: var(--ds-listbox-border-width);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-listbox-part-gap);
+  font-family: var(--ds-listbox-font-family);
+  font-size: var(--ds-listbox-font-size);
+  line-height: var(--ds-listbox-line-height);
+}
+
+.ds-listbox__list {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
   padding: var(--ds-listbox-list-padding);
-  border: var(--ds-listbox-border-width) solid var(--ds-listbox-border);
+  border: var(--ds-listbox-frame-width) solid var(--ds-listbox-border);
   border-radius: var(--ds-listbox-radius);
   /* surface: locked — never overridable. */
   background-color: var(--ds-listbox-surface);
-  font-family: var(--ds-listbox-font-family);
-  font-size: var(--ds-listbox-font-size);
-  line-height: var(--ds-listbox-line-height);
   /* optionColor: locked — never overridable. */
   color: var(--ds-listbox-option-color);
 }
 
+/* borderInvalid replaces border while invalid, only when not embedded. */
+.ds-listbox--invalid .ds-listbox__list {
+  border-color: var(--ds-listbox-border-invalid);
+}
+
+/* embedded: the host popup owns border, surface and radius; the list keeps its listPadding. */
+.ds-listbox--embedded {
+  --ds-listbox-frame-width: calc(var(--ds-listbox-border-width) * 0);
+}
+
+.ds-listbox--embedded .ds-listbox__list {
+  border-style: none;
+  border-radius: 0;
+  background-color: transparent;
+}
+
 /*
- * maxVisible: rows are fontSize × lineHeight + 2 × optionPaddingBlock tall (never under the target
- * minimum). The cap is that row height times the row count, plus the list's own padding and border.
+ * maxVisible: rows are max(minTarget, fontSize × lineHeight + 2 × optionPaddingBlock) tall. The cap is
+ * that row height times the row count, plus 2 × listPadding, plus 2 × borderWidth when not embedded.
  */
 .ds-listbox--max-visible-5 {
   --ds-listbox-visible-rows: 5;
@@ -60,39 +87,33 @@
   --ds-listbox-visible-rows: 12;
 }
 
-.ds-listbox--max-visible-5,
-.ds-listbox--max-visible-8,
-.ds-listbox--max-visible-12 {
+.ds-listbox--max-visible-5 .ds-listbox__list,
+.ds-listbox--max-visible-8 .ds-listbox__list,
+.ds-listbox--max-visible-12 .ds-listbox__list {
   max-block-size: calc(
     var(--ds-listbox-visible-rows) *
       max(
         var(--ds-listbox-min-target),
         var(--ds-listbox-font-size) * var(--ds-listbox-line-height) + 2 * var(--ds-listbox-option-padding-block)
       ) +
-      2 * var(--ds-listbox-list-padding) + 2 * var(--ds-listbox-border-width)
+      2 * var(--ds-listbox-list-padding) + 2 * var(--ds-listbox-frame-width)
   );
 }
 
-.ds-listbox--max-visible-all {
+.ds-listbox--max-visible-all .ds-listbox__list {
   overflow-y: visible;
 }
 
 /* focus-visible: never removed, only replaced by the token ring. focusRing/focusRingWidth: locked. */
-.ds-listbox:focus-visible {
+.ds-listbox__list:focus-visible {
   outline: var(--ds-listbox-focus-ring-width) solid var(--ds-listbox-focus-ring);
   outline-offset: calc(-1 * var(--ds-listbox-focus-ring-width));
 }
 
-.ds-listbox--disabled {
+/* Dims the list once; the error message stays at full opacity. */
+.ds-listbox--disabled .ds-listbox__list {
   opacity: var(--ds-listbox-disabled-opacity);
   cursor: not-allowed;
-}
-
-/* embedded: the host popup owns border, surface and radius; the list keeps its listPadding. */
-.ds-listbox--embedded {
-  border: none;
-  border-radius: 0;
-  background-color: transparent;
 }
 
 .ds-listbox__group {
@@ -146,8 +167,13 @@
   opacity: var(--ds-listbox-disabled-opacity);
 }
 
+/* Not stacked on the list's own dimming. */
 .ds-listbox--disabled .ds-listbox__option--disabled {
   opacity: 1;
+}
+
+.ds-listbox--disabled .ds-listbox__option {
+  cursor: not-allowed;
 }
 
 /* optionSelectedCheck: locked; the slot is always present with `multiple` so labels align. */

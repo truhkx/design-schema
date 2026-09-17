@@ -2,9 +2,8 @@ import * as React from 'react';
 import { Animated, I18nManager, Platform, Pressable, ScrollView, Text as RNText, View } from 'react-native';
 import type {
   LayoutChangeEvent,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
   PressableStateCallbackType,
+  ScrollEvent,
   ScrollViewInstance,
   TextStyle,
   ViewInstance,
@@ -20,8 +19,17 @@ export type TabsActivation = 'automatic' | 'manual';
 export type TabsOrientation = 'horizontal' | 'vertical';
 export type TabsFit = 'start' | 'fill';
 
-/** One tab. `badge` is a short count or status shown after the label ("3", "New"). */
-export type TabsTab = { id: string; label: string; icon?: IconName; disabled?: boolean; badge?: string };
+/**
+ * One tab. `badge` is a short count or status shown after the label ("3", "New"). The icon is
+ * an Icon at `size: md` in the tab's current foreground color.
+ */
+export type TabsItem = {
+  id: string;
+  label: string;
+  icon?: IconName | undefined;
+  disabled?: boolean | undefined;
+  badge?: string | undefined;
+};
 
 /** The style bindings a caller may replace with a different token; see the component's overrides contract. */
 export type TabsOverridableBinding =
@@ -43,7 +51,7 @@ export type TabsOverridableBinding =
 
 export interface TabsProps {
   /** The tabs in order. `badge` is a short count or status shown after the label ("3", "New"). */
-  tabs: TabsTab[];
+  tabs: TabsItem[];
   /** One `TabPanel` per tab, in the same order, each with a matching `id`. Only the selected panel is rendered unless `keepMounted`. */
   children: React.ReactNode;
   /** Accessible name of the tab list ("Account sections"). Not shown visually. */
@@ -80,7 +88,8 @@ export interface TabPanelProps {
 }
 
 const COPY = {
-  position: (index: number, total: number): string => `${index} of ${total}`,
+  position: (index: number, total: number): string =>
+    '{index} of {total}'.replace('{index}', String(index)).replace('{total}', String(total)),
 } as const;
 
 /** Wraps one tab's content. Rendered by `Tabs`, never directly. */
@@ -113,8 +122,8 @@ const isWeb = Platform.OS === 'web';
  * short, `fill` on phones for two to four tabs. Not for navigation between pages (a nav
  * Landmark of Links), not for a sequence (Stepper), not for panels the user must compare.
  *
- * Renders a `ScrollView` (fit `start`: overflowing tabs scroll, the selected tab kept in
- * view) or a `View` whose tabs grow along the orientation axis (fit `fill`) of `Pressable`s
+ * Renders a `ScrollView` (fit `start`, and every vertical list: overflowing tabs scroll, the
+ * selected tab kept in view) or a row `View` whose tabs share the width (horizontal fit `fill`) of `Pressable`s
  * with `accessibilityRole="tab"`, `accessibilityState={{ selected, disabled }}` and
  * `accessibilityValue` from `copy.position`; the list carries `accessibilityRole="tablist"`
  * and `accessibilityLabel={label}`. The indicator is an `Animated.View` positioned from
@@ -146,6 +155,8 @@ export function Tabs({
   const { tokens: t } = useTheme();
   const reducedMotion = useReducedMotion();
   const isHorizontal = orientation === 'horizontal';
+  // `fill` is horizontal only: vertical tabs always span the list's inline size.
+  const fill = fit === 'fill' && isHorizontal;
   const rtl = I18nManager.isRTL;
 
   const firstEnabledId = tabs.find((tab) => tab.disabled !== true)?.id;
@@ -225,7 +236,7 @@ export function Tabs({
 
   const scrollSelectedIntoView = React.useCallback(
     (id: string): void => {
-      if (fit !== 'start') {
+      if (fill) {
         return;
       }
       const layout = tabLayoutsRef.current.get(id);
@@ -248,7 +259,7 @@ export function Tabs({
         scrollView.scrollTo(isHorizontal ? { x: Math.max(0, target), animated } : { y: Math.max(0, target), animated });
       }
     },
-    [fit, isHorizontal, reducedMotion],
+    [fill, isHorizontal, reducedMotion],
   );
 
   React.useEffect(() => {
@@ -267,7 +278,7 @@ export function Tabs({
     }
   };
 
-  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>): void => {
+  const handleScroll = (event: ScrollEvent): void => {
     const { x, y } = event.nativeEvent.contentOffset;
     scrollOffsetRef.current = isHorizontal ? x : y;
   };
@@ -351,7 +362,7 @@ export function Tabs({
       position={COPY.position(index + 1, tabs.length)}
       selected={tab.id === currentValue}
       tabStop={tab.id === tabStopId}
-      fill={fit === 'fill'}
+      fill={fill}
       horizontal={isHorizontal}
       styleTokens={styleTokens}
       onSelect={selectTab}
@@ -372,7 +383,7 @@ export function Tabs({
   const listContentStyle: ViewStyle = {
     flexDirection: isHorizontal ? 'row' : 'column',
     alignItems: 'stretch',
-    flexGrow: fit === 'fill' ? 1 : 0,
+    flexGrow: fill ? 1 : 0,
     gap: listGap,
     position: 'relative',
     borderBottomWidth: isHorizontal ? listBorderWidth : 0,
@@ -411,8 +422,7 @@ export function Tabs({
     />
   );
 
-  const list =
-    fit === 'start' ? (
+  const list = !fill ? (
       <ScrollView
         ref={scrollRef}
         horizontal={isHorizontal}
@@ -490,7 +500,7 @@ interface TabButtonStyleTokens {
 }
 
 interface TabButtonProps {
-  tab: TabsTab;
+  tab: TabsItem;
   position: string;
   selected: boolean;
   tabStop: boolean;
@@ -556,7 +566,8 @@ function TabButton({
     color: s.badgeColor,
   };
 
-  const accessibleName = tab.badge !== undefined ? `${tab.label}, ${tab.badge}` : tab.label;
+  // The badge is part of the name: label, a plain space, badge ("Inbox 3").
+  const accessibleName = tab.badge !== undefined ? `${tab.label} ${tab.badge}` : tab.label;
   // Roving tab stop on react-native-web; on native every tab stays its own stop.
   const webFocusProps: Record<string, unknown> = Platform.OS === 'web' ? { focusable: tabStop && !disabled } : {};
 
@@ -590,7 +601,7 @@ function TabButton({
     >
       {tab.icon !== undefined ? (
         <View testID="Tabs.tabIcon" accessibilityElementsHidden importantForAccessibility="no">
-          <Icon name={tab.icon} size="sm" color={foreground} />
+          <Icon name={tab.icon} size="md" color={foreground} />
         </View>
       ) : null}
       <RNText numberOfLines={1} style={labelStyle} testID="Tabs.tabLabel">

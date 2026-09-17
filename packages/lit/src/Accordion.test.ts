@@ -16,6 +16,8 @@ import meta from './Accordion.stories.js';
 interface Given {
   headingLevel?: AccordionHeadingLevel;
   exclusive?: boolean;
+  defaultValue?: string | string[];
+  items?: { id: string; summary: string; content: string; disabled?: boolean | undefined }[];
 }
 
 /** The Default story's args plus the scenario's `given`, rendered the way the story renders them. */
@@ -62,8 +64,12 @@ beforeEach(() => {
 describe('ds-accordion', () => {
   it('click-on-a-trigger-reports-the-open-set', async () => {
     const s = await setup();
+    const order: string[] = [];
+    s.el.addEventListener('change', () => order.push('change'));
+    s.el.addEventListener('open-change', () => order.push('open-change'));
     await userEvent.click(s.trigger());
     await s.settle();
+    expect(order).toEqual(['change', 'open-change']);
     const firstId = s.items[0]!.id;
     expect(s.change).toHaveBeenCalledTimes(1);
     expect(s.change.mock.calls[0]?.[0].detail).toEqual({ openIds: [firstId] });
@@ -73,12 +79,28 @@ describe('ds-accordion', () => {
   });
 
   it('exclusive-still-reports-both-events', async () => {
-    const s = await setup({ exclusive: true });
+    const s = await setup({
+      exclusive: true,
+      defaultValue: 'pro',
+      items: [
+        { id: 'free', summary: 'Free', content: 'One project and community support.' },
+        { id: 'pro', summary: 'Pro', content: 'Unlimited projects and email support.' },
+      ],
+    });
+    const order: string[] = [];
+    s.el.addEventListener('change', () => order.push('change'));
+    s.el.addEventListener('open-change', () => order.push('open-change'));
     await userEvent.click(s.trigger());
     await s.settle();
     expect(s.change).toHaveBeenCalledTimes(1);
-    expect(s.change.mock.calls[0]?.[0].detail.openIds).toHaveLength(1);
-    expect(s.openChange).toHaveBeenCalled();
+    expect(s.change.mock.calls[0]?.[0].detail).toEqual({ openIds: ['free'] });
+    expect(s.openChange.mock.calls.map(([event]) => event.detail)).toEqual([
+      { id: 'free', open: true, reason: 'trigger' },
+      { id: 'pro', open: false, reason: 'exclusive' },
+    ]);
+    expect(order).toEqual(['change', 'open-change', 'open-change']);
+    expect(s.trigger(0)).toHaveAttribute('aria-expanded', 'true');
+    expect(s.trigger(1)).toHaveAttribute('aria-expanded', 'false');
   });
 
   /* derived */

@@ -6,13 +6,23 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ComponentProps } from 'react';
-import { Tabs, type TabsProps } from './Tabs';
+import { Tabs, TabPanel, type TabsProps } from './Tabs';
 import meta from './Tabs.stories';
 
-/** The Default story's args plus the scenario's `given`, with a mock for every event prop. */
+/**
+ * The Default story's args plus the scenario's `given`, with a mock for every event prop. A
+ * scenario that replaces `tabs` also replaces the panels (one TabPanel per tab, id = the tab id).
+ */
 function setup(given: Partial<TabsProps> = {}) {
   const onChange = vi.fn();
-  const props = { ...meta.args, ...given, onChange } as ComponentProps<typeof Tabs>;
+  const panels = given.tabs
+    ? given.tabs.map((tab) => (
+        <TabPanel key={tab.id} id={tab.id}>
+          {tab.label} panel.
+        </TabPanel>
+      ))
+    : undefined;
+  const props = { ...meta.args, ...given, ...(panels ? { children: panels } : {}), onChange } as ComponentProps<typeof Tabs>;
   const utils = render(<Tabs {...props} />);
   const user = userEvent.setup();
   return {

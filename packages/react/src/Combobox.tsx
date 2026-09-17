@@ -19,7 +19,7 @@ import { createPortal } from 'react-dom';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
 import { Icon } from './Icon';
-import { Listbox, type ListboxOption, type ListboxValue } from './Listbox';
+import { Listbox, type ListboxGroup, type ListboxItem, type ListboxValue } from './Listbox';
 import { Text, type TextOverridableBinding } from './Text';
 import { useFormContext } from './FormContext';
 import './Combobox.css';
@@ -67,6 +67,7 @@ export type ComboboxOverridableBinding =
   | 'helperSize'
   | 'popupSurface'
   | 'popupBorder'
+  | 'popupBorderWidth'
   | 'popupShadow'
   | 'popupRadius'
   | 'popupOffset'
@@ -102,6 +103,7 @@ const ROOT_HOOK: Partial<Record<ComboboxOverridableBinding, string>> = {
 const POPUP_HOOK: Partial<Record<ComboboxOverridableBinding, string>> = {
   popupSurface: '--ds-combobox-popup-surface',
   popupBorder: '--ds-combobox-popup-border',
+  popupBorderWidth: '--ds-combobox-popup-border-width',
   popupShadow: '--ds-combobox-popup-shadow',
   popupRadius: '--ds-combobox-popup-radius',
   popupOffset: '--ds-combobox-popup-offset',
@@ -140,11 +142,11 @@ function resolveOverrides(overrides: Partial<Record<ComboboxOverridableBinding, 
 
 type ComboboxRow = { value: string; label: string; disabled?: boolean | undefined };
 
-function isGroup(option: ListboxOption): option is { group: string; options: ListboxOption[] } {
+function isGroup(option: ListboxItem): option is ListboxGroup {
   return 'group' in option;
 }
 
-function flattenRows(options: ListboxOption[]): ComboboxRow[] {
+function flattenRows(options: ListboxItem[]): ComboboxRow[] {
   const result: ComboboxRow[] = [];
   for (const option of options) {
     if (isGroup(option)) result.push(...flattenRows(option.options));
@@ -154,11 +156,12 @@ function flattenRows(options: ListboxOption[]): ComboboxRow[] {
 }
 
 /** Keeps the rows matching `predicate`, dropping groups left empty. */
-function filterTree(options: ListboxOption[], predicate: (row: ComboboxRow) => boolean): ListboxOption[] {
-  const result: ListboxOption[] = [];
+function filterTree(options: ListboxItem[], predicate: (row: ComboboxRow) => boolean): ListboxItem[] {
+  const result: ListboxItem[] = [];
   for (const option of options) {
     if (isGroup(option)) {
-      const children = filterTree(option.options, predicate);
+      // Groups do not nest.
+      const children = option.options.filter(predicate);
       if (children.length > 0) result.push({ group: option.group, options: children });
     } else if (predicate(option)) {
       result.push(option);
@@ -256,7 +259,7 @@ export interface ComboboxProps
   /** Field name for the Form. */
   name: string;
   /** The full option set, or the current page of results when `filter` is `async`. Passed through to the Listbox after filtering. */
-  options: ListboxOption[];
+  options: ListboxItem[];
   /** Controlled selected value(s). With `multiple`, an array. With `allowCustom`, a value not in `options` is a custom entry. */
   value?: ComboboxValue | undefined;
   /** Initial value(s). */
@@ -275,6 +278,8 @@ export interface ComboboxProps
    * Typed text that matches no option can be committed as a value (tags, emails). Enter or a comma
    * commits it; the list shows `copy.addCustom` as a synthetic first row, suppressed when the
    * trimmed text already matches an existing option by either its `value` or its `label`.
+   * Committing text that matches an option that way (Enter or a comma, same case- and
+   * diacritic-insensitive match) commits that option's `value`, never a custom string.
    */
   allowCustom?: boolean | undefined;
   /**
@@ -306,7 +311,11 @@ export interface ComboboxProps
   overrides?: Partial<Record<ComboboxOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when the selected value(s) change (array with `multiple`; custom entries included when `allowCustom`). */
   onChange?: ((value: string | string[]) => void) | undefined;
-  /** Fired on every keystroke with the input text. The hook for `async` filtering. */
+  /**
+   * Fired on every text change the user causes — each keystroke, and the text a commit, Escape-to-clear
+   * or the clear button leaves behind — with the input text. Not fired when a controlled `value` change
+   * rewrites the label. The hook for `async` filtering.
+   */
   onInputChange?: ((value: string) => void) | undefined;
   /** Fired when the list opens or closes. */
   onOpenChange?: ((open: boolean) => void) | undefined;
@@ -318,7 +327,7 @@ export interface ComboboxProps
  * When to use:
  * Use a Combobox for long lists (fifty-plus: people, cities, products), for values that can be typed faster than found (dates, codes), for `async` search against a server, and for multi-value fields where chips make the selection legible (recipients, tags, filters). Use `allowCustom` when new values are legitimate (tags, invitees by email) and never when the value must exist (a customer id). Use `filter: none` when the list is short but chips are wanted.
  */
-export const Combobox = function Combobox({
+export function Combobox({
   ref,
   label,
   name,
@@ -445,7 +454,7 @@ export const Combobox = function Combobox({
     allowCustom &&
     trimmedText !== '' &&
     !rows.some((row) => normalize(row.value) === normalizedText || normalize(row.label) === normalizedText);
-  const listOptions: ListboxOption[] = useMemo(() => {
+  const listOptions: ListboxItem[] = useMemo(() => {
     if (isLoading) return [];
     return showCustomRow
       ? [{ value: CUSTOM_ROW_VALUE, label: COPY.addCustom.replace('{value}', trimmedText) }, ...filteredOptions]
@@ -522,23 +531,30 @@ export const Combobox = function Combobox({
   }, [form, name, id]);
 
   // Polite announcement of result count, loading and empty, after `statusDebounce`.
-  const statusMessage = isLoading
-    ? COPY.loading
-    : resultCount === 0
-      ? COPY.empty
-      : (new Intl.PluralRules(undefined).select(resultCount) === 'one' ? COPY.resultCount.one : COPY.resultCount.other).replace(
-          '{count}',
-          String(resultCount),
-        );
   useEffect(() => {
     if (!isOpen) {
       setStatusText('');
       return undefined;
     }
+    let message: string;
+    if (isLoading) message = COPY.loading;
+    else if (resultCount === 0) message = COPY.empty;
+    else {
+      // The plural follows the nearest `lang` ancestor, else the runtime default.
+      const locale = rootRef.current?.closest('[lang]')?.getAttribute('lang') || undefined;
+      let rules: Intl.PluralRules;
+      try {
+        rules = new Intl.PluralRules(locale);
+      } catch {
+        rules = new Intl.PluralRules();
+      }
+      const phrase = rules.select(resultCount) === 'one' ? COPY.resultCount.one : COPY.resultCount.other;
+      message = phrase.replace('{count}', String(resultCount));
+    }
     const base = rootRef.current ? parseTime(getComputedStyle(rootRef.current).getPropertyValue(STATUS_DEBOUNCE.token)) : null;
-    const timer = setTimeout(() => setStatusText(statusMessage), base === null ? 0 : base * STATUS_DEBOUNCE.multiply);
+    const timer = setTimeout(() => setStatusText(message), base === null ? 0 : base * STATUS_DEBOUNCE.multiply);
     return () => clearTimeout(timer);
-  }, [isOpen, statusMessage]);
+  }, [isOpen, isLoading, resultCount]);
 
   // Anchor to the field; follow scrolling and resizing.
   useLayoutEffect(() => {
@@ -609,15 +625,20 @@ export const Combobox = function Combobox({
     onInputChange?.(next);
   };
 
+  /** Commits typed text; text matching an option by value or label commits that option's value, never a custom string. */
   const commitCustom = (raw: string) => {
     if (raw === '') return;
+    const key = normalize(raw);
+    const match = rows.find((row) => normalize(row.value) === key || normalize(row.label) === key);
+    if (match?.disabled) return;
+    const committed = match?.value ?? raw;
     if (multiple) {
-      if (!selectedValues.includes(raw)) commitValue([...selectedValues, raw]);
+      if (!selectedValues.includes(committed)) commitValue([...selectedValues, committed]);
       updateText('');
       requestActive('none');
     } else {
-      if (raw !== singleValue) commitValue(raw);
-      updateText(raw);
+      if (committed !== singleValue) commitValue(committed);
+      updateText(match?.label ?? raw);
       close();
     }
   };
@@ -923,4 +944,4 @@ export const Combobox = function Combobox({
         : null}
     </div>
   );
-};
+}

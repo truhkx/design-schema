@@ -9,13 +9,16 @@ export type TabsOrientation = 'horizontal' | 'vertical';
 export type TabsFit = 'start' | 'fill';
 
 /** Shape of each entry in `tabs`. */
-export interface TabsTab {
+export interface TabsItem {
   id: string;
   label: string;
   icon?: IconName | undefined;
   disabled?: boolean | undefined;
   badge?: string | undefined;
 }
+
+/** @deprecated Use `TabsItem`. */
+export type TabsTab = TabsItem;
 
 /** Detail carried by the `change` CustomEvent. */
 export interface TabsChangeDetail {
@@ -192,10 +195,6 @@ export class DsTabs extends LitElement {
       overflow-y: auto;
     }
 
-    :host([orientation='vertical'][fit='fill']) [data-part='tablist'] {
-      align-self: stretch;
-    }
-
     [data-part='tab'] {
       position: relative;
       box-sizing: border-box;
@@ -221,7 +220,8 @@ export class DsTabs extends LitElement {
       cursor: pointer;
     }
 
-    :host([fit='fill']) [data-part='tab'] {
+    /* fill is horizontal only: vertical tabs always span the list's inline size. */
+    :host([fit='fill']:not([orientation='vertical'])) [data-part='tab'] {
       flex: 1 1 0%;
       justify-content: center;
     }
@@ -256,6 +256,7 @@ export class DsTabs extends LitElement {
     [data-part='tabBadge'] {
       flex: none;
       font-size: var(--ds-tabs-badge-size);
+      line-height: var(--ds-tabs-line-height);
       color: var(--ds-tabs-badge-color);
     }
 
@@ -297,7 +298,7 @@ export class DsTabs extends LitElement {
   `;
 
   /** The tabs in order. A property, not an attribute. */
-  @property({ attribute: false }) accessor tabs: TabsTab[] = [];
+  @property({ attribute: false }) accessor tabs: TabsItem[] = [];
 
   /** Accessible name of the tab list ("Account sections"). Not shown visually. */
   @property() accessor label: string = '';
@@ -314,7 +315,7 @@ export class DsTabs extends LitElement {
   /** Vertical tab lists sit beside their panels and use Up/Down arrows. */
   @property({ type: String, reflect: true }) accessor orientation: TabsOrientation = 'horizontal';
 
-  /** `start` packs tabs at the start; `fill` stretches them along the list. */
+  /** `start` packs tabs at the start; `fill` stretches them across the width. Horizontal only: vertical tabs always span the list's inline size. */
   @property({ type: String, reflect: true }) accessor fit: TabsFit = 'start';
 
   /**
@@ -357,7 +358,6 @@ export class DsTabs extends LitElement {
   }
 
   protected override firstUpdated(): void {
-    this.lastScrolledId = this.currentValue;
     if (this.tablistEl && typeof ResizeObserver !== 'undefined') {
       this.resizeObserver = new ResizeObserver(() => this.updateIndicator());
       this.resizeObserver.observe(this.tablistEl);
@@ -400,7 +400,7 @@ export class DsTabs extends LitElement {
     `;
   }
 
-  private renderTab(tab: TabsTab, index: number, selected: boolean, roving: boolean): TemplateResult {
+  private renderTab(tab: TabsItem, index: number, selected: boolean, roving: boolean): TemplateResult {
     const disabled = tab.disabled === true;
     const hasBadge = tab.badge !== undefined && tab.badge !== '';
     return html`
@@ -438,7 +438,7 @@ export class DsTabs extends LitElement {
     return enabled[0]?.id ?? null;
   }
 
-  private readonly handleTabClick = (tab: TabsTab): void => {
+  private readonly handleTabClick = (tab: TabsItem): void => {
     if (tab.disabled === true) {
       return;
     }
@@ -479,7 +479,7 @@ export class DsTabs extends LitElement {
     this.warnInDev();
   }
 
-  private enabledTabs(): TabsTab[] {
+  private enabledTabs(): TabsItem[] {
     return this.tabs.filter((tab) => tab.disabled !== true);
   }
 
@@ -574,6 +574,9 @@ export class DsTabs extends LitElement {
       indicator.style.opacity = '0';
       return;
     }
+    // The first placement is instant; only movement between tabs animates.
+    const first = indicator.style.opacity !== '1';
+    if (first) indicator.style.transition = 'none';
     indicator.style.opacity = '1';
     if (this.orientation === 'vertical') {
       indicator.style.transform = `translateY(${tabEl.offsetTop}px)`;
@@ -583,6 +586,10 @@ export class DsTabs extends LitElement {
       indicator.style.transform = `translateX(${tabEl.offsetLeft}px)`;
       indicator.style.inlineSize = `${tabEl.offsetWidth}px`;
       indicator.style.blockSize = '';
+    }
+    if (first) {
+      void indicator.offsetWidth;
+      indicator.style.transition = '';
     }
   }
 

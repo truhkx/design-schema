@@ -37,3 +37,18 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Listbox: the rules say `disabled` sets accessibilityState plus `disabled`, but the package conventions forbid passing `disabled` to Pressable (it removes focus); followed the package: accessibilityState.disabled plus a press guard.
 - Listbox: the focus-visible binding does not say whether the ring may change layout; the `focusRingWidth` border is always reserved (transparent when unfocused), so measured row height is fontSize × lineHeight + 2 × optionPaddingBlock + 2 × borderWidthFocus, not the doc's formula.
 - Listbox (conventions digest): the digest shows `toLineHeight(t.fontLineHeightNormal, t.fontSizeMd)` but theme.ts's signature is `toLineHeight(fontSize, multiplier)`; followed the code.
+
+## 2026-09-17 11:48 — round 1
+
+- Listbox: the row formula says fontSize × lineHeight but doesn't say whether to round it; I used toLineHeight (rounded), which is also the line height the rows render with, so the computed height matches what's drawn.
+- Listbox: `typeaheadReset` is overridable, but native has no typeahead (the platform notes say so), so nothing reads it. It's accepted in the overrides type for parity only.
+- Listbox: the spec gives no weight for unselected options (only `optionSelectedWeight`); I used font.weight.regular.
+- Listbox: individually disabled options: the spec only says the list's `disabledOpacity` isn't stacked on top of them, which implies they are dimmed but never says so. I dim them with `disabledOpacity` when the whole list isn't disabled.
+- Listbox: the spec doesn't say whether a Form-supplied error (form.errors[name]) turns on `borderInvalid`; I treat it as invalid, the same as `error`.
+- Listbox: `initialActiveValue` is described only for first focus. Combobox changes it as the user types, so I move the pre-highlight when the prop changes and no row has focus, without firing onActiveChange (consistent with 'never on mount').
+- Listbox: the spec doesn't say what a disabled list does on row focus. I still draw the focus border but don't fire onActiveChange or show the active background, because keys, hover and taps are supposed to do nothing.
+- Listbox: with `multiple` the list's accessibilityValue is '{count} selected' even at 0. The spec says 'the list's accessibilityValue text is copy.selectedCount' without an exception for zero, and the copy has no plural or zero form.
+- Listbox: the 'focus on failed submit' target on native isn't specified (there's no single tab stop); I move accessibility focus to the FlatList.
+- Listbox: `valueType: string[]` in the form block conflicts with the single-select string value; I followed the `name` prop description (a string when single, an array with multiple, no key when nothing is selected).
+- Listbox: the group label row's padding only covers the block direction (groupLabelPaddingBlock); I reused optionPaddingInline for its inline padding so it lines up with the option labels.
+- Listbox: the empty/loading row has no padding binding; I reused optionPaddingBlock/optionPaddingInline so it lines up with the rows.

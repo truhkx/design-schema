@@ -3,12 +3,12 @@ import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Combobox.js';
 import type { ComboboxFilter, ComboboxValue } from './Combobox.js';
-import type { ListboxOption } from './Listbox.js';
+import type { ListboxItem } from './Listbox.js';
 
 interface ComboboxArgs {
   label: string;
   name: string;
-  options: ListboxOption[];
+  options: ListboxItem[];
   value?: ComboboxValue | undefined;
   defaultValue?: ComboboxValue | undefined;
   open?: boolean | undefined;
@@ -26,12 +26,10 @@ interface ComboboxArgs {
   clearable: boolean;
 }
 
-const FRUIT_OPTIONS: ListboxOption[] = [
+const FRUIT_OPTIONS: ListboxItem[] = [
   { value: 'apple', label: 'Apple' },
   { value: 'apricot', label: 'Apricot' },
   { value: 'banana', label: 'Banana' },
-  { value: 'cherry', label: 'Cherry' },
-  { value: 'grape', label: 'Grape' },
 ];
 
 const meta: Meta<ComboboxArgs> = {
@@ -94,7 +92,7 @@ export const FilterAsync: Story = { args: { filter: 'async' } };
 
 /* states */
 export const Open: Story = { args: { open: true } };
-export const Multiple: Story = { args: { multiple: true, defaultValue: ['apple', 'cherry'] } };
+export const Multiple: Story = { args: { multiple: true, defaultValue: ['apple', 'banana'] } };
 export const AllowCustom: Story = { args: { allowCustom: true, multiple: true } };
 export const Loading: Story = { args: { filter: 'async', loading: true, open: true } };
 export const NotClearable: Story = { args: { clearable: false, defaultValue: 'banana' } };

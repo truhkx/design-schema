@@ -85,6 +85,22 @@ describe('ds-segmented-control', () => {
     expect(s.segment()).toHaveAttribute('aria-checked', 'false');
   });
 
+  it('arrow-skips-disabled-segments', async () => {
+    const s = await setup({
+      options: [
+        { value: 'list', label: 'List' },
+        { value: 'grid', label: 'Grid', disabled: true },
+        { value: 'table', label: 'Table' },
+      ],
+      defaultValue: 'list',
+    });
+    s.checked().focus();
+    await userEvent.keyboard('{ArrowRight}');
+    await s.el.updateComplete;
+    expect(s.change).toHaveBeenCalledTimes(1);
+    expect(s.change.mock.calls[0]?.[0].detail).toEqual({ value: 'table' });
+  });
+
   /* derived */
   it('renders', async () => {
     const s = await setup();

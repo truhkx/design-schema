@@ -111,7 +111,7 @@
   box-shadow: var(--ds-segmented-control-segment-shadow);
   border-radius: var(--ds-segmented-control-segment-radius);
   pointer-events: none;
-  transition-property: inset-inline-start, inset-block-start, inline-size, block-size;
+  transition-property: left, top, width, height;
   transition-duration: var(--ds-segmented-control-transition);
   transition-timing-function: var(--motion-easing-standard);
 }

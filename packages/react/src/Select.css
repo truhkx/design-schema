@@ -93,21 +93,14 @@
   padding-block: calc(var(--ds-select-trigger-padding-block) - (var(--ds-select-focus-ring-width) - var(--ds-select-trigger-border-width)));
 }
 
-.ds-select--disabled .ds-select__trigger,
-.ds-select__native:disabled {
+/* disabledOpacity dims the whole field group once (label, description, trigger, error), as Input. */
+.ds-select--disabled {
   opacity: var(--ds-select-disabled-opacity);
-  cursor: not-allowed;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .ds-select__trigger,
-  .ds-select__native {
-    transition:
-      border-color var(--motion-duration-fast) var(--motion-easing-standard),
-      border-width var(--motion-duration-fast) var(--motion-easing-standard),
-      padding-inline var(--motion-duration-fast) var(--motion-easing-standard),
-      padding-block var(--motion-duration-fast) var(--motion-easing-standard);
-  }
+.ds-select--disabled .ds-select__trigger,
+.ds-select__native:disabled {
+  cursor: not-allowed;
 }
 
 .ds-select__native-wrap {
@@ -116,7 +109,7 @@
 }
 
 .ds-select__native-wrap .ds-select__native {
-  padding-inline-end: calc(var(--ds-select-trigger-padding-inline) + var(--ds-select-trigger-gap) + var(--ds-select-font-size)); /* inline Icon is one font-size wide */
+  padding-inline-end: calc(var(--ds-select-trigger-padding-inline) + var(--ds-select-trigger-gap) + var(--font-size-sm)); /* the size-sm chevron Icon is one font.size.sm wide */
 }
 
 .ds-select__value {
@@ -128,15 +121,11 @@
   text-align: start;
 }
 
-.ds-select__value--placeholder {
-  color: var(--ds-select-placeholder-color);
-}
-
+/* valueColor, placeholderColor and chevron are realised by the composed Text tones and Icon color. */
 .ds-select__chevron {
   flex: 0 0 auto;
   display: inline-flex;
   line-height: 0;
-  color: var(--ds-select-chevron);
 }
 
 .ds-select__native-wrap .ds-select__chevron {
@@ -150,22 +139,21 @@
 .ds-select__popup {
   --ds-select-popup-surface: var(--color-overlay-surface);
   --ds-select-popup-border: var(--color-border);
+  --ds-select-popup-border-width: var(--border-width-thin);
   --ds-select-popup-shadow: var(--shadow-overlay);
   --ds-select-popup-radius: var(--radius-md);
   --ds-select-popup-offset: var(--space-1);
   --ds-select-layer: var(--layer-dropdown);
   --ds-select-enter: var(--motion-duration-fast);
-  --ds-select-font-weight: var(--font-weight-regular);
   box-sizing: border-box;
   position: fixed;
   min-inline-size: var(--ds-select-trigger-width, 0px); /* literal-ok: zero fallback before the first measurement */
   max-inline-size: calc(100vw - 2 * var(--layout-gutter));
   overflow: auto;
   background-color: var(--ds-select-popup-surface);
-  border: var(--border-width-thin) solid var(--ds-select-popup-border);
+  border: var(--ds-select-popup-border-width) solid var(--ds-select-popup-border);
   border-radius: var(--ds-select-popup-radius);
   box-shadow: var(--ds-select-popup-shadow);
-  font-weight: var(--ds-select-font-weight);
   z-index: var(--ds-select-layer);
   opacity: 0;
   transition: opacity var(--ds-select-enter) var(--motion-easing-standard);

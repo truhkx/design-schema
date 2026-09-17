@@ -32,3 +32,12 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Accordion: the `list` anatomy part has no stated element; put data-part="list" (and part="list") on the shadow root's flex container.
 - Accordion: toggling `exclusive` on while several sections are open silently trims the set to the first id; the doc covers only value/defaultValue, so no open-change is reported for the sections that close.
 - Accordion: the scenario `click: trigger` doesn't say which trigger; tests use the first, with Default args (nothing open) expecting change({ openIds: [firstId] }) and open-change({ id: firstId, open: true, reason: 'trigger' }).
+
+## 2026-09-17 12:04 — round 1
+
+- Accordion: `exclusive` says turning it on 'trims the open set to the first open id' but not whether 'first' means first in item order or first in the open set (open order / the `value` array); chose the open set's order, matching the stated equivalence with several ids in `value`/`defaultValue`.
+- Accordion: behavior says sections closed by `exclusive` are reported 'in item order', but no order is given for the several per-section `open-change` events of a `reason: 'controlled'` `value` change; chose item order too.
+- Accordion (lit): the accordion always sets `open` on slotted `<ds-disclosure>` children, so a consumer's `open` / `default-open` attribute on a slotted disclosure is overridden by `value`/`defaultValue`; the doc does not say whether a child's own open state should seed the accordion's set. Kept `value`/`defaultValue` as the only source.
+- Accordion (lit): with the accordion setting `open`, each slotted disclosure that `exclusive` or a `value` change opens or closes fires its own composed `toggle` with `reason: 'controlled'`, which the notes leave to reach the page; the doc does not say a consumer listening for `toggle` on slotted children will see these echoes as well as the accordion's `open-change`.
+- Accordion: `exclusive` 'turned on later while `value` holds several ids' trims silently, but the doc only asks for the development warning when `value`/`defaultValue` itself holds several ids under `exclusive`; no warning is emitted for the toggle-on case.
+- Accordion: the `divider`/`dividerWidth` bindings have no `part` (they are forwarded to Divider), and `fontFamily` has no `part` although it is forwarded to the trigger like the other three; `Style bindings` therefore lists only four of the seven overridable bindings. Implemented all seven as hooks per the Lit notes.

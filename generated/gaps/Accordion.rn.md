@@ -30,3 +30,12 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Accordion: the Keyboard rules (arrows, Home/End) are explicitly not implemented on native, and the rn notes say arrow keys apply 'only with a hardware keyboard on react-native-web'. Pressable has no key events, so I added no web-only handler. The Keyboard story renders one section open with four triggers (one disabled but still focusable).
 - Accordion: the `exclusive-still-reports-both-events` scenario gives only `exclusive: true` with nothing open beforehand, so the test can't observe the 'closes the others' half. It checks both events and the expanded state only.
 - Accordion: `click-on-a-trigger-reports-the-open-set` doesn't say which trigger to press; the test presses the first one and asserts onChange([firstId]) and onOpenChange(firstId, true, 'trigger').
+
+## 2026-09-17 12:06 — round 1
+
+- Accordion: a `value` change whose set matches the current open set but whose raw input differs (e.g. several ids trimmed under `exclusive`) — the doc doesn't say whether that counts as a change the accordion 'did not itself just emit'; I report per-section `controlled` only for ids whose open state actually changed, and nothing when `exclusive` alone trims the set.
+- Accordion: the just-emitted set is 'compared only with the next `value` change and then cleared' — unspecified whether a change caused only by toggling `exclusive` (value unchanged) consumes it; I leave it pending until `value` itself changes.
+- Accordion: turning `exclusive` on in uncontrolled mode 'trims the open set' — unclear whether it's permanent (turning `exclusive` off again doesn't restore the others) or only for display; I made it permanent in local state.
+- Accordion: the `divider`/`dividerWidth` bindings have no `part` and Divider's own defaults are the same tokens, so it's unspecified whether Accordion forwards its defaults or only overrides; I always forward the Accordion defaults (same for the four Disclosure forwards).
+- Accordion: the Keyboard story rule asks for 'open with its trigger and at least three focusable children'; the RN Keyboard story opens one section of four (4 triggers as focus stops, plain-text panel), since panel content in the Default items isn't focusable.
+- Accordion: Divider between items keeps its default `spacing: none`; the doc says itemGap falls on both sides of the divider but doesn't say whether the Divider should add spacing of its own; I left it at none.

@@ -9,7 +9,7 @@ import './Icon.js';
 import './Button.js';
 import './Listbox.js';
 import type { IconOverridableBinding, IconSize } from './Icon.js';
-import type { DsListbox, ListboxChangeDetail, ListboxItem } from './Listbox.js';
+import type { DsListbox, ListboxChangeDetail, ListboxOption } from './Listbox.js';
 
 export type SearchSize = 'md' | 'lg';
 
@@ -436,7 +436,7 @@ export class DsSearch extends LitElement {
   }
 
   /** What the Listbox shows: nothing while loading, so its empty row carries `copy.loading`. */
-  private get listOptions(): ListboxItem[] {
+  private get listOptions(): ListboxOption[] {
     if (this.loading) {
       return [];
     }
@@ -731,12 +731,12 @@ export class DsSearch extends LitElement {
     this.updatePosition();
   };
 
-  private activeItem(): ListboxItem | undefined {
+  private activeItem(): ListboxOption | undefined {
     return this.activeValue === null ? undefined : this.listOptions.find((item) => item.value === this.activeValue);
   }
 
   /** Fills the query with the suggestion's label, what the user just read, and submits it. */
-  private chooseSuggestion(item: ListboxItem): void {
+  private chooseSuggestion(item: ListboxOption): void {
     if (this.value === undefined) {
       this.internalValue = item.label;
     }

@@ -148,6 +148,7 @@
 .ds-combobox__popup {
   --ds-combobox-popup-surface: var(--color-overlay-surface);
   --ds-combobox-popup-border: var(--color-border);
+  --ds-combobox-popup-border-width: var(--border-width-thin);
   --ds-combobox-popup-shadow: var(--shadow-overlay);
   --ds-combobox-popup-radius: var(--radius-md);
   --ds-combobox-popup-offset: var(--space-1);
@@ -159,7 +160,7 @@
   max-inline-size: calc(100vw - 2 * var(--layout-gutter));
   overflow: hidden;
   background-color: var(--ds-combobox-popup-surface);
-  border: var(--border-width-thin) solid var(--ds-combobox-popup-border);
+  border: var(--ds-combobox-popup-border-width) solid var(--ds-combobox-popup-border);
   border-radius: var(--ds-combobox-popup-radius);
   box-shadow: var(--ds-combobox-popup-shadow);
   opacity: 1;

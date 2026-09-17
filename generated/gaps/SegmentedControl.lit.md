@@ -27,3 +27,13 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - SegmentedControl: in controlled mode, the keyboard rules don't say where focus goes when the parent doesn't accept the change. Focus moves to the next segment while the checked state stays until `value` changes.
 - SegmentedControl: `label` is required with no default. The Lit property defaults to '' and warns in development when empty.
 - SegmentedControl: the `disabled-segment-is-not-selectable` scenario's description says arrow movement skips disabled segments, but its `when` is only a click, so skipping is implemented and not covered by a scenario.
+
+## 2026-09-17 11:36 — round 1
+
+- SegmentedControl: the resolved Keyboard section lists only the arrow rules, but the schema's keyboard block and the guidance also define Home/End (and ArrowRight wrap from last); kept Home/End as the schema says.
+- SegmentedControl: under a controlled `value`, the guidance says arrows move focus and fire onChange while the checked state stays put, but not what the next arrow moves from (the focused segment or the still-checked one), nor whether moving back onto the checked value fires onChange; chose: move from the focused segment, and fire only when the target differs from the current value.
+- SegmentedControl: iconOnly with an option lacking `icon` — the doc says that segment shows its label as text, but not whether it still gets the Tooltip and `aria-label`; chose no Tooltip and no aria-label (the visible text is the name).
+- SegmentedControl: 'inside a Toolbar' is defined as a role="toolbar" ancestor found via composedPath/host ancestors, but composedPath exists only during an event and does not show where the element sits in the page; implemented as a parentElement/shadow-host walk at keydown time.
+- SegmentedControl: the doc does not say which element's writing direction decides RTL for the arrows; used the host's computed `direction`.
+- SegmentedControl: no behavior scenario covers RTL arrows, Home/End, the toolbar no-wrap rule, or controlled-mode arrows, so those paths are untested; the Keyboard story has no RTL or in-toolbar variant for the keyboard gate.
+- SegmentedControl: `defaultValue` has no reflect entry and no attribute name is given; kept `default-value`.

@@ -279,7 +279,8 @@ export class DsSegmentedControl extends LitElement {
   @query('[data-part="indicator"]') private accessor indicatorEl!: HTMLElement | null;
 
   private resizeObserver: ResizeObserver | undefined;
-  private warned = false;
+  private warnedLabel = false;
+  private warnedIcon = false;
 
   /** The currently selected value, controlled or not. */
   get currentValue(): string | null {
@@ -332,6 +333,8 @@ export class DsSegmentedControl extends LitElement {
   }
 
   private renderSegment(option: SegmentedControlOption, selected: boolean, tabStop: boolean): TemplateResult {
+    // An `iconOnly` option without an icon shows its label as text, so the segment never renders empty.
+    const iconOnly = this.iconOnly && option.icon !== undefined;
     const button = html`
       <button
         type="button"
@@ -340,7 +343,7 @@ export class DsSegmentedControl extends LitElement {
         role="radio"
         data-value=${option.value}
         aria-checked=${selected ? 'true' : 'false'}
-        aria-label=${ifDefined(this.iconOnly ? option.label : undefined)}
+        aria-label=${ifDefined(iconOnly ? option.label : undefined)}
         tabindex=${tabStop ? 0 : -1}
         ?disabled=${option.disabled === true}
         @click=${() => this.handleSegmentClick(option)}
@@ -348,43 +351,69 @@ export class DsSegmentedControl extends LitElement {
         ${option.icon
           ? html`<ds-icon data-part="segmentIcon" part="segmentIcon" name=${option.icon}></ds-icon>`
           : nothing}
-        ${this.iconOnly
+        ${iconOnly
           ? nothing
           : html`<span data-part="segmentLabel" part="segmentLabel">${option.label}</span>`}
       </button>
     `;
-    return this.iconOnly
+    return iconOnly
       ? html`<ds-tooltip data-part="tooltip" part="tooltip" content=${option.label} no-describes>${button}</ds-tooltip>`
       : button;
   }
 
   private readonly handleKeydown = (event: KeyboardEvent): void => {
+    const rtl = getComputedStyle(this).direction === 'rtl';
+    let delta: number;
     switch (event.key) {
-      case 'ArrowRight':
       case 'ArrowDown':
-        event.preventDefault();
-        this.moveSelection(1);
+        delta = 1;
+        break;
+      case 'ArrowUp':
+        delta = -1;
+        break;
+      case 'ArrowRight':
+        delta = rtl ? -1 : 1;
         break;
       case 'ArrowLeft':
-      case 'ArrowUp':
-        event.preventDefault();
-        this.moveSelection(-1);
+        delta = rtl ? 1 : -1;
         break;
-      case 'Home': {
-        event.preventDefault();
-        const first = this.firstEnabled();
-        if (first) this.focusAndSelect(first.value);
-        break;
-      }
+      case 'Home':
       case 'End': {
-        event.preventDefault();
+        // Inside a toolbar, Home and End belong to the toolbar.
+        if (this.insideToolbar()) return;
         const items = this.enabledOptions();
-        const last = items[items.length - 1];
-        if (last) this.focusAndSelect(last.value);
-        break;
+        const target = event.key === 'Home' ? items[0] : items[items.length - 1];
+        event.preventDefault();
+        if (target) this.focusAndSelect(target.value);
+        return;
       }
+      default:
+        return;
     }
+    const items = this.enabledOptions();
+    if (items.length === 0) return;
+    const currentIndex = items.findIndex((option) => option.value === this.tabStopValue());
+    const nextIndex = currentIndex + delta;
+    // Inside a toolbar the arrows do not wrap: an arrow pointing out of the ends is left to the toolbar.
+    if ((nextIndex < 0 || nextIndex >= items.length) && this.insideToolbar()) return;
+    event.preventDefault();
+    this.focusAndSelect(items[(nextIndex + items.length) % items.length]!.value);
   };
+
+  /** Whether a `role="toolbar"` ancestor contains this element, walking host ancestors across shadow roots. */
+  private insideToolbar(): boolean {
+    let node: Element | null = this.parentElement ?? this.hostOf(this);
+    while (node) {
+      if (node.getAttribute('role') === 'toolbar') return true;
+      node = node.parentElement ?? this.hostOf(node);
+    }
+    return false;
+  }
+
+  private hostOf(node: Element): Element | null {
+    const root = node.getRootNode();
+    return root instanceof ShadowRoot ? root.host : null;
+  }
 
   private handleSegmentClick(option: SegmentedControlOption): void {
     if (option.disabled === true) {
@@ -411,16 +440,6 @@ export class DsSegmentedControl extends LitElement {
       }
     }
     return items[0]?.value;
-  }
-
-  private moveSelection(delta: number): void {
-    const items = this.enabledOptions();
-    if (items.length === 0) {
-      return;
-    }
-    const currentIndex = items.findIndex((option) => option.value === this.tabStopValue());
-    const nextIndex = (currentIndex + delta + items.length) % items.length;
-    this.focusAndSelect(items[nextIndex]!.value);
   }
 
   private focusAndSelect(value: string): void {
@@ -493,20 +512,20 @@ export class DsSegmentedControl extends LitElement {
   }
 
   private warnInDev(): void {
-    if (!import.meta.env.DEV || this.warned) {
+    if (!import.meta.env.DEV) {
       return;
     }
-    if (!this.label) {
-      this.warned = true;
+    if (!this.label && !this.warnedLabel) {
+      this.warnedLabel = true;
       console.warn("<ds-segmented-control> requires a `label`, the group's accessible name.", this);
     }
-    if (this.options.length < 2 || this.options.length > 5) {
-      this.warned = true;
-      console.warn('<ds-segmented-control> expects two to five entries in `options`.', this);
-    }
-    if (this.iconOnly && this.options.some((option) => option.icon === undefined)) {
-      this.warned = true;
-      console.warn('<ds-segmented-control> `iconOnly` requires every option to have an `icon`.', this);
+    // The two-to-five option count is guidance only: any count renders, with no warning.
+    if (this.iconOnly && !this.warnedIcon && this.options.some((option) => option.icon === undefined)) {
+      this.warnedIcon = true;
+      console.warn(
+        '<ds-segmented-control> `iconOnly` requires every option to have an `icon`; options without one show their label.',
+        this,
+      );
     }
   }
 }

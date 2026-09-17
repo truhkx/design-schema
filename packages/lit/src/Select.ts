@@ -12,9 +12,10 @@ import type {
   DsListbox,
   ListboxActiveChangeDetail,
   ListboxChangeDetail,
-  ListboxGroupOption,
-  ListboxItem,
+  ListboxGroup,
   ListboxOption,
+  ListboxItem,
+  ListboxOverridableBinding,
 } from './Listbox.js';
 import type { TextOverridableBinding } from './Text.js';
 
@@ -53,6 +54,7 @@ export type SelectOverridableBinding =
   | 'helperSize'
   | 'popupSurface'
   | 'popupBorder'
+  | 'popupBorderWidth'
   | 'popupShadow'
   | 'popupRadius'
   | 'popupOffset'
@@ -76,6 +78,7 @@ const HOOKS: Record<SelectOverridableBinding, string> = {
   helperSize: '--ds-select-helper-size',
   popupSurface: '--ds-select-popup-surface',
   popupBorder: '--ds-select-popup-border',
+  popupBorderWidth: '--ds-select-popup-border-width',
   popupShadow: '--ds-select-popup-shadow',
   popupRadius: '--ds-select-popup-radius',
   popupOffset: '--ds-select-popup-offset',
@@ -107,13 +110,13 @@ const CHEVRON_OVERRIDES: Partial<Record<IconOverridableBinding, TokenRef | undef
 /** Whether the running browser implements the Popover API. Evaluated once. */
 const POPOVER_SUPPORTED = typeof HTMLElement !== 'undefined' && typeof HTMLElement.prototype.showPopover === 'function';
 
-function isGroupOption(option: ListboxOption): option is ListboxGroupOption {
+function isGroupOption(option: ListboxItem): option is ListboxGroup {
   return 'group' in option;
 }
 
 /** Depth-first list of every selectable item, groups flattened. */
-function flattenOptions(options: ListboxOption[]): ListboxItem[] {
-  const result: ListboxItem[] = [];
+function flattenOptions(options: ListboxItem[]): ListboxOption[] {
+  const result: ListboxOption[] = [];
   for (const option of options) {
     if (isGroupOption(option)) {
       result.push(...flattenOptions(option.options));
@@ -192,6 +195,7 @@ export class DsSelect extends LitElement {
       --ds-select-helper-size: var(--font-size-sm);
       --ds-select-popup-surface: var(--color-overlay-surface);
       --ds-select-popup-border: var(--color-border);
+      --ds-select-popup-border-width: var(--border-width-thin);
       --ds-select-popup-shadow: var(--shadow-overlay);
       --ds-select-popup-radius: var(--radius-md);
       --ds-select-popup-offset: var(--space-1);
@@ -295,19 +299,12 @@ export class DsSelect extends LitElement {
       cursor: not-allowed;
     }
 
-    /* valueColor: color.foreground, locked */
+    /* valueColor / placeholderColor (locked): the composed Text's default / muted tone */
     [data-part='value'] {
       flex: 1;
       min-inline-size: 0;
       overflow: hidden;
-      text-overflow: ellipsis;
       white-space: nowrap;
-      color: var(--color-foreground);
-    }
-
-    /* placeholderColor: color.foreground.muted, locked */
-    [data-part='value'][data-placeholder] {
-      color: var(--color-foreground-muted);
     }
 
     [data-part='chevron'] {
@@ -318,11 +315,13 @@ export class DsSelect extends LitElement {
       position: fixed;
       inset: auto;
       box-sizing: border-box;
+      /* popupOffset: the gap on the side the popup opens */
       margin: 0;
+      margin-block: var(--ds-select-popup-offset);
       padding: 0;
       overflow: hidden;
       border-style: solid;
-      border-width: var(--border-width-thin);
+      border-width: var(--ds-select-popup-border-width);
       border-color: var(--ds-select-popup-border);
       border-radius: var(--ds-select-popup-radius);
       background: var(--ds-select-popup-surface);
@@ -383,7 +382,7 @@ export class DsSelect extends LitElement {
   @property() accessor name = '';
 
   /** The options, passed through to the Listbox. A property, not an attribute. */
-  @property({ attribute: false }) accessor options: ListboxOption[] = [];
+  @property({ attribute: false }) accessor options: ListboxItem[] = [];
 
   /** Controlled value (array with `multiple`). Omit for an uncontrolled field. */
   @property({ attribute: false }) accessor value: SelectValue | undefined;
@@ -476,7 +475,7 @@ export class DsSelect extends LitElement {
     this.addEventListener('focusout', this.handleFocusOut);
   }
 
-  private get flatItems(): ListboxItem[] {
+  private get flatItems(): ListboxOption[] {
     return flattenOptions(this.options);
   }
 
@@ -610,9 +609,11 @@ export class DsSelect extends LitElement {
       fontFamily: o?.fontFamily,
       lineHeight: o?.lineHeight,
     };
+    // fontSize: font.size.{size}, so the label and value follow `size` unless overridden.
+    const fontSize: TokenRef = o?.fontSize ?? (`font.size.${this.size}` as TokenRef);
     const labelOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {
       fontWeight: o?.labelWeight,
-      fontSize: o?.fontSize,
+      fontSize,
       fontFamily: o?.fontFamily,
       lineHeight: o?.lineHeight,
     };
@@ -626,7 +627,7 @@ export class DsSelect extends LitElement {
           for="trigger"
           class=${classMap({ 'visually-hidden': this.hideLabel })}
           @click=${this.handleLabelClick}
-          ><ds-text element="span" size=${this.size} weight="medium" .overrides=${labelOverrides}
+          ><ds-text element="span" weight="medium" .overrides=${labelOverrides}
             >${this.label}${this.required ? COPY_REQUIRED_INDICATOR : nothing}</ds-text
           ></label
         >
@@ -635,24 +636,45 @@ export class DsSelect extends LitElement {
               id="description"
               data-part="description"
               part="description"
-              element="p"
+              element="span"
               size="sm"
               tone="muted"
               .overrides=${helperOverrides}
               >${this.description}</ds-text
             >`
           : nothing}
-        ${this.usesPopup ? this.renderPopupField(isDisabled, describedBy) : this.renderNativeField(isDisabled, describedBy)}
-        <div id="error" data-part="errorMessage" part="errorMessage" role="alert" ?hidden=${!message}>
+        ${this.usesPopup
+          ? this.renderPopupField(isDisabled, describedBy, fontSize)
+          : this.renderNativeField(isDisabled, describedBy)}
+        <div id="error" role="alert" ?hidden=${!message}>
           ${message
-            ? html`<ds-text element="p" size="sm" tone="danger" .overrides=${helperOverrides}>${message}</ds-text>`
+            ? html`<ds-text
+                data-part="errorMessage"
+                part="errorMessage"
+                element="span"
+                size="sm"
+                tone="danger"
+                .overrides=${helperOverrides}
+                >${message}</ds-text
+              >`
             : nothing}
         </div>
       </div>
     `;
   }
 
-  private renderPopupField(isDisabled: boolean, describedBy: string): TemplateResult {
+  private renderPopupField(isDisabled: boolean, describedBy: string, fontSize: TokenRef): TemplateResult {
+    const o = this.overrides;
+    const valueOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {
+      fontSize,
+      fontWeight: o?.fontWeight,
+      fontFamily: o?.fontFamily,
+      lineHeight: o?.lineHeight,
+    };
+    const listboxOverrides: Partial<Record<ListboxOverridableBinding, TokenRef | undefined>> = {
+      fontFamily: o?.fontFamily,
+      lineHeight: o?.lineHeight,
+    };
     const isOpen = this.currentOpen;
     const labels = this.displayLabels();
     const text =
@@ -674,7 +696,7 @@ export class DsSelect extends LitElement {
         aria-haspopup="listbox"
         aria-expanded=${isOpen ? 'true' : 'false'}
         aria-controls="popup"
-        aria-labelledby="label value"
+        aria-labelledby="label"
         aria-describedby=${ifDefined(describedBy || undefined)}
         aria-invalid=${ifDefined(this.invalid ? 'true' : undefined)}
         aria-required=${ifDefined(this.required ? 'true' : undefined)}
@@ -682,8 +704,22 @@ export class DsSelect extends LitElement {
         @click=${this.handleTriggerClick}
         @keydown=${this.handleTriggerKeydown}
       >
-        <span id="value" data-part="value" part="value" ?data-placeholder=${labels.length === 0}>${text}</span>
-        <ds-icon data-part="chevron" part="chevron" name="chevron-down" .overrides=${CHEVRON_OVERRIDES}></ds-icon>
+        <ds-text
+          id="value"
+          data-part="value"
+          part="value"
+          element="span"
+          tone=${labels.length === 0 ? 'muted' : 'default'}
+          .overrides=${valueOverrides}
+          >${text}</ds-text
+        >
+        <ds-icon
+          data-part="chevron"
+          part="chevron"
+          name="chevron-down"
+          size="sm"
+          .overrides=${CHEVRON_OVERRIDES}
+        ></ds-icon>
       </button>
       <span id="active-option" class="visually-hidden" aria-live="polite">${isOpen ? activeLabel : ''}</span>
       <div
@@ -698,15 +734,15 @@ export class DsSelect extends LitElement {
         <ds-listbox
           data-part="listbox"
           part="listbox"
-          labelledBy="label"
           embedded
+          .labelledBy=${'label'}
           .selectionFollowsFocus=${false}
           .options=${this.options}
           .value=${this.multiple ? (this.currentValue ?? []) : (this.currentValue ?? '')}
           .initialActiveValue=${this.activeValue ?? undefined}
           .activeValue=${this.activeValue}
+          .overrides=${listboxOverrides}
           ?multiple=${this.multiple}
-          ?disabled=${isDisabled}
           @change=${this.handleListboxChange}
           @active-change=${this.handleListboxActiveChange}
         ></ds-listbox>
@@ -716,7 +752,7 @@ export class DsSelect extends LitElement {
 
   private renderNativeField(isDisabled: boolean, describedBy: string): TemplateResult {
     const selected = this.selectedSet;
-    const renderOptions = (options: ListboxOption[]): unknown[] =>
+    const renderOptions = (options: ListboxItem[]): unknown[] =>
       options.map((option) =>
         isGroupOption(option)
           ? html`<optgroup label=${option.group}>${renderOptions(option.options)}</optgroup>`
@@ -752,7 +788,7 @@ export class DsSelect extends LitElement {
         ${this.multiple
           ? nothing
           : html`<span class="native-chevron"
-              ><ds-icon data-part="chevron" part="chevron" name="chevron-down" .overrides=${CHEVRON_OVERRIDES}></ds-icon
+              ><ds-icon data-part="chevron" part="chevron" name="chevron-down" size="sm" .overrides=${CHEVRON_OVERRIDES}></ds-icon
             ></span>`}
       </div>
     `;
@@ -981,12 +1017,13 @@ export class DsSelect extends LitElement {
     const triggerRect = trigger.getBoundingClientRect();
     const popupHeight = popup.getBoundingClientRect().height;
     const viewportHeight = document.documentElement.clientHeight;
-    const offset = parseFloat(getComputedStyle(this).getPropertyValue(HOOKS.popupOffset)) || 0;
+    // popupOffset is the popup's block margin, resolved by the browser.
+    const offset = parseFloat(getComputedStyle(popup).marginBlockStart) || 0;
     const above =
       triggerRect.bottom + offset + popupHeight > viewportHeight && triggerRect.top - offset - popupHeight >= 0;
 
-    popup.style.top = above ? 'auto' : `${triggerRect.bottom + offset}px`;
-    popup.style.bottom = above ? `${viewportHeight - triggerRect.top + offset}px` : 'auto';
+    popup.style.top = above ? 'auto' : `${triggerRect.bottom}px`;
+    popup.style.bottom = above ? `${viewportHeight - triggerRect.top}px` : 'auto';
     popup.style.left = `${triggerRect.left}px`;
     popup.style.minInlineSize = `${triggerRect.width}px`;
   }

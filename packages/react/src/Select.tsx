@@ -19,7 +19,13 @@ import { createPortal } from 'react-dom';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Icon } from './Icon';
 import { Text, type TextOverridableBinding } from './Text';
-import { Listbox, type ListboxOption, type ListboxValue } from './Listbox';
+import {
+  Listbox,
+  type ListboxGroup,
+  type ListboxItem,
+  type ListboxOverridableBinding,
+  type ListboxValue,
+} from './Listbox';
 import { useFormContext } from './FormContext';
 import './Select.css';
 
@@ -39,8 +45,9 @@ const COPY = {
 
 /**
  * Style bindings that can be overridden per instance; accessibility-bearing bindings are never in
- * this list. `labelWeight` and `helperSize` are forwarded to the composed Text parts' own
- * `overrides`, since Text owns those bindings.
+ * this list. `labelWeight` and `helperSize` reach only the composed Text parts' own `overrides`
+ * (no --ds-select-* hook); `fontFamily`, `fontSize`, `fontWeight` and `lineHeight` are forwarded
+ * into the composed parts as the schema lists, and keep a root hook for the native <select>.
  */
 export type SelectOverridableBinding =
   | 'triggerBorderInvalid'
@@ -54,6 +61,7 @@ export type SelectOverridableBinding =
   | 'helperSize'
   | 'popupSurface'
   | 'popupBorder'
+  | 'popupBorderWidth'
   | 'popupShadow'
   | 'popupRadius'
   | 'popupOffset'
@@ -80,46 +88,65 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<SelectOverridableBinding, string>> = {
   disabledOpacity: '--ds-select-disabled-opacity',
 };
 
-/**
- * The popup is portaled, so it inherits nothing from the root: its bindings are set on the popup
- * node itself. `fontWeight` also weights the option text, so it is written on both.
- */
+/** The popup is portaled, so it inherits nothing from the root: its bindings are set on the popup node itself. */
 const POPUP_OVERRIDE_HOOK: Partial<Record<SelectOverridableBinding, string>> = {
   popupSurface: '--ds-select-popup-surface',
   popupBorder: '--ds-select-popup-border',
+  popupBorderWidth: '--ds-select-popup-border-width',
   popupShadow: '--ds-select-popup-shadow',
   popupRadius: '--ds-select-popup-radius',
   popupOffset: '--ds-select-popup-offset',
   layer: '--ds-select-layer',
   enter: '--ds-select-enter',
-  fontWeight: '--ds-select-font-weight',
 };
 
 type TextOverrides = Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
+type ListboxOverrides = Partial<Record<ListboxOverridableBinding, TokenRef | undefined>>;
 
-function resolveOverrides(overrides: Partial<Record<SelectOverridableBinding, TokenRef | undefined>>): {
-  rootStyle: CSSProperties;
+type ResolvedOverrides = {
+  rootStyle: CSSProperties | undefined;
   popupStyle: CSSProperties;
-  labelOverrides: TextOverrides | undefined;
-  helperOverrides: TextOverrides | undefined;
-} {
+  label: TextOverrides;
+  value: TextOverrides;
+  helper: TextOverrides | undefined;
+  listbox: ListboxOverrides | undefined;
+};
+
+/** Splits `overrides` into the root and popup hooks and the forwards into each composed part. */
+function resolveOverrides(
+  overrides: Partial<Record<SelectOverridableBinding, TokenRef | undefined>> | undefined,
+  size: SelectSize,
+): ResolvedOverrides {
   const rootStyle: Record<string, string> = {};
   const popupStyle: Record<string, string> = {};
-  let labelOverrides: TextOverrides | undefined;
-  let helperOverrides: TextOverrides | undefined;
-  for (const binding of Object.keys(overrides) as SelectOverridableBinding[]) {
-    const ref = overrides[binding];
+  const given = overrides ?? {};
+  for (const binding of Object.keys(given) as SelectOverridableBinding[]) {
+    const ref = given[binding];
     if (!ref) continue;
-    if (binding === 'labelWeight') labelOverrides = { fontWeight: ref };
-    if (binding === 'helperSize') helperOverrides = { fontSize: ref };
     // Locked bindings have no hook, so they are ignored if passed.
     const rootHook = ROOT_OVERRIDE_HOOK[binding];
     if (rootHook) rootStyle[rootHook] = cssVar(ref);
     const popupHook = POPUP_OVERRIDE_HOOK[binding];
     if (popupHook) popupStyle[popupHook] = cssVar(ref);
   }
-  return { rootStyle: rootStyle as CSSProperties, popupStyle: popupStyle as CSSProperties, labelOverrides, helperOverrides };
+  // fontSize is font.size.{size}: the label and value follow `size` unless overridden.
+  const fontSize = given.fontSize ?? (`font.size.${size}` as TokenRef);
+  const { fontFamily, lineHeight } = given;
+  const shared = { ...(fontFamily ? { fontFamily } : {}), ...(lineHeight ? { lineHeight } : {}) };
+  const hasShared = Object.keys(shared).length > 0;
+  return {
+    rootStyle: Object.keys(rootStyle).length > 0 ? (rootStyle as CSSProperties) : undefined,
+    popupStyle: popupStyle as CSSProperties,
+    label: { ...shared, fontSize, ...(given.labelWeight ? { fontWeight: given.labelWeight } : {}) },
+    value: { ...shared, fontSize, ...(given.fontWeight ? { fontWeight: given.fontWeight } : {}) },
+    helper: given.helperSize || hasShared ? { ...shared, ...(given.helperSize ? { fontSize: given.helperSize } : {}) } : undefined,
+    // fontSize is not forwarded: the popup does not follow `size`.
+    listbox: hasShared ? shared : undefined,
+  };
 }
+
+/** The locked `chevron` binding, realised through the composed Icon's color. */
+const CHEVRON_OVERRIDES: Partial<Record<'color', TokenRef>> = { color: 'color.foreground.muted' as TokenRef };
 
 declare const process: { env: { NODE_ENV?: string } };
 
@@ -132,12 +159,12 @@ function prefersReducedMotion(): boolean {
 
 type SelectRow = { value: string; label: string; disabled?: boolean | undefined };
 
-function isGroup(option: ListboxOption): option is { group: string; options: ListboxOption[] } {
+function isGroup(option: ListboxItem): option is ListboxGroup {
   return 'group' in option;
 }
 
 /** Depth-first rows, dropping group wrappers — used to resolve a value to its label. */
-function flattenRows(options: ListboxOption[]): SelectRow[] {
+function flattenRows(options: ListboxItem[]): SelectRow[] {
   const result: SelectRow[] = [];
   for (const option of options) {
     if (isGroup(option)) result.push(...flattenRows(option.options));
@@ -211,7 +238,7 @@ export interface SelectProps
   /** Field name for the Form. */
   name: string;
   /** The options, passed through to the Listbox. */
-  options: ListboxOption[];
+  options: ListboxItem[];
   /** Controlled value (array with `multiple`). */
   value?: SelectValue | undefined;
   /** Initial value (array with `multiple`). */
@@ -301,7 +328,6 @@ export function Select({
   const generatedId = useId();
   const id = idProp ?? (form?.idBase ? `${form.idBase}-${name}` : `ds-select${generatedId}`);
   const labelId = `${id}-label`;
-  const valueId = `${id}-value`;
   const descriptionId = `${id}-description`;
   const errorId = `${id}-error`;
   const listboxId = `${id}-listbox`;
@@ -337,7 +363,11 @@ export function Select({
   const [entered, setEntered] = useState(false);
 
   const isDisabled = disabled || (form?.disabled ?? false);
-  const resolvedError = error ?? form?.errors[name];
+  // The error region shows `error`, then the Form's message, then `copy.invalid` while `invalid` (as Input).
+  const resolvedError =
+    (error !== undefined && error !== '' ? error : undefined) ??
+    form?.errors[name] ??
+    (invalid ? COPY.invalid.replace('{label}', label) : undefined);
   const isInvalid = invalid || resolvedError !== undefined;
 
   const rows = flattenRows(options);
@@ -569,7 +599,7 @@ export function Select({
     if (option && option.getAttribute('aria-disabled') !== 'true') closeSelect(true);
   };
 
-  const resolved = overrides ? resolveOverrides(overrides) : undefined;
+  const resolved = resolveOverrides(overrides, size);
 
   const classes = [
     'ds-select',
@@ -582,14 +612,21 @@ export function Select({
 
   const describedBy = [description ? descriptionId : null, resolvedError ? errorId : null].filter(Boolean).join(' ');
 
+  // Clicking the label focuses the trigger and does not open the popup (a <label for> would click the button).
+  const handleLabelClick = (event: ReactMouseEvent<HTMLLabelElement>) => {
+    if (isNativeSelect) return;
+    event.preventDefault();
+    triggerRef.current?.focus();
+  };
+
   const labelNode = (
     <label
       htmlFor={id}
       id={labelId}
       className={['ds-select__label', hideLabel ? 'ds-select__visually-hidden' : null].filter(Boolean).join(' ')}
-      data-part="label"
+      onClick={handleLabelClick}
     >
-      <Text element="span" weight="medium" overrides={resolved?.labelOverrides}>
+      <Text element="span" weight="medium" data-part="label" overrides={resolved.label}>
         {label}
         {required ? COPY.requiredIndicator : null}
       </Text>
@@ -597,31 +634,31 @@ export function Select({
   );
 
   const descriptionNode = description ? (
-    <Text
-      element="p"
-      id={descriptionId}
-      size="sm"
-      tone="muted"
-      data-part="description"
-      overrides={resolved?.helperOverrides}
-    >
+    <Text element="span" id={descriptionId} size="sm" tone="muted" data-part="description" overrides={resolved.helper}>
       {description}
     </Text>
   ) : null;
 
   const errorNode = resolvedError ? (
     <Text
-      element="p"
+      element="span"
       id={errorId}
       role="alert"
       size="sm"
       tone="danger"
       data-part="errorMessage"
-      overrides={resolved?.helperOverrides}
+      overrides={resolved.helper}
     >
       {resolvedError}
     </Text>
   ) : null;
+
+  // The wrapper only places the composed Icon; it never styles it.
+  const chevronNode = (
+    <span className="ds-select__chevron" aria-hidden="true">
+      <Icon name="chevron-down" size="sm" data-part="chevron" overrides={CHEVRON_OVERRIDES} />
+    </span>
+  );
 
   if (isNativeSelect) {
     const handleNativeChange = (event: ChangeEvent<HTMLSelectElement>) => {
@@ -633,7 +670,7 @@ export function Select({
       if (form && (form.validate === 'blur' || form.validate === 'change')) form.validateField(name);
     };
 
-    const renderNativeNode = (node: ListboxOption, path: string): ReactElement => {
+    const renderNativeNode = (node: ListboxItem, path: string): ReactElement => {
       if (isGroup(node)) {
         return (
           <optgroup key={`${path}-group`} label={node.group}>
@@ -651,7 +688,7 @@ export function Select({
     const nativeValue = multiple ? selectedValues : (selectedValues[0] ?? '');
 
     return (
-      <div data-ds="Select" data-ds-field="" className={classes} style={resolved?.rootStyle}>
+      <div data-ds="Select" data-ds-field="" className={classes} style={resolved.rootStyle}>
         {labelNode}
         {descriptionNode}
         <span className="ds-select__native-wrap">
@@ -681,11 +718,7 @@ export function Select({
             ) : null}
             {options.map((node, index) => renderNativeNode(node, String(index)))}
           </select>
-          {!multiple ? (
-            <span className="ds-select__chevron" data-part="chevron" aria-hidden="true">
-              <Icon name="chevron-down" inline />
-            </span>
-          ) : null}
+          {!multiple ? chevronNode : null}
         </span>
         {errorNode}
       </div>
@@ -695,7 +728,7 @@ export function Select({
   const initialActive = selectedValues[0];
 
   return (
-    <div data-ds="Select" data-ds-field="" className={classes} style={resolved?.rootStyle}>
+    <div data-ds="Select" data-ds-field="" className={classes} style={resolved.rootStyle}>
       {labelNode}
       {descriptionNode}
       <button
@@ -708,7 +741,7 @@ export function Select({
         aria-expanded={open ? 'true' : 'false'}
         aria-controls={open ? listboxId : undefined}
         aria-activedescendant={open && activeValue !== null ? `${listboxId}-option-${activeValue}` : undefined}
-        aria-labelledby={`${labelId} ${valueId}`}
+        aria-labelledby={labelId}
         aria-describedby={describedBy || undefined}
         aria-invalid={isInvalid ? 'true' : undefined}
         aria-required={required ? 'true' : undefined}
@@ -720,16 +753,13 @@ export function Select({
         onFocus={onFocus}
         onBlur={onBlur}
       >
-        <span
-          id={valueId}
-          data-part="value"
-          className={['ds-select__value', isPlaceholder ? 'ds-select__value--placeholder' : null].filter(Boolean).join(' ')}
-        >
-          {triggerText}
+        {/* valueColor / placeholderColor are the value Text's default and muted tones. */}
+        <span className="ds-select__value">
+          <Text element="span" data-part="value" tone={isPlaceholder ? 'muted' : 'default'} overrides={resolved.value}>
+            {triggerText}
+          </Text>
         </span>
-        <span className="ds-select__chevron" data-part="chevron" aria-hidden="true">
-          <Icon name="chevron-down" inline />
-        </span>
+        {chevronNode}
       </button>
       {/* Disabled selects are not submitted. */}
       {isDisabled ? null : selectedValues.map((v) => <input key={v} type="hidden" name={name} value={v} />)}
@@ -741,7 +771,7 @@ export function Select({
               data-part="popup"
               data-vertical={vertical}
               className={['ds-select__popup', entered ? 'ds-select__popup--entered' : null].filter(Boolean).join(' ')}
-              style={{ ...popupPosition, ...resolved?.popupStyle }}
+              style={{ ...popupPosition, ...resolved.popupStyle }}
               // Keep focus on the trigger when an option is pressed.
               onMouseDown={(event) => event.preventDefault()}
               onClick={handlePopupClick}
@@ -758,6 +788,7 @@ export function Select({
                 selectionFollowsFocus={false}
                 embedded
                 initialActiveValue={initialActive}
+                overrides={resolved.listbox}
                 onChange={handleListboxChange}
                 onActiveChange={setActiveValue}
               />

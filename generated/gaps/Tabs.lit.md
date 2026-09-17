@@ -34,3 +34,15 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Tabs: `minTarget` (size.target.comfortable) does not say whether it applies to block size only or both axes; applied as min block and inline size on the tab.
 - Tabs: the Keyboard story's activation is unspecified while the Enter/Space rule needs `manual` and the ArrowRight rule mentions automatic selection; chose `activation: manual` with three enabled tabs, orientation from the URL.
 - Tabs: `click: tab` in the scenarios does not say which tab; tests click the first tab (a non-selected one when defaultValue is 'activity').
+
+## 2026-09-17 11:32 — round 1
+
+- Tabs: the spec names the exported item type `TabsItem`, but RN and the existing Lit code export `TabsTab`; Lit now exports `TabsItem` plus a deprecated `TabsTab` alias, and the doc's Lifecycle section should record the rename (RN still exports only `TabsTab`).
+- Tabs: `children` / `<ds-tab-panel>` is a second custom element with no anatomy or props of its own in the schema (tag, `data-ds` value, whether it has overrides); kept `ds-tab-panel` with `data-ds="TabPanel"` and `data-part="panel"`.
+- Tabs: `panelGap` is bound to part `panel`, but its description applies it as the gap of the host's flex layout; applied as `gap` on `:host`, so the binding's `part` is misleading.
+- Tabs: the web notes make panels focusable (`tabindex="0"`) but the Lit notes list only `hidden`, `role` and `aria-label` as attributes ds-tabs sets; ds-tabs also sets `tabindex="0"` so Tab from the list lands in the panel.
+- Tabs: a tab's accessible name is the label then the badge separated by a space, but the doc doesn't say how to produce that when label and badge are separate elements (their text runs together as "Inbox3"); used `aria-labelledby` pointing at both spans inside the shadow root.
+- Tabs: the doc doesn't say whether the indicator animates on first render or when the selected tab first appears; chose instant first placement and animation only between tabs (theme: prefer no animation).
+- Tabs: 'the selected tab is kept in view … (including on first render)' is ambiguous about whether the list should scroll to the selected tab on first render; it now does, setting only the list's own scrollLeft/scrollTop.
+- Tabs: `defaultValue` has no Lit attribute name in the doc; used `default-value`. `keepMounted` is not reflected but still reads the `keep-mounted` attribute.
+- Tabs: examples say 'exactly its given as args', but CSF3 merges the meta defaults (activation, orientation, fit, keepMounted: false) into every story; each example story sets only its given args on top of those defaults.

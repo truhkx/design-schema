@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Listbox, type ListboxOption } from './Listbox';
+import { Listbox, type ListboxItem, type ListboxOption } from './Listbox';
 
 const FRUITS: ListboxOption[] = [
   { value: 'apple', label: 'Apple' },
@@ -9,7 +9,7 @@ const FRUITS: ListboxOption[] = [
   { value: 'elderberry', label: 'Elderberry' },
 ];
 
-const MANY_FRUITS: ListboxOption[] = [
+const MANY_FRUITS: ListboxItem[] = [
   ...FRUITS,
   { value: 'fig', label: 'Fig' },
   { value: 'grape', label: 'Grape' },
@@ -120,6 +120,16 @@ export const InitialActiveValue: Story = { args: { initialActiveValue: 'cherry' 
 export const Empty: Story = { args: { options: [] } };
 export const EmptyWithMessage: Story = { args: { options: [], emptyMessage: 'No matching people' } };
 export const Controlled: Story = { args: { value: 'cherry' } };
+export const Multiple: Story = { args: { multiple: true, defaultValue: ['banana'] } };
+export const LabelledBy: Story = {
+  args: { labelledBy: 'listbox-story-label' },
+  render: (args) => (
+    <div>
+      <p id="listbox-story-label">Favourite fruit</p>
+      <Listbox {...args} />
+    </div>
+  ),
+};
 
 /** Present with at least three options, for the keyboard gate — Listbox has no trigger or popup. */
 export const Keyboard: Story = {

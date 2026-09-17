@@ -2,11 +2,11 @@ import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Tabs.js';
-import type { TabsActivation, TabsFit, TabsOrientation, TabsTab } from './Tabs.js';
+import type { TabsActivation, TabsFit, TabsOrientation, TabsItem } from './Tabs.js';
 
 interface TabsArgs {
   label: string;
-  tabs: TabsTab[];
+  tabs: TabsItem[];
   value?: string | undefined;
   defaultValue?: string | undefined;
   activation?: TabsActivation | undefined;
@@ -15,7 +15,7 @@ interface TabsArgs {
   keepMounted?: boolean | undefined;
 }
 
-const TABS: TabsTab[] = [
+const TABS: TabsItem[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'activity', label: 'Activity', badge: '3' },
   { id: 'files', label: 'Files' },

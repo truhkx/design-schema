@@ -22,7 +22,8 @@ function setup(given: Partial<ListboxProps> = {}) {
     onChange,
     onActiveChange,
     props,
-    list: () => utils.container.querySelector<HTMLElement>('[data-ds="Listbox"]')!,
+    root: () => utils.container.querySelector<HTMLElement>('[data-ds="Listbox"]')!,
+    list: () => utils.container.querySelector<HTMLElement>('[data-ds="Listbox"] [data-part="list"]')!,
     option: () => utils.container.querySelector<HTMLElement>('[data-part="option"]')!,
   };
 }
@@ -106,7 +107,8 @@ describe('Listbox', () => {
 
   it('renders', () => {
     const s = setup();
-    expect(s.list()).toBeInTheDocument();
+    expect(s.root()).toBeInTheDocument();
+    expect(s.list()).toHaveAttribute('role', 'listbox');
   });
 
   it.each(['5', '8', '12', 'all'] as const)('renders-max-visible-%s', (maxVisible) => {

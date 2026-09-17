@@ -28,3 +28,12 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Accordion: the doc doesn't say whether Home/End or arrow keys from a focused disabled trigger (still tabbable) should work; they do, and they skip disabled items as targets.
 - Accordion: AccordionItem uses the schema shape verbatim (`disabled?: boolean`) instead of the package convention `disabled?: boolean | undefined`, so under exactOptionalPropertyTypes callers can't pass `disabled: undefined`.
 - Accordion: the behavior scenario `click: trigger` doesn't say which trigger; tests use the first, and with Default args (nothing open) expect onChange([firstId]) and onOpenChange(firstId, true, 'trigger').
+
+## 2026-09-17 12:03 — round 1
+
+- Accordion: `exclusive` trims to 'the first open id' but doesn't say first by item order or by array order; I used array order, the same as several ids in `value`/`defaultValue` (so for uncontrolled state, the first section the user opened).
+- Accordion: turning `exclusive` on trims uncontrolled state for good, so turning it off again doesn't bring back the trimmed sections. For a controlled `value` the trim only affects what's shown, so turning `exclusive` off shows the full `value` again without firing events. The doc doesn't say which is intended.
+- Accordion: when `value` changes to a set the accordion didn't emit, the doc doesn't say what order the `controlled` onOpenChange calls go in; I used item order, matching the `exclusive` rule.
+- Accordion: the timing is 'after-change', but the item Disclosures are always controlled, so onChange/onOpenChange fire in the click handler before React commits the new state, even when the accordion is uncontrolled. The doc doesn't say whether uncontrolled mode should wait for the commit, as Disclosure does.
+- Accordion: the `divider`/`dividerWidth` bindings default to `color.border`/`border.width.thin`, which is also Divider's own default. So the accordion only passes Divider an `overrides` object when the consumer sets one; the doc doesn't say whether the defaults must always be forwarded. `triggerPaddingBlock` is always forwarded because its default (space.md) differs from Disclosure's (space.sm).
+- Accordion: the item Disclosures get no `id`, so their ids come from `useId`, not the item `id`. The doc says items are identified by `id` but doesn't say whether that id should reach the DOM (e.g. as the trigger id).

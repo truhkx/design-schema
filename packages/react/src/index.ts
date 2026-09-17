@@ -203,7 +203,15 @@ export type {
 } from './SegmentedControl';
 
 export { Listbox } from './Listbox';
-export type { ListboxProps, ListboxOption, ListboxValue, ListboxMaxVisible, ListboxOverridableBinding } from './Listbox';
+export type {
+  ListboxProps,
+  ListboxOption,
+  ListboxGroup,
+  ListboxItem,
+  ListboxValue,
+  ListboxMaxVisible,
+  ListboxOverridableBinding,
+} from './Listbox';
 
 export { Select } from './Select';
 export type { SelectProps, SelectValue, SelectNative, SelectSize, SelectOverridableBinding } from './Select';

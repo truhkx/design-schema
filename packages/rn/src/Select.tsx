@@ -46,6 +46,7 @@ export type SelectOverridableBinding =
   | 'helperSize'
   | 'popupSurface'
   | 'popupBorder'
+  | 'popupBorderWidth'
   | 'popupShadow'
   | 'popupRadius'
   | 'popupOffset'
@@ -145,7 +146,7 @@ type Rect = { x: number; y: number; width: number; height: number };
  * `accessibilityHint`, `accessibilityState={{ expanded, disabled }}`,
  * `accessibilityValue={{ text }}` with the selected label(s)) showing the value or the
  * placeholder, and a `chevron-down` `Icon`. Activating it opens an `embedded` `Listbox`
- * (given no `name`, `selectionFollowsFocus: false` for single, and the first selection
+ * (given no `name`, `selectionFollowsFocus: false`, and the first selection
  * as `initialActiveValue`): a `BottomSheet` on phone-width screens (`layout.maxWidth.prose`)
  * with a `copy.done` footer button for `multiple`, or else a transparent `Modal` whose
  * popup sits below the trigger (flipped above on overflow), at least as wide as it, on
@@ -309,6 +310,11 @@ export function Select({
   };
 
   const handleListboxChange = (next: ListboxValue): void => {
+    // Re-picking the selected option closes a single select without a change.
+    if (!multiple && next === currentValue) {
+      closePopup();
+      return;
+    }
     if (!isControlled) {
       setInternalValue(next);
     }
@@ -387,6 +393,7 @@ export function Select({
   const partGap = token<number>(overrides?.partGap, t.space1);
   const popupSurface = token<string>(overrides?.popupSurface, t.colorOverlaySurface);
   const popupBorder = token<string>(overrides?.popupBorder, t.colorBorder);
+  const popupBorderWidth = token<number>(overrides?.popupBorderWidth, t.borderWidthThin);
   const popupShadow = token<typeof t.shadowOverlay>(overrides?.popupShadow, t.shadowOverlay);
   const popupRadius = token<number>(overrides?.popupRadius, t.radiusMd);
   const popupOffset = token<number>(overrides?.popupOffset, t.space1);
@@ -402,10 +409,11 @@ export function Select({
       ? selectedValues.map(labelFor).join(', ')
       : COPY.selectedCount.replace('{count}', new Intl.NumberFormat().format(selectedValues.length));
 
-  // The focus width replaces the border width; padding shrinks by the difference.
+  // The focus width replaces the border width; padding shrinks by the difference, clamped at zero.
   const borderWidth = focused ? t.borderWidthFocus : triggerBorderWidth;
-  const inset = triggerBorderWidth - borderWidth;
-  const triggerBorderColor = focused ? t.colorBorderFocus : isInvalid ? triggerBorderInvalid : t.colorBorderStrong;
+  const inset = Math.max(0, borderWidth - triggerBorderWidth);
+  // Invalid keeps the danger color while focused, so focus never hides the error.
+  const triggerBorderColor = isInvalid ? triggerBorderInvalid : focused ? t.colorBorderFocus : t.colorBorderStrong;
 
   const containerStyle: ViewStyle = {
     flexDirection: 'column',
@@ -423,29 +431,32 @@ export function Select({
     borderWidth,
     borderColor: triggerBorderColor,
     borderRadius: triggerRadius,
-    paddingHorizontal: triggerPaddingInline + inset,
-    paddingVertical: triggerPaddingBlock + inset,
+    paddingHorizontal: Math.max(0, triggerPaddingInline - inset),
+    paddingVertical: Math.max(0, triggerPaddingBlock - inset),
   };
 
-  const valueOverrides = {
-    fontFamily: overrides?.fontFamily,
-    fontSize: overrides?.fontSize,
-    fontWeight: overrides?.fontWeight,
-    lineHeight: overrides?.lineHeight,
-  };
+  // Each forward carries the binding's token (the override, or its default) into the child's overrides.
+  const fontFamilyRef: TokenRef = overrides?.fontFamily ?? 'font.family.body';
+  const fontSizeRef: TokenRef = overrides?.fontSize ?? (`font.size.${size}` as TokenRef);
+  const lineHeightRef: TokenRef = overrides?.lineHeight ?? 'font.lineHeight.normal';
+  const helperSizeRef: TokenRef = overrides?.helperSize ?? 'font.size.sm';
+
   const labelOverrides = {
-    fontFamily: overrides?.fontFamily,
-    fontSize: overrides?.fontSize,
-    fontWeight: overrides?.labelWeight,
-    lineHeight: overrides?.lineHeight,
+    fontWeight: overrides?.labelWeight ?? ('font.weight.medium' as TokenRef),
+    fontSize: fontSizeRef,
+    fontFamily: fontFamilyRef,
+    lineHeight: lineHeightRef,
   };
-  const helperOverrides = { fontFamily: overrides?.fontFamily, fontSize: overrides?.helperSize, lineHeight: overrides?.lineHeight };
-  const listboxOverrides = {
-    fontFamily: overrides?.fontFamily,
-    fontSize: overrides?.fontSize ?? (size === 'sm' ? ('font.size.sm' as TokenRef) : undefined),
-    lineHeight: overrides?.lineHeight,
-    disabledOpacity: overrides?.disabledOpacity,
+  const valueOverrides = {
+    fontSize: fontSizeRef,
+    fontWeight: overrides?.fontWeight ?? ('font.weight.regular' as TokenRef),
+    fontFamily: fontFamilyRef,
+    lineHeight: lineHeightRef,
   };
+  const helperOverrides = { fontSize: helperSizeRef, fontFamily: fontFamilyRef, lineHeight: lineHeightRef };
+  // fontSize is not forwarded: the popup does not follow `size`.
+  const listboxOverrides = { fontFamily: fontFamilyRef, lineHeight: lineHeightRef };
+  const chevronOverrides = { color: 'color.foreground.muted' as TokenRef };
 
   const listbox = (
     <Listbox
@@ -453,10 +464,9 @@ export function Select({
       options={options}
       multiple={multiple}
       value={currentValue}
-      selectionFollowsFocus={multiple ? undefined : false}
-      initialActiveValue={selectedValues[0]}
-      disabled={isDisabled}
       embedded
+      selectionFollowsFocus={false}
+      initialActiveValue={selectedValues[0]}
       onChange={handleListboxChange}
       overrides={listboxOverrides}
     />
@@ -474,6 +484,7 @@ export function Select({
         : triggerRect.y + triggerRect.height + popupOffset;
 
   const hostStyle: ViewStyle = { flex: 1 };
+  const valueSlotStyle: ViewStyle = { flexShrink: 1 };
 
   const popupOuterStyle: Animated.WithAnimatedValue<ViewStyle> = {
     position: 'absolute',
@@ -488,7 +499,7 @@ export function Select({
 
   const popupInnerStyle: ViewStyle = {
     borderRadius: popupRadius,
-    borderWidth: t.borderWidthThin,
+    borderWidth: popupBorderWidth,
     borderColor: popupBorder,
     backgroundColor: popupSurface,
     overflow: 'hidden',
@@ -497,14 +508,18 @@ export function Select({
   return (
     <View ref={ref} testID="Select" style={containerStyle}>
       {hideLabel ? null : (
-        <Text size={size} weight="medium" overrides={labelOverrides}>
-          {visibleLabel}
-        </Text>
+        <View testID="Select.label">
+          <Text weight="medium" overrides={labelOverrides}>
+            {visibleLabel}
+          </Text>
+        </View>
       )}
       {description !== undefined ? (
-        <Text size="sm" tone="muted" overrides={helperOverrides}>
-          {description}
-        </Text>
+        <View testID="Select.description">
+          <Text tone="muted" size="sm" overrides={helperOverrides}>
+            {description}
+          </Text>
+        </View>
       ) : null}
       <Pressable
         ref={triggerRef}
@@ -512,21 +527,25 @@ export function Select({
         accessibilityLabel={visibleLabel}
         accessibilityHint={description}
         accessibilityState={{ expanded: open, disabled: isDisabled }}
-        accessibilityValue={hasSelection ? { text: valueText } : undefined}
+        accessibilityValue={{ text: valueText }}
         onPress={handleTriggerPress}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         style={triggerStyle}
         testID="Select.trigger"
       >
-        <Text size={size} tone={hasSelection ? 'default' : 'muted'} overrides={valueOverrides}>
-          {valueText}
-        </Text>
-        <Icon name="chevron-down" size="sm" color={t.colorForegroundMuted} />
+        <View testID="Select.value" style={valueSlotStyle}>
+          <Text tone={hasSelection ? 'default' : 'muted'} overrides={valueOverrides}>
+            {valueText}
+          </Text>
+        </View>
+        <View testID="Select.chevron">
+          <Icon name="chevron-down" size="sm" overrides={chevronOverrides} />
+        </View>
       </Pressable>
       {displayedError !== undefined ? (
         <View testID="Select.errorMessage" accessibilityLiveRegion={summarised ? 'none' : 'assertive'}>
-          <Text size="sm" tone="danger" overrides={helperOverrides}>
+          <Text tone="danger" size="sm" overrides={helperOverrides}>
             {displayedError}
           </Text>
         </View>

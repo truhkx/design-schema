@@ -20,7 +20,7 @@ import '../src/Alert.js';
 import '../src/AlertDialog.js';
 import '../src/Toast.js';
 
-import type { TabsTab } from '../src/Tabs.js';
+import type { TabsItem } from '../src/Tabs.js';
 import type { FormSubmitDetail } from '../src/Form.js';
 import type { InputChangeDetail } from '../src/Input.js';
 import type { SwitchChangeDetail } from '../src/Switch.js';
@@ -28,7 +28,7 @@ import type { RadioGroupChangeDetail, RadioGroupOption } from '../src/RadioGroup
 import type { SegmentedControlChangeDetail, SegmentedControlOption } from '../src/SegmentedControl.js';
 import { toast } from '../src/Toast.js';
 
-const SETTINGS_TABS: TabsTab[] = [
+const SETTINGS_TABS: TabsItem[] = [
   { id: 'profile', label: 'Profile' },
   { id: 'notifications', label: 'Notifications' },
   { id: 'appearance', label: 'Appearance' },

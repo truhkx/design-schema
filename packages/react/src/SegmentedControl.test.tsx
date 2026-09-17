@@ -69,6 +69,22 @@ describe('SegmentedControl', () => {
     expect(s.onChange).not.toHaveBeenCalled();
   });
 
+  it('arrow-skips-disabled-segments', async () => {
+    const s = setup({
+      options: [
+        { value: 'list', label: 'List' },
+        { value: 'grid', label: 'Grid', disabled: true },
+        { value: 'table', label: 'Table' },
+      ],
+      defaultValue: 'list',
+    });
+    act(() => s.selected().focus());
+    await s.user.keyboard('{ArrowRight}');
+    expect(s.onChange).toHaveBeenCalledTimes(1);
+    expect(s.onChange).toHaveBeenCalledWith('table');
+    expect(screen.getByRole('radio', { name: 'Table' })).toHaveFocus();
+  });
+
   it('renders', () => {
     const s = setup();
     expect(s.group()).not.toBeNull();

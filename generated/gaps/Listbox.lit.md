@@ -35,3 +35,15 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Listbox: `invalid` and `error` both drive the invalid state and the doc does not say whether clearing `error` clears an explicitly set `invalid`; chose to clear only the invalid that `error` implied.
 - Listbox: behavior says 'Without name the list does not register with a Form', while the lit convention puts `data-ds-field` on every field; kept `data-ds-field` always (ds-form skips unnamed fields) and submit no form value without `name`.
 - Listbox: Ctrl+A 'again clears': does not say whether selected disabled options survive select-all or the clear; select-all keeps them, clear empties everything.
+
+## 2026-09-17 11:46 — round 1
+
+- Listbox: `error` says the displayed message falls back to 'the Form's message', but Lit's ds-form never pushes a message into its fields (it only reads `validationMessage`), so there is no Form message to show; the displayed order is `error`, then copy.required/copy.invalid while invalid.
+- Listbox: the export rename (ListboxOption = leaf, ListboxGroup, ListboxItem = union) swaps the meaning of two existing Lit names and drops ListboxGroupOption, which breaks Select, Combobox, Search and adopters; the doc has no lifecycle/deprecation entry for the old names. Chose a clean rename and updated the in-package consumers.
+- Listbox: typeahead says 'the next option whose label starts with the typed characters' and nothing about typing the same letter again. The old Lit code cycled through options sharing that letter (the APG convention); I dropped cycling to follow the rule literally, so 'aa' matches only a label starting with 'aa'.
+- Listbox: onActiveChange fires null 'when the list loses focus', but when Select/Combobox/Search drive the list with handleKey the list never has focus, so the host must clear `activeValue` itself; the doc doesn't say who fires null in that case.
+- Listbox: `disabled` says keys, hover and clicks do nothing but doesn't say whether focusing a disabled list still sets an active option and fires active-change; chose not to (the active option is only set when enabled).
+- Listbox: `labelledBy` gives no attribute name for Lit; chose `labelled-by` (kebab-case like `initial-active-value`, `empty-message`).
+- Listbox: `invalid` must reflect (platforms.lit.reflect) but the list is also invalid while `error` is set; to keep `:host([invalid])` and the state test consistent, setting `error` sets `invalid` and clearing it resets `invalid` only if `error` was what set it. The doc doesn't say whether the reflected attribute should cover error-implied invalid.
+- Listbox: the errorMessage part is a composed Text but the doc names no live-region behaviour; the old wrapper's role=alert was removed, so a newly set error is announced only through aria-describedby.
+- Listbox: the Behavior row formula multiplies `fontSize × lineHeight`, which is only valid CSS if `font.lineHeight.normal` is unitless; the doc doesn't state that constraint on the token.

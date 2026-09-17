@@ -284,7 +284,7 @@ describe('the form and overlay blocks are required, not warned about', () => {
   });
 });
 
-/** The phase 3 migration: the twelve fields and the one container that declare how they join a Form. `discovery` is
+/** The phase 3 migration: the eleven fields and the one container that declare how they join a Form. `discovery` is
  *  `context` everywhere, the contract Form.tsx, the RN and the SwiftUI FormContext implement (prompts/conventions/
  *  claimed `data-ds-field` on web and Lit, and generated/gaps/Input.web.md found no component carrying it). */
 const MIGRATED_FORMS: Record<string, Dict> = {
@@ -297,7 +297,6 @@ const MIGRATED_FORMS: Record<string, Dict> = {
   NumberInput: { role: 'field', value: 'value', valueType: 'number', name: 'name', validation: ['required', 'invalid', 'range'], messages: { required: 'required', invalid: 'invalid', range: 'outOfRange' }, discovery: 'context' },
   RadioGroup: { role: 'field', value: 'value', valueType: 'string', name: 'name', validation: ['required', 'invalid'], messages: { required: 'required', invalid: 'invalid' }, discovery: 'context' },
   Search: { role: 'field', value: 'value', valueType: 'string', name: 'name', discovery: 'context' },
-  SegmentedControl: { role: 'field', value: 'value', valueType: 'string', discovery: 'context' },
   Select: { role: 'field', value: 'value', valueType: 'string[]', name: 'name', validation: ['required', 'invalid'], messages: { required: 'required', invalid: 'invalid' }, discovery: 'context' },
   Slider: { role: 'field', value: 'value', valueType: 'number-range', name: 'name', validation: ['required', 'invalid'], messages: { required: 'required', invalid: 'invalid' }, discovery: 'context' },
   Switch: { role: 'field', value: 'checked', valueType: 'boolean', name: 'name', discovery: 'context' },
@@ -314,7 +313,9 @@ describe('the form block in generated/components.json', () => {
     expect(raised).toEqual([]);
   });
 
-  test('the twelve fields and the one container declare the block, and nothing else does', () => {
+  // SegmentedControl dropped its block in the regeneration's Selection fold: it has no `name`, and its own
+  // notes disagreed about joining a Form (generated/gaps/FOLDS.md, 2026-09-16) — a RadioGroup is the field.
+  test('the eleven fields and the one container declare the block, and nothing else does', () => {
     const declared = Object.fromEntries(generated.filter((c) => c.form !== undefined).map((c) => [c.name, c.form as Dict]));
     expect(declared).toEqual(MIGRATED_FORMS);
     // Fieldset groups fields and has an `error` prop, but no `name` and no value of its own, so it is not a field.
@@ -1384,9 +1385,16 @@ describe('narrowing and reflect in generated/components.json', () => {
   /** What this job narrowed, and the only places narrowForPlatform may differ from the doc: dialog.md drops
    *  `scroll-lock` on rn ("Scroll lock has no native meaning and is not implemented"), and datagrid.md drops
    *  `copy.copied` on rn ("Ctrl+C has no native equivalent … copy.copied is unused there"). */
-  const NARROWED: Record<string, string> = { DataGrid: 'rn', Dialog: 'rn' };
+  /** The regeneration's folds narrowed more docs than job 633 did: platform is now a list per doc. */
+  const NARROWED: Record<string, string[]> = {
+    Button: ['web', 'lit'],
+    DataGrid: ['web', 'lit', 'rn', 'swiftui'],
+    Dialog: ['rn'],
+    Tabs: ['web', 'lit'],
+    TreeGrid: ['web', 'lit', 'swiftui'],
+  };
 
-  test('narrowForPlatform differs from the doc only on Dialog and DataGrid on rn, and nowhere else', () => {
+  test('narrowForPlatform differs from the doc only on the narrowed docs, and nowhere else', () => {
     const differs: string[] = [];
     for (const c of generated) {
       for (const platform of Object.keys(c.platforms)) {
@@ -1395,7 +1403,7 @@ describe('narrowing and reflect in generated/components.json', () => {
         else differs.push(`${c.name}.${platform}`);
       }
     }
-    expect(differs).toEqual(Object.entries(NARROWED).map(([name, plat]) => `${name}.${plat}`));
+    expect(differs).toEqual(Object.entries(NARROWED).flatMap(([name, plats]) => plats.map((plat) => `${name}.${plat}`)));
     const dialog = generated.find((c) => c.name === 'Dialog') as ComponentDef;
     expect(dialog.a11y.requires).toContain('scroll-lock');
     expect(narrowForPlatform(dialog, 'rn').a11y.requires).not.toContain('scroll-lock');
@@ -1673,19 +1681,29 @@ describe('constants', () => {
     });
 
     test('the docs that carry a number their logic reads, and the numbers themselves', () => {
-      expect(declared.map((c) => c.name)).toEqual(['ActionSheet', 'BottomSheet', 'Carousel', 'Combobox', 'Toast', 'Tooltip', 'Tree']);
-      expect(entries).toHaveLength(10);
+      expect(declared.map((c) => c.name)).toEqual(['ActionSheet', 'BottomSheet', 'Carousel', 'Combobox', 'Input', 'Search', 'SidePanel', 'Toast', 'Tooltip', 'Tree']);
       expect(Object.fromEntries(entries.map(([name, k]) => [name, k.token === undefined ? k.value : `${k.token} × ${k.multiply ?? 1}`]))).toEqual({
-        // The same 25% / 1.5 px/ms drag rule, stated in both docs' own prose.
+        // The same 25% / 1.5 px/ms drag rule, stated in each doc's own prose; SidePanel joined the two sheets
+        // in the regeneration's folds, which also declared the drag slop, the edge zone and the timings below.
         'ActionSheet.dismissDistance': 0.25,
         'ActionSheet.dismissVelocity': 1.5,
+        'ActionSheet.dragSlop': 'space.1 × 1',
         'BottomSheet.dismissDistance': 0.25,
         'BottomSheet.dismissVelocity': 1.5,
+        'BottomSheet.dragSlop': 'space.1 × 1',
+        'SidePanel.dismissDistance': 0.25,
+        'SidePanel.dismissVelocity': 1.5,
+        'SidePanel.dragSlop': 'space.1 × 1',
+        'SidePanel.edgeZone': 'size.target.comfortable × 1',
         'Carousel.minInterval': 5000,
         'Combobox.statusDebounce': 'motion.duration.base × 2',
+        'Search.statusDebounce': 'motion.duration.base × 2',
+        'Input.longPressDelay': 500,
         'Toast.shortDuration': 'motion.duration.loop × 6',
         'Toast.longDuration': 'motion.duration.loop × 12',
         'Tooltip.hoverDelay': 'motion.duration.base × 3',
+        'Tooltip.warmWindow': 'motion.duration.base × 1',
+        'Tooltip.pointerGrace': 'motion.duration.fast × 1',
         'Tree.typeaheadReset': 500,
       });
       // Menu's typeahead reset is a style binding on a real token, so Menu declares no constant.

@@ -825,8 +825,9 @@ describe('enum value renames', () => {
       expect(rn).toContain("kind = 'cta',");
       expect(rn).toContain("kind === 'ghost' && inverse");
       const lit = moved['lit/CtaButton.ts'] as string;
-      expect(lit).toMatch(/:host\(\[kind='cta'\]\) button \{\s+color: var\(--color-action-primary-foreground\);\s+background: var\(--color-action-primary-background\);/);
-      expect(lit).toMatch(/:host\(\[kind='destructive'\]\) \{\s+--ds-button-background-hover: var\(--color-action-danger-background-hover\);/);
+      // The regenerated Lit element sets custom properties on the host, as the `destructive` case below does.
+      expect(lit).toMatch(/:host\(\[kind='cta'\]\) \{\s+--ds-button-background: var\(--color-action-primary-background\);/);
+      expect(lit).toMatch(/:host\(\[kind='destructive'\]\) \{\s+--ds-button-background: var\(--color-action-danger-background\);/);
       expect(lit).toContain("accessor kind: CtaButtonVariant = 'cta';");
     });
   });
@@ -1139,7 +1140,8 @@ describe("the job's gate: the committed Button output, renamed", () => {
     naming.rename(src, res, 'brand', 'web');
     expect(readdirSync(src).sort()).toEqual(['Card.css', 'Card.tsx', 'CtaButton.css', 'CtaButton.tsx']);
     const tsx = readFileSync(join(src, 'CtaButton.tsx'), 'utf8');
-    expect(tsx).toContain('export const CtaButton = function CtaButton(');
+    // The regenerated React component is a function declaration, so the rename moves the declared name.
+    expect(tsx).toContain('export function CtaButton(');
     expect(tsx).toContain('export interface CtaButtonProps');
     expect(tsx).toContain("import './CtaButton.css'");
     expect(tsx).toContain("import { cssVar, type TokenRef } from '@acme/tokens'");
@@ -1211,8 +1213,12 @@ describe("the job's gate: the committed Button output, renamed", () => {
     const litButton = read('lit', 'CtaButton.ts');
     expect(litButton).toMatch(/new CustomEvent<\w+>\('activate'/);
     expect(litButton).not.toMatch(/new CustomEvent<\w+>\('press'/);
-    expect(litButton, 'the part moves, its gate hook does not').toContain('<slot name="end-icon" part="trailing-icon"></slot>');
-    expect(litButton).toContain("slot[name='end-icon']");
+    // The slot name moves; `part` and `data-part` are gate hooks and stay canonical — which the convention
+    // spells as the anatomy name verbatim, so camelCase since the regeneration.
+    expect(litButton, 'the part moves, its gate hooks do not').toContain('<slot name="end-icon" part="trailingIcon" data-part="trailingIcon"></slot>');
+    // No `slot[name=…]` selector to check any more: the regenerated element styles slotted icons through the
+    // part hooks instead, so the slot name appears only in the template line asserted above.
+    expect(litButton).not.toContain("slot[name='trailing-icon']");
     const litCallout = read('lit', 'Callout.ts');
     expect(litCallout).toContain('@activate=${this.handleDismiss}');
     expect(litCallout).not.toContain('@press=');

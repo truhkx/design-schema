@@ -208,10 +208,18 @@ export function componentChunks(): Chunk[] {
         for (const [platform, notes] of Object.entries(splitPlatformNotes(md))) {
           const note = ((c.platforms as Dict)[platform]?.notes ?? '') as string;
           const text = pyStrip(notes + (note ? '\n\n' + note : ''));
-          chunks.push({
-            id: `guidance:${name}:${section}:${platform}`, text: `${name} — ${section} (${platform})\n\n${text}`,
-            meta: { ...base, platform, section, granularity: 'section' },
-          });
+          // One chunk per platform, but a long one is split by paragraph the way sectionChunks does: a doc
+          // whose platform notes grow past the budget (folding grows them) would otherwise emit a chunk the
+          // embedding model cannot take.
+          const cid = `guidance:${name}:${section}:${platform}`;
+          const head = `${name} — ${section} (${platform})\n\n`;
+          if (pyLen(head + text) > MAX_CHARS) {
+            for (const [i, para] of paragraphs(text).entries()) {
+              chunks.push({ id: `${cid}#p${i}`, text: `${head}${para}`, meta: { ...base, platform, section, granularity: 'paragraph' } });
+            }
+          } else {
+            chunks.push({ id: cid, text: `${head}${text}`, meta: { ...base, platform, section, granularity: 'section' } });
+          }
         }
       } else {
         chunks.push(...sectionChunks(`guidance:${name}:${section}`, name, section, md, { ...base, platform: 'all' }));

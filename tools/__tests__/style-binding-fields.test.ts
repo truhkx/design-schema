@@ -295,10 +295,11 @@ describe('generated/components.json after the migration', () => {
   test('the fields the migration added, counted', () => {
     const count = (field: string): number => bindings.filter(([, , s]) => s[field] !== undefined).length;
     expect({ part: count('part'), state: count('state'), by: count('by'), values: count('values'), computed: count('computed') })
-      .toEqual({ part: 360, state: 16, by: 10, values: 10, computed: 3 });
+      .toEqual({ part: 623, state: 18, by: 10, values: 10, computed: 6 });
     expect(bindings.filter(([, , s]) => s.state !== undefined).map(([, name]) => name)).toEqual([
-      'ActionSheet.itemHover', 'Button.backgroundHover', 'Card.hoverBackground', 'Checkbox.pressedOverlay', 'DataGrid.rowHover',
-      'DatePicker.dayHover', 'Disclosure.triggerBackgroundHover', 'Link.colorHover', 'Listbox.optionActiveBackground', 'Menu.itemHover',
+      'ActionSheet.itemHover', 'Button.backgroundHover', 'Button.inverseBackgroundHover', 'Button.inverseHoverOpacity',
+      'Card.hoverBackground', 'Checkbox.pressedOverlay', 'DataGrid.rowHover', 'DatePicker.dayHover',
+      'Disclosure.triggerBackgroundHover', 'Link.colorHover', 'Listbox.optionActiveBackground', 'Menu.itemHover',
       'Splitter.separatorHover', 'Splitter.separatorActive', 'Stepper.stepHover', 'Table.rowHover', 'Tabs.tabHoverBackground', 'Tree.rowHover',
     ]);
     expect(bindings.filter(([, , s]) => s.by !== undefined).map(([, name]) => name)).toEqual([

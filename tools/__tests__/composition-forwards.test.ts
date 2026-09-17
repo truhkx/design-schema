@@ -274,8 +274,9 @@ describe('compositionTarget', () => {
     const entries = JSON.parse(readFileSync(join(REPO_ROOT, 'generated', 'components.json'), 'utf8')) as Dict[];
     const byName = new Map(entries.map((e) => [e.component.name as string, e.component as Dict]));
     const composed = entries.filter((e) => e.component.composition !== undefined);
-    // The corpus after the job 639 migration: the docs that compose, and the entries that say more than a name.
-    expect(composed).toHaveLength(33);
+    // The corpus after the job 639 migration, and after the regeneration's folds added four more composing
+    // docs: the docs that compose, and the entries that say more than a name.
+    expect(composed).toHaveLength(37);
     let objects = 0;
     let forwards = 0;
     let passed = 0;
@@ -302,6 +303,8 @@ describe('compositionTarget', () => {
         }
       }
     }
-    expect({ objects, forwards, passed }).toEqual({ objects: 15, forwards: 11, passed: 7 });
+    // The regeneration's folds turned most bare-string entries into the object form and declared what each
+    // composite passes and forwards, so these counts are several times the job 639 migration's.
+    expect({ objects, forwards, passed }).toEqual({ objects: 92, forwards: 141, passed: 176 });
   });
 });

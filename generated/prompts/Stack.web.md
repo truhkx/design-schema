@@ -66,11 +66,17 @@ component:
     children:
       type: content
       required: true
-      description: Any components. Stack does not style its children; it only positions
+      description: 'Any components. Stack does not style its children; it only positions
         them. Null and boolean children are skipped, as the platform skips them. In
         examples `children` describes the content in words; stories render it with
         system components (Input, Button, Text) in the order named, and the Default
-        story renders three Text children.
+        story renders three Text children reading "First item", "Second item" and
+        "Third item". The examples resolve as: form fields are three Inputs labelled
+        "Full name", "Email" and "Password"; the regions of the page are three Boxes
+        (`surface: subtle`, `inset: md`) each holding a Text naming its region ("Summary",
+        "Details", "History"); a row of filters is eight small secondary Buttons ("All",
+        "Open", "Closed", "Mine", "Unassigned", "Urgent", "This week", "Archived").
+        All of it is story scaffolding, not copy.'
     direction:
       type: enum
       values:
@@ -114,13 +120,17 @@ component:
         anything, and Stack has no size of its own, so that is the caller''s to give.
         The four values are the whole set: `around` and `evenly` are deliberately
         left out, since a rhythm system should not offer four ways to divide leftover
-        space.'
+        space. Its enum stories (and `DirectionHorizontal`) are therefore horizontal:
+        an enum-value story may add the args that make its value visible (`direction:
+        horizontal`, `align: start`), while an example story has exactly its `given`.'
     wrap:
       type: boolean
       default: false
       description: Allow horizontal stacks to wrap onto new lines instead of overflowing.
         It is set whatever the direction — on a column it is inert unless the block
         size is bounded — rather than being silently ignored on a vertical Stack.
+        As a boolean it gets one story, `Wrap` (horizontal, in the same width-bounded
+        decorator as `wrapping-filters`).
       a11y: 'Prefer wrapping over horizontal scrolling so content reflows at 320px
         and 400% zoom. Native has neither viewport width nor browser zoom: the equivalent
         is that a wrapped row still fits when the platform''s text size is turned
@@ -164,12 +174,13 @@ component:
     web:
       element: div
       attributes: []
-      notes: Flexbox. `gap` maps to the CSS gap property with the layout.gap token;
+      notes: 'Flexbox. `gap` maps to the CSS gap property with the layout.gap token;
         no margins on children. The root is the `container` part; the `li` wrappers
         for `ul`/`ol` are the `item` part. Stack merges a consumer `className` and
         `style` onto the root, as Box and Text do, because composites give it layout-only
-        classes; the consumer `style` is merged after the `overrides` hooks. The ref
-        is `Ref<HTMLElement>`, not narrowed per `element`.
+        classes; the consumer `style` is merged after the `overrides` hooks. The root
+        also sets `min-inline-size: 0`, so a horizontal Stack can shrink inside a
+        parent flex container. The ref is `Ref<HTMLElement>`, not narrowed per `element`.'
     lit:
       tag: ds-stack
       reflect:
@@ -185,16 +196,21 @@ component:
         each `display: contents` and marked `part="item"`. Keep the light DOM where
         it is: use manual slot assignment and rebuild the wrappers from a childList
         observer rather than moving children into them, which would re-fire slotchange
-        forever. `element` is not reflected: it is read from the attribute or property
-        but is not a styling contract, since it changes only the shadow structure.'
+        forever. A child is an element or a text node with non-whitespace content;
+        comments and whitespace-only text get no `li`. Every wrapper in the shadow
+        root (`section`, `nav`, `ul`, `ol`, `li`) is `display: contents`, so the host
+        stays the flex container. The list role lives on the shadow `ul`/`ol`, so
+        the web rule that the list role beats a consumer `role` does not arise: a
+        consumer `role` on the host is the consumer''s and is left alone. `element`
+        is not reflected: it is read from the attribute or property but is not a styling
+        contract, since it changes only the shadow structure.'
     rn:
       element: View
-      props:
-      - style
-      notes: 'Flexbox with `gap` (RN ≥ 0.71). Children are not wrapped. `style` in
-        the props list is the View''s internal style, not a public prop. `element`
-        is not applicable: a navigation region is Landmark and a list is a plain View
-        whose rows carry their own semantics.'
+      props: []
+      notes: 'Flexbox with `gap` (RN ≥ 0.71). Children are not wrapped. There is no
+        public `style` prop; the View''s style is internal. `element` is not applicable:
+        a navigation region is Landmark and a list is a plain View whose rows carry
+        their own semantics.'
     swiftui:
       element: VStack
       props:
@@ -221,8 +237,9 @@ component:
       - web
       - lit
   - name: list-element-is-a-list
-    description: For ul, each child is wrapped in an li, so assistive technology announces
-      the group as a list and counts its items.
+    description: 'For ul, each child is wrapped in an li, so assistive technology
+      announces the group as a list and counts its items: the Default story''s three
+      children give three listitems, which the test asserts too.'
     given:
       element: ul
     then:
@@ -254,8 +271,8 @@ component:
       children: The regions of the page
   - name: wrapping-filters
     description: A horizontal group that reflows onto new lines on narrow viewports
-      instead of overflowing. Its story renders inside a width-bounded container (a
-      story decorator, not an arg) so the wrap shows.
+      instead of overflowing. Its story renders inside a container capped at `layout.maxWidth.prose`
+      (a story decorator, not an arg) so the eight filters wrap.
     given:
       direction: horizontal
       gap: tight
@@ -269,7 +286,7 @@ component:
 - example `form-fields`, story `FormFields`: given `direction: "vertical"`, `gap: "normal"`, `children: "The form fields"`; The usual vertical rhythm between fields in a form.
 - example `button-row`, story `ButtonRow`: given `direction: "horizontal"`, `gap: "tight"`, `justify: "end"`, `align: "center"`, `children: "A secondary Cancel Button, then a primary submit Button"`; A row of actions at the end of a form or card, tightly spaced and pushed to the end.
 - example `page-sections`, story `PageSections`: given `direction: "vertical"`, `gap: "section"`, `children: "The regions of the page"`; The section rhythm between the regions of a page.
-- example `wrapping-filters`, story `WrappingFilters`: given `direction: "horizontal"`, `gap: "tight"`, `wrap: true`, `align: "center"`, `children: "A row of filters"`; A horizontal group that reflows onto new lines on narrow viewports instead of overflowing. Its story renders inside a width-bounded container (a story decorator, not an arg) so the wrap shows.
+- example `wrapping-filters`, story `WrappingFilters`: given `direction: "horizontal"`, `gap: "tight"`, `wrap: true`, `align: "center"`, `children: "A row of filters"`; A horizontal group that reflows onto new lines on narrow viewports instead of overflowing. Its story renders inside a container capped at `layout.maxWidth.prose` (a story decorator, not an arg) so the eight filters wrap.
 
 ## Overrides (per-instance styling contract)
 
@@ -295,8 +312,9 @@ Each scenario below becomes one test. They are platform-neutral: `given` are pro
   then:
   - role: navigation
 - name: list-element-is-a-list
-  description: For ul, each child is wrapped in an li, so assistive technology announces
-    the group as a list and counts its items.
+  description: 'For ul, each child is wrapped in an li, so assistive technology announces
+    the group as a list and counts its items: the Default story''s three children
+    give three listitems, which the test asserts too.'
   given:
     element: ul
   then:
@@ -447,12 +465,13 @@ Each scenario below becomes one test. They are platform-neutral: `given` are pro
 ```yaml
 element: div
 attributes: []
-notes: Flexbox. `gap` maps to the CSS gap property with the layout.gap token; no margins
-  on children. The root is the `container` part; the `li` wrappers for `ul`/`ol` are
-  the `item` part. Stack merges a consumer `className` and `style` onto the root,
+notes: 'Flexbox. `gap` maps to the CSS gap property with the layout.gap token; no
+  margins on children. The root is the `container` part; the `li` wrappers for `ul`/`ol`
+  are the `item` part. Stack merges a consumer `className` and `style` onto the root,
   as Box and Text do, because composites give it layout-only classes; the consumer
-  `style` is merged after the `overrides` hooks. The ref is `Ref<HTMLElement>`, not
-  narrowed per `element`.
+  `style` is merged after the `overrides` hooks. The root also sets `min-inline-size:
+  0`, so a horizontal Stack can shrink inside a parent flex container. The ref is
+  `Ref<HTMLElement>`, not narrowed per `element`.'
 ```
 
 ## Guidance

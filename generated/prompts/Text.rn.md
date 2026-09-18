@@ -98,9 +98,9 @@ component:
       default: default
       description: 'Semantic color. `onAction` is only for text placed on an action
         background, and its story paints that background (color.action.primary.background)
-        behind the Text. There is no `inverse` tone: the shared foreground vocabulary
-        has no such name, so an inverse surface re-scopes the foreground instead (see
-        `styles.color`).'
+        behind the Text, on a wrapper holding a Box with `inset: md` around it. There
+        is no `inverse` tone: the shared foreground vocabulary has no such name, so
+        an inverse surface re-scopes the foreground instead (see `styles.color`).'
       a11y: Every tone meets 4.5:1 on the page background in every theme and mode
         except onAction, which is checked against color.action.primary.background.
     align:
@@ -122,15 +122,22 @@ component:
         via `title` when children is a plain string; otherwise the consumer passes
         `title`, and neither one is a development warning — the text is then reachable
         only to a screen reader. A consumer `title` always wins and is forwarded unchanged,
-        with or without `truncate`. On Lit there is no "plain string" state, so `title`
-        comes from the host''s flattened, whitespace-collapsed textContent, is omitted
-        when that is empty, sits on the `part="text"` element (the one that clips),
-        and follows live edits to the text (a MutationObserver over the host''s subtree,
-        since slotchange misses character changes). With `element: span` the clipped
-        box is `display: inline-block; max-inline-size: 100%; vertical-align: bottom`,
-        so the width comes from the parent and the clipped box stays on the line.
-        Native clips with `numberOfLines={1}` and `ellipsizeMode="tail"` and has no
-        affordance that reveals the rest — a known gap.'
+        with or without `truncate`; an explicit `title={undefined}` counts as not
+        passed, so the string children still supply it. On Lit there is no `title`
+        property (the name is not attribute-safe): a `title` attribute the consumer
+        puts on the host is observed and copied unchanged to the `part="text"` element,
+        where it wins the same way. With no consumer title there is no "plain string"
+        state, so `title` comes from the host''s flattened, whitespace-collapsed textContent,
+        is omitted when that is empty, sits on the `part="text"` element (the one
+        that clips), and follows live edits to the text (a MutationObserver over the
+        host''s subtree, since slotchange misses character changes). With `element:
+        span` the clipped box is `display: inline-block; max-inline-size: 100%; vertical-align:
+        bottom`, so the width comes from the parent and the clipped box stays on the
+        line. Native clips with `numberOfLines={1}` and `ellipsizeMode="tail"` and
+        has no affordance that reveals the rest — a known gap. Truncate stories need
+        a width to clip against; that decorator is story scaffolding, not a binding,
+        and may use a literal (`max-inline-size: 24ch` on web and Lit, a comparable
+        fixed width on native).'
       a11y: Truncated text is still read in full by screen readers; ensure sighted
         users can also reach it.
     element:
@@ -175,8 +182,9 @@ component:
         on web or Lit: the tone rule reads the token''s own custom property directly
         — `default` is the bare `var(--color-foreground)` an inverse surface re-scopes,
         and `onAction` is `var(--color-foreground-on-action)` (camelCase to kebab-case).
-        `TextForegroundContext` is exported from Text.tsx for sibling components and
-        not re-exported from the package index.'
+        `TextForegroundContext` exists on React Native only: it is exported from the
+        rn Text.tsx for sibling components and not re-exported from the package index.
+        The web Text.tsx has no such export.'
       locked: true
   a11y:
     role: generic
@@ -216,11 +224,14 @@ component:
       - align
       - truncate
       - element
-      notes: 'Renders the chosen element inside the shadow root with `part="text"`;
-        the host is `display: contents` for `span`-like use and `display: block` otherwise.
-        `element` reflects so those two rules are `:host([element="span"])` selectors
-        rather than an inline style — an inline `display: contents` would beat `:host([hidden])
-        { display: none }` and a hidden span would stay visible.'
+      notes: 'Renders the chosen element inside the shadow root with `part="text"`
+        and `data-part="text"` (inside the shadow root it cannot collide with a composing
+        parent''s part name on the host); the host is `display: contents` for `span`-like
+        use and `display: block` otherwise. `element` reflects so those two rules
+        are `:host([element="span"])` selectors rather than an inline style — an inline
+        `display: contents` would beat `:host([hidden]) { display: none }` and a hidden
+        span would stay visible. Stories keep an arg named `children` and render it
+        as the slotted text, so each example''s args match its `given`.'
     rn:
       element: Text
       props:
@@ -262,6 +273,8 @@ component:
   - name: truncated-text-keeps-the-full-string-reachable
     description: Truncation clips to one line, and on web the full text is exposed
       via title when children is a plain string, so sighted users can also reach it.
+      On web the title is on the root; on Lit it is on the shadow `part="text"` element,
+      not the host.
     given:
       truncate: true
       children: A sentence long enough to be clipped by its column.
@@ -294,7 +307,8 @@ component:
     - web
     - lit
   - name: truncated-cell
-    description: One line of text in a dense cell, with the full string still reachable.
+    description: One line of text in a dense cell, with the full string still reachable
+      (on React Native only to a screen reader; see `truncate`).
     given:
       children: Quarterly revenue summary for the EMEA region.
       truncate: true
@@ -304,7 +318,7 @@ component:
 
 - example `body-copy`, story `BodyCopy`: given `children: "Changes are saved automatically. You can undo any change for 30 days."`; The default paragraph - body size, regular weight, default tone.
 - example `caption`, story `Caption`: given `children: "Last updated 2 minutes ago."`, `size: "xs"`, `tone: "muted"`; Secondary metadata at the smallest readable size, muted so it sits behind the content it annotates.
-- example `truncated-cell`, story `TruncatedCell`: given `children: "Quarterly revenue summary for the EMEA region."`, `truncate: true`; One line of text in a dense cell, with the full string still reachable.
+- example `truncated-cell`, story `TruncatedCell`: given `children: "Quarterly revenue summary for the EMEA region."`, `truncate: true`; One line of text in a dense cell, with the full string still reachable (on React Native only to a screen reader; see `truncate`).
 
 ## Overrides (per-instance styling contract)
 
@@ -472,7 +486,7 @@ Sentence case for interface copy. Write for the smallest size the text will appe
 
 ## Accessibility
 
-Every tone except `onAction` is contrast-checked against the page background at AA in every theme and mode; the build fails if a theme's derived palette breaks this. `xs` is the floor for readable text — nothing in the system renders smaller. Text must reflow at 200% zoom and 320px viewports (WCAG 1.4.4, 1.4.10), which means never fixing the width of a text container in pixels. On native platforms, font scaling stays enabled so the platform's accessibility text sizes apply.
+Every tone except `onAction` is contrast-checked against the page background at AA in every theme and mode; the build fails if a theme's derived palette breaks this. Text on any other surface (a Box `surface`, a Feed item, a Splitter pane) is the surface owner's pair to declare, as Box does, not Text's. `xs` is the floor for readable text — nothing in the system renders smaller. Text must reflow at 200% zoom and 320px viewports (WCAG 1.4.4, 1.4.10), which means never fixing the width of a text container in pixels. On native platforms, font scaling stays enabled so the platform's accessibility text sizes apply.
 
 ## Platform notes
 

@@ -2525,3 +2525,50 @@ One line per decision: `<date> <Component> <platform>: <gap> → <what the doc n
 2026-09-17 Splitter web+lit: a shrink step at minSize without collapsible → clamps and fires nothing; a drag collapses only strictly below
 2026-09-17 Splitter web+lit: stackBelow is a container query in one place and a ResizeObserver in another → one wording, and the comparison is strict
 2026-09-17 Splitter web+lit: what F6 does from outside the splitter → handled only from inside; from the container the cycle starts at primary
+2026-09-18 Box rn: Guidance says undefined background for none, binding says transparent → Guidance now says 'transparent', written out
+2026-09-18 Box rn+web: border false, write width 0 or leave unset → web/Lit width 0, hook may stay; RN leaves both unset
+2026-09-18 Box rn+lit: do scenarios layer given on Default story args → yes, intended; they assert only renders and roles
+2026-09-18 Box lit: Behavior prose says ElementInternals, lit note says plain role → Behavior now says plain role attribute on the host
+2026-09-18 Box web+lit: consumer CSS on radius hook at radius none → ignored too; none writes radius.none directly, reads no hook
+2026-09-18 Box lit: what --ds-box-background defaults to without a surface → no base default; only non-none surfaces set it
+2026-09-18 Box web: how string children get wrapped in Text by stories → one meta-level render, plain Text at defaults, strings only
+2026-09-18 Box web: meta args carry border/element defaults beyond the example given → allowed as controls
+2026-09-18 Box web: may a composite's layout class set Box's hooks → yes, it is consumer CSS and outranks modifiers
+2026-09-18 Heading rn: which module owns TextStyleContext → Text.tsx's export, imported, never redeclared
+2026-09-18 Heading web+lit+rn: invalid-level dev warning has no wording or copy key → not copy; names the value and level-2 fallback, example given
+2026-09-18 Heading web+rn: fallback and numeric level have no scenario → each platform's own test file covers them
+2026-09-18 Heading lit: what the level property holds before it is set → undefined, and the h2 fallback renders
+2026-09-18 Heading rn: export a HeadingAlign type or reuse Text's → reuse Text's align type and helper; no HeadingAlign
+2026-09-18 Heading web: does align start emit a modifier class → yes, every value emits ds-heading--align-<value>
+2026-09-18 Heading rn: marginBlockEnd override of space.0 omitted or written → written out as 0
+2026-09-18 Heading lit: story names for digit-leading enum values → literal <Prop><Value> casing: Size4xl, Level1
+2026-09-18 Heading web: may a consumer data-part in rest override the hook → yes, data-part before rest like Box; data-ds after
+2026-09-18 Icon rn: does a Heading count as a Text for colour → any TextStyleContext provider with nested true counts
+2026-09-18 Icon rn+web: overrides.size under inline, hook and modifier class → RN ignores it; web keeps size class, inline wins later
+2026-09-18 Icon lit: size prose says inline-block, lit host is inline-flex → size description names the Lit exception
+2026-09-18 Icon web+rn: unknown-name warning wording and test coverage → not copy: 'Icon: unknown name "<name>"'; platform tests cover it
+2026-09-18 Icon rn: inline example says baseline, RN cannot align to it → example notes the glyph sits slightly higher on RN
+2026-09-18 Icon web: paths table copied or imported from tools at build → verbatim copy per package in the JSON's order
+2026-09-18 Icon web: what size Text wraps the decorative-beside-a-label story → a Text of the same size, sm
+2026-09-18 Stack web+rn+lit: Default story Text wording unspecified → "First item", "Second item", "Third item"
+2026-09-18 Stack web+rn+lit: example children described only in words → named Inputs, three subtle Box regions, eight small secondary filter Buttons
+2026-09-18 Stack web+rn+lit: no token bounds the wrapping-filters story width → decorator capped at layout.maxWidth.prose
+2026-09-18 Stack web+rn: Justify and horizontal-only enum stories add args → enum stories may add args that show the value; examples exactly given
+2026-09-18 Stack web: does the wrap boolean get a story → one Wrap story, horizontal, in the width-bounded decorator
+2026-09-18 Stack web: root carries an undocumented min-inline-size 0 → documented, so a horizontal Stack shrinks in flex parents
+2026-09-18 Stack rn: rn props list names style while rules forbid it → props list emptied; note says style is internal
+2026-09-18 Stack lit: consumer role on host versus shadow list role → host role left alone; list role lives on shadow ul/ol
+2026-09-18 Stack lit: what counts as a child for li wrapping → elements and non-whitespace text; no li for comments or whitespace
+2026-09-18 Stack lit: display contents only named for li wrappers → every shadow wrapper (section, nav, ul, ol, li) is display contents
+2026-09-18 Stack lit: list scenario has no item-count expectation → description says three listitems, and the test asserts them
+2026-09-18 Stack rn: every behavior scenario is renders-only, no style assertions → no doc change; logged to TOOLING as a gate limit
+2026-09-18 Text web: TextForegroundContext export named without a platform → React Native only; web Text.tsx has no such export
+2026-09-18 Text web: explicit title undefined with truncate, win or fallback → counts as not passed; string children supply title
+2026-09-18 Text lit: does the consumer-title rule apply to Lit → no title property; host title attribute copied to part=text, wins
+2026-09-18 Text lit: which element the truncate scenario's title sits on → scenario says root on web, shadow part=text on Lit
+2026-09-18 Text lit: does the shadow text element carry data-part → yes, part="text" and data-part="text" together
+2026-09-18 Text lit: example children given against a Lit slot → arg named children, rendered as the slotted text
+2026-09-18 Text web+lit: onAction story surface has no inset → wrapper painted action background holding a Box inset md
+2026-09-18 Text web: truncate stories need an untokened width constraint → decorator is scaffolding; 24ch on web/Lit, fixed width native
+2026-09-18 Text rn: truncated-cell says reachable, native has no title → example says screen-reader only on React Native
+2026-09-18 Text web: whose contrast pair is Text on other surfaces → the surface owner declares it, as Box does

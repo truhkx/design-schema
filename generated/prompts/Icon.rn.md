@@ -139,8 +139,11 @@ component:
       description: The glyph box is a square of 1em; `size` sets that em (font-size
         on the element), so the box tracks the type scale. With `inline`, font-size
         is inherited instead and `overrides.size` is a no-op (the hook is still set,
-        for consistency). Non-inline icons are display inline-block with vertical-align
-        middle; inline ones sit at vertical-align -0.125em.
+        for consistency, and on web the `ds-icon--{size}` modifier class stays applied;
+        `.ds-icon--inline` is declared later and wins). React Native has no hook,
+        so there the override is simply ignored while inline. Non-inline icons are
+        display inline-block with vertical-align middle (the Lit host is inline-flex
+        instead; see its note); inline ones sit at vertical-align -0.125em.
       locked: false
     color:
       token: color.foreground
@@ -152,8 +155,9 @@ component:
         `overrides.color` sets an explicit color. On React Native, where there is
         no currentColor, the order is: the `color` prop, else `overrides.color`, else
         the enclosing Text''s TextStyleContext colour whenever the glyph is nested
-        in a Text (nesting alone is enough; `inline` governs only the size), else
-        color.foreground.'
+        in a Text (nesting alone is enough; `inline` governs only the size; any `TextStyleContext`
+        provider with `nested: true` counts, so a Heading or Link colours it too),
+        else color.foreground.'
       locked: false
     strokeWidth:
       token: border.width.focus
@@ -194,8 +198,11 @@ component:
         and the `glyph` part, carrying `data-ds="Icon"` and `data-part="glyph"` on
         the one element. An unknown `name` is unreachable from TypeScript but possible
         from JavaScript: every platform renders an empty glyph and warns, on every
-        render, with no dedupe. The empty glyph keeps the label or decorative accessibility
-        props, so an unlabelled unknown icon stays hidden.'
+        render, with no dedupe. The warning is developer-facing, not copy, so it has
+        no copy key: `Icon: unknown name "<name>"`. It has no behavior scenario (a
+        scenario takes only canonical values), so each platform''s own test file covers
+        it. The empty glyph keeps the label or decorative accessibility props, so
+        an unlabelled unknown icon stays hidden.'
     lit:
       tag: ds-icon
       reflect:
@@ -330,8 +337,9 @@ component:
       label: 'Warning: over quota'
   - name: decorative-beside-a-label
     description: The usual case - a glyph next to text, with no label, so the label
-      carries the meaning alone. Its story wraps the glyph in a system Text with the
-      demo word "Saved" beside it; that word is story scaffolding, not copy.
+      carries the meaning alone. Its story wraps the glyph in a system Text of the
+      same size (`sm`) with the demo word "Saved" beside it; that word is story scaffolding,
+      not copy.
     given:
       name: check
       size: sm
@@ -339,6 +347,8 @@ component:
     description: An icon sized at 1em of the surrounding text and sitting on its baseline,
       for use inside a Text or Link. Its story nests it at the end of a system Text
       reading "Read the release notes"; that sentence is story scaffolding, not copy.
+      On React Native the glyph sits slightly above the baseline, a platform limit
+      the rn note explains; the story is the same.
     given:
       name: external
       inline: true
@@ -347,8 +357,8 @@ component:
 ## Constants and examples
 
 - example `status-in-a-cell`, story `StatusInACell`: given `name: "warning"`, `label: "Warning: over quota"`; A lone status glyph that is the whole message, so it says what it means instead of what it depicts.
-- example `decorative-beside-a-label`, story `DecorativeBesideALabel`: given `name: "check"`, `size: "sm"`; The usual case - a glyph next to text, with no label, so the label carries the meaning alone. Its story wraps the glyph in a system Text with the demo word "Saved" beside it; that word is story scaffolding, not copy.
-- example `inline-in-running-text`, story `InlineInRunningText`: given `name: "external"`, `inline: true`; An icon sized at 1em of the surrounding text and sitting on its baseline, for use inside a Text or Link. Its story nests it at the end of a system Text reading "Read the release notes"; that sentence is story scaffolding, not copy.
+- example `decorative-beside-a-label`, story `DecorativeBesideALabel`: given `name: "check"`, `size: "sm"`; The usual case - a glyph next to text, with no label, so the label carries the meaning alone. Its story wraps the glyph in a system Text of the same size (`sm`) with the demo word "Saved" beside it; that word is story scaffolding, not copy.
+- example `inline-in-running-text`, story `InlineInRunningText`: given `name: "external"`, `inline: true`; An icon sized at 1em of the surrounding text and sitting on its baseline, for use inside a Text or Link. Its story nests it at the end of a system Text reading "Read the release notes"; that sentence is story scaffolding, not copy. On React Native the glyph sits slightly above the baseline, a platform limit the rn note explains; the story is the same.
 
 ## Overrides (per-instance styling contract)
 
@@ -648,7 +658,7 @@ An Icon renders a single glyph at the requested size and does nothing else: no i
 
 ## Content guidelines
 
-`tools/icon-paths.json` is the only source for geometry and for whether a glyph is filled or stroked: every platform draws the `d` strings in it verbatim, and where this prose and the JSON disagree the JSON wins and the prose is what should be corrected. What the descriptions below are for is intent, not coordinates. The filled glyphs are the four status shapes, `ellipsis`, `play` and `pause`; everything else is a line glyph, including `list`, `grid`, `folder` and `file`. `list` draws its three rules and its three bullets in one unfilled path, the bullets as zero-length round-capped strokes, because a glyph is fill-or-stroke as a whole and a separate filled circle would need a second path. Glyph names describe the shape or the universal meaning, not the use ("chevron-down", "close", "warning"), so the same icon can serve many components. `dash` is the short indeterminate mark (4–12 on the grid) used by Checkbox; `minus` is the full-width line (3–13) that pairs with `plus`. `danger` is an octagon with an ×; Alert's current exclamation octagon changes to it when Alert is regenerated to compose Icon. A `label`, when used, says what the icon means in context ("Warning: over quota"), not what it depicts ("triangle").
+`tools/icon-paths.json` is the only source for geometry and for whether a glyph is filled or stroked: every platform draws the `d` strings in it verbatim, from a copy in its own package in the JSON's order (packages cannot import from `tools/` at build time), and where this prose and the JSON disagree the JSON wins and the prose is what should be corrected. What the descriptions below are for is intent, not coordinates. The filled glyphs are the four status shapes, `ellipsis`, `play` and `pause`; everything else is a line glyph, including `list`, `grid`, `folder` and `file`. `list` draws its three rules and its three bullets in one unfilled path, the bullets as zero-length round-capped strokes, because a glyph is fill-or-stroke as a whole and a separate filled circle would need a second path. Glyph names describe the shape or the universal meaning, not the use ("chevron-down", "close", "warning"), so the same icon can serve many components. `dash` is the short indeterminate mark (4–12 on the grid) used by Checkbox; `minus` is the full-width line (3–13) that pairs with `plus`. `danger` is an octagon with an ×; Alert's current exclamation octagon changes to it when Alert is regenerated to compose Icon. A `label`, when used, says what the icon means in context ("Warning: over quota"), not what it depicts ("triangle").
 
 ## Accessibility
 

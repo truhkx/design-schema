@@ -3147,7 +3147,7 @@
         "children": {
           "type": "content",
           "required": true,
-          "description": "Any content. Box does not space its children; put a Stack inside for that. A string given as `children` in an example is wrapped in the system Text by its story on every platform (`<ds-text>` on Lit, where slotted content cannot be an arg). The Default story uses the `highlighted-panel` props, since a Box at its schema defaults draws nothing."
+          "description": "Any content. Box does not space its children; put a Stack inside for that. A string given as `children` in an example is wrapped in the system Text by its story on every platform (`<ds-text>` on Lit, where slotted content cannot be an arg): one meta-level render wraps only string children in a Text at its defaults, so each example story keeps exactly its `given` as args. The Default story uses the `highlighted-panel` props, since a Box at its schema defaults draws nothing; meta args may still list the schema defaults (`border: false`, `element: div`) as controls. Behavior scenarios render the Default story's args with their `given` on top, which is intended: they assert only renders and roles."
         },
         "inset": {
           "type": "enum",
@@ -3243,12 +3243,12 @@
         },
         "background": {
           "token": "color.background.{surface}",
-          "description": "`none` renders the literal transparent, not a token, written out explicitly (`background-color: transparent`) and not read through the hook, so neither `overrides.background` nor consumer CSS on `--ds-box-background` paints a `none` box; the token binding covers the other three values. Interpolated bindings like this one are locked — they keep their `--ds-box-*` hook, which is the consumer's own-CSS escape hatch, but they are not members of the overrides type.",
+          "description": "`none` renders the literal transparent, not a token, written out explicitly (`background-color: transparent`) and not read through the hook, so neither `overrides.background` nor consumer CSS on `--ds-box-background` paints a `none` box; the token binding covers the other three values, and the `--ds-box-background` hook is set only by those three, with no base default. Interpolated bindings like this one are locked — they keep their `--ds-box-*` hook, which is the consumer's own-CSS escape hatch, but they are not members of the overrides type.",
           "locked": true
         },
         "border": {
           "token": "color.border",
-          "description": "The border colour. It shares a name with the `border` boolean, which decides presence: an override recolours the border and never brings one into existence.",
+          "description": "The border colour. It shares a name with the `border` boolean, which decides presence: an override recolours the border and never brings one into existence. On web and Lit, without `border` the width is `0` and the colour hook may stay written, since nothing visible reads it; on React Native, which has no cascade, `borderWidth` and `borderColor` are left unset when `border` is false.",
           "locked": false
         },
         "borderWidth": {
@@ -3257,7 +3257,7 @@
         },
         "radius": {
           "token": "radius.{radius}",
-          "description": "`radius: none` resolves `radius.none` and is written out, rather than leaving the property unset — every binding is applied explicitly, with no cascade. Unlike padding, radius is presence-gated: `none` means no rounded corners, so `overrides.radius` is ignored at `none` and applies at every other value.",
+          "description": "`radius: none` resolves `radius.none` and is written out, rather than leaving the property unset — every binding is applied explicitly, with no cascade. Unlike padding, radius is presence-gated: `none` means no rounded corners, so `overrides.radius` is ignored at `none` and applies at every other value. As with `surface: none`, the `none` rule writes `radius.none` directly and reads no hook, so consumer CSS on `--ds-box-radius` cannot round a `none` box either.",
           "locked": false
         }
       },
@@ -3303,7 +3303,7 @@
         "web": {
           "element": "div",
           "attributes": [],
-          "notes": "A plain element with classes for each enum value; `surface: none` paints `transparent` and reads no hook. insetBlock/insetInline modifiers win over inset. No margin, ever. The root is the `surface` part and carries `data-part=\"surface\"`, written before `...rest` so a composing parent can relabel it (Popover and BottomSheet pass `data-part=\"body\"`). Box is the one primitive that merges a consumer `className` and `style` onto the root instead of dropping them, as Text does, because those same composites give it a layout-only class. Props are typed against `div` for every `element` value; Box is not polymorphic, and the ref is `Ref<HTMLElement>`."
+          "notes": "A plain element with classes for each enum value; `surface: none` paints `transparent` and reads no hook. insetBlock/insetInline modifiers win over inset. No margin, ever. The root is the `surface` part and carries `data-part=\"surface\"`, written before `...rest` so a composing parent can relabel it (Popover and BottomSheet pass `data-part=\"body\"`). Box is the one primitive that merges a consumer `className` and `style` onto the root instead of dropping them, as Text does, because those same composites give it a layout-only class. That class may set Box's `--ds-box-*` hooks (Dialog sets the padding hooks this way): it is consumer CSS, and it outranks the modifier classes by specificity. Props are typed against `div` for every `element` value; Box is not polymorphic, and the ref is `Ref<HTMLElement>`."
         },
         "lit": {
           "tag": "ds-box",
@@ -3845,10 +3845,10 @@
       "Overview": "Box is the thing you reach for when a group of content needs a surface: padding around it, a background under it, a border, rounded corners. It has no opinions about what is inside and no spacing between its children — that is Stack's job — so the two compose without overlap: a Box for the inset, a Stack for the gaps.",
       "When to use": "Use a Box to give a region of a layout a background or padding: a sidebar panel, a highlighted row, a footer band, the inside of a modal. Use it when a Card is too much (a Card is a Box with conventions about elevation and content). Choose `inset` by role — `sm` for dense rows, `md` for most panels, `lg` for page-level containers, `xl` for hero bands — and let the theme's rhythm decide the numbers.",
       "When not to use": "Do not use a Box to add space between two components; put them in a Stack. Do not use it as a page container; Container owns gutters and measure. Do not nest surfaces more than two deep (`subtle` on `default`, `strong` on `subtle`) — a third level reads as clutter and the contrast math is only checked two deep. Do not use `surface` to signal status; that is Alert's tinted background.",
-      "Behavior": "Box renders its children in a block with the requested padding, background, border and radius, and nothing else. It adds no role of its own (`a11y.role: none`); on web the native element carries whatever semantics it has, which for `section`, `header` and `footer` depends on naming and ancestry as it does in plain HTML, and Lit sets an ElementInternals role only for the values whose role is unconditional (see the platform note). It never scrolls, never clips (`radius` does not imply `overflow: hidden`; a child that should be clipped clips itself), and never carries margin. `insetBlock` and `insetInline` override `inset` per axis. `surface: none` paints transparent, so the parent's background shows through.",
+      "Behavior": "Box renders its children in a block with the requested padding, background, border and radius, and nothing else. It adds no role of its own (`a11y.role: none`); on web the native element carries whatever semantics it has, which for `section`, `header` and `footer` depends on naming and ancestry as it does in plain HTML, and Lit sets a plain `role` attribute on the host only for the values whose role is unconditional (see the platform note). It never scrolls, never clips (`radius` does not imply `overflow: hidden`; a child that should be clipped clips itself), and never carries margin. `insetBlock` and `insetInline` override `inset` per axis. `surface: none` paints transparent, so the parent's background shows through.",
       "Content guidelines": "None; Box has no text of its own.",
       "Accessibility": "Box is invisible to assistive technology unless `element` gives it a sectioning role, in which case Landmark is usually the right component instead. Text on a `subtle` or `strong` surface must remain readable: the build checks body, muted and link foreground against both surfaces in both modes (WCAG 1.4.3), which is what makes \"two levels deep\" a safe rule rather than a hope. Box itself sets no foreground and establishes no colour context for its children, so these pairs are a guarantee about the tokens, not something the component implements or can enforce at runtime. A border, when present, is decorative; nothing relies on it to identify content (1.4.11 does not apply).",
-      "Platform notes": "### Web\nRender the `element` with classes `ds-box`, `ds-box--inset-{value}`, `ds-box--inset-block-{value}`, `ds-box--inset-inline-{value}`, `ds-box--surface-{value}`, `ds-box--border`, `ds-box--radius-{value}`. Padding uses logical properties (`padding-block`, `padding-inline`). Axis modifiers are declared after the all-sides modifier so they win.\n\n### Lit\n`<ds-box inset=\"md\" surface=\"subtle\" radius=\"md\">`. The host is the box; `:host` carries the padding, background, border and radius from reflected attributes (`:host([inset=\"md\"])`). Children are slotted. `element` maps to a plain `role` attribute on the host for the values whose role is unconditional and is otherwise inert.\n\n### React Native\n`View` with `paddingVertical`/`paddingHorizontal` from `layout.inset.*`, `backgroundColor` from `color.background.*` (undefined for `none`), `borderWidth`/`borderColor` when `border`, `borderRadius` from `radius.*`. No `element`.",
+      "Platform notes": "### Web\nRender the `element` with classes `ds-box`, `ds-box--inset-{value}`, `ds-box--inset-block-{value}`, `ds-box--inset-inline-{value}`, `ds-box--surface-{value}`, `ds-box--border`, `ds-box--radius-{value}`. Padding uses logical properties (`padding-block`, `padding-inline`). Axis modifiers are declared after the all-sides modifier so they win.\n\n### Lit\n`<ds-box inset=\"md\" surface=\"subtle\" radius=\"md\">`. The host is the box; `:host` carries the padding, background, border and radius from reflected attributes (`:host([inset=\"md\"])`). Children are slotted. `element` maps to a plain `role` attribute on the host for the values whose role is unconditional and is otherwise inert.\n\n### React Native\n`View` with `paddingVertical`/`paddingHorizontal` from `layout.inset.*`, `backgroundColor` from `color.background.*` (`'transparent'` for `none`, written out), `borderWidth`/`borderColor` only when `border`, `borderRadius` from `radius.*`. No `element`.",
       "Related": "Stack, Card, Container, Landmark."
     },
     "extensions": [],
@@ -14291,7 +14291,7 @@
             "6"
           ],
           "required": true,
-          "description": "Position in the document outline. Controls the semantic element, not the visual size. Canonical values are strings; generated components also accept the number — the exported `HeadingLevel` type is the string union, and the prop or property type adds `1 | 2 | 3 | 4 | 5 | 6`. A missing, out-of-range or non-numeric level (untyped JavaScript, `level=\"7\"`) is treated as `2` on every platform: an <h2> on web and Lit, the 3xl default size everywhere, and one development warning per element for its lifetime. The Default story renders level `2` with \"Account settings\".",
+          "description": "Position in the document outline. Controls the semantic element, not the visual size. Canonical values are strings; generated components also accept the number — the exported `HeadingLevel` type is the string union, and the prop or property type adds `1 | 2 | 3 | 4 | 5 | 6`. A missing, out-of-range or non-numeric level (untyped JavaScript, `level=\"7\"`) is treated as `2` on every platform: an <h2> on web and Lit, the 3xl default size everywhere, and one development warning per element for its lifetime. The warning is developer-facing, not copy, so it has no copy key; it names the received value and the level-2 fallback (`Heading: level 7 is not one of 1–6; rendering as level 2.`). Behavior scenarios take only canonical values, so each platform's own test file covers a numeric level and the fallback with its single warning. On Lit the property holds `undefined` until set, and the fallback renders. The Default story renders level `2` with \"Account settings\".",
           "a11y": "Screen-reader users navigate by heading level; levels must not skip (h1 → h3)."
         },
         "size": {
@@ -14305,7 +14305,7 @@
             "lg",
             "md"
           ],
-          "description": "Visual size, independent of level. There is no single default; the default is read from `level` by this exact map — 1 → 4xl, 2 → 3xl, 3 → 2xl, 4 → xl, 5 → lg, 6 → md — and an explicit `size` always wins over it. On Lit the resolved default is never written back to the `size` attribute, so `[size]` selectors match only explicit sizes; web exposes no size attribute at all, only the `ds-heading--size-*` modifier class, which carries the resolved size. Heading takes the large end of the shared size vocabulary; the exported type is its own, since Text takes the small end."
+          "description": "Visual size, independent of level. There is no single default; the default is read from `level` by this exact map — 1 → 4xl, 2 → 3xl, 3 → 2xl, 4 → xl, 5 → lg, 6 → md — and an explicit `size` always wins over it. On Lit the resolved default is never written back to the `size` attribute, so `[size]` selectors match only explicit sizes; web exposes no size attribute at all, only the `ds-heading--size-*` modifier class, which carries the resolved size. Heading takes the large end of the shared size vocabulary; the exported type is its own, since Text takes the small end. Enum stories keep the literal `<Prop><Value>` casing: `Size4xl`, `Size2xl`, `Level1`."
         },
         "children": {
           "type": "content",
@@ -14320,7 +14320,7 @@
             "end"
           ],
           "default": "start",
-          "description": "Horizontal text alignment. It has no style binding on purpose — alignment is a layout choice, not a themed value — so it maps straight to the platform's text-align. `start` and `end` are logical on web and Lit; React Native has no logical values and resolves them through I18nManager.isRTL at render, so a writing-direction change mid-session does not re-align an already-rendered heading, the same limit Text has."
+          "description": "Horizontal text alignment. It has no style binding on purpose — alignment is a layout choice, not a themed value — so it maps straight to the platform's text-align. `start` and `end` are logical on web and Lit; React Native has no logical values and resolves them through I18nManager.isRTL at render, so a writing-direction change mid-session does not re-align an already-rendered heading, the same limit Text has. The value set is Text's, so a platform reuses Text's exported align type and mapping helper and exports no separate HeadingAlign. On web every value, `start` included, emits its `ds-heading--align-<value>` class."
         }
       },
       "styles": {
@@ -14347,7 +14347,7 @@
         },
         "marginBlockEnd": {
           "token": "space.sm",
-          "description": "Space below the heading (marginBottom on React Native — the one margin the system allows, because a heading owns the gap to its own first paragraph). It is unconditional: a container that owns its own rhythm turns it off with `overrides={{ marginBlockEnd: 'space.0' }}`, as Table does.",
+          "description": "Space below the heading (marginBottom on React Native — the one margin the system allows, because a heading owns the gap to its own first paragraph). It is unconditional: a container that owns its own rhythm turns it off with `overrides={{ marginBlockEnd: 'space.0' }}`, as Table does. That override is written out as a margin of 0, never omitted.",
           "locked": false
         }
       },
@@ -14369,7 +14369,7 @@
         "web": {
           "element": "h1–h6",
           "attributes": [],
-          "notes": "The element is chosen by `level`. Never use `role=\"heading\"` on a div when a real heading element is available. The root is the `text` part and carries `data-part=\"text\"` beside `data-ds=\"Heading\"` — on web and Lit one element takes both hooks. Heading does not compose Text: it owns its five typography bindings because Text cannot carry the header semantics, the heading sizes or a margin. `contrast-aaa` and `heading-hierarchy` have nothing to implement here — the first is a property of the locked token pair and the second is a property of the page; both are checked by the build, not by the component. The user-agent top margin of h1–h6 is reset to `margin-block-start: 0` — a reset of a browser default, not a binding, since marginBlockEnd is the one margin Heading owns."
+          "notes": "The element is chosen by `level`. Never use `role=\"heading\"` on a div when a real heading element is available. The root is the `text` part and carries `data-part=\"text\"` beside `data-ds=\"Heading\"` — on web and Lit one element takes both hooks. On web `data-part` is written before `...rest`, so a composing parent can relabel it as it does Box; `data-ds` is written after. Heading does not compose Text: it owns its five typography bindings because Text cannot carry the header semantics, the heading sizes or a margin. `contrast-aaa` and `heading-hierarchy` have nothing to implement here — the first is a property of the locked token pair and the second is a property of the page; both are checked by the build, not by the component. The user-agent top margin of h1–h6 is reset to `margin-block-start: 0` — a reset of a browser default, not a binding, since marginBlockEnd is the one margin Heading owns."
         },
         "lit": {
           "tag": "ds-heading",
@@ -14385,7 +14385,7 @@
           "props": [
             "accessibilityRole=header"
           ],
-          "notes": "iOS and Android have no heading levels. `level` maps only to typography; the header trait is set regardless of level. Document the outline in the screen's design instead. Heading renders the platform Text directly rather than composing the system Text, which carries no header role, no heading sizes and no margin. The root is both the component and its only part, so it carries `testID=\"Heading\"` and there is no `Heading.text`: a part that is the root keeps the root hook. The ref is `Ref<TextInstance>`. Heading provides `TextStyleContext` ({ fontSize, color, nested: true }) with its own resolved size and colour, as Text does, so an inline Icon or Link inside it matches the heading."
+          "notes": "iOS and Android have no heading levels. `level` maps only to typography; the header trait is set regardless of level. Document the outline in the screen's design instead. Heading renders the platform Text directly rather than composing the system Text, which carries no header role, no heading sizes and no margin. The root is both the component and its only part, so it carries `testID=\"Heading\"` and there is no `Heading.text`: a part that is the root keeps the root hook. The ref is `Ref<TextInstance>`. Heading provides `TextStyleContext` ({ fontSize, color, nested: true }), the context Text.tsx exports, imported from there rather than declared again, with its own resolved size and colour, as Text does, so an inline Icon or Link inside it matches the heading."
         },
         "swiftui": {
           "element": "Text",
@@ -14758,12 +14758,12 @@
       "styles": {
         "size": {
           "token": "font.size.{size}",
-          "description": "The glyph box is a square of 1em; `size` sets that em (font-size on the element), so the box tracks the type scale. With `inline`, font-size is inherited instead and `overrides.size` is a no-op (the hook is still set, for consistency). Non-inline icons are display inline-block with vertical-align middle; inline ones sit at vertical-align -0.125em.",
+          "description": "The glyph box is a square of 1em; `size` sets that em (font-size on the element), so the box tracks the type scale. With `inline`, font-size is inherited instead and `overrides.size` is a no-op (the hook is still set, for consistency, and on web the `ds-icon--{size}` modifier class stays applied; `.ds-icon--inline` is declared later and wins). React Native has no hook, so there the override is simply ignored while inline. Non-inline icons are display inline-block with vertical-align middle (the Lit host is inline-flex instead; see its note); inline ones sit at vertical-align -0.125em.",
           "locked": false
         },
         "color": {
           "token": "color.foreground",
-          "description": "The default is inherit (currentColor): glyphs take the text color, so a Button, Link or Alert colors them for free, and color.foreground is only what inheritance resolves to at the root. The CSS hook therefore defaults to `currentColor`, not to the token — defaulting it to the token would break that inheritance — and color.foreground is what it resolves to at the root. `overrides.color` sets an explicit color. On React Native, where there is no currentColor, the order is: the `color` prop, else `overrides.color`, else the enclosing Text's TextStyleContext colour whenever the glyph is nested in a Text (nesting alone is enough; `inline` governs only the size), else color.foreground.",
+          "description": "The default is inherit (currentColor): glyphs take the text color, so a Button, Link or Alert colors them for free, and color.foreground is only what inheritance resolves to at the root. The CSS hook therefore defaults to `currentColor`, not to the token — defaulting it to the token would break that inheritance — and color.foreground is what it resolves to at the root. `overrides.color` sets an explicit color. On React Native, where there is no currentColor, the order is: the `color` prop, else `overrides.color`, else the enclosing Text's TextStyleContext colour whenever the glyph is nested in a Text (nesting alone is enough; `inline` governs only the size; any `TextStyleContext` provider with `nested: true` counts, so a Heading or Link colours it too), else color.foreground.",
           "locked": false
         },
         "strokeWidth": {
@@ -14788,7 +14788,7 @@
             "aria-label",
             "focusable=false"
           ],
-          "notes": "One inline <svg viewBox=\"0 0 16 16\" width=\"1em\" height=\"1em\"> per glyph, from a `paths` table exported from Icon.tsx (module export, not re-exported from the package index; no sprite, no icon font, no dependency). Root svg: fill none, stroke currentColor; filled glyphs set fill currentColor / stroke none on their own path. `focusable=\"false\"` for old Edge. Decorative icons: aria-hidden=\"true\"; labelled: role=\"img\" aria-label. The svg is both the root and the `glyph` part, carrying `data-ds=\"Icon\"` and `data-part=\"glyph\"` on the one element. An unknown `name` is unreachable from TypeScript but possible from JavaScript: every platform renders an empty glyph and warns, on every render, with no dedupe. The empty glyph keeps the label or decorative accessibility props, so an unlabelled unknown icon stays hidden."
+          "notes": "One inline <svg viewBox=\"0 0 16 16\" width=\"1em\" height=\"1em\"> per glyph, from a `paths` table exported from Icon.tsx (module export, not re-exported from the package index; no sprite, no icon font, no dependency). Root svg: fill none, stroke currentColor; filled glyphs set fill currentColor / stroke none on their own path. `focusable=\"false\"` for old Edge. Decorative icons: aria-hidden=\"true\"; labelled: role=\"img\" aria-label. The svg is both the root and the `glyph` part, carrying `data-ds=\"Icon\"` and `data-part=\"glyph\"` on the one element. An unknown `name` is unreachable from TypeScript but possible from JavaScript: every platform renders an empty glyph and warns, on every render, with no dedupe. The warning is developer-facing, not copy, so it has no copy key: `Icon: unknown name \"<name>\"`. It has no behavior scenario (a scenario takes only canonical values), so each platform's own test file covers it. The empty glyph keeps the label or decorative accessibility props, so an unlabelled unknown icon stays hidden."
         },
         "lit": {
           "tag": "ds-icon",
@@ -14924,7 +14924,7 @@
         },
         {
           "name": "decorative-beside-a-label",
-          "description": "The usual case - a glyph next to text, with no label, so the label carries the meaning alone. Its story wraps the glyph in a system Text with the demo word \"Saved\" beside it; that word is story scaffolding, not copy.",
+          "description": "The usual case - a glyph next to text, with no label, so the label carries the meaning alone. Its story wraps the glyph in a system Text of the same size (`sm`) with the demo word \"Saved\" beside it; that word is story scaffolding, not copy.",
           "given": {
             "name": "check",
             "size": "sm"
@@ -14932,7 +14932,7 @@
         },
         {
           "name": "inline-in-running-text",
-          "description": "An icon sized at 1em of the surrounding text and sitting on its baseline, for use inside a Text or Link. Its story nests it at the end of a system Text reading \"Read the release notes\"; that sentence is story scaffolding, not copy.",
+          "description": "An icon sized at 1em of the surrounding text and sitting on its baseline, for use inside a Text or Link. Its story nests it at the end of a system Text reading \"Read the release notes\"; that sentence is story scaffolding, not copy. On React Native the glyph sits slightly above the baseline, a platform limit the rn note explains; the story is the same.",
           "given": {
             "name": "external",
             "inline": true
@@ -15340,7 +15340,7 @@
       "When to use": "Use an Icon wherever a component's anatomy names one: the leading icon in a Button, the chevron in a Disclosure, the status shape in an Alert, the check in a Checkbox, the external mark on a Link, the ellipsis in a collapsed Breadcrumb. Use `inline` when the icon is inside running text. Give it a `label` only when the icon is the whole message — a lone warning triangle in a table cell, say — and the label is what a screen reader should say instead.",
       "When not to use": "Do not use an Icon as a button; wrap it in a Button with `iconOnly` and a `label`, which brings the target size, focus ring and accessible name. Do not use Icons as illustration or decoration at large sizes; that is an Illustration component (not planned) or an image. Do not add a glyph to the set for one screen; the set grows when a *component* needs a shape, and until then product code passes its own SVG to the slot that accepts content.",
       "Behavior": "An Icon renders a single glyph at the requested size and does nothing else: no interaction, no focus, no animation. Its color is the surrounding text color on web and Lit (`currentColor`); on React Native the parent supplies it. Decorative icons (no `label`) are invisible to assistive technology so that \"Save\" is announced as \"Save\", not \"check mark Save\". Labelled icons are announced as images with their label.",
-      "Content guidelines": "`tools/icon-paths.json` is the only source for geometry and for whether a glyph is filled or stroked: every platform draws the `d` strings in it verbatim, and where this prose and the JSON disagree the JSON wins and the prose is what should be corrected. What the descriptions below are for is intent, not coordinates. The filled glyphs are the four status shapes, `ellipsis`, `play` and `pause`; everything else is a line glyph, including `list`, `grid`, `folder` and `file`. `list` draws its three rules and its three bullets in one unfilled path, the bullets as zero-length round-capped strokes, because a glyph is fill-or-stroke as a whole and a separate filled circle would need a second path. Glyph names describe the shape or the universal meaning, not the use (\"chevron-down\", \"close\", \"warning\"), so the same icon can serve many components. `dash` is the short indeterminate mark (4–12 on the grid) used by Checkbox; `minus` is the full-width line (3–13) that pairs with `plus`. `danger` is an octagon with an ×; Alert's current exclamation octagon changes to it when Alert is regenerated to compose Icon. A `label`, when used, says what the icon means in context (\"Warning: over quota\"), not what it depicts (\"triangle\").",
+      "Content guidelines": "`tools/icon-paths.json` is the only source for geometry and for whether a glyph is filled or stroked: every platform draws the `d` strings in it verbatim, from a copy in its own package in the JSON's order (packages cannot import from `tools/` at build time), and where this prose and the JSON disagree the JSON wins and the prose is what should be corrected. What the descriptions below are for is intent, not coordinates. The filled glyphs are the four status shapes, `ellipsis`, `play` and `pause`; everything else is a line glyph, including `list`, `grid`, `folder` and `file`. `list` draws its three rules and its three bullets in one unfilled path, the bullets as zero-length round-capped strokes, because a glyph is fill-or-stroke as a whole and a separate filled circle would need a second path. Glyph names describe the shape or the universal meaning, not the use (\"chevron-down\", \"close\", \"warning\"), so the same icon can serve many components. `dash` is the short indeterminate mark (4–12 on the grid) used by Checkbox; `minus` is the full-width line (3–13) that pairs with `plus`. `danger` is an octagon with an ×; Alert's current exclamation octagon changes to it when Alert is regenerated to compose Icon. A `label`, when used, says what the icon means in context (\"Warning: over quota\"), not what it depicts (\"triangle\").",
       "Accessibility": "Decorative icons are hidden from assistive technology (WCAG 1.1.1: they carry no information the adjacent text does not). Meaningful icons expose role `img` and an accessible name from `label` (1.1.1, 4.1.2). Icons never convey information by color alone: the four status glyphs are four different shapes (1.4.1). Because they are drawn in the text color, they inherit whatever contrast the text has; components that place an icon on a tinted surface (Alert, Meter) declare that pair themselves. Line glyphs use the focus-ring width as their stroke so they stay legible at `xs` (1.4.11 applies only when the icon is meaningful, and a labelled icon then sits in a component that declares the pair).",
       "Platform notes": "### Web\nExport a `paths` table keyed by `name`, drawn on a 16×16 grid: line glyphs are bare `<path>`s inheriting the root's `fill=\"none\" stroke=\"currentColor\"`; the four status shapes, the ellipsis, `play` and `pause` are single `fill=\"currentColor\" stroke=\"none\" fill-rule=\"evenodd\"` paths whose inner mark is a hole. Render `<svg viewBox=\"0 0 16 16\" width=\"1em\" height=\"1em\" fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\">` with `stroke-width: var(--border-width-focus)` and `vector-effect: non-scaling-stroke` on paths in CSS. Size: `font-size: var(--font-size-{size})` on the element (attributes cannot take custom properties); `display: inline-block; vertical-align: middle`; with `inline`, `font-size: inherit; vertical-align: -0.125em`. The `d` strings come verbatim from `tools/icon-paths.json`. Decorative: `aria-hidden=\"true\"`; labelled: `role=\"img\"` and `aria-label`. Always `focusable=\"false\"`. Button, Link, Alert, Disclosure, Checkbox, RadioGroup and Breadcrumb should be updated to render `<Icon>` instead of their private glyphs in the next regeneration.\n\n### Lit\n`<ds-icon name=\"check\" size=\"sm\">` renders the same SVG in its shadow root; `:host { display: inline-flex; vertical-align: middle; font-size: var(--ds-icon-size); color: var(--ds-icon-color) }` and `:host([inline]) { display: inline-block; vertical-align: -0.125em; font-size: inherit; inline-size: 1em; block-size: 1em }`. Reflect `name`, `size` and `inline`. The paths table is a module-private constant; other elements compose `<ds-icon>`.\n\n### React Native\nImport `Svg` and `Path` from `react-native-svg` and render the shared `paths` table (a `paths.ts` in the RN package, written from `tools/icon-paths.json`): `<Svg viewBox=\"0 0 16 16\" width={size} height={size} fill=\"none\" stroke={color} strokeLinecap=\"round\" strokeLinejoin=\"round\">` with `<Path d strokeWidth>` per glyph; filled glyphs pass `fill={color} stroke=\"none\" fillRule=\"evenodd\"` on their Path. `size` and `strokeWidth` come from the tokens through `useTheme()`. With `inline` nested in the system Text, size from the parent's font size via `TextStyleContext`; otherwise `font.size.md`. `color` from the prop, then `overrides.color`, then the enclosing Text's colour, then `color.foreground`. Decorative: `accessibilityElementsHidden`, `importantForAccessibility=\"no\"`; labelled: `accessibilityRole=\"image\"`, `accessibilityLabel`. No Unicode fallback remains.",
       "Related": "Button, Link, Alert, Disclosure, Checkbox, Breadcrumb."
@@ -27039,7 +27039,7 @@
         "children": {
           "type": "content",
           "required": true,
-          "description": "Any components. Stack does not style its children; it only positions them. Null and boolean children are skipped, as the platform skips them. In examples `children` describes the content in words; stories render it with system components (Input, Button, Text) in the order named, and the Default story renders three Text children."
+          "description": "Any components. Stack does not style its children; it only positions them. Null and boolean children are skipped, as the platform skips them. In examples `children` describes the content in words; stories render it with system components (Input, Button, Text) in the order named, and the Default story renders three Text children reading \"First item\", \"Second item\" and \"Third item\". The examples resolve as: form fields are three Inputs labelled \"Full name\", \"Email\" and \"Password\"; the regions of the page are three Boxes (`surface: subtle`, `inset: md`) each holding a Text naming its region (\"Summary\", \"Details\", \"History\"); a row of filters is eight small secondary Buttons (\"All\", \"Open\", \"Closed\", \"Mine\", \"Unassigned\", \"Urgent\", \"This week\", \"Archived\"). All of it is story scaffolding, not copy."
         },
         "direction": {
           "type": "enum",
@@ -27082,12 +27082,12 @@
             "between"
           ],
           "default": "start",
-          "description": "Main-axis distribution. It only shows where the main axis is larger than the content — a vertical Stack needs a bounded height for it to mean anything, and Stack has no size of its own, so that is the caller's to give. The four values are the whole set: `around` and `evenly` are deliberately left out, since a rhythm system should not offer four ways to divide leftover space."
+          "description": "Main-axis distribution. It only shows where the main axis is larger than the content — a vertical Stack needs a bounded height for it to mean anything, and Stack has no size of its own, so that is the caller's to give. The four values are the whole set: `around` and `evenly` are deliberately left out, since a rhythm system should not offer four ways to divide leftover space. Its enum stories (and `DirectionHorizontal`) are therefore horizontal: an enum-value story may add the args that make its value visible (`direction: horizontal`, `align: start`), while an example story has exactly its `given`."
         },
         "wrap": {
           "type": "boolean",
           "default": false,
-          "description": "Allow horizontal stacks to wrap onto new lines instead of overflowing. It is set whatever the direction — on a column it is inert unless the block size is bounded — rather than being silently ignored on a vertical Stack.",
+          "description": "Allow horizontal stacks to wrap onto new lines instead of overflowing. It is set whatever the direction — on a column it is inert unless the block size is bounded — rather than being silently ignored on a vertical Stack. As a boolean it gets one story, `Wrap` (horizontal, in the same width-bounded decorator as `wrapping-filters`).",
           "a11y": "Prefer wrapping over horizontal scrolling so content reflows at 320px and 400% zoom. Native has neither viewport width nor browser zoom: the equivalent is that a wrapped row still fits when the platform's text size is turned up."
         },
         "element": {
@@ -27122,7 +27122,7 @@
         "web": {
           "element": "div",
           "attributes": [],
-          "notes": "Flexbox. `gap` maps to the CSS gap property with the layout.gap token; no margins on children. The root is the `container` part; the `li` wrappers for `ul`/`ol` are the `item` part. Stack merges a consumer `className` and `style` onto the root, as Box and Text do, because composites give it layout-only classes; the consumer `style` is merged after the `overrides` hooks. The ref is `Ref<HTMLElement>`, not narrowed per `element`."
+          "notes": "Flexbox. `gap` maps to the CSS gap property with the layout.gap token; no margins on children. The root is the `container` part; the `li` wrappers for `ul`/`ol` are the `item` part. Stack merges a consumer `className` and `style` onto the root, as Box and Text do, because composites give it layout-only classes; the consumer `style` is merged after the `overrides` hooks. The root also sets `min-inline-size: 0`, so a horizontal Stack can shrink inside a parent flex container. The ref is `Ref<HTMLElement>`, not narrowed per `element`."
         },
         "lit": {
           "tag": "ds-stack",
@@ -27133,14 +27133,12 @@
             "justify",
             "wrap"
           ],
-          "notes": "The host is the flex container (`:host { display: flex }`) with a default slot, so children stay in the light DOM and keep their own semantics. The host is the `container` part and carries no `part` attribute, since a host cannot; for `ul`/`ol` the shadow root renders the list and one `li` per child, each `display: contents` and marked `part=\"item\"`. Keep the light DOM where it is: use manual slot assignment and rebuild the wrappers from a childList observer rather than moving children into them, which would re-fire slotchange forever. `element` is not reflected: it is read from the attribute or property but is not a styling contract, since it changes only the shadow structure."
+          "notes": "The host is the flex container (`:host { display: flex }`) with a default slot, so children stay in the light DOM and keep their own semantics. The host is the `container` part and carries no `part` attribute, since a host cannot; for `ul`/`ol` the shadow root renders the list and one `li` per child, each `display: contents` and marked `part=\"item\"`. Keep the light DOM where it is: use manual slot assignment and rebuild the wrappers from a childList observer rather than moving children into them, which would re-fire slotchange forever. A child is an element or a text node with non-whitespace content; comments and whitespace-only text get no `li`. Every wrapper in the shadow root (`section`, `nav`, `ul`, `ol`, `li`) is `display: contents`, so the host stays the flex container. The list role lives on the shadow `ul`/`ol`, so the web rule that the list role beats a consumer `role` does not arise: a consumer `role` on the host is the consumer's and is left alone. `element` is not reflected: it is read from the attribute or property but is not a styling contract, since it changes only the shadow structure."
         },
         "rn": {
           "element": "View",
-          "props": [
-            "style"
-          ],
-          "notes": "Flexbox with `gap` (RN ≥ 0.71). Children are not wrapped. `style` in the props list is the View's internal style, not a public prop. `element` is not applicable: a navigation region is Landmark and a list is a plain View whose rows carry their own semantics."
+          "props": [],
+          "notes": "Flexbox with `gap` (RN ≥ 0.71). Children are not wrapped. There is no public `style` prop; the View's style is internal. `element` is not applicable: a navigation region is Landmark and a list is a plain View whose rows carry their own semantics."
         },
         "swiftui": {
           "element": "VStack",
@@ -27174,7 +27172,7 @@
         },
         {
           "name": "list-element-is-a-list",
-          "description": "For ul, each child is wrapped in an li, so assistive technology announces the group as a list and counts its items.",
+          "description": "For ul, each child is wrapped in an li, so assistive technology announces the group as a list and counts its items: the Default story's three children give three listitems, which the test asserts too.",
           "given": {
             "element": "ul"
           },
@@ -27221,7 +27219,7 @@
         },
         {
           "name": "wrapping-filters",
-          "description": "A horizontal group that reflows onto new lines on narrow viewports instead of overflowing. Its story renders inside a width-bounded container (a story decorator, not an arg) so the wrap shows.",
+          "description": "A horizontal group that reflows onto new lines on narrow viewports instead of overflowing. Its story renders inside a container capped at `layout.maxWidth.prose` (a story decorator, not an arg) so the eight filters wrap.",
           "given": {
             "direction": "horizontal",
             "gap": "tight",
@@ -31012,7 +31010,7 @@
             "onAction"
           ],
           "default": "default",
-          "description": "Semantic color. `onAction` is only for text placed on an action background, and its story paints that background (color.action.primary.background) behind the Text. There is no `inverse` tone: the shared foreground vocabulary has no such name, so an inverse surface re-scopes the foreground instead (see `styles.color`).",
+          "description": "Semantic color. `onAction` is only for text placed on an action background, and its story paints that background (color.action.primary.background) behind the Text, on a wrapper holding a Box with `inset: md` around it. There is no `inverse` tone: the shared foreground vocabulary has no such name, so an inverse surface re-scopes the foreground instead (see `styles.color`).",
           "a11y": "Every tone meets 4.5:1 on the page background in every theme and mode except onAction, which is checked against color.action.primary.background."
         },
         "align": {
@@ -31028,7 +31026,7 @@
         "truncate": {
           "type": "boolean",
           "default": false,
-          "description": "Clip to one line with an ellipsis. On web the full text is exposed via `title` when children is a plain string; otherwise the consumer passes `title`, and neither one is a development warning — the text is then reachable only to a screen reader. A consumer `title` always wins and is forwarded unchanged, with or without `truncate`. On Lit there is no \"plain string\" state, so `title` comes from the host's flattened, whitespace-collapsed textContent, is omitted when that is empty, sits on the `part=\"text\"` element (the one that clips), and follows live edits to the text (a MutationObserver over the host's subtree, since slotchange misses character changes). With `element: span` the clipped box is `display: inline-block; max-inline-size: 100%; vertical-align: bottom`, so the width comes from the parent and the clipped box stays on the line. Native clips with `numberOfLines={1}` and `ellipsizeMode=\"tail\"` and has no affordance that reveals the rest — a known gap.",
+          "description": "Clip to one line with an ellipsis. On web the full text is exposed via `title` when children is a plain string; otherwise the consumer passes `title`, and neither one is a development warning — the text is then reachable only to a screen reader. A consumer `title` always wins and is forwarded unchanged, with or without `truncate`; an explicit `title={undefined}` counts as not passed, so the string children still supply it. On Lit there is no `title` property (the name is not attribute-safe): a `title` attribute the consumer puts on the host is observed and copied unchanged to the `part=\"text\"` element, where it wins the same way. With no consumer title there is no \"plain string\" state, so `title` comes from the host's flattened, whitespace-collapsed textContent, is omitted when that is empty, sits on the `part=\"text\"` element (the one that clips), and follows live edits to the text (a MutationObserver over the host's subtree, since slotchange misses character changes). With `element: span` the clipped box is `display: inline-block; max-inline-size: 100%; vertical-align: bottom`, so the width comes from the parent and the clipped box stays on the line. Native clips with `numberOfLines={1}` and `ellipsizeMode=\"tail\"` and has no affordance that reveals the rest — a known gap. Truncate stories need a width to clip against; that decorator is story scaffolding, not a binding, and may use a literal (`max-inline-size: 24ch` on web and Lit, a comparable fixed width on native).",
           "a11y": "Truncated text is still read in full by screen readers; ensure sighted users can also reach it."
         },
         "element": {
@@ -31064,7 +31062,7 @@
         },
         "color": {
           "token": "color.foreground.{tone}",
-          "description": "Locked, and locked means absent from the overridable type — so a composing parent that forwards `{ color: … }` gets a compile error, not a silent no-op. A surface with its own foreground (Toast, Tooltip, Slider's value bubble on `color.inverse.foreground`) therefore does not recolour Text at all: on web and Lit it re-scopes `--color-foreground` on its own container, which the tone resolves through and which touches no part of the child; on React Native, where there is no cascade, it provides the package-internal `TextForegroundContext`, which Text reads only while `tone` is `default`. `onAction` is not a stand-in for either — in dark mode it is near-white while the inverse foreground is near-black. A control that paints its own selected text (a DatePicker day) draws that text itself rather than asking Text for a colour it has no tone for. Being locked, it has no `--ds-text-color` hook on web or Lit: the tone rule reads the token's own custom property directly — `default` is the bare `var(--color-foreground)` an inverse surface re-scopes, and `onAction` is `var(--color-foreground-on-action)` (camelCase to kebab-case). `TextForegroundContext` is exported from Text.tsx for sibling components and not re-exported from the package index.",
+          "description": "Locked, and locked means absent from the overridable type — so a composing parent that forwards `{ color: … }` gets a compile error, not a silent no-op. A surface with its own foreground (Toast, Tooltip, Slider's value bubble on `color.inverse.foreground`) therefore does not recolour Text at all: on web and Lit it re-scopes `--color-foreground` on its own container, which the tone resolves through and which touches no part of the child; on React Native, where there is no cascade, it provides the package-internal `TextForegroundContext`, which Text reads only while `tone` is `default`. `onAction` is not a stand-in for either — in dark mode it is near-white while the inverse foreground is near-black. A control that paints its own selected text (a DatePicker day) draws that text itself rather than asking Text for a colour it has no tone for. Being locked, it has no `--ds-text-color` hook on web or Lit: the tone rule reads the token's own custom property directly — `default` is the bare `var(--color-foreground)` an inverse surface re-scopes, and `onAction` is `var(--color-foreground-on-action)` (camelCase to kebab-case). `TextForegroundContext` exists on React Native only: it is exported from the rn Text.tsx for sibling components and not re-exported from the package index. The web Text.tsx has no such export.",
           "locked": true
         }
       },
@@ -31112,7 +31110,7 @@
             "truncate",
             "element"
           ],
-          "notes": "Renders the chosen element inside the shadow root with `part=\"text\"`; the host is `display: contents` for `span`-like use and `display: block` otherwise. `element` reflects so those two rules are `:host([element=\"span\"])` selectors rather than an inline style — an inline `display: contents` would beat `:host([hidden]) { display: none }` and a hidden span would stay visible."
+          "notes": "Renders the chosen element inside the shadow root with `part=\"text\"` and `data-part=\"text\"` (inside the shadow root it cannot collide with a composing parent's part name on the host); the host is `display: contents` for `span`-like use and `display: block` otherwise. `element` reflects so those two rules are `:host([element=\"span\"])` selectors rather than an inline style — an inline `display: contents` would beat `:host([hidden]) { display: none }` and a hidden span would stay visible. Stories keep an arg named `children` and render it as the slotted text, so each example's args match its `given`."
         },
         "rn": {
           "element": "Text",
@@ -31140,7 +31138,7 @@
       "behavior": [
         {
           "name": "truncated-text-keeps-the-full-string-reachable",
-          "description": "Truncation clips to one line, and on web the full text is exposed via title when children is a plain string, so sighted users can also reach it.",
+          "description": "Truncation clips to one line, and on web the full text is exposed via title when children is a plain string, so sighted users can also reach it. On web the title is on the root; on Lit it is on the shadow `part=\"text\"` element, not the host.",
           "given": {
             "truncate": true,
             "children": "A sentence long enough to be clipped by its column."
@@ -31189,7 +31187,7 @@
         },
         {
           "name": "truncated-cell",
-          "description": "One line of text in a dense cell, with the full string still reachable.",
+          "description": "One line of text in a dense cell, with the full string still reachable (on React Native only to a screen reader; see `truncate`).",
           "given": {
             "children": "Quarterly revenue summary for the EMEA region.",
             "truncate": true
@@ -31449,7 +31447,7 @@
       "When to use": "Use Text for paragraphs, labels, captions, helper text, and any inline copy. Pick `size` from the scale rather than styling a raw element, and use `tone` for meaning: `muted` for secondary information, `danger` for errors, `strong` when a phrase must stand out from surrounding body copy. Use `weight` to create hierarchy inside a size; it is calmer than jumping sizes.",
       "When not to use": "Do not use Text for section titles — use Heading, which carries document structure. Do not use `tone: danger` for decoration; it is reserved for error and destructive messaging so that its meaning stays reliable. Do not stack `size: xl` with `weight: bold` to fake a heading.",
       "Content guidelines": "Sentence case for interface copy. Write for the smallest size the text will appear at. Avoid relying on color alone to convey meaning: pair `tone: danger` with an icon or explicit wording (\"Error:\") so color-blind users get the same information.",
-      "Accessibility": "Every tone except `onAction` is contrast-checked against the page background at AA in every theme and mode; the build fails if a theme's derived palette breaks this. `xs` is the floor for readable text — nothing in the system renders smaller. Text must reflow at 200% zoom and 320px viewports (WCAG 1.4.4, 1.4.10), which means never fixing the width of a text container in pixels. On native platforms, font scaling stays enabled so the platform's accessibility text sizes apply.",
+      "Accessibility": "Every tone except `onAction` is contrast-checked against the page background at AA in every theme and mode; the build fails if a theme's derived palette breaks this. Text on any other surface (a Box `surface`, a Feed item, a Splitter pane) is the surface owner's pair to declare, as Box does, not Text's. `xs` is the floor for readable text — nothing in the system renders smaller. Text must reflow at 200% zoom and 320px viewports (WCAG 1.4.4, 1.4.10), which means never fixing the width of a text container in pixels. On native platforms, font scaling stays enabled so the platform's accessibility text sizes apply.",
       "Platform notes": "### Web\nThe `element` prop chooses the tag; default `p`. `label` should only be used with a `for` association — prefer the Input component, which handles this. Truncation adds `title` with the full string.\n\n### Lit\n`<ds-text size=\"sm\" tone=\"muted\">` renders the element in a shadow root with `part=\"text\"` as an anatomy name only; styling comes through the `--ds-text-*` hooks and `overrides`, never `::part`. Reflected attributes allow `ds-text[tone=\"danger\"]` selectors in consuming apps.\n\n### React Native\nRenders `Text`. `size` and `weight` map to `fontSize`/`fontWeight` from the RN token object; `tone` to a color token. `truncate` sets `numberOfLines={1}` and `ellipsizeMode=\"tail\"`. Nested Text is fine for inline emphasis.",
       "Related": "Heading, Input (uses Text for label, description, and error)."
     },

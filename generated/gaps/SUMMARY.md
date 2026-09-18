@@ -1,6 +1,6 @@
-# Gap digest — phase final
+# Gap digest — phase Primitives
 
-Generated 2026-09-17T16:57 by tools/gap_digest.ts. DOC lines belong in the named doc; fold them, run `pnpm parse`, and the affected targets become stale by prompt hash.
+Generated 2026-09-18T18:04 by tools/gap_digest.ts. DOC lines belong in the named doc; fold them, run `pnpm parse`, and the affected targets become stale by prompt hash.
 
 ## Accordion
 
@@ -694,6 +694,61 @@ Doc: `site/src/content/docs/components/bottomsheet.md`
 ## Box
 
 Doc: `site/src/content/docs/components/box.md`
+
+### 2026-09-18 17:59 — rn round 3
+
+- **DOC** Box: no code change. The rn axe gate's log (logs/playwright.json, written after the last Box edit) has no Box/React Native entry, and Box's 30 stories pass axe on their own in both modes. The failures come from Accordion, Button, Card, Carousel, Toolbar, Tree, TreeGrid, the Demo pages and Patterns/SettingsPage. Because the gate runs over every story in the package, a Box round can't pass it; the retry loop should only count failures under the regenerated component's own story titles. → `site/src/content/docs/components/box.md`
+
+### 2026-09-18 17:53 — rn round 2
+
+- **DOC** Box: no code change this round. The rn axe gate's failures are all in other components' stories (Toolbar, Tree, TreeGrid, Demo/Preferences, Demo/Profile settings, Demo/Sign in, Patterns/SettingsPage). The full gate log (logs/playwright.json) has no Box/React Native entry, and axe run on only the 30 Box stories, in both modes, found no violations. Because this gate runs axe over every story, one component's round can fail on another component's stories, so a Box regeneration can't clear it. → `site/src/content/docs/components/box.md`
+
+### 2026-09-18 17:43 — rn round 1
+
+- **DOC** Box: the `background` binding's description says `surface: none` renders the literal transparent 'written out explicitly', but the Guidance 'React Native' note says `backgroundColor` is 'undefined for none'. I followed the binding (and the 'every binding is applied explicitly' rule) and wrote 'transparent'; the Guidance note should be changed to match. → `site/src/content/docs/components/box.md`
+- **DOC** Box: `borderWidth`/`borderColor` are left unset when `border` is false. The spec says the border is presence-gated but doesn't say whether 'every binding applied explicitly' means writing `borderWidth: 0` there. I left them unset because RN has no cascade. → `site/src/content/docs/components/box.md`
+- **DOC** Box: the Default story is the `highlighted-panel` props, and the `given` of every behavior scenario is layered on top of them, so `renders-radius-none` also has `inset: md` and `surface: subtle`. The scenarios only assert `renders`, so this is harmless, but the doc should confirm Default-plus-given is intended for a component whose schema defaults draw nothing. → `site/src/content/docs/components/box.md`
+- **DOC** Box: `navigation-region` is limited to web/lit and `element` doesn't apply on RN, so there is no RN story for it. The two `element` behavior scenarios are also web/lit only and weren't in the RN scenario list. → `site/src/content/docs/components/box.md`
+- **DOC** Box: the `a11y.requires` item `contrast-aa` needs no runtime code, because Box sets no foreground (the Accessibility section says the build checks the token pairs). Nothing was implemented for it. → `site/src/content/docs/components/box.md`
+
+### 2026-09-18 17:31 — lit round 3
+
+- **DOC** Box: neither failing gate names Box. logs/playwright.json (the full axe-lit report, which the pasted console output cuts off) has no Box/Lit violation or render error in light or dark mode. keyboard-run has no Box spec because the doc declares no `keyboard` block. I made no code change. The gates fail on other Lit components (DataGrid, Feed, Tabs, TreeGrid for axe; Combobox, Select, Tabs, Tree and others for keyboard-run), and fixing Box cannot turn them green. → `site/src/content/docs/components/box.md`
+- **DOC** Box: the per-component gate report hands Box the whole package's axe and keyboard-run results without filtering them to Box's stories and specs. So a component with no violations of its own gets sent back for retries it cannot resolve. The gate output should be filtered by story title (`Box/Lit`) and spec file (`generated/keyboard/Box.lit.spec.ts`) before a regeneration round is triggered. → `site/src/content/docs/components/box.md`
+
+### 2026-09-18 17:18 — lit round 2
+
+- **DOC** Box: none of the failures shown in either gate are Box's. keyboard-run lists only other components' specs, and generated/keyboard/ has no Box spec because the doc declares no `keyboard` block. The visible axe list is Tabs, TreeGrid and others, and test-results/*axe-lit*/error-context.md has no 'Box' entries. I left Box.ts, Box.stories.ts and Box.test.ts unchanged this round. → `site/src/content/docs/components/box.md`
+- **DOC** Box: I could not confirm that Box passes axe. The pasted axe output is cut off at the front, so Box/Lit entries could have been there. My Box-only axe script (logs/box-axe.mjs, a scratch file outside the package) needed approval and never ran. The full axe-lit gate run and the Storybook server both stopped before finishing, so no Box/Lit axe result exists. → `site/src/content/docs/components/box.md`
+- **DOC** Box: a11y.contrast lists foreground-on-subtle and foreground-on-strong pairs as a guarantee about the tokens. The story that wraps `children` in `<ds-text>` on `surface: strong` in dark mode relies on those token pairs being checked by the build, and Box can't enforce them at runtime. If axe reports color-contrast on a Box story, the fix is the token values in the theme doc, not the component. → `site/src/content/docs/components/box.md`
+- **DOC** (report recovered after a second request) → `site/src/content/docs/components/box.md`
+
+### 2026-09-18 17:05 — lit round 1
+
+- **DOC** Box: the Guidance 'Behavior' section says Lit sets an ElementInternals role for the unconditional sectioning values, but platforms.lit.notes says a plain `role` attribute on the host and not ElementInternals. I followed the platform note (plain attribute); the Behavior prose should be corrected. → `site/src/content/docs/components/box.md`
+- **DOC** Box: the `radius` style description says `overrides.radius` is ignored at `none`, but doesn't say whether consumer CSS on `--ds-box-radius` should also be ignored there, as the `background` description spells out for `surface: none`. I chose to not read the hook at `radius="none"` (it writes `var(--radius-none)` directly), so consumer CSS can't round a `none` box either. → `site/src/content/docs/components/box.md`
+- **DOC** Box: `background` is locked, but the doc doesn't say what `--ds-box-background` defaults to when there's no surface attribute. I didn't give the hook a base default: it's set only per non-none surface value, and the base `background-color` is transparent. → `site/src/content/docs/components/box.md`
+- **DOC** Box: the `renders` scenarios check the shadow root, but Box's shadow root is only a `<slot>`. The `renders: true` assertion (shadowRoot has children) passes trivially and tests none of the inset, surface or radius styling. → `site/src/content/docs/components/box.md`
+- **DOC** Box: the `children` description says the Default story uses the `highlighted-panel` props, but doesn't say whether the scenario `given` builds on meta.args or on Default's own args. I put the example props on `Default.args` and the tests merge meta.args, then Default.args, then `given`. → `site/src/content/docs/components/box.md`
+
+### 2026-09-18 16:53 — web round 3
+
+- **DOC** Box: rounds 2 and 3 ran against identical Box code, yet the keyboard-run failures changed (Popover, RadioGroup, SegmentedControl and Listbox Home are new; RadioGroup and SegmentedControl don't use Box). So the gate result doesn't depend on Box: the keyboard gate is flaky under parallel workers or is reporting other components' regressions. A package-wide gate can't show whether a single-component job fixed anything; a Box job should be judged on Box stories and specs alone. → `site/src/content/docs/components/box.md`
+- **DOC** Box: I checked that Box's composites (Popover, Dialog, BottomSheet, SidePanel) don't depend on the radius change. None of them sets `radius` or reads `--ds-box-radius`, and Dialog's padding-hook overrides (`.ds-dialog__scroll > .ds-box`) still beat Box's modifier classes on specificity. That precedence is undocumented: the spec says a composing parent may pass a 'layout-only class' but not whether that class may set Box's `--ds-box-*` hooks, which Dialog.css does. I left it as it is. → `site/src/content/docs/components/box.md`
+
+### 2026-09-18 16:40 — web round 2
+
+- **DOC** Box: neither failing gate names Box. keyboard-run's 29 failures are all in other components' specs (Box has no keyboard block and so no generated spec), and logs/playwright.json from the same run has no Box/React axe violation in light or dark. I made no code change. The gates run across the whole package, so this report can't tell a Box regression from other components' failures; a per-component filter (a story title prefix for axe, a spec glob for keyboard) would make a generator's round 2 actionable. → `site/src/content/docs/components/box.md`
+- **DOC** Box: I couldn't confirm that the Storybook the axe run tested included this round's Box stories (Default now renders string children through Text). logs/box-axe.mjs checks only the Box stories but needs approval to run in this session, and it has not been run. → `site/src/content/docs/components/box.md`
+
+### 2026-09-18 16:28 — web round 1
+
+- **DOC** Box: the overrides rule says 'rules always read the hook, never the token directly', but the radius binding says `overrides.radius` is ignored at `radius: none`. I resolved it the way `surface: none` is handled: `.ds-box--radius-none` writes `border-radius: var(--radius-none)` directly and reads no hook. The side effect is that consumer CSS on `--ds-box-radius` also has no effect at `none`. The spec only mentions overrides here, while for background it explicitly covers both overrides and consumer CSS; state which one applies to radius. → `site/src/content/docs/components/box.md`
+- **DOC** Box: the border presence gate (`border: false` makes `overrides.border` and `overrides.borderWidth` no-ops) is done in CSS: `border-width: 0` stays unless `ds-box--border` is set, and the colour hook stays live. The spec doesn't say whether the hook should also be left unwritten when `border` is false; I left it written, since nothing visible depends on it. → `site/src/content/docs/components/box.md`
+- **DOC** Box: 'A string given as `children` in an example is wrapped in the system Text by its story' doesn't say how. I used one meta-level `render` that wraps only string children in a plain `<Text>` with its defaults, so the example stories keep exactly their `given` as args. The spec doesn't say which Text element or size to use. → `site/src/content/docs/components/box.md`
+- **DOC** Box: the Default story uses the `highlighted-panel` props, and I also kept `border: false` and `element: 'div'` in `meta.args` so they show as controls. These are the schema defaults, so the rendered output is the same, but Default's args are not exactly the example's `given`. → `site/src/content/docs/components/box.md`
+- **DOC** Box: the behavior scenarios are all render or role checks. Nothing tests the per-axis inset precedence, the `surface: none` transparency, or the presence-gated overrides, because jsdom doesn't compute cascaded custom properties. I checked those contracts in CSS only. → `site/src/content/docs/components/box.md`
+- **DOC** Box: the ref is `Ref<HTMLElement>` and the root uses `element as ElementType`, following 'not polymorphic, props typed against div'. That means a `div`-only attribute passed with `element: 'nav'` type-checks. I assume that's intended. → `site/src/content/docs/components/box.md`
 
 ### 2026-09-17 04:05 — lit round 1
 
@@ -3168,6 +3223,62 @@ Doc: `site/src/content/docs/components/form.md`
 
 Doc: `site/src/content/docs/components/heading.md`
 
+### 2026-09-18 14:45 — rn round 3
+
+- **DOC** Heading: axe was re-run with the same result; this run's error-context.md files (light and dark) and logs/playwright.json have no violation or render error for any Heading/React Native story. Every failure is in Toolbar, Tree, TreeGrid, Demo/Preferences, Demo/Profile settings, Demo/Sign in or Patterns/SettingsPage. Heading was left unchanged, and no change to it can turn this gate green. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: the fix loop keeps handing Heading a gate that runs every story in the package, so another component's failure blocks this one's round indefinitely; the axe gate needs a per-component story filter, or the round should list only the failures from that component's own stories. → `site/src/content/docs/components/heading.md`
+
+### 2026-09-18 14:36 — rn round 2
+
+- **DOC** Heading: the axe gate failed on the whole React Native Storybook, but its full log (logs/playwright.json) has no violation or render error for any Heading/React Native story in light or dark; every failure is in Toolbar, Tree, TreeGrid, Demo/Preferences, Demo/Profile settings, Demo/Sign in or Patterns/SettingsPage. Heading was left unchanged, and the gate stays red until those components are fixed. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: the gate runs every story in the package and has no per-component filter, so one component's round cannot show that component passing; per-component results come only from reading the failure list. → `site/src/content/docs/components/heading.md`
+
+### 2026-09-18 14:27 — rn round 1
+
+- **DOC** Heading: the rn notes call the context `TextStyleContext ({ fontSize, color, nested: true })`, but the Heading doc does not say which module owns it; I imported the existing one from ./Text instead of declaring a new one. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: the fallback rule for an invalid `level` says 'one development warning per element for its lifetime' but does not give the wording, and there is no copy key for a dev warning; I wrote `Heading: level <value> is not one of 1–6; rendering as level 2.` via console.warn under __DEV__. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: the generic rules say to type a ref as `Ref<ViewInstance>`, but the rn notes say `Ref<TextInstance>`; I followed the notes, since the root is a Text. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: `align` has no style binding, and the doc does not say whether `textAlign` should also be exported for Heading; I reused Text's exported `TextAlign` type and `toTextAlign` helper rather than declaring a Heading-specific `HeadingAlign` type, so the public API has no HeadingAlign. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: marginBlockEnd maps to `marginBottom` on RN per the binding description; with `overrides={{ marginBlockEnd: 'space.0' }}` the spec does not say whether a margin of 0 should be omitted or written, so it is written as 0. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: the renders scenarios pass string levels only; the doc says generated components also accept the number, but no scenario or example covers a numeric level or the invalid-level fallback, so neither is tested. → `site/src/content/docs/components/heading.md`
+
+### 2026-09-18 14:16 — lit round 3
+
+- **CODE** Heading: no Heading code change in round 3; the gate output is identical to round 2 and no failure is in Heading. The axe reports list no Heading/Lit story, and TreeGrid's aria-hidden-focus nodes are its own aria-hidden expand ds-button, not the composed ds-heading caption. Heading has no keyboard block, so keyboard-run does not test it. The failures belong to Tabs, TreeGrid and the components in the keyboard list, and need their own jobs; the gate run does not separate them from pre-existing failures.
+- NOISE: 4 repeated or empty line(s) collapsed
+
+### 2026-09-18 14:05 — lit round 2
+
+- **DOC** Heading: no Heading code change in round 2. Neither failing gate points at Heading: there is no keyboard spec for Heading (the doc has no `keyboard` block), and the axe error-context files list no Heading/Lit story in light or dark. The failures belong to Combobox, DatePicker, Dialog, Feed, Listbox, Menu, Popover, Search, SegmentedControl, Select, SidePanel, Slider, Stepper, Tabs, Toast, Toolbar, Tooltip, Tree and TreeGrid, and need fixing in those components' jobs. → `site/src/content/docs/components/heading.md`
+- NOISE: 4 repeated or empty line(s) collapsed
+
+### 2026-09-18 13:55 — lit round 1
+
+- **DOC** Heading: the missing/invalid-level development warning is required ('one development warning per element for its lifetime') but the doc gives no copy string for it, so the wording is not verbatim doc copy; kept the existing message naming the received value and the <h2> fallback. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: the behavior scenarios' `then: role: heading` does not say which level the heading must expose; the test also asserts the element is <h3>/<h2> and that getByRole('heading', { level: 3 }) finds it, which goes beyond what the scenario states. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: `level` is required with no default, but a Lit accessor must hold a value or be typed `| undefined`; declared it `accessor level!: HeadingLevel | 1 | 2 | 3 | 4 | 5 | 6` and rely on the <h2> fallback at runtime. The doc could state what the Lit property holds before it is set. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: story naming for enum values that start with a digit is unspecified (`<Prop><Value>` gives `Size4xl`, `Size2xl`, `Level1`); kept that literal casing. → `site/src/content/docs/components/heading.md`
+
+### 2026-09-18 13:46 — web round 3
+
+- **DOC** Heading: none of the round-3 failures are Heading's. The axe gate fails on Carousel, Box, Feed, Listbox, Menu, Splitter and Tabs stories. The keyboard gate fails on Accordion, ActionSheet, Combobox, DatePicker, Listbox, Menu, Search, Slider, Tabs, Toast, Tooltip and Tree specs. Both gates run over the whole package, so a Heading-only job can't make them pass; I made no changes and did not edit other components. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: the keyboard failures that were new in round 3 (AlertDialog, BottomSheet, Dialog, Feed, FocusScope) all pass when rerun alone with --workers 1 (15 passed, 4 manual skips), with the current Heading composed into Dialog, AlertDialog and BottomSheet. They were caused by running at full parallelism, not by the code; the gate needs a baseline or a lower worker count to give a stable result. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: I still could not confirm the Heading stories pass axe in a browser; logs/heading-axe.mjs (axe on Heading/React stories only, light and dark) needs approval to run. → `site/src/content/docs/components/heading.md`
+
+### 2026-09-18 13:36 — web round 2
+
+- **DOC** Heading: round 2 reported the keyboard-run and axe gates as failed, but none of the listed failures are Heading's. keyboard-run fails in Accordion, ActionSheet, Combobox, DatePicker, Listbox, Menu, Search, Slider, Tabs, Toast, Tooltip and Tree specs (Heading has no keyboard block or spec). axe fails in Carousel, Feed, Listbox, Menu, Splitter and Tabs stories; logs/playwright.json has no Heading/React entry. The gates run over the whole package, so a single-component job can't make them pass. I left the Heading files unchanged and did not edit other components. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: I could not confirm the Heading stories pass axe in a browser; logs/heading-axe.mjs (axe on Heading/React stories only, light and dark) needs approval to run. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: the gates don't say which failures existed before a job, so a job can't tell its own failures from the package's. A baseline list per gate, or running the gate only on the job's component, would make this checkable. → `site/src/content/docs/components/heading.md`
+
+### 2026-09-18 13:27 — web round 1
+
+- **DOC** Heading: the level description asks for 'one development warning per element for its lifetime' but gives no wording and no copy key; I wrote `Heading: level <value> is not one of 1–6; rendering an <h2>.` via console.warn, gated by a per-instance useRef in render (the BottomSheet pattern). → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: the fallback-to-2 behaviour (missing/out-of-range/non-numeric level) has no behavior scenario, so there is no gate test for it or for the single warning; only the prose asks for it. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: the spec says the exported `HeadingLevel` is the string union with the number added only on the prop, but other components (Card, Accordion, Disclosure, Popover, Tree, Feed) export their `*HeadingLevel` types with the numbers included; I followed the Heading spec, so the two styles now differ within the package. Card passes `headingLevel as HeadingLevel`, which still compiles. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: `align` has no default-carrying modifier story beyond AlignStart, and the spec says nothing about whether `start` should emit a class; I kept emitting `ds-heading--align-<value>` for every value, start included. → `site/src/content/docs/components/heading.md`
+- **DOC** Heading: the web notes say one element takes `data-ds` and `data-part="text"`, but they don't say whether a consumer's `data-part` in `...rest` may override it; rest is spread first so the component's hooks win. → `site/src/content/docs/components/heading.md`
+
 ### 2026-09-17 03:58 — rn round 1
 
 - **DOC** Heading: the rule says a component exposing its root declares `ref?: Ref<ViewInstance>`, but the rn element is `Text`, so the ref is typed `React.Ref<TextInstance>`; the rule should say 'the root's instance type' without naming ViewInstance. → `site/src/content/docs/components/heading.md`
@@ -3255,6 +3366,59 @@ Doc: `site/src/content/docs/components/heading.md`
 ## Icon
 
 Doc: `site/src/content/docs/components/icon.md`
+
+### 2026-09-18 11:37 — rn round 3
+
+- **DOC** Icon: the rn axe gate checks every story in the package, not just the component being generated, so the Icon job can't pass it. Once round 2 stopped every Icon-drawing story failing to render, the gate showed 634 violating elements across 822 stories (light mode). None is in an Icon story and none is or contains an Icon <svg> (checked element by element with logs/icon-axe-detail.spec.mjs). They are aria-required-attr 300, color-contrast 122, aria-required-children 88, aria-required-parent 73, nested-interactive 26, scrollable-region-focusable 14, target-size 9, aria-prohibited-attr 2, in Accordion, Button, Card, Carousel, Toast, Toolbar, Tree, TreeGrid, the SettingsPage pattern and the Preferences / Profile settings / Sign in demos. Chose not to rewrite those components or disable rules in their stories; they need their own regeneration jobs, or the gate needs a way to judge a job only on the components it regenerated. → `site/src/content/docs/components/icon.md`
+
+### 2026-09-18 11:18 — rn round 2
+
+- **DOC** Icon: the spec says react-native-svg renders Icon on react-native-web (vectorEffect only when Platform.OS is web), but react-native-svg 15.15.5's web build imports `parse` by name from two PEG.js parsers written as CommonJS, and the rn Storybook leaves the package out of Vite's pre-bundle (so its .web.js files resolve), so every story that draws an Icon failed to render. Fixed in packages/rn/.storybook/main.ts with a Vite plugin that wraps just those two files as ES modules; the conventions digest should record this as part of the react-native-svg web setup. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: once stories render, the rn axe gate still fails with 361 (light) / 334 (dark) violations, none in an Icon story: Accordion color-contrast, Button Disabled color-contrast, Card nested-interactive, Carousel aria-required-attr and scrollable-region-focusable, Tree aria-required-children, TreeGrid aria-required-attr and target-size, Toast / Patterns SettingsPage aria-prohibited-attr, and the Preferences / Profile settings / Sign in demos. The render failure had hidden them. They belong to those components' regenerations; not changed here. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the rn notes say labelled icons use accessibilityRole="image" on the Svg but don't say whether react-native-svg forwards it as role=img on web; axe confirms it does, so no role prop was needed. → `site/src/content/docs/components/icon.md`
+
+### 2026-09-18 10:57 — rn round 1
+
+- **DOC** Icon: the rn notes say `strokeWidth` goes on each <Path>, but the Guidance's React Native section shows the <Svg> root with `strokeLinecap`/`strokeLinejoin` and does not say whether `stroke` belongs on the root too; chose stroke/linecap/linejoin on the root and strokeWidth, fillRule and vectorEffect per Path. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the color binding says the enclosing Text's colour applies 'whenever the glyph is nested in a Text', and `overrides.color` comes before it, but the spec does not say whether a Heading (which also provides TextStyleContext) counts as 'a Text'; chose any TextStyleContext provider with nested=true. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the `size` binding says that with `inline`, `overrides.size` is a no-op but 'the hook is still set, for consistency'; React Native has no style hook, so the override is simply ignored while inline. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the unknown-name case (an empty glyph and a warning on every render) is required by the web notes for 'every platform' but has no behavior scenario, so it is implemented but not tested. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the `inline-in-running-text` example says the glyph sits 'on its baseline', but the rn notes say React Native cannot align it to the baseline; the story nests it in a Text anyway and accepts the higher position. → `site/src/content/docs/components/icon.md`
+
+### 2026-09-18 10:47 — lit round 3
+
+- **DOC** Icon: round 3 gate output is identical to round 2. The complete axe failure list (89 entries in test-results/tests-gates-axe-axe-every-story-passes-axe-light--axe-lit/error-context.md) is all DataGrid, Feed, Listbox, NumberInput, Select, SidePanel, Slider and TreeGrid; no Icon story appears anywhere in test-results/. Every keyboard-run failure is in another component's spec, and Icon has no keyboard block or keyboard spec. No Icon change can clear these gates, so no code was changed. The repair loop should run the gates only on the component being generated, or compare against a pre-job baseline, so failures elsewhere don't block this job. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: gates and the Icon Vitest suite were not re-run locally (command execution needs approval), so this conclusion comes from the gate artifacts on disk. → `site/src/content/docs/components/icon.md`
+
+### 2026-09-18 10:33 — lit round 2
+
+- **DOC** Icon: both failing gates (keyboard-run, axe) report only other components (Combobox, DatePicker, Dialog, Feed, Listbox, Menu, Popover, Search, SegmentedControl, Select, SidePanel, Slider, Stepper, Tabs, Toast, Toolbar, Tooltip, Tree for keyboard; Tabs dark color-contrast and TreeGrid aria-hidden-focus/target-size for axe). Icon has no keyboard block or keyboard spec, and no Icon story shows up in the axe artifacts or in logs/playwright.json, which already records the same Tabs/TreeGrid failures. No Icon change can make these gates pass, so no code was changed; the gate run should be scoped to the component under generation, or these failures fixed in their own components' jobs. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the keyboard-run and axe gates were not re-run and the Icon Vitest suite was not run this round (command execution needed approval), so the round-1 edits are checked only by reading them. → `site/src/content/docs/components/icon.md`
+
+### 2026-09-18 10:18 — lit round 1
+
+- **DOC** Icon: the lit conventions say Lit's glyph table predates tools/icon-paths.json and redraws check, close, external, calendar, the status shapes, search, list, grid and pause, but the current packages/lit/src/Icon.ts already carries the JSON's d strings verbatim, in its order, with the same filled set; the note is stale and nothing was replaced. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the lit notes require no delegatesFocus and the generic rules require delegatesFocus for a11y.requires; followed the component notes (never focusable), so there is no shadowRootOptions override. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the `inline` prop description implies an inline icon aligns to the text baseline, but on Lit the shadow <svg> sits in an inline-block host at vertical-align -0.125em, which is baseline-adjacent rather than baseline-true. Kept the doc's CSS as written. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the `size` style description says 'Non-inline icons are display inline-block', while the lit notes say the host is inline-flex on purpose. Followed the lit notes; the styles prose could name the Lit exception. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the generic 'Keyboard' story and 'disabled uses opacity.disabled' rules don't apply (no keyboard block, no disabled prop); no story or style was added for them. → `site/src/content/docs/components/icon.md`
+
+### 2026-09-18 10:10 — web round 3
+
+- **DOC** Icon: round 3 repeats round 2's gate output word for word; logs/playwright.json (10:09:58) has no Icon/React failure and Icon has no keyboard spec, so there is nothing to fix in Icon. The repair loop keeps sending Icon back for failures in Box, Carousel, Feed, Listbox, Menu, Slider, Splitter and Tabs (axe) and ActionSheet, Combobox, DatePicker, Listbox, Menu, Search, Slider, Tabs, Toast, Tooltip, Tree (keyboard); scope the gate verdict to the component's own stories and specs, or the loop will never end for components with no failures. → `site/src/content/docs/components/icon.md`
+
+### 2026-09-18 10:03 — web round 2
+
+- **DOC** Icon: the round-2 gate output (keyboard-run, axe) contains no Icon failure: Icon has no keyboard spec, and logs/playwright.json from this run lists axe violations only for Box, Carousel, Feed, Listbox, Menu, Slider, Splitter and Tabs. I changed no code. The gate harness sends every package-wide failure to each component's round, so a component can be sent back for failures it can't fix; the gate report should be filtered to the component under repair. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: I couldn't run axe on the Icon stories alone (the script, logs/icon-axe.mjs, needed an approval I didn't have); the no-violation conclusion comes from the full gate report, not a run scoped to Icon. → `site/src/content/docs/components/icon.md`
+
+### 2026-09-18 09:56 — web round 1
+
+- **DOC** Icon: the conventions say to 'build its paths table from' tools/icon-paths.json, but the package can't import from tools/ at build time; I kept a verbatim copy of the `d` strings and `filled` flags in the JSON's order. The doc should say whether a copy or a build-time import is intended. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the note 'the hook is still set, for consistency' for `overrides.size` under `inline` doesn't say whether the `ds-icon--{size}` modifier class should also stay applied when `inline`; I kept it, so the hook has its token default and `.ds-icon--inline` overrides font-size later in the cascade. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the unknown-`name` warning text isn't in `copy`; I kept the existing developer-facing message (`Icon: unknown name "…"`), since dev warnings aren't user-facing copy. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: the spec says 'Transitions use motion.duration.fast' and 'focus-visible', but Icon has no transition and is never focusable; I added neither. The generic rules should say they don't apply to non-interactive primitives. → `site/src/content/docs/components/icon.md`
+- **DOC** Icon: DecorativeBesideALabel doesn't say what size the wrapping Text should be; I used `size="sm"` to match the icon's `size: sm`. → `site/src/content/docs/components/icon.md`
 
 ### 2026-09-17 03:52 — rn round 1
 
@@ -5646,6 +5810,63 @@ Doc: `site/src/content/docs/components/splitter.md`
 
 Doc: `site/src/content/docs/components/stack.md`
 
+### 2026-09-18 16:18 — rn round 3
+
+- **DOC** Stack: the axe-rn gate's latest report (logs/playwright.json, written 16:17:55, after the Stack files' last edit at 16:01) has no Stack/React Native entries in light or dark mode. Every violation belongs to other components or demos (Select, Slider, Splitter, Stepper, Switch, Toolbar, Tree, TreeGrid, Preferences/Profile settings/Sign in demos, Patterns/SettingsPage). The gate runs axe over the whole rn Storybook and fails on any violation, so no change to Stack can make it pass. Re-running Stack rounds against it only repeats this result. Scope the gate to the stories of the component under generation (filter index.json entries by title) or diff against a baseline of existing violations, and file the listed violations against their own components. → `site/src/content/docs/components/stack.md`
+
+### 2026-09-18 16:10 — rn round 2
+
+- **DOC** Stack: the axe gate runs over every story in the rn Storybook and fails the whole project if any component has a violation. This round's failures are all in other components (Select, Slider, Splitter, Stepper, Switch, Toolbar, Tree, TreeGrid, and the Preferences/Profile settings/Sign in demos and Patterns/SettingsPage), and none are Stack stories. Fixing the rn code for one component can't make this gate pass. The gate needs to be scoped to the stories of the component under generation, or baselined against the violations that already exist, before it can judge Stack. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: I couldn't run a Stack-only axe check (the script is at logs/stack-axe.mjs; running it needs approval). Stack's clean result rests on the gate's own report in logs/playwright.json, which has no Stack entries in light or dark mode. → `site/src/content/docs/components/stack.md`
+
+### 2026-09-18 16:02 — rn round 1
+
+- **DOC** Stack: the wrapping-filters example needs a 'width-bounded container' decorator but names no width or token. I bounded it with `layout.maxWidth.prose` and used eight filter Buttons so the row wraps at that width; a small, named story width (or a `layout.column.*` token, which the guidance already suggests) would make this deterministic. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: the `children` prop says the Default story renders 'three Text children' but gives no content. I used placeholder text ('First item', 'Second item', 'Third item'). The copy isn't specified, so each platform may choose different words. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: example children are described in words only ('The form fields', 'The regions of the page', 'A row of filters'). I picked the components and labels myself: three Inputs (Full name/Email/Password), three level-2 Headings for page sections, and secondary Buttons for filters. The doc doesn't say whether filters should be Buttons or a toggle component. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: the `justify` stories only show distribution on a bounded main axis. The doc says the caller supplies that size but gives no story guidance, so the Justify* stories use `direction: horizontal` (with `align: start`) so the effect is visible. A vertical justify story would look the same for every value. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: the `platforms.rn.props` list names `style` and says it is internal. The rules also say there is no `style` prop, so none is exposed. The doc should drop `style` from the rn props list, or mark it internal in the schema, so the two don't appear to contradict each other. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: every behavior scenario is `renders: true`. Nothing tests the resolved gap token, the `gap: none` override no-op, or the direction, align and justify mapping on rn. Adding style-assertion scenarios, e.g. that `gap: none` with `overrides.gap` resolves `layout.gap.none`, would make the overrides contract testable. → `site/src/content/docs/components/stack.md`
+
+### 2026-09-18 15:48 — lit round 3
+
+- **DOC** Stack: rounds 2 and 3 got the same package-wide keyboard-run and axe failures, all from other components (keyboard: Combobox, DatePicker, Dialog, Feed, Listbox, Menu, Popover, Search, SegmentedControl, Select, SidePanel, Slider, Stepper, Tabs, Toast, Toolbar, Tooltip, Tree; axe: Tabs dark-mode color-contrast, TreeGrid aria-hidden-focus and target-size). Stack's only runtime change is the gap='none' rule, and no other Lit component or story uses gap='none', so the Stack consumers among those (Dialog, Feed, Popover, SidePanel, Tooltip) are unaffected. Stack has no keyboard spec, and its 26 stories pass axe in light and dark. The gates should be scoped to the generated component, or those failures fixed in their own jobs; I changed no Stack code. → `site/src/content/docs/components/stack.md`
+- NOISE: 1 repeated or empty line(s) collapsed
+
+### 2026-09-18 15:38 — lit round 2
+
+- **DOC** Stack: the keyboard-run and axe gates run across the whole package and fail on other components (keyboard: Combobox, DatePicker, Dialog, Feed, Listbox, Menu, Popover, Search, SegmentedControl, Select, SidePanel, Slider, Stepper, Tabs, Toast, Toolbar, Tooltip, Tree; axe: Tabs dark-mode color-contrast, TreeGrid aria-hidden-focus and target-size). Stack has no keyboard block, and all 26 of its Lit stories pass axe in light and dark. So a Stack job can't turn these gates green, and I changed no Stack code. The gates would need to be scoped to the generated component for a per-component round to be actionable. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: the gaps from round 1 still stand (consumer role on the host versus the list role in the shadow root; what counts as a child in Lit; display: contents on the nav/section wrappers; what 'renders' means for the derived scenarios; no item-count expectation in list-element-is-a-list; the example children are given only in words; no token for the WrappingFilters width bound). → `site/src/content/docs/components/stack.md`
+
+### 2026-09-18 15:26 — lit round 1
+
+- **DOC** Stack: the element prop says 'the list role wins over a consumer role on ul/ol; on the other elements a consumer role passes through', but in Lit the list is inside the shadow root and a consumer role lands on the host, which wraps the list rather than competing with it. Neither case is addressed for Lit; I left the host's role alone, so a host role on ul/ol gives a nested role-over-list structure. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: 'Null and boolean children are skipped' has no Lit counterpart (children are DOM nodes). I chose to give no li to comments or whitespace-only text nodes, and one li to each element and each non-empty text node; the doc should say what counts as a child for Lit. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: the nav/section wrappers in the shadow root need display: contents so the host stays the flex container. The doc names this only for the li wrappers; I applied it to section, nav, ul, ol and li. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: the renders-* derived scenarios only say 'renders: true'. For the reflected props I assert the reflected attribute, and for element I assert the shadow structure; the doc doesn't define what 'renders' means for a slot-only layout element. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: the list-element-is-a-list scenario says assistive technology 'counts its items' but its then only asserts role: list. The test also asserts one li per Default child (3); the doc could add an item-count expectation. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: the examples give children in words ('The form fields', 'The regions of the page', 'A row of filters'), so the concrete content (three Inputs, three Text regions, six small secondary/ghost Buttons as filters) is my choice. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: WrappingFilters needs a width-bounded decorator, but the doc names no token for the bound; the story uses a 16rem max-inline-size inline style (story-only, carried over from the previous version). → `site/src/content/docs/components/stack.md`
+
+### 2026-09-18 15:13 — web round 3
+
+- **DOC** Stack: round 3 fails the same way as round 2. keyboard-run has no Stack spec (the doc declares no `keyboard` block), and the 15:13 axe report (logs/playwright.json) has no `Stack/React/*` violation; every failure is in another component. I made no Stack change. The gate runs every story in the package and turns one pass/fail into a verdict for the component being generated, so Stack can't pass until those components are fixed. The gate should filter to the component under generation, or compare against a baseline of known package failures. → `site/src/content/docs/components/stack.md`
+- NOISE: 1 repeated or empty line(s) collapsed
+
+### 2026-09-18 15:04 — web round 2
+
+- **DOC** Stack: the round-2 gate failures don't involve Stack. keyboard-run has no Stack spec (Stack declares no `keyboard` block), and in the 15:03 axe report (logs/playwright.json) every violation is in another component (Carousel scrollable-region-focusable, Feed/Listbox aria-required-children, Slider/Tabs/Menu/Splitter/Listbox color-contrast, Splitter target-size, among others). No Stack story appears, so I made no Stack change. The gates don't separate per-component results from failures elsewhere in the package, so a clean component still gets a FAILED verdict; I left the other components' failures for their own jobs. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: the round-1 gaps still stand: the `wrap` boolean has no enum-value story rule (I kept `Wrap`); the Default story's Text wording isn't given; the example children are described only in words; horizontal-only enum stories add `direction`/`align` args; Justify* stories are horizontal rather than height-bounded; the root carries an unspecified `min-inline-size: 0`. → `site/src/content/docs/components/stack.md`
+
+### 2026-09-18 14:55 — web round 1
+
+- **DOC** Stack: `wrap` is a boolean, and the 'one story per enum value' rule doesn't say whether booleans get stories; I kept the existing `Wrap` story (horizontal, inside a width-bounded decorator), which overlaps the `WrappingFilters` example story. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: the Default story is fixed at three Text children but the text isn't specified; I used 'First item' / 'Second item' / 'Third item'. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: examples describe children in words only ('The form fields', 'A row of filters', 'The regions of the page'); I chose three Inputs (name/email/phone), six small secondary/ghost filter Buttons, and three Text regions. The spec doesn't say which Button variant or size a filter should use. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: the enum-value stories for horizontal-only effects (DirectionHorizontal, Justify*) add `align: 'start'` and `direction: 'horizontal'` beyond the single prop the story is named after, so the effect is visible; the spec says an example story has exactly its `given` as args but doesn't say whether that also applies to enum-value stories. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: `justify` on the Default (vertical, unbounded) Stack shows nothing, as the doc warns; the Justify* stories are shown horizontally, not inside a bounded-height decorator. The spec doesn't say which it wants. → `site/src/content/docs/components/stack.md`
+- **DOC** Stack: the root also carries `min-inline-size: 0` so a horizontal Stack can shrink inside a parent flex container; the spec doesn't mention it (kept from the existing file). → `site/src/content/docs/components/stack.md`
+
 ### 2026-09-17 04:02 — rn round 1
 
 - **DOC** Stack: the generic rule says enum props whose values are quoted digits (naming 'Stack gap') accept both string and number, but Stack's gap values are now names (none|tight|normal|loose|section); the rule's example is stale. Chose names only. → `site/src/content/docs/components/stack.md`
@@ -6263,6 +6484,67 @@ Doc: `site/src/content/docs/components/tabs.md`
 ## Text
 
 Doc: `site/src/content/docs/components/text.md`
+
+### 2026-09-18 13:17 — rn round 3
+
+- **DOC** Text: the rn axe gate failed with the same list as round 2, and no failure is a Text story. logs/playwright.json (13:16, written after the last Text.tsx edit at 12:55) has no 'Text/React Native' entry. The failures are Toolbar, Tree, TreeGrid, Demo/Preferences, Patterns/SettingsPage and the Submitting demos, so a Text round can't clear this gate and I changed no code. → `site/src/content/docs/components/text.md`
+- **DOC** Text (gate design): axe.spec.ts puts every story in one assertion, so a component round is blocked by other components' violations and repeated rounds fail with identical logs. The gate needs a per-component filter or a baseline of known failures before per-component rounds can pass. → `site/src/content/docs/components/text.md`
+- **DOC** Text: a Text-only axe pass is still unconfirmed: logs/text-axe-rn.mjs is written but needs approval to run. → `site/src/content/docs/components/text.md`
+- **DOC** Text: the Submitting demos' color-contrast failures are likely disabled fields at opacity.disabled, as the spec requires. WCAG exempts disabled controls but axe checks them; the demos' docs should say whether to disable the rule for those stories or change how disabled fields look. → `site/src/content/docs/components/text.md`
+
+### 2026-09-18 13:06 — rn round 2
+
+- **DOC** Text: the rn axe gate fails for the whole Storybook, but no failure is a Text story. logs/playwright.json has no 'Text/React Native' entry in either mode; the failures are Toolbar (aria-required-attr, nested-interactive), Tree (aria-required-children, target-size), TreeGrid (aria-required-attr, target-size), Demo/Preferences (aria-required-attr, nested-interactive), Patterns/SettingsPage (aria-prohibited-attr), and color-contrast in the Submitting demos. I changed no Text code, because a per-component regeneration can't make this whole-Storybook gate pass. → `site/src/content/docs/components/text.md`
+- **DOC** Text: I couldn't run a Text-only axe pass to confirm (running logs/text-axe-rn.mjs needs approval), so the 'Text is clean' result comes from the gate's JSON report, not a fresh run. → `site/src/content/docs/components/text.md`
+- **DOC** Text (gate design): axe.spec.ts reports every story in one assertion, so a component round fails on other components' violations. The gate needs a per-component filter or a baseline of known failures. → `site/src/content/docs/components/text.md`
+- **DOC** Text: the Submitting demos' color-contrast failures are likely disabled fields dimmed with opacity.disabled, as the spec requires. WCAG exempts disabled controls, but axe checks them anyway; the demos' docs should say whether to disable the rule for those stories (parameters.a11y.disable) or change how disabled fields look. → `site/src/content/docs/components/text.md`
+
+### 2026-09-18 12:55 — rn round 1
+
+- **DOC** Text: the generic Rules say to import tokens from `@design-schema/tokens/<theme-id>/rn/light|dark`, while the package digest says to read them from `useTheme()`; I kept `useTheme()` (the package convention). → `site/src/content/docs/components/text.md`
+- **DOC** Text: the Rules give the `toLineHeight` argument order as (multiplier, fontSize), but theme.tsx declares `toLineHeight(fontSize, multiplier)`; I kept the real signature. The digest example should be fixed. → `site/src/content/docs/components/text.md`
+- **DOC** Text: the platform notes say `TextNestingContext` is replaced by `TextStyleContext.nested`, but the package digest still tells components to use `TextNestingContext`; nothing in packages/rn uses it any more. The digest's Styles bullet should name `TextStyleContext`. → `site/src/content/docs/components/text.md`
+- **DOC** Text: the `truncated-cell` example says the full string stays reachable, but native has no `title`, so only screen readers reach it. The story keeps the example's name and args, and its comment states this known gap. → `site/src/content/docs/components/text.md`
+- **DOC** Text: the web/lit-only behavior `truncated-text-keeps-the-full-string-reachable` and the example `inline-error-wording` (which uses the web-only `element` prop) have no rn test or story. `ToneDanger` reuses the 'Error: …' wording instead. → `site/src/content/docs/components/text.md`
+- **DOC** Text: the spec gives no padding for the onAction story's action-background surface; I kept `spaceMd`/`spaceSm` padding and `radiusMd` from the existing story. → `site/src/content/docs/components/text.md`
+- **DOC** Text: the `renders` scenarios only check that something renders, so nothing tests the resolved tokens, the foreground context taking effect only for tone `default`, or the RTL start/end mapping. → `site/src/content/docs/components/text.md`
+
+### 2026-09-18 12:43 — lit round 3
+
+- **DOC** Text: round 3 reports the same keyboard-run and axe failures as round 2, all in other Lit components. The axe rules (aria-hidden-focus, link-name, aria-required-children, target-size, color-contrast) can't fire on Text's single non-focusable <p>/<span>, which carries no aria-hidden, link, role or target. Tabs, whose dark-mode contrast fails, doesn't compose ds-text. Text has no keyboard block. Every Text story passes axe in both modes. Chose: no Text code change, because changing the failing components is outside a Text job. `node logs/text-gate-ab.mjs` (needs approval) A/Bs the Tree/Toast/Listbox keyboard specs against HEAD's Text.ts to confirm. → `site/src/content/docs/components/text.md`
+- **DOC** Text: the retry loop repeats the same whole-Storybook gate output each round, so a component-scoped generation job can't turn it green or prove it is unrelated. The gate could run only the regenerated component's stories and specs plus its composers, and diff against a stored baseline so failures that were already there aren't charged to this job. → `site/src/content/docs/components/text.md`
+
+### 2026-09-18 12:33 — lit round 2
+
+- **DOC** Text: the round-2 keyboard-run and axe gates fail only in other Lit components (Combobox, DatePicker, Dialog, Feed, Listbox, Menu, Popover, Search, SegmentedControl, Select, SidePanel, Slider, Stepper, Tabs, Toast, Toolbar, Tooltip, Tree keyboard specs; DataGrid, Feed, Listbox, NumberInput, Select, SidePanel, Slider, Tabs dark, TreeGrid axe). No Text story fails axe and Text has no keyboard block. The round-1 Text changes (a host `title` forwarded to part=text, data-part=text inside Text's own shadow root) are not reachable from any composite: no Lit component sets `title` on ds-text, and none can query inside Text's shadow root. Chose: no Text code change. The failures need per-component fix jobs. logs/text-gate-ab.mjs (not run here: needed approval) A/Bs the Tree/Toast/Listbox keyboard specs against HEAD's Text.ts to confirm. → `site/src/content/docs/components/text.md`
+- **DOC** Text: the gates run the whole Lit Storybook, so a single-component generation round cannot turn them green when other components fail. The gate report could be filtered to the stories and specs of the component being regenerated, plus the components that compose it. → `site/src/content/docs/components/text.md`
+
+### 2026-09-18 12:23 — lit round 1
+
+- **DOC** Text: `truncate` says 'A consumer `title` always wins and is forwarded unchanged' right before 'On Lit there is no plain string state', so it is unclear whether the consumer-title rule applies to Lit. `title` is also a native HTMLElement member, and the conventions forbid it as a prop name. Chose: no `title` property; a `title` attribute the consumer puts on the host is observed and copied unchanged to the `part="text"` element, where it wins over the textContent-derived title with or without truncate. The host keeps its own attribute too, so the native tooltip is the same either way. → `site/src/content/docs/components/text.md`
+- **DOC** Text: the behavior scenario `truncated-text-keeps-the-full-string-reachable` says `attribute: title` but doesn't say which element carries it. On Lit it goes on the shadow `part="text"` element (per the truncate description), not the host, so the test asserts on `[data-part="text"]`. The scenario could name the part. → `site/src/content/docs/components/text.md`
+- **DOC** Text: `anatomy: [text]` and the web notes say the React root has no `data-part` (composing parents pass their own), but the Lit notes only mention `part="text"`. Chose: the Lit shadow element carries both `part="text"` and `data-part="text"`. It is inside the shadow root, so it can't collide with a parent's part name on the host. → `site/src/content/docs/components/text.md`
+- **DOC** Text: the `onAction` tone description says its story paints `color.action.primary.background` behind the Text, but gives no inset for that surface. Chose `<ds-box inset="md">` inside a wrapper painted with that token. → `site/src/content/docs/components/text.md`
+- **DOC** Text: the examples' `given` uses `children`, which is a slot on Lit. The story arg is named `children` and rendered as the slotted text, so each example's args match its `given` exactly. → `site/src/content/docs/components/text.md`
+
+### 2026-09-18 12:10 — web round 3
+
+- **DOC** Text: the round loop resends package-wide gate failures (axe over every story, keyboard specs for every component) to the Text generator, but no failure in rounds 2 or 3 is a Text story. Box and Splitter show it most directly: their stories that render Text pass dark-mode contrast, and only the stories that pass bare strings fail. No change to Text can make these gates pass. The round prompt should filter gate output to the component under regeneration, or the loop never converges. → `site/src/content/docs/components/text.md`
+- **DOC** Text: Box's example stories (Highlighted Panel, Bordered Row, Hero Band, Navigation Region) and Splitter's (Sidebar And Content, Collapsible Navigation, Editor Over Preview, Never Stacking Workbench) pass plain strings for content the doc says Text should carry ('Use Text for paragraphs, labels, captions, helper text, and any inline copy'). In dark mode those strings inherit a colour that is not the foreground token and fail axe color-contrast. Either the examples' `given` values should be rendered through Text, or the Storybook preview should set the body colour to `var(--color-foreground)`. The Text doc does not say which owns it. I changed neither. → `site/src/content/docs/components/text.md`
+- **DOC** Text: `a11y.contrast` checks tones only against `color.background`, while Box `surface: subtle|strong`, Feed items and Splitter panes put Text on other surfaces. The doc does not say whether those pairs are the Text tone's responsibility or the parent surface's. I left the tones as the spec fixes them. → `site/src/content/docs/components/text.md`
+
+### 2026-09-18 11:59 — web round 2
+
+- **DOC** Text: the gate run under review failed on no Text story; its axe and keyboard failures are all in other components (Carousel, Feed, Listbox, Menu, Splitter, Tabs, Box, Slider for axe; Combobox, Dialog, SegmentedControl, Tabs, Toolbar, Tree and others for keyboard). The per-component round asks the Text generator to make these package-wide gates pass, but they cannot pass by editing Text, and editing other components is out of scope. I made no change. The round prompt should scope gate output to the component being regenerated. → `site/src/content/docs/components/text.md`
+- **DOC** Text: `a11y.contrast` checks every tone only against `color.background`, but composing parents (Feed items, Box `surface`, Splitter panes, Tabs panels) place Text on raised or subtle surfaces. If any dark-mode contrast failure there turns out to be a `.ds-text` node, the doc does not say which component owns that pair (the Text tone or the parent surface). I did not change the tones, since the spec fixes them to `color.foreground.{tone}` and `color` is locked. → `site/src/content/docs/components/text.md`
+
+### 2026-09-18 11:46 — web round 1
+
+- **DOC** Text: the `styles.color` description says `TextForegroundContext` is exported from Text.tsx for sibling components, but the sentence around it is about React Native. I read it as RN-only and did not add it to the web Text.tsx; the doc should name the platform. → `site/src/content/docs/components/text.md`
+- **DOC** Text: the Overrides section says 'Rules always read the hook, never the token directly', but the locked `color` binding reads `var(--color-foreground-*)` directly with no `--ds-text-color` hook. I followed the `styles.color` description, which says the section wins; the generic rule should exempt locked bindings. → `site/src/content/docs/components/text.md`
+- **DOC** Text: the web notes say the consumer `title` 'always wins'. It is unclear whether an explicit `title={undefined}` with `truncate` counts as the consumer winning (no title) or falls back to the string children. I chose the fallback (`title ?? children`). → `site/src/content/docs/components/text.md`
+- **DOC** Text: the truncate stories need a width constraint to show the ellipsis, and the spec gives no token for it. I kept the existing decorator's `maxInlineSize: '24ch'`; the doc could name a layout token or say stories may use a `ch` constraint. → `site/src/content/docs/components/text.md`
+- **DOC** Text: nothing in the schema says what `truncate` does when the parent is wider than the text, or with `element: p` (it is display:block, so it fills the parent). This is covered only by the `span` inline-block note; I kept `display: block` for `p`. → `site/src/content/docs/components/text.md`
 
 ### 2026-09-17 03:55 — rn round 1
 
@@ -7106,8 +7388,22 @@ Doc: `site/src/content/docs/components/treegrid.md`
 
 ## Totals
 
-DOC: 4684 · CODE: 94 · TOOLING: 4 · NOISE: 42
+DOC: 4826 · CODE: 95 · TOOLING: 4 · NOISE: 52
 
 ## Gates to fix
 
-- none: every recorded target passed its gates
+- [ ] Box.lit — axe, keyboard-run
+- [ ] Box.rn — axe
+- [ ] Box.web — axe, keyboard-run
+- [ ] Heading.lit — axe, keyboard-run
+- [ ] Heading.rn — axe
+- [ ] Heading.web — axe, keyboard-run
+- [ ] Icon.lit — axe, keyboard-run
+- [ ] Icon.rn — axe
+- [ ] Icon.web — axe, keyboard-run
+- [ ] Stack.lit — axe, keyboard-run
+- [ ] Stack.rn — axe
+- [ ] Stack.web — axe, keyboard-run
+- [ ] Text.lit — axe, keyboard-run
+- [ ] Text.rn — axe
+- [ ] Text.web — axe, keyboard-run

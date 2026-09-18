@@ -61,11 +61,16 @@ component:
     children:
       type: content
       required: true
-      description: Any content. Box does not space its children; put a Stack inside
+      description: 'Any content. Box does not space its children; put a Stack inside
         for that. A string given as `children` in an example is wrapped in the system
         Text by its story on every platform (`<ds-text>` on Lit, where slotted content
-        cannot be an arg). The Default story uses the `highlighted-panel` props, since
-        a Box at its schema defaults draws nothing.
+        cannot be an arg): one meta-level render wraps only string children in a Text
+        at its defaults, so each example story keeps exactly its `given` as args.
+        The Default story uses the `highlighted-panel` props, since a Box at its schema
+        defaults draws nothing; meta args may still list the schema defaults (`border:
+        false`, `element: div`) as controls. Behavior scenarios render the Default
+        story''s args with their `given` on top, which is intended: they assert only
+        renders and roles.'
     inset:
       type: enum
       values:
@@ -156,16 +161,20 @@ component:
       description: '`none` renders the literal transparent, not a token, written out
         explicitly (`background-color: transparent`) and not read through the hook,
         so neither `overrides.background` nor consumer CSS on `--ds-box-background`
-        paints a `none` box; the token binding covers the other three values. Interpolated
-        bindings like this one are locked — they keep their `--ds-box-*` hook, which
-        is the consumer''s own-CSS escape hatch, but they are not members of the overrides
-        type.'
+        paints a `none` box; the token binding covers the other three values, and
+        the `--ds-box-background` hook is set only by those three, with no base default.
+        Interpolated bindings like this one are locked — they keep their `--ds-box-*`
+        hook, which is the consumer''s own-CSS escape hatch, but they are not members
+        of the overrides type.'
       locked: true
     border:
       token: color.border
       description: 'The border colour. It shares a name with the `border` boolean,
         which decides presence: an override recolours the border and never brings
-        one into existence.'
+        one into existence. On web and Lit, without `border` the width is `0` and
+        the colour hook may stay written, since nothing visible reads it; on React
+        Native, which has no cascade, `borderWidth` and `borderColor` are left unset
+        when `border` is false.'
       locked: false
     borderWidth:
       token: border.width.thin
@@ -176,7 +185,9 @@ component:
         than leaving the property unset — every binding is applied explicitly, with
         no cascade. Unlike padding, radius is presence-gated: `none` means no rounded
         corners, so `overrides.radius` is ignored at `none` and applies at every other
-        value.'
+        value. As with `surface: none`, the `none` rule writes `radius.none` directly
+        and reads no hook, so consumer CSS on `--ds-box-radius` cannot round a `none`
+        box either.'
       locked: false
   a11y:
     role: none
@@ -211,8 +222,10 @@ component:
         written before `...rest` so a composing parent can relabel it (Popover and
         BottomSheet pass `data-part="body"`). Box is the one primitive that merges
         a consumer `className` and `style` onto the root instead of dropping them,
-        as Text does, because those same composites give it a layout-only class. Props
-        are typed against `div` for every `element` value; Box is not polymorphic,
+        as Text does, because those same composites give it a layout-only class. That
+        class may set Box''s `--ds-box-*` hooks (Dialog sets the padding hooks this
+        way): it is consumer CSS, and it outranks the modifier classes by specificity.
+        Props are typed against `div` for every `element` value; Box is not polymorphic,
         and the ref is `Ref<HTMLElement>`.'
     lit:
       tag: ds-box
@@ -366,7 +379,7 @@ Do not use a Box to add space between two components; put them in a Stack. Do no
 
 ## Behavior
 
-Box renders its children in a block with the requested padding, background, border and radius, and nothing else. It adds no role of its own (`a11y.role: none`); on web the native element carries whatever semantics it has, which for `section`, `header` and `footer` depends on naming and ancestry as it does in plain HTML, and Lit sets an ElementInternals role only for the values whose role is unconditional (see the platform note). It never scrolls, never clips (`radius` does not imply `overflow: hidden`; a child that should be clipped clips itself), and never carries margin. `insetBlock` and `insetInline` override `inset` per axis. `surface: none` paints transparent, so the parent's background shows through.
+Box renders its children in a block with the requested padding, background, border and radius, and nothing else. It adds no role of its own (`a11y.role: none`); on web the native element carries whatever semantics it has, which for `section`, `header` and `footer` depends on naming and ancestry as it does in plain HTML, and Lit sets a plain `role` attribute on the host only for the values whose role is unconditional (see the platform note). It never scrolls, never clips (`radius` does not imply `overflow: hidden`; a child that should be clipped clips itself), and never carries margin. `insetBlock` and `insetInline` override `inset` per axis. `surface: none` paints transparent, so the parent's background shows through.
 
 ## Content guidelines
 
@@ -385,7 +398,7 @@ Render the `element` with classes `ds-box`, `ds-box--inset-{value}`, `ds-box--in
 `<ds-box inset="md" surface="subtle" radius="md">`. The host is the box; `:host` carries the padding, background, border and radius from reflected attributes (`:host([inset="md"])`). Children are slotted. `element` maps to a plain `role` attribute on the host for the values whose role is unconditional and is otherwise inert.
 
 ### React Native
-`View` with `paddingVertical`/`paddingHorizontal` from `layout.inset.*`, `backgroundColor` from `color.background.*` (undefined for `none`), `borderWidth`/`borderColor` when `border`, `borderRadius` from `radius.*`. No `element`.
+`View` with `paddingVertical`/`paddingHorizontal` from `layout.inset.*`, `backgroundColor` from `color.background.*` (`'transparent'` for `none`, written out), `borderWidth`/`borderColor` only when `border`, `borderRadius` from `radius.*`. No `element`.
 
 ## Related
 

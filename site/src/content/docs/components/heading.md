@@ -11,13 +11,13 @@ component:
       type: enum
       values: ['1', '2', '3', '4', '5', '6']
       required: true
-      description: 'Position in the document outline. Controls the semantic element, not the visual size. Canonical values are strings; generated components also accept the number — the exported `HeadingLevel` type is the string union, and the prop or property type adds `1 | 2 | 3 | 4 | 5 | 6`. A missing, out-of-range or non-numeric level (untyped JavaScript, `level="7"`) is treated as `2` on every platform: an <h2> on web and Lit, the 3xl default size everywhere, and one development warning per element for its lifetime. The Default story renders level `2` with "Account settings".'
+      description: 'Position in the document outline. Controls the semantic element, not the visual size. Canonical values are strings; generated components also accept the number — the exported `HeadingLevel` type is the string union, and the prop or property type adds `1 | 2 | 3 | 4 | 5 | 6`. A missing, out-of-range or non-numeric level (untyped JavaScript, `level="7"`) is treated as `2` on every platform: an <h2> on web and Lit, the 3xl default size everywhere, and one development warning per element for its lifetime. The warning is developer-facing, not copy, so it has no copy key; it names the received value and the level-2 fallback (`Heading: level 7 is not one of 1–6; rendering as level 2.`). Behavior scenarios take only canonical values, so each platform''s own test file covers a numeric level and the fallback with its single warning. On Lit the property holds `undefined` until set, and the fallback renders. The Default story renders level `2` with "Account settings".'
       a11y: Screen-reader users navigate by heading level; levels must not skip (h1 → h3).
     size:
       type: enum
       enumRef: size
       values: [4xl, 3xl, 2xl, xl, lg, md]
-      description: 'Visual size, independent of level. There is no single default; the default is read from `level` by this exact map — 1 → 4xl, 2 → 3xl, 3 → 2xl, 4 → xl, 5 → lg, 6 → md — and an explicit `size` always wins over it. On Lit the resolved default is never written back to the `size` attribute, so `[size]` selectors match only explicit sizes; web exposes no size attribute at all, only the `ds-heading--size-*` modifier class, which carries the resolved size. Heading takes the large end of the shared size vocabulary; the exported type is its own, since Text takes the small end.'
+      description: 'Visual size, independent of level. There is no single default; the default is read from `level` by this exact map — 1 → 4xl, 2 → 3xl, 3 → 2xl, 4 → xl, 5 → lg, 6 → md — and an explicit `size` always wins over it. On Lit the resolved default is never written back to the `size` attribute, so `[size]` selectors match only explicit sizes; web exposes no size attribute at all, only the `ds-heading--size-*` modifier class, which carries the resolved size. Heading takes the large end of the shared size vocabulary; the exported type is its own, since Text takes the small end. Enum stories keep the literal `<Prop><Value>` casing: `Size4xl`, `Size2xl`, `Level1`.'
     children:
       type: content
       required: true
@@ -26,14 +26,14 @@ component:
       type: enum
       values: [start, center, end]
       default: start
-      description: 'Horizontal text alignment. It has no style binding on purpose — alignment is a layout choice, not a themed value — so it maps straight to the platform''s text-align. `start` and `end` are logical on web and Lit; React Native has no logical values and resolves them through I18nManager.isRTL at render, so a writing-direction change mid-session does not re-align an already-rendered heading, the same limit Text has.'
+      description: 'Horizontal text alignment. It has no style binding on purpose — alignment is a layout choice, not a themed value — so it maps straight to the platform''s text-align. `start` and `end` are logical on web and Lit; React Native has no logical values and resolves them through I18nManager.isRTL at render, so a writing-direction change mid-session does not re-align an already-rendered heading, the same limit Text has. The value set is Text''s, so a platform reuses Text''s exported align type and mapping helper and exports no separate HeadingAlign. On web every value, `start` included, emits its `ds-heading--align-<value>` class.'
   styles:
     fontFamily: { token: font.family.heading }
     fontWeight: { token: font.weight.semibold }
     fontSize: { token: 'font.size.{size}' }
     lineHeight: { token: font.lineHeight.tight }
     color: { token: color.foreground.strong, description: 'Locked by the AAA pair, so it has no `--ds-heading-color` hook: the rule reads `var(--color-foreground-strong)` directly and consumer CSS has no hook to break the pair with.' }
-    marginBlockEnd: { token: space.sm, description: 'Space below the heading (marginBottom on React Native — the one margin the system allows, because a heading owns the gap to its own first paragraph). It is unconditional: a container that owns its own rhythm turns it off with `overrides={{ marginBlockEnd: ''space.0'' }}`, as Table does.' }
+    marginBlockEnd: { token: space.sm, description: 'Space below the heading (marginBottom on React Native — the one margin the system allows, because a heading owns the gap to its own first paragraph). It is unconditional: a container that owns its own rhythm turns it off with `overrides={{ marginBlockEnd: ''space.0'' }}`, as Table does. That override is written out as a margin of 0, never omitted.' }
   a11y:
     role: heading
     requires: [heading-hierarchy, contrast-aaa]
@@ -43,7 +43,7 @@ component:
     web:
       element: h1–h6
       attributes: []
-      notes: 'The element is chosen by `level`. Never use `role="heading"` on a div when a real heading element is available. The root is the `text` part and carries `data-part="text"` beside `data-ds="Heading"` — on web and Lit one element takes both hooks. Heading does not compose Text: it owns its five typography bindings because Text cannot carry the header semantics, the heading sizes or a margin. `contrast-aaa` and `heading-hierarchy` have nothing to implement here — the first is a property of the locked token pair and the second is a property of the page; both are checked by the build, not by the component. The user-agent top margin of h1–h6 is reset to `margin-block-start: 0` — a reset of a browser default, not a binding, since marginBlockEnd is the one margin Heading owns.'
+      notes: 'The element is chosen by `level`. Never use `role="heading"` on a div when a real heading element is available. The root is the `text` part and carries `data-part="text"` beside `data-ds="Heading"` — on web and Lit one element takes both hooks. On web `data-part` is written before `...rest`, so a composing parent can relabel it as it does Box; `data-ds` is written after. Heading does not compose Text: it owns its five typography bindings because Text cannot carry the header semantics, the heading sizes or a margin. `contrast-aaa` and `heading-hierarchy` have nothing to implement here — the first is a property of the locked token pair and the second is a property of the page; both are checked by the build, not by the component. The user-agent top margin of h1–h6 is reset to `margin-block-start: 0` — a reset of a browser default, not a binding, since marginBlockEnd is the one margin Heading owns.'
     lit:
       tag: ds-heading
       reflect: [level, size, align]
@@ -51,7 +51,7 @@ component:
     rn:
       element: Text
       props: [accessibilityRole=header]
-      notes: 'iOS and Android have no heading levels. `level` maps only to typography; the header trait is set regardless of level. Document the outline in the screen''s design instead. Heading renders the platform Text directly rather than composing the system Text, which carries no header role, no heading sizes and no margin. The root is both the component and its only part, so it carries `testID="Heading"` and there is no `Heading.text`: a part that is the root keeps the root hook. The ref is `Ref<TextInstance>`. Heading provides `TextStyleContext` ({ fontSize, color, nested: true }) with its own resolved size and colour, as Text does, so an inline Icon or Link inside it matches the heading.'
+      notes: 'iOS and Android have no heading levels. `level` maps only to typography; the header trait is set regardless of level. Document the outline in the screen''s design instead. Heading renders the platform Text directly rather than composing the system Text, which carries no header role, no heading sizes and no margin. The root is both the component and its only part, so it carries `testID="Heading"` and there is no `Heading.text`: a part that is the root keeps the root hook. The ref is `Ref<TextInstance>`. Heading provides `TextStyleContext` ({ fontSize, color, nested: true }), the context Text.tsx exports, imported from there rather than declared again, with its own resolved size and colour, as Text does, so an inline Icon or Link inside it matches the heading.'
     swiftui:
       element: Text
       props: [.accessibilityAddTraits=isHeader, .accessibilityHeading, .font, .fontWeight]

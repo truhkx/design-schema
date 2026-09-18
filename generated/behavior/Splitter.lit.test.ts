@@ -64,21 +64,21 @@ beforeEach(() => {
 
 describe('ds-splitter', () => {
   test('arrow-grows-the-primary-pane', async () => {
-    const s = await setup({"defaultSize": 50});
+    const s = await setup({"defaultSize": 50, "stackBelow": "never"});
     s.el.focus();
     await userEvent.keyboard('{ArrowRight}');
     expect(s.events.onSizeChange).toHaveBeenCalled();
     expect(s.events.onSizeChangeEnd).toHaveBeenCalled();
   });
   test('arrow-shrinks-the-primary-pane', async () => {
-    const s = await setup({"defaultSize": 50});
+    const s = await setup({"defaultSize": 50, "stackBelow": "never"});
     s.el.focus();
     await userEvent.keyboard('{ArrowLeft}');
     expect(s.events.onSizeChange).toHaveBeenCalled();
     expect(s.events.onSizeChangeEnd).toHaveBeenCalled();
   });
   test('home-sets-the-primary-pane-to-its-minimum', async () => {
-    const s = await setup({"defaultSize": 50, "minSize": 20});
+    const s = await setup({"defaultSize": 50, "minSize": 20, "stackBelow": "never"});
     s.el.focus();
     await userEvent.keyboard('{Home}');
     expect(s.events.onSizeChange).toHaveBeenCalled();
@@ -86,7 +86,7 @@ describe('ds-splitter', () => {
     expect(s.events.onSizeChange.mock.calls[0]?.[0]?.detail?.size).toEqual(20);
   });
   test('end-sets-the-primary-pane-to-its-maximum', async () => {
-    const s = await setup({"defaultSize": 50, "maxSize": 80});
+    const s = await setup({"defaultSize": 50, "maxSize": 80, "stackBelow": "never"});
     s.el.focus();
     await userEvent.keyboard('{End}');
     expect(s.events.onSizeChange).toHaveBeenCalled();
@@ -94,7 +94,7 @@ describe('ds-splitter', () => {
     expect(s.events.onSizeChange.mock.calls[0]?.[0]?.detail?.size).toEqual(80);
   });
   test('enter-collapses-a-collapsible-pane', async () => {
-    const s = await setup({"collapsible": true, "defaultSize": 40});
+    const s = await setup({"collapsible": true, "defaultSize": 40, "stackBelow": "never"});
     s.el.focus();
     await userEvent.keyboard('{Enter}');
     expect(s.events.onCollapseChange).toHaveBeenCalled();
@@ -102,18 +102,18 @@ describe('ds-splitter', () => {
     expect(s.events.onCollapseChange.mock.calls[0]?.[0]?.detail?.collapsed).toEqual(true);
   });
   test('enter-does-nothing-when-the-pane-cannot-collapse', async () => {
-    const s = await setup({});
+    const s = await setup({"stackBelow": "never"});
     s.el.focus();
     await userEvent.keyboard('{Enter}');
     expect(s.events.onCollapseChange).not.toHaveBeenCalled();
   });
   test('the-collapse-button-collapses-the-pane', async () => {
-    const s = await setup({"collapsible": true, "defaultSize": 40});
+    const s = await setup({"collapsible": true, "defaultSize": 40, "stackBelow": "never"});
     await userEvent.click(s.collapseButton());
     expect(s.events.onCollapseChange).toHaveBeenCalled();
   });
   test('a-collapsed-pane-ignores-the-arrow-keys', async () => {
-    const s = await setup({"collapsible": true, "defaultCollapsed": true});
+    const s = await setup({"collapsible": true, "defaultCollapsed": true, "stackBelow": "never"});
     s.el.focus();
     await userEvent.keyboard('{ArrowRight}');
     expect(s.events.onSizeChange).not.toHaveBeenCalled();

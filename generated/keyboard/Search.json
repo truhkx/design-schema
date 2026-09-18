@@ -15,7 +15,7 @@
       "keys": [
         "Escape"
       ],
-      "action": "Closes suggestions if open; otherwise clears the field.",
+      "action": "Closes suggestions if open; otherwise clears the field. On an already-empty field with no list open it does nothing and fires no onClear.",
       "from": "first",
       "expect": "manual"
     },

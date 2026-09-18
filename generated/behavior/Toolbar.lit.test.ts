@@ -56,6 +56,14 @@ beforeEach(() => {
 });
 
 describe('ds-toolbar', () => {
+  test('horizontal-is-the-reported-orientation', async () => {
+    const s = await setup({});
+    expect(s.container()).toHaveAttribute("aria-orientation", "horizontal");
+  });
+  test('vertical-toolbar-reports-its-orientation', async () => {
+    const s = await setup({"orientation": "vertical"});
+    expect(s.container()).toHaveAttribute("aria-orientation", "vertical");
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

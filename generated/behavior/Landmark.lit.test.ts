@@ -56,6 +56,23 @@ beforeEach(() => {
 });
 
 describe('ds-landmark', () => {
+  test('the-role-prop-chooses-the-landmark', async () => {
+    const s = await setup({"role": "navigation"});
+    expect(s.el.shadowRoot!.querySelector('[role="navigation"]')).not.toBeNull();
+  });
+  test('search-is-the-search-landmark', async () => {
+    const s = await setup({"role": "search"});
+    expect(s.el.shadowRoot!.querySelector('[role="search"]')).not.toBeNull();
+  });
+  test('main-is-the-primary-content-landmark', async () => {
+    const s = await setup({"role": "main"});
+    expect(s.el.shadowRoot!.querySelector('[role="main"]')).not.toBeNull();
+  });
+  test('a-region-is-named-by-its-label', async () => {
+    const s = await setup({"role": "region", "label": "Related articles"});
+    expect(s.el.shadowRoot!.querySelector('[role="region"]')).not.toBeNull();
+    expect(s.region()).toHaveAttribute("aria-label", "Related articles");
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

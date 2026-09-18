@@ -38,7 +38,7 @@ describe('Accordion', () => {
     expect(s.events.onOpenChange).toHaveBeenCalled();
   });
   test('exclusive-still-reports-both-events', () => {
-    const s = setup({"exclusive": true});
+    const s = setup({"exclusive": true, "defaultValue": "pro", "items": [{"id": "free", "summary": "Free", "content": "One project and community support."}, {"id": "pro", "summary": "Pro", "content": "Unlimited projects and email support."}]});
     fireEvent.press(s.trigger());
     expect(s.events.onChange).toHaveBeenCalled();
     expect(s.events.onOpenChange).toHaveBeenCalled();

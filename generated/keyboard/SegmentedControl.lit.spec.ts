@@ -115,7 +115,7 @@ test.describe('SegmentedControl (lit) keyboard', () => {
     await page.keyboard.press('ArrowRight');
     expect(await focusIndex(page, root)).toBe(0);
   });
-  test('Home: First segment.', async ({ page }) => {
+  test('Home: Moves to and selects the first enabled segment — this control always has a selection, so Home and End select as the arrows do.', async ({ page }) => {
     const root = page.getByRole('radiogroup').first();
     await focusAt(page, root, await focusableCount(page, root) - 1);
     const before = await focusIndex(page, root);
@@ -124,7 +124,7 @@ test.describe('SegmentedControl (lit) keyboard', () => {
     await page.keyboard.press('Home');
     expect(await focusIndex(page, root)).toBe(0);
   });
-  test('End: Last segment.', async ({ page }) => {
+  test('End: Moves to and selects the last enabled segment.', async ({ page }) => {
     const root = page.getByRole('radiogroup').first();
     await focusAt(page, root, 0);
     const before = await focusIndex(page, root);

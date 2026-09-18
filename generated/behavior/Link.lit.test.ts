@@ -70,6 +70,7 @@ describe('ds-link', () => {
   test('external-link-announces-that-it-leaves', async () => {
     const s = await setup({"external": true, "label": "View the billing history"});
     expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("\\(opens\\ in\\ new\\ tab\\)"));
+    expect(s.anchor()).toHaveAccessibleName("View the billing history (opens in new tab)");
   });
   test('external-link-opens-a-new-tab', async () => {
     const s = await setup({"external": true});

@@ -9,7 +9,12 @@
       ],
       "action": "From the last focusable descendant, wraps to the first.",
       "from": "last",
-      "expect": "focus-wraps-to-first"
+      "expect": "focus-wraps-to-first",
+      "platforms": [
+        "web",
+        "lit",
+        "swiftui"
+      ]
     },
     {
       "keys": [
@@ -17,15 +22,26 @@
       ],
       "action": "From the first focusable descendant, wraps to the last.",
       "from": "first",
-      "expect": "focus-wraps-to-last"
+      "expect": "focus-wraps-to-last",
+      "platforms": [
+        "web",
+        "lit",
+        "swiftui"
+      ]
     },
     {
       "keys": [
         "Tab"
       ],
-      "action": "Ordinary forward movement inside the scope.",
+      "action": "Ordinary forward movement inside the scope; native focus order, no handler.",
       "from": "first",
-      "expect": "focus-next"
+      "expect": "focus-next",
+      "platforms": [
+        "web",
+        "lit",
+        "rn",
+        "swiftui"
+      ]
     }
   ]
 }

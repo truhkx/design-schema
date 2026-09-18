@@ -92,6 +92,10 @@ describe('ds-table', () => {
     const s = await setup({"emptyMessage": "No invoices yet.", "columns": [{"key": "invoice", "header": "Invoice", "isRowHeader": true}], "data": []});
     expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("No\\ invoices\\ yet\\."));
   });
+  test('loading-marks-the-table-busy', async () => {
+    const s = await setup({"loading": true, "columns": [{"key": "invoice", "header": "Invoice", "isRowHeader": true}], "data": [{"id": "a", "invoice": "INV-1"}]});
+    expect(s.container()).toHaveAttribute("aria-busy", "true");
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

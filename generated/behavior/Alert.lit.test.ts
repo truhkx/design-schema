@@ -76,6 +76,10 @@ describe('ds-alert', () => {
     const s = await setup({"live": "status"});
     expect(s.el.shadowRoot!.querySelector('[role="status"]')).not.toBeNull();
   });
+  test('live-off-renders-no-role', async () => {
+    const s = await setup({"live": "off"});
+    expect(s.container()).not.toHaveAttribute("role");
+  });
   test('the-heading-is-rendered', async () => {
     const s = await setup({"heading": "Payment failed"});
     expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("Payment\\ failed"));

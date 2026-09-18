@@ -88,6 +88,10 @@ describe('ds-feed', () => {
     const s = await setup({"items": [], "hasMore": false, "loading": false});
     expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("Nothing\\ here\\ yet\\."));
   });
+  test('loading-marks-the-feed-busy', async () => {
+    const s = await setup({"loading": true, "hasMore": true});
+    expect(s.container()).toHaveAttribute("aria-busy", "true");
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

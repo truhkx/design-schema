@@ -56,6 +56,14 @@ beforeEach(() => {
 });
 
 describe('ds-heading', () => {
+  test('level-puts-the-heading-in-the-outline', async () => {
+    const s = await setup({"level": "3"});
+    expect(s.el.shadowRoot!.querySelector('[role="heading"]')).not.toBeNull();
+  });
+  test('size-does-not-change-the-outline', async () => {
+    const s = await setup({"level": "2", "size": "md"});
+    expect(s.el.shadowRoot!.querySelector('[role="heading"]')).not.toBeNull();
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

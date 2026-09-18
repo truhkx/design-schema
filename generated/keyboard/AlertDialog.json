@@ -31,7 +31,7 @@
       "keys": [
         "Enter"
       ],
-      "action": "Activates the focused button. Initial focus is on Cancel so Enter never confirms by momentum.",
+      "action": "Activates the focused button as a native button activation, which on Cancel fires onCancel with reason cancel. Initial focus is on Cancel so Enter never confirms by momentum. `closes` here means the close request fires; the dialog itself stays open until the consumer sets `open` false.",
       "from": "first",
       "expect": "closes",
       "when": "focus on a button"

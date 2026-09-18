@@ -60,6 +60,11 @@ beforeEach(() => {
 });
 
 describe('ds-form', () => {
+  test('label-names-the-form-landmark', async () => {
+    const s = await setup({"label": "Sign in"});
+    expect(s.el.shadowRoot!.querySelector('[role="form"]')).not.toBeNull();
+    expect(s.container()).toHaveAccessibleName("Sign in");
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

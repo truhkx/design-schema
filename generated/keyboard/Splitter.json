@@ -16,7 +16,7 @@
         "ArrowRight",
         "ArrowDown"
       ],
-      "action": "Grows the primary pane by `step` (ArrowDown when vertical; ArrowRight when horizontal).",
+      "action": "Grows the primary pane by `step` (ArrowDown when vertical; ArrowRight when horizontal). In RTL a horizontal splitter swaps ArrowLeft and ArrowRight, so the separator moves the way the arrow points, as dragging does.",
       "from": "first",
       "expect": "manual"
     },

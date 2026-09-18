@@ -43,6 +43,14 @@ describe('Alert', () => {
     const s = setup({"live": "alert"});
     expect(screen.getByRole('alert')).toBeOnTheScreen();
   });
+  test('live-status-renders-the-status-role', () => {
+    const s = setup({"live": "status"});
+    expect(s.container()).toHaveProp("accessibilityLiveRegion", "polite");
+  });
+  test('live-off-renders-no-role', () => {
+    const s = setup({"live": "off"});
+    expect(s.container()).not.toHaveProp("accessibilityLiveRegion");
+  });
   test('the-heading-is-rendered', () => {
     const s = setup({"heading": "Payment failed"});
     expect(screen.getByText(new RegExp("Payment\\ failed"))).toBeOnTheScreen();

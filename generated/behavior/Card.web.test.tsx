@@ -38,7 +38,7 @@ describe('Card', () => {
     expect(screen.getByRole('article')).toBeInTheDocument();
   });
   test('interactive-adds-no-focus-stop', async () => {
-    const s = setup({"interactive": true});
+    const s = setup({"heading": "September invoice", "children": "A Link to the invoice", "interactive": true});
     act(() => (s.surface()).focus());
     expect(s.surface()).not.toHaveFocus();
   });

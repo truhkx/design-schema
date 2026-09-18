@@ -28,6 +28,10 @@ describe('Landmark', () => {
     const s = setup({"role": "navigation"});
     expect(screen.getByRole('navigation')).toBeInTheDocument();
   });
+  test('search-is-the-search-landmark', async () => {
+    const s = setup({"role": "search"});
+    expect(screen.getByRole('search')).toBeInTheDocument();
+  });
   test('main-is-the-primary-content-landmark', async () => {
     const s = setup({"role": "main"});
     expect(screen.getByRole('main')).toBeInTheDocument();

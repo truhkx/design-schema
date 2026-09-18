@@ -41,6 +41,7 @@ describe('Divider', () => {
     const s = setup({"label": "or"});
     expect(screen.getByText(new RegExp("or"))).toBeInTheDocument();
     expect(screen.getByRole('separator')).toBeInTheDocument();
+    expect(screen.getByRole('separator', { name: "or" })).toBeInTheDocument();
   });
   test('renders', async () => {
     const s = setup({});

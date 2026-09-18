@@ -27,6 +27,18 @@ function setup(given: Partial<LandmarkProps> = {}) {
 }
 
 describe('Landmark', () => {
+  test('the-role-prop-chooses-the-landmark', () => {
+    const s = setup({"role": "navigation"});
+    expect(s.region()).toHaveProp("role", "navigation");
+  });
+  test('search-is-the-search-landmark', () => {
+    const s = setup({"role": "search"});
+    expect(s.region()).toHaveProp("accessibilityRole", "search");
+  });
+  test('a-region-is-named-by-its-label', () => {
+    const s = setup({"role": "region", "label": "Related articles"});
+    expect(s.region()).toHaveProp("accessibilityLabel", "Related articles");
+  });
   test('renders', () => {
     const s = setup({});
     expect(s.root()).toBeTruthy();

@@ -34,6 +34,10 @@ describe('Link', () => {
     fireEvent.press(s.anchor());
     expect(s.events.onPress).toHaveBeenCalled();
   });
+  test('external-link-announces-that-it-leaves', () => {
+    const s = setup({"external": true, "label": "View the billing history"});
+    expect(screen.getByRole('link', { name: "View the billing history (opens in new tab)" })).toBeOnTheScreen();
+  });
   test('renders', () => {
     const s = setup({});
     expect(s.root()).toBeTruthy();

@@ -93,7 +93,7 @@ test.describe('AlertDialog (web) keyboard', () => {
     await page.keyboard.press('Shift+Tab');
     expect(await focusIndex(page, root)).toBe(await focusableCount(page, root) - 1);
   });
-  test('Enter: Activates the focused button. Initial focus is on Cancel so Enter never confirms by momentum. (focus on a button)', async ({ page }) => {
+  test('Enter: Activates the focused button as a native button activation, which on Cancel fires onCancel with reason cancel. Initial focus is on Cancel so Enter never confirms by momentum. `closes` here means the close request fires; the dialog itself stays open until the consumer sets `open` false. (focus on a button)', async ({ page }) => {
     const root = page.getByRole('alertdialog').first();
     await focusAt(page, root, 0);
     const before = await focusIndex(page, root);

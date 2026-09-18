@@ -66,7 +66,7 @@ test.describe('Feed (lit) keyboard', () => {
     await page.goto('/iframe.html?id=feed-lit--keyboard&viewMode=story');
     await expect(page.getByRole('feed').first()).toBeVisible();
   });
-  test('Tab: Moves through interactive content inside the current article and on to the next article\'s content in reading order; articles themselves are focusable so the feed commands below work.', async ({ page }) => {
+  test('Tab: Moves through interactive content inside the current article and on to the next article\'s content in reading order; articles are focusable but never tab stops (Card `focusable` renders `tabindex="-1"`, so a hundred cards are not a hundred stops), and focus reaches one by pointer, by Ctrl+Home/End returning, or through a screen reader\'s browse mode — the feed commands below act from there.', async ({ page }) => {
     const root = page.getByRole('feed').first();
     
     const before = await focusIndex(page, root);
@@ -77,6 +77,6 @@ test.describe('Feed (lit) keyboard', () => {
   });
   test.skip('PageDown: Moves focus to the next article (the APG feed command). — manual', async () => {});
   test.skip('PageUp: Moves focus to the previous article. — manual', async () => {});
-  test.skip('Control+End: Moves focus to the first focusable element after the feed in the document; with `hasMore`, instead triggers a load (press again once it has loaded and `hasMore` is false). — manual', async () => {});
+  test.skip('Control+End: Moves focus to the first focusable element after the feed in the document; with `hasMore`, instead triggers a load, or does nothing while `loading` (press again once it has loaded and `hasMore` is false). Feed commands act only from inside an article, not from the new-items button. The key is always consumed there, the `loading` case included, so a feed command never falls through to the browser\'s scroll to the end of the document. — manual', async () => {});
   test.skip('Control+Home: Moves focus to the new-items button when shown, else to the last focusable element before the feed in the document. — manual', async () => {});
 });

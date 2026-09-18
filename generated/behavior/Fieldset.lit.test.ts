@@ -63,6 +63,7 @@ describe('ds-fieldset', () => {
   test('the-legend-names-the-group', async () => {
     const s = await setup({"legend": "Delivery window"});
     expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("Delivery\\ window"));
+    expect(s.group()).toHaveAccessibleName("Delivery window");
   });
   test('the-description-is-rendered', async () => {
     const s = await setup({"description": "We only ship within the EU."});
@@ -71,6 +72,10 @@ describe('ds-fieldset', () => {
   test('a-group-error-is-announced', async () => {
     const s = await setup({"error": "End date must be after start date."});
     expect(s.el.shadowRoot!.querySelector('[role="alert"]')).not.toBeNull();
+  });
+  test('a-disabled-group-is-marked-disabled', async () => {
+    const s = await setup({"disabled": true});
+    expect(s.group()).toHaveAttribute('aria-disabled', 'true');
   });
   test('renders', async () => {
     const s = await setup({});

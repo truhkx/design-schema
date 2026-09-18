@@ -41,62 +41,62 @@ function setup(given: Partial<SplitterProps> = {}) {
 
 describe('Splitter', () => {
   test('arrow-grows-the-primary-pane', async () => {
-    const s = setup({"defaultSize": 50});
+    const s = setup({"defaultSize": 50, "stackBelow": "never"});
     act(() => focusInto(s.container()));
     await s.user.keyboard('{ArrowRight}');
     expect(s.events.onSizeChange).toHaveBeenCalled();
     expect(s.events.onSizeChangeEnd).toHaveBeenCalled();
   });
   test('arrow-shrinks-the-primary-pane', async () => {
-    const s = setup({"defaultSize": 50});
+    const s = setup({"defaultSize": 50, "stackBelow": "never"});
     act(() => focusInto(s.container()));
     await s.user.keyboard('{ArrowLeft}');
     expect(s.events.onSizeChange).toHaveBeenCalled();
     expect(s.events.onSizeChangeEnd).toHaveBeenCalled();
   });
   test('home-sets-the-primary-pane-to-its-minimum', async () => {
-    const s = setup({"defaultSize": 50, "minSize": 20});
+    const s = setup({"defaultSize": 50, "minSize": 20, "stackBelow": "never"});
     act(() => focusInto(s.container()));
     await s.user.keyboard('{Home}');
     expect(s.events.onSizeChange).toHaveBeenCalled();
   });
   test('end-sets-the-primary-pane-to-its-maximum', async () => {
-    const s = setup({"defaultSize": 50, "maxSize": 80});
+    const s = setup({"defaultSize": 50, "maxSize": 80, "stackBelow": "never"});
     act(() => focusInto(s.container()));
     await s.user.keyboard('{End}');
     expect(s.events.onSizeChange).toHaveBeenCalled();
   });
   test('enter-collapses-a-collapsible-pane', async () => {
-    const s = setup({"collapsible": true, "defaultSize": 40});
+    const s = setup({"collapsible": true, "defaultSize": 40, "stackBelow": "never"});
     act(() => focusInto(s.container()));
     await s.user.keyboard('{Enter}');
     expect(s.events.onCollapseChange).toHaveBeenCalled();
   });
   test('enter-does-nothing-when-the-pane-cannot-collapse', async () => {
-    const s = setup({});
+    const s = setup({"stackBelow": "never"});
     act(() => focusInto(s.container()));
     await s.user.keyboard('{Enter}');
     expect(s.events.onCollapseChange).not.toHaveBeenCalled();
   });
   test('the-collapse-button-collapses-the-pane', async () => {
-    const s = setup({"collapsible": true, "defaultSize": 40});
+    const s = setup({"collapsible": true, "defaultSize": 40, "stackBelow": "never"});
     await s.user.click(s.collapseButton());
     expect(s.events.onCollapseChange).toHaveBeenCalled();
   });
   test('a-collapsed-pane-ignores-the-arrow-keys', async () => {
-    const s = setup({"collapsible": true, "defaultCollapsed": true});
+    const s = setup({"collapsible": true, "defaultCollapsed": true, "stackBelow": "never"});
     act(() => focusInto(s.container()));
     await s.user.keyboard('{ArrowRight}');
     expect(s.events.onSizeChange).not.toHaveBeenCalled();
   });
   test('the-separator-reports-its-size-and-bounds', async () => {
-    const s = setup({"defaultSize": 40, "minSize": 15, "maxSize": 85});
+    const s = setup({"defaultSize": 40, "minSize": 15, "maxSize": 85, "stackBelow": "never"});
     expect(s.container()).toHaveAttribute("aria-valuenow", "40");
     expect(s.container()).toHaveAttribute("aria-valuemin", "15");
     expect(s.container()).toHaveAttribute("aria-valuemax", "85");
   });
   test('the-separator-is-a-focusable-widget', async () => {
-    const s = setup({});
+    const s = setup({"stackBelow": "never"});
     act(() => (s.container()).focus());
     expect(s.container()).toHaveFocus();
   });

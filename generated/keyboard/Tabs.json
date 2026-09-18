@@ -24,7 +24,7 @@
       "keys": [
         "ArrowLeft"
       ],
-      "action": "Moves to the previous tab, wrapping.",
+      "action": "Moves to the previous tab, wrapping; selects it under automatic activation.",
       "from": "last",
       "expect": "focus-prev",
       "when": "horizontal"
@@ -45,7 +45,7 @@
       "keys": [
         "ArrowUp"
       ],
-      "action": "Moves to the previous tab, wrapping.",
+      "action": "Moves to the previous tab, wrapping; selects it under automatic activation.",
       "from": "last",
       "expect": "manual",
       "when": "vertical",
@@ -66,7 +66,7 @@
       "keys": [
         "Home"
       ],
-      "action": "First tab.",
+      "action": "First tab; selects it under automatic activation.",
       "from": "last",
       "expect": "focus-first"
     },
@@ -74,7 +74,7 @@
       "keys": [
         "End"
       ],
-      "action": "Last tab.",
+      "action": "Last tab; selects it under automatic activation.",
       "from": "first",
       "expect": "focus-last"
     },

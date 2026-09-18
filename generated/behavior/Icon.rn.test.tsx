@@ -33,7 +33,12 @@ describe('Icon', () => {
   });
   test('label-makes-the-icon-meaningful', () => {
     const s = setup({"name": "warning", "label": "Warning: over quota"});
+    expect(s.glyph()).toHaveProp("accessibilityElementsHidden", false);
     expect(screen.getByRole('img', { name: "Warning: over quota" })).toBeOnTheScreen();
+  });
+  test('empty-label-is-decorative', () => {
+    const s = setup({"name": "check", "label": ""});
+    expect(s.glyph()).toHaveProp("accessibilityElementsHidden", true);
   });
   test('renders', () => {
     const s = setup({});

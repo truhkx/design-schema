@@ -48,6 +48,12 @@ describe('Disclosure', () => {
     expect(s.trigger()).not.toBeExpanded();
     expect(s.trigger()).toBeDisabled();
   });
+  test('controlled-open-change-reports-controlled', () => {
+    const s = setup({"open": false});
+    s.rerender({"open": true});
+    expect(s.events.onToggle).toHaveBeenCalled();
+    expect(s.trigger()).toBeExpanded();
+  });
   test('renders', () => {
     const s = setup({"open": true});
     expect(s.root()).toBeTruthy();

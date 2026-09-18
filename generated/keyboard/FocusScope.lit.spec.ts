@@ -84,7 +84,7 @@ test.describe('FocusScope (lit) keyboard', () => {
     await page.keyboard.press('Shift+Tab');
     expect(await focusIndex(page, root)).toBe(await focusableCount(page, root) - 1);
   });
-  test('Tab: Ordinary forward movement inside the scope.', async ({ page }) => {
+  test('Tab: Ordinary forward movement inside the scope; native focus order, no handler.', async ({ page }) => {
     const root = page.locator('[data-ds="FocusScope"]').first();
     await focusAt(page, root, 0);
     const before = await focusIndex(page, root);

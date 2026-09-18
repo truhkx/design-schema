@@ -42,7 +42,7 @@
       "keys": [
         "Shift+Tab"
       ],
-      "action": "Non-modal: from the first element in the panel, returns focus to the trigger and closes.",
+      "action": "Non-modal: from the first element in the panel, returns focus to the trigger and closes (reason `tab-out`).",
       "from": "first",
       "expect": "focus-trigger",
       "when": "open",

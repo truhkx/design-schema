@@ -34,6 +34,10 @@ describe('Icon', () => {
     expect(s.glyph()).not.toHaveAttribute("aria-hidden");
     expect(screen.getByRole('img', { name: "Warning: over quota" })).toBeInTheDocument();
   });
+  test('empty-label-is-decorative', async () => {
+    const s = setup({"name": "check", "label": ""});
+    expect(s.glyph()).toHaveAttribute("aria-hidden", "true");
+  });
   test('renders', async () => {
     const s = setup({});
     expect(s.root()).not.toBeNull();

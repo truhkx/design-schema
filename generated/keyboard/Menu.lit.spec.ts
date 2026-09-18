@@ -66,10 +66,10 @@ test.describe('Menu (lit) keyboard', () => {
     await page.goto('/iframe.html?id=menu-lit--keyboard&viewMode=story');
     await expect(page.getByRole('menu').first()).toBeVisible();
   });
-  test.skip('Enter: Opens the menu and focuses the first item. (focus on trigger) — manual', async () => {});
-  test.skip(' : Opens the menu and focuses the first item. (focus on trigger) — manual', async () => {});
-  test.skip('ArrowDown: Opens the menu and focuses the first item. (focus on trigger) — manual', async () => {});
-  test.skip('ArrowUp: Opens the menu and focuses the last item. (focus on trigger) — manual', async () => {});
+  test.skip('Enter: Opens the menu and focuses the first item (ArrowDown on an already open menu just focuses the first item). (focus on trigger) — manual', async () => {});
+  test.skip(' : Opens the menu and focuses the first item (ArrowDown on an already open menu just focuses the first item). (focus on trigger) — manual', async () => {});
+  test.skip('ArrowDown: Opens the menu and focuses the first item (ArrowDown on an already open menu just focuses the first item). (focus on trigger) — manual', async () => {});
+  test.skip('ArrowUp: Opens the menu and focuses the last item (on an already open menu it just focuses the last item). (focus on trigger) — manual', async () => {});
   test('ArrowDown: Moves to the next enabled item. (menu open)', async ({ page }) => {
     const root = page.getByRole('menu').first();
     await focusAt(page, root, 0);
@@ -133,7 +133,7 @@ test.describe('Menu (lit) keyboard', () => {
     await page.keyboard.press('Space');
     await expect(root).toBeHidden();
   });
-  test('Escape: Closes and returns focus to the trigger. (menu open)', async ({ page }) => {
+  test('Escape: Closes and returns focus to the trigger; pressed on the trigger while the menu is open it also closes (reason `escape`) and focus stays there. (menu open)', async ({ page }) => {
     const root = page.getByRole('menu').first();
     await focusAt(page, root, 1);
     const before = await focusIndex(page, root);
@@ -143,7 +143,7 @@ test.describe('Menu (lit) keyboard', () => {
     await expect(root).toBeHidden();
     await expect(trigger(page)).toBeFocused();
   });
-  test('Tab: Closes and moves focus to the next/previous tabbable element after the trigger. (menu open)', async ({ page }) => {
+  test('Tab: Closes; Tab moves focus to the tabbable element after the trigger, Shift+Tab to the one before it, in document order (the anchor stands in for the trigger when there is none). The key is not prevented: the menu sets every item to tabindex -1 and moves focus to the trigger, so the browser\'s own Tab continues from there and a popup a controlled parent still shows holds no tab stop (web and Lit alike). With `anchor`, focus is parked on the anchor when it is focusable; otherwise the menu prevents the key and focuses the first tabbable after (Tab) or the last before (Shift+Tab) the anchor in document order, excluding its descendants. (menu open)', async ({ page }) => {
     const root = page.getByRole('menu').first();
     await focusAt(page, root, 1);
     const before = await focusIndex(page, root);
@@ -152,7 +152,7 @@ test.describe('Menu (lit) keyboard', () => {
     await page.keyboard.press('Tab');
     await expect(root).toBeHidden();
   });
-  test('Shift+Tab: Closes and moves focus to the next/previous tabbable element after the trigger. (menu open)', async ({ page }) => {
+  test('Shift+Tab: Closes; Tab moves focus to the tabbable element after the trigger, Shift+Tab to the one before it, in document order (the anchor stands in for the trigger when there is none). The key is not prevented: the menu sets every item to tabindex -1 and moves focus to the trigger, so the browser\'s own Tab continues from there and a popup a controlled parent still shows holds no tab stop (web and Lit alike). With `anchor`, focus is parked on the anchor when it is focusable; otherwise the menu prevents the key and focuses the first tabbable after (Tab) or the last before (Shift+Tab) the anchor in document order, excluding its descendants. (menu open)', async ({ page }) => {
     const root = page.getByRole('menu').first();
     await focusAt(page, root, 1);
     const before = await focusIndex(page, root);
@@ -161,5 +161,5 @@ test.describe('Menu (lit) keyboard', () => {
     await page.keyboard.press('Shift+Tab');
     await expect(root).toBeHidden();
   });
-  test.skip('typeahead letter: Typeahead — moves to the next item whose label starts with the typed characters. (menu open) — manual', async () => {});
+  test.skip('typeahead letter: Typeahead — moves to the next enabled item whose label starts with the typed characters. Any single printable character counts (letters of any script and digits, not only a–z), compared case-insensitively; Space stays activation, and keys held with Ctrl, Meta or Alt are ignored. (menu open) — manual', async () => {});
 });

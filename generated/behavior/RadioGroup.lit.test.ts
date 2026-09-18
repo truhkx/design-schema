@@ -85,6 +85,7 @@ describe('ds-radio-group', () => {
     const s = await setup({"disabled": true});
     await userEvent.click(s.radio(), { force: true });
     expect(s.events.onChange).not.toHaveBeenCalled();
+    expect(s.group()).toHaveAttribute('aria-disabled', 'true');
   });
   test('required-is-shown-in-the-legend', async () => {
     const s = await setup({"required": true});

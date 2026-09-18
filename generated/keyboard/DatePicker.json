@@ -8,7 +8,7 @@
         "ArrowDown",
         "Alt+ArrowDown"
       ],
-      "action": "From the input, opens the calendar with focus on the selected day (or today).",
+      "action": "From the input, opens the calendar with focus on the selected day (or today); when the calendar is already open, moves focus to that day (the pending range start, else the value, else today).",
       "from": "first",
       "expect": "manual",
       "when": "focus in input"
@@ -112,7 +112,7 @@
       "keys": [
         "Tab"
       ],
-      "action": "Cycles within the calendar: month/year controls, the grid (one tab stop, roving over days), Today, Clear.",
+      "action": "Cycles within the calendar: previous month, month Select, year Select, next month, the grid (one tab stop, roving over days), Today, Clear, and back (Shift+Tab reverses). DatePicker traps Tab itself, because the non-modal Popover would close on Tab-out; Tab inside an open Select popup belongs to the Select. In the grid, keys held with Alt, Ctrl or Meta are ignored.",
       "from": "inside",
       "expect": "manual",
       "when": "open"

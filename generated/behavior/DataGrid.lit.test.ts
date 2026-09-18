@@ -102,6 +102,18 @@ describe('ds-data-grid', () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);
   });
+  test('renders-caption-level-2', async () => {
+    const s = await setup({"captionLevel": "2"});
+    expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);
+  });
+  test('renders-caption-level-3', async () => {
+    const s = await setup({"captionLevel": "3"});
+    expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);
+  });
+  test('renders-caption-level-4', async () => {
+    const s = await setup({"captionLevel": "4"});
+    expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);
+  });
   test('renders-selectable-none', async () => {
     const s = await setup({"selectable": "none"});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

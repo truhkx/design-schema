@@ -7,9 +7,14 @@
       "keys": [
         "Tab"
       ],
-      "action": "Moves into the tree (to the selected node, else the first) and out of it — one tab stop.",
+      "action": "Moves into the tree (to the selected node — the first selected in tree order when several are — else the first node) and out of it — one tab stop. Leaving the tree forgets which node was focused, so re-entry follows the same rule instead of restoring it.",
       "from": "any",
-      "expect": "manual"
+      "expect": "manual",
+      "platforms": [
+        "web",
+        "lit",
+        "swiftui"
+      ]
     },
     {
       "keys": [
@@ -54,7 +59,7 @@
       "keys": [
         "ArrowLeft"
       ],
-      "action": "On an open parent: closes it. Otherwise: moves to the parent.",
+      "action": "On an open parent: closes it. Otherwise: moves to the parent; when the parent is disabled, focus stays put.",
       "from": "inside",
       "expect": "manual",
       "platforms": [
@@ -69,7 +74,12 @@
       ],
       "action": "First node.",
       "from": "last",
-      "expect": "focus-first"
+      "expect": "focus-first",
+      "platforms": [
+        "web",
+        "lit",
+        "swiftui"
+      ]
     },
     {
       "keys": [
@@ -77,13 +87,18 @@
       ],
       "action": "Last visible node.",
       "from": "first",
-      "expect": "focus-last"
+      "expect": "focus-last",
+      "platforms": [
+        "web",
+        "lit",
+        "swiftui"
+      ]
     },
     {
       "keys": [
         "Enter"
       ],
-      "action": "Activates the node (onActivate, or follows href); with `selectable: single`, also selects it.",
+      "action": "Activates the node (onActivate, or follows href); with `selectable: single`, also selects it first. An href node is followed by clicking its composed link (so the page's click routing sees it) and does not fire onActivate.",
       "from": "inside",
       "expect": "manual"
     },
@@ -91,25 +106,35 @@
       "keys": [
         " "
       ],
-      "action": "Selects (single) or toggles selection (multiple) of the focused node.",
+      "action": "Selects (single) or toggles selection (multiple) of the focused node. On rn a tap on the row does this instead — Pressable has no key events.",
       "from": "inside",
       "expect": "manual",
-      "when": "selectable"
+      "when": "selectable",
+      "platforms": [
+        "web",
+        "lit",
+        "swiftui"
+      ]
     },
     {
       "keys": [
         "*"
       ],
-      "action": "Opens every sibling of the focused node.",
+      "action": "Opens every enabled sibling of the focused node, the focused node included; lazy siblings open and fire onExpand.",
       "from": "inside",
-      "expect": "manual"
+      "expect": "manual",
+      "platforms": [
+        "web",
+        "lit",
+        "swiftui"
+      ]
     },
     {
       "keys": [
         "Shift+ArrowDown",
         "Shift+ArrowUp"
       ],
-      "action": "Moves focus to the next / previous node and adds it to the selection (the APG rule; no anchor range).",
+      "action": "Moves focus to the next / previous node and adds it to the selection (the APG rule; no anchor range). Outside `multiple` they act as plain arrows.",
       "from": "inside",
       "expect": "manual",
       "when": "multiple",
@@ -123,16 +148,21 @@
       "keys": [
         "Control+a"
       ],
-      "action": "Selects every visible, enabled node at the current expansion state; bound by key code KeyA.",
+      "action": "Adds every visible, enabled node at the current expansion state to the selection; nodes already selected inside a collapsed branch stay selected (the key never deselects). Bound by key code KeyA, with Control or Meta (Cmd on macOS).",
       "from": "inside",
       "expect": "manual",
-      "when": "multiple"
+      "when": "multiple",
+      "platforms": [
+        "web",
+        "lit",
+        "swiftui"
+      ]
     },
     {
       "keys": [
         "a-z"
       ],
-      "action": "Type-ahead: moves to the next visible node whose label starts with the typed characters; the buffer clears after 500 ms (literal-ok, as Listbox).",
+      "action": "Type-ahead: any printable character (letters, digits, punctuation) moves to the next visible node whose label starts with the typed characters; `*` and Space keep their own bindings and never enter the buffer. A fresh one-character buffer searches from the node after the focused one; a longer buffer may re-match the focused node (as Listbox). The buffer clears after 500 ms (literal-ok, as Listbox).",
       "from": "inside",
       "expect": "manual",
       "platforms": [

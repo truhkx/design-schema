@@ -27,6 +27,14 @@ function setup(given: Partial<HeadingProps> = {}) {
 }
 
 describe('Heading', () => {
+  test('level-puts-the-heading-in-the-outline', () => {
+    const s = setup({"level": "3"});
+    expect(s.text()).toHaveProp("accessibilityRole", "header");
+  });
+  test('size-does-not-change-the-outline', () => {
+    const s = setup({"level": "2", "size": "md"});
+    expect(s.text()).toHaveProp("accessibilityRole", "header");
+  });
   test('renders', () => {
     const s = setup({});
     expect(s.root()).toBeTruthy();

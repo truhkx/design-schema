@@ -67,12 +67,12 @@ test.describe('Splitter (web) keyboard', () => {
     await expect(page.getByRole('separator').first()).toBeVisible();
   });
   test.skip('Tab: The separator is a tab stop between the two panes\' content. — manual', async () => {});
-  test.skip('ArrowRight: Grows the primary pane by `step` (ArrowDown when vertical; ArrowRight when horizontal). — manual', async () => {});
-  test.skip('ArrowDown: Grows the primary pane by `step` (ArrowDown when vertical; ArrowRight when horizontal). — manual', async () => {});
+  test.skip('ArrowRight: Grows the primary pane by `step` (ArrowDown when vertical; ArrowRight when horizontal). In RTL a horizontal splitter swaps ArrowLeft and ArrowRight, so the separator moves the way the arrow points, as dragging does. — manual', async () => {});
+  test.skip('ArrowDown: Grows the primary pane by `step` (ArrowDown when vertical; ArrowRight when horizontal). In RTL a horizontal splitter swaps ArrowLeft and ArrowRight, so the separator moves the way the arrow points, as dragging does. — manual', async () => {});
   test.skip('ArrowLeft: Shrinks the primary pane by `step`. — manual', async () => {});
   test.skip('ArrowUp: Shrinks the primary pane by `step`. — manual', async () => {});
   test.skip('Home: Sets the primary pane to `minSize`. — manual', async () => {});
   test.skip('End: Sets the primary pane to `maxSize`. — manual', async () => {});
   test.skip('Enter: Collapses the primary pane, or restores it to its previous size. While collapsed, arrows, Home, End and pointer drag do nothing; only Enter or the collapse button restores. (collapsible) — manual', async () => {});
-  test.skip('F6: Cycles focus primary pane → separator → secondary pane → primary pane (wrapping), landing on the region\'s first focusable descendant or, when it has none, on the pane wrapper itself (tabindex -1). The APG convenience for cycling panes; not available on native. — manual', async () => {});
+  test.skip('F6: Cycles focus primary pane → separator → secondary pane → primary pane (wrapping), landing on the region\'s first focusable descendant or, when it has none, on the pane wrapper itself (tabindex -1). A collapsed (inert) primary pane is skipped; while stacked there is no separator and the cycle is primary → secondary. The collapse Button belongs to the separator zone (F6 lands on the separator). Shift+F6 is not handled at all — the splitter ignores it and does not preventDefault, so the browser\'s own behaviour stands; it does not cycle backwards. F6 is handled only while focus is inside the splitter, and from the container itself rather than a zone the cycle starts at the primary pane. The APG convenience for cycling panes; not available on native. — manual', async () => {});
 });

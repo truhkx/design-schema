@@ -41,7 +41,7 @@
       "keys": [
         "Home"
       ],
-      "action": "First segment.",
+      "action": "Moves to and selects the first enabled segment — this control always has a selection, so Home and End select as the arrows do.",
       "from": "last",
       "expect": "focus-first"
     },
@@ -49,7 +49,7 @@
       "keys": [
         "End"
       ],
-      "action": "Last segment.",
+      "action": "Moves to and selects the last enabled segment.",
       "from": "first",
       "expect": "focus-last"
     }

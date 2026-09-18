@@ -56,6 +56,14 @@ beforeEach(() => {
 });
 
 describe('ds-box', () => {
+  test('nav-element-carries-navigation-semantics', async () => {
+    const s = await setup({"element": "nav"});
+    expect(s.el.shadowRoot!.querySelector('[role="navigation"]')).not.toBeNull();
+  });
+  test('article-element-carries-article-semantics', async () => {
+    const s = await setup({"element": "article"});
+    expect(s.el.shadowRoot!.querySelector('[role="article"]')).not.toBeNull();
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

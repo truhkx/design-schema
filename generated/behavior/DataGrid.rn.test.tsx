@@ -62,6 +62,18 @@ describe('DataGrid', () => {
     const s = setup({});
     expect(s.root()).toBeTruthy();
   });
+  test('renders-caption-level-2', () => {
+    const s = setup({"captionLevel": "2"});
+    expect(s.root()).toBeTruthy();
+  });
+  test('renders-caption-level-3', () => {
+    const s = setup({"captionLevel": "3"});
+    expect(s.root()).toBeTruthy();
+  });
+  test('renders-caption-level-4', () => {
+    const s = setup({"captionLevel": "4"});
+    expect(s.root()).toBeTruthy();
+  });
   test('renders-selectable-none', () => {
     const s = setup({"selectable": "none"});
     expect(s.root()).toBeTruthy();

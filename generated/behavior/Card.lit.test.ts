@@ -64,10 +64,18 @@ describe('ds-card', () => {
     const s = await setup({"heading": "Team plan"});
     expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("Team\\ plan"));
   });
+  test('a-card-with-a-heading-is-an-article', async () => {
+    const s = await setup({"heading": "Team plan"});
+    expect(s.el.shadowRoot!.querySelector('[role="article"]')).not.toBeNull();
+  });
   test('interactive-adds-no-focus-stop', async () => {
-    const s = await setup({"interactive": true});
+    const s = await setup({"heading": "September invoice", "children": "A Link to the invoice", "interactive": true});
     s.el.focus();
     expect(activeChain()).not.toContain(s.el);
+  });
+  test('focusable-takes-scripted-focus-only', async () => {
+    const s = await setup({"focusable": true});
+    expect(s.surface()).toHaveAttribute("tabindex", "-1");
   });
   test('renders', async () => {
     const s = await setup({});

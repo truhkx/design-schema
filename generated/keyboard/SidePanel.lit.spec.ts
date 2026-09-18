@@ -84,8 +84,8 @@ test.describe('SidePanel (lit) keyboard', () => {
     await page.keyboard.press('Space');
     expect(await ariaState(page)).not.toBe(stateBefore);
   });
-  test.skip('Tab: Non-modal: from the trigger, moves into the open panel (it is next in DOM order); from the last element in the panel, continues into the page. Modal: from the last element wraps to the first. (open) — manual', async () => {});
-  test('Escape: Closes and returns focus to the trigger (from inside the panel; a persistent sidebar ignores it). (open)', async ({ page }) => {
+  test.skip('Tab: Non-modal: from the trigger, moves to the first tabbable in the open panel; from the last element in the panel, continues to the next tabbable element after the trigger. On web the panel is portaled, so both steps are explicit keydown handling (Popover\'s seam); on Lit the shadow panel follows the trigger slot and document order does it. Modal: from the last element wraps to the first. (open) — manual', async () => {});
+  test('Escape: Closes and returns focus to the trigger (from focus anywhere inside the panel surface; Escape with focus on the trigger does nothing, and a persistent sidebar ignores it). (open)', async ({ page }) => {
     const root = page.locator('[data-ds="SidePanel"]').first();
     await focusAt(page, root, 1);
     const before = await focusIndex(page, root);

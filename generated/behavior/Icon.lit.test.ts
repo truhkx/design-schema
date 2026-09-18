@@ -66,6 +66,10 @@ describe('ds-icon', () => {
     expect(s.glyph()).not.toHaveAttribute("aria-hidden");
     expect(s.glyph()).toHaveAccessibleName("Warning: over quota");
   });
+  test('empty-label-is-decorative', async () => {
+    const s = await setup({"name": "check", "label": ""});
+    expect(s.glyph()).toHaveAttribute("aria-hidden", "true");
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

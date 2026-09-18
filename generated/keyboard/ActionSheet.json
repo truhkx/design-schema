@@ -56,7 +56,7 @@
         "Enter",
         " "
       ],
-      "action": "Chooses the focused action and closes.",
+      "action": "Fires onAction for the focused action (nothing when it is disabled); the sheet does not close itself — the Keyboard story's consumer closes on onAction.",
       "from": "first",
       "expect": "closes",
       "when": "focus on an action"
@@ -65,7 +65,7 @@
       "keys": [
         "Tab"
       ],
-      "action": "Closes and moves focus on (a menu is not a tab stop container).",
+      "action": "Closes and moves focus on (a menu is not a tab stop container). No Tab handler is needed: the roving tabindex leaves one stop and the outside-close rule does the rest, which is why this rule is manual rather than asserted.",
       "from": "first",
       "expect": "manual",
       "when": "wide-screen menu presentation"

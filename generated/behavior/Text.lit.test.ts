@@ -56,6 +56,10 @@ beforeEach(() => {
 });
 
 describe('ds-text', () => {
+  test('truncated-text-keeps-the-full-string-reachable', async () => {
+    const s = await setup({"truncate": true, "children": "A sentence long enough to be clipped by its column."});
+    expect(s.text()).toHaveAttribute("title", "A sentence long enough to be clipped by its column.");
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

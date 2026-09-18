@@ -67,8 +67,8 @@ test.describe('Carousel (web) keyboard', () => {
     await expect(page.getByRole('region').first()).toBeVisible();
   });
   test.skip('Tab: Moves through the controls (play/pause, previous, next, picker) and then into the current slide\'s focusable content; hidden slides are inert. — manual', async () => {});
-  test.skip('ArrowRight: Next slide. (focus on picker or in a tabs picker) — manual', async () => {});
-  test.skip('ArrowLeft: Previous slide. (focus on picker) — manual', async () => {});
+  test.skip('ArrowRight: Next slide (one slide, not one page): focus and selection move together with reason `picker`, wrapping at the ends as Tabs does whatever `loop` says. Dots and tabs both use a roving tabindex, so the picker is one tab stop. (focus on picker or in a tabs picker) — manual', async () => {});
+  test.skip('ArrowLeft: Previous slide, wrapping the same way. (focus on picker) — manual', async () => {});
   test.skip('Home: First slide. (focus on picker) — manual', async () => {});
   test.skip('End: Last slide. (focus on picker) — manual', async () => {});
   test.skip('Enter: Activates the focused control: previous, next, a picker item, or play/pause. — native', async () => {});

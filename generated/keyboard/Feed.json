@@ -7,7 +7,7 @@
       "keys": [
         "Tab"
       ],
-      "action": "Moves through interactive content inside the current article and on to the next article's content in reading order; articles themselves are focusable so the feed commands below work.",
+      "action": "Moves through interactive content inside the current article and on to the next article's content in reading order; articles are focusable but never tab stops (Card `focusable` renders `tabindex=\"-1\"`, so a hundred cards are not a hundred stops), and focus reaches one by pointer, by Ctrl+Home/End returning, or through a screen reader's browse mode — the feed commands below act from there.",
       "from": "any",
       "expect": "focus-next"
     },
@@ -31,7 +31,7 @@
       "keys": [
         "Control+End"
       ],
-      "action": "Moves focus to the first focusable element after the feed in the document; with `hasMore`, instead triggers a load (press again once it has loaded and `hasMore` is false).",
+      "action": "Moves focus to the first focusable element after the feed in the document; with `hasMore`, instead triggers a load, or does nothing while `loading` (press again once it has loaded and `hasMore` is false). Feed commands act only from inside an article, not from the new-items button. The key is always consumed there, the `loading` case included, so a feed command never falls through to the browser's scroll to the end of the document.",
       "from": "inside",
       "expect": "manual"
     },

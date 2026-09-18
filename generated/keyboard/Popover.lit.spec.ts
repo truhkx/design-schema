@@ -89,7 +89,7 @@ test.describe('Popover (lit) keyboard', () => {
     await page.keyboard.press('Tab');
     await expect(root).toBeHidden();
   });
-  test('Shift+Tab: Non-modal: from the first element in the panel, returns focus to the trigger and closes. (open)', async ({ page }) => {
+  test('Shift+Tab: Non-modal: from the first element in the panel, returns focus to the trigger and closes (reason `tab-out`). (open)', async ({ page }) => {
     const root = page.getByRole('dialog').first();
     await focusAt(page, root, 0);
     const before = await focusIndex(page, root);

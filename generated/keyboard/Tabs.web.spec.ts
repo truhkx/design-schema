@@ -76,7 +76,7 @@ test.describe('Tabs (web) keyboard', () => {
     await page.keyboard.press('ArrowRight');
     expect(await focusIndex(page, root)).toBe(before + 1);
   });
-  test('ArrowLeft: Moves to the previous tab, wrapping. (horizontal)', async ({ page }) => {
+  test('ArrowLeft: Moves to the previous tab, wrapping; selects it under automatic activation. (horizontal)', async ({ page }) => {
     const root = page.getByRole('tablist').first();
     await focusAt(page, root, await focusableCount(page, root) - 1);
     const before = await focusIndex(page, root);
@@ -96,7 +96,7 @@ test.describe('Tabs (web) keyboard', () => {
     await page.keyboard.press('ArrowDown');
     expect(await focusIndex(page, root)).toBe(before + 1);
   });
-  test('ArrowUp: Moves to the previous tab, wrapping. (vertical)', async ({ page }) => {
+  test('ArrowUp: Moves to the previous tab, wrapping; selects it under automatic activation. (vertical)', async ({ page }) => {
     await page.goto('/iframe.html?id=tabs-react--keyboard&viewMode=story&args=orientation:vertical');
     await expect(page.getByRole('tablist').first()).toBeVisible();
     const root = page.getByRole('tablist').first();
@@ -116,7 +116,7 @@ test.describe('Tabs (web) keyboard', () => {
     await page.keyboard.press('ArrowRight');
     expect(await focusIndex(page, root)).toBe(0);
   });
-  test('Home: First tab.', async ({ page }) => {
+  test('Home: First tab; selects it under automatic activation.', async ({ page }) => {
     const root = page.getByRole('tablist').first();
     await focusAt(page, root, await focusableCount(page, root) - 1);
     const before = await focusIndex(page, root);
@@ -125,7 +125,7 @@ test.describe('Tabs (web) keyboard', () => {
     await page.keyboard.press('Home');
     expect(await focusIndex(page, root)).toBe(0);
   });
-  test('End: Last tab.', async ({ page }) => {
+  test('End: Last tab; selects it under automatic activation.', async ({ page }) => {
     const root = page.getByRole('tablist').first();
     await focusAt(page, root, 0);
     const before = await focusIndex(page, root);

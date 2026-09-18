@@ -26,7 +26,7 @@
         "PageUp",
         "PageDown"
       ],
-      "action": "Changes by ten steps (or to the next mark).",
+      "action": "Changes by ten steps, clamped to the bounds (with `snapToMarks`, to the next mark, and to `max`/`min` past the last mark).",
       "from": "first",
       "expect": "manual"
     },

@@ -66,7 +66,7 @@ test.describe('Tree (web) keyboard', () => {
     await page.goto('/iframe.html?id=tree-react--keyboard&viewMode=story');
     await expect(page.getByRole('tree').first()).toBeVisible();
   });
-  test.skip('Tab: Moves into the tree (to the selected node, else the first) and out of it — one tab stop. — manual', async () => {});
+  test.skip('Tab: Moves into the tree (to the selected node — the first selected in tree order when several are — else the first node) and out of it — one tab stop. Leaving the tree forgets which node was focused, so re-entry follows the same rule instead of restoring it. — manual', async () => {});
   test('ArrowDown: Next visible node.', async ({ page }) => {
     const root = page.getByRole('tree').first();
     await focusAt(page, root, 0);
@@ -86,7 +86,7 @@ test.describe('Tree (web) keyboard', () => {
     expect(await focusIndex(page, root)).toBe(before - 1);
   });
   test.skip('ArrowRight: On a closed parent: opens it. On an open parent: moves to its first enabled child (disabled nodes are skipped). On a leaf: nothing. — manual', async () => {});
-  test.skip('ArrowLeft: On an open parent: closes it. Otherwise: moves to the parent. — manual', async () => {});
+  test.skip('ArrowLeft: On an open parent: closes it. Otherwise: moves to the parent; when the parent is disabled, focus stays put. — manual', async () => {});
   test('Home: First node.', async ({ page }) => {
     const root = page.getByRole('tree').first();
     await focusAt(page, root, await focusableCount(page, root) - 1);
@@ -105,11 +105,11 @@ test.describe('Tree (web) keyboard', () => {
     await page.keyboard.press('End');
     expect(await focusIndex(page, root)).toBe(await focusableCount(page, root) - 1);
   });
-  test.skip('Enter: Activates the node (onActivate, or follows href); with `selectable: single`, also selects it. — manual', async () => {});
-  test.skip(' : Selects (single) or toggles selection (multiple) of the focused node. (selectable) — manual', async () => {});
-  test.skip('*: Opens every sibling of the focused node. — manual', async () => {});
-  test.skip('Shift+ArrowDown: Moves focus to the next / previous node and adds it to the selection (the APG rule; no anchor range). (multiple) — manual', async () => {});
-  test.skip('Shift+ArrowUp: Moves focus to the next / previous node and adds it to the selection (the APG rule; no anchor range). (multiple) — manual', async () => {});
-  test.skip('Control+a: Selects every visible, enabled node at the current expansion state; bound by key code KeyA. (multiple) — manual', async () => {});
-  test.skip('typeahead letter: Type-ahead: moves to the next visible node whose label starts with the typed characters; the buffer clears after 500 ms (literal-ok, as Listbox). — manual', async () => {});
+  test.skip('Enter: Activates the node (onActivate, or follows href); with `selectable: single`, also selects it first. An href node is followed by clicking its composed link (so the page\'s click routing sees it) and does not fire onActivate. — manual', async () => {});
+  test.skip(' : Selects (single) or toggles selection (multiple) of the focused node. On rn a tap on the row does this instead — Pressable has no key events. (selectable) — manual', async () => {});
+  test.skip('*: Opens every enabled sibling of the focused node, the focused node included; lazy siblings open and fire onExpand. — manual', async () => {});
+  test.skip('Shift+ArrowDown: Moves focus to the next / previous node and adds it to the selection (the APG rule; no anchor range). Outside `multiple` they act as plain arrows. (multiple) — manual', async () => {});
+  test.skip('Shift+ArrowUp: Moves focus to the next / previous node and adds it to the selection (the APG rule; no anchor range). Outside `multiple` they act as plain arrows. (multiple) — manual', async () => {});
+  test.skip('Control+a: Adds every visible, enabled node at the current expansion state to the selection; nodes already selected inside a collapsed branch stay selected (the key never deselects). Bound by key code KeyA, with Control or Meta (Cmd on macOS). (multiple) — manual', async () => {});
+  test.skip('typeahead letter: Type-ahead: any printable character (letters, digits, punctuation) moves to the next visible node whose label starts with the typed characters; `*` and Space keep their own bindings and never enter the buffer. A fresh one-character buffer searches from the node after the focused one; a longer buffer may re-match the focused node (as Listbox). The buffer clears after 500 ms (literal-ok, as Listbox). — manual', async () => {});
 });

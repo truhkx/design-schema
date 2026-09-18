@@ -60,9 +60,20 @@ beforeEach(() => {
 });
 
 describe('ds-divider', () => {
+  test('decorative-divider-is-hidden-from-assistive-technology', async () => {
+    const s = await setup({});
+    expect(s.line()).toHaveAttribute("aria-hidden", "true");
+  });
+  test('semantic-divider-is-a-separator', async () => {
+    const s = await setup({"semantic": true});
+    expect(s.el.shadowRoot!.querySelector('[role="separator"]')).not.toBeNull();
+    expect(s.line()).toHaveAttribute("aria-orientation", "horizontal");
+  });
   test('label-is-read-and-makes-the-divider-semantic', async () => {
     const s = await setup({"label": "or"});
     expect(s.el.shadowRoot!.textContent).toMatch(new RegExp("or"));
+    expect(s.el.shadowRoot!.querySelector('[role="separator"]')).not.toBeNull();
+    expect(s.line()).toHaveAccessibleName("or");
   });
   test('renders', async () => {
     const s = await setup({});

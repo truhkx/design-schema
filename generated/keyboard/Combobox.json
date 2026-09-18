@@ -7,7 +7,7 @@
       "keys": [
         "ArrowDown"
       ],
-      "action": "Opens the list (if closed) and moves the active option down; focus stays in the input.",
+      "action": "Opens the list (if closed) with the selected option active, else the first; when already open, moves the active option down (from none: the first match); focus stays in the input.",
       "from": "first",
       "expect": "manual"
     },
@@ -15,7 +15,7 @@
       "keys": [
         "ArrowUp"
       ],
-      "action": "Opens the list and moves the active option up.",
+      "action": "Opens the list with the selected option active, else the last; when already open, moves the active option up.",
       "from": "first",
       "expect": "manual"
     },
@@ -32,7 +32,7 @@
       "keys": [
         "Escape"
       ],
-      "action": "Closes the list if open; if closed and clearable, clears the input text.",
+      "action": "Closes the list if open; if closed and clearable, clears the input text only (the value is kept; the clear button is what empties the value).",
       "from": "first",
       "expect": "manual",
       "when": "list open",
@@ -42,7 +42,7 @@
       "keys": [
         "Tab"
       ],
-      "action": "Closes the list and moves focus on. Under single-select a highlighted option is NOT committed by Tab (typing intent is ambiguous).",
+      "action": "Closes the list and moves focus on. A highlighted option is NOT committed by Tab, in single or multiple mode (typing intent is ambiguous).",
       "from": "first",
       "expect": "manual",
       "when": "list open",
@@ -71,7 +71,7 @@
       "keys": [
         ","
       ],
-      "action": "With allowCustom, commits the typed text as a custom value (as Enter does) and clears the input.",
+      "action": "With allowCustom, commits the typed text exactly as Enter does: multiple clears the input and stays open; single shows the committed text and closes.",
       "from": "first",
       "expect": "manual",
       "when": "allowCustom"
@@ -80,7 +80,7 @@
       "keys": [
         "Alt+ArrowDown"
       ],
-      "action": "Opens the list without moving the active option.",
+      "action": "Opens the list with the selected option active, or no active option when nothing is selected; does nothing while the list is already open.",
       "from": "first",
       "expect": "manual"
     }

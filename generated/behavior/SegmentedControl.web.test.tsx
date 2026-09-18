@@ -42,6 +42,7 @@ describe('SegmentedControl', () => {
     const s = setup({"options": [{"value": "list", "label": "List"}, {"value": "grid", "label": "Grid"}], "defaultValue": "grid"});
     await s.user.click(s.segment());
     expect(s.events.onChange).toHaveBeenCalled();
+    expect(s.events.onChange).toHaveBeenCalledWith("list", expect.anything());
   });
   test('arrow-moves-and-selects', async () => {
     const s = setup({"options": [{"value": "list", "label": "List"}, {"value": "grid", "label": "Grid"}], "defaultValue": "list"});
@@ -59,6 +60,18 @@ describe('SegmentedControl', () => {
     const s = setup({"options": [{"value": "list", "label": "List", "disabled": true}, {"value": "grid", "label": "Grid"}], "defaultValue": "grid"});
     await s.user.click(s.segment());
     expect(s.events.onChange).not.toHaveBeenCalled();
+  });
+  test('arrow-skips-disabled-segments', async () => {
+    const s = setup({"options": [{"value": "list", "label": "List"}, {"value": "grid", "label": "Grid", "disabled": true}, {"value": "table", "label": "Table"}], "defaultValue": "list"});
+    act(() => focusInto(s.group()));
+    await s.user.keyboard('{ArrowRight}');
+    expect(s.events.onChange).toHaveBeenCalled();
+  });
+  test('end-selects-the-last-enabled-segment', async () => {
+    const s = setup({"options": [{"value": "list", "label": "List"}, {"value": "grid", "label": "Grid"}, {"value": "table", "label": "Table", "disabled": true}], "defaultValue": "list"});
+    act(() => focusInto(s.group()));
+    await s.user.keyboard('{End}');
+    expect(s.events.onChange).toHaveBeenCalled();
   });
   test('renders', async () => {
     const s = setup({});

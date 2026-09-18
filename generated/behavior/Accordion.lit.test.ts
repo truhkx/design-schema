@@ -69,7 +69,7 @@ describe('ds-accordion', () => {
     expect(s.trigger()).toHaveAttribute("aria-expanded", "true");
   });
   test('exclusive-still-reports-both-events', async () => {
-    const s = await setup({"exclusive": true});
+    const s = await setup({"exclusive": true, "defaultValue": "pro", "items": [{"id": "free", "summary": "Free", "content": "One project and community support."}, {"id": "pro", "summary": "Pro", "content": "Unlimited projects and email support."}]});
     await userEvent.click(s.trigger());
     expect(s.events.onChange).toHaveBeenCalled();
     expect(s.events.onOpenChange).toHaveBeenCalled();

@@ -24,7 +24,7 @@
         "PageUp",
         "PageDown"
       ],
-      "action": "Changes by ten steps.",
+      "action": "Changes by ten steps (10 × `step`, clamped); the 10 is a count, not a style value.",
       "from": "first",
       "expect": "manual"
     },
@@ -33,16 +33,15 @@
         "Home",
         "End"
       ],
-      "action": "Sets min / max when they are defined; otherwise the input's native caret movement.",
+      "action": "Sets min / max when they are defined (component code, not native: a text input cannot do this); otherwise the key is left to the input's native caret movement. A jump is a step: it clears a clamp message and fires onChange only when the value changes.",
       "from": "first",
-      "expect": "manual",
-      "native": true
+      "expect": "manual"
     },
     {
       "keys": [
         "Enter"
       ],
-      "action": "Commits (rounds and clamps) the typed value; inside a Form, submits.",
+      "action": "Commits (rounds and clamps) the typed value; inside a Form, submits (on React Native too: returnKeyType done, no next-field chain).",
       "from": "first",
       "expect": "manual"
     }

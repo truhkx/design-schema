@@ -67,7 +67,7 @@ test.describe('Search (lit) keyboard', () => {
     await expect(page.getByRole('searchbox').first()).toBeVisible();
   });
   test.skip('Enter: Submits the query (or the highlighted suggestion). — manual', async () => {});
-  test.skip('Escape: Closes suggestions if open; otherwise clears the field. — manual', async () => {});
+  test.skip('Escape: Closes suggestions if open; otherwise clears the field. On an already-empty field with no list open it does nothing and fires no onClear. — manual', async () => {});
   test.skip('ArrowDown: Opens suggestions and highlights the first; then moves down. (suggestions) — manual', async () => {});
   test.skip('ArrowUp: Moves up; from the first, back to the input with no highlight. (suggestions) — manual', async () => {});
   test('Tab: Leaves the field: to the clear button when the field has text, then the submit button.', async ({ page }) => {

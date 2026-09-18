@@ -66,8 +66,8 @@ test.describe('DatePicker (web) keyboard', () => {
     await page.goto('/iframe.html?id=datepicker-react--keyboard&viewMode=story');
     await expect(page.locator('[data-ds="DatePicker"]').first()).toBeVisible();
   });
-  test.skip('ArrowDown: From the input, opens the calendar with focus on the selected day (or today). (focus in input) — manual', async () => {});
-  test.skip('Alt+ArrowDown: From the input, opens the calendar with focus on the selected day (or today). (focus in input) — manual', async () => {});
+  test.skip('ArrowDown: From the input, opens the calendar with focus on the selected day (or today); when the calendar is already open, moves focus to that day (the pending range start, else the value, else today). (focus in input) — manual', async () => {});
+  test.skip('Alt+ArrowDown: From the input, opens the calendar with focus on the selected day (or today); when the calendar is already open, moves focus to that day (the pending range start, else the value, else today). (focus in input) — manual', async () => {});
   test.skip('Enter: On the calendar button, opens; on a day, selects it (and closes for a single date; for a range, selects the start then the end). — manual', async () => {});
   test.skip(' : On the calendar button, opens; on a day, selects it (and closes for a single date; for a range, selects the start then the end). — manual', async () => {});
   test('Escape: Closes the calendar without changing the value and returns focus to the calendar button. (open)', async ({ page }) => {
@@ -88,5 +88,5 @@ test.describe('DatePicker (web) keyboard', () => {
   test.skip('End: Last day of the week. (focus on a day) — manual', async () => {});
   test.skip('PageUp: Same day, previous month (Shift: previous year). (focus on a day) — manual', async () => {});
   test.skip('PageDown: Same day, next month (Shift: next year). (focus on a day) — manual', async () => {});
-  test.skip('Tab: Cycles within the calendar: month/year controls, the grid (one tab stop, roving over days), Today, Clear. (open) — manual', async () => {});
+  test.skip('Tab: Cycles within the calendar: previous month, month Select, year Select, next month, the grid (one tab stop, roving over days), Today, Clear, and back (Shift+Tab reverses). DatePicker traps Tab itself, because the non-modal Popover would close on Tab-out; Tab inside an open Select popup belongs to the Select. In the grid, keys held with Alt, Ctrl or Meta are ignored. (open) — manual', async () => {});
 });

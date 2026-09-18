@@ -15,7 +15,7 @@
       "keys": [
         "ArrowRight"
       ],
-      "action": "Next slide.",
+      "action": "Next slide (one slide, not one page): focus and selection move together with reason `picker`, wrapping at the ends as Tabs does whatever `loop` says. Dots and tabs both use a roving tabindex, so the picker is one tab stop.",
       "from": "inside",
       "expect": "manual",
       "when": "focus on picker or in a tabs picker"
@@ -24,7 +24,7 @@
       "keys": [
         "ArrowLeft"
       ],
-      "action": "Previous slide.",
+      "action": "Previous slide, wrapping the same way.",
       "from": "inside",
       "expect": "manual",
       "when": "focus on picker"

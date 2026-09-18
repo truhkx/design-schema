@@ -120,7 +120,7 @@ test.describe('ActionSheet (web) keyboard', () => {
     await page.keyboard.press('End');
     expect(await focusIndex(page, root)).toBe(await focusableCount(page, root) - 1);
   });
-  test('Enter: Chooses the focused action and closes. (focus on an action)', async ({ page }) => {
+  test('Enter: Fires onAction for the focused action (nothing when it is disabled); the sheet does not close itself — the Keyboard story\'s consumer closes on onAction. (focus on an action)', async ({ page }) => {
     const root = page.getByRole('menu').first();
     await focusAt(page, root, 0);
     const before = await focusIndex(page, root);
@@ -129,7 +129,7 @@ test.describe('ActionSheet (web) keyboard', () => {
     await page.keyboard.press('Enter');
     await expect(root).toBeHidden();
   });
-  test(' : Chooses the focused action and closes. (focus on an action)', async ({ page }) => {
+  test(' : Fires onAction for the focused action (nothing when it is disabled); the sheet does not close itself — the Keyboard story\'s consumer closes on onAction. (focus on an action)', async ({ page }) => {
     const root = page.getByRole('menu').first();
     await focusAt(page, root, 0);
     const before = await focusIndex(page, root);
@@ -138,5 +138,5 @@ test.describe('ActionSheet (web) keyboard', () => {
     await page.keyboard.press('Space');
     await expect(root).toBeHidden();
   });
-  test.skip('Tab: Closes and moves focus on (a menu is not a tab stop container). (wide-screen menu presentation) — manual', async () => {});
+  test.skip('Tab: Closes and moves focus on (a menu is not a tab stop container). No Tab handler is needed: the roving tabindex leaves one stop and the outside-close rule does the rest, which is why this rule is manual rather than asserted. (wide-screen menu presentation) — manual', async () => {});
 });

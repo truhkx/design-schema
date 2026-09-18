@@ -68,37 +68,43 @@ describe('ds-slider', () => {
     const s = await setup({"defaultValue": 50, "step": 5});
     s.el.focus();
     await userEvent.keyboard('{ArrowRight}');
-    expect(s.events.onChange).toHaveBeenCalled();
+    expect(s.events.onChange).toHaveBeenCalledTimes(1);
+    expect(s.events.onChange.mock.calls[0]?.[0]?.detail?.value).toEqual(55);
   });
   test('arrow-decreases-by-one-step', async () => {
     const s = await setup({"defaultValue": 50, "step": 5});
     s.el.focus();
     await userEvent.keyboard('{ArrowLeft}');
-    expect(s.events.onChange).toHaveBeenCalled();
+    expect(s.events.onChange).toHaveBeenCalledTimes(1);
+    expect(s.events.onChange.mock.calls[0]?.[0]?.detail?.value).toEqual(45);
   });
   test('page-up-changes-by-ten-steps', async () => {
     const s = await setup({"defaultValue": 50});
     s.el.focus();
     await userEvent.keyboard('{PageUp}');
-    expect(s.events.onChange).toHaveBeenCalled();
+    expect(s.events.onChange).toHaveBeenCalledTimes(1);
+    expect(s.events.onChange.mock.calls[0]?.[0]?.detail?.value).toEqual(60);
   });
   test('home-sets-the-minimum', async () => {
     const s = await setup({"defaultValue": 50, "min": 0, "max": 100});
     s.el.focus();
     await userEvent.keyboard('{Home}');
-    expect(s.events.onChange).toHaveBeenCalled();
+    expect(s.events.onChange).toHaveBeenCalledTimes(1);
+    expect(s.events.onChange.mock.calls[0]?.[0]?.detail?.value).toEqual(0);
   });
   test('end-sets-the-maximum', async () => {
     const s = await setup({"defaultValue": 50, "min": 0, "max": 100});
     s.el.focus();
     await userEvent.keyboard('{End}');
-    expect(s.events.onChange).toHaveBeenCalled();
+    expect(s.events.onChange).toHaveBeenCalledTimes(1);
+    expect(s.events.onChange.mock.calls[0]?.[0]?.detail?.value).toEqual(100);
   });
   test('a-key-press-is-a-complete-interaction', async () => {
     const s = await setup({"defaultValue": 50});
     s.el.focus();
     await userEvent.keyboard('{ArrowRight}');
-    expect(s.events.onChangeEnd).toHaveBeenCalled();
+    expect(s.events.onChangeEnd).toHaveBeenCalledTimes(1);
+    expect(s.events.onChangeEnd.mock.calls[0]?.[0]?.detail?.value).toEqual(51);
   });
   test('a-disabled-slider-does-not-move', async () => {
     const s = await setup({"disabled": true, "defaultValue": 50});

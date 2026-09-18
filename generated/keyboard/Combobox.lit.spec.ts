@@ -66,10 +66,10 @@ test.describe('Combobox (lit) keyboard', () => {
     await page.goto('/iframe.html?id=combobox-lit--keyboard&viewMode=story');
     await expect(page.getByRole('combobox').first()).toBeVisible();
   });
-  test.skip('ArrowDown: Opens the list (if closed) and moves the active option down; focus stays in the input. — manual', async () => {});
-  test.skip('ArrowUp: Opens the list and moves the active option up. — manual', async () => {});
+  test.skip('ArrowDown: Opens the list (if closed) with the selected option active, else the first; when already open, moves the active option down (from none: the first match); focus stays in the input. — manual', async () => {});
+  test.skip('ArrowUp: Opens the list with the selected option active, else the last; when already open, moves the active option up. — manual', async () => {});
   test.skip('Enter: Commits the active option (single: closes; multiple: toggles and stays open); with allowCustom and no active option, commits the typed text. (list open) — manual', async () => {});
-  test('Escape: Closes the list if open; if closed and clearable, clears the input text. (list open)', async ({ page }) => {
+  test('Escape: Closes the list if open; if closed and clearable, clears the input text only (the value is kept; the clear button is what empties the value). (list open)', async ({ page }) => {
     const root = page.getByRole('combobox').first();
     await focusAt(page, root, 0);
     const before = await focusIndex(page, root);
@@ -78,7 +78,7 @@ test.describe('Combobox (lit) keyboard', () => {
     await page.keyboard.press('Escape');
     await expect(page.locator('[data-part="popup"]').first()).toBeHidden();
   });
-  test('Tab: Closes the list and moves focus on. Under single-select a highlighted option is NOT committed by Tab (typing intent is ambiguous). (list open)', async ({ page }) => {
+  test('Tab: Closes the list and moves focus on. A highlighted option is NOT committed by Tab, in single or multiple mode (typing intent is ambiguous). (list open)', async ({ page }) => {
     const root = page.getByRole('combobox').first();
     await focusAt(page, root, 0);
     const before = await focusIndex(page, root);
@@ -90,6 +90,6 @@ test.describe('Combobox (lit) keyboard', () => {
   test.skip('Backspace: In an empty input with chips, removes the last chip. (multiple) — manual', async () => {});
   test.skip('Home: Move the text caret (input semantics), never the list. — native', async () => {});
   test.skip('End: Move the text caret (input semantics), never the list. — native', async () => {});
-  test.skip(',: With allowCustom, commits the typed text as a custom value (as Enter does) and clears the input. (allowCustom) — manual', async () => {});
-  test.skip('Alt+ArrowDown: Opens the list without moving the active option. — manual', async () => {});
+  test.skip(',: With allowCustom, commits the typed text exactly as Enter does: multiple clears the input and stays open; single shows the committed text and closes. (allowCustom) — manual', async () => {});
+  test.skip('Alt+ArrowDown: Opens the list with the selected option active, or no active option when nothing is selected; does nothing while the list is already open. — manual', async () => {});
 });

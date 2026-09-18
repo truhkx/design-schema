@@ -85,6 +85,22 @@ describe('ds-segmented-control', () => {
     await userEvent.click(s.segment());
     expect(s.events.onChange).not.toHaveBeenCalled();
   });
+  test('arrow-skips-disabled-segments', async () => {
+    const s = await setup({"options": [{"value": "list", "label": "List"}, {"value": "grid", "label": "Grid", "disabled": true}, {"value": "table", "label": "Table"}], "defaultValue": "list"});
+    s.el.focus();
+    await userEvent.keyboard('{ArrowRight}');
+    expect(s.events.onChange).toHaveBeenCalled();
+    expect(s.events.onChange).toHaveBeenCalledTimes(1);
+    expect(s.events.onChange.mock.calls[0]?.[0]?.detail?.value).toEqual("table");
+  });
+  test('end-selects-the-last-enabled-segment', async () => {
+    const s = await setup({"options": [{"value": "list", "label": "List"}, {"value": "grid", "label": "Grid"}, {"value": "table", "label": "Table", "disabled": true}], "defaultValue": "list"});
+    s.el.focus();
+    await userEvent.keyboard('{End}');
+    expect(s.events.onChange).toHaveBeenCalled();
+    expect(s.events.onChange).toHaveBeenCalledTimes(1);
+    expect(s.events.onChange.mock.calls[0]?.[0]?.detail?.value).toEqual("grid");
+  });
   test('renders', async () => {
     const s = await setup({});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

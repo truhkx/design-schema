@@ -82,6 +82,13 @@ describe('ds-disclosure', () => {
     s.el.focus();
     expect(activeChain()).toContain(s.el);
   });
+  test('controlled-open-change-reports-controlled', async () => {
+    const s = await setup({"open": false});
+    Object.assign(s.el, {"open": true});
+    await (s.el as unknown as { updateComplete: Promise<boolean> }).updateComplete;
+    expect(s.events.onToggle).toHaveBeenCalled();
+    expect(s.trigger()).toHaveAttribute('aria-expanded', 'true');
+  });
   test('renders', async () => {
     const s = await setup({"open": true});
     expect(s.el.shadowRoot ? s.root.childElementCount > 0 : s.el.isConnected).toBe(true);

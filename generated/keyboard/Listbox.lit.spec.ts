@@ -120,10 +120,10 @@ test.describe('Listbox (lit) keyboard', () => {
     await page.keyboard.press('Enter');
     expect(await ariaState(page)).toMatch(/true/);
   });
-  test.skip('Shift+ArrowDown: Multiple: moves and adds the next/previous option to the selection. (multiple) — manual', async () => {});
-  test.skip('Shift+ArrowUp: Multiple: moves and adds the next/previous option to the selection. (multiple) — manual', async () => {});
-  test.skip('Control+a: Multiple: selects all enabled options; again clears. (multiple) — manual', async () => {});
-  test.skip('typeahead letter: Typeahead to the next option whose label starts with the typed characters. — manual', async () => {});
-  test.skip('PageDown: Moves by the visible row count. — manual', async () => {});
-  test.skip('PageUp: Moves by the visible row count. — manual', async () => {});
+  test.skip('Shift+ArrowDown: Multiple: moves and adds the next/previous option to the selection (add only; an already-selected option stays selected). (multiple) — manual', async () => {});
+  test.skip('Shift+ArrowUp: Multiple: moves and adds the next/previous option to the selection (add only; an already-selected option stays selected). (multiple) — manual', async () => {});
+  test.skip('Control+a: Multiple: selects all enabled options; pressed again when every enabled option is selected, deselects the enabled options. Selected disabled options stay selected either way. (multiple) — manual', async () => {});
+  test.skip('typeahead letter: Typeahead to the next option whose label starts with the typed characters; typing the same character repeatedly cycles through the options starting with it (APG). The buffer clears after `typeaheadReset`. — manual', async () => {});
+  test.skip('PageDown: Moves by the `maxVisible` row count, clamped to the last/first enabled option; with `maxVisible: all` jumps to the last/first enabled option. Follows `selectionFollowsFocus` like the arrows. — manual', async () => {});
+  test.skip('PageUp: Moves by the `maxVisible` row count, clamped to the last/first enabled option; with `maxVisible: all` jumps to the last/first enabled option. Follows `selectionFollowsFocus` like the arrows. — manual', async () => {});
 });

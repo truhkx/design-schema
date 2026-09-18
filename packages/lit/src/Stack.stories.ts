@@ -33,10 +33,11 @@ function renderStack(args: StackArgs, content: TemplateResult): TemplateResult {
   `;
 }
 
-const buttons: TemplateResult = html`
-  <ds-button label="Save changes"></ds-button>
-  <ds-button variant="secondary" label="Preview"></ds-button>
-  <ds-button variant="ghost" label="Cancel"></ds-button>
+/** The Default story renders three Text children, per the doc. */
+const texts: TemplateResult = html`
+  <ds-text>First item</ds-text>
+  <ds-text>Second item</ds-text>
+  <ds-text>Third item</ds-text>
 `;
 
 const meta: Meta<StackArgs> = {
@@ -58,7 +59,7 @@ const meta: Meta<StackArgs> = {
     wrap: false,
     element: 'div',
   },
-  render: (args) => renderStack(args, buttons),
+  render: (args) => renderStack(args, texts),
 };
 
 export default meta;
@@ -96,7 +97,7 @@ export const JustifyBetween: Story = justifyStory('between');
 /* wrap */
 export const Wrap: Story = {
   args: { direction: 'horizontal', align: 'center', wrap: true },
-  render: (args) => html`<div style="max-inline-size: 16rem">${renderStack(args, buttons)}</div>`,
+  render: (args) => html`<div style="max-inline-size: 16rem">${renderStack(args, texts)}</div>`,
 };
 
 /* element */
@@ -124,7 +125,7 @@ export const FormFields: Story = {
 
 /** A row of actions at the end of a form or card, tightly spaced and pushed to the end. */
 export const ButtonRow: Story = {
-  args: { direction: 'horizontal', gap: 'tight', justify: 'end' },
+  args: { direction: 'horizontal', gap: 'tight', justify: 'end', align: 'center' },
   render: (args) =>
     renderStack(
       args,
@@ -151,20 +152,19 @@ export const PageSections: Story = {
 
 /** A horizontal group that reflows onto new lines on narrow viewports instead of overflowing. */
 export const WrappingFilters: Story = {
-  args: { direction: 'horizontal', gap: 'tight', wrap: true },
-  render: (args) => html`
-    <div style="max-inline-size: 16rem">
-      ${renderStack(
-        args,
-        html`
-          <ds-button variant="secondary" size="sm" label="All"></ds-button>
-          <ds-button variant="ghost" size="sm" label="Open"></ds-button>
-          <ds-button variant="ghost" size="sm" label="In review"></ds-button>
-          <ds-button variant="ghost" size="sm" label="Merged"></ds-button>
-          <ds-button variant="ghost" size="sm" label="Closed"></ds-button>
-          <ds-button variant="ghost" size="sm" label="Archived"></ds-button>
-        `,
-      )}
-    </div>
-  `,
+  args: { direction: 'horizontal', gap: 'tight', wrap: true, align: 'center' },
+  /* the width bound is a decorator, not an arg, so the wrap shows */
+  decorators: [(story) => html`<div style="max-inline-size: 16rem">${story()}</div>`],
+  render: (args) =>
+    renderStack(
+      args,
+      html`
+        <ds-button variant="secondary" size="sm" label="All"></ds-button>
+        <ds-button variant="ghost" size="sm" label="Open"></ds-button>
+        <ds-button variant="ghost" size="sm" label="In review"></ds-button>
+        <ds-button variant="ghost" size="sm" label="Merged"></ds-button>
+        <ds-button variant="ghost" size="sm" label="Closed"></ds-button>
+        <ds-button variant="ghost" size="sm" label="Archived"></ds-button>
+      `,
+    ),
 };

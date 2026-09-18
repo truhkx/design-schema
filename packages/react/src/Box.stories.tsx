@@ -2,20 +2,23 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Box } from './Box';
 import { Text } from './Text';
 
-const content = <Text element="p">Box content.</Text>;
-
 const meta: Meta<typeof Box> = {
   title: 'Box/React',
   component: Box,
   tags: ['autodocs'],
+  // Default is the `highlighted-panel` example: a Box at its schema defaults draws nothing.
   args: {
+    children: 'A panel of settings',
     inset: 'md',
     surface: 'subtle',
     border: false,
     radius: 'md',
     element: 'div',
-    children: content,
   },
+  // A string given as `children` is wrapped in the system Text, as the doc asks of every platform.
+  render: ({ children, ...args }) => (
+    <Box {...args}>{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>
+  ),
 };
 
 export default meta;

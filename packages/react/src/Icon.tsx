@@ -159,14 +159,16 @@ export interface IconProps
   /**
    * Which glyph. The set is deliberately small and grows only when a component needs a shape;
    * `info`, `success`, `warning` and `danger` are the four status shapes (circle-i, circle-check,
-   * triangle-!, octagon-x) so tone is never carried by color alone.
+   * triangle-!, octagon-x) so tone is never carried by color alone. `name` has no default; the
+   * Default story renders `check`.
    */
   name: IconName;
   /** Rendered size, from the font-size scale so icons line up with text of the same size. */
   size?: IconSize | undefined;
   /**
    * Size the glyph at 1em of the surrounding text and align it to the text baseline, ignoring
-   * `size`. For icons inside Text, Link and Button labels.
+   * `size`. For icons inside Text, Link and Button labels. On web `font-size: inherit` always has a
+   * surrounding size to read, so there is no fallback.
    */
   inline?: boolean | undefined;
   /**
@@ -207,9 +209,11 @@ export function Icon({
   ...rest
 }: IconProps & { ref?: Ref<SVGSVGElement> | undefined }): ReactElement {
   const labelled = label !== undefined && label !== '';
-  const glyph = paths[name] as ReactElement | undefined;
+  // Own keys only, so a JavaScript caller's `name="toString"` is unknown rather than a prototype hit.
+  const glyph = Object.hasOwn(paths, name) ? paths[name] : undefined;
 
-  // Unreachable from TypeScript, possible from JavaScript: draw nothing and warn on every render.
+  // Unreachable from TypeScript, possible from JavaScript: draw an empty glyph (keeping the label or
+  // decorative props, so an unlabelled unknown icon stays hidden) and warn on every render, no dedupe.
   if (isDev && !glyph) {
     console.warn(`Icon: unknown name "${String(name)}" — no glyph in the paths table, so nothing is drawn.`);
   }

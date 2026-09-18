@@ -45,3 +45,23 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Box: examples pass `children` as a string, but on Lit that is slotted content and `HTMLElement.children` is read-only. The stories render it inside `<ds-text>` and the test sets it as textContent. The doc doesn't say whether that text should be wrapped in Text on Lit.
 - Box: `element` isn't in `platforms.lit.reflect`, so I didn't reflect it and it is a plain String property. The doc doesn't say whether a consumer can set it by attribute alone; it works because Lit maps the attribute to the property.
 - Box: overrides don't apply when `radius` is `none` (overrides change values, not presence), but the paddingBlock description says padding overrides do apply at `none`. The doc doesn't say whether `radius: none` also counts as a real token that an override should restyle. I treated radius `none` as absent, so the radius override is ignored there.
+
+## 2026-09-18 17:05 — round 1
+
+- Box: the Guidance 'Behavior' section says Lit sets an ElementInternals role for the unconditional sectioning values, but platforms.lit.notes says a plain `role` attribute on the host and not ElementInternals. I followed the platform note (plain attribute); the Behavior prose should be corrected.
+- Box: the `radius` style description says `overrides.radius` is ignored at `none`, but doesn't say whether consumer CSS on `--ds-box-radius` should also be ignored there, as the `background` description spells out for `surface: none`. I chose to not read the hook at `radius="none"` (it writes `var(--radius-none)` directly), so consumer CSS can't round a `none` box either.
+- Box: `background` is locked, but the doc doesn't say what `--ds-box-background` defaults to when there's no surface attribute. I didn't give the hook a base default: it's set only per non-none surface value, and the base `background-color` is transparent.
+- Box: the `renders` scenarios check the shadow root, but Box's shadow root is only a `<slot>`. The `renders: true` assertion (shadowRoot has children) passes trivially and tests none of the inset, surface or radius styling.
+- Box: the `children` description says the Default story uses the `highlighted-panel` props, but doesn't say whether the scenario `given` builds on meta.args or on Default's own args. I put the example props on `Default.args` and the tests merge meta.args, then Default.args, then `given`.
+
+## 2026-09-18 17:18 — round 2
+
+- Box: none of the failures shown in either gate are Box's. keyboard-run lists only other components' specs, and generated/keyboard/ has no Box spec because the doc declares no `keyboard` block. The visible axe list is Tabs, TreeGrid and others, and test-results/*axe-lit*/error-context.md has no 'Box' entries. I left Box.ts, Box.stories.ts and Box.test.ts unchanged this round.
+- Box: I could not confirm that Box passes axe. The pasted axe output is cut off at the front, so Box/Lit entries could have been there. My Box-only axe script (logs/box-axe.mjs, a scratch file outside the package) needed approval and never ran. The full axe-lit gate run and the Storybook server both stopped before finishing, so no Box/Lit axe result exists.
+- Box: a11y.contrast lists foreground-on-subtle and foreground-on-strong pairs as a guarantee about the tokens. The story that wraps `children` in `<ds-text>` on `surface: strong` in dark mode relies on those token pairs being checked by the build, and Box can't enforce them at runtime. If axe reports color-contrast on a Box story, the fix is the token values in the theme doc, not the component.
+- (report recovered after a second request)
+
+## 2026-09-18 17:31 — round 3
+
+- Box: neither failing gate names Box. logs/playwright.json (the full axe-lit report, which the pasted console output cuts off) has no Box/Lit violation or render error in light or dark mode. keyboard-run has no Box spec because the doc declares no `keyboard` block. I made no code change. The gates fail on other Lit components (DataGrid, Feed, Tabs, TreeGrid for axe; Combobox, Select, Tabs, Tree and others for keyboard-run), and fixing Box cannot turn them green.
+- Box: the per-component gate report hands Box the whole package's axe and keyboard-run results without filtering them to Box's stories and specs. So a component with no violations of its own gets sent back for retries it cannot resolve. The gate output should be filtered by story title (`Box/Lit`) and spec file (`generated/keyboard/Box.lit.spec.ts`) before a regeneration round is triggered.

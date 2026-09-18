@@ -52,3 +52,20 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Icon: the web Guidance lists the filled glyphs as 'the four status shapes and the ellipsis'. `tools/icon-paths.json` (and Content guidelines) also mark `play` and `pause` as filled. I followed the JSON.
 - Icon: the spec says `...rest` never forwards `style` or `className`, but `IconProps` extends the svg props, which include both. I removed them from the props type. Sibling components such as Button still accept and merge them, so the package is inconsistent until those are regenerated.
 - Icon: the 'renders' scenarios have nothing to check beyond the root existing, and none checks `data-part="glyph"` on the root, the unknown-name warning, or that an empty `label` is decorative. The web notes spell all three out, but no scenario covers them, so a regression there passes the gate.
+
+## 2026-09-18 09:56 — round 1
+
+- Icon: the conventions say to 'build its paths table from' tools/icon-paths.json, but the package can't import from tools/ at build time; I kept a verbatim copy of the `d` strings and `filled` flags in the JSON's order. The doc should say whether a copy or a build-time import is intended.
+- Icon: the note 'the hook is still set, for consistency' for `overrides.size` under `inline` doesn't say whether the `ds-icon--{size}` modifier class should also stay applied when `inline`; I kept it, so the hook has its token default and `.ds-icon--inline` overrides font-size later in the cascade.
+- Icon: the unknown-`name` warning text isn't in `copy`; I kept the existing developer-facing message (`Icon: unknown name "…"`), since dev warnings aren't user-facing copy.
+- Icon: the spec says 'Transitions use motion.duration.fast' and 'focus-visible', but Icon has no transition and is never focusable; I added neither. The generic rules should say they don't apply to non-interactive primitives.
+- Icon: DecorativeBesideALabel doesn't say what size the wrapping Text should be; I used `size="sm"` to match the icon's `size: sm`.
+
+## 2026-09-18 10:03 — round 2
+
+- Icon: the round-2 gate output (keyboard-run, axe) contains no Icon failure: Icon has no keyboard spec, and logs/playwright.json from this run lists axe violations only for Box, Carousel, Feed, Listbox, Menu, Slider, Splitter and Tabs. I changed no code. The gate harness sends every package-wide failure to each component's round, so a component can be sent back for failures it can't fix; the gate report should be filtered to the component under repair.
+- Icon: I couldn't run axe on the Icon stories alone (the script, logs/icon-axe.mjs, needed an approval I didn't have); the no-violation conclusion comes from the full gate report, not a run scoped to Icon.
+
+## 2026-09-18 10:10 — round 3
+
+- Icon: round 3 repeats round 2's gate output word for word; logs/playwright.json (10:09:58) has no Icon/React failure and Icon has no keyboard spec, so there is nothing to fix in Icon. The repair loop keeps sending Icon back for failures in Box, Carousel, Feed, Listbox, Menu, Slider, Splitter and Tabs (axe) and ActionSheet, Combobox, DatePicker, Listbox, Menu, Search, Slider, Tabs, Toast, Tooltip, Tree (keyboard); scope the gate verdict to the component's own stories and specs, or the loop will never end for components with no failures.

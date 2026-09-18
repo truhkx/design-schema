@@ -111,7 +111,10 @@ export const StatusInACell: Story = {
   args: { name: 'warning', label: 'Warning: over quota' },
 };
 
-/* The usual case - a glyph next to text, with no label, so the label carries the meaning alone. */
+/*
+ * The usual case - a glyph next to text, with no label, so the label carries the meaning alone.
+ * "Saved" is story scaffolding, not copy.
+ */
 export const DecorativeBesideALabel: Story = {
   args: { name: 'check', size: 'sm' },
   render: (args) => html`
@@ -121,13 +124,14 @@ export const DecorativeBesideALabel: Story = {
   `,
 };
 
-/* An icon sized at 1em of the surrounding text and sitting on its baseline, for use inside a Text or Link. */
+/*
+ * An icon sized at 1em of the surrounding text and sitting on its baseline, for use inside a Text or Link.
+ * "Read the release notes" is story scaffolding, not copy.
+ */
 export const InlineInRunningText: Story = {
   args: { name: 'external', inline: true },
   render: (args) => html`
-    <ds-text>
-      The report opens in a new tab <ds-icon name=${args.name} ?inline=${args.inline}></ds-icon>
-    </ds-text>
+    <ds-text>Read the release notes <ds-icon name=${args.name} ?inline=${args.inline}></ds-icon></ds-text>
   `,
 };
 

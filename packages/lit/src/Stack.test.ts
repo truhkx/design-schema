@@ -6,17 +6,26 @@
  */
 import { beforeEach, describe, expect, it } from 'vitest';
 import './Stack.js';
+import './Text.js';
 import type { DsStack } from './Stack.js';
 import meta from './Stack.stories.js';
 
 type Given = Partial<Pick<DsStack, 'direction' | 'gap' | 'align' | 'justify' | 'wrap' | 'element'>>;
 
-/** The Default story's args plus the scenario's `given`, as properties on a fresh element. */
+/**
+ * The Default story's args plus the scenario's `given`, as properties on a fresh element,
+ * with the Default story's three Text children.
+ */
 async function setup(given: Given = {}) {
   const el = document.createElement('ds-stack');
   const props = { ...meta.args, ...given };
   for (const [key, value] of Object.entries(props)) {
     if (value !== undefined) (el as unknown as Record<string, unknown>)[key] = value;
+  }
+  for (const label of ['First item', 'Second item', 'Third item']) {
+    const text = document.createElement('ds-text');
+    text.textContent = label;
+    el.append(text);
   }
   document.body.append(el);
   await el.updateComplete;
@@ -35,14 +44,12 @@ describe('ds-stack', () => {
   });
 
   it('list-element-is-a-list', async () => {
-    const el = document.createElement('ds-stack');
-    el.element = 'ul';
-    el.append(document.createElement('span'), document.createElement('span'));
-    document.body.append(el);
-    await el.updateComplete;
+    const { el } = await setup({ element: 'ul' });
     expect(el.shadowRoot!.querySelector('[role="list"]')).not.toBeNull();
     /* each child is wrapped in an li, so assistive technology counts the items */
-    expect(el.shadowRoot!.querySelectorAll('li[role="listitem"][part="item"]')).toHaveLength(2);
+    const items = el.shadowRoot!.querySelectorAll<HTMLSlotElement>('li[role="listitem"][part="item"] > slot');
+    expect(items).toHaveLength(3);
+    items.forEach((slot, i) => expect(slot.assignedNodes()).toEqual([el.children[i]]));
   });
 
   /* derived: a11y.role */

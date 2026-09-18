@@ -8,8 +8,8 @@ import type { TextAlign, TextStyleContextValue } from './Text';
 import { toFontWeight, toLineHeight, useTheme } from './theme';
 import type { Tokens } from './theme';
 
-/** Position in the document outline. The schema declares the values as strings; numbers are accepted for ergonomics. */
-export type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6 | '1' | '2' | '3' | '4' | '5' | '6';
+/** Position in the document outline. The canonical values are strings; the `level` prop also accepts the number. */
+export type HeadingLevel = '1' | '2' | '3' | '4' | '5' | '6';
 export type HeadingSize = '4xl' | '3xl' | '2xl' | 'xl' | 'lg' | 'md';
 
 /**
@@ -23,9 +23,11 @@ export interface HeadingProps {
   /**
    * Position in the document outline. On React Native this controls only the default
    * typography — iOS and Android have no heading levels, so the header trait is set
-   * regardless of level. Document the outline in the screen's design instead.
+   * regardless of level. Document the outline in the screen's design instead. A missing,
+   * out-of-range or non-numeric level is treated as `2` (the 3xl default size) and warns
+   * once per element in development.
    */
-  level: HeadingLevel;
+  level: HeadingLevel | 1 | 2 | 3 | 4 | 5 | 6;
   /** Visual size, independent of level. Defaults per level: 1 → 4xl, 2 → 3xl, 3 → 2xl, 4 → xl, 5 → lg, 6 → md. */
   size?: HeadingSize | undefined;
   /** The heading text. Keep it short and descriptive; it is what appears in the page outline. */
@@ -38,7 +40,7 @@ export interface HeadingProps {
   ref?: React.Ref<TextInstance> | undefined;
 }
 
-const LEVEL_SIZE: Record<'1' | '2' | '3' | '4' | '5' | '6', HeadingSize> = {
+const LEVEL_SIZE: Record<HeadingLevel, HeadingSize> = {
   '1': '4xl',
   '2': '3xl',
   '3': '2xl',
@@ -46,6 +48,8 @@ const LEVEL_SIZE: Record<'1' | '2' | '3' | '4' | '5' | '6', HeadingSize> = {
   '5': 'lg',
   '6': 'md',
 };
+
+const LEVELS: readonly string[] = Object.keys(LEVEL_SIZE);
 
 const SIZE_TOKEN = {
   '4xl': 'fontSize4xl',
@@ -80,7 +84,18 @@ const SIZE_TOKEN = {
 export function Heading({ level, size, children, align = 'start', overrides, ref }: HeadingProps): React.JSX.Element {
   const { tokens: t } = useTheme();
 
-  const levelKey = String(level) as '1' | '2' | '3' | '4' | '5' | '6';
+  const levelString = String(level);
+  const levelValid = LEVELS.includes(levelString);
+  const levelKey: HeadingLevel = levelValid ? (levelString as HeadingLevel) : '2';
+
+  const warnedInvalidLevel = React.useRef(false);
+  React.useEffect(() => {
+    if (__DEV__ && !levelValid && !warnedInvalidLevel.current) {
+      warnedInvalidLevel.current = true;
+      console.warn(`Heading: level ${JSON.stringify(level)} is not one of 1–6; rendering as level 2.`);
+    }
+  }, [levelValid, level]);
+
   const resolvedSize: HeadingSize = size ?? LEVEL_SIZE[levelKey];
   const fontSize = overrides?.fontSize ? (resolveToken(t, overrides.fontSize) as number) : t[SIZE_TOKEN[resolvedSize]];
   const color = t.colorForegroundStrong;

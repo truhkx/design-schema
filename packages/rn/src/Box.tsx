@@ -76,8 +76,8 @@ const RADIUS_TOKEN = {
  * children (that is Stack's job), and it never carries margin of its own.
  *
  * Renders a `View` with paddingVertical/paddingHorizontal from `layout.inset.*`,
- * backgroundColor from `color.background.*` (nothing for `surface: none`, so the
- * parent's shows through), borderWidth/borderColor when `border`, and borderRadius
+ * backgroundColor from `color.background.*` (literal `transparent` for `surface: none`,
+ * so the parent's shows through), borderWidth/borderColor when `border`, and borderRadius
  * from `radius.*`. It adds no accessibility role of its own; `radius` does not clip
  * (a child that should be clipped clips itself). The `element` prop is web/Lit only —
  * React Native has no sectioning elements, so the `nav`/`article` semantics those
@@ -111,10 +111,9 @@ export function Box({
         radius !== 'none' && overrides?.radius ? (resolveToken(t, overrides.radius) as number) : t[RADIUS_TOKEN[radius]],
     };
 
-    // `surface: none` sets no background at all; `background` is locked, so it is never overridden.
-    if (surface !== 'none') {
-      next.backgroundColor = t[SURFACE_TOKEN[surface]];
-    }
+    // `surface: none` writes out transparent rather than reading a token, so the parent's
+    // background shows through; `background` is locked, so it is never overridden.
+    next.backgroundColor = surface === 'none' ? 'transparent' : t[SURFACE_TOKEN[surface]];
 
     // `border: false` draws no border, so both border overrides are no-ops.
     if (border) {

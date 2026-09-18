@@ -46,3 +46,19 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Box: `paddingBlock`/`paddingInline` overrides apply even when `inset` or the axis prop is `none` (the style description says so); the general 'overrides change values, never presence' paragraph lists `surface`, `border` and `radius` but not inset, so I followed the style description.
 - Box: every behavior scenario is a `renders: true` check, so no test checks the resolved padding, background, border or radius, or the override precedence; the two `element` scenarios are web-only and have no rn test.
 - Box: `resolveToken` returns a general token value, so the resolved override is cast to `number` for padding, width and radius and to `string` for the border colour; the spec doesn't say what type an override resolves to on rn.
+
+## 2026-09-18 17:43 — round 1
+
+- Box: the `background` binding's description says `surface: none` renders the literal transparent 'written out explicitly', but the Guidance 'React Native' note says `backgroundColor` is 'undefined for none'. I followed the binding (and the 'every binding is applied explicitly' rule) and wrote 'transparent'; the Guidance note should be changed to match.
+- Box: `borderWidth`/`borderColor` are left unset when `border` is false. The spec says the border is presence-gated but doesn't say whether 'every binding applied explicitly' means writing `borderWidth: 0` there. I left them unset because RN has no cascade.
+- Box: the Default story is the `highlighted-panel` props, and the `given` of every behavior scenario is layered on top of them, so `renders-radius-none` also has `inset: md` and `surface: subtle`. The scenarios only assert `renders`, so this is harmless, but the doc should confirm Default-plus-given is intended for a component whose schema defaults draw nothing.
+- Box: `navigation-region` is limited to web/lit and `element` doesn't apply on RN, so there is no RN story for it. The two `element` behavior scenarios are also web/lit only and weren't in the RN scenario list.
+- Box: the `a11y.requires` item `contrast-aa` needs no runtime code, because Box sets no foreground (the Accessibility section says the build checks the token pairs). Nothing was implemented for it.
+
+## 2026-09-18 17:53 — round 2
+
+- Box: no code change this round. The rn axe gate's failures are all in other components' stories (Toolbar, Tree, TreeGrid, Demo/Preferences, Demo/Profile settings, Demo/Sign in, Patterns/SettingsPage). The full gate log (logs/playwright.json) has no Box/React Native entry, and axe run on only the 30 Box stories, in both modes, found no violations. Because this gate runs axe over every story, one component's round can fail on another component's stories, so a Box regeneration can't clear it.
+
+## 2026-09-18 17:59 — round 3
+
+- Box: no code change. The rn axe gate's log (logs/playwright.json, written after the last Box edit) has no Box/React Native entry, and Box's 30 stories pass axe on their own in both modes. The failures come from Accordion, Button, Card, Carousel, Toolbar, Tree, TreeGrid, the Demo pages and Patterns/SettingsPage. Because the gate runs over every story in the package, a Box round can't pass it; the retry loop should only count failures under the regenerated component's own story titles.

@@ -5,6 +5,27 @@ import type { StorybookConfig } from '@storybook/react-vite';
 // sit beside the React and Lit stories in the composed root Storybook.
 const reactNativeWeb = fileURLToPath(new URL('./react-native-web.ts', import.meta.url));
 
+// react-native-svg's ESM build ships its two PEG.js transform parsers as CommonJS
+// (`module.exports = { parse, … }`) and imports them by name from extractTransform.js.
+// With the package out of the pre-bundle (below) Vite serves them untouched, so the
+// named `parse` import fails and every story that draws an Icon breaks. Wrap just those
+// two files as ES modules.
+const SVG_PEG_PARSER = /react-native-svg\/lib\/module\/lib\/extract\/transform(ToRn)?\.js$/;
+const svgPegParsersAsEsm = {
+  name: 'ds:react-native-svg-peg-parsers-as-esm',
+  enforce: 'pre' as const,
+  transform(code: string, id: string): string | undefined {
+    if (!SVG_PEG_PARSER.test(id.split('?')[0]!.replace(/\\/g, '/'))) return undefined;
+    return [
+      'var module = { exports: {} };',
+      code,
+      'export const parse = module.exports.parse;',
+      'export const SyntaxError = module.exports.SyntaxError;',
+      'export default module.exports;',
+    ].join('\n');
+  },
+};
+
 const config: StorybookConfig = {
   framework: { name: '@storybook/react-vite', options: {} },
   stories: ['../src/**/*.stories.@(ts|tsx)', '../demo/**/*.stories.@(ts|tsx)'],
@@ -14,6 +35,7 @@ const config: StorybookConfig = {
     const alias = Array.isArray(existing) ? existing : Object.entries(existing).map(([find, replacement]) => ({ find, replacement }));
     return {
       ...config,
+      plugins: [...(config.plugins ?? []), svgPegParsersAsEsm],
       define: { ...config.define, __DEV__: true, global: 'window' },
       resolve: {
         ...config.resolve,

@@ -113,24 +113,27 @@
   },
   "Box.rn": {
     "hash": "46584121a644936f",
-    "lastAttemptHash": "46584121a644936f",
-    "generatedAt": "2026-09-17T08:05:53+00:00",
+    "lastAttemptHash": "c05b91870c82d070",
+    "generatedAt": "2026-09-18T22:04:07+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 0.5962,
+    "rounds": 3,
+    "costUsd": 1.6764,
     "files": [
+      "packages/rn/src/Box.stories.tsx",
       "packages/rn/src/Box.test.tsx",
-      "packages/rn/src/Box.tsx"
+      "packages/rn/src/Box.tsx",
+      "packages/rn/src/index.ts"
     ],
-    "gaps": 5,
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": false
     }
   },
   "Breadcrumb.rn": {
@@ -492,47 +495,49 @@
   },
   "Heading.rn": {
     "hash": "e9adda48babdcd0c",
-    "lastAttemptHash": "e9adda48babdcd0c",
-    "generatedAt": "2026-09-17T07:58:30+00:00",
+    "lastAttemptHash": "453901b056e2e976",
+    "generatedAt": "2026-09-18T18:54:12+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 0.6341,
+    "rounds": 3,
+    "costUsd": 1.5782,
     "files": [
-      "packages/rn/src/Heading.stories.tsx",
       "packages/rn/src/Heading.test.tsx",
-      "packages/rn/src/Heading.tsx",
-      "packages/rn/src/index.ts"
+      "packages/rn/src/Heading.tsx"
     ],
-    "gaps": 6,
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": false
     }
   },
   "Icon.rn": {
     "hash": "45ed570fe8fcd0ba",
-    "lastAttemptHash": "45ed570fe8fcd0ba",
-    "generatedAt": "2026-09-17T07:52:16+00:00",
+    "lastAttemptHash": "14192be33619ea25",
+    "generatedAt": "2026-09-18T15:45:50+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 0.8708,
+    "rounds": 3,
+    "costUsd": 2.9163,
     "files": [
+      "packages/rn/.storybook/main.ts",
+      "packages/rn/src/Icon.test.tsx",
       "packages/rn/src/Icon.tsx"
     ],
-    "gaps": 8,
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": false
     }
   },
   "Input.rn": {
@@ -909,25 +914,27 @@
   },
   "Stack.rn": {
     "hash": "237a01266913d365",
-    "lastAttemptHash": "237a01266913d365",
-    "generatedAt": "2026-09-17T08:02:09+00:00",
+    "lastAttemptHash": "a40ccf38c24b2e4f",
+    "generatedAt": "2026-09-18T20:27:05+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 0.6246,
+    "rounds": 3,
+    "costUsd": 1.8742,
     "files": [
       "packages/rn/src/Stack.stories.tsx",
       "packages/rn/src/Stack.test.tsx",
-      "packages/rn/src/Stack.tsx"
+      "packages/rn/src/Stack.tsx",
+      "packages/rn/src/index.ts"
     ],
-    "gaps": 5,
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": false
     }
   },
   "Stepper.rn": {
@@ -1020,26 +1027,27 @@
   },
   "Text.rn": {
     "hash": "4ebbd99368032622",
-    "lastAttemptHash": "4ebbd99368032622",
-    "generatedAt": "2026-09-17T07:55:16+00:00",
+    "lastAttemptHash": "891546687779d9c8",
+    "generatedAt": "2026-09-18T17:26:27+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 0.6819,
+    "rounds": 3,
+    "costUsd": 1.5009,
     "files": [
       "packages/rn/src/Text.stories.tsx",
       "packages/rn/src/Text.test.tsx",
       "packages/rn/src/Text.tsx",
       "packages/rn/src/index.ts"
     ],
-    "gaps": 7,
+    "gaps": 15,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": false
     }
   },
   "Toast.rn": {

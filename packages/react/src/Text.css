@@ -9,7 +9,6 @@
   font-size: var(--ds-text-font-size);
   font-weight: var(--ds-text-font-weight);
   line-height: var(--ds-text-line-height);
-  color: var(--ds-text-color);
 }
 
 /* size → font.size.{size} */
@@ -26,11 +25,14 @@
 .ds-text--weight-bold { --ds-text-font-weight: var(--font-weight-bold); }
 
 /* tone → color.foreground.{tone} */
-.ds-text--tone-default { --ds-text-color: var(--color-foreground); }
-.ds-text--tone-strong { --ds-text-color: var(--color-foreground-strong); }
-.ds-text--tone-muted { --ds-text-color: var(--color-foreground-muted); }
-.ds-text--tone-danger { --ds-text-color: var(--color-foreground-danger); }
-.ds-text--tone-on-action { --ds-text-color: var(--color-foreground-on-action); }
+/* `color` is locked, so it has no `--ds-text-color` hook: each tone reads the token's own custom
+ * property. `default` is the bare `--color-foreground`, which an inverse surface (Toast, Tooltip)
+ * re-scopes on its own container. */
+.ds-text--tone-default { color: var(--color-foreground); }
+.ds-text--tone-strong { color: var(--color-foreground-strong); }
+.ds-text--tone-muted { color: var(--color-foreground-muted); }
+.ds-text--tone-danger { color: var(--color-foreground-danger); }
+.ds-text--tone-on-action { color: var(--color-foreground-on-action); }
 
 .ds-text--align-start { text-align: start; }
 .ds-text--align-center { text-align: center; }

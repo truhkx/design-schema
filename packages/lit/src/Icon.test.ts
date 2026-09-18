@@ -3,7 +3,7 @@
  * Runs in headless Chromium (Vitest browser mode). See generated/prompts/Icon.lit.md.
  *
  * Icon has no interaction, focus or animation, so the derived scenarios only assert render; the
- * two scenarios written in the doc are about what assistive technology sees, which on Lit is the
+ * three scenarios written in the doc are about what assistive technology sees, which on Lit is the
  * <svg> in the shadow root (the host is a plain element with no role of its own).
  */
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -46,6 +46,12 @@ describe('ds-icon', () => {
     expect(glyph.getAttribute('role')).toBe('img');
     expect(glyph.getAttribute('aria-hidden')).toBeNull();
     expect(glyph).toHaveAccessibleName('Warning: over quota');
+  });
+
+  /** An empty string is the decorative case, not an authoring error: the icon stays hidden. */
+  it('empty-label-is-decorative', async () => {
+    const { glyph } = await setup({ name: 'check', label: '' });
+    expect(glyph.getAttribute('aria-hidden')).toBe('true');
   });
 
   /* derived: anatomy.glyph */
@@ -211,8 +217,7 @@ describe('ds-icon', () => {
     expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
   });
 
-  /* derived: a11y.requires. No `given` in the doc; the Default story's args are
-     decorative (no label), so a label is set here to exercise the mechanism. */
+  /* derived: a11y.requires */
   it('has-accessible-name', async () => {
     const { glyph } = await setup({ label: 'Accessible name' });
     expect(glyph).toHaveAccessibleName('Accessible name');

@@ -170,7 +170,6 @@ export function Icon({ name, size = 'md', inline = false, label, color, override
       viewBox="0 0 16 16"
       fill="none"
       stroke={resolvedColor}
-      strokeWidth={strokeWidth!}
       strokeLinecap="round"
       strokeLinejoin="round"
       accessibilityRole={a11y.accessibilityRole!}
@@ -178,12 +177,13 @@ export function Icon({ name, size = 'md', inline = false, label, color, override
       accessibilityElementsHidden={a11y.accessibilityElementsHidden}
       importantForAccessibility={a11y.importantForAccessibility}
     >
+      {/* strokeWidth, fillRule and vectorEffect sit on the Path: fill-or-stroke is chosen per glyph. */}
       {glyph.filled ? (
         <Path d={glyph.d} fill={resolvedColor} stroke="none" fillRule="evenodd" />
       ) : web ? (
-        <Path d={glyph.d} vectorEffect="non-scaling-stroke" />
+        <Path d={glyph.d} strokeWidth={strokeWidth!} vectorEffect="non-scaling-stroke" />
       ) : (
-        <Path d={glyph.d} />
+        <Path d={glyph.d} strokeWidth={strokeWidth!} />
       )}
     </Svg>
   );

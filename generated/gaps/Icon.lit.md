@@ -56,3 +56,21 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Icon: web platform notes say non-inline icons are `display: inline-block`, but the Lit notes say the host is `inline-flex`. Lit uses inline-flex for the non-inline host and inline-block under [inline], as the Lit guidance says; the doc should state that the two platforms differ on purpose.
 - Icon: the `decorative-beside-a-label` example needs text beside the glyph, but the doc has no copy for it. The story renders the demo word 'Saved' inside ds-text; the example should give its adjacent text (or a copy key).
 - Icon: the `renders` / `renders-size-*` scenarios apply `given` to the Default story args, which set name 'check'. `name` is required with no default, so Default has to choose a glyph; the doc should name the Default story's `name`.
+
+## 2026-09-18 10:18 — round 1
+
+- Icon: the lit conventions say Lit's glyph table predates tools/icon-paths.json and redraws check, close, external, calendar, the status shapes, search, list, grid and pause, but the current packages/lit/src/Icon.ts already carries the JSON's d strings verbatim, in its order, with the same filled set; the note is stale and nothing was replaced.
+- Icon: the lit notes require no delegatesFocus and the generic rules require delegatesFocus for a11y.requires; followed the component notes (never focusable), so there is no shadowRootOptions override.
+- Icon: the `inline` prop description implies an inline icon aligns to the text baseline, but on Lit the shadow <svg> sits in an inline-block host at vertical-align -0.125em, which is baseline-adjacent rather than baseline-true. Kept the doc's CSS as written.
+- Icon: the `size` style description says 'Non-inline icons are display inline-block', while the lit notes say the host is inline-flex on purpose. Followed the lit notes; the styles prose could name the Lit exception.
+- Icon: the generic 'Keyboard' story and 'disabled uses opacity.disabled' rules don't apply (no keyboard block, no disabled prop); no story or style was added for them.
+
+## 2026-09-18 10:33 — round 2
+
+- Icon: both failing gates (keyboard-run, axe) report only other components (Combobox, DatePicker, Dialog, Feed, Listbox, Menu, Popover, Search, SegmentedControl, Select, SidePanel, Slider, Stepper, Tabs, Toast, Toolbar, Tooltip, Tree for keyboard; Tabs dark color-contrast and TreeGrid aria-hidden-focus/target-size for axe). Icon has no keyboard block or keyboard spec, and no Icon story shows up in the axe artifacts or in logs/playwright.json, which already records the same Tabs/TreeGrid failures. No Icon change can make these gates pass, so no code was changed; the gate run should be scoped to the component under generation, or these failures fixed in their own components' jobs.
+- Icon: the keyboard-run and axe gates were not re-run and the Icon Vitest suite was not run this round (command execution needed approval), so the round-1 edits are checked only by reading them.
+
+## 2026-09-18 10:47 — round 3
+
+- Icon: round 3 gate output is identical to round 2. The complete axe failure list (89 entries in test-results/tests-gates-axe-axe-every-story-passes-axe-light--axe-lit/error-context.md) is all DataGrid, Feed, Listbox, NumberInput, Select, SidePanel, Slider and TreeGrid; no Icon story appears anywhere in test-results/. Every keyboard-run failure is in another component's spec, and Icon has no keyboard block or keyboard spec. No Icon change can clear these gates, so no code was changed. The repair loop should run the gates only on the component being generated, or compare against a pre-job baseline, so failures elsewhere don't block this job.
+- Icon: gates and the Icon Vitest suite were not re-run locally (command execution needs approval), so this conclusion comes from the gate artifacts on disk.

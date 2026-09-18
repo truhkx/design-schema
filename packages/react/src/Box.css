@@ -5,7 +5,6 @@
   --ds-box-padding-inline: var(--layout-inset-none);
   --ds-box-border: var(--color-border);
   --ds-box-border-width: var(--border-width-thin);
-  --ds-box-radius: var(--radius-none);
   box-sizing: border-box;
   display: block;
   margin: 0;
@@ -16,7 +15,6 @@
   border-style: solid;
   border-width: 0;
   border-color: var(--ds-box-border);
-  border-radius: var(--ds-box-radius);
 }
 
 /* inset → layout.inset.{value}, both axes. `layout.inset.none` is a real token, so an override
@@ -50,10 +48,11 @@
 /* border: a thin default border, off unless requested. Decorative only. */
 .ds-box--border { border-width: var(--ds-box-border-width); }
 
-/* radius → radius.{radius}; `none` resolves `radius.none` and is written out like the others.
+/* radius → radius.{radius}. Radius is presence-gated: `none` writes `radius.none` out directly
+   and reads no hook, so `overrides.radius` is a no-op there and applies at every other value.
    Radius never implies overflow clipping. */
-.ds-box--radius-none { --ds-box-radius: var(--radius-none); }
-.ds-box--radius-sm { --ds-box-radius: var(--radius-sm); }
-.ds-box--radius-md { --ds-box-radius: var(--radius-md); }
-.ds-box--radius-lg { --ds-box-radius: var(--radius-lg); }
-.ds-box--radius-full { --ds-box-radius: var(--radius-full); }
+.ds-box--radius-none { border-radius: var(--radius-none); }
+.ds-box--radius-sm { --ds-box-radius: var(--radius-sm); border-radius: var(--ds-box-radius); }
+.ds-box--radius-md { --ds-box-radius: var(--radius-md); border-radius: var(--ds-box-radius); }
+.ds-box--radius-lg { --ds-box-radius: var(--radius-lg); border-radius: var(--ds-box-radius); }
+.ds-box--radius-full { --ds-box-radius: var(--radius-full); border-radius: var(--ds-box-radius); }

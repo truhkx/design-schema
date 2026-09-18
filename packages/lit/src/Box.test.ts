@@ -5,7 +5,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import './Box.js';
 import type { DsBox } from './Box.js';
-import meta from './Box.stories.js';
+import meta, { Default } from './Box.stories.js';
 
 type Given = Partial<Pick<DsBox, 'inset' | 'insetBlock' | 'insetInline' | 'surface' | 'border' | 'radius' | 'element'>> & {
   children?: string;
@@ -14,7 +14,7 @@ type Given = Partial<Pick<DsBox, 'inset' | 'insetBlock' | 'insetInline' | 'surfa
 /** The Default story's args plus the scenario's `given`, as properties on a fresh element. */
 async function setup(given: Given = {}) {
   const el = document.createElement('ds-box');
-  const { children, ...props } = { ...meta.args, ...given };
+  const { children, ...props } = { ...meta.args, ...Default.args, ...given };
   for (const [key, value] of Object.entries(props)) {
     if (value !== undefined) (el as unknown as Record<string, unknown>)[key] = value;
   }
@@ -30,6 +30,16 @@ beforeEach(() => {
 });
 
 describe('ds-box', () => {
+  it('nav-element-carries-navigation-semantics', async () => {
+    const { el } = await setup({ element: 'nav' });
+    expect(el).toHaveRole('navigation');
+  });
+
+  it('article-element-carries-article-semantics', async () => {
+    const { el } = await setup({ element: 'article' });
+    expect(el).toHaveRole('article');
+  });
+
   /* derived: a11y.role */
   it('renders', async () => {
     const { el } = await setup();

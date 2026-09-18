@@ -1,7 +1,7 @@
 /**
  * Icon — behavior scenarios from the component doc, one test each, in the doc's
- * order. Every scenario is a `renders: true` check (Icon has no interaction, no
- * focus, no animation); see generated/prompts/Icon.rn.md.
+ * order. Icon has no interaction, no focus and no animation, so every scenario is an
+ * accessibility-props or `renders: true` check; see generated/prompts/Icon.rn.md.
  */
 import * as React from 'react';
 import { render, screen } from '@testing-library/react-native';
@@ -44,6 +44,18 @@ describe('Icon', () => {
     expect(screen.getByLabelText('Warning: over quota')).toBeTruthy();
     expect(screen.getByTestId('Icon').props.accessibilityElementsHidden).toBe(false);
     expect(screen.getByTestId('Icon').props.accessibilityRole).toBe('image');
+  });
+
+  /*
+   * An empty string is the decorative case, not an authoring error: the icon stays
+   * hidden.
+   */
+  it('empty-label-is-decorative', () => {
+    setup({ name: 'check', label: '' });
+    expect(screen.queryByTestId('Icon')).toBeNull();
+    const root = screen.getByTestId('Icon', { includeHiddenElements: true });
+    expect(root.props.accessibilityElementsHidden).toBe(true);
+    expect(root.props.importantForAccessibility).toBe('no');
   });
 
   /* derived: renders */

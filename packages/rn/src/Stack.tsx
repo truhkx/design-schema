@@ -87,8 +87,8 @@ const JUSTIFY: Record<StackJustify, ViewStyle['justifyContent']> = {
  *
  * Renders a `View` with `flexDirection`, `gap` from the token object, `alignItems`,
  * `justifyContent` and `flexWrap`; children are not wrapped. `element` is not
- * applicable on React Native — put `accessibilityRole` on the content instead — so
- * the `nav`/`ul` semantics the web and Lit builds render have no counterpart here.
+ * applicable on React Native: a navigation region is `Landmark`, and a list is a
+ * plain Stack whose rows carry their own semantics (a native list has no role to claim).
  * Row direction already follows the writing direction under `I18nManager`.
  * Horizontal stacks should `wrap` rather than scroll, so content reflows for large
  * text settings (WCAG 1.4.10).

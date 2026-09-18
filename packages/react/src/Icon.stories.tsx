@@ -68,12 +68,15 @@ export const DecorativeBesideALabel: Story = {
   ),
 };
 
-/* An icon sized at 1em of the surrounding text and sitting on its baseline, for use inside a Text or Link. */
+/*
+ * An icon sized at 1em of the surrounding text and sitting on its baseline, for use inside a Text or
+ * Link. "Read the release notes" is story scaffolding, not copy.
+ */
 export const InlineInRunningText: Story = {
   args: { name: 'external', inline: true },
   render: (args) => (
     <Text>
-      The report opens in a new tab <Icon {...args} />
+      Read the release notes <Icon {...args} />
     </Text>
   ),
 };

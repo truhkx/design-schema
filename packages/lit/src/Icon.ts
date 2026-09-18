@@ -223,7 +223,7 @@ export class DsIcon extends LitElement {
    * Which glyph. The set is deliberately small and grows only when a component
    * needs a shape; `info`, `success`, `warning` and `danger` are the four status
    * shapes (circle-i, circle-check, triangle-!, octagon-x) so tone is never
-   * carried by color alone.
+   * carried by color alone. `name` has no default; the Default story renders `check`.
    */
   @property({ type: String, reflect: true }) accessor name!: IconName;
 
@@ -233,8 +233,8 @@ export class DsIcon extends LitElement {
   /**
    * Size the glyph at 1em of the surrounding text and align it to the text
    * baseline, ignoring `size`. For icons inside Text, Link and Button labels.
-   * With no surrounding Text the glyph takes whatever font size it inherits,
-   * and still ignores `size`.
+   * `font-size: inherit` always has a surrounding size to read, so there is no
+   * fallback here (the `font.size.md` fallback is React Native only).
    */
   @property({ type: Boolean, reflect: true }) accessor inline = false;
 

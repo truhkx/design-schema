@@ -39,7 +39,7 @@ const HOOKS: Record<BoxOverridableBinding, string> = {
  * put a Stack inside for that. Padding, background, border and radius all come
  * from reflected attributes on `:host`, so nothing but the slot renders in the
  * shadow root. `element` swaps nothing there: the host is the element, so the
- * prop exists for API parity and sets a role through `ElementInternals` for the
+ * prop exists for API parity and sets a plain `role` attribute on the host for the
  * values whose implicit role is unconditional (`article`, `aside`, `main`,
  * `nav`); `div`, `section`, `header` and `footer` carry no role. Prefer
  * Landmark for page regions.
@@ -72,14 +72,15 @@ export class DsBox extends LitElement {
       --ds-box-border: var(--color-border);
       --ds-box-border-width: var(--border-width-thin);
       --ds-box-radius: var(--radius-none);
-      --ds-box-background: transparent;
       padding-block: var(--ds-box-padding-block);
       padding-inline: var(--ds-box-padding-inline);
-      background: var(--ds-box-background);
+      /* surface="none" (and the default) is the literal transparent, not read through the hook. */
+      background-color: transparent;
       border-style: solid;
       border-width: 0;
       border-color: var(--ds-box-border);
-      border-radius: var(--ds-box-radius);
+      /* radius="none" is written out as radius.none, not read through the hook. */
+      border-radius: var(--radius-none);
     }
 
     :host([hidden]) {
@@ -143,9 +144,15 @@ export class DsBox extends LitElement {
     }
 
     /* background: color.background.{surface}, locked — keeps its hook (the CSS escape hatch) but is
-       not in the overrides type. surface="none" is the literal transparent, so the parent's shows through. */
+       not in the overrides type. surface="none" is the literal transparent, so the parent's shows through,
+       and neither overrides nor consumer CSS on --ds-box-background paints it. */
     :host([surface='none']) {
-      --ds-box-background: transparent;
+      background-color: transparent;
+    }
+    :host([surface='default']),
+    :host([surface='subtle']),
+    :host([surface='strong']) {
+      background-color: var(--ds-box-background);
     }
     :host([surface='default']) {
       --ds-box-background: var(--color-background);
@@ -162,9 +169,15 @@ export class DsBox extends LitElement {
       border-width: var(--ds-box-border-width);
     }
 
-    /* radius: radius.{radius} */
+    /* radius: radius.{radius}. Presence-gated: none means no rounded corners, so the hook is not read there. */
     :host([radius='none']) {
-      --ds-box-radius: var(--radius-none);
+      border-radius: var(--radius-none);
+    }
+    :host([radius='sm']),
+    :host([radius='md']),
+    :host([radius='lg']),
+    :host([radius='full']) {
+      border-radius: var(--ds-box-radius);
     }
     :host([radius='sm']) {
       --ds-box-radius: var(--radius-sm);
@@ -207,7 +220,7 @@ export class DsBox extends LitElement {
   /**
    * Element to render. The host is always the element in the DOM, so this swaps
    * nothing in the shadow root; `article`, `aside`, `main` and `nav` set their
-   * implicit role on the host through `ElementInternals`, and `div`, `section`,
+   * implicit role on the host as a plain `role` attribute, and `div`, `section`,
    * `header` and `footer` set none. Sectioning values only when the box is a
    * semantic region; prefer Landmark for page regions.
    */
@@ -216,13 +229,6 @@ export class DsBox extends LitElement {
   /** Per-instance style overrides: `{ radius: 'radius.lg' }`. The locked `background` is ignored. */
   @property({ attribute: false })
   accessor overrides: Partial<Record<BoxOverridableBinding, TokenRef | undefined>> | undefined;
-
-  private readonly internals: ElementInternals;
-
-  constructor() {
-    super();
-    this.internals = this.attachInternals();
-  }
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -233,7 +239,13 @@ export class DsBox extends LitElement {
 
   protected override willUpdate(changed: PropertyValues): void {
     if (changed.has('element')) {
-      this.internals.role = SECTIONING_ROLES[this.element] ?? null;
+      /* A plain attribute, not ElementInternals: the accessible-role tests cannot read internals. */
+      const role = SECTIONING_ROLES[this.element];
+      if (role === undefined) {
+        this.removeAttribute('role');
+      } else if (this.getAttribute('role') !== role) {
+        this.setAttribute('role', role);
+      }
     }
     /* `border` and `radius` decide which overrides are in effect, so a change to either re-applies them. */
     if (changed.has('overrides') || changed.has('border') || changed.has('radius')) {

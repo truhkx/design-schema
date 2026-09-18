@@ -26,3 +26,23 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Heading: the spec has no binding for margin-block-start, and the browser's default h1–h6 top margin would add a margin the system doesn't allow; I reset it with `margin-block-start: 0`, which is not a token.
 - Heading: the stories list names Default plus one story per enum value; I used `Level1`…`Level6` and `Size4xl`/`Size3xl`/`Size2xl`/`SizeXl`/`SizeLg`/`SizeMd`. PascalCase for values that start with a digit ('4xl') isn't specified.
 - Heading: the Default story's args aren't given by the spec (level is required); I kept level '2', children 'Account settings', align 'start'.
+
+## 2026-09-18 13:27 — round 1
+
+- Heading: the level description asks for 'one development warning per element for its lifetime' but gives no wording and no copy key; I wrote `Heading: level <value> is not one of 1–6; rendering an <h2>.` via console.warn, gated by a per-instance useRef in render (the BottomSheet pattern).
+- Heading: the fallback-to-2 behaviour (missing/out-of-range/non-numeric level) has no behavior scenario, so there is no gate test for it or for the single warning; only the prose asks for it.
+- Heading: the spec says the exported `HeadingLevel` is the string union with the number added only on the prop, but other components (Card, Accordion, Disclosure, Popover, Tree, Feed) export their `*HeadingLevel` types with the numbers included; I followed the Heading spec, so the two styles now differ within the package. Card passes `headingLevel as HeadingLevel`, which still compiles.
+- Heading: `align` has no default-carrying modifier story beyond AlignStart, and the spec says nothing about whether `start` should emit a class; I kept emitting `ds-heading--align-<value>` for every value, start included.
+- Heading: the web notes say one element takes `data-ds` and `data-part="text"`, but they don't say whether a consumer's `data-part` in `...rest` may override it; rest is spread first so the component's hooks win.
+
+## 2026-09-18 13:36 — round 2
+
+- Heading: round 2 reported the keyboard-run and axe gates as failed, but none of the listed failures are Heading's. keyboard-run fails in Accordion, ActionSheet, Combobox, DatePicker, Listbox, Menu, Search, Slider, Tabs, Toast, Tooltip and Tree specs (Heading has no keyboard block or spec). axe fails in Carousel, Feed, Listbox, Menu, Splitter and Tabs stories; logs/playwright.json has no Heading/React entry. The gates run over the whole package, so a single-component job can't make them pass. I left the Heading files unchanged and did not edit other components.
+- Heading: I could not confirm the Heading stories pass axe in a browser; logs/heading-axe.mjs (axe on Heading/React stories only, light and dark) needs approval to run.
+- Heading: the gates don't say which failures existed before a job, so a job can't tell its own failures from the package's. A baseline list per gate, or running the gate only on the job's component, would make this checkable.
+
+## 2026-09-18 13:46 — round 3
+
+- Heading: none of the round-3 failures are Heading's. The axe gate fails on Carousel, Box, Feed, Listbox, Menu, Splitter and Tabs stories. The keyboard gate fails on Accordion, ActionSheet, Combobox, DatePicker, Listbox, Menu, Search, Slider, Tabs, Toast, Tooltip and Tree specs. Both gates run over the whole package, so a Heading-only job can't make them pass; I made no changes and did not edit other components.
+- Heading: the keyboard failures that were new in round 3 (AlertDialog, BottomSheet, Dialog, Feed, FocusScope) all pass when rerun alone with --workers 1 (15 passed, 4 manual skips), with the current Heading composed into Dialog, AlertDialog and BottomSheet. They were caused by running at full parallelism, not by the code; the gate needs a baseline or a lower worker count to give a stable result.
+- Heading: I still could not confirm the Heading stories pass axe in a browser; logs/heading-axe.mjs (axe on Heading/React stories only, light and dark) needs approval to run.

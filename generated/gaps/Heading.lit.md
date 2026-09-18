@@ -33,3 +33,26 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Heading: the Lit notes say to warn once 'with the attribute absent', but don't say whether setting a valid level later and then removing it should warn again; chose once per element for the element's lifetime.
 - Heading: `level` is `required` with no default, but TS `isolatedDeclarations` + accessors need a declared type; typed it `HeadingLevel | 1 | 2 | 3 | 4 | 5 | 6` with a definite-assignment `!` so the number form the doc says is accepted type-checks — the doc doesn't say whether the exported `HeadingLevel` type itself should include the numbers.
 - Heading: behavior scenarios `level-puts-the-heading-in-the-outline` and `size-does-not-change-the-outline` are marked `platforms: [web]` only, although the Lit element renders a real <h1>–<h6> and could assert role=heading in its shadow root; they are not in the Lit scenario list, so no Lit test asserts the heading role.
+
+## 2026-09-18 13:55 — round 1
+
+- Heading: the missing/invalid-level development warning is required ('one development warning per element for its lifetime') but the doc gives no copy string for it, so the wording is not verbatim doc copy; kept the existing message naming the received value and the <h2> fallback.
+- Heading: the behavior scenarios' `then: role: heading` does not say which level the heading must expose; the test also asserts the element is <h3>/<h2> and that getByRole('heading', { level: 3 }) finds it, which goes beyond what the scenario states.
+- Heading: `level` is required with no default, but a Lit accessor must hold a value or be typed `| undefined`; declared it `accessor level!: HeadingLevel | 1 | 2 | 3 | 4 | 5 | 6` and rely on the <h2> fallback at runtime. The doc could state what the Lit property holds before it is set.
+- Heading: story naming for enum values that start with a digit is unspecified (`<Prop><Value>` gives `Size4xl`, `Size2xl`, `Level1`); kept that literal casing.
+
+## 2026-09-18 14:05 — round 2
+
+- Heading: no Heading code change in round 2. Neither failing gate points at Heading: there is no keyboard spec for Heading (the doc has no `keyboard` block), and the axe error-context files list no Heading/Lit story in light or dark. The failures belong to Combobox, DatePicker, Dialog, Feed, Listbox, Menu, Popover, Search, SegmentedControl, Select, SidePanel, Slider, Stepper, Tabs, Toast, Toolbar, Tooltip, Tree and TreeGrid, and need fixing in those components' jobs.
+- Heading: the missing/invalid-level development warning is required ('one development warning per element for its lifetime') but the doc gives no copy string for it, so the wording is not verbatim doc copy; kept the existing message naming the received value and the <h2> fallback.
+- Heading: the behavior scenarios' `then: role: heading` does not say which level the heading must expose; the test also asserts the element is <h3>/<h2> and that getByRole('heading', { level: 3 }) finds it, which goes beyond what the scenario states.
+- Heading: `level` is required with no default, but a Lit accessor must hold a value or be typed `| undefined`; declared it `accessor level!: HeadingLevel | 1 | 2 | 3 | 4 | 5 | 6` and rely on the <h2> fallback at runtime. The doc could state what the Lit property holds before it is set.
+- Heading: story naming for enum values that start with a digit is unspecified (`<Prop><Value>` gives `Size4xl`, `Size2xl`, `Level1`); kept that literal casing.
+
+## 2026-09-18 14:16 — round 3
+
+- Heading: no Heading code change in round 3; the gate output is identical to round 2 and no failure is in Heading. The axe reports list no Heading/Lit story, and TreeGrid's aria-hidden-focus nodes are its own aria-hidden expand ds-button, not the composed ds-heading caption. Heading has no keyboard block, so keyboard-run does not test it. The failures belong to Tabs, TreeGrid and the components in the keyboard list, and need their own jobs; the gate run does not separate them from pre-existing failures.
+- Heading: the missing/invalid-level development warning is required ('one development warning per element for its lifetime') but the doc gives no copy string for it, so the wording is not verbatim doc copy; kept the existing message naming the received value and the <h2> fallback.
+- Heading: the behavior scenarios' `then: role: heading` does not say which level the heading must expose; the test also asserts the element is <h3>/<h2> and that getByRole('heading', { level: 3 }) finds it, which goes beyond what the scenario states.
+- Heading: `level` is required with no default, but a Lit accessor must hold a value or be typed `| undefined`; declared it `accessor level!: HeadingLevel | 1 | 2 | 3 | 4 | 5 | 6` and rely on the <h2> fallback at runtime. The doc could state what the Lit property holds before it is set.
+- Heading: story naming for enum values that start with a digit is unspecified (`<Prop><Value>` gives `Size4xl`, `Size2xl`, `Level1`); kept that literal casing.

@@ -28,3 +28,22 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Heading: the spec does not say what happens at runtime when `level` is missing or invalid on RN (Lit falls back to h2 and warns); `level` is required in the TypeScript type, so an untyped caller gets `LEVEL_SIZE[undefined]` and no size. There is no fallback or __DEV__ warning.
 - Heading: both doc behavior scenarios (`level-puts-the-heading-in-the-outline`, `size-does-not-change-the-outline`) are web-only `role: heading` checks, so RN has no test that `accessibilityRole="header"` is set on every level/size; only derived `renders` tests exist.
 - Heading: the Default story args (`level: '2'`, `children: 'Account settings'`) are not given by the spec; the scenarios build on Default's args, so the doc should declare them.
+
+## 2026-09-18 14:27 — round 1
+
+- Heading: the rn notes call the context `TextStyleContext ({ fontSize, color, nested: true })`, but the Heading doc does not say which module owns it; I imported the existing one from ./Text instead of declaring a new one.
+- Heading: the fallback rule for an invalid `level` says 'one development warning per element for its lifetime' but does not give the wording, and there is no copy key for a dev warning; I wrote `Heading: level <value> is not one of 1–6; rendering as level 2.` via console.warn under __DEV__.
+- Heading: the generic rules say to type a ref as `Ref<ViewInstance>`, but the rn notes say `Ref<TextInstance>`; I followed the notes, since the root is a Text.
+- Heading: `align` has no style binding, and the doc does not say whether `textAlign` should also be exported for Heading; I reused Text's exported `TextAlign` type and `toTextAlign` helper rather than declaring a Heading-specific `HeadingAlign` type, so the public API has no HeadingAlign.
+- Heading: marginBlockEnd maps to `marginBottom` on RN per the binding description; with `overrides={{ marginBlockEnd: 'space.0' }}` the spec does not say whether a margin of 0 should be omitted or written, so it is written as 0.
+- Heading: the renders scenarios pass string levels only; the doc says generated components also accept the number, but no scenario or example covers a numeric level or the invalid-level fallback, so neither is tested.
+
+## 2026-09-18 14:36 — round 2
+
+- Heading: the axe gate failed on the whole React Native Storybook, but its full log (logs/playwright.json) has no violation or render error for any Heading/React Native story in light or dark; every failure is in Toolbar, Tree, TreeGrid, Demo/Preferences, Demo/Profile settings, Demo/Sign in or Patterns/SettingsPage. Heading was left unchanged, and the gate stays red until those components are fixed.
+- Heading: the gate runs every story in the package and has no per-component filter, so one component's round cannot show that component passing; per-component results come only from reading the failure list.
+
+## 2026-09-18 14:45 — round 3
+
+- Heading: axe was re-run with the same result; this run's error-context.md files (light and dark) and logs/playwright.json have no violation or render error for any Heading/React Native story. Every failure is in Toolbar, Tree, TreeGrid, Demo/Preferences, Demo/Profile settings, Demo/Sign in or Patterns/SettingsPage. Heading was left unchanged, and no change to it can turn this gate green.
+- Heading: the fix loop keeps handing Heading a gate that runs every story in the package, so another component's failure blocks this one's round indefinitely; the axe gate needs a per-component story filter, or the round should list only the failures from that component's own stories.

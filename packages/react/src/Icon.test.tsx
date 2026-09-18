@@ -35,6 +35,13 @@ describe('Icon', () => {
     expect(getByRole('img', { name: 'Warning: over quota' })).toBe(root);
   });
 
+  /** An empty string is the decorative case, not an authoring error: the icon stays hidden. */
+  it('empty-label-is-decorative', () => {
+    const { root } = setup({ name: 'check', label: '' });
+    expect(root).not.toBeNull();
+    expect(root?.getAttribute('aria-hidden')).toBe('true');
+  });
+
   /* derived: a11y.role */
   it('renders', () => {
     const { container } = setup();

@@ -63,7 +63,11 @@ export interface BoxProps extends Omit<ComponentPropsWithoutRef<'div'>, 'childre
    * Landmark for the region instead of this prop.
    */
   element?: BoxElement | undefined;
-  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
+  /**
+   * Per-instance style overrides: each entry sets the matching CSS hook to that token, inline.
+   * Overrides change values, never presence: `border` and `borderWidth` are no-ops without
+   * `border`, and `radius` is a no-op at `radius: none`. Padding applies at every value.
+   */
   overrides?: Partial<Record<BoxOverridableBinding, TokenRef | undefined>> | undefined;
 }
 

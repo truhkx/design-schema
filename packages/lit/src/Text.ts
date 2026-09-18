@@ -51,8 +51,10 @@ function isTextElement(value: unknown): value is TextElement {
  * reserved for error and destructive messaging, paired with explicit wording so
  * colour never carries the meaning alone.
  *
+ * `part="text"` is the anatomy name only; styling comes through the
+ * `--ds-text-*` hooks and `overrides`, never `::part`.
+ *
  * @slot - The text content. Inline formatting (emphasis, links) is allowed; block elements are not.
- * @csspart text - The rendered `<p>` or `<span>`.
  */
 @customElement('ds-text')
 export class DsText extends LitElement {
@@ -204,6 +206,9 @@ export class DsText extends LitElement {
   /** Plain-text content of the default slot, used for `title` when truncated. */
   @state() private accessor fullText = '';
 
+  /** The consumer's `title` attribute on the host, forwarded to the `text` part unchanged. */
+  @state() private accessor consumerTitle: string | undefined;
+
   /** Text edits inside existing nodes do not fire `slotchange`; this keeps `title` current. */
   private textObserver: MutationObserver | undefined;
 
@@ -213,7 +218,13 @@ export class DsText extends LitElement {
     this.syncFullText();
     this.textObserver ??= new MutationObserver(() => this.syncFullText());
     // Observes only; the callback writes reactive state, never the observed DOM.
-    this.textObserver.observe(this, { childList: true, characterData: true, subtree: true });
+    this.textObserver.observe(this, {
+      childList: true,
+      characterData: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['title'],
+    });
   }
 
   override disconnectedCallback(): void {
@@ -229,16 +240,23 @@ export class DsText extends LitElement {
 
   protected override render(): TemplateResult {
     const tag = isTextElement(this.element) ? TAGS[this.element] : TAGS.p;
-    const title = this.truncate && this.fullText !== '' ? this.fullText : undefined;
-    return html`<${tag} class="text" part="text" title=${ifDefined(title)}
+    // A consumer `title` on the host always wins and is forwarded unchanged, with or without truncate.
+    const title =
+      this.consumerTitle ?? (this.truncate && this.fullText !== '' ? this.fullText : undefined);
+    return html`<${tag} class="text" part="text" data-part="text" title=${ifDefined(title)}
       ><slot @slotchange=${this.syncFullText}></slot></${tag}
     >`;
   }
 
-  /** The host's flattened, whitespace-collapsed textContent; `title` is omitted when it is empty. */
+  /**
+   * The host's flattened, whitespace-collapsed textContent (`title` is omitted when it is
+   * empty), and the consumer's own `title` attribute on the host.
+   */
   private syncFullText(): void {
     const next = (this.textContent ?? '').replace(/\s+/g, ' ').trim();
     if (next !== this.fullText) this.fullText = next;
+    const consumer = this.getAttribute('title') ?? undefined;
+    if (consumer !== this.consumerTitle) this.consumerTitle = consumer;
   }
 
   private applyOverrides(): void {

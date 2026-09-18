@@ -4,7 +4,9 @@ import { Button } from './Button';
 import { Heading } from './Heading';
 import { Input } from './Input';
 import { Stack } from './Stack';
+import { View } from 'react-native';
 import { Text } from './Text';
+import { useTheme } from './theme';
 import { withTheme } from './decorators';
 
 const meta: Meta<typeof Stack> = {
@@ -14,9 +16,9 @@ const meta: Meta<typeof Stack> = {
   args: {
     children: (
       <>
-        <Button label="Save changes" />
-        <Button label="Cancel" variant="secondary" />
-        <Button label="Forgot password?" variant="ghost" />
+        <Text>First item</Text>
+        <Text>Second item</Text>
+        <Text>Third item</Text>
       </>
     ),
     direction: 'vertical',
@@ -82,6 +84,7 @@ export const ButtonRow: Story = {
     direction: 'horizontal',
     gap: 'tight',
     justify: 'end',
+    align: 'center',
     children: (
       <>
         <Button label="Cancel" variant="secondary" />
@@ -106,20 +109,36 @@ export const PageSections: Story = {
   },
 };
 
+/** Bounds the story's width to the prose measure so a wrapping row visibly reflows. */
+function BoundedWidth({ children }: { children: React.ReactNode }): React.JSX.Element {
+  const { tokens: t } = useTheme();
+  return <View style={{ maxWidth: t.layoutMaxWidthProse }}>{children}</View>;
+}
+
 /** A horizontal group that reflows onto new lines on narrow viewports instead of overflowing. */
 export const WrappingFilters: Story = {
+  decorators: [
+    (Story) => (
+      <BoundedWidth>
+        <Story />
+      </BoundedWidth>
+    ),
+  ],
   args: {
     direction: 'horizontal',
     gap: 'tight',
     wrap: true,
+    align: 'center',
     children: (
       <>
         <Button label="All" variant="secondary" />
         <Button label="Open" variant="secondary" />
         <Button label="In review" variant="secondary" />
+        <Button label="Approved" variant="secondary" />
         <Button label="Merged" variant="secondary" />
         <Button label="Closed" variant="secondary" />
-        <Text>6 results</Text>
+        <Button label="Draft" variant="secondary" />
+        <Button label="Archived" variant="secondary" />
       </>
     ),
   },

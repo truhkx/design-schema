@@ -1,6 +1,6 @@
 /**
  * Heading — behavior scenarios from the component doc, one test each, in the doc's
- * order. Every scenario here is a `renders: true` check; see generated/prompts/Heading.rn.md.
+ * order: the two header-role scenarios first, then the derived `renders: true` checks.
  */
 import * as React from 'react';
 import { render } from '@testing-library/react-native';
@@ -21,6 +21,16 @@ function setup(given: Partial<HeadingProps> = {}) {
 }
 
 describe('Heading', () => {
+  it('level-puts-the-heading-in-the-outline', () => {
+    const s = setup({ level: '3' });
+    expect(s.getByTestId('Heading').props.accessibilityRole).toBe('header');
+  });
+
+  it('size-does-not-change-the-outline', () => {
+    const s = setup({ level: '2', size: 'md' });
+    expect(s.getByTestId('Heading').props.accessibilityRole).toBe('header');
+  });
+
   it('renders', () => {
     const s = setup();
     expect(s.toJSON()).not.toBeNull();

@@ -4,12 +4,12 @@ import { Button } from './Button';
 import { Input } from './Input';
 import { Text } from './Text';
 
-/* An array rather than a fragment: `element="ul"` wraps each child in an `li`, and React counts a
-   fragment as one child, so a fragment here would render one list item holding all three. */
+/* Three Text children, per the doc. An array rather than a fragment: `element="ul"` wraps each child
+   in an `li`, and React counts a fragment as one child, so a fragment would render one list item. */
 const items = [
-  <Button key="save" label="Save changes" />,
-  <Button key="cancel" label="Cancel" variant="secondary" />,
-  <Button key="delete" label="Delete file" variant="danger" />,
+  <Text key="first">First item</Text>,
+  <Text key="second">Second item</Text>,
+  <Text key="third">Third item</Text>,
 ];
 
 const meta: Meta<typeof Stack> = {
@@ -95,6 +95,7 @@ export const ButtonRow: Story = {
     direction: 'horizontal',
     gap: 'tight',
     justify: 'end',
+    align: 'center',
     children: [
       <Button key="cancel" label="Cancel" variant="secondary" />,
       <Button key="submit" label="Submit" type="submit" />,
@@ -121,6 +122,7 @@ export const WrappingFilters: Story = {
     direction: 'horizontal',
     gap: 'tight',
     wrap: true,
+    align: 'center',
     children: [
       <Button key="all" label="All" variant="secondary" size="sm" />,
       <Button key="open" label="Open" variant="ghost" size="sm" />,

@@ -116,25 +116,29 @@
   },
   "Box.lit": {
     "hash": "a58e82de074fa31e",
-    "lastAttemptHash": "a58e82de074fa31e",
-    "generatedAt": "2026-09-17T08:05:10+00:00",
+    "lastAttemptHash": "10478e4b70c9621a",
+    "generatedAt": "2026-09-18T21:42:52+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.0441,
+    "rounds": 3,
+    "costUsd": 1.934,
     "files": [
+      "logs/box-axe.mjs",
       "packages/lit/src/Box.stories.ts",
       "packages/lit/src/Box.test.ts",
       "packages/lit/src/Box.ts"
     ],
-    "gaps": 6,
+    "gaps": 11,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": false,
+      "axe": false
     }
   },
   "Breadcrumb.lit": {
@@ -501,49 +505,55 @@
   },
   "Heading.lit": {
     "hash": "d6394fdc073861c1",
-    "lastAttemptHash": "d6394fdc073861c1",
-    "generatedAt": "2026-09-17T07:57:46+00:00",
+    "lastAttemptHash": "b6fc5f2fb9881e90",
+    "generatedAt": "2026-09-18T18:26:45+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 0.8021,
+    "rounds": 3,
+    "costUsd": 1.8759,
     "files": [
       "packages/lit/src/Heading.stories.ts",
       "packages/lit/src/Heading.test.ts",
-      "packages/lit/src/Heading.ts"
+      "packages/lit/src/Heading.ts",
+      "packages/lit/src/index.ts"
     ],
-    "gaps": 6,
+    "gaps": 14,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": false,
+      "axe": false
     }
   },
   "Icon.lit": {
     "hash": "59cc45d2874f6b3b",
-    "lastAttemptHash": "59cc45d2874f6b3b",
-    "generatedAt": "2026-09-17T07:50:55+00:00",
+    "lastAttemptHash": "7cfc82cc964c821b",
+    "generatedAt": "2026-09-18T14:56:39+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 0.7515,
+    "rounds": 3,
+    "costUsd": 1.5442,
     "files": [
       "packages/lit/src/Icon.stories.ts",
       "packages/lit/src/Icon.test.ts",
-      "packages/lit/src/Icon.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/Icon.ts"
     ],
-    "gaps": 5,
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": false,
+      "axe": false
     }
   },
   "Input.lit": {
@@ -937,25 +947,28 @@
   },
   "Stack.lit": {
     "hash": "371e07cafb06f8f6",
-    "lastAttemptHash": "371e07cafb06f8f6",
-    "generatedAt": "2026-09-17T08:01:17+00:00",
+    "lastAttemptHash": "273373766c789bd6",
+    "generatedAt": "2026-09-18T20:01:00+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 0.8968,
+    "rounds": 3,
+    "costUsd": 2.1037,
     "files": [
       "packages/lit/src/Stack.stories.ts",
       "packages/lit/src/Stack.test.ts",
       "packages/lit/src/Stack.ts"
     ],
-    "gaps": 6,
+    "gaps": 11,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": false,
+      "axe": false
     }
   },
   "Stepper.lit": {
@@ -1052,24 +1065,28 @@
   },
   "Text.lit": {
     "hash": "cf3715323143f219",
-    "lastAttemptHash": "cf3715323143f219",
-    "generatedAt": "2026-09-17T07:54:26+00:00",
+    "lastAttemptHash": "194ca7846b23d5f9",
+    "generatedAt": "2026-09-18T16:55:04+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 0.7651,
+    "rounds": 3,
+    "costUsd": 2.5702,
     "files": [
       "packages/lit/src/Text.stories.ts",
+      "packages/lit/src/Text.test.ts",
       "packages/lit/src/Text.ts"
     ],
-    "gaps": 6,
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": false,
+      "axe": false
     }
   },
   "Toast.lit": {

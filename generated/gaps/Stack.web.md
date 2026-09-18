@@ -46,3 +46,22 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Stack: `ref` is typed Ref<HTMLElement> because the root tag varies with `element` (div/section/nav/ul/ol); the spec doesn't say whether the type should narrow per element.
 - Stack: `element` is web/lit only, but the doc doesn't say whether a consumer `role` on a ul/ol Stack should win over the forced role="list". The list role wins; for other elements a consumer role passes through.
 - Stack: the doc says 'one li per child as the platform counts children' but not how null/boolean children count. React.Children.map skips them (no empty li), which I kept.
+
+## 2026-09-18 14:55 — round 1
+
+- Stack: `wrap` is a boolean, and the 'one story per enum value' rule doesn't say whether booleans get stories; I kept the existing `Wrap` story (horizontal, inside a width-bounded decorator), which overlaps the `WrappingFilters` example story.
+- Stack: the Default story is fixed at three Text children but the text isn't specified; I used 'First item' / 'Second item' / 'Third item'.
+- Stack: examples describe children in words only ('The form fields', 'A row of filters', 'The regions of the page'); I chose three Inputs (name/email/phone), six small secondary/ghost filter Buttons, and three Text regions. The spec doesn't say which Button variant or size a filter should use.
+- Stack: the enum-value stories for horizontal-only effects (DirectionHorizontal, Justify*) add `align: 'start'` and `direction: 'horizontal'` beyond the single prop the story is named after, so the effect is visible; the spec says an example story has exactly its `given` as args but doesn't say whether that also applies to enum-value stories.
+- Stack: `justify` on the Default (vertical, unbounded) Stack shows nothing, as the doc warns; the Justify* stories are shown horizontally, not inside a bounded-height decorator. The spec doesn't say which it wants.
+- Stack: the root also carries `min-inline-size: 0` so a horizontal Stack can shrink inside a parent flex container; the spec doesn't mention it (kept from the existing file).
+
+## 2026-09-18 15:04 — round 2
+
+- Stack: the round-2 gate failures don't involve Stack. keyboard-run has no Stack spec (Stack declares no `keyboard` block), and in the 15:03 axe report (logs/playwright.json) every violation is in another component (Carousel scrollable-region-focusable, Feed/Listbox aria-required-children, Slider/Tabs/Menu/Splitter/Listbox color-contrast, Splitter target-size, among others). No Stack story appears, so I made no Stack change. The gates don't separate per-component results from failures elsewhere in the package, so a clean component still gets a FAILED verdict; I left the other components' failures for their own jobs.
+- Stack: the round-1 gaps still stand: the `wrap` boolean has no enum-value story rule (I kept `Wrap`); the Default story's Text wording isn't given; the example children are described only in words; horizontal-only enum stories add `direction`/`align` args; Justify* stories are horizontal rather than height-bounded; the root carries an unspecified `min-inline-size: 0`.
+
+## 2026-09-18 15:13 — round 3
+
+- Stack: round 3 fails the same way as round 2. keyboard-run has no Stack spec (the doc declares no `keyboard` block), and the 15:13 axe report (logs/playwright.json) has no `Stack/React/*` violation; every failure is in another component. I made no Stack change. The gate runs every story in the package and turns one pass/fail into a verdict for the component being generated, so Stack can't pass until those components are fixed. The gate should filter to the component under generation, or compare against a baseline of known package failures.
+- Stack: the round-1 gaps still stand: the `wrap` boolean has no enum-value story rule (I kept `Wrap`); the Default story's Text wording isn't given; the example children are described only in words; horizontal-only enum stories add `direction`/`align` args; Justify* stories are horizontal rather than height-bounded; the root carries an unspecified `min-inline-size: 0`.

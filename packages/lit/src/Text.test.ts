@@ -7,20 +7,23 @@ import './Text.js';
 import type { DsText } from './Text.js';
 import meta from './Text.stories.js';
 
-type Given = Partial<Pick<DsText, 'size' | 'weight' | 'tone' | 'align' | 'element'>>;
+type Given = Partial<Pick<DsText, 'size' | 'weight' | 'tone' | 'align' | 'truncate' | 'element'>> & {
+  children?: string;
+};
 
 /** The Default story's args plus the scenario's `given`, as properties (and slot text) on a fresh element. */
 async function setup(given: Given = {}) {
   const el = document.createElement('ds-text');
-  const props = { ...meta.args, ...given };
+  const props: Record<string, unknown> = { ...meta.args, ...given };
   for (const [key, value] of Object.entries(props)) {
-    if (key === 'text' || value === undefined) continue;
+    if (key === 'children' || value === undefined) continue;
     (el as unknown as Record<string, unknown>)[key] = value;
   }
-  el.textContent = String(meta.args?.text ?? '');
+  el.textContent = String(props['children'] ?? '');
   document.body.append(el);
   await el.updateComplete;
-  return { el };
+  const part = el.shadowRoot!.querySelector<HTMLElement>('[data-part="text"]');
+  return { el, part };
 }
 
 beforeEach(() => {
@@ -28,6 +31,15 @@ beforeEach(() => {
 });
 
 describe('ds-text', () => {
+  it('truncated-text-keeps-the-full-string-reachable', async () => {
+    const { part } = await setup({
+      truncate: true,
+      children: 'A sentence long enough to be clipped by its column.',
+    });
+    // `title` sits on the part that clips.
+    expect(part?.getAttribute('title')).toBe('A sentence long enough to be clipped by its column.');
+  });
+
   it('renders', async () => {
     const { el } = await setup();
     expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);

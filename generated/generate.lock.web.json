@@ -119,26 +119,28 @@
   },
   "Box.web": {
     "hash": "85fadaee02502a83",
-    "lastAttemptHash": "85fadaee02502a83",
-    "generatedAt": "2026-09-17T08:03:33+00:00",
+    "lastAttemptHash": "279c19c335ee218f",
+    "generatedAt": "2026-09-18T21:04:29+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 0.8235,
+    "rounds": 3,
+    "costUsd": 1.6428,
     "files": [
       "packages/react/src/Box.css",
       "packages/react/src/Box.stories.tsx",
-      "packages/react/src/Box.test.tsx",
       "packages/react/src/Box.tsx"
     ],
-    "gaps": 5,
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": false,
+      "axe": false
     }
   },
   "Breadcrumb.web": {
@@ -527,51 +529,56 @@
   },
   "Heading.web": {
     "hash": "7e2a8844553daf28",
-    "lastAttemptHash": "7e2a8844553daf28",
-    "generatedAt": "2026-09-17T07:56:39+00:00",
+    "lastAttemptHash": "3bc381a21fb85f75",
+    "generatedAt": "2026-09-18T17:54:32+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 0.82,
+    "rounds": 3,
+    "costUsd": 1.938,
     "files": [
       "packages/react/src/Heading.css",
       "packages/react/src/Heading.stories.tsx",
       "packages/react/src/Heading.test.tsx",
-      "packages/react/src/Heading.tsx"
+      "packages/react/src/Heading.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 6,
+    "gaps": 11,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": false,
+      "axe": false
     }
   },
   "Icon.web": {
     "hash": "7a3aa90d5110c636",
-    "lastAttemptHash": "7a3aa90d5110c636",
-    "generatedAt": "2026-09-17T07:50:03+00:00",
+    "lastAttemptHash": "4bd3e217fb1f23cd",
+    "generatedAt": "2026-09-18T14:17:46+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.0257,
+    "rounds": 3,
+    "costUsd": 1.6284,
     "files": [
-      "packages/react/src/Icon.css",
       "packages/react/src/Icon.stories.tsx",
       "packages/react/src/Icon.test.tsx",
-      "packages/react/src/Icon.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Icon.tsx"
     ],
-    "gaps": 6,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": false,
+      "axe": false
     }
   },
   "Input.web": {
@@ -980,26 +987,27 @@
   },
   "Stack.web": {
     "hash": "e69294b90b42a39d",
-    "lastAttemptHash": "e69294b90b42a39d",
-    "generatedAt": "2026-09-17T07:59:50+00:00",
+    "lastAttemptHash": "53c752feb20f7846",
+    "generatedAt": "2026-09-18T19:24:39+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 0.843,
+    "rounds": 3,
+    "costUsd": 1.6365,
     "files": [
-      "packages/react/src/Stack.css",
       "packages/react/src/Stack.stories.tsx",
-      "packages/react/src/Stack.test.tsx",
       "packages/react/src/Stack.tsx"
     ],
-    "gaps": 8,
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": false,
+      "axe": false
     }
   },
   "Stepper.web": {
@@ -1097,25 +1105,27 @@
   },
   "Text.web": {
     "hash": "fe1f48275a8be129",
-    "lastAttemptHash": "fe1f48275a8be129",
-    "generatedAt": "2026-09-17T07:53:24+00:00",
+    "lastAttemptHash": "24b95f85717bef3b",
+    "generatedAt": "2026-09-18T16:21:55+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 0.7175,
+    "rounds": 3,
+    "costUsd": 2.0659,
     "files": [
       "packages/react/src/Text.css",
-      "packages/react/src/Text.stories.tsx",
       "packages/react/src/Text.tsx"
     ],
-    "gaps": 5,
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": false,
+      "axe": false
     }
   },
   "Toast.web": {

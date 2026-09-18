@@ -68,7 +68,10 @@ const meta: Meta<BoxArgs> = {
 export default meta;
 type Story = StoryObj<BoxArgs>;
 
-export const Default: Story = {};
+/** A Box at its schema defaults draws nothing, so Default uses the `highlighted-panel` example's props. */
+export const Default: Story = {
+  args: { children: 'A panel of settings', inset: 'md', surface: 'subtle', radius: 'md' },
+};
 
 /* inset — shown on a subtle surface so the padding is visible */
 const insetStory = (inset: BoxInset): Story => ({ args: { inset, surface: 'subtle' } });

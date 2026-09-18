@@ -32,3 +32,27 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Text: `ToneOnAction` needs an action-coloured background to make sense, and the spec doesn't say where it comes from; the story wraps Text in a View painted with `colorActionPrimaryBackground`, padded with `spaceMd`/`spaceSm` and rounded with `radiusMd`. The `ToneDanger` story swaps in the error wording from the web-only `inline-error-wording` example so danger is never shown on neutral text.
 - Text: `TextForegroundContext` is named in the `styles.color` description but has no RN export guidance beyond 'package-internal'; kept it exported from Text.tsx for sibling components but not re-exported from index.ts.
 - Text: behavior scenario name `renders-tone-on-action` kebab-cases the enum value `onAction`; the existing test used `renders-tone-onAction`, now renamed to match the doc.
+
+## 2026-09-18 12:55 — round 1
+
+- Text: the generic Rules say to import tokens from `@design-schema/tokens/<theme-id>/rn/light|dark`, while the package digest says to read them from `useTheme()`; I kept `useTheme()` (the package convention).
+- Text: the Rules give the `toLineHeight` argument order as (multiplier, fontSize), but theme.tsx declares `toLineHeight(fontSize, multiplier)`; I kept the real signature. The digest example should be fixed.
+- Text: the platform notes say `TextNestingContext` is replaced by `TextStyleContext.nested`, but the package digest still tells components to use `TextNestingContext`; nothing in packages/rn uses it any more. The digest's Styles bullet should name `TextStyleContext`.
+- Text: the `truncated-cell` example says the full string stays reachable, but native has no `title`, so only screen readers reach it. The story keeps the example's name and args, and its comment states this known gap.
+- Text: the web/lit-only behavior `truncated-text-keeps-the-full-string-reachable` and the example `inline-error-wording` (which uses the web-only `element` prop) have no rn test or story. `ToneDanger` reuses the 'Error: …' wording instead.
+- Text: the spec gives no padding for the onAction story's action-background surface; I kept `spaceMd`/`spaceSm` padding and `radiusMd` from the existing story.
+- Text: the `renders` scenarios only check that something renders, so nothing tests the resolved tokens, the foreground context taking effect only for tone `default`, or the RTL start/end mapping.
+
+## 2026-09-18 13:06 — round 2
+
+- Text: the rn axe gate fails for the whole Storybook, but no failure is a Text story. logs/playwright.json has no 'Text/React Native' entry in either mode; the failures are Toolbar (aria-required-attr, nested-interactive), Tree (aria-required-children, target-size), TreeGrid (aria-required-attr, target-size), Demo/Preferences (aria-required-attr, nested-interactive), Patterns/SettingsPage (aria-prohibited-attr), and color-contrast in the Submitting demos. I changed no Text code, because a per-component regeneration can't make this whole-Storybook gate pass.
+- Text: I couldn't run a Text-only axe pass to confirm (running logs/text-axe-rn.mjs needs approval), so the 'Text is clean' result comes from the gate's JSON report, not a fresh run.
+- Text (gate design): axe.spec.ts reports every story in one assertion, so a component round fails on other components' violations. The gate needs a per-component filter or a baseline of known failures.
+- Text: the Submitting demos' color-contrast failures are likely disabled fields dimmed with opacity.disabled, as the spec requires. WCAG exempts disabled controls, but axe checks them anyway; the demos' docs should say whether to disable the rule for those stories (parameters.a11y.disable) or change how disabled fields look.
+
+## 2026-09-18 13:17 — round 3
+
+- Text: the rn axe gate failed with the same list as round 2, and no failure is a Text story. logs/playwright.json (13:16, written after the last Text.tsx edit at 12:55) has no 'Text/React Native' entry. The failures are Toolbar, Tree, TreeGrid, Demo/Preferences, Patterns/SettingsPage and the Submitting demos, so a Text round can't clear this gate and I changed no code.
+- Text (gate design): axe.spec.ts puts every story in one assertion, so a component round is blocked by other components' violations and repeated rounds fail with identical logs. The gate needs a per-component filter or a baseline of known failures before per-component rounds can pass.
+- Text: a Text-only axe pass is still unconfirmed: logs/text-axe-rn.mjs is written but needs approval to run.
+- Text: the Submitting demos' color-contrast failures are likely disabled fields at opacity.disabled, as the spec requires. WCAG exempts disabled controls but axe checks them; the demos' docs should say whether to disable the rule for those stories or change how disabled fields look.

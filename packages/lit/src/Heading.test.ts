@@ -3,6 +3,7 @@
  * Runs in headless Chromium (Vitest browser mode).
  */
 import { beforeEach, describe, expect, it } from 'vitest';
+import { page } from 'vitest/browser';
 import './Heading.js';
 import type { DsHeading } from './Heading.js';
 import meta from './Heading.stories.js';
@@ -27,7 +28,27 @@ beforeEach(() => {
   document.body.replaceChildren();
 });
 
+/** The shadow `<h1>`–`<h6>` exposed as role=heading, found the way assistive technology finds it. */
+function headings(): Element[] {
+  return page.getByRole('heading').elements();
+}
+
 describe('ds-heading', () => {
+  it('level-puts-the-heading-in-the-outline', async () => {
+    const { el } = await setup({ level: '3' });
+    const inner = el.shadowRoot!.querySelector('[data-part="text"]');
+    expect(inner?.localName).toBe('h3');
+    expect(headings()).toContain(inner);
+    expect(page.getByRole('heading', { level: 3 }).elements()).toContain(inner);
+  });
+
+  it('size-does-not-change-the-outline', async () => {
+    const { el } = await setup({ level: '2', size: 'md' });
+    const inner = el.shadowRoot!.querySelector('[data-part="text"]');
+    expect(inner?.localName).toBe('h2');
+    expect(headings()).toContain(inner);
+  });
+
   it('renders', async () => {
     const { el } = await setup();
     expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);

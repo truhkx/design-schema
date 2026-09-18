@@ -23,7 +23,10 @@ export default meta;
 
 type Story = StoryObj<typeof Box>;
 
-export const Default: Story = { args: { inset: 'md', surface: 'subtle' } };
+/** A Box at its schema defaults draws nothing, so Default uses the `highlighted-panel` example's props. */
+export const Default: Story = {
+  args: { children: <Text>A panel of settings</Text>, inset: 'md', surface: 'subtle', radius: 'md' },
+};
 
 // inset
 export const InsetNone: Story = { args: { inset: 'none' } };

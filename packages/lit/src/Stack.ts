@@ -78,9 +78,10 @@ export class DsStack extends LitElement {
       flex-direction: row;
     }
 
-    /* gap: layout.gap.{gap} */
+    /* gap: layout.gap.{gap}. none reads the token, not the hook: no gap is in
+       effect, so overrides and consumer CSS on --ds-stack-gap are no-ops there. */
     :host([gap='none']) {
-      --ds-stack-gap: var(--layout-gap-none);
+      gap: var(--layout-gap-none);
     }
     :host([gap='tight']) {
       --ds-stack-gap: var(--layout-gap-tight);

@@ -132,6 +132,11 @@ export function toTextAlign(align: TextAlign): TextStyle['textAlign'] {
  * `TextStyleContext` with the resolved `fontSize`/`color` so inline children
  * (Icon, Link) can match this Text instead of falling back to a default.
  *
+ * `a11y.role: generic` has no native counterpart, so no `accessibilityRole` is
+ * set. Weight tokens snap to the nearest hundred and lineHeight × fontSize rounds
+ * to a whole pixel, so a theme weight of 550 or a fractional line height lands on
+ * the nearest step.
+ *
  * Native has no equivalent of web's `title`, so a truncated string has no
  * sighted affordance to reach the rest of it — screen readers still read it in
  * full. Keep truncated copy short enough that the visible line carries the

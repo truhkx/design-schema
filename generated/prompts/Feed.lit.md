@@ -30,6 +30,8 @@ Write `packages/lit/src/Feed.ts` defining the custom element tag declared under 
 - Stories are named after the prop and value in PascalCase (`ToneInfo`, `RoleBanner`); demo stories are titled `Demo/<Name>/<Platform>`.
 - Icons: use the system `Icon` component for every glyph the docs name (`<Icon name="external" inline />`, `<ds-icon name="close">`, `<Icon name="check" color={…} />`); never draw an inline SVG or a Unicode glyph by hand. Decorative icons take no label; a glyph that carries meaning gets one.
 - Stories: Storybook 10 CSF3 with `@storybook/web-components-vite` and `html` from lit; title `'<Name>/Lit'`; one story per enum value plus Default.
+- Story render shape: the render that applies to a story (its own `render`, else the meta's) is written inline and returns one `html`` template directly — never a call (`render: (args) => renderBox(args)`) and never a bare identifier (`render: divider`). The docs site reads that template for the Lit code sample, and anything else leaves every story in the module without one. Interpolate helper fragments into the template rather than wrapping it.
+- Story parity: every story the React package exports has a Lit story with the same export name and args, including each example named above.
 - TypeScript 7 with `isolatedDeclarations`: every exported symbol carries an explicit type annotation and no export type is inferred — `protected override render(): TemplateResult` (`TemplateResult | typeof nothing` when a branch renders nothing), typed static members, public methods with return types, `const meta: Meta = …` in stories. `exactOptionalPropertyTypes` (`name?: T | undefined`), `noUncheckedIndexedAccess` and `verbatimModuleSyntax` (`import type`) are on.
 - Tests run on Vitest 5 browser mode over Vite 8 (Playwright, Chromium; helpers from `vitest/browser`); the behavior scenarios below become `Feed.test.ts`.
 
@@ -443,7 +445,15 @@ component:
         at the top automatically: the newItemsButton (Button secondary, sm) is sticky
         at the top and its press prepends and moves focus to the first new article.
         The loading indicator is an indeterminate ProgressBar with label copy.loading,
-        aria-busy on the feed while loading. Under reduced motion no scroll animation.'
+        aria-busy on the feed while loading. Under reduced motion no scroll animation.
+        role="feed" goes on the element whose direct children are the articles, not
+        on an ancestor: ARIA requires a feed to own its article children, and axe
+        reports aria-required-children when a wrapper sits between them. So the items
+        column itself carries role="feed" (with the label and aria-busy), the new-items
+        role="status" row and any other chrome stay outside it as siblings, and each
+        Feed-owned article wrapper carries role="article" with aria-posinset/aria-setsize/aria-describedby,
+        while the Card inside it is the presentation. Put another way: nothing may
+        sit between the feed element and an article element.'
     lit:
       tag: ds-feed
       reflect:
@@ -848,7 +858,7 @@ The container is a `feed` with a name and `aria-busy` while loading (APG feed; W
 ## Platform notes
 
 ### Web
-Render `<div role="feed" aria-label aria-busy data-ds="Feed">` with the sticky `newItemsButton` when `newItemsCount > 0`, then a `Card focusable heading headingLevel role="article" aria-describedby aria-posinset aria-setsize` per item (Card renders the `<article>`, its heading and the ring) whose body holds a `<time dateTime title>` inside `Text tone="muted" size="xs"`, the content, and an actions row (`Stack` horizontal, `gap: tight`); a visually-hidden span "unread" and the `unreadBorder` bar on the Feed-owned article wrapper when `unread`. Keydown on the feed implements the table when the event target is inside an article. `IntersectionObserver`s for load-more (`rootMargin: '100% 0px'`) and visibility (`threshold: 0.5`, one-second timer). Footer: indeterminate `ProgressBar label={copy.loading} hideLabel` inside `loadingInset` while `loading`, else the end message `Text` inside `endMessageInset` when `!hasMore`. On mount with no items, `hasMore` and not `loading`, fire `onLoadMore` once (there is no last article to observe).
+Render `<div role="feed" aria-label aria-busy data-ds="Feed">` with the sticky `newItemsButton` when `newItemsCount > 0`, then a `Card focusable heading headingLevel role="article" aria-describedby aria-posinset aria-setsize` per item (Card renders the `<article>`, its heading and the ring) whose body holds a `<time dateTime title>` inside `Text tone="muted" size="xs"`, the content, and an actions row (`Stack` horizontal, `gap: tight`); a visually-hidden span "unread" and the `unreadBorder` bar on the Feed-owned article wrapper when `unread`. Keydown on the feed implements the table when the event target is inside an article. `IntersectionObserver`s for load-more (`rootMargin: '100% 0px'`) and visibility (`threshold: 0.5`, one-second timer). Footer: indeterminate `ProgressBar label={copy.loading} hideLabel` inside `loadingInset` while `loading`, else the end message `Text` inside `endMessageInset` when `!hasMore`. On mount with no items, `hasMore` and not `loading`, fire `onLoadMore` once (there is no last article to observe). `role="feed"` sits on the items column — the element whose direct children are the article wrappers — and never on an ancestor with the new-items row inside it: a feed must own its articles directly, or `aria-required-children` fails on every story. The sticky `newItemsButton` row is a sibling of the feed element, not a child.
 
 ### Lit
 `<ds-feed label="Activity" .items=${items} has-more @load-more=${load}></ds-feed>`; shadow articles as `ds-card`; composed events.

@@ -2095,7 +2095,7 @@
                 }
               ]
             },
-            "description": "Per-instance style overrides: each entry sets the matching CSS hook to that token, inline."
+            "description": "Per-instance style overrides: each entry sets the matching CSS hook to that token, inline.\nOverrides change values, never presence: `border` and `borderWidth` are no-ops without\n`border`, and `radius` is a no-op at `radius: none`. Padding applies at every value."
           },
           "ref": {
             "required": false,
@@ -2128,199 +2128,199 @@
         {
           "id": "box-react--default",
           "name": "Default",
-          "snippet": "const Default = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"md\" element=\"div\"><Text element=\"p\">Box content.</Text></Box>;"
+          "snippet": "const Default = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"md\" element=\"div\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;"
         },
         {
           "id": "box-react--inset-none",
           "name": "Inset None",
-          "snippet": "const InsetNone = () => <Box inset=\"none\" surface=\"subtle\" border={false} radius=\"md\" element=\"div\"><Text element=\"p\">Box content.</Text></Box>;"
+          "snippet": "const InsetNone = () => <Box inset=\"none\" surface=\"subtle\" border={false} radius=\"md\" element=\"div\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;"
         },
         {
           "id": "box-react--inset-sm",
           "name": "Inset Sm",
-          "snippet": "const InsetSm = () => <Box inset=\"sm\" surface=\"subtle\" border={false} radius=\"md\" element=\"div\"><Text element=\"p\">Box content.</Text></Box>;"
+          "snippet": "const InsetSm = () => <Box inset=\"sm\" surface=\"subtle\" border={false} radius=\"md\" element=\"div\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;"
         },
         {
           "id": "box-react--inset-md",
           "name": "Inset Md",
-          "snippet": "const InsetMd = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"md\" element=\"div\"><Text element=\"p\">Box content.</Text></Box>;"
+          "snippet": "const InsetMd = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"md\" element=\"div\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;"
         },
         {
           "id": "box-react--inset-lg",
           "name": "Inset Lg",
-          "snippet": "const InsetLg = () => <Box inset=\"lg\" surface=\"subtle\" border={false} radius=\"md\" element=\"div\"><Text element=\"p\">Box content.</Text></Box>;"
+          "snippet": "const InsetLg = () => <Box inset=\"lg\" surface=\"subtle\" border={false} radius=\"md\" element=\"div\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;"
         },
         {
           "id": "box-react--inset-xl",
           "name": "Inset Xl",
-          "snippet": "const InsetXl = () => <Box inset=\"xl\" surface=\"subtle\" border={false} radius=\"md\" element=\"div\"><Text element=\"p\">Box content.</Text></Box>;"
+          "snippet": "const InsetXl = () => <Box inset=\"xl\" surface=\"subtle\" border={false} radius=\"md\" element=\"div\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;"
         },
         {
           "id": "box-react--inset-block-none",
           "name": "Inset Block None",
-          "snippet": "const InsetBlockNone = () => <Box\r\n    inset=\"md\"\r\n    surface=\"subtle\"\r\n    border={false}\r\n    radius=\"md\"\r\n    element=\"div\"\r\n    insetBlock=\"none\"><Text element=\"p\">Box content.</Text></Box>;"
+          "snippet": "const InsetBlockNone = () => <Box\r\n    inset=\"md\"\r\n    surface=\"subtle\"\r\n    border={false}\r\n    radius=\"md\"\r\n    element=\"div\"\r\n    insetBlock=\"none\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;"
         },
         {
           "id": "box-react--inset-block-sm",
           "name": "Inset Block Sm",
-          "snippet": "const InsetBlockSm = () => <Box\r\n    inset=\"md\"\r\n    surface=\"subtle\"\r\n    border={false}\r\n    radius=\"md\"\r\n    element=\"div\"\r\n    insetBlock=\"sm\"><Text element=\"p\">Box content.</Text></Box>;"
+          "snippet": "const InsetBlockSm = () => <Box\r\n    inset=\"md\"\r\n    surface=\"subtle\"\r\n    border={false}\r\n    radius=\"md\"\r\n    element=\"div\"\r\n    insetBlock=\"sm\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;"
         },
         {
           "id": "box-react--inset-block-md",
           "name": "Inset Block Md",
-          "snippet": "const InsetBlockMd = () => <Box\r\n    inset=\"md\"\r\n    surface=\"subtle\"\r\n    border={false}\r\n    radius=\"md\"\r\n    element=\"div\"\r\n    insetBlock=\"md\"><Text element=\"p\">Box content.</Text></Box>;"
+          "snippet": "const InsetBlockMd = () => <Box\r\n    inset=\"md\"\r\n    surface=\"subtle\"\r\n    border={false}\r\n    radius=\"md\"\r\n    element=\"div\"\r\n    insetBlock=\"md\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;"
         },
         {
           "id": "box-react--inset-block-lg",
           "name": "Inset Block Lg",
-          "snippet": "const InsetBlockLg = () => <Box\r\n    inset=\"md\"\r\n    surface=\"subtle\"\r\n    border={false}\r\n    radius=\"md\"\r\n    element=\"div\"\r\n    insetBlock=\"lg\"><Text element=\"p\">Box content.</Text></Box>;"
+          "snippet": "const InsetBlockLg = () => <Box\r\n    inset=\"md\"\r\n    surface=\"subtle\"\r\n    border={false}\r\n    radius=\"md\"\r\n    element=\"div\"\r\n    insetBlock=\"lg\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;"
         },
         {
           "id": "box-react--inset-block-xl",
           "name": "Inset Block Xl",
-          "snippet": "const InsetBlockXl = () => <Box\r\n    inset=\"md\"\r\n    surface=\"subtle\"\r\n    border={false}\r\n    radius=\"md\"\r\n    element=\"div\"\r\n    insetBlock=\"xl\"><Text element=\"p\">Box content.</Text></Box>;"
+          "snippet": "const InsetBlockXl = () => <Box\r\n    inset=\"md\"\r\n    surface=\"subtle\"\r\n    border={false}\r\n    radius=\"md\"\r\n    element=\"div\"\r\n    insetBlock=\"xl\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;"
         },
         {
           "id": "box-react--inset-inline-none",
           "name": "Inset Inline None",
-          "snippet": "const InsetInlineNone = () => <Box\r\n    inset=\"md\"\r\n    surface=\"subtle\"\r\n    border={false}\r\n    radius=\"md\"\r\n    element=\"div\"\r\n    insetInline=\"none\"><Text element=\"p\">Box content.</Text></Box>;"
+          "snippet": "const InsetInlineNone = () => <Box\r\n    inset=\"md\"\r\n    surface=\"subtle\"\r\n    border={false}\r\n    radius=\"md\"\r\n    element=\"div\"\r\n    insetInline=\"none\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;"
         },
         {
           "id": "box-react--inset-inline-sm",
           "name": "Inset Inline Sm",
-          "snippet": "const InsetInlineSm = () => <Box\r\n    inset=\"md\"\r\n    surface=\"subtle\"\r\n    border={false}\r\n    radius=\"md\"\r\n    element=\"div\"\r\n    insetInline=\"sm\"><Text element=\"p\">Box content.</Text></Box>;"
+          "snippet": "const InsetInlineSm = () => <Box\r\n    inset=\"md\"\r\n    surface=\"subtle\"\r\n    border={false}\r\n    radius=\"md\"\r\n    element=\"div\"\r\n    insetInline=\"sm\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;"
         },
         {
           "id": "box-react--inset-inline-md",
           "name": "Inset Inline Md",
-          "snippet": "const InsetInlineMd = () => <Box\r\n    inset=\"md\"\r\n    surface=\"subtle\"\r\n    border={false}\r\n    radius=\"md\"\r\n    element=\"div\"\r\n    insetInline=\"md\"><Text element=\"p\">Box content.</Text></Box>;"
+          "snippet": "const InsetInlineMd = () => <Box\r\n    inset=\"md\"\r\n    surface=\"subtle\"\r\n    border={false}\r\n    radius=\"md\"\r\n    element=\"div\"\r\n    insetInline=\"md\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;"
         },
         {
           "id": "box-react--inset-inline-lg",
           "name": "Inset Inline Lg",
-          "snippet": "const InsetInlineLg = () => <Box\r\n    inset=\"md\"\r\n    surface=\"subtle\"\r\n    border={false}\r\n    radius=\"md\"\r\n    element=\"div\"\r\n    insetInline=\"lg\"><Text element=\"p\">Box content.</Text></Box>;"
+          "snippet": "const InsetInlineLg = () => <Box\r\n    inset=\"md\"\r\n    surface=\"subtle\"\r\n    border={false}\r\n    radius=\"md\"\r\n    element=\"div\"\r\n    insetInline=\"lg\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;"
         },
         {
           "id": "box-react--inset-inline-xl",
           "name": "Inset Inline Xl",
-          "snippet": "const InsetInlineXl = () => <Box\r\n    inset=\"md\"\r\n    surface=\"subtle\"\r\n    border={false}\r\n    radius=\"md\"\r\n    element=\"div\"\r\n    insetInline=\"xl\"><Text element=\"p\">Box content.</Text></Box>;"
+          "snippet": "const InsetInlineXl = () => <Box\r\n    inset=\"md\"\r\n    surface=\"subtle\"\r\n    border={false}\r\n    radius=\"md\"\r\n    element=\"div\"\r\n    insetInline=\"xl\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;"
         },
         {
           "id": "box-react--surface-none",
           "name": "Surface None",
-          "snippet": "const SurfaceNone = () => <Box inset=\"md\" surface=\"none\" border={false} radius=\"md\" element=\"div\"><Text element=\"p\">Box content.</Text></Box>;"
+          "snippet": "const SurfaceNone = () => <Box inset=\"md\" surface=\"none\" border={false} radius=\"md\" element=\"div\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;"
         },
         {
           "id": "box-react--surface-default",
           "name": "Surface Default",
-          "snippet": "const SurfaceDefault = () => <Box inset=\"md\" surface=\"default\" border={false} radius=\"md\" element=\"div\"><Text element=\"p\">Box content.</Text></Box>;"
+          "snippet": "const SurfaceDefault = () => <Box inset=\"md\" surface=\"default\" border={false} radius=\"md\" element=\"div\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;"
         },
         {
           "id": "box-react--surface-subtle",
           "name": "Surface Subtle",
-          "snippet": "const SurfaceSubtle = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"md\" element=\"div\"><Text element=\"p\">Box content.</Text></Box>;"
+          "snippet": "const SurfaceSubtle = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"md\" element=\"div\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;"
         },
         {
           "id": "box-react--surface-strong",
           "name": "Surface Strong",
-          "snippet": "const SurfaceStrong = () => <Box inset=\"md\" surface=\"strong\" border={false} radius=\"md\" element=\"div\"><Text element=\"p\">Box content.</Text></Box>;"
+          "snippet": "const SurfaceStrong = () => <Box inset=\"md\" surface=\"strong\" border={false} radius=\"md\" element=\"div\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;"
         },
         {
           "id": "box-react--border",
           "name": "Border",
-          "snippet": "const Border = () => <Box inset=\"md\" surface=\"subtle\" border radius=\"md\" element=\"div\"><Text element=\"p\">Box content.</Text></Box>;"
+          "snippet": "const Border = () => <Box inset=\"md\" surface=\"subtle\" border radius=\"md\" element=\"div\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;"
         },
         {
           "id": "box-react--radius-none",
           "name": "Radius None",
-          "snippet": "const RadiusNone = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"none\" element=\"div\"><Text element=\"p\">Box content.</Text></Box>;"
+          "snippet": "const RadiusNone = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"none\" element=\"div\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;"
         },
         {
           "id": "box-react--radius-sm",
           "name": "Radius Sm",
-          "snippet": "const RadiusSm = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"sm\" element=\"div\"><Text element=\"p\">Box content.</Text></Box>;"
+          "snippet": "const RadiusSm = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"sm\" element=\"div\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;"
         },
         {
           "id": "box-react--radius-md",
           "name": "Radius Md",
-          "snippet": "const RadiusMd = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"md\" element=\"div\"><Text element=\"p\">Box content.</Text></Box>;"
+          "snippet": "const RadiusMd = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"md\" element=\"div\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;"
         },
         {
           "id": "box-react--radius-lg",
           "name": "Radius Lg",
-          "snippet": "const RadiusLg = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"lg\" element=\"div\"><Text element=\"p\">Box content.</Text></Box>;"
+          "snippet": "const RadiusLg = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"lg\" element=\"div\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;"
         },
         {
           "id": "box-react--radius-full",
           "name": "Radius Full",
-          "snippet": "const RadiusFull = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"full\" element=\"div\"><Text element=\"p\">Box content.</Text></Box>;"
+          "snippet": "const RadiusFull = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"full\" element=\"div\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;"
         },
         {
           "id": "box-react--element-div",
           "name": "Element Div",
-          "snippet": "const ElementDiv = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"md\" element=\"div\"><Text element=\"p\">Box content.</Text></Box>;"
+          "snippet": "const ElementDiv = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"md\" element=\"div\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;"
         },
         {
           "id": "box-react--element-section",
           "name": "Element Section",
-          "snippet": "const ElementSection = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"md\" element=\"section\"><Text element=\"p\">Box content.</Text></Box>;"
+          "snippet": "const ElementSection = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"md\" element=\"section\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;"
         },
         {
           "id": "box-react--element-article",
           "name": "Element Article",
-          "snippet": "const ElementArticle = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"md\" element=\"article\"><Text element=\"p\">Box content.</Text></Box>;"
+          "snippet": "const ElementArticle = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"md\" element=\"article\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;"
         },
         {
           "id": "box-react--element-aside",
           "name": "Element Aside",
-          "snippet": "const ElementAside = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"md\" element=\"aside\"><Text element=\"p\">Box content.</Text></Box>;"
+          "snippet": "const ElementAside = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"md\" element=\"aside\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;"
         },
         {
           "id": "box-react--element-header",
           "name": "Element Header",
-          "snippet": "const ElementHeader = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"md\" element=\"header\"><Text element=\"p\">Box content.</Text></Box>;"
+          "snippet": "const ElementHeader = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"md\" element=\"header\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;"
         },
         {
           "id": "box-react--element-footer",
           "name": "Element Footer",
-          "snippet": "const ElementFooter = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"md\" element=\"footer\"><Text element=\"p\">Box content.</Text></Box>;"
+          "snippet": "const ElementFooter = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"md\" element=\"footer\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;"
         },
         {
           "id": "box-react--element-main",
           "name": "Element Main",
-          "snippet": "const ElementMain = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"md\" element=\"main\"><Text element=\"p\">Box content.</Text></Box>;"
+          "snippet": "const ElementMain = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"md\" element=\"main\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;"
         },
         {
           "id": "box-react--element-nav",
           "name": "Element Nav",
-          "snippet": "const ElementNav = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"md\" element=\"nav\"><Text element=\"p\">Box content.</Text></Box>;"
+          "snippet": "const ElementNav = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"md\" element=\"nav\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;"
         },
         {
           "id": "box-react--highlighted-panel",
           "name": "Highlighted Panel",
-          "snippet": "const HighlightedPanel = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"md\" element=\"div\">A panel of settings</Box>;",
+          "snippet": "const HighlightedPanel = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"md\" element=\"div\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;",
           "description": "A panel lifted off the page with a tinted surface, rounded corners and the usual inset."
         },
         {
           "id": "box-react--bordered-row",
           "name": "Bordered Row",
-          "snippet": "const BorderedRow = () => <Box inset=\"sm\" surface=\"subtle\" border radius=\"md\" element=\"div\">A row of data</Box>;",
+          "snippet": "const BorderedRow = () => <Box inset=\"sm\" surface=\"subtle\" border radius=\"md\" element=\"div\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;",
           "description": "A dense row bounded by a thin border rather than a fill."
         },
         {
           "id": "box-react--hero-band",
           "name": "Hero Band",
-          "snippet": "const HeroBand = () => <Box\r\n    inset=\"md\"\r\n    surface=\"strong\"\r\n    border={false}\r\n    radius=\"md\"\r\n    element=\"div\"\r\n    insetBlock=\"xl\"\r\n    insetInline=\"lg\">A hero band</Box>;",
+          "snippet": "const HeroBand = () => <Box\r\n    inset=\"md\"\r\n    surface=\"strong\"\r\n    border={false}\r\n    radius=\"md\"\r\n    element=\"div\"\r\n    insetBlock=\"xl\"\r\n    insetInline=\"lg\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;",
           "description": "A full-width band with more vertical than horizontal padding, on the strongest surface."
         },
         {
           "id": "box-react--navigation-region",
           "name": "Navigation Region",
-          "snippet": "const NavigationRegion = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"md\" element=\"nav\">The sidebar links</Box>;",
+          "snippet": "const NavigationRegion = () => <Box inset=\"md\" surface=\"subtle\" border={false} radius=\"md\" element=\"nav\">{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>;",
           "description": "A padded region whose element makes it a navigation landmark on web."
         }
       ],
-      "import": "import { Box, Text } from '@design-schema/react';\nimport { Text } from './Text';"
+      "import": "import { Box, Text } from '@design-schema/react';"
     },
     "breadcrumb-react": {
       "id": "breadcrumb-react",
@@ -6595,9 +6595,9 @@
           "snippet": "const RowSelectionForBulkActions = () => <DataGrid\r\n    caption=\"Orders\"\r\n    columns={[\r\n      { key: 'order', header: 'Order', isRowHeader: true },\r\n      { key: 'customer', header: 'Customer' },\r\n    ]}\r\n    data={[\r\n      { id: 'a', order: '1001', customer: 'Ana Souza' },\r\n      { id: 'b', order: '1002', customer: 'Bo Lin' },\r\n    ]}\r\n    selectable=\"row\"\r\n    density=\"comfortable\" />;"
         },
         {
-          "id": "datagrid-react--range-selection-in-a-fixed-height-grid",
-          "name": "Range Selection In A Fixed Height Grid",
-          "snippet": "const RangeSelectionInAFixedHeightGrid = () => <DataGrid\r\n    caption=\"Daily figures\"\r\n    columns={[\r\n      { key: 'day', header: 'Day', isRowHeader: true },\r\n      { key: 'visits', header: 'Visits', align: 'end' },\r\n      { key: 'signups', header: 'Signups', align: 'end' },\r\n    ]}\r\n    data={[\r\n      { id: 'a', day: 'Monday', visits: 1200, signups: 30 },\r\n      { id: 'b', day: 'Tuesday', visits: 1450, signups: 41 },\r\n    ]}\r\n    selectable=\"range\"\r\n    height=\"fixed\" />;"
+          "id": "datagrid-react--range-selection",
+          "name": "Range Selection",
+          "snippet": "const RangeSelection = () => <DataGrid\r\n    caption=\"Daily figures\"\r\n    columns={[\r\n      { key: 'day', header: 'Day', isRowHeader: true },\r\n      { key: 'visits', header: 'Visits', align: 'end' },\r\n      { key: 'signups', header: 'Signups', align: 'end' },\r\n    ]}\r\n    data={[\r\n      { id: 'a', day: 'Monday', visits: 1200, signups: 30 },\r\n      { id: 'b', day: 'Tuesday', visits: 1450, signups: 41 },\r\n    ]}\r\n    selectable=\"range\"\r\n    height=\"fixed\" />;"
         },
         {
           "id": "datagrid-react--hide-caption",
@@ -9365,7 +9365,7 @@
         {
           "id": "form-react--long-form-validated-on-blur",
           "name": "Long Form Validated On Blur",
-          "snippet": "const LongFormValidatedOnBlur = () => <Form\r\n    name=\"profile\"\r\n    label=\"Profile details\"\r\n    actions={<Button label=\"Save profile\" type=\"submit\" />}\r\n    validate=\"blur\">(<Stack gap=\"normal\">\r\n      <Input label=\"Full name\" name=\"fullName\" required />\r\n      <Input label=\"Email\" name=\"email\" required />\r\n      <Input label=\"Phone\" name=\"phone\" required />\r\n      <Input label=\"City\" name=\"city\" required />\r\n    </Stack>)</Form>;"
+          "snippet": "const LongFormValidatedOnBlur = () => <Form\r\n    name=\"profile\"\r\n    label=\"Profile details\"\r\n    actions={<Button label=\"Save profile\" type=\"submit\" />}\r\n    validate=\"blur\">(<Stack gap=\"normal\">\r\n      <Input label=\"Full name\" name=\"fullName\" required />\r\n      <Input label=\"Email\" name=\"email\" type=\"email\" required />\r\n      <Input label=\"Phone\" name=\"phone\" type=\"tel\" required />\r\n      <Input label=\"City\" name=\"city\" required />\r\n    </Stack>)</Form>;"
         },
         {
           "id": "form-react--submitting",
@@ -9403,31 +9403,37 @@
             "required": true,
             "tsType": {
               "name": "union",
-              "raw": "'1' | '2' | '3' | '4' | '5' | '6' | 1 | 2 | 3 | 4 | 5 | 6",
+              "raw": "HeadingLevel | 1 | 2 | 3 | 4 | 5 | 6",
               "elements": [
                 {
-                  "name": "literal",
-                  "value": "'1'"
-                },
-                {
-                  "name": "literal",
-                  "value": "'2'"
-                },
-                {
-                  "name": "literal",
-                  "value": "'3'"
-                },
-                {
-                  "name": "literal",
-                  "value": "'4'"
-                },
-                {
-                  "name": "literal",
-                  "value": "'5'"
-                },
-                {
-                  "name": "literal",
-                  "value": "'6'"
+                  "name": "union",
+                  "raw": "'1' | '2' | '3' | '4' | '5' | '6'",
+                  "elements": [
+                    {
+                      "name": "literal",
+                      "value": "'1'"
+                    },
+                    {
+                      "name": "literal",
+                      "value": "'2'"
+                    },
+                    {
+                      "name": "literal",
+                      "value": "'3'"
+                    },
+                    {
+                      "name": "literal",
+                      "value": "'4'"
+                    },
+                    {
+                      "name": "literal",
+                      "value": "'5'"
+                    },
+                    {
+                      "name": "literal",
+                      "value": "'6'"
+                    }
+                  ]
                 },
                 {
                   "name": "literal",
@@ -9455,7 +9461,7 @@
                 }
               ]
             },
-            "description": "Position in the document outline. Controls the semantic element, not the visual size.\nCanonical values are strings; generated components also accept the number."
+            "description": "Position in the document outline. Controls the semantic element, not the visual size.\nCanonical values are strings; the number is accepted too. A missing, out-of-range or\nnon-numeric level is treated as `2` (an <h2> at the 3xl default size) with one development\nwarning per element for its lifetime."
           },
           "size": {
             "required": false,
@@ -9498,7 +9504,7 @@
                 }
               ]
             },
-            "description": "Visual size, independent of level. There is no single default; the default is read from\n`level` by this exact map — 1 → 4xl, 2 → 3xl, 3 → 2xl, 4 → xl, 5 → lg, 6 → md — and an\nexplicit `size` always wins over it."
+            "description": "Visual size, independent of level. There is no single default; the default is read from\n`level` by this exact map — 1 → 4xl, 2 → 3xl, 3 → 2xl, 4 → xl, 5 → lg, 6 → md — and an\nexplicit `size` always wins over it. Web exposes no size attribute, only the\n`ds-heading--size-*` modifier class, which carries the resolved size."
           },
           "children": {
             "required": true,
@@ -9536,7 +9542,7 @@
                 }
               ]
             },
-            "description": "Horizontal text alignment. `start` and `end` are logical.",
+            "description": "Horizontal text alignment. It has no style binding on purpose — alignment is a layout choice,\nnot a themed value — so it maps straight to text-align. `start` and `end` are logical.",
             "defaultValue": {
               "value": "'start'",
               "computed": false
@@ -9860,7 +9866,7 @@
                 }
               ]
             },
-            "description": "Which glyph. The set is deliberately small and grows only when a component needs a shape;\n`info`, `success`, `warning` and `danger` are the four status shapes (circle-i, circle-check,\ntriangle-!, octagon-x) so tone is never carried by color alone."
+            "description": "Which glyph. The set is deliberately small and grows only when a component needs a shape;\n`info`, `success`, `warning` and `danger` are the four status shapes (circle-i, circle-check,\ntriangle-!, octagon-x) so tone is never carried by color alone. `name` has no default; the\nDefault story renders `check`."
           },
           "size": {
             "required": false,
@@ -9919,7 +9925,7 @@
                 }
               ]
             },
-            "description": "Size the glyph at 1em of the surrounding text and align it to the text baseline, ignoring\n`size`. For icons inside Text, Link and Button labels.",
+            "description": "Size the glyph at 1em of the surrounding text and align it to the text baseline, ignoring\n`size`. For icons inside Text, Link and Button labels. On web `font-size: inherit` always has a\nsurrounding size to read, so there is no fallback.",
             "defaultValue": {
               "value": "false",
               "computed": false
@@ -10193,7 +10199,7 @@
         {
           "id": "icon-react--inline-in-running-text",
           "name": "Inline In Running Text",
-          "snippet": "const InlineInRunningText = () => <Text>The report opens in a new tab <Icon name=\"external\" size=\"md\" inline />\r\n</Text>;"
+          "snippet": "const InlineInRunningText = () => <Text>Read the release notes <Icon name=\"external\" size=\"md\" inline />\r\n</Text>;"
         }
       ],
       "import": "import { Icon, Text } from '@design-schema/react';"
@@ -11092,7 +11098,7 @@
                 }
               ]
             },
-            "description": "`default` uses the link colors. `inherit` takes the surrounding text color and relies on the\nunderline alone — for links inside muted or on-action text.",
+            "description": "`default` uses the link colors. `inherit` takes the surrounding text color and relies on the\nunderline alone — for links inside muted or on-action text. Under `inherit` the color,\ncolorHover and colorVisited bindings are not applied: rest, hover and visited all resolve to\nthe inherited color, and the underline and the external icon follow it.",
             "defaultValue": {
               "value": "'default'",
               "computed": false
@@ -11235,16 +11241,6 @@
           "id": "link-react--tone-inherit",
           "name": "Tone Inherit",
           "snippet": "const ToneInherit = () => <Text tone=\"muted\">\r\n    <Link\r\n        href=\"/billing/history\"\r\n        label=\"View the billing history\"\r\n        external={false}\r\n        tone=\"inherit\"\r\n        download={false} />\r\n</Text>;"
-        },
-        {
-          "id": "link-react--external",
-          "name": "External",
-          "snippet": "const External = () => <Link\r\n    href=\"/billing/history\"\r\n    label=\"View the billing history\"\r\n    external\r\n    tone=\"default\"\r\n    download={false} />;"
-        },
-        {
-          "id": "link-react--download",
-          "name": "Download",
-          "snippet": "const Download = () => <Link\r\n    href=\"/billing/history\"\r\n    label=\"View the billing history\"\r\n    external={false}\r\n    tone=\"default\"\r\n    download />;"
         },
         {
           "id": "link-react--inline-in-a-paragraph",
@@ -19250,7 +19246,7 @@
             "tsType": {
               "name": "ReactNode"
             },
-            "description": "Any components. Stack does not style its children; it only positions them."
+            "description": "Any components. Stack does not style its children; it only positions them. Null and boolean\nchildren are skipped, as the platform skips them."
           },
           "direction": {
             "required": false,
@@ -19398,7 +19394,7 @@
                 }
               ]
             },
-            "description": "Main-axis distribution. It only shows where the main axis is larger than the content — a vertical\nStack needs a bounded height for it to mean anything, and Stack has no size of its own, so that is\nthe caller's to give.",
+            "description": "Main-axis distribution. It only shows where the main axis is larger than the content — a vertical\nStack needs a bounded height for it to mean anything, and Stack has no size of its own, so that is\nthe caller's to give. The four values are the whole set: `around` and `evenly` are deliberately left out.",
             "defaultValue": {
               "value": "'start'",
               "computed": false
@@ -19461,7 +19457,7 @@
                 }
               ]
             },
-            "description": "Landmark or list semantics when the group has meaning. For `ul`/`ol`, each child is wrapped in an\n`li` that is `display: contents`, so the children stay the flex items and the gap is unchanged. One\n`li` per child as React counts children: a fragment holding two elements is one child, so pass an array.",
+            "description": "Landmark or list semantics when the group has meaning. For `ul`/`ol`, each child is wrapped in an\n`li` that is `display: contents`, so the children stay the flex items and the gap is unchanged. One\n`li` per child as React counts children: a fragment holding two elements is one child, so pass an array;\nnull and boolean children get no `li`. The wrapper carries `role=\"listitem\"` and the list `role=\"list\"`,\nbecause dropping `list-style` removes list semantics in some browsers. The list role wins over a\nconsumer `role` on `ul`/`ol`; on the other elements a consumer `role` passes through.",
             "defaultValue": {
               "value": "'div'",
               "computed": false
@@ -19539,112 +19535,112 @@
         {
           "id": "stack-react--default",
           "name": "Default",
-          "snippet": "const Default = () => <Stack\r\n    direction=\"vertical\"\r\n    gap=\"normal\"\r\n    align=\"stretch\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Button key=\"save\" label=\"Save changes\" />,\r\n      <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\r\n      <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\r\n    ]}</Stack>;"
+          "snippet": "const Default = () => <Stack\r\n    direction=\"vertical\"\r\n    gap=\"normal\"\r\n    align=\"stretch\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Text key=\"first\">First item</Text>,\r\n      <Text key=\"second\">Second item</Text>,\r\n      <Text key=\"third\">Third item</Text>,\r\n    ]}</Stack>;"
         },
         {
           "id": "stack-react--direction-vertical",
           "name": "Direction Vertical",
-          "snippet": "const DirectionVertical = () => <Stack\r\n    direction=\"vertical\"\r\n    gap=\"normal\"\r\n    align=\"stretch\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Button key=\"save\" label=\"Save changes\" />,\r\n      <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\r\n      <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\r\n    ]}</Stack>;"
+          "snippet": "const DirectionVertical = () => <Stack\r\n    direction=\"vertical\"\r\n    gap=\"normal\"\r\n    align=\"stretch\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Text key=\"first\">First item</Text>,\r\n      <Text key=\"second\">Second item</Text>,\r\n      <Text key=\"third\">Third item</Text>,\r\n    ]}</Stack>;"
         },
         {
           "id": "stack-react--direction-horizontal",
           "name": "Direction Horizontal",
-          "snippet": "const DirectionHorizontal = () => <Stack\r\n    direction=\"horizontal\"\r\n    gap=\"normal\"\r\n    align=\"start\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Button key=\"save\" label=\"Save changes\" />,\r\n      <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\r\n      <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\r\n    ]}</Stack>;"
+          "snippet": "const DirectionHorizontal = () => <Stack\r\n    direction=\"horizontal\"\r\n    gap=\"normal\"\r\n    align=\"start\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Text key=\"first\">First item</Text>,\r\n      <Text key=\"second\">Second item</Text>,\r\n      <Text key=\"third\">Third item</Text>,\r\n    ]}</Stack>;"
         },
         {
           "id": "stack-react--gap-none",
           "name": "Gap None",
-          "snippet": "const GapNone = () => <Stack\r\n    direction=\"vertical\"\r\n    gap=\"none\"\r\n    align=\"stretch\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Button key=\"save\" label=\"Save changes\" />,\r\n      <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\r\n      <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\r\n    ]}</Stack>;"
+          "snippet": "const GapNone = () => <Stack\r\n    direction=\"vertical\"\r\n    gap=\"none\"\r\n    align=\"stretch\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Text key=\"first\">First item</Text>,\r\n      <Text key=\"second\">Second item</Text>,\r\n      <Text key=\"third\">Third item</Text>,\r\n    ]}</Stack>;"
         },
         {
           "id": "stack-react--gap-tight",
           "name": "Gap Tight",
-          "snippet": "const GapTight = () => <Stack\r\n    direction=\"vertical\"\r\n    gap=\"tight\"\r\n    align=\"stretch\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Button key=\"save\" label=\"Save changes\" />,\r\n      <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\r\n      <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\r\n    ]}</Stack>;"
+          "snippet": "const GapTight = () => <Stack\r\n    direction=\"vertical\"\r\n    gap=\"tight\"\r\n    align=\"stretch\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Text key=\"first\">First item</Text>,\r\n      <Text key=\"second\">Second item</Text>,\r\n      <Text key=\"third\">Third item</Text>,\r\n    ]}</Stack>;"
         },
         {
           "id": "stack-react--gap-normal",
           "name": "Gap Normal",
-          "snippet": "const GapNormal = () => <Stack\r\n    direction=\"vertical\"\r\n    gap=\"normal\"\r\n    align=\"stretch\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Button key=\"save\" label=\"Save changes\" />,\r\n      <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\r\n      <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\r\n    ]}</Stack>;"
+          "snippet": "const GapNormal = () => <Stack\r\n    direction=\"vertical\"\r\n    gap=\"normal\"\r\n    align=\"stretch\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Text key=\"first\">First item</Text>,\r\n      <Text key=\"second\">Second item</Text>,\r\n      <Text key=\"third\">Third item</Text>,\r\n    ]}</Stack>;"
         },
         {
           "id": "stack-react--gap-loose",
           "name": "Gap Loose",
-          "snippet": "const GapLoose = () => <Stack\r\n    direction=\"vertical\"\r\n    gap=\"loose\"\r\n    align=\"stretch\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Button key=\"save\" label=\"Save changes\" />,\r\n      <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\r\n      <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\r\n    ]}</Stack>;"
+          "snippet": "const GapLoose = () => <Stack\r\n    direction=\"vertical\"\r\n    gap=\"loose\"\r\n    align=\"stretch\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Text key=\"first\">First item</Text>,\r\n      <Text key=\"second\">Second item</Text>,\r\n      <Text key=\"third\">Third item</Text>,\r\n    ]}</Stack>;"
         },
         {
           "id": "stack-react--gap-section",
           "name": "Gap Section",
-          "snippet": "const GapSection = () => <Stack\r\n    direction=\"vertical\"\r\n    gap=\"section\"\r\n    align=\"stretch\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Button key=\"save\" label=\"Save changes\" />,\r\n      <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\r\n      <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\r\n    ]}</Stack>;"
+          "snippet": "const GapSection = () => <Stack\r\n    direction=\"vertical\"\r\n    gap=\"section\"\r\n    align=\"stretch\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Text key=\"first\">First item</Text>,\r\n      <Text key=\"second\">Second item</Text>,\r\n      <Text key=\"third\">Third item</Text>,\r\n    ]}</Stack>;"
         },
         {
           "id": "stack-react--align-start",
           "name": "Align Start",
-          "snippet": "const AlignStart = () => <Stack\r\n    direction=\"vertical\"\r\n    gap=\"normal\"\r\n    align=\"start\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Button key=\"save\" label=\"Save changes\" />,\r\n      <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\r\n      <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\r\n    ]}</Stack>;"
+          "snippet": "const AlignStart = () => <Stack\r\n    direction=\"vertical\"\r\n    gap=\"normal\"\r\n    align=\"start\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Text key=\"first\">First item</Text>,\r\n      <Text key=\"second\">Second item</Text>,\r\n      <Text key=\"third\">Third item</Text>,\r\n    ]}</Stack>;"
         },
         {
           "id": "stack-react--align-center",
           "name": "Align Center",
-          "snippet": "const AlignCenter = () => <Stack\r\n    direction=\"vertical\"\r\n    gap=\"normal\"\r\n    align=\"center\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Button key=\"save\" label=\"Save changes\" />,\r\n      <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\r\n      <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\r\n    ]}</Stack>;"
+          "snippet": "const AlignCenter = () => <Stack\r\n    direction=\"vertical\"\r\n    gap=\"normal\"\r\n    align=\"center\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Text key=\"first\">First item</Text>,\r\n      <Text key=\"second\">Second item</Text>,\r\n      <Text key=\"third\">Third item</Text>,\r\n    ]}</Stack>;"
         },
         {
           "id": "stack-react--align-end",
           "name": "Align End",
-          "snippet": "const AlignEnd = () => <Stack\r\n    direction=\"vertical\"\r\n    gap=\"normal\"\r\n    align=\"end\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Button key=\"save\" label=\"Save changes\" />,\r\n      <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\r\n      <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\r\n    ]}</Stack>;"
+          "snippet": "const AlignEnd = () => <Stack\r\n    direction=\"vertical\"\r\n    gap=\"normal\"\r\n    align=\"end\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Text key=\"first\">First item</Text>,\r\n      <Text key=\"second\">Second item</Text>,\r\n      <Text key=\"third\">Third item</Text>,\r\n    ]}</Stack>;"
         },
         {
           "id": "stack-react--align-stretch",
           "name": "Align Stretch",
-          "snippet": "const AlignStretch = () => <Stack\r\n    direction=\"vertical\"\r\n    gap=\"normal\"\r\n    align=\"stretch\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Button key=\"save\" label=\"Save changes\" />,\r\n      <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\r\n      <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\r\n    ]}</Stack>;"
+          "snippet": "const AlignStretch = () => <Stack\r\n    direction=\"vertical\"\r\n    gap=\"normal\"\r\n    align=\"stretch\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Text key=\"first\">First item</Text>,\r\n      <Text key=\"second\">Second item</Text>,\r\n      <Text key=\"third\">Third item</Text>,\r\n    ]}</Stack>;"
         },
         {
           "id": "stack-react--justify-start",
           "name": "Justify Start",
-          "snippet": "const JustifyStart = () => <Stack\r\n    direction=\"horizontal\"\r\n    gap=\"normal\"\r\n    align=\"start\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Button key=\"save\" label=\"Save changes\" />,\r\n      <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\r\n      <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\r\n    ]}</Stack>;"
+          "snippet": "const JustifyStart = () => <Stack\r\n    direction=\"horizontal\"\r\n    gap=\"normal\"\r\n    align=\"start\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Text key=\"first\">First item</Text>,\r\n      <Text key=\"second\">Second item</Text>,\r\n      <Text key=\"third\">Third item</Text>,\r\n    ]}</Stack>;"
         },
         {
           "id": "stack-react--justify-center",
           "name": "Justify Center",
-          "snippet": "const JustifyCenter = () => <Stack\r\n    direction=\"horizontal\"\r\n    gap=\"normal\"\r\n    align=\"start\"\r\n    justify=\"center\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Button key=\"save\" label=\"Save changes\" />,\r\n      <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\r\n      <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\r\n    ]}</Stack>;"
+          "snippet": "const JustifyCenter = () => <Stack\r\n    direction=\"horizontal\"\r\n    gap=\"normal\"\r\n    align=\"start\"\r\n    justify=\"center\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Text key=\"first\">First item</Text>,\r\n      <Text key=\"second\">Second item</Text>,\r\n      <Text key=\"third\">Third item</Text>,\r\n    ]}</Stack>;"
         },
         {
           "id": "stack-react--justify-end",
           "name": "Justify End",
-          "snippet": "const JustifyEnd = () => <Stack\r\n    direction=\"horizontal\"\r\n    gap=\"normal\"\r\n    align=\"start\"\r\n    justify=\"end\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Button key=\"save\" label=\"Save changes\" />,\r\n      <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\r\n      <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\r\n    ]}</Stack>;"
+          "snippet": "const JustifyEnd = () => <Stack\r\n    direction=\"horizontal\"\r\n    gap=\"normal\"\r\n    align=\"start\"\r\n    justify=\"end\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Text key=\"first\">First item</Text>,\r\n      <Text key=\"second\">Second item</Text>,\r\n      <Text key=\"third\">Third item</Text>,\r\n    ]}</Stack>;"
         },
         {
           "id": "stack-react--justify-between",
           "name": "Justify Between",
-          "snippet": "const JustifyBetween = () => <Stack\r\n    direction=\"horizontal\"\r\n    gap=\"normal\"\r\n    align=\"start\"\r\n    justify=\"between\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Button key=\"save\" label=\"Save changes\" />,\r\n      <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\r\n      <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\r\n    ]}</Stack>;"
+          "snippet": "const JustifyBetween = () => <Stack\r\n    direction=\"horizontal\"\r\n    gap=\"normal\"\r\n    align=\"start\"\r\n    justify=\"between\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Text key=\"first\">First item</Text>,\r\n      <Text key=\"second\">Second item</Text>,\r\n      <Text key=\"third\">Third item</Text>,\r\n    ]}</Stack>;"
         },
         {
           "id": "stack-react--wrap",
           "name": "Wrap",
-          "snippet": "const Wrap = () => <Stack\r\n    direction=\"horizontal\"\r\n    gap=\"normal\"\r\n    align=\"start\"\r\n    justify=\"start\"\r\n    wrap\r\n    element=\"div\">{[\r\n      <Button key=\"save\" label=\"Save changes\" />,\r\n      <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\r\n      <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\r\n    ]}</Stack>;"
+          "snippet": "const Wrap = () => <Stack\r\n    direction=\"horizontal\"\r\n    gap=\"normal\"\r\n    align=\"start\"\r\n    justify=\"start\"\r\n    wrap\r\n    element=\"div\">{[\r\n      <Text key=\"first\">First item</Text>,\r\n      <Text key=\"second\">Second item</Text>,\r\n      <Text key=\"third\">Third item</Text>,\r\n    ]}</Stack>;"
         },
         {
           "id": "stack-react--element-div",
           "name": "Element Div",
-          "snippet": "const ElementDiv = () => <Stack\r\n    direction=\"vertical\"\r\n    gap=\"normal\"\r\n    align=\"stretch\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Button key=\"save\" label=\"Save changes\" />,\r\n      <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\r\n      <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\r\n    ]}</Stack>;"
+          "snippet": "const ElementDiv = () => <Stack\r\n    direction=\"vertical\"\r\n    gap=\"normal\"\r\n    align=\"stretch\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Text key=\"first\">First item</Text>,\r\n      <Text key=\"second\">Second item</Text>,\r\n      <Text key=\"third\">Third item</Text>,\r\n    ]}</Stack>;"
         },
         {
           "id": "stack-react--element-section",
           "name": "Element Section",
-          "snippet": "const ElementSection = () => <Stack\r\n    direction=\"vertical\"\r\n    gap=\"normal\"\r\n    align=\"stretch\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"section\">{[\r\n      <Button key=\"save\" label=\"Save changes\" />,\r\n      <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\r\n      <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\r\n    ]}</Stack>;"
+          "snippet": "const ElementSection = () => <Stack\r\n    direction=\"vertical\"\r\n    gap=\"normal\"\r\n    align=\"stretch\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"section\">{[\r\n      <Text key=\"first\">First item</Text>,\r\n      <Text key=\"second\">Second item</Text>,\r\n      <Text key=\"third\">Third item</Text>,\r\n    ]}</Stack>;"
         },
         {
           "id": "stack-react--element-nav",
           "name": "Element Nav",
-          "snippet": "const ElementNav = () => <Stack\r\n    direction=\"horizontal\"\r\n    gap=\"normal\"\r\n    align=\"start\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"nav\">{[\r\n      <Button key=\"save\" label=\"Save changes\" />,\r\n      <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\r\n      <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\r\n    ]}</Stack>;"
+          "snippet": "const ElementNav = () => <Stack\r\n    direction=\"horizontal\"\r\n    gap=\"normal\"\r\n    align=\"start\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"nav\">{[\r\n      <Text key=\"first\">First item</Text>,\r\n      <Text key=\"second\">Second item</Text>,\r\n      <Text key=\"third\">Third item</Text>,\r\n    ]}</Stack>;"
         },
         {
           "id": "stack-react--element-ul",
           "name": "Element Ul",
-          "snippet": "const ElementUl = () => <Stack\r\n    direction=\"vertical\"\r\n    gap=\"normal\"\r\n    align=\"stretch\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"ul\">{[\r\n      <Button key=\"save\" label=\"Save changes\" />,\r\n      <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\r\n      <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\r\n    ]}</Stack>;"
+          "snippet": "const ElementUl = () => <Stack\r\n    direction=\"vertical\"\r\n    gap=\"normal\"\r\n    align=\"stretch\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"ul\">{[\r\n      <Text key=\"first\">First item</Text>,\r\n      <Text key=\"second\">Second item</Text>,\r\n      <Text key=\"third\">Third item</Text>,\r\n    ]}</Stack>;"
         },
         {
           "id": "stack-react--element-ol",
           "name": "Element Ol",
-          "snippet": "const ElementOl = () => <Stack\r\n    direction=\"vertical\"\r\n    gap=\"normal\"\r\n    align=\"stretch\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"ol\">{[\r\n      <Button key=\"save\" label=\"Save changes\" />,\r\n      <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\r\n      <Button key=\"delete\" label=\"Delete file\" variant=\"danger\" />,\r\n    ]}</Stack>;"
+          "snippet": "const ElementOl = () => <Stack\r\n    direction=\"vertical\"\r\n    gap=\"normal\"\r\n    align=\"stretch\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"ol\">{[\r\n      <Text key=\"first\">First item</Text>,\r\n      <Text key=\"second\">Second item</Text>,\r\n      <Text key=\"third\">Third item</Text>,\r\n    ]}</Stack>;"
         },
         {
           "id": "stack-react--form-fields",
@@ -19655,7 +19651,7 @@
         {
           "id": "stack-react--button-row",
           "name": "Button Row",
-          "snippet": "const ButtonRow = () => <Stack\r\n    direction=\"horizontal\"\r\n    gap=\"tight\"\r\n    align=\"stretch\"\r\n    justify=\"end\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\r\n      <Button key=\"submit\" label=\"Submit\" type=\"submit\" />,\r\n    ]}</Stack>;",
+          "snippet": "const ButtonRow = () => <Stack\r\n    direction=\"horizontal\"\r\n    gap=\"tight\"\r\n    align=\"center\"\r\n    justify=\"end\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\r\n      <Button key=\"submit\" label=\"Submit\" type=\"submit\" />,\r\n    ]}</Stack>;",
           "description": "A row of actions at the end of a form or card, tightly spaced and pushed to the end."
         },
         {
@@ -19667,11 +19663,11 @@
         {
           "id": "stack-react--wrapping-filters",
           "name": "Wrapping Filters",
-          "snippet": "const WrappingFilters = () => <Stack\r\n    direction=\"horizontal\"\r\n    gap=\"tight\"\r\n    align=\"stretch\"\r\n    justify=\"start\"\r\n    wrap\r\n    element=\"div\">{[\r\n      <Button key=\"all\" label=\"All\" variant=\"secondary\" size=\"sm\" />,\r\n      <Button key=\"open\" label=\"Open\" variant=\"ghost\" size=\"sm\" />,\r\n      <Button key=\"in-review\" label=\"In review\" variant=\"ghost\" size=\"sm\" />,\r\n      <Button key=\"merged\" label=\"Merged\" variant=\"ghost\" size=\"sm\" />,\r\n      <Button key=\"closed\" label=\"Closed\" variant=\"ghost\" size=\"sm\" />,\r\n      <Button key=\"archived\" label=\"Archived\" variant=\"ghost\" size=\"sm\" />,\r\n    ]}</Stack>;",
+          "snippet": "const WrappingFilters = () => <Stack\r\n    direction=\"horizontal\"\r\n    gap=\"tight\"\r\n    align=\"center\"\r\n    justify=\"start\"\r\n    wrap\r\n    element=\"div\">{[\r\n      <Button key=\"all\" label=\"All\" variant=\"secondary\" size=\"sm\" />,\r\n      <Button key=\"open\" label=\"Open\" variant=\"ghost\" size=\"sm\" />,\r\n      <Button key=\"in-review\" label=\"In review\" variant=\"ghost\" size=\"sm\" />,\r\n      <Button key=\"merged\" label=\"Merged\" variant=\"ghost\" size=\"sm\" />,\r\n      <Button key=\"closed\" label=\"Closed\" variant=\"ghost\" size=\"sm\" />,\r\n      <Button key=\"archived\" label=\"Archived\" variant=\"ghost\" size=\"sm\" />,\r\n    ]}</Stack>;",
           "description": "A horizontal group that reflows onto new lines on narrow viewports instead of overflowing."
         }
       ],
-      "import": "import { Button, Input, Stack, Text } from '@design-schema/react';\nimport { Button } from './Button';\nimport { Input } from './Input';\nimport { Text } from './Text';"
+      "import": "import { Button, Input, Stack, Text } from '@design-schema/react';\nimport { Text } from './Text';\nimport { Input } from './Input';\nimport { Button } from './Button';"
     },
     "stepper-react": {
       "id": "stepper-react",
@@ -22205,7 +22201,7 @@
                 }
               ]
             },
-            "description": "Semantic color. `onAction` is only for text placed on an action background. There is no `inverse`\ntone: an inverse surface re-scopes `--color-foreground` on its own container, which the tone resolves through.",
+            "description": "Semantic color. `onAction` is only for text placed on an action background, and its story paints\nthat background (color.action.primary.background) behind the Text. There is no `inverse` tone: the\nshared foreground vocabulary has no such name, so an inverse surface re-scopes `--color-foreground`\non its own container, which the `default` tone resolves through.",
             "defaultValue": {
               "value": "'default'",
               "computed": false
@@ -25193,6 +25189,6 @@
   },
   "meta": {
     "docgen": "react-docgen",
-    "durationMs": 2696
+    "durationMs": 2262
   }
 }

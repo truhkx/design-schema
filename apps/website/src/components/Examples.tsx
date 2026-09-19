@@ -8,6 +8,9 @@ import type { PlatformCode } from '../highlight';
 import { Mono } from './Mono';
 
 /** User-facing strings, in one place, the way the generated components keep theirs. */
+/** The level a grid's group labels render at, and so the level its first tile follows. */
+const GROUP_HEADING_LEVEL = 3;
+
 const COPY = {
   heading: 'Examples',
   openInStorybook: 'Open in Storybook',
@@ -26,6 +29,10 @@ const COPY = {
     'Not rendered here: this example renders a level-1 heading, and a page has one of those — the ' +
     'title at the top of this one. Its source stands in, and it says the same thing either way: ' +
     'level 1 really does produce an <h1>, which is the whole reason this page cannot embed it.',
+  headingSkip:
+    'Not rendered here: a grid shows every tile at once, and this example’s heading would skip a ' +
+    'level after the one above it. Its source stands in — the level it names is the point, and the ' +
+    'page outline cannot demonstrate it and stay unbroken at the same time.',
   more: (count: number) => `More examples (${count})`,
   moreLabel: (name: string) => `More ${name} examples`,
   defaultGroup: 'Default',
@@ -63,6 +70,13 @@ export interface ExamplesProps {
    * a different level — see `pageHeadingExamples`.
    */
   pageHeading: boolean[];
+  /**
+   * The heading level each example renders, in the same order, or `null` for none — from
+   * ../example-probe.ts, again by rendering. A grid shows every tile at once, so a tile whose
+   * heading would skip a level after the tile before it is shown as source: the tabs layout never
+   * had the problem, because one panel is on screen at a time.
+   */
+  headingLevel: (number | null)[];
   /** The hosted Storybook's project URL, or absent before job 510 publishes one. */
   storybookUrl?: string | undefined;
   /**
@@ -139,7 +153,7 @@ function stepLabel(example: ExampleView): string {
  *   — once job 510 has published a Storybook — a deep link to the same story there. A set longer
  *   than one strip keeps its `primary` stories in the strip and puts the rest in a second strip
  *   behind a "More examples" disclosure, so every story is still one click away.
- * - **A grid** (`sweep`), when every story steps one prop of a typography component: one tile per
+ * - **A grid** (`sweep`), when most stories step one prop of a typography component: one tile per
  *   story, grouped by prop, each captioned with the token it reads and that token's built value.
  *
  * The code is per platform (job 532): within a scenario, a second, smaller strip picks React, React
@@ -162,6 +176,7 @@ export function Examples({
   examples,
   renderable,
   pageHeading,
+  headingLevel,
   storybookUrl,
   platforms,
   code,
@@ -192,6 +207,13 @@ export function Examples({
   const outlineNote = (
     <Text size="sm" tone="muted">
       {COPY.pageHeading}
+    </Text>
+  );
+
+  /* A tile whose heading would skip a level after the tile above it: the grid says so instead. */
+  const headingSkipNote = (
+    <Text size="sm" tone="muted">
+      {COPY.headingSkip}
     </Text>
   );
 
@@ -317,12 +339,28 @@ export function Examples({
     }
     body = (
       <>
-        {groups.map((group) => (
+        {groups.map((group) => {
+          /*
+           * Which tiles would skip a heading level, walked once per group before anything renders:
+           * a tile follows the group's own label, then whatever the tile before it actually put in
+           * the outline. A tile shown as source contributes nothing, so the next tile still follows
+           * the last real heading. Going down a level never skips — h6 back to h1 is legal.
+           */
+          const skipped: boolean[] = [];
+          let previous = GROUP_HEADING_LEVEL;
+          for (const index of group.indexes) {
+            const level = headingLevel[index] ?? null;
+            const skips = level !== null && level > previous + 1;
+            skipped.push(skips);
+            if (level !== null && !skips) previous = level;
+          }
+          return (
           <Stack key={group.title} direction="vertical" gap="normal">
-            <Heading level={3}>{group.title}</Heading>
+            <Heading level={GROUP_HEADING_LEVEL}>{group.title}</Heading>
             <ul className="ds-example-grid">
-              {group.indexes.map((index) => {
+              {group.indexes.map((index, position) => {
                 const example = examples[index] as ExampleView;
+                const skips = skipped[position] === true;
                 return (
                   <li key={example.storyId} className="ds-example-grid__tile" data-example-tile={example.storyId}>
                     <Stack direction="vertical" gap="tight">
@@ -330,6 +368,8 @@ export function Examples({
                         <Text size="sm" tone="muted">
                           {COPY.decorated}
                         </Text>
+                      ) : skips ? (
+                        headingSkipNote
                       ) : (
                         live(index, 'md')
                       )}
@@ -357,7 +397,8 @@ export function Examples({
               })}
             </ul>
           </Stack>
-        ))}
+          );
+        })}
         {sweepCode === undefined ? null : (
           /* Not `keepMounted`, now that the block has a platform strip: Tabs measures its selected tab
              to place the indicator, and a strip laid out inside a closed disclosure measures zero —

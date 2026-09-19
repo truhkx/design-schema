@@ -1,5 +1,5 @@
 {
-  "layout": "scenarios",
+  "layout": "sweep",
   "platforms": {
     "react": true,
     "lit": true,
@@ -64,7 +64,7 @@
         "value": "xs"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Size Sm",
@@ -95,7 +95,7 @@
         "value": "sm"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Size Md",
@@ -126,7 +126,7 @@
         "value": "md"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Size Lg",
@@ -157,7 +157,7 @@
         "value": "lg"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Size Xl",
@@ -188,7 +188,7 @@
         "value": "xl"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Weight Regular",
@@ -219,7 +219,7 @@
         "value": "regular"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Weight Medium",
@@ -250,7 +250,7 @@
         "value": "medium"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Weight Semibold",
@@ -281,7 +281,7 @@
         "value": "semibold"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Weight Bold",
@@ -312,7 +312,7 @@
         "value": "bold"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Tone Default",
@@ -343,7 +343,7 @@
         "value": "default"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Tone Strong",
@@ -374,7 +374,7 @@
         "value": "strong"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Tone Muted",
@@ -405,7 +405,7 @@
         "value": "muted"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Tone Danger",
@@ -436,7 +436,7 @@
         "value": "danger"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Tone On Action",
@@ -467,7 +467,7 @@
         "value": "onAction"
       },
       "decorated": true,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Align Start",
@@ -498,7 +498,7 @@
         "value": "start"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Align Center",
@@ -529,7 +529,7 @@
         "value": "center"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Align End",
@@ -560,7 +560,7 @@
         "value": "end"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Element P",
@@ -591,7 +591,7 @@
         "value": "p"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Element Span",
@@ -622,7 +622,7 @@
         "value": "span"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Truncate",
@@ -796,7 +796,7 @@
         "value": true
       },
       "decorated": true,
-      "primary": false
+      "primary": true
     }
   ]
 }

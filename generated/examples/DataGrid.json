@@ -1740,7 +1740,7 @@
       "primary": true
     },
     {
-      "title": "Range Selection In A Fixed Height Grid",
+      "title": "Range Selection",
       "args": {
         "caption": "Daily figures",
         "columns": [
@@ -1784,12 +1784,12 @@
         "swift": null
       },
       "stories": {
-        "react": "RangeSelectionInAFixedHeightGrid",
-        "lit": "RangeSelectionInAFixedHeightGrid",
-        "rn": "RangeSelectionInAFixedHeightGrid",
+        "react": "RangeSelection",
+        "lit": "RangeSelection",
+        "rn": "RangeSelection",
         "swift": null
       },
-      "storyId": "datagrid-react--range-selection-in-a-fixed-height-grid",
+      "storyId": "datagrid-react--range-selection",
       "sweep": null,
       "decorated": false,
       "primary": true

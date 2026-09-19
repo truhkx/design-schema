@@ -1,5 +1,5 @@
 {
-  "layout": "scenarios",
+  "layout": "sweep",
   "platforms": {
     "react": true,
     "lit": true,
@@ -56,7 +56,7 @@
         "value": "1"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Level 2",
@@ -83,7 +83,7 @@
         "value": "2"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Level 3",
@@ -110,7 +110,7 @@
         "value": "3"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Level 4",
@@ -137,7 +137,7 @@
         "value": "4"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Level 5",
@@ -164,7 +164,7 @@
         "value": "5"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Level 6",
@@ -191,7 +191,7 @@
         "value": "6"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Size 4 Xl",
@@ -219,7 +219,7 @@
         "value": "4xl"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Size 3 Xl",
@@ -247,7 +247,7 @@
         "value": "3xl"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Size 2 Xl",
@@ -275,7 +275,7 @@
         "value": "2xl"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Size Xl",
@@ -303,7 +303,7 @@
         "value": "xl"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Size Lg",
@@ -331,7 +331,7 @@
         "value": "lg"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Size Md",
@@ -359,7 +359,7 @@
         "value": "md"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Align Start",
@@ -386,7 +386,7 @@
         "value": "start"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Align Center",
@@ -413,7 +413,7 @@
         "value": "center"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Align End",
@@ -440,7 +440,7 @@
         "value": "end"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Page Title",
@@ -467,7 +467,7 @@
         "value": "1"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Section Heading",
@@ -494,7 +494,7 @@
         "value": "2"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Subsection Sized Up",

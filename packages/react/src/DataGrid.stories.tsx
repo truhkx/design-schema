@@ -119,7 +119,7 @@ export const RowSelectionForBulkActions: Story = {
   },
 };
 
-export const RangeSelectionInAFixedHeightGrid: Story = {
+export const RangeSelection: Story = {
   args: {
     caption: 'Daily figures',
     selectable: 'range',

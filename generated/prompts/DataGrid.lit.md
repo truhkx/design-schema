@@ -1310,7 +1310,7 @@ component:
       - id: b
         order: '1002'
         customer: Bo Lin
-  - name: range-selection-in-a-fixed-height-grid
+  - name: range-selection
     description: Spreadsheet-style rectangles that can be copied as tab-separated
       text, in a grid the caller sizes.
     given:
@@ -1466,7 +1466,7 @@ component:
 - example `price-list`, story `PriceList`: given `caption: "Price list"`, `columns: [{"key":"sku","header":"SKU","isRowHeader":true,"width":160},{"key":"name","header":"Name"},{"key":"price","header":"Price","align":"end","sortable":true}]`, `data: [{"id":"a","sku":"A-1","name":"Widget","price":10},{"id":"b","sku":"B-2","name":"Sprocket","price":20}]`; The read-only grid people scroll and scan, sorted by a column they choose.
 - example `editable-cells`, story `EditableCells`: given `caption: "Stock levels"`, `editable: true`, `columns: [{"key":"sku","header":"SKU","isRowHeader":true},{"key":"onHand","header":"On hand","align":"end","editable":true,"editor":"number"}]`, `data: [{"id":"a","sku":"A-1","onHand":12},{"id":"b","sku":"B-2","onHand":4}]`; A grid meant to be worked in, where Enter or F2 opens the editor on an editable column.
 - example `row-selection-for-bulk-actions`, story `RowSelectionForBulkActions`: given `caption: "Orders"`, `selectable: "row"`, `density: "comfortable"`, `columns: [{"key":"order","header":"Order","isRowHeader":true},{"key":"customer","header":"Customer"}]`, `data: [{"id":"a","order":"1001","customer":"Ana Souza"},{"id":"b","order":"1002","customer":"Bo Lin"}]`; A checkbox column and Shift/Ctrl row selection, for acting on many rows at once.
-- example `range-selection-in-a-fixed-height-grid`, story `RangeSelectionInAFixedHeightGrid`: given `caption: "Daily figures"`, `selectable: "range"`, `height: "fixed"`, `columns: [{"key":"day","header":"Day","isRowHeader":true},{"key":"visits","header":"Visits","align":"end"},{"key":"signups","header":"Signups","align":"end"}]`, `data: [{"id":"a","day":"Monday","visits":1200,"signups":30},{"id":"b","day":"Tuesday","visits":1450,"signups":41}]`; Spreadsheet-style rectangles that can be copied as tab-separated text, in a grid the caller sizes.
+- example `range-selection`, story `RangeSelection`: given `caption: "Daily figures"`, `selectable: "range"`, `height: "fixed"`, `columns: [{"key":"day","header":"Day","isRowHeader":true},{"key":"visits","header":"Visits","align":"end"},{"key":"signups","header":"Signups","align":"end"}]`, `data: [{"id":"a","day":"Monday","visits":1200,"signups":30},{"id":"b","day":"Tuesday","visits":1450,"signups":41}]`; Spreadsheet-style rectangles that can be copied as tab-separated text, in a grid the caller sizes.
 
 ## Overrides (per-instance styling contract)
 

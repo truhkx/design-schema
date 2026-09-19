@@ -620,13 +620,13 @@
 <header>
   <div class="wrap">
     <h1>Manifest Debugger</h1>
-    <div class="summary"><a class="filter-pill all" data-k="all" href="#filter-all">All</a><a class="filter-pill err" data-k="errors" href="#filter-errors">2/54 API errors</a><a class="filter-pill info" data-k="infos" href="#filter-infos">2/54 infos</a><a class="filter-pill" data-k="no-api" href="#filter-no-api">1/54 without API description</a><span class="filter-pill ok" aria-disabled="true">865 stories ok</span><a class="filter-pill info" data-k="story-warnings" href="#filter-story-warnings">33/865 incomplete snippets</a></div>
+    <div class="summary"><a class="filter-pill all" data-k="all" href="#filter-all">All</a><a class="filter-pill err" data-k="errors" href="#filter-errors">2/54 API errors</a><a class="filter-pill info" data-k="infos" href="#filter-infos">2/54 infos</a><a class="filter-pill" data-k="no-api" href="#filter-no-api">1/54 without API description</a><span class="filter-pill ok" aria-disabled="true">863 stories ok</span><a class="filter-pill info" data-k="story-warnings" href="#filter-story-warnings">33/863 incomplete snippets</a></div>
   </div>
 </header>
 <main>
   <div class="wrap">
     <div class="note info" style="margin-bottom: 16px;">
-            <strong>Tip:</strong> You are using <code>react-docgen</code> (the default). Generation took <strong>2.7s</strong>. For higher quality prop types, consider switching to <code>react-docgen-typescript</code> in your <code>main.ts</code>:
+            <strong>Tip:</strong> You are using <code>react-docgen</code> (the default). Generation took <strong>2.3s</strong>. For higher quality prop types, consider switching to <code>react-docgen-typescript</code> in your <code>main.ts</code>:
             <pre><code>typescript: {
   reactDocgen: 'react-docgen-typescript',
 }</code></pre>
@@ -2722,6 +2722,8 @@ insetInline?: BoxInset | undefined
 
 /**
  * Per-instance style overrides: each entry sets the matching CSS hook to that token, inline.
+ * Overrides change values, never presence: `border` and `borderWidth` are no-ops without
+ * `border`, and `radius` is a no-op at `radius: none`. Padding applies at every value.
  */
 overrides?: Partial&lt;Record&lt;BoxOverridableBinding, TokenRef | undefined&gt;&gt; | undefined
 
@@ -2747,8 +2749,7 @@ surface?: BoxSurface | undefined = &#39;none&#39;</code></pre>
                 <div class="row">
                   <span class="ex-name">Imports</span>
                 </div>
-                <pre><code>import { Box, Text } from '@design-schema/react';
-import { Text } from './Text';</code></pre>
+                <pre><code>import { Box, Text } from '@design-schema/react';</code></pre>
               </div>
           
           
@@ -2759,7 +2760,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const Default = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;div&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Box content.&lt;/Text&gt;&lt;/Box&gt;;</code></pre>
+              <pre><code>const Default = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;div&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -2769,7 +2770,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const InsetNone = () =&gt; &lt;Box inset=&quot;none&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;div&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Box content.&lt;/Text&gt;&lt;/Box&gt;;</code></pre>
+              <pre><code>const InsetNone = () =&gt; &lt;Box inset=&quot;none&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;div&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -2779,7 +2780,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const InsetSm = () =&gt; &lt;Box inset=&quot;sm&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;div&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Box content.&lt;/Text&gt;&lt;/Box&gt;;</code></pre>
+              <pre><code>const InsetSm = () =&gt; &lt;Box inset=&quot;sm&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;div&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -2789,7 +2790,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const InsetMd = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;div&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Box content.&lt;/Text&gt;&lt;/Box&gt;;</code></pre>
+              <pre><code>const InsetMd = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;div&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -2799,7 +2800,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const InsetLg = () =&gt; &lt;Box inset=&quot;lg&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;div&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Box content.&lt;/Text&gt;&lt;/Box&gt;;</code></pre>
+              <pre><code>const InsetLg = () =&gt; &lt;Box inset=&quot;lg&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;div&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -2809,7 +2810,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const InsetXl = () =&gt; &lt;Box inset=&quot;xl&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;div&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Box content.&lt;/Text&gt;&lt;/Box&gt;;</code></pre>
+              <pre><code>const InsetXl = () =&gt; &lt;Box inset=&quot;xl&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;div&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -2825,7 +2826,7 @@ import { Text } from './Text';</code></pre>
     border={false}
     radius=&quot;md&quot;
     element=&quot;div&quot;
-    insetBlock=&quot;none&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Box content.&lt;/Text&gt;&lt;/Box&gt;;</code></pre>
+    insetBlock=&quot;none&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -2841,7 +2842,7 @@ import { Text } from './Text';</code></pre>
     border={false}
     radius=&quot;md&quot;
     element=&quot;div&quot;
-    insetBlock=&quot;sm&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Box content.&lt;/Text&gt;&lt;/Box&gt;;</code></pre>
+    insetBlock=&quot;sm&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -2857,7 +2858,7 @@ import { Text } from './Text';</code></pre>
     border={false}
     radius=&quot;md&quot;
     element=&quot;div&quot;
-    insetBlock=&quot;md&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Box content.&lt;/Text&gt;&lt;/Box&gt;;</code></pre>
+    insetBlock=&quot;md&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -2873,7 +2874,7 @@ import { Text } from './Text';</code></pre>
     border={false}
     radius=&quot;md&quot;
     element=&quot;div&quot;
-    insetBlock=&quot;lg&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Box content.&lt;/Text&gt;&lt;/Box&gt;;</code></pre>
+    insetBlock=&quot;lg&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -2889,7 +2890,7 @@ import { Text } from './Text';</code></pre>
     border={false}
     radius=&quot;md&quot;
     element=&quot;div&quot;
-    insetBlock=&quot;xl&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Box content.&lt;/Text&gt;&lt;/Box&gt;;</code></pre>
+    insetBlock=&quot;xl&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -2905,7 +2906,7 @@ import { Text } from './Text';</code></pre>
     border={false}
     radius=&quot;md&quot;
     element=&quot;div&quot;
-    insetInline=&quot;none&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Box content.&lt;/Text&gt;&lt;/Box&gt;;</code></pre>
+    insetInline=&quot;none&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -2921,7 +2922,7 @@ import { Text } from './Text';</code></pre>
     border={false}
     radius=&quot;md&quot;
     element=&quot;div&quot;
-    insetInline=&quot;sm&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Box content.&lt;/Text&gt;&lt;/Box&gt;;</code></pre>
+    insetInline=&quot;sm&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -2937,7 +2938,7 @@ import { Text } from './Text';</code></pre>
     border={false}
     radius=&quot;md&quot;
     element=&quot;div&quot;
-    insetInline=&quot;md&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Box content.&lt;/Text&gt;&lt;/Box&gt;;</code></pre>
+    insetInline=&quot;md&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -2953,7 +2954,7 @@ import { Text } from './Text';</code></pre>
     border={false}
     radius=&quot;md&quot;
     element=&quot;div&quot;
-    insetInline=&quot;lg&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Box content.&lt;/Text&gt;&lt;/Box&gt;;</code></pre>
+    insetInline=&quot;lg&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -2969,7 +2970,7 @@ import { Text } from './Text';</code></pre>
     border={false}
     radius=&quot;md&quot;
     element=&quot;div&quot;
-    insetInline=&quot;xl&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Box content.&lt;/Text&gt;&lt;/Box&gt;;</code></pre>
+    insetInline=&quot;xl&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -2979,7 +2980,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const SurfaceNone = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;none&quot; border={false} radius=&quot;md&quot; element=&quot;div&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Box content.&lt;/Text&gt;&lt;/Box&gt;;</code></pre>
+              <pre><code>const SurfaceNone = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;none&quot; border={false} radius=&quot;md&quot; element=&quot;div&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -2989,7 +2990,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const SurfaceDefault = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;default&quot; border={false} radius=&quot;md&quot; element=&quot;div&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Box content.&lt;/Text&gt;&lt;/Box&gt;;</code></pre>
+              <pre><code>const SurfaceDefault = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;default&quot; border={false} radius=&quot;md&quot; element=&quot;div&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -2999,7 +3000,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const SurfaceSubtle = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;div&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Box content.&lt;/Text&gt;&lt;/Box&gt;;</code></pre>
+              <pre><code>const SurfaceSubtle = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;div&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -3009,7 +3010,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const SurfaceStrong = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;strong&quot; border={false} radius=&quot;md&quot; element=&quot;div&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Box content.&lt;/Text&gt;&lt;/Box&gt;;</code></pre>
+              <pre><code>const SurfaceStrong = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;strong&quot; border={false} radius=&quot;md&quot; element=&quot;div&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -3019,7 +3020,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const Border = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border radius=&quot;md&quot; element=&quot;div&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Box content.&lt;/Text&gt;&lt;/Box&gt;;</code></pre>
+              <pre><code>const Border = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border radius=&quot;md&quot; element=&quot;div&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -3029,7 +3030,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const RadiusNone = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;none&quot; element=&quot;div&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Box content.&lt;/Text&gt;&lt;/Box&gt;;</code></pre>
+              <pre><code>const RadiusNone = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;none&quot; element=&quot;div&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -3039,7 +3040,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const RadiusSm = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;sm&quot; element=&quot;div&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Box content.&lt;/Text&gt;&lt;/Box&gt;;</code></pre>
+              <pre><code>const RadiusSm = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;sm&quot; element=&quot;div&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -3049,7 +3050,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const RadiusMd = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;div&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Box content.&lt;/Text&gt;&lt;/Box&gt;;</code></pre>
+              <pre><code>const RadiusMd = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;div&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -3059,7 +3060,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const RadiusLg = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;lg&quot; element=&quot;div&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Box content.&lt;/Text&gt;&lt;/Box&gt;;</code></pre>
+              <pre><code>const RadiusLg = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;lg&quot; element=&quot;div&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -3069,7 +3070,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const RadiusFull = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;full&quot; element=&quot;div&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Box content.&lt;/Text&gt;&lt;/Box&gt;;</code></pre>
+              <pre><code>const RadiusFull = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;full&quot; element=&quot;div&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -3079,7 +3080,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const ElementDiv = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;div&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Box content.&lt;/Text&gt;&lt;/Box&gt;;</code></pre>
+              <pre><code>const ElementDiv = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;div&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -3089,7 +3090,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const ElementSection = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;section&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Box content.&lt;/Text&gt;&lt;/Box&gt;;</code></pre>
+              <pre><code>const ElementSection = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;section&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -3099,7 +3100,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const ElementArticle = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;article&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Box content.&lt;/Text&gt;&lt;/Box&gt;;</code></pre>
+              <pre><code>const ElementArticle = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;article&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -3109,7 +3110,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const ElementAside = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;aside&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Box content.&lt;/Text&gt;&lt;/Box&gt;;</code></pre>
+              <pre><code>const ElementAside = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;aside&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -3119,7 +3120,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const ElementHeader = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;header&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Box content.&lt;/Text&gt;&lt;/Box&gt;;</code></pre>
+              <pre><code>const ElementHeader = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;header&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -3129,7 +3130,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const ElementFooter = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;footer&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Box content.&lt;/Text&gt;&lt;/Box&gt;;</code></pre>
+              <pre><code>const ElementFooter = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;footer&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -3139,7 +3140,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const ElementMain = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;main&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Box content.&lt;/Text&gt;&lt;/Box&gt;;</code></pre>
+              <pre><code>const ElementMain = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;main&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -3149,7 +3150,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const ElementNav = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;nav&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Box content.&lt;/Text&gt;&lt;/Box&gt;;</code></pre>
+              <pre><code>const ElementNav = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;nav&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -3159,7 +3160,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               <div class="hint">A panel lifted off the page with a tinted surface, rounded corners and the usual inset.</div>
-              <pre><code>const HighlightedPanel = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;div&quot;&gt;A panel of settings&lt;/Box&gt;;</code></pre>
+              <pre><code>const HighlightedPanel = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;div&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -3169,7 +3170,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               <div class="hint">A dense row bounded by a thin border rather than a fill.</div>
-              <pre><code>const BorderedRow = () =&gt; &lt;Box inset=&quot;sm&quot; surface=&quot;subtle&quot; border radius=&quot;md&quot; element=&quot;div&quot;&gt;A row of data&lt;/Box&gt;;</code></pre>
+              <pre><code>const BorderedRow = () =&gt; &lt;Box inset=&quot;sm&quot; surface=&quot;subtle&quot; border radius=&quot;md&quot; element=&quot;div&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -3186,7 +3187,7 @@ import { Text } from './Text';</code></pre>
     radius=&quot;md&quot;
     element=&quot;div&quot;
     insetBlock=&quot;xl&quot;
-    insetInline=&quot;lg&quot;&gt;A hero band&lt;/Box&gt;;</code></pre>
+    insetInline=&quot;lg&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -3196,7 +3197,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               <div class="hint">A padded region whose element makes it a navigation landmark on web.</div>
-              <pre><code>const NavigationRegion = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;nav&quot;&gt;The sidebar links&lt;/Box&gt;;</code></pre>
+              <pre><code>const NavigationRegion = () =&gt; &lt;Box inset=&quot;md&quot; surface=&quot;subtle&quot; border={false} radius=&quot;md&quot; element=&quot;nav&quot;&gt;{typeof children === &#39;string&#39; ? &lt;Text&gt;{children}&lt;/Text&gt; : children}&lt;/Box&gt;;</code></pre>
               
             </div>
         </div>
@@ -6785,12 +6786,12 @@ stickyHeader?: boolean | undefined = true</code></pre>
             </div>
             <div class="note ok">
               <div class="row">
-                <span class="ex-name">Range Selection In A Fixed Height Grid</span>
+                <span class="ex-name">Range Selection</span>
                 <span class="badge ok">story ok</span>
               </div>
               
               
-              <pre><code>const RangeSelectionInAFixedHeightGrid = () =&gt; &lt;DataGrid
+              <pre><code>const RangeSelection = () =&gt; &lt;DataGrid
     caption=&quot;Daily figures&quot;
     columns={[
       { key: &#39;day&#39;, header: &#39;Day&#39;, isRowHeader: true },
@@ -10325,8 +10326,8 @@ import { Button } from './Button';</code></pre>
     actions={&lt;Button label=&quot;Save profile&quot; type=&quot;submit&quot; /&gt;}
     validate=&quot;blur&quot;&gt;(&lt;Stack gap=&quot;normal&quot;&gt;
       &lt;Input label=&quot;Full name&quot; name=&quot;fullName&quot; required /&gt;
-      &lt;Input label=&quot;Email&quot; name=&quot;email&quot; required /&gt;
-      &lt;Input label=&quot;Phone&quot; name=&quot;phone&quot; required /&gt;
+      &lt;Input label=&quot;Email&quot; name=&quot;email&quot; type=&quot;email&quot; required /&gt;
+      &lt;Input label=&quot;Phone&quot; name=&quot;phone&quot; type=&quot;tel&quot; required /&gt;
       &lt;Input label=&quot;City&quot; name=&quot;city&quot; required /&gt;
     &lt;/Stack&gt;)&lt;/Form&gt;;</code></pre>
               
@@ -10444,7 +10445,8 @@ the right look without breaking the outline.</div>
             <pre><code>Component: src\Heading.tsx::Heading</code></pre>
             <pre><code>Props:</code></pre>
             <pre><code>/**
- * Horizontal text alignment. `start` and `end` are logical.
+ * Horizontal text alignment. It has no style binding on purpose — alignment is a layout choice,
+ * not a themed value — so it maps straight to text-align. `start` and `end` are logical.
  */
 align?: HeadingAlign | undefined = &#39;start&#39;
 
@@ -10455,9 +10457,11 @@ children: ReactNode
 
 /**
  * Position in the document outline. Controls the semantic element, not the visual size.
- * Canonical values are strings; generated components also accept the number.
+ * Canonical values are strings; the number is accepted too. A missing, out-of-range or
+ * non-numeric level is treated as `2` (an &lt;h2&gt; at the 3xl default size) with one development
+ * warning per element for its lifetime.
  */
-level: &#39;1&#39; | &#39;2&#39; | &#39;3&#39; | &#39;4&#39; | &#39;5&#39; | &#39;6&#39; | 1 | 2 | 3 | 4 | 5 | 6
+level: HeadingLevel | 1 | 2 | 3 | 4 | 5 | 6
 
 /**
  * Per-instance style overrides: each entry sets the matching `--ds-heading-*` hook to that token, inline.
@@ -10469,7 +10473,8 @@ ref?: Ref&lt;HTMLHeadingElement&gt; | undefined
 /**
  * Visual size, independent of level. There is no single default; the default is read from
  * `level` by this exact map — 1 → 4xl, 2 → 3xl, 3 → 2xl, 4 → xl, 5 → lg, 6 → md — and an
- * explicit `size` always wins over it.
+ * explicit `size` always wins over it. Web exposes no size attribute, only the
+ * `ds-heading--size-*` modifier class, which carries the resolved size.
  */
 size?: HeadingSize | undefined</code></pre>
           </div>
@@ -10743,7 +10748,8 @@ glyphs use the focus-ring width as their stroke, at every size, so they stay leg
             <pre><code>Props:</code></pre>
             <pre><code>/**
  * Size the glyph at 1em of the surrounding text and align it to the text baseline, ignoring
- * `size`. For icons inside Text, Link and Button labels.
+ * `size`. For icons inside Text, Link and Button labels. On web `font-size: inherit` always has a
+ * surrounding size to read, so there is no fallback.
  */
 inline?: boolean | undefined = false
 
@@ -10758,7 +10764,8 @@ label?: string | undefined
 /**
  * Which glyph. The set is deliberately small and grows only when a component needs a shape;
  * `info`, `success`, `warning` and `danger` are the four status shapes (circle-i, circle-check,
- * triangle-!, octagon-x) so tone is never carried by color alone.
+ * triangle-!, octagon-x) so tone is never carried by color alone. `name` has no default; the
+ * Default story renders `check`.
  */
 name: | &#39;check&#39;
 | &#39;dash&#39;
@@ -11163,7 +11170,7 @@ size?: IconSize | undefined = &#39;md&#39;</code></pre>
               </div>
               
               
-              <pre><code>const InlineInRunningText = () =&gt; &lt;Text&gt;The report opens in a new tab &lt;Icon name=&quot;external&quot; size=&quot;md&quot; inline /&gt;
+              <pre><code>const InlineInRunningText = () =&gt; &lt;Text&gt;Read the release notes &lt;Icon name=&quot;external&quot; size=&quot;md&quot; inline /&gt;
 &lt;/Text&gt;;</code></pre>
               
             </div>
@@ -11902,7 +11909,7 @@ import { Heading } from './Heading';</code></pre>
       <div class="badges">
         <label for="c-26-link-react-props" class="badge ok as-toggle">8 prop types</label>
         
-        <label for="c-26-link-react-stories" class="badge ok as-toggle">9 stories</label>
+        <label for="c-26-link-react-stories" class="badge ok as-toggle">7 stories</label>
         
         
       </div>
@@ -11974,7 +11981,9 @@ ref?: Ref&lt;HTMLAnchorElement&gt; | undefined
 
 /**
  * `default` uses the link colors. `inherit` takes the surrounding text color and relies on the
- * underline alone — for links inside muted or on-action text.
+ * underline alone — for links inside muted or on-action text. Under `inherit` the color,
+ * colorHover and colorVisited bindings are not applied: rest, hover and visited all resolve to
+ * the inherited color, and the underline and the external icon follow it.
  */
 tone?: LinkTone | undefined = &#39;default&#39;</code></pre>
           </div>
@@ -12037,36 +12046,6 @@ tone?: LinkTone | undefined = &#39;default&#39;</code></pre>
         tone=&quot;inherit&quot;
         download={false} /&gt;
 &lt;/Text&gt;;</code></pre>
-              
-            </div>
-            <div class="note ok">
-              <div class="row">
-                <span class="ex-name">External</span>
-                <span class="badge ok">story ok</span>
-              </div>
-              
-              
-              <pre><code>const External = () =&gt; &lt;Link
-    href=&quot;/billing/history&quot;
-    label=&quot;View the billing history&quot;
-    external
-    tone=&quot;default&quot;
-    download={false} /&gt;;</code></pre>
-              
-            </div>
-            <div class="note ok">
-              <div class="row">
-                <span class="ex-name">Download</span>
-                <span class="badge ok">story ok</span>
-              </div>
-              
-              
-              <pre><code>const Download = () =&gt; &lt;Link
-    href=&quot;/billing/history&quot;
-    label=&quot;View the billing history&quot;
-    external={false}
-    tone=&quot;default&quot;
-    download /&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -18521,7 +18500,8 @@ exposed to assistive technology.</div>
 align?: StackAlign | undefined = &#39;stretch&#39;
 
 /**
- * Any components. Stack does not style its children; it only positions them.
+ * Any components. Stack does not style its children; it only positions them. Null and boolean
+ * children are skipped, as the platform skips them.
  */
 children: ReactNode
 
@@ -18533,7 +18513,10 @@ direction?: StackDirection | undefined = &#39;vertical&#39;
 /**
  * Landmark or list semantics when the group has meaning. For `ul`/`ol`, each child is wrapped in an
  * `li` that is `display: contents`, so the children stay the flex items and the gap is unchanged. One
- * `li` per child as React counts children: a fragment holding two elements is one child, so pass an array.
+ * `li` per child as React counts children: a fragment holding two elements is one child, so pass an array;
+ * null and boolean children get no `li`. The wrapper carries `role=&quot;listitem&quot;` and the list `role=&quot;list&quot;`,
+ * because dropping `list-style` removes list semantics in some browsers. The list role wins over a
+ * consumer `role` on `ul`/`ol`; on the other elements a consumer `role` passes through.
  */
 element?: StackElement | undefined = &#39;div&#39;
 
@@ -18547,7 +18530,7 @@ gap?: StackGap | undefined = &#39;normal&#39;
 /**
  * Main-axis distribution. It only shows where the main axis is larger than the content — a vertical
  * Stack needs a bounded height for it to mean anything, and Stack has no size of its own, so that is
- * the caller&#39;s to give.
+ * the caller&#39;s to give. The four values are the whole set: `around` and `evenly` are deliberately left out.
  */
 justify?: StackJustify | undefined = &#39;start&#39;
 
@@ -18575,9 +18558,9 @@ wrap?: boolean | undefined = false</code></pre>
                   <span class="ex-name">Imports</span>
                 </div>
                 <pre><code>import { Button, Input, Stack, Text } from '@design-schema/react';
-import { Button } from './Button';
+import { Text } from './Text';
 import { Input } from './Input';
-import { Text } from './Text';</code></pre>
+import { Button } from './Button';</code></pre>
               </div>
           
           
@@ -18595,9 +18578,9 @@ import { Text } from './Text';</code></pre>
     justify=&quot;start&quot;
     wrap={false}
     element=&quot;div&quot;&gt;{[
-      &lt;Button key=&quot;save&quot; label=&quot;Save changes&quot; /&gt;,
-      &lt;Button key=&quot;cancel&quot; label=&quot;Cancel&quot; variant=&quot;secondary&quot; /&gt;,
-      &lt;Button key=&quot;delete&quot; label=&quot;Delete file&quot; variant=&quot;danger&quot; /&gt;,
+      &lt;Text key=&quot;first&quot;&gt;First item&lt;/Text&gt;,
+      &lt;Text key=&quot;second&quot;&gt;Second item&lt;/Text&gt;,
+      &lt;Text key=&quot;third&quot;&gt;Third item&lt;/Text&gt;,
     ]}&lt;/Stack&gt;;</code></pre>
               
             </div>
@@ -18615,9 +18598,9 @@ import { Text } from './Text';</code></pre>
     justify=&quot;start&quot;
     wrap={false}
     element=&quot;div&quot;&gt;{[
-      &lt;Button key=&quot;save&quot; label=&quot;Save changes&quot; /&gt;,
-      &lt;Button key=&quot;cancel&quot; label=&quot;Cancel&quot; variant=&quot;secondary&quot; /&gt;,
-      &lt;Button key=&quot;delete&quot; label=&quot;Delete file&quot; variant=&quot;danger&quot; /&gt;,
+      &lt;Text key=&quot;first&quot;&gt;First item&lt;/Text&gt;,
+      &lt;Text key=&quot;second&quot;&gt;Second item&lt;/Text&gt;,
+      &lt;Text key=&quot;third&quot;&gt;Third item&lt;/Text&gt;,
     ]}&lt;/Stack&gt;;</code></pre>
               
             </div>
@@ -18635,9 +18618,9 @@ import { Text } from './Text';</code></pre>
     justify=&quot;start&quot;
     wrap={false}
     element=&quot;div&quot;&gt;{[
-      &lt;Button key=&quot;save&quot; label=&quot;Save changes&quot; /&gt;,
-      &lt;Button key=&quot;cancel&quot; label=&quot;Cancel&quot; variant=&quot;secondary&quot; /&gt;,
-      &lt;Button key=&quot;delete&quot; label=&quot;Delete file&quot; variant=&quot;danger&quot; /&gt;,
+      &lt;Text key=&quot;first&quot;&gt;First item&lt;/Text&gt;,
+      &lt;Text key=&quot;second&quot;&gt;Second item&lt;/Text&gt;,
+      &lt;Text key=&quot;third&quot;&gt;Third item&lt;/Text&gt;,
     ]}&lt;/Stack&gt;;</code></pre>
               
             </div>
@@ -18655,9 +18638,9 @@ import { Text } from './Text';</code></pre>
     justify=&quot;start&quot;
     wrap={false}
     element=&quot;div&quot;&gt;{[
-      &lt;Button key=&quot;save&quot; label=&quot;Save changes&quot; /&gt;,
-      &lt;Button key=&quot;cancel&quot; label=&quot;Cancel&quot; variant=&quot;secondary&quot; /&gt;,
-      &lt;Button key=&quot;delete&quot; label=&quot;Delete file&quot; variant=&quot;danger&quot; /&gt;,
+      &lt;Text key=&quot;first&quot;&gt;First item&lt;/Text&gt;,
+      &lt;Text key=&quot;second&quot;&gt;Second item&lt;/Text&gt;,
+      &lt;Text key=&quot;third&quot;&gt;Third item&lt;/Text&gt;,
     ]}&lt;/Stack&gt;;</code></pre>
               
             </div>
@@ -18675,9 +18658,9 @@ import { Text } from './Text';</code></pre>
     justify=&quot;start&quot;
     wrap={false}
     element=&quot;div&quot;&gt;{[
-      &lt;Button key=&quot;save&quot; label=&quot;Save changes&quot; /&gt;,
-      &lt;Button key=&quot;cancel&quot; label=&quot;Cancel&quot; variant=&quot;secondary&quot; /&gt;,
-      &lt;Button key=&quot;delete&quot; label=&quot;Delete file&quot; variant=&quot;danger&quot; /&gt;,
+      &lt;Text key=&quot;first&quot;&gt;First item&lt;/Text&gt;,
+      &lt;Text key=&quot;second&quot;&gt;Second item&lt;/Text&gt;,
+      &lt;Text key=&quot;third&quot;&gt;Third item&lt;/Text&gt;,
     ]}&lt;/Stack&gt;;</code></pre>
               
             </div>
@@ -18695,9 +18678,9 @@ import { Text } from './Text';</code></pre>
     justify=&quot;start&quot;
     wrap={false}
     element=&quot;div&quot;&gt;{[
-      &lt;Button key=&quot;save&quot; label=&quot;Save changes&quot; /&gt;,
-      &lt;Button key=&quot;cancel&quot; label=&quot;Cancel&quot; variant=&quot;secondary&quot; /&gt;,
-      &lt;Button key=&quot;delete&quot; label=&quot;Delete file&quot; variant=&quot;danger&quot; /&gt;,
+      &lt;Text key=&quot;first&quot;&gt;First item&lt;/Text&gt;,
+      &lt;Text key=&quot;second&quot;&gt;Second item&lt;/Text&gt;,
+      &lt;Text key=&quot;third&quot;&gt;Third item&lt;/Text&gt;,
     ]}&lt;/Stack&gt;;</code></pre>
               
             </div>
@@ -18715,9 +18698,9 @@ import { Text } from './Text';</code></pre>
     justify=&quot;start&quot;
     wrap={false}
     element=&quot;div&quot;&gt;{[
-      &lt;Button key=&quot;save&quot; label=&quot;Save changes&quot; /&gt;,
-      &lt;Button key=&quot;cancel&quot; label=&quot;Cancel&quot; variant=&quot;secondary&quot; /&gt;,
-      &lt;Button key=&quot;delete&quot; label=&quot;Delete file&quot; variant=&quot;danger&quot; /&gt;,
+      &lt;Text key=&quot;first&quot;&gt;First item&lt;/Text&gt;,
+      &lt;Text key=&quot;second&quot;&gt;Second item&lt;/Text&gt;,
+      &lt;Text key=&quot;third&quot;&gt;Third item&lt;/Text&gt;,
     ]}&lt;/Stack&gt;;</code></pre>
               
             </div>
@@ -18735,9 +18718,9 @@ import { Text } from './Text';</code></pre>
     justify=&quot;start&quot;
     wrap={false}
     element=&quot;div&quot;&gt;{[
-      &lt;Button key=&quot;save&quot; label=&quot;Save changes&quot; /&gt;,
-      &lt;Button key=&quot;cancel&quot; label=&quot;Cancel&quot; variant=&quot;secondary&quot; /&gt;,
-      &lt;Button key=&quot;delete&quot; label=&quot;Delete file&quot; variant=&quot;danger&quot; /&gt;,
+      &lt;Text key=&quot;first&quot;&gt;First item&lt;/Text&gt;,
+      &lt;Text key=&quot;second&quot;&gt;Second item&lt;/Text&gt;,
+      &lt;Text key=&quot;third&quot;&gt;Third item&lt;/Text&gt;,
     ]}&lt;/Stack&gt;;</code></pre>
               
             </div>
@@ -18755,9 +18738,9 @@ import { Text } from './Text';</code></pre>
     justify=&quot;start&quot;
     wrap={false}
     element=&quot;div&quot;&gt;{[
-      &lt;Button key=&quot;save&quot; label=&quot;Save changes&quot; /&gt;,
-      &lt;Button key=&quot;cancel&quot; label=&quot;Cancel&quot; variant=&quot;secondary&quot; /&gt;,
-      &lt;Button key=&quot;delete&quot; label=&quot;Delete file&quot; variant=&quot;danger&quot; /&gt;,
+      &lt;Text key=&quot;first&quot;&gt;First item&lt;/Text&gt;,
+      &lt;Text key=&quot;second&quot;&gt;Second item&lt;/Text&gt;,
+      &lt;Text key=&quot;third&quot;&gt;Third item&lt;/Text&gt;,
     ]}&lt;/Stack&gt;;</code></pre>
               
             </div>
@@ -18775,9 +18758,9 @@ import { Text } from './Text';</code></pre>
     justify=&quot;start&quot;
     wrap={false}
     element=&quot;div&quot;&gt;{[
-      &lt;Button key=&quot;save&quot; label=&quot;Save changes&quot; /&gt;,
-      &lt;Button key=&quot;cancel&quot; label=&quot;Cancel&quot; variant=&quot;secondary&quot; /&gt;,
-      &lt;Button key=&quot;delete&quot; label=&quot;Delete file&quot; variant=&quot;danger&quot; /&gt;,
+      &lt;Text key=&quot;first&quot;&gt;First item&lt;/Text&gt;,
+      &lt;Text key=&quot;second&quot;&gt;Second item&lt;/Text&gt;,
+      &lt;Text key=&quot;third&quot;&gt;Third item&lt;/Text&gt;,
     ]}&lt;/Stack&gt;;</code></pre>
               
             </div>
@@ -18795,9 +18778,9 @@ import { Text } from './Text';</code></pre>
     justify=&quot;start&quot;
     wrap={false}
     element=&quot;div&quot;&gt;{[
-      &lt;Button key=&quot;save&quot; label=&quot;Save changes&quot; /&gt;,
-      &lt;Button key=&quot;cancel&quot; label=&quot;Cancel&quot; variant=&quot;secondary&quot; /&gt;,
-      &lt;Button key=&quot;delete&quot; label=&quot;Delete file&quot; variant=&quot;danger&quot; /&gt;,
+      &lt;Text key=&quot;first&quot;&gt;First item&lt;/Text&gt;,
+      &lt;Text key=&quot;second&quot;&gt;Second item&lt;/Text&gt;,
+      &lt;Text key=&quot;third&quot;&gt;Third item&lt;/Text&gt;,
     ]}&lt;/Stack&gt;;</code></pre>
               
             </div>
@@ -18815,9 +18798,9 @@ import { Text } from './Text';</code></pre>
     justify=&quot;start&quot;
     wrap={false}
     element=&quot;div&quot;&gt;{[
-      &lt;Button key=&quot;save&quot; label=&quot;Save changes&quot; /&gt;,
-      &lt;Button key=&quot;cancel&quot; label=&quot;Cancel&quot; variant=&quot;secondary&quot; /&gt;,
-      &lt;Button key=&quot;delete&quot; label=&quot;Delete file&quot; variant=&quot;danger&quot; /&gt;,
+      &lt;Text key=&quot;first&quot;&gt;First item&lt;/Text&gt;,
+      &lt;Text key=&quot;second&quot;&gt;Second item&lt;/Text&gt;,
+      &lt;Text key=&quot;third&quot;&gt;Third item&lt;/Text&gt;,
     ]}&lt;/Stack&gt;;</code></pre>
               
             </div>
@@ -18835,9 +18818,9 @@ import { Text } from './Text';</code></pre>
     justify=&quot;start&quot;
     wrap={false}
     element=&quot;div&quot;&gt;{[
-      &lt;Button key=&quot;save&quot; label=&quot;Save changes&quot; /&gt;,
-      &lt;Button key=&quot;cancel&quot; label=&quot;Cancel&quot; variant=&quot;secondary&quot; /&gt;,
-      &lt;Button key=&quot;delete&quot; label=&quot;Delete file&quot; variant=&quot;danger&quot; /&gt;,
+      &lt;Text key=&quot;first&quot;&gt;First item&lt;/Text&gt;,
+      &lt;Text key=&quot;second&quot;&gt;Second item&lt;/Text&gt;,
+      &lt;Text key=&quot;third&quot;&gt;Third item&lt;/Text&gt;,
     ]}&lt;/Stack&gt;;</code></pre>
               
             </div>
@@ -18855,9 +18838,9 @@ import { Text } from './Text';</code></pre>
     justify=&quot;center&quot;
     wrap={false}
     element=&quot;div&quot;&gt;{[
-      &lt;Button key=&quot;save&quot; label=&quot;Save changes&quot; /&gt;,
-      &lt;Button key=&quot;cancel&quot; label=&quot;Cancel&quot; variant=&quot;secondary&quot; /&gt;,
-      &lt;Button key=&quot;delete&quot; label=&quot;Delete file&quot; variant=&quot;danger&quot; /&gt;,
+      &lt;Text key=&quot;first&quot;&gt;First item&lt;/Text&gt;,
+      &lt;Text key=&quot;second&quot;&gt;Second item&lt;/Text&gt;,
+      &lt;Text key=&quot;third&quot;&gt;Third item&lt;/Text&gt;,
     ]}&lt;/Stack&gt;;</code></pre>
               
             </div>
@@ -18875,9 +18858,9 @@ import { Text } from './Text';</code></pre>
     justify=&quot;end&quot;
     wrap={false}
     element=&quot;div&quot;&gt;{[
-      &lt;Button key=&quot;save&quot; label=&quot;Save changes&quot; /&gt;,
-      &lt;Button key=&quot;cancel&quot; label=&quot;Cancel&quot; variant=&quot;secondary&quot; /&gt;,
-      &lt;Button key=&quot;delete&quot; label=&quot;Delete file&quot; variant=&quot;danger&quot; /&gt;,
+      &lt;Text key=&quot;first&quot;&gt;First item&lt;/Text&gt;,
+      &lt;Text key=&quot;second&quot;&gt;Second item&lt;/Text&gt;,
+      &lt;Text key=&quot;third&quot;&gt;Third item&lt;/Text&gt;,
     ]}&lt;/Stack&gt;;</code></pre>
               
             </div>
@@ -18895,9 +18878,9 @@ import { Text } from './Text';</code></pre>
     justify=&quot;between&quot;
     wrap={false}
     element=&quot;div&quot;&gt;{[
-      &lt;Button key=&quot;save&quot; label=&quot;Save changes&quot; /&gt;,
-      &lt;Button key=&quot;cancel&quot; label=&quot;Cancel&quot; variant=&quot;secondary&quot; /&gt;,
-      &lt;Button key=&quot;delete&quot; label=&quot;Delete file&quot; variant=&quot;danger&quot; /&gt;,
+      &lt;Text key=&quot;first&quot;&gt;First item&lt;/Text&gt;,
+      &lt;Text key=&quot;second&quot;&gt;Second item&lt;/Text&gt;,
+      &lt;Text key=&quot;third&quot;&gt;Third item&lt;/Text&gt;,
     ]}&lt;/Stack&gt;;</code></pre>
               
             </div>
@@ -18915,9 +18898,9 @@ import { Text } from './Text';</code></pre>
     justify=&quot;start&quot;
     wrap
     element=&quot;div&quot;&gt;{[
-      &lt;Button key=&quot;save&quot; label=&quot;Save changes&quot; /&gt;,
-      &lt;Button key=&quot;cancel&quot; label=&quot;Cancel&quot; variant=&quot;secondary&quot; /&gt;,
-      &lt;Button key=&quot;delete&quot; label=&quot;Delete file&quot; variant=&quot;danger&quot; /&gt;,
+      &lt;Text key=&quot;first&quot;&gt;First item&lt;/Text&gt;,
+      &lt;Text key=&quot;second&quot;&gt;Second item&lt;/Text&gt;,
+      &lt;Text key=&quot;third&quot;&gt;Third item&lt;/Text&gt;,
     ]}&lt;/Stack&gt;;</code></pre>
               
             </div>
@@ -18935,9 +18918,9 @@ import { Text } from './Text';</code></pre>
     justify=&quot;start&quot;
     wrap={false}
     element=&quot;div&quot;&gt;{[
-      &lt;Button key=&quot;save&quot; label=&quot;Save changes&quot; /&gt;,
-      &lt;Button key=&quot;cancel&quot; label=&quot;Cancel&quot; variant=&quot;secondary&quot; /&gt;,
-      &lt;Button key=&quot;delete&quot; label=&quot;Delete file&quot; variant=&quot;danger&quot; /&gt;,
+      &lt;Text key=&quot;first&quot;&gt;First item&lt;/Text&gt;,
+      &lt;Text key=&quot;second&quot;&gt;Second item&lt;/Text&gt;,
+      &lt;Text key=&quot;third&quot;&gt;Third item&lt;/Text&gt;,
     ]}&lt;/Stack&gt;;</code></pre>
               
             </div>
@@ -18955,9 +18938,9 @@ import { Text } from './Text';</code></pre>
     justify=&quot;start&quot;
     wrap={false}
     element=&quot;section&quot;&gt;{[
-      &lt;Button key=&quot;save&quot; label=&quot;Save changes&quot; /&gt;,
-      &lt;Button key=&quot;cancel&quot; label=&quot;Cancel&quot; variant=&quot;secondary&quot; /&gt;,
-      &lt;Button key=&quot;delete&quot; label=&quot;Delete file&quot; variant=&quot;danger&quot; /&gt;,
+      &lt;Text key=&quot;first&quot;&gt;First item&lt;/Text&gt;,
+      &lt;Text key=&quot;second&quot;&gt;Second item&lt;/Text&gt;,
+      &lt;Text key=&quot;third&quot;&gt;Third item&lt;/Text&gt;,
     ]}&lt;/Stack&gt;;</code></pre>
               
             </div>
@@ -18975,9 +18958,9 @@ import { Text } from './Text';</code></pre>
     justify=&quot;start&quot;
     wrap={false}
     element=&quot;nav&quot;&gt;{[
-      &lt;Button key=&quot;save&quot; label=&quot;Save changes&quot; /&gt;,
-      &lt;Button key=&quot;cancel&quot; label=&quot;Cancel&quot; variant=&quot;secondary&quot; /&gt;,
-      &lt;Button key=&quot;delete&quot; label=&quot;Delete file&quot; variant=&quot;danger&quot; /&gt;,
+      &lt;Text key=&quot;first&quot;&gt;First item&lt;/Text&gt;,
+      &lt;Text key=&quot;second&quot;&gt;Second item&lt;/Text&gt;,
+      &lt;Text key=&quot;third&quot;&gt;Third item&lt;/Text&gt;,
     ]}&lt;/Stack&gt;;</code></pre>
               
             </div>
@@ -18995,9 +18978,9 @@ import { Text } from './Text';</code></pre>
     justify=&quot;start&quot;
     wrap={false}
     element=&quot;ul&quot;&gt;{[
-      &lt;Button key=&quot;save&quot; label=&quot;Save changes&quot; /&gt;,
-      &lt;Button key=&quot;cancel&quot; label=&quot;Cancel&quot; variant=&quot;secondary&quot; /&gt;,
-      &lt;Button key=&quot;delete&quot; label=&quot;Delete file&quot; variant=&quot;danger&quot; /&gt;,
+      &lt;Text key=&quot;first&quot;&gt;First item&lt;/Text&gt;,
+      &lt;Text key=&quot;second&quot;&gt;Second item&lt;/Text&gt;,
+      &lt;Text key=&quot;third&quot;&gt;Third item&lt;/Text&gt;,
     ]}&lt;/Stack&gt;;</code></pre>
               
             </div>
@@ -19015,9 +18998,9 @@ import { Text } from './Text';</code></pre>
     justify=&quot;start&quot;
     wrap={false}
     element=&quot;ol&quot;&gt;{[
-      &lt;Button key=&quot;save&quot; label=&quot;Save changes&quot; /&gt;,
-      &lt;Button key=&quot;cancel&quot; label=&quot;Cancel&quot; variant=&quot;secondary&quot; /&gt;,
-      &lt;Button key=&quot;delete&quot; label=&quot;Delete file&quot; variant=&quot;danger&quot; /&gt;,
+      &lt;Text key=&quot;first&quot;&gt;First item&lt;/Text&gt;,
+      &lt;Text key=&quot;second&quot;&gt;Second item&lt;/Text&gt;,
+      &lt;Text key=&quot;third&quot;&gt;Third item&lt;/Text&gt;,
     ]}&lt;/Stack&gt;;</code></pre>
               
             </div>
@@ -19051,7 +19034,7 @@ import { Text } from './Text';</code></pre>
               <pre><code>const ButtonRow = () =&gt; &lt;Stack
     direction=&quot;horizontal&quot;
     gap=&quot;tight&quot;
-    align=&quot;stretch&quot;
+    align=&quot;center&quot;
     justify=&quot;end&quot;
     wrap={false}
     element=&quot;div&quot;&gt;{[
@@ -19090,7 +19073,7 @@ import { Text } from './Text';</code></pre>
               <pre><code>const WrappingFilters = () =&gt; &lt;Stack
     direction=&quot;horizontal&quot;
     gap=&quot;tight&quot;
-    align=&quot;stretch&quot;
+    align=&quot;center&quot;
     justify=&quot;start&quot;
     wrap
     element=&quot;div&quot;&gt;{[
@@ -21069,8 +21052,10 @@ ref?: Ref&lt;HTMLElement&gt; | undefined
 size?: TextSize | undefined = &#39;md&#39;
 
 /**
- * Semantic color. `onAction` is only for text placed on an action background. There is no `inverse`
- * tone: an inverse surface re-scopes `--color-foreground` on its own container, which the tone resolves through.
+ * Semantic color. `onAction` is only for text placed on an action background, and its story paints
+ * that background (color.action.primary.background) behind the Text. There is no `inverse` tone: the
+ * shared foreground vocabulary has no such name, so an inverse surface re-scopes `--color-foreground`
+ * on its own container, which the `default` tone resolves through.
  */
 tone?: TextTone | undefined = &#39;default&#39;
 

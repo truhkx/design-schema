@@ -9668,7 +9668,7 @@
           }
         },
         {
-          "name": "range-selection-in-a-fixed-height-grid",
+          "name": "range-selection",
           "description": "Spreadsheet-style rectangles that can be copied as tab-separated text, in a grid the caller sizes.",
           "given": {
             "caption": "Daily figures",

@@ -424,7 +424,7 @@ component:
         data:
           - { id: a, order: '1001', customer: Ana Souza }
           - { id: b, order: '1002', customer: Bo Lin }
-    - name: range-selection-in-a-fixed-height-grid
+    - name: range-selection
       description: Spreadsheet-style rectangles that can be copied as tab-separated text, in a grid the caller sizes.
       given:
         caption: Daily figures

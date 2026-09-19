@@ -42,7 +42,7 @@
  *
  *   - `sweep` is the one prop a story sets, when it sets exactly one enum or boolean prop (copy props
  *     like `label` aside) and no code — `SizeXl: { args: { size: 'xl' } }` is `{ prop: 'size', value: 'xl' }`.
- *   - `layout` is `sweep` when every story but Default is one, and the component is typography: a type
+ *   - `layout` is `sweep` when most stories but Default are one, and the component is typography: a type
  *     sample reads the same in a small tile as in a full panel, where a layout wrapper (Box, Container)
  *     is shown by the room it takes and a control (Toolbar) by the width it has to overflow. The page
  *     renders a sweep as one small-multiple grid. Everything else is `scenarios`, and renders as tabs.
@@ -730,11 +730,21 @@ export function sweepOf(story: StoryExport, component: ComponentInfo): Sweep | n
  */
 export const SWEEP_CATEGORIES: ReadonlySet<string> = new Set(['typography']);
 
-/** `sweep` when every story but Default steps one prop and the component's category can be tiled. */
+/**
+ * `sweep` when a tileable component's stories are mostly prop steps.
+ *
+ * It was "every story but Default" until the docs grew scenarios: Text is 21 steps beside four
+ * (Body Copy, Caption, Inline Error Wording, Truncate Inline) and Heading 17 beside one
+ * (Subsection Sized Up), each setting two props rather than one, so each was a single story that
+ * turned a 21-tile type specimen into a 25-tab strip. A grid is the right reading for a set that is
+ * overwhelmingly steps, so the minority rides along: the renderer already groups a story with no
+ * sweep under "Default" and captions it with whatever tokens its own args resolve.
+ */
 export function layoutOf(component: ComponentInfo, examples: readonly Pick<Example, 'title' | 'sweep'>[]): Layout {
   if (!SWEEP_CATEGORIES.has(component.category)) return 'scenarios';
   const steps = examples.filter((example) => example.title !== 'Default');
-  return steps.length > 0 && steps.every((example) => example.sweep !== null) ? 'sweep' : 'scenarios';
+  const swept = steps.filter((example) => example.sweep !== null);
+  return swept.length > steps.length - swept.length ? 'sweep' : 'scenarios';
 }
 
 /**

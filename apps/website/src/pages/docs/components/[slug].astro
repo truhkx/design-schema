@@ -26,7 +26,7 @@ import { Examples } from '../../../components/Examples';
 import { Mono } from '../../../components/Mono';
 import { PropsTables } from '../../../components/PropsTables';
 import { examplesFor, joinSnippets, PLATFORM_ORDER, reactStorybookUrl, type Snippets } from '../../../examples';
-import { pageHeadingExamples, renderableExamples } from '../../../example-probe';
+import { headingLevelExamples, pageHeadingExamples, renderableExamples } from '../../../example-probe';
 import { sweepCaptions, variantCss } from '../../../example-sweep';
 import { CODE_THEME, highlightSnippets } from '../../../highlight';
 import { publishedThemeTokens } from '../../../themes';
@@ -114,6 +114,12 @@ const renderable = renderableExamples(name, examples);
  * is asked of the rendered markup rather than of the args.
  */
 const pageHeading = pageHeadingExamples(name, examples);
+/**
+ * What heading level each one renders, for the grid: tiles stand side by side in the outline, so a
+ * tile whose heading would skip a level after the one before it is shown as source instead — see
+ * ../../../example-probe.ts.
+ */
+const headingLevel = headingLevelExamples(name, examples);
 /** A grid's captions: each tile's token, and its built value in every published theme — see ../../../example-sweep.ts. */
 const themeTokens = sweep ? publishedThemeTokens() : [];
 const captions = sweep ? sweepCaptions(definition, examples, renderable, themeTokens) : [];
@@ -202,6 +208,7 @@ const keyboard: KeyboardLine[] | undefined = spec?.rules.map((rule) => ({
       examples={exampleViews}
       renderable={renderable}
       pageHeading={pageHeading}
+      headingLevel={headingLevel}
       storybookUrl={storybookUrl}
       platforms={platforms}
       code={exampleCode}

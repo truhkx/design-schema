@@ -420,8 +420,13 @@ describe('layoutOf', () => {
     expect(examples.layoutOf({ category: 'typography', props: {} }, steps)).toBe('sweep');
   });
 
-  test('one scenario among the steps keeps the tabs', () => {
-    expect(examples.layoutOf({ category: 'typography', props: {} }, [...steps, { title: 'Custom', sweep: null }])).toBe('scenarios');
+  test('a scenario among the steps rides along in the grid', () => {
+    expect(examples.layoutOf({ category: 'typography', props: {} }, [...steps, { title: 'Custom', sweep: null }])).toBe('sweep');
+  });
+
+  test('a set that is mostly scenarios keeps the tabs', () => {
+    const scenarios = [{ title: 'A', sweep: null }, { title: 'B', sweep: null }, { title: 'C', sweep: null }];
+    expect(examples.layoutOf({ category: 'typography', props: {} }, [...steps, ...scenarios])).toBe('scenarios');
   });
 
   test('a layout component is never tiled, however sweep-shaped its stories', () => {

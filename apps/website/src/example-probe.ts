@@ -71,3 +71,23 @@ export function renderableExamples(name: string, examples: Example[]): boolean[]
 export function pageHeadingExamples(name: string, examples: Example[]): boolean[] {
   return staticMarkup(name, examples).map((markup) => markup !== null && /<h1[\s/>]/i.test(markup));
 }
+
+/**
+ * The heading level each example renders, in the order given, or `null` where it renders none.
+ *
+ * A grid shows every tile at once, so the tiles are neighbours in the page outline in a way tab
+ * panels never are: one panel is on screen at a time, and a level-4 specimen beside a level-2 one is
+ * two clicks apart rather than two elements apart. Heading's own sweep is the case — `Subsection
+ * Sized Up` sets `level: "4"` to make its point, and lands directly after a level-2 tile under the
+ * group's own level-3 label, which is a skipped level and a real WCAG 1.3.1 failure on the page,
+ * not a quibble of the checker.
+ *
+ * Asked by rendering, like everything else here, so the answer follows whatever the args actually
+ * produce: a component that starts emitting a heading, or stops, needs no list updated anywhere.
+ */
+export function headingLevelExamples(name: string, examples: Example[]): (number | null)[] {
+  return staticMarkup(name, examples).map((markup) => {
+    const match = markup === null ? null : /<h([1-6])[\s/>]/i.exec(markup);
+    return match === null ? null : Number(match[1]);
+  });
+}

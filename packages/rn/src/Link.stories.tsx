@@ -28,7 +28,7 @@ export const ToneInherit: Story = {
   args: { tone: 'inherit' },
   render: (args) => (
     <Text tone="muted">
-      <Link {...args} />.
+      For how charges are calculated, read <Link {...args} />.
     </Text>
   ),
 };

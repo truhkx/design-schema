@@ -1,10 +1,4 @@
-import {
-  type ComponentPropsWithoutRef,
-  type CSSProperties,
-  type ElementType,
-  type ReactNode,
-  type Ref, type ReactElement,
-} from 'react';
+import type { ComponentPropsWithoutRef, CSSProperties, ElementType, ReactElement, ReactNode, Ref } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Container.css';
 
@@ -28,9 +22,10 @@ function overridesToStyle(
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as ContainerOverridableBinding[]) {
     const ref = overrides[binding];
-    const hook = OVERRIDE_HOOK[binding];
     // An override changes a value, never presence: `width: full` and `gutter: none` have no hook to set.
-    if (ref && hook && inEffect[binding]) style[hook] = cssVar(ref);
+    // Set inline, the hook beats every class rule, so a paddingInline override replaces the whole
+    // responsive `default` gutter at every viewport width.
+    if (ref && inEffect[binding]) style[OVERRIDE_HOOK[binding]] = cssVar(ref);
   }
   return style as CSSProperties;
 }
@@ -93,7 +88,7 @@ export function Container({
     : undefined;
 
   return (
-    <Tag {...rest} ref={ref as Ref<HTMLElement>} data-ds="Container" data-part="column" className={classes} style={style}>
+    <Tag {...rest} ref={ref} data-ds="Container" data-part="column" className={classes} style={style}>
       {children}
     </Tag>
   );

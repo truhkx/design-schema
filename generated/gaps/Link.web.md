@@ -50,3 +50,20 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 ## 2026-09-18 19:26 — round 3
 
 - Link: rounds 2 and 3 were rejected by gates whose every failure is in another component. The complete axe lists in test-results/tests-gates-axe-*/error-context.md (light: Carousel, Feed, Listbox, Slider, Splitter; dark: Carousel, Feed, Listbox, Menu, Splitter, Tabs) and the 15 keyboard-web failures (ActionSheet, Combobox, DatePicker, Listbox, Menu, Search, Slider, Tabs, Toast, Tooltip, Tree) contain no Link story or spec, and Link has no keyboard block. No Link code changed. The repair loop should scope keyboard-run and axe failures to the component under generation (or diff against a pre-change baseline), otherwise a per-component round can never pass and keeps being retried.
+
+## 2026-09-19 09:48 — round 1
+
+- Link: Link.tsx, Link.test.tsx and the index.ts export already existed and matched the spec, so they were left unchanged; only Link.css and Link.stories.tsx were edited.
+- Link: the previous CSS gave the locked bindings (color, colorHover, colorVisited, focusRing*) --ds-link-* hooks, which the web platform notes forbid; the general Overrides section says 'every style binding above becomes a CSS custom-property hook', which contradicts them. I followed the platform notes: locked rules read the token directly.
+- Link: the spec does not say whether the ToneDefault story renders standalone or inside a paragraph (only ToneInherit's wrapper is specified); ToneDefault is standalone.
+- Link: copy.external ('opens in new tab') has no use on web (the web suffix is copy.externalSuffix); it is not declared in the React COPY constant.
+- Link: onPress maps to onClick with the signature (event) => void | boolean; the spec doesn't say whether a handler that calls preventDefault and also returns a non-false value should still navigate. Link only adds preventDefault on an explicit `false` and otherwise leaves the event as the handler left it.
+- Link: the click-fires-on-press scenario names only 'event: onPress' and doesn't say what arguments to assert; the test checks that it was called once and doesn't check the event argument.
+
+## 2026-09-19 09:56 — round 2
+
+- Link: the `axe` and `keyboard-run` gates run across the whole Storybook and fail on other components' stories (Feed, Listbox, Menu, Splitter, Tabs axe violations; ActionSheet, Combobox, DatePicker, Listbox, Menu, Search, SegmentedControl, Slider, Tabs, Toast, Tooltip, Tree keyboard failures). None of them are Link: an axe run limited to Link/React passes all 7 stories in light and dark (logs/link-axe.spec.ts), and Link declares no keyboard block, so the keyboard gate has no Link spec. No Link code was changed; the gate would need a per-component filter to judge this job.
+
+## 2026-09-19 10:03 — round 3
+
+- Link: the `axe` and `keyboard-run` gates failed again, only on other components (Feed, Listbox, Menu, Splitter, Tabs axe violations; ActionSheet, Combobox, DatePicker, Listbox, Menu, Search, Slider, Tabs, Toast, Tooltip, Tree keyboard failures). A re-run of axe limited to Link/React passes all 7 stories in light and dark, and Link has no keyboard block, so neither gate has a Link-specific failure to fix. No code was changed. More rounds cannot pass until those components are fixed or the gates only check the component being regenerated.

@@ -35,9 +35,16 @@ export interface FormFieldRegistration {
 export interface FormContextValue {
   /** `true` while the Form is disabled; every field and action reflects it. */
   disabled: boolean;
-  /** The Form's `validate` mode. */
+  /**
+   * The Form's `validate` mode. A field validates on blur when this is `blur` or `submitFailed` is
+   * true, and on change when this is `change` or `submitFailed` is true.
+   */
+  validateMode: FormValidateMode;
+  /** `true` after a failed submission, until a successful one resets it. */
+  submitFailed: boolean;
+  /** Same as `validateMode`; read by fields generated before `submitFailed` existed. */
   validate: FormValidateMode;
-  /** Base for generated ids, derived from the Form's `name`. */
+  /** Base for generated ids: the Form's `name`, or a generated unique id when it has none. */
   idBase: string | undefined;
   /** Errors currently held by the Form, keyed by field name. */
   errors: Readonly<Record<string, string>>;

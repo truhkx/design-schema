@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { Animated, Linking } from 'react-native';
+import { Animated, Linking, Platform } from 'react-native';
 import type { GestureResponderEvent, TextStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
@@ -65,6 +65,8 @@ const COPY = {
 /** `copy.externalSuffix`, exposed so composites (e.g. `Card`) can reproduce a Link's accessible name when they move it onto a wrapping element. */
 export const LINK_EXTERNAL_SUFFIX: ' (opens in new tab)' = COPY.externalSuffix;
 
+const IS_WEB = Platform.OS === 'web';
+
 /**
  * Link — takes people somewhere. Buttons do things; links navigate.
  *
@@ -80,6 +82,9 @@ export const LINK_EXTERNAL_SUFFIX: ' (opens in new tab)' = COPY.externalSuffix;
  * returning `false` cancels any `Linking` hand-off. For a non-`external` link the
  * handler is the navigation and `Linking.openURL(href)` is only the fallback without
  * one; an `external` link opens through `Linking` after the handler as well.
+ * On react-native-web the Text receives `href` (plus `hrefAttrs` target/rel when
+ * `external`) and renders a real anchor: the browser navigates, `Linking` is not
+ * called, and a handler returning `false` calls `preventDefault`.
  * `accessibilityHint`, `onFocus`, `onBlur`, `onHoverIn`, `onHoverOut` and `onLongPress`
  * are forwarded to the native element, so a wrapping Tooltip can attach to this Link.
  * Link exposes no `ref`. Standalone, the Link sets the body typography via Text's
@@ -148,19 +153,35 @@ export function Link({
 
   const animatedColor = highlight.interpolate({ inputRange: [0, 1], outputRange: [t.colorLink, t.colorLinkHover] });
 
-  const handlePress = (): void => {
+  const handlePress = (event: GestureResponderEvent): void => {
+    const result = onPress?.(href);
+    if (IS_WEB) {
+      // react-native-web renders a real anchor and the browser navigates, so Linking is
+      // never called; `false` cancels that navigation instead.
+      if (result === false) {
+        event.preventDefault();
+      }
+      return;
+    }
     // Cancelable: a handler returning `false` skips the only default action, the Linking hand-off.
-    if (onPress?.(href) === false) {
+    if (result === false) {
       return;
     }
     if (external || onPress === undefined) {
+      // A rejected openURL (unsupported scheme, unhandled route) is swallowed silently.
       Promise.resolve(Linking.openURL(href)).catch(() => undefined);
     }
   };
 
-  // Text's types omit onFocus/onBlur/onHoverIn/onHoverOut (react-native-web wires them
-  // up on Text), so the forwarded handlers go through an untyped bag.
+  // Text's types omit href/hrefAttrs and onFocus/onBlur/onHoverIn/onHoverOut
+  // (react-native-web wires them up on Text), so they go through an untyped bag.
   const forwardedProps: Record<string, unknown> = { onFocus, onBlur, onHoverIn, onHoverOut };
+  if (IS_WEB) {
+    forwardedProps.href = href;
+    if (external) {
+      forwardedProps.hrefAttrs = { target: '_blank', rel: 'noopener noreferrer' };
+    }
+  }
 
   // Standalone, the Link sets the body typography (there is no cascade); nested in
   // a system Text it sets none and inherits the surrounding style.

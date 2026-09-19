@@ -72,3 +72,21 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Form (carried): the Lit events `submit` and `invalid` share names with native events, which conflicts with the rule against using native event names. I kept them because platforms.lit names them.
 - Form (carried): the doc doesn't say whether the error summary comes back when blur or change validation finds an error after a successful submission. I reset the failed-submission state on success, so it doesn't.
 - Form (carried): a single bare action would stretch to full width in the flex column, and the doc gives no alignment. I made the actions slot a start-aligned flex row.
+
+## 2026-09-19 12:36 — round 1
+
+- Form: errorSummaryBorder is `locked: false` in styles and listed as Overridable, but platforms.web.notes calls it one of 'the locked summary bindings (errorSummaryText, errorSummaryBackground, errorSummaryBorder)' with no --ds-form-* hook. Chose the styles block: --ds-form-error-summary-border exists and is overridable.
+- Form: an error-summary entry whose field has unregistered still needs the label fallback (field message empty → label → name), but the unregistered field can no longer be asked for its label. Chose to remember each errored field's label when it is recorded (at submit and at later blur/change validation).
+- Form: 'the locale of the nearest `lang` ancestor' does not say whether that lookup crosses shadow roots. Lit uses this.closest('[lang]'), which stops at the host's shadow root, then falls back to the runtime default.
+- Form: the FailedSubmit story 'submits the sign-in example empty in its play function', but on Lit the shadow <form> owns no fields, so requestSubmit() does nothing. Lit's play function calls the element's public submit() instead; the doc should say how Lit triggers it (submit(), or a press on the ds-button).
+- Form: the prop is `labelledBy`, but the Lit attribute is not stated. Lit's default is the lowercased `labelledby`, and the stories use that; the doc could name the attribute (e.g. `labelled-by`) explicitly.
+- Form: behavior scenario label-names-the-form-landmark checks role and name through the host's plain role/aria-label attributes (as the conventions require). The derived 'renders' scenarios only check that the container part exists, because the doc gives no observable beyond 'renders: true'.
+- Form: the doc does not say whether ds-form should stop the submit ds-button's `press` event once it has handled it (the conventions stop a child's press only when the composite dispatches its own event). Chose to let `press` keep bubbling, since Form dispatches `submit`/`invalid`, not a press.
+
+## 2026-09-19 12:44 — round 2
+
+- Form: both rejecting gates cover the whole Lit Storybook, and neither names Form. keyboard-run fails only on other components' specs (Form has no keyboard block, so there is no Form keyboard spec). The axe output shown names only Tabs (dark color-contrast) and TreeGrid (aria-hidden-focus, target-size); no logs/playwright*.json exists for this run, so the full list could not be searched for Form. A Form-only axe run (logs/form-axe.config.ts) passes all 10 Form/Lit stories in light and dark. That run did not confirm that FailedSubmit's play function rendered the error summary before axe checked. No Form code was changed; the gates need a per-component scope, or the other components need fixing, before a Form job can go green.
+
+## 2026-09-19 12:52 — round 3
+
+- Form: the whole-Storybook axe and keyboard gates fail only on other components, so a Form job cannot pass them. The complete axe list (test-results/*axe-lit/error-context.md, 168 failures) names Carousel, DataGrid, Feed, Listbox, NumberInput, Select, Slider, Splitter, Tabs and TreeGrid, never Form. Every keyboard-run failure is in another component's spec (Form declares no keyboard block, so it has no spec). The last Form-only axe run (round 2, logs/form-axe.config.ts) passed all 10 Form/Lit stories in light and dark, and Form code has not changed since. Nothing was changed; the gates need a per-component scope, or those components need fixing separately.

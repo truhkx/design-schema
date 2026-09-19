@@ -44,9 +44,10 @@ export const ValidateSubmit: Story = { args: { validate: 'submit' } };
 export const ValidateBlur: Story = { args: { validate: 'blur' } };
 export const ValidateChange: Story = { args: { validate: 'change' } };
 
-// examples — `children` and `actions` are described in prose by the doc, so each renders them.
+// examples — `children` and `actions` are described in prose by the doc, so each renders
+// the named Inputs in a Stack at its default gap and the named Button bare in `actions`.
 const signInFields = (
-  <Stack gap="loose">
+  <Stack>
     <Input label="Email" name="email" type="email" required />
     <Input label="Password" name="password" type="password" required />
   </Stack>
@@ -67,7 +68,7 @@ export const LongFormValidatedOnBlur: Story = {
   args: { name: 'profile', label: 'Profile details', validate: 'blur' },
   render: (args) => (
     <Form {...args} actions={<Button label="Save profile" type="submit" />}>
-      <Stack gap="loose">
+      <Stack>
         <Input label="Full name" name="fullName" required />
         <Input label="Email" name="email" type="email" required />
         <Input label="Phone" name="phone" type="tel" required />

@@ -129,6 +129,11 @@ export interface FormProps
   onInvalid?: ((errors: FormErrors) => void) | undefined;
 }
 
+/** A null, empty-string or empty-array value contributes no key to `onSubmit`. */
+function isEmptyValue(value: unknown): boolean {
+  return value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0);
+}
+
 function shallowEqual(a: Readonly<FormErrors>, b: Readonly<FormErrors>): boolean {
   const aKeys = Object.keys(a);
   const bKeys = Object.keys(b);
@@ -163,19 +168,25 @@ export function Form({
   useImperativeHandle(ref, () => formRef.current as HTMLFormElement, []);
 
   const generatedId = useId();
-  const summaryId = `${name ?? `ds-form${generatedId}`}-error-summary`;
+  // An unnamed form bases its ids on a generated unique id.
+  const idBase = name ?? `ds-form${generatedId}`;
+  const summaryId = `${idBase}-error-summary`;
 
   const fieldsRef = useRef(new Map<string, FormFieldRegistration>());
+  // Last registration seen per name, so a summary entry keeps its label after its field unregisters.
+  const knownFieldsRef = useRef(new Map<string, FormFieldRegistration>());
   const [errors, setErrors] = useState<FormErrors>({});
-  // After a failed submission, fields re-validate on blur and change even under `validate: submit`.
-  const submittedRef = useRef(false);
+  // Counts failed submissions (the summary refocuses on each); a successful submission resets it.
+  // After a failed submission every mode re-validates on blur and change (`submitFailed`).
   const [failedSubmissions, setFailedSubmissions] = useState(0);
+  const submitFailed = failedSubmissions > 0;
   // Plural locale for the summary heading: the nearest `lang` ancestor, read when submission fails.
   const [locale, setLocale] = useState<string | undefined>(undefined);
   const summaryRef = useRef<HTMLDivElement | null>(null);
 
   const register = useCallback((field: FormFieldRegistration) => {
     fieldsRef.current.set(field.name, field);
+    knownFieldsRef.current.set(field.name, field);
     return () => {
       if (fieldsRef.current.get(field.name) === field) fieldsRef.current.delete(field.name);
     };
@@ -205,7 +216,8 @@ export function Form({
 
   const validateField = useCallback(
     (fieldName: string) => {
-      if (validate === 'submit' && !submittedRef.current) return;
+      // Under `validate: submit`, nothing validates before the first failed submission.
+      if (validate === 'submit' && !submitFailed) return;
       const field = fieldsRef.current.get(fieldName);
       if (!field) return;
       const message = field.isDisabled() ? null : field.validate();
@@ -221,13 +233,12 @@ export function Form({
         return { ...prev, [fieldName]: message };
       });
     },
-    [validate],
+    [validate, submitFailed],
   );
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
     if (disabled) return;
-    submittedRef.current = true;
 
     const nextErrors: FormErrors = {};
     const values: FormValues = {};
@@ -241,21 +252,18 @@ export function Form({
         firstInvalid ??= field;
       } else {
         const fieldValue = field.getValue();
-        if (fieldValue !== undefined) values[field.name] = fieldValue;
+        if (fieldValue !== undefined && !isEmptyValue(fieldValue)) values[field.name] = fieldValue;
       }
     }
 
     setErrors((prev) => (shallowEqual(prev, nextErrors) ? prev : nextErrors));
 
     if (firstInvalid !== null) {
+      const lang = formRef.current?.closest('[lang]')?.getAttribute('lang');
+      setLocale(lang ? lang : undefined);
+      setFailedSubmissions((count) => count + 1);
       onInvalid?.(nextErrors);
-      if (errorSummary) {
-        const lang = formRef.current?.closest('[lang]')?.getAttribute('lang');
-        setLocale(lang ? lang : undefined);
-        setFailedSubmissions((count) => count + 1);
-      } else {
-        firstInvalid.focus();
-      }
+      if (!errorSummary) firstInvalid.focus();
       return;
     }
     setFailedSubmissions(0);
@@ -268,8 +276,17 @@ export function Form({
   }, [failedSubmissions, errorSummary]);
 
   const contextValue = useMemo<FormContextValue>(
-    () => ({ disabled, validate, idBase: name, errors, register, validateField }),
-    [disabled, validate, name, errors, register, validateField],
+    () => ({
+      disabled,
+      validateMode: validate,
+      submitFailed,
+      validate,
+      idBase,
+      errors,
+      register,
+      validateField,
+    }),
+    [disabled, validate, submitFailed, idBase, errors, register, validateField],
   );
 
   const errorEntries = Object.entries(errors);
@@ -309,9 +326,11 @@ export function Form({
               <Stack element="ul" gap="tight" overrides={summaryGap}>
                 {/* Stack element="ul" wraps each child in its own `li`. */}
                 {errorEntries.map(([fieldName, message]) => {
+                  // A field that has unregistered since the failed submit stays as plain danger Text.
                   const field = fieldsRef.current.get(fieldName);
+                  const known = field ?? knownFieldsRef.current.get(fieldName);
                   // An empty message falls back to the label, then to the name when the label is empty too.
-                  const text = message !== '' ? message : field?.label ? field.label : fieldName;
+                  const text = message !== '' ? message : known?.label ? known.label : fieldName;
                   return field ? (
                     <Link
                       key={fieldName}

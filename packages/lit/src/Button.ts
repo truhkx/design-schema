@@ -183,10 +183,13 @@ export class DsButton extends LitElement {
       --ds-button-spinner-size: var(--font-size-lg);
     }
 
-    /* iconOnly: equal padding on all sides (space.sm), regardless of size */
-    :host([icon-only]) {
-      --ds-button-padding-inline: var(--space-sm);
-      --ds-button-padding-block: var(--space-sm);
+    /*
+     * iconOnly: equal padding on all sides. paddingInline takes the resolved
+     * paddingBlock, so a paddingBlock override keeps the sides equal and a
+     * paddingInline override has no effect.
+     */
+    :host([icon-only]) [data-part='container'] {
+      padding-inline: var(--ds-button-padding-block);
     }
 
     /* background / foreground: color.action.{variant}.*, locked (no hook) */
@@ -284,7 +287,8 @@ export class DsButton extends LitElement {
     }
     @keyframes ds-button-spin {
       to {
-        transform: rotate(1turn);
+        /* one full turn: a geometric constant, not a themed value */
+        transform: rotate(360deg);
       }
     }
     @media (prefers-reduced-motion: reduce) {
@@ -343,8 +347,9 @@ export class DsButton extends LitElement {
 
   /**
    * Shows a ring spinner in the leading icon position, hides `trailingIcon`,
-   * keeps the label visible and the layout unchanged, and blocks repeat
-   * activation while an action is pending. `copy.loading` is the description.
+   * keeps the label visible and the height unchanged, and blocks repeat
+   * activation while an action is pending. Without a `leadingIcon` the spinner
+   * and iconGap widen the button. `copy.loading` is the description.
    */
   @property({ type: Boolean, reflect: true }) accessor loading = false;
 
@@ -412,7 +417,7 @@ export class DsButton extends LitElement {
             : html`<slot name="trailing-icon" part="trailingIcon" data-part="trailingIcon"></slot>`}
         </span>
         ${this.loading
-          ? html`<span id="loading-description" class="visually-hidden">${COPY_LOADING}</span>`
+          ? html`<span id="loading-description" class="visually-hidden" aria-hidden="true">${COPY_LOADING}</span>`
           : nothing}
       </button>
     `;

@@ -63,3 +63,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Container: the 'renders' scenarios don't say what to assert on web; the tests check that the root element exists and nothing about styles (jsdom can't evaluate the media queries or custom properties).
 - Container: the spec names no Default-story children; kept a single Text paragraph 'Container content.' as the Default arg, which isn't schema copy.
 - Container: the spec doesn't say whether an override on gutter: default should also replace the value inside the media queries; the hook is set inline, which beats the class rules at every viewport, so it replaces the whole responsive gutter as the paddingInline description requires.
+
+## 2026-09-19 13:23 — round 1
+
+- Container: the Related section names Landmark and the `element` description says to use `main` 'when no Landmark wraps it', but nothing says whether Container should warn or change when `element: main` is inside a Landmark main; I chose no check and no warning, following the 'neither enforces it nor warns' clause.
+- Container: the `main-element-is-the-page-landmark` scenario's `then: role: main` doesn't say whether it means 'exactly one main' or 'at least one'; the test asserts exactly one element with role main in the render.
+- Container: the derived `renders` scenarios say nothing beyond `renders: true`, so for gutter/width/align/element they only assert that a root node exists; the spec gives no observable (class, computed max-inline-size, tag name) to assert per value, so jsdom can't check that the responsive gutter or the `full`/`none` literals apply.
+- Container: `children` is declared `required: true` and typed `ReactNode`, which already allows `undefined`/`null`, so 'required' here only means the prop key must be present; I kept `children: ReactNode` (not optional).

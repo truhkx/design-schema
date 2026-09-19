@@ -159,19 +159,16 @@
   },
   "Button.rn": {
     "hash": "84a796bb9ae7fd08",
-    "lastAttemptHash": "00b5a5e3bab02c95",
-    "generatedAt": "2026-09-18T23:12:54+00:00",
+    "lastAttemptHash": "b2d07c29f411a0ef",
+    "generatedAt": "2026-09-19T13:47:22+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 3,
-    "costUsd": 3.5583,
+    "costUsd": 2.4525,
     "files": [
-      "packages/rn/src/Button.stories.tsx",
-      "packages/rn/src/Button.test.tsx",
-      "packages/rn/src/Button.tsx",
-      "packages/rn/src/index.ts"
+      "packages/rn/src/Button.tsx"
     ],
-    "gaps": 16,
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -473,25 +470,28 @@
   },
   "Form.rn": {
     "hash": "463b9a198a00e1f2",
-    "lastAttemptHash": "463b9a198a00e1f2",
-    "generatedAt": "2026-09-17T08:33:52+00:00",
+    "lastAttemptHash": "f63d6dc830cb3607",
+    "generatedAt": "2026-09-19T17:22:14+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.3385,
+    "rounds": 3,
+    "costUsd": 2.654,
     "files": [
       "packages/rn/src/Form.stories.tsx",
+      "packages/rn/src/Form.test.tsx",
       "packages/rn/src/Form.tsx",
-      "packages/rn/src/FormContext.ts"
+      "packages/rn/src/FormContext.ts",
+      "packages/rn/src/index.ts"
     ],
-    "gaps": 8,
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": false
     }
   },
   "Heading.rn": {
@@ -551,19 +551,19 @@
   },
   "Input.rn": {
     "hash": "1f0103ed0a54c735",
-    "lastAttemptHash": "c06ae45c0f016f1d",
-    "generatedAt": "2026-09-19T01:18:46+00:00",
+    "lastAttemptHash": "d1886b7794ea6954",
+    "generatedAt": "2026-09-19T16:09:13+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 3,
-    "costUsd": 2.4163,
+    "costUsd": 2.6135,
     "files": [
       "packages/rn/src/Input.stories.tsx",
       "packages/rn/src/Input.test.tsx",
       "packages/rn/src/Input.tsx",
       "packages/rn/src/index.ts"
     ],
-    "gaps": 17,
+    "gaps": 11,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -599,20 +599,18 @@
   },
   "Link.rn": {
     "hash": "3163fdf28bf714e5",
-    "lastAttemptHash": "ddd041e32a58c6d0",
-    "generatedAt": "2026-09-19T00:11:32+00:00",
+    "lastAttemptHash": "c9402c416a550ec3",
+    "generatedAt": "2026-09-19T14:58:50+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 3,
-    "costUsd": 3.1112,
+    "costUsd": 1.8501,
     "files": [
-      "logs/link-axe-rn.mjs",
       "packages/rn/src/Link.stories.tsx",
       "packages/rn/src/Link.test.tsx",
-      "packages/rn/src/Link.tsx",
-      "packages/rn/src/index.ts"
+      "packages/rn/src/Link.tsx"
     ],
-    "gaps": 31,
+    "gaps": 12,
     "gates": {
       "parse": true,
       "contrast": true,

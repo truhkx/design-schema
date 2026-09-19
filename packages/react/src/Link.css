@@ -1,13 +1,11 @@
-/* Link — styled only through Design Schema token custom properties. */
+/* Link — styled only through Design Schema token custom properties.
+   Locked bindings (the three colours and the focus ring) get no --ds-link-* hook: their rules read
+   the token directly, so consumer CSS cannot swap an accessibility-bearing colour. */
 
 .ds-link {
   --ds-link-underline-thickness: var(--border-width-thin);
   --ds-link-underline-offset: var(--space-1);
   --ds-link-external-icon-gap: var(--space-1);
-  --ds-link-focus-ring: var(--color-border-focus);
-  --ds-link-focus-ring-width: var(--border-width-focus);
-  --ds-link-focus-ring-radius: var(--radius-sm);
-  --ds-link-focus-ring-offset: var(--border-width-focus);
   --ds-link-transition: var(--motion-duration-fast);
 
   display: inline;
@@ -22,27 +20,24 @@
 /* tone → default uses the link colors. inherit applies none of color, colorHover or colorVisited:
    the anchor keeps the inherited color (the root rule above), and the underline and icon follow it. */
 .ds-link--tone-default {
-  --ds-link-color: var(--color-link);
-  --ds-link-color-hover: var(--color-link-hover);
-  --ds-link-color-visited: var(--color-link-visited);
-  color: var(--ds-link-color);
+  color: var(--color-link);
 }
 
 /* colorVisited (web and Lit only). Declared before :hover so hover wins on a visited link. */
 .ds-link--tone-default:visited {
-  color: var(--ds-link-color-visited);
+  color: var(--color-link-visited);
 }
 
 /* colorHover: plain pointer :hover, not :active, with no (hover: hover) guard. */
 .ds-link--tone-default:hover {
-  color: var(--ds-link-color-hover);
+  color: var(--color-link-hover);
 }
 
 /* focus-visible (locked): the radius applies only here, so a resting inline anchor is not rounded. */
 .ds-link:focus-visible {
-  outline: var(--ds-link-focus-ring-width) solid var(--ds-link-focus-ring);
-  outline-offset: var(--ds-link-focus-ring-offset);
-  border-radius: var(--ds-link-focus-ring-radius);
+  outline: var(--border-width-focus) solid var(--color-border-focus);
+  outline-offset: var(--border-width-focus);
+  border-radius: var(--radius-sm);
 }
 
 @media (prefers-reduced-motion: reduce) {

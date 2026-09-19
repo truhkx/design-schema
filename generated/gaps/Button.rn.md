@@ -77,3 +77,22 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Button: the axe gate failed color-contrast on the Disabled story only because react-native-web never marked the button disabled. The disabledOpacity dimming itself is correct per the spec and WCAG 1.4.3 (inactive components are exempt), and was left unchanged. The doc could say that the disabled state must be visible to web accessibility tooling for that exemption to apply.
 - Button: the loading prop says rn announces copy.loading through `accessibilityValue={{ text: copy.loading }}`. react-native-web ignores it, and aria-valuetext isn't allowed on role=button, so on react-native-web only aria-busy is exposed. Nothing was added for web; the doc should say how react-native-web should announce loading, if it should.
 - Button: Button now owns its root ref and passes it to the caller through useImperativeHandle instead of passing `ref` straight through. The rn conventions allow this ('useImperativeHandle(ref, …) when an inner ref owns the root'), but the Button doc only says it 'exposes its root Pressable as ref'.
+
+## 2026-09-19 09:28 — round 1
+
+- Button: the `iconOnly` prop text says the padding is `space.sm`, but the paddingBlock binding's token is also `space.sm`, so it's unclear whether iconOnly means the literal `space.sm` or the resolved paddingBlock. I used the resolved paddingBlock, because the text also says a paddingBlock override keeps the sides equal.
+- Button: `loading-announces-busy-and-ignores-activation` puts `aria-busy` on web/Lit only, while its description says the rn test checks accessibilityState.busy 'in its own file'. There is no separate file, so the test asserts `toBeBusy()` in the same scenario.
+- Button: the `icon-only-in-a-toolbar` example gives `leadingIcon: Icon name=close` as a string. On rn it has to be an element whose `color` is the ghost foreground token, so the story renders a small wrapper that reads that token. `given` has no way to name a token-colored child element.
+- Button: `backgroundHover` has state `hover`, but the rn notes map it to pressed. The spec never says whether `Pressable`'s `hovered` should do anything on react-native-web. It is ignored, following the binding description, so the forwarded `onHoverIn`/`onHoverOut` are passed through and don't change the fill.
+- Button: `transition` is meant to animate only the background, but pressing also re-renders the label, and the spec doesn't say whether the label color may change on press. No variant changes its foreground, so only the separate animated fill layer behind the content animates.
+- Button: the loading spinner's looping `Animated` timing causes React act() warnings under Jest. The scenarios can't say whether tests should render with reduced motion or fake timers. I left the tests unchanged.
+
+## 2026-09-19 09:35 — round 2
+
+- Button: the rn axe gate runs over the whole Storybook and fails on other components' existing violations (Toolbar, Tree, TreeGrid, Listbox, Carousel, Toast, the Preferences demo, the SettingsPage pattern and more). No Button/React Native story is in the failure list, so no change to Button can make the gate pass. The spec gives no way to scope a component job's axe gate to its own stories. I changed no code.
+- Button: Toast 'With Action' reports 2 contrast failures where the other Toast stories report 1. The spec says ghost+inverse text is color.inverse.link on the transparent ghost fill over color.inverse.surface, a pair the spec's contrast list requires to pass. I couldn't run axe here to confirm the extra failure isn't the Button label; logs/button-axe-rn.mjs prints the failing HTML.
+- Button: Card 'Interactive With Button' fails nested-interactive because a Button sits inside a pressable Card. Neither the Button nor the Card spec says whether a Button may go inside an interactive container. Button was left as is.
+
+## 2026-09-19 09:41 — round 3
+
+- Button: the rn axe gate runs over the whole Storybook and fails on other components' existing violations (Toolbar, Tree, TreeGrid, Listbox, Carousel, Card, Toast, the Preferences demo, the SettingsPage pattern). For the second round in a row no Button/React Native story fails, and Toast 'With Action' dropped from 2 contrast failures to 1, matching the other Toast stories. The spec gives no way to scope a component's axe gate to its own stories. I changed no code, because weakening Button couldn't clear failures in other components' stories.

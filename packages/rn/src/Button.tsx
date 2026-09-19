@@ -50,7 +50,12 @@ export interface ButtonProps {
   leadingIcon?: React.ReactNode;
   /** Icon after the label. Decorative, like `leadingIcon`. */
   trailingIcon?: React.ReactNode;
-  /** Hides the visible label and shows only `leadingIcon`. `label` is still required and becomes the accessible name. Padding becomes equal on all sides (`space.sm`). */
+  /**
+   * Hides the visible label and shows only `leadingIcon`; `trailingIcon` is not rendered
+   * either. `label` is still required and becomes the accessible name. Padding becomes equal
+   * on all sides: paddingInline takes the resolved paddingBlock (`space.sm`), so a
+   * `paddingInline` override has no effect while `iconOnly`.
+   */
   iconOnly?: boolean | undefined;
   /**
    * Shows a ring spinner in the leading icon slot (whether or not `leadingIcon` is set;
@@ -286,12 +291,14 @@ export function Button({
   const focusRingColor = inverse ? t.colorInverseFocus : t.colorBorderFocus;
 
   const iconGap = overrides?.iconGap ? (resolveToken(t, overrides.iconGap) as number) : t.space2;
-  const paddingInline = overrides?.paddingInline
-    ? (resolveToken(t, overrides.paddingInline) as number)
-    : iconOnly
-      ? t.spaceSm
-      : t[PADDING_INLINE_TOKEN[size]];
   const paddingBlock = overrides?.paddingBlock ? (resolveToken(t, overrides.paddingBlock) as number) : t.spaceSm;
+  // `iconOnly` makes the sides equal: paddingInline takes the resolved paddingBlock, so a
+  // paddingBlock override keeps them equal and a paddingInline override has no effect.
+  const paddingInline = iconOnly
+    ? paddingBlock
+    : overrides?.paddingInline
+      ? (resolveToken(t, overrides.paddingInline) as number)
+      : t[PADDING_INLINE_TOKEN[size]];
   const radius = overrides?.radius ? (resolveToken(t, overrides.radius) as number) : t.radiusMd;
   const fontFamily = overrides?.fontFamily ? (resolveToken(t, overrides.fontFamily) as string) : t.fontFamilyBody;
   const fontWeight = overrides?.fontWeight ? (resolveToken(t, overrides.fontWeight) as number) : t.fontWeightMedium;

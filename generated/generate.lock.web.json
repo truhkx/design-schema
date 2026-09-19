@@ -170,17 +170,20 @@
   },
   "Button.web": {
     "hash": "ea0cd5f4b4fcac15",
-    "lastAttemptHash": "3988ae109fc84c0c",
-    "generatedAt": "2026-09-18T22:29:54+00:00",
+    "lastAttemptHash": "f9287a334e4da936",
+    "generatedAt": "2026-09-19T13:03:10+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 3,
-    "costUsd": 1.7917,
+    "costUsd": 2.7372,
     "files": [
       "packages/react/src/Button.css",
-      "packages/react/src/Button.tsx"
+      "packages/react/src/Button.stories.tsx",
+      "packages/react/src/Button.test.tsx",
+      "packages/react/src/Button.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 12,
+    "gaps": 13,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -508,18 +511,19 @@
   },
   "Form.web": {
     "hash": "3378252927e046b2",
-    "lastAttemptHash": "1d0c2faf8ee0b93d",
-    "generatedAt": "2026-09-19T02:13:40+00:00",
+    "lastAttemptHash": "9c64726f2da3e132",
+    "generatedAt": "2026-09-19T16:35:22+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 3,
-    "costUsd": 1.8533,
+    "costUsd": 2.5404,
     "files": [
-      "logs/form-axe.mjs",
+      "packages/react/src/Form.css",
       "packages/react/src/Form.stories.tsx",
-      "packages/react/src/Form.tsx"
+      "packages/react/src/Form.tsx",
+      "packages/react/src/FormContext.ts"
     ],
-    "gaps": 12,
+    "gaps": 14,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -590,14 +594,18 @@
   },
   "Input.web": {
     "hash": "f46a5905bb8eeeea",
-    "lastAttemptHash": "92d2f9b06a96ae2f",
-    "generatedAt": "2026-09-19T00:36:42+00:00",
+    "lastAttemptHash": "3227cdb688fa2e27",
+    "generatedAt": "2026-09-19T15:22:29+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 3,
-    "costUsd": 2.6364,
+    "costUsd": 1.6923,
     "files": [
-      "packages/react/src/Input.tsx"
+      "packages/react/src/Input.css",
+      "packages/react/src/Input.stories.tsx",
+      "packages/react/src/Input.test.tsx",
+      "packages/react/src/Input.tsx",
+      "packages/react/src/index.ts"
     ],
     "gaps": 10,
     "gates": {
@@ -637,12 +645,12 @@
   },
   "Link.web": {
     "hash": "4fbb185fd490748d",
-    "lastAttemptHash": "5c060df858b24690",
-    "generatedAt": "2026-09-18T23:32:29+00:00",
+    "lastAttemptHash": "83eafa5501b5c32d",
+    "generatedAt": "2026-09-19T14:11:28+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 3,
-    "costUsd": 1.5925,
+    "costUsd": 1.3421,
     "files": [
       "packages/react/src/Link.css",
       "packages/react/src/Link.stories.tsx",

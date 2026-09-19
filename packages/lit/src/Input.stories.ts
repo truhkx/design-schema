@@ -82,6 +82,8 @@ export const Required: Story = { args: { required: true } };
 export const HideLabel: Story = { args: { hideLabel: true } };
 export const Disabled: Story = { args: { disabled: true, defaultValue: 'name@example.com' } };
 export const Invalid: Story = { args: { invalid: true } };
+export const InvalidRequiredEmpty: Story = { args: { invalid: true, required: true } };
+export const WithPlaceholder: Story = { args: { placeholder: 'name@example.com' } };
 
 /* examples */
 export const EmailWithADescription: Story = {

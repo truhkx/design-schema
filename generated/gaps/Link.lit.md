@@ -46,3 +46,21 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 ## 2026-09-18 19:47 — round 3
 
 - Link: the gates run over the whole Lit package, so their red status can't be cleared by changes to Link alone. This round's axe and keyboard-run failures are all in other components (Tabs color-contrast, TreeGrid aria-hidden-focus and target-size, Feed aria-required-children, and the keyboard specs of 18 other components); none names Link. The last Link-related failure, Feed and SidePanel link-name, is gone after round 2's story fix. The gate harness should scope each component's round to that component's stories and specs, or say that other components' failures are out of scope.
+
+## 2026-09-19 10:12 — round 1
+
+- Link: the reflect list names tone, external and download, but the Lit guidance says to 'reflect tone and external'; all three are reflected, as the reflect list is the declared contract.
+- Link: the tone description scopes the link colours to 'the tone: default modifier' only for web; for Lit I scoped them with :host(:not([tone='inherit'])), so an unknown tone value falls back to the link colours rather than inherit.
+- Link: the has-accessible-name and control-is-focusable scenarios don't say whether to assert on the host or the shadow anchor; the tests check the anchor's name and assert that focusing the host lands on the anchor through delegatesFocus.
+- Link: externalIconGap says an override 'is written only while external is true', but not whether a stored override should be re-applied when external goes back to true later; the element re-applies it on any change to external or overrides.
+- Link: the Lit notes say an empty href is the consumer's error and Link does not warn, so an empty href still renders <a href=""> (a link to the current page) rather than a non-link; left as written.
+
+## 2026-09-19 10:21 — round 2
+
+- Link: gates keyboard-run and axe run over the whole Lit Storybook and failed only on other components (keyboard: Combobox, DatePicker, Dialog, Feed, Listbox, Menu, Popover, Search, SegmentedControl, Select, SidePanel, Slider, Stepper, Tabs, Toast, Toolbar, Tooltip, Tree; axe: Tabs color-contrast in dark mode, TreeGrid aria-hidden-focus and target-size, among others). Link has no keyboard block so it has no keyboard spec, and all 7 Link/Lit stories pass axe in light and dark (checked with logs/link-axe.spec.ts). No Link change can make these gates pass; I left the code as it was rather than change another component's files in a Link job.
+- Link: carried over from round 1: tone scoping on Lit uses :host(:not([tone='inherit'])), so an unknown tone value falls back to the link colours; the spec states the scoping only for web.
+
+## 2026-09-19 10:30 — round 3
+
+- Link: round 3 gave the same keyboard-run and axe output as round 2, and none of it is Link's. Link has no keyboard block, so there's no keyboard spec for it, and all 7 Link/Lit stories pass axe in light and dark (logs/link-axe.spec.ts, re-run this round). Both gates check the whole Lit Storybook, so Tabs' dark-mode color-contrast failures, TreeGrid's aria-hidden-focus and target-size failures, and the keyboard failures in 18 other components fail every job. The job loop should limit these gates to the component being generated (filter stories by title, as logs/link-axe.spec.ts does) or accept failures already in the baseline; no Link code change can make them pass.
+- Link: carried over from round 1: tone scoping on Lit uses :host(:not([tone='inherit'])), so an unknown tone value falls back to the link colours; the spec states the scoping only for web.

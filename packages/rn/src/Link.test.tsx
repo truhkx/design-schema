@@ -4,6 +4,7 @@
  * native a press is `fireEvent.press` and the external name is the accessibilityLabel.
  */
 import * as React from 'react';
+import { Linking } from 'react-native';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { Link } from './Link';
 import type { LinkProps } from './Link';
@@ -54,5 +55,52 @@ describe('Link', () => {
   it('has-accessible-name', () => {
     const s = setup();
     expect(s.container()).toHaveAccessibleName(s.props.label);
+  });
+});
+
+/* Platform-own: the Linking fallback and external hand-off, which the scenarios cannot express. */
+describe('Link — Linking hand-off', () => {
+  let openURL: jest.SpyInstance;
+  beforeEach(() => {
+    openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
+  });
+  afterEach(() => openURL.mockRestore());
+
+  function renderLink(props: Partial<LinkProps>) {
+    render(
+      <ThemeProvider mode="light">
+        <Link href="/billing/history" label="View the billing history" {...props} />
+      </ThemeProvider>,
+    );
+    fireEvent.press(screen.getByTestId('Link'));
+  }
+
+  it('opens the URL with Linking when there is no handler', () => {
+    renderLink({});
+    expect(openURL).toHaveBeenCalledWith('/billing/history');
+  });
+
+  it('leaves navigation to the handler for a non-external link', () => {
+    renderLink({ onPress: jest.fn() });
+    expect(openURL).not.toHaveBeenCalled();
+  });
+
+  it('hands an external link to Linking after the handler', () => {
+    const onPress = jest.fn();
+    renderLink({ external: true, onPress });
+    expect(onPress).toHaveBeenCalledWith('/billing/history');
+    expect(openURL).toHaveBeenCalledWith('/billing/history');
+  });
+
+  it('skips the hand-off when the handler returns false', () => {
+    renderLink({ external: true, onPress: () => false });
+    expect(openURL).not.toHaveBeenCalled();
+  });
+
+  it('swallows a rejected openURL', async () => {
+    openURL.mockRejectedValue(new Error('unsupported'));
+    renderLink({});
+    await Promise.resolve();
+    expect(openURL).toHaveBeenCalledTimes(1);
   });
 });

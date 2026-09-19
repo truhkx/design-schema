@@ -59,3 +59,21 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 ## 2026-09-18 20:50 — round 3
 
 - Input: rounds 2 and 3 reported identical keyboard-run and axe failures, and none of them is in Input. The axe results were written after the last Input.ts edit and name no Input/Lit story, although all 17 Input stories are in the index the gate ran. Input declares no keyboard block, so no Input keyboard spec exists. Both gates are whole-suite: axe.spec.ts puts every story in one test, and keyboard-run runs every component's spec. So a component's regeneration job fails on other components' failures and can't pass by changing its own code. Made no change; the gates need to be scoped to the component under generation, or report per component, for this retry loop to converge.
+
+## 2026-09-19 11:23 — round 1
+
+- Input: the required-is-shown-in-the-label scenario limits the aria-required check to web, but the Behavior prose says aria-required is set on every platform and the Lit inner input sets it; the Lit test asserts aria-required="true" as well as the copy.
+- Input: focusRingWidth says 'padding shrinks by the difference' but the Style bindings section gives no `computed` calc(); chose padding-inline/block: calc(var(--ds-input-padding-*) - (var(--border-width-focus) - var(--ds-input-border-width))).
+- Input: the doc's examples name only four stories, but React also exports InvalidRequiredEmpty and WithPlaceholder (and Lit keeps Required and HideLabel, which React lacks); added the two missing ones to Lit with React's args. The doc should list the full story set, or say which extras each platform may have.
+- Input: fontSize is font.size.{size} and the size enum is sm|md; the doc doesn't confirm that font.size.md exists as a token (it was used as --font-size-md).
+- Input: controlled mode with type=number: live() rewrites .value after each change, and the browser sanitizes a partial entry like '1e' to '', so a controlled number field whose listener doesn't rebind synchronously loses a partial entry. The doc doesn't say how badInput interacts with controlled revert; kept React-style revert.
+- Input: the doc doesn't mention formStateRestoreCallback (browser back/forward restore); kept it, and it only sets the uncontrolled value.
+- Input: label and name are required: true but the doc gives no dev warning or fallback for a missing label; the element defaults both to '' and adds no warning.
+
+## 2026-09-19 11:32 — round 2
+
+- Input: round 2's keyboard-run and axe failures are all in other components (axe: Carousel, DataGrid, Feed, Listbox, NumberInput, Select, Slider, Splitter, Tabs, TreeGrid; keyboard-lit: Combobox, DatePicker, Dialog, Feed, Listbox, Menu, Popover, Search, SegmentedControl, Select, SidePanel, Slider, Stepper, Tabs, Toast, Toolbar, Tooltip, Tree). Input has no keyboard block, and its 20 Lit stories pass axe on their own in light and dark (logs/input-lit-axe.spec.ts). No Input code changed. Because both gates cover the whole Storybook, an Input job can't turn them green.
+
+## 2026-09-19 11:39 — round 3
+
+- Input: round 3's keyboard-run and axe output is the same as round 2. The fresh results (logs/playwright.json, written after the last Input edit) name only Carousel, DataGrid, Feed, Listbox, NumberInput, Select, Slider, Splitter, Tabs and TreeGrid for axe, plus the keyboard failures of Combobox, DatePicker, Dialog, Feed, Listbox, Menu, Popover, Search, SegmentedControl, Select, SidePanel, Slider, Stepper, Tabs, Toast, Toolbar, Tooltip and Tree. Input has no keyboard block, and its Lit stories pass axe on their own (logs/input-lit-axe.spec.ts). No Input change can turn these whole-Storybook gates green, so the retry loop should blame them on the failing components.

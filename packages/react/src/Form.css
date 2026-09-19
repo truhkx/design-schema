@@ -3,8 +3,6 @@
 .ds-form {
   --ds-form-gap: var(--layout-gap-loose);
   --ds-form-error-summary-border: var(--color-border-danger);
-  --ds-form-error-summary-text: var(--color-foreground-danger);
-  --ds-form-error-summary-background: var(--color-background-subtle);
   --ds-form-error-summary-border-width: var(--border-width-thin);
   --ds-form-error-summary-radius: var(--radius-md);
   --ds-form-error-summary-padding: var(--space-md);
@@ -16,22 +14,30 @@
   inline-size: 100%;
 }
 
-/* fields / actions: transparent wrappers that expose the anatomy hooks without affecting the
-   flex layout — each field and the actions row remain siblings spaced by --ds-form-gap. */
-.ds-form__fields,
-.ds-form__actions {
+/* fields: a transparent wrapper that exposes the anatomy hook without affecting the flex layout —
+   each direct child of the fields part is spaced by --ds-form-gap. */
+.ds-form__fields {
   display: contents;
 }
 
-/* errorSummary: a focusable alert region that links to each invalid field. Text and background are locked.
-   errorSummaryGap reaches the summary's Stacks through their `gap` override, not through CSS here. */
+/* actions: one flex item after the fields; its content aligns to the inline start, so a single
+   bare action keeps its natural width rather than stretching. */
+.ds-form__actions {
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+
+/* errorSummary: a focusable alert region that links to each invalid field. errorSummaryText and
+   errorSummaryBackground are locked and read their tokens directly (no hook). errorSummaryGap reaches
+   the summary's Stacks through their `gap` override, not through CSS here. */
 .ds-form__error-summary {
   box-sizing: border-box;
   padding: var(--ds-form-error-summary-padding);
   border: var(--ds-form-error-summary-border-width) solid var(--ds-form-error-summary-border);
   border-radius: var(--ds-form-error-summary-radius);
-  background-color: var(--ds-form-error-summary-background);
-  color: var(--ds-form-error-summary-text);
+  background-color: var(--color-background-subtle);
+  color: var(--color-foreground-danger);
 }
 
 .ds-form__error-summary:focus-visible {

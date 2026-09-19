@@ -63,7 +63,8 @@ export class DsLink extends LitElement {
     [data-part='anchor'] {
       /* A link has no typography of its own: it takes the surrounding text's. */
       font: inherit;
-      color: var(--color-link);
+      /* tone=inherit: rest, hover and visited all resolve to the inherited color; the underline and icon follow currentColor */
+      color: inherit;
       text-decoration-line: underline;
       text-decoration-thickness: var(--ds-link-underline-thickness);
       text-underline-offset: var(--ds-link-underline-offset);
@@ -77,21 +78,18 @@ export class DsLink extends LitElement {
       }
     }
 
-    /* colorVisited */
-    [data-part='anchor']:visited {
+    /* color, colorVisited and colorHover apply under tone=default only; locked, so they read the tokens directly */
+    :host(:not([tone='inherit'])) [data-part='anchor'] {
+      color: var(--color-link);
+    }
+
+    :host(:not([tone='inherit'])) [data-part='anchor']:visited {
       color: var(--color-link-visited);
     }
 
-    /* colorHover: pointer hover only, not :active */
-    [data-part='anchor']:hover {
+    /* colorHover: pointer hover only, not :active, with no hover-media guard */
+    :host(:not([tone='inherit'])) [data-part='anchor']:hover {
       color: var(--color-link-hover);
-    }
-
-    /* tone=inherit: color, colorHover and colorVisited are not applied; the underline and icon follow currentColor */
-    :host([tone='inherit']) [data-part='anchor'],
-    :host([tone='inherit']) [data-part='anchor']:visited,
-    :host([tone='inherit']) [data-part='anchor']:hover {
-      color: inherit;
     }
 
     /* focusRing, focusRingWidth, focusRingRadius, focusRingOffset: the ring follows the inline text box */

@@ -37,7 +37,8 @@ export interface FormProps {
   /**
    * When field-level validation runs. `submit` is the least noisy; `blur` is the usual
    * choice for longer forms. `change` validates on change only, not also on blur; after a
-   * failed submission every mode re-validates as fields change.
+   * failed submission every mode re-validates on blur and change, until a successful
+   * submission resets that state.
    */
   validate?: FormValidateMode | undefined;
   /** Disables every field and action inside. Use while submitting. Each child dims itself; the Form only exposes the disabled state. */
@@ -228,8 +229,9 @@ export function Form({
     handles.current.get(fieldName)?.focus();
   }, []);
 
-  // After a failed submission every mode re-validates as fields are fixed. The shared
-  // field contract has one mode, so fields are told `change` from then on.
+  // After a failed submission every mode re-validates on blur and change. Fields read
+  // `submitFailed` for that; `validateMode` also reports `change` from then on so fields
+  // that read only the mode keep re-validating as they are fixed.
   const validateMode: FormValidateMode = submitFailed ? 'change' : validate;
 
   const contextValue = React.useMemo<FormContextValue>(
@@ -241,11 +243,12 @@ export function Form({
       reportValidity,
       disabled,
       validateMode,
+      submitFailed,
       errorSummary,
       errors,
       order,
     }),
-    [register, unregister, submit, focusField, reportValidity, disabled, validateMode, errorSummary, errors, order],
+    [register, unregister, submit, focusField, reportValidity, disabled, validateMode, submitFailed, errorSummary, errors, order],
   );
 
   // Each item is the field's own message verbatim; an empty message falls back to the
@@ -288,6 +291,8 @@ export function Form({
     // The same gap separates the fields part's direct children, so the rhythm is uniform
     // whether siblings are two fields or the fields block and the action row.
     const fields: ViewStyle = { flexDirection: 'column', gap };
+    // Inline start, so a single bare action keeps its natural width rather than stretching.
+    const actionsPart: ViewStyle = { alignItems: 'flex-start' };
     const summary: ViewStyle = {
       borderStyle: 'solid',
       borderWidth: overrides?.errorSummaryBorderWidth
@@ -300,7 +305,7 @@ export function Form({
       backgroundColor: t.colorBackgroundSubtle,
       padding: overrides?.errorSummaryPadding ? (resolveToken(t, overrides.errorSummaryPadding) as number) : t.spaceMd,
     };
-    return { container, fields, summary };
+    return { container, fields, actions: actionsPart, summary };
   }, [
     t,
     overrides?.gap,
@@ -351,7 +356,9 @@ export function Form({
         <View testID="Form.fields" style={styles.fields}>
           {children}
         </View>
-        <View testID="Form.actions">{actions}</View>
+        <View testID="Form.actions" style={styles.actions}>
+          {actions}
+        </View>
       </View>
     </FormContext.Provider>
   );

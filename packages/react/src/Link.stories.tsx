@@ -26,11 +26,12 @@ export const Default: Story = {};
 
 /* tone */
 export const ToneDefault: Story = { args: { tone: 'default' } };
+/* Same muted wrapper and sentence as InsideMutedText, with the Default href and label. */
 export const ToneInherit: Story = {
   args: { tone: 'inherit' },
   render: (args) => (
     <Text tone="muted">
-      <Link {...args} />
+      For how charges are calculated, read <Link {...args} />.
     </Text>
   ),
 };

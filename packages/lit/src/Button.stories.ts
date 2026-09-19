@@ -1,9 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
-import { html, nothing, type TemplateResult } from 'lit';
+import { html, nothing } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Button.js';
 import './Icon.js';
 import type { ButtonSize, ButtonType, ButtonVariant } from './Button.js';
+import type { IconName } from './Icon.js';
 
 interface ButtonArgs {
   label: string;
@@ -18,26 +19,11 @@ interface ButtonArgs {
   accessibleName?: string | undefined;
   overflowLabel?: string | undefined;
   expanded?: boolean | undefined;
+  /** The system Icon slotted as `leading-icon` (decorative). */
+  leadingIcon?: IconName | undefined;
+  /** The system Icon slotted as `trailing-icon` (decorative). */
+  trailingIcon?: IconName | undefined;
 }
-
-/** The base render; `extra` is slotted into the button (the decorative icon slots). */
-const renderButton = (args: ButtonArgs, extra: TemplateResult | typeof nothing = nothing): TemplateResult => html`
-  <ds-button
-    label=${args.label}
-    variant=${args.variant}
-    size=${args.size}
-    type=${args.type}
-    track=${ifDefined(args.track === '' ? undefined : args.track)}
-    accessible-name=${ifDefined(args.accessibleName || undefined)}
-    overflow-label=${ifDefined(args.overflowLabel || undefined)}
-    .expanded=${args.expanded}
-    ?disabled=${args.disabled}
-    ?icon-only=${args.iconOnly}
-    ?loading=${args.loading}
-    ?inverse=${args.inverse}
-    >${extra}</ds-button
-  >
-`;
 
 const meta: Meta<ButtonArgs> = {
   title: 'Button/Lit',
@@ -57,6 +43,8 @@ const meta: Meta<ButtonArgs> = {
     accessibleName: { control: 'text' },
     overflowLabel: { control: 'text' },
     expanded: { control: 'boolean' },
+    leadingIcon: { control: 'text' },
+    trailingIcon: { control: 'text' },
   },
   args: {
     label: 'Save changes',
@@ -69,7 +57,27 @@ const meta: Meta<ButtonArgs> = {
     inverse: false,
     track: '',
   },
-  render: (args) => renderButton(args),
+  render: (args) => html`
+    <ds-button
+      label=${args.label}
+      variant=${args.variant}
+      size=${args.size}
+      type=${args.type}
+      track=${ifDefined(args.track || undefined)}
+      accessible-name=${ifDefined(args.accessibleName || undefined)}
+      overflow-label=${ifDefined(args.overflowLabel || undefined)}
+      .expanded=${args.expanded}
+      ?disabled=${args.disabled}
+      ?icon-only=${args.iconOnly}
+      ?loading=${args.loading}
+      ?inverse=${args.inverse}
+      >${args.leadingIcon
+        ? html`<ds-icon slot="leading-icon" name=${args.leadingIcon} inline></ds-icon>`
+        : nothing}${args.trailingIcon
+        ? html`<ds-icon slot="trailing-icon" name=${args.trailingIcon} inline></ds-icon>`
+        : nothing}</ds-button
+    >
+  `,
 };
 
 export default meta;
@@ -79,8 +87,8 @@ export const Default: Story = {};
 
 /* variant */
 export const VariantPrimary: Story = { args: { variant: 'primary' } };
-export const VariantSecondary: Story = { args: { variant: 'secondary' } };
-export const VariantGhost: Story = { args: { variant: 'ghost' } };
+export const VariantSecondary: Story = { args: { variant: 'secondary', label: 'Cancel' } };
+export const VariantGhost: Story = { args: { variant: 'ghost', label: 'Forgot password?' } };
 export const VariantDanger: Story = { args: { variant: 'danger', label: 'Delete file' } };
 
 /* size */
@@ -90,37 +98,49 @@ export const SizeLg: Story = { args: { size: 'lg' } };
 
 /* type */
 export const TypeButton: Story = { args: { type: 'button' } };
-export const TypeSubmit: Story = { args: { type: 'submit' } };
+export const TypeSubmit: Story = { args: { type: 'submit', label: 'Sign in' } };
 
-/* boolean states */
+/* notable states */
 export const Disabled: Story = { args: { disabled: true } };
 
-/** Busy: a spinner replaces the leading icon, the trailing icon hides, the label and size stay put. */
-export const Loading: Story = { args: { loading: true } };
+/** Busy: a spinner takes the leading icon position, the trailing icon hides, the label and height stay put. */
+export const Loading: Story = { args: { loading: true, label: 'Saving' } };
 
-/* decorative icons, hidden from assistive technology — the label carries the meaning */
-export const LeadingIcon: Story = {
-  args: { label: 'Add item', variant: 'secondary' },
-  render: (args) => renderButton(args, html`<ds-icon slot="leading-icon" name="plus"></ds-icon>`),
+/** iconOnly while loading: the spinner replaces the sole glyph. */
+export const LoadingIconOnly: Story = {
+  args: { loading: true, iconOnly: true, label: 'Close', variant: 'ghost', leadingIcon: 'close' },
 };
 
-export const TrailingIcon: Story = {
-  args: { label: 'Continue', variant: 'secondary' },
-  render: (args) => renderButton(args, html`<ds-icon slot="trailing-icon" name="chevron-right"></ds-icon>`),
+/* decorative icons, hidden from assistive technology — the label carries the meaning */
+export const WithIcons: Story = {
+  args: { label: 'Add item', leadingIcon: 'plus', trailingIcon: 'chevron-right' },
 };
 
 /** iconOnly hides the visible label; `label` becomes the accessible name. */
 export const IconOnly: Story = {
-  args: { iconOnly: true, label: 'Close', variant: 'ghost' },
-  render: (args) => renderButton(args, html`<ds-icon slot="leading-icon" name="close"></ds-icon>`),
+  args: { iconOnly: true, label: 'Close', variant: 'ghost', leadingIcon: 'close' },
+};
+
+/** expanded: set by a disclosing parent (Menu, Popover, SidePanel, Disclosure) as a property. */
+export const Expanded: Story = {
+  args: { label: 'Actions', variant: 'secondary', expanded: true, trailingIcon: 'chevron-down' },
 };
 
 /** inverse: rendered on an inverse surface, like a Toast or a Tooltip-like panel. */
 export const Inverse: Story = {
-  args: { variant: 'ghost', inverse: true, label: 'Dismiss' },
+  args: { variant: 'ghost', inverse: true, label: 'Undo' },
+  parameters: { backgrounds: { default: 'dark' } },
   render: (args) => html`
-    <div style="background: var(--color-inverse-surface); padding: var(--space-md); border-radius: var(--radius-md);">
-      ${renderButton(args)}
+    <div style="background: var(--color-inverse-surface); padding: var(--space-lg);">
+      <ds-button
+        label=${args.label}
+        variant=${args.variant}
+        size=${args.size}
+        type=${args.type}
+        ?disabled=${args.disabled}
+        ?loading=${args.loading}
+        ?inverse=${args.inverse}
+      ></ds-button>
     </div>
   `,
 };
@@ -133,11 +153,6 @@ export const AccessibleName: Story = {
   args: { label: 'Amount', variant: 'ghost', accessibleName: 'Sort by Amount, ascending' },
 };
 
-/** expanded: set by a disclosing parent (Menu, Popover, SidePanel, Disclosure) as a property. */
-export const Expanded: Story = {
-  args: { label: 'Options', variant: 'secondary', expanded: true },
-};
-
 /* examples from the doc */
 
 /** The single most important action in a view, labelled with the outcome. */
@@ -146,13 +161,10 @@ export const PrimarySave: Story = { args: { label: 'Save changes', variant: 'pri
 /** A destructive, hard-to-undo action, which is the only use of the danger variant. */
 export const DestructiveConfirm: Story = { args: { label: 'Delete file', variant: 'danger' } };
 
-/** A low-emphasis icon-only control in dense UI, labelled with what it does, not what the icon depicts. */
+/** A low-emphasis icon-only control in dense UI, whose label says what it does rather than what the icon depicts. */
 export const IconOnlyInAToolbar: Story = {
-  args: { label: 'Close', iconOnly: true, variant: 'ghost', size: 'sm' },
-  render: (args) => renderButton(args, html`<ds-icon slot="leading-icon" name="close"></ds-icon>`),
+  args: { label: 'Close', iconOnly: true, leadingIcon: 'close', variant: 'ghost', size: 'sm' },
 };
 
-/** The submit button of a form while the request is in flight — busy, and ignoring repeat activation. */
-export const PendingSubmit: Story = {
-  args: { label: 'Create account', type: 'submit', loading: true },
-};
+/** The submit button of a form while the request is in flight - busy, and ignoring repeat activation. */
+export const PendingSubmit: Story = { args: { label: 'Create account', type: 'submit', loading: true } };

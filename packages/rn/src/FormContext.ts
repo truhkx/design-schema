@@ -40,8 +40,17 @@ export interface FormContextValue {
   reportValidity(name: string, error: string | null): void;
   /** `true` when the Form is disabled; every field and action inside follows. */
   disabled: boolean;
-  /** The Form's `validate` setting. */
+  /**
+   * The Form's `validate` setting, reported as `change` once a submission has failed so
+   * fields that read only this keep re-validating as they are fixed.
+   */
   validateMode: FormValidateMode;
+  /**
+   * `true` from a failed submission until a successful one. A field validates on blur when
+   * `validateMode` is `blur` or this is true, and on change when `validateMode` is `change`
+   * or this is true.
+   */
+  submitFailed: boolean;
   /** Whether the Form renders (and announces) its own error summary. */
   errorSummary: boolean;
   /** Errors from the most recent validation, keyed by field name. */

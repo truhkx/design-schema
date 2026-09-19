@@ -79,3 +79,24 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Link: the rules template's `disabled` / accessibilityState rule doesn't apply, because Link is never disabled; I added nothing for it.
 - Link: click-fires-on-press says 'navigates to href', but the RN test can only assert that onPress(href) fires. Nothing checks the Linking fallback or the external hand-off after the handler.
 - Link: the press animation causes an act() warning in the RN Jest tests (they still pass). The spec gives no guidance on testing the animated press color.
+
+## 2026-09-19 10:39 — round 1
+
+- Link: the package digest writes the helper as `toLineHeight(t.fontLineHeightNormal, t.fontSizeMd)`, but theme.tsx declares `toLineHeight(fontSize, multiplier)`; I kept the real order `toLineHeight(t.fontSizeMd, t.fontLineHeightNormal)`.
+- Link: the package digest says Text provides `TextNestingContext`; the Link guidance (correctly) says it is `TextStyleContext` with a `nested` field. I used TextStyleContext; the digest should be fixed.
+- Link: the spec doesn't say how Link detects react-native-web. I used a module-level `Platform.OS === 'web'` check for both the href/hrefAttrs forwarding and the preventDefault-instead-of-Linking branch; the Jest suite runs as native, so the web branch isn't unit-tested.
+- Link: on web, `false` must call preventDefault, but the spec doesn't say which event. I call `event.preventDefault()` on the GestureResponderEvent that Text's onPress receives (react-native-web passes the click event). On native, fireEvent.press passes no event, so the argument is only read on web.
+- Link: `ToneInherit` should use the Default href and label inside the muted sentence, but the spec doesn't say whether it keeps `InsideMutedText`'s render verbatim; I gave it the same wrapper and sentence with the Default args.
+- Link: the meta args hold `href`/`label` (required props, and the Default story's args per inline-in-a-paragraph) along with the schema defaults; the web note says meta args hold 'only schema defaults', which a required prop with no default can't satisfy. I kept href/label in meta.
+- Link: the Linking tests mock `openURL` with `mockResolvedValue(undefined)` because RN 0.87's strict types declare `openURL(): Promise<void>`; the spec says tests mock Linking but not the resolved type.
+- Link: the pressed-colour Animated.timing triggers `act(...)` warnings under RNTL 13's synchronous press; the spec doesn't say whether tests should use fake timers or wrap the press in act. I left them as warnings, not failures.
+
+## 2026-09-19 10:46 — round 2
+
+- Link: the axe gate runs over every story in the RN Storybook and requires zero violations. All reported failures are in other components (Accordion, Card, Carousel, Checkbox, Combobox, DataGrid, Listbox, Select, Slider, Table, Toolbar, Tree, TreeGrid, Demo/Preferences, Patterns/SettingsPage, …) and none is a Link/React Native story, so a Link-only job cannot make this gate pass. The gate should be scoped to the regenerated component's stories, or compared against a baseline, for per-component jobs.
+- Link: I couldn't run the Link-only axe check (logs/link-axe-rn.mjs) in this session because running the node script needs approval and port 6009 was already taken; Link's stories are not in the failing list but I have not confirmed them clean against the current build.
+
+## 2026-09-19 10:52 — round 3
+
+- Link: the axe gate requires zero violations across every React Native story, and all its failures belong to other components (Toolbar, Tree, TreeGrid, Table, Listbox, Carousel, Select, Demo/Preferences, Patterns/SettingsPage, …). The six Link/React Native stories are in the scanned index and have no violations in either mode, so no change to Link can make this gate pass. The gate should be scoped to the regenerated component's stories or diffed against a baseline.
+- Link: the scanned storybook-static/index.json is from 09:34, and git status shows its assets deleted, so the gate may be running an older build without the round 1 react-native-web href/hrefAttrs change. A Link-only axe pass on a fresh build (logs/link-axe-rn.mjs) needs approval that this session didn't get.

@@ -79,6 +79,16 @@ export const WithoutASummary: Story = {
   },
 };
 
+/* The sign-in example submitted empty, so the error summary's markup and contrast pair are checked. */
+export const FailedSubmit: Story = {
+  args: { name: 'sign-in', label: 'Sign in', children: signInFields, actions: signInActions },
+  play: async ({ canvasElement }) => {
+    canvasElement.querySelector('form')?.requestSubmit();
+    // Let React commit the summary before the gates inspect it.
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+  },
+};
+
 /* labelledBy wins over label when both are set */
 export const LabelledBy: Story = {
   args: { labelledBy: 'form-labelled-by-heading' },

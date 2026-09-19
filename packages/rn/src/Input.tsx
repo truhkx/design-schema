@@ -189,13 +189,19 @@ export function Input({
 
   const currentValue = value ?? internalValue;
   const isDisabled = disabled || (form?.disabled ?? false) || (fieldset?.disabled ?? false);
+  // The Form marks a failing field through its context entry, which counts exactly as a
+  // Form-set `invalid`: its presence marks the field, and an empty message falls through to
+  // the derived copy.
+  const hasFormEntry = form !== null && name in form.errors;
   const formError = form?.errors[name];
+  const markedInvalid = invalid || hasFormEntry;
   // The error slot shows `error` when set, then the Form's message; otherwise a message
-  // only while `invalid` is true: copy.required for an empty required field, else copy.invalid.
-  // `required` counts only the empty string as empty, as a native field does: whitespace passes.
-  const invalidMessage = invalid ? (required && currentValue === '' ? COPY.required(label) : COPY.invalid(label)) : undefined;
-  const displayedError = error !== undefined && error !== '' ? error : (formError ?? invalidMessage);
-  const isInvalid = invalid || displayedError !== undefined;
+  // only while the field is marked invalid: copy.required for an empty required field, else
+  // copy.invalid. `required` counts only the empty string as empty: whitespace passes.
+  const invalidMessage = markedInvalid ? (required && currentValue === '' ? COPY.required(label) : COPY.invalid(label)) : undefined;
+  const displayedError =
+    error !== undefined && error !== '' ? error : formError !== undefined && formError !== '' ? formError : invalidMessage;
+  const isInvalid = markedInvalid || displayedError !== undefined;
   const summarised = form !== null && form.errorSummary;
 
   const validateValue = React.useCallback(
@@ -216,11 +222,15 @@ export function Input({
   );
 
   // A stable handle whose methods read the latest render, so re-registering never
-  // reorders the Form's field list.
-  const latest = React.useRef({ currentValue, validateValue });
-  latest.current = { currentValue, validateValue };
+  // reorders the Form's field list. The field's own `validate()` ignores the Form's entry,
+  // since it is what the Form calls to produce it.
+  const latest = React.useRef({ currentValue, validateValue, label });
+  latest.current = { currentValue, validateValue, label };
   const handle = React.useMemo<FormFieldHandle>(
     () => ({
+      get label(): string {
+        return latest.current.label;
+      },
       getValue: () => latest.current.currentValue,
       validate: () => latest.current.validateValue(latest.current.currentValue),
       focus: () => {

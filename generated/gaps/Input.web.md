@@ -64,3 +64,22 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 
 - Input: round 3 got the same keyboard-run and axe failures as round 2, all in other components (keyboard: ActionSheet, Combobox, DatePicker, Listbox, Menu, Search, Slider, Tabs, Toast, Tooltip, Tree; axe: Carousel, Feed, Listbox, Menu, Slider, Splitter, Tabs). Input's code hasn't changed since round 2, when axe found no violations in its 18 stories and no Input keyboard spec existed, so I changed nothing.
 - Input: the repair loop judges one component by whole-suite gates, so a component that is already clean can't converge. The gates, or the runner's pass/fail check, should be limited to the component under repair (axe by story title prefix, keyboard by spec file name).
+
+## 2026-09-19 10:59 — round 1
+
+- Input: the generic rule types the ref as the root element (`Ref<HTMLElement>` on the root) but platforms.web.notes says the ref targets the <input>, not the wrapper; followed the notes — `ref?: Ref<HTMLInputElement>` via useImperativeHandle while `data-ds`/`data-ds-field` stay on the wrapper div. The generic rule should defer to a component's notes for the ref target.
+- Input: the field id inside a Form is `${form.idBase}-${name}` (FormContext.idBase), otherwise `useId()`; the Input doc never mentions idBase, so this id scheme comes from FormContext rather than the spec.
+- Input: `validate: change` vs `blur` — the doc says onBlur is the moment to validate but does not say which Form modes the field triggers `validateField` for; chose blur and change modes on blur, change mode also on every change.
+- Input: `readOnly` passes through and suppresses edits natively, but the doc doesn't say whether onChange can fire for a read-only (not disabled) field; relied on native behaviour (it cannot), with an explicit guard only for disabled.
+- Input: constants.longPressDelay is native-only and has no web meaning; not used on web.
+- Input: `:focus-visible` on a text input matches on pointer focus too, so the border focus ring shows on click as well as keyboard; the doc treats the border as the focus-visible ring without saying whether that is intended.
+- Input: scenario `focus-is-reported` (`focus: field`) is expressed with user.tab(); `error-is-identified` `state: invalid` is expressed as aria-invalid="true" on the input — the scenario vocabulary doesn't name the web attribute for `state: invalid`.
+- Input: no `keyboard` block, so no `Keyboard` story; extra state stories (Disabled, Invalid, InvalidRequiredEmpty, WithPlaceholder) are beyond the enum/example set and were kept as 'notable states'.
+
+## 2026-09-19 11:07 — round 2
+
+- Input: the round-2 rejection came from whole-Storybook gates whose failures are all in other components. keyboard-run failed in ActionSheet, Combobox, DatePicker, Listbox, Menu, Search, Slider, Tabs, Toast, Tooltip and Tree; Input has no keyboard block and no generated keyboard spec. axe failed in Carousel, Feed, Listbox, Menu, Slider, Splitter and Tabs; all 18 Input/React stories are in the scanned index.json and none is in the failure list. No Input change can make either gate pass. The gates should be scoped to the component under generation, or the pipeline should compare against a baseline, so a job isn't rejected for other components' existing failures.
+
+## 2026-09-19 11:15 — round 3
+
+- Input: round 3's rejection is identical to round 2's, and the rewritten logs/playwright.json (11:14) still lists no Input/React story. keyboard-run fails in ActionSheet, Combobox, DatePicker, Listbox, Menu, Search, Slider, Tabs, Toast, Tooltip and Tree; Input has no keyboard spec. axe fails in Carousel, Feed, Listbox, Menu, Slider, Splitter and Tabs; all 18 Input stories were scanned and passed. The retry loop keeps re-sending an Input job that no Input change can satisfy. The gates should filter failures to the component under generation, or compare against a pre-job baseline, before rejecting.

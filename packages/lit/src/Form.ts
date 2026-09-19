@@ -203,6 +203,9 @@ export class DsForm extends LitElement {
    */
   @state() private accessor errors: ReadonlyMap<string, string> = new Map();
 
+  /** Each errored field's `label` as registered, so an entry whose field has since gone keeps its fallback text. */
+  private readonly errorLabels = new Map<string, string>();
+
   /** Once a submission has failed, fields re-validate on blur/change even in `submit` mode; a successful one clears it. */
   private hasFailedSubmission = false;
 
@@ -300,11 +303,15 @@ export class DsForm extends LitElement {
             ${errorEntries.map(([name, message]) => {
               const field = fieldsByName.get(name);
               // The field's own message verbatim; its label only when the message is empty.
-              const text = message || field?.label || name;
+              const text = message || (field?.label ?? this.errorLabels.get(name)) || name;
+              // A field that has since unregistered keeps its entry as plain danger Text, with no Link.
+              if (field === undefined) {
+                return html`<ds-text tone="danger">${text}</ds-text>`;
+              }
               return html`
                 <ds-link
                   tone="inherit"
-                  href=${field?.id ? `#${field.id}` : '#'}
+                  href=${`#${field.id}`}
                   label=${text}
                   @click=${(event: MouseEvent) => this.handleSummaryLinkClick(event, name)}
                 ></ds-link>
@@ -330,6 +337,7 @@ export class DsForm extends LitElement {
     this.assignFieldIds(fields);
 
     const errors = new Map<string, string>();
+    this.errorLabels.clear();
     const values: FormSubmitDetail['values'] = {};
     let firstInvalid: DsFormField | undefined;
 
@@ -344,6 +352,7 @@ export class DsForm extends LitElement {
         }
       } else {
         errors.set(field.name, field.validationMessage ?? '');
+        this.errorLabels.set(field.name, field.label);
         firstInvalid ??= field;
       }
     }
@@ -467,6 +476,7 @@ export class DsForm extends LitElement {
     const next = new Map(this.errors);
     if (invalid) {
       next.set(field.name, field.validationMessage ?? '');
+      this.errorLabels.set(field.name, field.label);
     } else {
       next.delete(field.name);
     }

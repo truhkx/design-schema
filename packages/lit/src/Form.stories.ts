@@ -5,7 +5,8 @@ import './Form.js';
 import './Input.js';
 import './Button.js';
 import './Stack.js';
-import type { FormValidate } from './Form.js';
+import './Heading.js';
+import type { DsForm, FormValidate } from './Form.js';
 
 interface FormArgs {
   name?: string | undefined;
@@ -16,29 +17,12 @@ interface FormArgs {
   errorSummary?: boolean | undefined;
 }
 
-const signInFields = html`
+/** A required Input name=email label=Email type=email and a required Input name=password label=Password type=password, in a Stack. */
+const signInFields: TemplateResult = html`
   <ds-stack gap="normal">
     <ds-input label="Email" name="email" type="email" required></ds-input>
     <ds-input label="Password" name="password" type="password" required></ds-input>
   </ds-stack>
-`;
-
-/** A single action renders bare; two or more would go in a horizontal Stack. */
-const submitAction = (label: string): TemplateResult => html`
-  <ds-button slot="actions" label=${label} type="submit"></ds-button>
-`;
-
-const renderForm = (args: FormArgs, fields: TemplateResult, actions: TemplateResult): TemplateResult => html`
-  <ds-form
-    name=${ifDefined(args.name)}
-    label=${ifDefined(args.label)}
-    labelledBy=${ifDefined(args.labelledBy)}
-    validate=${ifDefined(args.validate)}
-    ?disabled=${args.disabled ?? false}
-    ?no-error-summary=${args.errorSummary === false}
-  >
-    ${fields} ${actions}
-  </ds-form>
 `;
 
 const meta: Meta<FormArgs> = {
@@ -48,18 +32,27 @@ const meta: Meta<FormArgs> = {
     actions: { handles: ['submit', 'invalid'] },
   },
   argTypes: {
-    validate: { control: 'select', options: ['submit', 'blur', 'change'] },
+    validate: { control: 'inline-radio', options: ['submit', 'blur', 'change'] },
     disabled: { control: 'boolean' },
     errorSummary: { control: 'boolean' },
   },
   args: {
     name: 'sign-in',
     label: 'Sign in',
-    validate: 'submit',
-    disabled: false,
-    errorSummary: true,
   },
-  render: (args) => renderForm(args, signInFields, submitAction('Sign in')),
+  render: (args) => html`
+    <ds-form
+      name=${ifDefined(args.name)}
+      label=${ifDefined(args.label)}
+      labelledby=${ifDefined(args.labelledBy)}
+      validate=${ifDefined(args.validate)}
+      ?disabled=${args.disabled ?? false}
+      ?no-error-summary=${args.errorSummary === false}
+    >
+      ${signInFields}
+      <ds-button slot="actions" label="Sign in" type="submit"></ds-button>
+    </ds-form>
+  `,
 };
 
 export default meta;
@@ -72,45 +65,86 @@ export const ValidateSubmit: Story = { args: { validate: 'submit' } };
 export const ValidateBlur: Story = { args: { validate: 'blur' } };
 export const ValidateChange: Story = { args: { validate: 'change' } };
 
-/* states */
-export const Disabled: Story = { args: { disabled: true } };
-export const NoErrorSummary: Story = { args: { errorSummary: false } };
-
 /* examples */
 
 /** The smallest real form - two fields and one submit action, validated on submit. */
 export const SignIn: Story = {
   args: { name: 'sign-in', label: 'Sign in' },
-  render: (args) => renderForm(args, signInFields, submitAction('Sign in')),
 };
 
 /** A longer form where feedback per field as focus leaves it beats one report at the end. */
 export const LongFormValidatedOnBlur: Story = {
   args: { name: 'profile', label: 'Profile details', validate: 'blur' },
-  render: (args) =>
-    renderForm(
-      args,
-      html`
-        <ds-stack gap="normal">
-          <ds-input label="Full name" name="fullName" required></ds-input>
-          <ds-input label="Email" name="email" type="email" required></ds-input>
-          <ds-input label="Phone" name="phone" type="tel" required></ds-input>
-          <ds-input label="City" name="city" required></ds-input>
-        </ds-stack>
-      `,
-      submitAction('Save profile'),
-    ),
+  render: (args) => html`
+    <ds-form
+      name=${ifDefined(args.name)}
+      label=${ifDefined(args.label)}
+      validate=${ifDefined(args.validate)}
+      ?disabled=${args.disabled ?? false}
+      ?no-error-summary=${args.errorSummary === false}
+    >
+      <ds-stack gap="normal">
+        <ds-input label="Full name" name="fullName" required></ds-input>
+        <ds-input label="Email" name="email" type="email" required></ds-input>
+        <ds-input label="Phone" name="phone" type="tel" required></ds-input>
+        <ds-input label="City" name="city" required></ds-input>
+      </ds-stack>
+      <ds-button slot="actions" label="Save profile" type="submit"></ds-button>
+    </ds-form>
+  `,
 };
 
 /** A form while its request is in flight - every field and action disabled, so it cannot be submitted twice. */
 export const Submitting: Story = {
   args: { name: 'sign-in', label: 'Sign in', disabled: true },
-  render: (args) => renderForm(args, signInFields, submitAction('Sign in')),
 };
 
 /** A short form that reports errors at the fields alone, moving focus to the first invalid one. */
 export const WithoutASummary: Story = {
   args: { name: 'rename', label: 'Rename file', errorSummary: false },
-  render: (args) =>
-    renderForm(args, html`<ds-input label="File name" name="fileName" required></ds-input>`, submitAction('Rename')),
+  render: (args) => html`
+    <ds-form
+      name=${ifDefined(args.name)}
+      label=${ifDefined(args.label)}
+      validate=${ifDefined(args.validate)}
+      ?disabled=${args.disabled ?? false}
+      ?no-error-summary=${args.errorSummary === false}
+    >
+      <ds-input label="File name" name="fileName" required></ds-input>
+      <ds-button slot="actions" label="Rename" type="submit"></ds-button>
+    </ds-form>
+  `,
+};
+
+/* The sign-in example submitted empty, so the error summary's markup and contrast pair are checked. */
+export const FailedSubmit: Story = {
+  args: { name: 'sign-in', label: 'Sign in' },
+  play: async ({ canvasElement }) => {
+    const form = canvasElement.querySelector<DsForm>('ds-form');
+    if (form === null) return;
+    await form.updateComplete;
+    form.submit();
+    await form.updateComplete;
+  },
+};
+
+/* labelledBy wins over label when both are set */
+export const LabelledBy: Story = {
+  args: { labelledBy: 'form-labelled-by-heading' },
+  render: (args) => html`
+    <ds-stack gap="normal">
+      <ds-heading id="form-labelled-by-heading" level="2">Sign in</ds-heading>
+      <ds-form
+        name=${ifDefined(args.name)}
+        label=${ifDefined(args.label)}
+        labelledby=${ifDefined(args.labelledBy)}
+        validate=${ifDefined(args.validate)}
+        ?disabled=${args.disabled ?? false}
+        ?no-error-summary=${args.errorSummary === false}
+      >
+        ${signInFields}
+        <ds-button slot="actions" label="Sign in" type="submit"></ds-button>
+      </ds-form>
+    </ds-stack>
+  `,
 };

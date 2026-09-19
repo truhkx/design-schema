@@ -62,3 +62,26 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 ## 2026-09-18 17:59 — round 3
 
 - Box: no code change. The rn axe gate's log (logs/playwright.json, written after the last Box edit) has no Box/React Native entry, and Box's 30 stories pass axe on their own in both modes. The failures come from Accordion, Button, Card, Carousel, Toolbar, Tree, TreeGrid, the Demo pages and Patterns/SettingsPage. Because the gate runs over every story in the package, a Box round can't pass it; the retry loop should only count failures under the regenerated component's own story titles.
+
+## 2026-09-19 08:13 — round 1
+
+- Box: `children` says one meta-level render wraps only string children in a Text, but the RN conventions only cover Storybook — they don't say whether behavior tests should use that meta render. Rendering <Box> directly with the Default story's string children throws on native, so the test calls `meta.render!(props, {} as never)`. The doc should say that RN tests render through the meta render.
+- Box: `navigation-region` and both behavior scenarios are limited to web/Lit, so RN has no story or test for them and no replacement. I added nothing; the doc could say explicitly that RN has no counterpart and point to Landmark.
+- Box: the meta `args` may list schema defaults such as `element: div`, but BoxProps on RN has no `element`, so the RN meta leaves it out. The doc's 'meta args may still list the schema defaults' should exclude props not declared for the platform.
+- Box: the spec doesn't say whether the extra `Border` and `WithOverrides` stories are wanted (the story rule asks for one story per enum value plus notable states). I kept them from the previous generation because `border` is a boolean with no enum stories.
+
+## 2026-09-19 08:19 — round 2
+
+- Box: the axe-rn gate runs every React Native story in one test per mode and fails on other components' problems (aria-required-attr, nested-interactive, aria-required-children, target-size, color-contrast in Toolbar, Tree, TreeGrid, Listbox, Table, Select, Demo/Preferences and others). None of them are Box stories. A run limited to 'Box/React Native' (logs/box-axe.config.ts, same tags, same server) passes all 30 stories in light and dark. I changed no Box code; the gate should run per component, or Box's regeneration should not be judged on it.
+- Box: carried over from round 1 — the doc should say that RN behavior tests render through the stories' meta render, because a bare string child inside a View throws on native.
+- Box: carried over from round 1 — the `navigation-region` example and both element-semantics scenarios are web/Lit only, and RN has no stated counterpart; the doc could point to Landmark explicitly.
+- Box: carried over from round 1 — 'meta args may still list the schema defaults (`element: div`)' should exclude props not declared for the platform; the RN meta leaves `element` out.
+- Box: carried over from round 1 — it is unclear whether the extra `Border` and `WithOverrides` stories are wanted; I kept them.
+
+## 2026-09-19 08:25 — round 3
+
+- Box: round 3 has the same axe-rn failure list as round 2, and none of it is Box (Toolbar, Tree, TreeGrid, Listbox, Table, Select, Demo/Preferences, Patterns/SettingsPage and others). A run limited to 'Box/React Native' (logs/box-axe.config.ts, same tags and server) passes all 30 stories in light and dark again. I changed no Box code: no change to Box can make a gate that checks the whole Storybook pass, so the gate should check only the regenerated component's stories.
+- Box: carried over — the doc should say that RN behavior tests render through the stories' meta render, because a bare string child inside a View throws on native.
+- Box: carried over — the `navigation-region` example and both element-semantics scenarios are web/Lit only, and RN has no stated counterpart; the doc could point to Landmark explicitly.
+- Box: carried over — 'meta args may still list the schema defaults (`element: div`)' should exclude props not declared for the platform; the RN meta leaves `element` out.
+- Box: carried over — it is unclear whether the extra `Border` and `WithOverrides` stories are wanted; I kept them.

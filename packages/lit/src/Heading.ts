@@ -2,10 +2,10 @@ import { LitElement, css, type PropertyValues, type CSSResult, type TemplateResu
 import { customElement, property } from 'lit/decorators.js';
 import { html, literal, type StaticValue } from 'lit/static-html.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
+import type { TextAlign } from './Text.js';
 
 export type HeadingLevel = '1' | '2' | '3' | '4' | '5' | '6';
 export type HeadingSize = '4xl' | '3xl' | '2xl' | 'xl' | 'lg' | 'md';
-export type HeadingAlign = 'start' | 'center' | 'end';
 
 /** Overridable style hooks; see the `overrides` property. `color` is locked and excluded. */
 export type HeadingOverridableBinding = 'fontFamily' | 'fontWeight' | 'fontSize' | 'lineHeight' | 'marginBlockEnd';
@@ -158,24 +158,26 @@ export class DsHeading extends LitElement {
    * Position in the document outline. Controls the semantic element, not the
    * visual size — screen-reader users navigate by heading level, so levels must
    * not skip (h1 → h3). Required; the canonical values are the strings `'1'`–
-   * `'6'` and the numbers `1`–`6` are accepted too. A missing or unknown level
-   * falls back to `<h2>`.
+   * `'6'` and the numbers `1`–`6` are accepted too. The property holds
+   * `undefined` until set; a missing, out-of-range or non-numeric level renders
+   * as `<h2>` at the 3xl size and warns once per element in development.
    */
-  @property({ type: String, reflect: true }) accessor level!: HeadingLevel | 1 | 2 | 3 | 4 | 5 | 6;
+  @property({ type: String, reflect: true }) accessor level: HeadingLevel | 1 | 2 | 3 | 4 | 5 | 6 | undefined;
 
   /**
    * Visual size, independent of level. Defaults per level: 1 → 4xl, 2 → 3xl,
-   * 3 → 2xl, 4 → xl, 5 → lg, 6 → md.
+   * 3 → 2xl, 4 → xl, 5 → lg, 6 → md; an explicit size always wins. The resolved
+   * default is never written back, so `[size]` matches only an explicit size.
    */
   @property({ type: String, reflect: true }) accessor size: HeadingSize | undefined;
 
-  /** Horizontal text alignment. `start`/`end` follow writing direction. */
-  @property({ type: String, reflect: true }) accessor align: HeadingAlign = 'start';
+  /** Horizontal text alignment. `start`/`end` follow writing direction. Text's align type. */
+  @property({ type: String, reflect: true }) accessor align: TextAlign = 'start';
 
   /** Per-instance style overrides: `{ fontSize: 'font.size.lg' }`. `color` is locked and ignored. */
   @property({ attribute: false }) accessor overrides: Partial<Record<HeadingOverridableBinding, TokenRef | undefined>> | undefined;
 
-  /** Development-only: the missing-level warning is emitted at most once per element. */
+  /** Development-only: the fallback-level warning is emitted at most once per element, for its lifetime. */
   private warnedMissingLevel = false;
 
   override connectedCallback(): void {
@@ -191,11 +193,7 @@ export class DsHeading extends LitElement {
     // no initial value, so it never appears in `changed` on the first render.
     if (import.meta.env.DEV && !this.warnedMissingLevel && normalizeLevel(this.level) === undefined) {
       this.warnedMissingLevel = true;
-      console.warn(
-        `<ds-heading> needs a level from 1 to 6 to sit in the document outline; got ${String(
-          this.level,
-        )}. Rendering <h${FALLBACK_LEVEL}>.`,
-      );
+      console.warn(`Heading: level ${String(this.level)} is not one of 1–6; rendering as level ${FALLBACK_LEVEL}.`);
     }
   }
 

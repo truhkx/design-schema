@@ -74,3 +74,28 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 
 - Icon: round 3 gate output is identical to round 2. The complete axe failure list (89 entries in test-results/tests-gates-axe-axe-every-story-passes-axe-light--axe-lit/error-context.md) is all DataGrid, Feed, Listbox, NumberInput, Select, SidePanel, Slider and TreeGrid; no Icon story appears anywhere in test-results/. Every keyboard-run failure is in another component's spec, and Icon has no keyboard block or keyboard spec. No Icon change can clear these gates, so no code was changed. The repair loop should run the gates only on the component being generated, or compare against a pre-job baseline, so failures elsewhere don't block this job.
 - Icon: gates and the Icon Vitest suite were not re-run locally (command execution needs approval), so this conclusion comes from the gate artifacts on disk.
+
+## 2026-09-19 02:42 — round 1
+
+- Icon: the package convention 'Names tests can read' says role and aria-label go as plain attributes on the host, but the Icon lit note says the role and accessible name live on the shadow <svg>, not the host. I followed the component note (the more specific one), so the behavior tests query the shadow <svg>, not the host; the convention digest should name Icon as the exception.
+- Icon: the spec gives the unknown-name warning text but not what an absent `name` (never set) should warn. It falls into the same path and warns `Icon: unknown name "undefined"`; the doc could say whether a missing name gets its own message.
+- Icon: the web note says the svg carries width="1em" height="1em" attributes; the Lit note only says the <svg> is 1em. Lit sizes it with CSS (inline-size/block-size: 1em) and sets no width/height attributes; the doc could say whether Lit must mirror the web attributes.
+- Icon: the lit note says the svg carries `data-part="glyph"` but says nothing about `data-ds` there. On web the svg is the root and carries data-ds="Icon"; on Lit data-ds sits on the host only. Kept host-only, per the package convention.
+
+## 2026-09-19 03:02 — round 2
+
+- Icon: the keyboard-run gate failures are all in other components (Combobox, DatePicker, Dialog, Feed, Listbox, Menu, Popover, Search, SegmentedControl, Select, SidePanel, Slider, Stepper, Tabs, Toast, Toolbar, Tooltip, Tree); Icon has no keyboard block and no keyboard spec. No Icon change can fix it, so I left those components alone.
+- Icon: the axe gate timed out at 900s across the whole Lit Storybook (~840 stories x 2 modes). Checked on its own, Icon/Lit passes (37 stories x 2 modes, no violations). The gate needs a longer limit or to run per component before it can judge a single-component job.
+- Icon: the package convention 'Names tests can read' says role and aria-label go as plain attributes on the host, but the Icon lit note says the role and accessible name live on the shadow <svg>, not the host. I followed the component note (the more specific one), so the behavior tests query the shadow <svg>, not the host; the convention digest should name Icon as the exception.
+- Icon: the spec gives the unknown-name warning text but not what an absent `name` (never set) should warn. It falls into the same path and warns `Icon: unknown name "undefined"`; the doc could say whether a missing name gets its own message.
+- Icon: the web note says the svg carries width="1em" height="1em" attributes; the Lit note only says the <svg> is 1em. Lit sizes it with CSS (inline-size/block-size: 1em) and sets no width/height attributes; the doc could say whether Lit must mirror the web attributes.
+- Icon: the lit note says the svg carries `data-part="glyph"` but says nothing about `data-ds` there. On web the svg is the root and carries data-ds="Icon"; on Lit data-ds sits on the host only. Kept host-only, per the package convention.
+
+## 2026-09-19 03:18 — round 3
+
+- Icon: the axe gate now finishes but fails only on other components (Carousel, DataGrid, Feed, Listbox, NumberInput, Select, Slider, Splitter, Tabs, TreeGrid); no Icon/Lit story is in the failure list, and Icon/Lit alone passes (37 stories x light/dark). A whole-Storybook gate cannot turn green from a single-component job; it should filter to the job's component or compare against a baseline.
+- Icon: the keyboard-run gate fails the same ~30 tests in other components as the two rounds before (Combobox, DatePicker, Dialog, Feed, Listbox, Menu, Popover, Search, SegmentedControl, Select, SidePanel, Slider, Stepper, Tabs, Toast, Toolbar, Tooltip, Tree); Icon has no keyboard block or spec. I left them alone.
+- Icon: the package convention 'Names tests can read' says role and aria-label go as plain attributes on the host, but the Icon lit note says the role and accessible name live on the shadow <svg>, not the host. I followed the component note (the more specific one), so the behavior tests query the shadow <svg>, not the host; the convention digest should name Icon as the exception.
+- Icon: the spec gives the unknown-name warning text but not what an absent `name` (never set) should warn. It falls into the same path and warns `Icon: unknown name "undefined"`; the doc could say whether a missing name gets its own message.
+- Icon: the web note says the svg carries width="1em" height="1em" attributes; the Lit note only says the <svg> is 1em. Lit sizes it with CSS (inline-size/block-size: 1em) and sets no width/height attributes; the doc could say whether Lit must mirror the web attributes.
+- Icon: the lit note says the svg carries `data-part="glyph"` but says nothing about `data-ds` there. On web the svg is the root and carries data-ds="Icon"; on Lit data-ds sits on the host only. Kept host-only, per the package convention.

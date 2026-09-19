@@ -35,7 +35,8 @@ function overridesToStyle(overrides: Partial<Record<StackOverridableBinding, Tok
 export interface StackProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children'> {
   /**
    * Any components. Stack does not style its children; it only positions them. Null and boolean
-   * children are skipped, as the platform skips them.
+   * children are skipped, as the platform skips them. With `element` `ul`/`ol` each child gets one
+   * `li`, as React counts children: a fragment is one child, so pass an array.
    */
   children: ReactNode;
   /** Main axis. `horizontal` follows writing direction (start→end), not left→right. */

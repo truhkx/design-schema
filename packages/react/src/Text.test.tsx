@@ -5,12 +5,13 @@
  */
 import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
+import type { ComponentProps } from 'react';
 import { Text, type TextProps } from './Text';
 import meta from './Text.stories';
 
 /** The Default story's args plus the scenario's `given`. */
-function setup(given: Partial<TextProps> = {}) {
-  const props = { ...meta.args, ...given } as TextProps;
+function setup(given: Partial<TextProps> = {}): ReturnType<typeof render> {
+  const props = { ...meta.args, ...given } as ComponentProps<typeof Text>;
   return render(<Text {...props} />);
 }
 

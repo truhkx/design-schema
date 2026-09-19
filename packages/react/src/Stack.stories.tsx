@@ -1,8 +1,21 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
 import { Stack } from './Stack';
+import { Box } from './Box';
 import { Button } from './Button';
 import { Input } from './Input';
 import { Text } from './Text';
+
+/* A container capped at `layout.maxWidth.prose`, so a horizontal row wraps (`Wrap`, `WrappingFilters`). */
+const proseWidth: Decorator = (Story) => (
+  <div style={{ maxInlineSize: 'var(--layout-max-width-prose)' }}>
+    <Story />
+  </div>
+);
+
+/* A row of filters: eight small secondary Buttons, per the doc. Story scaffolding, not copy. */
+const filters = ['All', 'Open', 'Closed', 'Mine', 'Unassigned', 'Urgent', 'This week', 'Archived'].map((label) => (
+  <Button key={label} label={label} variant="secondary" size="sm" />
+));
 
 /* Three Text children, per the doc. An array rather than a fragment: `element="ul"` wraps each child
    in an `li`, and React counts a fragment as one child, so a fragment would render one list item. */
@@ -57,14 +70,8 @@ export const JustifyBetween: Story = { args: { direction: 'horizontal', align: '
 
 /* wrap */
 export const Wrap: Story = {
-  args: { direction: 'horizontal', align: 'start', wrap: true },
-  decorators: [
-    (Story) => (
-      <div style={{ maxInlineSize: '16rem' }}>
-        <Story />
-      </div>
-    ),
-  ],
+  args: { direction: 'horizontal', align: 'start', wrap: true, children: filters },
+  decorators: [proseWidth],
 };
 
 /* element */
@@ -83,8 +90,8 @@ export const FormFields: Story = {
     gap: 'normal',
     children: [
       <Input key="name" label="Full name" name="name" type="text" />,
-      <Input key="email" label="Email address" name="email" type="email" />,
-      <Input key="phone" label="Phone number" name="phone" type="tel" />,
+      <Input key="email" label="Email" name="email" type="email" />,
+      <Input key="password" label="Password" name="password" type="password" />,
     ],
   },
 };
@@ -109,9 +116,15 @@ export const PageSections: Story = {
     direction: 'vertical',
     gap: 'section',
     children: [
-      <Text key="first">The first region of the page</Text>,
-      <Text key="second">The second region of the page</Text>,
-      <Text key="third">The third region of the page</Text>,
+      <Box key="summary" surface="subtle" inset="md">
+        <Text>Summary</Text>
+      </Box>,
+      <Box key="details" surface="subtle" inset="md">
+        <Text>Details</Text>
+      </Box>,
+      <Box key="history" surface="subtle" inset="md">
+        <Text>History</Text>
+      </Box>,
     ],
   },
 };
@@ -123,20 +136,7 @@ export const WrappingFilters: Story = {
     gap: 'tight',
     wrap: true,
     align: 'center',
-    children: [
-      <Button key="all" label="All" variant="secondary" size="sm" />,
-      <Button key="open" label="Open" variant="ghost" size="sm" />,
-      <Button key="in-review" label="In review" variant="ghost" size="sm" />,
-      <Button key="merged" label="Merged" variant="ghost" size="sm" />,
-      <Button key="closed" label="Closed" variant="ghost" size="sm" />,
-      <Button key="archived" label="Archived" variant="ghost" size="sm" />,
-    ],
+    children: filters,
   },
-  decorators: [
-    (Story) => (
-      <div style={{ maxInlineSize: '16rem' }}>
-        <Story />
-      </div>
-    ),
-  ],
+  decorators: [proseWidth],
 };

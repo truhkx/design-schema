@@ -215,7 +215,7 @@ export function Icon({
   // Unreachable from TypeScript, possible from JavaScript: draw an empty glyph (keeping the label or
   // decorative props, so an unlabelled unknown icon stays hidden) and warn on every render, no dedupe.
   if (isDev && !glyph) {
-    console.warn(`Icon: unknown name "${String(name)}" — no glyph in the paths table, so nothing is drawn.`);
+    console.warn(`Icon: unknown name "${String(name)}"`);
   }
 
   // The size class is applied even when `inline`: the hook stays set for consistency, and

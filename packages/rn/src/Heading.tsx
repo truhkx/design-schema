@@ -92,7 +92,7 @@ export function Heading({ level, size, children, align = 'start', overrides, ref
   React.useEffect(() => {
     if (__DEV__ && !levelValid && !warnedInvalidLevel.current) {
       warnedInvalidLevel.current = true;
-      console.warn(`Heading: level ${JSON.stringify(level)} is not one of 1–6; rendering as level 2.`);
+      console.warn(`Heading: level ${String(level)} is not one of 1–6; rendering as level 2.`);
     }
   }, [levelValid, level]);
 

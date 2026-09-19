@@ -1,5 +1,6 @@
-import { useRef, type ComponentPropsWithoutRef, type CSSProperties, type ReactElement, type ReactNode, type Ref } from 'react';
+import { useEffect, useRef, type ComponentPropsWithoutRef, type CSSProperties, type ReactElement, type ReactNode, type Ref } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
+import type { TextAlign } from './Text';
 import './Heading.css';
 
 declare const process: { env: { NODE_ENV?: string } };
@@ -8,8 +9,6 @@ declare const process: { env: { NODE_ENV?: string } };
 export type HeadingLevel = '1' | '2' | '3' | '4' | '5' | '6';
 /** Visual size: the large end of the shared size vocabulary (Text takes the small end). */
 export type HeadingSize = '4xl' | '3xl' | '2xl' | 'xl' | 'lg' | 'md';
-/** Horizontal text alignment; `start` and `end` are logical. */
-export type HeadingAlign = 'start' | 'center' | 'end';
 
 /** Style bindings that can be overridden per instance; the locked `color` binding is not in this list. */
 export type HeadingOverridableBinding = 'fontFamily' | 'fontWeight' | 'fontSize' | 'lineHeight' | 'marginBlockEnd';
@@ -52,9 +51,10 @@ export interface HeadingProps extends Omit<ComponentPropsWithoutRef<'h1'>, 'chil
   children: ReactNode;
   /**
    * Horizontal text alignment. It has no style binding on purpose — alignment is a layout choice,
-   * not a themed value — so it maps straight to text-align. `start` and `end` are logical.
+   * not a themed value — so it maps straight to text-align. `start` and `end` are logical. The
+   * value set is Text's, so the type is Text's `TextAlign`.
    */
-  align?: HeadingAlign | undefined;
+  align?: TextAlign | undefined;
   /** Per-instance style overrides: each entry sets the matching `--ds-heading-*` hook to that token, inline. */
   overrides?: Partial<Record<HeadingOverridableBinding, TokenRef | undefined>> | undefined;
 }
@@ -100,14 +100,18 @@ export function Heading({
   overrides,
   ...rest
 }: HeadingProps & { ref?: Ref<HTMLHeadingElement> | undefined }): ReactElement {
-  const warnedRef = useRef(false);
   const raw = String(level);
   const valid = isLevel(raw);
   const key: HeadingLevel = valid ? raw : '2';
-  if (process.env.NODE_ENV !== 'production' && !valid && !warnedRef.current) {
-    warnedRef.current = true;
-    console.warn(`Heading: level ${JSON.stringify(level)} is not one of 1–6; rendering an <h2>.`);
-  }
+
+  // One warning per element for its lifetime, however often the invalid level changes.
+  const warnedRef = useRef(false);
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'production' && !valid && !warnedRef.current) {
+      warnedRef.current = true;
+      console.warn(`Heading: level ${raw} is not one of 1–6; rendering as level 2.`);
+    }
+  }, [valid, raw]);
 
   const Tag = ELEMENT_BY_LEVEL[key];
   // The level-derived size is only a class; it is never written back as an explicit size.
@@ -117,7 +121,7 @@ export function Heading({
   const style = overrides ? overridesToStyle(overrides) : undefined;
 
   return (
-    <Tag {...rest} ref={ref} data-ds="Heading" data-part="text" className={classes} style={style}>
+    <Tag data-part="text" {...rest} ref={ref} data-ds="Heading" className={classes} style={style}>
       {children}
     </Tag>
   );

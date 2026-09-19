@@ -56,3 +56,18 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Heading: the behavior scenarios' `then: role: heading` does not say which level the heading must expose; the test also asserts the element is <h3>/<h2> and that getByRole('heading', { level: 3 }) finds it, which goes beyond what the scenario states.
 - Heading: `level` is required with no default, but a Lit accessor must hold a value or be typed `| undefined`; declared it `accessor level!: HeadingLevel | 1 | 2 | 3 | 4 | 5 | 6` and rely on the <h2> fallback at runtime. The doc could state what the Lit property holds before it is set.
 - Heading: story naming for enum values that start with a digit is unspecified (`<Prop><Value>` gives `Size4xl`, `Size2xl`, `Level1`); kept that literal casing.
+
+## 2026-09-19 05:42 — round 1
+
+- Heading: the fallback warning must 'name the received value', but the doc gives only the out-of-range example (`level 7`). For an absent level on Lit (property `undefined`) I print `Heading: level undefined is not one of 1–6; rendering as level 2.`; the doc should say how a missing level is worded.
+- Heading: 'a platform reuses Text's exported align type and mapping helper' — Lit's Text has no mapping helper (alignment is `:host([align])` attribute selectors), so Lit reuses only the `TextAlign` type and keeps its own three selectors. Dropping `HeadingAlign` from the Lit index is a breaking type-export removal the doc doesn't mention.
+- Heading: 'one development warning per element for its lifetime' — Lit counts the warning per element instance, so an element that starts without a level and later receives `level="7"` warns only once, for the first bad value. The doc doesn't say whether a later, different invalid value should warn again; I chose not to.
+- Heading: with `level` absent or invalid, the 3xl size comes from the `:host` default of `--ds-heading-font-size`, because no `[level]` selector matches; the doc says 'the 3xl default size everywhere' but doesn't say where Lit's fallback size lives.
+
+## 2026-09-19 05:50 — round 2
+
+- Heading: the keyboard-run and axe gates run over the whole Lit Storybook, and neither failure in this round involves Heading. There is no generated/keyboard/Heading spec (the doc has no keyboard block), and today's full axe run (logs/playwright.json, 2026-09-19T09:43Z) has no Heading/Lit/ entries. The failures are other components' existing problems (Tabs dark-mode color-contrast; TreeGrid aria-hidden-focus and target-size; keyboard rules for Combobox, Select, Tabs, Tree, Toast and others). A Heading-only axe run with the AAA tags (logs/heading-axe.spec.ts) is 38/38 clean in light and dark. Heading code is unchanged this round: a component-scoped fix cannot turn these gates green, and they should be scoped to the component being generated or re-baselined.
+
+## 2026-09-19 05:57 — round 3
+
+- Heading: round 3 got the same keyboard-run and axe output as round 2, and neither involves Heading. The latest full run (logs/playwright.json, 2026-09-19T09:51Z) has no Heading/Lit/ entries, there is no generated/keyboard/Heading spec because the doc has no keyboard block, and a Heading-only axe run including the AAA tags (logs/heading-axe.spec.ts) has no violations in any of the 19 stories, light or dark. The failures belong to Tabs, TreeGrid, Combobox, Select, SegmentedControl, Tree, Toast and other components. No Heading change can clear them, so repeating the round won't converge until the gates run only the component being generated or are re-baselined.

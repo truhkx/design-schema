@@ -116,19 +116,18 @@
   },
   "Box.lit": {
     "hash": "a58e82de074fa31e",
-    "lastAttemptHash": "10478e4b70c9621a",
-    "generatedAt": "2026-09-18T21:42:52+00:00",
+    "lastAttemptHash": "a11f754f475788d4",
+    "generatedAt": "2026-09-19T12:12:18+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 3,
-    "costUsd": 1.934,
+    "costUsd": 1.7277,
     "files": [
-      "logs/box-axe.mjs",
-      "packages/lit/src/Box.stories.ts",
-      "packages/lit/src/Box.test.ts",
-      "packages/lit/src/Box.ts"
+      "logs/box-axe.config.ts",
+      "logs/box-axe.spec.ts",
+      "packages/lit/src/Box.stories.ts"
     ],
-    "gaps": 11,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -508,19 +507,21 @@
   },
   "Heading.lit": {
     "hash": "d6394fdc073861c1",
-    "lastAttemptHash": "b6fc5f2fb9881e90",
-    "generatedAt": "2026-09-18T18:26:45+00:00",
+    "lastAttemptHash": "4904d882829efc5c",
+    "generatedAt": "2026-09-19T10:04:33+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 3,
-    "costUsd": 1.8759,
+    "costUsd": 1.7156,
     "files": [
+      "logs/heading-axe.config.ts",
+      "logs/heading-axe.spec.ts",
       "packages/lit/src/Heading.stories.ts",
       "packages/lit/src/Heading.test.ts",
       "packages/lit/src/Heading.ts",
       "packages/lit/src/index.ts"
     ],
-    "gaps": 14,
+    "gaps": 6,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -535,18 +536,19 @@
   },
   "Icon.lit": {
     "hash": "59cc45d2874f6b3b",
-    "lastAttemptHash": "7cfc82cc964c821b",
-    "generatedAt": "2026-09-18T14:56:39+00:00",
+    "lastAttemptHash": "2642eda66d42e233",
+    "generatedAt": "2026-09-19T07:31:48+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 3,
-    "costUsd": 1.5442,
+    "costUsd": 1.877,
     "files": [
       "packages/lit/src/Icon.stories.ts",
       "packages/lit/src/Icon.test.ts",
-      "packages/lit/src/Icon.ts"
+      "packages/lit/src/Icon.ts",
+      "packages/lit/src/index.ts"
     ],
-    "gaps": 9,
+    "gaps": 16,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -955,18 +957,18 @@
   },
   "Stack.lit": {
     "hash": "371e07cafb06f8f6",
-    "lastAttemptHash": "273373766c789bd6",
-    "generatedAt": "2026-09-18T20:01:00+00:00",
+    "lastAttemptHash": "73585aa7a87ae91c",
+    "generatedAt": "2026-09-19T11:10:31+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 3,
-    "costUsd": 2.1037,
+    "costUsd": 2.0579,
     "files": [
       "packages/lit/src/Stack.stories.ts",
       "packages/lit/src/Stack.test.ts",
       "packages/lit/src/Stack.ts"
     ],
-    "gaps": 11,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1073,16 +1075,17 @@
   },
   "Text.lit": {
     "hash": "cf3715323143f219",
-    "lastAttemptHash": "194ca7846b23d5f9",
-    "generatedAt": "2026-09-18T16:55:04+00:00",
+    "lastAttemptHash": "22c54def15ebdc68",
+    "generatedAt": "2026-09-19T09:00:22+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 3,
-    "costUsd": 2.5702,
+    "costUsd": 1.4067,
     "files": [
       "packages/lit/src/Text.stories.ts",
       "packages/lit/src/Text.test.ts",
-      "packages/lit/src/Text.ts"
+      "packages/lit/src/Text.ts",
+      "packages/lit/src/index.ts"
     ],
     "gaps": 9,
     "gates": {

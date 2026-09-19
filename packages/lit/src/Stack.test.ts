@@ -5,6 +5,7 @@
  * Runs in headless Chromium (Vitest browser mode). See generated/prompts/Stack.lit.md.
  */
 import { beforeEach, describe, expect, it } from 'vitest';
+import { page } from 'vitest/browser';
 import './Stack.js';
 import './Text.js';
 import type { DsStack } from './Stack.js';
@@ -40,12 +41,17 @@ describe('ds-stack', () => {
   it('nav-element-is-a-navigation-landmark', async () => {
     const { el } = await setup({ element: 'nav' });
     /* a native <nav> is the navigation landmark; no role attribute is needed */
-    expect(el.shadowRoot!.querySelector('nav')).not.toBeNull();
+    const nav = el.shadowRoot!.querySelector('nav');
+    expect(nav).not.toBeNull();
+    expect(page.getByRole('navigation').elements()).toContain(nav);
   });
 
   it('list-element-is-a-list', async () => {
     const { el } = await setup({ element: 'ul' });
-    expect(el.shadowRoot!.querySelector('[role="list"]')).not.toBeNull();
+    const list = el.shadowRoot!.querySelector('ul');
+    expect(list).not.toBeNull();
+    expect(page.getByRole('list').elements()).toContain(list);
+    expect(page.getByRole('listitem').elements()).toHaveLength(3);
     /* each child is wrapped in an li, so assistive technology counts the items */
     const items = el.shadowRoot!.querySelectorAll<HTMLSlotElement>('li[role="listitem"][part="item"] > slot');
     expect(items).toHaveLength(3);

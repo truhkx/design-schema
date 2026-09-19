@@ -5,19 +5,17 @@
  */
 import * as React from 'react';
 import { render } from '@testing-library/react-native';
-import { Box } from './Box';
 import type { BoxProps } from './Box';
 import meta, { Default } from './Box.stories';
 import { ThemeProvider } from './theme';
 
-/** The Default story's args plus the scenario's `given`. */
+/**
+ * The Default story's args plus the scenario's `given`, rendered through the meta-level
+ * render so the story's string children are wrapped in a Text, as native requires.
+ */
 function setup(given: Partial<BoxProps> = {}) {
   const props: BoxProps = { ...(meta.args as BoxProps), ...(Default.args as Partial<BoxProps>), ...given };
-  const utils = render(
-    <ThemeProvider mode="light">
-      <Box {...props} />
-    </ThemeProvider>,
-  );
+  const utils = render(<ThemeProvider mode="light">{meta.render!(props, {} as never)}</ThemeProvider>);
   return { ...utils, props };
 }
 

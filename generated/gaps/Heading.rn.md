@@ -47,3 +47,23 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 
 - Heading: axe was re-run with the same result; this run's error-context.md files (light and dark) and logs/playwright.json have no violation or render error for any Heading/React Native story. Every failure is in Toolbar, Tree, TreeGrid, Demo/Preferences, Demo/Profile settings, Demo/Sign in or Patterns/SettingsPage. Heading was left unchanged, and no change to it can turn this gate green.
 - Heading: the fix loop keeps handing Heading a gate that runs every story in the package, so another component's failure blocks this one's round indefinitely; the axe gate needs a per-component story filter, or the round should list only the failures from that component's own stories.
+
+## 2026-09-19 06:05 — round 1
+
+- Heading: the generator digest says `toLineHeight(t.fontLineHeightNormal, t.fontSizeMd)`, but theme.tsx declares `toLineHeight(fontSize, multiplier)`; I followed the code (size first). The digest's argument order is wrong.
+- Heading: the Rules section says 'Import tokens from @design-schema/tokens/<theme-id>/rn/light and /dark', but the package convention (and every existing component) reads tokens only through useTheme(); I kept useTheme() and imported no theme modules directly.
+- Heading: the warning text puts the received value straight into the template (`level 7`), but the spec does not say how to render a non-string value (undefined, NaN, an object); I used String(level), so a missing level prints `level undefined`.
+- Heading: 'one development warning per element for its lifetime' does not say whether a later valid→invalid change warns again; I warn at most once per mounted instance, whatever the later props.
+- Heading: the per-platform tests for a numeric level and the fallback are asked for in prose, not written as scenarios, so their assertions (same fontSize as the string/level-2 form, console.warn called once with the exact message) are my choice.
+- Heading: the Rules section's generic `accessibilityRole="header"` guidance and the RN digest's preference for the `role` prop (RN ≥ 0.87) disagree; platforms.rn.props names accessibilityRole=header and the scenarios assert that attribute, so I kept accessibilityRole and did not add role="heading".
+- Heading: the stories have no story for the invalid-level fallback or a numeric level; the spec lists only enum, example and Default stories, so I added none.
+
+## 2026-09-19 06:13 — round 2
+
+- Heading: the axe gate checks the whole React Native Storybook, so it fails a Heading job on other components' existing violations. Missing required ARIA attributes: Checkbox, Combobox, Meter, RadioGroup, Select, Slider, Splitter, Switch, Toolbar, TreeGrid. Wrong or missing required children: Feed, Listbox, Stepper, Table, Tree. Nested controls: Card, Carousel, Switch, Toolbar. Colour contrast: Accordion, Tabs, Toast and the disabled states. Heading's own stories and Stack's (41 stories, light and dark) pass axe, and none of the 140 violating elements in stories that render Heading is a heading. I changed no code; the gate needs a per-component filter or those components fixed in their own jobs.
+- Heading: react-native-web renders accessibilityRole="header" with no aria-level as an <h1>, so every native Heading shows up as h1 in the web Storybook whatever its level. axe's wcag tags don't flag it, but the spec says only that `level` 'maps only to typography' on rn; it doesn't say whether the web preview should pass aria-level. I kept the spec (no level) and didn't add aria-level.
+
+## 2026-09-19 06:18 — round 3
+
+- Heading: the axe gate checks the whole React Native Storybook and fails on other components' existing violations (Accordion, Card, Carousel, Checkbox, Combobox, DataGrid, Feed, Listbox, Meter, RadioGroup, Select, Slider, Splitter, Stepper, Switch, Table, Tabs, Toast, Toolbar, Tree, TreeGrid, the Preferences demo and the SettingsPage pattern). No failing story is a Heading or Stack story. The same axe rules pass on Heading and Stack stories alone (41 stories, light and dark, rerun this round), and none of the 140 failing elements in stories that render Heading is a heading. No code change can satisfy the gate from this job: those components need fixing in their own jobs, or the gate should filter to the component under generation (logs/heading-rn-axe.spec.ts shows the filter).
+- Heading: react-native-web renders accessibilityRole="header" without aria-level as <h1>, so every native Heading is an h1 in the web Storybook whatever its level. The spec says level maps only to typography on rn and doesn't say whether the web preview should pass aria-level; I kept the spec and added none.

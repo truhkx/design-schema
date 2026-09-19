@@ -9,7 +9,7 @@ const meta: Meta<typeof Box> = {
   component: Box,
   decorators: [withTheme()],
   args: {
-    children: <Text>Box content</Text>,
+    children: 'Box content',
     inset: 'none',
     insetBlock: undefined,
     insetInline: undefined,
@@ -17,6 +17,11 @@ const meta: Meta<typeof Box> = {
     border: false,
     radius: 'none',
   },
+  // Native requires a string inside a Text, so string children are wrapped in the system
+  // Text at its defaults here, once, and each story keeps exactly its example's args.
+  render: ({ children, ...args }) => (
+    <Box {...args}>{typeof children === 'string' ? <Text>{children}</Text> : children}</Box>
+  ),
 };
 
 export default meta;
@@ -25,7 +30,7 @@ type Story = StoryObj<typeof Box>;
 
 /** A Box at its schema defaults draws nothing, so Default uses the `highlighted-panel` example's props. */
 export const Default: Story = {
-  args: { children: <Text>A panel of settings</Text>, inset: 'md', surface: 'subtle', radius: 'md' },
+  args: { children: 'A panel of settings', inset: 'md', surface: 'subtle', radius: 'md' },
 };
 
 // inset
@@ -75,15 +80,15 @@ export const WithOverrides: Story = {
 
 /** A panel lifted off the page with a tinted surface, rounded corners and the usual inset. */
 export const HighlightedPanel: Story = {
-  args: { children: <Text>A panel of settings</Text>, inset: 'md', surface: 'subtle', radius: 'md' },
+  args: { children: 'A panel of settings', inset: 'md', surface: 'subtle', radius: 'md' },
 };
 
 /** A dense row bounded by a thin border rather than a fill. */
 export const BorderedRow: Story = {
-  args: { children: <Text>A row of data</Text>, inset: 'sm', border: true },
+  args: { children: 'A row of data', inset: 'sm', border: true },
 };
 
 /** A full-width band with more vertical than horizontal padding, on the strongest surface. */
 export const HeroBand: Story = {
-  args: { children: <Text>A hero band</Text>, insetBlock: 'xl', insetInline: 'lg', surface: 'strong' },
+  args: { children: 'A hero band', insetBlock: 'xl', insetInline: 'lg', surface: 'strong' },
 };

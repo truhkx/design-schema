@@ -4,7 +4,7 @@
  * gate runs this file after every generation round. See generated/prompts/Heading.web.md.
  */
 import type { ComponentProps } from 'react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { render, screen, type RenderResult } from '@testing-library/react';
 import { Heading } from './Heading';
 import meta from './Heading.stories';
@@ -111,5 +111,34 @@ describe('Heading', () => {
   it('renders-align-end', () => {
     const { container } = setup({ align: 'end' });
     expect(container.firstChild).not.toBeNull();
+  });
+
+  /* web-only: the numeric level and the level-2 fallback (scenarios take canonical values only) */
+  it('accepts a numeric level', () => {
+    setup({ level: 5 });
+    const heading = screen.getByRole('heading', { level: 5 });
+    expect(heading).toHaveClass('ds-heading--size-lg');
+  });
+
+  it('falls back to level 2 with one warning per element', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const { rerender } = setup({ level: '7' as unknown as '2' });
+      const heading = screen.getByRole('heading', { level: 2 });
+      expect(heading).toHaveClass('ds-heading--size-3xl');
+      rerender(<Heading {...(meta.args as ComponentProps<typeof Heading>)} level={'x' as unknown as '2'} />);
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn).toHaveBeenCalledWith('Heading: level 7 is not one of 1–6; rendering as level 2.');
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it('carries both hooks on the root, and an explicit size wins over the level default', () => {
+    setup({ level: '1', size: 'md' });
+    const heading = screen.getByRole('heading', { level: 1 });
+    expect(heading).toHaveAttribute('data-ds', 'Heading');
+    expect(heading).toHaveAttribute('data-part', 'text');
+    expect(heading).toHaveClass('ds-heading--size-md', 'ds-heading--align-start');
   });
 });

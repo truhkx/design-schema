@@ -46,3 +46,19 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Heading: none of the round-3 failures are Heading's. The axe gate fails on Carousel, Box, Feed, Listbox, Menu, Splitter and Tabs stories. The keyboard gate fails on Accordion, ActionSheet, Combobox, DatePicker, Listbox, Menu, Search, Slider, Tabs, Toast, Tooltip and Tree specs. Both gates run over the whole package, so a Heading-only job can't make them pass; I made no changes and did not edit other components.
 - Heading: the keyboard failures that were new in round 3 (AlertDialog, BottomSheet, Dialog, Feed, FocusScope) all pass when rerun alone with --workers 1 (15 passed, 4 manual skips), with the current Heading composed into Dialog, AlertDialog and BottomSheet. They were caused by running at full parallelism, not by the code; the gate needs a baseline or a lower worker count to give a stable result.
 - Heading: I still could not confirm the Heading stories pass axe in a browser; logs/heading-axe.mjs (axe on Heading/React stories only, light and dark) needs approval to run.
+
+## 2026-09-19 05:20 — round 1
+
+- Heading: align says 'reuse Text's exported align type and mapping helper', but web Text exports no align mapping helper — alignment is only the ds-text--align-<value> modifier class. I reused the TextAlign type and kept Heading's own ds-heading--align-* classes in Heading.css.
+- Heading: removing HeadingAlign from the React exports breaks the public API for anyone importing it; the docs don't say whether to keep a deprecated alias. I removed it with no alias. Lit still exports HeadingAlign, so the platforms now differ.
+- Heading: the fallback warning comes once 'per element for its lifetime', but the docs don't say whether it goes in render or an effect. I put it in useEffect behind a ref guard, so StrictMode's double render/double effect can't send it twice and render stays side-effect free.
+- Heading: level is required and the warning 'names the received value', but the docs don't say how undefined or non-string values are printed. I use String(level), so a missing level prints 'level undefined'.
+- Heading: the Default story's args include align: 'start' along with level '2' and 'Account settings'. The spec names only level and children for Default, so align in the args is my choice; it matches the prop's default.
+
+## 2026-09-19 05:27 — round 2
+
+- Heading: the keyboard-run and axe gates check the whole React Storybook, so the job is failed for other components' problems. Heading has no keyboard spec, and axe on just the Heading/React stories (19 stories, light and dark) finds 0 violations. The remaining failures (keyboard: ActionSheet, Combobox, DatePicker, Listbox, Menu, Search, Slider, Tabs, Toast, Tooltip, Tree; axe: Feed aria-required-children and contrast, Listbox, Menu, Splitter target-size and contrast, Tabs contrast) are outside Heading's files. I left them alone rather than edit other components in a Heading job. The gates need to be limited to the component under generation, or baselined, before they can judge Heading.
+
+## 2026-09-19 05:34 — round 3
+
+- Heading: round 3 got the same keyboard-run and axe failures as round 2, all in other components. Heading has no keyboard spec, and axe on just the Heading/React stories (19 stories, light and dark) finds 0 violations. The remaining failures are keyboard: ActionSheet, Combobox, DatePicker, Listbox, Menu, Search, Slider, Tabs, Toast, Tooltip, Tree; axe: Feed aria-required-children and contrast, Listbox, Menu, Splitter target-size and contrast, Tabs contrast. No change to Heading's files can clear them. The gates need to be limited to the component under generation or compared against a baseline; until then every React job fails them.

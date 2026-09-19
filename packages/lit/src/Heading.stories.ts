@@ -1,22 +1,15 @@
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
-import { html, type TemplateResult } from 'lit';
+import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Heading.js';
-import type { HeadingAlign, HeadingLevel, HeadingSize } from './Heading.js';
+import type { HeadingLevel, HeadingSize } from './Heading.js';
+import type { TextAlign } from './Text.js';
 
 interface HeadingArgs {
   level: HeadingLevel;
   size?: HeadingSize | undefined;
-  align: HeadingAlign;
+  align: TextAlign;
   children: string;
-}
-
-function renderHeading(args: HeadingArgs): TemplateResult {
-  return html`
-    <ds-heading level=${args.level} size=${ifDefined(args.size)} align=${args.align}
-      >${args.children}</ds-heading
-    >
-  `;
 }
 
 const meta: Meta<HeadingArgs> = {
@@ -33,7 +26,8 @@ const meta: Meta<HeadingArgs> = {
     align: 'start',
     children: 'Account settings',
   },
-  render: renderHeading,
+  render: (args) =>
+    html`<ds-heading level=${args.level} size=${ifDefined(args.size)} align=${args.align}>${args.children}</ds-heading>`,
 };
 
 export default meta;

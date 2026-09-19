@@ -2,7 +2,7 @@
  * Icon — behavior scenarios from the component doc, one test each, in the doc's order.
  * Icon has no interaction, focus or animation, so the derived scenarios only assert render.
  */
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import { Icon, type IconProps } from './Icon';
 import meta from './Icon.stories';
@@ -209,5 +209,51 @@ describe('Icon', () => {
   it('has-accessible-name', () => {
     const { root, getByRole } = setup({ label: 'Accessible name' });
     expect(getByRole('img', { name: 'Accessible name' })).toBe(root);
+  });
+
+  /*
+   * Platform test (no scenario: a scenario takes only canonical values). An unknown `name` from
+   * JavaScript draws an empty glyph, keeps the accessibility props, and warns on every render.
+   */
+  describe('unknown name', () => {
+    const unknown = { name: 'not-a-glyph' } as unknown as Partial<IconProps>;
+
+    it('renders an empty, still-hidden glyph and warns on every render, no dedupe', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      try {
+        const { root, rerender } = setup(unknown);
+        expect(root).not.toBeNull();
+        expect(root?.childElementCount).toBe(0);
+        expect(root?.getAttribute('aria-hidden')).toBe('true');
+        expect(warn).toHaveBeenLastCalledWith('Icon: unknown name "not-a-glyph"');
+        const calls = warn.mock.calls.length;
+        rerender(<Icon {...({ ...meta.args, ...unknown } as ComponentProps<typeof Icon>)} />);
+        expect(warn.mock.calls.length).toBe(calls + 1);
+      } finally {
+        warn.mockRestore();
+      }
+    });
+
+    it('keeps the label on the empty glyph', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      try {
+        const { root, getByRole } = setup({ ...unknown, label: 'Status' });
+        expect(getByRole('img', { name: 'Status' })).toBe(root);
+        expect(root?.getAttribute('aria-hidden')).toBeNull();
+      } finally {
+        warn.mockRestore();
+      }
+    });
+
+    it('does not treat a prototype key as a glyph', () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      try {
+        const { root } = setup({ name: 'toString' } as unknown as Partial<IconProps>);
+        expect(root?.childElementCount).toBe(0);
+        expect(warn).toHaveBeenCalledWith('Icon: unknown name "toString"');
+      } finally {
+        warn.mockRestore();
+      }
+    });
   });
 });

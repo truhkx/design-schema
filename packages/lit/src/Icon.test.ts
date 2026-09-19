@@ -6,9 +6,9 @@
  * three scenarios written in the doc are about what assistive technology sees, which on Lit is the
  * <svg> in the shadow root (the host is a plain element with no role of its own).
  */
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import './Icon.js';
-import type { DsIcon } from './Icon.js';
+import type { DsIcon, IconName } from './Icon.js';
 import meta from './Icon.stories.js';
 
 type Given = Partial<Pick<DsIcon, 'name' | 'size' | 'inline' | 'label'>>;
@@ -221,5 +221,41 @@ describe('ds-icon', () => {
   it('has-accessible-name', async () => {
     const { glyph } = await setup({ label: 'Accessible name' });
     expect(glyph).toHaveAccessibleName('Accessible name');
+  });
+});
+
+/*
+ * Platform-only: an unknown `name` (unreachable from TypeScript, possible from JavaScript) renders an
+ * empty glyph and warns on every render, with no dedupe. The scenarios take only canonical values,
+ * so this file covers it.
+ */
+describe('ds-icon unknown name', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('renders an empty glyph and warns on every render', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { el, glyph } = await setup({ name: 'nope' as IconName });
+    expect(glyph.childElementCount).toBe(0);
+    expect(warn).toHaveBeenCalledWith('Icon: unknown name "nope"');
+    const before = warn.mock.calls.length;
+    el.size = 'lg';
+    await el.updateComplete;
+    expect(warn.mock.calls.length).toBe(before + 1);
+  });
+
+  it('keeps the decorative accessibility props when unlabelled', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { glyph } = await setup({ name: 'nope' as IconName });
+    expect(glyph.getAttribute('aria-hidden')).toBe('true');
+    expect(glyph.getAttribute('role')).toBeNull();
+  });
+
+  it('keeps the label when labelled', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { glyph } = await setup({ name: 'nope' as IconName, label: 'Status' });
+    expect(glyph.getAttribute('role')).toBe('img');
+    expect(glyph).toHaveAccessibleName('Status');
   });
 });

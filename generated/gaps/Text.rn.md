@@ -56,3 +56,23 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Text (gate design): axe.spec.ts puts every story in one assertion, so a component round is blocked by other components' violations and repeated rounds fail with identical logs. The gate needs a per-component filter or a baseline of known failures before per-component rounds can pass.
 - Text: a Text-only axe pass is still unconfirmed: logs/text-axe-rn.mjs is written but needs approval to run.
 - Text: the Submitting demos' color-contrast failures are likely disabled fields at opacity.disabled, as the spec requires. WCAG exempts disabled controls but axe checks them; the demos' docs should say whether to disable the rule for those stories or change how disabled fields look.
+
+## 2026-09-19 05:01 — round 1
+
+- Text: the package digest shows `toLineHeight(t.fontLineHeightNormal, t.fontSizeMd)` (multiplier first), but theme.tsx declares `toLineHeight(fontSize, multiplier)`. Kept the real signature; the digest example has the arguments in the wrong order.
+- Text: the onAction story wants `color.action.primary.background` painted on 'a wrapper', but Box's `surface` enum (none|default|subtle|strong) has no action surface, so the wrapper is a plain View with the background token around a `Box inset="md"`. The spec doesn't say which component paints it, and there is no composable way to do it.
+- Text: truncate stories need 'a comparable fixed width on native' to `24ch`; there's no ch unit and no token, so I used `width: 200` marked `literal-ok`. The spec doesn't give a native number.
+- Text: the TruncatedCell example's `given` is exactly `children` + `truncate`, but the story also needs a width decorator via `render`. I took 'story scaffolding, not a binding' to mean a render wrapper is allowed without adding args.
+- Text: `ToneDanger` swaps `children` to the 'Error: …' wording from the web/Lit-only `inline-error-wording` example so color isn't the only signal. The spec doesn't say whether per-value stories may change children on rn, where that example doesn't apply.
+- Text: all 18 rn scenarios are `renders: true`. The one real behavior (full text reachable when truncated) is web/Lit only, so nothing tests that rn truncation sets `numberOfLines={1}` or that `TextForegroundContext` applies only to `tone: default`. The schema has no rn scenario for either.
+- Text: the overrides for `fontWeight`/`lineHeight` are resolved with a cast to number, and `fontFamily` to string. The spec doesn't say what happens when an override TokenRef points at a token of the wrong kind (e.g. a color for fontSize); no guard or dev warning was added.
+
+## 2026-09-19 05:07 — round 2
+
+- Text: the axe gate runs over the whole React Native Storybook, so it fails Text on other components' problems (Toolbar aria-required-attr/nested-interactive, Tree aria-required-children, TreeGrid aria-required-attr/target-size, NumberInput Disabled color-contrast, Demo/Preferences, Patterns/SettingsPage aria-prohibited-attr). None of the failures is a Text story; an axe run limited to `Text/React Native` (logs/text-rn-axe.config.ts) passes all 21 stories in light and dark. No Text change can make this gate pass. The gate needs to be scoped to the component under generation (or compared against a baseline) so one component's regeneration isn't blamed for the rest of the package.
+- Text: carried over from round 1 — the native truncate-story width (`width: 200`, literal-ok), the onAction wrapper being a plain View because Box has no action surface, and `toLineHeight`'s argument order in the package digest are still unresolved in the doc.
+
+## 2026-09-19 05:13 — round 3
+
+- Text: the rn axe gate fails for the third round on other components (Accordion color-contrast in light mode, Card/Toolbar/Demo/Preferences nested-interactive, Carousel/Toolbar/TreeGrid aria-required-attr, Carousel scrollable-region-focusable, Tree aria-required-children, Tree/TreeGrid target-size, NumberInput Disabled color-contrast, Patterns/SettingsPage aria-prohibited-attr). The 05:13 run has no Text/React Native entry, Accordion.tsx does not compose Text, and an axe run limited to Text/React Native (logs/text-rn-axe.config.ts) passes all 21 stories in light and dark. The gate and the job's scope conflict: the gate needs to be scoped to the component being generated (or compared against a stored baseline), otherwise no rn component job can pass until the whole package is clean.
+- Text: carried over, still unresolved in the doc — the native truncate-story width (`width: 200`, literal-ok), the onAction wrapper being a plain View because Box has no action surface, and `toLineHeight`'s argument order in the package digest.

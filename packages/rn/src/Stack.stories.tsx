@@ -1,7 +1,7 @@
 import * as React from 'react';
-import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { Decorator, Meta, StoryObj } from '@storybook/react-vite';
+import { Box } from './Box';
 import { Button } from './Button';
-import { Heading } from './Heading';
 import { Input } from './Input';
 import { Stack } from './Stack';
 import { View } from 'react-native';
@@ -58,8 +58,37 @@ export const JustifyCenter: Story = { args: { direction: 'horizontal', align: 's
 export const JustifyEnd: Story = { args: { direction: 'horizontal', align: 'start', justify: 'end' } };
 export const JustifyBetween: Story = { args: { direction: 'horizontal', align: 'start', justify: 'between' } };
 
-// notable states
-export const Wrap: Story = { args: { direction: 'horizontal', wrap: true, align: 'start' } };
+/** Bounds the story's width to the prose measure so a wrapping row visibly reflows. */
+function BoundedWidth({ children }: { children: React.ReactNode }): React.JSX.Element {
+  const { tokens: t } = useTheme();
+  return <View style={{ maxWidth: t.layoutMaxWidthProse }}>{children}</View>;
+}
+
+const boundedWidth: Decorator = (Story) => (
+  <BoundedWidth>
+    <Story />
+  </BoundedWidth>
+);
+
+/** The row of filters from the doc: eight small secondary Buttons (story scaffolding, not copy). */
+const filters = (
+  <>
+    <Button label="All" variant="secondary" size="sm" />
+    <Button label="Open" variant="secondary" size="sm" />
+    <Button label="Closed" variant="secondary" size="sm" />
+    <Button label="Mine" variant="secondary" size="sm" />
+    <Button label="Unassigned" variant="secondary" size="sm" />
+    <Button label="Urgent" variant="secondary" size="sm" />
+    <Button label="This week" variant="secondary" size="sm" />
+    <Button label="Archived" variant="secondary" size="sm" />
+  </>
+);
+
+// wrap (horizontal, in the same width-bounded decorator as `WrappingFilters`, so the row visibly wraps)
+export const Wrap: Story = {
+  decorators: [boundedWidth],
+  args: { direction: 'horizontal', wrap: true, align: 'start', children: filters },
+};
 export const WithOverrides: Story = { args: { overrides: { gap: 'space.lg' } } };
 
 // examples from the component doc
@@ -101,45 +130,28 @@ export const PageSections: Story = {
     gap: 'section',
     children: (
       <>
-        <Heading level="2">Profile</Heading>
-        <Heading level="2">Billing</Heading>
-        <Heading level="2">Notifications</Heading>
+        <Box surface="subtle" inset="md">
+          <Text>Summary</Text>
+        </Box>
+        <Box surface="subtle" inset="md">
+          <Text>Details</Text>
+        </Box>
+        <Box surface="subtle" inset="md">
+          <Text>History</Text>
+        </Box>
       </>
     ),
   },
 };
 
-/** Bounds the story's width to the prose measure so a wrapping row visibly reflows. */
-function BoundedWidth({ children }: { children: React.ReactNode }): React.JSX.Element {
-  const { tokens: t } = useTheme();
-  return <View style={{ maxWidth: t.layoutMaxWidthProse }}>{children}</View>;
-}
-
 /** A horizontal group that reflows onto new lines on narrow viewports instead of overflowing. */
 export const WrappingFilters: Story = {
-  decorators: [
-    (Story) => (
-      <BoundedWidth>
-        <Story />
-      </BoundedWidth>
-    ),
-  ],
+  decorators: [boundedWidth],
   args: {
     direction: 'horizontal',
     gap: 'tight',
     wrap: true,
     align: 'center',
-    children: (
-      <>
-        <Button label="All" variant="secondary" />
-        <Button label="Open" variant="secondary" />
-        <Button label="In review" variant="secondary" />
-        <Button label="Approved" variant="secondary" />
-        <Button label="Merged" variant="secondary" />
-        <Button label="Closed" variant="secondary" />
-        <Button label="Draft" variant="secondary" />
-        <Button label="Archived" variant="secondary" />
-      </>
-    ),
+    children: filters,
   },
 };

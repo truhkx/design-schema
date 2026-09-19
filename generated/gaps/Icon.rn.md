@@ -100,3 +100,19 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 ## 2026-09-18 11:37 — round 3
 
 - Icon: the rn axe gate checks every story in the package, not just the component being generated, so the Icon job can't pass it. Once round 2 stopped every Icon-drawing story failing to render, the gate showed 634 violating elements across 822 stories (light mode). None is in an Icon story and none is or contains an Icon <svg> (checked element by element with logs/icon-axe-detail.spec.mjs). They are aria-required-attr 300, color-contrast 122, aria-required-children 88, aria-required-parent 73, nested-interactive 26, scrollable-region-focusable 14, target-size 9, aria-prohibited-attr 2, in Accordion, Button, Card, Carousel, Toast, Toolbar, Tree, TreeGrid, the SettingsPage pattern and the Preferences / Profile settings / Sign in demos. Chose not to rewrite those components or disable rules in their stories; they need their own regeneration jobs, or the gate needs a way to judge a job only on the components it regenerated.
+
+## 2026-09-19 03:32 — round 1
+
+- Icon: the rn platform notes say `accessibilityRole=image` is a fixed prop, but the a11y rule sets it only when labelled; I set it only when there is a label, so decorative icons have no role (hidden icons take none).
+- Icon: the unknown-name case has no scenario, and the web notes say each platform's own test file covers it; I added `unknown-name-renders-empty-and-warns` to Icon.test.tsx, checking the empty glyph, the decorative a11y props and a warning on every render.
+- Icon: the inline-in-running-text example doesn't give a size for the surrounding Text; the story uses `Text size="lg"` so the glyph visibly follows a size that isn't the md fallback.
+- Icon: the empty-glyph fallback for an unknown name isn't specified beyond 'renders an empty glyph'; the RN Svg keeps width, height, viewBox and fill="none" but has no stroke and no Path.
+- Icon: native stroke scaling is written as `t.borderWidthFocus * (16 / size)`, and the 16 is marked `literal-ok` as the grid's coordinate space; the doc could name the grid as a constant (icon-paths.json `grid: 16`) so the literal gate doesn't need the annotation.
+
+## 2026-09-19 03:45 — round 2
+
+- Icon: the rn axe gate runs over the whole Storybook, so it fails the Icon job on other components' violations (Toolbar/TreeGrid/SegmentedControl aria-required-attr and nested-interactive, Tree/Listbox aria-required-children/parent, Tree/TreeGrid target-size, Demo/Preferences color-contrast, Toast and Patterns/SettingsPage aria-prohibited-attr). No Icon story appears in either mode's failure list, and an axe run limited to Icon (logs/icon-axe/icon-axe.config.ts: 37 stories, light and dark) passes. Icon.tsx is unchanged. The gate needs to be limited to the component being generated, or checked against a known-failures baseline, before an Icon job can pass it.
+
+## 2026-09-19 03:54 — round 3
+
+- Icon: the rn axe gate (tests/gates/axe.spec.ts, project axe-rn) runs every story in the React Native Storybook, and both rounds' reports list only other components: Toolbar/TreeGrid/SegmentedControl/Demo Preferences aria-required-attr and nested-interactive, Tree/Listbox aria-required-children/parent, Tree/TreeGrid target-size, Demo/Preferences color-contrast, Toast/Patterns SettingsPage aria-prohibited-attr. No Icon or Demo/Icon story appears in either mode, and an Icon-limited run of the same axe check (logs/icon-axe/icon-axe.config.ts, 37 stories) passes light and dark on the current code. No Icon change can make this gate pass. The gate needs to be limited to the component under generation or checked against a known-failures baseline; otherwise the job keeps failing on other components' debt.

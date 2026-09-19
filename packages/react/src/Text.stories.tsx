@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { Box } from './Box';
 import { Text } from './Text';
 
 const meta: Meta<typeof Text> = {
@@ -43,8 +44,10 @@ export const ToneOnAction: Story = {
   args: { tone: 'onAction', children: 'Text on an action background' },
   decorators: [
     (Story) => (
-      <div style={{ background: 'var(--color-action-primary-background)', padding: 'var(--space-md)' }}>
-        <Story />
+      <div style={{ background: 'var(--color-action-primary-background)' }}>
+        <Box inset="md">
+          <Story />
+        </Box>
       </div>
     ),
   ],
@@ -98,7 +101,7 @@ export const InlineErrorWording: Story = {
   args: { children: 'Error: enter an email address like name@example.com', tone: 'danger', element: 'span' },
 };
 
-/** One line of text in a dense cell, with the full string still reachable. */
+/** One line of text in a dense cell, with the full string still reachable (on React Native only to a screen reader; see `truncate`). */
 export const TruncatedCell: Story = {
   args: { children: 'Quarterly revenue summary for the EMEA region.', truncate: true },
   decorators: [

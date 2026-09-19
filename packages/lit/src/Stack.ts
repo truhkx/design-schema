@@ -63,6 +63,8 @@ export class DsStack extends LitElement {
       flex-wrap: nowrap;
       align-items: stretch;
       justify-content: flex-start;
+      /* lets a horizontal Stack shrink inside a parent flex container */
+      min-inline-size: 0;
       --ds-stack-gap: var(--layout-gap-normal);
       gap: var(--ds-stack-gap);
     }

@@ -15,7 +15,7 @@ export { Button } from './Button';
 export type { ButtonProps, ButtonVariant, ButtonSize, ButtonType, ButtonOverridableBinding } from './Button';
 
 export { Heading } from './Heading';
-export type { HeadingProps, HeadingLevel, HeadingSize, HeadingAlign, HeadingOverridableBinding } from './Heading';
+export type { HeadingProps, HeadingLevel, HeadingSize, HeadingOverridableBinding } from './Heading';
 
 export { Text } from './Text';
 export type { TextProps, TextSize, TextWeight, TextTone, TextAlign, TextElement, TextOverridableBinding } from './Text';

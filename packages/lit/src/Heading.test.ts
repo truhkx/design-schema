@@ -2,7 +2,7 @@
  * <ds-heading> — behavior scenarios from the component doc, one test each, in the doc's order.
  * Runs in headless Chromium (Vitest browser mode).
  */
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { page } from 'vitest/browser';
 import './Heading.js';
 import type { DsHeading } from './Heading.js';
@@ -130,5 +130,48 @@ describe('ds-heading', () => {
   it('renders-align-end', async () => {
     const { el } = await setup({ align: 'end' });
     expect(el.shadowRoot!.childElementCount).toBeGreaterThan(0);
+  });
+});
+
+/* Platform-own coverage the doc asks for: the numeric level, and the level-2 fallback with its single warning. */
+describe('ds-heading level handling', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('accepts a numeric level and reflects it as the canonical string', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { el } = await setup({ level: 4 });
+    expect(el.shadowRoot!.querySelector('[data-part="text"]')?.localName).toBe('h4');
+    expect(el.getAttribute('level')).toBe('4');
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('falls back to <h2> without a level and warns once for the element lifetime', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const el = document.createElement('ds-heading');
+    el.textContent = 'Account settings';
+    document.body.append(el);
+    await el.updateComplete;
+    expect(el.level).toBeUndefined();
+    expect(el.shadowRoot!.querySelector('[data-part="text"]')?.localName).toBe('h2');
+    expect(el.hasAttribute('size')).toBe(false);
+
+    el.setAttribute('level', '7');
+    await el.updateComplete;
+    expect(el.shadowRoot!.querySelector('[data-part="text"]')?.localName).toBe('h2');
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith('Heading: level undefined is not one of 1–6; rendering as level 2.');
+  });
+
+  it('names an out-of-range level in the warning', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const el = document.createElement('ds-heading');
+    el.setAttribute('level', '7');
+    document.body.append(el);
+    await el.updateComplete;
+    expect(el.shadowRoot!.querySelector('[data-part="text"]')?.localName).toBe('h2');
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith('Heading: level 7 is not one of 1–6; rendering as level 2.');
   });
 });

@@ -50,3 +50,20 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 ## 2026-09-18 16:18 — round 3
 
 - Stack: the axe-rn gate's latest report (logs/playwright.json, written 16:17:55, after the Stack files' last edit at 16:01) has no Stack/React Native entries in light or dark mode. Every violation belongs to other components or demos (Select, Slider, Splitter, Stepper, Switch, Toolbar, Tree, TreeGrid, Preferences/Profile settings/Sign in demos, Patterns/SettingsPage). The gate runs axe over the whole rn Storybook and fails on any violation, so no change to Stack can make it pass. Re-running Stack rounds against it only repeats this result. Scope the gate to the stories of the component under generation (filter index.json entries by title) or diff against a baseline of existing violations, and file the listed violations against their own components.
+
+## 2026-09-19 07:11 — round 1
+
+- Stack: the generic rules say 'Enum props whose values are quoted digits (Heading level, Stack gap) accept both the string and the number', but Stack's gap values are named presets (none/tight/normal/loose/section), not digits; the rule is stale for Stack and I ignored it.
+- Stack: the button-row example gives 'a primary submit Button' but no label for it; the story keeps 'Submit' (type="submit"), which is invented scaffolding text.
+- Stack: the doc says the `Wrap` story is 'horizontal, in the same width-bounded decorator as wrapping-filters' but not which children it renders; the Default story's three short Texts never wrap inside layout.maxWidth.prose, so I reused the eight filter Buttons and align: start. The doc should name Wrap's children.
+- Stack: the doc says 'an example story has exactly its given', but the meta args (align: stretch, justify: start, wrap: false) still merge into the example stories in CSF3. Every value is the default, so rendering is unchanged, but 'exactly' cannot be met literally without dropping meta args.
+- Stack: `direction: horizontal` should follow writing direction; on RN, `flexDirection: 'row'` flips under I18nManager.isRTL only when the app enables RTL. The spec doesn't say whether Stack should force it; I left it to the platform.
+- Stack: the item anatomy part and the element prop (web/lit only) have no RN counterpart. The rn notes say so, but the anatomy list doesn't mark `item` as web/lit-only, so no `Stack.item` testID exists on RN.
+
+## 2026-09-19 07:17 — round 2
+
+- Stack: the axe gate runs every React Native story, and it failed only on other components' stories (27 components plus Demo/Preferences and Patterns/SettingsPage); no Stack/React Native story appears in logs/playwright.json. Stack has no role or ARIA attributes, so it cannot cause these rules to fail, and changing Stack cannot make the gate pass. I changed no code. The gate should run on the job's own component, or compare against a baseline, before it counts as a rejection of Stack.
+
+## 2026-09-19 07:22 — round 3
+
+- Stack: the axe gate failed again with the same list as round 2. logs/playwright.json (07:22) lists only failing stories, and no Stack/React Native story is in it, in either mode, so Stack passes axe. All the failures come from 27 other components and the Demo/Preferences and Patterns/SettingsPage pages. Stack has no role or ARIA attributes, so it cannot cause them, and changing Stack cannot make this gate pass. I changed no code. The gate should run on the job's own stories, or compare against a baseline, or this job will be rejected every round.

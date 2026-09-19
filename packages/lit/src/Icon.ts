@@ -276,11 +276,12 @@ export class DsIcon extends LitElement {
 
   protected override render(): TemplateResult {
     const glyph: TemplateResult | undefined = GLYPHS[this.name];
-    /* Unreachable from TypeScript, possible from JavaScript: warn on every render, no dedupe. */
+    /*
+     * Unreachable from TypeScript, possible from JavaScript: an empty glyph, and a warning on every
+     * render with no dedupe. Developer-facing, not copy.
+     */
     if (import.meta.env.DEV && glyph === undefined) {
-      console.warn(
-        `<ds-icon> ${this.name === undefined ? 'requires a `name`' : `has no glyph named "${this.name}"`} — no glyph in the table, so an empty svg is drawn.`,
-      );
+      console.warn(`Icon: unknown name "${String(this.name)}"`);
     }
     /* An empty `label` is no label: the icon is decorative, as when it is omitted. */
     const labelled = this.label !== undefined && this.label !== '';

@@ -84,7 +84,7 @@ export type {
 } from './Button.js';
 
 export { DsHeading } from './Heading.js';
-export type { HeadingLevel, HeadingSize, HeadingAlign, HeadingOverridableBinding } from './Heading.js';
+export type { HeadingLevel, HeadingSize, HeadingOverridableBinding } from './Heading.js';
 
 export { DsText } from './Text.js';
 export type {

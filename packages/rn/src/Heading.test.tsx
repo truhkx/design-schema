@@ -114,3 +114,40 @@ describe('Heading', () => {
     expect(s.toJSON()).not.toBeNull();
   });
 });
+
+/* Platform-own coverage the doc asks for: behavior scenarios take only canonical values. */
+describe('Heading level handling', () => {
+  function fontSizeOf(s: ReturnType<typeof setup>): unknown {
+    return s.getByTestId('Heading').props.style.fontSize;
+  }
+
+  it('accepts a numeric level with the same result as the string', () => {
+    const numeric = fontSizeOf(setup({ level: 4 }));
+    const text = fontSizeOf(setup({ level: '4' }));
+    expect(numeric).toBe(text);
+  });
+
+  it('falls back to level 2 on an invalid level and warns once for the lifetime', () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const fallback = fontSizeOf(setup({ level: '2' }));
+      const s = setup({ level: '7' as HeadingProps['level'] });
+      expect(fontSizeOf(s)).toBe(fallback);
+      expect(s.getByTestId('Heading').props.accessibilityRole).toBe('header');
+      s.rerender(
+        <ThemeProvider mode="light">
+          <Heading {...s.props} level={'9' as HeadingProps['level']} />
+        </ThemeProvider>,
+      );
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn).toHaveBeenCalledWith('Heading: level 7 is not one of 1–6; rendering as level 2.');
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it('writes a marginBlockEnd override of space.0 out as a margin of 0', () => {
+    const s = setup({ overrides: { marginBlockEnd: 'space.0' } });
+    expect(s.getByTestId('Heading').props.style.marginBottom).toBe(0);
+  });
+});

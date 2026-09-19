@@ -226,4 +226,27 @@ describe('Icon', () => {
     setup({ label: 'Accessible name' });
     expect(screen.getByLabelText('Accessible name')).toBeTruthy();
   });
+
+  /*
+   * Platform test, not a scenario: an unknown `name` (reachable only from JavaScript)
+   * renders an empty glyph, keeps the decorative props, and warns on every render.
+   */
+  it('unknown-name-renders-empty-and-warns', () => {
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const s = setup({ name: 'nope' as IconProps['name'] });
+      const root = screen.getByTestId('Icon', { includeHiddenElements: true });
+      expect(root.props.accessibilityElementsHidden).toBe(true);
+      expect(warn).toHaveBeenCalledWith('Icon: unknown name "nope"');
+      const before = warn.mock.calls.length;
+      s.rerender(
+        <ThemeProvider mode="light">
+          <Icon {...s.props} />
+        </ThemeProvider>,
+      );
+      expect(warn.mock.calls.length).toBeGreaterThan(before);
+    } finally {
+      warn.mockRestore();
+    }
+  });
 });

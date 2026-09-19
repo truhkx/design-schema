@@ -113,19 +113,19 @@
   },
   "Box.rn": {
     "hash": "46584121a644936f",
-    "lastAttemptHash": "c05b91870c82d070",
-    "generatedAt": "2026-09-18T22:04:07+00:00",
+    "lastAttemptHash": "3f6f6cf3c44bf690",
+    "generatedAt": "2026-09-19T12:31:02+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 3,
-    "costUsd": 1.6764,
+    "costUsd": 1.6918,
     "files": [
       "packages/rn/src/Box.stories.tsx",
       "packages/rn/src/Box.test.tsx",
       "packages/rn/src/Box.tsx",
       "packages/rn/src/index.ts"
     ],
-    "gaps": 7,
+    "gaps": 14,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -496,17 +496,23 @@
   },
   "Heading.rn": {
     "hash": "e9adda48babdcd0c",
-    "lastAttemptHash": "453901b056e2e976",
-    "generatedAt": "2026-09-18T18:54:12+00:00",
+    "lastAttemptHash": "9a2d1e13a5cf1c28",
+    "generatedAt": "2026-09-19T10:24:20+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 3,
-    "costUsd": 1.5782,
+    "costUsd": 2.2147,
     "files": [
+      "logs/heading-rn-axe.config.ts",
+      "logs/heading-rn-axe.spec.ts",
+      "logs/heading-rn-composers-axe.config.ts",
+      "logs/heading-rn-composers-axe.spec.ts",
+      "packages/rn/src/Heading.stories.tsx",
       "packages/rn/src/Heading.test.tsx",
-      "packages/rn/src/Heading.tsx"
+      "packages/rn/src/Heading.tsx",
+      "packages/rn/src/index.ts"
     ],
-    "gaps": 10,
+    "gaps": 11,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -519,18 +525,20 @@
   },
   "Icon.rn": {
     "hash": "45ed570fe8fcd0ba",
-    "lastAttemptHash": "14192be33619ea25",
-    "generatedAt": "2026-09-18T15:45:50+00:00",
+    "lastAttemptHash": "9aff3264d32d0789",
+    "generatedAt": "2026-09-19T08:02:52+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 3,
-    "costUsd": 2.9163,
+    "costUsd": 1.7679,
     "files": [
-      "packages/rn/.storybook/main.ts",
+      "packages/rn/src/Icon.stories.tsx",
       "packages/rn/src/Icon.test.tsx",
-      "packages/rn/src/Icon.tsx"
+      "packages/rn/src/Icon.tsx",
+      "packages/rn/src/index.ts",
+      "packages/rn/src/paths.ts"
     ],
-    "gaps": 9,
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -921,19 +929,19 @@
   },
   "Stack.rn": {
     "hash": "237a01266913d365",
-    "lastAttemptHash": "a40ccf38c24b2e4f",
-    "generatedAt": "2026-09-18T20:27:05+00:00",
+    "lastAttemptHash": "6e1d4b979d9eb4ff",
+    "generatedAt": "2026-09-19T11:27:47+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 3,
-    "costUsd": 1.8742,
+    "costUsd": 1.144,
     "files": [
       "packages/rn/src/Stack.stories.tsx",
       "packages/rn/src/Stack.test.tsx",
       "packages/rn/src/Stack.tsx",
       "packages/rn/src/index.ts"
     ],
-    "gaps": 9,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1034,19 +1042,16 @@
   },
   "Text.rn": {
     "hash": "4ebbd99368032622",
-    "lastAttemptHash": "891546687779d9c8",
-    "generatedAt": "2026-09-18T17:26:27+00:00",
+    "lastAttemptHash": "f4214b581468a7ae",
+    "generatedAt": "2026-09-19T09:18:59+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 3,
-    "costUsd": 1.5009,
+    "costUsd": 2.0023,
     "files": [
-      "packages/rn/src/Text.stories.tsx",
-      "packages/rn/src/Text.test.tsx",
-      "packages/rn/src/Text.tsx",
-      "packages/rn/src/index.ts"
+      "packages/rn/src/Text.stories.tsx"
     ],
-    "gaps": 15,
+    "gaps": 11,
     "gates": {
       "parse": true,
       "contrast": true,

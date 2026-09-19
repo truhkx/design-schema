@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { View } from 'react-native';
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { Box } from './Box';
 import { Text } from './Text';
 import { withTheme } from './decorators';
 import { useTheme } from './theme';
@@ -44,18 +45,25 @@ export const ToneStrong: Story = { args: { tone: 'strong' } };
 export const ToneMuted: Story = { args: { tone: 'muted' } };
 export const ToneDanger: Story = { args: { tone: 'danger', children: 'Error: enter an email address like name@example.com' } };
 
-/** `onAction` is only valid on an action background, so the story supplies one from the tokens. */
+/**
+ * `onAction` is only valid on an action background, so the story paints
+ * `color.action.primary.background` on a wrapper holding a Box with `inset: md` around the Text.
+ */
 function OnActionSurface(props: React.ComponentProps<typeof Text>): React.JSX.Element {
   const { tokens } = useTheme();
   return (
-    <View
-      style={{
-        backgroundColor: tokens.colorActionPrimaryBackground,
-        paddingHorizontal: tokens.spaceMd,
-        paddingVertical: tokens.spaceSm,
-        borderRadius: tokens.radiusMd,
-      }}
-    >
+    <View style={{ backgroundColor: tokens.colorActionPrimaryBackground }}>
+      <Box inset="md">
+        <Text {...props} />
+      </Box>
+    </View>
+  );
+}
+
+/** Story scaffolding, not a binding: a fixed column for truncation to clip against (web and Lit use `24ch`). */
+function NarrowColumn(props: React.ComponentProps<typeof Text>): React.JSX.Element {
+  return (
+    <View style={{ width: 200 /* literal-ok: story scaffolding width for truncate to clip against */ }}>
       <Text {...props} />
     </View>
   );
@@ -84,4 +92,5 @@ export const Caption: Story = {
 /** One line of text in a dense cell. Native has no `title` equivalent, so only screen readers reach the rest. */
 export const TruncatedCell: Story = {
   args: { children: 'Quarterly revenue summary for the EMEA region.', truncate: true },
+  render: (args) => <NarrowColumn {...args} />,
 };

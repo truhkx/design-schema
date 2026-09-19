@@ -69,3 +69,21 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 ## 2026-09-18 10:10 — round 3
 
 - Icon: round 3 repeats round 2's gate output word for word; logs/playwright.json (10:09:58) has no Icon/React failure and Icon has no keyboard spec, so there is nothing to fix in Icon. The repair loop keeps sending Icon back for failures in Box, Carousel, Feed, Listbox, Menu, Slider, Splitter and Tabs (axe) and ActionSheet, Combobox, DatePicker, Listbox, Menu, Search, Slider, Tabs, Toast, Tooltip, Tree (keyboard); scope the gate verdict to the component's own stories and specs, or the loop will never end for components with no failures.
+
+## 2026-09-19 01:58 — round 1
+
+- Icon: the spec asks for `Icon.stories.tsx` to cover every enum value, but the Rules name stories `<Prop><Value>` with PascalCase only shown for simple values; for hyphenated names I used `NameChevronRight`, `NameArrowLeft` (hyphen segments capitalised and joined).
+- Icon: the web note gives the warning text `Icon: unknown name "<name>"` but not whether anything may follow it; the previous file appended an explanation — I emit exactly the quoted string and the test asserts it verbatim.
+- Icon: the spec does not say whether a JavaScript caller's `className`/`style` should be dropped or merged; following the package rule (`...rest` never forwards `style`/`className`), they are overwritten by the component's own class and the overrides style.
+- Icon: `overrides.size` sets `--ds-icon-size` inline, which beats the `.ds-icon--{size}` modifier's hook declaration — the spec implies this ('rules read the hook') but never states that an inline override outranks the size modifier; that is what the file does.
+- Icon: the inline story's Text element/size are unspecified ('a system Text reading "Read the release notes"'); I used Text's defaults, and `element="span" size="sm"` for DecorativeBesideALabel since the example says the Text is the same size (`sm`) but not which element.
+
+## 2026-09-19 02:06 — round 2
+
+- Icon: round-2 gate `keyboard-run` failed only on other components (Menu, RadioGroup, Search, SegmentedControl, SidePanel, Slider, Stepper, Table, Tabs, Toast, Toolbar, Tooltip, Tree); Icon declares no `keyboard` block and has no keyboard spec, so there is nothing in Icon to fix — left unchanged rather than editing unrelated components from an Icon job.
+- Icon: round-2 gate `axe` failed with `Timed out waiting 120000ms from config.webServer`, i.e. Storybook did not start within the time limit before any story was visited (playwright.config.ts starts the react, lit and rn Storybooks together within 120s). Run alone, react Storybook started in time and all 35 Icon/React stories passed axe (wcag2a/2aa/22aa) in light and dark with exactly one `[data-ds=Icon][data-part=glyph]` each (logs/icon-axe.spec.ts). The gate's time limit is outside the component's files; no code change made.
+
+## 2026-09-19 02:24 — round 3
+
+- Icon: round-3 `keyboard-run` failed only on other components (Dialog, Feed, FocusScope, Listbox, Menu, RadioGroup, Search, SegmentedControl, Slider, Stepper, Table, Tabs, Toast, Toolbar, Tooltip, Tree), and the set differs from round 2 (Dialog/Feed/FocusScope/Listbox new; Menu Shift+Tab, Toolbar Home/End, Tree ArrowDown gone), which looks like flakiness. Icon declares no `keyboard` block, and its rendered output is unchanged from HEAD (the only Icon.tsx diff is the text of the dev-only unknown-name warning, now the spec's exact `Icon: unknown name "<name>"`), so composed Icons cannot have changed those results. No code change.
+- Icon: round-3 `axe` timed out at 900s. That gate visits every story across the Storybooks, so its run time is the whole package's, not Icon's. Scoped to Icon/React (35 stories × light/dark, wcag2a/2aa/22aa via logs/icon-axe.spec.ts) it passes with zero violations. No code change; the gate's time limit is outside the component's files.

@@ -42,3 +42,21 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 
 - Text: round 3 reports the same keyboard-run and axe failures as round 2, all in other Lit components. The axe rules (aria-hidden-focus, link-name, aria-required-children, target-size, color-contrast) can't fire on Text's single non-focusable <p>/<span>, which carries no aria-hidden, link, role or target. Tabs, whose dark-mode contrast fails, doesn't compose ds-text. Text has no keyboard block. Every Text story passes axe in both modes. Chose: no Text code change, because changing the failing components is outside a Text job. `node logs/text-gate-ab.mjs` (needs approval) A/Bs the Tree/Toast/Listbox keyboard specs against HEAD's Text.ts to confirm.
 - Text: the retry loop repeats the same whole-Storybook gate output each round, so a component-scoped generation job can't turn it green or prove it is unrelated. The gate could run only the regenerated component's stories and specs plus its composers, and diff against a stored baseline so failures that were already there aren't charged to this job.
+
+## 2026-09-19 04:38 — round 1
+
+- Text: the only story with a `given` for truncation (truncated-text-keeps-the-full-string-reachable) checks `title` alone; nothing checks that the title follows live text edits (the MutationObserver requirement) or that a consumer `title` on the host wins over the textContent. I did not add tests for these, since the scenario list is the contract.
+- Text: the Lit notes say a consumer `title` on the host is copied to `part="text"`, but not whether it should also be removed from the host. Leaving it on the host means the host and the part carry the same tooltip. I kept the host attribute, so the consumer's DOM is not changed.
+- Text: `truncate` on web says the React `title` comes from children only when children is a plain string. On Lit it comes from the flattened textContent, so a slotted `<em>` or link still produces a title. The docs describe this, but the two platforms behave differently for rich children, and that difference is not called out.
+- Text: the doc gives no children for the enum-value stories. React's Default uses 'Use the email you signed up with.', ToneDanger adds a trailing period ('…name@example.com.') where the InlineErrorWording example has none, and ToneOnAction uses 'Text on an action background'. I copied React's values for parity; the doc should state them so the platforms cannot drift.
+- Text: React has a `TruncateInline` story (truncate + element span) that the doc doesn't list as an example. I added it on Lit for parity; if span truncation is part of the contract, it should become a doc example.
+
+## 2026-09-19 04:45 — round 2
+
+- Text: neither failing gate has a Text/Lit entry. The axe run from 04:45 lists only Carousel, DataGrid, Feed, Listbox, NumberInput, Select, Slider, Splitter, Tabs and TreeGrid stories, and there is no generated/keyboard/Text spec. Because these gates run over the whole Storybook, they fail every job until those components are fixed. I did not change Text to answer them.
+- Text: the round-1 gaps still apply (whether a consumer `title` stays on the host, rich-children title behavior differing between web and Lit, story children the doc doesn't give, the TruncateInline story the doc doesn't list, and no test for live title updates or consumer-title precedence).
+
+## 2026-09-19 04:53 — round 3
+
+- Text: the gates are unchanged from round 2 and still contain no Text entry. The axe output files (04:52–04:53) have zero `Text/Lit` entries and are the same size as last round's; generated/keyboard has no Text spec. Both gates run over the whole Storybook and fail on Carousel, DataGrid, Feed, Listbox, NumberInput, Select, Slider, Splitter, Tabs and TreeGrid (axe) and on 18 other components' keyboard specs. The runner should run gates for the job's own component, or this job will keep being rejected no matter what Text contains.
+- Text: the round-1 gaps still stand (whether a consumer `title` stays on the host, rich-children title behavior differing between web and Lit, story children the doc doesn't give, the TruncateInline story the doc doesn't list, and no test for live title updates or consumer-title precedence).

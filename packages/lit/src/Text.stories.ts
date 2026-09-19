@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
-import { html, type TemplateResult } from 'lit';
+import { html } from 'lit';
 import './Box.js';
 import './Text.js';
 import type { TextAlign, TextElement, TextSize, TextTone, TextWeight } from './Text.js';
@@ -15,20 +15,6 @@ interface TextArgs {
   children: string;
 }
 
-function renderText(args: TextArgs): TemplateResult {
-  return html`
-    <ds-text
-      size=${args.size}
-      weight=${args.weight}
-      tone=${args.tone}
-      align=${args.align}
-      ?truncate=${args.truncate}
-      element=${args.element}
-      >${args.children}</ds-text
-    >
-  `;
-}
-
 const meta: Meta<TextArgs> = {
   title: 'Text/Lit',
   tags: ['autodocs'],
@@ -42,24 +28,32 @@ const meta: Meta<TextArgs> = {
     children: { control: 'text' },
   },
   args: {
+    children: 'Use the email you signed up with.',
     size: 'md',
     weight: 'regular',
     tone: 'default',
     align: 'start',
     truncate: false,
     element: 'p',
-    children: 'Changes are saved automatically. You can undo any change for 30 days.',
   },
-  render: renderText,
+  render: (args) => html`<ds-text
+    size=${args.size}
+    weight=${args.weight}
+    tone=${args.tone}
+    align=${args.align}
+    ?truncate=${args.truncate}
+    element=${args.element}
+    >${args.children}</ds-text
+  >`,
 };
 
 export default meta;
 type Story = StoryObj<TextArgs>;
 
-/** A column narrow enough that a truncated line actually clips. */
-function inColumn(args: TextArgs): TemplateResult {
-  return html`<div style="max-inline-size: 16rem">${renderText(args)}</div>`;
-}
+/* Story scaffolding, not a binding: a column narrow enough that a truncated line clips. */
+const column: NonNullable<Story['decorators']> = [
+  (story) => html`<div style="max-inline-size: 24ch">${story()}</div>`,
+];
 
 export const Default: Story = {};
 
@@ -81,16 +75,16 @@ export const ToneDefault: Story = { args: { tone: 'default' } };
 export const ToneStrong: Story = { args: { tone: 'strong' } };
 export const ToneMuted: Story = { args: { tone: 'muted' } };
 export const ToneDanger: Story = {
-  args: { tone: 'danger', children: 'Error: enter an email address like name@example.com' },
+  args: { tone: 'danger', children: 'Error: enter an email address like name@example.com.' },
 };
 /** `onAction` is only for text on an action background, so the story paints color.action.primary.background behind it. */
 export const ToneOnAction: Story = {
-  args: { tone: 'onAction' },
-  render: (args) => html`
-    <div style="background: var(--color-action-primary-background)">
-      <ds-box inset="md">${renderText(args)}</ds-box>
-    </div>
-  `,
+  args: { tone: 'onAction', children: 'Text on an action background' },
+  decorators: [
+    (story) => html`<div style="background: var(--color-action-primary-background)">
+      <ds-box inset="md">${story()}</ds-box>
+    </div>`,
+  ],
 };
 
 /* align */
@@ -98,12 +92,19 @@ export const AlignStart: Story = { args: { align: 'start' } };
 export const AlignCenter: Story = { args: { align: 'center' } };
 export const AlignEnd: Story = { args: { align: 'end' } };
 
-/* truncate */
-export const Truncate: Story = { args: { truncate: true }, render: inColumn };
-
 /* element */
 export const ElementP: Story = { args: { element: 'p' } };
 export const ElementSpan: Story = { args: { element: 'span' } };
+
+/* truncate */
+export const Truncate: Story = {
+  args: { truncate: true, children: 'A sentence long enough to be clipped by its column.' },
+  decorators: column,
+};
+export const TruncateInline: Story = {
+  args: { truncate: true, element: 'span', children: 'A sentence long enough to be clipped by its column.' },
+  decorators: column,
+};
 
 /* examples from the component doc */
 
@@ -122,8 +123,8 @@ export const InlineErrorWording: Story = {
   args: { children: 'Error: enter an email address like name@example.com', tone: 'danger', element: 'span' },
 };
 
-/** One line of text in a dense cell, with the full string still reachable. */
+/** One line of text in a dense cell, with the full string still reachable (on React Native only to a screen reader; see `truncate`). */
 export const TruncatedCell: Story = {
   args: { children: 'Quarterly revenue summary for the EMEA region.', truncate: true },
-  render: inColumn,
+  decorators: column,
 };

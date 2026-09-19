@@ -91,9 +91,12 @@ component:
         inherited color (currentColor on web and Lit, the enclosing TextStyleContext
         color on native), and the underline and the external icon follow that same
         color, so an inherited link has no hover or visited color change by design.
-        On native Link sets no textDecorationColor (the underline takes the Text color);
-        a standalone inherit link outside any system Text has nothing to inherit,
-        so its label and icon both use color.foreground.'
+        On web the root takes `color: inherit`, and the color, :visited and :hover
+        rules are scoped to the `tone: default` modifier. On native Link sets no textDecorationColor
+        under either tone (the underline takes the Text color, so it follows the animated
+        label colour), and under `inherit` the label runs no press animation, since
+        rest and pressed resolve to the same colour; a standalone inherit link outside
+        any system Text has nothing to inherit, so its label and icon both use color.foreground.'
     download:
       type: boolean
       default: false
@@ -153,7 +156,9 @@ component:
         Link''s own `externalIcon` wrapper span (inline text has no Stack to use),
         never on the Icon inside it. The icon is 1em of the surrounding font size
         (no token: it scales with the text). On React Native nested Text ignores margins,
-        so the gap is a single literal space and this binding is not applied.'
+        so the gap is a single literal space and this binding is not applied. An override
+        of it is written only while `external` is true, the only time the binding
+        is in effect.'
       locked: false
     focusRing:
       token: color.border.focus
@@ -173,7 +178,8 @@ component:
       locked: true
     transition:
       token: motion.duration.fast
-      description: Color transition on hover, with motion.easing.standard.
+      description: Color transition on hover, with motion.easing.standard. Only `color`
+        transitions; the underline follows it through currentColor.
       locked: false
   copy:
     externalSuffix: ' (opens in new tab)'
@@ -214,7 +220,12 @@ component:
         holding the visible text inside the anchor (web and Lit); on native the root
         Text is the anchor and the label is its string content, with no element of
         its own. Lit shadow elements carry `part` as well as `data-part`, both the
-        anatomy names: they are names tests read, not a styling surface.'
+        anatomy names: they are names tests read, not a styling surface. Locked bindings
+        (the three colours and the focus ring bindings, which carry contrast and focus
+        guarantees) get no `--ds-link-*` hook on web or Lit: their rules read the
+        token directly, so consumer CSS cannot swap an accessibility-bearing colour.
+        Example stories take their `given` as args over meta args that hold only schema
+        defaults, which counts as exactly the `given`.'
     lit:
       tag: ds-link
       reflect:
@@ -226,7 +237,9 @@ component:
         navigation call preventDefault on that click. A ds-link inside a ds-text paragraph
         is inline by default (display: inline). `href` and `label` are required but
         a property needs an initial value, so both start as '''' and Link does not
-        warn; an empty href is the consumer''s authoring error (render Text instead).'
+        warn; an empty href is the consumer''s authoring error (render Text instead).
+        ds-link has no slot: the text comes only from `label`, so `<ds-link href>text</ds-link>`
+        renders an unnamed anchor.'
     rn:
       element: Text
       props:
@@ -253,11 +266,20 @@ component:
         on native. Icon''s inline mode renders at font.size.md rather than the enclosing
         Text''s size, which is Icon''s own documented limit and can look mis-sized
         inside a non-md Text. No hover or visited state; the pressed state uses colorHover.
-        On react-native-web this becomes a real anchor. Forwards `accessibilityHint`,
-        `accessibilityLabel` (when set by a parent such as Tooltip), `onHoverIn`,
-        `onHoverOut`, `onFocus`, `onBlur` and `onLongPress` to the native element,
-        so Tooltip can attach to it through those props; Link exposes no `ref` prop
-        and no ref to its Text root.'
+        On react-native-web Link forwards `href` to the Text (through an untyped prop
+        bag, since native Text types have no `href`) so it renders a real <a>, plus
+        `hrefAttrs` { target: _blank, rel: noopener noreferrer } when `external`;
+        there the browser navigates as on web, Linking is not called, and a handler
+        returning `false` calls preventDefault. A rejected `Linking.openURL` (unsupported
+        scheme, unhandled route) is swallowed silently. The forwarded focus and hover
+        handlers are typed `(event: unknown) => void` and passed through the same
+        untyped bag, since native Text types do not declare them. Each platform''s
+        own test file mocks Linking to cover the fallback and the external hand-off,
+        which the scenario cannot express. Forwards `accessibilityHint`, `accessibilityLabel`
+        (when set by a parent such as Tooltip), `onHoverIn`, `onHoverOut`, `onFocus`,
+        `onBlur` and `onLongPress` to the native element, so Tooltip can attach to
+        it through those props; Link exposes no `ref` prop and no ref to its Text
+        root.'
     swiftui:
       element: Link
       props:
@@ -277,7 +299,8 @@ component:
   behavior:
   - name: click-fires-on-press
     description: Activation with pointer, Enter, or assistive technology navigates
-      to href; onPress fires first.
+      to href; onPress fires first. On web and Lit the test cancels the click with
+      preventDefault so the test page does not navigate.
     when:
       click: anchor
     then:
@@ -341,7 +364,8 @@ component:
   - name: external-destination
     description: A link that leaves the product, so the name says so before it is
       activated. This example is the `external` state story (and downloadable-file
-      the `download` one); no separate External or Download story is added.
+      the `download` one); no separate External or Download story is added. Both render
+      standalone, not inside a Text paragraph.
     given:
       href: https://status.example.com
       label: Status page
@@ -350,8 +374,8 @@ component:
     description: 'A link in muted or on-action text, where the color is inherited
       and the underline alone marks it. The story renders it inside a Text with `tone:
       muted` reading "For how charges are calculated, read " followed by the link
-      and a full stop. The `tone: inherit` enum story uses the same muted wrapper,
-      so the inherited color is visible.'
+      and a full stop. The `tone: inherit` enum story uses the same muted wrapper
+      and sentence with the Default href and label, so the inherited color is visible.'
     given:
       href: /help/billing
       label: the billing guide
@@ -381,8 +405,8 @@ component:
 ## Constants and examples
 
 - example `inline-in-a-paragraph`, story `InlineInAParagraph`: given `href: "/billing/history"`, `label: "View the billing history"`; The default link inside body text, underlined and taking the paragraph's typography. The story renders it inside a default Text paragraph reading "Invoices from the last twelve months are kept. " followed by the link and a full stop. Its href and label are also the Default story's args, so the derived renders and accessible-name scenarios run against them.
-- example `external-destination`, story `ExternalDestination`: given `href: "https://status.example.com"`, `label: "Status page"`, `external: true`; A link that leaves the product, so the name says so before it is activated. This example is the `external` state story (and downloadable-file the `download` one); no separate External or Download story is added.
-- example `inside-muted-text`, story `InsideMutedText`: given `href: "/help/billing"`, `label: "the billing guide"`, `tone: "inherit"`; A link in muted or on-action text, where the color is inherited and the underline alone marks it. The story renders it inside a Text with `tone: muted` reading "For how charges are calculated, read " followed by the link and a full stop. The `tone: inherit` enum story uses the same muted wrapper, so the inherited color is visible.
+- example `external-destination`, story `ExternalDestination`: given `href: "https://status.example.com"`, `label: "Status page"`, `external: true`; A link that leaves the product, so the name says so before it is activated. This example is the `external` state story (and downloadable-file the `download` one); no separate External or Download story is added. Both render standalone, not inside a Text paragraph.
+- example `inside-muted-text`, story `InsideMutedText`: given `href: "/help/billing"`, `label: "the billing guide"`, `tone: "inherit"`; A link in muted or on-action text, where the color is inherited and the underline alone marks it. The story renders it inside a Text with `tone: muted` reading "For how charges are calculated, read " followed by the link and a full stop. The `tone: inherit` enum story uses the same muted wrapper and sentence with the Default href and label, so the inherited color is visible.
 
 ## Overrides (per-instance styling contract)
 
@@ -431,7 +455,7 @@ Do not use a Link to trigger an action — submitting, opening a dialog, togglin
 
 A Link has no typography of its own: it inherits font family, size, weight and line height from the text it sits in, so it looks right inside a paragraph, a caption, or a breadcrumb without configuration. Standalone, it inherits from the page body.
 
-Activation with pointer, Enter, or assistive technology navigates to `href`. `onPress` fires first; on web the consumer may prevent the default to route client-side, and on native the consumer's handler is the navigation (an `external` link still hands off to the system afterwards unless the handler returns `false`). With `external`, web opens a new tab and native hands the URL to the system. `download` asks the browser to save rather than open and does nothing on native. The link is never disabled: a destination that is not available is not rendered as a link.
+Activation with pointer, Enter, or assistive technology navigates to `href`. `onPress` fires first; on web the consumer may prevent the default to route client-side, and on native the consumer's handler is the navigation (an `external` link still hands off to the system afterwards unless the handler returns `false`). With `external`, web opens a new tab and native hands the URL to the system. `download` asks the browser to save rather than open and does nothing on native. The link is never disabled: a destination that is not available is not rendered as a link. Link has no current-page state and forwards no `aria-current`; the current item of a navigation (Breadcrumb''s last item, a drawer''s current page) is rendered as Text, not as a Link.
 
 ## Content guidelines
 
@@ -463,7 +487,8 @@ One test per scenario, in this order.
 ```yaml
 - name: click-fires-on-press
   description: Activation with pointer, Enter, or assistive technology navigates to
-    href; onPress fires first.
+    href; onPress fires first. On web and Lit the test cancels the click with preventDefault
+    so the test page does not navigate.
   when:
     click: anchor
   then:

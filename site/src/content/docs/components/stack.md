@@ -10,7 +10,7 @@ component:
     children:
       type: content
       required: true
-      description: 'Any components. Stack does not style its children; it only positions them. Null and boolean children are skipped, as the platform skips them. In examples `children` describes the content in words; stories render it with system components (Input, Button, Text) in the order named, and the Default story renders three Text children reading "First item", "Second item" and "Third item". The examples resolve as: form fields are three Inputs labelled "Full name", "Email" and "Password"; the regions of the page are three Boxes (`surface: subtle`, `inset: md`) each holding a Text naming its region ("Summary", "Details", "History"); a row of filters is eight small secondary Buttons ("All", "Open", "Closed", "Mine", "Unassigned", "Urgent", "This week", "Archived"). All of it is story scaffolding, not copy.'
+      description: 'Any components. Stack does not style its children; it only positions them. Null and boolean children are skipped, as the platform skips them. In examples `children` describes the content in words; stories render it with system components (Input, Button, Text) in the order named, and the Default story renders three Text children reading "First item", "Second item" and "Third item". The examples resolve as: form fields are three Inputs labelled "Full name", "Email" and "Password"; the regions of the page are three Boxes (`surface: subtle`, `inset: md`) each holding a Text naming its region ("Summary", "Details", "History"); a row of filters is eight small secondary Buttons ("All", "Open", "Closed", "Mine", "Unassigned", "Urgent", "This week", "Archived"); the button row''s primary submit Button is labelled "Submit". All of it is story scaffolding, not copy.'
     direction:
       type: enum
       values: [vertical, horizontal]
@@ -30,11 +30,11 @@ component:
       type: enum
       values: [start, center, end, between]
       default: start
-      description: 'Main-axis distribution. It only shows where the main axis is larger than the content — a vertical Stack needs a bounded height for it to mean anything, and Stack has no size of its own, so that is the caller''s to give. The four values are the whole set: `around` and `evenly` are deliberately left out, since a rhythm system should not offer four ways to divide leftover space. Its enum stories (and `DirectionHorizontal`) are therefore horizontal: an enum-value story may add the args that make its value visible (`direction: horizontal`, `align: start`), while an example story has exactly its `given`.'
+      description: 'Main-axis distribution. It only shows where the main axis is larger than the content — a vertical Stack needs a bounded height for it to mean anything, and Stack has no size of its own, so that is the caller''s to give. The four values are the whole set: `around` and `evenly` are deliberately left out, since a rhythm system should not offer four ways to divide leftover space. Its enum stories (and `DirectionHorizontal`) are therefore horizontal: an enum-value story may add the args that make its value visible (`direction: horizontal`, `align: start`), while an example story has exactly its `given`. The `Gap*` stories take only `gap` and stay vertical. Meta args hold only schema defaults, and those merged under an example story count as "exactly its `given`".'
     wrap:
       type: boolean
       default: false
-      description: 'Allow horizontal stacks to wrap onto new lines instead of overflowing. It is set whatever the direction — on a column it is inert unless the block size is bounded — rather than being silently ignored on a vertical Stack. As a boolean it gets one story, `Wrap` (horizontal, in the same width-bounded decorator as `wrapping-filters`).'
+      description: 'Allow horizontal stacks to wrap onto new lines instead of overflowing. It is set whatever the direction — on a column it is inert unless the block size is bounded — rather than being silently ignored on a vertical Stack. As a boolean it gets one story, `Wrap` (horizontal, `align: start`, the eight filter Buttons of `wrapping-filters`, in the same width-bounded decorator).'
       a11y: 'Prefer wrapping over horizontal scrolling so content reflows at 320px and 400% zoom. Native has neither viewport width nor browser zoom: the equivalent is that a wrapped row still fits when the platform''s text size is turned up.'
     element:
       type: enum
@@ -55,11 +55,11 @@ component:
     lit:
       tag: ds-stack
       reflect: [direction, gap, align, justify, wrap]
-      notes: 'The host is the flex container (`:host { display: flex }`) with a default slot, so children stay in the light DOM and keep their own semantics. The host is the `container` part and carries no `part` attribute, since a host cannot; for `ul`/`ol` the shadow root renders the list and one `li` per child, each `display: contents` and marked `part="item"`. Keep the light DOM where it is: use manual slot assignment and rebuild the wrappers from a childList observer rather than moving children into them, which would re-fire slotchange forever. A child is an element or a text node with non-whitespace content; comments and whitespace-only text get no `li`. Every wrapper in the shadow root (`section`, `nav`, `ul`, `ol`, `li`) is `display: contents`, so the host stays the flex container. The list role lives on the shadow `ul`/`ol`, so the web rule that the list role beats a consumer `role` does not arise: a consumer `role` on the host is the consumer''s and is left alone. `element` is not reflected: it is read from the attribute or property but is not a styling contract, since it changes only the shadow structure.'
+      notes: 'The host is the flex container (`:host { display: flex }`) with a default slot, so children stay in the light DOM and keep their own semantics. The host is the `container` part and carries no `part` attribute, since a host cannot; for `ul`/`ol` the shadow root renders the list and one `li` per child, each `display: contents` and marked `part="item"`. Keep the light DOM where it is: use manual slot assignment and rebuild the wrappers from a childList observer rather than moving children into them, which would re-fire slotchange forever. A child is an element or a text node with non-whitespace content; comments and whitespace-only text get no `li`. Every wrapper in the shadow root (`section`, `nav`, `ul`, `ol`, `li`) is `display: contents`, so the host stays the flex container. The list role lives on the shadow `ul`/`ol`, so the web rule that the list role beats a consumer `role` does not arise: a consumer `role` on the host is the consumer''s and is left alone. `element` is not reflected: it is read from the attribute or property but is not a styling contract, since it changes only the shadow structure. `:host` sets `min-inline-size: 0`, as the web root does.'
     rn:
       element: View
       props: []
-      notes: 'Flexbox with `gap` (RN ≥ 0.71). Children are not wrapped. There is no public `style` prop; the View''s style is internal. `element` is not applicable: a navigation region is Landmark and a list is a plain View whose rows carry their own semantics.'
+      notes: 'Flexbox with `gap` (RN ≥ 0.71). Children are not wrapped, so the `item` part has no native home and there is no `Stack.item` testID. `horizontal` is `flexDirection: ''row''`, which follows writing direction only when the app enables RTL through I18nManager; Stack does not force it. There is no public `style` prop; the View''s style is internal. `element` is not applicable: a navigation region is Landmark and a list is a plain View whose rows carry their own semantics.'
     swiftui:
       element: VStack
       props: [HStack, spacing, alignment, .frame, ViewThatFits, .accessibilityElement=contain]
@@ -87,7 +87,7 @@ component:
       description: The section rhythm between the regions of a page.
       given: { direction: vertical, gap: section, children: 'The regions of the page' }
     - name: wrapping-filters
-      description: A horizontal group that reflows onto new lines on narrow viewports instead of overflowing. Its story renders inside a container capped at `layout.maxWidth.prose` (a story decorator, not an arg) so the eight filters wrap.
+      description: A horizontal group that reflows onto new lines on narrow viewports instead of overflowing. Its story renders inside a container capped at `layout.maxWidth.prose × 0.5` (a story decorator, not an arg), narrow enough that the eight filters wrap in every theme.
       given: { direction: horizontal, gap: tight, wrap: true, align: center, children: 'A row of filters' }
 ---
 

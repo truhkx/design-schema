@@ -2572,3 +2572,102 @@ One line per decision: `<date> <Component> <platform>: <gap> → <what the doc n
 2026-09-18 Text web: truncate stories need an untokened width constraint → decorator is scaffolding; 24ch on web/Lit, fixed width native
 2026-09-18 Text rn: truncated-cell says reachable, native has no title → example says screen-reader only on React Native
 2026-09-18 Text web: whose contrast pair is Text on other surfaces → the surface owner declares it, as Box does
+2026-09-19 Box web: single consumer class ties with modifier specificity → hook-setting selectors need two classes, as Dialog's does
+2026-09-19 Box web: consumer style versus overrides on the same hook → style is spread after overrides and wins
+2026-09-19 Box web+rn: border boolean has no enum story name → one `Border` story plus a `WithOverrides` story
+2026-09-19 Box lit: React meta args carry the highlighted-panel props → meta args hold only schema defaults; panel props on Default alone
+2026-09-19 Box rn: meta args list element, which RN lacks → only defaults of props the platform declares
+2026-09-19 Box rn: RN behavior tests fail on bare string child → rn tests render through the meta render
+2026-09-19 Box rn: navigation-region example has no RN counterpart stated → no rn story or test; Landmark's stories are the counterpart
+2026-09-19 Box lit: what renders means for a host-is-the-element component → host connected and shadow root holds the slot
+2026-09-19 Box lit: consumer role on host overwritten by element → Box removes only a role it wrote
+2026-09-19 Heading web+lit: Text exports no align mapping helper → reuse TextAlign only; own classes/selectors; HeadingAlign dropped, no alias
+2026-09-19 Heading web+lit+rn: missing level wording and later invalid values → String(level) ("level undefined"); one warning per element, never again
+2026-09-19 Heading web: warning in render or effect → effect behind a ref guard, StrictMode-safe
+2026-09-19 Heading web+rn: Default args and fallback stories → Default has level 2 and children only; no fallback or numeric story
+2026-09-19 Heading lit: where the fallback 3xl size lives → the :host default of --ds-heading-font-size
+2026-09-19 Heading rn: accessibilityRole vs role, and aria-level on react-native-web → accessibilityRole=header, no aria-level; preview h1 accepted
+2026-09-19 Icon web: story names for hyphenated enum values → segments capitalised and joined (NameChevronRight)
+2026-09-19 Icon web: unknown-name warning may carry trailing text → exactly the quoted string; absent name prints "undefined"
+2026-09-19 Icon web: consumer className/style dropped or merged → dropped, per the package rest rule
+2026-09-19 Icon web: inline overrides.size versus size modifier → the inline hook outranks the modifier declaration
+2026-09-19 Icon web+rn: Text size around the inline story → system Text at its defaults (md) on every platform
+2026-09-19 Icon lit: svg width/height attributes and data-ds placement → same 1em attributes as web; data-ds on host only
+2026-09-19 Icon lit: convention says host carries role, note says svg → Icon named as the exception; tests query the shadow svg
+2026-09-19 Icon rn: accessibilityRole image listed as fixed prop → set only when labelled; decorative has no role
+2026-09-19 Icon rn: empty-glyph fallback shape unspecified → the Svg with size, viewBox, fill none and no path
+2026-09-19 Icon rn: literal 16 in native stroke scaling → grid read from the paths table's grid field
+2026-09-19 Stack web+lit+rn: Wrap story children and alignment unnamed → eight filter Buttons, horizontal, align start
+2026-09-19 Stack web+rn: prose cap may not make eight filters wrap → decorator capped at layout.maxWidth.prose × 0.5
+2026-09-19 Stack web+rn: meta args merge under example stories → meta args hold only defaults; that counts as exactly given
+2026-09-19 Stack lit: Gap stories direction unspecified → Gap* stories take only gap and stay vertical
+2026-09-19 Stack lit: min-inline-size 0 stated for web only → :host sets it too
+2026-09-19 Stack lit+rn: button-row submit Button label missing → "Submit"
+2026-09-19 Stack rn: RTL row direction and item part on RN → row follows app RTL only, not forced; no item part or testID
+2026-09-19 Text web+rn: onAction wrapper painting unsanctioned → plain story element with the token background is sanctioned scaffolding
+2026-09-19 Text web: truncate display on the default p → the clipped box stays display block
+2026-09-19 Text web: camelCase onAction to modifier class → kebab-case ds-text--tone-on-action from an explicit table
+2026-09-19 Text lit: enum story children not given → Default wording, ToneDanger uses the error example verbatim, ToneOnAction named
+2026-09-19 Text lit: TruncateInline story not in the doc → sanctioned on web and Lit as the span truncate case
+2026-09-19 Text lit: consumer title removed from host or not → left on the host; rich-children title difference is deliberate
+2026-09-19 Text rn: native truncate story width unspecified → width 200, story scaffolding; a render wrapper adds no args
+2026-09-19 Text rn: wrong-kind TokenRef override has no guard → cast to the binding's type, no runtime guard or warning
+2026-09-19 Button web: loading ring roundness and spin turn unnamed → radius.full read directly; rotate(360deg) a geometric constant
+2026-09-19 Button web+lit: hover fills while disabled or loading → never applied in either state
+2026-09-19 Button web: locked bindings keep hooks on web → web follows Lit: no hook, one rule per variant
+2026-09-19 Button web: loading copy node aria-hidden or not → visually hidden and aria-hidden; describedby still resolves it
+2026-09-19 Button web: iconOnly padding under overrides → paddingInline takes resolved paddingBlock; inline override inert
+2026-09-19 Button web: blocked submit beyond preventDefault → preventDefault plus stopPropagation; the Form never sees it
+2026-09-19 Button web: accessibleName label-in-name warning → no development warning
+2026-09-19 Button web+rn: given shorthand "Icon name=close" meaning → the system Icon with those props, inline on web/Lit, coloured on rn
+2026-09-19 Button lit: required label initial value and warning → starts as '' with no warning
+2026-09-19 Button lit: Lit prose reflected-attribute list stale → prose lists all eight reflected attributes
+2026-09-19 Button rn: spinner testID and drawing technique → no testID; bordered View, no react-native-svg
+2026-09-19 Button rn: iconOnly without leadingIcon, submit without Form → both allowed silently
+2026-09-19 Button rn: inverse hover alpha over unknown backdrop → resolved colour with alpha; non-hex colours pass through
+2026-09-19 Button rn: overflowLabel never rendered on rn → Toolbar reads it from element props, as on web
+2026-09-19 Button rn: react-native-web drops accessibilityState → mirror aria-busy/expanded; aria-disabled set imperatively via owned ref
+2026-09-19 Button rn: loading announcement on react-native-web → only aria-busy; nothing added
+2026-09-19 Button rn: busy assertion missing from loading scenario → rn test asserts accessibilityState.busy in its own file
+2026-09-19 Link web: locked colour and focus bindings get hooks → no hook on web or Lit; rules read tokens
+2026-09-19 Link web: how inherit rest colour is written → color inherit on root; colour rules scoped to tone default
+2026-09-19 Link web: what the transition animates → color only; underline follows currentColor
+2026-09-19 Link web: externalIconGap override when not external → written only while external is true
+2026-09-19 Link web: meta args merged under example stories → schema-default meta args count as exactly given
+2026-09-19 Link lit: external and download stories inside a paragraph → both render standalone
+2026-09-19 Link lit: click test navigates the test page → the test cancels the click with preventDefault
+2026-09-19 Link lit: ToneInherit story args → Default href and label inside the muted sentence
+2026-09-19 Link lit: slotted label content on ds-link → no slot; label only; slotted text leaves the anchor unnamed
+2026-09-19 Link lit: aria-current on a ds-link host → no current state; the current item is Text
+2026-09-19 Link rn: textDecorationColor and inherit animation → no textDecorationColor under either tone; no animation under inherit
+2026-09-19 Link rn: react-native-web renders div role link → forward href and hrefAttrs; the browser navigates, false prevents default
+2026-09-19 Link rn: Linking.openURL rejection and forwarded handler types → swallowed silently; handlers typed (event unknown), untyped bag
+2026-09-19 Link rn: scenario cannot check Linking fallback → platform tests mock Linking for fallback and external hand-off
+2026-09-19 Input web: Form entry with an empty message → presence marks invalid; empty message falls through to derived copy
+2026-09-19 Input web: error set to empty string → counts as unset
+2026-09-19 Input web: Form entry inside the field's validate() → ignored; validate() is what produces it
+2026-09-19 Input web: data-part on the composed Text root → allowed, a name not styling, as in Fieldset
+2026-09-19 Input lit: visible message versus validationMessage mismatch → allowed to differ, stated
+2026-09-19 Input lit: which ValidityState flags to setValidity → the inner input's whole ValidityState with copy.invalid
+2026-09-19 Input lit: helper Text size without override → size sm, matching helperSize
+2026-09-19 Input lit: part attributes for the anatomy parts → part plus data-part, addressing only
+2026-09-19 Input lit: invalid state and focus target for scenarios → host invalid plus inner aria-invalid; inner focus, host event
+2026-09-19 Input rn: Form context disabled on native → a disabled Form disables fields on every platform
+2026-09-19 Input rn: Enter-to-advance owner → returnKeyType and onSubmitEditing come from the Form context
+2026-09-19 Input rn: autoCapitalize, textContentType and search keyboard → none/false for email, password, url; none and default otherwise
+2026-09-19 Input rn: native label composition → system Text, weight medium, size follows size, labelWeight forwarded
+2026-09-19 Input rn: announcement with a Form error summary → suppressed; the Form announces
+2026-09-19 Input rn: react-native-web ignores accessibilityState.disabled → aria-disabled on the TextInput and the root group
+2026-09-19 Form web: summary list items nested li → Links passed bare; Stack wraps each in li
+2026-09-19 Form web: summary entry whose field unregistered → plain danger Text, no Link, until next validation
+2026-09-19 Form web+lit+rn: who owns re-validation after failed submit → Form; context carries submitFailed; Lit ds-form listens
+2026-09-19 Form lit: summary after success then blur errors → a successful submit resets the failed state
+2026-09-19 Form web+lit+rn: example Stack gap unspecified → the Stack's default gap normal; the Button bare in actions
+2026-09-19 Form web: locked summary bindings keep hooks → no hook on web or Lit
+2026-09-19 Form web+rn: error summary never rendered by a story → FailedSubmit story submits empty in a play function (web, Lit)
+2026-09-19 Form lit: native event names submit and invalid → kept; native ones never reach ds-form listeners
+2026-09-19 Form lit: single bare action stretches → actions part aligns to inline start
+2026-09-19 Form lit: which element is the landmark → the host; the shadow form is unnamed
+2026-09-19 Form rn: plural locale, announcement separator and repeats → PluralRules default locale at submit; '. ' once per failed submit
+2026-09-19 Form rn: empty-value filtering owner → Form omits null, empty string and empty array
+2026-09-19 Form rn: summary box layout and border style → a column with a solid border

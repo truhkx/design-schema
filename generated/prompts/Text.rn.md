@@ -98,9 +98,17 @@ component:
       default: default
       description: 'Semantic color. `onAction` is only for text placed on an action
         background, and its story paints that background (color.action.primary.background)
-        behind the Text, on a wrapper holding a Box with `inset: md` around it. There
-        is no `inverse` tone: the shared foreground vocabulary has no such name, so
-        an inverse surface re-scopes the foreground instead (see `styles.color`).'
+        behind the Text, on a wrapper holding a Box with `inset: md` around it. No
+        component paints an action surface, so that wrapper is sanctioned story scaffolding
+        like the truncate width: a plain element (a `div` on web and Lit, a View on
+        native) whose background is the token itself. Enum stories use the Default
+        children, "Use the email you signed up with.", except `ToneDanger`, which
+        uses the `inline-error-wording` children verbatim on every platform so colour
+        is never the only signal, and `ToneOnAction`, which reads "Text on an action
+        background". The web modifier class is kebab-case (`ds-text--tone-on-action`),
+        from an explicit tone-to-class table. There is no `inverse` tone: the shared
+        foreground vocabulary has no such name, so an inverse surface re-scopes the
+        foreground instead (see `styles.color`).'
       a11y: Every tone meets 4.5:1 on the page background in every theme and mode
         except onAction, which is checked against color.action.primary.background.
     align:
@@ -126,18 +134,23 @@ component:
         passed, so the string children still supply it. On Lit there is no `title`
         property (the name is not attribute-safe): a `title` attribute the consumer
         puts on the host is observed and copied unchanged to the `part="text"` element,
-        where it wins the same way. With no consumer title there is no "plain string"
-        state, so `title` comes from the host''s flattened, whitespace-collapsed textContent,
-        is omitted when that is empty, sits on the `part="text"` element (the one
-        that clips), and follows live edits to the text (a MutationObserver over the
-        host''s subtree, since slotchange misses character changes). With `element:
-        span` the clipped box is `display: inline-block; max-inline-size: 100%; vertical-align:
-        bottom`, so the width comes from the parent and the clipped box stays on the
-        line. Native clips with `numberOfLines={1}` and `ellipsizeMode="tail"` and
-        has no affordance that reveals the rest — a known gap. Truncate stories need
-        a width to clip against; that decorator is story scaffolding, not a binding,
-        and may use a literal (`max-inline-size: 24ch` on web and Lit, a comparable
-        fixed width on native).'
+        where it wins the same way, and is left on the host as well (Text never edits
+        the consumer''s DOM). Web and Lit therefore differ for rich children on purpose:
+        web gets no automatic `title` unless children is a plain string, while Lit''s
+        textContent title covers slotted markup too. With no consumer title there
+        is no "plain string" state, so `title` comes from the host''s flattened, whitespace-collapsed
+        textContent, is omitted when that is empty, sits on the `part="text"` element
+        (the one that clips), and follows live edits to the text (a MutationObserver
+        over the host''s subtree, since slotchange misses character changes). With
+        `element: span` the clipped box is `display: inline-block; max-inline-size:
+        100%; vertical-align: bottom`, so the width comes from the parent and the
+        clipped box stays on the line; on the default `p` the clipped box stays `display:
+        block`. A `TruncateInline` story (truncate with `element: span`) shows that
+        case on web and Lit. Native clips with `numberOfLines={1}` and `ellipsizeMode="tail"`
+        and has no affordance that reveals the rest — a known gap. Truncate stories
+        need a width to clip against; that decorator (or render wrapper, which adds
+        no args) is story scaffolding, not a binding, and may use a literal (`max-inline-size:
+        24ch` on web and Lit, `width: 200` on native).'
       a11y: Truncated text is still read in full by screen readers; ensure sighted
         users can also reach it.
     element:
@@ -250,7 +263,10 @@ component:
         tokens are numbers and the platform wants a string union, so a weight snaps
         to the nearest hundred, and lineHeight × fontSize rounds to a whole pixel:
         a theme with a weight of 550 or a fractional line height lands on the nearest
-        step.'
+        step. Resolved overrides are cast to the binding''s own type (number for fontSize,
+        fontWeight and lineHeight, string for fontFamily) with no runtime guard: a
+        TokenRef of the wrong kind is the caller''s type error, not a development
+        warning.'
     swiftui:
       element: Text
       props:
@@ -463,7 +479,10 @@ notes: "No `element` prop \u2014 RN has one Text primitive. `truncate` maps to `
   \ counterpart and no accessibilityRole is set. Font weight tokens are numbers and\
   \ the platform wants a string union, so a weight snaps to the nearest hundred, and\
   \ lineHeight \xD7 fontSize rounds to a whole pixel: a theme with a weight of 550\
-  \ or a fractional line height lands on the nearest step."
+  \ or a fractional line height lands on the nearest step. Resolved overrides are\
+  \ cast to the binding's own type (number for fontSize, fontWeight and lineHeight,\
+  \ string for fontFamily) with no runtime guard: a TokenRef of the wrong kind is\
+  \ the caller's type error, not a development warning."
 ```
 
 ## Guidance

@@ -78,11 +78,16 @@ component:
         every platform: an <h2> on web and Lit, the 3xl default size everywhere, and
         one development warning per element for its lifetime. The warning is developer-facing,
         not copy, so it has no copy key; it names the received value and the level-2
-        fallback (`Heading: level 7 is not one of 1–6; rendering as level 2.`). Behavior
-        scenarios take only canonical values, so each platform''s own test file covers
-        a numeric level and the fallback with its single warning. On Lit the property
-        holds `undefined` until set, and the fallback renders. The Default story renders
-        level `2` with "Account settings".'
+        fallback (`Heading: level 7 is not one of 1–6; rendering as level 2.`), printing
+        the value as `String(level)`, so a missing level reads `level undefined`.
+        The warning is issued once per element whatever later values arrive (a later,
+        different invalid value does not warn again), and on web from an effect behind
+        a ref guard rather than during render, so StrictMode cannot send it twice.
+        Behavior scenarios take only canonical values, so each platform''s own test
+        file covers a numeric level and the fallback with its single warning; neither
+        gets a story. On Lit the property holds `undefined` until set, and the fallback
+        renders. The Default story renders level `2` with "Account settings" and no
+        other args.'
       a11y: Screen-reader users navigate by heading level; levels must not skip (h1
         → h3).
     size:
@@ -121,9 +126,11 @@ component:
         the platform's text-align. `start` and `end` are logical on web and Lit; React
         Native has no logical values and resolves them through I18nManager.isRTL at
         render, so a writing-direction change mid-session does not re-align an already-rendered
-        heading, the same limit Text has. The value set is Text's, so a platform reuses
-        Text's exported align type and mapping helper and exports no separate HeadingAlign.
-        On web every value, `start` included, emits its `ds-heading--align-<value>`
+        heading, the same limit Text has. The value set is Text's, so every platform
+        reuses Text's exported `TextAlign` type and exports no separate HeadingAlign,
+        with no deprecated alias; Text exports no mapping helper on web or Lit, so
+        Heading keeps its own `ds-heading--align-*` classes there and its own `:host([align])`
+        selectors on Lit. On web every value, `start` included, emits its `ds-heading--align-<value>`
         class.
   styles:
     fontFamily:
@@ -191,8 +198,10 @@ component:
         it falls back to <h2> and warns once per element, for the element''s lifetime,
         in development. Sizes are attribute selectors on the reflected `level` and
         `size` setting `--ds-heading-font-size`, with the `[size]` rules declared
-        after the `[level]` defaults so an explicit size wins at equal specificity.
-        Non-interactive, so no delegatesFocus and no focus styling.'
+        after the `[level]` defaults so an explicit size wins at equal specificity;
+        with `level` absent or invalid no `[level]` rule matches, so the 3xl fallback
+        size is the `:host` default of `--ds-heading-font-size`. Non-interactive,
+        so no delegatesFocus and no focus styling.'
     rn:
       element: Text
       props:
@@ -206,7 +215,10 @@ component:
         The ref is `Ref<TextInstance>`. Heading provides `TextStyleContext` ({ fontSize,
         color, nested: true }), the context Text.tsx exports, imported from there
         rather than declared again, with its own resolved size and colour, as Text
-        does, so an inline Icon or Link inside it matches the heading.'
+        does, so an inline Icon or Link inside it matches the heading. The header
+        role is the `accessibilityRole="header"` prop, not the `role` prop, and no
+        `aria-level` is passed: react-native-web previews therefore show every Heading
+        as an <h1>, a Storybook-only effect accepted because native has no levels.'
     swiftui:
       element: Text
       props:
@@ -419,7 +431,10 @@ notes: 'iOS and Android have no heading levels. `level` maps only to typography;
   is no `Heading.text`: a part that is the root keeps the root hook. The ref is `Ref<TextInstance>`.
   Heading provides `TextStyleContext` ({ fontSize, color, nested: true }), the context
   Text.tsx exports, imported from there rather than declared again, with its own resolved
-  size and colour, as Text does, so an inline Icon or Link inside it matches the heading.'
+  size and colour, as Text does, so an inline Icon or Link inside it matches the heading.
+  The header role is the `accessibilityRole="header"` prop, not the `role` prop, and
+  no `aria-level` is passed: react-native-web previews therefore show every Heading
+  as an <h1>, a Storybook-only effect accepted because native has no levels.'
 ```
 
 ## Guidance

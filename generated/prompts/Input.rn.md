@@ -137,7 +137,8 @@ component:
     error:
       type: string
       description: The error message. Setting it implies `invalid`. Explain what is
-        wrong and how to fix it.
+        wrong and how to fix it. An empty string counts as unset, so it implies nothing
+        and never leaves an empty alert.
       a11y: Rendered in the error slot with aria-describedby and role=alert so it
         is announced when it appears.
     autocomplete:
@@ -246,14 +247,18 @@ component:
     labelWeight:
       token: font.weight.medium
       part: label
+      description: On web and Lit the native label's weight. On native the label is
+        the system Text with `weight="medium"`, its size following `size`, and an
+        override is forwarded as that Text's fontWeight.
       locked: false
     helperSize:
       token: font.size.sm
       description: Description and error text size. Reaches them only through the
         composed Text's `overrides` (fontSize), with fontFamily and lineHeight forwarded
         the same way; it has no --ds-input-* hook, so page CSS sizes helper text through
-        Text's own hooks. fontFamily and lineHeight keep their root hooks as well,
-        for the label and the field.
+        Text's own hooks. The description and error Texts are `size="sm"`, matching
+        this default, with the override forwarded on top. fontFamily and lineHeight
+        keep their root hooks as well, for the label and the field.
       locked: false
     lineHeight:
       token: font.lineHeight.normal
@@ -380,7 +385,13 @@ component:
         `formResetCallback` restores the uncontrolled value to `defaultValue` and
         leaves `invalid` and `error` alone (the Form owns one, the consumer the other).
         The disabled state tests read is `aria-disabled="true"` on the inner input,
-        which never has the native `disabled` attribute.'
+        which never has the native `disabled` attribute; the invalid state is the
+        reflected `invalid` on the host plus `aria-invalid="true"` on the inner input.
+        `focus: field` focuses the inner input, and the test asserts the retargeted
+        native `focus` on the host. The browser/type step forwards the inner input''s
+        whole ValidityState to `setValidity` with the copy.invalid message. The parts
+        carry `part` as well as `data-part`, both the anatomy names, for addressing
+        only.'
     rn:
       element: TextInput
       props:
@@ -410,7 +421,17 @@ component:
         and the error by the live region / announcement, not role=alert. The label,
         description and errorMessage parts are plain wrapper Views carrying `testID="Input.<part>"`
         around the composed Text, because Text takes no testID (as in Fieldset); the
-        error wrapper also carries the Android accessibilityLiveRegion.'
+        error wrapper also carries the Android accessibilityLiveRegion. Inside a Form
+        with an error summary the live region and the iOS announcement are suppressed,
+        since the Form announces (see Form). react-native-web drops `accessibilityState`,
+        so disabled is mirrored as `aria-disabled` on both the TextInput and the root
+        group View that carries disabledOpacity; the group is what makes a web accessibility
+        checker treat the dimmed label and value as disabled. `returnKeyType` and
+        `onSubmitEditing` come from the Form context (next field, or submit on the
+        last), which owns the order. email, password and url set `autoCapitalize="none"`
+        and `autoCorrect={false}`; text, number and search have `textContentType="none"`,
+        and search keeps `keyboardType="default"`. A disabled Form reaches the field
+        through its context, beside FieldsetContext.'
     swiftui:
       element: TextField
       props:
@@ -707,7 +728,16 @@ notes: "No label element \u2014 the label is rendered as Text and also passed as
   \ / announcement, not role=alert. The label, description and errorMessage parts\
   \ are plain wrapper Views carrying `testID=\"Input.<part>\"` around the composed\
   \ Text, because Text takes no testID (as in Fieldset); the error wrapper also carries\
-  \ the Android accessibilityLiveRegion."
+  \ the Android accessibilityLiveRegion. Inside a Form with an error summary the live\
+  \ region and the iOS announcement are suppressed, since the Form announces (see\
+  \ Form). react-native-web drops `accessibilityState`, so disabled is mirrored as\
+  \ `aria-disabled` on both the TextInput and the root group View that carries disabledOpacity;\
+  \ the group is what makes a web accessibility checker treat the dimmed label and\
+  \ value as disabled. `returnKeyType` and `onSubmitEditing` come from the Form context\
+  \ (next field, or submit on the last), which owns the order. email, password and\
+  \ url set `autoCapitalize=\"none\"` and `autoCorrect={false}`; text, number and\
+  \ search have `textContentType=\"none\"`, and search keeps `keyboardType=\"default\"\
+  `. A disabled Form reaches the field through its context, beside FieldsetContext."
 ```
 
 ## Guidance
@@ -726,7 +756,7 @@ Do not use Input for multi-line content (use TextArea, planned), for choosing fr
 
 ## Behavior
 
-The field is uncontrolled unless `value` is provided. `onChange` fires with the string value on every keystroke; `onBlur` is the recommended moment to validate so users are not shouted at mid-word. Setting `error` marks the field invalid, shows the message in the error slot, and announces it. Clearing `error` removes the message and the invalid state that `error` implied; an `invalid` set by the Form or the consumer stays until they clear it (on Lit, where setting `error` also writes the reflected `invalid`, clearing a non-empty `error` writes it back to false and ds-form sets it again on its next validation). `required` counts only the empty string as empty, as a native field does: whitespace passes. `disabled` fields are visible, readable, focusable (aria-disabled + readOnly on web — never the native disabled attribute), and skipped by the Form; `required` appends `copy.requiredIndicator` to the visible label and sets `aria-required`; the indicator is plain label text (not aria-hidden) and stays part of the accessible name. A read-only field that is not disabled is still submitted and validated, as a native one is. Validation precedence: `error` prop, then `required` (renders `copy.required`), then `invalid` (renders `copy.invalid`), then browser/type validity where the platform has it — which also reports `copy.invalid`, never the browser's own validationMessage, so all user-facing text comes from the copy block. The error slot shows `error` when set; otherwise it shows a message only while `invalid` is true (set directly or by the Form): `copy.required` for an empty required field, else `copy.invalid`. An empty required field that is not yet invalid shows nothing, so the user is not flagged before typing. `validationMessage`/validity always follow the full precedence. The Form marks a failing field by setting its `invalid` and clears it when the field passes; it never sets `error`, which stays the consumer's. On web and native that mark is the field's entry in the Form context (`errors[name]`), which the field treats exactly as a Form-set `invalid`; on Lit ds-form sets the property. The error slot's order is then: the `error` prop, the Form's context entry, the `invalid`-derived copy. Inside a Fieldset `disabled` from the group applies as if set on the field — on web through the `disabled` prop Fieldset passes to its children, on Lit through the property ds-fieldset sets (or formDisabledCallback from a native fieldset/form), and on native through `FieldsetContext`, which also carries the legend that prefixes the accessibility label ("Shipping address, Street"). The label is a native `<label for>` (web/Lit) styled from Input's label bindings, not a Text; description and error are Text. `hideLabel` keeps the `<label>` in the DOM, visually hidden (web/Lit; see the native note). `size: sm` swaps paddingBlock/paddingInline/minTarget for their Sm bindings and the type of the field and the label to font.size.sm (description and error stay at helperSize); nothing else changes.
+The field is uncontrolled unless `value` is provided. `onChange` fires with the string value on every keystroke; `onBlur` is the recommended moment to validate so users are not shouted at mid-word. Setting `error` marks the field invalid, shows the message in the error slot, and announces it. Clearing `error` removes the message and the invalid state that `error` implied; an `invalid` set by the Form or the consumer stays until they clear it (on Lit, where setting `error` also writes the reflected `invalid`, clearing a non-empty `error` writes it back to false and ds-form sets it again on its next validation). `required` counts only the empty string as empty, as a native field does: whitespace passes. `disabled` fields are visible, readable, focusable (aria-disabled + readOnly on web — never the native disabled attribute), and skipped by the Form; `required` appends `copy.requiredIndicator` to the visible label and sets `aria-required`; the indicator is plain label text (not aria-hidden) and stays part of the accessible name. A read-only field that is not disabled is still submitted and validated, as a native one is. Validation precedence: `error` prop, then `required` (renders `copy.required`), then `invalid` (renders `copy.invalid`), then browser/type validity where the platform has it — which also reports `copy.invalid`, never the browser's own validationMessage, so all user-facing text comes from the copy block. The error slot shows `error` when set; otherwise it shows a message only while `invalid` is true (set directly or by the Form): `copy.required` for an empty required field, else `copy.invalid`. An empty required field that is not yet invalid shows nothing, so the user is not flagged before typing. `validationMessage`/validity always follow the full precedence. The Form marks a failing field by setting its `invalid` and clears it when the field passes; it never sets `error`, which stays the consumer's. On web and native that mark is the field's entry in the Form context (`errors[name]`), which the field treats exactly as a Form-set `invalid`: its presence marks the field invalid; on Lit ds-form sets the property. The error slot's order is then: the `error` prop, the Form's context entry, the `invalid`-derived copy, and an entry with an empty message falls through to the derived copy. The field's own `validate()` ignores that entry, since it is what the Form calls to produce it. The visible slot and `validationMessage` may differ: an untouched empty required field reports valueMissing with `copy.required` while its slot shows nothing. The description and error Texts carry their `data-part` on the composed Text's root, as in Fieldset; that is a name, not styling. A disabled Form disables its fields on every platform. Inside a Fieldset `disabled` from the group applies as if set on the field — on web through the `disabled` prop Fieldset passes to its children, on Lit through the property ds-fieldset sets (or formDisabledCallback from a native fieldset/form), and on native through `FieldsetContext`, which also carries the legend that prefixes the accessibility label ("Shipping address, Street"). The label is a native `<label for>` (web/Lit) styled from Input's label bindings, not a Text; description and error are Text. `hideLabel` keeps the `<label>` in the DOM, visually hidden (web/Lit; see the native note). `size: sm` swaps paddingBlock/paddingInline/minTarget for their Sm bindings and the type of the field and the label to font.size.sm (description and error stay at helperSize); nothing else changes.
 
 ## Content guidelines
 

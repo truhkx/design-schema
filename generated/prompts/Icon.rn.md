@@ -90,11 +90,12 @@ component:
       - folder
       - file
       required: true
-      description: Which glyph. The set is deliberately small and grows only when
+      description: 'Which glyph. The set is deliberately small and grows only when
         a component needs a shape; `info`, `success`, `warning` and `danger` are the
         four status shapes (circle-i, circle-check, triangle-!, octagon-x) so tone
         is never carried by color alone. `name` has no default; the Default story
-        renders `check`.
+        renders `check`. Enum stories for hyphenated names capitalise each segment
+        and join them: `NameChevronRight`, `NameArrowLeft`.'
     size:
       type: enum
       enumRef: size
@@ -140,10 +141,12 @@ component:
         on the element), so the box tracks the type scale. With `inline`, font-size
         is inherited instead and `overrides.size` is a no-op (the hook is still set,
         for consistency, and on web the `ds-icon--{size}` modifier class stays applied;
-        `.ds-icon--inline` is declared later and wins). React Native has no hook,
-        so there the override is simply ignored while inline. Non-inline icons are
-        display inline-block with vertical-align middle (the Lit host is inline-flex
-        instead; see its note); inline ones sit at vertical-align -0.125em.
+        `.ds-icon--inline` is declared later and wins). A non-inline `overrides.size`
+        is written as the `--ds-icon-size` hook inline, so it outranks the `ds-icon--{size}`
+        modifier's declaration of the same hook. React Native has no hook, so there
+        the override is simply ignored while inline. Non-inline icons are display
+        inline-block with vertical-align middle (the Lit host is inline-flex instead;
+        see its note); inline ones sit at vertical-align -0.125em.
       locked: false
     color:
       token: color.foreground
@@ -199,10 +202,15 @@ component:
         the one element. An unknown `name` is unreachable from TypeScript but possible
         from JavaScript: every platform renders an empty glyph and warns, on every
         render, with no dedupe. The warning is developer-facing, not copy, so it has
-        no copy key: `Icon: unknown name "<name>"`. It has no behavior scenario (a
-        scenario takes only canonical values), so each platform''s own test file covers
-        it. The empty glyph keeps the label or decorative accessibility props, so
-        an unlabelled unknown icon stays hidden.'
+        no copy key: exactly `Icon: unknown name "<name>"`, with nothing appended;
+        an absent `name` takes the same path and prints `Icon: unknown name "undefined"`.
+        The empty glyph is the root svg (or native Svg) with its size, viewBox and
+        `fill="none"` and no path. It has no behavior scenario (a scenario takes only
+        canonical values), so each platform''s own test file covers it. The empty
+        glyph keeps the label or decorative accessibility props, so an unlabelled
+        unknown icon stays hidden. Icon drops a JavaScript caller''s `className` and
+        `style`: the component''s own class and the overrides style are written over
+        them, as the package rule for `...rest` says.'
     lit:
       tag: ds-icon
       reflect:
@@ -218,7 +226,11 @@ component:
         host colour is `color: var(--ds-icon-color)`, never a bare `inherit`, so `overrides.color`
         reaches it. :host([hidden]) { display: none }. The role and the accessible
         name live on that <svg>, not on the host — this is the one primitive whose
-        semantics sit inside the shadow root, because the glyph is the image. No delegatesFocus
+        semantics sit inside the shadow root, because the glyph is the image, and
+        the one exception to the rule that names tests read are plain host attributes:
+        Icon''s behavior tests query the shadow <svg>. The <svg> carries the same
+        `width="1em" height="1em"` attributes as on web; `data-ds="Icon"` sits on
+        the host only, and the <svg> carries `data-part` and `part`. No delegatesFocus
         — the icon is never focusable. color inherits through the shadow root, so
         a ds-icon inside ds-button takes the button foreground. The paths table lives
         in Icon.ts and is imported by no one else — other components use <ds-icon
@@ -243,7 +255,9 @@ component:
         the same 16-grid `paths` table as web renders through <Svg viewBox="0 0 16
         16" width={size} height={size} fill="none" stroke={color}> with <Path> children,
         strokeWidth from border.width.focus scaled to the 16-grid at the rendered
-        size (vectorEffect="non-scaling-stroke" where the platform honors it), filled
+        size (`strokeWidth × grid / size`, with `grid` read from the paths table''s
+        `grid` field, which paths.ts copies from icon-paths.json, rather than a literal
+        16) (vectorEffect="non-scaling-stroke" where the platform honors it), filled
         glyphs with fill={color} stroke="none". `strokeWidth`, `fillRule` and `vectorEffect`
         in the props list go on each <Path>, since fill-or-stroke is chosen per glyph,
         and `vectorEffect` is passed only when Platform.OS is web — native gets the
@@ -256,8 +270,10 @@ component:
         slightly higher than on web: a platform limit, not a bug. The root is react-native-svg''s
         Svg, whose ref is a class instance rather than a view handle, so Icon exposes
         no ref; it carries `testID="Icon"` and no separate part hook. Decorative:
-        accessibilityElementsHidden + importantForAccessibility="no"; labelled: accessibilityRole="image"
-        + accessibilityLabel, accessibilityElementsHidden false and importantForAccessibility="auto".'
+        accessibilityElementsHidden + importantForAccessibility="no" and no accessibilityRole
+        (`accessibilityRole=image` in the props list is set only when labelled); labelled:
+        accessibilityRole="image" + accessibilityLabel, accessibilityElementsHidden
+        false and importantForAccessibility="auto".'
     swiftui:
       element: Path
       props:
@@ -338,17 +354,18 @@ component:
   - name: decorative-beside-a-label
     description: The usual case - a glyph next to text, with no label, so the label
       carries the meaning alone. Its story wraps the glyph in a system Text of the
-      same size (`sm`) with the demo word "Saved" beside it; that word is story scaffolding,
-      not copy.
+      same size (`sm`, and a span element on web and Lit) with the demo word "Saved"
+      beside it; that word is story scaffolding, not copy.
     given:
       name: check
       size: sm
   - name: inline-in-running-text
     description: An icon sized at 1em of the surrounding text and sitting on its baseline,
       for use inside a Text or Link. Its story nests it at the end of a system Text
-      reading "Read the release notes"; that sentence is story scaffolding, not copy.
-      On React Native the glyph sits slightly above the baseline, a platform limit
-      the rn note explains; the story is the same.
+      at its defaults (size md) reading "Read the release notes", on every platform;
+      that sentence is story scaffolding, not copy. On React Native the glyph sits
+      slightly above the baseline, a platform limit the rn note explains; the story
+      is the same.
     given:
       name: external
       inline: true
@@ -357,8 +374,8 @@ component:
 ## Constants and examples
 
 - example `status-in-a-cell`, story `StatusInACell`: given `name: "warning"`, `label: "Warning: over quota"`; A lone status glyph that is the whole message, so it says what it means instead of what it depicts.
-- example `decorative-beside-a-label`, story `DecorativeBesideALabel`: given `name: "check"`, `size: "sm"`; The usual case - a glyph next to text, with no label, so the label carries the meaning alone. Its story wraps the glyph in a system Text of the same size (`sm`) with the demo word "Saved" beside it; that word is story scaffolding, not copy.
-- example `inline-in-running-text`, story `InlineInRunningText`: given `name: "external"`, `inline: true`; An icon sized at 1em of the surrounding text and sitting on its baseline, for use inside a Text or Link. Its story nests it at the end of a system Text reading "Read the release notes"; that sentence is story scaffolding, not copy. On React Native the glyph sits slightly above the baseline, a platform limit the rn note explains; the story is the same.
+- example `decorative-beside-a-label`, story `DecorativeBesideALabel`: given `name: "check"`, `size: "sm"`; The usual case - a glyph next to text, with no label, so the label carries the meaning alone. Its story wraps the glyph in a system Text of the same size (`sm`, and a span element on web and Lit) with the demo word "Saved" beside it; that word is story scaffolding, not copy.
+- example `inline-in-running-text`, story `InlineInRunningText`: given `name: "external"`, `inline: true`; An icon sized at 1em of the surrounding text and sitting on its baseline, for use inside a Text or Link. Its story nests it at the end of a system Text at its defaults (size md) reading "Read the release notes", on every platform; that sentence is story scaffolding, not copy. On React Native the glyph sits slightly above the baseline, a platform limit the rn note explains; the story is the same.
 
 ## Overrides (per-instance styling contract)
 
@@ -621,20 +638,23 @@ notes: "react-native-svg is the one sanctioned native dependency (decision 2026-
   \ the same 16-grid `paths` table as web renders through <Svg viewBox=\"0 0 16 16\"\
   \ width={size} height={size} fill=\"none\" stroke={color}> with <Path> children,\
   \ strokeWidth from border.width.focus scaled to the 16-grid at the rendered size\
-  \ (vectorEffect=\"non-scaling-stroke\" where the platform honors it), filled glyphs\
-  \ with fill={color} stroke=\"none\". `strokeWidth`, `fillRule` and `vectorEffect`\
-  \ in the props list go on each <Path>, since fill-or-stroke is chosen per glyph,\
-  \ and `vectorEffect` is passed only when Platform.OS is web \u2014 native gets the\
-  \ scaled width instead, never both. `color` is an explicit prop (no currentColor\
-  \ on native) defaulting to color.foreground, and a nested icon reads the enclosing\
-  \ Text through `TextStyleContext` \u2014 the real export, which carries the resolved\
-  \ fontSize, color and nesting flag; there is no boolean TextNestingContext. An Svg\
-  \ inside an RN Text is centred by the text renderer with no baseline control, so\
-  \ `inline` here matches size and colour only and the glyph sits slightly higher\
-  \ than on web: a platform limit, not a bug. The root is react-native-svg's Svg,\
-  \ whose ref is a class instance rather than a view handle, so Icon exposes no ref;\
-  \ it carries `testID=\"Icon\"` and no separate part hook. Decorative: accessibilityElementsHidden\
-  \ + importantForAccessibility=\"no\"; labelled: accessibilityRole=\"image\" + accessibilityLabel,\
+  \ (`strokeWidth \xD7 grid / size`, with `grid` read from the paths table's `grid`\
+  \ field, which paths.ts copies from icon-paths.json, rather than a literal 16) (vectorEffect=\"\
+  non-scaling-stroke\" where the platform honors it), filled glyphs with fill={color}\
+  \ stroke=\"none\". `strokeWidth`, `fillRule` and `vectorEffect` in the props list\
+  \ go on each <Path>, since fill-or-stroke is chosen per glyph, and `vectorEffect`\
+  \ is passed only when Platform.OS is web \u2014 native gets the scaled width instead,\
+  \ never both. `color` is an explicit prop (no currentColor on native) defaulting\
+  \ to color.foreground, and a nested icon reads the enclosing Text through `TextStyleContext`\
+  \ \u2014 the real export, which carries the resolved fontSize, color and nesting\
+  \ flag; there is no boolean TextNestingContext. An Svg inside an RN Text is centred\
+  \ by the text renderer with no baseline control, so `inline` here matches size and\
+  \ colour only and the glyph sits slightly higher than on web: a platform limit,\
+  \ not a bug. The root is react-native-svg's Svg, whose ref is a class instance rather\
+  \ than a view handle, so Icon exposes no ref; it carries `testID=\"Icon\"` and no\
+  \ separate part hook. Decorative: accessibilityElementsHidden + importantForAccessibility=\"\
+  no\" and no accessibilityRole (`accessibilityRole=image` in the props list is set\
+  \ only when labelled); labelled: accessibilityRole=\"image\" + accessibilityLabel,\
   \ accessibilityElementsHidden false and importantForAccessibility=\"auto\"."
 ```
 

@@ -68,9 +68,15 @@ component:
         at its defaults, so each example story keeps exactly its `given` as args.
         The Default story uses the `highlighted-panel` props, since a Box at its schema
         defaults draws nothing; meta args may still list the schema defaults (`border:
-        false`, `element: div`) as controls. Behavior scenarios render the Default
-        story''s args with their `given` on top, which is intended: they assert only
-        renders and roles.'
+        false`, `element: div`) as controls, but only defaults of props the platform
+        declares (React Native has no `element`) and never the `highlighted-panel`
+        props, which go on the Default story alone. Meta args that equal the schema
+        defaults count as "exactly its `given`". Besides one story per enum value,
+        the `border` boolean gets one `Border` story (`border: true`) and a `WithOverrides`
+        story shows `overrides`. On React Native the behavior tests render through
+        the stories'' meta render, since a bare string child inside a View throws
+        there. Behavior scenarios render the Default story''s args with their `given`
+        on top, which is intended: they assert only renders and roles.'
     inset:
       type: enum
       values:
@@ -224,8 +230,12 @@ component:
         a consumer `className` and `style` onto the root instead of dropping them,
         as Text does, because those same composites give it a layout-only class. That
         class may set Box''s `--ds-box-*` hooks (Dialog sets the padding hooks this
-        way): it is consumer CSS, and it outranks the modifier classes by specificity.
-        Props are typed against `div` for every `element` value; Box is not polymorphic,
+        way): it is consumer CSS, and it outranks the modifier classes only with a
+        selector of at least two classes (Dialog''s `.ds-dialog__scroll > .ds-box`);
+        a single class ties with the plain-class modifiers and loses or wins by stylesheet
+        order, which is not supported. A consumer `style` is spread after the inline
+        `overrides` hooks, so it wins where both set the same `--ds-box-*` hook. Props
+        are typed against `div` for every `element` value; Box is not polymorphic,
         and the ref is `Ref<HTMLElement>`.'
     lit:
       tag: ds-box
@@ -247,18 +257,22 @@ component:
         → complementary, main, nav → navigation. `div`, `section`, `header` and `footer`
         set no role, because a native `<header>` or `<footer>` is only a banner or
         contentinfo outside sectioning content and the element cannot see where it
-        sits; a page-level banner is Landmark.'
+        sits; a page-level banner is Landmark. Box removes only a role it wrote itself,
+        so a consumer `role` on a `div` box stays. A derived `renders` scenario on
+        Lit means the host is connected and its shadow root holds the slot.'
     rn:
       element: View
       props: []
       notes: 'View with paddingVertical/paddingHorizontal, backgroundColor, borderWidth/borderColor,
         borderRadius from the token object. `element` does not apply — use Landmark
-        for a region. The root view is both the component and its only part, so it
-        carries `testID="Box"` and there is no `Box.surface`: when a component''s
-        single anatomy part is the root, the root form wins. A string given as `children`
-        in an example is illustrative; native requires it inside a Text. Resolved
-        overrides are cast to the binding''s own type: number for padding, width and
-        radius, string for the border colour.'
+        for a region; the `navigation-region` example and the two element scenarios
+        have no React Native story or test, and Landmark''s stories are the counterpart.
+        The root view is both the component and its only part, so it carries `testID="Box"`
+        and there is no `Box.surface`: when a component''s single anatomy part is
+        the root, the root form wins. A string given as `children` in an example is
+        illustrative; native requires it inside a Text. Resolved overrides are cast
+        to the binding''s own type: number for padding, width and radius, string for
+        the border colour.'
     swiftui:
       element: VStack
       props:

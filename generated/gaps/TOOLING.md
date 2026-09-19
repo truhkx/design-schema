@@ -156,3 +156,14 @@ Gaps a fold cannot answer because they are about the tools, not the docs.
 - The Storybook previews do not set the body colour to `var(--color-foreground)`, so a story that passes a bare string inherits a non-token colour and fails dark-mode contrast (Text, web).
 - The derived `renders` scenarios assert only that something rendered; for slot-only or style-only primitives (Box, Stack, Text) they pass trivially and test no binding. Style assertions need a browser gate; jsdom computes no cascaded custom properties (Box, Stack, Text).
 - A fold session still cannot run `node logs/*.mjs` or a chained `git diff | grep`; the stale sections were read from `git diff -U0 generated/gaps/SUMMARY.md` (fold, Primitives phase).
+
+## 2026-09-19
+
+- Every round 2/3 of the Primitives rerun and of Button, Link, Input and Form is again the whole-Storybook axe / keyboard-run verdict (plus an axe webServer 120s start-up timeout and a 900s whole-Lit-Storybook timeout); still unscoped, see 2026-09-18 (all nine components, all platforms).
+- The axe gate ran against a Storybook built before the round's edit (packages/react/storybook-static from 2026-09-17), so it never tested the regenerated code; the gate should rebuild or check the build is newer than the component (Form, Button; web).
+- The axe gate checks only each story's first render; states reached by interaction (Form's error summary) need a play function or a post-interaction pass (Form; web, lit, rn).
+- Generic prompt rules conflict with component docs: "disabled uses aria-disabled on the root" (Form's role forbids it), "disabled sets accessibilityState.disabled in addition to `disabled`" (TextInput has none), the `disabled`/accessibilityState template for components with no `disabled` (Link), "Enum props with quoted digits (Heading level, Stack gap) accept numbers" (Stack gap is named presets), and a Lit convention that role/aria-label sit on the host (Icon's are on the shadow svg) (Form, Input, Link, Stack, Icon).
+- The generated "Style bindings" / Overrides sections render computed bindings with the ×factor inside the hook value (Button inverseHoverOpacity) and list forwarded-only bindings as `--ds-*` hooks (Form errorSummaryGap), contradicting the binding descriptions (Button, Form; lit).
+- The rn conventions digest should require mirroring `accessibilityState` as `aria-*` props for react-native-web 0.21, which drops accessibilityState (and Pressable overwrites a passed aria-disabled), and still has `toLineHeight` arguments reversed and names `TextNestingContext` (Button, Input, Link, Heading, Text; rn).
+- Link's animated press colour raises an act() warning in the RN Jest tests; the rn test conventions give no pattern for animated state (Link, rn).
+- A fold session still cannot run `node logs/*.mjs`; stale gap files were found by grepping round headings dated after folded.json and `ls --time-style` (fold, Primitives rerun).

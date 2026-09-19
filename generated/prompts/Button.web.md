@@ -140,20 +140,26 @@ component:
       description: Overrides the accessible name when it must say more than the visible
         label ("Sort by Amount, ascending" on a header that shows "Amount"). The name
         must contain the visible label (WCAG 2.5.3 label-in-name); starting with it
-        is preferred but not required. Maps to aria-label / accessibilityLabel.
+        is preferred but not required, and no development warning checks it. Maps
+        to aria-label / accessibilityLabel.
     overflowLabel:
       type: string
       description: 'Text used for this button when a Toolbar collapses it into its
         overflow Menu. Only Buttons collapse; other controls stay visible. Button
-        itself never renders it: on web Toolbar reads it from the Button element''s
-        props (it never reaches the DOM); on Lit it is the plain `overflow-label`
-        attribute on ds-button, which Toolbar reads from the host.'
+        itself never renders it: on web and React Native Toolbar reads it from the
+        Button element''s props (it never reaches the DOM or the Pressable); on Lit
+        it is the plain `overflow-label` attribute on ds-button, which Toolbar reads
+        from the host.'
     iconOnly:
       type: boolean
       default: false
-      description: Hides the visible label and shows only `leadingIcon`; `trailingIcon`
+      description: 'Hides the visible label and shows only `leadingIcon`; `trailingIcon`
         is not rendered either. `label` is still required and becomes the accessible
-        name. Padding becomes equal on all sides (`space.sm`).
+        name. Padding becomes equal on all sides (`space.sm`): paddingInline takes
+        the resolved paddingBlock, so a paddingBlock override keeps the sides equal
+        and a paddingInline override has no effect while `iconOnly`. An `iconOnly`
+        button with no `leadingIcon` is allowed and renders only its accessible name,
+        with no development warning.'
     loading:
       type: boolean
       default: false
@@ -167,11 +173,15 @@ component:
         is not an anatomy part and carries no part name; it only takes the leadingIcon
         position, so no leadingIcon part is present while loading. `copy.loading`
         is announced as a description, never as part of the name, so it survives aria-label:
-        web and Lit render it in a visually hidden node inside the button''s own tree
-        referenced by aria-describedby (web merges it with any caller aria-describedby;
-        on Lit only the internal id is referenced, since a caller''s aria-describedby
-        on the host cannot cross the shadow root); rn sets `accessibilityValue={{
-        text: copy.loading }}` beside `busy`; SwiftUI uses `.accessibilityValue`.'
+        web and Lit render it in a visually hidden, `aria-hidden` node inside the
+        button''s own tree referenced by aria-describedby (a description still resolves
+        from a hidden node, and the virtual cursor does not read it a second time)
+        (web merges it with any caller aria-describedby; on Lit only the internal
+        id is referenced, since a caller''s aria-describedby on the host cannot cross
+        the shadow root); rn sets `accessibilityValue={{ text: copy.loading }}` beside
+        `busy`, which react-native-web ignores (and aria-valuetext is not allowed
+        on a button), so a react-native-web preview exposes only aria-busy and adds
+        nothing else; SwiftUI uses `.accessibilityValue`.'
       platforms:
       - web
       - lit
@@ -235,7 +245,10 @@ component:
       state: hover
       locked: true
       description: Pointer hover and pressed state (`:hover` and `:active` on web
-        and Lit; pressed on rn). Locked like background and foreground, so an override
+        and Lit; pressed on rn, which does not read the Pressable `hovered` state,
+        so a react-native-web mouse hover leaves the fill alone). Never applied while
+        `disabled` or `loading`, since neither accepts a press; the same holds for
+        inverseBackgroundHover. Locked like background and foreground, so an override
         cannot put an unproven fill behind the locked foreground.
     foreground:
       token: color.action.{variant}.foreground
@@ -280,7 +293,9 @@ component:
       token: color.inverse.foreground
       state: hover
       description: 'ghost hover and pressed fill when `inverse`: this color at inverseHoverOpacity
-        over color.inverse.surface.'
+        over color.inverse.surface. On native it is the resolved colour with an alpha
+        channel, drawn over whatever the transparent ghost sits on; a colour that
+        is not #rgb or #rrggbb passes through without alpha.'
       locked: false
     inverseHoverOpacity:
       token: opacity.disabled
@@ -325,7 +340,11 @@ component:
       description: 'Ring thickness of the loading spinner: a spinnerSize circle with
         one quarter transparent, drawn in currentColor (the resolved foreground binding
         on rn). Locked because border.width.focus is a focus token: it keeps its `--ds-button-spinner-stroke`
-        hook but is not a member of the overrides type.'
+        hook but is not a member of the overrides type. The ring is round through
+        `radius.full`, read directly with no hook, on web and Lit, and through a radius
+        of spinnerSize / 2 on rn, where it is a bordered View with a transparent top
+        border (no react-native-svg) and carries no testID. One rotation is a full
+        turn, `rotate(360deg)`: a geometric constant, not a themed value.'
       locked: true
   copy:
     loading: Loading
@@ -362,7 +381,13 @@ component:
         `...rest` still applies, which is how Menu, Popover, Disclosure, SidePanel,
         Combobox and Search already set it. `ButtonProps` omits `className` and `style`
         from the native button props, so passing either is a type error rather than
-        a silent drop: `overrides` is the only per-instance styling.'
+        a silent drop: `overrides` is the only per-instance styling. Hooks follow
+        Lit: locked bindings get no `--ds-button-*` hook, and the interpolated ones
+        (background, backgroundHover, foreground) are written out as one rule per
+        variant reading the token directly; spinnerStroke is the one exception. A
+        blocked activation (disabled or loading) calls preventDefault() and stopPropagation()
+        on the click, so a `type: submit` button submits nothing and the enclosing
+        Form never sees the event.'
     lit:
       tag: ds-button
       reflect:
@@ -381,9 +406,11 @@ component:
         kebab-case and part names camelCase. The slots are not aria-hidden (aria-hidden
         on a <slot> is unreliable): a ds-icon with no label hides itself, which is
         what makes the icons decorative. Locked bindings get no `--ds-button-*` hook
-        (the rule reads the token directly, per the overrides contract); spinnerStroke
-        is the one exception its binding names. A blocked activation (disabled or
-        loading) is swallowed on the inner button with preventDefault() and stopPropagation():
+        (the rule reads the token directly, per the overrides contract, one rule per
+        variant for the interpolated ones); spinnerStroke is the one exception its
+        binding names. `label` is required but a property needs an initial value,
+        so it starts as '''' and ds-button does not warn. A blocked activation (disabled
+        or loading) is swallowed on the inner button with preventDefault() and stopPropagation():
         neither `press` nor the native click leaves the host, and no form submits.
         ds-button is NOT form-associated (a FACE with a reflected disabled attribute
         becomes truly disabled and unfocusable); `type=submit` is handled by ds-form
@@ -410,7 +437,16 @@ component:
         Pressable as `ref` so a parent (Tooltip, Toolbar) can measure and focus it.
         `disabled` is never passed to Pressable, which would drop it from the focus
         order: it is a press guard plus `accessibilityState.disabled`, so a hardware-keyboard
-        user can still focus it and the press is swallowed, as on web.'
+        user can still focus it and the press is swallowed, as on web. react-native-web
+        drops `accessibilityState`, so Button mirrors busy and expanded as `aria-busy`/`aria-expanded`
+        props, and sets `aria-disabled` imperatively on the web DOM node in an effect
+        (Pressable overwrites a passed `aria-disabled`, and any disabled prop removes
+        the button from the tab order); that needs Button to own its root ref and
+        expose it through `useImperativeHandle(ref, …)`. Without the mirror a dimmed
+        disabled button fails contrast in the web preview, because tooling does not
+        see it as disabled. The role and name stay `accessibilityRole`/`accessibilityLabel`,
+        which react-native-web still renders. A `type: submit` Button outside any
+        Form only fires onPress, with no warning.'
     swiftui:
       element: Button
       props:
@@ -483,7 +519,9 @@ component:
     - lit
   - name: loading-announces-busy-and-ignores-activation
     description: While loading is true the button announces itself as busy and ignores
-      further activation, but keeps its height and its label in view.
+      further activation, but keeps its height and its label in view. The rn test
+      also asserts accessibilityState.busy in its own file, since a scenario has no
+      busy state.
     given:
       loading: true
     when:
@@ -535,8 +573,11 @@ component:
       label: Delete file
       variant: danger
   - name: icon-only-in-a-toolbar
-    description: A low-emphasis icon-only control in dense UI, whose label says what
-      it does rather than what the icon depicts.
+    description: 'A low-emphasis icon-only control in dense UI, whose label says what
+      it does rather than what the icon depicts. `Icon name=close` is shorthand for
+      the system Icon with those props: `<Icon name="close" inline />` on web, `<ds-icon
+      name="close" inline>` on Lit, and on rn `<Icon name="close">` with `color` set
+      to the ghost foreground token, since native has no currentColor.'
     given:
       label: Close
       iconOnly: true
@@ -580,7 +621,7 @@ component:
 
 - example `primary-save`, story `PrimarySave`: given `label: "Save changes"`, `variant: "primary"`; The single most important action in a view, labelled with the outcome.
 - example `destructive-confirm`, story `DestructiveConfirm`: given `label: "Delete file"`, `variant: "danger"`; A destructive, hard-to-undo action, which is the only use of the danger variant.
-- example `icon-only-in-a-toolbar`, story `IconOnlyInAToolbar`: given `label: "Close"`, `iconOnly: true`, `leadingIcon: "Icon name=close"`, `variant: "ghost"`, `size: "sm"`; A low-emphasis icon-only control in dense UI, whose label says what it does rather than what the icon depicts.
+- example `icon-only-in-a-toolbar`, story `IconOnlyInAToolbar`: given `label: "Close"`, `iconOnly: true`, `leadingIcon: "Icon name=close"`, `variant: "ghost"`, `size: "sm"`; A low-emphasis icon-only control in dense UI, whose label says what it does rather than what the icon depicts. `Icon name=close` is shorthand for the system Icon with those props: `<Icon name="close" inline />` on web, `<ds-icon name="close" inline>` on Lit, and on rn `<Icon name="close">` with `color` set to the ghost foreground token, since native has no currentColor.
 - example `pending-submit`, story `PendingSubmit`: given `label: "Create account"`, `type: "submit"`, `loading: true`; The submit button of a form while the request is in flight - busy, and ignoring repeat activation.
 
 ## Overrides (per-instance styling contract)
@@ -647,7 +688,9 @@ Each scenario below becomes one test. They are platform-neutral: `given` are pro
   - lit
 - name: loading-announces-busy-and-ignores-activation
   description: While loading is true the button announces itself as busy and ignores
-    further activation, but keeps its height and its label in view.
+    further activation, but keeps its height and its label in view. The rn test also
+    asserts accessibilityState.busy in its own file, since a scenario has no busy
+    state.
   given:
     loading: true
   when:
@@ -770,7 +813,12 @@ notes: 'Use aria-disabled rather than the disabled attribute so the button remai
   still applies, which is how Menu, Popover, Disclosure, SidePanel, Combobox and Search
   already set it. `ButtonProps` omits `className` and `style` from the native button
   props, so passing either is a type error rather than a silent drop: `overrides`
-  is the only per-instance styling.'
+  is the only per-instance styling. Hooks follow Lit: locked bindings get no `--ds-button-*`
+  hook, and the interpolated ones (background, backgroundHover, foreground) are written
+  out as one rule per variant reading the token directly; spinnerStroke is the one
+  exception. A blocked activation (disabled or loading) calls preventDefault() and
+  stopPropagation() on the click, so a `type: submit` button submits nothing and the
+  enclosing Form never sees the event.'
 ```
 
 ## Guidance
@@ -807,7 +855,7 @@ Every button must have an accessible name (WCAG 4.1.2). The name comes from the 
 Render a native `<button>` with `type` from the prop (default `button`, so a button inside a form never submits by accident). Use `aria-disabled="true"` for the disabled state; the button stays in the tab order. Set `aria-busy="true"` while loading.
 
 ### Lit
-The host element `<ds-button>` reflects `variant`, `size`, `disabled`, `icon-only` and `loading` as attributes so consumers can style states from outside the shadow root. The inner element is a real `<button>`; the shadow root is created with `delegatesFocus: true`. Activation dispatches a composed, bubbling `press` CustomEvent. Consumers can also listen to the native `click` that bubbles out of the shadow root; a click blocked by `disabled` or `loading` never leaves it.
+The host element `<ds-button>` reflects `variant`, `size`, `type`, `disabled`, `icon-only`, `loading`, `inverse` and `overflow-label` as attributes so consumers can style states from outside the shadow root. The inner element is a real `<button>`; the shadow root is created with `delegatesFocus: true`. Activation dispatches a composed, bubbling `press` CustomEvent. Consumers can also listen to the native `click` that bubbles out of the shadow root; a click blocked by `disabled` or `loading` never leaves it.
 
 ### React Native
 Render a `Pressable` with `accessibilityRole="button"`, `accessibilityLabel={label}` and `accessibilityState={{ disabled, busy: loading }}`. There is no CSS cascade, so every style binding is applied explicitly from the token object. Because there is no hover on touch, `backgroundHover` is used for the pressed state. Icons passed as `leadingIcon`/`trailingIcon` are the system `Icon` and are rendered as given: there is no cascade, so Button cannot recolor them, and callers pass the variant's foreground to the Icon's own `color` prop (native Icon's first color source). When the visual footprint is smaller than 44px, add `hitSlop` to reach the comfortable target size.

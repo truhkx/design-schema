@@ -77,7 +77,9 @@ component:
       type: content
       required: true
       description: Fields (Input etc.) and layout (Stack). The action row goes in
-        `actions`.
+        `actions`. The examples describe children and actions in words; their stories
+        render the named Inputs in a Stack at its default gap (`normal`) and the named
+        Button bare in `actions`.
     actions:
       type: content
       required: true
@@ -85,7 +87,8 @@ component:
         first (Form''s action-order rule). Rendered after the fields with the form
         gap; a named slot on Lit and the `actions` anatomy part on every platform.
         A single action renders bare; two or more go in a horizontal Stack the consumer
-        supplies.'
+        supplies. The actions part aligns its content to the inline start, so a single
+        bare action keeps its natural width rather than stretching.'
     name:
       type: string
       description: Identifier for the form, used for analytics and as the base of
@@ -114,10 +117,15 @@ component:
       - blur
       - change
       default: submit
-      description: When field-level validation runs. `submit` is the least noisy;
+      description: 'When field-level validation runs. `submit` is the least noisy;
         `blur` is the usual choice for longer forms. `change` validates on change
         only, not also on blur; after a failed submission every mode re-validates
-        on blur and change.
+        on blur and change, until a successful submission resets that state. Form
+        owns the rule: on web and rn the context carries `submitFailed` beside `validateMode`,
+        and a field validates on blur when the mode is `blur` or `submitFailed` is
+        true, and on change when the mode is `change` or `submitFailed` is true; on
+        Lit ds-form listens itself and calls the field''s `checkValidity()`, and the
+        field renders its own error.'
     disabled:
       type: boolean
       default: false
@@ -140,8 +148,12 @@ component:
         (not for errors that blur or change validation finds before one), shrinks
         as fields are fixed, and is removed by a successful submission. Items follow
         document order at the failed submit; an error found later by blur or change
-        validation is appended at the end. The plural locale is read at the failed
-        submit.
+        validation is appended at the end. An entry whose field has since unregistered
+        (a Disclosure closed after the failed submit) stays as plain danger Text with
+        no Link until the next validation replaces the errors. The plural locale is
+        read at the failed submit. The summary box is a column with a solid border.
+        A `FailedSubmit` story on web and Lit submits the sign-in example empty in
+        its play function, so the summary's markup and contrast pair are checked.
       a11y: The summary receives focus and is announced, so users find every error
         without hunting.
   events:
@@ -217,12 +229,13 @@ component:
     errorSummaryGap:
       token: layout.gap.tight
       part: errorSummary
-      description: Gap between the heading and the list and between list items. Inside
+      description: 'Gap between the heading and the list and between list items. Inside
         the errorSummary box a Stack holds the heading and the list, and the list
         is a second Stack (element ul on web and Lit) with no markers and no indent;
-        Form forwards this binding to both Stacks' `overrides.gap` (the `overrides`
-        property on Lit) and has no --ds-form-* hook for it, as Input's helperSize
-        has none.
+        Form forwards this binding to both Stacks'' `overrides.gap` (the `overrides`
+        property on Lit) and has no --ds-form-* hook for it, as Input''s helperSize
+        has none. The item Links are passed to the list Stack bare: Stack wraps each
+        child in its own `li`.'
       locked: false
   copy:
     summaryHeading:
@@ -263,7 +276,9 @@ component:
         each field''s host as getElementById(registered id).closest(''[data-ds-field]''),
         and fields with no such host go last in registration order. A field inside
         a closed Disclosure is left out because it unmounted and unregistered; Form
-        does no Disclosure check of its own (web and rn).'
+        does no Disclosure check of its own (web and rn). The locked summary bindings
+        (errorSummaryText, errorSummaryBackground, errorSummaryBorder) get no `--ds-form-*`
+        hook on web or Lit; their rules read the token directly.'
     lit:
       tag: ds-form
       reflect:
@@ -286,28 +301,36 @@ component:
         errors }` in detail. Never nest inside a native form. The summary reuses the
         web markup: role="alert" and tabindex="-1" on the errorSummary box, and each
         item Link has href="#<field id>" with the click default prevented, so the
-        hash never changes.'
+        hash never changes. The landmark is the host: `role="form"` and the name (aria-label
+        or aria-labelledby) sit on ds-form, and the shadow <form> is unnamed, so it
+        is not a second landmark. The `submit` and `invalid` CustomEvents keep their
+        native names: the shadow <form>''s native submit is non-composed and prevented,
+        and a field''s native `invalid` does not bubble, so the only `submit` and
+        `invalid` a ds-form listener sees are Form''s own.'
     rn:
       element: View
       props:
       - accessibilityLabel
       notes: 'No native form on iOS/Android. Form provides a context { register, unregister,
-        submit, errors, validateMode, disabled, focusField }; fields call register(name,
-        { label, getValue, validate, focus }) in mount order (name is the argument,
-        not a handle property); a Button with type=submit calls submit(). Non-last
-        fields get returnKeyType="next" (focusField), the last gets "done" (submit).
-        Disabled Inputs do not register. On failed submit the summary is announced
-        (accessibilityLiveRegion="assertive" on Android, announceForAccessibility
+        submit, errors, validateMode, submitFailed, disabled, focusField }; fields
+        call register(name, { label, getValue, validate, focus }) in mount order (name
+        is the argument, not a handle property); a Button with type=submit calls submit().
+        Non-last fields get returnKeyType="next" (focusField), the last gets "done"
+        (submit). Disabled Inputs do not register. On failed submit the summary is
+        announced (accessibilityLiveRegion="assertive" on Android, announceForAccessibility
         on iOS) and focus moves to the summary when errorSummary is on, otherwise
         to the first invalid field — same as web. The iOS announcement is the summary
-        heading followed by each item. The summary View is not itself `accessible`,
-        so each item Link stays separately focusable, and accessibility focus moves
-        to the summary heading Text. Each item Link has the field''s `name` as its
-        href and an onPress that focuses the field and returns false, so nothing opens;
-        each Link is nested in a `Text tone="danger"`, which is how the danger color
-        reaches a `tone: inherit` Link on native. The View keeps role="form", which
-        only has landmark meaning on react-native-web; iOS and Android have no form
-        landmark, so accessibilityLabel naming the group is the native alternative.'
+        heading followed by each item, joined with ''. '', once per failed submit
+        (not again as the summary shrinks). The plural locale is `new Intl.PluralRules().resolvedOptions().locale`,
+        captured at the failed submit. Form itself omits a null, empty-string or empty-array
+        value from `onSubmit`, so fields need not normalise. The summary View is not
+        itself `accessible`, so each item Link stays separately focusable, and accessibility
+        focus moves to the summary heading Text. Each item Link has the field''s `name`
+        as its href and an onPress that focuses the field and returns false, so nothing
+        opens; each Link is nested in a `Text tone="danger"`, which is how the danger
+        color reaches a `tone: inherit` Link on native. The View keeps role="form",
+        which only has landmark meaning on react-native-web; iOS and Android have
+        no form landmark, so accessibilityLabel naming the group is the native alternative.'
     swiftui:
       element: VStack
       props:

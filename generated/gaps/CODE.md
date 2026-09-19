@@ -80,3 +80,10 @@ Gaps where a sibling component's generated code is wrong. The docs are already r
 - Splitter's example stories (Sidebar And Content, Collapsible Navigation, Editor Over Preview, Never Stacking Workbench) pass bare strings where the content should be a Text, so they fail dark-mode contrast. Box's stories did the same before this round; box.md now requires the Text wrap (found in Text, web).
 - The rn Submitting demos fail color-contrast on disabled fields dimmed with `opacity.disabled`; WCAG exempts disabled controls, so the demo docs should say whether those stories disable the rule (found in Text, rn).
 - Card, Accordion, Disclosure, Popover, Tree and Feed export their `*HeadingLevel` types with the numbers included, while Heading's `HeadingLevel` is the string union (numbers added only on the prop), as heading.md says; the siblings should follow Heading (found in Heading, web).
+
+## 2026-09-19
+
+- React Box stories put the highlighted-panel props (inset md, surface subtle, radius md) in the meta args, so BorderedRow, HeroBand and NavigationRegion carry more than their `given`; box.md now says they belong on Default alone (found in Box, lit).
+- NumberInput, Search, DatePicker and Fieldset (Disabled, Disabled Group) rn stories fail axe color-contrast because disabled is conveyed only through accessibilityState, which react-native-web 0.21 drops; they need the `aria-disabled` mirror on the dimmed group that Input and Button now have (found in Input, rn).
+- packages/rn/src/FormContext.tsx is a stale duplicate of FormContext.ts (no `label`, no number/array values); Form imports the .ts, so the .tsx should be deleted (found in Form, rn).
+- The rn Tabs panel View has accessibilityLabel and no role (Tabs.tsx ~465-472), so react-native-web renders a role-less `<div aria-label>` and Patterns/SettingsPage fails aria-prohibited-attr; the panel needs role="tabpanel" (found in Form, rn).

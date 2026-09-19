@@ -71,8 +71,9 @@ component:
         "Full name", "Email" and "Password"; the regions of the page are three Boxes
         (`surface: subtle`, `inset: md`) each holding a Text naming its region ("Summary",
         "Details", "History"); a row of filters is eight small secondary Buttons ("All",
-        "Open", "Closed", "Mine", "Unassigned", "Urgent", "This week", "Archived").
-        All of it is story scaffolding, not copy.'
+        "Open", "Closed", "Mine", "Unassigned", "Urgent", "This week", "Archived");
+        the button row''s primary submit Button is labelled "Submit". All of it is
+        story scaffolding, not copy.'
     direction:
       type: enum
       values:
@@ -118,15 +119,18 @@ component:
         left out, since a rhythm system should not offer four ways to divide leftover
         space. Its enum stories (and `DirectionHorizontal`) are therefore horizontal:
         an enum-value story may add the args that make its value visible (`direction:
-        horizontal`, `align: start`), while an example story has exactly its `given`.'
+        horizontal`, `align: start`), while an example story has exactly its `given`.
+        The `Gap*` stories take only `gap` and stay vertical. Meta args hold only
+        schema defaults, and those merged under an example story count as "exactly
+        its `given`".'
     wrap:
       type: boolean
       default: false
-      description: Allow horizontal stacks to wrap onto new lines instead of overflowing.
+      description: 'Allow horizontal stacks to wrap onto new lines instead of overflowing.
         It is set whatever the direction — on a column it is inert unless the block
         size is bounded — rather than being silently ignored on a vertical Stack.
-        As a boolean it gets one story, `Wrap` (horizontal, in the same width-bounded
-        decorator as `wrapping-filters`).
+        As a boolean it gets one story, `Wrap` (horizontal, `align: start`, the eight
+        filter Buttons of `wrapping-filters`, in the same width-bounded decorator).'
       a11y: 'Prefer wrapping over horizontal scrolling so content reflows at 320px
         and 400% zoom. Native has neither viewport width nor browser zoom: the equivalent
         is that a wrapped row still fits when the platform''s text size is turned
@@ -199,11 +203,15 @@ component:
         the web rule that the list role beats a consumer `role` does not arise: a
         consumer `role` on the host is the consumer''s and is left alone. `element`
         is not reflected: it is read from the attribute or property but is not a styling
-        contract, since it changes only the shadow structure.'
+        contract, since it changes only the shadow structure. `:host` sets `min-inline-size:
+        0`, as the web root does.'
     rn:
       element: View
       props: []
-      notes: 'Flexbox with `gap` (RN ≥ 0.71). Children are not wrapped. There is no
+      notes: 'Flexbox with `gap` (RN ≥ 0.71). Children are not wrapped, so the `item`
+        part has no native home and there is no `Stack.item` testID. `horizontal`
+        is `flexDirection: ''row''`, which follows writing direction only when the
+        app enables RTL through I18nManager; Stack does not force it. There is no
         public `style` prop; the View''s style is internal. `element` is not applicable:
         a navigation region is Landmark and a list is a plain View whose rows carry
         their own semantics.'
@@ -267,8 +275,9 @@ component:
       children: The regions of the page
   - name: wrapping-filters
     description: A horizontal group that reflows onto new lines on narrow viewports
-      instead of overflowing. Its story renders inside a container capped at `layout.maxWidth.prose`
-      (a story decorator, not an arg) so the eight filters wrap.
+      instead of overflowing. Its story renders inside a container capped at `layout.maxWidth.prose
+      × 0.5` (a story decorator, not an arg), narrow enough that the eight filters
+      wrap in every theme.
     given:
       direction: horizontal
       gap: tight
@@ -282,7 +291,7 @@ component:
 - example `form-fields`, story `FormFields`: given `direction: "vertical"`, `gap: "normal"`, `children: "The form fields"`; The usual vertical rhythm between fields in a form.
 - example `button-row`, story `ButtonRow`: given `direction: "horizontal"`, `gap: "tight"`, `justify: "end"`, `align: "center"`, `children: "A secondary Cancel Button, then a primary submit Button"`; A row of actions at the end of a form or card, tightly spaced and pushed to the end.
 - example `page-sections`, story `PageSections`: given `direction: "vertical"`, `gap: "section"`, `children: "The regions of the page"`; The section rhythm between the regions of a page.
-- example `wrapping-filters`, story `WrappingFilters`: given `direction: "horizontal"`, `gap: "tight"`, `wrap: true`, `align: "center"`, `children: "A row of filters"`; A horizontal group that reflows onto new lines on narrow viewports instead of overflowing. Its story renders inside a container capped at `layout.maxWidth.prose` (a story decorator, not an arg) so the eight filters wrap.
+- example `wrapping-filters`, story `WrappingFilters`: given `direction: "horizontal"`, `gap: "tight"`, `wrap: true`, `align: "center"`, `children: "A row of filters"`; A horizontal group that reflows onto new lines on narrow viewports instead of overflowing. Its story renders inside a container capped at `layout.maxWidth.prose × 0.5` (a story decorator, not an arg), narrow enough that the eight filters wrap in every theme.
 
 ## Overrides (per-instance styling contract)
 

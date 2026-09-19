@@ -175,13 +175,14 @@ export function Link({
       };
 
   // `inherit`: nested, the label takes the enclosing Text's color; standalone there is
-  // nothing to inherit, so it matches Icon's own fallback, color.foreground.
+  // nothing to inherit, so it matches Icon's own fallback, color.foreground. No
+  // textDecorationColor in either tone: the underline takes the Text color.
   const colorStyle =
     tone === 'inherit'
       ? nested
         ? null
         : { color: t.colorForeground }
-      : { color: animatedColor, textDecorationColor: animatedColor };
+      : { color: animatedColor };
 
   return (
     <Animated.Text

@@ -28,12 +28,47 @@
  * below the header, and past the column's end on a short page. Everything here is position and
  * spacing; nothing sets how a Disclosure or a Link looks.
  */
+/*
+ * The scroll itself has to be visible (Tony's review, 2026-09-18). The rule above makes the list
+ * scroll; nothing said so. On the three short docs pages the page is exactly one viewport tall and
+ * cannot scroll at all, so the only thing that moves is this box — and it ended at the viewport's
+ * edge mid-link ("Disclosure", sliced through the middle), with Windows' overlay scrollbar hidden
+ * until the pointer is over it. Thirty-one links sat below that cut with nothing saying they were
+ * there. Three additions, each doing one job:
+ *
+ * `scrollbar-gutter: stable` reserves the classic scrollbar's track whether or not it is drawn, so
+ * the links do not shift sideways the moment a scrollbar appears and the list always stops at the
+ * same edge. It is what Dialog, AlertDialog, SidePanel and BottomSheet already do for their own
+ * scrollers. Where the platform draws *overlay* scrollbars — the capture above — the property is
+ * inert by definition, which is exactly why it cannot be the whole fix.
+ *
+ * The mask is the part that shows. The bottom `layout.gutter` of the box fades the navigation out
+ * to transparent, so a cut link reads as a link continuing past the edge instead of a link that
+ * happens to end there. It is Toolbar's `overflow: scroll` treatment, at Toolbar's own `fadeWidth`
+ * (`space.6`, which is what `layout.gutter` resolves to), and it is the reason this is a mask and
+ * not a painted gradient: a mask fades the content into whatever is behind it, so it is right in
+ * calm-precise and warm-friendly, light and dark, with no colour of its own to get wrong. The
+ * stops are alpha — `black` is "opaque here" — not a design colour.
+ *
+ * `padding-block-end` is what keeps the fade honest. It is the fade's own length, so at the bottom
+ * of the scroll the faded band covers that blank strip and the last link is fully opaque: the fade
+ * is visible while there is more to see and gone when there is not, with no script measuring
+ * anything. A list too short to scroll ends inside that same blank strip, so it never fades either.
+ * `scroll-padding-block-end` extends that to the keyboard: tabbing to a link near the end scrolls
+ * it clear of the faded band rather than flush against it. The box keeps its own scrollbar, its
+ * arrow keys and its tab order — nothing here takes focus or traps it.
+ */
 .ds-docs-nav__sidebar {
   position: sticky;
   inset-block-start: var(--layout-gutter);
   max-block-size: min(100vh - 2 * var(--layout-gutter), 100%);
   overflow-y: auto;
+  scrollbar-gutter: stable;
   padding-inline-end: var(--layout-gutter-narrow);
+  padding-block-end: var(--layout-gutter);
+  scroll-padding-block-end: var(--layout-gutter);
+  mask-image: linear-gradient(to bottom, black calc(100% - var(--layout-gutter)), transparent); /* literal-ok: mask alpha stop */
+  -webkit-mask-image: linear-gradient(to bottom, black calc(100% - var(--layout-gutter)), transparent); /* literal-ok: mask alpha stop */
 }
 
 @media (min-width: 768px) { /* layout.breakpoint.md */

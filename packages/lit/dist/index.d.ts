@@ -16,7 +16,7 @@ export declare class DsIcon extends LitElement {
    * Which glyph. The set is deliberately small and grows only when a component
    * needs a shape; `info`, `success`, `warning` and `danger` are the four status
    * shapes (circle-i, circle-check, triangle-!, octagon-x) so tone is never
-   * carried by color alone.
+   * carried by color alone. `name` has no default; the Default story renders `check`.
    */
   accessor name: IconName;
   /** Rendered size, from the font-size scale so icons line up with text of the same size. */
@@ -24,8 +24,8 @@ export declare class DsIcon extends LitElement {
   /**
    * Size the glyph at 1em of the surrounding text and align it to the text
    * baseline, ignoring `size`. For icons inside Text, Link and Button labels.
-   * With no surrounding Text the glyph takes whatever font size it inherits,
-   * and still ignores `size`.
+   * `font-size: inherit` always has a surrounding size to read, so there is no
+   * fallback here (the `font.size.md` fallback is React Native only).
    */
   accessor inline;
   /**
@@ -154,13 +154,18 @@ export declare class DsText extends LitElement {
   accessor overrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> | undefined;
   /** Plain-text content of the default slot, used for `title` when truncated. */
   private accessor fullText;
+  /** The consumer's `title` attribute on the host, forwarded to the `text` part unchanged. */
+  private accessor consumerTitle;
   /** Text edits inside existing nodes do not fire `slotchange`; this keeps `title` current. */
   private textObserver;
   override connectedCallback(): void;
   override disconnectedCallback(): void;
   protected override willUpdate(changed: PropertyValues): void;
   protected override render(): TemplateResult;
-  /** The host's flattened, whitespace-collapsed textContent; `title` is omitted when it is empty. */
+  /**
+   * The host's flattened, whitespace-collapsed textContent (`title` is omitted when it is
+   * empty), and the consumer's own `title` attribute on the host.
+   */
   private syncFullText;
   private applyOverrides;
 }
@@ -322,7 +327,8 @@ interface ButtonTrackDetail {
  * Overridable style hooks; see the `overrides` property. The accessibility-bearing
  * bindings — `background`, `backgroundHover`, `foreground`, `focusRing`,
  * `focusRingWidth`, `inverseForeground`, `inverseFocusRing`, `minTarget` and
- * `spinnerStroke` — are locked and excluded (they keep their CSS hooks).
+ * `spinnerStroke` — are locked and excluded; of those, only `spinnerStroke` keeps
+ * a CSS hook (`--ds-button-spinner-stroke`), the rest read their tokens directly.
  */
 type ButtonOverridableBinding = "iconGap" | "paddingInline" | "paddingBlock" | "radius" | "fontFamily" | "fontWeight" | "fontSize" | "inverseBackgroundHover" | "inverseHoverOpacity" | "disabledOpacity" | "transition" | "loadingSpin" | "spinnerSize";
 export declare class DsButton extends LitElement {
@@ -526,7 +532,7 @@ declare global {
 //#endregion
 //#region src/Link.d.ts
 type LinkTone = "default" | "inherit";
-/** Overridable style hooks; see the `overrides` property. `color`, `colorHover`, `colorVisited`, `focusRing`, `focusRingWidth` and `focusRingRadius` are locked and excluded. */
+/** Overridable style hooks; see the `overrides` property. `color`, `colorHover`, `colorVisited`, `focusRing`, `focusRingWidth`, `focusRingRadius` and `focusRingOffset` are locked and excluded. */
 type LinkOverridableBinding = "underlineThickness" | "underlineOffset" | "externalIconGap" | "transition";
 export declare class DsLink extends LitElement {
   static override shadowRootOptions: ShadowRootInit;
@@ -659,10 +665,15 @@ export declare class DsForm extends LitElement {
   accessor errorSummary;
   /** Per-instance style overrides: `{ gap: 'layout.gap.normal' }`. Locked bindings (errorSummaryText, errorSummaryBackground) are ignored. */
   accessor overrides: Partial<Record<FormOverridableBinding, TokenRef | undefined>> | undefined;
-  /** Field name -> message, for fields that have failed validation, in document order. */
+  /**
+   * Field name -> message for the error summary: document order at the failed submit, with errors that
+   * blur or change validation finds later appended at the end. Empty until a submission fails.
+   */
   private accessor errors;
-  /** Once a submission has failed, fields re-validate on blur/change even in `submit` mode. */
+  /** Once a submission has failed, fields re-validate on blur/change even in `submit` mode; a successful one clears it. */
   private hasFailedSubmission;
+  /** The plural locale, read at the failed submit (nearest `lang` ancestor, else the runtime default). */
+  private summaryLocale;
   /** Fields and actions this Form disabled itself, so re-enabling never touches one already disabled by the consumer. */
   private readonly disabledByForm;
   /** Re-syncs disabled propagation when fields are added or removed; observes `childList` only, never the attributes it writes. */
@@ -689,6 +700,10 @@ export declare class DsForm extends LitElement {
   /** A field with no useful blur moment (Checkbox, Switch) declares `data-ds-field="change"`. */
   private validatesOnChange;
   private handleSummaryLinkClick;
+  /**
+   * Runs the field's own validation (the field shows its error). The summary only tracks it after a failed
+   * submission: a fixed field drops out, a still-listed one keeps its place, a newly invalid one is appended.
+   */
   private validateField;
   /** The collected field an event came from, or `null`. */
   private fieldFor;
@@ -741,15 +756,13 @@ export declare class DsBox extends LitElement {
   /**
    * Element to render. The host is always the element in the DOM, so this swaps
    * nothing in the shadow root; `article`, `aside`, `main` and `nav` set their
-   * implicit role on the host through `ElementInternals`, and `div`, `section`,
+   * implicit role on the host as a plain `role` attribute, and `div`, `section`,
    * `header` and `footer` set none. Sectioning values only when the box is a
    * semantic region; prefer Landmark for page regions.
    */
   accessor element: BoxElement;
   /** Per-instance style overrides: `{ radius: 'radius.lg' }`. The locked `background` is ignored. */
   accessor overrides: Partial<Record<BoxOverridableBinding, TokenRef | undefined>> | undefined;
-  private readonly internals;
-  constructor();
   override connectedCallback(): void;
   protected override willUpdate(changed: PropertyValues): void;
   protected override render(): TemplateResult;
@@ -5044,17 +5057,17 @@ interface FeedItemVisibleDetail {
 }
 /**
  * Overridable style hooks; see the `overrides` property. `unreadBorder`,
- * `unreadBorderWidth`, `timestampColor`, `endMessageColor`, `focusRing` and
- * `focusRingWidth` are locked and excluded.
+ * `unreadBorderWidth`, `timestampColor`, `endMessageColor`, `emptyStateColor`,
+ * `focusRing` and `focusRingWidth` are locked and excluded.
  */
-type FeedOverridableBinding = "itemGap" | "articleInset" | "timestampSize" | "newItemsOffset" | "loadingInset" | "endMessageInset" | "endMessageSize" | "fontFamily";
+type FeedOverridableBinding = "itemGap" | "articleInset" | "articleBodyGap" | "timestampSize" | "newItemsOffset" | "newItemsLayer" | "loadingInset" | "endMessageInset" | "endMessageSize" | "emptyStateInset" | "emptyStateSize" | "fontFamily";
 export declare class DsFeed extends LitElement {
   static override styles: CSSResult;
-  /** What the feed contains ("Activity", "Notifications"). The feed's accessible name. */
+  /** What the feed contains ("Activity", "Notifications"). The feed's accessible name; an empty label warns in development. */
   accessor label;
   /** Articles, newest first. */
   accessor items: FeedItem[];
-  /** More items exist beyond the last; the feed asks for them with `load-more` as the end approaches, and once on mount when empty and not `loading`. */
+  /** More items exist beyond the last; the feed asks for them with `load-more` as the end approaches, and whenever `items` is empty and not `loading`. */
   accessor hasMore;
   /** More items are being fetched; a loading indicator is shown after the last article and the feed is `aria-busy`. */
   accessor loading;
@@ -5066,21 +5079,31 @@ export declare class DsFeed extends LitElement {
   accessor endMessage: string | undefined;
   /** Per-instance style overrides: `{ itemGap: 'layout.gap.loose' }`. Locked bindings are not accepted. */
   accessor overrides: Partial<Record<FeedOverridableBinding, TokenRef | undefined>> | undefined;
-  private accessor newItemsButtonEl;
   private loadMoreObserver;
   private visibilityObserver;
   private readonly visibilityTimers;
   private readonly reportedVisible;
-  private pendingShowNewFocus;
+  /** The first item's id when `show-new` was fired; focus moves once the caller's prepend changes it. */
+  private showNewFirstId;
   private mounted;
+  private warnedLabel;
   override connectedCallback(): void;
   override disconnectedCallback(): void;
   protected override willUpdate(changed: PropertyValues): void;
   protected override render(): TemplateResult;
   protected override updated(changed: PropertyValues): void;
   private renderArticle;
+  /**
+   * While `loading` the indicator shows rather than the empty state, so a feed
+   * about to fetch never flashes `copy.empty`; an empty feed with more to come
+   * stays blank for the same reason.
+   */
   private renderFooter;
+  /** The focusable Cards, in document order. */
   private getArticles;
+  /** The Feed-owned wrappers the observers watch. */
+  private getArticleWrappers;
+  private get newItemsButtonEl();
   private dispatchLoadMore;
   private readonly handleShowNewPress;
   private readonly handleKeydown;

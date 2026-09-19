@@ -1,0 +1,44 @@
+/*
+ * The Type column of the props and events tables (../components/PropsTables.tsx).
+ *
+ * `Table`'s auto layout hands the slack to the Description column — `width: "fill"` is
+ * `inline-size: 100%` — and leaves every other column at its min-content width. For the types most
+ * props have, that is exactly right: `string`, `boolean`, `primary | secondary | ghost | danger` all
+ * sit on one line either way, and those tables must keep laying out precisely as they do today.
+ *
+ * It is wrong for a prop whose type is an object or array shape. A signature's min-content width is
+ * its longest *token* — about fourteen characters — so DataGrid's `columns` wrapped into a ~650px
+ * ribbon two words wide, beside a Description cell that was mostly empty. One cell was most of that
+ * page's height.
+ *
+ * So a shape cell, and only a shape cell, asks for a third of the table for its column. Which cells
+ * those are is decided in ./PropsTables.tsx (SHAPE_TYPE_LENGTH); a table holding no long type emits
+ * no `ds-prop-type` at all, so nothing about it changes. Layout only, the same rule
+ * ../layouts/docs-layout.css keeps.
+ */
+
+.ds-prop-type {
+  /* A block, so the declaration below is a width the column has to honour rather than a hint an
+     inline box would drop. */
+  display: block;
+  /* Break at the boundaries the signature already has — the spaces around `|` and after `;` — and
+     never inside an identifier: `break-word` only ever applies to a token too wide for the line, so
+     it is the guard against sideways scroll on a phone rather than a way of wrapping. */
+  overflow-wrap: break-word;
+}
+
+/*
+ * `.ds-table` declares `container-type: inline-size`, so this reads the table's own width — the docs
+ * column, not the window — and `cqw` below is a share of that same box.
+ *
+ * Only once a third is genuinely spare: the other four columns need roughly the prose measure
+ * between them at their narrowest (a nowrap Prop and Default, plus Platforms and the Description's
+ * longest word), so below this width the min-content column is still the only one that fits, the
+ * rule does not apply, and the table cannot be pushed past its track. Above it — the docs column is
+ * 898px at a 1280px viewport — the shape gets its third and the Description keeps the rest.
+ */
+@container (min-width: 858px) { /* literal-ok: layout.maxWidth.prose + half of it again, the width the other columns need before a third one can be spared */
+  .ds-prop-type {
+    min-inline-size: 34cqw; /* literal-ok: a ratio of the table, not a dimension */
+  }
+}

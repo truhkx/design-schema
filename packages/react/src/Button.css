@@ -98,7 +98,7 @@
   /* inverseBackgroundHover at inverseHoverOpacity (calc(opacity.disabled * 0.25)) over color.inverse.surface */
   --ds-button-background-hover: color-mix(
     in srgb,
-    var(--ds-button-inverse-background-hover) calc(calc(var(--ds-button-inverse-hover-opacity) * 0.25) * 100%),
+    var(--ds-button-inverse-background-hover) calc(var(--ds-button-inverse-hover-opacity) * 0.25 * 100%),
     var(--color-inverse-surface)
   );
 }

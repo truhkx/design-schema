@@ -168,25 +168,27 @@
   },
   "Button.web": {
     "hash": "ea0cd5f4b4fcac15",
-    "lastAttemptHash": "ea0cd5f4b4fcac15",
-    "generatedAt": "2026-09-17T08:14:45+00:00",
+    "lastAttemptHash": "3988ae109fc84c0c",
+    "generatedAt": "2026-09-18T22:29:54+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.1311,
+    "rounds": 3,
+    "costUsd": 1.7917,
     "files": [
       "packages/react/src/Button.css",
-      "packages/react/src/Button.stories.tsx",
       "packages/react/src/Button.tsx"
     ],
-    "gaps": 9,
+    "gaps": 12,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": false,
+      "axe": false
     }
   },
   "Card.web": {
@@ -504,27 +506,28 @@
   },
   "Form.web": {
     "hash": "3378252927e046b2",
-    "lastAttemptHash": "3378252927e046b2",
-    "generatedAt": "2026-09-17T08:29:20+00:00",
+    "lastAttemptHash": "1d0c2faf8ee0b93d",
+    "generatedAt": "2026-09-19T02:13:40+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.2953,
+    "rounds": 3,
+    "costUsd": 1.8533,
     "files": [
-      "packages/react/src/Form.css",
+      "logs/form-axe.mjs",
       "packages/react/src/Form.stories.tsx",
-      "packages/react/src/Form.test.tsx",
-      "packages/react/src/Form.tsx",
-      "packages/react/src/FormContext.ts"
+      "packages/react/src/Form.tsx"
     ],
-    "gaps": 10,
+    "gaps": 12,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": false,
+      "axe": false
     }
   },
   "Heading.web": {
@@ -583,27 +586,26 @@
   },
   "Input.web": {
     "hash": "f46a5905bb8eeeea",
-    "lastAttemptHash": "f46a5905bb8eeeea",
-    "generatedAt": "2026-09-17T08:24:57+00:00",
+    "lastAttemptHash": "92d2f9b06a96ae2f",
+    "generatedAt": "2026-09-19T00:36:42+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.1034,
+    "rounds": 3,
+    "costUsd": 2.6364,
     "files": [
-      "packages/react/src/Input.css",
-      "packages/react/src/Input.stories.tsx",
-      "packages/react/src/Input.test.tsx",
-      "packages/react/src/Input.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Input.tsx"
     ],
-    "gaps": 8,
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": false,
+      "axe": false
     }
   },
   "Landmark.web": {
@@ -631,26 +633,30 @@
   },
   "Link.web": {
     "hash": "4fbb185fd490748d",
-    "lastAttemptHash": "4fbb185fd490748d",
-    "generatedAt": "2026-09-17T08:20:33+00:00",
+    "lastAttemptHash": "5c060df858b24690",
+    "generatedAt": "2026-09-18T23:32:29+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.0998,
+    "rounds": 3,
+    "costUsd": 1.5925,
     "files": [
       "packages/react/src/Link.css",
       "packages/react/src/Link.stories.tsx",
+      "packages/react/src/Link.test.tsx",
       "packages/react/src/Link.tsx",
-      "packages/react/src/Tree.tsx"
+      "packages/react/src/index.ts"
     ],
-    "gaps": 7,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": false,
+      "axe": false
     }
   },
   "Listbox.web": {

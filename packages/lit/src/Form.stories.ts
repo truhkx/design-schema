@@ -23,10 +23,9 @@ const signInFields = html`
   </ds-stack>
 `;
 
+/** A single action renders bare; two or more would go in a horizontal Stack. */
 const submitAction = (label: string): TemplateResult => html`
-  <ds-stack slot="actions" direction="horizontal" gap="tight" align="start">
-    <ds-button label=${label} type="submit"></ds-button>
-  </ds-stack>
+  <ds-button slot="actions" label=${label} type="submit"></ds-button>
 `;
 
 const renderForm = (args: FormArgs, fields: TemplateResult, actions: TemplateResult): TemplateResult => html`
@@ -94,8 +93,8 @@ export const LongFormValidatedOnBlur: Story = {
       html`
         <ds-stack gap="normal">
           <ds-input label="Full name" name="fullName" required></ds-input>
-          <ds-input label="Email" name="email" required></ds-input>
-          <ds-input label="Phone" name="phone" required></ds-input>
+          <ds-input label="Email" name="email" type="email" required></ds-input>
+          <ds-input label="Phone" name="phone" type="tel" required></ds-input>
           <ds-input label="City" name="city" required></ds-input>
         </ds-stack>
       `,

@@ -25,7 +25,7 @@ const BASE_ITEMS: FeedItem[] = [
     heading: 'Ana commented on Invoice 42',
     timestamp: minutesAgo(3),
     content: html`<ds-text size="sm">Looks right to me.</ds-text>`,
-    actions: html`<ds-link href="#invoice-42">View invoice</ds-link>`,
+    actions: html`<ds-link href="#invoice-42" label="View invoice"></ds-link>`,
     unread: true,
   },
   {
@@ -33,14 +33,14 @@ const BASE_ITEMS: FeedItem[] = [
     heading: 'Bo approved Invoice 41',
     timestamp: minutesAgo(47),
     content: html`<ds-text size="sm">Approved for payment.</ds-text>`,
-    actions: html`<ds-link href="#invoice-41">View invoice</ds-link>`,
+    actions: html`<ds-link href="#invoice-41" label="View invoice"></ds-link>`,
   },
   {
     id: 'evt-95',
     heading: 'Dae opened a ticket',
     timestamp: minutesAgo(95),
     content: html`<ds-text size="sm">Export fails for large workspaces.</ds-text>`,
-    actions: html`<ds-link href="#ticket-108">View ticket</ds-link>`,
+    actions: html`<ds-link href="#ticket-108" label="View ticket"></ds-link>`,
   },
 ];
 
@@ -155,8 +155,8 @@ export const LoadingTheNextPage: Story = {
 export const Keyboard: Story = {
   args: { newItemsCount: 2 },
   render: (args, context) => html`
-    <ds-link href="#before">Before the feed</ds-link>
+    <ds-link href="#before" label="Before the feed"></ds-link>
     ${meta.render!(args, context)}
-    <ds-link href="#after">After the feed</ds-link>
+    <ds-link href="#after" label="After the feed"></ds-link>
   `,
 };

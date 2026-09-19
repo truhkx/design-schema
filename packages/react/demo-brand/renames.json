@@ -46,7 +46,7 @@
       "dir": "src",
       "canonical": "Button.css",
       "brand": "CtaButton.css",
-      "names": 488,
+      "names": 487,
       "differ": 98
     },
     {
@@ -67,8 +67,8 @@
       "dir": "src",
       "canonical": "Button.tsx",
       "brand": "CtaButton.tsx",
-      "names": 1087,
-      "differ": 51
+      "names": 1123,
+      "differ": 52
     },
     {
       "dir": "src",
@@ -116,21 +116,21 @@
       "dir": "src",
       "canonical": "Icon.tsx",
       "brand": "Icon.tsx",
-      "names": 1103,
+      "names": 1164,
       "differ": 18
     },
     {
       "dir": "src",
       "canonical": "Link.css",
       "brand": "Link.css",
-      "names": 223,
-      "differ": 34
+      "names": 234,
+      "differ": 30
     },
     {
       "dir": "src",
       "canonical": "Link.tsx",
       "brand": "Link.tsx",
-      "names": 568,
+      "names": 598,
       "differ": 11
     },
     {
@@ -144,21 +144,21 @@
       "dir": "src",
       "canonical": "Stack.tsx",
       "brand": "Stack.tsx",
-      "names": 586,
+      "names": 657,
       "differ": 10
     },
     {
       "dir": "src",
       "canonical": "Text.css",
       "brand": "Text.css",
-      "names": 171,
-      "differ": 41
+      "names": 202,
+      "differ": 36
     },
     {
       "dir": "src",
       "canonical": "Text.tsx",
       "brand": "Text.tsx",
-      "names": 610,
+      "names": 633,
       "differ": 17
     },
     {
@@ -186,7 +186,7 @@
       "dir": "behavior",
       "canonical": "Disclosure.web.test.tsx",
       "brand": "Expander.web.test.tsx",
-      "names": 339,
+      "names": 362,
       "differ": 11
     }
   ],
@@ -237,7 +237,7 @@
       "category": "component name",
       "from": "ButtonProps",
       "to": "CtaButtonProps",
-      "count": 8
+      "count": 9
     },
     {
       "category": "component name",
@@ -417,7 +417,7 @@
       "category": "class or custom-element name",
       "from": "ds-link",
       "to": "demo-link",
-      "count": 11
+      "count": 9
     },
     {
       "category": "class or custom-element name",
@@ -819,19 +819,19 @@
       "category": "CSS custom-property prefix",
       "from": "--ds-link-color",
       "to": "--demo-link-color",
-      "count": 3
+      "count": 2
     },
     {
       "category": "CSS custom-property prefix",
       "from": "--ds-link-color-hover",
       "to": "--demo-link-color-hover",
-      "count": 3
+      "count": 2
     },
     {
       "category": "CSS custom-property prefix",
       "from": "--ds-link-color-visited",
       "to": "--demo-link-color-visited",
-      "count": 3
+      "count": 2
     },
     {
       "category": "CSS custom-property prefix",
@@ -847,6 +847,12 @@
     },
     {
       "category": "CSS custom-property prefix",
+      "from": "--ds-link-focus-ring-offset",
+      "to": "--demo-link-focus-ring-offset",
+      "count": 2
+    },
+    {
+      "category": "CSS custom-property prefix",
       "from": "--ds-link-focus-ring-radius",
       "to": "--demo-link-focus-ring-radius",
       "count": 2
@@ -855,7 +861,7 @@
       "category": "CSS custom-property prefix",
       "from": "--ds-link-focus-ring-width",
       "to": "--demo-link-focus-ring-width",
-      "count": 3
+      "count": 2
     },
     {
       "category": "CSS custom-property prefix",
@@ -885,7 +891,7 @@
       "category": "CSS custom-property prefix",
       "from": "--ds-text-color",
       "to": "--demo-text-color",
-      "count": 6
+      "count": 1
     },
     {
       "category": "CSS custom-property prefix",

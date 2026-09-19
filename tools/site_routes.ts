@@ -43,7 +43,7 @@ export class RoutesError extends Error {}
  * the 51 components and nothing else — so these are the hand-written half, and they are hand-written
  * in exactly two places, both of which say so.
  */
-export const FIXED_ROUTES: readonly string[] = ['/', '/about', '/docs', '/docs/foundations', '/docs/patterns', '/docs/naming-demo'];
+export const FIXED_ROUTES: readonly string[] = ['/', '/about', '/docs', '/docs/foundations', '/docs/foundations/spec-sheet', '/docs/patterns', '/docs/naming-demo'];
 
 /** One component page per component in the generated nav, in the generator's own phase order. */
 export function componentRoutes(navText: string): string[] {

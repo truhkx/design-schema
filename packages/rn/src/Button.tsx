@@ -145,6 +145,9 @@ const FONT_SIZE_TOKEN = {
   lg: 'fontSizeLg',
 } as const satisfies Record<ButtonSize, keyof Tokens>;
 
+/** The DOM element react-native-web renders for the root; this package has no DOM lib. */
+type WebElement = { setAttribute(name: string, value: string): void; removeAttribute(name: string): void };
+
 /** `inverseHoverOpacity` is `opacity.disabled` times this factor (the binding's `computed`). */
 const INVERSE_HOVER_OPACITY_FACTOR = 0.25; // literal-ok: the doc's computed multiplier on a token
 
@@ -178,7 +181,9 @@ function withAlpha(color: string, alpha: number): string {
  * Renders a `Pressable` with `accessibilityRole="button"`, `accessibilityLabel`
  * (`accessibleName`, else a name set by a parent, else `label`) and
  * `accessibilityState={{ disabled, busy, expanded }}` (`expanded` omitted unless a
- * disclosing parent sets it). `disabled` is never passed to `Pressable` itself — that
+ * disclosing parent sets it), mirrored to `aria-busy`/`aria-expanded` (and, on
+ * react-native-web, `aria-disabled` set on the DOM node) because react-native-web renders
+ * only the aria-* forms. `disabled` is never passed to `Pressable` itself — that
  * would drop it from the tab order — so a disabled button stays focusable and is
  * announced as disabled while a press guard blocks `onPress`. There is no hover on
  * touch, so `backgroundHover` animates in for the pressed state instead (over
@@ -237,6 +242,31 @@ export function Button({
   const [layout, setLayout] = React.useState<{ width: number; height: number } | null>(null);
 
   const isDisabled = disabled || (form?.disabled ?? false);
+
+  // The root is owned here so react-native-web can be given `aria-disabled` directly (below);
+  // the caller's `ref` still receives the same Pressable.
+  const rootRef = React.useRef<ViewInstance>(null);
+  React.useImperativeHandle(ref, () => rootRef.current!, []);
+
+  // react-native-web's Pressable writes `aria-disabled` from its own `disabled` prop, after any
+  // `aria-disabled` passed in, and passing `disabled` would also set the native attribute on the
+  // <button> it renders, dropping it from the tab order. So on web the attribute is set on the
+  // DOM node itself: the button stays focusable and is still announced (and audited) as disabled.
+  React.useEffect(() => {
+    if (Platform.OS !== 'web') {
+      return;
+    }
+    const node = rootRef.current as unknown as WebElement | null;
+    if (node === null) {
+      return;
+    }
+    if (isDisabled) {
+      node.setAttribute('aria-disabled', 'true');
+    } else {
+      node.removeAttribute('aria-disabled');
+    }
+  }, [isDisabled]);
+
   const colors = VARIANT_TOKENS[variant];
   const isInverseGhost = variant === 'ghost' && inverse;
 
@@ -405,12 +435,16 @@ export function Button({
 
   return (
     <Pressable
-      ref={ref}
+      ref={rootRef}
       testID="Button"
       accessibilityRole="button"
       accessibilityLabel={accessibleName ?? accessibilityLabel ?? label}
       accessibilityHint={accessibilityHint}
       accessibilityState={expanded === undefined ? { disabled: isDisabled, busy: loading } : { disabled: isDisabled, busy: loading, expanded }}
+      // react-native-web 0.21 ignores `accessibilityState`; these aria-* mirrors are what reach
+      // the DOM (native merges both). `aria-disabled` is set on the web node in an effect above.
+      aria-busy={loading}
+      aria-expanded={expanded}
       accessibilityValue={loading ? { text: COPY.loading } : undefined}
       hitSlop={hitSlop}
       onPress={handlePress}
@@ -435,7 +469,8 @@ export function Button({
     >
       <Animated.View style={backgroundFillStyle} pointerEvents="none" />
       {loading ? (
-        <View testID="Button.leadingIcon" style={iconSlotStyle} accessibilityElementsHidden importantForAccessibility="no">
+        // The spinner only takes the leadingIcon position; it is not an anatomy part and carries no part name.
+        <View style={iconSlotStyle} accessibilityElementsHidden importantForAccessibility="no">
           <Animated.View style={spinnerStyle} />
         </View>
       ) : leadingIcon !== undefined && leadingIcon !== null ? (

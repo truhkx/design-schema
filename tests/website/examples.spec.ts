@@ -166,6 +166,12 @@ test.describe('the examples pipeline', () => {
       const response = await page.goto(`/docs/components/${slug}`);
       expect(response?.status()).toBe(200);
 
+      // The page's own title is the only h1: an example that renders one puts a second document-level
+      // heading in the outline. Heading's `level-1` sweep tile did exactly that until the example probe
+      // started showing such examples as source instead — asserted here, before the sweep branch returns,
+      // so it covers every component and not only the tabbed ones.
+      await expect(page.locator('h1')).toHaveCount(1);
+
       const { layout, examples: entries } = exampleSet(name);
       if (layout === 'sweep') {
         // One tile per story, and no strip at all.

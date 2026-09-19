@@ -60,7 +60,7 @@
         "value": "default"
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Tone Inherit",
@@ -73,7 +73,7 @@
       },
       "snippets": {
         "react": "import { Link, Text } from '@design-schema/react';\n\n<Text tone=\"muted\">\n  <Link\n    href=\"/billing/history\"\n    label=\"View the billing history\"\n    tone=\"inherit\"\n  />\n</Text>",
-        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\nimport type { LinkTone } from '@design-schema/lit';\n\ninterface LinkArgs {\n  href: string;\n  label: string;\n  external: boolean;\n  tone: LinkTone;\n  download: boolean;\n}\n\nconst link = (args: LinkArgs): TemplateResult => html`<ds-link\n  href=${args.href}\n  label=${args.label}\n  tone=${args.tone}\n  ?external=${args.external}\n  ?download=${args.download}\n></ds-link>`;\n\nhtml`\n  <ds-text tone=\"muted\">See ${link({ href: '#billing', label: 'View the billing history', tone: 'inherit' })}.</ds-text>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\nimport type { LinkTone } from '@design-schema/lit';\n\ninterface LinkArgs {\n  href: string;\n  label: string;\n  external: boolean;\n  tone: LinkTone;\n  download: boolean;\n}\n\nconst link = (args: LinkArgs): TemplateResult => html`<ds-link\n  href=${args.href}\n  label=${args.label}\n  tone=${args.tone}\n  ?external=${args.external}\n  ?download=${args.download}\n></ds-link>`;\n\nhtml`\n  <ds-text tone=\"muted\">For how charges are calculated, read ${link({ href: '/billing/history', label: 'View the billing history', tone: 'inherit' })}.</ds-text>\n`;",
         "rn": "import { Link, Text } from '@design-schema/rn';\n\n<Text tone=\"muted\">\n  <Link\n    href=\"/billing/history\"\n    label=\"View the billing history\"\n    tone=\"inherit\"\n  />.\n</Text>",
         "swift": null
       },
@@ -85,64 +85,6 @@
       },
       "storyId": "link-react--tone-inherit",
       "sweep": null,
-      "decorated": false,
-      "primary": true
-    },
-    {
-      "title": "External",
-      "args": {
-        "href": "/billing/history",
-        "label": "View the billing history",
-        "external": true,
-        "tone": "default",
-        "download": false
-      },
-      "snippets": {
-        "react": "import { Link } from '@design-schema/react';\n\n<Link href=\"/billing/history\" label=\"View the billing history\" external />",
-        "lit": null,
-        "rn": null,
-        "swift": null
-      },
-      "stories": {
-        "react": "External",
-        "lit": null,
-        "rn": null,
-        "swift": null
-      },
-      "storyId": "link-react--external",
-      "sweep": {
-        "prop": "external",
-        "value": true
-      },
-      "decorated": false,
-      "primary": true
-    },
-    {
-      "title": "Download",
-      "args": {
-        "href": "/billing/history",
-        "label": "View the billing history",
-        "external": false,
-        "tone": "default",
-        "download": true
-      },
-      "snippets": {
-        "react": "import { Link } from '@design-schema/react';\n\n<Link href=\"/billing/history\" label=\"View the billing history\" download />",
-        "lit": null,
-        "rn": null,
-        "swift": null
-      },
-      "stories": {
-        "react": "Download",
-        "lit": null,
-        "rn": null,
-        "swift": null
-      },
-      "storyId": "link-react--download",
-      "sweep": {
-        "prop": "download",
-        "value": true
-      },
       "decorated": false,
       "primary": true
     },
@@ -225,7 +167,7 @@
       "storyId": "link-react--inside-muted-text",
       "sweep": null,
       "decorated": false,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Downloadable File",
@@ -254,7 +196,7 @@
         "value": true
       },
       "decorated": false,
-      "primary": false
+      "primary": true
     }
   ]
 }

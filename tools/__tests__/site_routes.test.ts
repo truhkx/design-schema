@@ -47,6 +47,7 @@ describe('the route list', () => {
       '/about',
       '/docs',
       '/docs/foundations',
+      '/docs/foundations/spec-sheet',
       '/docs/patterns',
       '/docs/naming-demo',
       '/docs/components/icon',
@@ -81,7 +82,7 @@ describe('the gate', () => {
   test('passes a complete build and says what it counted', () => {
     buildAll();
     expect(routes.main([dist])).toBe(0);
-    expect(std.out()).toContain('9 pages');
+    expect(std.out()).toContain('10 pages');
     expect(std.out()).toContain('(3 components)');
   });
 
@@ -95,7 +96,7 @@ describe('the gate', () => {
     write(routes.pageFor(dist, '/docs/components/text'), ''); // truncated, not deleted
     expect(routes.main([dist])).toBe(1);
     expect(std.err()).toContain('/docs/components/text');
-    expect(std.err()).toContain('1 of 9 routes');
+    expect(std.err()).toContain('1 of 10 routes');
   });
 
   test('fails when /about was never built', () => {

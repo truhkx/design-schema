@@ -56,8 +56,8 @@ export const LongFormValidatedOnBlur: Story = {
     children: (
       <Stack gap="normal">
         <Input label="Full name" name="fullName" required />
-        <Input label="Email" name="email" required />
-        <Input label="Phone" name="phone" required />
+        <Input label="Email" name="email" type="email" required />
+        <Input label="Phone" name="phone" type="tel" required />
         <Input label="City" name="city" required />
       </Stack>
     ),

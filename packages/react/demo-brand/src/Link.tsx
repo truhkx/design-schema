@@ -48,7 +48,9 @@ export interface LinkProps
   external?: boolean | undefined;
   /**
    * `default` uses the link colors. `inherit` takes the surrounding text color and relies on the
-   * underline alone — for links inside muted or on-action text.
+   * underline alone — for links inside muted or on-action text. Under `inherit` the color,
+   * colorHover and colorVisited bindings are not applied: rest, hover and visited all resolve to
+   * the inherited color, and the underline and the external icon follow it.
    */
   tone?: LinkTone | undefined;
   /** Downloads the resource instead of navigating, under the server's file name (a custom file name is out of scope). Web only. */

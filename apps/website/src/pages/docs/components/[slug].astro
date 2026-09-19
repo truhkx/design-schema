@@ -26,12 +26,13 @@ import { Examples } from '../../../components/Examples';
 import { Mono } from '../../../components/Mono';
 import { PropsTables } from '../../../components/PropsTables';
 import { examplesFor, joinSnippets, PLATFORM_ORDER, reactStorybookUrl, type Snippets } from '../../../examples';
-import { renderableExamples } from '../../../example-probe';
+import { pageHeadingExamples, renderableExamples } from '../../../example-probe';
 import { sweepCaptions, variantCss } from '../../../example-sweep';
 import { CODE_THEME, highlightSnippets } from '../../../highlight';
 import { publishedThemeTokens } from '../../../themes';
 import '../../../components/code.css';
 import '../../../components/examples.css';
+import '../../../components/props-table.css';
 import {
   basicUsage,
   consumerChoices,
@@ -107,6 +108,12 @@ const sweepCode = sweep
 const exampleViews = examples.map(({ snippets: _snippets, stories: _stories, ...view }) => view);
 /** Which of them render from args alone, established by rendering them — see ../../../example-probe.ts. */
 const renderable = renderableExamples(name, examples);
+/**
+ * Which of them would render an `<h1>` — the one heading level this page has already spent, on the
+ * component's name above. Those are shown as source; ../../../example-probe.ts says why the question
+ * is asked of the rendered markup rather than of the args.
+ */
+const pageHeading = pageHeadingExamples(name, examples);
 /** A grid's captions: each tile's token, and its built value in every published theme — see ../../../example-sweep.ts. */
 const themeTokens = sweep ? publishedThemeTokens() : [];
 const captions = sweep ? sweepCaptions(definition, examples, renderable, themeTokens) : [];
@@ -194,6 +201,7 @@ const keyboard: KeyboardLine[] | undefined = spec?.rules.map((rule) => ({
       layout={layout}
       examples={exampleViews}
       renderable={renderable}
+      pageHeading={pageHeading}
       storybookUrl={storybookUrl}
       platforms={platforms}
       code={exampleCode}

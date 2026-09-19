@@ -282,6 +282,10 @@
   .ds-table--stack .ds-table__body > .ds-table__row > * {
     display: block;
     inline-size: auto;
+    /* The width-min column sizes itself with inline-size: 1% and white-space: nowrap. Stacked, the
+       cell is a block at full row width, so the nowrap has nothing left to do but push its longest
+       line past the viewport — the phone-width overflow on the keyboard tables. */
+    white-space: normal;
     padding: 0;
     border: 0;
     box-shadow: none;

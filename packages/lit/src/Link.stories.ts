@@ -32,7 +32,7 @@ const meta: Meta<LinkArgs> = {
     download: { control: 'boolean' },
   },
   args: {
-    href: '#billing',
+    href: '/billing/history',
     label: 'View the billing history',
     external: false,
     tone: 'default',
@@ -50,7 +50,7 @@ export const Default: Story = {};
 export const ToneDefault: Story = { args: { tone: 'default' } };
 export const ToneInherit: Story = {
   args: { tone: 'inherit' },
-  render: (args) => html`<ds-text tone="muted">See ${link(args)}.</ds-text>`,
+  render: (args) => html`<ds-text tone="muted">For how charges are calculated, read ${link(args)}.</ds-text>`,
 };
 
 /* examples */

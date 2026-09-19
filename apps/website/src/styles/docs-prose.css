@@ -1,0 +1,229 @@
+/*
+ * Markdown, in this system's type and colour.
+ *
+ * The docs sections render `site/src/content/docs/{foundations,patterns}` as HTML (../pages/docs/
+ * _prose.ts), and rendered Markdown is the one thing on this site that is not generated-component
+ * markup: it is paragraphs, lists, tables and code blocks the way a Markdown renderer emits them, so
+ * it arrives with no styling at all. These rules give that markup the same type scale, colour roles
+ * and rhythm every component around it already has. No literal values: every one is a token, the
+ * same rule ../layouts/docs-layout.css and ../components/code.css keep.
+ *
+ * Nothing here styles a component. The page's own headings, links and descriptions above and between
+ * the documents are `@design-schema/react`; these rules start inside `.ds-prose`.
+ */
+
+.ds-prose {
+  color: var(--color-foreground);
+  font-family: var(--font-family-body);
+  font-size: var(--font-size-md);
+  line-height: var(--font-line-height-loose);
+}
+
+/* The document's own spacing at the ends is the page's to decide — the Stack around it. */
+.ds-prose > :first-child {
+  margin-block-start: 0;
+}
+
+.ds-prose > :last-child {
+  margin-block-end: 0;
+}
+
+/*
+ * A reading measure for the text, and only for the text: `layout.maxWidth.prose` is the system's own
+ * 65-character line (foundations/layout.md, "The tokens"), and the docs column is wider than that at
+ * desktop width. Tables and code blocks are excluded on purpose — they are not prose and they have
+ * their own scrolling.
+ */
+.ds-prose p,
+.ds-prose ul,
+.ds-prose ol,
+.ds-prose blockquote,
+.ds-prose h2,
+.ds-prose h3,
+.ds-prose h4,
+.ds-prose h5,
+.ds-prose h6 {
+  max-inline-size: var(--layout-max-width-prose);
+}
+
+.ds-prose p,
+.ds-prose ul,
+.ds-prose ol,
+.ds-prose blockquote,
+.ds-prose pre,
+.ds-prose .ds-prose__scroll {
+  margin-block: var(--layout-gap-normal);
+}
+
+/* ---- headings -------------------------------------------------------------------------------- */
+
+/*
+ * A document's body starts at `<h3>` on a section page — the page is the `<h1>` and the document's
+ * title is the `<h2>` — and at `<h2>` on the spec sheet's own page, which is one document under one
+ * `<h1>` (../pages/docs/_prose.ts, transform 1). Both are styled, so the same Markdown reads the
+ * same in either place. The sizes follow Heading's own level→size map — 2 → 3xl, 3 → 2xl, 4 → xl,
+ * 5 → lg, 6 → md — so a body heading and a component heading of the same level are the same size.
+ */
+.ds-prose h2,
+.ds-prose h3,
+.ds-prose h4,
+.ds-prose h5,
+.ds-prose h6 {
+  margin-block: var(--layout-gap-loose) var(--layout-gap-normal);
+  color: var(--color-foreground-strong);
+  font-family: var(--font-family-heading);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--font-line-height-tight);
+}
+
+.ds-prose h2 {
+  font-size: var(--font-size-3xl);
+}
+
+.ds-prose h3 {
+  font-size: var(--font-size-2xl);
+}
+
+.ds-prose h4 {
+  font-size: var(--font-size-xl);
+}
+
+.ds-prose h5 {
+  font-size: var(--font-size-lg);
+}
+
+.ds-prose h6 {
+  font-size: var(--font-size-md);
+}
+
+/* ---- inline ---------------------------------------------------------------------------------- */
+
+/* The link colours the generated Link uses, since a Markdown anchor is not one. The underline is the
+   site's rule for every link on the page (./links.css): on hover and on keyboard focus. */
+.ds-prose a:any-link {
+  color: var(--color-link);
+  text-decoration-thickness: var(--border-width-thin);
+  text-underline-offset: var(--space-1);
+}
+
+.ds-prose a:any-link:visited {
+  color: var(--color-link-visited);
+}
+
+.ds-prose a:any-link:hover {
+  color: var(--color-link-hover);
+}
+
+.ds-prose a:focus-visible {
+  outline: var(--border-width-focus) solid var(--color-border-focus);
+  outline-offset: var(--border-width-focus);
+  border-radius: var(--radius-sm);
+}
+
+.ds-prose strong {
+  color: var(--color-foreground-strong);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* A token path, a prop name, a file: the mono family, like ../components/Mono.tsx, on the subtle
+   surface so a span of code is legible inside a sentence without a border. */
+.ds-prose :not(pre) > code {
+  padding-inline: var(--space-1);
+  border-radius: var(--radius-sm);
+  background: var(--color-background-subtle);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+}
+
+/* ---- lists ----------------------------------------------------------------------------------- */
+
+.ds-prose ul,
+.ds-prose ol {
+  padding-inline-start: var(--space-6);
+}
+
+.ds-prose li + li {
+  margin-block-start: var(--layout-gap-tight);
+}
+
+.ds-prose li > ul,
+.ds-prose li > ol {
+  margin-block: var(--layout-gap-tight);
+}
+
+/* ---- quotes and rules ------------------------------------------------------------------------ */
+
+.ds-prose blockquote {
+  margin-inline: 0;
+  padding-inline-start: var(--space-4);
+  border-inline-start: var(--border-width-thin) solid var(--color-border);
+  color: var(--color-foreground-muted);
+}
+
+.ds-prose hr {
+  margin-block: var(--layout-gap-loose);
+  border: 0;
+  border-block-start: var(--border-width-thin) solid var(--color-border);
+}
+
+/* ---- code blocks ----------------------------------------------------------------------------- */
+
+/*
+ * The same frame ../components/code.css draws, for the same reason: a code block is a surface with a
+ * border and a rounded corner its own scrolling stops at. The colours are not repeated here — a
+ * Markdown block keeps no palette of its own (_prose.ts takes Shiki's off), so it reads in the
+ * page's foreground on the page's background, which is what every theme and both modes already give.
+ */
+.ds-prose pre {
+  overflow-x: auto;
+  padding: var(--space-md);
+  border: var(--border-width-thin) solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  line-height: var(--font-line-height-normal);
+}
+
+.ds-prose pre:focus-visible,
+.ds-prose .ds-prose__scroll:focus-visible {
+  outline: var(--border-width-focus) solid var(--color-border-focus);
+  outline-offset: calc(-1 * var(--border-width-focus));
+}
+
+/* ---- tables ---------------------------------------------------------------------------------- */
+
+/*
+ * The scroll container _prose.ts wraps every table in: a table wider than the docs column scrolls
+ * inside this box, so the page itself never scrolls sideways — the rule that keeps the phone layout
+ * working. It is a tab stop for the same reason Shiki makes a wide code block one.
+ */
+.ds-prose__scroll {
+  overflow-x: auto;
+  max-inline-size: 100%;
+}
+
+.ds-prose table {
+  border-collapse: collapse;
+  inline-size: 100%;
+  font-size: var(--font-size-sm);
+  line-height: var(--font-line-height-normal);
+}
+
+.ds-prose th,
+.ds-prose td {
+  padding: var(--space-2) var(--space-3);
+  border-block-end: var(--border-width-thin) solid var(--color-border);
+  text-align: start;
+  vertical-align: top;
+}
+
+.ds-prose th {
+  color: var(--color-foreground-strong);
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+}
+
+.ds-prose tbody tr:last-child th,
+.ds-prose tbody tr:last-child td {
+  border-block-end: 0;
+}

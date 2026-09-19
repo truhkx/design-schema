@@ -451,7 +451,7 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text tone=\"onAction\">Text on an action background</Text>",
-        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\nimport type { TextAlign, TextElement, TextSize, TextTone, TextWeight } from '@design-schema/lit';\n\ninterface TextArgs {\n  size: TextSize;\n  weight: TextWeight;\n  tone: TextTone;\n  align: TextAlign;\n  truncate: boolean;\n  element: TextElement;\n  text: string;\n}\n\nfunction renderText(args: TextArgs): TemplateResult {\n  return html`\n    <ds-text\n      size=${args.size}\n      weight=${args.weight}\n      tone=${args.tone}\n      align=${args.align}\n      ?truncate=${args.truncate}\n      element=${args.element}\n      >${args.text}</ds-text\n    >\n  `;\n}\n\nhtml`\n  <div style=\"background: var(--color-action-primary-background); padding: var(--space-md)\">${renderText({ tone: 'onAction', text: 'Text on an action background' })}</div>\n`;",
+        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\nimport type { TextAlign, TextElement, TextSize, TextTone, TextWeight } from '@design-schema/lit';\n\ninterface TextArgs {\n  size: TextSize;\n  weight: TextWeight;\n  tone: TextTone;\n  align: TextAlign;\n  truncate: boolean;\n  element: TextElement;\n  /** The slotted text content (the doc's `children`). */\n  children: string;\n}\n\nfunction renderText(args: TextArgs): TemplateResult {\n  return html`\n    <ds-text\n      size=${args.size}\n      weight=${args.weight}\n      tone=${args.tone}\n      align=${args.align}\n      ?truncate=${args.truncate}\n      element=${args.element}\n      >${args.children}</ds-text\n    >\n  `;\n}\n\nhtml`\n  <div style=\"background: var(--color-action-primary-background)\">\n    <ds-box inset=\"md\">${renderText({ tone: 'onAction', children: 'Changes are saved automatically. You can undo any change for 30 days.' })}</ds-box>\n  </div>\n`;",
         "rn": "import * as React from 'react';\nimport { View } from 'react-native';\nimport { Text, useTheme } from '@design-schema/rn';\n\nfunction OnActionSurface(props: React.ComponentProps<typeof Text>): React.JSX.Element {\n  const { tokens } = useTheme();\n  return (\n    <View\n      style={{\n        backgroundColor: tokens.colorActionPrimaryBackground,\n        paddingHorizontal: tokens.spaceMd,\n        paddingVertical: tokens.spaceSm,\n        borderRadius: tokens.radiusMd,\n      }}\n    >\n      <Text {...props} />\n    </View>\n  );\n}\n\n<OnActionSurface tone=\"onAction\">Save changes</OnActionSurface>",
         "swift": null
       },
@@ -780,13 +780,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text truncate>Quarterly revenue summary for the EMEA region.</Text>",
-        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\nimport type { TextAlign, TextElement, TextSize, TextTone, TextWeight } from '@design-schema/lit';\n\ninterface TextArgs {\n  size: TextSize;\n  weight: TextWeight;\n  tone: TextTone;\n  align: TextAlign;\n  truncate: boolean;\n  element: TextElement;\n  text: string;\n}\n\nfunction renderText(args: TextArgs): TemplateResult {\n  return html`\n    <ds-text\n      size=${args.size}\n      weight=${args.weight}\n      tone=${args.tone}\n      align=${args.align}\n      ?truncate=${args.truncate}\n      element=${args.element}\n      >${args.text}</ds-text\n    >\n  `;\n}\n\nhtml`\n  <div style=\"max-inline-size: 16rem\">${renderText({ truncate: true, text: 'Quarterly revenue summary for the EMEA region.' })}</div>\n`;",
+        "lit": null,
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text truncate>Quarterly revenue summary for the EMEA region.</Text>",
         "swift": null
       },
       "stories": {
         "react": "TruncatedCell",
-        "lit": "TruncatedCell",
+        "lit": null,
         "rn": "TruncatedCell",
         "swift": null
       },

@@ -49,15 +49,25 @@
 }
 
 /*
- * The nav takes all the room between the lockup and the theme control, and spaces its links evenly
- * across it — equal space before, between and after — rather than clustering them at one end.
- * No `gap`: space-evenly adds it between links but not at the ends, and the spacing stops being even.
- * Doubled up to outrank the Stack's own `justify` and `gap` classes whatever order the sheets load in.
+ * The links are one group beside the lockup, not a band stretched across the row: the wordmark at the
+ * start, the three links next to it, the theme control at the far end.
+ *
+ * Tony's review on 2026-09-15 asked for `space-evenly` so the nav would not cluster at the end, but
+ * spreading three links over a 1280px row left ~170px between each of them — no closer to each other
+ * than to the lockup or the theme control, so they read as four unrelated things rather than as a
+ * nav. The nav still takes the row's slack; it just spends it after the group instead of between the
+ * links.
+ *
+ * `flex: 1 1 auto` is the whole of "theme control at the end": the nav absorbs the leftover width, so
+ * the control is held hard right without a `margin-inline-start: auto` of its own, and the row keeps
+ * the three-part shape the plan describes. The space between the links is the Stack's own
+ * `gap="loose"` (HeaderNav.tsx) — the token through the component's API rather than a length here.
+ * This rule adds only the step in from the wordmark, one gap wider than the row's own, so the group
+ * reads as separate from it rather than as a fourth word after it.
  */
-.ds-site-header .ds-site-header__links {
+.ds-site-header__links {
   flex: 1 1 auto;
-  justify-content: space-evenly;
-  gap: 0;
+  margin-inline-start: var(--layout-gap-loose);
 }
 
 .ds-site-header__wide {

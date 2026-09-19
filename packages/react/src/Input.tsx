@@ -210,15 +210,19 @@ export function Input({
   const isDisabled = disabled || (form?.disabled ?? false);
   const withLabel = (message: string): string => message.replace('{label}', label);
 
-  // Error slot: `error` (or the Form's held error) when set; otherwise a copy message only while
-  // `invalid` is true — copy.required for an empty required field, else copy.invalid.
-  const heldError = error ?? form?.errors[name];
+  // Error slot order: the `error` prop, the Form's context entry, then a copy message while `invalid`
+  // is true — copy.required for an empty required field, else copy.invalid. The Form's entry is its
+  // `invalid` mark, so its presence alone marks the field, even with an empty message.
+  const formError = form?.errors[name];
+  const markedInvalid = invalid || formError !== undefined;
   const slotMessage =
-    heldError !== undefined && heldError !== ''
-      ? heldError
-      : invalid
-        ? withLabel(required && currentValue === '' ? COPY.required : COPY.invalid)
-        : undefined;
+    error !== undefined && error !== ''
+      ? error
+      : formError !== undefined && formError !== ''
+        ? formError
+        : markedInvalid
+          ? withLabel(required && currentValue === '' ? COPY.required : COPY.invalid)
+          : undefined;
   const isInvalid = slotMessage !== undefined;
 
   // Keep the latest props in a ref so the Form registration does not churn on every render.

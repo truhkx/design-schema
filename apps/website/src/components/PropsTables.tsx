@@ -12,6 +12,28 @@ const COPY = {
   empty: 'This component takes no props.',
 };
 
+/**
+ * The length past which a type is a signature rather than a word, and needs a column of its own
+ * width — see ./props-table.css, which is where the width is.
+ *
+ * The number is the measure the Type column can hold on one line at the narrowest it is ever asked
+ * to: everything shorter wraps once at most and is left exactly as it renders today, which is the
+ * point. It sits above every enum the schema declares that reads as a list of words — Button's
+ * `primary | secondary | ghost | danger` is 36 characters, the longest of them 44 — and below every
+ * object, array and function shape, the ones whose min-content width is a token rather than a line.
+ */
+const SHAPE_TYPE_LENGTH = 48;
+
+/**
+ * A Type cell. The wrapper is added only for a shape, so a table of short types emits none and is
+ * laid out by exactly the rules it is laid out by today.
+ */
+function typeCell(type: string | undefined) {
+  const mono = <Mono>{type}</Mono>;
+  if (type === undefined || type.length < SHAPE_TYPE_LENGTH) return mono;
+  return <span className="ds-prop-type">{mono}</span>;
+}
+
 export interface PropsTablesProps {
   /** The component name, so each table's accessible name says which component it belongs to. */
   name: string;
@@ -66,7 +88,7 @@ export function PropsTables({ name, props, events }: PropsTablesProps) {
         );
       },
     },
-    { key: 'type', header: 'Type', render: (row: TableRow) => <Mono>{byProp.get(row.id)?.type}</Mono> },
+    { key: 'type', header: 'Type', render: (row: TableRow) => typeCell(byProp.get(row.id)?.type) },
     {
       key: 'default',
       header: 'Default',
@@ -109,7 +131,7 @@ export function PropsTables({ name, props, events }: PropsTablesProps) {
       width: 'min',
       render: (row: TableRow) => <Mono>{row.id}</Mono>,
     },
-    { key: 'type', header: 'Type', render: (row: TableRow) => <Mono>{byEvent.get(row.id)?.type}</Mono> },
+    { key: 'type', header: 'Type', render: (row: TableRow) => typeCell(byEvent.get(row.id)?.type) },
     {
       key: 'description',
       header: 'Description',

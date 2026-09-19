@@ -154,13 +154,14 @@ export default function HeaderNav({ items, themes }: HeaderNavProps) {
     <>
       <div className="ds-site-header__wide">
         <Stack direction="horizontal" gap="normal" align="center">
-          {/* `ds-site-header__links` stretches the nav across the row and spaces its links evenly. */}
+          {/* One group next to the lockup: `gap="loose"` spaces the links, and
+              `ds-site-header__links` takes the row's slack so the theme control stays at the end. */}
           <Stack
             element="nav"
             aria-label={COPY.navLabel}
             className="ds-site-header__links"
             direction="horizontal"
-            gap="normal"
+            gap="loose"
             align="center"
           >
             {links}

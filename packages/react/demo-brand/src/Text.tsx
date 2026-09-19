@@ -40,8 +40,10 @@ export interface TextProps extends Omit<ComponentPropsWithoutRef<'p'>, 'children
   /** Emphasis without changing size. Prefer weight over color for hierarchy. */
   weight?: TextWeight | undefined;
   /**
-   * Semantic color. `onAction` is only for text placed on an action background. There is no `inverse`
-   * tone: an inverse surface re-scopes `--color-foreground` on its own container, which the tone resolves through.
+   * Semantic color. `onAction` is only for text placed on an action background, and its story paints
+   * that background (color.action.primary.background) behind the Text. There is no `inverse` tone: the
+   * shared foreground vocabulary has no such name, so an inverse surface re-scopes `--color-foreground`
+   * on its own container, which the `default` tone resolves through.
    */
   tone?: TextTone | undefined;
   /** Horizontal alignment. `start`/`end` follow writing direction. */

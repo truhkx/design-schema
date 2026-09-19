@@ -291,7 +291,6 @@ export function Form({
         noValidate
         aria-label={labelledBy ? undefined : label}
         aria-labelledby={labelledBy}
-        aria-disabled={disabled ? 'true' : undefined}
         onSubmit={handleSubmit}
       >
         {showSummary ? (
@@ -308,27 +307,26 @@ export function Form({
                 {summaryHeading(errorEntries.length, locale)}
               </Text>
               <Stack element="ul" gap="tight" overrides={summaryGap}>
+                {/* Stack element="ul" wraps each child in its own `li`. */}
                 {errorEntries.map(([fieldName, message]) => {
                   const field = fieldsRef.current.get(fieldName);
-                  const text = message !== '' ? message : (field?.label ?? fieldName);
-                  return (
-                    <li key={fieldName}>
-                      {field ? (
-                        <Link
-                          href={`#${field.id}`}
-                          label={text}
-                          tone="inherit"
-                          onClick={() => {
-                            field.focus();
-                            return false;
-                          }}
-                        />
-                      ) : (
-                        <Text element="span" tone="danger">
-                          {text}
-                        </Text>
-                      )}
-                    </li>
+                  // An empty message falls back to the label, then to the name when the label is empty too.
+                  const text = message !== '' ? message : field?.label ? field.label : fieldName;
+                  return field ? (
+                    <Link
+                      key={fieldName}
+                      href={`#${field.id}`}
+                      label={text}
+                      tone="inherit"
+                      onClick={() => {
+                        field.focus();
+                        return false;
+                      }}
+                    />
+                  ) : (
+                    <Text key={fieldName} element="span" tone="danger">
+                      {text}
+                    </Text>
                   );
                 })}
               </Stack>

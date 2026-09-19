@@ -192,7 +192,8 @@ export function Input({
   const formError = form?.errors[name];
   // The error slot shows `error` when set, then the Form's message; otherwise a message
   // only while `invalid` is true: copy.required for an empty required field, else copy.invalid.
-  const invalidMessage = invalid ? (required && currentValue.trim() === '' ? COPY.required(label) : COPY.invalid(label)) : undefined;
+  // `required` counts only the empty string as empty, as a native field does: whitespace passes.
+  const invalidMessage = invalid ? (required && currentValue === '' ? COPY.required(label) : COPY.invalid(label)) : undefined;
   const displayedError = error !== undefined && error !== '' ? error : (formError ?? invalidMessage);
   const isInvalid = invalid || displayedError !== undefined;
   const summarised = form !== null && form.errorSummary;
@@ -203,7 +204,7 @@ export function Input({
       if (error !== undefined && error !== '') {
         return error;
       }
-      if (required && candidate.trim() === '') {
+      if (required && candidate === '') {
         return COPY.required(label);
       }
       if (invalid) {
@@ -368,7 +369,11 @@ export function Input({
   const helperOverrides = { fontFamily: overrides?.fontFamily, fontSize: overrides?.helperSize, lineHeight: overrides?.lineHeight };
 
   return (
-    <View ref={ref} style={containerStyle} testID="Input">
+    // `aria-disabled` marks the whole dimmed group (label, description, field, error) as disabled:
+    // react-native-web 0.21 ignores `accessibilityState`, so without it the dimmed label and value
+    // read as ordinary text that fails contrast. The group View is not an accessibility element on
+    // native, so this changes nothing there.
+    <View ref={ref} aria-disabled={isDisabled || undefined} style={containerStyle} testID="Input">
       {hideLabel ? null : (
         <View testID="Input.label">
           <Text
@@ -393,6 +398,8 @@ export function Input({
         accessibilityLabel={accessibleName}
         accessibilityHint={accessibleHint}
         accessibilityState={{ disabled: isDisabled }}
+        // react-native-web 0.21 renders only the aria-* form of the state.
+        aria-disabled={isDisabled}
         keyboardType={KEYBOARD_TYPE[type]}
         textContentType={TEXT_CONTENT_TYPE[type]}
         secureTextEntry={type === 'password'}

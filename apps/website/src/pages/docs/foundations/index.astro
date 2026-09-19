@@ -1,28 +1,86 @@
 ---
 /**
- * The Foundations section's landing page.
+ * The Foundations section: `site/src/content/docs/foundations`, rendered.
  *
- * A placeholder with a real route, for the same reason as ./components/[slug].astro: the sidebar's
- * top-level links (website-plan.md, "Docs section") have to go somewhere, and a nav link to a 404 is
- * a defect the navigation job owns. The content — tokens, color, type, spacing, the layout
- * breakpoints — is `site/src/content/docs/foundations/*.md`, rendered here by a later job.
+ * The written foundations documents — design tokens, layout and rhythm, styling and overrides, focus
+ * management — are shown one after another on this page rather than as an index of links to four
+ * more routes. Two reasons, both about how much there is: the four together are about 25 KB of
+ * Markdown, a sitting's reading, and they are four halves of one argument — the layout rhythm is the
+ * token page's spacing grid applied *between* components, and the styling page is what an override
+ * may and may not do to either. Splitting them would cost three page loads and gain nothing.
+ *
+ * The section's fifth document is the generated spec sheet, which is ten times the other four put
+ * together and has a route of its own (./spec-sheet.astro). ../_prose.ts's `OWN_PAGE_IDS` is where
+ * that split is decided, and it is the only place on the site that knows about it.
+ *
+ * No prose is authored here. Every word below the section's own heading comes from the Markdown,
+ * through the `docs` collection, with the transforms ../_prose.ts describes.
  */
-import { Heading, Stack, Text } from '@design-schema/react';
+import { getCollection } from 'astro:content';
+import { Breadcrumb, Heading, Link, Stack, Text } from '@design-schema/react';
 
 import DocsLayout from '../../../layouts/DocsLayout.astro';
+import { siteNav } from '../../../nav';
+import { anchoredIds, componentSlugs, docById, docHref, OWN_PAGE_IDS, proseHtml, sectionDocs } from '../_prose';
+import '../../../styles/docs-prose.css';
 
+/** The page's own words — the section's name, its summary, and the two labels around the documents. */
 const COPY = {
+  docs: 'Docs',
   title: 'Foundations',
-  body:
-    'The tokens every component is built from: color roles and their contrast pairs, the type scale, ' +
-    'spacing and the layout rhythm, motion, and the page-level breakpoints. These pages render ' +
-    'site/src/content/docs/foundations; until they do, that folder is the reference.',
+  description:
+    'The tokens every component is built from: color roles and their contrast pairs, the type ' +
+    'scale, spacing and the layout rhythm, motion, and the page-level breakpoints.',
+  onThisPage: 'On this page',
 };
+
+const entries = await getCollection('docs');
+const context = { componentSlugs: componentSlugs(siteNav().docs), anchored: anchoredIds(entries) };
+
+const docs = sectionDocs(entries, 'foundations');
+if (docs.length === 0) {
+  throw new Error('No documents in site/src/content/docs/foundations — the Foundations page would be empty.');
+}
+
+/** The documents rendered on this page, in the frontmatter's order, and their HTML. */
+const sections = docs
+  .filter((doc) => !OWN_PAGE_IDS.has(doc.id))
+  .map((doc) => ({ id: doc.id, title: doc.data.title, description: doc.data.description, html: proseHtml(doc, context) }));
+
+/** The contents list: every document in the folder, including the one that reads on its own page. */
+const contents = docs.map((doc) => ({ href: docHref(doc, 'foundations'), label: doc.data.title }));
+
+// The spec sheet is linked from this page and reached from the sidebar; if it ever leaves the folder
+// this page should stop promising it, and ./spec-sheet.astro should stop being a route.
+if (docById(entries, 'spec-sheet') === undefined) {
+  throw new Error('site/src/content/docs/foundations/spec-sheet.md is gone — remove ./spec-sheet.astro and its nav entry.');
+}
 ---
 
-<DocsLayout title={`${COPY.title} — Design Schema`} description={COPY.body}>
-  <Stack direction="vertical" gap="loose">
-    <Heading level={1}>{COPY.title}</Heading>
-    <Text>{COPY.body}</Text>
+<DocsLayout title={`${COPY.title} — Design Schema`} description={COPY.description}>
+  <Stack direction="vertical" gap="section">
+    <Stack direction="vertical" gap="normal">
+      <Breadcrumb items={[{ label: COPY.docs, href: '/docs' }, { label: COPY.title }]} />
+      <Heading level={1}>{COPY.title}</Heading>
+      <Text tone="muted">{COPY.description}</Text>
+      <Stack direction="vertical" gap="tight" align="start">
+        <Text size="sm" tone="muted">{COPY.onThisPage}</Text>
+        {contents.map((item) => <Link href={item.href} label={item.label} />)}
+      </Stack>
+    </Stack>
+
+    {
+      sections.map((section) => (
+        /* A plain `section` rather than a Landmark: it is an anchor target and a grouping, not a
+           region a screen-reader user should have to step through on the way down the page. */
+        <section id={section.id}>
+          <Stack direction="vertical" gap="normal">
+            <Heading level={2}>{section.title}</Heading>
+            <Text tone="muted">{section.description}</Text>
+            <div class="ds-prose" set:html={section.html} />
+          </Stack>
+        </section>
+      ))
+    }
   </Stack>
 </DocsLayout>

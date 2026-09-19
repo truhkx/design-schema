@@ -928,8 +928,8 @@
         "inline": true
       },
       "snippets": {
-        "react": "import { Icon, Text } from '@design-schema/react';\n\n<Text>\n  The report opens in a new tab <Icon name=\"external\" inline />\n</Text>",
-        "lit": "<ds-text>\n  The report opens in a new tab <ds-icon name=\"external\" inline></ds-icon>\n</ds-text>",
+        "react": "import { Icon, Text } from '@design-schema/react';\n\n<Text>\n  Read the release notes <Icon name=\"external\" inline />\n</Text>",
+        "lit": "<ds-text>Read the release notes <ds-icon name=\"external\" inline></ds-icon></ds-text>",
         "rn": "import { Icon, Text } from '@design-schema/rn';\n\n<Text size=\"lg\">\n  Read the release notes <Icon name=\"external\" inline />\n</Text>",
         "swift": null
       },

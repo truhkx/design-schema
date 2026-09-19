@@ -95,18 +95,27 @@ export default function DocsNav({ sections, groups, current }: DocsNavProps) {
   return (
     <>
       <div className="ds-docs-nav__wide">
-        <Landmark role="navigation" label={COPY.navLabel} className="ds-docs-nav__sidebar">
-          <Stack direction="vertical" gap="normal">
-            {sections.map((section) => link(section.href, section.label))}
-            {groups.map((group) => (
-              <Disclosure key={group.phase} summary={group.phase} defaultOpen>
-                <Stack direction="vertical" gap="tight">
-                  {group.components.map((component) => link(componentRoute(component.slug), component.name))}
-                </Stack>
-              </Disclosure>
-            ))}
-          </Stack>
-        </Landmark>
+        {/*
+          The sticky box is ours, not the Landmark: components/landmark.md is explicit that Landmark
+          takes no className or style, and that a composite needing its own positioning "renders its
+          own styled element and composes Landmark inside it" (SidePanel does the same). Putting
+          ds-docs-nav__sidebar back on <Landmark> silently drops it — the class is not in its props —
+          which is how the sidebar lost position: sticky and overlapped the footer.
+        */}
+        <div className="ds-docs-nav__sidebar">
+          <Landmark role="navigation" label={COPY.navLabel}>
+            <Stack direction="vertical" gap="normal">
+              {sections.map((section) => link(section.href, section.label))}
+              {groups.map((group) => (
+                <Disclosure key={group.phase} summary={group.phase} defaultOpen>
+                  <Stack direction="vertical" gap="tight">
+                    {group.components.map((component) => link(componentRoute(component.slug), component.name))}
+                  </Stack>
+                </Disclosure>
+              ))}
+            </Stack>
+          </Landmark>
+        </div>
       </div>
 
       <div className="ds-docs-nav__narrow" ref={narrowRef}>

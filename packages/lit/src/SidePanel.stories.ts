@@ -66,9 +66,9 @@ const menuTrigger = html`
 
 const navLinks = html`
   <ds-stack gap="tight">
-    <ds-link href="#home" aria-current="page">Home</ds-link>
-    <ds-link href="#orders">Orders</ds-link>
-    <ds-link href="#settings">Settings</ds-link>
+    <ds-link href="#home" label="Home"></ds-link>
+    <ds-link href="#orders" label="Orders"></ds-link>
+    <ds-link href="#settings" label="Settings"></ds-link>
   </ds-stack>
 `;
 
@@ -197,8 +197,8 @@ export const Keyboard: Story = {
       menuTrigger,
       html`
         <ds-stack gap="tight">
-          <ds-link href="#home" aria-current="page">Home</ds-link>
-          <ds-link href="#orders">Orders</ds-link>
+          <ds-link href="#home" label="Home"></ds-link>
+          <ds-link href="#orders" label="Orders"></ds-link>
           <ds-input label="Search" name="search"></ds-input>
         </ds-stack>
       `,

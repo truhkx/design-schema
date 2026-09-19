@@ -52,3 +52,24 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Button: the `icon-only-in-a-toolbar` example gives `leadingIcon: "The close Icon"` as prose. The story renders `<Icon name="close" inline />`.
 - Button: there's no `Keyboard` story because Button has no `keyboard` block; activation is native, as the scenarios say.
 - Button: demo-brand/src/CtaButton.tsx still lists `backgroundHover` as overridable, which the schema now locks. I didn't touch it; `pnpm demo:naming` may need a rerun.
+
+## 2026-09-18 18:09 — round 1
+
+- Button: the doc gives no web CSS for the loading ring's round shape, the spin direction or the full turn. The existing CSS uses `--radius-full` and `rotate(360deg)`, and I kept both. The doc could name the radius token and say whether a one-turn rotation is a sanctioned literal.
+- Button: `backgroundHover` is declared for `state: hover` but says nothing about disabled or loading. I kept the existing choice: no hover fill while `aria-disabled` or `aria-busy` is set.
+- Button: the Overrides section gives every binding a hook, locked ones included, but the Lit note says locked bindings get no hook, with spinnerStroke the only exception. On web I kept hooks for locked bindings, left out of the `overrides` type. The doc should say whether web follows Lit here.
+- Button: the copy.loading node is visually hidden and also `aria-hidden`, because aria-describedby still resolves hidden nodes. The doc doesn't say whether the node should be aria-hidden, which would stop a screen reader's virtual cursor reading it inline.
+- Button: the doc says `iconOnly` padding is equal on every side (`space.sm`). The CSS sets only paddingInline to space.sm, which matches because paddingBlock is already space.sm. An override of paddingBlock or paddingInline then makes the sides unequal again. The doc doesn't say which should win.
+- Button: `type: submit` with `iconOnly` or `loading`: the doc doesn't say whether a blocked submit should also stop Form's native submit event beyond preventDefault(). I kept preventDefault plus stopPropagation.
+- Button: `accessibleName` must contain the visible label (WCAG 2.5.3), but the doc asks for no development warning when it doesn't, so I added none.
+- Button: in the stories, the `given` value `leadingIcon: "Icon name=close"` is shorthand, not a literal string. I rendered it as `<Icon name="close" inline />`. The doc should define how content values in `given` map to elements.
+
+## 2026-09-18 18:16 — round 2
+
+- Button: the round-2 failures are all in other components. keyboard-run fails in ActionSheet, Combobox, DatePicker, Listbox, Menu, Search, Slider, Tabs, Toast, Tooltip and Tree; axe fails in Carousel, Feed, Listbox, Slider, Splitter, Menu and Tabs. Button's spec has no keyboard block, so keyboard-run has no Button test, and logs/playwright.json has no Button/React axe entry in light or dark mode. I changed no Button code because the gates name nothing to fix in it. The gate output could say which components each failure belongs to, so a single-component round isn't sent failures from the whole package.
+- Button: the gate report gives no pre-change baseline, so from the report alone I can't tell whether these failures predate this generation. I also didn't check that the gates ran against a Storybook rebuilt after the round-1 Button edits.
+
+## 2026-09-18 18:23 — round 3
+
+- Button: rounds 2 and 3 got the same package-wide gate failures, none in Button. keyboard-run fails in ActionSheet, Combobox, DatePicker, Listbox, Menu, Search, Slider, Tabs, Toast, Tooltip and Tree; axe fails in Carousel, Feed, Listbox, Slider, Splitter, Menu and Tabs. Button's diff is one CSS line with the same result, active only on inverse-ghost hover, plus a type-only change to ButtonProps. The React package typechecks cleanly, so no composing component passes className or style. The gates need to run on the regenerated component's own stories and specs, or diff against a pre-generation baseline, so a single-component round isn't sent failures it can't fix.
+- Button: eight of the failing components compose Button (Splitter, Tree, Carousel, DatePicker, Search, ActionSheet, Menu, Toast). Their failures are roving focus, Escape handling, tab order, required children, target size, a focusable scroll region and dark-mode contrast in their own markup, none in Button's contract. I didn't edit them, since this job covers Button only.

@@ -39,3 +39,43 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Link: the spec says Link forwards `onFocus`, `onBlur`, `onHoverIn` and `onHoverOut` to Text, but RN 0.87's strict Text types do not declare them; passed them through an untyped props bag, as the previous file did.
 - Link: the Default story args are not given by the spec; chose the inline-in-a-paragraph example's href/label.
 - Link: the pressed color crossfades with Animated, which makes the press test log React act() warnings under Jest (tests still pass); the doc does not say whether the test should use fake timers or reduced motion.
+
+## 2026-09-18 19:54 — round 1
+
+- Link: the package digest writes `toLineHeight(t.fontLineHeightNormal, t.fontSizeMd)`, but `theme.tsx` declares `toLineHeight(fontSize, multiplier)`; I followed the code (`toLineHeight(t.fontSizeMd, t.fontLineHeightNormal)`), so the digest's argument order needs fixing.
+- Link: the digest names a `TextNestingContext`; Link's guidance says it doesn't exist and to use `TextStyleContext.nested`, which is what the code exports. I used `TextStyleContext`, so the package digest is stale.
+- Link: the spec says only 'On native Link sets no textDecorationColor' inside the `tone: inherit` description, and doesn't say whether that also covers `tone: default`. I applied it to both tones, so the underline follows the animated text color. That also keeps the underline and the label from crossfading separately.
+- Link: the spec says the Icon color 'swaps instantly on press while the label crossfades', but doesn't say whether the label animates at all under `tone: inherit`. I run no animation under `inherit`, since rest and pressed resolve to the same inherited color.
+- Link: the forwarded `onFocus`/`onBlur`/`onHoverIn`/`onHoverOut` props have no event type in the spec, and RN's strict `Text` types don't declare them. I typed them `(event: unknown) => void` and spread them onto the Text through an untyped object. The spec should name the event types, or say they only apply on react-native-web.
+- Link: the spec doesn't say what happens when `Linking.openURL` rejects (an unsupported scheme or an app route with no handler). I swallow the rejection silently.
+- Link: the rules template lists `disabled` / `accessibilityState` handling, but Link has no `disabled` prop ('never disabled'). I added none; the template rule could say it applies only when the schema declares `disabled`.
+- Link: the `click-fires-on-press` scenario says Link 'navigates to href', but the test can only assert that `onPress` fires with `href`. Nothing checks the `Linking` fallback or the external hand-off after the handler, and the scenarios could add both for native.
+
+## 2026-09-18 20:01 — round 2
+
+- Link: round 2 is unfixed and I have no verified result. The axe-rn run (bfvxftxcv) was stopped before it finished and left no report, and the sandbox wouldn't run `node logs/link-axe-rn.mjs` (a harness filtered to Link, left in logs/ and unused). None of the violations in the truncated log I was given name Link, so which Link story fails is still unknown.
+- Link: the RN notes say 'On react-native-web this becomes a real anchor', but react-native-web 0.21 only renders a Text as <a> when it gets an `href` prop. Link passes none, so on web it renders <div role="link"> (<span> when nested). This is my main suspect for the axe failure, but I haven't confirmed it and haven't made the fix. The planned fix is to forward `href` to Text through the untyped prop bag (RN's native Text types have no `href`) and call `event.preventDefault()` in the press handler, so the browser doesn't navigate on top of `onPress`/`Linking.openURL`. The spec doesn't say whether Link should forward `href` on web, whether to preventDefault (which also blocks ctrl/middle-click open-in-new-tab), or whether `external` should set `hrefAttrs` (target _blank, rel noopener noreferrer) on react-native-web.
+- Link: the package digest writes `toLineHeight(t.fontLineHeightNormal, t.fontSizeMd)`, but `theme.tsx` declares `toLineHeight(fontSize, multiplier)`; the code follows theme.tsx.
+- Link: the digest names a `TextNestingContext`; the code exports `TextStyleContext` (`nested` field), which Link's guidance also names. I used `TextStyleContext`.
+- Link: 'On native Link sets no textDecorationColor' appears only in the `tone: inherit` description. I applied it to both tones, so the underline follows the animated text color.
+- Link: the spec doesn't say whether the label animates under `tone: inherit`; I run no animation there, since rest and pressed resolve to the same inherited color.
+- Link: the forwarded `onFocus`/`onBlur`/`onHoverIn`/`onHoverOut` props have no event type in the spec, and RN's strict `Text` types don't declare them. I typed them `(event: unknown) => void` and spread them through an untyped object.
+- Link: the spec doesn't say what happens when `Linking.openURL` rejects (unsupported scheme or unhandled app route); the rejection is swallowed silently.
+- Link: the rules template's `disabled` / `accessibilityState` rule doesn't apply, because Link is never disabled; I added nothing for it.
+- Link: the `click-fires-on-press` scenario says 'navigates to href', but the RN test can only assert that `onPress(href)` fires. Nothing checks the Linking fallback or the external hand-off after the handler.
+- Link: the press animation causes an act() warning in the RN tests (the tests still pass). The spec gives no guidance on testing the animated press color.
+- (report recovered after a second request)
+
+## 2026-09-18 20:06 — round 3
+
+- Link: the axe gate names Link as the component under test but runs every RN story as one test per mode. The failures come from other components (Toolbar, Tree, TreeGrid, Listbox, Feed, Carousel, Checkbox, Combobox, Select, Meter, RadioGroup, SegmentedControl, Card, Tabs, Toast, DataGrid and the Preferences/Profile/SettingsPage demos). logs/playwright.json has no Link/React Native violation in light or dark mode, so no Link change can turn the gate green. I left Link's code unchanged.
+- Link: the RN notes say 'On react-native-web this becomes a real anchor', but react-native-web 0.21 only renders Text as <a> when it gets an `href` prop, and RN's native Text types declare no `href`. Link doesn't forward it, so on web it renders <div role="link"> (<span> when nested). axe accepts that, so I didn't change it, to avoid an unverified behavior change. Forwarding `href` would also need a decision the spec doesn't make: whether to preventDefault the anchor click (stopping double navigation alongside onPress/Linking, but also blocking ctrl/middle-click), and whether `external` sets hrefAttrs target/rel on web.
+- Link: the package digest writes `toLineHeight(t.fontLineHeightNormal, t.fontSizeMd)`, but theme.tsx declares `toLineHeight(fontSize, multiplier)`; the code follows theme.tsx.
+- Link: the digest names a `TextNestingContext`; the code exports `TextStyleContext` (`nested` field), which Link's guidance also names. I used `TextStyleContext`.
+- Link: 'On native Link sets no textDecorationColor' appears only in the `tone: inherit` description. I applied it to both tones, so the underline follows the animated text color.
+- Link: the spec doesn't say whether the label animates under `tone: inherit`; I run no animation there, since rest and pressed resolve to the same inherited color.
+- Link: the forwarded onFocus/onBlur/onHoverIn/onHoverOut props have no event type in the spec, and RN's strict Text types don't declare them. I typed them `(event: unknown) => void` and spread them through an untyped object.
+- Link: the spec doesn't say what happens when Linking.openURL rejects; the rejection is swallowed silently.
+- Link: the rules template's `disabled` / accessibilityState rule doesn't apply, because Link is never disabled; I added nothing for it.
+- Link: click-fires-on-press says 'navigates to href', but the RN test can only assert that onPress(href) fires. Nothing checks the Linking fallback or the external hand-off after the handler.
+- Link: the press animation causes an act() warning in the RN Jest tests (they still pass). The spec gives no guidance on testing the animated press color.

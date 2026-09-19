@@ -33,3 +33,20 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Link: `copy.external` ('opens in new tab') is only used on SwiftUI. On web it is kept only as a comment, and the doc doesn't say that web leaves it unused.
 - Link: the Default story args are not given anywhere. I used the `inline-in-a-paragraph` values (href `/billing/history`, label `View the billing history`), so the has-accessible-name and renders scenarios run against those.
 - Link: the `external` and `download` booleans get no story from the 'one story per enum value' rule. I added `External` and `Download` state stories alongside the `ExternalDestination` and `DownloadableFile` example stories, which cover the same states.
+
+## 2026-09-18 19:13 — round 1
+
+- Link: locked bindings (color, colorHover, colorVisited, focusRing*) — the overrides section says every binding becomes a `--ds-link-*` hook and rules read the hook, but it does not say whether locked bindings get hooks at all; chose to keep hooks for them (not settable through `overrides`, still settable from consumer CSS), which lets consumer CSS change an accessibility-bearing color. The doc should say whether locked bindings have hooks.
+- Link: tone inherit — the spec says the color bindings are 'not applied' but not how the rest color is written on web; chose `color: inherit` on the root and scoped the color/:visited/:hover rules to `.ds-link--tone-default`, rather than setting the hooks to currentColor.
+- Link: the `transition` binding says only 'Color transition on hover'; chose to transition `color` only (not text-decoration-color, which already follows currentColor).
+- Link: externalIconGap override — 'apply an override only where the binding is in effect' was read as skipping the inline hook when `external` is false; the doc does not say this explicitly for Link.
+- Link: example stories get their `given` as args, but Storybook merges meta.args (external: false, tone: default, download: false) underneath, so the stories do not have 'exactly' the given args; left the meta defaults in place since they match the schema defaults.
+
+## 2026-09-18 19:20 — round 2
+
+- Link: round-2 gate failures are all in other components (keyboard: ActionSheet, Combobox, DatePicker, Listbox, Menu, Search, Slider, Tabs, Toast, Tooltip, Tree; axe: Feed, Listbox, Menu, Splitter, Tabs in the visible output). Link has no keyboard block and therefore no keyboard spec, and the axe output was truncated, so there is no evidence of a Link violation; no Link code was changed. The gate report should be filtered to the component under generation, or include the untruncated failure list, so a per-component round can act on it.
+- Link: could not re-run axe on the Link stories in this session (running node requires approval); logs/link-axe.mjs runs the gate's axe options against Link/React stories only, for the owner to confirm.
+
+## 2026-09-18 19:26 — round 3
+
+- Link: rounds 2 and 3 were rejected by gates whose every failure is in another component. The complete axe lists in test-results/tests-gates-axe-*/error-context.md (light: Carousel, Feed, Listbox, Slider, Splitter; dark: Carousel, Feed, Listbox, Menu, Splitter, Tabs) and the 15 keyboard-web failures (ActionSheet, Combobox, DatePicker, Listbox, Menu, Search, Slider, Tabs, Toast, Tooltip, Tree) contain no Link story or spec, and Link has no keyboard block. No Link code changed. The repair loop should scope keyboard-run and axe failures to the component under generation (or diff against a pre-change baseline), otherwise a per-component round can never pass and keeps being retried.

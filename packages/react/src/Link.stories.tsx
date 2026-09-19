@@ -35,11 +35,7 @@ export const ToneInherit: Story = {
   ),
 };
 
-/* states */
-export const External: Story = { args: { external: true } };
-export const Download: Story = { args: { download: true } };
-
-/* examples */
+/* examples — ExternalDestination is the `external` state story and DownloadableFile the `download` one. */
 export const InlineInAParagraph: Story = {
   args: { href: '/billing/history', label: 'View the billing history' },
   render: (args) => (

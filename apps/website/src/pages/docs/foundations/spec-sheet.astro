@@ -1,0 +1,61 @@
+---
+/**
+ * The spec sheet: `site/src/content/docs/foundations/spec-sheet.md`, rendered.
+ *
+ * The one document in the docs sections with a route of its own. `tools/spec_sheet.ts` generates it
+ * from the built tokens and `generated/components.json` — every token value in light and dark, and
+ * every style binding of every component — which makes it about 393 KB of Markdown, ten times the
+ * rest of the Foundations folder. Inlining it on ./index.astro would bury the four written
+ * foundations documents under a table per component; ../_prose.ts's `OWN_PAGE_IDS` is where that
+ * decision lives, and ../../../nav.ts is where the sidebar and the mobile Select learn the route.
+ *
+ * Nothing is authored here: the heading and the summary are the document's own frontmatter, and the
+ * body is its Markdown with the transforms ../_prose.ts describes — including its 51 component links,
+ * which are re-pointed at this site's own component pages.
+ */
+import { getCollection } from 'astro:content';
+import { Breadcrumb, Heading, Stack, Text } from '@design-schema/react';
+
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+import { siteNav } from '../../../nav';
+import { anchoredIds, componentSlugs, docById, proseHtml } from '../_prose';
+import '../../../styles/docs-prose.css';
+
+/** The page's own words: the two crumbs above the title. Everything else is the document's. */
+const COPY = {
+  docs: 'Docs',
+  foundations: 'Foundations',
+};
+
+const entries = await getCollection('docs');
+const doc = docById(entries, 'spec-sheet');
+if (doc === undefined) {
+  throw new Error('site/src/content/docs/foundations/spec-sheet.md is missing — run `pnpm spec-sheet` at the repo root.');
+}
+
+/**
+ * `shiftHeadings: false` — this page is one document, so its `##` sections sit directly under the
+ * page's `<h1>` and are already the right level. The section pages, which put an `<h2>` of their own
+ * above each document, are the ones that shift.
+ */
+const html = proseHtml(doc, {
+  componentSlugs: componentSlugs(siteNav().docs),
+  anchored: anchoredIds(entries),
+  shiftHeadings: false,
+});
+---
+
+<DocsLayout title={`${doc.data.title} — Design Schema`} description={doc.data.description}>
+  <Stack direction="vertical" gap="normal">
+    <Breadcrumb
+      items={[
+        { label: COPY.docs, href: '/docs' },
+        { label: COPY.foundations, href: '/docs/foundations' },
+        { label: doc.data.title },
+      ]}
+    />
+    <Heading level={1}>{doc.data.title}</Heading>
+    <Text tone="muted">{doc.data.description}</Text>
+    <div class="ds-prose" set:html={html} />
+  </Stack>
+</DocsLayout>

@@ -21,7 +21,8 @@ export interface ButtonTrackDetail {
  * Overridable style hooks; see the `overrides` property. The accessibility-bearing
  * bindings — `background`, `backgroundHover`, `foreground`, `focusRing`,
  * `focusRingWidth`, `inverseForeground`, `inverseFocusRing`, `minTarget` and
- * `spinnerStroke` — are locked and excluded (they keep their CSS hooks).
+ * `spinnerStroke` — are locked and excluded; of those, only `spinnerStroke` keeps
+ * a CSS hook (`--ds-button-spinner-stroke`), the rest read their tokens directly.
  */
 export type ButtonOverridableBinding =
   | 'iconGap'
@@ -102,12 +103,15 @@ export class DsButton extends LitElement {
   };
 
   static override styles: CSSResult = css`
+    /*
+     * Hooks for the overridable bindings, plus spinnerStroke (locked, but its
+     * binding keeps the hook). The other locked bindings (background,
+     * backgroundHover, foreground, focusRing, focusRingWidth, inverseForeground,
+     * inverseFocusRing, minTarget) have no hook: their rules read the token.
+     */
     :host {
       display: inline-flex;
       vertical-align: middle;
-      --ds-button-background: var(--color-action-primary-background);
-      --ds-button-background-hover: var(--color-action-primary-background-hover);
-      --ds-button-foreground: var(--color-action-primary-foreground);
       --ds-button-icon-gap: var(--space-2);
       --ds-button-padding-inline: var(--space-md);
       --ds-button-padding-block: var(--space-sm);
@@ -115,13 +119,9 @@ export class DsButton extends LitElement {
       --ds-button-font-family: var(--font-family-body);
       --ds-button-font-weight: var(--font-weight-medium);
       --ds-button-font-size: var(--font-size-md);
-      --ds-button-focus-ring: var(--color-border-focus);
-      --ds-button-focus-ring-width: var(--border-width-focus);
-      --ds-button-inverse-foreground: var(--color-inverse-link);
-      --ds-button-inverse-focus-ring: var(--color-inverse-focus);
       --ds-button-inverse-background-hover: var(--color-inverse-foreground);
-      --ds-button-inverse-hover-opacity: calc(var(--opacity-disabled) * 0.25);
-      --ds-button-min-target: var(--size-target-min);
+      /* the base token; the rule that reads it multiplies by 0.25 */
+      --ds-button-inverse-hover-opacity: var(--opacity-disabled);
       --ds-button-disabled-opacity: var(--opacity-disabled);
       --ds-button-transition: var(--motion-duration-fast);
       --ds-button-loading-spin: var(--motion-duration-loop);
@@ -141,8 +141,8 @@ export class DsButton extends LitElement {
       justify-content: center;
       inline-size: 100%;
       /* minTarget: locked; the floor at every size (WCAG 2.5.8) */
-      min-inline-size: var(--ds-button-min-target);
-      min-block-size: var(--ds-button-min-target);
+      min-inline-size: var(--size-target-min);
+      min-block-size: var(--size-target-min);
       margin: 0;
       padding-block: var(--ds-button-padding-block);
       padding-inline: var(--ds-button-padding-inline);
@@ -151,8 +151,8 @@ export class DsButton extends LitElement {
       font-family: var(--ds-button-font-family);
       font-size: var(--ds-button-font-size);
       font-weight: var(--ds-button-font-weight);
-      color: var(--ds-button-foreground);
-      background: var(--ds-button-background);
+      color: var(--color-action-primary-foreground);
+      background: var(--color-action-primary-background);
       cursor: pointer;
       appearance: none;
       -webkit-appearance: none;
@@ -189,31 +189,36 @@ export class DsButton extends LitElement {
       --ds-button-padding-block: var(--space-sm);
     }
 
-    /* background / backgroundHover / foreground: color.action.{variant}.*, locked */
-    :host([variant='primary']) {
-      --ds-button-background: var(--color-action-primary-background);
-      --ds-button-background-hover: var(--color-action-primary-background-hover);
-      --ds-button-foreground: var(--color-action-primary-foreground);
+    /* background / foreground: color.action.{variant}.*, locked (no hook) */
+    :host([variant='primary']) [data-part='container'] {
+      color: var(--color-action-primary-foreground);
+      background: var(--color-action-primary-background);
     }
-    :host([variant='secondary']) {
-      --ds-button-background: var(--color-action-secondary-background);
-      --ds-button-background-hover: var(--color-action-secondary-background-hover);
-      --ds-button-foreground: var(--color-action-secondary-foreground);
+    :host([variant='secondary']) [data-part='container'] {
+      color: var(--color-action-secondary-foreground);
+      background: var(--color-action-secondary-background);
     }
-    :host([variant='ghost']) {
-      --ds-button-background: var(--color-action-ghost-background);
-      --ds-button-background-hover: var(--color-action-ghost-background-hover);
-      --ds-button-foreground: var(--color-action-ghost-foreground);
+    :host([variant='ghost']) [data-part='container'] {
+      color: var(--color-action-ghost-foreground);
+      background: var(--color-action-ghost-background);
     }
-    :host([variant='danger']) {
-      --ds-button-background: var(--color-action-danger-background);
-      --ds-button-background-hover: var(--color-action-danger-background-hover);
-      --ds-button-foreground: var(--color-action-danger-foreground);
+    :host([variant='danger']) [data-part='container'] {
+      color: var(--color-action-danger-foreground);
+      background: var(--color-action-danger-background);
     }
 
-    /* backgroundHover: pointer hover and pressed state */
-    :host(:not([disabled]):not([loading])) [data-part='container']:is(:hover, :active) {
-      background: var(--ds-button-background-hover);
+    /* backgroundHover: color.action.{variant}.backgroundHover on pointer hover and pressed, locked */
+    :host([variant='primary']:not([disabled]):not([loading])) [data-part='container']:is(:hover, :active) {
+      background: var(--color-action-primary-background-hover);
+    }
+    :host([variant='secondary']:not([disabled]):not([loading])) [data-part='container']:is(:hover, :active) {
+      background: var(--color-action-secondary-background-hover);
+    }
+    :host([variant='ghost']:not([disabled]):not([loading])) [data-part='container']:is(:hover, :active) {
+      background: var(--color-action-ghost-background-hover);
+    }
+    :host([variant='danger']:not([disabled]):not([loading])) [data-part='container']:is(:hover, :active) {
+      background: var(--color-action-danger-background-hover);
     }
 
     /*
@@ -223,25 +228,25 @@ export class DsButton extends LitElement {
      * keep their own fills.
      */
     :host([inverse][variant='ghost']) [data-part='container'] {
-      color: var(--ds-button-inverse-foreground);
+      color: var(--color-inverse-link);
     }
     :host([inverse][variant='ghost']:not([disabled]):not([loading])) [data-part='container']:is(:hover, :active) {
       background: color-mix(
         in srgb,
-        var(--ds-button-inverse-background-hover) calc(var(--ds-button-inverse-hover-opacity) * 100%),
+        var(--ds-button-inverse-background-hover) calc(var(--ds-button-inverse-hover-opacity) * 0.25 * 100%),
         transparent
       );
     }
 
     /* focusRing / focusRingWidth: color.border.focus at border.width.focus, locked */
     [data-part='container']:focus-visible {
-      outline: var(--ds-button-focus-ring-width) solid var(--ds-button-focus-ring);
-      outline-offset: var(--ds-button-focus-ring-width);
+      outline: var(--border-width-focus) solid var(--color-border-focus);
+      outline-offset: var(--border-width-focus);
     }
 
     /* inverseFocusRing: the ring must read against the inverse surface, for every variant */
     :host([inverse]) [data-part='container']:focus-visible {
-      outline-color: var(--ds-button-inverse-focus-ring);
+      outline-color: var(--color-inverse-focus);
     }
 
     /* disabledOpacity: the whole button; colors are unchanged so the contrast math still holds */

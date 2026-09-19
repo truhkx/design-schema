@@ -33,7 +33,10 @@ function overridesToStyle(overrides: Partial<Record<StackOverridableBinding, Tok
 }
 
 export interface StackProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children'> {
-  /** Any components. Stack does not style its children; it only positions them. */
+  /**
+   * Any components. Stack does not style its children; it only positions them. Null and boolean
+   * children are skipped, as the platform skips them.
+   */
   children: ReactNode;
   /** Main axis. `horizontal` follows writing direction (start→end), not left→right. */
   direction?: StackDirection | undefined;
@@ -48,7 +51,7 @@ export interface StackProps extends Omit<ComponentPropsWithoutRef<'div'>, 'child
   /**
    * Main-axis distribution. It only shows where the main axis is larger than the content — a vertical
    * Stack needs a bounded height for it to mean anything, and Stack has no size of its own, so that is
-   * the caller's to give.
+   * the caller's to give. The four values are the whole set: `around` and `evenly` are deliberately left out.
    */
   justify?: StackJustify | undefined;
   /**
@@ -59,7 +62,10 @@ export interface StackProps extends Omit<ComponentPropsWithoutRef<'div'>, 'child
   /**
    * Landmark or list semantics when the group has meaning. For `ul`/`ol`, each child is wrapped in an
    * `li` that is `display: contents`, so the children stay the flex items and the gap is unchanged. One
-   * `li` per child as React counts children: a fragment holding two elements is one child, so pass an array.
+   * `li` per child as React counts children: a fragment holding two elements is one child, so pass an array;
+   * null and boolean children get no `li`. The wrapper carries `role="listitem"` and the list `role="list"`,
+   * because dropping `list-style` removes list semantics in some browsers. The list role wins over a
+   * consumer `role` on `ul`/`ol`; on the other elements a consumer `role` passes through.
    */
   element?: StackElement | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */

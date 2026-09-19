@@ -269,7 +269,6 @@ component:
       text: 'Resize {column}'
       params:
         column: { type: string, description: The column header text. }
-    empty: Nothing to show.
     scrollHint: Scroll sideways to see more columns
   a11y:
     role: treegrid

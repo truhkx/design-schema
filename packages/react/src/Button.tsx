@@ -63,7 +63,10 @@ function overridesToStyle(overrides: Partial<Record<ButtonOverridableBinding, To
 }
 
 export interface ButtonProps
-  extends Omit<ComponentPropsWithoutRef<'button'>, 'type' | 'disabled' | 'children' | 'aria-label' | 'onClick'> {
+  extends Omit<
+    ComponentPropsWithoutRef<'button'>,
+    'type' | 'disabled' | 'children' | 'aria-label' | 'onClick' | 'className' | 'style'
+  > {
   /** The button's text. Also its accessible name. */
   label: string;
   /**
@@ -170,10 +173,15 @@ export function Button({
   onTrack,
   'aria-expanded': ariaExpanded,
   'aria-describedby': describedBy,
-  className: _className,
-  style: _style,
-  ...rest
+  ...props
 }: ButtonProps & { ref?: Ref<HTMLButtonElement> | undefined }): ReactElement {
+  // `className` and `style` are not in ButtonProps; one that arrives through an untyped spread is
+  // still dropped, since `overrides` is the only per-instance styling.
+  const {
+    className: _className,
+    style: _style,
+    ...rest
+  } = props as typeof props & { className?: unknown; style?: unknown };
   const form = useFormContext();
   const loadingId = `ds-button${useId()}-loading`;
   const isDisabled = disabled || (form?.disabled ?? false);

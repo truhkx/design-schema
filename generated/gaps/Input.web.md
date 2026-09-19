@@ -45,3 +45,22 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Input: the constant longPressDelay is native-only and has no web meaning, so nothing reads it on web.
 - Input: the `helperSize` override is forwarded as Text `fontSize`, and `fontFamily`/`lineHeight` go both to the root hooks (label, input) and to Text overrides. The spec says fontFamily and lineHeight are 'forwarded the same way' but doesn't say whether the root hooks remain too; I kept both.
 - Input: `readOnly` is not a schema prop but is accepted from the native input props (the Behavior text mentions a read-only field). Disabled forces readOnly on, per 'aria-disabled + readOnly on web'.
+
+## 2026-09-18 20:12 — round 1
+
+- Input: the Behavior section says the Form's context entry (errors[name]) is treated 'exactly as a Form-set invalid' and also that the error slot shows that entry as a message. It doesn't say what an entry with an empty message means. I chose: the entry's presence marks the field invalid, and an empty message falls through to the invalid-derived copy (copy.required for an empty required field, else copy.invalid).
+- Input: `error: ''` is not defined. I treat it as unset, so the Form's entry or the invalid-derived copy shows, since 'Setting it implies invalid' would otherwise leave an empty role=alert.
+- Input: the spec doesn't say whether the Form's own entry counts in the field's validate() precedence. I left it out, because validate() is what the Form calls to produce that entry, and including it would make the Form re-read its own result.
+- Input: the Form's validate mode 'change' is not defined for blur. The field re-validates on blur in both 'blur' and 'change' modes, so a field left without typing still gets checked.
+- Input: the errorMessage and description parts are Text elements carrying data-part. The spec doesn't say whether data-part may sit on the composed child's root (the 'no style props reaching into it' rule only covers styling). I kept it on the Text, as in Fieldset.
+- Input: the constant longPressDelay is native-only and has no web meaning. I don't use it on web.
+
+## 2026-09-18 20:24 — round 2
+
+- Input: neither round-2 gate failure is Input's. A fresh axe-web run reports no violations for any of the 18 Input/React stories in light or dark (all remaining failures are Carousel, Feed, Listbox, Menu, Slider, Splitter and Tabs), and Input has no keyboard block, so generated/keyboard has no Input spec. I changed no code; the gates stay red until those components are fixed.
+- Input: the gate report for a single-component round lists every component's failures, so it doesn't show which ones the component under repair owns. I had to re-run the axe gate and filter by story title to show Input was clean.
+
+## 2026-09-18 20:30 — round 3
+
+- Input: round 3 got the same keyboard-run and axe failures as round 2, all in other components (keyboard: ActionSheet, Combobox, DatePicker, Listbox, Menu, Search, Slider, Tabs, Toast, Tooltip, Tree; axe: Carousel, Feed, Listbox, Menu, Slider, Splitter, Tabs). Input's code hasn't changed since round 2, when axe found no violations in its 18 stories and no Input keyboard spec existed, so I changed nothing.
+- Input: the repair loop judges one component by whole-suite gates, so a component that is already clean can't converge. The gates, or the runner's pass/fail check, should be limited to the component under repair (axe by story title prefix, keyboard by spec file name).

@@ -9,7 +9,7 @@ export type LinkTone = 'default' | 'inherit';
 /** copy.externalSuffix — appended to the accessible name of an external link. */
 const EXTERNAL_SUFFIX = ' (opens in new tab)';
 
-/** Overridable style hooks; see the `overrides` property. `color`, `colorHover`, `colorVisited`, `focusRing`, `focusRingWidth` and `focusRingRadius` are locked and excluded. */
+/** Overridable style hooks; see the `overrides` property. `color`, `colorHover`, `colorVisited`, `focusRing`, `focusRingWidth`, `focusRingRadius` and `focusRingOffset` are locked and excluded. */
 export type LinkOverridableBinding = 'underlineThickness' | 'underlineOffset' | 'externalIconGap' | 'transition';
 
 const HOOKS: Record<LinkOverridableBinding, string> = {
@@ -94,7 +94,7 @@ export class DsLink extends LitElement {
       color: inherit;
     }
 
-    /* focusRing, focusRingWidth, focusRingRadius: the ring follows the inline text box */
+    /* focusRing, focusRingWidth, focusRingRadius, focusRingOffset: the ring follows the inline text box */
     [data-part='anchor']:focus-visible {
       outline: var(--border-width-focus) solid var(--color-border-focus);
       outline-offset: var(--border-width-focus);

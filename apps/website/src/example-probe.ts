@@ -24,28 +24,50 @@ import { COMPONENTS, decodeArgs } from './example-args';
 import type { Example } from './examples';
 
 /**
- * Whether each example renders, in the order given.
+ * Each example's static markup, in the order given, or `null` where mounting it throws.
  *
  * React writes a component stack to `console.error` before rethrowing, and a page with a dozen
  * source-only stories would bury the build log in stacks for failures that are already handled. The
  * probe is the one place that is expected, so it is the one place that quiets it.
  */
-export function renderableExamples(name: string, examples: Example[]): boolean[] {
+function staticMarkup(name: string, examples: Example[]): (string | null)[] {
   const Component = COMPONENTS[name];
-  if (typeof Component !== 'function') return examples.map(() => false);
+  if (typeof Component !== 'function') return examples.map(() => null);
 
   const error = console.error;
   console.error = () => {};
   try {
     return examples.map((example) => {
       try {
-        renderToStaticMarkup(createElement(Component as ElementType, decodeArgs(example.args)));
-        return true;
+        return renderToStaticMarkup(createElement(Component as ElementType, decodeArgs(example.args)));
       } catch {
-        return false;
+        return null;
       }
     });
   } finally {
     console.error = error;
   }
+}
+
+/** Whether each example renders, in the order given. */
+export function renderableExamples(name: string, examples: Example[]): boolean[] {
+  return staticMarkup(name, examples).map((markup) => markup !== null);
+}
+
+/**
+ * Whether each example puts an `<h1>` on the page it is embedded in.
+ *
+ * A component page is a document with one level-1 heading — its title, the component's name. An
+ * example that renders a level-1 heading of its own (`Heading` with `level: "1"`, and any component
+ * given a `headingLevel` of 1) would make that two, so the page shows such an example as source
+ * rather than rendering it, and ./components/Examples.tsx says so where the render would have been.
+ *
+ * Asked the same way this module asks everything else — by rendering the example and looking
+ * at what came out, not by listing the components or the props that could do it. So a level-1
+ * `headingLevel` added to any example, on any page, is contained the day it lands, and no component
+ * has to render anything other than what its args say: a `Heading` at `level: "1"` still produces a
+ * real `<h1>` here, which is exactly why the page cannot embed one.
+ */
+export function pageHeadingExamples(name: string, examples: Example[]): boolean[] {
+  return staticMarkup(name, examples).map((markup) => markup !== null && /<h1[\s/>]/i.test(markup));
 }

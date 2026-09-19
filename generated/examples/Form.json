@@ -339,6 +339,7 @@
               "props": {
                 "label": "Email",
                 "name": "email",
+                "type": "email",
                 "required": true
               },
               "children": []
@@ -348,6 +349,7 @@
               "props": {
                 "label": "Phone",
                 "name": "phone",
+                "type": "tel",
                 "required": true
               },
               "children": []
@@ -374,9 +376,9 @@
         "validate": "blur"
       },
       "snippets": {
-        "react": "import { Form, Input, Button, Stack } from '@design-schema/react';\n\n<Form\n  name=\"profile\"\n  label=\"Profile details\"\n  actions={<Button label=\"Save profile\" type=\"submit\" />}\n  validate=\"blur\"\n>\n  <Stack gap=\"normal\">\n    <Input label=\"Full name\" name=\"fullName\" required />\n    <Input label=\"Email\" name=\"email\" required />\n    <Input label=\"Phone\" name=\"phone\" required />\n    <Input label=\"City\" name=\"city\" required />\n  </Stack>\n</Form>",
+        "react": "import { Form, Input, Button, Stack } from '@design-schema/react';\n\n<Form\n  name=\"profile\"\n  label=\"Profile details\"\n  actions={<Button label=\"Save profile\" type=\"submit\" />}\n  validate=\"blur\"\n>\n  <Stack gap=\"normal\">\n    <Input label=\"Full name\" name=\"fullName\" required />\n    <Input label=\"Email\" name=\"email\" type=\"email\" required />\n    <Input label=\"Phone\" name=\"phone\" type=\"tel\" required />\n    <Input label=\"City\" name=\"city\" required />\n  </Stack>\n</Form>",
         "lit": null,
-        "rn": "import { Button, Form, Input, Stack } from '@design-schema/rn';\n\n<Form name=\"profile\" label=\"Profile details\" validate=\"blur\" actions={<Button label=\"Save profile\" type=\"submit\" />}>\n  <Stack gap=\"loose\">\n    <Input label=\"Full name\" name=\"fullName\" required />\n    <Input label=\"Email\" name=\"email\" required />\n    <Input label=\"Phone\" name=\"phone\" required />\n    <Input label=\"City\" name=\"city\" required />\n  </Stack>\n</Form>",
+        "rn": "import { Button, Form, Input, Stack } from '@design-schema/rn';\n\n<Form name=\"profile\" label=\"Profile details\" validate=\"blur\" actions={<Button label=\"Save profile\" type=\"submit\" />}>\n  <Stack gap=\"loose\">\n    <Input label=\"Full name\" name=\"fullName\" required />\n    <Input label=\"Email\" name=\"email\" type=\"email\" required />\n    <Input label=\"Phone\" name=\"phone\" type=\"tel\" required />\n    <Input label=\"City\" name=\"city\" required />\n  </Stack>\n</Form>",
         "swift": null
       },
       "stories": {

@@ -28,3 +28,21 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Link: the doc asks for one story per enum value plus notable states, but external and download are booleans with only example stories (ExternalDestination, DownloadableFile) covering them; did not add separate External/Download stories.
 - Link: the web note's visually hidden pattern lists 'absolute, 1px box, clip-path inset 50%, white-space nowrap' but not margin/overflow/border; kept the standard margin:-1px, overflow:hidden, border:0 and dropped the legacy clip:rect.
 - Link: the `renders`/`renders-tone-*` derived scenarios say only `renders: true` with no observable to assert for tone; the tests check the anchor part exists, which cannot distinguish tones.
+
+## 2026-09-18 19:33 — round 1
+
+- Link: the spec requires a story per enum value plus one per example, but doesn't say whether ExternalDestination and DownloadableFile also sit inside a Text paragraph like the other two examples; I render them standalone.
+- Link: the click-fires-on-press scenario would navigate the test page with the Default href '/billing/history'; the spec doesn't say how a test stops that, so the test calls preventDefault on the retargeted click.
+- Link: the `tone: inherit` enum story must use the muted wrapper, but the spec doesn't say whether it keeps the Default args or takes the inside-muted-text args; ToneInherit keeps the Default href and label inside the muted sentence.
+- Link: whether the decorative ds-icon (no label) is hidden from assistive technology depends on Icon's own contract; the Link spec says 'no label (so it hides itself)' but doesn't state the attribute Lit's Icon uses, so Link passes only name and inline.
+
+## 2026-09-18 19:40 — round 2
+
+- Link: `label` is a required string prop and Link has no slot, so the common web-component form `<ds-link href>text</ds-link>` renders an unnamed anchor with no error; Feed and SidePanel stories did that and failed axe link-name. The doc should say plainly that Lit takes no slotted label content (and whether it should warn in development when label is empty, since the platform notes say it does not warn). I fixed the callers to use `label` and added no slot.
+- Link: the SidePanel stories put `aria-current="page"` on the ds-link host for a nav drawer's current item, but Link has no current prop and doesn't forward it to its shadow anchor, so the state never reached assistive technology. I removed the attribute. The doc should say whether Link supports a current-page state (as Breadcrumb's last item and navigation drawers need) or whether consumers render Text for the current item.
+- Link: the gate failures handed to this round were almost all other components (keyboard-run: Combobox, Tabs, Tree and others; axe: Tabs color-contrast, TreeGrid aria-hidden-focus and target-size); Link has no keyboard block and no Link story appears in either failure list, so I changed nothing for those.
+- Link: I couldn't re-run axe in this session (running the check needs approval I couldn't get), so the Feed and SidePanel link-name fix is untested in a browser; logs/link-axe.mjs runs axe over the Link, Feed and SidePanel stories only.
+
+## 2026-09-18 19:47 — round 3
+
+- Link: the gates run over the whole Lit package, so their red status can't be cleared by changes to Link alone. This round's axe and keyboard-run failures are all in other components (Tabs color-contrast, TreeGrid aria-hidden-focus and target-size, Feed aria-required-children, and the keyboard specs of 18 other components); none names Link. The last Link-related failure, Feed and SidePanel link-name, is gone after round 2's story fix. The gate harness should scope each component's round to that component's stories and specs, or say that other components' failures are out of scope.

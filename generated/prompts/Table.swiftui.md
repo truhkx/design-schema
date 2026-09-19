@@ -652,23 +652,26 @@ component:
         assistive technology with empty alternative text (`content: attr(data-label)
         / ""`, after a plain `content: attr(data-label)` fallback) as the text is
         already associated by the roles. The row header gets no data-label: it is
-        the row''s name. `responsive: scroll`: the table sits in a <div role="region"
-        aria-labelledby={captionId} tabindex="0"> with overflow-x auto, faded edges,
-        and the row-header column position: sticky. Sticky header: thead th position:
-        sticky top 0 with the shadow toggled by an IntersectionObserver sentinel.
-        rowActions cell has a visually-hidden columnheader "Actions", and carries
-        the same text as its data-label so the stacked layout labels the action row
-        like every other cell. With `selectable: single` the header''s selection position
-        is an empty <td role="cell"> with no part (an empty columnheader would have
-        no name). Button writes its own data-part, so the sortButton part has no hook
-        of its own; it is the Button inside the columnHeader. `copy.rowCount` is chosen
-        with Intl.PluralRules for `document.documentElement.lang`, falling back to
-        the runtime default (React Native has no document, so it always uses the runtime
-        default locale). Each theme''s CSS build stamps its own prose and content
-        widths into the container queries, so a theme with another content width ships
-        another stylesheet; no rebuilt number ever reaches a package built for a different
-        theme. Rows are keyed by id; no virtualization in this component (that is
-        DataGrid).'
+        the row''s name. A stacked cell is a block at the full row width, so the stacked
+        rules also reset `white-space` to normal: the width-min column sets `nowrap`
+        to shrink-wrap itself in the columnar layout, and left set it pushes its longest
+        line past the container on a phone. `responsive: scroll`: the table sits in
+        a <div role="region" aria-labelledby={captionId} tabindex="0"> with overflow-x
+        auto, faded edges, and the row-header column position: sticky. Sticky header:
+        thead th position: sticky top 0 with the shadow toggled by an IntersectionObserver
+        sentinel. rowActions cell has a visually-hidden columnheader "Actions", and
+        carries the same text as its data-label so the stacked layout labels the action
+        row like every other cell. With `selectable: single` the header''s selection
+        position is an empty <td role="cell"> with no part (an empty columnheader
+        would have no name). Button writes its own data-part, so the sortButton part
+        has no hook of its own; it is the Button inside the columnHeader. `copy.rowCount`
+        is chosen with Intl.PluralRules for `document.documentElement.lang`, falling
+        back to the runtime default (React Native has no document, so it always uses
+        the runtime default locale). Each theme''s CSS build stamps its own prose
+        and content widths into the container queries, so a theme with another content
+        width ships another stylesheet; no rebuilt number ever reaches a package built
+        for a different theme. Rows are keyed by id; no virtualization in this component
+        (that is DataGrid).'
     lit:
       tag: ds-table
       reflect:

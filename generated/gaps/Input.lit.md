@@ -41,3 +41,21 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Input: the constant `longPressDelay` is native-only and has no meaning on Lit; not used.
 - Input: `formResetCallback` isn't specified beyond the Forms convention; chose to restore the uncontrolled value to `defaultValue` and leave `invalid`/`error` untouched (the Form owns `invalid`, the consumer owns `error`).
 - Input: the scenario `disabled-stays-focusable-and-is-announced` expects `state: disabled` to be true but doesn't say which observable carries it on Lit; the test checks `aria-disabled="true"` on the inner input, plus that it has no native `disabled` attribute.
+
+## 2026-09-18 20:37 — round 1
+
+- Input: the Behavior section says `required` counts only the empty string as empty (whitespace passes), but the scenarios never test it, which is how the previous Lit build shipped a trim(). Chose the doc's rule; a `required-whitespace-passes` scenario would lock it in.
+- Input: the error slot shows copy.required only 'while invalid is true' for an empty required field, while validationMessage/validity always follow the full precedence. So an untouched empty required field reports valueMissing with copy.required through ElementInternals but shows nothing on screen. Chose to implement both as written; the doc could state outright that the visible message and validationMessage are allowed to differ.
+- Input: the Lit notes say the browser/type step is reported with copy.invalid. They do not say which ValidityState flags to forward to setValidity. The web note's 'specific flags' remark is about setCustomValidity on a native input and does not apply to Lit, where the inner input never gets a custom error. Chose to forward the inner input's whole ValidityState with the copy.invalid message.
+- Input: helperSize is realised by forwarding `overrides.helperSize` to Text's fontSize, but the default helper size comes from Text's own `size="sm"`. The doc does not say which Text `size` the description and error use when no override is set. Chose size="sm", which matches helperSize's default token font.size.sm.
+- Input: the anatomy names the parts but the doc never says whether Lit exposes them as `part` attributes as well as `data-part`, and the overrides contract says no ::part for styling. Kept part="label|description|field|errorMessage" for addressing, as the package convention names them verbatim.
+- Input: the `error-is-identified` scenario's `state: invalid` has no platform mapping. Chose the host's reflected `invalid` property plus aria-invalid="true" on the inner input.
+- Input: the `focus-is-reported` scenario's `focus: field` does not say whether the host or the inner input is focused on Lit. Focused the inner field and asserted the retargeted native `focus` on the host.
+
+## 2026-09-18 20:44 — round 2
+
+- Input: round-2 gate failures (keyboard-run, axe) name no Input story or spec. keyboard-run fails in other components' generated/keyboard/*.lit.spec.ts and Input declares no keyboard block. The axe lists name NumberInput, Tabs, TreeGrid and others but no Input/Lit story. Because the axe spec runs every story in one test, a failure elsewhere fails the gate for every component. Made no Input change and did not edit other components; the gate report should give per-component results so a regeneration job is not rejected for failures outside its component.
+
+## 2026-09-18 20:50 — round 3
+
+- Input: rounds 2 and 3 reported identical keyboard-run and axe failures, and none of them is in Input. The axe results were written after the last Input.ts edit and name no Input/Lit story, although all 17 Input stories are in the index the gate ran. Input declares no keyboard block, so no Input keyboard spec exists. Both gates are whole-suite: axe.spec.ts puts every story in one test, and keyboard-run runs every component's spec. So a component's regeneration job fails on other components' failures and can't pass by changing its own code. Made no change; the gates need to be scoped to the component under generation, or report per component, for this retry loop to converge.

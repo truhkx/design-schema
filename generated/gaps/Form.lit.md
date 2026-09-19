@@ -44,3 +44,31 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Form: the doc gives no text for an item whose field has an empty message AND an empty `label`; I fall back to the field `name`.
 - Form: the behavior scenario `label-names-the-form-landmark` is checked through host `role`/`aria-label` attributes rather than a computed accessible name; the lit tests have no accessible-name helper.
 - Form: example `long-form-validated-on-blur` names the fields but not input types (phone/email); stories use the default Input type for them, following the `given` literally.
+
+## 2026-09-18 22:16 — round 1
+
+- Form: the generic Overrides section says every overridable binding becomes a --ds-form-* hook and lists errorSummaryGap as overridable, but the errorSummaryGap binding says Form forwards it to both summary Stacks' `overrides.gap` and has no hook. I followed the binding: it stays in FormOverridableBinding but has no hook and is only forwarded.
+- Form: the Lit event names `submit` and `invalid` are native event names, which conflicts with the rule against dispatching a CustomEvent under a native name. I kept them because platforms.lit names them. The shadow <form>'s native submit is non-composed and preventDefault'd, and a field's native `invalid` (from ElementInternals.checkValidity) does not bubble, so neither reaches a listener on ds-form. A consumer listening in the capture phase on a field's ancestor can still see a native `invalid`.
+- Form: the doc doesn't say whether the summary returns when blur or change validation finds an error after a successful submission. I reset the failed-submission state on success, so the summary stays hidden until the next failed submit, and `validate: submit` stops re-validating on blur and change.
+- Form: the doc doesn't say whether Form or the field makes a field show its own error when blur or change validation runs. Form calls field.checkValidity() and relies on the field to render its error.
+- Form: a single bare action in the flex-column container would stretch to full width. The doc says a single action renders bare but gives no alignment. I made the actions slot a start-aligned flex row, which is a layout choice the doc doesn't specify.
+- Form: the scenario `label-names-the-form-landmark` expects role form with name 'Sign in'. Role and aria-label are plain attributes on the host; the <form> in the shadow root carries no accessible name. The doc doesn't say which element is the landmark on Lit, so the shadow <form> is also exposed as an unnamed form in the accessibility tree.
+- Form: the sign-in examples say 'in a Stack' but give no gap for it. I used gap=normal for the field Stack in the stories.
+
+## 2026-09-18 22:39 — round 2
+
+- Form: the axe gate can't pass for any Lit component. tests/gates/axe.spec.ts checks every Lit story in light and dark, one at a time (about 840 stories x 2 modes x ~1.3 s, roughly 36 minutes), against a 900 s limit. Form's 10 stories were axe-clean in both modes when run alone, and so was the failed-submit error-summary state. No Form change can make the gate pass.
+- Form: the keyboard-run gate fails on other components' specs (Tabs, SegmentedControl, Tree, Toast, Select, Combobox, Menu, Dialog). Run one at a time, the same 20 tests fail every time, so this isn't load flakiness. Form has no keyboard block and no keyboard spec. I left those components alone as out of scope for this Form job.
+- Form (carried from round 1): the generic Overrides section says errorSummaryGap is a --ds-form-* hook, but the binding says it is forwarded to the summary Stacks' `overrides.gap` with no hook. I followed the binding.
+- Form (carried from round 1): the Lit events `submit` and `invalid` share names with native events, which conflicts with the rule against using native event names. I kept them because platforms.lit names them.
+- Form (carried from round 1): the doc doesn't say whether the error summary comes back when blur or change validation finds an error after a successful submission. I reset the failed-submission state on success, so it doesn't.
+- Form (carried from round 1): a single bare action would stretch to full width in the flex column, and the doc gives no alignment. I made the actions slot a start-aligned flex row.
+
+## 2026-09-18 22:56 — round 3
+
+- Form: the axe gate fails only on other components' stories (DataGrid, Feed, Listbox, NumberInput, Select, Slider, Tabs, TreeGrid). logs/playwright.json has no Form/Lit, Input/Lit, Button/Lit, Link/Lit, Stack/Lit, Text/Lit or demo entries, and Form's 10 stories passed axe in both modes, including the failed-submit summary state. The gate covers the whole Storybook, so a Form job can't turn it green.
+- Form: the keyboard-run gate fails only in specs for other components (Tabs, SegmentedControl, Tree, Toast, Select, Combobox, Menu, Dialog, DatePicker, Feed, Listbox, Popover, Search, SidePanel, Slider, Stepper, Toolbar, Tooltip). Run one at a time, they fail every time. Form has no keyboard block and no spec.
+- Form (carried): the generic Overrides section says errorSummaryGap is a --ds-form-* hook, but the binding says it is forwarded to the summary Stacks' `overrides.gap` with no hook. I followed the binding.
+- Form (carried): the Lit events `submit` and `invalid` share names with native events, which conflicts with the rule against using native event names. I kept them because platforms.lit names them.
+- Form (carried): the doc doesn't say whether the error summary comes back when blur or change validation finds an error after a successful submission. I reset the failed-submission state on success, so it doesn't.
+- Form (carried): a single bare action would stretch to full width in the flex column, and the doc gives no alignment. I made the actions slot a start-aligned flex row.

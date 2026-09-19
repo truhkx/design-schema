@@ -37,7 +37,7 @@ async function openDrawer(page: Page, key: string) {
   await hamburger(page).focus();
   await page.keyboard.press(key);
   await expect(drawer(page)).toBeVisible();
-  await expect(drawer(page)).toHaveClass(/ds-side-panel__panel--visible/);
+  await expect(drawer(page)).toHaveClass(/ds-side-panel--visible/);
 }
 
 test.describe('site header — below the breakpoint', () => {
@@ -126,7 +126,7 @@ test.describe('site header — above the breakpoint', () => {
     await expect(homeLink(page)).toHaveAttribute('href', '/');
   });
 
-  test('the nav spans the row and spaces its links evenly', async ({ page }) => {
+  test('groups the nav links and holds the theme control at the end', async ({ page }) => {
     await openHome(page);
     const nav = page.getByRole('navigation', { name: 'Main' });
     const navBox = await nav.boundingBox();
@@ -137,14 +137,20 @@ test.describe('site header — above the breakpoint', () => {
       }),
     );
     expect(navBox).not.toBeNull();
-    // Wider than the links need: the nav fills the space between the lockup and the theme control.
+    expect(linkBoxes.length).toBeGreaterThan(1);
+    // One group: every gap between the links is the same single `layout.gap.loose` (16px calm-precise,
+    // 30px warm-friendly), not the ~170px that `space-evenly` across the whole row used to leave.
+    const gaps: number[] = [];
+    for (let i = 1; i < linkBoxes.length; i += 1) gaps.push(linkBoxes[i]!.left - linkBoxes[i - 1]!.right);
+    for (const gap of gaps) {
+      expect(gap).toBeLessThanOrEqual(40);
+      expect(Math.abs(gap - gaps[0]!)).toBeLessThanOrEqual(2);
+    }
+    // The group sits at the start of the nav, beside the lockup...
+    expect(linkBoxes[0]!.left - navBox!.x).toBeLessThanOrEqual(2);
+    // ...and the nav still takes the row's slack, which is what keeps the theme control hard right.
     const linksWidth = linkBoxes.reduce((sum, box) => sum + (box.right - box.left), 0);
     expect(navBox!.width).toBeGreaterThan(linksWidth * 2);
-    // space-evenly: the gap before the first link, between each pair, and after the last are equal.
-    const edges = [navBox!.x, ...linkBoxes.flatMap((box) => [box.left, box.right]), navBox!.x + navBox!.width];
-    const gaps: number[] = [];
-    for (let i = 0; i < edges.length; i += 2) gaps.push(edges[i + 1]! - edges[i]!);
-    for (const gap of gaps) expect(Math.abs(gap - gaps[0]!)).toBeLessThanOrEqual(2);
   });
 
   test('the header is dark on a light page', async ({ page }) => {

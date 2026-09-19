@@ -1,27 +1,63 @@
 ---
 /**
- * The Patterns section's landing page.
+ * The Patterns section: `site/src/content/docs/patterns`, rendered.
  *
- * The same placeholder-with-a-real-route as ./foundations/index.astro: the sidebar links here, so
- * the route exists. The content is `site/src/content/docs/patterns/*.md` — the compositions that
- * span components (forms, empty states, page layouts) — rendered here by a later job.
+ * The same shape as ../foundations/index.astro and for the same reason, more so: the folder holds
+ * one document today, so an index page would be a single link to a single page. It is rendered
+ * inline, under its own `<h2>`, and the page grows a second section the moment the folder grows a
+ * second document — the list comes from the collection, not from anything written here.
+ *
+ * No prose is authored here. Every word below the section's own heading comes from the Markdown,
+ * through the `docs` collection, with the transforms ../_prose.ts describes.
  */
-import { Heading, Stack, Text } from '@design-schema/react';
+import { getCollection } from 'astro:content';
+import { Breadcrumb, Heading, Stack, Text } from '@design-schema/react';
 
 import DocsLayout from '../../../layouts/DocsLayout.astro';
+import { siteNav } from '../../../nav';
+import { anchoredIds, componentSlugs, OWN_PAGE_IDS, proseHtml, sectionDocs } from '../_prose';
+import '../../../styles/docs-prose.css';
 
+/** The page's own words: the section's name and its summary. */
 const COPY = {
+  docs: 'Docs',
   title: 'Patterns',
-  body:
+  description:
     'How the components compose: the arrangements that span more than one of them, and the rules ' +
-    'that keep those arrangements accessible. These pages render site/src/content/docs/patterns; ' +
-    'until they do, that folder is the reference.',
+    'that keep those arrangements accessible.',
 };
+
+const entries = await getCollection('docs');
+const context = { componentSlugs: componentSlugs(siteNav().docs), anchored: anchoredIds(entries) };
+
+const sections = sectionDocs(entries, 'patterns')
+  .filter((doc) => !OWN_PAGE_IDS.has(doc.id))
+  .map((doc) => ({ id: doc.id, title: doc.data.title, description: doc.data.description, html: proseHtml(doc, context) }));
+if (sections.length === 0) {
+  throw new Error('No documents in site/src/content/docs/patterns — the Patterns page would be empty.');
+}
 ---
 
-<DocsLayout title={`${COPY.title} — Design Schema`} description={COPY.body}>
-  <Stack direction="vertical" gap="loose">
-    <Heading level={1}>{COPY.title}</Heading>
-    <Text>{COPY.body}</Text>
+<DocsLayout title={`${COPY.title} — Design Schema`} description={COPY.description}>
+  <Stack direction="vertical" gap="section">
+    <Stack direction="vertical" gap="normal">
+      <Breadcrumb items={[{ label: COPY.docs, href: '/docs' }, { label: COPY.title }]} />
+      <Heading level={1}>{COPY.title}</Heading>
+      <Text tone="muted">{COPY.description}</Text>
+    </Stack>
+
+    {
+      sections.map((section) => (
+        /* A plain `section`: an anchor target and a grouping, not a landmark — see
+           ../foundations/index.astro, which renders its documents the same way. */
+        <section id={section.id}>
+          <Stack direction="vertical" gap="normal">
+            <Heading level={2}>{section.title}</Heading>
+            <Text tone="muted">{section.description}</Text>
+            <div class="ds-prose" set:html={section.html} />
+          </Stack>
+        </section>
+      ))
+    }
   </Stack>
 </DocsLayout>

@@ -38,3 +38,29 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Input: the error-slot rule ('a message only while invalid is true: copy.required for an empty required field, else copy.invalid') doesn't say where the RN Form's per-field message (FormContext errors[name]) comes in the order. Chose error prop, then the Form's message, then the invalid-derived copy.
 - Input: constant longPressDelay has no token expression, so 'logic reads each constant through its token expression' can't apply; kept a named module constant (500, marked literal-ok) matching Pressable's delayLongPress.
 - Input: behavior scenario disabled-stays-focusable-and-is-announced keeps only `state: disabled` for rn, but the rn note says the field is not focusable on native (editable={false}). The test asserts accessibilityState.disabled and that RNTL treats the field as disabled; the scenario name contradicts native behavior and should be narrowed or renamed for rn.
+
+## 2026-09-18 20:58 — round 1
+
+- Input: the generic rule says `disabled` sets accessibilityState.disabled 'in addition to `disabled`', but TextInput has no `disabled` prop and the rn notes prescribe `editable={false}`; chose editable={false} + accessibilityState.disabled, so the field is not focusable on native as the notes say.
+- Input: the rn behavior test 'disabled-stays-focusable-and-is-announced' asserts only accessibilityState.disabled (plus RNTL's toBeDisabled, which reads editable={false}); the scenario name still says 'stays focusable', which is false on native. The rn narrowing is only in the description.
+- Input: the doc says the Form's context entry (errors[name]) is treated 'exactly as a Form-set invalid' yet also that the error slot shows 'the Form's context entry' second in order; chose to display the entry's string as the message (between `error` and the invalid-derived copy) rather than recomputing copy.invalid/copy.required from it.
+- Input: `validate()` ignores the Form's own errors[name] mark (otherwise a Form-set mark would never clear itself); the doc's precedence list (error → required → invalid) doesn't say whether the Form's mark counts as `invalid` inside validation.
+- Input: the Form context's `disabled` (form?.disabled) is also honoured alongside FieldsetContext's; the doc names only Fieldset as a source of group-disabled on native.
+- Input: returnKeyType/submitBehavior/onSubmitEditing (Enter moves to the next Form field or submits on the last) are not in the schema's rn props or keyboard block; kept from the existing Form contract. The doc should say whether Enter-to-advance is Input's or Form's responsibility.
+- Input: autoCapitalize='none' and autoCorrect={false} for email/password/url are not in the schema (SwiftUI's props list .textInputAutocapitalization/.autocorrectionDisabled but rn's does not); kept as the obvious type mapping.
+- Input: TEXT_CONTENT_TYPE for number/search/text is 'none' and search keeps keyboardType 'default' ('web-search' exists on iOS); the doc's keyboardType mapping lists only email/number/tel/url.
+- Input: labelWeight is realised through Text weight='medium' with the override forwarded as Text's fontWeight, and the label Text follows `size`; the schema gives labelWeight part: label but doesn't say that on native the label is a composed Text (it says so only for description/error).
+- Input: the iOS announcement and the Android live region are suppressed when the Form has an error summary (form.errorSummary), to avoid a double announcement; the Input doc doesn't mention this interaction.
+
+## 2026-09-18 21:04 — round 2
+
+- Input: the rn rules say disabled is conveyed by `accessibilityState.disabled`, but react-native-web 0.21 ignores accessibilityState, so on the Storybook/axe surface the dimmed label and value read as enabled text and fail color-contrast (Disabled story, light). Chose to mirror the state as `aria-disabled` on the TextInput and on the root group View (the disabledOpacity group); axe treats text under an aria-disabled ancestor as disabled. The doc's rn notes should say the aria-* mirror is required on react-native-web and that it sits on the group, not just the field.
+- Input: `aria-disabled` on the root group is a generic element carrying a deprecated-on-generic ARIA 1.2 attribute; axe allows it as global. The doc names the group as the disabledOpacity target but doesn't say whether the group itself carries the disabled state.
+- Input: the axe gate prints only violation counts, so the two failing nodes (assumed: label text and field value) could not be confirmed; running the browser script needed approval that wasn't available in this session.
+- NumberInput (not this job): its Disabled story fails the same color-contrast check for the same reason and needs the same aria-disabled mirror.
+
+## 2026-09-18 21:09 — round 3
+
+- Input: no Input story remains in the axe-rn failure list after round 2's aria-disabled mirror; the gate still fails on other components (Toolbar, Tree, TreeGrid, DataGrid, NumberInput/Search/DatePicker Disabled, Fieldset Disabled and Disabled Group, Demo/Preferences, Patterns/SettingsPage), which are outside this job.
+- Fieldset (affects Input's composition story): Fieldset Disabled and Disabled Group each still have 1 color-contrast node in light mode, most likely the legend: Fieldset dims the legend/description with opacity.disabled but, like Input before round 2, conveys disabled only through accessibilityState, which react-native-web 0.21 ignores. The docs should require the aria-disabled mirror on the dimmed group for every component that dims with opacity.disabled (Input, NumberInput, Search, DatePicker, Fieldset).
+- Input: the rn notes and generic rules name `accessibilityState.disabled` as the way to convey disabled, but on react-native-web only the aria-* form reaches the DOM; the doc doesn't say this, so every dimmed disabled story fails axe color-contrast until the component mirrors it by hand.

@@ -50,6 +50,12 @@ describe('Expander', () => {
     act(() => (s.trigger()).focus());
     expect(s.trigger()).toHaveFocus();
   });
+  test('controlled-open-change-reports-controlled', async () => {
+    const s = setup({"open": false});
+    s.rerender({"open": true});
+    expect(s.events.onToggle).toHaveBeenCalled();
+    expect(s.trigger()).toHaveAttribute('aria-expanded', 'true');
+  });
   test('renders', async () => {
     const s = setup({"open": true});
     expect(s.root()).not.toBeNull();

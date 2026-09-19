@@ -7,50 +7,44 @@
   --demo-link-focus-ring: var(--color-border-focus);
   --demo-link-focus-ring-width: var(--border-width-focus);
   --demo-link-focus-ring-radius: var(--radius-sm);
+  --demo-link-focus-ring-offset: var(--border-width-focus);
   --demo-link-transition: var(--motion-duration-fast);
 
   display: inline;
-  color: var(--demo-link-color);
+  color: inherit;
   font: inherit;
   text-decoration: underline;
   text-decoration-thickness: var(--demo-link-underline-thickness);
   text-underline-offset: var(--demo-link-underline-offset);
-  border-radius: var(--demo-link-focus-ring-radius);
-  cursor: pointer;
+  transition: color var(--demo-link-transition) var(--motion-easing-standard);
 }
 
-/* tone → default uses the link colors; inherit takes the surrounding text color and skips color, colorHover and colorVisited. */
+/* tone → default uses the link colors. inherit applies none of color, colorHover or colorVisited:
+   the anchor keeps the inherited color (the root rule above), and the underline and icon follow it. */
 .demo-link--tone-default {
   --demo-link-color: var(--color-link);
   --demo-link-color-hover: var(--color-link-hover);
   --demo-link-color-visited: var(--color-link-visited);
-}
-.demo-link--tone-inherit {
-  --demo-link-color: currentColor;
-  --demo-link-color-hover: currentColor;
-  --demo-link-color-visited: currentColor;
+  color: var(--demo-link-color);
 }
 
-/* colorVisited (web and Lit only) */
-.demo-link:visited {
+/* colorVisited (web and Lit only). Declared before :hover so hover wins on a visited link. */
+.demo-link--tone-default:visited {
   color: var(--demo-link-color-visited);
 }
 
-/* colorHover: pointer hover only, not :active. */
-.demo-link:hover {
+/* colorHover: plain pointer :hover, not :active, with no (hover: hover) guard. */
+.demo-link--tone-default:hover {
   color: var(--demo-link-color-hover);
 }
 
-/* focus-visible (locked): the ring follows the text box, not the line box. Never removed. */
+/* focus-visible (locked): the radius applies only here, so a resting inline anchor is not rounded. */
 .demo-link:focus-visible {
   outline: var(--demo-link-focus-ring-width) solid var(--demo-link-focus-ring);
-  outline-offset: var(--demo-link-focus-ring-width);
+  outline-offset: var(--demo-link-focus-ring-offset);
+  border-radius: var(--demo-link-focus-ring-radius);
 }
 
-/* transition: color on hover, with motion.easing.standard; removed under reduced motion. */
-.demo-link {
-  transition: color var(--demo-link-transition) var(--motion-easing-standard);
-}
 @media (prefers-reduced-motion: reduce) {
   .demo-link {
     transition: none;
@@ -71,7 +65,6 @@
   margin: -1px;
   padding: 0;
   overflow: hidden;
-  clip: rect(0 0 0 0);
   clip-path: inset(50%);
   white-space: nowrap;
   border: 0;

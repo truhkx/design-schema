@@ -1,0 +1,29 @@
+/*
+ * The docs landing page's two card rows: the ten roadmap phases, and the three docs sections.
+ *
+ * The one thing no component in the 51 can do for itself — equal columns. Stack is a flex line, so a
+ * wrapped row of cards sizes each card by its contents and the row comes out ragged; a card row of
+ * a component list and a card row of section summaries both want a grid. Same rule, and the same
+ * track width, as ../components/examples.css: layout only, no colour, no border, no type, and every
+ * value a token.
+ */
+
+.ds-docs-index__grid {
+  display: grid;
+  /*
+   * A card about a navigation column wide — half the prose measure, the ratio the docs shell and the
+   * example grid already use. Three across in the docs column at desktop width, one on a phone, and
+   * `min(100%, …)` is what keeps the single column from being wider than the viewport there.
+   */
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, calc(var(--layout-max-width-prose) / 2)), 1fr)); /* literal-ok: a ratio, not a dimension */
+  gap: var(--layout-gap-loose);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ds-docs-index__cell {
+  /* A long component name or summary wraps inside its card rather than stretching the track. */
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}

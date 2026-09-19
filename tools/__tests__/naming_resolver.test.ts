@@ -825,9 +825,10 @@ describe('enum value renames', () => {
       expect(rn).toContain("kind = 'cta',");
       expect(rn).toContain("kind === 'ghost' && inverse");
       const lit = moved['lit/CtaButton.ts'] as string;
-      // The regenerated Lit element sets custom properties on the host, as the `destructive` case below does.
-      expect(lit).toMatch(/:host\(\[kind='cta'\]\) \{\s+--ds-button-background: var\(--color-action-primary-background\);/);
-      expect(lit).toMatch(/:host\(\[kind='destructive'\]\) \{\s+--ds-button-background: var\(--color-action-danger-background\);/);
+      // The regenerated Lit element styles the container part per variant: the background/foreground
+      // bindings are locked in the schema (no hook), so the variant reads its tokens directly.
+      expect(lit).toMatch(/:host\(\[kind='cta'\]\) \[data-part='container'\] \{[^}]*background: var\(--color-action-primary-background\);/);
+      expect(lit).toMatch(/:host\(\[kind='destructive'\]\) \[data-part='container'\] \{[^}]*background: var\(--color-action-danger-background\);/);
       expect(lit).toContain("accessor kind: CtaButtonVariant = 'cta';");
     });
   });
@@ -1174,7 +1175,7 @@ describe("the job's gate: the committed Button output, renamed", () => {
     const button = readFileSync(join(src, 'CtaButton.ts'), 'utf8');
     expect(button).toContain("@customElement('nimbus-cta-button')");
     expect(button).toContain('export class NimbusCtaButton extends LitElement');
-    expect(button).toMatch(/--nimbus-button-background/);
+    expect(button).toMatch(/--nimbus-button-radius/);
     expect(button).toContain("this.setAttribute('data-ds', 'Button')");
     // Card names the tag in a selector, ActionSheet renders it: both follow the rename.
     const card = readFileSync(join(src, 'Card.ts'), 'utf8');

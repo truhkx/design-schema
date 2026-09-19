@@ -32,9 +32,19 @@ export type Nav = { top: TopItem[]; docs: NavGroup[] };
  * Naming demo joined them with job 523. It is a page about the components rather than one of them,
  * so it belongs beside Foundations and Patterns rather than in a phase group — and a comparison
  * nobody can find proves nothing, which is the whole point of that page.
+ *
+ * Spec sheet joined them when the two sections started rendering their Markdown. It is a Foundations
+ * document like the other four, but a generated one — every token value and every style binding for
+ * a whole theme, ten times the size of the rest of the folder — so it reads on a route of its own
+ * (src/pages/docs/foundations/spec-sheet.astro) instead of inline on the section page, and a route
+ * the navigation cannot reach is a page nobody finds. `OWN_PAGE_IDS` in
+ * src/pages/docs/_prose.ts is where that split is decided; `FIXED_ROUTES` in tools/site_routes.ts is
+ * the other hand-written half of this list and wants the same route, so the deploy gate checks it
+ * was built.
  */
 export const DOCS_SECTIONS: readonly TopItem[] = [
   { label: 'Foundations', href: '/docs/foundations' },
+  { label: 'Spec sheet', href: '/docs/foundations/spec-sheet' },
   { label: 'Patterns', href: '/docs/patterns' },
   { label: 'Naming demo', href: '/docs/naming-demo' },
 ];

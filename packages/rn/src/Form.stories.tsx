@@ -69,8 +69,8 @@ export const LongFormValidatedOnBlur: Story = {
     <Form {...args} actions={<Button label="Save profile" type="submit" />}>
       <Stack gap="loose">
         <Input label="Full name" name="fullName" required />
-        <Input label="Email" name="email" required />
-        <Input label="Phone" name="phone" required />
+        <Input label="Email" name="email" type="email" required />
+        <Input label="Phone" name="phone" type="tel" required />
         <Input label="City" name="city" required />
       </Stack>
     </Form>

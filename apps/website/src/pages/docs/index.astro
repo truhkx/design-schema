@@ -2,38 +2,126 @@
 /**
  * The docs landing page — the destination of the header's "Docs" link and the hero's call to action.
  *
- * Deliberately thin: this job (505) builds the docs section's *navigation*, and the pages it points
- * at are jobs 506 (the component page template) and later. What this page owns is the entry point —
- * without it the site's most-followed link is a 404 — so it says where the section's three kinds of
- * page are and lets the sidebar do the navigating.
+ * It used to be three links and a count, on the reasoning that the sidebar does the navigating. The
+ * sidebar does, but a landing page that says less than the navigation beside it is a screenful of
+ * nothing: an adopter arriving here cannot see what the system contains without opening ten
+ * disclosures. So this page shows it — the ten roadmap phases with their components, and the two
+ * prose sections with the documents each one holds.
+ *
+ * Nothing on it is written twice. The phases and their components are `generated/nav.json`, which
+ * tools/site_nav.ts writes from the schema; the documents are the `docs` collection's own titles and
+ * descriptions, read from the Markdown in site/src/content/docs. A 52nd component or a new
+ * foundations document appears here on the next build, in the right place, without this file
+ * changing.
  */
-import { Heading, Link, Stack, Text } from '@design-schema/react';
+import { getCollection } from 'astro:content';
+import { Card, Heading, Link, Stack, Text } from '@design-schema/react';
 
 import DocsLayout from '../../layouts/DocsLayout.astro';
-import { DOCS_SECTIONS, siteNav } from '../../nav';
+import { componentRoute, DOCS_SECTIONS, siteNav } from '../../nav';
+import { docHref, sectionDocs } from './_prose';
+import '../../styles/docs-index.css';
 
+/** The page's own words: the section names, and the one sentence that says what the docs are. */
 const COPY = {
   title: 'Docs',
   intro:
     'Every component in Design Schema is specified in one Markdown doc, and these pages render that ' +
     'schema: what a component is for, the props it takes, and the accessibility contract it is ' +
-    'generated against. Use the navigation to reach a component; the two sections below cover the ' +
-    'tokens and the patterns the components are built from.',
+    'generated against. Foundations and Patterns render the prose from the same source — the tokens ' +
+    'the components are built from, and the arrangements that span more than one of them.',
+  components: 'Components',
+  foundations: 'Foundations',
+  patterns: 'Patterns',
+  also: 'Also in these docs',
 };
 
 const { docs } = siteNav();
 const componentCount = docs.reduce((total, group) => total + group.components.length, 0);
+
+const entries = await getCollection('docs');
+/** One list entry per document: where it is read on this site, its title, and its own summary. */
+const documents = (folder: 'foundations' | 'patterns') =>
+  sectionDocs(entries, folder).map((doc) => ({
+    href: docHref(doc, folder),
+    title: doc.data.title,
+    description: doc.data.description,
+  }));
+
+const foundations = documents('foundations');
+const patterns = documents('patterns');
+
+/**
+ * The naming demo. It is a docs destination but neither a component nor one of the two prose
+ * sections, so it is named here the way the sidebar names it — from `DOCS_SECTIONS`, the one place
+ * this site writes the docs section routes down.
+ */
+const naming = DOCS_SECTIONS.find((section) => section.href === '/docs/naming-demo');
 ---
 
 <DocsLayout title={`${COPY.title} — Design Schema`} description={COPY.intro}>
-  <Stack direction="vertical" gap="loose">
-    <Heading level={1}>{COPY.title}</Heading>
-    <Text>{COPY.intro}</Text>
-    <Stack direction="vertical" gap="tight" align="start">
-      {DOCS_SECTIONS.map((section) => <Link href={section.href} label={section.label} />)}
+  <Stack direction="vertical" gap="section">
+    <Stack direction="vertical" gap="normal">
+      <Heading level={1}>{COPY.title}</Heading>
+      <Text>{COPY.intro}</Text>
     </Stack>
-    <Text tone="muted">
-      {`${componentCount} components in ${docs.length} phases, grouped in the order the generator composes them.`}
-    </Text>
+
+    <Stack direction="vertical" gap="normal">
+      <Heading level={2}>{COPY.components}</Heading>
+      <Text tone="muted">
+        {`${componentCount} components in ${docs.length} phases, grouped in the order the generator composes them.`}
+      </Text>
+      {/* A grid rather than a wrapped Stack: equal columns are the one thing no component in the 51
+          does for itself (../../styles/docs-index.css). */}
+      <ul class="ds-docs-index__grid">
+        {
+          docs.map((group) => (
+            <li class="ds-docs-index__cell">
+              <Card heading={group.phase} headingLevel="3" surface="subtle" inset="md">
+                <Stack direction="vertical" gap="tight" align="start">
+                  {group.components.map((component) => (
+                    <Link href={componentRoute(component.slug)} label={component.name} />
+                  ))}
+                </Stack>
+              </Card>
+            </li>
+          ))
+        }
+      </ul>
+    </Stack>
+
+    {
+      [
+        { heading: COPY.foundations, items: foundations },
+        { heading: COPY.patterns, items: patterns },
+      ].map((section) => (
+        <Stack direction="vertical" gap="normal">
+          {/* The heading is text, not a link: the site's link rule (../../styles/links.css) drops
+              the underline until hover, so a linked heading would have no affordance at rest. Every
+              document below it links into the section page, and the sidebar links the section
+              itself. */}
+          <Heading level={2}>{section.heading}</Heading>
+          <Stack direction="vertical" gap="loose">
+            {section.items.map((item) => (
+              <Stack direction="vertical" gap="tight" align="start">
+                <Link href={item.href} label={item.title} />
+                <Text size="sm" tone="muted">
+                  {item.description}
+                </Text>
+              </Stack>
+            ))}
+          </Stack>
+        </Stack>
+      ))
+    }
+
+    {
+      naming === undefined ? null : (
+        <Stack direction="vertical" gap="tight" align="start">
+          <Text tone="muted">{COPY.also}</Text>
+          <Link href={naming.href} label={naming.label} />
+        </Stack>
+      )
+    }
   </Stack>
 </DocsLayout>

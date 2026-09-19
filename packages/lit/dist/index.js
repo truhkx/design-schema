@@ -323,7 +323,7 @@ new class extends _identity {
 		* Which glyph. The set is deliberately small and grows only when a component
 		* needs a shape; `info`, `success`, `warning` and `danger` are the four status
 		* shapes (circle-i, circle-check, triangle-!, octagon-x) so tone is never
-		* carried by color alone.
+		* carried by color alone. `name` has no default; the Default story renders `check`.
 		*/
 		#A = _init_name$12(this);
 		/** Rendered size, from the font-size scale so icons line up with text of the same size. */
@@ -337,8 +337,8 @@ new class extends _identity {
 		/**
 		* Size the glyph at 1em of the surrounding text and align it to the text
 		* baseline, ignoring `size`. For icons inside Text, Link and Button labels.
-		* With no surrounding Text the glyph takes whatever font size it inherits,
-		* and still ignores `size`.
+		* `font-size: inherit` always has a surrounding size to read, so there is no
+		* fallback here (the `font.size.md` fallback is React Native only).
 		*/
 		get size() {
 			return this.#B;
@@ -932,6 +932,8 @@ let _init_overrides$46;
 let _init_extra_overrides$46;
 let _init_fullText;
 let _init_extra_fullText;
+let _init_consumerTitle;
+let _init_extra_consumerTitle;
 /** Overridable style hooks; see the `overrides` property. `color` is locked and excluded. */
 const HOOKS$46 = {
 	fontFamily: "--ds-text-font-family",
@@ -968,14 +970,16 @@ function isTextElement(value) {
 * reserved for error and destructive messaging, paired with explicit wording so
 * colour never carries the meaning alone.
 *
+* `part="text"` is the anatomy name only; styling comes through the
+* `--ds-text-*` hooks and `overrides`, never `::part`.
+*
 * @slot - The text content. Inline formatting (emphasis, links) is allowed; block elements are not.
-* @csspart text - The rendered `<p>` or `<span>`.
 */
 let _DsText;
 new class extends _identity {
 	static [class DsText extends LitElement {
 		static {
-			({e: [_init_size$11, _init_extra_size$11, _init_weight, _init_extra_weight, _init_tone$6, _init_extra_tone$6, _init_align$3, _init_extra_align$3, _init_truncate, _init_extra_truncate, _init_element$3, _init_extra_element$3, _init_overrides$46, _init_extra_overrides$46, _init_fullText, _init_extra_fullText], c: [_DsText, _initClass$48]} = applyDecs2311(this, [customElement("ds-text")], [
+			({e: [_init_size$11, _init_extra_size$11, _init_weight, _init_extra_weight, _init_tone$6, _init_extra_tone$6, _init_align$3, _init_extra_align$3, _init_truncate, _init_extra_truncate, _init_element$3, _init_extra_element$3, _init_overrides$46, _init_extra_overrides$46, _init_fullText, _init_extra_fullText, _init_consumerTitle, _init_extra_consumerTitle], c: [_DsText, _initClass$48]} = applyDecs2311(this, [customElement("ds-text")], [
 				[
 					property({
 						type: String,
@@ -1033,6 +1037,11 @@ new class extends _identity {
 					state(),
 					1,
 					"fullText"
+				],
+				[
+					state(),
+					1,
+					"consumerTitle"
 				]
 			], 0, void 0, LitElement));
 		}
@@ -1110,14 +1119,22 @@ new class extends _identity {
 			this.#G = v;
 		}
 		#H = (_init_extra_overrides$46(this), _init_fullText(this, ""));
-		/** Text edits inside existing nodes do not fire `slotchange`; this keeps `title` current. */
+		/** The consumer's `title` attribute on the host, forwarded to the `text` part unchanged. */
 		get fullText() {
 			return this.#H;
 		}
 		set fullText(v) {
 			this.#H = v;
 		}
-		textObserver = void _init_extra_fullText(this);
+		#I = (_init_extra_fullText(this), _init_consumerTitle(this));
+		/** Text edits inside existing nodes do not fire `slotchange`; this keeps `title` current. */
+		get consumerTitle() {
+			return this.#I;
+		}
+		set consumerTitle(v) {
+			this.#I = v;
+		}
+		textObserver = void _init_extra_consumerTitle(this);
 		connectedCallback() {
 			super.connectedCallback();
 			this.setAttribute("data-ds", "Text");
@@ -1126,7 +1143,9 @@ new class extends _identity {
 			this.textObserver.observe(this, {
 				childList: true,
 				characterData: true,
-				subtree: true
+				subtree: true,
+				attributes: true,
+				attributeFilter: ["title"]
 			});
 		}
 		disconnectedCallback() {
@@ -1138,15 +1157,20 @@ new class extends _identity {
 		}
 		render() {
 			const tag = isTextElement(this.element) ? TAGS$1[this.element] : TAGS$1.p;
-			const title = this.truncate && this.fullText !== "" ? this.fullText : void 0;
-			return html$1`<${tag} class="text" part="text" title=${ifDefined(title)}
+			const title = this.consumerTitle ?? (this.truncate && this.fullText !== "" ? this.fullText : void 0);
+			return html$1`<${tag} class="text" part="text" data-part="text" title=${ifDefined(title)}
       ><slot @slotchange=${this.syncFullText}></slot></${tag}
     >`;
 		}
-		/** The host's flattened, whitespace-collapsed textContent; `title` is omitted when it is empty. */
+		/**
+		* The host's flattened, whitespace-collapsed textContent (`title` is omitted when it is
+		* empty), and the consumer's own `title` attribute on the host.
+		*/
 		syncFullText() {
 			const next = (this.textContent ?? "").replace(/\s+/g, " ").trim();
 			if (next !== this.fullText) this.fullText = next;
+			const consumer = this.getAttribute("title") ?? void 0;
+			if (consumer !== this.consumerTitle) this.consumerTitle = consumer;
 		}
 		applyOverrides() {
 			for (const binding of Object.keys(HOOKS$46)) {
@@ -2095,7 +2119,8 @@ let _init_extra_overrides$43;
 * Overridable style hooks; see the `overrides` property. The accessibility-bearing
 * bindings — `background`, `backgroundHover`, `foreground`, `focusRing`,
 * `focusRingWidth`, `inverseForeground`, `inverseFocusRing`, `minTarget` and
-* `spinnerStroke` — are locked and excluded (they keep their CSS hooks).
+* `spinnerStroke` — are locked and excluded; of those, only `spinnerStroke` keeps
+* a CSS hook (`--ds-button-spinner-stroke`), the rest read their tokens directly.
 */
 const HOOKS$43 = {
 	iconGap: "--ds-button-icon-gap",
@@ -2454,12 +2479,15 @@ new class extends _identity {
 		delegatesFocus: true
 	};
 	styles = css`
+    /*
+     * Hooks for the overridable bindings, plus spinnerStroke (locked, but its
+     * binding keeps the hook). The other locked bindings (background,
+     * backgroundHover, foreground, focusRing, focusRingWidth, inverseForeground,
+     * inverseFocusRing, minTarget) have no hook: their rules read the token.
+     */
     :host {
       display: inline-flex;
       vertical-align: middle;
-      --ds-button-background: var(--color-action-primary-background);
-      --ds-button-background-hover: var(--color-action-primary-background-hover);
-      --ds-button-foreground: var(--color-action-primary-foreground);
       --ds-button-icon-gap: var(--space-2);
       --ds-button-padding-inline: var(--space-md);
       --ds-button-padding-block: var(--space-sm);
@@ -2467,13 +2495,9 @@ new class extends _identity {
       --ds-button-font-family: var(--font-family-body);
       --ds-button-font-weight: var(--font-weight-medium);
       --ds-button-font-size: var(--font-size-md);
-      --ds-button-focus-ring: var(--color-border-focus);
-      --ds-button-focus-ring-width: var(--border-width-focus);
-      --ds-button-inverse-foreground: var(--color-inverse-link);
-      --ds-button-inverse-focus-ring: var(--color-inverse-focus);
       --ds-button-inverse-background-hover: var(--color-inverse-foreground);
-      --ds-button-inverse-hover-opacity: calc(var(--opacity-disabled) * 0.25);
-      --ds-button-min-target: var(--size-target-min);
+      /* the base token; the rule that reads it multiplies by 0.25 */
+      --ds-button-inverse-hover-opacity: var(--opacity-disabled);
       --ds-button-disabled-opacity: var(--opacity-disabled);
       --ds-button-transition: var(--motion-duration-fast);
       --ds-button-loading-spin: var(--motion-duration-loop);
@@ -2493,8 +2517,8 @@ new class extends _identity {
       justify-content: center;
       inline-size: 100%;
       /* minTarget: locked; the floor at every size (WCAG 2.5.8) */
-      min-inline-size: var(--ds-button-min-target);
-      min-block-size: var(--ds-button-min-target);
+      min-inline-size: var(--size-target-min);
+      min-block-size: var(--size-target-min);
       margin: 0;
       padding-block: var(--ds-button-padding-block);
       padding-inline: var(--ds-button-padding-inline);
@@ -2503,8 +2527,8 @@ new class extends _identity {
       font-family: var(--ds-button-font-family);
       font-size: var(--ds-button-font-size);
       font-weight: var(--ds-button-font-weight);
-      color: var(--ds-button-foreground);
-      background: var(--ds-button-background);
+      color: var(--color-action-primary-foreground);
+      background: var(--color-action-primary-background);
       cursor: pointer;
       appearance: none;
       -webkit-appearance: none;
@@ -2541,31 +2565,36 @@ new class extends _identity {
       --ds-button-padding-block: var(--space-sm);
     }
 
-    /* background / backgroundHover / foreground: color.action.{variant}.*, locked */
-    :host([variant='primary']) {
-      --ds-button-background: var(--color-action-primary-background);
-      --ds-button-background-hover: var(--color-action-primary-background-hover);
-      --ds-button-foreground: var(--color-action-primary-foreground);
+    /* background / foreground: color.action.{variant}.*, locked (no hook) */
+    :host([variant='primary']) [data-part='container'] {
+      color: var(--color-action-primary-foreground);
+      background: var(--color-action-primary-background);
     }
-    :host([variant='secondary']) {
-      --ds-button-background: var(--color-action-secondary-background);
-      --ds-button-background-hover: var(--color-action-secondary-background-hover);
-      --ds-button-foreground: var(--color-action-secondary-foreground);
+    :host([variant='secondary']) [data-part='container'] {
+      color: var(--color-action-secondary-foreground);
+      background: var(--color-action-secondary-background);
     }
-    :host([variant='ghost']) {
-      --ds-button-background: var(--color-action-ghost-background);
-      --ds-button-background-hover: var(--color-action-ghost-background-hover);
-      --ds-button-foreground: var(--color-action-ghost-foreground);
+    :host([variant='ghost']) [data-part='container'] {
+      color: var(--color-action-ghost-foreground);
+      background: var(--color-action-ghost-background);
     }
-    :host([variant='danger']) {
-      --ds-button-background: var(--color-action-danger-background);
-      --ds-button-background-hover: var(--color-action-danger-background-hover);
-      --ds-button-foreground: var(--color-action-danger-foreground);
+    :host([variant='danger']) [data-part='container'] {
+      color: var(--color-action-danger-foreground);
+      background: var(--color-action-danger-background);
     }
 
-    /* backgroundHover: pointer hover and pressed state */
-    :host(:not([disabled]):not([loading])) [data-part='container']:is(:hover, :active) {
-      background: var(--ds-button-background-hover);
+    /* backgroundHover: color.action.{variant}.backgroundHover on pointer hover and pressed, locked */
+    :host([variant='primary']:not([disabled]):not([loading])) [data-part='container']:is(:hover, :active) {
+      background: var(--color-action-primary-background-hover);
+    }
+    :host([variant='secondary']:not([disabled]):not([loading])) [data-part='container']:is(:hover, :active) {
+      background: var(--color-action-secondary-background-hover);
+    }
+    :host([variant='ghost']:not([disabled]):not([loading])) [data-part='container']:is(:hover, :active) {
+      background: var(--color-action-ghost-background-hover);
+    }
+    :host([variant='danger']:not([disabled]):not([loading])) [data-part='container']:is(:hover, :active) {
+      background: var(--color-action-danger-background-hover);
     }
 
     /*
@@ -2575,25 +2604,25 @@ new class extends _identity {
      * keep their own fills.
      */
     :host([inverse][variant='ghost']) [data-part='container'] {
-      color: var(--ds-button-inverse-foreground);
+      color: var(--color-inverse-link);
     }
     :host([inverse][variant='ghost']:not([disabled]):not([loading])) [data-part='container']:is(:hover, :active) {
       background: color-mix(
         in srgb,
-        var(--ds-button-inverse-background-hover) calc(var(--ds-button-inverse-hover-opacity) * 100%),
+        var(--ds-button-inverse-background-hover) calc(var(--ds-button-inverse-hover-opacity) * 0.25 * 100%),
         transparent
       );
     }
 
     /* focusRing / focusRingWidth: color.border.focus at border.width.focus, locked */
     [data-part='container']:focus-visible {
-      outline: var(--ds-button-focus-ring-width) solid var(--ds-button-focus-ring);
-      outline-offset: var(--ds-button-focus-ring-width);
+      outline: var(--border-width-focus) solid var(--color-border-focus);
+      outline-offset: var(--border-width-focus);
     }
 
     /* inverseFocusRing: the ring must read against the inverse surface, for every variant */
     :host([inverse]) [data-part='container']:focus-visible {
-      outline-color: var(--ds-button-inverse-focus-ring);
+      outline-color: var(--color-inverse-focus);
     }
 
     /* disabledOpacity: the whole button; colors are unchanged so the contrast math still holds */
@@ -3378,7 +3407,7 @@ new class extends _identity {
 		get displayedError() {
 			if (this.error) return this.error;
 			if (!this.invalid) return "";
-			return this.required && this.currentValue.trim() === "" ? COPY_REQUIRED$7(this.label) : COPY_INVALID$9(this.label);
+			return this.required && this.currentValue === "" ? COPY_REQUIRED$7(this.label) : COPY_INVALID$9(this.label);
 		}
 		/** helperSize, fontFamily and lineHeight forwarded to the description and error Text. */
 		get textOverrides() {
@@ -3395,12 +3424,12 @@ new class extends _identity {
 			if (this.isDisabled) return;
 			const next = input.value;
 			if (this.value === void 0) this.editedValue = next;
-			else this.requestUpdate();
 			this.dispatchEvent(new CustomEvent("change", {
 				detail: { value: next },
 				bubbles: true,
 				composed: true
 			}));
+			if (this.value !== void 0) this.requestUpdate();
 		}
 		applyOverrides() {
 			for (const binding of Object.keys(HOOKS$41)) {
@@ -3421,7 +3450,7 @@ new class extends _identity {
 			const anchor = this.inputEl ?? void 0;
 			this.internals.setFormValue(value);
 			if (this.error) this.internals.setValidity({ customError: true }, this.error, anchor);
-			else if (this.required && value.trim() === "") this.internals.setValidity({ valueMissing: true }, COPY_REQUIRED$7(this.label), anchor);
+			else if (this.required && value === "") this.internals.setValidity({ valueMissing: true }, COPY_REQUIRED$7(this.label), anchor);
 			else if (this.invalid) this.internals.setValidity({ customError: true }, COPY_INVALID$9(this.label), anchor);
 			else if (anchor && !anchor.validity.valid) this.internals.setValidity(anchor.validity, COPY_INVALID$9(this.label), anchor);
 			else this.internals.setValidity({});
@@ -3582,7 +3611,7 @@ let _init_overrides$40;
 let _init_extra_overrides$40;
 /** copy.externalSuffix — appended to the accessible name of an external link. */
 const EXTERNAL_SUFFIX = " (opens in new tab)";
-/** Overridable style hooks; see the `overrides` property. `color`, `colorHover`, `colorVisited`, `focusRing`, `focusRingWidth` and `focusRingRadius` are locked and excluded. */
+/** Overridable style hooks; see the `overrides` property. `color`, `colorHover`, `colorVisited`, `focusRing`, `focusRingWidth`, `focusRingRadius` and `focusRingOffset` are locked and excluded. */
 const HOOKS$40 = {
 	underlineThickness: "--ds-link-underline-thickness",
 	underlineOffset: "--ds-link-underline-offset",
@@ -3787,7 +3816,7 @@ new class extends _identity {
       color: inherit;
     }
 
-    /* focusRing, focusRingWidth, focusRingRadius: the ring follows the inline text box */
+    /* focusRing, focusRingWidth, focusRingRadius, focusRingOffset: the ring follows the inline text box */
     [data-part='anchor']:focus-visible {
       outline: var(--border-width-focus) solid var(--color-border-focus);
       outline-offset: var(--border-width-focus);
@@ -4072,9 +4101,10 @@ new class extends _identity {
       flex-direction: row;
     }
 
-    /* gap: layout.gap.{gap} */
+    /* gap: layout.gap.{gap}. none reads the token, not the hook: no gap is in
+       effect, so overrides and consumer CSS on --ds-stack-gap are no-ops there. */
     :host([gap='none']) {
-      --ds-stack-gap: var(--layout-gap-none);
+      gap: var(--layout-gap-none);
     }
     :host([gap='tight']) {
       --ds-stack-gap: var(--layout-gap-tight);
@@ -4165,14 +4195,18 @@ let _init_extra_errors;
 * unselected).
 */
 /** Overridable style hooks; see the `overrides` property. `errorSummaryText` and `errorSummaryBackground` are locked and excluded. */
+/** `errorSummaryGap` has no hook: it is forwarded to the summary Stacks' `overrides.gap`. */
 const HOOKS$38 = {
 	gap: "--ds-form-gap",
 	errorSummaryBorder: "--ds-form-error-summary-border",
 	errorSummaryBorderWidth: "--ds-form-error-summary-border-width",
 	errorSummaryRadius: "--ds-form-error-summary-radius",
-	errorSummaryPadding: "--ds-form-error-summary-padding",
-	errorSummaryGap: "--ds-form-error-summary-gap"
+	errorSummaryPadding: "--ds-form-error-summary-padding"
 };
+/** A null, empty-string or empty-array value contributes no key. */
+function isEmptyValue(value) {
+	return value === null || value === void 0 || value === "" || Array.isArray(value) && value.length === 0;
+}
 /** copy.summaryHeading, plural by `count`. */
 const COPY_SUMMARY_HEADING = {
 	one: "1 problem with this form",
@@ -4330,15 +4364,18 @@ new class extends _identity {
 			this.#F = v;
 		}
 		#G = (_init_extra_errorSummary(this), _init_overrides$38(this));
-		/** Field name -> message, for fields that have failed validation, in document order. */
+		/**
+		* Field name -> message for the error summary: document order at the failed submit, with errors that
+		* blur or change validation finds later appended at the end. Empty until a submission fails.
+		*/
 		get overrides() {
 			return this.#G;
 		}
 		set overrides(v) {
 			this.#G = v;
 		}
-		#H = (_init_extra_overrides$38(this), _init_errors(this, {}));
-		/** Once a submission has failed, fields re-validate on blur/change even in `submit` mode. */
+		#H = (_init_extra_overrides$38(this), _init_errors(this, /* @__PURE__ */ new Map()));
+		/** Once a submission has failed, fields re-validate on blur/change even in `submit` mode; a successful one clears it. */
 		get errors() {
 			return this.#H;
 		}
@@ -4346,6 +4383,8 @@ new class extends _identity {
 			this.#H = v;
 		}
 		hasFailedSubmission = (_init_extra_errors(this), false);
+		/** The plural locale, read at the failed submit (nearest `lang` ancestor, else the runtime default). */
+		summaryLocale;
 		/** Fields and actions this Form disabled itself, so re-enabling never touches one already disabled by the consumer. */
 		disabledByForm = /* @__PURE__ */ new Set();
 		/** Re-syncs disabled propagation when fields are added or removed; observes `childList` only, never the attributes it writes. */
@@ -4391,8 +4430,8 @@ new class extends _identity {
 			}
 		}
 		render() {
-			const errorEntries = Object.entries(this.errors);
-			const showSummary = this.errorSummary && errorEntries.length > 0;
+			const errorEntries = Array.from(this.errors);
+			const showSummary = this.errorSummary && this.hasFailedSubmission && errorEntries.length > 0;
 			return html`
       <form
         part="container"
@@ -4409,11 +4448,13 @@ new class extends _identity {
 		}
 		renderSummary(errorEntries) {
 			const fieldsByName = new Map(this.queryFields().map((field) => [field.name, field]));
+			const gapRef = this.overrides?.errorSummaryGap;
+			const stackOverrides = gapRef === void 0 ? void 0 : { gap: gapRef };
 			return html`
       <div part="errorSummary" data-part="errorSummary" role="alert" tabindex="-1">
-        <ds-stack gap="tight">
+        <ds-stack gap="tight" .overrides=${stackOverrides}>
           <ds-text element="p" weight="semibold" tone="danger">${this.summaryHeading(errorEntries.length)}</ds-text>
-          <ds-stack element="ul" gap="tight">
+          <ds-stack element="ul" gap="tight" .overrides=${stackOverrides}>
             ${errorEntries.map(([name, message]) => {
 				const field = fieldsByName.get(name);
 				const text = message || field?.label || name;
@@ -4432,8 +4473,7 @@ new class extends _identity {
     `;
 		}
 		summaryHeading(count) {
-			const locale = this.closest("[lang]")?.getAttribute("lang") || void 0;
-			const form = new Intl.PluralRules(locale).select(count) === "one" ? "one" : "other";
+			const form = new Intl.PluralRules(this.summaryLocale).select(count) === "one" ? "one" : "other";
 			return COPY_SUMMARY_HEADING[form].replace("{count}", String(count));
 		}
 		/** Validate every field and, only if all pass, dispatch `submit` with the collected values. */
@@ -4441,24 +4481,25 @@ new class extends _identity {
 			if (this.disabled) return;
 			const fields = this.queryFields();
 			this.assignFieldIds(fields);
-			const errors = {};
+			const errors = /* @__PURE__ */ new Map();
 			const values = {};
 			let firstInvalid;
 			for (const field of fields) {
 				if (field.disabled) continue;
 				if (field.checkValidity()) {
 					const value = field.currentValue;
-					if (value !== null && value !== void 0 && value !== "") values[field.name] = value;
+					if (!isEmptyValue(value)) values[field.name] = value;
 				} else {
-					errors[field.name] = field.validationMessage ?? "";
+					errors.set(field.name, field.validationMessage ?? "");
 					firstInvalid ??= field;
 				}
 			}
 			this.errors = errors;
 			if (firstInvalid !== void 0) {
 				this.hasFailedSubmission = true;
+				this.summaryLocale = this.closest("[lang]")?.getAttribute("lang") || void 0;
 				this.dispatchEvent(new CustomEvent("invalid", {
-					detail: { errors },
+					detail: { errors: Object.fromEntries(errors) },
 					bubbles: true,
 					composed: true
 				}));
@@ -4466,6 +4507,7 @@ new class extends _identity {
 				else firstInvalid.focus();
 				return;
 			}
+			this.hasFailedSubmission = false;
 			this.dispatchEvent(new CustomEvent("submit", {
 				detail: { values },
 				bubbles: true,
@@ -4509,12 +4551,16 @@ new class extends _identity {
 			event.preventDefault();
 			this.queryFields().find((candidate) => candidate.name === name)?.focus();
 		}
+		/**
+		* Runs the field's own validation (the field shows its error). The summary only tracks it after a failed
+		* submission: a fixed field drops out, a still-listed one keeps its place, a newly invalid one is appended.
+		*/
 		validateField(field) {
-			const next = {};
 			const invalid = !field.disabled && !field.checkValidity();
-			for (const candidate of this.queryFields()) if (candidate === field) {
-				if (invalid) next[field.name] = field.validationMessage ?? "";
-			} else if (candidate.name in this.errors) next[candidate.name] = this.errors[candidate.name] ?? "";
+			if (!this.hasFailedSubmission) return;
+			const next = new Map(this.errors);
+			if (invalid) next.set(field.name, field.validationMessage ?? "");
+			else next.delete(field.name);
 			this.errors = next;
 		}
 		/** The collected field an event came from, or `null`. */
@@ -4598,7 +4644,6 @@ new class extends _identity {
       --ds-form-error-summary-border-width: var(--border-width-thin);
       --ds-form-error-summary-radius: var(--radius-md);
       --ds-form-error-summary-padding: var(--space-md);
-      --ds-form-error-summary-gap: var(--layout-gap-tight);
     }
 
     :host([hidden]) {
@@ -4611,6 +4656,12 @@ new class extends _identity {
       gap: var(--ds-form-gap);
       margin: 0;
       padding: 0;
+    }
+
+    /* A bare single action keeps its own width instead of stretching across the column. */
+    slot[name='actions'] {
+      display: flex;
+      align-items: flex-start;
     }
 
     /* errorSummaryBackground / errorSummaryText: color.background.subtle / color.foreground.danger, locked */
@@ -4626,11 +4677,6 @@ new class extends _identity {
     [data-part='errorSummary']:focus-visible {
       outline: var(--border-width-focus) solid var(--color-border-focus);
       outline-offset: var(--border-width-focus);
-    }
-
-    /* errorSummaryGap reaches the composed Stacks through their documented hook. */
-    [data-part='errorSummary'] ds-stack {
-      --ds-stack-gap: var(--ds-form-error-summary-gap);
     }
   `;
 	constructor() {
@@ -4684,7 +4730,7 @@ const HOOKS$37 = {
 * put a Stack inside for that. Padding, background, border and radius all come
 * from reflected attributes on `:host`, so nothing but the slot renders in the
 * shadow root. `element` swaps nothing there: the host is the element, so the
-* prop exists for API parity and sets a role through `ElementInternals` for the
+* prop exists for API parity and sets a plain `role` attribute on the host for the
 * values whose implicit role is unconditional (`article`, `aside`, `main`,
 * `nav`); `div`, `section`, `header` and `footer` carry no role. Prefer
 * Landmark for page regions.
@@ -4773,6 +4819,10 @@ new class extends _identity {
 				]
 			], 0, void 0, LitElement));
 		}
+		constructor(...args) {
+			super(...args);
+			_init_extra_overrides$37(this);
+		}
 		/** Padding on all sides, from the layout inset presets. Use `insetBlock`/`insetInline` when the axes differ. */
 		#A = _init_inset$1(this, "none");
 		/**
@@ -4824,7 +4874,7 @@ new class extends _identity {
 		/**
 		* Element to render. The host is always the element in the DOM, so this swaps
 		* nothing in the shadow root; `article`, `aside`, `main` and `nav` set their
-		* implicit role on the host through `ElementInternals`, and `div`, `section`,
+		* implicit role on the host as a plain `role` attribute, and `div`, `section`,
 		* `header` and `footer` set none. Sectioning values only when the box is a
 		* semantic region; prefer Landmark for page regions.
 		*/
@@ -4849,18 +4899,17 @@ new class extends _identity {
 		set overrides(v) {
 			this.#H = v;
 		}
-		internals = void _init_extra_overrides$37(this);
-		constructor() {
-			super();
-			this.internals = this.attachInternals();
-		}
 		connectedCallback() {
 			super.connectedCallback();
 			this.setAttribute("data-ds", "Box");
 			this.setAttribute("data-part", "surface");
 		}
 		willUpdate(changed) {
-			if (changed.has("element")) this.internals.role = SECTIONING_ROLES[this.element] ?? null;
+			if (changed.has("element")) {
+				const role = SECTIONING_ROLES[this.element];
+				if (role === void 0) this.removeAttribute("role");
+				else if (this.getAttribute("role") !== role) this.setAttribute("role", role);
+			}
 			if (changed.has("overrides") || changed.has("border") || changed.has("radius")) this.applyOverrides();
 		}
 		render() {
@@ -4897,14 +4946,15 @@ new class extends _identity {
       --ds-box-border: var(--color-border);
       --ds-box-border-width: var(--border-width-thin);
       --ds-box-radius: var(--radius-none);
-      --ds-box-background: transparent;
       padding-block: var(--ds-box-padding-block);
       padding-inline: var(--ds-box-padding-inline);
-      background: var(--ds-box-background);
+      /* surface="none" (and the default) is the literal transparent, not read through the hook. */
+      background-color: transparent;
       border-style: solid;
       border-width: 0;
       border-color: var(--ds-box-border);
-      border-radius: var(--ds-box-radius);
+      /* radius="none" is written out as radius.none, not read through the hook. */
+      border-radius: var(--radius-none);
     }
 
     :host([hidden]) {
@@ -4968,9 +5018,15 @@ new class extends _identity {
     }
 
     /* background: color.background.{surface}, locked — keeps its hook (the CSS escape hatch) but is
-       not in the overrides type. surface="none" is the literal transparent, so the parent's shows through. */
+       not in the overrides type. surface="none" is the literal transparent, so the parent's shows through,
+       and neither overrides nor consumer CSS on --ds-box-background paints it. */
     :host([surface='none']) {
-      --ds-box-background: transparent;
+      background-color: transparent;
+    }
+    :host([surface='default']),
+    :host([surface='subtle']),
+    :host([surface='strong']) {
+      background-color: var(--ds-box-background);
     }
     :host([surface='default']) {
       --ds-box-background: var(--color-background);
@@ -4987,9 +5043,15 @@ new class extends _identity {
       border-width: var(--ds-box-border-width);
     }
 
-    /* radius: radius.{radius} */
+    /* radius: radius.{radius}. Presence-gated: none means no rounded corners, so the hook is not read there. */
     :host([radius='none']) {
-      --ds-box-radius: var(--radius-none);
+      border-radius: var(--radius-none);
+    }
+    :host([radius='sm']),
+    :host([radius='md']),
+    :host([radius='lg']),
+    :host([radius='full']) {
+      border-radius: var(--ds-box-radius);
     }
     :host([radius='sm']) {
       --ds-box-radius: var(--radius-sm);
@@ -39224,8 +39286,6 @@ let _init_endMessage;
 let _init_extra_endMessage;
 let _init_overrides;
 let _init_extra_overrides;
-let _init_newItemsButtonEl;
-let _init_extra_newItemsButtonEl;
 /**
 * One article. `content` and `actions` are anything `lit-html` can render
 * (a string, a `TemplateResult`, a `Node`) — the platform's stand-in for
@@ -39235,17 +39295,21 @@ let _init_extra_newItemsButtonEl;
 /** Detail carried by the `item-visible` CustomEvent. */
 /**
 * Overridable style hooks; see the `overrides` property. `unreadBorder`,
-* `unreadBorderWidth`, `timestampColor`, `endMessageColor`, `focusRing` and
-* `focusRingWidth` are locked and excluded.
+* `unreadBorderWidth`, `timestampColor`, `endMessageColor`, `emptyStateColor`,
+* `focusRing` and `focusRingWidth` are locked and excluded.
 */
 const HOOKS = {
 	itemGap: "--ds-feed-item-gap",
 	articleInset: "--ds-feed-article-inset",
+	articleBodyGap: "--ds-feed-article-body-gap",
 	timestampSize: "--ds-feed-timestamp-size",
 	newItemsOffset: "--ds-feed-new-items-offset",
+	newItemsLayer: "--ds-feed-new-items-layer",
 	loadingInset: "--ds-feed-loading-inset",
 	endMessageInset: "--ds-feed-end-message-inset",
 	endMessageSize: "--ds-feed-end-message-size",
+	emptyStateInset: "--ds-feed-empty-state-inset",
+	emptyStateSize: "--ds-feed-empty-state-size",
 	fontFamily: "--ds-feed-font-family"
 };
 /** copy.showNew */
@@ -39271,7 +39335,11 @@ const COPY_DAYS_AGO = (n) => `${n} d ago`;
 const MINUTE_MS = 6e4;
 /** How long an article must stay 50% visible before `item-visible` fires ("a moment"). */
 const VISIBLE_DWELL_MS = 1e3;
-/** justNow under a minute, minutesAgo/hoursAgo/daysAgo up to a week, else the absolute date in the user's locale. */
+/**
+* justNow under a minute (and for a future timestamp), minutesAgo/hoursAgo/daysAgo
+* up to a week, else the absolute date in the user's locale. Counts are floored, so
+* 90 seconds is `1 min ago`. An unparseable timestamp is shown as given.
+*/
 function formatRelativeTime(iso) {
 	const time = new Date(iso).getTime();
 	if (Number.isNaN(time)) return iso;
@@ -39284,9 +39352,10 @@ function formatRelativeTime(iso) {
 	if (days < 7) return COPY_DAYS_AGO(days);
 	return new Intl.DateTimeFormat(void 0, { dateStyle: "medium" }).format(time);
 }
+/** The `<time>` title; an unparseable timestamp gets no title. */
 function formatAbsoluteTime(iso) {
 	const time = new Date(iso).getTime();
-	return Number.isNaN(time) ? iso : new Intl.DateTimeFormat(void 0, {
+	return Number.isNaN(time) ? void 0 : new Intl.DateTimeFormat(void 0, {
 		dateStyle: "medium",
 		timeStyle: "short"
 	}).format(time);
@@ -39339,16 +39408,23 @@ function documentHost(el) {
 * `<ds-card focusable>` articles built from `items`, newest first. Card gives
 * each article `role="article"`, its heading name, `tabindex="-1"` and its own
 * focus ring; Feed adds `aria-describedby` (the article's `<time>`, in the same
-* tree) and `aria-posinset`/`aria-setsize` (`-1` while `hasMore`).
-* `IntersectionObserver`s drive `load-more` (the last article within one
-* viewport, while `hasMore` and not `loading`) and `item-visible` (50% visible
-* for one second, once per id). An empty feed with `hasMore` that is not
-* `loading` fires `load-more` once on mount. The new-items button never
-* inserts items itself — pressing it fires `show-new`, and once the caller's
-* next `items` update lands focus moves to the new first article. With focus
-* inside an article, PageDown/PageUp move between articles, Ctrl+End requests
-* more when `hasMore` (otherwise leaves the feed forward), and Ctrl+Home goes to
-* the new-items button when shown, otherwise leaves the feed backward.
+* tree) and `aria-posinset`/`aria-setsize` (`-1` while `hasMore`). The `article`
+* part is a Feed-owned wrapper around each Card that draws the unread bar, and
+* `newItemsButton` is the sticky `role="status"` row around the Button — Card and
+* Button host their own anatomy.
+*
+* `IntersectionObserver`s drive `load-more` (the last article within one viewport,
+* while `hasMore` and not `loading`) and `item-visible` (50% visible for one
+* second, once per id per mount). An empty feed with `hasMore` that is not
+* `loading` asks for its first page itself — on mount and again whenever the
+* caller clears `items` — since there is no last article to observe. The
+* new-items row is always rendered so its count is announced when the button
+* appears; pressing it never inserts items, it fires `show-new`, and focus moves
+* to the first article once the caller's prepend changes the first item's id.
+* With focus inside an article, PageDown/PageUp move between articles, Ctrl+End
+* requests more when `hasMore` (nothing while `loading`, otherwise it leaves the
+* feed forward), and Ctrl+Home goes to the new-items button when shown, otherwise
+* leaves the feed backward.
 *
 * ## When to use
 *
@@ -39364,7 +39440,7 @@ function documentHost(el) {
 * is at the bottom. Do not use it for content that must be complete on load;
 * paginate instead.
 *
-* @fires load-more - Fired when the last rendered article is within one screen of view (or on Ctrl+End with `hasMore`).
+* @fires load-more - Fired when the last rendered article is within one screen of view (or on Ctrl+End with `hasMore` and not `loading`).
 * @fires show-new - Fired when the new-items button is pressed; the caller prepends the items and clears `newItemsCount`.
 * @fires item-visible - Fired with `{ id }` once an item has been substantially visible for a moment.
 */
@@ -39372,7 +39448,7 @@ let _DsFeed;
 new class extends _identity {
 	static [class DsFeed extends LitElement {
 		static {
-			({e: [_init_label, _init_extra_label, _init_items, _init_extra_items, _init_hasMore, _init_extra_hasMore, _init_loading, _init_extra_loading, _init_newItemsCount, _init_extra_newItemsCount, _init_headingLevel, _init_extra_headingLevel, _init_endMessage, _init_extra_endMessage, _init_overrides, _init_extra_overrides, _init_newItemsButtonEl, _init_extra_newItemsButtonEl], c: [_DsFeed, _initClass]} = applyDecs2311(this, [customElement("ds-feed")], [
+			({e: [_init_label, _init_extra_label, _init_items, _init_extra_items, _init_hasMore, _init_extra_hasMore, _init_loading, _init_extra_loading, _init_newItemsCount, _init_extra_newItemsCount, _init_headingLevel, _init_extra_headingLevel, _init_endMessage, _init_extra_endMessage, _init_overrides, _init_extra_overrides], c: [_DsFeed, _initClass]} = applyDecs2311(this, [customElement("ds-feed")], [
 				[
 					property({ type: String }),
 					1,
@@ -39430,15 +39506,10 @@ new class extends _identity {
 					property({ attribute: false }),
 					1,
 					"overrides"
-				],
-				[
-					query("[data-part=\"newItemsButton\"]"),
-					1,
-					"newItemsButtonEl"
 				]
 			], 0, void 0, LitElement));
 		}
-		/** What the feed contains ("Activity", "Notifications"). The feed's accessible name. */
+		/** What the feed contains ("Activity", "Notifications"). The feed's accessible name; an empty label warns in development. */
 		#A = _init_label(this, "");
 		/** Articles, newest first. */
 		get label() {
@@ -39448,7 +39519,7 @@ new class extends _identity {
 			this.#A = v;
 		}
 		#B = (_init_extra_label(this), _init_items(this, []));
-		/** More items exist beyond the last; the feed asks for them with `load-more` as the end approaches, and once on mount when empty and not `loading`. */
+		/** More items exist beyond the last; the feed asks for them with `load-more` as the end approaches, and whenever `items` is empty and not `loading`. */
 		get items() {
 			return this.#B;
 		}
@@ -39502,19 +39573,14 @@ new class extends _identity {
 		set overrides(v) {
 			this.#H = v;
 		}
-		#I = (_init_extra_overrides(this), _init_newItemsButtonEl(this));
-		get newItemsButtonEl() {
-			return this.#I;
-		}
-		set newItemsButtonEl(v) {
-			this.#I = v;
-		}
-		loadMoreObserver = void _init_extra_newItemsButtonEl(this);
+		loadMoreObserver = void _init_extra_overrides(this);
 		visibilityObserver;
 		visibilityTimers = /* @__PURE__ */ new Map();
 		reportedVisible = /* @__PURE__ */ new Set();
-		pendingShowNewFocus = false;
+		/** The first item's id when `show-new` was fired; focus moves once the caller's prepend changes it. */
+		showNewFirstId = null;
 		mounted = false;
+		warnedLabel = false;
 		connectedCallback() {
 			super.connectedCallback();
 			this.setAttribute("data-ds", "Feed");
@@ -39531,46 +39597,53 @@ new class extends _identity {
 		}
 		render() {
 			const count = this.newItemsCount ?? 0;
-			const isEmpty = this.items.length === 0;
+			const shown = count > 0;
 			return html`
       <div part="container" data-part="container" @keydown=${this.handleKeydown}>
-        ${count > 0 ? html`
-              <div class="new-items-row">
-                <ds-button
-                  part="newItemsButton"
-                  data-part="newItemsButton"
-                  variant="secondary"
-                  size="sm"
-                  label=${COPY_SHOW_NEW(count)}
-                  @press=${this.handleShowNewPress}
-                ></ds-button>
-              </div>
-            ` : nothing}
-        ${repeat(this.items, (item) => item.id, (item, index) => this.renderArticle(item, index))}
-        ${this.renderFooter(isEmpty)}
+        <div
+          class=${shown ? "new-items-row shown" : "new-items-row"}
+          part=${shown ? "newItemsButton" : nothing}
+          data-part=${shown ? "newItemsButton" : nothing}
+          role="status"
+        >
+          ${shown ? html`<ds-button
+                variant="secondary"
+                size="sm"
+                label=${COPY_SHOW_NEW(count)}
+                @press=${this.handleShowNewPress}
+              ></ds-button>` : nothing}
+        </div>
+        <div class="items">
+          ${repeat(this.items, (item) => item.id, (item, index) => this.renderArticle(item, index))}
+          ${this.renderFooter()}
+        </div>
       </div>
     `;
 		}
 		updated(changed) {
-			if (changed.has("items") || changed.has("hasMore") || changed.has("loading")) this.syncObservers();
-			if (!this.mounted) {
-				this.mounted = true;
+			if (changed.has("items") || changed.has("hasMore") || changed.has("loading") || !this.mounted) {
+				this.syncObservers();
 				if (this.items.length === 0 && this.hasMore && !this.loading) this.dispatchLoadMore();
 			}
-			if (this.pendingShowNewFocus && changed.has("items")) {
-				this.pendingShowNewFocus = false;
+			this.mounted = true;
+			if (this.showNewFirstId !== null && changed.has("items") && this.items[0]?.id !== this.showNewFirstId) {
+				this.showNewFirstId = null;
 				this.getArticles()[0]?.focus();
 			}
 		}
 		renderArticle(item, index) {
 			const timestampId = `feed-ts-${item.id}`;
 			const total = this.hasMore ? -1 : this.items.length;
+			const absolute = formatAbsoluteTime(item.timestamp);
 			return html`
-      <div class="article-row" ?data-unread=${item.unread === true}>
+      <div
+        part="article"
+        data-part="article"
+        data-item-id=${item.id}
+        ?data-unread=${item.unread === true}
+      >
         <ds-card
-          part="article"
-          data-part="article"
-          data-item-id=${item.id}
+          class="article-card"
           heading=${item.heading}
           heading-level=${this.headingLevel}
           inset="md"
@@ -39580,13 +39653,18 @@ new class extends _identity {
           aria-setsize=${total}
         >
           <ds-stack part="articleBody" data-part="articleBody" gap="tight">
-            ${item.unread ? html`<span class="visually-hidden">${COPY_UNREAD}</span>` : nothing}
-            ${total !== -1 ? html`<span class="visually-hidden">${COPY_POSITION(index + 1, total)}</span>` : nothing}
-            <ds-text part="timestamp" data-part="timestamp" element="span" tone="muted" size="xs"
-              ><time id=${timestampId} datetime=${item.timestamp} title=${formatAbsoluteTime(item.timestamp)}
+            ${item.unread === true ? html`<span class="visually-hidden">${COPY_UNREAD}</span>` : nothing}
+            <ds-text class="timestamp-text" element="span" tone="muted" size="xs"
+              ><time
+                id=${timestampId}
+                part="timestamp"
+                data-part="timestamp"
+                datetime=${item.timestamp}
+                title=${absolute ?? nothing}
                 >${formatRelativeTime(item.timestamp)}</time
               ></ds-text
             >
+            ${total !== -1 ? html`<span class="visually-hidden">${COPY_POSITION(index + 1, total)}</span>` : nothing}
             <div>${item.content}</div>
           </ds-stack>
           ${item.actions !== void 0 && item.actions !== null ? html`<ds-stack
@@ -39601,24 +39679,39 @@ new class extends _identity {
       </div>
     `;
 		}
-		renderFooter(isEmpty) {
+		/**
+		* While `loading` the indicator shows rather than the empty state, so a feed
+		* about to fetch never flashes `copy.empty`; an empty feed with more to come
+		* stays blank for the same reason.
+		*/
+		renderFooter() {
 			if (this.loading) return html`
         <div part="loadingIndicator" data-part="loadingIndicator">
           <ds-progress-bar label=${COPY_LOADING} hide-label></ds-progress-bar>
         </div>
       `;
-			if (isEmpty) return html`<ds-text part="emptyState" data-part="emptyState" tone="muted">${COPY_EMPTY}</ds-text>`;
+			if (this.items.length === 0) return this.hasMore ? nothing : html`
+            <div part="emptyState" data-part="emptyState">
+              <ds-text tone="muted" size="sm">${COPY_EMPTY}</ds-text>
+            </div>
+          `;
 			if (!this.hasMore) return html`
-        <div class="end-message-row">
-          <ds-text part="endMessage" data-part="endMessage" tone="muted" size="sm"
-            >${this.endMessage ?? COPY_END}</ds-text
-          >
+        <div part="endMessage" data-part="endMessage">
+          <ds-text tone="muted" size="sm">${this.endMessage ?? COPY_END}</ds-text>
         </div>
       `;
 			return nothing;
 		}
+		/** The focusable Cards, in document order. */
 		getArticles() {
+			return Array.from(this.renderRoot.querySelectorAll(".article-card"));
+		}
+		/** The Feed-owned wrappers the observers watch. */
+		getArticleWrappers() {
 			return Array.from(this.renderRoot.querySelectorAll("[data-part=\"article\"]"));
+		}
+		get newItemsButtonEl() {
+			return this.renderRoot.querySelector(".new-items-row ds-button");
 		}
 		dispatchLoadMore() {
 			this.dispatchEvent(new CustomEvent("load-more", {
@@ -39628,7 +39721,7 @@ new class extends _identity {
 		}
 		handleShowNewPress = (event) => {
 			event.stopPropagation();
-			this.pendingShowNewFocus = true;
+			this.showNewFirstId = this.items[0]?.id ?? null;
 			this.dispatchEvent(new CustomEvent("show-new", {
 				bubbles: true,
 				composed: true
@@ -39647,11 +39740,13 @@ new class extends _identity {
 				articles[index - 1]?.focus();
 			} else if (event.key === "End" && event.ctrlKey) {
 				event.preventDefault();
-				if (this.hasMore) this.dispatchLoadMore();
-				else this.focusOutside(1);
+				if (this.hasMore) {
+					if (!this.loading) this.dispatchLoadMore();
+				} else this.focusOutside(1);
 			} else if (event.key === "Home" && event.ctrlKey) {
 				event.preventDefault();
-				if (this.newItemsButtonEl !== null) this.newItemsButtonEl.focus();
+				const button = this.newItemsButtonEl;
+				if (button !== null) button.focus();
 				else this.focusOutside(-1);
 			}
 		};
@@ -39675,7 +39770,10 @@ new class extends _identity {
 				if (this.getAttribute("aria-label") !== this.label) this.setAttribute("aria-label", this.label);
 			} else {
 				this.removeAttribute("aria-label");
-				if (import.meta.env.DEV) console.warn("<ds-feed>: `label` is required; it is the feed's accessible name.");
+				if (import.meta.env.DEV && !this.warnedLabel) {
+					this.warnedLabel = true;
+					console.warn("<ds-feed>: `label` is required; it is the feed's accessible name.");
+				}
 			}
 			if (this.loading) this.setAttribute("aria-busy", "true");
 			else this.removeAttribute("aria-busy");
@@ -39683,15 +39781,15 @@ new class extends _identity {
 		/** (Re)builds the load-more and visibility observers against the current articles. */
 		syncObservers() {
 			this.teardownObservers();
-			const articles = this.getArticles();
-			const last = articles[articles.length - 1];
+			const wrappers = this.getArticleWrappers();
+			const last = wrappers[wrappers.length - 1];
 			if (last === void 0) return;
 			if (this.hasMore && !this.loading) {
 				this.loadMoreObserver = new IntersectionObserver(this.handleLoadMoreIntersect, { rootMargin: "100% 0px" });
 				this.loadMoreObserver.observe(last);
 			}
 			this.visibilityObserver = new IntersectionObserver(this.handleVisibilityIntersect, { threshold: .5 });
-			for (const article of articles) if (!this.reportedVisible.has(article.dataset.itemId ?? "")) this.visibilityObserver.observe(article);
+			for (const wrapper of wrappers) if (!this.reportedVisible.has(wrapper.dataset.itemId ?? "")) this.visibilityObserver.observe(wrapper);
 		}
 		teardownObservers() {
 			this.loadMoreObserver?.disconnect();
@@ -39748,11 +39846,17 @@ new class extends _identity {
       font-family: var(--ds-feed-font-family);
       --ds-feed-item-gap: var(--layout-gap-normal);
       --ds-feed-article-inset: var(--layout-inset-md);
+      --ds-feed-article-body-gap: var(--layout-gap-tight);
+      --ds-feed-unread-border: var(--color-control-selected-background);
+      --ds-feed-unread-border-width: var(--border-width-focus);
       --ds-feed-timestamp-size: var(--font-size-xs);
       --ds-feed-new-items-offset: var(--space-3);
+      --ds-feed-new-items-layer: var(--layer-raised);
       --ds-feed-loading-inset: var(--layout-inset-md);
       --ds-feed-end-message-inset: var(--layout-inset-md);
       --ds-feed-end-message-size: var(--font-size-sm);
+      --ds-feed-empty-state-inset: var(--layout-inset-md);
+      --ds-feed-empty-state-size: var(--font-size-sm);
       --ds-feed-font-family: var(--font-family-body);
     }
 
@@ -39760,59 +39864,92 @@ new class extends _identity {
       display: none;
     }
 
-    /* itemGap: layout.gap.normal, between the rows of the feed */
-    [data-part='container'] {
+    /* newItemsOffset / newItemsLayer: the live row is always rendered so the count is announced
+       when the button appears, and takes space only while it is shown (padding, not a margin:
+       the row is the first child). It stays over the scrolling articles. */
+    .new-items-row {
+      position: sticky;
+      inset-block-start: 0;
+      z-index: var(--ds-feed-new-items-layer);
+      display: flex;
+      justify-content: center;
+    }
+
+    .new-items-row.shown {
+      padding-block-start: var(--ds-feed-new-items-offset);
+    }
+
+    /* itemGap: layout.gap.normal, between the articles and the footer row */
+    .items {
       display: flex;
       flex-direction: column;
       gap: var(--ds-feed-item-gap);
     }
 
-    /* newItemsOffset: space.3, padding above the sticky button (it is the first child) */
-    .new-items-row {
-      display: flex;
-      justify-content: center;
-      position: sticky;
-      inset-block-start: 0;
-      z-index: 1;
-      padding-block-start: var(--ds-feed-new-items-offset);
+    [data-part='article'] {
+      position: relative;
     }
 
-    /* articleInset: layout.inset.md, forwarded through Card's documented padding hooks */
-    [data-part='article'] {
+    /* articleInset: layout.inset.md, forwarded to the Card's own padding hooks rather than
+       restyling its shadow tree (Card's inset is an sm/md/lg choice and takes no token) */
+    [data-part='article'] > ds-card {
       --ds-card-padding-block: var(--ds-feed-article-inset);
       --ds-card-padding-inline: var(--ds-feed-article-inset);
     }
 
-    /* unreadBorder / unreadBorderWidth: locked start-edge bar, drawn on Feed's own row beside the Card */
-    .article-row[data-unread] {
-      border-inline-start: var(--border-width-focus) solid var(--color-control-selected-background);
+    /* unreadBorder / unreadBorderWidth (locked): a start-edge bar drawn by Feed's own wrapper over
+       the Card's start edge (mirrored in RTL), paired with the visually-hidden "unread" word. */
+    [data-part='article'][data-unread]::before {
+      content: '';
+      position: absolute;
+      inset-block: 0;
+      inset-inline-start: 0;
+      inline-size: var(--ds-feed-unread-border-width);
+      background: var(--ds-feed-unread-border);
+      pointer-events: none;
     }
 
-    /* timestampSize: font.size.xs through Text's documented hook; timestampColor is Text tone="muted" (locked) */
-    [data-part='timestamp'] {
+    /* articleBodyGap: layout.gap.tight, forwarded to the body Stack's own gap hook */
+    [data-part='articleBody'] {
+      --ds-stack-gap: var(--ds-feed-article-body-gap);
+    }
+
+    /* timestampSize: font.size.xs through Text's hook; timestampColor is Text tone="muted" (locked) */
+    .timestamp-text {
       --ds-text-font-size: var(--ds-feed-timestamp-size);
     }
 
-    /* fontFamily: font.family.body, reaching composed Text through its documented hook */
+    /* fontFamily: font.family.body, reaching every composed Text and the new-items Button
+       through their own hooks; the hidden runs inherit it from :host */
     ds-text {
       --ds-text-font-family: var(--ds-feed-font-family);
     }
 
-    /* loadingInset: layout.inset.md */
+    ds-button {
+      --ds-button-font-family: var(--ds-feed-font-family);
+    }
+
+    /* loadingInset: layout.inset.md around the ProgressBar */
     [data-part='loadingIndicator'] {
-      padding-block: var(--ds-feed-loading-inset);
-      padding-inline: var(--ds-feed-loading-inset);
+      padding: var(--ds-feed-loading-inset);
     }
 
-    /* endMessageInset: layout.inset.md, around the end message */
-    .end-message-row {
-      padding-block: var(--ds-feed-end-message-inset);
-      padding-inline: var(--ds-feed-end-message-inset);
-    }
-
-    /* endMessageSize: font.size.sm through Text's hook; endMessageColor is Text tone="muted" (locked) */
+    /* endMessageInset / endMessageSize; endMessageColor is Text tone="muted" (locked) */
     [data-part='endMessage'] {
+      padding: var(--ds-feed-end-message-inset);
+    }
+
+    [data-part='endMessage'] > ds-text {
       --ds-text-font-size: var(--ds-feed-end-message-size);
+    }
+
+    /* emptyStateInset / emptyStateSize; emptyStateColor is Text tone="muted" (locked) */
+    [data-part='emptyState'] {
+      padding: var(--ds-feed-empty-state-inset);
+    }
+
+    [data-part='emptyState'] > ds-text {
+      --ds-text-font-size: var(--ds-feed-empty-state-size);
     }
 
     .visually-hidden {

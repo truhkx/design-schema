@@ -431,7 +431,8 @@ export class DsInput extends LitElement {
     if (!this.invalid) {
       return '';
     }
-    return this.required && this.currentValue.trim() === '' ? COPY_REQUIRED(this.label) : COPY_INVALID(this.label);
+    // `required` counts only the empty string as empty, as a native field does: whitespace passes.
+    return this.required && this.currentValue === '' ? COPY_REQUIRED(this.label) : COPY_INVALID(this.label);
   }
 
   /** helperSize, fontFamily and lineHeight forwarded to the description and error Text. */
@@ -451,10 +452,6 @@ export class DsInput extends LitElement {
     const next = input.value;
     if (this.value === undefined) {
       this.editedValue = next;
-    } else {
-      // Controlled: show the new value only once `.value` is rebound; re-render
-      // so `live()` restores the controlled value if the consumer keeps it.
-      this.requestUpdate();
     }
     this.dispatchEvent(
       new CustomEvent<InputChangeDetail>('change', {
@@ -463,6 +460,11 @@ export class DsInput extends LitElement {
         composed: true,
       }),
     );
+    if (this.value !== undefined) {
+      // Controlled, like React: after `change` the field shows `.value` again
+      // unless a listener rebound it synchronously; `live()` restores it.
+      this.requestUpdate();
+    }
   }
 
   private applyOverrides(): void {
@@ -493,7 +495,7 @@ export class DsInput extends LitElement {
 
     if (this.error) {
       this.internals.setValidity({ customError: true }, this.error, anchor);
-    } else if (this.required && value.trim() === '') {
+    } else if (this.required && value === '') {
       this.internals.setValidity({ valueMissing: true }, COPY_REQUIRED(this.label), anchor);
     } else if (this.invalid) {
       this.internals.setValidity({ customError: true }, COPY_INVALID(this.label), anchor);

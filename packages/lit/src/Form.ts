@@ -49,14 +49,21 @@ export type FormOverridableBinding =
   | 'errorSummaryPadding'
   | 'errorSummaryGap';
 
-const HOOKS: Record<FormOverridableBinding, string> = {
+/** `errorSummaryGap` has no hook: it is forwarded to the summary Stacks' `overrides.gap`. */
+const HOOKS: Record<Exclude<FormOverridableBinding, 'errorSummaryGap'>, string> = {
   gap: '--ds-form-gap',
   errorSummaryBorder: '--ds-form-error-summary-border',
   errorSummaryBorderWidth: '--ds-form-error-summary-border-width',
   errorSummaryRadius: '--ds-form-error-summary-radius',
   errorSummaryPadding: '--ds-form-error-summary-padding',
-  errorSummaryGap: '--ds-form-error-summary-gap',
 };
+
+type FieldValue = FormSubmitDetail['values'][string];
+
+/** A null, empty-string or empty-array value contributes no key. */
+function isEmptyValue(value: FieldValue | null | undefined): boolean {
+  return value === null || value === undefined || value === '' || (Array.isArray(value) && value.length === 0);
+}
 
 /** copy.summaryHeading, plural by `count`. */
 const COPY_SUMMARY_HEADING: Record<'one' | 'other', string> = {
@@ -128,7 +135,6 @@ export class DsForm extends LitElement {
       --ds-form-error-summary-border-width: var(--border-width-thin);
       --ds-form-error-summary-radius: var(--radius-md);
       --ds-form-error-summary-padding: var(--space-md);
-      --ds-form-error-summary-gap: var(--layout-gap-tight);
     }
 
     :host([hidden]) {
@@ -141,6 +147,12 @@ export class DsForm extends LitElement {
       gap: var(--ds-form-gap);
       margin: 0;
       padding: 0;
+    }
+
+    /* A bare single action keeps its own width instead of stretching across the column. */
+    slot[name='actions'] {
+      display: flex;
+      align-items: flex-start;
     }
 
     /* errorSummaryBackground / errorSummaryText: color.background.subtle / color.foreground.danger, locked */
@@ -156,11 +168,6 @@ export class DsForm extends LitElement {
     [data-part='errorSummary']:focus-visible {
       outline: var(--border-width-focus) solid var(--color-border-focus);
       outline-offset: var(--border-width-focus);
-    }
-
-    /* errorSummaryGap reaches the composed Stacks through their documented hook. */
-    [data-part='errorSummary'] ds-stack {
-      --ds-stack-gap: var(--ds-form-error-summary-gap);
     }
   `;
 
@@ -190,11 +197,17 @@ export class DsForm extends LitElement {
   /** Per-instance style overrides: `{ gap: 'layout.gap.normal' }`. Locked bindings (errorSummaryText, errorSummaryBackground) are ignored. */
   @property({ attribute: false }) accessor overrides: Partial<Record<FormOverridableBinding, TokenRef | undefined>> | undefined;
 
-  /** Field name -> message, for fields that have failed validation, in document order. */
-  @state() private accessor errors: Record<string, string> = {};
+  /**
+   * Field name -> message for the error summary: document order at the failed submit, with errors that
+   * blur or change validation finds later appended at the end. Empty until a submission fails.
+   */
+  @state() private accessor errors: ReadonlyMap<string, string> = new Map();
 
-  /** Once a submission has failed, fields re-validate on blur/change even in `submit` mode. */
+  /** Once a submission has failed, fields re-validate on blur/change even in `submit` mode; a successful one clears it. */
   private hasFailedSubmission = false;
+
+  /** The plural locale, read at the failed submit (nearest `lang` ancestor, else the runtime default). */
+  private summaryLocale: string | undefined;
 
   /** Fields and actions this Form disabled itself, so re-enabling never touches one already disabled by the consumer. */
   private readonly disabledByForm = new Set<Disableable>();
@@ -256,8 +269,8 @@ export class DsForm extends LitElement {
   }
 
   protected override render(): TemplateResult {
-    const errorEntries = Object.entries(this.errors);
-    const showSummary = this.errorSummary && errorEntries.length > 0;
+    const errorEntries = Array.from(this.errors);
+    const showSummary = this.errorSummary && this.hasFailedSubmission && errorEntries.length > 0;
 
     return html`
       <form
@@ -276,11 +289,14 @@ export class DsForm extends LitElement {
 
   private renderSummary(errorEntries: [string, string][]): TemplateResult {
     const fieldsByName = new Map(this.queryFields().map((field) => [field.name, field] as const));
+    // errorSummaryGap is forwarded to both Stacks; their `gap="tight"` is the binding's default token.
+    const gapRef = this.overrides?.errorSummaryGap;
+    const stackOverrides = gapRef === undefined ? undefined : { gap: gapRef };
     return html`
       <div part="errorSummary" data-part="errorSummary" role="alert" tabindex="-1">
-        <ds-stack gap="tight">
+        <ds-stack gap="tight" .overrides=${stackOverrides}>
           <ds-text element="p" weight="semibold" tone="danger">${this.summaryHeading(errorEntries.length)}</ds-text>
-          <ds-stack element="ul" gap="tight">
+          <ds-stack element="ul" gap="tight" .overrides=${stackOverrides}>
             ${errorEntries.map(([name, message]) => {
               const field = fieldsByName.get(name);
               // The field's own message verbatim; its label only when the message is empty.
@@ -301,8 +317,7 @@ export class DsForm extends LitElement {
   }
 
   private summaryHeading(count: number): string {
-    const locale = this.closest('[lang]')?.getAttribute('lang') || undefined;
-    const form = new Intl.PluralRules(locale).select(count) === 'one' ? 'one' : 'other';
+    const form = new Intl.PluralRules(this.summaryLocale).select(count) === 'one' ? 'one' : 'other';
     return COPY_SUMMARY_HEADING[form].replace('{count}', String(count));
   }
 
@@ -314,7 +329,7 @@ export class DsForm extends LitElement {
     const fields = this.queryFields();
     this.assignFieldIds(fields);
 
-    const errors: Record<string, string> = {};
+    const errors = new Map<string, string>();
     const values: FormSubmitDetail['values'] = {};
     let firstInvalid: DsFormField | undefined;
 
@@ -324,11 +339,11 @@ export class DsForm extends LitElement {
       }
       if (field.checkValidity()) {
         const value = field.currentValue;
-        if (value !== null && value !== undefined && value !== '') {
-          values[field.name] = value;
+        if (!isEmptyValue(value)) {
+          values[field.name] = value as FieldValue;
         }
       } else {
-        errors[field.name] = field.validationMessage ?? '';
+        errors.set(field.name, field.validationMessage ?? '');
         firstInvalid ??= field;
       }
     }
@@ -337,8 +352,13 @@ export class DsForm extends LitElement {
 
     if (firstInvalid !== undefined) {
       this.hasFailedSubmission = true;
+      this.summaryLocale = this.closest('[lang]')?.getAttribute('lang') || undefined;
       this.dispatchEvent(
-        new CustomEvent<FormInvalidDetail>('invalid', { detail: { errors }, bubbles: true, composed: true }),
+        new CustomEvent<FormInvalidDetail>('invalid', {
+          detail: { errors: Object.fromEntries(errors) },
+          bubbles: true,
+          composed: true,
+        }),
       );
       if (this.errorSummary) {
         this.pendingSummaryFocus = true;
@@ -348,6 +368,8 @@ export class DsForm extends LitElement {
       return;
     }
 
+    // A successful submission removes the summary.
+    this.hasFailedSubmission = false;
     this.dispatchEvent(
       new CustomEvent<FormSubmitDetail>('submit', { detail: { values }, bubbles: true, composed: true }),
     );
@@ -433,16 +455,20 @@ export class DsForm extends LitElement {
       ?.focus();
   }
 
+  /**
+   * Runs the field's own validation (the field shows its error). The summary only tracks it after a failed
+   * submission: a fixed field drops out, a still-listed one keeps its place, a newly invalid one is appended.
+   */
   private validateField(field: DsFormField): void {
-    const next: Record<string, string> = {};
     const invalid = !field.disabled && !field.checkValidity();
-    // Rebuild in document order so the summary lists fields as they appear.
-    for (const candidate of this.queryFields()) {
-      if (candidate === field) {
-        if (invalid) next[field.name] = field.validationMessage ?? '';
-      } else if (candidate.name in this.errors) {
-        next[candidate.name] = this.errors[candidate.name] ?? '';
-      }
+    if (!this.hasFailedSubmission) {
+      return;
+    }
+    const next = new Map(this.errors);
+    if (invalid) {
+      next.set(field.name, field.validationMessage ?? '');
+    } else {
+      next.delete(field.name);
     }
     this.errors = next;
   }
@@ -534,7 +560,7 @@ export class DsForm extends LitElement {
   }
 
   private applyOverrides(): void {
-    for (const binding of Object.keys(HOOKS) as FormOverridableBinding[]) {
+    for (const binding of Object.keys(HOOKS) as (keyof typeof HOOKS)[]) {
       const ref = this.overrides?.[binding];
       const hook = HOOKS[binding];
       if (ref === undefined) {

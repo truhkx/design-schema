@@ -19,13 +19,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\"><Text>A panel of settings</Text></Box>",
+        "lit": "<ds-box inset=\"md\" surface=\"subtle\" radius=\"md\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
         "swift": null
       },
       "stories": {
         "react": "Default",
-        "lit": null,
+        "lit": "Default",
         "rn": "Default",
         "swift": null
       },
@@ -46,13 +46,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"none\" surface=\"subtle\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"none\"><Text>Box content</Text></Box>",
+        "lit": "<ds-box inset=\"none\" surface=\"subtle\" radius=\"md\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"none\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
         "react": "InsetNone",
-        "lit": null,
+        "lit": "InsetNone",
         "rn": "InsetNone",
         "swift": null
       },
@@ -76,13 +76,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"sm\" surface=\"subtle\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"sm\" surface=\"subtle\"><Text>Box content</Text></Box>",
+        "lit": "<ds-box inset=\"sm\" surface=\"subtle\" radius=\"md\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"sm\" surface=\"subtle\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
         "react": "InsetSm",
-        "lit": null,
+        "lit": "InsetSm",
         "rn": "InsetSm",
         "swift": null
       },
@@ -106,13 +106,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"subtle\"><Text>Box content</Text></Box>",
+        "lit": "<ds-box inset=\"md\" surface=\"subtle\" radius=\"md\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"subtle\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
         "react": "InsetMd",
-        "lit": null,
+        "lit": "InsetMd",
         "rn": "InsetMd",
         "swift": null
       },
@@ -136,13 +136,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"lg\" surface=\"subtle\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"lg\" surface=\"subtle\"><Text>Box content</Text></Box>",
+        "lit": "<ds-box inset=\"lg\" surface=\"subtle\" radius=\"md\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"lg\" surface=\"subtle\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
         "react": "InsetLg",
-        "lit": null,
+        "lit": "InsetLg",
         "rn": "InsetLg",
         "swift": null
       },
@@ -166,13 +166,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"xl\" surface=\"subtle\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"xl\" surface=\"subtle\"><Text>Box content</Text></Box>",
+        "lit": "<ds-box inset=\"xl\" surface=\"subtle\" radius=\"md\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"xl\" surface=\"subtle\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
         "react": "InsetXl",
-        "lit": null,
+        "lit": "InsetXl",
         "rn": "InsetXl",
         "swift": null
       },
@@ -197,13 +197,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" insetBlock=\"none\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"none\" insetInline=\"md\" surface=\"subtle\"><Text>Box content</Text></Box>",
+        "lit": "<ds-box inset=\"md\" inset-block=\"none\" surface=\"subtle\" radius=\"md\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"none\" insetInline=\"md\" surface=\"subtle\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
         "react": "InsetBlockNone",
-        "lit": null,
+        "lit": "InsetBlockNone",
         "rn": "InsetBlockNone",
         "swift": null
       },
@@ -228,13 +228,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" insetBlock=\"sm\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"sm\" insetInline=\"md\" surface=\"subtle\"><Text>Box content</Text></Box>",
+        "lit": "<ds-box inset=\"md\" inset-block=\"sm\" surface=\"subtle\" radius=\"md\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"sm\" insetInline=\"md\" surface=\"subtle\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
         "react": "InsetBlockSm",
-        "lit": null,
+        "lit": "InsetBlockSm",
         "rn": "InsetBlockSm",
         "swift": null
       },
@@ -259,13 +259,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" insetBlock=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"md\" insetInline=\"md\" surface=\"subtle\"><Text>Box content</Text></Box>",
+        "lit": "<ds-box inset=\"md\" inset-block=\"md\" surface=\"subtle\" radius=\"md\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"md\" insetInline=\"md\" surface=\"subtle\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
         "react": "InsetBlockMd",
-        "lit": null,
+        "lit": "InsetBlockMd",
         "rn": "InsetBlockMd",
         "swift": null
       },
@@ -290,13 +290,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" insetBlock=\"lg\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"lg\" insetInline=\"md\" surface=\"subtle\"><Text>Box content</Text></Box>",
+        "lit": "<ds-box inset=\"md\" inset-block=\"lg\" surface=\"subtle\" radius=\"md\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"lg\" insetInline=\"md\" surface=\"subtle\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
         "react": "InsetBlockLg",
-        "lit": null,
+        "lit": "InsetBlockLg",
         "rn": "InsetBlockLg",
         "swift": null
       },
@@ -321,13 +321,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" insetBlock=\"xl\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"xl\" insetInline=\"md\" surface=\"subtle\"><Text>Box content</Text></Box>",
+        "lit": "<ds-box inset=\"md\" inset-block=\"xl\" surface=\"subtle\" radius=\"md\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"xl\" insetInline=\"md\" surface=\"subtle\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
         "react": "InsetBlockXl",
-        "lit": null,
+        "lit": "InsetBlockXl",
         "rn": "InsetBlockXl",
         "swift": null
       },
@@ -352,13 +352,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" insetInline=\"none\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"md\" insetInline=\"none\" surface=\"subtle\"><Text>Box content</Text></Box>",
+        "lit": "<ds-box inset=\"md\" inset-inline=\"none\" surface=\"subtle\" radius=\"md\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"md\" insetInline=\"none\" surface=\"subtle\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
         "react": "InsetInlineNone",
-        "lit": null,
+        "lit": "InsetInlineNone",
         "rn": "InsetInlineNone",
         "swift": null
       },
@@ -383,13 +383,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" insetInline=\"sm\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"md\" insetInline=\"sm\" surface=\"subtle\"><Text>Box content</Text></Box>",
+        "lit": "<ds-box inset=\"md\" inset-inline=\"sm\" surface=\"subtle\" radius=\"md\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"md\" insetInline=\"sm\" surface=\"subtle\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
         "react": "InsetInlineSm",
-        "lit": null,
+        "lit": "InsetInlineSm",
         "rn": "InsetInlineSm",
         "swift": null
       },
@@ -414,13 +414,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" insetInline=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"md\" insetInline=\"md\" surface=\"subtle\"><Text>Box content</Text></Box>",
+        "lit": "<ds-box inset=\"md\" inset-inline=\"md\" surface=\"subtle\" radius=\"md\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"md\" insetInline=\"md\" surface=\"subtle\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
         "react": "InsetInlineMd",
-        "lit": null,
+        "lit": "InsetInlineMd",
         "rn": "InsetInlineMd",
         "swift": null
       },
@@ -445,13 +445,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" insetInline=\"lg\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"md\" insetInline=\"lg\" surface=\"subtle\"><Text>Box content</Text></Box>",
+        "lit": "<ds-box inset=\"md\" inset-inline=\"lg\" surface=\"subtle\" radius=\"md\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"md\" insetInline=\"lg\" surface=\"subtle\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
         "react": "InsetInlineLg",
-        "lit": null,
+        "lit": "InsetInlineLg",
         "rn": "InsetInlineLg",
         "swift": null
       },
@@ -476,13 +476,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" insetInline=\"xl\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"md\" insetInline=\"xl\" surface=\"subtle\"><Text>Box content</Text></Box>",
+        "lit": "<ds-box inset=\"md\" inset-inline=\"xl\" surface=\"subtle\" radius=\"md\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"md\" insetInline=\"xl\" surface=\"subtle\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
         "react": "InsetInlineXl",
-        "lit": null,
+        "lit": "InsetInlineXl",
         "rn": "InsetInlineXl",
         "swift": null
       },
@@ -506,13 +506,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"none\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"none\"><Text>Box content</Text></Box>",
+        "lit": "<ds-box inset=\"md\" surface=\"none\" radius=\"md\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"none\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
         "react": "SurfaceNone",
-        "lit": null,
+        "lit": "SurfaceNone",
         "rn": "SurfaceNone",
         "swift": null
       },
@@ -536,13 +536,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"default\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"default\"><Text>Box content</Text></Box>",
+        "lit": "<ds-box inset=\"md\" surface=\"default\" radius=\"md\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"default\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
         "react": "SurfaceDefault",
-        "lit": null,
+        "lit": "SurfaceDefault",
         "rn": "SurfaceDefault",
         "swift": null
       },
@@ -566,13 +566,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"subtle\"><Text>Box content</Text></Box>",
+        "lit": "<ds-box inset=\"md\" surface=\"subtle\" radius=\"md\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"subtle\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
         "react": "SurfaceSubtle",
-        "lit": null,
+        "lit": "SurfaceSubtle",
         "rn": "SurfaceSubtle",
         "swift": null
       },
@@ -596,13 +596,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"strong\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"strong\"><Text>Box content</Text></Box>",
+        "lit": "<ds-box inset=\"md\" surface=\"strong\" radius=\"md\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"strong\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
         "react": "SurfaceStrong",
-        "lit": null,
+        "lit": "SurfaceStrong",
         "rn": "SurfaceStrong",
         "swift": null
       },
@@ -626,13 +626,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" border radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" border><Text>Box content</Text></Box>",
+        "lit": "<ds-box inset=\"md\" surface=\"subtle\" border radius=\"md\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" border>{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
         "react": "Border",
-        "lit": null,
+        "lit": "Border",
         "rn": "Border",
         "swift": null
       },
@@ -656,13 +656,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"none\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"none\"><Text>Box content</Text></Box>",
+        "lit": "<ds-box inset=\"md\" surface=\"subtle\" radius=\"none\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"none\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
         "react": "RadiusNone",
-        "lit": null,
+        "lit": "RadiusNone",
         "rn": "RadiusNone",
         "swift": null
       },
@@ -686,13 +686,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"sm\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"sm\"><Text>Box content</Text></Box>",
+        "lit": "<ds-box inset=\"md\" surface=\"subtle\" radius=\"sm\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"sm\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
         "react": "RadiusSm",
-        "lit": null,
+        "lit": "RadiusSm",
         "rn": "RadiusSm",
         "swift": null
       },
@@ -716,13 +716,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\"><Text>Box content</Text></Box>",
+        "lit": "<ds-box inset=\"md\" surface=\"subtle\" radius=\"md\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
         "react": "RadiusMd",
-        "lit": null,
+        "lit": "RadiusMd",
         "rn": "RadiusMd",
         "swift": null
       },
@@ -746,13 +746,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"lg\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"lg\"><Text>Box content</Text></Box>",
+        "lit": "<ds-box inset=\"md\" surface=\"subtle\" radius=\"lg\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"lg\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
         "react": "RadiusLg",
-        "lit": null,
+        "lit": "RadiusLg",
         "rn": "RadiusLg",
         "swift": null
       },
@@ -776,13 +776,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"full\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"full\"><Text>Box content</Text></Box>",
+        "lit": "<ds-box inset=\"md\" surface=\"subtle\" radius=\"full\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"full\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
         "react": "RadiusFull",
-        "lit": null,
+        "lit": "RadiusFull",
         "rn": "RadiusFull",
         "swift": null
       },
@@ -806,13 +806,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"div\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
+        "lit": "<ds-box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"div\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "ElementDiv",
-        "lit": null,
+        "lit": "ElementDiv",
         "rn": null,
         "swift": null
       },
@@ -836,13 +836,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"section\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
+        "lit": "<ds-box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"section\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "ElementSection",
-        "lit": null,
+        "lit": "ElementSection",
         "rn": null,
         "swift": null
       },
@@ -866,13 +866,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"article\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
+        "lit": "<ds-box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"article\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "ElementArticle",
-        "lit": null,
+        "lit": "ElementArticle",
         "rn": null,
         "swift": null
       },
@@ -896,13 +896,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"aside\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
+        "lit": "<ds-box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"aside\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "ElementAside",
-        "lit": null,
+        "lit": "ElementAside",
         "rn": null,
         "swift": null
       },
@@ -926,13 +926,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"header\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
+        "lit": "<ds-box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"header\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "ElementHeader",
-        "lit": null,
+        "lit": "ElementHeader",
         "rn": null,
         "swift": null
       },
@@ -956,13 +956,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"footer\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
+        "lit": "<ds-box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"footer\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "ElementFooter",
-        "lit": null,
+        "lit": "ElementFooter",
         "rn": null,
         "swift": null
       },
@@ -986,13 +986,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"main\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
+        "lit": "<ds-box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"main\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "ElementMain",
-        "lit": null,
+        "lit": "ElementMain",
         "rn": null,
         "swift": null
       },
@@ -1016,13 +1016,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"nav\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
+        "lit": "<ds-box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"nav\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "ElementNav",
-        "lit": null,
+        "lit": "ElementNav",
         "rn": null,
         "swift": null
       },
@@ -1046,13 +1046,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
-        "lit": null,
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\"><Text>A panel of settings</Text></Box>",
+        "lit": "<ds-box inset=\"md\" surface=\"subtle\" radius=\"md\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
         "swift": null
       },
       "stories": {
         "react": "HighlightedPanel",
-        "lit": null,
+        "lit": "HighlightedPanel",
         "rn": "HighlightedPanel",
         "swift": null
       },
@@ -1073,13 +1073,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"sm\" surface=\"subtle\" border radius=\"md\">{typeof 'A row of data' === 'string' ? <Text>{'A row of data'}</Text> : 'A row of data'}</Box>",
-        "lit": null,
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"sm\" border><Text>A row of data</Text></Box>",
+        "lit": "<ds-box inset=\"sm\" border>\n  <ds-text>A row of data</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"sm\" border>{typeof 'A row of data' === 'string' ? <Text>{'A row of data'}</Text> : 'A row of data'}</Box>",
         "swift": null
       },
       "stories": {
         "react": "BorderedRow",
-        "lit": null,
+        "lit": "BorderedRow",
         "rn": "BorderedRow",
         "swift": null
       },
@@ -1102,13 +1102,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box\n  inset=\"md\"\n  surface=\"strong\"\n  radius=\"md\"\n  insetBlock=\"xl\"\n  insetInline=\"lg\"\n>{typeof 'A hero band' === 'string' ? <Text>{'A hero band'}</Text> : 'A hero band'}</Box>",
-        "lit": null,
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"xl\" insetInline=\"lg\" surface=\"strong\"><Text>A hero band</Text></Box>",
+        "lit": "<ds-box inset-block=\"xl\" inset-inline=\"lg\" surface=\"strong\">\n  <ds-text>A hero band</ds-text>\n</ds-box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"xl\" insetInline=\"lg\" surface=\"strong\">{typeof 'A hero band' === 'string' ? <Text>{'A hero band'}</Text> : 'A hero band'}</Box>",
         "swift": null
       },
       "stories": {
         "react": "HeroBand",
-        "lit": null,
+        "lit": "HeroBand",
         "rn": "HeroBand",
         "swift": null
       },
@@ -1129,13 +1129,13 @@
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"nav\">{typeof 'The sidebar links' === 'string' ? <Text>{'The sidebar links'}</Text> : 'The sidebar links'}</Box>",
-        "lit": null,
+        "lit": "<ds-box inset=\"md\" element=\"nav\">\n  <ds-text>The sidebar links</ds-text>\n</ds-box>",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "NavigationRegion",
-        "lit": null,
+        "lit": "NavigationRegion",
         "rn": null,
         "swift": null
       },

@@ -620,13 +620,13 @@
 <header>
   <div class="wrap">
     <h1>Manifest Debugger</h1>
-    <div class="summary"><a class="filter-pill all" data-k="all" href="#filter-all">All</a><a class="filter-pill err" data-k="errors" href="#filter-errors">2/54 API errors</a><a class="filter-pill info" data-k="infos" href="#filter-infos">2/54 infos</a><a class="filter-pill" data-k="no-api" href="#filter-no-api">1/54 without API description</a><span class="filter-pill ok" aria-disabled="true">863 stories ok</span><a class="filter-pill info" data-k="story-warnings" href="#filter-story-warnings">33/863 incomplete snippets</a></div>
+    <div class="summary"><a class="filter-pill all" data-k="all" href="#filter-all">All</a><a class="filter-pill err" data-k="errors" href="#filter-errors">2/54 API errors</a><a class="filter-pill info" data-k="infos" href="#filter-infos">2/54 infos</a><a class="filter-pill" data-k="no-api" href="#filter-no-api">1/54 without API description</a><span class="filter-pill ok" aria-disabled="true">864 stories ok</span><a class="filter-pill info" data-k="story-warnings" href="#filter-story-warnings">33/864 incomplete snippets</a></div>
   </div>
 </header>
 <main>
   <div class="wrap">
     <div class="note info" style="margin-bottom: 16px;">
-            <strong>Tip:</strong> You are using <code>react-docgen</code> (the default). Generation took <strong>2.3s</strong>. For higher quality prop types, consider switching to <code>react-docgen-typescript</code> in your <code>main.ts</code>:
+            <strong>Tip:</strong> You are using <code>react-docgen</code> (the default). Generation took <strong>2.5s</strong>. For higher quality prop types, consider switching to <code>react-docgen-typescript</code> in your <code>main.ts</code>:
             <pre><code>typescript: {
   reactDocgen: 'react-docgen-typescript',
 }</code></pre>
@@ -5770,7 +5770,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const Default = () =&gt; &lt;Container width=&quot;content&quot; gutter=&quot;default&quot; align=&quot;center&quot; element=&quot;div&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Container content.&lt;/Text&gt;&lt;/Container&gt;;</code></pre>
+              <pre><code>const Default = () =&gt; &lt;Container width=&quot;content&quot; gutter=&quot;default&quot; align=&quot;center&quot; element=&quot;div&quot;&gt;&lt;Text&gt;Container content.&lt;/Text&gt;&lt;/Container&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -5780,7 +5780,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const WidthProse = () =&gt; &lt;Container width=&quot;prose&quot; gutter=&quot;default&quot; align=&quot;center&quot; element=&quot;div&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Container content.&lt;/Text&gt;&lt;/Container&gt;;</code></pre>
+              <pre><code>const WidthProse = () =&gt; &lt;Container width=&quot;prose&quot; gutter=&quot;default&quot; align=&quot;center&quot; element=&quot;div&quot;&gt;&lt;Text&gt;Container content.&lt;/Text&gt;&lt;/Container&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -5790,7 +5790,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const WidthContent = () =&gt; &lt;Container width=&quot;content&quot; gutter=&quot;default&quot; align=&quot;center&quot; element=&quot;div&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Container content.&lt;/Text&gt;&lt;/Container&gt;;</code></pre>
+              <pre><code>const WidthContent = () =&gt; &lt;Container width=&quot;content&quot; gutter=&quot;default&quot; align=&quot;center&quot; element=&quot;div&quot;&gt;&lt;Text&gt;Container content.&lt;/Text&gt;&lt;/Container&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -5800,7 +5800,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const WidthPage = () =&gt; &lt;Container width=&quot;page&quot; gutter=&quot;default&quot; align=&quot;center&quot; element=&quot;div&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Container content.&lt;/Text&gt;&lt;/Container&gt;;</code></pre>
+              <pre><code>const WidthPage = () =&gt; &lt;Container width=&quot;page&quot; gutter=&quot;default&quot; align=&quot;center&quot; element=&quot;div&quot;&gt;&lt;Text&gt;Container content.&lt;/Text&gt;&lt;/Container&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -5810,7 +5810,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const WidthFull = () =&gt; &lt;Container width=&quot;full&quot; gutter=&quot;default&quot; align=&quot;center&quot; element=&quot;div&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Container content.&lt;/Text&gt;&lt;/Container&gt;;</code></pre>
+              <pre><code>const WidthFull = () =&gt; &lt;Container width=&quot;full&quot; gutter=&quot;default&quot; align=&quot;center&quot; element=&quot;div&quot;&gt;&lt;Text&gt;Container content.&lt;/Text&gt;&lt;/Container&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -5820,7 +5820,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const GutterNarrow = () =&gt; &lt;Container width=&quot;content&quot; gutter=&quot;narrow&quot; align=&quot;center&quot; element=&quot;div&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Container content.&lt;/Text&gt;&lt;/Container&gt;;</code></pre>
+              <pre><code>const GutterNarrow = () =&gt; &lt;Container width=&quot;content&quot; gutter=&quot;narrow&quot; align=&quot;center&quot; element=&quot;div&quot;&gt;&lt;Text&gt;Container content.&lt;/Text&gt;&lt;/Container&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -5830,7 +5830,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const GutterDefault = () =&gt; &lt;Container width=&quot;content&quot; gutter=&quot;default&quot; align=&quot;center&quot; element=&quot;div&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Container content.&lt;/Text&gt;&lt;/Container&gt;;</code></pre>
+              <pre><code>const GutterDefault = () =&gt; &lt;Container width=&quot;content&quot; gutter=&quot;default&quot; align=&quot;center&quot; element=&quot;div&quot;&gt;&lt;Text&gt;Container content.&lt;/Text&gt;&lt;/Container&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -5840,7 +5840,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const GutterWide = () =&gt; &lt;Container width=&quot;content&quot; gutter=&quot;wide&quot; align=&quot;center&quot; element=&quot;div&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Container content.&lt;/Text&gt;&lt;/Container&gt;;</code></pre>
+              <pre><code>const GutterWide = () =&gt; &lt;Container width=&quot;content&quot; gutter=&quot;wide&quot; align=&quot;center&quot; element=&quot;div&quot;&gt;&lt;Text&gt;Container content.&lt;/Text&gt;&lt;/Container&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -5850,7 +5850,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const GutterNone = () =&gt; &lt;Container width=&quot;content&quot; gutter=&quot;none&quot; align=&quot;center&quot; element=&quot;div&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Container content.&lt;/Text&gt;&lt;/Container&gt;;</code></pre>
+              <pre><code>const GutterNone = () =&gt; &lt;Container width=&quot;content&quot; gutter=&quot;none&quot; align=&quot;center&quot; element=&quot;div&quot;&gt;&lt;Text&gt;Container content.&lt;/Text&gt;&lt;/Container&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -5860,7 +5860,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const AlignCenter = () =&gt; &lt;Container width=&quot;content&quot; gutter=&quot;default&quot; align=&quot;center&quot; element=&quot;div&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Container content.&lt;/Text&gt;&lt;/Container&gt;;</code></pre>
+              <pre><code>const AlignCenter = () =&gt; &lt;Container width=&quot;content&quot; gutter=&quot;default&quot; align=&quot;center&quot; element=&quot;div&quot;&gt;&lt;Text&gt;Container content.&lt;/Text&gt;&lt;/Container&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -5870,7 +5870,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const AlignStart = () =&gt; &lt;Container width=&quot;content&quot; gutter=&quot;default&quot; align=&quot;start&quot; element=&quot;div&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Container content.&lt;/Text&gt;&lt;/Container&gt;;</code></pre>
+              <pre><code>const AlignStart = () =&gt; &lt;Container width=&quot;content&quot; gutter=&quot;default&quot; align=&quot;start&quot; element=&quot;div&quot;&gt;&lt;Text&gt;Container content.&lt;/Text&gt;&lt;/Container&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -5880,7 +5880,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const ElementDiv = () =&gt; &lt;Container width=&quot;content&quot; gutter=&quot;default&quot; align=&quot;center&quot; element=&quot;div&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Container content.&lt;/Text&gt;&lt;/Container&gt;;</code></pre>
+              <pre><code>const ElementDiv = () =&gt; &lt;Container width=&quot;content&quot; gutter=&quot;default&quot; align=&quot;center&quot; element=&quot;div&quot;&gt;&lt;Text&gt;Container content.&lt;/Text&gt;&lt;/Container&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -5890,7 +5890,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const ElementMain = () =&gt; &lt;Container width=&quot;content&quot; gutter=&quot;default&quot; align=&quot;center&quot; element=&quot;main&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Container content.&lt;/Text&gt;&lt;/Container&gt;;</code></pre>
+              <pre><code>const ElementMain = () =&gt; &lt;Container width=&quot;content&quot; gutter=&quot;default&quot; align=&quot;center&quot; element=&quot;main&quot;&gt;&lt;Text&gt;Container content.&lt;/Text&gt;&lt;/Container&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -5900,7 +5900,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               
-              <pre><code>const ElementSection = () =&gt; &lt;Container width=&quot;content&quot; gutter=&quot;default&quot; align=&quot;center&quot; element=&quot;section&quot;&gt;&lt;Text element=&quot;p&quot;&gt;Container content.&lt;/Text&gt;&lt;/Container&gt;;</code></pre>
+              <pre><code>const ElementSection = () =&gt; &lt;Container width=&quot;content&quot; gutter=&quot;default&quot; align=&quot;center&quot; element=&quot;section&quot;&gt;&lt;Text&gt;Container content.&lt;/Text&gt;&lt;/Container&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -5910,7 +5910,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               <div class="hint">The default page column for application screens, centered at the content measure.</div>
-              <pre><code>const ApplicationScreen = () =&gt; &lt;Container width=&quot;content&quot; gutter=&quot;default&quot; align=&quot;center&quot; element=&quot;div&quot;&gt;&lt;Text element=&quot;p&quot;&gt;A Stack of page regions&lt;/Text&gt;&lt;/Container&gt;;</code></pre>
+              <pre><code>const ApplicationScreen = () =&gt; &lt;Container width=&quot;content&quot; gutter=&quot;default&quot; align=&quot;center&quot; element=&quot;div&quot;&gt;&lt;Text&gt;A Stack of page regions&lt;/Text&gt;&lt;/Container&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -5920,7 +5920,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               <div class="hint">An article capped at the prose measure, about 65 characters a line.</div>
-              <pre><code>const ReadingMeasure = () =&gt; &lt;Container width=&quot;prose&quot; gutter=&quot;default&quot; align=&quot;center&quot; element=&quot;div&quot;&gt;&lt;Text element=&quot;p&quot;&gt;An article&lt;/Text&gt;&lt;/Container&gt;;</code></pre>
+              <pre><code>const ReadingMeasure = () =&gt; &lt;Container width=&quot;prose&quot; gutter=&quot;default&quot; align=&quot;center&quot; element=&quot;div&quot;&gt;&lt;Text&gt;An article&lt;/Text&gt;&lt;/Container&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -5930,7 +5930,7 @@ import { Text } from './Text';</code></pre>
               </div>
               
               <div class="hint">A narrower measure inside an already padded parent, so the gutters are not applied twice.</div>
-              <pre><code>const NestedSection = () =&gt; &lt;Container width=&quot;prose&quot; gutter=&quot;none&quot; align=&quot;center&quot; element=&quot;div&quot;&gt;&lt;Text element=&quot;p&quot;&gt;A narrower section&lt;/Text&gt;&lt;/Container&gt;;</code></pre>
+              <pre><code>const NestedSection = () =&gt; &lt;Container width=&quot;prose&quot; gutter=&quot;none&quot; align=&quot;center&quot; element=&quot;div&quot;&gt;&lt;Text&gt;A narrower section&lt;/Text&gt;&lt;/Container&gt;;</code></pre>
               
             </div>
         </div>
@@ -10120,7 +10120,7 @@ text and renders the controls it names beside it.</div>
       <div class="badges">
         <label for="c-21-form-react-props" class="badge ok as-toggle">12 prop types</label>
         
-        <label for="c-21-form-react-stories" class="badge ok as-toggle">9 stories</label>
+        <label for="c-21-form-react-stories" class="badge ok as-toggle">10 stories</label>
         
         
       </div>
@@ -10365,6 +10365,22 @@ import { Button } from './Button';</code></pre>
             </div>
             <div class="note ok">
               <div class="row">
+                <span class="ex-name">Failed Submit</span>
+                <span class="badge ok">story ok</span>
+              </div>
+              
+              
+              <pre><code>const FailedSubmit = () =&gt; &lt;Form
+    name=&quot;sign-in&quot;
+    label=&quot;Sign in&quot;
+    actions={&lt;Button label=&quot;Sign in&quot; type=&quot;submit&quot; /&gt;}&gt;(&lt;Stack gap=&quot;normal&quot;&gt;
+      &lt;Input label=&quot;Email&quot; name=&quot;email&quot; type=&quot;email&quot; required /&gt;
+      &lt;Input label=&quot;Password&quot; name=&quot;password&quot; type=&quot;password&quot; required /&gt;
+    &lt;/Stack&gt;)&lt;/Form&gt;;</code></pre>
+              
+            </div>
+            <div class="note ok">
+              <div class="row">
                 <span class="ex-name">Labelled By</span>
                 <span class="badge ok">story ok</span>
               </div>
@@ -10446,9 +10462,10 @@ the right look without breaking the outline.</div>
             <pre><code>Props:</code></pre>
             <pre><code>/**
  * Horizontal text alignment. It has no style binding on purpose — alignment is a layout choice,
- * not a themed value — so it maps straight to text-align. `start` and `end` are logical.
+ * not a themed value — so it maps straight to text-align. `start` and `end` are logical. The
+ * value set is Text&#39;s, so the type is Text&#39;s `TextAlign`.
  */
-align?: HeadingAlign | undefined = &#39;start&#39;
+align?: TextAlign | undefined = &#39;start&#39;
 
 /**
  * The heading text. Keep it short and descriptive; it is what appears in the page outline.
@@ -12038,14 +12055,13 @@ tone?: LinkTone | undefined = &#39;default&#39;</code></pre>
               </div>
               
               
-              <pre><code>const ToneInherit = () =&gt; &lt;Text tone=&quot;muted&quot;&gt;
-    &lt;Link
+              <pre><code>const ToneInherit = () =&gt; &lt;Text tone=&quot;muted&quot;&gt;For how charges are calculated, read &lt;Link
         href=&quot;/billing/history&quot;
         label=&quot;View the billing history&quot;
         external={false}
         tone=&quot;inherit&quot;
-        download={false} /&gt;
-&lt;/Text&gt;;</code></pre>
+        download={false} /&gt;.
+        &lt;/Text&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -18501,7 +18517,8 @@ align?: StackAlign | undefined = &#39;stretch&#39;
 
 /**
  * Any components. Stack does not style its children; it only positions them. Null and boolean
- * children are skipped, as the platform skips them.
+ * children are skipped, as the platform skips them. With `element` `ul`/`ol` each child gets one
+ * `li`, as React counts children: a fragment is one child, so pass an array.
  */
 children: ReactNode
 
@@ -18557,10 +18574,11 @@ wrap?: boolean | undefined = false</code></pre>
                 <div class="row">
                   <span class="ex-name">Imports</span>
                 </div>
-                <pre><code>import { Button, Input, Stack, Text } from '@design-schema/react';
+                <pre><code>import { Box, Button, Input, Stack, Text } from '@design-schema/react';
 import { Text } from './Text';
+import { Button } from './Button';
 import { Input } from './Input';
-import { Button } from './Button';</code></pre>
+import { Box } from './Box';</code></pre>
               </div>
           
           
@@ -18897,11 +18915,9 @@ import { Button } from './Button';</code></pre>
     align=&quot;start&quot;
     justify=&quot;start&quot;
     wrap
-    element=&quot;div&quot;&gt;{[
-      &lt;Text key=&quot;first&quot;&gt;First item&lt;/Text&gt;,
-      &lt;Text key=&quot;second&quot;&gt;Second item&lt;/Text&gt;,
-      &lt;Text key=&quot;third&quot;&gt;Third item&lt;/Text&gt;,
-    ]}&lt;/Stack&gt;;</code></pre>
+    element=&quot;div&quot;&gt;{[&#39;All&#39;, &#39;Open&#39;, &#39;Closed&#39;, &#39;Mine&#39;, &#39;Unassigned&#39;, &#39;Urgent&#39;, &#39;This week&#39;, &#39;Archived&#39;].map((label) =&gt; (
+      &lt;Button key={label} label={label} variant=&quot;secondary&quot; size=&quot;sm&quot; /&gt;
+    ))}&lt;/Stack&gt;;</code></pre>
               
             </div>
             <div class="note ok">
@@ -19019,8 +19035,8 @@ import { Button } from './Button';</code></pre>
     wrap={false}
     element=&quot;div&quot;&gt;{[
       &lt;Input key=&quot;name&quot; label=&quot;Full name&quot; name=&quot;name&quot; type=&quot;text&quot; /&gt;,
-      &lt;Input key=&quot;email&quot; label=&quot;Email address&quot; name=&quot;email&quot; type=&quot;email&quot; /&gt;,
-      &lt;Input key=&quot;phone&quot; label=&quot;Phone number&quot; name=&quot;phone&quot; type=&quot;tel&quot; /&gt;,
+      &lt;Input key=&quot;email&quot; label=&quot;Email&quot; name=&quot;email&quot; type=&quot;email&quot; /&gt;,
+      &lt;Input key=&quot;password&quot; label=&quot;Password&quot; name=&quot;password&quot; type=&quot;password&quot; /&gt;,
     ]}&lt;/Stack&gt;;</code></pre>
               
             </div>
@@ -19057,9 +19073,15 @@ import { Button } from './Button';</code></pre>
     justify=&quot;start&quot;
     wrap={false}
     element=&quot;div&quot;&gt;{[
-      &lt;Text key=&quot;first&quot;&gt;The first region of the page&lt;/Text&gt;,
-      &lt;Text key=&quot;second&quot;&gt;The second region of the page&lt;/Text&gt;,
-      &lt;Text key=&quot;third&quot;&gt;The third region of the page&lt;/Text&gt;,
+      &lt;Box key=&quot;summary&quot; surface=&quot;subtle&quot; inset=&quot;md&quot;&gt;
+        &lt;Text&gt;Summary&lt;/Text&gt;
+      &lt;/Box&gt;,
+      &lt;Box key=&quot;details&quot; surface=&quot;subtle&quot; inset=&quot;md&quot;&gt;
+        &lt;Text&gt;Details&lt;/Text&gt;
+      &lt;/Box&gt;,
+      &lt;Box key=&quot;history&quot; surface=&quot;subtle&quot; inset=&quot;md&quot;&gt;
+        &lt;Text&gt;History&lt;/Text&gt;
+      &lt;/Box&gt;,
     ]}&lt;/Stack&gt;;</code></pre>
               
             </div>
@@ -19076,14 +19098,9 @@ import { Button } from './Button';</code></pre>
     align=&quot;center&quot;
     justify=&quot;start&quot;
     wrap
-    element=&quot;div&quot;&gt;{[
-      &lt;Button key=&quot;all&quot; label=&quot;All&quot; variant=&quot;secondary&quot; size=&quot;sm&quot; /&gt;,
-      &lt;Button key=&quot;open&quot; label=&quot;Open&quot; variant=&quot;ghost&quot; size=&quot;sm&quot; /&gt;,
-      &lt;Button key=&quot;in-review&quot; label=&quot;In review&quot; variant=&quot;ghost&quot; size=&quot;sm&quot; /&gt;,
-      &lt;Button key=&quot;merged&quot; label=&quot;Merged&quot; variant=&quot;ghost&quot; size=&quot;sm&quot; /&gt;,
-      &lt;Button key=&quot;closed&quot; label=&quot;Closed&quot; variant=&quot;ghost&quot; size=&quot;sm&quot; /&gt;,
-      &lt;Button key=&quot;archived&quot; label=&quot;Archived&quot; variant=&quot;ghost&quot; size=&quot;sm&quot; /&gt;,
-    ]}&lt;/Stack&gt;;</code></pre>
+    element=&quot;div&quot;&gt;{[&#39;All&#39;, &#39;Open&#39;, &#39;Closed&#39;, &#39;Mine&#39;, &#39;Unassigned&#39;, &#39;Urgent&#39;, &#39;This week&#39;, &#39;Archived&#39;].map((label) =&gt; (
+      &lt;Button key={label} label={label} variant=&quot;secondary&quot; size=&quot;sm&quot; /&gt;
+    ))}&lt;/Stack&gt;;</code></pre>
               
             </div>
         </div>
@@ -21061,7 +21078,8 @@ tone?: TextTone | undefined = &#39;default&#39;
 
 /**
  * Clip to one line with an ellipsis. The full text is exposed via `title` when children is a plain
- * string; otherwise the consumer passes `title`. With `element: span` the clipped box is
+ * string; otherwise the consumer passes `title`. A consumer `title` always wins and is forwarded
+ * unchanged, with or without `truncate`; `title={undefined}` counts as not passed. With `element: span` the clipped box is
  * `display: inline-block; max-inline-size: 100%`, so the width comes from the parent.
  */
 truncate?: boolean | undefined = false
@@ -21081,7 +21099,7 @@ weight?: TextWeight | undefined = &#39;regular&#39;</code></pre>
                 <div class="row">
                   <span class="ex-name">Imports</span>
                 </div>
-                <pre><code>import { Text } from '@design-schema/react';</code></pre>
+                <pre><code>import { Box, Text } from '@design-schema/react';</code></pre>
               </div>
           
           
@@ -21491,7 +21509,7 @@ weight?: TextWeight | undefined = &#39;regular&#39;</code></pre>
                 <span class="badge ok">story ok</span>
               </div>
               
-              <div class="hint">One line of text in a dense cell, with the full string still reachable.</div>
+              <div class="hint">One line of text in a dense cell, with the full string still reachable (on React Native only to a screen reader; see `truncate`).</div>
               <pre><code>const TruncatedCell = () =&gt; &lt;Text
     size=&quot;md&quot;
     weight=&quot;regular&quot;

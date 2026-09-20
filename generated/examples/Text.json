@@ -20,13 +20,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text>Use the email you signed up with.</Text>",
-        "lit": null,
+        "lit": "<ds-text>Use the email you signed up with.</ds-text>",
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text>Use the email you signed up with. We will send a verification code to it.</Text>",
         "swift": null
       },
       "stories": {
         "react": "Default",
-        "lit": null,
+        "lit": "Default",
         "rn": "Default",
         "swift": null
       },
@@ -48,13 +48,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text size=\"xs\">Use the email you signed up with.</Text>",
-        "lit": null,
+        "lit": "<ds-text size=\"xs\">Use the email you signed up with.</ds-text>",
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text size=\"xs\">Use the email you signed up with. We will send a verification code to it.</Text>",
         "swift": null
       },
       "stories": {
         "react": "SizeXs",
-        "lit": null,
+        "lit": "SizeXs",
         "rn": "SizeXs",
         "swift": null
       },
@@ -79,13 +79,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text size=\"sm\">Use the email you signed up with.</Text>",
-        "lit": null,
+        "lit": "<ds-text size=\"sm\">Use the email you signed up with.</ds-text>",
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text size=\"sm\">Use the email you signed up with. We will send a verification code to it.</Text>",
         "swift": null
       },
       "stories": {
         "react": "SizeSm",
-        "lit": null,
+        "lit": "SizeSm",
         "rn": "SizeSm",
         "swift": null
       },
@@ -110,13 +110,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text size=\"md\">Use the email you signed up with.</Text>",
-        "lit": null,
+        "lit": "<ds-text size=\"md\">Use the email you signed up with.</ds-text>",
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text size=\"md\">Use the email you signed up with. We will send a verification code to it.</Text>",
         "swift": null
       },
       "stories": {
         "react": "SizeMd",
-        "lit": null,
+        "lit": "SizeMd",
         "rn": "SizeMd",
         "swift": null
       },
@@ -141,13 +141,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text size=\"lg\">Use the email you signed up with.</Text>",
-        "lit": null,
+        "lit": "<ds-text size=\"lg\">Use the email you signed up with.</ds-text>",
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text size=\"lg\">Use the email you signed up with. We will send a verification code to it.</Text>",
         "swift": null
       },
       "stories": {
         "react": "SizeLg",
-        "lit": null,
+        "lit": "SizeLg",
         "rn": "SizeLg",
         "swift": null
       },
@@ -172,13 +172,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text size=\"xl\">Use the email you signed up with.</Text>",
-        "lit": null,
+        "lit": "<ds-text size=\"xl\">Use the email you signed up with.</ds-text>",
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text size=\"xl\">Use the email you signed up with. We will send a verification code to it.</Text>",
         "swift": null
       },
       "stories": {
         "react": "SizeXl",
-        "lit": null,
+        "lit": "SizeXl",
         "rn": "SizeXl",
         "swift": null
       },
@@ -203,13 +203,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text weight=\"regular\">Use the email you signed up with.</Text>",
-        "lit": null,
+        "lit": "<ds-text weight=\"regular\">Use the email you signed up with.</ds-text>",
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text weight=\"regular\">Use the email you signed up with. We will send a verification code to it.</Text>",
         "swift": null
       },
       "stories": {
         "react": "WeightRegular",
-        "lit": null,
+        "lit": "WeightRegular",
         "rn": "WeightRegular",
         "swift": null
       },
@@ -234,13 +234,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text weight=\"medium\">Use the email you signed up with.</Text>",
-        "lit": null,
+        "lit": "<ds-text weight=\"medium\">Use the email you signed up with.</ds-text>",
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text weight=\"medium\">Use the email you signed up with. We will send a verification code to it.</Text>",
         "swift": null
       },
       "stories": {
         "react": "WeightMedium",
-        "lit": null,
+        "lit": "WeightMedium",
         "rn": "WeightMedium",
         "swift": null
       },
@@ -265,13 +265,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text weight=\"semibold\">Use the email you signed up with.</Text>",
-        "lit": null,
+        "lit": "<ds-text weight=\"semibold\">Use the email you signed up with.</ds-text>",
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text weight=\"semibold\">Use the email you signed up with. We will send a verification code to it.</Text>",
         "swift": null
       },
       "stories": {
         "react": "WeightSemibold",
-        "lit": null,
+        "lit": "WeightSemibold",
         "rn": "WeightSemibold",
         "swift": null
       },
@@ -296,13 +296,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text weight=\"bold\">Use the email you signed up with.</Text>",
-        "lit": null,
+        "lit": "<ds-text weight=\"bold\">Use the email you signed up with.</ds-text>",
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text weight=\"bold\">Use the email you signed up with. We will send a verification code to it.</Text>",
         "swift": null
       },
       "stories": {
         "react": "WeightBold",
-        "lit": null,
+        "lit": "WeightBold",
         "rn": "WeightBold",
         "swift": null
       },
@@ -327,13 +327,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text tone=\"default\">Use the email you signed up with.</Text>",
-        "lit": null,
+        "lit": "<ds-text tone=\"default\">Use the email you signed up with.</ds-text>",
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text tone=\"default\">Use the email you signed up with. We will send a verification code to it.</Text>",
         "swift": null
       },
       "stories": {
         "react": "ToneDefault",
-        "lit": null,
+        "lit": "ToneDefault",
         "rn": "ToneDefault",
         "swift": null
       },
@@ -358,13 +358,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text tone=\"strong\">Use the email you signed up with.</Text>",
-        "lit": null,
+        "lit": "<ds-text tone=\"strong\">Use the email you signed up with.</ds-text>",
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text tone=\"strong\">Use the email you signed up with. We will send a verification code to it.</Text>",
         "swift": null
       },
       "stories": {
         "react": "ToneStrong",
-        "lit": null,
+        "lit": "ToneStrong",
         "rn": "ToneStrong",
         "swift": null
       },
@@ -389,13 +389,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text tone=\"muted\">Use the email you signed up with.</Text>",
-        "lit": null,
+        "lit": "<ds-text tone=\"muted\">Use the email you signed up with.</ds-text>",
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text tone=\"muted\">Use the email you signed up with. We will send a verification code to it.</Text>",
         "swift": null
       },
       "stories": {
         "react": "ToneMuted",
-        "lit": null,
+        "lit": "ToneMuted",
         "rn": "ToneMuted",
         "swift": null
       },
@@ -420,13 +420,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text tone=\"danger\">Error: enter an email address like name@example.com.</Text>",
-        "lit": null,
+        "lit": "<ds-text tone=\"danger\">Error: enter an email address like name@example.com.</ds-text>",
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text tone=\"danger\">Error: enter an email address like name@example.com</Text>",
         "swift": null
       },
       "stories": {
         "react": "ToneDanger",
-        "lit": null,
+        "lit": "ToneDanger",
         "rn": "ToneDanger",
         "swift": null
       },
@@ -451,8 +451,8 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text tone=\"onAction\">Text on an action background</Text>",
-        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\nimport type { TextAlign, TextElement, TextSize, TextTone, TextWeight } from '@design-schema/lit';\n\ninterface TextArgs {\n  size: TextSize;\n  weight: TextWeight;\n  tone: TextTone;\n  align: TextAlign;\n  truncate: boolean;\n  element: TextElement;\n  /** The slotted text content (the doc's `children`). */\n  children: string;\n}\n\nfunction renderText(args: TextArgs): TemplateResult {\n  return html`\n    <ds-text\n      size=${args.size}\n      weight=${args.weight}\n      tone=${args.tone}\n      align=${args.align}\n      ?truncate=${args.truncate}\n      element=${args.element}\n      >${args.children}</ds-text\n    >\n  `;\n}\n\nhtml`\n  <div style=\"background: var(--color-action-primary-background)\">\n    <ds-box inset=\"md\">${renderText({ tone: 'onAction', children: 'Changes are saved automatically. You can undo any change for 30 days.' })}</ds-box>\n  </div>\n`;",
-        "rn": "import * as React from 'react';\nimport { View } from 'react-native';\nimport { Text, useTheme } from '@design-schema/rn';\n\nfunction OnActionSurface(props: React.ComponentProps<typeof Text>): React.JSX.Element {\n  const { tokens } = useTheme();\n  return (\n    <View\n      style={{\n        backgroundColor: tokens.colorActionPrimaryBackground,\n        paddingHorizontal: tokens.spaceMd,\n        paddingVertical: tokens.spaceSm,\n        borderRadius: tokens.radiusMd,\n      }}\n    >\n      <Text {...props} />\n    </View>\n  );\n}\n\n<OnActionSurface tone=\"onAction\">Save changes</OnActionSurface>",
+        "lit": "<ds-text tone=\"onAction\">Text on an action background</ds-text>",
+        "rn": "import * as React from 'react';\nimport { View } from 'react-native';\nimport { Box, Text, useTheme } from '@design-schema/rn';\n\nfunction OnActionSurface(props: React.ComponentProps<typeof Text>): React.JSX.Element {\n  const { tokens } = useTheme();\n  return (\n    <View style={{ backgroundColor: tokens.colorActionPrimaryBackground }}>\n      <Box inset=\"md\">\n        <Text {...props} />\n      </Box>\n    </View>\n  );\n}\n\n<OnActionSurface tone=\"onAction\">Save changes</OnActionSurface>",
         "swift": null
       },
       "stories": {
@@ -482,13 +482,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text align=\"start\">Use the email you signed up with.</Text>",
-        "lit": null,
+        "lit": "<ds-text align=\"start\">Use the email you signed up with.</ds-text>",
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text align=\"start\">Use the email you signed up with. We will send a verification code to it.</Text>",
         "swift": null
       },
       "stories": {
         "react": "AlignStart",
-        "lit": null,
+        "lit": "AlignStart",
         "rn": "AlignStart",
         "swift": null
       },
@@ -513,13 +513,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text align=\"center\">Use the email you signed up with.</Text>",
-        "lit": null,
+        "lit": "<ds-text align=\"center\">Use the email you signed up with.</ds-text>",
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text align=\"center\">Use the email you signed up with. We will send a verification code to it.</Text>",
         "swift": null
       },
       "stories": {
         "react": "AlignCenter",
-        "lit": null,
+        "lit": "AlignCenter",
         "rn": "AlignCenter",
         "swift": null
       },
@@ -544,13 +544,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text align=\"end\">Use the email you signed up with.</Text>",
-        "lit": null,
+        "lit": "<ds-text align=\"end\">Use the email you signed up with.</ds-text>",
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text align=\"end\">Use the email you signed up with. We will send a verification code to it.</Text>",
         "swift": null
       },
       "stories": {
         "react": "AlignEnd",
-        "lit": null,
+        "lit": "AlignEnd",
         "rn": "AlignEnd",
         "swift": null
       },
@@ -575,13 +575,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text element=\"p\">Use the email you signed up with.</Text>",
-        "lit": null,
+        "lit": "<ds-text element=\"p\">Use the email you signed up with.</ds-text>",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "ElementP",
-        "lit": null,
+        "lit": "ElementP",
         "rn": null,
         "swift": null
       },
@@ -606,13 +606,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text element=\"span\">Use the email you signed up with.</Text>",
-        "lit": null,
+        "lit": "<ds-text element=\"span\">Use the email you signed up with.</ds-text>",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "ElementSpan",
-        "lit": null,
+        "lit": "ElementSpan",
         "rn": null,
         "swift": null
       },
@@ -637,13 +637,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text truncate>A sentence long enough to be clipped by its column.</Text>",
-        "lit": null,
+        "lit": "<ds-text truncate>A sentence long enough to be clipped by its column.</ds-text>",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "Truncate",
-        "lit": null,
+        "lit": "Truncate",
         "rn": null,
         "swift": null
       },
@@ -668,13 +668,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text truncate element=\"span\">A sentence long enough to be clipped by its column.</Text>",
-        "lit": null,
+        "lit": "<ds-text truncate element=\"span\">A sentence long enough to be clipped by its column.</ds-text>",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "TruncateInline",
-        "lit": null,
+        "lit": "TruncateInline",
         "rn": null,
         "swift": null
       },
@@ -696,13 +696,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text>Changes are saved automatically. You can undo any change for 30 days.</Text>",
-        "lit": null,
+        "lit": "<ds-text>Changes are saved automatically. You can undo any change for 30 days.</ds-text>",
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text>Changes are saved automatically. You can undo any change for 30 days.</Text>",
         "swift": null
       },
       "stories": {
         "react": "BodyCopy",
-        "lit": null,
+        "lit": "BodyCopy",
         "rn": "BodyCopy",
         "swift": null
       },
@@ -724,13 +724,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text size=\"xs\" tone=\"muted\">Last updated 2 minutes ago.</Text>",
-        "lit": null,
+        "lit": "<ds-text size=\"xs\" tone=\"muted\">Last updated 2 minutes ago.</ds-text>",
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text size=\"xs\" tone=\"muted\">Last updated 2 minutes ago.</Text>",
         "swift": null
       },
       "stories": {
         "react": "Caption",
-        "lit": null,
+        "lit": "Caption",
         "rn": "Caption",
         "swift": null
       },
@@ -752,13 +752,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text tone=\"danger\" element=\"span\">Error: enter an email address like name@example.com</Text>",
-        "lit": null,
+        "lit": "<ds-text tone=\"danger\" element=\"span\">Error: enter an email address like name@example.com</ds-text>",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "InlineErrorWording",
-        "lit": null,
+        "lit": "InlineErrorWording",
         "rn": null,
         "swift": null
       },
@@ -780,13 +780,13 @@
       },
       "snippets": {
         "react": "import { Text } from '@design-schema/react';\n\n<Text truncate>Quarterly revenue summary for the EMEA region.</Text>",
-        "lit": null,
-        "rn": "import { Text } from '@design-schema/rn';\n\n<Text truncate>Quarterly revenue summary for the EMEA region.</Text>",
+        "lit": "<ds-text truncate>Quarterly revenue summary for the EMEA region.</ds-text>",
+        "rn": "import * as React from 'react';\nimport { View } from 'react-native';\nimport { Text } from '@design-schema/rn';\n\nfunction NarrowColumn(props: React.ComponentProps<typeof Text>): React.JSX.Element {\n  return (\n    <View style={{ width: 200 /* literal-ok: story scaffolding width for truncate to clip against */ }}>\n      <Text {...props} />\n    </View>\n  );\n}\n\n<NarrowColumn truncate>Quarterly revenue summary for the EMEA region.</NarrowColumn>",
         "swift": null
       },
       "stories": {
         "react": "TruncatedCell",
-        "lit": null,
+        "lit": "TruncatedCell",
         "rn": "TruncatedCell",
         "swift": null
       },

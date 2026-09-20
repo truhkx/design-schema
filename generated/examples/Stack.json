@@ -48,13 +48,13 @@
       },
       "snippets": {
         "react": "import { Stack, Text } from '@design-schema/react';\n\nconst items = [\n  <Text key=\"first\">First item</Text>,\n  <Text key=\"second\">Second item</Text>,\n  <Text key=\"third\">Third item</Text>,\n];\n\n<Stack>{items}</Stack>",
-        "lit": null,
+        "lit": "<ds-stack>\n  <ds-text>First item</ds-text>\n  <ds-text>Second item</ds-text>\n  <ds-text>Third item</ds-text>\n</ds-stack>",
         "rn": "import { Stack, Text } from '@design-schema/rn';\n\n<Stack>\n  <>\n    <Text>First item</Text>\n    <Text>Second item</Text>\n    <Text>Third item</Text>\n  </>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "Default",
-        "lit": null,
+        "lit": "Default",
         "rn": "Default",
         "swift": null
       },
@@ -104,13 +104,13 @@
       },
       "snippets": {
         "react": "import { Stack, Text } from '@design-schema/react';\n\nconst items = [\n  <Text key=\"first\">First item</Text>,\n  <Text key=\"second\">Second item</Text>,\n  <Text key=\"third\">Third item</Text>,\n];\n\n<Stack direction=\"vertical\">{items}</Stack>",
-        "lit": null,
+        "lit": "<ds-stack direction=\"vertical\">\n  <ds-text>First item</ds-text>\n  <ds-text>Second item</ds-text>\n  <ds-text>Third item</ds-text>\n</ds-stack>",
         "rn": "import { Stack, Text } from '@design-schema/rn';\n\n<Stack direction=\"vertical\">\n  <>\n    <Text>First item</Text>\n    <Text>Second item</Text>\n    <Text>Third item</Text>\n  </>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "DirectionVertical",
-        "lit": null,
+        "lit": "DirectionVertical",
         "rn": "DirectionVertical",
         "swift": null
       },
@@ -163,13 +163,13 @@
       },
       "snippets": {
         "react": "import { Stack, Text } from '@design-schema/react';\n\nconst items = [\n  <Text key=\"first\">First item</Text>,\n  <Text key=\"second\">Second item</Text>,\n  <Text key=\"third\">Third item</Text>,\n];\n\n<Stack direction=\"horizontal\" align=\"start\">{items}</Stack>",
-        "lit": null,
+        "lit": "<ds-stack direction=\"horizontal\" align=\"start\">\n  <ds-text>First item</ds-text>\n  <ds-text>Second item</ds-text>\n  <ds-text>Third item</ds-text>\n</ds-stack>",
         "rn": "import { Stack, Text } from '@design-schema/rn';\n\n<Stack direction=\"horizontal\" align=\"start\">\n  <>\n    <Text>First item</Text>\n    <Text>Second item</Text>\n    <Text>Third item</Text>\n  </>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "DirectionHorizontal",
-        "lit": null,
+        "lit": "DirectionHorizontal",
         "rn": "DirectionHorizontal",
         "swift": null
       },
@@ -219,13 +219,13 @@
       },
       "snippets": {
         "react": "import { Stack, Text } from '@design-schema/react';\n\nconst items = [\n  <Text key=\"first\">First item</Text>,\n  <Text key=\"second\">Second item</Text>,\n  <Text key=\"third\">Third item</Text>,\n];\n\n<Stack gap=\"none\">{items}</Stack>",
-        "lit": null,
+        "lit": "<ds-stack gap=\"none\">\n  <ds-text>First item</ds-text>\n  <ds-text>Second item</ds-text>\n  <ds-text>Third item</ds-text>\n</ds-stack>",
         "rn": "import { Stack, Text } from '@design-schema/rn';\n\n<Stack gap=\"none\">\n  <>\n    <Text>First item</Text>\n    <Text>Second item</Text>\n    <Text>Third item</Text>\n  </>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "GapNone",
-        "lit": null,
+        "lit": "GapNone",
         "rn": "GapNone",
         "swift": null
       },
@@ -278,13 +278,13 @@
       },
       "snippets": {
         "react": "import { Stack, Text } from '@design-schema/react';\n\nconst items = [\n  <Text key=\"first\">First item</Text>,\n  <Text key=\"second\">Second item</Text>,\n  <Text key=\"third\">Third item</Text>,\n];\n\n<Stack gap=\"tight\">{items}</Stack>",
-        "lit": null,
+        "lit": "<ds-stack gap=\"tight\">\n  <ds-text>First item</ds-text>\n  <ds-text>Second item</ds-text>\n  <ds-text>Third item</ds-text>\n</ds-stack>",
         "rn": "import { Stack, Text } from '@design-schema/rn';\n\n<Stack gap=\"tight\">\n  <>\n    <Text>First item</Text>\n    <Text>Second item</Text>\n    <Text>Third item</Text>\n  </>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "GapTight",
-        "lit": null,
+        "lit": "GapTight",
         "rn": "GapTight",
         "swift": null
       },
@@ -337,13 +337,13 @@
       },
       "snippets": {
         "react": "import { Stack, Text } from '@design-schema/react';\n\nconst items = [\n  <Text key=\"first\">First item</Text>,\n  <Text key=\"second\">Second item</Text>,\n  <Text key=\"third\">Third item</Text>,\n];\n\n<Stack gap=\"normal\">{items}</Stack>",
-        "lit": null,
+        "lit": "<ds-stack gap=\"normal\">\n  <ds-text>First item</ds-text>\n  <ds-text>Second item</ds-text>\n  <ds-text>Third item</ds-text>\n</ds-stack>",
         "rn": "import { Stack, Text } from '@design-schema/rn';\n\n<Stack gap=\"normal\">\n  <>\n    <Text>First item</Text>\n    <Text>Second item</Text>\n    <Text>Third item</Text>\n  </>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "GapNormal",
-        "lit": null,
+        "lit": "GapNormal",
         "rn": "GapNormal",
         "swift": null
       },
@@ -396,13 +396,13 @@
       },
       "snippets": {
         "react": "import { Stack, Text } from '@design-schema/react';\n\nconst items = [\n  <Text key=\"first\">First item</Text>,\n  <Text key=\"second\">Second item</Text>,\n  <Text key=\"third\">Third item</Text>,\n];\n\n<Stack gap=\"loose\">{items}</Stack>",
-        "lit": null,
+        "lit": "<ds-stack gap=\"loose\">\n  <ds-text>First item</ds-text>\n  <ds-text>Second item</ds-text>\n  <ds-text>Third item</ds-text>\n</ds-stack>",
         "rn": "import { Stack, Text } from '@design-schema/rn';\n\n<Stack gap=\"loose\">\n  <>\n    <Text>First item</Text>\n    <Text>Second item</Text>\n    <Text>Third item</Text>\n  </>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "GapLoose",
-        "lit": null,
+        "lit": "GapLoose",
         "rn": "GapLoose",
         "swift": null
       },
@@ -455,13 +455,13 @@
       },
       "snippets": {
         "react": "import { Stack, Text } from '@design-schema/react';\n\nconst items = [\n  <Text key=\"first\">First item</Text>,\n  <Text key=\"second\">Second item</Text>,\n  <Text key=\"third\">Third item</Text>,\n];\n\n<Stack gap=\"section\">{items}</Stack>",
-        "lit": null,
+        "lit": "<ds-stack gap=\"section\">\n  <ds-text>First item</ds-text>\n  <ds-text>Second item</ds-text>\n  <ds-text>Third item</ds-text>\n</ds-stack>",
         "rn": "import { Stack, Text } from '@design-schema/rn';\n\n<Stack gap=\"section\">\n  <>\n    <Text>First item</Text>\n    <Text>Second item</Text>\n    <Text>Third item</Text>\n  </>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "GapSection",
-        "lit": null,
+        "lit": "GapSection",
         "rn": "GapSection",
         "swift": null
       },
@@ -514,13 +514,13 @@
       },
       "snippets": {
         "react": "import { Stack, Text } from '@design-schema/react';\n\nconst items = [\n  <Text key=\"first\">First item</Text>,\n  <Text key=\"second\">Second item</Text>,\n  <Text key=\"third\">Third item</Text>,\n];\n\n<Stack align=\"start\">{items}</Stack>",
-        "lit": null,
+        "lit": "<ds-stack align=\"start\">\n  <ds-text>First item</ds-text>\n  <ds-text>Second item</ds-text>\n  <ds-text>Third item</ds-text>\n</ds-stack>",
         "rn": "import { Stack, Text } from '@design-schema/rn';\n\n<Stack align=\"start\">\n  <>\n    <Text>First item</Text>\n    <Text>Second item</Text>\n    <Text>Third item</Text>\n  </>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "AlignStart",
-        "lit": null,
+        "lit": "AlignStart",
         "rn": "AlignStart",
         "swift": null
       },
@@ -573,13 +573,13 @@
       },
       "snippets": {
         "react": "import { Stack, Text } from '@design-schema/react';\n\nconst items = [\n  <Text key=\"first\">First item</Text>,\n  <Text key=\"second\">Second item</Text>,\n  <Text key=\"third\">Third item</Text>,\n];\n\n<Stack align=\"center\">{items}</Stack>",
-        "lit": null,
+        "lit": "<ds-stack align=\"center\">\n  <ds-text>First item</ds-text>\n  <ds-text>Second item</ds-text>\n  <ds-text>Third item</ds-text>\n</ds-stack>",
         "rn": "import { Stack, Text } from '@design-schema/rn';\n\n<Stack align=\"center\">\n  <>\n    <Text>First item</Text>\n    <Text>Second item</Text>\n    <Text>Third item</Text>\n  </>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "AlignCenter",
-        "lit": null,
+        "lit": "AlignCenter",
         "rn": "AlignCenter",
         "swift": null
       },
@@ -632,13 +632,13 @@
       },
       "snippets": {
         "react": "import { Stack, Text } from '@design-schema/react';\n\nconst items = [\n  <Text key=\"first\">First item</Text>,\n  <Text key=\"second\">Second item</Text>,\n  <Text key=\"third\">Third item</Text>,\n];\n\n<Stack align=\"end\">{items}</Stack>",
-        "lit": null,
+        "lit": "<ds-stack align=\"end\">\n  <ds-text>First item</ds-text>\n  <ds-text>Second item</ds-text>\n  <ds-text>Third item</ds-text>\n</ds-stack>",
         "rn": "import { Stack, Text } from '@design-schema/rn';\n\n<Stack align=\"end\">\n  <>\n    <Text>First item</Text>\n    <Text>Second item</Text>\n    <Text>Third item</Text>\n  </>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "AlignEnd",
-        "lit": null,
+        "lit": "AlignEnd",
         "rn": "AlignEnd",
         "swift": null
       },
@@ -691,13 +691,13 @@
       },
       "snippets": {
         "react": "import { Stack, Text } from '@design-schema/react';\n\nconst items = [\n  <Text key=\"first\">First item</Text>,\n  <Text key=\"second\">Second item</Text>,\n  <Text key=\"third\">Third item</Text>,\n];\n\n<Stack align=\"stretch\">{items}</Stack>",
-        "lit": null,
+        "lit": "<ds-stack align=\"stretch\">\n  <ds-text>First item</ds-text>\n  <ds-text>Second item</ds-text>\n  <ds-text>Third item</ds-text>\n</ds-stack>",
         "rn": "import { Stack, Text } from '@design-schema/rn';\n\n<Stack align=\"stretch\">\n  <>\n    <Text>First item</Text>\n    <Text>Second item</Text>\n    <Text>Third item</Text>\n  </>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "AlignStretch",
-        "lit": null,
+        "lit": "AlignStretch",
         "rn": "AlignStretch",
         "swift": null
       },
@@ -750,13 +750,13 @@
       },
       "snippets": {
         "react": "import { Stack, Text } from '@design-schema/react';\n\nconst items = [\n  <Text key=\"first\">First item</Text>,\n  <Text key=\"second\">Second item</Text>,\n  <Text key=\"third\">Third item</Text>,\n];\n\n<Stack direction=\"horizontal\" align=\"start\" justify=\"start\">{items}</Stack>",
-        "lit": null,
+        "lit": "<ds-stack direction=\"horizontal\" align=\"start\" justify=\"start\">\n  <ds-text>First item</ds-text>\n  <ds-text>Second item</ds-text>\n  <ds-text>Third item</ds-text>\n</ds-stack>",
         "rn": "import { Stack, Text } from '@design-schema/rn';\n\n<Stack direction=\"horizontal\" align=\"start\" justify=\"start\">\n  <>\n    <Text>First item</Text>\n    <Text>Second item</Text>\n    <Text>Third item</Text>\n  </>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "JustifyStart",
-        "lit": null,
+        "lit": "JustifyStart",
         "rn": "JustifyStart",
         "swift": null
       },
@@ -806,13 +806,13 @@
       },
       "snippets": {
         "react": "import { Stack, Text } from '@design-schema/react';\n\nconst items = [\n  <Text key=\"first\">First item</Text>,\n  <Text key=\"second\">Second item</Text>,\n  <Text key=\"third\">Third item</Text>,\n];\n\n<Stack direction=\"horizontal\" align=\"start\" justify=\"center\">{items}</Stack>",
-        "lit": null,
+        "lit": "<ds-stack direction=\"horizontal\" align=\"start\" justify=\"center\">\n  <ds-text>First item</ds-text>\n  <ds-text>Second item</ds-text>\n  <ds-text>Third item</ds-text>\n</ds-stack>",
         "rn": "import { Stack, Text } from '@design-schema/rn';\n\n<Stack direction=\"horizontal\" align=\"start\" justify=\"center\">\n  <>\n    <Text>First item</Text>\n    <Text>Second item</Text>\n    <Text>Third item</Text>\n  </>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "JustifyCenter",
-        "lit": null,
+        "lit": "JustifyCenter",
         "rn": "JustifyCenter",
         "swift": null
       },
@@ -862,13 +862,13 @@
       },
       "snippets": {
         "react": "import { Stack, Text } from '@design-schema/react';\n\nconst items = [\n  <Text key=\"first\">First item</Text>,\n  <Text key=\"second\">Second item</Text>,\n  <Text key=\"third\">Third item</Text>,\n];\n\n<Stack direction=\"horizontal\" align=\"start\" justify=\"end\">{items}</Stack>",
-        "lit": null,
+        "lit": "<ds-stack direction=\"horizontal\" align=\"start\" justify=\"end\">\n  <ds-text>First item</ds-text>\n  <ds-text>Second item</ds-text>\n  <ds-text>Third item</ds-text>\n</ds-stack>",
         "rn": "import { Stack, Text } from '@design-schema/rn';\n\n<Stack direction=\"horizontal\" align=\"start\" justify=\"end\">\n  <>\n    <Text>First item</Text>\n    <Text>Second item</Text>\n    <Text>Third item</Text>\n  </>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "JustifyEnd",
-        "lit": null,
+        "lit": "JustifyEnd",
         "rn": "JustifyEnd",
         "swift": null
       },
@@ -918,13 +918,13 @@
       },
       "snippets": {
         "react": "import { Stack, Text } from '@design-schema/react';\n\nconst items = [\n  <Text key=\"first\">First item</Text>,\n  <Text key=\"second\">Second item</Text>,\n  <Text key=\"third\">Third item</Text>,\n];\n\n<Stack direction=\"horizontal\" align=\"start\" justify=\"between\">{items}</Stack>",
-        "lit": null,
+        "lit": "<ds-stack direction=\"horizontal\" align=\"start\" justify=\"between\">\n  <ds-text>First item</ds-text>\n  <ds-text>Second item</ds-text>\n  <ds-text>Third item</ds-text>\n</ds-stack>",
         "rn": "import { Stack, Text } from '@design-schema/rn';\n\n<Stack direction=\"horizontal\" align=\"start\" justify=\"between\">\n  <>\n    <Text>First item</Text>\n    <Text>Second item</Text>\n    <Text>Third item</Text>\n  </>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "JustifyBetween",
-        "lit": null,
+        "lit": "JustifyBetween",
         "rn": "JustifyBetween",
         "swift": null
       },
@@ -942,40 +942,14 @@
         "justify": "start",
         "wrap": true,
         "element": "div",
-        "children": [
-          {
-            "$element": "Text",
-            "props": {
-              "key": "first"
-            },
-            "children": [
-              "First item"
-            ]
-          },
-          {
-            "$element": "Text",
-            "props": {
-              "key": "second"
-            },
-            "children": [
-              "Second item"
-            ]
-          },
-          {
-            "$element": "Text",
-            "props": {
-              "key": "third"
-            },
-            "children": [
-              "Third item"
-            ]
-          }
-        ]
+        "children": {
+          "$unsupported": "['All', 'Open', 'Closed', 'Mine', 'Unassigned', 'Urgent', 'This week', 'Archived'].map((label) => (\n  <Button key={label} label={label} variant=\"secondary\" size=\"sm\" />\n))"
+        }
       },
       "snippets": {
-        "react": "import { Stack, Text } from '@design-schema/react';\n\nconst items = [\n  <Text key=\"first\">First item</Text>,\n  <Text key=\"second\">Second item</Text>,\n  <Text key=\"third\">Third item</Text>,\n];\n\n<Stack direction=\"horizontal\" align=\"start\" wrap>{items}</Stack>",
-        "lit": "import '@design-schema/lit';\nimport { html, type TemplateResult } from 'lit';\nimport type { StackAlign, StackDirection, StackElement, StackGap, StackJustify } from '@design-schema/lit';\n\ninterface StackArgs {\n  direction: StackDirection;\n  gap: StackGap;\n  align: StackAlign;\n  justify: StackJustify;\n  wrap: boolean;\n  element: StackElement;\n}\n\nfunction renderStack(args: StackArgs, content: TemplateResult): TemplateResult {\n  return html`\n    <ds-stack\n      direction=${args.direction}\n      gap=${args.gap}\n      align=${args.align}\n      justify=${args.justify}\n      ?wrap=${args.wrap}\n      .element=${args.element}\n    >\n      ${content}\n    </ds-stack>\n  `;\n}\n\nconst texts: TemplateResult = html`\n  <ds-text>First item</ds-text>\n  <ds-text>Second item</ds-text>\n  <ds-text>Third item</ds-text>\n`;\n\nhtml`\n  <div style=\"max-inline-size: 16rem\">${renderStack({ direction: 'horizontal', align: 'center', wrap: true }, texts)}</div>\n`;",
-        "rn": "import { Stack, Text } from '@design-schema/rn';\n\n<Stack direction=\"horizontal\" align=\"start\" wrap>\n  <>\n    <Text>First item</Text>\n    <Text>Second item</Text>\n    <Text>Third item</Text>\n  </>\n</Stack>",
+        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst filters = ['All', 'Open', 'Closed', 'Mine', 'Unassigned', 'Urgent', 'This week', 'Archived'].map((label) => (\n  <Button key={label} label={label} variant=\"secondary\" size=\"sm\" />\n));\n\n<Stack direction=\"horizontal\" align=\"start\" wrap>{filters}</Stack>",
+        "lit": "<ds-stack direction=\"horizontal\" align=\"start\" wrap>\n  <ds-button variant=\"secondary\" size=\"sm\" label=\"All\"></ds-button>\n  <ds-button variant=\"secondary\" size=\"sm\" label=\"Open\"></ds-button>\n  <ds-button variant=\"secondary\" size=\"sm\" label=\"Closed\"></ds-button>\n  <ds-button variant=\"secondary\" size=\"sm\" label=\"Mine\"></ds-button>\n  <ds-button variant=\"secondary\" size=\"sm\" label=\"Unassigned\"></ds-button>\n  <ds-button variant=\"secondary\" size=\"sm\" label=\"Urgent\"></ds-button>\n  <ds-button variant=\"secondary\" size=\"sm\" label=\"This week\"></ds-button>\n  <ds-button variant=\"secondary\" size=\"sm\" label=\"Archived\"></ds-button>\n</ds-stack>",
+        "rn": "import { Button, Stack } from '@design-schema/rn';\n\nconst filters = (\n  <>\n    <Button label=\"All\" variant=\"secondary\" size=\"sm\" />\n    <Button label=\"Open\" variant=\"secondary\" size=\"sm\" />\n    <Button label=\"Closed\" variant=\"secondary\" size=\"sm\" />\n    <Button label=\"Mine\" variant=\"secondary\" size=\"sm\" />\n    <Button label=\"Unassigned\" variant=\"secondary\" size=\"sm\" />\n    <Button label=\"Urgent\" variant=\"secondary\" size=\"sm\" />\n    <Button label=\"This week\" variant=\"secondary\" size=\"sm\" />\n    <Button label=\"Archived\" variant=\"secondary\" size=\"sm\" />\n  </>\n);\n\n<Stack direction=\"horizontal\" align=\"start\" wrap>{filters}</Stack>",
         "swift": null
       },
       "stories": {
@@ -1030,13 +1004,13 @@
       },
       "snippets": {
         "react": "import { Stack, Text } from '@design-schema/react';\n\nconst items = [\n  <Text key=\"first\">First item</Text>,\n  <Text key=\"second\">Second item</Text>,\n  <Text key=\"third\">Third item</Text>,\n];\n\n<Stack element=\"div\">{items}</Stack>",
-        "lit": null,
+        "lit": "<ds-stack element=\"div\">\n  <ds-text>First item</ds-text>\n  <ds-text>Second item</ds-text>\n  <ds-text>Third item</ds-text>\n</ds-stack>",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "ElementDiv",
-        "lit": null,
+        "lit": "ElementDiv",
         "rn": null,
         "swift": null
       },
@@ -1089,13 +1063,13 @@
       },
       "snippets": {
         "react": "import { Stack, Text } from '@design-schema/react';\n\nconst items = [\n  <Text key=\"first\">First item</Text>,\n  <Text key=\"second\">Second item</Text>,\n  <Text key=\"third\">Third item</Text>,\n];\n\n<Stack element=\"section\">{items}</Stack>",
-        "lit": null,
+        "lit": "<ds-stack element=\"section\">\n  <ds-text>First item</ds-text>\n  <ds-text>Second item</ds-text>\n  <ds-text>Third item</ds-text>\n</ds-stack>",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "ElementSection",
-        "lit": null,
+        "lit": "ElementSection",
         "rn": null,
         "swift": null
       },
@@ -1148,13 +1122,13 @@
       },
       "snippets": {
         "react": "import { Stack, Text } from '@design-schema/react';\n\nconst items = [\n  <Text key=\"first\">First item</Text>,\n  <Text key=\"second\">Second item</Text>,\n  <Text key=\"third\">Third item</Text>,\n];\n\n<Stack direction=\"horizontal\" align=\"start\" element=\"nav\">{items}</Stack>",
-        "lit": null,
+        "lit": "<ds-stack direction=\"horizontal\" align=\"start\" element=\"nav\">\n  <ds-text>First item</ds-text>\n  <ds-text>Second item</ds-text>\n  <ds-text>Third item</ds-text>\n</ds-stack>",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "ElementNav",
-        "lit": null,
+        "lit": "ElementNav",
         "rn": null,
         "swift": null
       },
@@ -1204,13 +1178,13 @@
       },
       "snippets": {
         "react": "import { Stack, Text } from '@design-schema/react';\n\nconst items = [\n  <Text key=\"first\">First item</Text>,\n  <Text key=\"second\">Second item</Text>,\n  <Text key=\"third\">Third item</Text>,\n];\n\n<Stack element=\"ul\">{items}</Stack>",
-        "lit": null,
+        "lit": "<ds-stack element=\"ul\">\n  <ds-text>First item</ds-text>\n  <ds-text>Second item</ds-text>\n  <ds-text>Third item</ds-text>\n</ds-stack>",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "ElementUl",
-        "lit": null,
+        "lit": "ElementUl",
         "rn": null,
         "swift": null
       },
@@ -1263,13 +1237,13 @@
       },
       "snippets": {
         "react": "import { Stack, Text } from '@design-schema/react';\n\nconst items = [\n  <Text key=\"first\">First item</Text>,\n  <Text key=\"second\">Second item</Text>,\n  <Text key=\"third\">Third item</Text>,\n];\n\n<Stack element=\"ol\">{items}</Stack>",
-        "lit": null,
+        "lit": "<ds-stack element=\"ol\">\n  <ds-text>First item</ds-text>\n  <ds-text>Second item</ds-text>\n  <ds-text>Third item</ds-text>\n</ds-stack>",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "ElementOl",
-        "lit": null,
+        "lit": "ElementOl",
         "rn": null,
         "swift": null
       },
@@ -1305,7 +1279,7 @@
             "$element": "Input",
             "props": {
               "key": "email",
-              "label": "Email address",
+              "label": "Email",
               "name": "email",
               "type": "email"
             },
@@ -1314,24 +1288,24 @@
           {
             "$element": "Input",
             "props": {
-              "key": "phone",
-              "label": "Phone number",
-              "name": "phone",
-              "type": "tel"
+              "key": "password",
+              "label": "Password",
+              "name": "password",
+              "type": "password"
             },
             "children": []
           }
         ]
       },
       "snippets": {
-        "react": "import { Stack, Input } from '@design-schema/react';\n\n<Stack direction=\"vertical\" gap=\"normal\">\n  {[\n    <Input key=\"name\" label=\"Full name\" name=\"name\" type=\"text\" />,\n    <Input key=\"email\" label=\"Email address\" name=\"email\" type=\"email\" />,\n    <Input key=\"phone\" label=\"Phone number\" name=\"phone\" type=\"tel\" />,\n  ]}\n</Stack>",
-        "lit": null,
+        "react": "import { Stack, Input } from '@design-schema/react';\n\n<Stack direction=\"vertical\" gap=\"normal\">\n  {[\n    <Input key=\"name\" label=\"Full name\" name=\"name\" type=\"text\" />,\n    <Input key=\"email\" label=\"Email\" name=\"email\" type=\"email\" />,\n    <Input key=\"password\" label=\"Password\" name=\"password\" type=\"password\" />,\n  ]}\n</Stack>",
+        "lit": "<ds-stack direction=\"vertical\" gap=\"normal\">\n  <ds-input label=\"Full name\" name=\"name\" type=\"text\"></ds-input>\n  <ds-input label=\"Email\" name=\"email\" type=\"email\"></ds-input>\n  <ds-input label=\"Password\" name=\"password\" type=\"password\"></ds-input>\n</ds-stack>",
         "rn": "import { Input, Stack } from '@design-schema/rn';\n\n<Stack direction=\"vertical\" gap=\"normal\">\n  <>\n    <Input label=\"Full name\" name=\"name\" />\n    <Input label=\"Email\" name=\"email\" type=\"email\" />\n    <Input label=\"Password\" name=\"password\" type=\"password\" />\n  </>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "FormFields",
-        "lit": null,
+        "lit": "FormFields",
         "rn": "FormFields",
         "swift": null
       },
@@ -1372,13 +1346,13 @@
       },
       "snippets": {
         "react": "import { Stack, Button } from '@design-schema/react';\n\n<Stack direction=\"horizontal\" gap=\"tight\" align=\"center\" justify=\"end\">\n  {[\n    <Button key=\"cancel\" label=\"Cancel\" variant=\"secondary\" />,\n    <Button key=\"submit\" label=\"Submit\" type=\"submit\" />,\n  ]}\n</Stack>",
-        "lit": null,
+        "lit": "<ds-stack direction=\"horizontal\" gap=\"tight\" align=\"center\" justify=\"end\">\n  <ds-button variant=\"secondary\" label=\"Cancel\"></ds-button>\n  <ds-button type=\"submit\" label=\"Submit\"></ds-button>\n</ds-stack>",
         "rn": "import { Button, Stack } from '@design-schema/rn';\n\n<Stack direction=\"horizontal\" gap=\"tight\" align=\"center\" justify=\"end\">\n  <>\n    <Button label=\"Cancel\" variant=\"secondary\" />\n    <Button label=\"Submit\" type=\"submit\" />\n  </>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "ButtonRow",
-        "lit": null,
+        "lit": "ButtonRow",
         "rn": "ButtonRow",
         "swift": null
       },
@@ -1398,43 +1372,67 @@
         "element": "div",
         "children": [
           {
-            "$element": "Text",
+            "$element": "Box",
             "props": {
-              "key": "first"
+              "key": "summary",
+              "surface": "subtle",
+              "inset": "md"
             },
             "children": [
-              "The first region of the page"
+              {
+                "$element": "Text",
+                "props": {},
+                "children": [
+                  "Summary"
+                ]
+              }
             ]
           },
           {
-            "$element": "Text",
+            "$element": "Box",
             "props": {
-              "key": "second"
+              "key": "details",
+              "surface": "subtle",
+              "inset": "md"
             },
             "children": [
-              "The second region of the page"
+              {
+                "$element": "Text",
+                "props": {},
+                "children": [
+                  "Details"
+                ]
+              }
             ]
           },
           {
-            "$element": "Text",
+            "$element": "Box",
             "props": {
-              "key": "third"
+              "key": "history",
+              "surface": "subtle",
+              "inset": "md"
             },
             "children": [
-              "The third region of the page"
+              {
+                "$element": "Text",
+                "props": {},
+                "children": [
+                  "History"
+                ]
+              }
             ]
           }
         ]
       },
       "snippets": {
-        "react": "import { Stack, Text } from '@design-schema/react';\n\n<Stack direction=\"vertical\" gap=\"section\">\n  {[\n    <Text key=\"first\">The first region of the page</Text>,\n    <Text key=\"second\">The second region of the page</Text>,\n    <Text key=\"third\">The third region of the page</Text>,\n  ]}\n</Stack>",
-        "lit": null,
-        "rn": "import { Heading, Stack } from '@design-schema/rn';\n\n<Stack direction=\"vertical\" gap=\"section\">\n  <>\n    <Heading level=\"2\">Profile</Heading>\n    <Heading level=\"2\">Billing</Heading>\n    <Heading level=\"2\">Notifications</Heading>\n  </>\n</Stack>",
+        "react": "import { Stack, Box, Text } from '@design-schema/react';\n\n<Stack direction=\"vertical\" gap=\"section\">\n  {[\n    <Box key=\"summary\" surface=\"subtle\" inset=\"md\">\n      <Text>Summary</Text>\n    </Box>,\n    <Box key=\"details\" surface=\"subtle\" inset=\"md\">\n      <Text>Details</Text>\n    </Box>,\n    <Box key=\"history\" surface=\"subtle\" inset=\"md\">\n      <Text>History</Text>\n    </Box>,\n  ]}\n</Stack>",
+        "lit": "<ds-stack direction=\"vertical\" gap=\"section\">\n  <ds-box surface=\"subtle\" inset=\"md\"><ds-text>Summary</ds-text></ds-box>\n  <ds-box surface=\"subtle\" inset=\"md\"><ds-text>Details</ds-text></ds-box>\n  <ds-box surface=\"subtle\" inset=\"md\"><ds-text>History</ds-text></ds-box>\n</ds-stack>",
+        "rn": "import { Box, Stack, Text } from '@design-schema/rn';\n\n<Stack direction=\"vertical\" gap=\"section\">\n  <>\n    <Box surface=\"subtle\" inset=\"md\">\n      <Text>Summary</Text>\n    </Box>\n    <Box surface=\"subtle\" inset=\"md\">\n      <Text>Details</Text>\n    </Box>\n    <Box surface=\"subtle\" inset=\"md\">\n      <Text>History</Text>\n    </Box>\n  </>\n</Stack>",
         "swift": null
       },
       "stories": {
         "react": "PageSections",
-        "lit": null,
+        "lit": "PageSections",
         "rn": "PageSections",
         "swift": null
       },
@@ -1452,78 +1450,19 @@
         "justify": "start",
         "wrap": true,
         "element": "div",
-        "children": [
-          {
-            "$element": "Button",
-            "props": {
-              "key": "all",
-              "label": "All",
-              "variant": "secondary",
-              "size": "sm"
-            },
-            "children": []
-          },
-          {
-            "$element": "Button",
-            "props": {
-              "key": "open",
-              "label": "Open",
-              "variant": "ghost",
-              "size": "sm"
-            },
-            "children": []
-          },
-          {
-            "$element": "Button",
-            "props": {
-              "key": "in-review",
-              "label": "In review",
-              "variant": "ghost",
-              "size": "sm"
-            },
-            "children": []
-          },
-          {
-            "$element": "Button",
-            "props": {
-              "key": "merged",
-              "label": "Merged",
-              "variant": "ghost",
-              "size": "sm"
-            },
-            "children": []
-          },
-          {
-            "$element": "Button",
-            "props": {
-              "key": "closed",
-              "label": "Closed",
-              "variant": "ghost",
-              "size": "sm"
-            },
-            "children": []
-          },
-          {
-            "$element": "Button",
-            "props": {
-              "key": "archived",
-              "label": "Archived",
-              "variant": "ghost",
-              "size": "sm"
-            },
-            "children": []
-          }
-        ]
+        "children": {
+          "$unsupported": "['All', 'Open', 'Closed', 'Mine', 'Unassigned', 'Urgent', 'This week', 'Archived'].map((label) => (\n  <Button key={label} label={label} variant=\"secondary\" size=\"sm\" />\n))"
+        }
       },
       "snippets": {
-        "react": "import { Stack, Button } from '@design-schema/react';\n\n<Stack direction=\"horizontal\" gap=\"tight\" align=\"center\" wrap>\n  {[\n    <Button key=\"all\" label=\"All\" variant=\"secondary\" size=\"sm\" />,\n    <Button key=\"open\" label=\"Open\" variant=\"ghost\" size=\"sm\" />,\n    <Button key=\"in-review\" label=\"In review\" variant=\"ghost\" size=\"sm\" />,\n    <Button key=\"merged\" label=\"Merged\" variant=\"ghost\" size=\"sm\" />,\n    <Button key=\"closed\" label=\"Closed\" variant=\"ghost\" size=\"sm\" />,\n    <Button key=\"archived\" label=\"Archived\" variant=\"ghost\" size=\"sm\" />,\n  ]}\n</Stack>",
-        "lit": null,
-        "rn": "import { Button, Stack } from '@design-schema/rn';\n\n<Stack direction=\"horizontal\" gap=\"tight\" align=\"center\" wrap>\n  <>\n    <Button label=\"All\" variant=\"secondary\" />\n    <Button label=\"Open\" variant=\"secondary\" />\n    <Button label=\"In review\" variant=\"secondary\" />\n    <Button label=\"Approved\" variant=\"secondary\" />\n    <Button label=\"Merged\" variant=\"secondary\" />\n    <Button label=\"Closed\" variant=\"secondary\" />\n    <Button label=\"Draft\" variant=\"secondary\" />\n    <Button label=\"Archived\" variant=\"secondary\" />\n  </>\n</Stack>",
+        "react": "import { Stack, Button } from '@design-schema/react';\n\nconst filters = ['All', 'Open', 'Closed', 'Mine', 'Unassigned', 'Urgent', 'This week', 'Archived'].map((label) => (\n  <Button key={label} label={label} variant=\"secondary\" size=\"sm\" />\n));\n\n<Stack direction=\"horizontal\" gap=\"tight\" align=\"center\" wrap>{filters}</Stack>",
+        "lit": "<ds-stack direction=\"horizontal\" gap=\"tight\" align=\"center\" wrap>\n  <ds-button variant=\"secondary\" size=\"sm\" label=\"All\"></ds-button>\n  <ds-button variant=\"secondary\" size=\"sm\" label=\"Open\"></ds-button>\n  <ds-button variant=\"secondary\" size=\"sm\" label=\"Closed\"></ds-button>\n  <ds-button variant=\"secondary\" size=\"sm\" label=\"Mine\"></ds-button>\n  <ds-button variant=\"secondary\" size=\"sm\" label=\"Unassigned\"></ds-button>\n  <ds-button variant=\"secondary\" size=\"sm\" label=\"Urgent\"></ds-button>\n  <ds-button variant=\"secondary\" size=\"sm\" label=\"This week\"></ds-button>\n  <ds-button variant=\"secondary\" size=\"sm\" label=\"Archived\"></ds-button>\n</ds-stack>",
+        "rn": "import { Button, Stack } from '@design-schema/rn';\n\nconst filters = (\n  <>\n    <Button label=\"All\" variant=\"secondary\" size=\"sm\" />\n    <Button label=\"Open\" variant=\"secondary\" size=\"sm\" />\n    <Button label=\"Closed\" variant=\"secondary\" size=\"sm\" />\n    <Button label=\"Mine\" variant=\"secondary\" size=\"sm\" />\n    <Button label=\"Unassigned\" variant=\"secondary\" size=\"sm\" />\n    <Button label=\"Urgent\" variant=\"secondary\" size=\"sm\" />\n    <Button label=\"This week\" variant=\"secondary\" size=\"sm\" />\n    <Button label=\"Archived\" variant=\"secondary\" size=\"sm\" />\n  </>\n);\n\n<Stack direction=\"horizontal\" gap=\"tight\" align=\"center\" wrap>{filters}</Stack>",
         "swift": null
       },
       "stories": {
         "react": "WrappingFilters",
-        "lit": null,
+        "lit": "WrappingFilters",
         "rn": "WrappingFilters",
         "swift": null
       },

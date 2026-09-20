@@ -51,13 +51,13 @@
       },
       "snippets": {
         "react": "import { Form, Input, Button, Stack } from '@design-schema/react';\n\nconst signInFields = (\n  <Stack gap=\"normal\">\n    <Input label=\"Email\" name=\"email\" type=\"email\" required />\n    <Input label=\"Password\" name=\"password\" type=\"password\" required />\n  </Stack>\n);\n\nconst signInActions = <Button label=\"Sign in\" type=\"submit\" />;\n\n<Form name=\"sign-in\" label=\"Sign in\" actions={signInActions}>{signInFields}</Form>",
-        "lit": null,
+        "lit": "<ds-form name=\"sign-in\" label=\"Sign in\">\n  <ds-stack gap=\"normal\">\n    <ds-input label=\"Email\" name=\"email\" type=\"email\" required></ds-input>\n    <ds-input label=\"Password\" name=\"password\" type=\"password\" required></ds-input>\n  </ds-stack>\n  <ds-button slot=\"actions\" label=\"Sign in\" type=\"submit\"></ds-button>\n</ds-form>",
         "rn": "import { Button, Form, Input, Stack } from '@design-schema/rn';\n\n<Form\n  name=\"profile\"\n  label=\"Profile\"\n  actions={\n    <Stack direction=\"horizontal\" gap=\"normal\" align=\"start\">\n      <Button label=\"Save changes\" type=\"submit\" />\n      <Button label=\"Cancel\" variant=\"secondary\" />\n    </Stack>\n  }\n>\n  <Input label=\"Full name\" name=\"name\" required />\n  <Input label=\"Email address\" name=\"email\" type=\"email\" required description=\"Use the email you signed up with.\" />\n</Form>",
         "swift": null
       },
       "stories": {
         "react": "Default",
-        "lit": null,
+        "lit": "Default",
         "rn": "Default",
         "swift": null
       },
@@ -111,13 +111,13 @@
       },
       "snippets": {
         "react": "import { Form, Input, Button, Stack } from '@design-schema/react';\n\nconst signInFields = (\n  <Stack gap=\"normal\">\n    <Input label=\"Email\" name=\"email\" type=\"email\" required />\n    <Input label=\"Password\" name=\"password\" type=\"password\" required />\n  </Stack>\n);\n\nconst signInActions = <Button label=\"Sign in\" type=\"submit\" />;\n\n<Form\n  name=\"sign-in\"\n  label=\"Sign in\"\n  actions={signInActions}\n  validate=\"submit\"\n>\n  {signInFields}\n</Form>",
-        "lit": null,
+        "lit": "<ds-form name=\"sign-in\" label=\"Sign in\" validate=\"submit\">\n  <ds-stack gap=\"normal\">\n    <ds-input label=\"Email\" name=\"email\" type=\"email\" required></ds-input>\n    <ds-input label=\"Password\" name=\"password\" type=\"password\" required></ds-input>\n  </ds-stack>\n  <ds-button slot=\"actions\" label=\"Sign in\" type=\"submit\"></ds-button>\n</ds-form>",
         "rn": "import { Button, Form, Input, Stack } from '@design-schema/rn';\n\n<Form\n  name=\"profile\"\n  label=\"Profile\"\n  validate=\"submit\"\n  actions={\n    <Stack direction=\"horizontal\" gap=\"normal\" align=\"start\">\n      <Button label=\"Save changes\" type=\"submit\" />\n      <Button label=\"Cancel\" variant=\"secondary\" />\n    </Stack>\n  }\n>\n  <Input label=\"Full name\" name=\"name\" required />\n  <Input label=\"Email address\" name=\"email\" type=\"email\" required description=\"Use the email you signed up with.\" />\n</Form>",
         "swift": null
       },
       "stories": {
         "react": "ValidateSubmit",
-        "lit": null,
+        "lit": "ValidateSubmit",
         "rn": "ValidateSubmit",
         "swift": null
       },
@@ -174,13 +174,13 @@
       },
       "snippets": {
         "react": "import { Form, Input, Button, Stack } from '@design-schema/react';\n\nconst signInFields = (\n  <Stack gap=\"normal\">\n    <Input label=\"Email\" name=\"email\" type=\"email\" required />\n    <Input label=\"Password\" name=\"password\" type=\"password\" required />\n  </Stack>\n);\n\nconst signInActions = <Button label=\"Sign in\" type=\"submit\" />;\n\n<Form name=\"sign-in\" label=\"Sign in\" actions={signInActions} validate=\"blur\">{signInFields}</Form>",
-        "lit": null,
+        "lit": "<ds-form name=\"sign-in\" label=\"Sign in\" validate=\"blur\">\n  <ds-stack gap=\"normal\">\n    <ds-input label=\"Email\" name=\"email\" type=\"email\" required></ds-input>\n    <ds-input label=\"Password\" name=\"password\" type=\"password\" required></ds-input>\n  </ds-stack>\n  <ds-button slot=\"actions\" label=\"Sign in\" type=\"submit\"></ds-button>\n</ds-form>",
         "rn": "import { Button, Form, Input, Stack } from '@design-schema/rn';\n\n<Form\n  name=\"profile\"\n  label=\"Profile\"\n  validate=\"blur\"\n  actions={\n    <Stack direction=\"horizontal\" gap=\"normal\" align=\"start\">\n      <Button label=\"Save changes\" type=\"submit\" />\n      <Button label=\"Cancel\" variant=\"secondary\" />\n    </Stack>\n  }\n>\n  <Input label=\"Full name\" name=\"name\" required />\n  <Input label=\"Email address\" name=\"email\" type=\"email\" required description=\"Use the email you signed up with.\" />\n</Form>",
         "swift": null
       },
       "stories": {
         "react": "ValidateBlur",
-        "lit": null,
+        "lit": "ValidateBlur",
         "rn": "ValidateBlur",
         "swift": null
       },
@@ -237,13 +237,13 @@
       },
       "snippets": {
         "react": "import { Form, Input, Button, Stack } from '@design-schema/react';\n\nconst signInFields = (\n  <Stack gap=\"normal\">\n    <Input label=\"Email\" name=\"email\" type=\"email\" required />\n    <Input label=\"Password\" name=\"password\" type=\"password\" required />\n  </Stack>\n);\n\nconst signInActions = <Button label=\"Sign in\" type=\"submit\" />;\n\n<Form\n  name=\"sign-in\"\n  label=\"Sign in\"\n  actions={signInActions}\n  validate=\"change\"\n>\n  {signInFields}\n</Form>",
-        "lit": null,
+        "lit": "<ds-form name=\"sign-in\" label=\"Sign in\" validate=\"change\">\n  <ds-stack gap=\"normal\">\n    <ds-input label=\"Email\" name=\"email\" type=\"email\" required></ds-input>\n    <ds-input label=\"Password\" name=\"password\" type=\"password\" required></ds-input>\n  </ds-stack>\n  <ds-button slot=\"actions\" label=\"Sign in\" type=\"submit\"></ds-button>\n</ds-form>",
         "rn": "import { Button, Form, Input, Stack } from '@design-schema/rn';\n\n<Form\n  name=\"profile\"\n  label=\"Profile\"\n  validate=\"change\"\n  actions={\n    <Stack direction=\"horizontal\" gap=\"normal\" align=\"start\">\n      <Button label=\"Save changes\" type=\"submit\" />\n      <Button label=\"Cancel\" variant=\"secondary\" />\n    </Stack>\n  }\n>\n  <Input label=\"Full name\" name=\"name\" required />\n  <Input label=\"Email address\" name=\"email\" type=\"email\" required description=\"Use the email you signed up with.\" />\n</Form>",
         "swift": null
       },
       "stories": {
         "react": "ValidateChange",
-        "lit": null,
+        "lit": "ValidateChange",
         "rn": "ValidateChange",
         "swift": null
       },
@@ -299,13 +299,13 @@
       },
       "snippets": {
         "react": "import { Form, Input, Button, Stack } from '@design-schema/react';\n\nconst signInFields = (\n  <Stack gap=\"normal\">\n    <Input label=\"Email\" name=\"email\" type=\"email\" required />\n    <Input label=\"Password\" name=\"password\" type=\"password\" required />\n  </Stack>\n);\n\nconst signInActions = <Button label=\"Sign in\" type=\"submit\" />;\n\n<Form name=\"sign-in\" label=\"Sign in\" actions={signInActions}>{signInFields}</Form>",
-        "lit": null,
-        "rn": "import { Button, Form, Input, Stack } from '@design-schema/rn';\n\nconst signInFields = (\n  <Stack gap=\"loose\">\n    <Input label=\"Email\" name=\"email\" type=\"email\" required />\n    <Input label=\"Password\" name=\"password\" type=\"password\" required />\n  </Stack>\n);\n\n<Form name=\"sign-in\" label=\"Sign in\" actions={<Button label=\"Sign in\" type=\"submit\" />}>\n  {signInFields}\n</Form>",
+        "lit": "<ds-form name=\"sign-in\" label=\"Sign in\">\n  <ds-stack gap=\"normal\">\n    <ds-input label=\"Email\" name=\"email\" type=\"email\" required></ds-input>\n    <ds-input label=\"Password\" name=\"password\" type=\"password\" required></ds-input>\n  </ds-stack>\n  <ds-button slot=\"actions\" label=\"Sign in\" type=\"submit\"></ds-button>\n</ds-form>",
+        "rn": "import { Button, Form, Input, Stack } from '@design-schema/rn';\n\nconst signInFields = (\n  <Stack>\n    <Input label=\"Email\" name=\"email\" type=\"email\" required />\n    <Input label=\"Password\" name=\"password\" type=\"password\" required />\n  </Stack>\n);\n\n<Form name=\"sign-in\" label=\"Sign in\" actions={<Button label=\"Sign in\" type=\"submit\" />}>\n  {signInFields}\n</Form>",
         "swift": null
       },
       "stories": {
         "react": "SignIn",
-        "lit": null,
+        "lit": "SignIn",
         "rn": "SignIn",
         "swift": null
       },
@@ -377,13 +377,13 @@
       },
       "snippets": {
         "react": "import { Form, Input, Button, Stack } from '@design-schema/react';\n\n<Form\n  name=\"profile\"\n  label=\"Profile details\"\n  actions={<Button label=\"Save profile\" type=\"submit\" />}\n  validate=\"blur\"\n>\n  <Stack gap=\"normal\">\n    <Input label=\"Full name\" name=\"fullName\" required />\n    <Input label=\"Email\" name=\"email\" type=\"email\" required />\n    <Input label=\"Phone\" name=\"phone\" type=\"tel\" required />\n    <Input label=\"City\" name=\"city\" required />\n  </Stack>\n</Form>",
-        "lit": null,
-        "rn": "import { Button, Form, Input, Stack } from '@design-schema/rn';\n\n<Form name=\"profile\" label=\"Profile details\" validate=\"blur\" actions={<Button label=\"Save profile\" type=\"submit\" />}>\n  <Stack gap=\"loose\">\n    <Input label=\"Full name\" name=\"fullName\" required />\n    <Input label=\"Email\" name=\"email\" type=\"email\" required />\n    <Input label=\"Phone\" name=\"phone\" type=\"tel\" required />\n    <Input label=\"City\" name=\"city\" required />\n  </Stack>\n</Form>",
+        "lit": "<ds-form name=\"profile\" label=\"Profile details\" validate=\"blur\">\n  <ds-stack gap=\"normal\">\n    <ds-input label=\"Full name\" name=\"fullName\" required></ds-input>\n    <ds-input label=\"Email\" name=\"email\" type=\"email\" required></ds-input>\n    <ds-input label=\"Phone\" name=\"phone\" type=\"tel\" required></ds-input>\n    <ds-input label=\"City\" name=\"city\" required></ds-input>\n  </ds-stack>\n  <ds-button slot=\"actions\" label=\"Save profile\" type=\"submit\"></ds-button>\n</ds-form>",
+        "rn": "import { Button, Form, Input, Stack } from '@design-schema/rn';\n\n<Form name=\"profile\" label=\"Profile details\" validate=\"blur\" actions={<Button label=\"Save profile\" type=\"submit\" />}>\n  <Stack>\n    <Input label=\"Full name\" name=\"fullName\" required />\n    <Input label=\"Email\" name=\"email\" type=\"email\" required />\n    <Input label=\"Phone\" name=\"phone\" type=\"tel\" required />\n    <Input label=\"City\" name=\"city\" required />\n  </Stack>\n</Form>",
         "swift": null
       },
       "stories": {
         "react": "LongFormValidatedOnBlur",
-        "lit": null,
+        "lit": "LongFormValidatedOnBlur",
         "rn": "LongFormValidatedOnBlur",
         "swift": null
       },
@@ -440,13 +440,13 @@
       },
       "snippets": {
         "react": "import { Form, Input, Button, Stack } from '@design-schema/react';\n\nconst signInFields = (\n  <Stack gap=\"normal\">\n    <Input label=\"Email\" name=\"email\" type=\"email\" required />\n    <Input label=\"Password\" name=\"password\" type=\"password\" required />\n  </Stack>\n);\n\nconst signInActions = <Button label=\"Sign in\" type=\"submit\" />;\n\n<Form name=\"sign-in\" label=\"Sign in\" actions={signInActions} disabled>{signInFields}</Form>",
-        "lit": null,
-        "rn": "import { Button, Form, Input, Stack } from '@design-schema/rn';\n\nconst signInFields = (\n  <Stack gap=\"loose\">\n    <Input label=\"Email\" name=\"email\" type=\"email\" required />\n    <Input label=\"Password\" name=\"password\" type=\"password\" required />\n  </Stack>\n);\n\n<Form name=\"sign-in\" label=\"Sign in\" disabled actions={<Button label=\"Sign in\" type=\"submit\" />}>\n  {signInFields}\n</Form>",
+        "lit": "<ds-form name=\"sign-in\" label=\"Sign in\" disabled>\n  <ds-stack gap=\"normal\">\n    <ds-input label=\"Email\" name=\"email\" type=\"email\" required></ds-input>\n    <ds-input label=\"Password\" name=\"password\" type=\"password\" required></ds-input>\n  </ds-stack>\n  <ds-button slot=\"actions\" label=\"Sign in\" type=\"submit\"></ds-button>\n</ds-form>",
+        "rn": "import { Button, Form, Input, Stack } from '@design-schema/rn';\n\nconst signInFields = (\n  <Stack>\n    <Input label=\"Email\" name=\"email\" type=\"email\" required />\n    <Input label=\"Password\" name=\"password\" type=\"password\" required />\n  </Stack>\n);\n\n<Form name=\"sign-in\" label=\"Sign in\" disabled actions={<Button label=\"Sign in\" type=\"submit\" />}>\n  {signInFields}\n</Form>",
         "swift": null
       },
       "stories": {
         "react": "Submitting",
-        "lit": null,
+        "lit": "Submitting",
         "rn": "Submitting",
         "swift": null
       },
@@ -484,13 +484,13 @@
       },
       "snippets": {
         "react": "import { Form, Input, Button } from '@design-schema/react';\n\n<Form\n  name=\"rename\"\n  label=\"Rename file\"\n  actions={<Button label=\"Rename\" type=\"submit\" />}\n  errorSummary={false}\n>\n  <Input label=\"File name\" name=\"fileName\" required />\n</Form>",
-        "lit": null,
+        "lit": "<ds-form name=\"rename\" label=\"Rename file\" no-error-summary>\n  <ds-input label=\"File name\" name=\"fileName\" required></ds-input>\n  <ds-button slot=\"actions\" label=\"Rename\" type=\"submit\"></ds-button>\n</ds-form>",
         "rn": "import { Button, Form, Input } from '@design-schema/rn';\n\n<Form name=\"rename\" label=\"Rename file\" errorSummary={false} actions={<Button label=\"Rename\" type=\"submit\" />}>\n  <Input label=\"File name\" name=\"fileName\" required />\n</Form>",
         "swift": null
       },
       "stories": {
         "react": "WithoutASummary",
-        "lit": null,
+        "lit": "WithoutASummary",
         "rn": "WithoutASummary",
         "swift": null
       },
@@ -499,6 +499,65 @@
         "prop": "errorSummary",
         "value": false
       },
+      "decorated": false,
+      "primary": true
+    },
+    {
+      "title": "Failed Submit",
+      "args": {
+        "name": "sign-in",
+        "label": "Sign in",
+        "children": {
+          "$element": "Stack",
+          "props": {
+            "gap": "normal"
+          },
+          "children": [
+            {
+              "$element": "Input",
+              "props": {
+                "label": "Email",
+                "name": "email",
+                "type": "email",
+                "required": true
+              },
+              "children": []
+            },
+            {
+              "$element": "Input",
+              "props": {
+                "label": "Password",
+                "name": "password",
+                "type": "password",
+                "required": true
+              },
+              "children": []
+            }
+          ]
+        },
+        "actions": {
+          "$element": "Button",
+          "props": {
+            "label": "Sign in",
+            "type": "submit"
+          },
+          "children": []
+        }
+      },
+      "snippets": {
+        "react": "import { Form, Input, Button, Stack } from '@design-schema/react';\n\nconst signInFields = (\n  <Stack gap=\"normal\">\n    <Input label=\"Email\" name=\"email\" type=\"email\" required />\n    <Input label=\"Password\" name=\"password\" type=\"password\" required />\n  </Stack>\n);\n\nconst signInActions = <Button label=\"Sign in\" type=\"submit\" />;\n\n<Form name=\"sign-in\" label=\"Sign in\" actions={signInActions}>{signInFields}</Form>",
+        "lit": "<ds-form name=\"sign-in\" label=\"Sign in\">\n  <ds-stack gap=\"normal\">\n    <ds-input label=\"Email\" name=\"email\" type=\"email\" required></ds-input>\n    <ds-input label=\"Password\" name=\"password\" type=\"password\" required></ds-input>\n  </ds-stack>\n  <ds-button slot=\"actions\" label=\"Sign in\" type=\"submit\"></ds-button>\n</ds-form>",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "FailedSubmit",
+        "lit": "FailedSubmit",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "form-react--failed-submit",
+      "sweep": null,
       "decorated": false,
       "primary": true
     },
@@ -547,13 +606,13 @@
       },
       "snippets": {
         "react": "import { Form, Input, Button, Stack, Heading } from '@design-schema/react';\n\nconst signInFields = (\n  <Stack gap=\"normal\">\n    <Input label=\"Email\" name=\"email\" type=\"email\" required />\n    <Input label=\"Password\" name=\"password\" type=\"password\" required />\n  </Stack>\n);\n\nconst signInActions = <Button label=\"Sign in\" type=\"submit\" />;\n\n<Stack gap=\"normal\">\n  <Heading id=\"form-labelled-by-heading\" level=\"2\">\n    Sign in\n  </Heading>\n  <Form\n    name=\"sign-in\"\n    label=\"Sign in\"\n    actions={signInActions}\n    labelledBy=\"form-labelled-by-heading\"\n  >{signInFields}</Form>\n</Stack>",
-        "lit": null,
+        "lit": "<ds-stack gap=\"normal\">\n  <ds-heading id=\"form-labelled-by-heading\" level=\"2\">Sign in</ds-heading>\n  <ds-form name=\"sign-in\" label=\"Sign in\" labelledby=\"form-labelled-by-heading\">\n    <ds-stack gap=\"normal\">\n      <ds-input label=\"Email\" name=\"email\" type=\"email\" required></ds-input>\n      <ds-input label=\"Password\" name=\"password\" type=\"password\" required></ds-input>\n    </ds-stack>\n    <ds-button slot=\"actions\" label=\"Sign in\" type=\"submit\"></ds-button>\n  </ds-form>\n</ds-stack>",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "LabelledBy",
-        "lit": null,
+        "lit": "LabelledBy",
         "rn": null,
         "swift": null
       },

@@ -16,16 +16,14 @@
         "element": "div",
         "children": {
           "$element": "Text",
-          "props": {
-            "element": "p"
-          },
+          "props": {},
           "children": [
             "Container content."
           ]
         }
       },
       "snippets": {
-        "react": "import { Container, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Container content.</Text>;\n\n<Container>{content}</Container>",
+        "react": "import { Container, Text } from '@design-schema/react';\n\n<Container><Text>Container content.</Text></Container>",
         "lit": "<ds-container>\n  <ds-text>Container content</ds-text>\n</ds-container>",
         "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container><Text>Container content</Text></Container>",
         "swift": null
@@ -50,16 +48,14 @@
         "element": "div",
         "children": {
           "$element": "Text",
-          "props": {
-            "element": "p"
-          },
+          "props": {},
           "children": [
             "Container content."
           ]
         }
       },
       "snippets": {
-        "react": "import { Container, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Container content.</Text>;\n\n<Container width=\"prose\">{content}</Container>",
+        "react": "import { Container, Text } from '@design-schema/react';\n\n<Container width=\"prose\"><Text>Container content.</Text></Container>",
         "lit": "<ds-container width=\"prose\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
         "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container width=\"prose\"><Text>Container content</Text></Container>",
         "swift": null
@@ -87,16 +83,14 @@
         "element": "div",
         "children": {
           "$element": "Text",
-          "props": {
-            "element": "p"
-          },
+          "props": {},
           "children": [
             "Container content."
           ]
         }
       },
       "snippets": {
-        "react": "import { Container, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Container content.</Text>;\n\n<Container width=\"content\">{content}</Container>",
+        "react": "import { Container, Text } from '@design-schema/react';\n\n<Container width=\"content\"><Text>Container content.</Text></Container>",
         "lit": "<ds-container width=\"content\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
         "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container width=\"content\"><Text>Container content</Text></Container>",
         "swift": null
@@ -124,16 +118,14 @@
         "element": "div",
         "children": {
           "$element": "Text",
-          "props": {
-            "element": "p"
-          },
+          "props": {},
           "children": [
             "Container content."
           ]
         }
       },
       "snippets": {
-        "react": "import { Container, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Container content.</Text>;\n\n<Container width=\"page\">{content}</Container>",
+        "react": "import { Container, Text } from '@design-schema/react';\n\n<Container width=\"page\"><Text>Container content.</Text></Container>",
         "lit": "<ds-container width=\"page\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
         "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container width=\"page\"><Text>Container content</Text></Container>",
         "swift": null
@@ -161,16 +153,14 @@
         "element": "div",
         "children": {
           "$element": "Text",
-          "props": {
-            "element": "p"
-          },
+          "props": {},
           "children": [
             "Container content."
           ]
         }
       },
       "snippets": {
-        "react": "import { Container, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Container content.</Text>;\n\n<Container width=\"full\">{content}</Container>",
+        "react": "import { Container, Text } from '@design-schema/react';\n\n<Container width=\"full\"><Text>Container content.</Text></Container>",
         "lit": "<ds-container width=\"full\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
         "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container width=\"full\"><Text>Container content</Text></Container>",
         "swift": null
@@ -198,16 +188,14 @@
         "element": "div",
         "children": {
           "$element": "Text",
-          "props": {
-            "element": "p"
-          },
+          "props": {},
           "children": [
             "Container content."
           ]
         }
       },
       "snippets": {
-        "react": "import { Container, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Container content.</Text>;\n\n<Container gutter=\"narrow\">{content}</Container>",
+        "react": "import { Container, Text } from '@design-schema/react';\n\n<Container gutter=\"narrow\"><Text>Container content.</Text></Container>",
         "lit": "<ds-container gutter=\"narrow\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
         "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container gutter=\"narrow\"><Text>Container content</Text></Container>",
         "swift": null
@@ -235,16 +223,14 @@
         "element": "div",
         "children": {
           "$element": "Text",
-          "props": {
-            "element": "p"
-          },
+          "props": {},
           "children": [
             "Container content."
           ]
         }
       },
       "snippets": {
-        "react": "import { Container, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Container content.</Text>;\n\n<Container gutter=\"default\">{content}</Container>",
+        "react": "import { Container, Text } from '@design-schema/react';\n\n<Container gutter=\"default\"><Text>Container content.</Text></Container>",
         "lit": "<ds-container gutter=\"default\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
         "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container gutter=\"default\"><Text>Container content</Text></Container>",
         "swift": null
@@ -272,16 +258,14 @@
         "element": "div",
         "children": {
           "$element": "Text",
-          "props": {
-            "element": "p"
-          },
+          "props": {},
           "children": [
             "Container content."
           ]
         }
       },
       "snippets": {
-        "react": "import { Container, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Container content.</Text>;\n\n<Container gutter=\"wide\">{content}</Container>",
+        "react": "import { Container, Text } from '@design-schema/react';\n\n<Container gutter=\"wide\"><Text>Container content.</Text></Container>",
         "lit": "<ds-container gutter=\"wide\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
         "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container gutter=\"wide\"><Text>Container content</Text></Container>",
         "swift": null
@@ -309,16 +293,14 @@
         "element": "div",
         "children": {
           "$element": "Text",
-          "props": {
-            "element": "p"
-          },
+          "props": {},
           "children": [
             "Container content."
           ]
         }
       },
       "snippets": {
-        "react": "import { Container, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Container content.</Text>;\n\n<Container gutter=\"none\">{content}</Container>",
+        "react": "import { Container, Text } from '@design-schema/react';\n\n<Container gutter=\"none\"><Text>Container content.</Text></Container>",
         "lit": "<ds-container gutter=\"none\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
         "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container gutter=\"none\"><Text>Container content</Text></Container>",
         "swift": null
@@ -346,16 +328,14 @@
         "element": "div",
         "children": {
           "$element": "Text",
-          "props": {
-            "element": "p"
-          },
+          "props": {},
           "children": [
             "Container content."
           ]
         }
       },
       "snippets": {
-        "react": "import { Container, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Container content.</Text>;\n\n<Container align=\"center\">{content}</Container>",
+        "react": "import { Container, Text } from '@design-schema/react';\n\n<Container align=\"center\"><Text>Container content.</Text></Container>",
         "lit": "<ds-container align=\"center\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
         "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container align=\"center\"><Text>Container content</Text></Container>",
         "swift": null
@@ -383,16 +363,14 @@
         "element": "div",
         "children": {
           "$element": "Text",
-          "props": {
-            "element": "p"
-          },
+          "props": {},
           "children": [
             "Container content."
           ]
         }
       },
       "snippets": {
-        "react": "import { Container, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Container content.</Text>;\n\n<Container align=\"start\">{content}</Container>",
+        "react": "import { Container, Text } from '@design-schema/react';\n\n<Container align=\"start\"><Text>Container content.</Text></Container>",
         "lit": "<ds-container align=\"start\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
         "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container align=\"start\"><Text>Container content</Text></Container>",
         "swift": null
@@ -420,16 +398,14 @@
         "element": "div",
         "children": {
           "$element": "Text",
-          "props": {
-            "element": "p"
-          },
+          "props": {},
           "children": [
             "Container content."
           ]
         }
       },
       "snippets": {
-        "react": "import { Container, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Container content.</Text>;\n\n<Container element=\"div\">{content}</Container>",
+        "react": "import { Container, Text } from '@design-schema/react';\n\n<Container element=\"div\"><Text>Container content.</Text></Container>",
         "lit": "<ds-container element=\"div\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
         "rn": null,
         "swift": null
@@ -457,16 +433,14 @@
         "element": "main",
         "children": {
           "$element": "Text",
-          "props": {
-            "element": "p"
-          },
+          "props": {},
           "children": [
             "Container content."
           ]
         }
       },
       "snippets": {
-        "react": "import { Container, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Container content.</Text>;\n\n<Container element=\"main\">{content}</Container>",
+        "react": "import { Container, Text } from '@design-schema/react';\n\n<Container element=\"main\"><Text>Container content.</Text></Container>",
         "lit": "<ds-container element=\"main\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
         "rn": null,
         "swift": null
@@ -494,16 +468,14 @@
         "element": "section",
         "children": {
           "$element": "Text",
-          "props": {
-            "element": "p"
-          },
+          "props": {},
           "children": [
             "Container content."
           ]
         }
       },
       "snippets": {
-        "react": "import { Container, Text } from '@design-schema/react';\n\nconst content = <Text element=\"p\">Container content.</Text>;\n\n<Container element=\"section\">{content}</Container>",
+        "react": "import { Container, Text } from '@design-schema/react';\n\n<Container element=\"section\"><Text>Container content.</Text></Container>",
         "lit": "<ds-container element=\"section\">\n  <ds-text>Container content</ds-text>\n</ds-container>",
         "rn": null,
         "swift": null
@@ -531,16 +503,14 @@
         "element": "div",
         "children": {
           "$element": "Text",
-          "props": {
-            "element": "p"
-          },
+          "props": {},
           "children": [
             "A Stack of page regions"
           ]
         }
       },
       "snippets": {
-        "react": "import { Container, Text } from '@design-schema/react';\n\n<Container width=\"content\"><Text element=\"p\">A Stack of page regions</Text></Container>",
+        "react": "import { Container, Text } from '@design-schema/react';\n\n<Container width=\"content\"><Text>A Stack of page regions</Text></Container>",
         "lit": "<ds-container width=\"content\">\n  <ds-text>A Stack of page regions</ds-text>\n</ds-container>",
         "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container width=\"content\"><Text>A Stack of page regions</Text></Container>",
         "swift": null
@@ -568,16 +538,14 @@
         "element": "div",
         "children": {
           "$element": "Text",
-          "props": {
-            "element": "p"
-          },
+          "props": {},
           "children": [
             "An article"
           ]
         }
       },
       "snippets": {
-        "react": "import { Container, Text } from '@design-schema/react';\n\n<Container width=\"prose\"><Text element=\"p\">An article</Text></Container>",
+        "react": "import { Container, Text } from '@design-schema/react';\n\n<Container width=\"prose\"><Text>An article</Text></Container>",
         "lit": "<ds-container width=\"prose\">\n  <ds-text>An article</ds-text>\n</ds-container>",
         "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container width=\"prose\"><Text>An article</Text></Container>",
         "swift": null
@@ -605,16 +573,14 @@
         "element": "div",
         "children": {
           "$element": "Text",
-          "props": {
-            "element": "p"
-          },
+          "props": {},
           "children": [
             "A narrower section"
           ]
         }
       },
       "snippets": {
-        "react": "import { Container, Text } from '@design-schema/react';\n\n<Container width=\"prose\" gutter=\"none\"><Text element=\"p\">A narrower section</Text></Container>",
+        "react": "import { Container, Text } from '@design-schema/react';\n\n<Container width=\"prose\" gutter=\"none\"><Text>A narrower section</Text></Container>",
         "lit": "<ds-container width=\"prose\" gutter=\"none\">\n  <ds-text>A narrower section</ds-text>\n</ds-container>",
         "rn": "import { Container, Text } from '@design-schema/rn';\n\n<Container width=\"prose\" gutter=\"none\"><Text>A narrower section</Text></Container>",
         "swift": null

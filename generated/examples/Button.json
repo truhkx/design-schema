@@ -21,13 +21,13 @@
       },
       "snippets": {
         "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Save changes\" />",
-        "lit": null,
+        "lit": "<ds-button label=\"Save changes\"></ds-button>",
         "rn": "import { Button } from '@design-schema/rn';\n\n<Button label=\"Save changes\" />",
         "swift": null
       },
       "stories": {
         "react": "Default",
-        "lit": null,
+        "lit": "Default",
         "rn": "Default",
         "swift": null
       },
@@ -50,13 +50,13 @@
       },
       "snippets": {
         "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Save changes\" variant=\"primary\" />",
-        "lit": null,
+        "lit": "<ds-button label=\"Save changes\" variant=\"primary\"></ds-button>",
         "rn": "import { Button } from '@design-schema/rn';\n\n<Button label=\"Save changes\" variant=\"primary\" />",
         "swift": null
       },
       "stories": {
         "react": "VariantPrimary",
-        "lit": null,
+        "lit": "VariantPrimary",
         "rn": "VariantPrimary",
         "swift": null
       },
@@ -82,13 +82,13 @@
       },
       "snippets": {
         "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Cancel\" variant=\"secondary\" />",
-        "lit": null,
+        "lit": "<ds-button label=\"Cancel\" variant=\"secondary\"></ds-button>",
         "rn": "import { Button } from '@design-schema/rn';\n\n<Button label=\"Cancel\" variant=\"secondary\" />",
         "swift": null
       },
       "stories": {
         "react": "VariantSecondary",
-        "lit": null,
+        "lit": "VariantSecondary",
         "rn": "VariantSecondary",
         "swift": null
       },
@@ -114,13 +114,13 @@
       },
       "snippets": {
         "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Forgot password?\" variant=\"ghost\" />",
-        "lit": null,
+        "lit": "<ds-button label=\"Forgot password?\" variant=\"ghost\"></ds-button>",
         "rn": "import { Button } from '@design-schema/rn';\n\n<Button label=\"Forgot password?\" variant=\"ghost\" />",
         "swift": null
       },
       "stories": {
         "react": "VariantGhost",
-        "lit": null,
+        "lit": "VariantGhost",
         "rn": "VariantGhost",
         "swift": null
       },
@@ -146,13 +146,13 @@
       },
       "snippets": {
         "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Delete file\" variant=\"danger\" />",
-        "lit": null,
+        "lit": "<ds-button label=\"Delete file\" variant=\"danger\"></ds-button>",
         "rn": "import { Button } from '@design-schema/rn';\n\n<Button label=\"Delete file\" variant=\"danger\" />",
         "swift": null
       },
       "stories": {
         "react": "VariantDanger",
-        "lit": null,
+        "lit": "VariantDanger",
         "rn": "VariantDanger",
         "swift": null
       },
@@ -178,13 +178,13 @@
       },
       "snippets": {
         "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Save changes\" size=\"sm\" />",
-        "lit": null,
+        "lit": "<ds-button label=\"Save changes\" size=\"sm\"></ds-button>",
         "rn": "import { Button } from '@design-schema/rn';\n\n<Button label=\"Save changes\" size=\"sm\" />",
         "swift": null
       },
       "stories": {
         "react": "SizeSm",
-        "lit": null,
+        "lit": "SizeSm",
         "rn": "SizeSm",
         "swift": null
       },
@@ -210,13 +210,13 @@
       },
       "snippets": {
         "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Save changes\" size=\"md\" />",
-        "lit": null,
+        "lit": "<ds-button label=\"Save changes\" size=\"md\"></ds-button>",
         "rn": "import { Button } from '@design-schema/rn';\n\n<Button label=\"Save changes\" size=\"md\" />",
         "swift": null
       },
       "stories": {
         "react": "SizeMd",
-        "lit": null,
+        "lit": "SizeMd",
         "rn": "SizeMd",
         "swift": null
       },
@@ -242,13 +242,13 @@
       },
       "snippets": {
         "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Save changes\" size=\"lg\" />",
-        "lit": null,
+        "lit": "<ds-button label=\"Save changes\" size=\"lg\"></ds-button>",
         "rn": "import { Button } from '@design-schema/rn';\n\n<Button label=\"Save changes\" size=\"lg\" />",
         "swift": null
       },
       "stories": {
         "react": "SizeLg",
-        "lit": null,
+        "lit": "SizeLg",
         "rn": "SizeLg",
         "swift": null
       },
@@ -274,13 +274,13 @@
       },
       "snippets": {
         "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Save changes\" type=\"button\" />",
-        "lit": null,
+        "lit": "<ds-button label=\"Save changes\" type=\"button\"></ds-button>",
         "rn": "import { Button } from '@design-schema/rn';\n\n<Button label=\"Save changes\" type=\"button\" />",
         "swift": null
       },
       "stories": {
         "react": "TypeButton",
-        "lit": null,
+        "lit": "TypeButton",
         "rn": "TypeButton",
         "swift": null
       },
@@ -306,13 +306,13 @@
       },
       "snippets": {
         "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Sign in\" type=\"submit\" />",
-        "lit": null,
+        "lit": "<ds-button label=\"Sign in\" type=\"submit\"></ds-button>",
         "rn": "import { Button } from '@design-schema/rn';\n\n<Button label=\"Sign in\" type=\"submit\" />",
         "swift": null
       },
       "stories": {
         "react": "TypeSubmit",
-        "lit": null,
+        "lit": "TypeSubmit",
         "rn": "TypeSubmit",
         "swift": null
       },
@@ -338,13 +338,13 @@
       },
       "snippets": {
         "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Save changes\" disabled />",
-        "lit": null,
+        "lit": "<ds-button label=\"Save changes\" disabled></ds-button>",
         "rn": "import { Button } from '@design-schema/rn';\n\n<Button label=\"Save changes\" disabled />",
         "swift": null
       },
       "stories": {
         "react": "Disabled",
-        "lit": null,
+        "lit": "Disabled",
         "rn": "Disabled",
         "swift": null
       },
@@ -370,13 +370,13 @@
       },
       "snippets": {
         "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Saving\" loading />",
-        "lit": null,
+        "lit": "<ds-button label=\"Saving\" loading></ds-button>",
         "rn": "import { Button } from '@design-schema/rn';\n\n<Button label=\"Save changes\" loading />",
         "swift": null
       },
       "stories": {
         "react": "Loading",
-        "lit": null,
+        "lit": "Loading",
         "rn": "Loading",
         "swift": null
       },
@@ -410,13 +410,13 @@
       },
       "snippets": {
         "react": "import { Button, Icon } from '@design-schema/react';\n\n<Button\n  label=\"Close\"\n  variant=\"ghost\"\n  iconOnly\n  loading\n  leadingIcon={<Icon name=\"close\" inline />}\n/>",
-        "lit": null,
+        "lit": "<ds-button label=\"Close\" variant=\"ghost\" icon-only loading><ds-icon slot=\"leading-icon\" name=\"close\" inline></ds-icon></ds-button>",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "LoadingIconOnly",
-        "lit": null,
+        "lit": "LoadingIconOnly",
         "rn": null,
         "swift": null
       },
@@ -455,13 +455,13 @@
       },
       "snippets": {
         "react": "import { Button, Icon } from '@design-schema/react';\n\n<Button\n  label=\"Add item\"\n  leadingIcon={<Icon name=\"plus\" inline />}\n  trailingIcon={<Icon name=\"chevron-right\" inline />}\n/>",
-        "lit": null,
+        "lit": "<ds-button label=\"Add item\"><ds-icon slot=\"leading-icon\" name=\"plus\" inline></ds-icon><ds-icon slot=\"trailing-icon\" name=\"chevron-right\" inline></ds-icon></ds-button>",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "WithIcons",
-        "lit": null,
+        "lit": "WithIcons",
         "rn": null,
         "swift": null
       },
@@ -492,13 +492,13 @@
       },
       "snippets": {
         "react": "import { Button, Icon } from '@design-schema/react';\n\n<Button\n  label=\"Close\"\n  variant=\"ghost\"\n  iconOnly\n  leadingIcon={<Icon name=\"close\" inline />}\n/>",
-        "lit": null,
+        "lit": "<ds-button label=\"Close\" variant=\"ghost\" icon-only><ds-icon slot=\"leading-icon\" name=\"close\" inline></ds-icon></ds-button>",
         "rn": "import * as React from 'react';\nimport { Button, type ButtonVariant, Icon, type IconName, useTheme, type Tokens } from '@design-schema/rn';\n\nconst FOREGROUND_TOKEN: Record<ButtonVariant, keyof Tokens> = {\n  primary: 'colorActionPrimaryForeground',\n  secondary: 'colorActionSecondaryForeground',\n  ghost: 'colorActionGhostForeground',\n  danger: 'colorActionDangerForeground',\n};\n\nfunction GlyphIcon({\n  name,\n  variant = 'primary',\n  inverse = false,\n}: {\n  name: IconName;\n  variant?: ButtonVariant | undefined;\n  inverse?: boolean | undefined;\n}): React.JSX.Element {\n  const { tokens } = useTheme();\n  const color = variant === 'ghost' && inverse ? tokens.colorInverseLink : (tokens[FOREGROUND_TOKEN[variant]] as string);\n  return <Icon name={name} color={color} />;\n}\n\n<Button\n  label=\"Close\"\n  variant=\"ghost\"\n  iconOnly\n  leadingIcon={<GlyphIcon name=\"close\" variant=\"ghost\" />}\n/>",
         "swift": null
       },
       "stories": {
         "react": "IconOnly",
-        "lit": null,
+        "lit": "IconOnly",
         "rn": "IconOnly",
         "swift": null
       },
@@ -530,13 +530,13 @@
       },
       "snippets": {
         "react": "import { Button, Icon } from '@design-schema/react';\n\n<Button\n  label=\"Actions\"\n  variant=\"secondary\"\n  expanded\n  trailingIcon={<Icon name=\"chevron-down\" inline />}\n/>",
-        "lit": null,
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-button label=\"Actions\" variant=\"secondary\" .expanded=${true}><ds-icon slot=\"trailing-icon\" name=\"chevron-down\" inline></ds-icon></ds-button>\n`;",
         "rn": "import * as React from 'react';\nimport { Button, type ButtonVariant, Icon, type IconName, useTheme, type Tokens } from '@design-schema/rn';\n\nconst FOREGROUND_TOKEN: Record<ButtonVariant, keyof Tokens> = {\n  primary: 'colorActionPrimaryForeground',\n  secondary: 'colorActionSecondaryForeground',\n  ghost: 'colorActionGhostForeground',\n  danger: 'colorActionDangerForeground',\n};\n\nfunction GlyphIcon({\n  name,\n  variant = 'primary',\n  inverse = false,\n}: {\n  name: IconName;\n  variant?: ButtonVariant | undefined;\n  inverse?: boolean | undefined;\n}): React.JSX.Element {\n  const { tokens } = useTheme();\n  const color = variant === 'ghost' && inverse ? tokens.colorInverseLink : (tokens[FOREGROUND_TOKEN[variant]] as string);\n  return <Icon name={name} color={color} />;\n}\n\n<Button\n  label=\"Options\"\n  expanded\n  trailingIcon={<GlyphIcon name=\"chevron-down\" />}\n/>",
         "swift": null
       },
       "stories": {
         "react": "Expanded",
-        "lit": null,
+        "lit": "Expanded",
         "rn": "Expanded",
         "swift": null
       },
@@ -559,7 +559,7 @@
       },
       "snippets": {
         "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Undo\" variant=\"ghost\" inverse />",
-        "lit": "import '@design-schema/lit';\nimport { html, nothing, type TemplateResult } from 'lit';\nimport { ifDefined } from 'lit/directives/if-defined.js';\nimport type { ButtonSize, ButtonType, ButtonVariant } from '@design-schema/lit';\n\ninterface ButtonArgs {\n  label: string;\n  variant: ButtonVariant;\n  size: ButtonSize;\n  type: ButtonType;\n  disabled: boolean;\n  iconOnly: boolean;\n  loading: boolean;\n  inverse: boolean;\n  track: string;\n  accessibleName?: string | undefined;\n  overflowLabel?: string | undefined;\n  expanded?: boolean | undefined;\n}\n\nconst renderButton = (args: ButtonArgs, extra: TemplateResult | typeof nothing = nothing): TemplateResult => html`\n  <ds-button\n    label=${args.label}\n    variant=${args.variant}\n    size=${args.size}\n    type=${args.type}\n    track=${ifDefined(args.track === '' ? undefined : args.track)}\n    accessible-name=${ifDefined(args.accessibleName || undefined)}\n    overflow-label=${ifDefined(args.overflowLabel || undefined)}\n    .expanded=${args.expanded}\n    ?disabled=${args.disabled}\n    ?icon-only=${args.iconOnly}\n    ?loading=${args.loading}\n    ?inverse=${args.inverse}\n    >${extra}</ds-button\n  >\n`;\n\nhtml`\n  <div style=\"background: var(--color-inverse-surface); padding: var(--space-md); border-radius: var(--radius-md);\">\n    ${renderButton({ label: 'Dismiss', variant: 'ghost', inverse: true })}\n  </div>\n`;",
+        "lit": "<div style=\"background: var(--color-inverse-surface); padding: var(--space-lg);\">\n  <ds-button label=\"Undo\" variant=\"ghost\" inverse></ds-button>\n</div>",
         "rn": "import * as React from 'react';\nimport { View } from 'react-native';\nimport { Button, useTheme } from '@design-schema/rn';\n\nfunction InverseSurface({ children }: { children: React.ReactNode }): React.JSX.Element {\n  const { tokens } = useTheme();\n  return (\n    <View style={{ backgroundColor: tokens.colorInverseSurface, padding: tokens.spaceMd, borderRadius: tokens.radiusMd }}>\n      {children}\n    </View>\n  );\n}\n\n<InverseSurface>\n  <Button label=\"Learn more\" variant=\"ghost\" inverse />\n</InverseSurface>",
         "swift": null
       },
@@ -589,13 +589,13 @@
       },
       "snippets": {
         "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Sign up\" track=\"signup\" />",
-        "lit": null,
+        "lit": "<ds-button label=\"Sign up\" track=\"signup\"></ds-button>",
         "rn": "import { Button } from '@design-schema/rn';\n\n<Button label=\"Sign up\" track=\"signup\" />",
         "swift": null
       },
       "stories": {
         "react": "Tracked",
-        "lit": null,
+        "lit": "Tracked",
         "rn": "Tracked",
         "swift": null
       },
@@ -618,13 +618,13 @@
       },
       "snippets": {
         "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Save changes\" variant=\"primary\" />",
-        "lit": null,
+        "lit": "<ds-button label=\"Save changes\" variant=\"primary\"></ds-button>",
         "rn": "import { Button } from '@design-schema/rn';\n\n<Button label=\"Save changes\" variant=\"primary\" />",
         "swift": null
       },
       "stories": {
         "react": "PrimarySave",
-        "lit": null,
+        "lit": "PrimarySave",
         "rn": "PrimarySave",
         "swift": null
       },
@@ -650,13 +650,13 @@
       },
       "snippets": {
         "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Delete file\" variant=\"danger\" />",
-        "lit": null,
+        "lit": "<ds-button label=\"Delete file\" variant=\"danger\"></ds-button>",
         "rn": "import { Button } from '@design-schema/rn';\n\n<Button label=\"Delete file\" variant=\"danger\" />",
         "swift": null
       },
       "stories": {
         "react": "DestructiveConfirm",
-        "lit": null,
+        "lit": "DestructiveConfirm",
         "rn": "DestructiveConfirm",
         "swift": null
       },
@@ -690,13 +690,13 @@
       },
       "snippets": {
         "react": "import { Button, Icon } from '@design-schema/react';\n\n<Button\n  label=\"Close\"\n  variant=\"ghost\"\n  size=\"sm\"\n  iconOnly\n  leadingIcon={<Icon name=\"close\" inline />}\n/>",
-        "lit": null,
+        "lit": "<ds-button label=\"Close\" variant=\"ghost\" size=\"sm\" icon-only><ds-icon slot=\"leading-icon\" name=\"close\" inline></ds-icon></ds-button>",
         "rn": "import * as React from 'react';\nimport { Button, type ButtonVariant, Icon, type IconName, useTheme, type Tokens } from '@design-schema/rn';\n\nconst FOREGROUND_TOKEN: Record<ButtonVariant, keyof Tokens> = {\n  primary: 'colorActionPrimaryForeground',\n  secondary: 'colorActionSecondaryForeground',\n  ghost: 'colorActionGhostForeground',\n  danger: 'colorActionDangerForeground',\n};\n\nfunction GlyphIcon({\n  name,\n  variant = 'primary',\n  inverse = false,\n}: {\n  name: IconName;\n  variant?: ButtonVariant | undefined;\n  inverse?: boolean | undefined;\n}): React.JSX.Element {\n  const { tokens } = useTheme();\n  const color = variant === 'ghost' && inverse ? tokens.colorInverseLink : (tokens[FOREGROUND_TOKEN[variant]] as string);\n  return <Icon name={name} color={color} />;\n}\n\n<Button\n  label=\"Close\"\n  variant=\"ghost\"\n  size=\"sm\"\n  iconOnly\n  leadingIcon={<GlyphIcon name=\"close\" variant=\"ghost\" />}\n/>",
         "swift": null
       },
       "stories": {
         "react": "IconOnlyInAToolbar",
-        "lit": null,
+        "lit": "IconOnlyInAToolbar",
         "rn": "IconOnlyInAToolbar",
         "swift": null
       },
@@ -719,13 +719,13 @@
       },
       "snippets": {
         "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Create account\" type=\"submit\" loading />",
-        "lit": null,
+        "lit": "<ds-button label=\"Create account\" type=\"submit\" loading></ds-button>",
         "rn": "import { Button } from '@design-schema/rn';\n\n<Button label=\"Create account\" type=\"submit\" loading />",
         "swift": null
       },
       "stories": {
         "react": "PendingSubmit",
-        "lit": null,
+        "lit": "PendingSubmit",
         "rn": "PendingSubmit",
         "swift": null
       },

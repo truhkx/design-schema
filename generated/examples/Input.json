@@ -447,13 +447,13 @@
       },
       "snippets": {
         "react": "import { Input } from '@design-schema/react';\n\n<Input label=\"Email address\" name=\"email\" invalid required />",
-        "lit": null,
+        "lit": "<ds-input label=\"Email address\" name=\"email\" required invalid></ds-input>",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "InvalidRequiredEmpty",
-        "lit": null,
+        "lit": "InvalidRequiredEmpty",
         "rn": null,
         "swift": null
       },
@@ -471,13 +471,13 @@
       },
       "snippets": {
         "react": "import { Input } from '@design-schema/react';\n\n<Input label=\"Email address\" name=\"email\" placeholder=\"name@example.com\" />",
-        "lit": null,
+        "lit": "<ds-input label=\"Email address\" name=\"email\" placeholder=\"name@example.com\"></ds-input>",
         "rn": null,
         "swift": null
       },
       "stories": {
         "react": "WithPlaceholder",
-        "lit": null,
+        "lit": "WithPlaceholder",
         "rn": null,
         "swift": null
       },

@@ -5732,89 +5732,89 @@
         {
           "id": "container-react--default",
           "name": "Default",
-          "snippet": "const Default = () => <Container width=\"content\" gutter=\"default\" align=\"center\" element=\"div\"><Text element=\"p\">Container content.</Text></Container>;"
+          "snippet": "const Default = () => <Container width=\"content\" gutter=\"default\" align=\"center\" element=\"div\"><Text>Container content.</Text></Container>;"
         },
         {
           "id": "container-react--width-prose",
           "name": "Width Prose",
-          "snippet": "const WidthProse = () => <Container width=\"prose\" gutter=\"default\" align=\"center\" element=\"div\"><Text element=\"p\">Container content.</Text></Container>;"
+          "snippet": "const WidthProse = () => <Container width=\"prose\" gutter=\"default\" align=\"center\" element=\"div\"><Text>Container content.</Text></Container>;"
         },
         {
           "id": "container-react--width-content",
           "name": "Width Content",
-          "snippet": "const WidthContent = () => <Container width=\"content\" gutter=\"default\" align=\"center\" element=\"div\"><Text element=\"p\">Container content.</Text></Container>;"
+          "snippet": "const WidthContent = () => <Container width=\"content\" gutter=\"default\" align=\"center\" element=\"div\"><Text>Container content.</Text></Container>;"
         },
         {
           "id": "container-react--width-page",
           "name": "Width Page",
-          "snippet": "const WidthPage = () => <Container width=\"page\" gutter=\"default\" align=\"center\" element=\"div\"><Text element=\"p\">Container content.</Text></Container>;"
+          "snippet": "const WidthPage = () => <Container width=\"page\" gutter=\"default\" align=\"center\" element=\"div\"><Text>Container content.</Text></Container>;"
         },
         {
           "id": "container-react--width-full",
           "name": "Width Full",
-          "snippet": "const WidthFull = () => <Container width=\"full\" gutter=\"default\" align=\"center\" element=\"div\"><Text element=\"p\">Container content.</Text></Container>;"
+          "snippet": "const WidthFull = () => <Container width=\"full\" gutter=\"default\" align=\"center\" element=\"div\"><Text>Container content.</Text></Container>;"
         },
         {
           "id": "container-react--gutter-narrow",
           "name": "Gutter Narrow",
-          "snippet": "const GutterNarrow = () => <Container width=\"content\" gutter=\"narrow\" align=\"center\" element=\"div\"><Text element=\"p\">Container content.</Text></Container>;"
+          "snippet": "const GutterNarrow = () => <Container width=\"content\" gutter=\"narrow\" align=\"center\" element=\"div\"><Text>Container content.</Text></Container>;"
         },
         {
           "id": "container-react--gutter-default",
           "name": "Gutter Default",
-          "snippet": "const GutterDefault = () => <Container width=\"content\" gutter=\"default\" align=\"center\" element=\"div\"><Text element=\"p\">Container content.</Text></Container>;"
+          "snippet": "const GutterDefault = () => <Container width=\"content\" gutter=\"default\" align=\"center\" element=\"div\"><Text>Container content.</Text></Container>;"
         },
         {
           "id": "container-react--gutter-wide",
           "name": "Gutter Wide",
-          "snippet": "const GutterWide = () => <Container width=\"content\" gutter=\"wide\" align=\"center\" element=\"div\"><Text element=\"p\">Container content.</Text></Container>;"
+          "snippet": "const GutterWide = () => <Container width=\"content\" gutter=\"wide\" align=\"center\" element=\"div\"><Text>Container content.</Text></Container>;"
         },
         {
           "id": "container-react--gutter-none",
           "name": "Gutter None",
-          "snippet": "const GutterNone = () => <Container width=\"content\" gutter=\"none\" align=\"center\" element=\"div\"><Text element=\"p\">Container content.</Text></Container>;"
+          "snippet": "const GutterNone = () => <Container width=\"content\" gutter=\"none\" align=\"center\" element=\"div\"><Text>Container content.</Text></Container>;"
         },
         {
           "id": "container-react--align-center",
           "name": "Align Center",
-          "snippet": "const AlignCenter = () => <Container width=\"content\" gutter=\"default\" align=\"center\" element=\"div\"><Text element=\"p\">Container content.</Text></Container>;"
+          "snippet": "const AlignCenter = () => <Container width=\"content\" gutter=\"default\" align=\"center\" element=\"div\"><Text>Container content.</Text></Container>;"
         },
         {
           "id": "container-react--align-start",
           "name": "Align Start",
-          "snippet": "const AlignStart = () => <Container width=\"content\" gutter=\"default\" align=\"start\" element=\"div\"><Text element=\"p\">Container content.</Text></Container>;"
+          "snippet": "const AlignStart = () => <Container width=\"content\" gutter=\"default\" align=\"start\" element=\"div\"><Text>Container content.</Text></Container>;"
         },
         {
           "id": "container-react--element-div",
           "name": "Element Div",
-          "snippet": "const ElementDiv = () => <Container width=\"content\" gutter=\"default\" align=\"center\" element=\"div\"><Text element=\"p\">Container content.</Text></Container>;"
+          "snippet": "const ElementDiv = () => <Container width=\"content\" gutter=\"default\" align=\"center\" element=\"div\"><Text>Container content.</Text></Container>;"
         },
         {
           "id": "container-react--element-main",
           "name": "Element Main",
-          "snippet": "const ElementMain = () => <Container width=\"content\" gutter=\"default\" align=\"center\" element=\"main\"><Text element=\"p\">Container content.</Text></Container>;"
+          "snippet": "const ElementMain = () => <Container width=\"content\" gutter=\"default\" align=\"center\" element=\"main\"><Text>Container content.</Text></Container>;"
         },
         {
           "id": "container-react--element-section",
           "name": "Element Section",
-          "snippet": "const ElementSection = () => <Container width=\"content\" gutter=\"default\" align=\"center\" element=\"section\"><Text element=\"p\">Container content.</Text></Container>;"
+          "snippet": "const ElementSection = () => <Container width=\"content\" gutter=\"default\" align=\"center\" element=\"section\"><Text>Container content.</Text></Container>;"
         },
         {
           "id": "container-react--application-screen",
           "name": "Application Screen",
-          "snippet": "const ApplicationScreen = () => <Container width=\"content\" gutter=\"default\" align=\"center\" element=\"div\"><Text element=\"p\">A Stack of page regions</Text></Container>;",
+          "snippet": "const ApplicationScreen = () => <Container width=\"content\" gutter=\"default\" align=\"center\" element=\"div\"><Text>A Stack of page regions</Text></Container>;",
           "description": "The default page column for application screens, centered at the content measure."
         },
         {
           "id": "container-react--reading-measure",
           "name": "Reading Measure",
-          "snippet": "const ReadingMeasure = () => <Container width=\"prose\" gutter=\"default\" align=\"center\" element=\"div\"><Text element=\"p\">An article</Text></Container>;",
+          "snippet": "const ReadingMeasure = () => <Container width=\"prose\" gutter=\"default\" align=\"center\" element=\"div\"><Text>An article</Text></Container>;",
           "description": "An article capped at the prose measure, about 65 characters a line."
         },
         {
           "id": "container-react--nested-section",
           "name": "Nested Section",
-          "snippet": "const NestedSection = () => <Container width=\"prose\" gutter=\"none\" align=\"center\" element=\"div\"><Text element=\"p\">A narrower section</Text></Container>;",
+          "snippet": "const NestedSection = () => <Container width=\"prose\" gutter=\"none\" align=\"center\" element=\"div\"><Text>A narrower section</Text></Container>;",
           "description": "A narrower measure inside an already padded parent, so the gutters are not applied twice."
         }
       ],
@@ -9378,6 +9378,11 @@
           "snippet": "const WithoutASummary = () => <Form\r\n    name=\"rename\"\r\n    label=\"Rename file\"\r\n    actions={<Button label=\"Rename\" type=\"submit\" />}\r\n    errorSummary={false}><Input label=\"File name\" name=\"fileName\" required /></Form>;"
         },
         {
+          "id": "form-react--failed-submit",
+          "name": "Failed Submit",
+          "snippet": "const FailedSubmit = () => <Form\r\n    name=\"sign-in\"\r\n    label=\"Sign in\"\r\n    actions={<Button label=\"Sign in\" type=\"submit\" />}>(<Stack gap=\"normal\">\r\n      <Input label=\"Email\" name=\"email\" type=\"email\" required />\r\n      <Input label=\"Password\" name=\"password\" type=\"password\" required />\r\n    </Stack>)</Form>;"
+        },
+        {
           "id": "form-react--labelled-by",
           "name": "Labelled By",
           "snippet": "const LabelledBy = () => <Stack gap=\"normal\">\r\n    <Heading id=\"form-labelled-by-heading\" level=\"2\">Sign in\r\n              </Heading>\r\n    <Form\r\n        name=\"sign-in\"\r\n        label=\"Sign in\"\r\n        actions={<Button label=\"Sign in\" type=\"submit\" />}\r\n        labelledBy=\"form-labelled-by-heading\"><Stack gap=\"normal\">\r\n            <Input label=\"Email\" name=\"email\" type=\"email\" required />\r\n            <Input label=\"Password\" name=\"password\" type=\"password\" required />\r\n        </Stack></Form>\r\n</Stack>;"
@@ -9517,7 +9522,7 @@
             "required": false,
             "tsType": {
               "name": "union",
-              "raw": "HeadingAlign | undefined",
+              "raw": "TextAlign | undefined",
               "elements": [
                 {
                   "name": "union",
@@ -9542,7 +9547,7 @@
                 }
               ]
             },
-            "description": "Horizontal text alignment. It has no style binding on purpose — alignment is a layout choice,\nnot a themed value — so it maps straight to text-align. `start` and `end` are logical.",
+            "description": "Horizontal text alignment. It has no style binding on purpose — alignment is a layout choice,\nnot a themed value — so it maps straight to text-align. `start` and `end` are logical. The\nvalue set is Text's, so the type is Text's `TextAlign`.",
             "defaultValue": {
               "value": "'start'",
               "computed": false
@@ -11240,7 +11245,7 @@
         {
           "id": "link-react--tone-inherit",
           "name": "Tone Inherit",
-          "snippet": "const ToneInherit = () => <Text tone=\"muted\">\r\n    <Link\r\n        href=\"/billing/history\"\r\n        label=\"View the billing history\"\r\n        external={false}\r\n        tone=\"inherit\"\r\n        download={false} />\r\n</Text>;"
+          "snippet": "const ToneInherit = () => <Text tone=\"muted\">For how charges are calculated, read <Link\r\n        href=\"/billing/history\"\r\n        label=\"View the billing history\"\r\n        external={false}\r\n        tone=\"inherit\"\r\n        download={false} />.\r\n        </Text>;"
         },
         {
           "id": "link-react--inline-in-a-paragraph",
@@ -19246,7 +19251,7 @@
             "tsType": {
               "name": "ReactNode"
             },
-            "description": "Any components. Stack does not style its children; it only positions them. Null and boolean\nchildren are skipped, as the platform skips them."
+            "description": "Any components. Stack does not style its children; it only positions them. Null and boolean\nchildren are skipped, as the platform skips them. With `element` `ul`/`ol` each child gets one\n`li`, as React counts children: a fragment is one child, so pass an array."
           },
           "direction": {
             "required": false,
@@ -19615,7 +19620,7 @@
         {
           "id": "stack-react--wrap",
           "name": "Wrap",
-          "snippet": "const Wrap = () => <Stack\r\n    direction=\"horizontal\"\r\n    gap=\"normal\"\r\n    align=\"start\"\r\n    justify=\"start\"\r\n    wrap\r\n    element=\"div\">{[\r\n      <Text key=\"first\">First item</Text>,\r\n      <Text key=\"second\">Second item</Text>,\r\n      <Text key=\"third\">Third item</Text>,\r\n    ]}</Stack>;"
+          "snippet": "const Wrap = () => <Stack\r\n    direction=\"horizontal\"\r\n    gap=\"normal\"\r\n    align=\"start\"\r\n    justify=\"start\"\r\n    wrap\r\n    element=\"div\">{['All', 'Open', 'Closed', 'Mine', 'Unassigned', 'Urgent', 'This week', 'Archived'].map((label) => (\r\n      <Button key={label} label={label} variant=\"secondary\" size=\"sm\" />\r\n    ))}</Stack>;"
         },
         {
           "id": "stack-react--element-div",
@@ -19645,7 +19650,7 @@
         {
           "id": "stack-react--form-fields",
           "name": "Form Fields",
-          "snippet": "const FormFields = () => <Stack\r\n    direction=\"vertical\"\r\n    gap=\"normal\"\r\n    align=\"stretch\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Input key=\"name\" label=\"Full name\" name=\"name\" type=\"text\" />,\r\n      <Input key=\"email\" label=\"Email address\" name=\"email\" type=\"email\" />,\r\n      <Input key=\"phone\" label=\"Phone number\" name=\"phone\" type=\"tel\" />,\r\n    ]}</Stack>;",
+          "snippet": "const FormFields = () => <Stack\r\n    direction=\"vertical\"\r\n    gap=\"normal\"\r\n    align=\"stretch\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Input key=\"name\" label=\"Full name\" name=\"name\" type=\"text\" />,\r\n      <Input key=\"email\" label=\"Email\" name=\"email\" type=\"email\" />,\r\n      <Input key=\"password\" label=\"Password\" name=\"password\" type=\"password\" />,\r\n    ]}</Stack>;",
           "description": "The usual vertical rhythm between fields in a form."
         },
         {
@@ -19657,17 +19662,17 @@
         {
           "id": "stack-react--page-sections",
           "name": "Page Sections",
-          "snippet": "const PageSections = () => <Stack\r\n    direction=\"vertical\"\r\n    gap=\"section\"\r\n    align=\"stretch\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Text key=\"first\">The first region of the page</Text>,\r\n      <Text key=\"second\">The second region of the page</Text>,\r\n      <Text key=\"third\">The third region of the page</Text>,\r\n    ]}</Stack>;",
+          "snippet": "const PageSections = () => <Stack\r\n    direction=\"vertical\"\r\n    gap=\"section\"\r\n    align=\"stretch\"\r\n    justify=\"start\"\r\n    wrap={false}\r\n    element=\"div\">{[\r\n      <Box key=\"summary\" surface=\"subtle\" inset=\"md\">\r\n        <Text>Summary</Text>\r\n      </Box>,\r\n      <Box key=\"details\" surface=\"subtle\" inset=\"md\">\r\n        <Text>Details</Text>\r\n      </Box>,\r\n      <Box key=\"history\" surface=\"subtle\" inset=\"md\">\r\n        <Text>History</Text>\r\n      </Box>,\r\n    ]}</Stack>;",
           "description": "The section rhythm between the regions of a page."
         },
         {
           "id": "stack-react--wrapping-filters",
           "name": "Wrapping Filters",
-          "snippet": "const WrappingFilters = () => <Stack\r\n    direction=\"horizontal\"\r\n    gap=\"tight\"\r\n    align=\"center\"\r\n    justify=\"start\"\r\n    wrap\r\n    element=\"div\">{[\r\n      <Button key=\"all\" label=\"All\" variant=\"secondary\" size=\"sm\" />,\r\n      <Button key=\"open\" label=\"Open\" variant=\"ghost\" size=\"sm\" />,\r\n      <Button key=\"in-review\" label=\"In review\" variant=\"ghost\" size=\"sm\" />,\r\n      <Button key=\"merged\" label=\"Merged\" variant=\"ghost\" size=\"sm\" />,\r\n      <Button key=\"closed\" label=\"Closed\" variant=\"ghost\" size=\"sm\" />,\r\n      <Button key=\"archived\" label=\"Archived\" variant=\"ghost\" size=\"sm\" />,\r\n    ]}</Stack>;",
+          "snippet": "const WrappingFilters = () => <Stack\r\n    direction=\"horizontal\"\r\n    gap=\"tight\"\r\n    align=\"center\"\r\n    justify=\"start\"\r\n    wrap\r\n    element=\"div\">{['All', 'Open', 'Closed', 'Mine', 'Unassigned', 'Urgent', 'This week', 'Archived'].map((label) => (\r\n      <Button key={label} label={label} variant=\"secondary\" size=\"sm\" />\r\n    ))}</Stack>;",
           "description": "A horizontal group that reflows onto new lines on narrow viewports instead of overflowing."
         }
       ],
-      "import": "import { Button, Input, Stack, Text } from '@design-schema/react';\nimport { Text } from './Text';\nimport { Input } from './Input';\nimport { Button } from './Button';"
+      "import": "import { Box, Button, Input, Stack, Text } from '@design-schema/react';\nimport { Text } from './Text';\nimport { Button } from './Button';\nimport { Input } from './Input';\nimport { Box } from './Box';"
     },
     "stepper-react": {
       "id": "stepper-react",
@@ -22256,7 +22261,7 @@
                 }
               ]
             },
-            "description": "Clip to one line with an ellipsis. The full text is exposed via `title` when children is a plain\nstring; otherwise the consumer passes `title`. With `element: span` the clipped box is\n`display: inline-block; max-inline-size: 100%`, so the width comes from the parent.",
+            "description": "Clip to one line with an ellipsis. The full text is exposed via `title` when children is a plain\nstring; otherwise the consumer passes `title`. A consumer `title` always wins and is forwarded\nunchanged, with or without `truncate`; `title={undefined}` counts as not passed. With `element: span` the clipped box is\n`display: inline-block; max-inline-size: 100%`, so the width comes from the parent.",
             "defaultValue": {
               "value": "false",
               "computed": false
@@ -22512,10 +22517,10 @@
           "id": "text-react--truncated-cell",
           "name": "Truncated Cell",
           "snippet": "const TruncatedCell = () => <Text\r\n    size=\"md\"\r\n    weight=\"regular\"\r\n    tone=\"default\"\r\n    align=\"start\"\r\n    truncate\r\n    element=\"p\">Quarterly revenue summary for the EMEA region.</Text>;",
-          "description": "One line of text in a dense cell, with the full string still reachable."
+          "description": "One line of text in a dense cell, with the full string still reachable (on React Native only to a screen reader; see `truncate`)."
         }
       ],
-      "import": "import { Text } from '@design-schema/react';"
+      "import": "import { Box, Text } from '@design-schema/react';"
     },
     "toast-react": {
       "id": "toast-react",
@@ -25189,6 +25194,6 @@
   },
   "meta": {
     "docgen": "react-docgen",
-    "durationMs": 2262
+    "durationMs": 2500
   }
 }

@@ -213,9 +213,12 @@ Do not add dependencies. Do not write README files.
 /** The tools the cli runner hands Claude Code. A generation writes package code and runs the gates itself. */
 const ALLOWED_TOOLS =
   'Read,Write,Edit,MultiEdit,Glob,Grep,Bash(pnpm *),Bash(npm run *),Bash(npx tsc *),Bash(npx vitest *),Bash(npx jest *),' +
-  'Bash(npx eslint *),Bash(node tools/*),Bash(python3 *),Bash(python *),Bash(py *),Bash(grep *),Bash(find *),Bash(cat *),' +
-  'Bash(head *),Bash(tail *),Bash(awk *),Bash(which *),Bash(where *),PowerShell(pnpm *),PowerShell(npm run *),' +
-  'PowerShell(npx *),PowerShell(py *),PowerShell(node tools/*),mcp__design-schema__*';
+  'Bash(npx eslint *),Bash(node tools/*),Bash(node logs/*),Bash(python3 *),Bash(python *),Bash(py *),Bash(grep *),' +
+  'Bash(find *),Bash(cat *),Bash(head *),Bash(tail *),Bash(awk *),Bash(which *),Bash(where *),' +
+  'Bash(git status *),Bash(git log *),Bash(git diff *),Bash(git show *),' +
+  'PowerShell(pnpm *),PowerShell(npm run *),PowerShell(npx *),PowerShell(py *),PowerShell(node tools/*),' +
+  'PowerShell(node logs/*),PowerShell(git status *),PowerShell(git log *),PowerShell(git diff *),' +
+  'PowerShell(git show *),mcp__design-schema__*';
 
 function print(line: string): void {
   process.stdout.write(line + '\n');

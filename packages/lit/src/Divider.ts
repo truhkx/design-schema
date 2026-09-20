@@ -63,6 +63,8 @@ export class DsDivider extends LitElement {
       display: flex;
       box-sizing: border-box;
       block-size: var(--ds-divider-thickness);
+      /* a one-token line is the smallest a divider may be: never let a flex parent shrink it away */
+      flex-shrink: 0;
     }
 
     :host([hidden]) {
@@ -129,7 +131,10 @@ export class DsDivider extends LitElement {
    * (`semantic` is implied). Ignored on a vertical divider, with a development
    * warning: a vertical line has no room for centered text. An ignored label
    * implies nothing either — a vertical divider is semantic only when
-   * `semantic` says so. An empty string is no label.
+   * `semantic` says so. An empty string is no label. When in effect, the label
+   * is the separator's accessible name (`aria-label` on the host, since ids do
+   * not cross the shadow root) and the two line pieces on either side are
+   * hidden from assistive technology.
    */
   @property({ type: String }) accessor label: string | undefined;
 
@@ -235,7 +240,8 @@ export class DsDivider extends LitElement {
   private warnIgnoredLabel(): void {
     const ignored = this.orientation === 'vertical' && this.label ? this.label : undefined;
     if (ignored !== undefined && ignored !== this.warnedLabel && import.meta.env.DEV) {
-      console.warn('ds-divider: `label` is ignored on a vertical divider: a vertical line has no room for centered text.');
+      // No copy.* string covers this warning; the wording matches React's so the two platforms warn alike.
+      console.warn('<ds-divider>: `label` is ignored on a vertical divider — a vertical line has no room for centered text.', this);
     }
     this.warnedLabel = ignored;
   }

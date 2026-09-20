@@ -166,3 +166,16 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Input: the generic rule asks for a `:focus-visible` outline from `--color-border-focus`/`--border-width-focus`, while the `focusRingWidth` binding says the border IS the focus ring with no outline. Followed the binding: `outline: none` plus a border-color/width swap with `calc()` padding compensation so the field does not shift.
 - Input: `required` counts only `''` as empty and the precedence puts `required` ahead of browser/type validity, so a required `type="number"` field holding bad input ('e', which leaves `el.value === ''`) reports copy.required rather than copy.invalid. Followed the precedence literally; flagging in case badInput is meant to win.
 - Input: `constants.longPressDelay` (500 ms) is explicitly native-only, so nothing on web reads it — the constant is unused in this package.
+
+## 2026-09-20 16:16 — round 1
+
+- Input: the doc never says whether `required` also sets the native `required` attribute. Setting it would let the browser show its own validationMessage bubble, which contradicts "never the browser's own validationMessage" — chose `aria-required` only, with the copy message carried by setCustomValidity.
+- Input: the `size` enum collides with the native `<input size>` (character width) attribute, but the doc resolves that collision only in the Lit notes. Applied the same resolution on React: native `size` is omitted from the prop surface and the schema enum wins.
+- Input: the schema prop is `autocomplete` while React's DOM prop is `autoComplete`. The doc names only the HTML attribute, so the public prop is the schema spelling and `autoComplete` is omitted from the native passthrough to avoid two spellings of one thing.
+- Input: nothing specifies where the field id comes from or whether a consumer `id` may override it. Chose `id` prop → `${form.idBase}-${name}` inside a Form (so Form error-summary links resolve) → `useId()`.
+- Input: the focus-ring padding compensation is prose only ("padding shrinks by the difference"). Implemented as `calc(padding - (focusRingWidth - borderWidth))`, which under-pads if an override sets `borderWidth` wider than the locked `focusRingWidth`; the doc gives no clamp.
+- Input: `readOnly` is documented as passing through the native props, but not whether a read-only field should expose `aria-readonly`. Left it to the native attribute alone.
+- Input: the interaction of `invalid`/`error` with `disabled` is unspecified for the visible slot. Chose to keep showing the error text and `aria-invalid` on a disabled field (only the custom validity is cleared), since a disabled field is skipped by the Form rather than silently corrected.
+- Input: `data-ds-field` placement is not stated for a multi-part field. Put it on the root group beside `data-ds` (not on the `<input>`), so Form discovery finds the whole field including its label and error.
+- Input: the `longPressDelay` constant is declared with no web meaning (the doc scopes it to the RN TextInput); not implemented on this platform.
+- Input: `onChange` is specified to receive only the string, so consumers needing the native ChangeEvent (e.g. `event.target.selectionStart`) have no route but the forwarded ref; the doc does not acknowledge the trade-off.

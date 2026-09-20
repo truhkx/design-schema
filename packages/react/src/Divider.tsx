@@ -38,7 +38,10 @@ export interface DividerProps
    * Optional text in the middle of a horizontal divider ("or", "Earlier today"). Turns the divider
    * from decorative into a labelled separator (`semantic` is implied). Ignored on a vertical
    * divider, with a development warning: a vertical line has no room for centered text. An ignored
-   * label implies nothing either — a vertical divider is semantic only when `semantic` says so.
+   * label implies nothing either — a vertical divider is semantic only when `semantic` says so. An
+   * empty string is no label: the divider stays decorative and nothing warns. When in effect, the
+   * label is the separator's accessible name (through `aria-labelledby`), and the two line pieces
+   * on either side are hidden from assistive technology.
    */
   label?: string | undefined;
   /**
@@ -47,7 +50,11 @@ export interface DividerProps
    * sections that a screen-reader user should hear.
    */
   semantic?: boolean | undefined;
-  /** Space on both sides, from the layout rhythm, for dividers used outside a Stack that already spaces them. */
+  /**
+   * Space on both sides along the cross axis (above and below a horizontal divider, left and right
+   * of a vertical one), from the layout rhythm, for dividers used outside a Stack that already
+   * spaces them. The space is transparent: `margin-block` horizontally, `margin-inline` vertically.
+   */
   spacing?: DividerSpacing | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook (or the composed label's own override) to that token. */
   overrides?: Partial<Record<DividerOverridableBinding, TokenRef | undefined>> | undefined;

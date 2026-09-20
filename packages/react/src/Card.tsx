@@ -14,7 +14,7 @@ import {
   type Ref,
 } from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
-import { Heading, type HeadingLevel } from './Heading';
+import { Heading } from './Heading';
 import { Button } from './Button';
 import { Link } from './Link';
 import { Text } from './Text';
@@ -178,11 +178,12 @@ export function Card({
 
   let body: ReactNode = children;
   if (isInteractive || hasBareText) {
+    // `Children.toArray` already keys every element, so only the wrapped bare strings need one of
+    // their own; re-keying the rest would remount the body whenever `interactive` flips.
     body = items.map((item, index) => {
-      const key = `ds-card-body-${index}`;
-      if (target !== null && item === target) return cloneElement(target, { [TARGET_ATTRIBUTE]: '', key });
-      if (typeof item === 'string' || typeof item === 'number') return <Text key={key}>{item}</Text>;
-      return isValidElement(item) ? cloneElement(item, { key }) : item;
+      if (target !== null && item === target) return cloneElement(target, { [TARGET_ATTRIBUTE]: '' });
+      if (typeof item === 'string' || typeof item === 'number') return <Text key={`ds-card-text-${index}`}>{item}</Text>;
+      return item;
     });
   }
   // `interactive` wins: the card already has a target, so it takes no scripted focus of its own.
@@ -236,7 +237,7 @@ export function Card({
       {hasHeading || hasHeaderActions ? (
         <div className="ds-card__header" data-part="header">
           {hasHeading ? (
-            <Heading id={headingId} level={headingLevel as HeadingLevel} size="lg" overrides={{ marginBlockEnd: 'space.0' }}>
+            <Heading id={headingId} level={headingLevel} size="lg" overrides={{ marginBlockEnd: 'space.0' }}>
               {heading}
             </Heading>
           ) : null}

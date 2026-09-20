@@ -33,6 +33,12 @@ export interface DsFormField extends HTMLElement {
   required: boolean;
   disabled: boolean;
   error?: string | undefined;
+  /**
+   * Set by Form from the result of `checkValidity()`, which is how the field
+   * renders its own message (every field documents `invalid` as "usually set by
+   * the Form"). Optional: a field that never validates omits it.
+   */
+  invalid?: boolean | undefined;
   readonly currentValue: string | number | boolean | string[] | [number, number] | null;
   id: string;
   focus(): void;
@@ -178,7 +184,7 @@ export class DsForm extends LitElement {
   @property() accessor label: string | undefined;
 
   /** Id of a visible Heading that names the form. Wins over `label` when both are set. */
-  @property() accessor labelledBy: string | undefined;
+  @property({ attribute: 'labelled-by' }) accessor labelledBy: string | undefined;
 
   /** When field-level validation runs. `submit` is the least noisy; `blur` is the usual choice for longer forms. */
   @property() accessor validate: FormValidate = 'submit';
@@ -214,6 +220,9 @@ export class DsForm extends LitElement {
 
   /** Fields and actions this Form disabled itself, so re-enabling never touches one already disabled by the consumer. */
   private readonly disabledByForm = new Set<Disableable>();
+
+  /** Fields this Form marked invalid, so re-validating never clears one the consumer marked itself. */
+  private readonly invalidByForm = new Set<DsFormField>();
 
   /** Re-syncs disabled propagation when fields are added or removed; observes `childList` only, never the attributes it writes. */
   private readonly mutationObserver = new MutationObserver(() => {
@@ -345,7 +354,7 @@ export class DsForm extends LitElement {
       if (field.disabled) {
         continue;
       }
-      if (field.checkValidity()) {
+      if (this.runFieldValidation(field)) {
         const value = field.currentValue;
         if (!isEmptyValue(value)) {
           values[field.name] = value as FieldValue;
@@ -451,6 +460,33 @@ export class DsForm extends LitElement {
     }
   }
 
+  /**
+   * Runs the field's own synchronous validation and mirrors the result onto its
+   * `invalid` property, which is what makes the field render its own message.
+   * Form never composes a message of its own: the text shown is the field's
+   * copy, and `validationMessage` is what the summary repeats.
+   */
+  private runFieldValidation(field: DsFormField): boolean {
+    // Clear only a flag this Form set, so the field's validity is measured
+    // afresh while an `invalid` the consumer set itself still counts as a
+    // failure (a field's `invalid` is both an input to and a result of
+    // validation, so a blanket clear would erase consumer state and a blanket
+    // set would be sticky forever).
+    if (this.invalidByForm.has(field) && field.invalid === true) {
+      field.invalid = false;
+    }
+    const valid = field.checkValidity();
+    if (typeof field.invalid === 'boolean') {
+      if (!valid) {
+        field.invalid = true;
+        this.invalidByForm.add(field);
+      } else {
+        this.invalidByForm.delete(field);
+      }
+    }
+    return valid;
+  }
+
   /** A field with no useful blur moment (Checkbox, Switch) declares `data-ds-field="change"`. */
   private validatesOnChange(field: DsFormField): boolean {
     return field.getAttribute('data-ds-field') === 'change';
@@ -469,7 +505,7 @@ export class DsForm extends LitElement {
    * submission: a fixed field drops out, a still-listed one keeps its place, a newly invalid one is appended.
    */
   private validateField(field: DsFormField): void {
-    const invalid = !field.disabled && !field.checkValidity();
+    const invalid = !field.disabled && !this.runFieldValidation(field);
     if (!this.hasFailedSubmission) {
       return;
     }

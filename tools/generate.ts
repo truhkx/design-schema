@@ -208,17 +208,48 @@ When the files are written, end your reply with exactly one fenced block:
 \`gaps\` is the most valuable output: every place the spec made you guess. Be specific. An empty list means the doc was complete.
 Do not edit anything under site/, schema/, prompts/ or generated/ — the docs are fixed from your gap list by a separate pass.
 Do not add dependencies. Do not write README files.
+
+## Running commands
+
+You run unattended behind a prefix-matched allowlist. A command that does not match is denied outright, and a
+denied gate rerun means you fix the gate blind. Keep every shell call in this shape:
+
+- You already start in the repo root. Never \`cd\` — a line beginning \`cd\` is denied whatever follows it.
+- One command per call. No \`&&\`, no \`;\`, no \`|\` — only the first word is matched, so chains are denied.
+- Repo-relative paths only, never absolute: \`logs/x.mjs\`, not \`C:\\Users\\...\\logs\\x.mjs\`.
+- Reach the gates through \`pnpm exec\`: \`pnpm exec playwright test -c logs/<name>-axe.config.ts\`,
+  \`pnpm exec vitest run src/<Name>.test.tsx\`, \`pnpm exec tsc --noEmit -p .\`. This always matches.
+- For a scoped package: \`pnpm --filter @design-schema/<pkg> exec <tool> ...\` — still one command.
+- Need several steps? Write one script to \`logs/<name>.mjs\` and run \`node logs/<name>.mjs\`. Do not chain.
+- git is read-only here (\`status\`, \`log\`, \`diff\`, \`show\`, \`check-ignore\`). Never stash, checkout or commit.
+
+When a gate fails, rerun that gate and read its output before changing code. If a command is denied, rewrite it
+into this shape rather than retrying it — a retry of the same line is denied again.
 `;
 
 /** The tools the cli runner hands Claude Code. A generation writes package code and runs the gates itself. */
 const ALLOWED_TOOLS =
-  'Read,Write,Edit,MultiEdit,Glob,Grep,Bash(pnpm *),Bash(npm run *),Bash(npx tsc *),Bash(npx vitest *),Bash(npx jest *),' +
-  'Bash(npx eslint *),Bash(node tools/*),Bash(node logs/*),Bash(python3 *),Bash(python *),Bash(py *),Bash(grep *),' +
-  'Bash(find *),Bash(cat *),Bash(head *),Bash(tail *),Bash(awk *),Bash(which *),Bash(where *),' +
-  'Bash(git status *),Bash(git log *),Bash(git diff *),Bash(git show *),' +
-  'PowerShell(pnpm *),PowerShell(npm run *),PowerShell(npx *),PowerShell(py *),PowerShell(node tools/*),' +
-  'PowerShell(node logs/*),PowerShell(git status *),PowerShell(git log *),PowerShell(git diff *),' +
-  'PowerShell(git show *),mcp__design-schema__*';
+  'Read,Write,Edit,MultiEdit,Glob,Grep,' +
+  // Package runners. `pnpm exec <tool>` is the documented way to reach playwright/vitest/tsc/jest, and the
+  // prompt's "Running commands" section tells the model to prefer it.
+  'Bash(pnpm *),Bash(npm run *),Bash(npx tsc *),Bash(npx vitest *),Bash(npx jest *),Bash(npx eslint *),' +
+  'Bash(npx playwright *),' +
+  // node: the bare form, the `--import tsx` form the repo's own tools need, and the installed CLIs a gate
+  // rerun reaches for (node_modules/@playwright/test/cli.js). Each needs its own prefix — a flag between
+  // `node` and the path defeats `node tools/*`.
+  'Bash(node tools/*),Bash(node logs/*),Bash(node node_modules/*),' +
+  'Bash(node --import tsx tools/*),Bash(node --import tsx logs/*),' +
+  'Bash(python3 *),Bash(python *),Bash(py *),Bash(grep *),Bash(find *),Bash(cat *),Bash(head *),Bash(tail *),' +
+  'Bash(awk *),Bash(ls *),Bash(which *),Bash(where *),' +
+  // git stays read-only on purpose: the runner is unattended with --permission-mode acceptEdits, and regen
+  // commits each phase itself, so a stray `git stash`/`git checkout` would silently eat a phase's work.
+  'Bash(git status *),Bash(git log *),Bash(git diff *),Bash(git show *),Bash(git check-ignore *),' +
+  'PowerShell(pnpm *),PowerShell(npm run *),PowerShell(npx *),PowerShell(py *),' +
+  'PowerShell(node tools/*),PowerShell(node logs/*),PowerShell(node node_modules/*),' +
+  'PowerShell(node --import tsx tools/*),PowerShell(node --import tsx logs/*),' +
+  'PowerShell(Get-ChildItem *),PowerShell(Test-Path *),' +
+  'PowerShell(git status *),PowerShell(git log *),PowerShell(git diff *),PowerShell(git show *),' +
+  'PowerShell(git check-ignore *),mcp__design-schema__*';
 
 function print(line: string): void {
   process.stdout.write(line + '\n');
@@ -242,8 +273,14 @@ function die(message: string): never {
  * The gates, run by tools/checks.ts — in process now that both are TypeScript, so the printed line and
  * the results are the gate runner's own.
  */
-export function runGates(platform: string, skip?: Set<string>, verbose: boolean = true, extra?: Set<string>): GateResult[] {
-  return runAll(platform, skip ?? new Set(), verbose, extra ?? new Set());
+export function runGates(
+  platform: string,
+  skip?: Set<string>,
+  verbose: boolean = true,
+  extra?: Set<string>,
+  component?: string,
+): GateResult[] {
+  return runAll(platform, skip ?? new Set(), verbose, extra ?? new Set(), component);
 }
 
 /** Seconds, the way `time.sleep` takes them. */
@@ -1003,7 +1040,9 @@ export async function generateOne(
     allGaps.push(...rep.gaps);
     recordGaps(name, platform, rep.gaps, roundNo);
     print(`  round ${roundNo}: ${rep.files.length} file(s), ${rep.gaps.length} gap(s), $${pyFixed(round.roundCost, 3)}`);
-    results = hooks.runGates(platform, skip, true, new Set(args.extra));
+    // `name` scopes axe and keyboard-run to this component: both sweep the whole repo otherwise, and a
+    // target cannot fix debt owned by a component in a later phase.
+    results = hooks.runGates(platform, skip, true, new Set(args.extra), name);
     if (round.customChanged.length > 0) results.push(customGate(platform, round.customChanged));
     const bad = results.filter((r) => !r.ok);
     if (bad.length === 0) break;

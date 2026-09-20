@@ -9,23 +9,33 @@ import './Link.js';
 import type { DsCard } from './Card.js';
 import meta from './Card.stories.js';
 
-type Given = Partial<Pick<DsCard, 'heading' | 'headingLevel' | 'inset' | 'surface' | 'interactive' | 'focusable'>>;
+type CardProp = 'heading' | 'headingLevel' | 'inset' | 'surface' | 'interactive' | 'focusable';
+type Given = Partial<Pick<DsCard, CardProp>> & { children?: string };
 
-/** The Default story's args plus the scenario's `given`, rendered the way the story renders its body. */
-async function setup(given: Given = {}) {
-  const { children, ...args } = { ...meta.args, ...given } as Record<string, unknown>;
+const CARD_PROPS: CardProp[] = ['heading', 'headingLevel', 'inset', 'surface', 'interactive', 'focusable'];
+
+/**
+ * The Default story's args plus the scenario's `given`, rendered the way the story renders its
+ * body: an interactive card's body is the single Link that is its target, otherwise Text.
+ */
+async function setup(given: Given = {}): Promise<{ el: DsCard }> {
+  const args = { ...meta.args, ...given };
   const el = document.createElement('ds-card');
-  for (const [key, value] of Object.entries(args)) {
-    if (value !== undefined) (el as unknown as Record<string, unknown>)[key] = value;
+  for (const prop of CARD_PROPS) {
+    const value = args[prop];
+    if (value !== undefined) (el as unknown as Record<string, unknown>)[prop] = value;
   }
-  const body = el.interactive ? document.createElement('ds-link') : document.createElement('ds-text');
+  const children = String(args.children ?? '');
   if (el.interactive) {
-    body.setAttribute('href', '#card');
-    body.setAttribute('label', String(children));
+    const link = document.createElement('ds-link');
+    link.setAttribute('href', '#card');
+    link.setAttribute('label', children);
+    el.append(link);
   } else {
-    body.textContent = String(children);
+    const text = document.createElement('ds-text');
+    text.textContent = children;
+    el.append(text);
   }
-  el.append(body);
   document.body.append(el);
   await el.updateComplete;
   return { el };
@@ -42,7 +52,10 @@ beforeEach(() => {
 describe('ds-card', () => {
   it('heading-is-rendered-as-a-heading', async () => {
     const { el } = await setup({ heading: 'Team plan' });
-    expect(el.shadowRoot!.textContent).toContain('Team plan');
+    const heading = el.shadowRoot!.querySelector('ds-heading');
+    expect(heading).not.toBeNull();
+    expect(heading!.textContent).toContain('Team plan');
+    expect(heading!.getAttribute('level')).toBe(meta.args!.headingLevel);
   });
 
   it('a-card-with-a-heading-is-an-article', async () => {
@@ -52,7 +65,11 @@ describe('ds-card', () => {
   });
 
   it('interactive-adds-no-focus-stop', async () => {
-    const { el } = await setup({ interactive: true });
+    const { el } = await setup({
+      heading: 'September invoice',
+      children: 'A Link to the invoice',
+      interactive: true,
+    });
     expect(el.hasAttribute('tabindex')).toBe(false);
     el.focus();
     expect(document.activeElement).not.toBe(el);
@@ -61,6 +78,8 @@ describe('ds-card', () => {
   it('focusable-takes-scripted-focus-only', async () => {
     const { el } = await setup({ focusable: true });
     expect(el.getAttribute('tabindex')).toBe('-1');
+    el.focus();
+    expect(document.activeElement).toBe(el);
   });
 
   /* derived */

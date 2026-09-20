@@ -5,15 +5,33 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
-type Entry = { id: string; type: string; title: string; name: string };
+type Entry = { id: string; type: string; title: string; name: string; importPath?: string };
+
+// DS_GATE_COMPONENT narrows the sweep to one component's stories. tools/generate.ts sets it while a
+// generation is running, because this gate walks the *whole* Storybook: without it a target fails on
+// debt belonging to components generated in a later phase (Listbox, Carousel, Table …) that it is not
+// allowed to touch, so every round is spent on a failure it cannot fix. Unset — a build, or `pnpm
+// gates:axe` — it still sweeps everything, which is what the repo-wide gate is for.
+const ONLY = process.env['DS_GATE_COMPONENT']?.trim() ?? '';
+
+/** A story belongs to `ONLY` when its Storybook title is `<Component>/<Platform>`, or its module is `<Component>.stories.*`. */
+function isComponent(e: Entry, component: string): boolean {
+  if ((e.title ?? '').split('/')[0] === component) return true;
+  return new RegExp(`(^|/)${component}\\.stories\\.[jt]sx?$`).test(e.importPath ?? '');
+}
 
 test.describe('axe', () => {
   let stories: Entry[] = [];
   test.beforeAll(async ({ request, baseURL }) => {
     const res = await request.get(`${baseURL}/index.json`);
     const json = (await res.json()) as { entries: Record<string, Entry> };
-    stories = Object.values(json.entries).filter((e) => e.type === 'story');
-    expect(stories.length).toBeGreaterThan(0);
+    const all = Object.values(json.entries).filter((e) => e.type === 'story');
+    expect(all.length).toBeGreaterThan(0);
+    stories = ONLY ? all.filter((e) => isComponent(e, ONLY)) : all;
+    // A typo in DS_GATE_COMPONENT would otherwise sweep nothing and pass, which is worse than failing.
+    if (ONLY && stories.length === 0) {
+      throw new Error(`DS_GATE_COMPONENT=${ONLY} matched none of the ${all.length} stories at ${baseURL}`);
+    }
   });
 
   for (const mode of ['light', 'dark'] as const) {

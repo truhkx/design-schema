@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { AccessibilityInfo, Easing, useColorScheme } from 'react-native';
+import { AccessibilityInfo, Easing, Platform, useColorScheme } from 'react-native';
 import type { EasingFunction, TextStyle } from 'react-native';
 import * as light from '@design-schema/tokens/calm-precise/rn/light';
 import * as dark from '@design-schema/tokens/calm-precise/rn/dark';
@@ -114,13 +114,34 @@ export function toEasing(value: readonly number[]): EasingFunction {
   return Easing.bezier(x1, y1, x2, y2);
 }
 
+/** The slice of `window.matchMedia` this hook needs; the package has no DOM lib. */
+type MediaMatcher = { matchMedia?: ((query: string) => { matches: boolean }) | undefined };
+
+const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
+
 /**
- * Whether the person has asked the OS to reduce motion. Resolves asynchronously on
- * first render (assume `false` until then) and follows later changes, so components
- * can skip `Animated` transitions and set their final value directly.
+ * The preference as of this instant, for the first render. react-native-web resolves
+ * `isReduceMotionEnabled()` from this very media query, so the synchronous read agrees with
+ * the promise below; it just arrives a render earlier. Native has no synchronous source, so
+ * it keeps the asynchronous answer alone.
+ */
+function reducedMotionNow(): boolean {
+  if (Platform.OS !== 'web') {
+    return false;
+  }
+  const media = globalThis as MediaMatcher;
+  return typeof media.matchMedia === 'function' ? media.matchMedia(REDUCED_MOTION_QUERY).matches : false;
+}
+
+/**
+ * Whether the person has asked the OS to reduce motion, so components can skip `Animated`
+ * transitions and set their final value directly. On web it is known synchronously for the
+ * first render — an entrance animation that plays once before an asynchronous answer arrives
+ * is motion the person asked not to see. Native resolves asynchronously (assume `false` until
+ * then). Both follow later changes.
  */
 export function useReducedMotion(): boolean {
-  const [reduced, setReduced] = React.useState(false);
+  const [reduced, setReduced] = React.useState(reducedMotionNow);
   React.useEffect(() => {
     let active = true;
     AccessibilityInfo.isReduceMotionEnabled()

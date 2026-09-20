@@ -126,23 +126,19 @@ export const Expanded: Story = {
   args: { label: 'Actions', variant: 'secondary', expanded: true, trailingIcon: 'chevron-down' },
 };
 
-/** inverse: rendered on an inverse surface, like a Toast or a Tooltip-like panel. */
+/**
+ * inverse: rendered on an inverse surface, like a Toast or a Tooltip-like panel. The surface is a
+ * story-only decorator, so the meta's render (and the Lit code sample) stays the button itself.
+ */
 export const Inverse: Story = {
   args: { variant: 'ghost', inverse: true, label: 'Undo' },
   parameters: { backgrounds: { default: 'dark' } },
-  render: (args) => html`
-    <div style="background: var(--color-inverse-surface); padding: var(--space-lg);">
-      <ds-button
-        label=${args.label}
-        variant=${args.variant}
-        size=${args.size}
-        type=${args.type}
-        ?disabled=${args.disabled}
-        ?loading=${args.loading}
-        ?inverse=${args.inverse}
-      ></ds-button>
-    </div>
-  `,
+  decorators: [
+    (story) =>
+      html`<div style="background: var(--color-inverse-surface); padding: var(--space-lg);">
+        ${story()}
+      </div>`,
+  ],
 };
 
 /** track: calls the analytics module on press, then fires `track` with the same pair. */

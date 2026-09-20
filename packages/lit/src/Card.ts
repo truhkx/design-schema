@@ -309,7 +309,8 @@ export class DsCard extends LitElement {
   }
 
   protected override willUpdate(changed: PropertyValues): void {
-    if (changed.has('overrides')) {
+    /* `surface` and `interactive` decide which overrides are in effect, so a change to either re-applies them. */
+    if (changed.has('overrides') || changed.has('surface') || changed.has('interactive')) {
       this.applyOverrides();
     }
     if (changed.has('heading')) {
@@ -481,11 +482,30 @@ export class DsCard extends LitElement {
     }
   }
 
+  /**
+   * Overrides change values, never presence. The border is drawn only on `surface="default"`,
+   * an interactive card always reserves `border.width.focus` instead of its own width (so a
+   * width override only reaches non-interactive cards), and the transition exists only for the
+   * interactive hover. Those bindings are not in effect otherwise, so their overrides are no-ops.
+   */
+  private isInEffect(binding: CardOverridableBinding): boolean {
+    switch (binding) {
+      case 'border':
+        return this.surface === 'default';
+      case 'borderWidth':
+        return this.surface === 'default' && !this.interactive;
+      case 'transition':
+        return this.interactive;
+      default:
+        return true;
+    }
+  }
+
   private applyOverrides(): void {
     for (const binding of Object.keys(HOOKS) as CardOverridableBinding[]) {
       const ref = this.overrides?.[binding];
       const hook = HOOKS[binding];
-      if (ref === undefined) {
+      if (ref === undefined || !this.isInEffect(binding)) {
         this.style.removeProperty(hook);
       } else {
         this.style.setProperty(hook, cssVar(ref));

@@ -47,6 +47,33 @@ describe('the gate table', () => {
     expect(names('web', [], ['behavior'])).toEqual(expect.arrayContaining(['behavior', 'behavior-run']));
   });
 
+  test('a component scopes the two browser gates, and one with no keyboard spec drops keyboard-run', () => {
+    // Button and Link have no `keyboard` block, so generated/keyboard/<Name>.<platform>.spec.ts is never
+    // written. A positional filter matching no file makes Playwright exit 1 on "No tests found", failing
+    // the job for a keyboard contract the component does not have — so the gate is dropped instead, and
+    // no unmatched filter ever reaches the command line.
+    for (const [platform, name] of [['lit', 'Button'], ['web', 'Link']] as const) {
+      const scoped = checks.gatesFor(platform, new Set(), new Set(['keyboard', 'axe']), name);
+      expect(scoped.map((g) => g.name)).toContain('keyboard'); // the generator still runs
+      expect(scoped.map((g) => g.name)).not.toContain('keyboard-run');
+      expect((scoped.find((g) => g.name === 'axe') as Gate).env).toEqual({ DS_GATE_COMPONENT: name });
+    }
+  });
+
+  test('a component that does have a keyboard spec filters keyboard-run to exactly that file', () => {
+    const scoped = checks.gatesFor('web', new Set(), new Set(['keyboard']), 'Accordion');
+    const kb = scoped.find((g) => g.name === 'keyboard-run') as Gate;
+    expect(kb.argv.slice(-2)).toEqual(['--pass-with-no-tests', 'generated/keyboard/Accordion.web.spec.ts']);
+  });
+
+  test('repo-wide, an empty keyboard run still fails — there it means the generator produced nothing', () => {
+    const wide = checks.gatesFor('lit', new Set(), new Set(['keyboard', 'axe']));
+    const kb = wide.find((g) => g.name === 'keyboard-run') as Gate;
+    expect(kb.argv).not.toContain('--pass-with-no-tests');
+    expect(kb.argv.some((a) => a.startsWith('generated/keyboard/'))).toBe(false);
+    expect((wide.find((g) => g.name === 'axe') as Gate).env).toBeUndefined();
+  });
+
   test('the TypeScript gates run through Node with the tsx fallback', () => {
     const parse = checks.gatesFor('web').find((g) => g.name === 'parse') as Gate;
     expect(parse.argv.slice(1, 3)).toEqual(['--import', 'tsx']);

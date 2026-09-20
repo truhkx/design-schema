@@ -37,7 +37,8 @@ describe('Divider', () => {
     expect(screen.getByText('or')).toBeTruthy();
     const separator = screen.getByRole('separator');
     expect(separator).toBe(root(container));
-    expect(separator.textContent).toContain('or');
+    // The name comes from aria-labelledby: separator children are presentational.
+    expect(screen.getByRole('separator', { name: 'or' })).toBe(separator);
   });
 
   /* derived: renders */

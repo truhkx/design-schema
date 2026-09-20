@@ -36,6 +36,7 @@
  * Runs under Node's type stripping: annotations only.
  */
 import { spawnSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -52,7 +53,7 @@ export const ROOT: string = REPO_ROOT;
 // compiles nowhere else — process/ios-platform.md, "Gates, and the Mac problem". What runs here for it are the
 // doc-level gates, which read the docs, and the literal gate, which reads Swift as well as TypeScript and CSS.
 
-export type Gate = { name: string; argv: string[]; cwd: string };
+export type Gate = { name: string; argv: string[]; cwd: string; env?: Record<string, string> };
 export type GateResult = { name: string; ok: boolean; output: string };
 
 export function pnpm(): string {
@@ -65,9 +66,21 @@ export function node(): string {
 
 export const BROWSER_GATES: ReadonlySet<string> = new Set(['keyboard', 'axe']); // need Playwright + browsers; opt in with --with
 
-export function gatesFor(platform: string, skip: Set<string> = new Set(), extra: Set<string> = new Set()): Gate[] {
+/**
+ * `component` scopes the two browser gates to the component being generated. Both sweep the whole repo by
+ * default — axe walks every story in the Storybook, keyboard-run every `generated/keyboard/*.spec.ts` — so
+ * during a phased regeneration a target fails on debt owned by components in later phases that it may not
+ * edit, and burns every fix round on a failure it cannot reach. Left undefined (a build, `pnpm gates:axe`,
+ * the batch path in generate.ts) both stay repo-wide.
+ */
+export function gatesFor(
+  platform: string,
+  skip: Set<string> = new Set(),
+  extra: Set<string> = new Set(),
+  component?: string,
+): Gate[] {
   const pkg = PACKAGE_DIR[platform] as string;
-  const gate = (name: string, argv: string[]): Gate => ({ name, argv, cwd: ROOT });
+  const gate = (name: string, argv: string[], env?: Record<string, string>): Gate => ({ name, argv, cwd: ROOT, ...(env ? { env } : {}) });
   const tool = (file: string, ...args: string[]): string[] => [node(), '--import', 'tsx', join(ROOT, 'tools', file), ...args];
   const allGates: Gate[] = [
     // Every tool gate is TypeScript: `--import tsx` runs the .ts file on any Node ≥ 22 (native type
@@ -85,10 +98,25 @@ export function gatesFor(platform: string, skip: Set<string> = new Set(), extra:
   }
   if (extra.has('keyboard') && (platform === 'web' || platform === 'lit')) {
     allGates.push(gate('keyboard', tool('keyboard_tests.ts')));
-    allGates.push(gate('keyboard-run', [pnpm(), 'exec', 'playwright', 'test', `--project=keyboard-${platform}`]));
+    // One spec file per component, so Playwright's own positional filter scopes this one. A component
+    // whose doc has no `keyboard` block never gets a spec (Button, Card, Divider, Link, …), and a
+    // positional filter that matches no file makes Playwright exit 1 with "No tests found" — which
+    // fails the job for a keyboard contract the component does not have. `--pass-with-no-tests` alone
+    // is not enough to rely on: it covers a run that collected nothing, and leaving an unmatched filter
+    // on the command line keeps the failure one Playwright-version change away. So a scoped run only
+    // adds the gate when its spec is actually on disk, and never passes a filter that matches nothing.
+    // A repo-wide run (a build, `pnpm gates`) keeps the empty-run failure, where an empty
+    // generated/keyboard/ does mean the generator produced nothing.
+    const spec = component ? `generated/keyboard/${component}.${platform}.spec.ts` : undefined;
+    if (spec === undefined || existsSync(join(ROOT, spec))) {
+      const only = spec === undefined ? [] : ['--pass-with-no-tests', spec];
+      allGates.push(gate('keyboard-run', [pnpm(), 'exec', 'playwright', 'test', `--project=keyboard-${platform}`, ...only]));
+    }
   }
   if (extra.has('axe') && isTsPlatform(platform)) {
-    allGates.push(gate('axe', [pnpm(), 'exec', 'playwright', 'test', `--project=axe-${platform}`]));
+    // One spec for every story, so the scope goes through the environment — see tests/gates/axe.spec.ts.
+    allGates.push(gate('axe', [pnpm(), 'exec', 'playwright', 'test', `--project=axe-${platform}`],
+      component ? { DS_GATE_COMPONENT: component } : undefined));
   }
   // The Swift behavior suite is Swift Testing on the macOS runner (job 460), not Vitest here.
   if (extra.has('behavior') && isTsPlatform(platform)) {
@@ -102,7 +130,7 @@ export function gatesFor(platform: string, skip: Set<string> = new Set(), extra:
 }
 
 export function runGate(g: Gate): GateResult {
-  const env = { ...process.env, FORCE_COLOR: '0' };
+  const env = { ...process.env, FORCE_COLOR: '0', ...(g.env ?? {}) };
   const options = { cwd: g.cwd, env, encoding: 'buffer' as const, timeout: 900_000, maxBuffer: 64 * 1024 * 1024 };
   // Windows: `pnpm` is a `.cmd`, which Node will not spawn without a shell — so the command goes
   // through cmd.exe pre-quoted. POSIX spawns the argv directly, as subprocess.run(list) does.
@@ -119,9 +147,15 @@ export function runGate(g: Gate): GateResult {
   return { name: g.name, ok: p.status === 0, output: pyStrip(out) };
 }
 
-export function runAll(platform: string, skip: Set<string> = new Set(), verbose: boolean = true, extra: Set<string> = new Set()): GateResult[] {
+export function runAll(
+  platform: string,
+  skip: Set<string> = new Set(),
+  verbose: boolean = true,
+  extra: Set<string> = new Set(),
+  component?: string,
+): GateResult[] {
   const results: GateResult[] = [];
-  for (const g of gatesFor(platform, skip, extra)) {
+  for (const g of gatesFor(platform, skip, extra, component)) {
     const r = runGate(g);
     results.push(r);
     if (verbose) {

@@ -27,7 +27,7 @@ const meta: Meta<ContainerArgs> = {
     element: { control: 'select', options: ELEMENTS },
   },
   args: {
-    children: 'Container content',
+    children: 'Container content.',
     width: 'content',
     gutter: 'default',
     align: 'center',
@@ -66,13 +66,20 @@ export const ElementDiv: Story = { args: { element: 'div' } };
 export const ElementMain: Story = { args: { element: 'main' } };
 export const ElementSection: Story = { args: { element: 'section' } };
 
-/* examples */
+/* examples — exactly each example's `given` as args; a string `children` is an illustrative label,
+   rendered inside a Text with its defaults rather than built as the Stack it names. */
+
+/** The default page column for application screens, centered at the content measure. */
 export const ApplicationScreen: Story = {
   args: { children: 'A Stack of page regions', width: 'content' },
 };
+
+/** An article capped at the prose measure, about 65 characters a line. */
 export const ReadingMeasure: Story = {
   args: { children: 'An article', width: 'prose' },
 };
+
+/** A narrower measure inside an already padded parent, so the gutters are not applied twice. */
 export const NestedSection: Story = {
   args: { children: 'A narrower section', width: 'prose', gutter: 'none' },
 };

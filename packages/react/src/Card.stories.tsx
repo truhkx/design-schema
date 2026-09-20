@@ -88,6 +88,22 @@ export const InteractiveWithText: Story = {
   },
 };
 
+/* A top-level Fragment is flattened, so the Link inside one still counts as a top-level child. */
+export const InteractiveInFragment: Story = {
+  args: {
+    heading: 'September invoice',
+    interactive: true,
+    children: (
+      <>
+        <Text element="p" tone="muted">
+          Due 30 September.
+        </Text>
+        <Link href="#" label="View the September invoice" />
+      </>
+    ),
+  },
+};
+
 export const InteractiveDisabledButton: Story = {
   args: {
     heading: 'Archived plan',

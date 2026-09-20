@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ComponentProps } from 'react';
 import { render, screen } from '@testing-library/react';
 import { Card, type CardProps } from './Card';
+import { Link } from './Link';
 import meta, { Default } from './Card.stories';
 
 afterEach(() => {
@@ -42,8 +43,15 @@ describe('Card', () => {
     expect(screen.getByRole('article', { name: 'Team plan' })).toBeTruthy();
   });
 
+  /* The `children` string describes the content: it is rendered as a top-level Link with that
+     label, so the card has a real target to extend. */
   it('interactive-adds-no-focus-stop', () => {
-    const { root } = setup({ interactive: true });
+    const { root } = setup({
+      heading: 'September invoice',
+      children: <Link href="#" label="A Link to the invoice" />,
+      interactive: true,
+    });
+    expect(screen.getByRole('link', { name: 'A Link to the invoice' }).hasAttribute('data-ds-card-target')).toBe(true);
     expect(root().hasAttribute('tabindex')).toBe(false);
     expect(canFocus(root())).toBe(false);
   });

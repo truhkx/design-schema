@@ -19,7 +19,7 @@ export type InputType = 'text' | 'email' | 'password' | 'number' | 'search' | 't
 export type InputSize = 'sm' | 'md';
 
 /** copy.* — used verbatim; `{label}` is replaced by the visible label. */
-const COPY = {
+const COPY: { required: string; invalid: string; requiredIndicator: string } = {
   required: '{label} is required.',
   invalid: '{label} is not valid.',
   requiredIndicator: ' (required)',
@@ -191,8 +191,15 @@ export function Input({
   onBlur,
   readOnly,
   id: idProp,
-  ...rest
+  ...props
 }: InputProps & { ref?: Ref<HTMLInputElement> | undefined }): ReactElement {
+  // `className` and `style` are not in InputProps; one that arrives through an untyped spread is
+  // still dropped, since `overrides` is the only per-instance styling.
+  const {
+    className: _className,
+    style: _style,
+    ...rest
+  } = props as typeof props & { className?: unknown; style?: unknown };
   const form = useFormContext();
   const generatedId = useId();
   const id = idProp ?? (form?.idBase ? `${form.idBase}-${name}` : `ds-input${generatedId}`);
@@ -269,6 +276,13 @@ export function Input({
 
   const describedBy = [description ? descriptionId : null, isInvalid ? errorId : null].filter(Boolean).join(' ');
 
+  // The Form's mode decides when the field re-validates; after a failed submission every mode
+  // re-validates on blur and on change, so a fixed field stops being flagged as the user types.
+  const validateMode = form ? (form.validateMode ?? form.validate) : undefined;
+  const afterFailedSubmit = form?.submitFailed ?? false;
+  const validatesOnChange = validateMode === 'change' || afterFailedSubmit;
+  const validatesOnBlur = validateMode === 'blur' || validateMode === 'change' || afterFailedSubmit;
+
   const handleChange = (event: ChangeEvent<HTMLInputElement>): void => {
     if (isDisabled) {
       event.preventDefault();
@@ -277,12 +291,12 @@ export function Input({
     const next = event.target.value;
     if (!isControlled) setUncontrolledValue(next);
     onChange?.(next);
-    if (form && form.validate === 'change') form.validateField(name);
+    if (form && validatesOnChange) form.validateField(name);
   };
 
   const handleBlur = (): void => {
     onBlur?.();
-    if (form && (form.validate === 'blur' || form.validate === 'change')) form.validateField(name);
+    if (form && validatesOnBlur) form.validateField(name);
   };
 
   const classes = [

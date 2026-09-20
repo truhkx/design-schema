@@ -26,7 +26,13 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<DividerOverridableBinding, string>> = {
 
 export interface DividerProps
   extends Omit<ComponentPropsWithoutRef<'div'>, 'children' | 'role' | 'aria-orientation' | 'aria-hidden' | 'className' | 'style'> {
-  /** Vertical dividers sit between inline siblings (toolbar groups) and stretch to the row height. */
+  /**
+   * Vertical dividers sit between inline siblings (toolbar groups) and stretch to the row height:
+   * `inline-block` with `block-size: auto; align-self: stretch; min-block-size: 100%` (flex stretch
+   * applies only to an auto cross size, and the min fills a parent with a set height). They need a
+   * flex or grid row (a horizontal Stack with align stretch) or a parent with a definite height; in
+   * plain block flow a vertical divider has no height and draws nothing.
+   */
   orientation?: DividerOrientation | undefined;
   /**
    * Optional text in the middle of a horizontal divider ("or", "Earlier today"). Turns the divider
@@ -84,10 +90,11 @@ export function Divider({
     for (const binding of Object.keys(overrides) as DividerOverridableBinding[]) {
       const token = overrides[binding];
       if (!token) continue;
-      // Overrides change values, never presence: spacing is off at `none`, the label bindings only
-      // apply while a label is shown.
+      // Overrides change values, never presence: spacing is off at `none`, and the label bindings
+      // (labelGap on the row, labelSize/fontFamily on the composed Text) only apply while a label
+      // is in effect.
       if (binding === 'spacing' && spacing === 'none') continue;
-      if (binding === 'labelGap' && !showLabel) continue;
+      if (!showLabel && (binding === 'labelGap' || binding === 'labelSize' || binding === 'fontFamily')) continue;
       if (binding === 'labelSize') textOverrides.fontSize = token;
       else if (binding === 'fontFamily') textOverrides.fontFamily = token;
       else {

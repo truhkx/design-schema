@@ -56,7 +56,8 @@ const SPACING_TOKEN = {
  * a decorative root hides itself and its line (`accessibilityElementsHidden` +
  * `importantForAccessibility="no-hide-descendants"`); a labelled root is a row (`gap` from
  * `labelGap`) of two hidden line Views around `Text size="sm" tone="muted"`, which is read.
- * `labelSize`/`fontFamily` overrides reach Text's `fontSize`/`fontFamily`.
+ * The label Text sits in a plain View carrying the `Divider.label` hook, since Text takes
+ * no `testID`. `labelSize`/`fontFamily` overrides reach Text's `fontSize`/`fontFamily`.
  */
 export function Divider({
   orientation = 'horizontal',
@@ -79,6 +80,8 @@ export function Divider({
     }
   }, [label, orientation, labelIgnored]);
 
+  // Keyed on `semantic` and whether a label is in effect, so a semantic vertical divider
+  // whose label is ignored warns here too.
   React.useEffect(() => {
     if (__DEV__ && semantic && !labelled) {
       console.warn(
@@ -114,9 +117,11 @@ export function Divider({
     return (
       <View ref={ref} style={styles.labelledRoot} testID="Divider">
         <View style={styles.segment} accessibilityElementsHidden importantForAccessibility="no" testID="Divider.line" />
-        <Text size="sm" tone="muted" overrides={{ fontSize: overrides?.labelSize, fontFamily: overrides?.fontFamily }}>
-          {label}
-        </Text>
+        <View testID="Divider.label">
+          <Text size="sm" tone="muted" overrides={{ fontSize: overrides?.labelSize, fontFamily: overrides?.fontFamily }}>
+            {label}
+          </Text>
+        </View>
         <View style={styles.segment} accessibilityElementsHidden importantForAccessibility="no" testID="Divider.line" />
       </View>
     );

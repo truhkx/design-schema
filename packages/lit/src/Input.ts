@@ -37,7 +37,13 @@ export type InputOverridableBinding =
   | 'disabledOpacity'
   | 'transition';
 
-const HOOKS: Record<InputOverridableBinding, string> = {
+/**
+ * `helperSize` has no hook: it reaches the description and error text only
+ * through the composed Text's `overrides.fontSize`, so page CSS sizes helper
+ * text through Text's own hooks (`fontFamily` and `lineHeight` keep their root
+ * hooks as well, for the label and the field).
+ */
+const HOOKS: Record<Exclude<InputOverridableBinding, 'helperSize'>, string> = {
   borderInvalid: '--ds-input-border-invalid',
   borderWidth: '--ds-input-border-width',
   radius: '--ds-input-radius',
@@ -47,7 +53,6 @@ const HOOKS: Record<InputOverridableBinding, string> = {
   fontFamily: '--ds-input-font-family',
   fontSize: '--ds-input-font-size',
   labelWeight: '--ds-input-label-weight',
-  helperSize: '--ds-input-helper-size',
   lineHeight: '--ds-input-line-height',
   disabledOpacity: '--ds-input-disabled-opacity',
   transition: '--ds-input-transition',
@@ -105,7 +110,6 @@ export class DsInput extends LitElement {
       --ds-input-font-family: var(--font-family-body);
       --ds-input-font-size: var(--font-size-md);
       --ds-input-label-weight: var(--font-weight-medium);
-      --ds-input-helper-size: var(--font-size-sm);
       --ds-input-line-height: var(--font-line-height-normal);
       --ds-input-disabled-opacity: var(--opacity-disabled);
       --ds-input-transition: var(--motion-duration-fast);
@@ -468,7 +472,7 @@ export class DsInput extends LitElement {
   }
 
   private applyOverrides(): void {
-    for (const binding of Object.keys(HOOKS) as InputOverridableBinding[]) {
+    for (const binding of Object.keys(HOOKS) as Exclude<InputOverridableBinding, 'helperSize'>[]) {
       const ref = this.overrides?.[binding];
       const hook = HOOKS[binding];
       if (ref === undefined) {

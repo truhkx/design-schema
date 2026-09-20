@@ -1074,7 +1074,15 @@ export function litFile(c: Dict, scenarios: Dict[]): string {
   lines.push(`  const el = document.createElement('${tag}');`);
   lines.push('  const props = { ...meta.args, ...given };');
   lines.push('  for (const [key, value] of Object.entries(props)) {');
-  lines.push('    if (value !== undefined) (el as unknown as Record<string, unknown>)[key] = value;');
+  lines.push('    if (value === undefined) continue;');
+  lines.push('    // `children` is slotted light-DOM content, and `Element.children` is getter-only:');
+  lines.push('    // assigning it throws and takes the whole file down at setup. Slot a string into the');
+  lines.push('    // default slot the way the stories do; a richer value cannot be expressed here.');
+  lines.push('    if (key === \'children\') {');
+  lines.push('      if (typeof value === \'string\') el.append(value);');
+  lines.push('      continue;');
+  lines.push('    }');
+  lines.push('    (el as unknown as Record<string, unknown>)[key] = value;');
   lines.push('  }');
   lines.push('  const events = {');
   for (const evName of Object.keys(events)) lines.push(`    ${evName}: vi.fn(),`);

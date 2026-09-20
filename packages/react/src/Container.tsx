@@ -47,7 +47,15 @@ export interface ContainerProps extends Omit<ComponentPropsWithoutRef<'div'>, 'c
    * that is the author's responsibility, since the component cannot see the rest of the page, so it
    * neither enforces it nor warns. */
   element?: ContainerElement | undefined;
-  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
+  /**
+   * Per-instance style overrides: each entry sets the matching CSS hook to that token, inline.
+   * Overrides change values, never presence: `maxWidth` is a no-op at `width: full` and
+   * `paddingInline` is a no-op at `gutter: none`, because neither renders a hook at that value.
+   * Neither warns. A `paddingInline` override replaces the value at every viewport width, including
+   * the whole responsive `default` gutter rather than just its middle band. Consumers may also set
+   * `--ds-container-max-width` / `--ds-container-padding-inline` from their own CSS; that is the
+   * sanctioned escape hatch.
+   */
   overrides?: Partial<Record<ContainerOverridableBinding, TokenRef | undefined>> | undefined;
 }
 

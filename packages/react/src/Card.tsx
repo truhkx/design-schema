@@ -1,6 +1,7 @@
 import {
   Children,
   cloneElement,
+  Fragment,
   isValidElement,
   useEffect,
   useId,
@@ -68,8 +69,9 @@ const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'produc
 export interface CardProps
   extends Omit<ComponentPropsWithoutRef<'article'>, 'children' | 'aria-labelledby' | 'className' | 'style'> {
   /**
-   * The body. Usually a Stack of Text and controls; a plain string is rendered inside the system
-   * Text (a bare string cannot sit in a native View).
+   * The body. Usually a Stack of Text and controls; a plain string or number is rendered inside the
+   * system Text with its defaults (a bare string cannot sit in a native View), including each
+   * top-level string or number in an array body.
    */
   children: ReactNode;
   /**
@@ -95,8 +97,10 @@ export interface CardProps
    * The whole card is one link or button target. Requires exactly one interactive child (a Link or
    * Button) whose action the card extends to its full area; the card itself is not focusable. The
    * child is looked for among the top-level children of the body only (a native a[href] or button
-   * is accepted too); controls nested inside a wrapper such as a Stack are not searched. With zero
-   * or several such children the card stays non-interactive and warns once in development. If the
+   * is accepted too); controls nested inside a wrapper such as a Stack are not searched, so place
+   * the link at the top level beside any Text. A top-level Fragment is flattened, so its children
+   * count as top-level. With zero or several such children the card stays non-interactive (no hit
+   * area, no hover background, no press) and warns once per mounted card in development. If the
    * child is disabled the card is disabled with it. Controls in `headerActions` and `footer` are
    * never the target; they sit above the hit area and keep their own targets.
    */
@@ -126,6 +130,22 @@ function isTarget(node: ReactNode): node is ReactElement<Record<string, unknown>
 }
 
 /**
+ * The body's top-level children, with Fragments flattened so a `<>…</>` wrapper does not hide the
+ * card's single target (and so no clone ever lands on a Fragment, which takes no attributes).
+ */
+function topLevelChildren(children: ReactNode): ReactNode[] {
+  const items: ReactNode[] = [];
+  for (const child of Children.toArray(children)) {
+    if (isValidElement<{ children?: ReactNode }>(child) && child.type === Fragment) {
+      items.push(...topLevelChildren(child.props.children));
+    } else {
+      items.push(child);
+    }
+  }
+  return items;
+}
+
+/**
  * Card — Design Schema, category: container.
  *
  * When to use:
@@ -148,17 +168,22 @@ export function Card({
   const headingId = useId();
   const hasHeading = heading !== undefined && heading !== '';
 
-  let body: ReactNode = typeof children === 'string' || typeof children === 'number' ? <Text>{children}</Text> : children;
-  let isInteractive = false;
-  if (interactive) {
-    // Top-level children of the body only; a Link inside a Stack is not searched.
-    const items = Children.toArray(children);
-    const targets = items.filter(isTarget);
-    const target = targets.length === 1 ? targets[0]! : null;
-    if (target !== null) {
-      isInteractive = true;
-      body = items.map((item) => (item === target ? cloneElement(target, { [TARGET_ATTRIBUTE]: '' }) : item));
-    }
+  // Top-level children of the body only; a Link inside a Stack is not searched, a Fragment's are.
+  const items = topLevelChildren(children);
+  const targets = interactive ? items.filter(isTarget) : [];
+  const target = targets.length === 1 ? targets[0]! : null;
+  const isInteractive = target !== null;
+  // A bare string or number cannot carry the body's type styles, so each one goes inside Text.
+  const hasBareText = items.some((item) => typeof item === 'string' || typeof item === 'number');
+
+  let body: ReactNode = children;
+  if (isInteractive || hasBareText) {
+    body = items.map((item, index) => {
+      const key = `ds-card-body-${index}`;
+      if (target !== null && item === target) return cloneElement(target, { [TARGET_ATTRIBUTE]: '', key });
+      if (typeof item === 'string' || typeof item === 'number') return <Text key={key}>{item}</Text>;
+      return isValidElement(item) ? cloneElement(item, { key }) : item;
+    });
   }
   // `interactive` wins: the card already has a target, so it takes no scripted focus of its own.
   const isFocusable = focusable && !interactive;

@@ -1,5 +1,5 @@
 import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
-import { customElement, property } from 'lit/decorators.js';
+import { customElement, property, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { trackPress } from './custom/analytics.js';
@@ -383,9 +383,39 @@ export class DsButton extends LitElement {
     | Partial<Record<ButtonOverridableBinding, TokenRef | undefined>>
     | undefined;
 
+  /**
+   * Mirror of the host's own `tabindex`, forwarded to the inner `<button>`.
+   *
+   * `delegatesFocus` makes the host focusable, but it does not make the inner
+   * button share the host's tabbability: a composer that writes `tabindex="-1"`
+   * on a `<ds-button>` — a roving-focus parent such as `ds-toolbar`, or one that
+   * keeps the control out of the tab order because the surrounding decoration is
+   * `aria-hidden` (`ds-tree-grid`'s expand chevron, `ds-number-input`'s steppers)
+   * — takes the *host* out of the tab order while the shadow `<button>` stays a
+   * tab stop of its own. Forwarding the attribute is the only way a composer can
+   * express that, since it cannot reach into this shadow root.
+   *
+   * `null` (no `tabindex` on the host) forwards nothing, so an ordinary button is
+   * tabbable exactly as before, and `disabled` still leaves it in the tab order.
+   */
+  @state() private accessor hostTabIndex: string | null = null;
+
+  /**
+   * Watches the host's `tabindex` only. The callback writes to the inner button
+   * through `hostTabIndex`, never back to the host, so it cannot re-enter.
+   */
+  private readonly tabIndexObserver: MutationObserver = new MutationObserver(() => this.readHostTabIndex());
+
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('data-ds', 'Button');
+    this.readHostTabIndex();
+    this.tabIndexObserver.observe(this, { attributes: true, attributeFilter: ['tabindex'] });
+  }
+
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this.tabIndexObserver.disconnect();
   }
 
   protected override willUpdate(changed: PropertyValues): void {
@@ -400,6 +430,7 @@ export class DsButton extends LitElement {
         part="container"
         data-part="container"
         type=${this.type}
+        tabindex=${ifDefined(this.hostTabIndex ?? undefined)}
         aria-disabled=${ifDefined(this.disabled ? 'true' : undefined)}
         aria-busy=${ifDefined(this.loading ? 'true' : undefined)}
         aria-expanded=${ifDefined(this.expanded === undefined ? undefined : String(this.expanded))}
@@ -453,6 +484,10 @@ export class DsButton extends LitElement {
       // to `press` instead, so a ds-form nested in a native form submits once.
       this.closest('form')?.requestSubmit();
     }
+  }
+
+  private readHostTabIndex(): void {
+    this.hostTabIndex = this.getAttribute('tabindex');
   }
 
   private applyOverrides(): void {

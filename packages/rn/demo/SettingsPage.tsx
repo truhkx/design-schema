@@ -131,7 +131,7 @@ export function SettingsPage(): React.JSX.Element {
                 >
                   <Stack gap="loose">
                     <Fieldset legend="Your details">
-                      <Input label="Name" name="name" required value={profile.name} onChange={setField('name')} />
+                      <Input label="Name" name="name" required value={profile.name} onChangeText={setField('name')} />
                       <Input
                         label="Email"
                         name="email"
@@ -139,7 +139,7 @@ export function SettingsPage(): React.JSX.Element {
                         required
                         description="We send receipts here."
                         value={profile.email}
-                        onChange={setField('email')}
+                        onChangeText={setField('email')}
                       />
                     </Fieldset>
                     <Fieldset legend="Public profile">
@@ -147,14 +147,14 @@ export function SettingsPage(): React.JSX.Element {
                         label="Display name"
                         name="displayName"
                         value={profile.displayName}
-                        onChange={setField('displayName')}
+                        onChangeText={setField('displayName')}
                       />
                       <Input
                         label="Website"
                         name="website"
                         type="url"
                         value={profile.website}
-                        onChange={setField('website')}
+                        onChangeText={setField('website')}
                       />
                     </Fieldset>
                   </Stack>

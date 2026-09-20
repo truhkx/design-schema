@@ -33,7 +33,15 @@ async function setup(given: Record<string, unknown> = {}) {
   const el = document.createElement('ds-box');
   const props = { ...meta.args, ...given };
   for (const [key, value] of Object.entries(props)) {
-    if (value !== undefined) (el as unknown as Record<string, unknown>)[key] = value;
+    if (value === undefined) continue;
+    // `children` is slotted light-DOM content, and `Element.children` is getter-only:
+    // assigning it throws and takes the whole file down at setup. Slot a string into the
+    // default slot the way the stories do; a richer value cannot be expressed here.
+    if (key === 'children') {
+      if (typeof value === 'string') el.append(value);
+      continue;
+    }
+    (el as unknown as Record<string, unknown>)[key] = value;
   }
   const events = {
   };

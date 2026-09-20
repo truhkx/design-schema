@@ -73,7 +73,12 @@ export class DsContainer extends LitElement {
     /* paddingInline: layout.gutter.{gutter}; none renders no padding. default is responsive,
        narrow below layout.maxWidth.content and wide above layout.maxWidth.page; custom
        properties are not valid in media queries, so the breakpoints below are the resolved
-       px values of those two tokens, read from the token file at generation time. */
+       px values of those two tokens, read from the token file at generation time. Both
+       boundaries are inclusive (a min-width query), so a viewport exactly at a token width
+       takes the wider gutter. The bare :host carries the responsive default alongside
+       [gutter='default'], since before the first update the attribute is not yet reflected
+       and the plain rules have to be the prop defaults; an attribute selector is more specific
+       than :host, so narrow/wide/none still win whenever their attribute is present. */
     :host([gutter='narrow']) {
       --ds-container-padding-inline: var(--layout-gutter-narrow);
     }
@@ -89,12 +94,14 @@ export class DsContainer extends LitElement {
     }
 
     @media (min-width: 960px) { /* literal-ok: breakpoint from layout.maxWidth.content */
+      :host,
       :host([gutter='default']) {
         --ds-container-padding-inline: var(--layout-gutter);
       }
     }
 
     @media (min-width: 1280px) { /* literal-ok: breakpoint from layout.maxWidth.page */
+      :host,
       :host([gutter='default']) {
         --ds-container-padding-inline: var(--layout-gutter-wide);
       }
@@ -138,7 +145,8 @@ export class DsContainer extends LitElement {
     if (changed.has('element')) {
       this.internals.role = this.element === 'main' ? 'main' : null;
     }
-    if (changed.has('overrides')) {
+    /* `width` and `gutter` decide which overrides are in effect, so a change to either re-applies them. */
+    if (changed.has('overrides') || changed.has('width') || changed.has('gutter')) {
       this.applyOverrides();
     }
   }
@@ -147,13 +155,29 @@ export class DsContainer extends LitElement {
     return html`<slot></slot>`;
   }
 
+  /**
+   * Overrides change values, never presence: `width: full` renders the literal `none` and
+   * `gutter: none` a literal 0, neither read through a hook, so those bindings are not in
+   * effect and their overrides are no-ops. No dev warning fires for one that has no effect.
+   */
+  private isInEffect(binding: ContainerOverridableBinding): boolean {
+    switch (binding) {
+      case 'maxWidth':
+        return this.width !== 'full';
+      case 'paddingInline':
+        return this.gutter !== 'none';
+    }
+  }
+
   private applyOverrides(): void {
     for (const binding of Object.keys(HOOKS) as ContainerOverridableBinding[]) {
       const ref = this.overrides?.[binding];
       const hook = HOOKS[binding];
-      if (ref === undefined) {
+      if (ref === undefined || !this.isInEffect(binding)) {
         this.style.removeProperty(hook);
       } else {
+        /* Set inline, so a paddingInline override replaces the whole responsive `default`
+           gutter at every viewport width, not just its middle band. */
         this.style.setProperty(hook, cssVar(ref));
       }
     }

@@ -1,15 +1,6 @@
 import * as React from 'react';
 import { AccessibilityInfo, Platform, TextInput, View, findNodeHandle } from 'react-native';
-import type {
-  GestureResponderEvent,
-  KeyboardTypeOptions,
-  ReturnKeyTypeOptions,
-  TextInputInstance,
-  TextInputProps,
-  TextStyle,
-  ViewInstance,
-  ViewStyle,
-} from 'react-native';
+import type { TextInputInstance, TextInputProps, TextStyle, ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { useFieldsetContext } from './Fieldset';
@@ -22,7 +13,12 @@ import type { Tokens } from './theme';
 export type InputType = 'text' | 'email' | 'password' | 'number' | 'search' | 'tel' | 'url';
 export type InputSize = 'sm' | 'md';
 
-/** The style bindings a caller may replace with a different token; see the component's overrides contract. */
+/**
+ * The style bindings a caller may replace with a different token; see the component's
+ * overrides contract. The locked bindings (`background`, `foreground`, `placeholder`,
+ * `border`, `borderFocus`, `errorText`, `descriptionText`, `minTarget`, `minTargetSm`,
+ * `focusRingWidth`) carry contrast or target guarantees and are not in the union.
+ */
 export type InputOverridableBinding =
   | 'borderInvalid'
   | 'borderWidth'
@@ -39,7 +35,7 @@ export type InputOverridableBinding =
   | 'transition';
 
 export interface InputProps {
-  /** Visible label (visually hidden with `hideLabel`). Never replaced by a placeholder. Also the field's `accessibilityLabel`. */
+  /** Visible label (not rendered with `hideLabel`, where it survives only as the accessible name). Never replaced by a placeholder. */
   label: string;
   /** Field name used by the enclosing Form when collecting values. */
   name: string;
@@ -51,75 +47,45 @@ export interface InputProps {
   placeholder?: string | undefined;
   /** Persistent helper text below the label explaining format or purpose. Also the field's `accessibilityHint`. */
   description?: string | undefined;
-  /** Input type. Drives the keyboard on touch platforms (`keyboardType`, `textContentType`, `secureTextEntry`). */
+  /** Input type. Drives `keyboardType`, `textContentType` and `secureTextEntry`. */
   type?: InputType | undefined;
-  /** The field must have a value to submit. Shown in the label, not only by color. */
+  /** The field must have a value to submit. Shown in the label as `copy.requiredIndicator`, not only by color. */
   required?: boolean | undefined;
-  /** Visually hide the label (it remains the accessible name). Only for a field whose context already names it: a DataGrid cell editor, a Search. */
-  hideLabel?: boolean | undefined;
-  /** `sm` for fields inside grid cells and toolbars: minimum target height, tighter padding, small type. */
-  size?: InputSize | undefined;
-  /** Not editable and not submitted. Stays visible and readable. */
+  /** Not editable and not submitted. Stays visible and readable; on native it is not focusable (see the component note). */
   disabled?: boolean | undefined;
   /** Marks the field as failing validation. Usually set by the Form; can be set directly. */
   invalid?: boolean | undefined;
-  /** The error message. Setting it implies `invalid`. Explain what is wrong and how to fix it. */
+  /** The error message. Setting it implies `invalid`. An empty string counts as unset. */
   error?: string | undefined;
+  /** Do not render the label Text. `label` stays the accessible name. Only for a field whose context already names it. */
+  hideLabel?: boolean | undefined;
+  /** `sm` for fields inside grid cells and toolbars: minimum target height, tighter padding, small type. */
+  size?: InputSize | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<InputOverridableBinding, TokenRef | undefined>> | undefined;
-  /** The root view (label, description, field and error group), so a parent can measure it. */
+  /** The root group `View`, so a parent can measure the field group. */
   ref?: React.Ref<ViewInstance> | undefined;
-  /** Supplementary description forwarded to the field; Tooltip sets it when it describes the field. Read after `description`. */
+  /** Supplementary description, appended after `description` on the field's hint; Tooltip sets it when it describes the field. */
   accessibilityHint?: string | undefined;
-  /** Set by a parent (Tooltip, when its content *is* the name) to replace the name the label would give. */
+  /** Set by a parent (Tooltip, when its content *is* the name) to replace the name `label` would give. */
   accessibilityLabel?: string | undefined;
-  /** Fired on every value change with the new string value. */
-  onChange?: ((value: string) => void) | undefined;
-  /** Fired when the field receives focus. No payload. */
+  /** Fired on every value change with the new string value, and nothing else. */
+  onChangeText?: ((value: string) => void) | undefined;
+  /** Fired when the field receives focus. Called with no arguments, not the focus event. */
   onFocus?: (() => void) | undefined;
-  /** Fired when the field loses focus. The usual moment to validate. No payload. */
+  /** Fired when the field loses focus — the usual moment to validate. Called with no arguments. */
   onBlur?: (() => void) | undefined;
-  /** Forwarded to the field (pointer enter; react-native-web pointer only) so Tooltip can attach to it. */
-  onHoverIn?: TextInputProps['onPointerEnter'];
-  /** Forwarded to the field (pointer leave; react-native-web pointer only) so Tooltip can attach to it. */
-  onHoverOut?: TextInputProps['onPointerLeave'];
-  /** Forwarded to the field so Tooltip can open on long press. */
-  onLongPress?: ((event: GestureResponderEvent) => void) | undefined;
-  /** Forwarded to the field so Tooltip can close when the press ends. */
-  onPressOut?: ((event: GestureResponderEvent) => void) | undefined;
+  /** Forwarded to the field so Tooltip can attach (react-native-web pointer only; maps to `onPointerEnter`). */
+  onHoverIn?: (() => void) | undefined;
+  /** Forwarded to the field so Tooltip can attach (react-native-web pointer only; maps to `onPointerLeave`). */
+  onHoverOut?: (() => void) | undefined;
+  /** Forwarded to the field; also cancels a pending synthetic long press. */
+  onPressOut?: (() => void) | undefined;
+  /** Forwarded to the field so Tooltip can open on long press. TextInput has none, so it is timed from `onPressIn`. */
+  onLongPress?: (() => void) | undefined;
 }
 
-const KEYBOARD_TYPE: Record<InputType, KeyboardTypeOptions> = {
-  text: 'default',
-  email: 'email-address',
-  password: 'default',
-  number: 'numeric',
-  search: 'default',
-  tel: 'phone-pad',
-  url: 'url',
-};
-
-const TEXT_CONTENT_TYPE: Record<InputType, TextInputProps['textContentType']> = {
-  text: 'none',
-  email: 'emailAddress',
-  password: 'password',
-  number: 'none',
-  search: 'none',
-  tel: 'telephoneNumber',
-  url: 'URL',
-};
-
-/** Types whose values must not be auto-capitalized or auto-corrected by the keyboard. */
-const VERBATIM_TYPES: ReadonlySet<InputType> = new Set<InputType>(['email', 'password', 'url']);
-
-const FONT_SIZE_TOKEN = { sm: 'fontSizeSm', md: 'fontSizeMd' } as const satisfies Record<InputSize, keyof Tokens>;
-const PADDING_INLINE_TOKEN = { sm: 'space2', md: 'spaceMd' } as const satisfies Record<InputSize, keyof Tokens>;
-const PADDING_BLOCK_TOKEN = { sm: 'space1', md: 'spaceSm' } as const satisfies Record<InputSize, keyof Tokens>;
-const MIN_TARGET_TOKEN = { sm: 'sizeTargetMin', md: 'sizeTargetComfortable' } as const satisfies Record<InputSize, keyof Tokens>;
-
-/** The `longPressDelay` constant: TextInput has no long-press event; this matches Pressable's default `delayLongPress`. */
-const LONG_PRESS_DELAY_MS = 500; // literal-ok: schema constant longPressDelay (React Native's own threshold, not a design token)
-
+/** The component's user-facing strings, from the doc's `copy` block. */
 const COPY = {
   required: (label: string): string => `${label} is required.`,
   invalid: (label: string): string => `${label} is not valid.`,
@@ -127,31 +93,105 @@ const COPY = {
 } as const;
 
 /**
- * Input — collects a single line of text, bundling label, helper text, field and
- * error message so their association is always correct.
+ * `longPressDelay`: how long a press on the TextInput is held before the forwarded
+ * `onLongPress` fires — the Pressable default, which TextInput lacks.
+ */
+const LONG_PRESS_DELAY = 500; // literal-ok: the doc's `longPressDelay` constant, in ms
+
+const KEYBOARD_TYPE = {
+  text: 'default',
+  email: 'email-address',
+  password: 'default',
+  number: 'numeric',
+  // `search` keeps the default keyboard: the return key is what a search field changes, not the layout.
+  search: 'default',
+  tel: 'phone-pad',
+  url: 'url',
+} as const satisfies Record<InputType, NonNullable<TextInputProps['keyboardType']>>;
+
+const CONTENT_TYPE = {
+  text: 'none',
+  email: 'emailAddress',
+  password: 'password',
+  number: 'none',
+  search: 'none',
+  tel: 'telephoneNumber',
+  url: 'URL',
+} as const satisfies Record<InputType, NonNullable<TextInputProps['textContentType']>>;
+
+/** Types whose value is never a sentence: no autocapitalisation and no autocorrection. */
+const LITERAL_TYPES: readonly InputType[] = ['email', 'password', 'url'];
+
+/** `font.size.{size}` — the field text and the label, so the label follows `size`. */
+const FONT_SIZE_TOKEN = {
+  sm: 'fontSizeSm',
+  md: 'fontSizeMd',
+} as const satisfies Record<InputSize, keyof Tokens>;
+
+const PADDING_INLINE_TOKEN = {
+  sm: 'space2',
+  md: 'spaceMd',
+} as const satisfies Record<InputSize, keyof Tokens>;
+
+const PADDING_BLOCK_TOKEN = {
+  sm: 'space1',
+  md: 'spaceSm',
+} as const satisfies Record<InputSize, keyof Tokens>;
+
+/** `minTarget` / `minTargetSm`: both locked, so the sm floor is always `size.target.min`. */
+const MIN_TARGET_TOKEN = {
+  sm: 'sizeTargetMin',
+  md: 'sizeTargetComfortable',
+} as const satisfies Record<InputSize, keyof Tokens>;
+
+/**
+ * Input — collects a single line of text.
  *
- * When to use: names, emails, passwords, search terms and short free-text values.
- * Choose `type` so the touch keyboard matches; provide `description` when the
- * format matters. Not for multi-line content, a fixed set of choices, or on/off
- * values, and never with `placeholder` standing in for the label.
+ * When to use: Use Input for names, emails, passwords, search terms, and short
+ * free-text values. Choose `type` for the value so the touch keyboard matches.
+ * Provide `description` when the format matters ("Use the email you signed up
+ * with"). Do not use `placeholder` as the label; it vanishes as soon as the user
+ * types.
  *
- * Renders a `Text` label, optional description, a `TextInput`, and an error `Text`.
- * The label is also passed as `accessibilityLabel`, description as
- * `accessibilityHint`, and `accessibilityState={{ disabled }}`. `type` maps to
- * `keyboardType`, `textContentType` and `secureTextEntry`. Errors are announced
- * with `accessibilityLiveRegion` (Android) and
- * `AccessibilityInfo.announceForAccessibility` (iOS). Inside a Form the field
- * registers `{ getValue, validate, focus }` by `name` (precedence: `error`, then
- * `required`, then `invalid`); a disabled field is not registered. The border is
- * the focus ring: focus widens it to `focusRingWidth` and padding shrinks by the
- * difference so the field never shifts; an invalid field keeps its danger color
- * while focused. `disabled` dims the whole group with `disabledOpacity`. Inside a
- * Fieldset the group's `disabled` applies as if set on the field and the legend
- * prefixes the `accessibilityLabel` ("Shipping address, Street"). `size: sm` swaps
- * padding and the target height for their Sm bindings and the type to
- * `font.size.sm`. `accessibilityHint`, `accessibilityLabel`, `onHoverIn`,
- * `onHoverOut`, `onFocus`, `onBlur`, `onLongPress` and `onPressOut` reach the
- * native field so Tooltip can attach to it.
+ * Renders a group `View` (`testID="Input"`) holding the label, description, the
+ * `TextInput` and the error message, separated by `partGap`. There is no label
+ * element on native: `label` is rendered as the system `Text` at `weight="medium"`
+ * and is also the field's `accessibilityLabel`, and `description` becomes its
+ * `accessibilityHint` (a hint forwarded by a parent is appended after it, joined
+ * with a space; a forwarded `accessibilityLabel` replaces the name outright). A
+ * Fieldset legend still prefixes the name ("Shipping address, Street").
+ * `hideLabel` drops the label Text entirely, so the `label` part has no native
+ * home while hidden and the name lives only in `accessibilityLabel`.
+ *
+ * `required` appends `copy.requiredIndicator` to the visible label and to the
+ * accessible name — there is no required accessibility state on native. The error
+ * is announced through `accessibilityLiveRegion` (Android) and
+ * `AccessibilityInfo.announceForAccessibility` (iOS) rather than `role="alert"`,
+ * and both are suppressed inside a Form that renders its own error summary.
+ *
+ * `disabled` uses `editable={false}` with `accessibilityState.disabled`: iOS
+ * cannot keep a non-editable TextInput focusable, so a disabled field is not
+ * focusable on native and the state is announced instead. react-native-web drops
+ * `accessibilityState`, so it is mirrored as `aria-disabled` on both the TextInput
+ * and the group View that carries `disabledOpacity` — the group is what makes a
+ * web accessibility checker treat the dimmed label and value as disabled.
+ *
+ * The field's border *is* its focus ring: on focus it widens to `focusRingWidth`
+ * in `color.border.focus` while the padding shrinks by the difference so nothing
+ * shifts, and when the field is both invalid and focused the danger color stays so
+ * the error is never hidden by focus. Native swaps the border instantly, so the
+ * `transition` binding is accepted for parity with web and has no effect here.
+ *
+ * Inside a Form the field registers by `name`, submits its string value, and takes
+ * `returnKeyType`/`onSubmitEditing` from the Form's field order (next field, or
+ * submit on the last). Validation precedence is `error`, then `required`
+ * (`copy.required`), then `invalid` (`copy.invalid`); the error slot shows `error`,
+ * else the Form's message for this field, else — only while invalid — the derived
+ * copy, so an untouched empty required field flags nothing.
+ *
+ * TextInput has no hover or long-press handlers: `onHoverIn`/`onHoverOut` map to
+ * `onPointerEnter`/`onPointerLeave`, and `onLongPress` is timed from `onPressIn`
+ * over `longPressDelay` unless `onPressOut` comes first.
  */
 export function Input({
   label,
@@ -162,54 +202,58 @@ export function Input({
   description,
   type = 'text',
   required = false,
-  hideLabel = false,
-  size = 'md',
   disabled = false,
   invalid = false,
   error,
+  hideLabel = false,
+  size = 'md',
   overrides,
   ref,
   accessibilityHint,
   accessibilityLabel,
-  onChange,
+  onChangeText,
   onFocus,
   onBlur,
   onHoverIn,
   onHoverOut,
-  onLongPress,
   onPressOut,
+  onLongPress,
 }: InputProps): React.JSX.Element {
   const { tokens: t } = useTheme();
   const form = useFormContext();
   const fieldset = useFieldsetContext();
+
   const inputRef = React.useRef<TextInputInstance>(null);
-  const longPressTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const [internalValue, setInternalValue] = React.useState<string>(defaultValue ?? '');
   const [focused, setFocused] = React.useState(false);
 
   const currentValue = value ?? internalValue;
   const isDisabled = disabled || (form?.disabled ?? false) || (fieldset?.disabled ?? false);
-  // The Form marks a failing field through its context entry, which counts exactly as a
-  // Form-set `invalid`: its presence marks the field, and an empty message falls through to
-  // the derived copy.
-  const hasFormEntry = form !== null && name in form.errors;
-  const formError = form?.errors[name];
-  const markedInvalid = invalid || hasFormEntry;
-  // The error slot shows `error` when set, then the Form's message; otherwise a message
-  // only while the field is marked invalid: copy.required for an empty required field, else
-  // copy.invalid. `required` counts only the empty string as empty: whitespace passes.
-  const invalidMessage = markedInvalid ? (required && currentValue === '' ? COPY.required(label) : COPY.invalid(label)) : undefined;
-  const displayedError =
-    error !== undefined && error !== '' ? error : formError !== undefined && formError !== '' ? formError : invalidMessage;
-  const isInvalid = markedInvalid || displayedError !== undefined;
+
+  // The Form marks a failing field by putting an entry under its name; the entry's
+  // presence is the mark, and an entry with an empty message falls through to the
+  // derived copy. `error` is the consumer's and the Form never sets it.
+  const formErrors = form?.errors;
+  const formMarked = formErrors !== undefined && Object.prototype.hasOwnProperty.call(formErrors, name);
+  const formError = formErrors?.[name];
+  const ownError = error !== undefined && error !== '' ? error : undefined;
+
+  const isInvalid = ownError !== undefined || invalid || formMarked;
+  const derivedError = isInvalid ? (required && currentValue === '' ? COPY.required(label) : COPY.invalid(label)) : undefined;
+  const displayedError = ownError ?? (formError !== undefined && formError !== '' ? formError : derivedError);
   const summarised = form !== null && form.errorSummary;
 
   const validateValue = React.useCallback(
     (candidate: string): string | null => {
-      // Precedence: `error` prop, then `required`, then `invalid`.
+      // Precedence: `error` prop, then `required`, then `invalid`. The Form's own entry is
+      // ignored here, since this is what the Form calls to produce it. A disabled field is skipped.
+      if (isDisabled) {
+        return null;
+      }
       if (error !== undefined && error !== '') {
         return error;
       }
+      // Only the empty string counts as empty, as a native field does: whitespace passes.
       if (required && candidate === '') {
         return COPY.required(label);
       }
@@ -218,34 +262,28 @@ export function Input({
       }
       return null;
     },
-    [required, label, error, invalid],
+    [isDisabled, error, required, invalid, label],
   );
 
-  // A stable handle whose methods read the latest render, so re-registering never
-  // reorders the Form's field list. The field's own `validate()` ignores the Form's entry,
-  // since it is what the Form calls to produce it.
-  const latest = React.useRef({ currentValue, validateValue, label });
-  latest.current = { currentValue, validateValue, label };
+  const focusField = React.useCallback((): void => {
+    inputRef.current?.focus();
+    const node = inputRef.current === null ? null : findNodeHandle(inputRef.current);
+    if (node != null) {
+      AccessibilityInfo.setAccessibilityFocus(node);
+    }
+  }, []);
+
+  const latest = React.useRef({ currentValue, isDisabled, validateValue, focusField });
+  latest.current = { currentValue, isDisabled, validateValue, focusField };
   const handle = React.useMemo<FormFieldHandle>(
     () => ({
-      get label(): string {
-        return latest.current.label;
-      },
-      getValue: () => latest.current.currentValue,
+      label,
+      // An empty or disabled field contributes nothing and is left out of the collected values.
+      getValue: () => (latest.current.isDisabled || latest.current.currentValue === '' ? undefined : latest.current.currentValue),
       validate: () => latest.current.validateValue(latest.current.currentValue),
-      focus: () => {
-        const input = inputRef.current;
-        if (input === null) {
-          return;
-        }
-        input.focus();
-        const node = findNodeHandle(input);
-        if (node != null) {
-          AccessibilityInfo.setAccessibilityFocus(node);
-        }
-      },
+      focus: () => latest.current.focusField(),
     }),
-    [],
+    [label],
   );
 
   const register = form?.register;
@@ -258,187 +296,198 @@ export function Input({
     return () => unregister(name);
   }, [register, unregister, name, handle, isDisabled]);
 
-  // iOS: announce an error the moment it appears, unless the Form's summary already does.
   React.useEffect(() => {
     if (Platform.OS === 'ios' && !summarised && displayedError !== undefined) {
       AccessibilityInfo.announceForAccessibility(displayedError);
     }
   }, [displayedError, summarised]);
 
-  React.useEffect(
-    () => () => {
-      if (longPressTimer.current !== null) {
-        clearTimeout(longPressTimer.current);
-      }
-    },
-    [],
-  );
-
-  const handleChangeText = (next: string): void => {
-    if (value === undefined) {
-      setInternalValue(next);
-    }
-    onChange?.(next);
-    if (form !== null && form.validateMode === 'change') {
-      form.reportValidity(name, validateValue(next));
-    }
-  };
-
-  const handleFocus = (): void => {
-    setFocused(true);
-    onFocus?.();
-  };
-
-  const handleBlur = (): void => {
-    setFocused(false);
-    onBlur?.();
-    if (form !== null && form.validateMode === 'blur') {
-      form.reportValidity(name, validateValue(currentValue));
-    }
-  };
-
-  const handlePressIn = (event: GestureResponderEvent): void => {
-    if (onLongPress === undefined) {
-      return;
-    }
-    longPressTimer.current = setTimeout(() => {
-      longPressTimer.current = null;
-      onLongPress(event);
-    }, LONG_PRESS_DELAY_MS);
-  };
-
-  const handlePressOut = (event: GestureResponderEvent): void => {
+  // TextInput has no long-press handler, so one is timed from `onPressIn` and cancelled
+  // by `onPressOut` (or by unmounting mid-press).
+  const longPressTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelLongPress = React.useCallback((): void => {
     if (longPressTimer.current !== null) {
       clearTimeout(longPressTimer.current);
       longPressTimer.current = null;
     }
-    onPressOut?.(event);
-  };
+  }, []);
+  React.useEffect(() => cancelLongPress, [cancelLongPress]);
 
-  const position = form === null ? -1 : form.order.indexOf(name);
-  const isLast = form !== null && position !== -1 && position === form.order.length - 1;
-  const nextName = form !== null && position !== -1 ? form.order[position + 1] : undefined;
-  const returnKeyType: ReturnKeyTypeOptions | undefined = form === null ? undefined : isLast ? 'done' : 'next';
-
-  const handleSubmitEditing = (): void => {
-    if (form === null) {
-      return;
-    }
-    if (isLast) {
-      form.submit();
-    } else if (nextName !== undefined) {
-      form.focusField(nextName);
-    }
-  };
-
-  const visibleLabel = required ? `${label}${COPY.requiredIndicator}` : label;
-  const ownName = accessibilityLabel ?? visibleLabel;
-  const accessibleName = fieldset !== null ? `${fieldset.legend}, ${ownName}` : ownName;
-  const hints = [description, accessibilityHint].filter((part): part is string => part !== undefined && part !== '');
-  const accessibleHint = hints.length > 0 ? hints.join(' ') : undefined;
-
-  const borderInvalidColor = overrides?.borderInvalid ? (resolveToken(t, overrides.borderInvalid) as string) : t.colorBorderDanger;
   const borderWidth = overrides?.borderWidth ? (resolveToken(t, overrides.borderWidth) as number) : t.borderWidthThin;
+  const borderInvalid = overrides?.borderInvalid ? (resolveToken(t, overrides.borderInvalid) as string) : t.colorBorderDanger;
   const radius = overrides?.radius ? (resolveToken(t, overrides.radius) as number) : t.radiusMd;
   const paddingInline = overrides?.paddingInline ? (resolveToken(t, overrides.paddingInline) as number) : t[PADDING_INLINE_TOKEN[size]];
   const paddingBlock = overrides?.paddingBlock ? (resolveToken(t, overrides.paddingBlock) as number) : t[PADDING_BLOCK_TOKEN[size]];
   const partGap = overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.space1;
   const fontFamily = overrides?.fontFamily ? (resolveToken(t, overrides.fontFamily) as string) : t.fontFamilyBody;
   const fontSize = overrides?.fontSize ? (resolveToken(t, overrides.fontSize) as number) : t[FONT_SIZE_TOKEN[size]];
-  const lineHeightMultiplier = overrides?.lineHeight ? (resolveToken(t, overrides.lineHeight) as number) : t.fontLineHeightNormal;
+  const lineHeight = overrides?.lineHeight ? (resolveToken(t, overrides.lineHeight) as number) : t.fontLineHeightNormal;
   const disabledOpacity = overrides?.disabledOpacity ? (resolveToken(t, overrides.disabledOpacity) as number) : t.opacityDisabled;
+  // `transition` is accepted for parity with web and Lit: the native border swaps instantly,
+  // so neither the default duration nor an override of it is read here.
 
-  // The border is the focus ring: focus widens it to the locked `focusRingWidth` and
-  // padding shrinks by the difference so the field never shifts. An invalid field keeps
-  // its danger color while focused, so focus never hides the error. Border color swaps
-  // instantly on native, so the `transition` binding (and its override) has no effect here.
-  const activeBorderWidth = focused ? t.borderWidthFocus : borderWidth;
-  const inset = activeBorderWidth - borderWidth;
-  const borderColor = isInvalid ? borderInvalidColor : focused ? t.colorBorderFocus : t.colorBorderStrong;
+  // The border is the focus ring, so focusing only changes its width — and the padding
+  // gives back exactly that difference so the field does not shift.
+  const focusRingWidth = t.borderWidthFocus;
+  const currentBorderWidth = focused ? focusRingWidth : borderWidth;
+  const borderGrowth = currentBorderWidth - borderWidth;
+  const borderColor = isInvalid ? borderInvalid : focused ? t.colorBorderFocus : t.colorBorderStrong;
 
-  const containerStyle: ViewStyle = {
-    flexDirection: 'column',
-    gap: partGap,
-    opacity: isDisabled ? disabledOpacity : 1,
+  const groupStyle = React.useMemo<ViewStyle>(
+    () => ({
+      flexDirection: 'column',
+      gap: partGap,
+      opacity: isDisabled ? disabledOpacity : 1,
+    }),
+    [partGap, isDisabled, disabledOpacity],
+  );
+
+  const fieldStyle = React.useMemo<TextStyle>(
+    () => ({
+      minHeight: t[MIN_TARGET_TOKEN[size]],
+      paddingHorizontal: Math.max(0, paddingInline - borderGrowth),
+      paddingVertical: Math.max(0, paddingBlock - borderGrowth),
+      borderWidth: currentBorderWidth,
+      borderColor,
+      borderRadius: radius,
+      backgroundColor: t.colorBackground,
+      color: t.colorForeground,
+      fontFamily,
+      fontSize,
+      lineHeight: toLineHeight(fontSize, lineHeight),
+    }),
+    [t, size, paddingInline, paddingBlock, borderGrowth, currentBorderWidth, borderColor, radius, fontFamily, fontSize, lineHeight],
+  );
+
+  // The root bindings the composed Texts realise: the label follows `size` and `labelWeight`,
+  // the helpers are `size="sm"` with `helperSize` on top. Overrides are forwarded to the
+  // child's own `overrides`; the child's colors stay its locked `tone`.
+  const labelOverrides = {
+    fontSize: overrides?.fontSize,
+    fontWeight: overrides?.labelWeight,
+    fontFamily: overrides?.fontFamily,
+    lineHeight: overrides?.lineHeight,
+  };
+  const helperOverrides = {
+    fontSize: overrides?.helperSize,
+    fontFamily: overrides?.fontFamily,
+    lineHeight: overrides?.lineHeight,
   };
 
-  const fieldStyle: TextStyle = {
-    minHeight: t[MIN_TARGET_TOKEN[size]],
-    backgroundColor: t.colorBackground,
-    color: t.colorForeground,
-    borderWidth: activeBorderWidth,
-    borderColor,
-    borderRadius: radius,
-    paddingHorizontal: Math.max(0, paddingInline - inset),
-    paddingVertical: Math.max(0, paddingBlock - inset),
-    fontFamily,
-    fontSize,
-    lineHeight: toLineHeight(fontSize, lineHeightMultiplier),
+  const visibleLabel = required ? `${label}${COPY.requiredIndicator}` : label;
+  // A forwarded name replaces the label outright; a Fieldset legend still goes in front.
+  const ownName = accessibilityLabel ?? visibleLabel;
+  const accessibleName = fieldset === null ? ownName : `${fieldset.legend}, ${ownName}`;
+  const hint = [description, accessibilityHint].filter((part) => part !== undefined && part !== '').join(' ');
+
+  // The Form owns the field order: every field but the last moves to the next one.
+  const order = form?.order ?? [];
+  const index = order.indexOf(name);
+  const isLastField = index === -1 || index === order.length - 1;
+  const handleSubmitEditing = (): void => {
+    if (form === null) {
+      return;
+    }
+    const next = order[index + 1];
+    if (isLastField || next === undefined) {
+      form.submit();
+    } else {
+      form.focusField(next);
+    }
   };
 
-  const helperOverrides = { fontFamily: overrides?.fontFamily, fontSize: overrides?.helperSize, lineHeight: overrides?.lineHeight };
+  const handleChangeText = (next: string): void => {
+    if (value === undefined) {
+      setInternalValue(next);
+    }
+    onChangeText?.(next);
+    if (form !== null && (form.validateMode === 'change' || form.submitFailed)) {
+      form.reportValidity(name, validateValue(next));
+    }
+  };
+
+  const handleBlur = (): void => {
+    setFocused(false);
+    if (form !== null && (form.validateMode === 'blur' || form.submitFailed)) {
+      form.reportValidity(name, validateValue(currentValue));
+    }
+    onBlur?.();
+  };
+
+  const literalType = LITERAL_TYPES.includes(type);
 
   return (
-    // `aria-disabled` marks the whole dimmed group (label, description, field, error) as disabled:
-    // react-native-web 0.21 ignores `accessibilityState`, so without it the dimmed label and value
-    // read as ordinary text that fails contrast. The group View is not an accessibility element on
-    // native, so this changes nothing there.
-    <View ref={ref} aria-disabled={isDisabled || undefined} style={containerStyle} testID="Input">
+    <View ref={ref} testID="Input" style={groupStyle} aria-disabled={isDisabled}>
       {hideLabel ? null : (
+        // Text takes no testID, so the part name lives on a wrapper View (as in Fieldset).
         <View testID="Input.label">
-          <Text
-            size={size}
-            weight="medium"
-            overrides={{ fontFamily: overrides?.fontFamily, fontSize: overrides?.fontSize, fontWeight: overrides?.labelWeight, lineHeight: overrides?.lineHeight }}
-          >
+          <Text size={size} weight="medium" overrides={labelOverrides}>
             {visibleLabel}
           </Text>
         </View>
       )}
-      {description !== undefined && description !== '' ? (
+      {description === undefined || description === '' ? null : (
         <View testID="Input.description">
           <Text size="sm" tone="muted" overrides={helperOverrides}>
             {description}
           </Text>
         </View>
-      ) : null}
+      )}
       <TextInput
         ref={inputRef}
         testID="Input.field"
-        accessibilityLabel={accessibleName}
-        accessibilityHint={accessibleHint}
-        accessibilityState={{ disabled: isDisabled }}
-        // react-native-web 0.21 renders only the aria-* form of the state.
-        aria-disabled={isDisabled}
-        keyboardType={KEYBOARD_TYPE[type]}
-        textContentType={TEXT_CONTENT_TYPE[type]}
-        secureTextEntry={type === 'password'}
-        autoCapitalize={VERBATIM_TYPES.has(type) ? 'none' : 'sentences'}
-        autoCorrect={!VERBATIM_TYPES.has(type)}
-        allowFontScaling
-        editable={!isDisabled}
+        style={fieldStyle}
         value={currentValue}
         placeholder={placeholder}
         placeholderTextColor={t.colorForegroundMuted}
-        returnKeyType={returnKeyType}
-        submitBehavior={isLast ? 'blurAndSubmit' : 'submit'}
-        onSubmitEditing={handleSubmitEditing}
+        editable={!isDisabled}
+        keyboardType={KEYBOARD_TYPE[type]}
+        textContentType={CONTENT_TYPE[type]}
+        secureTextEntry={type === 'password'}
+        autoCapitalize={literalType ? 'none' : undefined}
+        autoCorrect={literalType ? false : undefined}
+        accessibilityLabel={accessibleName}
+        accessibilityHint={hint === '' ? undefined : hint}
+        accessibilityState={{ disabled: isDisabled }}
+        // react-native-web 0.21 drops `accessibilityState`; this mirror is what reaches the DOM.
+        aria-disabled={isDisabled}
+        returnKeyType={form === null ? undefined : isLastField ? 'done' : 'next'}
+        onSubmitEditing={form === null ? undefined : handleSubmitEditing}
         onChangeText={handleChangeText}
-        onFocus={handleFocus}
+        onFocus={() => {
+          setFocused(true);
+          onFocus?.();
+        }}
         onBlur={handleBlur}
         onPointerEnter={onHoverIn}
         onPointerLeave={onHoverOut}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        style={fieldStyle}
+        onPressIn={() => {
+          if (onLongPress === undefined) {
+            return;
+          }
+          cancelLongPress();
+          longPressTimer.current = setTimeout(() => {
+            longPressTimer.current = null;
+            onLongPress();
+          }, LONG_PRESS_DELAY);
+        }}
+        onPressOut={() => {
+          cancelLongPress();
+          onPressOut?.();
+        }}
       />
-      {displayedError !== undefined ? (
-        <View accessibilityLiveRegion={summarised ? 'none' : 'assertive'} testID="Input.errorMessage">
+      {displayedError === undefined ? null : (
+        <View
+          testID="Input.errorMessage"
+          // Android announces through the live region; iOS through the effect above. A Form
+          // with its own error summary announces instead, so both are silenced there.
+          accessibilityLiveRegion={summarised ? 'none' : 'assertive'}
+        >
           <Text size="sm" tone="danger" overrides={helperOverrides}>
             {displayedError}
           </Text>
         </View>
-      ) : null}
+      )}
     </View>
   );
 }

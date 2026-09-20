@@ -1,6 +1,5 @@
 import * as React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Button } from './Button';
 import { Divider } from './Divider';
 import { Stack } from './Stack';
 import { Text } from './Text';
@@ -23,12 +22,12 @@ type Story = StoryObj<typeof Divider>;
 
 export const Default: Story = {};
 
-/** A vertical divider needs a row to stretch to. */
+/** A vertical divider needs a row with a height to stretch to. */
 const renderInRow: Story['render'] = (args) => (
   <Stack direction="horizontal" gap="tight" align="stretch">
-    <Button variant="secondary" label="Bold" />
+    <Text>Bold Italic</Text>
     <Divider {...args} />
-    <Button variant="secondary" label="Link" />
+    <Text>Align left</Text>
   </Stack>
 );
 

@@ -5,7 +5,7 @@
  */
 import * as React from 'react';
 import { Linking } from 'react-native';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { Link } from './Link';
 import type { LinkProps } from './Link';
 import meta from './Link.stories';
@@ -23,10 +23,30 @@ function setup(given: Partial<LinkProps> = {}) {
   return { ...utils, onPress, props, container: () => screen.getByTestId('Link') };
 }
 
+/**
+ * Presses and lets the pressed-color crossfade finish inside `act`. Activation starts an
+ * `Animated.timing` over `motion.duration.fast`, which otherwise ticks after the test
+ * body and warns that the update was not wrapped in act.
+ */
+function press(element: ReturnType<typeof screen.getByTestId>): void {
+  fireEvent.press(element);
+  act(() => {
+    jest.advanceTimersByTime(1000);
+  });
+}
+
 describe('Link', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   it('click-fires-on-press', () => {
     const s = setup();
-    fireEvent.press(s.container());
+    press(s.container());
     expect(s.onPress).toHaveBeenCalledTimes(1);
     expect(s.onPress).toHaveBeenCalledWith(s.props.href);
   });
@@ -62,9 +82,13 @@ describe('Link', () => {
 describe('Link — Linking hand-off', () => {
   let openURL: jest.SpyInstance;
   beforeEach(() => {
+    jest.useFakeTimers();
     openURL = jest.spyOn(Linking, 'openURL').mockResolvedValue(undefined);
   });
-  afterEach(() => openURL.mockRestore());
+  afterEach(() => {
+    openURL.mockRestore();
+    jest.useRealTimers();
+  });
 
   function renderLink(props: Partial<LinkProps>) {
     render(
@@ -72,7 +96,7 @@ describe('Link — Linking hand-off', () => {
         <Link href="/billing/history" label="View the billing history" {...props} />
       </ThemeProvider>,
     );
-    fireEvent.press(screen.getByTestId('Link'));
+    press(screen.getByTestId('Link'));
   }
 
   it('opens the URL with Linking when there is no handler', () => {

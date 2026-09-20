@@ -388,30 +388,33 @@ export function Button({
     }
   };
 
+  // The root carries the focus ring and the target floor; the fill and the content sit
+  // inside it. The ring's width is always reserved so focusing never shifts the layout.
   const containerStyle: ViewStyle = {
-    flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'stretch',
     justifyContent: 'center',
     minWidth: t.sizeTargetMin,
     minHeight: t.sizeTargetMin,
-    gap: iconGap,
-    paddingHorizontal: paddingInline,
-    paddingVertical: paddingBlock,
     borderRadius: radius,
     borderWidth: t.borderWidthFocus,
     borderColor: focused ? focusRingColor : 'transparent',
     opacity: isDisabled ? disabledOpacity : 1,
   };
 
-  // A separate fill behind the content, since the border's own color is fixed
-  // (transparent or the focus ring) and cannot also carry the animated background.
+  // The fill is a child, not the root's own `backgroundColor`, because a Pressable's style
+  // cannot hold an Animated value. It is a flex child rather than an absolutely positioned
+  // overlay: an overlay at inset 0 fills the *padding* box on Yoga and in CSS alike, so the
+  // fill would stop `border.width.focus` short of every edge. Growing to the root's box
+  // instead keeps the fill flush with the button, still inside the reserved ring.
   const backgroundFillStyle: Animated.WithAnimatedValue<ViewStyle> = {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
-    left: 0,
-    borderRadius: radius,
+    flexGrow: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: iconGap,
+    paddingHorizontal: paddingInline,
+    paddingVertical: paddingBlock,
+    borderRadius: Math.max(0, radius - t.borderWidthFocus),
     backgroundColor: animatedBackground,
   };
 
@@ -474,27 +477,28 @@ export function Button({
       onLayout={handleLayout}
       style={containerStyle}
     >
-      <Animated.View style={backgroundFillStyle} pointerEvents="none" />
-      {loading ? (
-        // The spinner only takes the leadingIcon position; it is not an anatomy part and carries no part name.
-        <View style={iconSlotStyle} accessibilityElementsHidden importantForAccessibility="no">
-          <Animated.View style={spinnerStyle} />
-        </View>
-      ) : leadingIcon !== undefined && leadingIcon !== null ? (
-        <View testID="Button.leadingIcon" style={iconSlotStyle} accessibilityElementsHidden importantForAccessibility="no">
-          {leadingIcon}
-        </View>
-      ) : null}
-      {iconOnly ? null : (
-        <RNText testID="Button.label" allowFontScaling style={labelStyle}>
-          {label}
-        </RNText>
-      )}
-      {!iconOnly && !loading && trailingIcon !== undefined && trailingIcon !== null ? (
-        <View testID="Button.trailingIcon" style={iconSlotStyle} accessibilityElementsHidden importantForAccessibility="no">
-          {trailingIcon}
-        </View>
-      ) : null}
+      <Animated.View style={backgroundFillStyle}>
+        {loading ? (
+          // The spinner only takes the leadingIcon position; it is not an anatomy part and carries no part name.
+          <View style={iconSlotStyle} accessibilityElementsHidden importantForAccessibility="no">
+            <Animated.View style={spinnerStyle} />
+          </View>
+        ) : leadingIcon !== undefined && leadingIcon !== null ? (
+          <View testID="Button.leadingIcon" style={iconSlotStyle} accessibilityElementsHidden importantForAccessibility="no">
+            {leadingIcon}
+          </View>
+        ) : null}
+        {iconOnly ? null : (
+          <RNText testID="Button.label" allowFontScaling style={labelStyle}>
+            {label}
+          </RNText>
+        )}
+        {!iconOnly && !loading && trailingIcon !== undefined && trailingIcon !== null ? (
+          <View testID="Button.trailingIcon" style={iconSlotStyle} accessibilityElementsHidden importantForAccessibility="no">
+            {trailingIcon}
+          </View>
+        ) : null}
+      </Animated.View>
     </Pressable>
   );
 }

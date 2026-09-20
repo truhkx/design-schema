@@ -38,6 +38,11 @@
   border-radius: var(--ds-form-error-summary-radius);
   background-color: var(--color-background-subtle);
   color: var(--color-foreground-danger);
+  /* The item Links are bare text in this box, so they would inherit the document's `line-height:
+     normal` rather than the system's body rhythm the heading Text already sets. Setting it here puts
+     each item on a full 24px line box, which is also its target size (WCAG 2.5.8): the Link is not
+     restyled — it inherits, as it does the danger color. */
+  line-height: var(--font-line-height-normal);
 }
 
 .ds-form__error-summary:focus-visible {

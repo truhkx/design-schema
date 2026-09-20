@@ -13,24 +13,24 @@ import { ThemeProvider } from './theme';
 
 /** The Default story's args plus the scenario's `given`, with a mock for every event prop. */
 function setup(given: Partial<InputProps> = {}) {
-  const onChange = jest.fn();
+  const onChangeText = jest.fn();
   const onFocus = jest.fn();
   const onBlur = jest.fn();
-  const props: InputProps = { ...(meta.args as InputProps), ...(Default.args as Partial<InputProps>), ...given, onChange, onFocus, onBlur };
+  const props: InputProps = { ...(meta.args as InputProps), ...(Default.args as Partial<InputProps>), ...given, onChangeText, onFocus, onBlur };
   const utils = render(
     <ThemeProvider mode="light">
       <Input {...props} />
     </ThemeProvider>,
   );
-  return { ...utils, onChange, onFocus, onBlur, props, field: () => screen.getByTestId('Input.field') };
+  return { ...utils, onChangeText, onFocus, onBlur, props, field: () => screen.getByTestId('Input.field') };
 }
 
 describe('Input', () => {
   it('typing-reports-the-new-value', () => {
     const s = setup();
     fireEvent.changeText(s.field(), 'a');
-    expect(s.onChange).toHaveBeenCalledTimes(1);
-    expect(s.onChange).toHaveBeenCalledWith('a');
+    expect(s.onChangeText).toHaveBeenCalledTimes(1);
+    expect(s.onChangeText).toHaveBeenCalledWith('a');
   });
 
   it('focus-is-reported', () => {

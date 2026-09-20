@@ -87,12 +87,12 @@
  * it is `border` on surface default and transparent on subtle. borderWidth overrides therefore only
  * change non-interactive cards.
  */
+/* transition: only the hover background animates, with motion.easing.standard — the focus ring
+   appears at once. */
 .ds-card--interactive {
   position: relative;
   border-width: var(--ds-card-focus-ring-width);
-  transition:
-    background-color var(--ds-card-transition) var(--motion-easing-standard),
-    border-color var(--ds-card-transition) var(--motion-easing-standard);
+  transition: background-color var(--ds-card-transition) var(--motion-easing-standard);
 }
 .ds-card--interactive.ds-card--surface-subtle {
   border-color: transparent;

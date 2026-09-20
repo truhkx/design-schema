@@ -168,15 +168,25 @@
   border-block-start-color: transparent;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  /* loadingSpin: one full rotation at linear easing; disabled under prefers-reduced-motion. */
-  .ds-button__spinner {
-    animation: ds-button-spin var(--ds-button-loading-spin) linear infinite;
+/* transition: only the background animates, with motion.easing.standard. No variant changes its
+   foreground between states. */
+.ds-button {
+  transition: background-color var(--ds-button-transition) var(--motion-easing-standard);
+}
+
+/* loadingSpin: one full rotation at linear easing (a continuous spin; motion.easing.standard is
+   for `transition` only). */
+.ds-button__spinner {
+  animation: ds-button-spin var(--ds-button-loading-spin) linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-button {
+    transition: none;
   }
 
-  /* transition: only the background animates, with motion.easing.standard. */
-  .ds-button {
-    transition: background-color var(--ds-button-transition) var(--motion-easing-standard);
+  .ds-button__spinner {
+    animation: none;
   }
 }
 

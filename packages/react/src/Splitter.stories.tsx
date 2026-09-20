@@ -5,8 +5,13 @@ import { Text } from './Text';
 import { Link } from './Link';
 import { Button } from './Button';
 
+/* A standalone Link is an inline text box (18px tall) that declares no target binding, so the
+   container owns its 24px target (WCAG 2.5.8) — the rule Breadcrumb.css and Form.css also state.
+   gap=normal spaces the links 26px apart (tight's 4px left them 22px apart), and align=start sizes
+   each one to its label instead of stretching it across the pane, where it would run under the
+   collapse Button and shrink that button's safe clickable space. Both are needed for axe. */
 const primaryContent = (
-  <Stack element="nav" gap="tight">
+  <Stack element="nav" gap="normal" align="start">
     <Text element="p" weight="medium">
       Sections
     </Text>
@@ -80,8 +85,9 @@ export const Collapsed: Story = { args: { collapsible: true, defaultCollapsed: t
 export const Keyboard: Story = {
   args: {
     collapsible: true,
+    // gap=normal + align=start for the same 24px target reason as primaryContent above.
     primary: (
-      <Stack element="nav" gap="tight">
+      <Stack element="nav" gap="normal" align="start">
         <Link href="#" label="Overview" />
         <Link href="#" label="Reports" />
       </Stack>

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
-import { html, type TemplateResult } from 'lit';
+import { html } from 'lit';
 import './Divider.js';
 import './Stack.js';
 import './Text.js';
@@ -11,26 +11,6 @@ interface DividerArgs {
   semantic: boolean;
   spacing: DividerSpacing;
 }
-
-const divider = (args: DividerArgs): TemplateResult => html`
-  <ds-divider
-    orientation=${args.orientation}
-    spacing=${args.spacing}
-    .label=${args.label || undefined}
-    ?semantic=${args.semantic}
-  ></ds-divider>
-`;
-
-/* A vertical divider stretches to the height of the row it sits in. */
-const inRow = (args: DividerArgs): TemplateResult => html`
-  <ds-stack direction="horizontal" gap="normal" align="stretch">
-    <ds-text element="span">Bold</ds-text>
-    <ds-text element="span">Italic</ds-text>
-    ${divider(args)}
-    <ds-text element="span">Align left</ds-text>
-    <ds-text element="span">Align right</ds-text>
-  </ds-stack>
-`;
 
 const meta: Meta<DividerArgs> = {
   title: 'Divider/Lit',
@@ -47,7 +27,14 @@ const meta: Meta<DividerArgs> = {
     semantic: false,
     spacing: 'none',
   },
-  render: divider,
+  render: (args) => html`
+    <ds-divider
+      orientation=${args.orientation}
+      spacing=${args.spacing}
+      .label=${args.label || undefined}
+      ?semantic=${args.semantic}
+    ></ds-divider>
+  `,
 };
 
 export default meta;
@@ -57,7 +44,24 @@ export const Default: Story = {};
 
 /* orientation */
 export const OrientationHorizontal: Story = { args: { orientation: 'horizontal' } };
-export const OrientationVertical: Story = { args: { orientation: 'vertical' }, render: inRow };
+
+/* A vertical divider stretches to its row, so it sits in a horizontal Stack with align stretch
+ * whose siblings give the row its height. */
+export const OrientationVertical: Story = {
+  args: { orientation: 'vertical' },
+  render: (args) => html`
+    <ds-stack direction="horizontal" align="stretch" gap="tight">
+      <ds-text element="span">Bold Italic</ds-text>
+      <ds-divider
+        orientation=${args.orientation}
+        spacing=${args.spacing}
+        .label=${args.label || undefined}
+        ?semantic=${args.semantic}
+      ></ds-divider>
+      <ds-text element="span">Align left</ds-text>
+    </ds-stack>
+  `,
+};
 
 /* spacing */
 export const SpacingNone: Story = { args: { spacing: 'none' } };
@@ -66,11 +70,25 @@ export const SpacingNormal: Story = { args: { spacing: 'normal' } };
 export const SpacingLoose: Story = { args: { spacing: 'loose' } };
 
 /* notable states */
-export const Labelled: Story = { args: { label: 'or' } };
 export const Semantic: Story = { args: { semantic: true } };
+export const Labelled: Story = { args: { label: 'or' } };
 
 /* examples */
 export const OrBetweenAlternatives: Story = { args: { label: 'or', spacing: 'normal' } };
 export const ListFurniture: Story = { args: { orientation: 'horizontal' } };
-export const ToolbarGroups: Story = { args: { orientation: 'vertical' }, render: inRow };
+export const ToolbarGroups: Story = {
+  args: { orientation: 'vertical' },
+  render: (args) => html`
+    <ds-stack direction="horizontal" align="stretch" gap="tight">
+      <ds-text element="span">Bold Italic</ds-text>
+      <ds-divider
+        orientation=${args.orientation}
+        spacing=${args.spacing}
+        .label=${args.label || undefined}
+        ?semantic=${args.semantic}
+      ></ds-divider>
+      <ds-text element="span">Align left</ds-text>
+    </ds-stack>
+  `,
+};
 export const SectionBoundary: Story = { args: { semantic: true, spacing: 'loose' } };

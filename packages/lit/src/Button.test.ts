@@ -179,4 +179,47 @@ describe('ds-button', () => {
     expect(document.activeElement).toBe(b.el);
     expect(b.el.shadowRoot!.activeElement).toBe(b.container());
   });
+
+  /*
+   * Platform contract, not a doc scenario: `delegatesFocus` makes the host focusable but leaves the inner
+   * <button> a tab stop of its own, so a composer that writes `tabindex="-1"` on the host (ds-toolbar's
+   * roving focus, ds-tree-grid's chevron and ds-number-input's steppers inside an aria-hidden wrapper)
+   * cannot take the control out of the tab order. The host attribute is forwarded to the inner button.
+   */
+  it('forwards a host tabindex to the inner button', async () => {
+    const b = await setup();
+    // MutationObserver callbacks are microtasks, so flush the task queue before awaiting the render.
+    const settle = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      await b.el.updateComplete;
+    };
+
+    expect(b.container().hasAttribute('tabindex')).toBe(false);
+
+    b.el.setAttribute('tabindex', '-1');
+    await settle();
+    expect(b.container().getAttribute('tabindex')).toBe('-1');
+    // Untabbable, but still focusable — delegatesFocus must keep working for roving-focus parents.
+    b.el.focus();
+    expect(b.el.shadowRoot!.activeElement).toBe(b.container());
+
+    b.el.setAttribute('tabindex', '0');
+    await settle();
+    expect(b.container().getAttribute('tabindex')).toBe('0');
+
+    b.el.removeAttribute('tabindex');
+    await settle();
+    expect(b.container().hasAttribute('tabindex')).toBe(false);
+  });
+
+  it('forwards a tabindex present before the element connects', async () => {
+    const el = document.createElement('ds-button');
+    el.setAttribute('tabindex', '-1');
+    el.label = 'Expand';
+    document.body.append(el);
+    await el.updateComplete;
+    // No microtask flush: the initial value is read synchronously in connectedCallback, so markup written
+    // by a parent's template (TreeGrid, NumberInput) is never tabbable for even one frame.
+    expect(el.shadowRoot!.querySelector('[data-part=container]')!.getAttribute('tabindex')).toBe('-1');
+  });
 });

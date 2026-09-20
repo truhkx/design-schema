@@ -9,7 +9,7 @@ const meta: Meta<typeof Container> = {
   component: Container,
   decorators: [withTheme()],
   args: {
-    children: <Text>Container content</Text>,
+    children: <Text>Container content.</Text>,
     width: 'content',
     gutter: 'default',
     align: 'center',

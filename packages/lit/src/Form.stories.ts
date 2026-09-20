@@ -44,7 +44,7 @@ const meta: Meta<FormArgs> = {
     <ds-form
       name=${ifDefined(args.name)}
       label=${ifDefined(args.label)}
-      labelledby=${ifDefined(args.labelledBy)}
+      labelled-by=${ifDefined(args.labelledBy)}
       validate=${ifDefined(args.validate)}
       ?disabled=${args.disabled ?? false}
       ?no-error-summary=${args.errorSummary === false}
@@ -64,6 +64,30 @@ export const Default: Story = {};
 export const ValidateSubmit: Story = { args: { validate: 'submit' } };
 export const ValidateBlur: Story = { args: { validate: 'blur' } };
 export const ValidateChange: Story = { args: { validate: 'change' } };
+
+/* keyboard: the form present with three fields and its submit action, and nothing else focusable —
+   Tab walks the fields in document order, Enter in any of them submits, as does the submit Button
+   (`ds-form` listens for `keydown` on the host and for the button's composed `press`; the shadow
+   `<form novalidate>` keeps the browser's own bubbles out of the way). */
+export const Keyboard: Story = {
+  args: { name: 'sign-in', label: 'Sign in' },
+  render: (args) => html`
+    <ds-form
+      name=${ifDefined(args.name)}
+      label=${ifDefined(args.label)}
+      validate=${ifDefined(args.validate)}
+      ?disabled=${args.disabled ?? false}
+      ?no-error-summary=${args.errorSummary === false}
+    >
+      <ds-stack gap="normal">
+        <ds-input label="Email" name="email" type="email" required></ds-input>
+        <ds-input label="Password" name="password" type="password" required></ds-input>
+        <ds-input label="Workspace" name="workspace" required></ds-input>
+      </ds-stack>
+      <ds-button slot="actions" label="Sign in" type="submit"></ds-button>
+    </ds-form>
+  `,
+};
 
 /* examples */
 
@@ -137,7 +161,7 @@ export const LabelledBy: Story = {
       <ds-form
         name=${ifDefined(args.name)}
         label=${ifDefined(args.label)}
-        labelledby=${ifDefined(args.labelledBy)}
+        labelled-by=${ifDefined(args.labelledBy)}
         validate=${ifDefined(args.validate)}
         ?disabled=${args.disabled ?? false}
         ?no-error-summary=${args.errorSummary === false}

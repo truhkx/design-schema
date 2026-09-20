@@ -43,6 +43,24 @@ export const ValidateSubmit: Story = { args: { validate: 'submit' } };
 export const ValidateBlur: Story = { args: { validate: 'blur' } };
 export const ValidateChange: Story = { args: { validate: 'change' } };
 
+/* keyboard: the form present with three fields and its submit action, and nothing else focusable —
+   Tab walks the fields in document order, Enter in any of them submits, as does the submit Button
+   (native form semantics; `novalidate` keeps the browser's own bubbles out of the way). */
+export const Keyboard: Story = {
+  args: {
+    name: 'sign-in',
+    label: 'Sign in',
+    children: (
+      <Stack gap="normal">
+        <Input label="Email" name="email" type="email" required />
+        <Input label="Password" name="password" type="password" required />
+        <Input label="Workspace" name="workspace" required />
+      </Stack>
+    ),
+    actions: <Button label="Sign in" type="submit" />,
+  },
+};
+
 /* examples */
 export const SignIn: Story = {
   args: { name: 'sign-in', label: 'Sign in', children: signInFields, actions: signInActions },

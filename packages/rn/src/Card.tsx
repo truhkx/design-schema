@@ -62,18 +62,20 @@ export interface CardProps {
   /**
    * The whole card is one link or button target. Requires exactly one Link or Button
    * among the top-level children of the body (controls nested in a wrapper such as a
-   * Stack are not searched); its action, role and name move onto a wrapping Pressable —
-   * the card's single target and single focus stop. With zero or several such children
-   * the card stays non-interactive and warns once in development. A disabled child
-   * disables the card with it. Controls in `headerActions` and `footer` are never the
-   * target.
+   * Stack are not searched; a top-level Fragment is flattened, so its children count
+   * as top-level); its action, role and name move onto a wrapping Pressable — the
+   * card's single target and single focus stop. With zero or several such children the
+   * card stays non-interactive and warns once per mounted card in development. A
+   * disabled child disables the card with it. Controls in `headerActions` and `footer`
+   * are never the target.
    */
   interactive?: boolean | undefined;
   /**
    * The card root takes `tabIndex={-1}` so a container (Feed) can move focus to it by
    * script through `ref`, and draws its own focus ring when focused that way. Not a
-   * tab stop; not for making cards clickable (`interactive`). With `interactive` also
-   * set, `interactive` wins, this is a no-op, and a development warning says so.
+   * tab stop; not for making cards clickable (`interactive`). It is a no-op whenever
+   * `interactive` is set — even when that card fell back to non-interactive for want of
+   * a single target — and a development warning says so.
    * A react-native-web capability: on iOS and Android no container can focus a View by script.
    */
   focusable?: boolean | undefined;
@@ -108,15 +110,22 @@ const HOVER_BACKGROUND = {
 } as const satisfies Record<CardSurface, keyof Tokens>;
 
 /**
- * RN core's `View` type omits `onFocus`/`onBlur`, which the runtime and
- * react-native-web (where scripted focus is exercised) support; this alias types them.
+ * RN core's `View` type omits `onFocus`/`onBlur` and `inert`, which the runtime and
+ * react-native-web (where scripted focus and the collapsed hit area are exercised)
+ * support; this alias types them. Native ignores the props it does not know.
  */
-type FocusableViewProps = React.ComponentProps<typeof View> & {
+type DomViewProps = React.ComponentProps<typeof View> & {
   onFocus?: (() => void) | undefined;
   onBlur?: (() => void) | undefined;
+  /**
+   * react-native-web only. `accessibilityElementsHidden` and `importantForAccessibility`
+   * are native-only props that react-native-web drops, so on the web the target is taken
+   * out of the focus order and the accessibility tree with `inert` instead.
+   */
+  inert?: boolean | undefined;
   ref?: React.Ref<ViewInstance> | undefined;
 };
-const FocusableView = View as unknown as React.ComponentType<FocusableViewProps>;
+const DomView = View as unknown as React.ComponentType<DomViewProps>;
 
 /** A bare string or number cannot sit in a native View: it goes inside the system Text. */
 function wrapText(node: React.ReactNode, key?: number): React.ReactNode {
@@ -125,6 +134,30 @@ function wrapText(node: React.ReactNode, key?: number): React.ReactNode {
 
 function renderBody(children: React.ReactNode): React.ReactNode {
   return Array.isArray(children) ? children.map((child, index) => wrapText(child, index)) : wrapText(children);
+}
+
+/**
+ * The body's top-level children, with arrays and Fragments spliced in: a Link inside a
+ * top-level `<>…</>` counts as top-level, while a control inside a wrapper such as a
+ * Stack does not.
+ */
+function flattenTopLevel(children: React.ReactNode): React.ReactNode[] {
+  const items: React.ReactNode[] = [];
+  const visit = (node: React.ReactNode): void => {
+    if (Array.isArray(node)) {
+      for (const item of node as React.ReactNode[]) {
+        visit(item);
+      }
+      return;
+    }
+    if (React.isValidElement(node) && node.type === React.Fragment) {
+      visit((node.props as { children?: React.ReactNode }).children);
+      return;
+    }
+    items.push(node);
+  };
+  visit(children);
+  return items;
 }
 
 function targetOf(node: React.ReactNode, form: FormContextValue | null): InteractiveTarget | null {
@@ -167,7 +200,9 @@ function targetOf(node: React.ReactNode, form: FormContextValue | null): Interac
         }
       },
       role: 'link',
-      label: props.external ? `${props.label}${LINK_EXTERNAL_SUFFIX}` : props.label,
+      // Link's own resolved name: its `accessibilityLabel` when a parent set one, else
+      // the label plus `copy.externalSuffix` when external.
+      label: props.accessibilityLabel ?? (props.external ? `${props.label}${LINK_EXTERNAL_SUFFIX}` : props.label),
       disabled: false,
     };
   }
@@ -184,7 +219,7 @@ function scanTopLevel(
   children: React.ReactNode,
   form: FormContextValue | null,
 ): { content: React.ReactNode; target: InteractiveTarget | null; count: number } {
-  const items = Array.isArray(children) ? (children as React.ReactNode[]) : [children];
+  const items = flattenTopLevel(children);
   let target: InteractiveTarget | null = null;
   let index = -1;
   let count = 0;
@@ -199,14 +234,24 @@ function scanTopLevel(
   if (count !== 1) {
     return { content: renderBody(children), target: null, count };
   }
-  const inert = (element: React.ReactNode, key?: number): React.JSX.Element => (
-    <View key={key} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no">
-      {element}
-    </View>
+  const content = items.map((item, i) =>
+    i === index ? (
+      // Button and Link forward no `accessible` prop, so the target is neutralised here:
+      // untappable and hidden from assistive technology on native, `inert` on the web, so
+      // the wrapping Pressable is the only target and the only focus stop.
+      <DomView
+        key={i}
+        pointerEvents="none"
+        accessibilityElementsHidden
+        importantForAccessibility="no"
+        inert
+      >
+        {item}
+      </DomView>
+    ) : (
+      <React.Fragment key={i}>{wrapText(item)}</React.Fragment>
+    ),
   );
-  const content = Array.isArray(children)
-    ? items.map((item, i) => (i === index ? inert(item, i) : wrapText(item, i)))
-    : inert(children);
   return { content, target, count };
 }
 
@@ -226,16 +271,19 @@ function scanTopLevel(
  *
  * `interactive` wraps the content in a `Pressable` that takes the single top-level
  * child's role, accessible name and action; the child is made inert and hidden from
- * assistive technology, so the Pressable is exactly one target and one focus stop. A
- * disabled child reports the Pressable disabled, ignores presses and shows no hover
- * background. With zero or several candidates the card renders as a plain View. The
- * ring's width (`border.width.focus`) is always reserved, colored `border` on
- * `surface: default` and transparent on `subtle` until focused, so focus never shifts
- * the layout. Hover and press show `hoverBackground` instantly; native has no
- * continuous hover to animate, so `transition` has no runtime effect.
+ * assistive technology, so the Pressable is exactly one target and one focus stop —
+ * "the card adds no second stop" means exactly one here, not zero. Only `children` is
+ * searched, with top-level Fragments flattened; `headerActions` and `footer` controls
+ * keep their own targets. A disabled child reports the Pressable disabled, ignores
+ * presses and shows no hover background. With zero or several candidates the card
+ * renders as a plain View. The ring's width (`border.width.focus`) is always reserved,
+ * colored `border` on `surface: default` and transparent on `subtle` until focused, so
+ * focus never shifts the layout. Hover and press show `hoverBackground` instantly;
+ * native has no continuous hover to animate, so `transition` has no runtime effect.
  *
  * `focusable` sets `tabIndex={-1}` (scriptable, not a tab stop under react-native-web;
- * on native Android `-1` means not focusable) and draws the ring on focus.
+ * on native Android `-1` means not focusable) and draws the ring on focus. It is a
+ * no-op whenever `interactive` is set, including on the non-interactive fallback.
  */
 export function Card({
   children,
@@ -301,8 +349,9 @@ export function Card({
   const hasHeaderActions = headerActions !== undefined && headerActions !== null;
   const hasFooter = footer !== undefined && footer !== null;
 
-  // `interactive` wins over `focusable` only when the card actually has a target.
-  const scriptFocusable = focusable && !isInteractive;
+  // `interactive` wins over `focusable` whenever it is set, including when the card
+  // fell back to non-interactive for want of a single target.
+  const scriptFocusable = focusable && !interactive;
   const ringReserved = isInteractive || scriptFocusable;
   const restingBorder = surface === 'default' ? borderColor : 'transparent';
   const showHover = isInteractive && !targetDisabled && (hovered || pressed);
@@ -357,7 +406,7 @@ export function Card({
 
   if (target === null) {
     return (
-      <FocusableView
+      <DomView
         ref={ref}
         style={surfaceStyle}
         testID="Card"
@@ -366,7 +415,7 @@ export function Card({
           : {})}
       >
         {content}
-      </FocusableView>
+      </DomView>
     );
   }
 

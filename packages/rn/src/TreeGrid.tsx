@@ -785,7 +785,7 @@ export function TreeGrid({
             size="sm"
             value={draft === undefined ? '' : String(draft)}
             overrides={editorInset}
-            onChange={(value) => setDraft(value)}
+            onChangeText={(value) => setDraft(value)}
             onBlur={() => commitEdit(row, column, draft)}
           />
         );

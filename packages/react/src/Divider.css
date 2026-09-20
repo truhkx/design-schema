@@ -19,10 +19,15 @@
   block-size: var(--ds-divider-thickness);
 }
 
+/*
+ * Flex stretch applies only to an auto cross size, and the min fills a parent that has a set
+ * height, so a vertical divider needs both to reach the row height.
+ */
 .ds-divider--vertical {
   display: inline-block;
   inline-size: var(--ds-divider-thickness);
-  block-size: 100%;
+  block-size: auto;
+  min-block-size: 100%;
   align-self: stretch;
 }
 

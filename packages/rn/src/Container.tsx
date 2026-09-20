@@ -46,7 +46,12 @@ const GUTTER = {
  * Renders a `View` with `width: '100%'`, `maxWidth` from `layout.maxWidth.{width}`
  * (none for `full`), `alignSelf` from `align` and `paddingHorizontal` from
  * `layout.gutter.{gutter}`. The `default` gutter compares `useWindowDimensions().width`
- * with the content and page max-width tokens. `element` is web and Lit only.
+ * with the content and page max-width tokens, with the same inclusive `>=` boundaries
+ * as the web media queries — it reads the window, never the parent, so a nested
+ * `gutter: default` Container picks its gutter by the window; nest with `gutter: none`.
+ * Container belongs in a column-direction parent (a screen, a vertical Stack); inside
+ * a row parent `width: '100%'` and `alignSelf` cross axes and that placement is not
+ * supported. `element` is web and Lit only, as in Box.
  */
 export function Container({
   children,

@@ -43,6 +43,8 @@ describe('ds-divider', () => {
     const { el } = await setup({ label: 'or' });
     expect(el.shadowRoot!.textContent).toContain('or');
     expect(el).toHaveRole('separator');
+    // A separator's children are presentational, so the name is the host's own aria-label.
+    expect(el).toHaveAccessibleName('or');
   });
 
   /* derived: a11y.role */

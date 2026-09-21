@@ -100,11 +100,14 @@ component:
         empty label leaves the bar unnamed, with no development warning.'
     value:
       type: number
-      description: Progress so far, between `min` and `max`. Omit (undefined or null)
+      description: 'Progress so far, between `min` and `max`. Omit (undefined or null)
         for an indeterminate bar (the end is unknown); generated code types it `number
         | null | undefined`. Clamped to `min`…`max` for the fill, the accessible value,
-        `formatValue`'s argument and the announcement tiers; a non-finite number (NaN,
-        Infinity) is treated as `min`.
+        `formatValue`''s argument and the announcement tiers; a non-finite number
+        (NaN, Infinity) is treated as `min`. An unparseable Lit `value` attribute
+        (`value="abc"`) parses to NaN and is therefore determinate at `min`: only
+        a removed or absent attribute, or an explicit null/undefined property, is
+        indeterminate.'
     min:
       type: number
       default: 0
@@ -125,11 +128,15 @@ component:
         ''percent'', maximumFractionDigits: 0 })` (the runtime or device default locale;
         there is no locale prop), as Meter does (99.5% of the way shows "100%" before
         completion; completion is only the clamped value reaching `max`). Called with
-        the clamped value. Rounding is for the text only; the fill uses the exact
-        fraction. A `max` at or below `min` is not a range: the bar renders empty,
-        exposes aria-valuenow / accessibilityValue.now = `min` with the given bounds,
-        shows and exposes "0%" unless a custom formatter says otherwise, makes no
-        progress or completion announcements, and warns in development.'
+        the clamped value, and not called at all while indeterminate — nothing shows
+        or announces a value then. Rounding is for the text only; the fill uses the
+        exact fraction. A `max` at or below `min` is not a range: the bar renders
+        empty, exposes aria-valuenow / accessibilityValue.now = `min` with the bounds
+        exactly as given (never swapped or clamped, even when that means aria-valuemin
+        is greater than aria-valuemax), exposes "0%" as aria-valuetext and shows it
+        when `showValue` is true, makes no progress or completion announcements, and
+        warns in development once per distinct min/max pair (not once per render or
+        per mount).'
     showValue:
       type: boolean
       default: true
@@ -148,7 +155,11 @@ component:
         label inside it, and is itself visually hidden (out of flow), so web''s aria-labelledby
         still resolves. On React Native a hidden label is not rendered at all; the
         name lives in accessibilityLabel and the `label` part has no native home while
-        hidden, as Input.'
+        hidden, as Input — and with `showValue: false` as well the header View is
+        not rendered either, so `testID="ProgressBar.header"` is absent in that one
+        configuration. On web and Lit the visually-hidden styles go on a wrapper span
+        inside the header, never on the `label` part itself, so the part stays a plain
+        Text with no layout styles of its own.'
     tone:
       type: enum
       enumRef: tone
@@ -249,7 +260,9 @@ component:
       token: space.2
       part: header
       description: Horizontal gap between the label and the value text in the header
-        row.
+        row. The label's wrapper shrinks (flexShrink 1, min inline size 0) so a long
+        label wraps inside the row instead of pushing the value text out of it — layout,
+        with no token of its own, as Meter does.
       locked: false
     transition:
       token: motion.duration.base
@@ -264,9 +277,17 @@ component:
       description: 'The indeterminate sweep: a fill one third of the track width (the
         one-third ratio is geometry, not a token; a literal is allowed for it) travelling
         from the inline start to the inline end (right to left in RTL) and repeating,
-        starting and ending wholly outside the track. Under reduced motion there is
-        no sweep: the fill is drawn static and full-width at opacity.disabled, keeping
-        its tone color.'
+        starting and ending wholly outside the track — from -(sweep width) to +(track
+        width) on the inline axis, mirrored to +(sweep width)…-(track width) in RTL.
+        Under reduced motion there is no sweep: the fill is drawn static and full-width
+        at `indeterminateReducedOpacity`, keeping its tone color.'
+      locked: false
+    indeterminateReducedOpacity:
+      token: opacity.disabled
+      part: fill
+      description: Opacity of the static full-width fill that replaces the sweep under
+        reduced motion, on every platform. A binding rather than a literal so a theme
+        can make the reduced-motion form more or less prominent.
       locked: false
     sweepEasing:
       token: motion.easing.standard
@@ -322,9 +343,13 @@ component:
         different elements. An indeterminate bar keeps aria-valuemin/max, omits aria-valuenow
         and aria-valuetext, and sets aria-busy="true" on the track. The indeterminate
         sweep mirrors its keyframes under :dir(rtl). Announcements go through a visually-hidden
-        `role="status" aria-live="polite"` region next to the bar, updated per `announce`.
-        Not <progress>: it cannot be themed consistently and its indeterminate animation
-        ignores reduced motion in some browsers.'
+        `role="status" aria-live="polite"` region that is the last child of the root
+        container (not a sibling of the root, so the component still returns one element
+        and `ref` lands on the root), updated per `announce`. The root takes no `tabIndex`:
+        it is stripped from the forwarded rest alongside className and style, since
+        the bar is never focusable and nothing programmatically focuses it. Not <progress>:
+        it cannot be themed consistently and its indeterminate animation ignores reduced
+        motion in some browsers.'
     lit:
       tag: ds-progress-bar
       reflect:
@@ -346,28 +371,46 @@ component:
         labelWeight, valueSize, fontFamily, lineHeight) reach the ds-text children
         only through their `overrides` property; they have no --ds-progress-bar-*
         CSS hook, since nothing in the shadow root could read one without restyling
-        the child.'
+        the child. `formatValue` is a function, so it is property-only (`attribute:
+        false`) and unreachable from static HTML: a plain-HTML author gets the default
+        percentage, and the Lit story that shows a custom formatter uses a `.formatValue`
+        property binding.'
     rn:
       element: View
       props:
-      - accessibilityRole=progressbar
+      - role=progressbar
       - accessibilityLabel
       - accessibilityValue
+      - aria-valuenow
+      - aria-valuemin
+      - aria-valuemax
+      - aria-valuetext
+      - aria-busy
       notes: 'Drawn with Views (Animated.View width for the fill; the indeterminate
         sweep is an Animated loop that is not started under reduced motion — the fill
-        is then drawn full-width at opacity.disabled — and eases with `sweepEasing`
-        via Easing.bezier; it runs toward the left when I18nManager.isRTL). No disabled
-        state and no keyboard interaction: the bar is never focusable (focusable={false}),
-        and screen-reader users learn progress from the announcements. accessibilityValue={{
-        min, max, now, text }} — an indeterminate bar carries min and max only, never
-        a `now` or a `text` that would name a progress it does not know, and sets
-        accessibilityState={{ busy: true }}, the native form of aria-busy. Announcements
-        via AccessibilityInfo.announceForAccessibility per `announce`. The accessibility
-        props (accessible, focusable={false}, accessibilityRole, Label, Value, State)
-        sit on the root View, so the name and value announce together, as Meter. The
-        label and valueText Texts carry their testIDs (`ProgressBar.label`, `ProgressBar.valueText`)
-        on wrapper Views, since Text takes none. The sweeping fill is anchored at
-        the inline start and translates toward the inline end, negative x when I18nManager.isRTL.'
+        is then drawn full-width at `indeterminateReducedOpacity` — and eases with
+        `sweepEasing` via Easing.bezier; it runs toward the left when I18nManager.isRTL).
+        No disabled state and no keyboard interaction: the bar is never focusable
+        (focusable={false}), and screen-reader users learn progress from the announcements.
+        accessibilityValue={{ min, max, now, text }} — an indeterminate bar carries
+        min and max only, never a `now` or a `text` that would name a progress it
+        does not know, and sets accessibilityState={{ busy: true }}, the native form
+        of aria-busy. The role is the `role="progressbar"` prop (RN 0.73+), as Meter
+        uses role="meter", not accessibilityRole. react-native-web forwards neither
+        the composite accessibilityValue nor accessibilityState, so the root also
+        carries the flattened `aria-valuenow`/`aria-valuemin`/`aria-valuemax`/`aria-valuetext`
+        and `aria-busy` beside them — without those the web-rendered bar is a role=progressbar
+        with no value at all. Announcements via AccessibilityInfo.announceForAccessibility
+        per `announce`. The accessibility props (accessible, focusable={false}, role,
+        Label, Value, State and the aria aliases) sit on the root View, so the name
+        and value announce together, as Meter. The label and valueText Texts carry
+        their testIDs (`ProgressBar.label`, `ProgressBar.valueText`) on wrapper Views,
+        since Text takes none. The sweeping fill is anchored at the inline start (alignSelf
+        flex-start) and translates toward the inline end, negative x when I18nManager.isRTL.
+        The determinate fill animates only a change in `value`: it snaps with no animation
+        before the track width is known, on the first onLayout, on a resize, and under
+        reduced motion — the same rule as Meter, which on a device means one frame
+        at width 0 before the first layout.'
     swiftui:
       element: ProgressView
       props:
@@ -380,10 +423,10 @@ component:
       notes: '`ProgressView(value:total:)` with a package `ProgressViewStyle` drawing
         the track and fill from the tokens (indeterminate when `value` is nil: a sweep
         driven by `TimelineView`, replaced under reduced motion by the fill drawn
-        static and full-width at opacity.disabled). VoiceOver gets the label and `.accessibilityValue(formatValue)`
-        from the style''s configuration; announcements per `announce` (milestones/complete/indeterminate
-        copy) through `AccessibilityNotification.Announcement`. `tone` recolors the
-        fill only.'
+        static and full-width at `indeterminateReducedOpacity`). VoiceOver gets the
+        label and `.accessibilityValue(formatValue)` from the style''s configuration;
+        announcements per `announce` (milestones/complete/indeterminate copy) through
+        `AccessibilityNotification.Announcement`. `tone` recolors the fill only.'
   behavior:
   - name: the-bar-reports-its-value-and-range
     description: A determinate bar exposes aria-valuenow, aria-valuemin and aria-valuemax
@@ -483,6 +526,7 @@ component:
 - `labelGap`: token `space.2`; part `header`
 - `transition`: token `motion.duration.base`; part `fill`
 - `indeterminateLoop`: token `motion.duration.loop`; part `fill`
+- `indeterminateReducedOpacity`: token `opacity.disabled`; part `fill`
 - `sweepEasing`: token `motion.easing.standard`; part `fill`
 
 ## Constants and examples
@@ -500,7 +544,7 @@ The component accepts `overrides?: Partial<Record<OverridableBinding, TokenRef>>
 
 Overrides change values, never presence: a prop that turns a part off (`surface: none`, `border: false`, `radius: none`) makes the matching overrides no-ops; apply an override only where the binding is in effect.
 
-Overridable: `track`, `trackHeight`, `radius`, `labelSize`, `labelWeight`, `valueSize`, `fontFamily`, `lineHeight`, `partGap`, `labelGap`, `transition`, `indeterminateLoop`, `sweepEasing`
+Overridable: `track`, `trackHeight`, `radius`, `labelSize`, `labelWeight`, `valueSize`, `fontFamily`, `lineHeight`, `partGap`, `labelGap`, `transition`, `indeterminateLoop`, `indeterminateReducedOpacity`, `sweepEasing`
 Locked (accessibility-bearing, never overridable): `fill`, `fillSuccess`, `fillDanger`, `labelColor`, `valueColor`
 
 ## Behavior scenarios (12)
@@ -612,9 +656,13 @@ notes: "role=\"progressbar\" sits on the track <div>, with aria-labelledby (the 
   \ elements. An indeterminate bar keeps aria-valuemin/max, omits aria-valuenow and\
   \ aria-valuetext, and sets aria-busy=\"true\" on the track. The indeterminate sweep\
   \ mirrors its keyframes under :dir(rtl). Announcements go through a visually-hidden\
-  \ `role=\"status\" aria-live=\"polite\"` region next to the bar, updated per `announce`.\
-  \ Not <progress>: it cannot be themed consistently and its indeterminate animation\
-  \ ignores reduced motion in some browsers."
+  \ `role=\"status\" aria-live=\"polite\"` region that is the last child of the root\
+  \ container (not a sibling of the root, so the component still returns one element\
+  \ and `ref` lands on the root), updated per `announce`. The root takes no `tabIndex`:\
+  \ it is stripped from the forwarded rest alongside className and style, since the\
+  \ bar is never focusable and nothing programmatically focuses it. Not <progress>:\
+  \ it cannot be themed consistently and its indeterminate animation ignores reduced\
+  \ motion in some browsers."
 ```
 
 ## Guidance
@@ -633,7 +681,7 @@ Do not use it for a measured quantity (Meter), for a value the user sets (Slider
 
 ## Behavior
 
-The fill width follows the clamped `value` as a fraction of the range, animated over `transition`. Indeterminate bars sweep continuously (inline start to inline end, mirrored in RTL) and expose `aria-busy`. When `value` reaches `max` the bar stays full and, if `announce` is not `none`, `copy.complete` is announced once. Changing `tone` to `success` or `danger` recolors the fill only — the containing view is responsible for the text that says the task finished or failed. The bar itself is never focusable. The live region is `role="status"` (plain attributes on Lit, not ElementInternals) and is not an anatomy part.
+The fill width follows the clamped `value` as a fraction of the range, animated over `transition`. Indeterminate bars sweep continuously (inline start to inline end, mirrored in RTL) and expose `aria-busy`. When `value` reaches `max` the bar stays full and, if `announce` is not `none`, `copy.complete` is announced once. Changing `tone` to `success` or `danger` recolors the fill only — the containing view is responsible for the text that says the task finished or failed. The bar itself is never focusable, and the root accepts no `tabIndex` — there is nothing to focus it for. The live region is `role="status"` (plain attributes on Lit, not ElementInternals), is not an anatomy part, and sits as the last child inside the root rather than beside it.
 
 The label row (header) is a horizontal row with the label at the inline start and the value text at the inline end, `labelGap` apart. `hideLabel` hides the label visually but the value text stays at the end; with no visible label and no visible value text the row takes no space.
 
@@ -645,8 +693,9 @@ Announcements follow these rules on every platform:
 - **Mount.** The tier and completion reached at mount are recorded silently: a bar that mounts at 60% or at `max` announces nothing. A bar that mounts indeterminate has entered that state, so `copy.indeterminate` is announced once after mount (unless `announce` is `none`), as it is each later time `value` becomes undefined.
 - **Backward.** A value that moves to a lower tier resets the record to the new value's tier: moving from 80% to 60% makes 75% and completion announceable again without re-announcing 50%. Dropping below `max` re-arms `copy.complete`.
 - **Repeats.** An announcement is spoken even when its text equals the previous one (indeterminate twice, a retried task completing again): web and Lit replace the live region's message node rather than setting the same text; React Native calls `announceForAccessibility` again.
-- **Indeterminate.** Entering the indeterminate state resets the record to tier 0 and re-arms `copy.complete`, so the first known value afterwards announces its tier under `milestones`. "Announced once after mount" means once the live region has rendered empty: web and Lit set the message on the next animation frame, since text already in a newly inserted region is often not read.
-- **Invalid range.** With `max ≤ min` no progress or completion is announced and no tier is recorded; `copy.indeterminate` still is. When the range becomes valid, the tier and completion it arrives at are recorded silently, as at mount.
+- **Indeterminate.** Entering the indeterminate state resets the record to tier 0 and re-arms `copy.complete`, so the first known value afterwards announces its tier under `milestones`. "Announced once after mount" means once the live region has rendered empty: web and Lit set the message on the next animation frame, since text already in a newly inserted region is often not read. Only that first announcement is deferred — the region is already in the tree afterwards, so every later announcement is set synchronously and progress and completion are not delayed.
+- **Invalid range.** With `max ≤ min` no progress or completion is announced and no tier is recorded; `copy.indeterminate` still is. When the range becomes valid, the tier and completion it arrives at are recorded silently, as at mount — an invalid range re-arms that silent record each time it is invalid, so a bar that mounts with a broken range and is later given a good one is silent on the first good value and announces from there.
+- **Gate coverage.** This state machine is deliberately not in the behavior scenarios: they can assert a rendered name, role, text and value, not a sequence of live-region announcements across renders and animation frames. It is covered by each platform package's own tests, and a change to the rules above belongs there as well as here.
 
 ## Content guidelines
 
@@ -659,13 +708,13 @@ The bar is a `progressbar` with `aria-valuenow`, `aria-valuemin`, `aria-valuemax
 ## Platform notes
 
 ### Web
-Render a root wrapper (`data-ds`, no role, gap `partGap`) containing the header row (`data-part="header"`, flex row, `justify-content: space-between`, gap `labelGap`) — a `Text element="span" size="sm" weight="medium" tone="default"` with id (visually hidden under `hideLabel`) and, when `showValue` and determinate, a `Text element="span" size="sm" tone="muted"` with the value text, each receiving its forwarded overrides — then the track `<div>` and fill `<div>` with `inline-size` from the clamped fraction. `role="progressbar"` sits on the track, never the root, with `aria-labelledby`, `aria-valuenow/min/max/text` (when indeterminate keep `aria-valuemin/max`, omit `aria-valuenow` and `aria-valuetext`, and set `aria-busy="true"`). A visually-hidden `<div role="status" aria-live="polite">` beside the bar receives the announcements described under Behavior. The indeterminate sweep is a CSS keyframe on the fill (`translateX` from -100% to 300% over `indeterminateLoop` with `sweepEasing`, reversed under `:dir(rtl)`), replaced under `prefers-reduced-motion` by a static fill at `opacity.disabled` covering the whole track.
+Render a root wrapper (`data-ds`, no role, gap `partGap`) containing the header row (`data-part="header"`, flex row, `justify-content: space-between`, gap `labelGap`) — a `Text element="span" size="sm" weight="medium" tone="default"` with id (visually hidden under `hideLabel`) and, when `showValue` and determinate, a `Text element="span" size="sm" tone="muted"` with the value text, each receiving its forwarded overrides — then the track `<div>` and fill `<div>` with `inline-size` from the clamped fraction. `role="progressbar"` sits on the track, never the root, with `aria-labelledby`, `aria-valuenow/min/max/text` (when indeterminate keep `aria-valuemin/max`, omit `aria-valuenow` and `aria-valuetext`, and set `aria-busy="true"`). A visually-hidden `<div role="status" aria-live="polite">` beside the bar receives the announcements described under Behavior. The indeterminate sweep is a CSS keyframe on the fill (`translateX` from -100% to 300% over `indeterminateLoop` with `sweepEasing`, reversed under `:dir(rtl)`), replaced under `prefers-reduced-motion` by a static fill at `indeterminateReducedOpacity` covering the whole track.
 
 ### Lit
 `<ds-progress-bar label="Uploading" value="42"></ds-progress-bar>`; `role="progressbar"`, `aria-label` (from `label`) and the aria values as plain attributes on the host, not `ElementInternals`; the same header, track and fill structure as web in the shadow root, with composed `ds-text` elements; live region in the shadow root; `tone`, `hide-label`, `hide-value` and `announce` reflected.
 
 ### React Native
-`View` track with an `Animated.View` fill whose width animates to the fraction (`useNativeDriver: false` for width; duration from `transition`, zero under reduced motion). Header row: a `View` with `flexDirection: 'row'`, `justifyContent: 'space-between'` and gap `labelGap` holding the two `Text`s. Indeterminate: an `Animated.loop` translating a one-third-width fill with `sweepEasing`, not started when `useReducedMotion()`; instead the fill is drawn full-width at `opacity.disabled`. `accessibilityRole="progressbar"`, `accessibilityValue`, and `AccessibilityInfo.announceForAccessibility` per `announce`.
+`View` track with an `Animated.View` fill whose width animates to the fraction (`useNativeDriver: false` for width; duration from `transition`, zero under reduced motion). Header row: a `View` with `flexDirection: 'row'`, `justifyContent: 'space-between'` and gap `labelGap` holding the two `Text`s. Indeterminate: an `Animated.loop` translating a one-third-width fill with `sweepEasing`, not started when `useReducedMotion()`; instead the fill is drawn full-width at `indeterminateReducedOpacity`. `accessibilityRole="progressbar"`, `accessibilityValue`, and `AccessibilityInfo.announceForAccessibility` per `announce`.
 
 ## Related
 

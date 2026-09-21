@@ -136,7 +136,9 @@ component:
         sees the text revert. In a range the first pick is an internal draft shown
         only in the calendar: `value` and the inputs keep showing the old value until
         the end is picked, then onChange reports the range and the field returns to
-        `value`.'
+        `value`. Typing does not touch a pending draft — only a second pick, Clear,
+        or closing the calendar resolves or discards it — so a user may type an end
+        date while a draft start shows in the calendar, and the two do not interact.'
       controls:
         event: onChange
         default: defaultValue
@@ -154,7 +156,9 @@ component:
         (the calendar button always opens on the start) — and uncommitted typed text
         is ignored. Lit: a property only, not a reflected attribute, because an absent
         attribute cannot say controlled-closed; bind `.open`, and setting it to false
-        keeps it controlled.'
+        keeps it controlled. Focus returns to the calendar button on the state change,
+        not on the request: a controlled owner that ignores `onOpenChange` keeps the
+        calendar open and focus stays inside it.'
       controls:
         event: onOpenChange
         state: open
@@ -174,13 +178,15 @@ component:
     isDateDisabled:
       type: function
       shape: '(isoDate: string) => boolean'
-      description: Disable specific days (weekends, holidays, booked). Disabled days
+      description: 'Disable specific days (weekends, holidays, booked). Disabled days
         are shown, not hidden, and are skipped by the Arrow keys (moving on in the
         same direction to the next enabled day, turning pages, and staying put when
         none is left before min/max, or, with no bound in that direction, when none
         is found within 3660 days, about ten years); Home, End, PageUp and PageDown
         land on the computed day even when it is disabled. A disabled day can take
-        focus but not be selected.
+        focus but not be selected. The skipping rule, and the 3660-day limit with
+        it, is web and Lit only: React Native has no arrow navigation, so there is
+        nothing there to skip with.'
     locale:
       type: string
       description: BCP 47 locale for month and weekday names, the first day of the
@@ -224,7 +230,10 @@ component:
     disabled:
       type: boolean
       default: false
-      description: Not editable, still readable.
+      description: 'Not editable, still readable. Every user-driven open is blocked
+        — the calendar Button, ArrowDown in the input — but a controlled `open: true`
+        still renders the calendar: a controlled prop is the parent''s decision, not
+        a user interaction.'
     error:
       type: string
       description: Error message; implies invalid.
@@ -265,7 +274,8 @@ component:
     - Alt+ArrowDown
     action: From the input, opens the calendar with focus on the selected day (or
       today); when the calendar is already open, moves focus to that day (the pending
-      range start, else the value, else today).
+      range start, else the value, else today) — from the end input it aims at the
+      end date, so ArrowDown and reopening behave the same way from the same input.
     when: focus in input
     from: first
     expect: manual
@@ -278,8 +288,11 @@ component:
     expect: manual
   - keys:
     - Escape
-    action: Closes the calendar without changing the value and returns focus to the
-      calendar button.
+    action: 'Closes the calendar without changing the value. Focus returns to the
+      calendar button when it was inside the calendar; when it is in an input or on
+      the button itself it stays there, since Escape only takes back focus the calendar
+      took. The handler is DatePicker''s own, on its root: the non-modal Popover cannot
+      hear a key pressed in the field, which is outside its panel.'
     when: open
     from: inside
     expect:
@@ -392,7 +405,9 @@ component:
       locked: false
     rangeSeparatorColor:
       token: color.foreground.muted
-      description: The en dash between start and end inputs.
+      description: 'The en dash between start and end inputs. The dash is decoration,
+        not an anatomy part: it is an aria-hidden span (Text on native) with no data-part
+        or testID, so this binding''s own hook is the only way to reach it.'
       locked: true
     calendarSurface:
       token: color.overlay.surface
@@ -414,12 +429,15 @@ component:
       token: layout.gap.tight
       part: header
       description: Between the prev/next Buttons and the month and year Selects in
-        the header row.
+        the header row. The header's order in the document is the Tab order — previous
+        month, month Select, year Select, next month — which is not the order the
+        anatomy list happens to use.
       locked: false
     footerGap:
       token: layout.gap.tight
       part: footer
-      description: Between the Today and Clear Buttons.
+      description: Between the Today and Clear Buttons. The footer row is aligned
+        to the inline end, so it reads as an action row under the grid.
       locked: false
     daySize:
       token: size.target.comfortable
@@ -440,6 +458,9 @@ component:
       token: color.action.ghost.backgroundHover
       part: day
       state: hover
+      description: Hover background of a day cell. On React Native hover exists only
+        under react-native-web (Pressable onHoverIn/onHoverOut); the binding is wired
+        there and is dead on a device, as every other hover binding is.
       locked: false
     daySelectedBackground:
       token: color.control.selectedBackground
@@ -472,18 +493,26 @@ component:
       locked: true
     weekdayColor:
       token: color.foreground.muted
+      part: weekdayHeader
       locked: true
     weekdaySize:
       token: font.size.xs
+      part: weekdayHeader
+      description: Weekday header cells. Each of the seven header cells carries the
+        `weekdayHeader` part (so a query for it returns seven, as `day` and `weekNumber`
+        do), never the header row.
       locked: false
     weekdayWeight:
       token: font.weight.medium
+      part: weekdayHeader
       locked: false
     weekNumberSize:
       token: font.size.xs
       part: weekNumber
       description: Week-number cells, in weekdayColor at weekNumberWeight. The week
-        column's header cell carries no data-part.
+        column's header cell carries no data-part, so it takes the weekdayHeader styling
+        rather than the week-number styling — it is a weekday-row cell that happens
+        to name the week column.
       locked: false
     weekNumberWeight:
       token: font.weight.regular
@@ -505,7 +534,9 @@ component:
     fieldGap:
       token: space.2
       part: field
-      description: Between the input(s) and the calendar button in the field row.
+      description: 'The field row''s gap, applied uniformly: between the input(s)
+        and the calendar button, and on both sides of a range''s en-dash separator,
+        so the dash sits at the same distance as the button.'
       locked: false
     dayFontSize:
       token: font.size.sm
@@ -516,6 +547,9 @@ component:
       locked: false
     lineHeight:
       token: font.lineHeight.normal
+      description: The field text's line height. It does not reach the description
+        or errorMessage Texts — only helperSize and fontFamily are forwarded to them,
+        and a Text's line height is otherwise its own.
       locked: false
     labelWeight:
       token: font.weight.medium
@@ -541,8 +575,11 @@ component:
       locked: true
     focusRing:
       token: color.border.focus
-      description: The field's focus-visible ring and the focused day's ring, which
-        replaces the today ring while that day has focus.
+      description: 'The field''s focus-visible ring and the focused day''s ring, which
+        replaces the today ring while that day has focus. The day has no ring binding
+        of its own: it borrows this one at focusRingWidth, drawn with the today ring''s
+        geometry (inset on React Native, where there is no outline) so the two never
+        shift the cell.'
       locked: true
     focusRingWidth:
       token: border.width.focus
@@ -552,9 +589,14 @@ component:
       locked: false
     transition:
       token: motion.duration.fast
-      description: 'Day-cell hover and selection states animate background-color and
-        color (rn: background color only; the today ring is an inset ring, not a border,
-        and switches at once); a month change is instant. Instant under reduced motion.'
+      description: 'Day-cell hover and selection states animate background-color,
+        color and (web, lit) the today ring''s border-color; a month change is instant.
+        Instant under reduced motion. On React Native it is background colour only,
+        through one fill layer''s opacity: the fill fades in when it appears and out
+        when it goes, while a fill whose colour merely changes (hover to selected,
+        selected to in-range) switches at once, as the day text colour does — cross-fading
+        two background colours would need a second layer per state. The today ring
+        there is an inset ring, not a border, and switches at once.'
       locked: false
   copy:
     open: Choose date
@@ -672,13 +714,16 @@ component:
         placement bottom-start; its own FocusScope is the only one, DatePicker adds
         none and traps Tab itself; outside click closes without change, like Escape)
         containing: header with prev/next Buttons and month/year Selects; a <table
-        role="grid" aria-labelledby> with <th scope="col" abbr> weekday headers and
-        <td role="gridcell"> days — the <td> carries aria-selected (true for the selected
-        day and, in a range, every day from start to end inclusive), and inside it
-        a <button tabindex=-1|0> in a roving tabindex with aria-current="date" for
-        today, aria-disabled for min/max/isDateDisabled, and aria-label = the full
-        date from Intl.DateTimeFormat(locale, { dateStyle: "full", timeZone: "UTC"
-        }) followed by ", {copy.todayLabel}" and/or ", {copy.selected}"; a footer
+        role="grid" aria-labelledby> with <th scope="col" abbr data-part="weekdayHeader">
+        weekday headers (the part is on each of the seven cells, not the row) and
+        <td role="gridcell"> days, always six rows so the panel height does not jump
+        between months and a mid-grid day index is stable (a month that fits in five
+        rows shows a trailing all-outside week) — the <td> carries aria-selected (true
+        for the selected day and, in a range, every day from start to end inclusive),
+        and inside it a <button tabindex=-1|0> in a roving tabindex with aria-current="date"
+        for today, aria-disabled for min/max/isDateDisabled, and aria-label = the
+        full date from Intl.DateTimeFormat(locale, { dateStyle: "full", timeZone:
+        "UTC" }) followed by ", {copy.todayLabel}" and/or ", {copy.selected}"; a footer
         with Today and Clear. With showWeekNumbers the header row starts with <th
         scope="col" abbr={copy.weekNumber}> holding visually hidden copy.weekNumber,
         and each row starts with <th scope="row" data-part="weekNumber"> (not focusable,
@@ -689,13 +734,15 @@ component:
         root; tests act on the control inside the wrapper. The Popover panel is portaled
         out of the root, so DatePicker declares the --ds-date-picker-* hook defaults
         and writes any overrides on the calendar content wrapper (data-part="popover"
-        content) as well as on the root. Form: FormContext holds no objects, so a
-        single date registers `name` with the ISO string and a range registers two
-        string fields, `name` (start ISO) and `name-end` (end ISO); a disabled field
-        submits nothing. Week starts from Intl.Locale.prototype.getWeekInfo() where
-        available, else Sunday. Selecting a day writes the formatted text into the
-        input and fires onChange with the ISO string; typing a complete valid date
-        moves the calendar to it.'
+        content) as well as on the root. `container` is a platform-only prop (not
+        in the schema) defaulting to document.body and forwarded to the composed Popover,
+        per the package''s portal convention; it never affects semantics. Form: FormContext
+        holds no objects, so a single date registers `name` with the ISO string and
+        a range registers two string fields, `name` (start ISO) and `name-end` (end
+        ISO); a disabled field submits nothing. Week starts from Intl.Locale.prototype.getWeekInfo()
+        where available, else Sunday. Selecting a day writes the formatted text into
+        the input and fires onChange with the ISO string; typing a complete valid
+        date moves the calendar to it.'
     lit:
       tag: ds-date-picker
       reflect:
@@ -709,29 +756,34 @@ component:
         entries for a range, name and name-end). Implements DsFormField for `name`
         (the start ISO string, or null until complete), and a range adds a second
         DsFormField entry for `name-end` (the end ISO string) that always validates
-        clean; `name` reports the combined message. ds-form discovers only light-DOM
-        descendants with data-ds-field, so while `range` is on the picker appends
-        a hidden light-DOM child `<ds-date-picker-end-field data-ds-field>` that reads
-        name-end, the end ISO, required and disabled from the picker and whose focus()
-        moves to the end input. The errorMessage ds-text sits in a role=alert wrapper
-        carrying its data-part. Calendar in a <ds-popover> in the shadow root; grid,
-        week numbers, day labels and aria-selected placement as in web. Ids do not
-        cross shadow roots, so the native <label for>, aria-describedby, aria-labelledby
-        and the grid label all point at elements inside the same shadow root, and
-        aria-invalid sits on the input(s). The month and year ds-selects live inside
-        the shadow root, so ds-form never discovers them; they carry name="month"
+        clean; `name` reports the combined message. The end field therefore ignores
+        `required` — it reads it from the picker for shape only, and its checkValidity()
+        is unconditionally true, because one message must not be read twice. ds-form
+        discovers only light-DOM descendants with data-ds-field, so while `range`
+        is on the picker appends a hidden light-DOM child `<ds-date-picker-end-field
+        data-ds-field>` that reads name-end, the end ISO, required and disabled from
+        the picker and whose focus() moves to the end input. The errorMessage ds-text
+        sits in a role=alert wrapper carrying its data-part. Calendar in a <ds-popover>
+        in the shadow root; grid, week numbers, day labels and aria-selected placement
+        as in web. Ids do not cross shadow roots, so the native <label for>, aria-describedby,
+        aria-labelledby and the grid label all point at elements inside the same shadow
+        root, and aria-invalid sits on the input(s). The month and year ds-selects
+        live inside the shadow root, so ds-form never discovers them; they carry name="month"
         and name="year" only to satisfy ds-select. `open` is a property, not reflected
         (see the prop). The composed ds-popover focuses its first focusable on open,
         so DatePicker moves focus to the selected day (or today) after the popover
         has opened, and asks the popover to reposition once the grid has laid out.
         Composed `change` and `open-change`. The composed parts carry data-part on
         the ds-button and ds-select hosts themselves, with no wrapper span, because
-        ds-popover''s trigger slot must receive the button itself. ds-button has no
-        focusable-while-disabled mode, so on Lit Today uses `disabled` and leaves
-        the Tab cycle while today cannot be picked. ds-select closes its popup on
-        Tab before the event bubbles, so the Tab trap ignores a Tab whose composed
-        path includes a ds-select; the Selects are never the first or last stop, so
-        native order holds the cycle there.'
+        ds-popover''s trigger slot must receive the button itself. The `popover` part
+        is the exception: the ds-popover host also holds the trigger slot and so is
+        never hidden, which no `closes` expectation could ever see, so part/data-part="popover"
+        goes on the calendar content wrapper inside it — the same element the web
+        note names. ds-button has no focusable-while-disabled mode, so on Lit Today
+        uses `disabled` and leaves the Tab cycle while today cannot be picked. ds-select
+        closes its popup on Tab before the event bubbles, so the Tab trap ignores
+        a Tab whose composed path includes a ds-select; the Selects are never the
+        first or last stop, so native order holds the cycle there.'
     rn:
       element: TextInput
       props:
@@ -756,8 +808,19 @@ component:
         Button exposes no node handle to focus by hand. The popover part is the BottomSheet
         here; only `calendarInset` is forwarded (to its `inset` override), and `calendarSurface`
         is realised by the sheet''s own locked surface. The sheet''s `heading` is
-        `label`; `copy.gridLabel` is the accessibilityLabel of the grid View and is
-        announced (AccessibilityInfo) when the month changes. The label is a Text,
+        `label`; `copy.gridLabel` is set as the accessibilityLabel of the grid View,
+        but that View is deliberately not `accessible` — making it so would swallow
+        all 42 day buttons — and a View with a label and no `accessible` exposes no
+        name, so on this platform the grid has no discoverable accessible name. The
+        month and year are reachable instead from the sheet''s heading, the month
+        and year Selects'' own values, and the AccessibilityInfo announcement on every
+        month change; that announcement is the native alternative to the grid''s name.
+        The sheet keeps BottomSheet''s own dismissal defaults (close button, scrim
+        tap, Escape and the Android back button), which is what satisfies the escape-dismiss
+        requirement; `dragToDismiss` stays off, since a calendar is not a scrollable
+        sheet. The Escape rule''s `focus-trigger` expectation is met by BottomSheet''s
+        FocusScope rather than by DatePicker, which has no node handle for the Button,
+        so it cannot be proved from this component''s own code. The label is a Text,
         since RN has no <label>. RN has no invalid state: the error text is appended
         to the input''s accessibilityHint after the description, and is also rendered
         in an assertive live region (accessibilityLiveRegion="assertive", with an
@@ -766,14 +829,16 @@ component:
         yearSelect, todayButton, clearButton) and label, description and popover are
         each wrapped in a View DatePicker owns with testID="DatePicker.<part>"; the
         footer is one row View (testID="DatePicker.footer", spaced by footerGap) passed
-        as the BottomSheet footer''s single child. Week-number cells are a Text inside
-        an `accessible` View (testID="DatePicker.weekNumber") carrying accessibilityLabel
-        "{copy.weekNumber} {n}", since Text takes no accessibilityLabel; the week
-        column''s header shows `copy.weekNumber` as visible muted Text at weekdaySize
-        (there is no visually-hidden primitive). The label Text takes size={size}
-        with the fontSize forward. Clear cannot keep focus on itself and reopening
-        cannot focus the start or end cell (focus lands on the sheet''s first focusable);
-        only the displayed month follows the start or end.'
+        as the BottomSheet footer''s single child. Each of the seven weekday header
+        cells carries `testID="DatePicker.weekdayHeader"` (so a query for it returns
+        seven), never the header row. Week-number cells are a Text inside an `accessible`
+        View (testID="DatePicker.weekNumber") carrying accessibilityLabel "{copy.weekNumber}
+        {n}", since Text takes no accessibilityLabel; the week column''s header shows
+        `copy.weekNumber` as visible muted Text at weekdaySize (there is no visually-hidden
+        primitive). The label Text takes size={size} with the fontSize forward. Clear
+        cannot keep focus on itself and reopening cannot focus the start or end cell
+        (focus lands on the sheet''s first focusable); only the displayed month follows
+        the start or end.'
     swiftui:
       element: TextField
       props:
@@ -893,6 +958,37 @@ component:
       name: due
       size: sm
       hideLabel: true
+  - name: with-a-value
+    description: A field that already holds a date, shown in the locale's pattern.
+    given:
+      label: Due date
+      name: due
+      defaultValue: '2026-09-10'
+  - name: range-with-dates
+    description: A range that already holds both ends, so the calendar shows the bar
+      between them.
+    given:
+      label: Stay
+      name: stay
+      range: true
+      defaultValue:
+        start: '2026-09-10'
+        end: '2026-09-14'
+  - name: with-an-error
+    description: A field whose value was rejected, with the message under it.
+    given:
+      label: Due date
+      name: due
+      defaultValue: '2026-09-10'
+      error: Choose a date at least two days from now.
+  - name: german-locale
+    description: The same field in a locale whose pattern, month names and first day
+      of the week all differ.
+    given:
+      label: Fälligkeitsdatum
+      name: due
+      locale: de-DE
+      defaultValue: '2026-09-10'
 ```
 
 ## Events
@@ -947,6 +1043,9 @@ component:
 - `dayTodayBorder`: token `color.control.selectedBackground`; part `day`; locked
 - `dayTodayBorderWidth`: token `border.width.focus`; part `day`; locked
 - `dayOutsideMonthColor`: token `color.foreground.muted`; part `day`; locked
+- `weekdayColor`: token `color.foreground.muted`; part `weekdayHeader`; locked
+- `weekdaySize`: token `font.size.xs`; part `weekdayHeader`
+- `weekdayWeight`: token `font.weight.medium`; part `weekdayHeader`
 - `weekNumberSize`: token `font.size.xs`; part `weekNumber`
 - `weekNumberWeight`: token `font.weight.regular`; part `weekNumber`
 - `fieldGap`: token `space.2`; part `field`
@@ -956,7 +1055,7 @@ component:
 
 ## Keyboard
 
-- `Escape` (Closes the calendar without changing the value and returns focus to the calendar button.): expect closes, then focus-trigger; target part `popover`
+- `Escape` (Closes the calendar without changing the value. Focus returns to the calendar button when it was inside the calendar; when it is in an input or on the button itself it stays there, since Escape only takes back focus the calendar took. The handler is DatePicker's own, on its root: the non-modal Popover cannot hear a key pressed in the field, which is outside its panel.): expect closes, then focus-trigger; target part `popover`
 
 ## Form and overlay
 
@@ -1005,6 +1104,10 @@ form:
 - example `stay-dates`, story `StayDates`: given `label: "Stay"`, `name: "stay"`, `range: true`; A start and an end date picked in one calendar, with two inputs in the field.
 - example `appointment-with-week-numbers`, story `AppointmentWithWeekNumbers`: given `label: "Appointment"`, `name: "appointment"`, `min: "2026-09-16"`, `showWeekNumbers: true`; A bookable date no earlier than today, with the ISO week-number column shown.
 - example `compact-cell-editor`, story `CompactCellEditor`: given `label: "Due date"`, `name: "due"`, `size: "sm"`, `hideLabel: true`; A small field inside a grid cell, named by its column.
+- example `with-a-value`, story `WithAValue`: given `label: "Due date"`, `name: "due"`, `defaultValue: "2026-09-10"`; A field that already holds a date, shown in the locale's pattern.
+- example `range-with-dates`, story `RangeWithDates`: given `label: "Stay"`, `name: "stay"`, `range: true`, `defaultValue: {"start":"2026-09-10","end":"2026-09-14"}`; A range that already holds both ends, so the calendar shows the bar between them.
+- example `with-an-error`, story `WithAnError`: given `label: "Due date"`, `name: "due"`, `defaultValue: "2026-09-10"`, `error: "Choose a date at least two days from now."`; A field whose value was rejected, with the message under it.
+- example `german-locale`, story `GermanLocale`: given `label: "Fälligkeitsdatum"`, `name: "due"`, `locale: "de-DE"`, `defaultValue: "2026-09-10"`; The same field in a locale whose pattern, month names and first day of the week all differ.
 
 ## Overrides (per-instance styling contract)
 
@@ -1060,7 +1163,7 @@ Do not use it for a date-and-time (a DateTimePicker is planned; until then, pair
 
 ## Behavior
 
-Typing parses the locale pattern leniently (separators optional, two-digit years refused) and fires `onChange` once the date is complete and valid; the calendar, when open, follows the typed date. The calendar opens from its button or ArrowDown in the input on the selected month (or today's), with focus on the selected day (or today). Arrow keys move by day and week, PageUp/Down by month (with Shift, by year), Home/End to the week's ends; moving past the month's edge turns the page. Enter or click selects: for a single date it closes and returns focus to the calendar button; for a range the first pick sets the start (clearing any old range), the second sets the end and closes, and picking before the start restarts; picking the start day again as the end makes a one-day range. The first range pick is pending: it shows only in the calendar, the inputs, `value` and `onChange` are untouched until the second pick, and closing discards it. Today and Clear act immediately. Clear empties the value (both ends in a range), fires `onChange(undefined)` even when already empty, and leaves the calendar open with focus on Clear. Today acts exactly like picking today's cell (so it closes for a single date) and is disabled (aria-disabled on web, `disabled` on lit, accessibilityState disabled on rn) when today is before `min`, after `max` or `isDateDisabled(today)`. Escape closes without changes. Validation follows Input's precedence plus `tooEarly`, `tooLate` and `rangeOrder`. The month and year Selects are `hideLabel` and `size: sm`. The year Select spans from the `min` year (else the current year − 100) to the `max` year (else the current year + 10), each bound falling back on its own, and is always widened to include the displayed year so the controlled Select has a matching option. `onChange` fires only for a complete value (a date, or both ends of a range) and on Clear; a partial range or partial typed date changes nothing. In a range, Today acts like clicking today's cell and Clear wipes both ends; reopening focuses the start date's cell (the end's when opened from the end input). Validation order: `error`; `required` only when every input is empty; unparseable (`copy.invalid`) when any non-empty input does not parse; `required` for a range with one end empty (without `required`, a partial range reports nothing); `tooEarly`, `tooLate`, `rangeOrder` (only end before start; end equal to start is valid) — there is no `invalid` prop on this field. `valueType: date-range` covers a single date too, and the `range` validation reports through `copy.tooEarly`, `copy.tooLate` and `copy.rangeOrder`. The `{min}`/`{max}` placeholders are the dates in the input's own numeric locale pattern (the placeholder's format), not ISO. A range registers two Form fields, `name` and `name-end`, and only `name` reports the combined message — `name-end` always validates clean, since one message must not be read twice. Typed text that parses to a real date commits even when it falls outside `min`/`max` or on an `isDateDisabled` day: the range bounds then surface as `tooEarly`/`tooLate`, and a disabled day typed directly is accepted, because the field has no message for it. The month and year Selects inside the calendar are internal controls, not fields: render them outside the enclosing form's field context so they never register with a Form. The label is a native `<label for>` on web and lit (not a Text; rn uses a Text), and the input — a textbox — carries the accessible name and, on web and lit, `aria-invalid`; the root has role none. The week-number column shows the ISO week of the row's first visible day. The Keyboard story starts open and keeps `open` in story state following onOpenChange (web `onOpenChange`, Lit `open-change` into `.open`), as Select and Combobox, so Escape can close it and return focus. In a range every day from start to end is selected (aria-selected, and `copy.selected` in its label), but only the two ends get the selected fill; days between get `dayInRangeBackground`.
+Typing parses the locale pattern leniently and fires `onChange` once the date is complete and valid; leniently means: separators are optional, two-digit years are refused, month and day take one or two digits when separators are present, and each field needs its exact width (4 for the year, 2 for month and day) when they are absent, since an unseparated run is otherwise ambiguous. the calendar, when open, follows the typed date. The calendar opens from its button or ArrowDown in the input on the selected month (or today's), with focus on the selected day (or today). Arrow keys move by day and week, PageUp/Down by month (with Shift, by year), Home/End to the week's ends; moving past the month's edge turns the page. Enter or click selects: for a single date it closes and returns focus to the calendar button; for a range the first pick sets the start (clearing any old range), the second sets the end and closes, and picking before the start restarts; picking the start day again as the end makes a one-day range. The first range pick is pending: it shows only in the calendar, the inputs, `value` and `onChange` are untouched until the second pick, and closing discards it. Today and Clear act immediately. Clear empties the value (both ends in a range), fires `onChange(undefined)` even when already empty, and leaves the calendar open with focus on Clear. Today acts exactly like picking today's cell (so it closes for a single date) and is disabled (aria-disabled on web, `disabled` on lit, accessibilityState disabled on rn) when today is before `min`, after `max` or `isDateDisabled(today)`. Escape closes without changes. Validation follows Input's precedence plus `tooEarly`, `tooLate` and `rangeOrder`. The month and year Selects are `hideLabel` and `size: sm`; all five composed Buttons are `variant: ghost`, with prev, next, Today and Clear at `size: sm` and the calendar trigger taking the field's own `size`. The grid is always six rows, on every platform, so the panel does not change height between months. `{year}` in `copy.gridLabel` is `String(year)` — the same string the year Select's option labels use, so the header and the grid's name never disagree (a locale with non-Latin digits therefore sees Western digits in both). "Today" is the device's local calendar date (local getters formatted to ISO), not a UTC one, so the today ring and the Today button follow the user's wall clock while every other date is UTC arithmetic on `YYYY-MM-DD` parts. An unparseable `min` or `max` is ignored when computing the year Select's range but still compared as a string when disabling days and in `tooEarly`/`tooLate`, so a malformed bound disables days rather than throwing. The year Select spans from the `min` year (else the current year − 100) to the `max` year (else the current year + 10), each bound falling back on its own, and is always widened to include the displayed year so the controlled Select has a matching option. `onChange` fires only for a complete value (a date, or both ends of a range) and on Clear; a partial range or partial typed date changes nothing. In a range, Today acts like clicking today's cell and Clear wipes both ends; reopening focuses the start date's cell (the end's when opened from the end input). Validation order: `error`; `required` only when every input is empty; unparseable (`copy.invalid`) when any non-empty input does not parse; `required` for a range with one end empty (without `required`, a partial range reports nothing); `tooEarly`, `tooLate`, `rangeOrder` (only end before start; end equal to start is valid) — there is no `invalid` prop on this field. `valueType: date-range` covers a single date too, and the `range` validation reports through `copy.tooEarly`, `copy.tooLate` and `copy.rangeOrder`. The `{min}`/`{max}` placeholders are the dates in the input's own numeric locale pattern (the placeholder's format), not ISO. A range registers two Form fields, `name` and `name-end`, and only `name` reports the combined message — `name-end` always validates clean, since one message must not be read twice. Typed text that parses to a real date commits even when it falls outside `min`/`max` or on an `isDateDisabled` day: the range bounds then surface as `tooEarly`/`tooLate`, and a disabled day typed directly is accepted, because the field has no message for it. The month and year Selects inside the calendar are internal controls, not fields: render them outside the enclosing form's field context so they never register with a Form. The label is a native `<label for>` on web and lit (not a Text; rn uses a Text), and the input — a textbox — carries the accessible name and, on web and lit, `aria-invalid`; the root has role none. The week-number column shows the ISO week of the row's first visible day. The Keyboard story starts open and keeps `open` in story state following onOpenChange (web `onOpenChange`, Lit `open-change` into `.open`), as Select and Combobox, so Escape can close it and return focus. In a range every day from start to end is selected (aria-selected, and `copy.selected` in its label), but only the two ends get the selected fill; days between get `dayInRangeBackground`. The `examples` block is the full set of documented states, and every platform ships a story for each: a value, a range with both ends, an error, and a non-English locale are part of it, not extras one package happens to have.
 
 ## Content guidelines
 
@@ -1073,7 +1176,7 @@ The input is labelled and described like Input (WCAG 1.3.1, 3.3.2), and typing i
 ## Platform notes
 
 ### Web
-Render Input's wrapper (label, description, field, error) with the text input(s), the `Button variant="ghost" iconOnly` calendar trigger (label from copy), and `Popover placement="bottom-start"` whose panel contains the header (`Button`s prev/next with chevron Icons; `Select`s for month and year, `size: sm`), `<table role="grid" aria-labelledby={gridLabelId}>` with `<thead>` of `<th scope="col" abbr={fullName}>` and `<tbody>` rows of `<td role="gridcell">` (carrying `aria-selected`) each containing a `<button>` with `tabIndex` roving, `aria-current="date"`, `aria-disabled`, `aria-label={fullDate + status}`, and a footer row DatePicker owns (`data-part="footer"`, gap `footerGap`; not a composed Stack) with Today and Clear `Button`s (`ghost`, `sm`). Keydown on the grid implements the table, moving the roving index and changing month when needed; focus follows. Dates are computed with plain `Date.UTC` arithmetic on `YYYY-MM-DD` parts; never `new Date(string)`.
+Render Input's wrapper (label, description, field, error) with the text input(s), the `Button variant="ghost" iconOnly` calendar trigger (label from copy, taking the field's own `size`), and `Popover placement="bottom-start"` whose panel contains the header (`Button`s prev/next, `ghost`, `size: sm`, with `Icon name="chevron-left"` / `"chevron-right"`; `Select`s for month and year, `size: sm`), `<table role="grid" aria-labelledby={gridLabelId}>` with `<thead>` of `<th scope="col" abbr={fullName}>` and `<tbody>` rows of `<td role="gridcell">` (carrying `aria-selected`) each containing a `<button>` with `tabIndex` roving, `aria-current="date"`, `aria-disabled`, `aria-label={fullDate + status}`, and a footer row DatePicker owns (`data-part="footer"`, gap `footerGap`; not a composed Stack) with Today and Clear `Button`s (`ghost`, `sm`). Keydown on the grid implements the table, moving the roving index and changing month when needed; focus follows. Dates are computed with plain `Date.UTC` arithmetic on `YYYY-MM-DD` parts; never `new Date(string)`.
 
 ### Lit
 `<ds-date-picker label="Due date" name="due" min="2026-01-01"></ds-date-picker>`; form-associated with ISO value; shadow `<ds-popover>` and grid; `DsFormField`; composed `change`, `open-change`.

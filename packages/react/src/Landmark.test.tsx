@@ -3,18 +3,34 @@
  */
 import { describe, expect, it } from 'vitest';
 import { render } from '@testing-library/react';
-import { Landmark, type LandmarkProps } from './Landmark';
+import { Landmark, type LandmarkProps, type LandmarkRole } from './Landmark';
 import meta from './Landmark.stories';
 import type { ComponentProps } from 'react';
 
-/** The Default story's args plus the scenario's `given`. */
-function setup(given: Partial<LandmarkProps> = {}) {
-  const props = { ...meta.args, ...given };
-  return render(<Landmark {...(props as ComponentProps<typeof Landmark>)} />);
-}
-
 const ROLES = ['banner', 'navigation', 'main', 'complementary', 'contentinfo', 'region', 'search', 'form'] as const;
 const ELEMENTS = ['header', 'nav', 'main', 'aside', 'footer', 'section', 'form', 'div'] as const;
+
+/**
+ * A scenario for another role does not inherit the Default story's label: the roles that refuse
+ * one get none, `region` and `form` get the label that makes them a landmark.
+ */
+const LABEL_FOR_ROLE: Record<LandmarkRole, string | undefined> = {
+  banner: undefined,
+  navigation: 'Main',
+  main: undefined,
+  complementary: undefined,
+  contentinfo: undefined,
+  region: 'Related articles',
+  search: undefined,
+  form: 'Sign in',
+};
+
+/** The Default story's args plus the scenario's `given`. */
+function setup(given: Partial<LandmarkProps> = {}) {
+  const label = 'label' in given ? given.label : given.role ? LABEL_FOR_ROLE[given.role] : meta.args?.label;
+  const props = { ...meta.args, ...given, label };
+  return render(<Landmark {...(props as ComponentProps<typeof Landmark>)} />);
+}
 
 describe('Landmark', () => {
   it('the-role-prop-chooses-the-landmark', () => {
@@ -34,7 +50,9 @@ describe('Landmark', () => {
 
   it('a-region-is-named-by-its-label', () => {
     const { getByRole } = setup({ role: 'region', label: 'Related articles' });
-    expect(getByRole('region').getAttribute('aria-label')).toBe('Related articles');
+    const region = getByRole('region');
+    expect(region.getAttribute('aria-label')).toBe('Related articles');
+    expect(region.getAttribute('data-ds')).toBe('Landmark');
   });
 
   it('an-overridden-element-still-carries-its-role', () => {

@@ -9,6 +9,7 @@ interface CheckboxArgs {
   hideLabel: boolean;
   name: string;
   value: string;
+  checked?: boolean | undefined;
   defaultChecked: boolean;
   indeterminate: boolean;
   disabled: boolean;
@@ -26,6 +27,7 @@ const meta: Meta<CheckboxArgs> = {
   },
   argTypes: {
     hideLabel: { control: 'boolean' },
+    checked: { control: 'boolean' },
     defaultChecked: { control: 'boolean' },
     indeterminate: { control: 'boolean' },
     disabled: { control: 'boolean' },
@@ -37,6 +39,7 @@ const meta: Meta<CheckboxArgs> = {
     hideLabel: false,
     name: 'updates',
     value: 'on',
+    checked: undefined,
     defaultChecked: false,
     indeterminate: false,
     disabled: false,
@@ -53,6 +56,7 @@ const meta: Meta<CheckboxArgs> = {
       description=${ifDefined(args.description)}
       error=${ifDefined(args.error)}
       ?hide-label=${args.hideLabel}
+      ?checked=${args.checked}
       ?default-checked=${args.defaultChecked}
       ?indeterminate=${args.indeterminate}
       ?disabled=${args.disabled}
@@ -68,14 +72,28 @@ type Story = StoryObj<CheckboxArgs>;
 export const Default: Story = {};
 
 /* states */
-export const DefaultCheckedTrue: Story = { args: { defaultChecked: true } };
+export const Checked: Story = { args: { defaultChecked: true } };
 export const IndeterminateTrue: Story = { args: { indeterminate: true } };
-export const DisabledTrue: Story = { args: { disabled: true } };
+export const Disabled: Story = { args: { disabled: true } };
 export const DisabledChecked: Story = { args: { disabled: true, defaultChecked: true } };
 export const RequiredTrue: Story = { args: { required: true } };
-export const InvalidTrue: Story = { args: { invalid: true } };
+export const Invalid: Story = { args: { invalid: true } };
 export const HideLabelTrue: Story = { args: { hideLabel: true } };
-export const ErrorSet: Story = { args: { error: 'Accept the terms to continue.' } };
+
+export const WithError: Story = {
+  args: {
+    label: 'I accept the terms of service',
+    name: 'terms',
+    required: true,
+    error: 'Accept the terms to continue.',
+  },
+};
+
+/**
+ * On Lit the `checked` attribute is the initial state only: the property is the live state, like a
+ * native input, so the box toggles on its own and there is no controlled mode.
+ */
+export const Controlled: Story = { args: { checked: true } };
 
 /* examples */
 export const Consent: Story = {

@@ -48,6 +48,9 @@ const HOOKS: Record<AlertOverridableBinding, string> = {
 /** The web "next focusable" set: a, button, input, select, textarea, [tabindex] ≥ 0, contenteditable. */
 const FOCUSABLE = 'a[href], button, input, select, textarea, [tabindex], [contenteditable]:not([contenteditable="false"])';
 
+/** Default token for the `iconSize` binding, forwarded to the Icon as `overrides.size`. */
+const ICON_SIZE_TOKEN = 'font.size.lg' as TokenRef;
+
 /**
  * `<ds-alert>` — Alert (category: feedback, APG pattern: alert).
  *
@@ -90,29 +93,27 @@ export class DsAlert extends LitElement {
       display: none;
     }
 
-    /* {tone} bindings: background, foreground, icon (locked) and border */
+    /* {tone} bindings: background and foreground (locked) and border. The icon binding is locked by
+       its non-text contrast pair and reaches the Icon through its own overrides.color, so it has no
+       hook here and the icon box carries no color of its own. */
     :host([tone='info']) {
       --ds-alert-background: var(--color-status-info-background);
       --ds-alert-foreground: var(--color-status-info-foreground);
-      --ds-alert-icon: var(--color-status-info-icon);
       --ds-alert-border: var(--color-status-info-border);
     }
     :host([tone='success']) {
       --ds-alert-background: var(--color-status-success-background);
       --ds-alert-foreground: var(--color-status-success-foreground);
-      --ds-alert-icon: var(--color-status-success-icon);
       --ds-alert-border: var(--color-status-success-border);
     }
     :host([tone='warning']) {
       --ds-alert-background: var(--color-status-warning-background);
       --ds-alert-foreground: var(--color-status-warning-foreground);
-      --ds-alert-icon: var(--color-status-warning-icon);
       --ds-alert-border: var(--color-status-warning-border);
     }
     :host([tone='danger']) {
       --ds-alert-background: var(--color-status-danger-background);
       --ds-alert-foreground: var(--color-status-danger-foreground);
-      --ds-alert-icon: var(--color-status-danger-icon);
       --ds-alert-border: var(--color-status-danger-border);
     }
 
@@ -130,17 +131,20 @@ export class DsAlert extends LitElement {
     }
 
     /* The icon box is as tall as the first line (or the icon, when larger); the Icon is centred in it.
-       Its color and size reach the Icon through its overrides, not through these hooks. */
+       The hooks it reads are set on the host and inherited. Color and size reach the Icon through
+       its own overrides, never through this box. */
     .icon {
+      --ds-alert-first-line: calc(var(--ds-alert-font-size) * var(--ds-alert-line-height));
       flex: none;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--ds-alert-icon);
-      block-size: max(calc(var(--ds-alert-font-size) * var(--ds-alert-line-height)), var(--ds-alert-icon-size));
+      block-size: max(var(--ds-alert-first-line), var(--ds-alert-icon-size));
+      line-height: 0;
     }
-    .container.has-heading .icon {
-      block-size: max(calc(var(--ds-alert-heading-size) * var(--ds-alert-line-height)), var(--ds-alert-icon-size));
+    /* The element sets data-has-heading on its root; no :has() query is used. */
+    :host([data-has-heading]) .icon {
+      --ds-alert-first-line: calc(var(--ds-alert-heading-size) * var(--ds-alert-line-height));
     }
 
     .content {
@@ -212,6 +216,15 @@ export class DsAlert extends LitElement {
         this.setAttribute('role', role);
       }
     }
+    if (changed.has('heading')) {
+      // The icon box is as tall as the first line, which is the heading when there is one. The CSS
+      // reads this attribute on the root rather than a `:has()` query, exactly as React does.
+      const hasHeading = this.heading !== undefined && this.heading !== '';
+      if (hasHeading !== this.hasAttribute('data-has-heading')) {
+        if (hasHeading) this.setAttribute('data-has-heading', '');
+        else this.removeAttribute('data-has-heading');
+      }
+    }
     if (changed.has('overrides')) {
       this.applyOverrides();
     }
@@ -224,15 +237,16 @@ export class DsAlert extends LitElement {
   }
 
   protected override render(): TemplateResult {
-    const heading = this.heading ? this.heading : undefined;
+    // An empty heading is the same as no heading: no heading element, and the name falls back to the body.
+    const heading = this.heading === undefined || this.heading === '' ? undefined : this.heading;
     return html`
-      <div class="container ${heading ? 'has-heading' : ''}" part="container" data-part="container">
+      <div class="container" part="container" data-part="container">
         <span class="icon" part="icon" data-part="icon">
           <ds-icon
             name=${this.tone}
             .overrides=${{
-              color: `color.status.${this.tone}.icon` as const,
-              size: this.overrides?.iconSize ?? 'font.size.lg',
+              color: `color.status.${this.tone}.icon` as TokenRef,
+              size: this.overrides?.iconSize ?? ICON_SIZE_TOKEN,
             }}
           ></ds-icon>
         </span>

@@ -38,6 +38,13 @@ describe('Alert', () => {
     expect(s.getByTestId('Alert').props.accessibilityLiveRegion).toBe('polite');
   });
 
+  it('live-off-renders-no-role', () => {
+    // Read in sequence, so there is no live region at all.
+    const s = setup({ live: 'off' });
+    expect(s.getByTestId('Alert').props.accessibilityLiveRegion).toBeUndefined();
+    expect(s.getByTestId('Alert').props.accessibilityRole).toBeUndefined();
+  });
+
   it('the-heading-is-rendered', () => {
     const s = setup({ heading: 'Payment failed' });
     expect(s.getByText('Payment failed')).toBeTruthy();

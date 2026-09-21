@@ -3,7 +3,6 @@ import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Alert.js';
 import './Link.js';
-import './Text.js';
 import type { AlertLive, AlertTone } from './Alert.js';
 
 interface AlertArgs {
@@ -100,15 +99,21 @@ export const PresentAtLoad: Story = {
 };
 
 /* notable states */
+export const WithHeading: Story = { args: { heading: 'Changes saved' } };
+
 export const WithLink: Story = {
-  args: { tone: 'warning', heading: 'Trial ends in three days' },
+  args: { tone: 'danger', heading: 'Payment failed' },
   render: (args) => html`
     <div style="inline-size: min(100%, 36rem)">
-      <ds-alert tone=${args.tone} live=${args.live} heading=${ifDefined(args.heading)} ?dismissible=${args.dismissible}>
-        <ds-text
-          >Add a payment method to keep your workspace.
-          <ds-link href="#billing" label="Go to billing"></ds-link></ds-text
-        >
+      <ds-alert
+        tone=${args.tone}
+        live=${args.live}
+        heading=${ifDefined(args.heading)}
+        ?dismissible=${args.dismissible}
+        @dismiss=${(event: Event) => (event.target as HTMLElement).remove()}
+      >
+        Your card was declined.
+        <ds-link href="/billing" label="Update your payment method" tone="inherit"></ds-link> to keep your plan.
       </ds-alert>
     </div>
   `,

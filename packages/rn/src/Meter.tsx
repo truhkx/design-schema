@@ -23,18 +23,22 @@ export type MeterOverridableBinding =
   | 'transition';
 
 export interface MeterProps {
-  /** The current measurement. Clamped to `min`…`max` for the bar; the accessible value is the clamped number too. */
+  /**
+   * The current measurement. Clamped to `min`…`max` for the bar; the accessible value is the
+   * clamped number too, exact and unrounded (only the percentage text is rounded). A non-finite
+   * `value` is treated as `min`.
+   */
   value: number;
-  /** Lower bound of the range. */
+  /** Lower bound of the range. A non-finite `min` (NaN, Infinity) is treated as 0. */
   min?: number | undefined;
-  /** Upper bound of the range. Must be greater than `min`. */
+  /** Upper bound of the range. Must be greater than `min`. A non-finite `max` (NaN, Infinity) is treated as 100. */
   max?: number | undefined;
   /** Visible label naming the measurement ("Storage used"). Also the accessible name. */
   label: string;
   /**
    * Human-readable value shown at the end of the label row and announced instead of the raw
    * number ("3.2 GB of 10 GB", "Strong"). Omit to show and announce the percentage, rounded to a
-   * whole number ("32%").
+   * whole number ("32%"), from the runtime's default locale.
    */
   valueText?: string | undefined;
   /** Fill color. `info` is the neutral brand fill; the consumer sets `success`/`warning`/`danger` from thresholds it owns. */
@@ -60,16 +64,19 @@ const FILL_TOKEN = {
  *
  * When to use: a measurement with a fixed range — storage or quota used, battery,
  * password strength, a score out of ten. The consumer decides the tone from thresholds
- * it owns; the meter just paints. Not for task progress (ProgressBar, planned).
+ * it owns; the meter just paints. Not for task progress (ProgressBar).
  *
  * Renders an `accessible` `View` with `role="meter"`, `accessibilityLabel={label}` and
  * `accessibilityValue={{ min, max, now: clamped, text }}`, where `text` is always set:
  * `valueText`, else the rounded percentage web and Lit announce. Inside: a header row of
- * two composed `Text`s and a track `View` (`overflow: 'hidden'`) holding the fill. The
- * track is measured with `onLayout` and the fill's pixel width animates over `transition`
- * (`useNativeDriver: false`); it snaps before the width is known, on resize, and under
- * reduced motion. A non-finite `value` counts as `min`; if `max <= min` the track renders
- * empty, `now` is `min`, "0%" is shown, and a warning is logged in development.
+ * two composed `Text`s — each in a plain `View` the Meter owns, since `Text` takes no
+ * `testID` — and a track `View` (`overflow: 'hidden'`) holding the fill. The track is
+ * measured with `onLayout` and the fill's pixel width animates over `transition`
+ * (`useNativeDriver: false`); it snaps before the width is known, on first layout, on
+ * resize, and under reduced motion. A non-finite `value` counts as `min`, a non-finite
+ * `min`/`max` as its default; if `max <= min` the track renders empty, `now` is `min`,
+ * "0%" is shown and announced, and development warns once per distinct invalid pair.
+ * Nothing here is interactive: no focus, no events, no hover.
  */
 export function Meter({
   value,
@@ -85,16 +92,24 @@ export function Meter({
   const { tokens: t } = useTheme();
   const reducedMotion = useReducedMotion();
 
-  const validRange = max > min;
-  React.useEffect(() => {
-    if (__DEV__ && !validRange) {
-      console.warn(`Meter: max (${max}) must be greater than min (${min}).`);
-    }
-  }, [validRange, min, max]);
+  // A non-finite bound falls back to its default, on every platform.
+  const safeMin = Number.isFinite(min) ? min : 0;
+  const safeMax = Number.isFinite(max) ? max : 100;
+  const validRange = safeMax > safeMin;
 
-  const safeValue = Number.isFinite(value) ? value : min;
-  const clamped = validRange ? Math.min(max, Math.max(min, safeValue)) : min;
-  const fraction = validRange ? (clamped - min) / (max - min) : 0;
+  // Development warning: an inverted or empty range. Warned once per distinct invalid pair.
+  const warnedRef = React.useRef<string | null>(null);
+  React.useEffect(() => {
+    if (!__DEV__ || validRange) return;
+    const key = `${safeMin}/${safeMax}`;
+    if (warnedRef.current === key) return;
+    warnedRef.current = key;
+    console.warn(`Meter: \`max\` (${safeMax}) must be greater than \`min\` (${safeMin}).`);
+  });
+
+  const safeValue = Number.isFinite(value) ? value : safeMin;
+  const clamped = validRange ? Math.min(safeMax, Math.max(safeMin, safeValue)) : safeMin;
+  const fraction = validRange ? (clamped - safeMin) / (safeMax - safeMin) : 0;
   // Rounding is for the text only; the fill width uses the exact fraction.
   const percentText = new Intl.NumberFormat(undefined, { style: 'percent', maximumFractionDigits: 0 }).format(fraction);
   const announcedValue = valueText ?? percentText;
@@ -112,7 +127,8 @@ export function Meter({
 
   React.useEffect(() => {
     const toValue = trackWidth * fraction;
-    // Only a change to `value` animates; the first layout and resizes snap.
+    // Only a change to the fraction animates; the first layout and resizes snap, and so
+    // does an update where both move at once.
     const resized = laidOutWidth.current !== trackWidth;
     laidOutWidth.current = trackWidth;
     if (reducedMotion || resized || trackWidth === 0) {
@@ -140,13 +156,15 @@ export function Meter({
       alignItems: 'baseline',
       gap: labelGap,
     };
+    // A long label wraps onto more lines inside the row rather than truncating.
+    const labelWrapper: ViewStyle = { flexShrink: 1 };
     const track: ViewStyle = {
       height: trackHeight,
       borderRadius: radius,
       backgroundColor: t.colorBackgroundStrong,
       overflow: 'hidden',
     };
-    return { container, header, track };
+    return { container, header, labelWrapper, track };
   }, [partGap, labelGap, trackHeight, radius, t.colorBackgroundStrong]);
 
   const fillStyle: Animated.WithAnimatedValue<ViewStyle> = {
@@ -165,35 +183,46 @@ export function Meter({
       accessible
       role="meter"
       accessibilityLabel={label}
-      accessibilityValue={{ min, max, now: clamped, text: announcedValue }}
+      accessibilityValue={{ min: safeMin, max: safeMax, now: clamped, text: announcedValue }}
+      // The aria-* aliases carry the same value. React Native merges them into
+      // `accessibilityValue`; react-native-web forwards only these, and role="meter"
+      // requires aria-valuenow on the DOM.
+      aria-valuemin={safeMin}
+      aria-valuemax={safeMax}
+      aria-valuenow={clamped}
+      aria-valuetext={announcedValue}
       style={styles.container}
     >
       <View testID="Meter.header" style={styles.header}>
-        <Text
-          size="sm"
-          weight="medium"
-          tone="default"
-          overrides={{
-            fontSize: overrides?.labelSize,
-            fontWeight: overrides?.labelWeight,
-            fontFamily: overrides?.fontFamily,
-            lineHeight: overrides?.lineHeight,
-          }}
-        >
-          {label}
-        </Text>
-        {hideValue ? null : (
+        <View testID="Meter.label" style={styles.labelWrapper}>
           <Text
             size="sm"
-            tone="muted"
+            weight="medium"
+            tone="default"
             overrides={{
-              fontSize: overrides?.valueSize,
+              fontSize: overrides?.labelSize,
+              fontWeight: overrides?.labelWeight,
               fontFamily: overrides?.fontFamily,
               lineHeight: overrides?.lineHeight,
             }}
           >
-            {announcedValue}
+            {label}
           </Text>
+        </View>
+        {hideValue ? null : (
+          <View testID="Meter.valueText">
+            <Text
+              size="sm"
+              tone="muted"
+              overrides={{
+                fontSize: overrides?.valueSize,
+                fontFamily: overrides?.fontFamily,
+                lineHeight: overrides?.lineHeight,
+              }}
+            >
+              {announcedValue}
+            </Text>
+          </View>
         )}
       </View>
       <View testID="Meter.track" style={styles.track} onLayout={handleTrackLayout}>

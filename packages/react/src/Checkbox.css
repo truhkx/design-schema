@@ -23,25 +23,32 @@
   --ds-checkbox-transition: var(--motion-duration-fast);
   /* indicator, indicatorStroke, helperSize, descriptionText and errorText have no hook: the composed
      Icon and Texts realise them through their own props and overrides. */
+
+  /* The label's first line box; the control centres on it and the row is padded around it. */
+  --ds-checkbox-line-box: calc(var(--ds-checkbox-label-size) * var(--ds-checkbox-line-height));
   display: flex;
   flex-direction: column;
   gap: var(--ds-checkbox-part-gap);
 }
 
-/* minTarget: the whole row, gap included, is the hit area; no vertical padding. */
+/* minTarget: the whole row, gap included, is the hit area. The children align to the start of the
+   cross axis and the padding makes a single-line row exactly minTarget tall, so a wrapping label or
+   a description grows the row downwards without pulling the control off the first line. */
 .ds-checkbox__row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--ds-checkbox-gap);
-  min-block-size: var(--ds-checkbox-min-target);
+  padding-block: calc((var(--ds-checkbox-min-target) - var(--ds-checkbox-line-box)) / 2);
   cursor: pointer;
 }
 
-/* The box stacks the native input and the indicator in one grid cell. */
+/* The box is one label line tall and stacks the native input and the indicator in one grid cell,
+   which centres the control on the label's first line. */
 .ds-checkbox__box {
   display: inline-grid;
   flex: 0 0 auto;
   place-items: center;
+  block-size: var(--ds-checkbox-line-box);
 }
 
 /* control: a native input drawn with the control tokens, never a hidden input under a fake box. */
@@ -56,9 +63,14 @@
   border-radius: var(--ds-checkbox-control-radius);
   background-color: var(--ds-checkbox-control-background);
   cursor: pointer;
+  transition:
+    background-color var(--ds-checkbox-transition) var(--motion-easing-standard),
+    border-color var(--ds-checkbox-transition) var(--motion-easing-standard);
   -webkit-appearance: none;
   appearance: none;
 }
+
+/* Border color precedence: invalid, then selected, then rest — so these three rules stay in order. */
 
 /* controlSelectedBackground: checked and indeterminate fill; the border takes the same color. */
 .ds-checkbox__control:checked,
@@ -67,7 +79,13 @@
   background-color: var(--ds-checkbox-control-selected-background);
 }
 
-/* pressedOverlay: an unchecked, not-mixed, enabled box shows the selected fill at this opacity. */
+/* controlBorderInvalid: replaces the border color in every state; the selected fill is unchanged. */
+.ds-checkbox__control[aria-invalid='true'] {
+  border-color: var(--ds-checkbox-control-border-invalid);
+}
+
+/* pressedOverlay: an unchecked, not-mixed, enabled box shows the selected fill at this opacity over
+   controlBackground; the border is unchanged. A filled or disabled box shows no overlay. */
 .ds-checkbox__control:not([aria-disabled='true']):not(:checked):not([aria-checked='mixed']):active {
   background-color: color-mix(
     in srgb,
@@ -76,18 +94,15 @@
   );
 }
 
-/* controlBorderInvalid */
-.ds-checkbox__control[aria-invalid='true']:not(:checked):not([aria-checked='mixed']) {
-  border-color: var(--ds-checkbox-control-border-invalid);
-}
-
-/* focus-visible: never removed, only replaced by the token ring. */
+/* focus-visible: never removed, only replaced by the token ring. It is a separate outline, so an
+   invalid box keeps controlBorderInvalid while focused. */
 .ds-checkbox__control:focus-visible {
   outline: var(--ds-checkbox-focus-ring-width) solid var(--ds-checkbox-focus-ring);
   outline-offset: var(--ds-checkbox-focus-ring-width);
 }
 
-/* indicator: holds the composed Icon (check / dash), centered over the control; clicks pass through. */
+/* indicator: holds the composed Icon (check / dash), centred over the control; clicks pass through
+   to the input. The Icon carries the indicator color and stroke itself. */
 .ds-checkbox__indicator {
   grid-area: 1 / 1;
   display: inline-flex;
@@ -111,7 +126,7 @@
   line-height: var(--ds-checkbox-line-height);
 }
 
-/* hideLabel: visually hidden, clipped to a 1px box — the standard sanctioned pixel literals */
+/* hideLabel: visually hidden, clipped to a 1px box — the standard sanctioned pixel literals. */
 .ds-checkbox__label--hidden {
   position: absolute;
   inline-size: 1px;
@@ -124,12 +139,14 @@
   border: 0;
 }
 
-/* The error sits below the row, outside the hit area, aligned with the text column. */
+/* The error sits below the row, outside the hit area, indented by controlSize + gap so it lines up
+   with the label rather than the control. */
 .ds-checkbox__error {
   padding-inline-start: calc(var(--ds-checkbox-control-size) + var(--ds-checkbox-gap));
 }
 
-/* disabled: stays focusable and readable; the control and label dim, description and error do not. */
+/* disabled: stays focusable and readable; the control and label dim, the description and error do
+   not, so they remain readable. */
 .ds-checkbox--disabled .ds-checkbox__row,
 .ds-checkbox--disabled .ds-checkbox__control,
 .ds-checkbox--disabled .ds-checkbox__label {
@@ -141,13 +158,8 @@
   opacity: var(--ds-checkbox-disabled-opacity);
 }
 
-/* transition: fill and border, with motion.easing.standard; removed under reduced motion. */
-.ds-checkbox__control {
-  transition:
-    background-color var(--ds-checkbox-transition) var(--motion-easing-standard),
-    border-color var(--ds-checkbox-transition) var(--motion-easing-standard);
-}
-
+/* transition: fill and border only — the indicator is mounted and unmounted, never animated.
+   Instant under reduced motion. */
 @media (prefers-reduced-motion: reduce) {
   .ds-checkbox__control {
     transition: none;

@@ -59,12 +59,17 @@ function overridesToStyle(overrides: Partial<Record<AlertOverridableBinding, Tok
 const FOCUSABLE =
   'a[href], button, input, select, textarea, [tabindex], [contenteditable]:not([contenteditable="false"])';
 
-/** Whether `el` is rendered: neither it nor an ancestor is `hidden` or `display: none`. */
+/**
+ * Whether `el` is rendered: neither it nor an ancestor carries `hidden`, `display: none` or
+ * `visibility: hidden`. Size and layout are not checked — jsdom has none.
+ */
 function isRendered(el: HTMLElement): boolean {
   const view = el.ownerDocument.defaultView;
   for (let node: HTMLElement | null = el; node !== null; node = node.parentElement) {
     if (node.hidden) return false;
-    if (view !== null && view.getComputedStyle(node).display === 'none') return false;
+    if (view === null) continue;
+    const style = view.getComputedStyle(node);
+    if (style.display === 'none' || style.visibility === 'hidden') return false;
   }
   return true;
 }
@@ -91,7 +96,11 @@ function focusOutside(root: HTMLElement): void {
   (next ?? previous)?.focus();
 }
 
-export interface AlertProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children' | 'role' | 'title' | 'style' | 'className'> {
+export interface AlertProps
+  extends Omit<
+    ComponentPropsWithoutRef<'div'>,
+    'children' | 'role' | 'title' | 'style' | 'className' | 'aria-label' | 'aria-labelledby'
+  > {
   /**
    * What kind of message this is. Sets the colors and the icon, which together convey the tone
    * without relying on color. There is deliberately no `neutral` tone: every value here says
@@ -99,8 +108,9 @@ export interface AlertProps extends Omit<ComponentPropsWithoutRef<'div'>, 'child
    */
   tone?: AlertTone | undefined;
   /**
-   * A short bold first line for the message. Optional for one-line messages. Named `heading`, not
-   * `title`, because `title` is a native attribute (tooltip) on every platform element.
+   * A short bold first line for the message. Optional for one-line messages. An empty string is the
+   * same as no heading: no heading element is rendered and the name falls back to the body. Named
+   * `heading`, not `title`, because `title` is a native attribute (tooltip) on every platform element.
    */
   heading?: string | undefined;
   /** The message body. Text and Links; no headings or form controls. */
@@ -165,8 +175,13 @@ export function Alert({
       data-ds="Alert"
       data-part="container"
       className={`ds-alert ds-alert--${tone}`}
+      // The icon box is as tall as the first line, which is the heading when there is one; the CSS
+      // reads this attribute rather than a `:has()` query, exactly as Lit does.
+      data-has-heading={hasHeading ? '' : undefined}
       style={overrides ? overridesToStyle(overrides) : undefined}
       role={live === 'off' ? undefined : live}
+      // The region is named by its own content: the heading when present, else the body element. A
+      // consumer `aria-label`/`aria-labelledby` is not forwarded to the root, so this always wins.
       aria-labelledby={hasHeading ? headingId : bodyId}
     >
       <span className="ds-alert__icon" data-part="icon">

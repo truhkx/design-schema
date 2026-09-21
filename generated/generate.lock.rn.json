@@ -45,27 +45,26 @@
     }
   },
   "Alert.rn": {
-    "hash": "0de7ff57be1375e3",
-    "lastAttemptHash": "0de7ff57be1375e3",
-    "generatedAt": "2026-09-17T09:19:28+00:00",
+    "hash": "e196d33392695aef",
+    "lastAttemptHash": "e196d33392695aef",
+    "generatedAt": "2026-09-21T07:21:24+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.73,
+    "costUsd": 1.3907,
     "files": [
-      "packages/rn/src/Alert.stories.tsx",
       "packages/rn/src/Alert.test.tsx",
-      "packages/rn/src/Alert.tsx",
-      "packages/rn/src/index.ts"
+      "packages/rn/src/Alert.tsx"
     ],
-    "gaps": 6,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "AlertDialog.rn": {
@@ -137,24 +136,28 @@
     }
   },
   "Breadcrumb.rn": {
-    "hash": "f259ce970b36ea3a",
-    "lastAttemptHash": "f259ce970b36ea3a",
-    "generatedAt": "2026-09-17T09:28:23+00:00",
+    "hash": "e24f6d45a45114ac",
+    "lastAttemptHash": "e24f6d45a45114ac",
+    "generatedAt": "2026-09-21T07:46:34+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.4868,
+    "costUsd": 3.2016,
     "files": [
-      "packages/rn/src/Breadcrumb.tsx"
+      "packages/rn/src/Breadcrumb.stories.tsx",
+      "packages/rn/src/Breadcrumb.test.tsx",
+      "packages/rn/src/Breadcrumb.tsx",
+      "packages/rn/src/index.ts"
     ],
-    "gaps": 8,
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "Button.rn": {
@@ -230,24 +233,25 @@
     }
   },
   "Checkbox.rn": {
-    "hash": "a73153e5c4687533",
-    "lastAttemptHash": "a73153e5c4687533",
-    "generatedAt": "2026-09-17T09:01:37+00:00",
+    "hash": "8a2f073bf7447721",
+    "lastAttemptHash": "8a2f073bf7447721",
+    "generatedAt": "2026-09-21T02:27:15+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.051,
+    "rounds": 2,
+    "costUsd": 6.2164,
     "files": [
       "packages/rn/src/Checkbox.tsx"
     ],
-    "gaps": 9,
+    "gaps": 23,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "Combobox.rn": {
@@ -365,25 +369,26 @@
     }
   },
   "Disclosure.rn": {
-    "hash": "a90718d02e455b48",
-    "lastAttemptHash": "a90718d02e455b48",
-    "generatedAt": "2026-09-17T09:15:24+00:00",
+    "hash": "1c077b0ff88b38ec",
+    "lastAttemptHash": "1c077b0ff88b38ec",
+    "generatedAt": "2026-09-21T07:12:38+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 0.7808,
+    "rounds": 2,
+    "costUsd": 4.894,
     "files": [
       "packages/rn/src/Disclosure.test.tsx",
       "packages/rn/src/Disclosure.tsx"
     ],
-    "gaps": 7,
+    "gaps": 24,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "Divider.rn": {
@@ -431,25 +436,25 @@
     }
   },
   "Fieldset.rn": {
-    "hash": "2f3c7dbc18093335",
-    "lastAttemptHash": "2f3c7dbc18093335",
-    "generatedAt": "2026-09-17T09:36:40+00:00",
+    "hash": "28b51983fe91fee5",
+    "lastAttemptHash": "28b51983fe91fee5",
+    "generatedAt": "2026-09-21T08:10:24+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 0.8907,
+    "rounds": 2,
+    "costUsd": 4.0306,
     "files": [
-      "packages/rn/src/Fieldset.stories.tsx",
       "packages/rn/src/Fieldset.tsx"
     ],
-    "gaps": 8,
+    "gaps": 13,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "FocusScope.rn": {
@@ -580,26 +585,25 @@
     }
   },
   "Landmark.rn": {
-    "hash": "ca4fdbe10414cdac",
-    "lastAttemptHash": "ca4fdbe10414cdac",
-    "generatedAt": "2026-09-17T09:24:03+00:00",
+    "hash": "514cd289f8995dc7",
+    "lastAttemptHash": "514cd289f8995dc7",
+    "generatedAt": "2026-09-21T07:34:07+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.7162,
+    "costUsd": 1.2998,
     "files": [
-      "packages/rn/src/Landmark.stories.tsx",
-      "packages/rn/src/Landmark.test.tsx",
       "packages/rn/src/Landmark.tsx"
     ],
-    "gaps": 5,
+    "gaps": 6,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "Link.rn": {
@@ -671,24 +675,25 @@
     }
   },
   "Meter.rn": {
-    "hash": "1a4397dd8db7e80d",
-    "lastAttemptHash": "1a4397dd8db7e80d",
-    "generatedAt": "2026-09-17T09:32:02+00:00",
+    "hash": "589dfe6fd3d39505",
+    "lastAttemptHash": "589dfe6fd3d39505",
+    "generatedAt": "2026-09-21T07:57:18+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 0.8544,
+    "rounds": 2,
+    "costUsd": 3.3577,
     "files": [
       "packages/rn/src/Meter.tsx"
     ],
-    "gaps": 8,
+    "gaps": 17,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "NumberInput.rn": {
@@ -780,24 +785,25 @@
     }
   },
   "RadioGroup.rn": {
-    "hash": "f8f682c3d9413a47",
-    "lastAttemptHash": "f8f682c3d9413a47",
-    "generatedAt": "2026-09-17T09:11:51+00:00",
+    "hash": "25c61cdd17820654",
+    "lastAttemptHash": "25c61cdd17820654",
+    "generatedAt": "2026-09-21T06:59:07+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.1776,
+    "rounds": 2,
+    "costUsd": 4.6321,
     "files": [
       "packages/rn/src/RadioGroup.tsx"
     ],
-    "gaps": 7,
+    "gaps": 15,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "Search.rn": {
@@ -978,24 +984,25 @@
     }
   },
   "Switch.rn": {
-    "hash": "008ce9124b5c8789",
-    "lastAttemptHash": "008ce9124b5c8789",
-    "generatedAt": "2026-09-17T09:06:39+00:00",
+    "hash": "a6a40974cc8ae559",
+    "lastAttemptHash": "a6a40974cc8ae559",
+    "generatedAt": "2026-09-21T06:39:32+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.0271,
+    "rounds": 2,
+    "costUsd": 6.8957,
     "files": [
       "packages/rn/src/Switch.tsx"
     ],
-    "gaps": 8,
+    "gaps": 15,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "Table.rn": {

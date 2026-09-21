@@ -23,17 +23,34 @@
   --ds-switch-transition: var(--motion-duration-fast);
   /* helperSize and descriptionText have no hook: the composed Text realises them through its own
      `muted` tone and `fontSize` override. */
-  /* minTarget: a full-width row with no padding; the whole row, gap included, toggles. */
+
+  /* The label's first line box, which the track slot is tall, and the thumb's travel. */
+  --ds-switch-line-box: calc(var(--ds-switch-label-size) * var(--ds-switch-line-height));
+  --ds-switch-thumb-travel: calc(
+    var(--ds-switch-track-width) - var(--ds-switch-thumb-size) - 2 * var(--ds-switch-thumb-inset)
+  );
+
+  /* minTarget: a full-width row with no padding; the whole row, gap included, toggles. The content
+     box is centred on the cross axis, so a one-line row sits in the middle of minTarget. */
   display: flex;
-  align-items: flex-start;
-  gap: var(--ds-switch-gap);
+  flex-direction: column;
+  justify-content: center;
   inline-size: 100%;
   min-block-size: var(--ds-switch-min-target);
   cursor: pointer;
 }
 
-/* labelPosition changes flex order only: `start` puts the label first and the track at the row end. */
-.ds-switch--label-start {
+/* The content box: the track slot aligns with the top of the text column, so a wrapping label or a
+   description grows the row downwards without pulling the track off the first line. */
+.ds-switch__row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ds-switch-gap);
+}
+
+/* labelPosition changes the order of the row only: `start` puts the label first and pushes the
+   track to the row end; `end` puts the track first, as on Checkbox. */
+.ds-switch--label-start .ds-switch__row {
   justify-content: space-between;
 }
 .ds-switch--label-start .ds-switch__text { order: 0; }
@@ -58,18 +75,24 @@
   line-height: var(--ds-switch-line-height);
 }
 
-/* One label line tall (labelSize × lineHeight): the track sits at the top, centred on the first line. */
+/* One label line tall: the track centres on the label's first line. */
 .ds-switch__slot {
   display: flex;
   flex: 0 0 auto;
   align-items: center;
-  block-size: calc(var(--ds-switch-label-size) * var(--ds-switch-line-height));
+  block-size: var(--ds-switch-line-box);
+}
+
+/* The track wrapper stacks the Switch-owned thumb span over the input. */
+.ds-switch__track-wrap {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
 }
 
 /* track: a native input sized trackWidth × trackHeight, drawn with the control tokens. */
 .ds-switch__control {
   box-sizing: border-box;
-  position: relative;
   flex: 0 0 auto;
   inline-size: var(--ds-switch-track-width);
   block-size: var(--ds-switch-track-height);
@@ -79,13 +102,19 @@
   border-radius: var(--ds-switch-radius);
   background-color: var(--ds-switch-track-off);
   cursor: pointer;
+  transition: background-color var(--ds-switch-transition) var(--motion-easing-standard);
   -webkit-appearance: none;
   appearance: none;
 }
 
-/* thumb: inset evenly on the short axis; travels trackWidth − thumbSize − 2 × thumbInset when on. */
-.ds-switch__control::before {
-  content: '';
+/* trackOn: keyed off the component state, not :checked, so controlled mode looks right. */
+.ds-switch__control[aria-checked='true'] {
+  background-color: var(--ds-switch-track-on);
+}
+
+/* thumb: a real span, not a ::before, which Firefox does not draw on an appearance: none input. It
+   is inset evenly on the short axis and click-through, so presses reach the input underneath. */
+.ds-switch__thumb {
   position: absolute;
   inset-block-start: calc((var(--ds-switch-track-height) - var(--ds-switch-thumb-size)) / 2);
   inset-inline-start: var(--ds-switch-thumb-inset);
@@ -93,24 +122,19 @@
   block-size: var(--ds-switch-thumb-size);
   border-radius: var(--ds-switch-radius);
   background-color: var(--ds-switch-thumb);
+  pointer-events: none;
+  transition: transform var(--ds-switch-transition) var(--motion-easing-standard);
 }
 
-/* trackOn */
-.ds-switch__control[aria-checked='true'] {
-  background-color: var(--ds-switch-track-on);
+/* Travels trackWidth − thumbSize − 2 × thumbInset when on. */
+.ds-switch__control[aria-checked='true'] ~ .ds-switch__thumb {
+  transform: translateX(var(--ds-switch-thumb-travel));
 }
 
-.ds-switch__control[aria-checked='true']::before {
-  transform: translateX(
-    calc(var(--ds-switch-track-width) - var(--ds-switch-thumb-size) - 2 * var(--ds-switch-thumb-inset))
-  );
-}
-
-/* RTL: the thumb travels toward the inline end, which is leftward. */
-[dir='rtl'] .ds-switch__control[aria-checked='true']::before {
-  transform: translateX(
-    calc(-1 * (var(--ds-switch-track-width) - var(--ds-switch-thumb-size) - 2 * var(--ds-switch-thumb-inset)))
-  );
+/* RTL: the thumb travels toward the inline end, which is leftward. `:dir(rtl)` rather than an
+   ancestor [dir='rtl'] selector, which misses an inherited direction. */
+.ds-switch__control[aria-checked='true'] ~ .ds-switch__thumb:dir(rtl) {
+  transform: translateX(calc(-1 * var(--ds-switch-thumb-travel)));
 }
 
 /* focus-visible: drawn around the track, offset by focusRingWidth like the other controls. Never removed. */
@@ -119,7 +143,8 @@
   outline-offset: var(--ds-switch-focus-ring-width);
 }
 
-/* disabled: stays focusable and readable; the track (with its thumb), label and description dim. */
+/* disabled: stays focusable and readable; the track (with its thumb), label and description dim —
+   on the slot and the text column, never on the composed description Text itself. */
 .ds-switch--disabled,
 .ds-switch--disabled .ds-switch__control,
 .ds-switch--disabled .ds-switch__label {
@@ -131,18 +156,10 @@
   opacity: var(--ds-switch-disabled-opacity);
 }
 
-/* transition: thumb travel and track color, with motion.easing.standard. */
-.ds-switch__control {
-  transition: background-color var(--ds-switch-transition) var(--motion-easing-standard);
-}
-.ds-switch__control::before {
-  transition: transform var(--ds-switch-transition) var(--motion-easing-standard);
-}
-
-/* Reduced motion: the thumb jumps and the color changes instantly. */
+/* Reduced motion: the thumb jumps and the track color changes instantly. */
 @media (prefers-reduced-motion: reduce) {
   .ds-switch__control,
-  .ds-switch__control::before {
+  .ds-switch__thumb {
     transition: none;
   }
 }

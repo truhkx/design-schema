@@ -7,6 +7,7 @@
   --ds-radio-group-control-border-width: var(--border-width-thin);
   --ds-radio-group-control-selected-background: var(--color-control-selected-background);
   --ds-radio-group-indicator: var(--color-control-selected-background);
+  --ds-radio-group-indicator-inset: var(--space-1);
   --ds-radio-group-control-border-invalid: var(--color-border-danger);
   --ds-radio-group-control-size: var(--space-5);
   --ds-radio-group-control-radius: var(--radius-full);
@@ -104,15 +105,17 @@
   appearance: none;
 }
 
-/* indicator: the centre dot, controlSize minus 2 × space.1 in diameter. */
+/* indicator: the centre dot, controlSize minus 2 × indicatorInset in diameter, always a circle
+   (it does not follow controlRadius). Its size is fixed, so the thicker focus border eats into the
+   inset rather than shrinking the dot. */
 .ds-radio-group__control::before {
   content: '';
   display: block;
-  inline-size: calc(var(--ds-radio-group-control-size) - 2 * var(--space-1));
-  block-size: calc(var(--ds-radio-group-control-size) - 2 * var(--space-1));
+  inline-size: calc(var(--ds-radio-group-control-size) - 2 * var(--ds-radio-group-indicator-inset));
+  block-size: calc(var(--ds-radio-group-control-size) - 2 * var(--ds-radio-group-indicator-inset));
   border-radius: var(--radius-full);
   background-color: var(--ds-radio-group-indicator);
-  transform: scale(0);
+  opacity: 0;
 }
 
 /* controlSelectedBackground: selected border color; the fill stays controlBackground. */
@@ -121,7 +124,7 @@
 }
 
 .ds-radio-group__control:checked::before {
-  transform: scale(1);
+  opacity: 1;
 }
 
 /* controlBorderInvalid: aria-invalid lives on the fieldset only. */
@@ -158,14 +161,18 @@
   opacity: var(--ds-radio-group-disabled-opacity);
 }
 
-/* transition: border and dot; removed under reduced motion. */
+/* transition: the selected border color and the dot's opacity, fading in and out. The focus border
+   (color and width) and the invalid border switch instantly, so neither is in the transition and
+   both states clear it. Removed entirely under reduced motion. */
 @media (prefers-reduced-motion: no-preference) {
   .ds-radio-group__control {
-    transition:
-      border-color var(--ds-radio-group-transition) var(--motion-easing-standard),
-      border-width var(--ds-radio-group-transition) var(--motion-easing-standard);
+    transition: border-color var(--ds-radio-group-transition) var(--motion-easing-standard);
   }
   .ds-radio-group__control::before {
-    transition: transform var(--ds-radio-group-transition) var(--motion-easing-standard);
+    transition: opacity var(--ds-radio-group-transition) var(--motion-easing-standard);
+  }
+  .ds-radio-group__control:focus-visible,
+  .ds-radio-group--invalid .ds-radio-group__control {
+    transition: none;
   }
 }

@@ -12,6 +12,8 @@ interface DisclosureArgs {
   defaultOpen: boolean;
   disabled: boolean;
   keepMounted: boolean;
+  /** Controlled open state. Bound as a property: a missing `open` attribute means uncontrolled. */
+  open?: boolean | undefined;
   headingLevel?: DisclosureHeadingLevel | undefined;
 }
 
@@ -25,20 +27,25 @@ const meta: Meta<DisclosureArgs> = {
     defaultOpen: { control: 'boolean' },
     disabled: { control: 'boolean' },
     keepMounted: { control: 'boolean' },
+    open: { control: 'boolean' },
     headingLevel: { control: 'select', options: [undefined, '2', '3', '4', '5', '6'] },
   },
   args: {
     summary: 'What happens if I cancel?',
-    children: 'Your plan stays active until the end of the billing period.',
+    children:
+      'You keep access until the end of the current billing period. Your data is kept for 30 days after that, then deleted.',
     defaultOpen: false,
     disabled: false,
     keepMounted: false,
+    open: undefined,
     headingLevel: undefined,
   },
+  decorators: [(story) => html`<div style="max-inline-size: 32rem">${story()}</div>`],
   render: (args) => html`
     <ds-disclosure
       summary=${args.summary}
       heading-level=${ifDefined(args.headingLevel)}
+      .open=${args.open}
       ?default-open=${args.defaultOpen}
       ?disabled=${args.disabled}
       ?keep-mounted=${args.keepMounted}
@@ -60,12 +67,7 @@ export const HeadingLevel4: Story = { args: { headingLevel: '4' } };
 export const HeadingLevel5: Story = { args: { headingLevel: '5' } };
 export const HeadingLevel6: Story = { args: { headingLevel: '6' } };
 
-/* boolean states */
-export const DefaultOpenTrue: Story = { args: { defaultOpen: true } };
-export const KeepMountedTrue: Story = { args: { keepMounted: true } };
-export const DisabledOpen: Story = { args: { disabled: true, defaultOpen: true } };
-
-/* examples */
+/* examples — exactly their `given` as args */
 export const FaqAnswer: Story = {
   args: {
     summary: 'What happens if I cancel?',
@@ -98,17 +100,23 @@ export const Disabled: Story = {
   },
 };
 
+/* states */
+export const Open: Story = { args: { defaultOpen: true } };
+export const Controlled: Story = { args: { open: true } };
+export const KeepMounted: Story = { args: { keepMounted: true } };
+
+/* accordion: independent disclosures stacked; nothing closes its siblings. */
 export const Accordion: Story = {
-  render: () => html`
-    <ds-stack gap="0">
-      <ds-disclosure summary="Can I change plans later?" heading-level="3">
-        <ds-text>Yes. Upgrades apply immediately; downgrades apply at the next renewal.</ds-text>
+  render: (args) => html`
+    <ds-stack gap="none">
+      <ds-disclosure summary="What happens if I cancel?" heading-level="3" ?disabled=${args.disabled}>
+        <ds-text>${args.children}</ds-text>
       </ds-disclosure>
-      <ds-disclosure summary="Do you offer refunds?" heading-level="3">
-        <ds-text>Annual plans can be refunded within 14 days of purchase.</ds-text>
+      <ds-disclosure summary="Can I change plans later?" heading-level="3" ?disabled=${args.disabled}>
+        <ds-text>Yes. Changes take effect at the next billing date.</ds-text>
       </ds-disclosure>
-      <ds-disclosure summary="What happens if I cancel?" heading-level="3">
-        <ds-text>Your workspace becomes read-only at the end of the billing period.</ds-text>
+      <ds-disclosure summary="Do you offer refunds?" heading-level="3" ?disabled=${args.disabled}>
+        <ds-text>Within 14 days of a charge, in full.</ds-text>
       </ds-disclosure>
     </ds-stack>
   `,

@@ -45,7 +45,8 @@ export type CheckboxOverridableBinding =
   | 'disabledOpacity'
   | 'transition';
 
-const HOOKS: Record<CheckboxOverridableBinding, string> = {
+/** Hooks on `:host`. `helperSize` has none: it reaches the description and error Texts only through their `overrides`. */
+const HOOKS: Record<Exclude<CheckboxOverridableBinding, 'helperSize'>, string> = {
   controlBackground: '--ds-checkbox-control-background',
   controlBorderWidth: '--ds-checkbox-control-border-width',
   pressedOverlay: '--ds-checkbox-pressed-overlay',
@@ -56,7 +57,6 @@ const HOOKS: Record<CheckboxOverridableBinding, string> = {
   partGap: '--ds-checkbox-part-gap',
   labelSize: '--ds-checkbox-label-size',
   labelWeight: '--ds-checkbox-label-weight',
-  helperSize: '--ds-checkbox-helper-size',
   fontFamily: '--ds-checkbox-font-family',
   lineHeight: '--ds-checkbox-line-height',
   disabledOpacity: '--ds-checkbox-disabled-opacity',
@@ -73,7 +73,7 @@ const HOOKS: Record<CheckboxOverridableBinding, string> = {
  * indicator span stacked over it. The `<label for>` sits in the same root, so a
  * click on it toggles natively; a click on the description or the gap is
  * forwarded to the control. The error message sits below the row, outside the
- * hit area.
+ * hit area, indented so it lines up with the label.
  *
  * The element is form-associated via `ElementInternals`
  * (`setFormValue(checked ? value : null)`), so a native `<form>` sees it, and
@@ -115,11 +115,15 @@ export class DsCheckbox extends LitElement {
       --ds-checkbox-part-gap: var(--space-1);
       --ds-checkbox-label-size: var(--font-size-md);
       --ds-checkbox-label-weight: var(--font-weight-regular);
-      --ds-checkbox-helper-size: var(--font-size-sm);
       --ds-checkbox-font-family: var(--font-family-body);
       --ds-checkbox-line-height: var(--font-line-height-normal);
       --ds-checkbox-disabled-opacity: var(--opacity-disabled);
       --ds-checkbox-transition: var(--motion-duration-fast);
+      /* indicator, indicatorStroke, helperSize, descriptionText and errorText have no hook: the
+         composed Icon and Texts realise them through their own props and overrides. */
+
+      /* The label's first line box; the control centres on it and the row is padded around it. */
+      --ds-checkbox-line-box: calc(var(--ds-checkbox-label-size) * var(--ds-checkbox-line-height));
     }
 
     :host([hidden]) {
@@ -133,34 +137,41 @@ export class DsCheckbox extends LitElement {
       gap: var(--ds-checkbox-part-gap);
     }
 
-    /* gap, minTarget: the whole row, gap included, is the hit area; no vertical padding */
+    /* minTarget: the whole row, gap included, is the hit area. The children align to the start of
+       the cross axis and the padding makes a single-line row exactly minTarget tall, so a wrapping
+       label or a description grows the row downwards without pulling the control off the first line. */
     .row {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: var(--ds-checkbox-gap);
-      min-block-size: var(--size-target-comfortable);
+      padding-block: calc((var(--size-target-comfortable) - var(--ds-checkbox-line-box)) / 2);
       cursor: pointer;
     }
 
-    /* The control and its indicator stacked in one cell. */
+    /* The box is one label line tall and stacks the control and the indicator in one grid cell,
+       which centres the control on the label's first line (and in the row when the label is hidden). */
     .box {
-      display: grid;
-      flex: none;
+      display: inline-grid;
+      place-items: center;
+      flex: 0 0 auto;
+      block-size: var(--ds-checkbox-line-box);
     }
     .box > * {
       grid-area: 1 / 1;
     }
 
+    /* control: a native input drawn with the control tokens, never a hidden input under a fake box. */
     .control {
       box-sizing: border-box;
       inline-size: var(--ds-checkbox-control-size);
       block-size: var(--ds-checkbox-control-size);
       margin: 0;
+      padding: 0;
       border-width: var(--ds-checkbox-control-border-width);
       border-style: solid;
       border-color: var(--color-control-border);
       border-radius: var(--ds-checkbox-control-radius);
-      background: var(--ds-checkbox-control-background);
+      background-color: var(--ds-checkbox-control-background);
       cursor: pointer;
       appearance: none;
       -webkit-appearance: none;
@@ -169,45 +180,55 @@ export class DsCheckbox extends LitElement {
         border-color var(--ds-checkbox-transition) var(--motion-easing-standard);
     }
 
-    /* pressedOverlay: an unchecked, not-mixed, enabled box shows controlSelectedBackground at this opacity */
+    /* Border color precedence: invalid, then selected, then rest — so these three rules stay in order. */
+
+    /* controlSelectedBackground: checked and indeterminate fill; the border takes the same color */
+    .control:checked,
+    .control:indeterminate {
+      border-color: var(--color-control-selected-background);
+      background-color: var(--color-control-selected-background);
+    }
+
+    /* controlBorderInvalid: replaces the border color in every state; the selected fill is unchanged */
+    :host([invalid]) .control {
+      border-color: var(--ds-checkbox-control-border-invalid);
+    }
+
+    /* pressedOverlay: an unchecked, not-mixed, enabled box shows controlSelectedBackground at this
+       opacity over controlBackground; the border is unchanged. A filled or disabled box shows none. */
     .row:not(.disabled) .control:active:not(:checked):not(:indeterminate) {
-      background: color-mix(
+      background-color: color-mix(
         in srgb,
         var(--color-control-selected-background) calc(var(--ds-checkbox-pressed-overlay) * 100%),
         var(--ds-checkbox-control-background)
       );
     }
 
-    /* controlSelectedBackground: checked and indeterminate fill; the border takes the same color */
-    .control:checked,
-    .control:indeterminate {
-      border-color: var(--color-control-selected-background);
-      background: var(--color-control-selected-background);
-    }
-
-    /* controlBorderInvalid */
-    :host([invalid]) .control {
-      border-color: var(--ds-checkbox-control-border-invalid);
-    }
-
-    /* focusRing, focusRingWidth */
+    /* focusRing, focusRingWidth: a separate outline, so an invalid box keeps controlBorderInvalid */
     .control:focus-visible {
       outline: var(--border-width-focus) solid var(--color-border-focus);
       outline-offset: var(--border-width-focus);
     }
 
-    /* indicator: the Icon centered in the control; clicks fall through to the input */
+    /* indicator: the Icon centred over the control; clicks fall through to the input */
     .indicator {
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: inline-flex;
       pointer-events: none;
     }
 
+    /* transition: fill and border only — the indicator is mounted and unmounted, never animated */
     @media (prefers-reduced-motion: reduce) {
       .control {
         transition: none;
       }
+    }
+
+    /* partGap: between label and description */
+    .text {
+      display: flex;
+      flex-direction: column;
+      gap: var(--ds-checkbox-part-gap);
+      min-inline-size: 0;
     }
 
     /* labelColor, labelSize, labelWeight, fontFamily, lineHeight: the label's own rule */
@@ -220,25 +241,21 @@ export class DsCheckbox extends LitElement {
       cursor: pointer;
     }
 
-    /* partGap: between label and description */
-    .text {
-      display: flex;
-      flex-direction: column;
-      gap: var(--ds-checkbox-part-gap);
-      min-inline-size: 0;
+    /* The error sits below the row, outside the hit area, indented by controlSize + gap so it lines
+       up with the label rather than the control. */
+    .error {
+      padding-inline-start: calc(var(--ds-checkbox-control-size) + var(--ds-checkbox-gap));
     }
 
     /* disabledOpacity: dims the control (with its indicator) and the label, not the description or error */
-    .row.disabled {
+    .row.disabled,
+    .row.disabled .control,
+    .row.disabled .label {
       cursor: not-allowed;
     }
     .row.disabled .box,
     .row.disabled .label {
       opacity: var(--ds-checkbox-disabled-opacity);
-    }
-    .row.disabled .control,
-    .row.disabled .label {
-      cursor: not-allowed;
     }
 
     .visually-hidden {
@@ -292,7 +309,7 @@ export class DsCheckbox extends LitElement {
 
   private checkedValue: boolean | undefined;
 
-  /** The live checked state, like a native input. The attribute is the initial state only; not reflected. */
+  /** The live checked state, like a native input: starts from the `checked` attribute, else `defaultChecked`, and follows every toggle. Not reflected. */
   get checked(): boolean {
     return this.checkedValue ?? this.defaultChecked;
   }
@@ -336,7 +353,8 @@ export class DsCheckbox extends LitElement {
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('data-ds', 'Checkbox');
-    this.setAttribute('data-ds-field', '');
+    // A checkbox has no useful blur moment, so `validate: blur` means "on change" for it.
+    this.setAttribute('data-ds-field', 'change');
   }
 
   /** The value `<ds-form>` collects: the checked boolean. */
@@ -376,6 +394,7 @@ export class DsCheckbox extends LitElement {
     this.formDisabled = disabled;
   }
 
+  /** Back to the initial state: the `checked` attribute, else `defaultChecked`. */
   formResetCallback(): void {
     this.checked = this.hasAttribute('checked') || this.defaultChecked;
     this.mixedCleared = false;
@@ -395,7 +414,8 @@ export class DsCheckbox extends LitElement {
   }
 
   protected override updated(): void {
-    // `indeterminate` has no attribute; it is a DOM property only.
+    // `indeterminate` has no attribute; it is a DOM property only. Compare first: an unconditional
+    // write would re-enter the update cycle.
     if (this.inputEl && this.inputEl.indeterminate !== this.showMixed) {
       this.inputEl.indeterminate = this.showMixed;
     }
@@ -462,6 +482,7 @@ export class DsCheckbox extends LitElement {
         ${message
           ? html`<ds-text
               id="error"
+              class="error"
               role="alert"
               part="errorMessage"
               data-part="errorMessage"
@@ -508,7 +529,7 @@ export class DsCheckbox extends LitElement {
   private handleRowClick(event: MouseEvent): void {
     const input = this.inputEl;
     const target = event.target;
-    if (!input || !(target instanceof Element)) {
+    if (!input || !(target instanceof Element) || this.isDisabled) {
       return;
     }
     // The input handles itself, and a label click is already forwarded to it natively.
@@ -535,6 +556,7 @@ export class DsCheckbox extends LitElement {
       return;
     }
     const next = input.checked;
+    // A toggle clears the mixed indicator until `indeterminate` changes value again.
     if (this.indeterminate) {
       this.mixedCleared = true;
     }
@@ -572,9 +594,8 @@ export class DsCheckbox extends LitElement {
   }
 
   private applyOverrides(): void {
-    for (const binding of Object.keys(HOOKS) as CheckboxOverridableBinding[]) {
+    for (const [binding, hook] of Object.entries(HOOKS) as [keyof typeof HOOKS, string][]) {
       const ref = this.overrides?.[binding];
-      const hook = HOOKS[binding];
       if (ref === undefined) {
         this.style.removeProperty(hook);
       } else {

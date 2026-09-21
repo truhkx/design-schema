@@ -51,8 +51,12 @@ export interface LandmarkProps
 declare const process: { env: Record<string, string | undefined> } | undefined;
 const isDev: boolean = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
 
+/** Development warnings, verbatim from the doc. */
 const COPY = {
+  duplicateMain: 'Landmark: role "main" appears more than once in this document.',
   missingLabel: 'Landmark: role "{role}" is only a landmark when it has a label.',
+  sharedLabel: 'Landmark: two "{role}" landmarks share the label "{label}"; give each a distinct label.',
+  bothUnlabelled: 'Landmark: two "{role}" landmarks both lack a label; give each a distinct label.',
   labelNotTaken: 'Landmark: role "{role}" does not take a label; it was not rendered.',
 } as const;
 
@@ -90,7 +94,7 @@ const DISTINGUISHED_ROLES: ReadonlySet<LandmarkRole> = new Set<LandmarkRole>([
   'form',
 ]);
 
-/** The role a rendered Landmark carries, read back from the DOM. */
+/** The role a rendered Landmark carries: its `role` attribute, else the role its tag implies. */
 function roleOf(el: Element): string | undefined {
   return el.getAttribute('role') ?? IMPLIED_ROLE[el.tagName.toLowerCase() as LandmarkElement];
 }
@@ -126,14 +130,14 @@ function warn(node: HTMLElement, role: LandmarkRole, labelDropped: boolean): voi
       (other.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0,
   );
   if (role === 'main') {
-    if (earlier.length > 0) console.warn('Landmark: a document should contain exactly one "main" landmark.');
+    if (earlier.length > 0) console.warn(COPY.duplicateMain);
     return;
   }
   if (earlier.some((other) => nameOf(other, root) === own)) {
     console.warn(
       own === null
-        ? `Landmark: two "${role}" landmarks in the same root both lack a label; give each a distinct label.`
-        : `Landmark: two "${role}" landmarks in the same root share the label "${own}"; give each a distinct label.`,
+        ? COPY.bothUnlabelled.replace('{role}', role)
+        : COPY.sharedLabel.replace('{role}', role).replace('{label}', own),
     );
   }
 }
@@ -156,6 +160,7 @@ export function Landmark({
   label,
   children,
   as,
+  'aria-labelledby': ariaLabelledBy,
   ...rest
 }: LandmarkProps & { ref?: Ref<HTMLElement> | undefined }): ReactElement {
   const nodeRef = useRef<HTMLElement>(null);
@@ -170,13 +175,16 @@ export function Landmark({
     tagName === 'footer' ||
     (as !== undefined && as !== DEFAULT_ELEMENT[role]) ||
     IMPLIED_ROLE[tagName] !== role;
-  // An empty string counts as absent; banner, main and contentinfo never render a label.
+  // An empty string counts as absent. banner, main and contentinfo never render a name, whether it
+  // came from `label` or from a composite's `aria-labelledby`.
+  const takesLabel = !UNLABELLED_ROLES.has(role);
   const hasLabel = label !== undefined && label !== '';
-  const labelDropped = hasLabel && UNLABELLED_ROLES.has(role);
-  const ariaLabel = hasLabel && !labelDropped ? label : undefined;
-  const labelledBy = rest['aria-labelledby'];
+  const hasLabelledBy = ariaLabelledBy !== undefined && ariaLabelledBy !== '';
+  const labelDropped = (hasLabel || hasLabelledBy) && !takesLabel;
+  const ariaLabel = takesLabel && hasLabel ? label : undefined;
+  const labelledBy = takesLabel && hasLabelledBy ? ariaLabelledBy : undefined;
 
-  // Fires when the combination appears or changes, not on every render.
+  // Fires when the offending combination appears or changes, not on every render.
   useEffect(() => {
     if (!isDev || !nodeRef.current) return;
     warn(nodeRef.current, role, labelDropped);
@@ -184,15 +192,17 @@ export function Landmark({
 
   // createElement typed on HTMLElement: JSX over a union of tags would demand a ref that fits
   // every element type at once.
-  return createElement<HTMLAttributes<HTMLElement> & { 'data-ds': string }, HTMLElement>(
+  return createElement<HTMLAttributes<HTMLElement> & { 'data-ds': string; 'data-part': string }, HTMLElement>(
     tagName,
     {
       ...rest,
       ref: nodeRef,
       className: 'ds-landmark',
       'data-ds': 'Landmark',
+      'data-part': 'region',
       role: explicitRole ? role : undefined,
       'aria-label': ariaLabel,
+      'aria-labelledby': labelledBy,
     },
     children,
   );

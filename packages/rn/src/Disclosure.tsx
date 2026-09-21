@@ -25,6 +25,7 @@ export type DisclosureOverridableBinding =
   | 'triggerFontFamily'
   | 'triggerFontSize'
   | 'triggerFontWeight'
+  | 'triggerLineHeight'
   | 'triggerRadius'
   | 'panelPaddingBlock'
   | 'panelPaddingInline'
@@ -57,6 +58,9 @@ export interface DisclosureProps {
   /** The root view. */
   ref?: React.Ref<ViewInstance> | undefined;
 }
+
+/** The part of a DOM element react-native-web hands back for a `View`; `Platform.OS === 'web'` only. */
+type WebElement = { setAttribute(name: string, value: string): void; removeAttribute(name: string): void };
 
 /** Chevron rotation: pointing along the reading direction when closed, down when open. */
 const CHEVRON_CLOSED = '0deg';
@@ -105,24 +109,48 @@ export function Disclosure({
   const isOpen = isControlled ? open : internalOpen;
   const rotation = React.useRef(new Animated.Value(isOpen ? 1 : 0)).current;
 
-  // A controlled `open` change the trigger's own press already reported ('pointer') is not
-  // reported again; one the consumer made on their own fires with 'controlled'.
-  const mountedRef = React.useRef(false);
-  const previousOpenRef = React.useRef(isOpen);
-  const selfEmittedRef = React.useRef<boolean | null>(null);
+  // react-native-web 0.21 ignores `accessibilityState`, so the disabled state would never reach the
+  // DOM, and passing Pressable's own `disabled` would drop the trigger from the tab order — which
+  // `accessibilityState.disabled` plus a press guard exists to avoid. So on web the attribute is set
+  // on the DOM node itself: the trigger stays focusable and is still announced (and audited) as
+  // disabled, which is also what keeps the dimmed trigger out of axe's contrast check, as in Button.
+  const triggerRef = React.useRef<ViewInstance>(null);
   React.useEffect(() => {
-    if (!mountedRef.current) {
-      mountedRef.current = true;
-      previousOpenRef.current = isOpen;
+    if (Platform.OS !== 'web') {
       return;
     }
-    if (isControlled && previousOpenRef.current !== isOpen && selfEmittedRef.current !== isOpen) {
-      onToggle?.(isOpen, 'controlled');
+    const node = triggerRef.current as unknown as WebElement | null;
+    if (node === null) {
+      return;
     }
-    selfEmittedRef.current = null;
+    if (disabled) {
+      node.setAttribute('aria-disabled', 'true');
+    } else {
+      node.removeAttribute('aria-disabled');
+    }
+  }, [disabled]);
+
+  // Controlled: a press is reported at once (the state changes only when the consumer echoes it),
+  // and the `open` change that echoes that request does not fire again; any other `open` change
+  // reports 'controlled'. Uncontrolled: the press is reported after the new state has committed.
+  // Only the latest request is remembered, and the next `open` change clears it. Nothing fires on mount.
+  const previousOpenRef = React.useRef(isOpen);
+  const selfEmittedRef = React.useRef<boolean | null>(null);
+  const pendingPressRef = React.useRef(false);
+  React.useEffect(() => {
+    if (previousOpenRef.current === isOpen) return;
     previousOpenRef.current = isOpen;
+    const echo = selfEmittedRef.current === isOpen;
+    selfEmittedRef.current = null;
+    const pressed = pendingPressRef.current;
+    pendingPressRef.current = false;
+    if (isControlled) {
+      if (!echo) onToggle?.(isOpen, 'controlled');
+    } else if (pressed) {
+      onToggle?.(isOpen, 'pointer');
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, isControlled]);
+  }, [isOpen]);
 
   const triggerPaddingBlock = overrides?.triggerPaddingBlock
     ? (resolveToken(t, overrides.triggerPaddingBlock) as number)
@@ -140,6 +168,9 @@ export function Disclosure({
   const triggerFontWeight = overrides?.triggerFontWeight
     ? (resolveToken(t, overrides.triggerFontWeight) as number)
     : t.fontWeightMedium;
+  const triggerLineHeight = overrides?.triggerLineHeight
+    ? (resolveToken(t, overrides.triggerLineHeight) as number)
+    : t.fontLineHeightNormal;
   const triggerRadius = overrides?.triggerRadius ? (resolveToken(t, overrides.triggerRadius) as number) : t.radiusMd;
   const panelPaddingBlock = overrides?.panelPaddingBlock
     ? (resolveToken(t, overrides.panelPaddingBlock) as number)
@@ -178,12 +209,14 @@ export function Disclosure({
       return;
     }
     const next = !isOpen;
+    // `Pressable` cannot tell a hardware Enter/Space from a tap, so a press is always 'pointer'.
     if (isControlled) {
       selfEmittedRef.current = next;
+      onToggle?.(next, 'pointer');
     } else {
+      pendingPressRef.current = true;
       setInternalOpen(next);
     }
-    onToggle?.(next, 'pointer');
   };
 
   const triggerStyle = ({ pressed }: PressableStateCallbackType): ViewStyle => ({
@@ -206,7 +239,7 @@ export function Disclosure({
     fontFamily: triggerFontFamily,
     fontSize: triggerFontSize,
     fontWeight: toFontWeight(triggerFontWeight),
-    lineHeight: toLineHeight(triggerFontSize, t.fontLineHeightNormal),
+    lineHeight: toLineHeight(triggerFontSize, triggerLineHeight),
     color: t.colorForeground,
     flexShrink: 1,
   };
@@ -231,10 +264,14 @@ export function Disclosure({
   return (
     <View ref={ref} testID="Disclosure">
       <Pressable
+        ref={triggerRef}
         testID="Disclosure.trigger"
         accessibilityRole="button"
         accessibilityLabel={summary}
         accessibilityState={{ expanded: isOpen, disabled }}
+        // react-native-web 0.21 ignores `accessibilityState`; this mirror is what carries the
+        // expanded state to the DOM (native merges both). `aria-disabled` is set in the effect above.
+        aria-expanded={isOpen}
         onPress={handlePress}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
@@ -250,6 +287,11 @@ export function Disclosure({
             overrides={{ size: overrides?.triggerFontSize ?? 'font.size.md' }}
           />
         </Animated.View>
+        {/*
+          The schema's stopgap: a plain `Text` carrying the same trigger bindings. The package
+          `Text` takes all four typography overrides but has no `accessibilityRole` prop, so it
+          cannot carry the header role `headingLevel` asks for.
+        */}
         <RNText accessibilityRole={headingLevel !== undefined ? 'header' : undefined} style={summaryStyle}>
           {summary}
         </RNText>

@@ -44,26 +44,27 @@
     }
   },
   "Alert.lit": {
-    "hash": "0bd47e44b3962ebf",
-    "lastAttemptHash": "0bd47e44b3962ebf",
-    "generatedAt": "2026-09-17T09:18:41+00:00",
+    "hash": "e50f5feeafc18028",
+    "lastAttemptHash": "e50f5feeafc18028",
+    "generatedAt": "2026-09-21T07:19:13+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.2333,
+    "costUsd": 2.2825,
     "files": [
       "packages/lit/src/Alert.stories.ts",
-      "packages/lit/src/Alert.test.ts",
       "packages/lit/src/Alert.ts"
     ],
-    "gaps": 9,
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "axe": true
     }
   },
   "AlertDialog.lit": {
@@ -141,16 +142,17 @@
     }
   },
   "Breadcrumb.lit": {
-    "hash": "6f3d27749e517947",
-    "lastAttemptHash": "6f3d27749e517947",
-    "generatedAt": "2026-09-17T09:26:28+00:00",
+    "hash": "e626315a01c5135b",
+    "lastAttemptHash": "e626315a01c5135b",
+    "generatedAt": "2026-09-21T07:40:10+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.8171,
+    "costUsd": 1.7728,
     "files": [
-      "packages/lit/src/Breadcrumb.test.ts",
-      "packages/lit/src/Breadcrumb.ts"
+      "packages/lit/src/Breadcrumb.stories.ts",
+      "packages/lit/src/Breadcrumb.ts",
+      "packages/lit/src/index.ts"
     ],
     "gaps": 6,
     "gates": {
@@ -159,7 +161,9 @@
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "axe": true
     }
   },
   "Button.lit": {
@@ -237,26 +241,27 @@
     }
   },
   "Checkbox.lit": {
-    "hash": "ebd3fc9e21a56446",
-    "lastAttemptHash": "ebd3fc9e21a56446",
-    "generatedAt": "2026-09-17T09:00:25+00:00",
+    "hash": "60dcf6ce0c0dc240",
+    "lastAttemptHash": "60dcf6ce0c0dc240",
+    "generatedAt": "2026-09-21T02:18:36+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.3324,
+    "costUsd": 2.3162,
     "files": [
       "packages/lit/src/Checkbox.stories.ts",
-      "packages/lit/src/Checkbox.test.ts",
       "packages/lit/src/Checkbox.ts"
     ],
-    "gaps": 7,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "axe": true
     }
   },
   "Combobox.lit": {
@@ -378,24 +383,28 @@
     }
   },
   "Disclosure.lit": {
-    "hash": "c7293cc06803c4fa",
-    "lastAttemptHash": "c7293cc06803c4fa",
-    "generatedAt": "2026-09-17T09:14:22+00:00",
+    "hash": "4b6ce65fe674187e",
+    "lastAttemptHash": "4b6ce65fe674187e",
+    "generatedAt": "2026-09-21T07:06:31+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.9132,
+    "costUsd": 3.8251,
     "files": [
+      "packages/lit/src/Disclosure.stories.ts",
+      "packages/lit/src/Disclosure.test.ts",
       "packages/lit/src/Disclosure.ts"
     ],
-    "gaps": 5,
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "axe": true
     }
   },
   "Divider.lit": {
@@ -446,26 +455,27 @@
     }
   },
   "Fieldset.lit": {
-    "hash": "32fef327e70c3283",
-    "lastAttemptHash": "32fef327e70c3283",
-    "generatedAt": "2026-09-17T09:35:29+00:00",
+    "hash": "9c06c7597370e536",
+    "lastAttemptHash": "9c06c7597370e536",
+    "generatedAt": "2026-09-21T08:04:56+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.2444,
+    "costUsd": 2.2243,
     "files": [
       "packages/lit/src/Fieldset.stories.ts",
-      "packages/lit/src/Fieldset.test.ts",
       "packages/lit/src/Fieldset.ts"
     ],
-    "gaps": 8,
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "axe": true
     }
   },
   "FocusScope.lit": {
@@ -600,13 +610,13 @@
     }
   },
   "Landmark.lit": {
-    "hash": "2ee55316882d89f5",
-    "lastAttemptHash": "2ee55316882d89f5",
-    "generatedAt": "2026-09-17T09:23:00+00:00",
+    "hash": "8ad505366cc51454",
+    "lastAttemptHash": "8ad505366cc51454",
+    "generatedAt": "2026-09-21T07:30:57+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.0773,
+    "costUsd": 2.4146,
     "files": [
       "packages/lit/src/Landmark.stories.ts",
       "packages/lit/src/Landmark.test.ts",
@@ -619,7 +629,9 @@
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "axe": true
     }
   },
   "Link.lit": {
@@ -699,24 +711,27 @@
     }
   },
   "Meter.lit": {
-    "hash": "6b13a3817f1bd747",
-    "lastAttemptHash": "6b13a3817f1bd747",
-    "generatedAt": "2026-09-17T09:30:48+00:00",
+    "hash": "e1c9829c2a5f8589",
+    "lastAttemptHash": "e1c9829c2a5f8589",
+    "generatedAt": "2026-09-21T07:52:55+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.873,
+    "costUsd": 1.5495,
     "files": [
+      "packages/lit/src/Meter.stories.ts",
       "packages/lit/src/Meter.ts"
     ],
-    "gaps": 5,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "axe": true
     }
   },
   "NumberInput.lit": {
@@ -810,24 +825,28 @@
     }
   },
   "RadioGroup.lit": {
-    "hash": "de14d7aa9dea2bd8",
-    "lastAttemptHash": "de14d7aa9dea2bd8",
-    "generatedAt": "2026-09-17T09:10:31+00:00",
+    "hash": "6779ff2cac50d4e8",
+    "lastAttemptHash": "6779ff2cac50d4e8",
+    "generatedAt": "2026-09-21T06:51:53+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.3508,
+    "costUsd": 3.8721,
     "files": [
+      "packages/lit/src/RadioGroup.stories.ts",
       "packages/lit/src/RadioGroup.ts"
     ],
-    "gaps": 7,
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
     }
   },
   "Search.lit": {
@@ -1014,27 +1033,27 @@
     }
   },
   "Switch.lit": {
-    "hash": "b5279ee2945325f6",
-    "lastAttemptHash": "b5279ee2945325f6",
-    "generatedAt": "2026-09-17T09:05:27+00:00",
+    "hash": "dbc65bc098cd416f",
+    "lastAttemptHash": "dbc65bc098cd416f",
+    "generatedAt": "2026-09-21T06:29:07+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.2322,
+    "costUsd": 3.1692,
     "files": [
       "packages/lit/src/Switch.stories.ts",
-      "packages/lit/src/Switch.test.ts",
-      "packages/lit/src/Switch.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/Switch.ts"
     ],
-    "gaps": 7,
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "axe": true
     }
   },
   "Table.lit": {

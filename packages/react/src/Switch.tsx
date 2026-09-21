@@ -36,7 +36,11 @@ export type SwitchOverridableBinding =
   | 'disabledOpacity'
   | 'transition';
 
-/** helperSize has no hook: it reaches the description Text only through its `fontSize` override. */
+/**
+ * helperSize has no hook: like every binding that is only forwarded to a composed child, it reaches
+ * the description Text through its `fontSize` override alone. fontFamily and lineHeight are both a
+ * hook (the label's own rule) and a forward.
+ */
 const OVERRIDE_HOOK: Partial<Record<SwitchOverridableBinding, string>> = {
   trackWidth: '--ds-switch-track-width',
   trackHeight: '--ds-switch-track-height',
@@ -97,14 +101,22 @@ export interface SwitchProps
   label: string;
   /**
    * Optional field name. When inside a Form the state is collected as a boolean on every platform;
-   * most switches are not in forms. A Switch never validates and never appears in an error summary.
+   * most switches are not in forms. Without `name` a Switch inside a Form does not register (it
+   * contributes no key) and its id comes from `useId()`, not the Form's idBase. A Switch never
+   * validates and never appears in an error summary.
    */
   name?: string | undefined;
-  /** Controlled state: a controlled switch shows a new state only once this prop changes. Omit for an uncontrolled control. */
+  /**
+   * Controlled state: a controlled switch shows a new state only once this prop changes. Omit for an
+   * uncontrolled control.
+   */
   checked?: boolean | undefined;
   /** Initial state for an uncontrolled control. */
   defaultChecked?: boolean | undefined;
-  /** Cannot be toggled. Stays visible, readable and focusable. Still registered with the Form. */
+  /**
+   * Cannot be toggled. Stays visible, readable and focusable. A disabled switch contributes no key
+   * to the Form's values: it unregisters while disabled and registers again when re-enabled.
+   */
   disabled?: boolean | undefined;
   /** Persistent helper text below the label explaining the effect. */
   description?: string | undefined;
@@ -115,7 +127,10 @@ export interface SwitchProps
   labelPosition?: SwitchLabelPosition | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<SwitchOverridableBinding, TokenRef | undefined>> | undefined;
-  /** Fired when the user changes the state, with the new boolean. The change is already in effect; there is nothing to submit. */
+  /**
+   * Fired when the user changes the state, with the new boolean. The change is already in effect;
+   * there is nothing to submit. A controlled prop change fires nothing, and nothing fires on mount.
+   */
   onChange?: ((checked: boolean) => void) | undefined;
 }
 
@@ -150,8 +165,9 @@ export function Switch({
   // The root is the row; the forwarded ref resolves to the interactive <input>, as in Checkbox.
   useImperativeHandle(ref, () => inputRef.current as HTMLInputElement, []);
 
-  // The input stays natively uncontrolled (no React-held `checked`); the component holds the state
-  // and mirrors it as aria-checked and, when it differs, onto the DOM property.
+  // The input stays natively uncontrolled (no React-held `checked` on the element, so a prevented
+  // click on a disabled switch cannot leave the DOM out of step); the component holds the state and
+  // mirrors it as aria-checked and, when it differs, onto the DOM property.
   const isControlled = checked !== undefined;
   const [uncontrolledChecked, setUncontrolledChecked] = useState(defaultChecked);
   const isChecked = isControlled ? checked : uncontrolledChecked;
@@ -165,9 +181,11 @@ export function Switch({
   const latest = useRef({ label, disabled: isDisabled, checked: isChecked });
   latest.current = { label, disabled: isDisabled, checked: isChecked };
 
-  // A Switch has no error state: it contributes its boolean under `name` and never validates.
+  // A Switch contributes its boolean under `name` and never validates — it has no error state. A
+  // nameless switch never registers, and a disabled one unregisters until it is enabled again, so
+  // neither contributes a key to the Form's values.
   useEffect(() => {
-    if (!form || !name) return undefined;
+    if (!form || !name || isDisabled) return undefined;
     return form.register({
       name,
       id,
@@ -179,7 +197,7 @@ export function Switch({
       validate: () => null,
       focus: () => inputRef.current?.focus(),
     });
-  }, [form, name, id]);
+  }, [form, name, id, isDisabled]);
 
   const handleClick = (event: MouseEvent<HTMLInputElement>) => {
     if (isDisabled) {
@@ -195,10 +213,10 @@ export function Switch({
       event.preventDefault();
       return;
     }
+    // Every native toggle flips the value, so there is no next-equals-checked case to guard here.
     const next = event.target.checked;
-    if (next === isChecked) return;
     if (isControlled) {
-      // Controlled: report the change but show it only once the prop changes.
+      // Controlled: report the change, then write the prop back, so the track follows the prop.
       event.target.checked = isChecked;
     } else {
       setUncontrolledChecked(next);
@@ -224,36 +242,46 @@ export function Switch({
 
   return (
     <div className={classes} data-ds="Switch" data-ds-field style={rootStyle} onClick={handleRowClick}>
-      <div className="ds-switch__text">
-        <label ref={labelRef} htmlFor={id} className="ds-switch__label" data-part="label">
-          {label}
-        </label>
-        {description ? (
-          <Text element="p" id={descriptionId} data-part="description" size="sm" tone="muted" overrides={helperOverrides}>
-            {description}
-          </Text>
-        ) : null}
+      {/* The row centres this content box in minTarget; inside it the track stays on the first line. */}
+      <div className="ds-switch__row">
+        <div className="ds-switch__text">
+          <label ref={labelRef} htmlFor={id} className="ds-switch__label" data-part="label">
+            {label}
+          </label>
+          {description ? (
+            <Text element="p" id={descriptionId} data-part="description" size="sm" tone="muted" overrides={helperOverrides}>
+              {description}
+            </Text>
+          ) : null}
+        </div>
+        {/* The slot is one label line tall, so the track centres on the label's first line. */}
+        <span className="ds-switch__slot">
+          {/* The track wrapper stacks the thumb over the input, as Checkbox's box does. */}
+          <span className="ds-switch__track-wrap">
+            {/* track: the input itself, drawn with appearance: none. */}
+            <input
+              {...rest}
+              ref={inputRef}
+              id={id}
+              type="checkbox"
+              role="switch"
+              name={name}
+              defaultChecked={isChecked}
+              className="ds-switch__control"
+              data-part="track"
+              aria-checked={isChecked ? 'true' : 'false'}
+              aria-describedby={description ? descriptionId : undefined}
+              aria-disabled={isDisabled ? 'true' : undefined}
+              onClick={handleClick}
+              onChange={handleChange}
+            />
+            {/* thumb: a Switch-owned span stacked over the input, not a ::before — Firefox draws no
+                pseudo-element on an appearance: none input. Decorative and click-through; the input
+                carries the state, and the thumb keys off its aria-checked. */}
+            <span className="ds-switch__thumb" data-part="thumb" aria-hidden="true" />
+          </span>
+        </span>
       </div>
-      {/* The slot is one label line tall, so the track centres on the label's first line. */}
-      <span className="ds-switch__slot">
-        {/* track: the input itself; the thumb is its ::before, so it has no data-part hook. */}
-        <input
-          {...rest}
-          ref={inputRef}
-          id={id}
-          type="checkbox"
-          role="switch"
-          name={name}
-          defaultChecked={isChecked}
-          className="ds-switch__control"
-          data-part="track"
-          aria-checked={isChecked ? 'true' : 'false'}
-          aria-describedby={description ? descriptionId : undefined}
-          aria-disabled={isDisabled ? 'true' : undefined}
-          onClick={handleClick}
-          onChange={handleChange}
-        />
-      </span>
     </div>
   );
 }

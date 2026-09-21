@@ -7,6 +7,8 @@ import type { SwitchLabelPosition } from './Switch.js';
 interface SwitchArgs {
   label: string;
   name: string;
+  /** Lit has no controlled mode: the attribute is the initial state and the property is the live one. */
+  checked?: boolean | undefined;
   defaultChecked: boolean;
   disabled: boolean;
   description?: string | undefined;
@@ -21,12 +23,14 @@ const meta: Meta<SwitchArgs> = {
   },
   argTypes: {
     labelPosition: { control: 'select', options: ['start', 'end'] },
+    checked: { control: 'boolean' },
     defaultChecked: { control: 'boolean' },
     disabled: { control: 'boolean' },
   },
   args: {
     label: 'Email notifications',
     name: '',
+    checked: undefined,
     defaultChecked: false,
     disabled: false,
     description: undefined,
@@ -38,6 +42,7 @@ const meta: Meta<SwitchArgs> = {
       name=${ifDefined(args.name || undefined)}
       description=${ifDefined(args.description)}
       label-position=${args.labelPosition}
+      ?checked=${args.checked ?? false}
       ?default-checked=${args.defaultChecked}
       ?disabled=${args.disabled}
     ></ds-switch>
@@ -52,10 +57,6 @@ export const Default: Story = {};
 /* labelPosition */
 export const LabelPositionStart: Story = { args: { labelPosition: 'start' } };
 export const LabelPositionEnd: Story = { args: { labelPosition: 'end' } };
-
-/* states */
-export const DefaultCheckedTrue: Story = { args: { defaultChecked: true } };
-export const DisabledChecked: Story = { args: { disabled: true, defaultChecked: true } };
 
 /* examples */
 export const SettingsRow: Story = {
@@ -73,3 +74,9 @@ export const CheckboxAligned: Story = {
 export const Disabled: Story = {
   args: { label: 'Two-factor authentication', disabled: true },
 };
+
+/* states */
+export const On: Story = { args: { defaultChecked: true } };
+export const DisabledOn: Story = { args: { disabled: true, defaultChecked: true } };
+/** On Lit the `checked` attribute is the initial state and the property is the live one. */
+export const Controlled: Story = { args: { checked: true } };

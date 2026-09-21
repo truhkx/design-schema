@@ -31,6 +31,7 @@ export type DisclosureOverridableBinding =
   | 'triggerFontFamily'
   | 'triggerFontSize'
   | 'triggerFontWeight'
+  | 'triggerLineHeight'
   | 'triggerRadius'
   | 'panelPaddingBlock'
   | 'panelPaddingInline'
@@ -44,6 +45,7 @@ const OVERRIDE_HOOK: Record<DisclosureOverridableBinding, string> = {
   triggerFontFamily: '--ds-disclosure-trigger-font-family', // literal-ok: CSS custom-property hook name, not a font stack
   triggerFontSize: '--ds-disclosure-trigger-font-size',
   triggerFontWeight: '--ds-disclosure-trigger-font-weight',
+  triggerLineHeight: '--ds-disclosure-trigger-line-height',
   triggerRadius: '--ds-disclosure-trigger-radius',
   panelPaddingBlock: '--ds-disclosure-panel-padding-block',
   panelPaddingInline: '--ds-disclosure-panel-padding-inline',

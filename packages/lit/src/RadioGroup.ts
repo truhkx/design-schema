@@ -7,13 +7,18 @@ import { cssVar, type TokenRef } from '@design-schema/tokens';
 import type { TextOverridableBinding } from './Text.js';
 import './Text.js';
 
+/** Layout of the options. */
 export type RadioGroupOrientation = 'vertical' | 'horizontal';
 
 /** Shape of each entry in `options`. */
 export interface RadioGroupOption {
+  /** Short identifier (letters, digits, dashes); it becomes part of an element id. */
   value: string;
+  /** The option's own label. */
   label: string;
+  /** One line: price, timing, consequence. */
   description?: string | undefined;
+  /** Natively disabled, so arrow movement skips it. */
   disabled?: boolean | undefined;
 }
 
@@ -33,6 +38,7 @@ const COPY_REQUIRED_INDICATOR = ' (required)';
 /** Overridable style hooks; see the `overrides` property. `controlBackground`, `controlBorder`, `controlSelectedBackground`, `indicator`, `legendColor`, `labelColor`, `descriptionText`, `errorText`, `focusRing`, `focusRingWidth` and `minTarget` are locked and excluded. */
 export type RadioGroupOverridableBinding =
   | 'controlBorderWidth'
+  | 'indicatorInset'
   | 'controlBorderInvalid'
   | 'controlSize'
   | 'controlRadius'
@@ -51,8 +57,10 @@ export type RadioGroupOverridableBinding =
   | 'disabledOpacity'
   | 'transition';
 
-const HOOKS: Record<RadioGroupOverridableBinding, string> = {
+/** Hooks on `:host`. `helperSize` has none: it reaches the description, radioDescription and error Texts only through their `overrides`. */
+const HOOKS: Record<Exclude<RadioGroupOverridableBinding, 'helperSize'>, string> = {
   controlBorderWidth: '--ds-radio-group-control-border-width',
+  indicatorInset: '--ds-radio-group-indicator-inset',
   controlBorderInvalid: '--ds-radio-group-control-border-invalid',
   controlSize: '--ds-radio-group-control-size',
   controlRadius: '--ds-radio-group-control-radius',
@@ -65,14 +73,13 @@ const HOOKS: Record<RadioGroupOverridableBinding, string> = {
   legendWeight: '--ds-radio-group-legend-weight',
   labelSize: '--ds-radio-group-label-size',
   labelWeight: '--ds-radio-group-label-weight',
-  helperSize: '--ds-radio-group-helper-size',
   fontFamily: '--ds-radio-group-font-family',
   lineHeight: '--ds-radio-group-line-height',
   disabledOpacity: '--ds-radio-group-disabled-opacity',
   transition: '--ds-radio-group-transition',
 };
 
-/** Keys a disabled group swallows so native radio movement and selection stay inert. */
+/** Keys a disabled group swallows: native radios move and select on the arrows and Space regardless of aria-disabled. */
 const GUARDED_KEYS = new Set(['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft', ' ']);
 
 /**
@@ -81,24 +88,32 @@ const GUARDED_KEYS = new Set(['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft',
  * `<ds-radio-group name="plan" label="Plan" .options=${[...]}>` renders a
  * `<fieldset role="radiogroup">` with a `<legend>` and one native
  * `<input type="radio">` per option inside its shadow root, where the shared
- * `name` groups them natively: roving tabindex, arrow movement and Space come
- * from the browser and are not reimplemented. Per-option `disabled` is the
- * native attribute so arrow movement skips it; a `disabled` group uses
- * `aria-disabled` plus click, key and change guards so it stays focusable but
- * inert. The indicator dot is the radio's `::after` and has no hook.
+ * `name` groups them natively: one tab stop, roving tabindex, arrow movement
+ * and Space come from the browser and are not reimplemented. Per-option
+ * `disabled` is the native attribute so arrow movement skips it; a `disabled`
+ * group uses `aria-disabled` plus click, key and change guards so it stays
+ * focusable but inert. The indicator dot is the radio's `::before` and has no
+ * part: it is a pseudo-element, not a node.
  *
  * The element is form-associated (`setFormValue(value)`) and carries
  * `data-ds-field`, so `<ds-form>` collects the selected value, or no key while
- * nothing is selected. The inner native `change` is not composed, so a composed
- * `change` CustomEvent with `{ value }` is re-dispatched from the host.
+ * nothing is selected, and validates it when focus leaves the whole group. The
+ * inner native `change` is not composed, so a composed `change` CustomEvent
+ * with `{ value }` is re-dispatched from the host.
+ *
+ * `ds-form` keeps its own messages (the summary and the `invalid` event) and
+ * does not set `invalid` here, so the displayed error is `error`, else — only
+ * while `invalid` — copy.required or copy.invalid. An app marks a group that
+ * `ds-form` failed by setting `invalid` or `error` from that event.
  *
  * ## When to use
  *
  * Use a RadioGroup when the user must pick exactly one of two to about seven
  * options and seeing them all helps the decision — plan tiers, shipping
  * methods. Give options a `description` when the label alone does not tell
- * them apart. Leave the group unselected when the choice is consequential and
- * you want a deliberate answer.
+ * them apart. Set `defaultValue` when there is a sensible default; leave the
+ * group unselected when the choice is consequential and you want a deliberate
+ * answer. For a yes/no use Checkbox or Switch.
  *
  * @fires change - Fired when the selection changes, with `{ value }` in `detail`.
  */
@@ -114,8 +129,8 @@ export class DsRadioGroup extends LitElement {
   static override styles: CSSResult = css`
     :host {
       display: block;
-      font-family: var(--ds-radio-group-font-family);
       --ds-radio-group-control-border-width: var(--border-width-thin);
+      --ds-radio-group-indicator-inset: var(--space-1);
       --ds-radio-group-control-border-invalid: var(--color-border-danger);
       --ds-radio-group-control-size: var(--space-5);
       --ds-radio-group-control-radius: var(--radius-full);
@@ -128,11 +143,14 @@ export class DsRadioGroup extends LitElement {
       --ds-radio-group-legend-weight: var(--font-weight-medium);
       --ds-radio-group-label-size: var(--font-size-md);
       --ds-radio-group-label-weight: var(--font-weight-regular);
-      --ds-radio-group-helper-size: var(--font-size-sm);
       --ds-radio-group-font-family: var(--font-family-body);
       --ds-radio-group-line-height: var(--font-line-height-normal);
       --ds-radio-group-disabled-opacity: var(--opacity-disabled);
       --ds-radio-group-transition: var(--motion-duration-fast);
+      /* controlBackground, controlBorder, controlSelectedBackground, indicator, legendColor,
+         labelColor, focusRing, focusRingWidth and minTarget are locked, so they read their token
+         directly. helperSize, descriptionText and errorText have no hook either: the composed
+         Texts realise them through their own props and overrides. */
     }
 
     :host([hidden]) {
@@ -150,128 +168,140 @@ export class DsRadioGroup extends LitElement {
       border: 0;
     }
 
-    /* legendColor, legendSize, legendWeight. A <legend> does not take part in the fieldset's flex gap, so partGap below it is a margin. */
+    /* legendColor, legendSize, legendWeight, fontFamily, lineHeight: the legend's own rule.
+       A <legend> does not take part in the fieldset's flex gap, so partGap below it is a margin. */
     legend {
       margin-block-end: var(--ds-radio-group-part-gap);
       padding: 0;
+      color: var(--color-foreground);
+      font-family: var(--ds-radio-group-font-family);
       font-size: var(--ds-radio-group-legend-size);
       font-weight: var(--ds-radio-group-legend-weight);
       line-height: var(--ds-radio-group-line-height);
-      color: var(--color-foreground);
     }
 
-    /* listGap: between options; horizontal wraps rather than overflows */
+    /* listGap: between options, on either axis; horizontal wraps rather than overflows */
     .list {
       display: flex;
-      flex-direction: column;
       gap: var(--ds-radio-group-list-gap);
+      flex-direction: column;
     }
     :host([orientation='horizontal']) .list {
       flex-direction: row;
       flex-wrap: wrap;
     }
 
-    /* minTarget: each option row is the hit area; optionPaddingBlock on the row; optionGap between radio and label */
+    /* The option row — radio, radioLabel and radioDescription. minTarget tall, optionPaddingBlock
+       around it, and the whole row is the hit area. Not an anatomy part, so it carries no data-part. */
     .option {
-      display: flex;
-      align-items: flex-start;
-      gap: var(--ds-radio-group-option-gap);
       box-sizing: border-box;
+      display: grid;
+      grid-template-columns: var(--ds-radio-group-control-size) minmax(0, 1fr);
+      column-gap: var(--ds-radio-group-option-gap);
+      row-gap: var(--ds-radio-group-option-text-gap);
+      align-items: center;
+      align-content: center;
       min-block-size: var(--size-target-comfortable);
       padding-block: var(--ds-radio-group-option-padding-block);
       cursor: pointer;
     }
 
+    /* controlBackground, controlBorder, controlBorderWidth, controlSize, controlRadius: a native
+       input drawn with the control tokens, never a hidden input under a fake box. */
     .radio {
-      position: relative;
-      flex: none;
       box-sizing: border-box;
+      grid-column: 1;
+      grid-row: 1;
+      display: inline-grid;
+      place-items: center;
       inline-size: var(--ds-radio-group-control-size);
       block-size: var(--ds-radio-group-control-size);
       margin: 0;
-      margin-block-start: calc(
-        (var(--ds-radio-group-label-size) * var(--ds-radio-group-line-height) - var(--ds-radio-group-control-size)) / 2
-      );
-      border-width: var(--ds-radio-group-control-border-width);
-      border-style: solid;
-      border-color: var(--color-control-border);
+      padding: 0;
+      border: var(--ds-radio-group-control-border-width) solid var(--color-control-border);
       border-radius: var(--ds-radio-group-control-radius);
-      background: var(--color-control-background);
-      cursor: pointer;
+      background-color: var(--color-control-background);
+      cursor: inherit;
       appearance: none;
       -webkit-appearance: none;
-      transition: border-color var(--ds-radio-group-transition) var(--motion-easing-standard);
     }
 
-    /* indicator: the centre dot, controlSize minus 2 × space.1 in diameter */
-    .radio::after {
+    /* indicator, indicatorInset: the centre dot, controlSize minus 2 × indicatorInset across, always
+       a circle (it does not follow controlRadius). Its size is fixed and it fades rather than scales,
+       so the thicker focus border eats into the inset rather than shrinking the dot. A pseudo-element,
+       so it carries no part or data-part. */
+    .radio::before {
       content: '';
-      position: absolute;
-      inset: 0;
-      margin: auto;
-      inline-size: calc(var(--ds-radio-group-control-size) - 2 * var(--space-1));
-      block-size: calc(var(--ds-radio-group-control-size) - 2 * var(--space-1));
+      display: block;
+      inline-size: calc(var(--ds-radio-group-control-size) - 2 * var(--ds-radio-group-indicator-inset));
+      block-size: calc(var(--ds-radio-group-control-size) - 2 * var(--ds-radio-group-indicator-inset));
       border-radius: var(--radius-full);
-      background: var(--color-control-selected-background);
-      transform: scale(0);
-      transition: transform var(--ds-radio-group-transition) var(--motion-easing-standard);
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .radio,
-      .radio::after {
-        transition: none;
-      }
+      background-color: var(--color-control-selected-background);
+      opacity: 0;
     }
 
     /* controlSelectedBackground: selected border color; the fill stays controlBackground */
     .radio:checked {
       border-color: var(--color-control-selected-background);
     }
-    .radio:checked::after {
-      transform: scale(1);
+    .radio:checked::before {
+      opacity: 1;
     }
 
-    /* controlBorderInvalid */
+    /* controlBorderInvalid: aria-invalid lives on the fieldset only, so the state comes from the host */
     :host([invalid]) .radio {
       border-color: var(--ds-radio-group-control-border-invalid);
     }
 
-    /* focusRing, focusRingWidth: the radio's border becomes the focus ring; the row is not outlined */
+    /* focusRing, focusRingWidth: the radio's border becomes the focus ring, replacing
+       controlBorderWidth/controlBorder; the option row is not outlined. The transparent outline
+       keeps a ring in forced-colors mode. */
     .radio:focus-visible {
-      outline: none;
+      outline: var(--border-width-focus) solid transparent;
       border-width: var(--border-width-focus);
       border-color: var(--color-border-focus);
     }
 
-    /* disabledOpacity: a disabled group dims every option row once, a disabled option dims its own row */
+    /* labelColor, labelSize, labelWeight, fontFamily, lineHeight: the label's own rule */
+    .label {
+      grid-column: 2;
+      grid-row: 1;
+      color: var(--color-foreground);
+      font-family: var(--ds-radio-group-font-family);
+      font-size: var(--ds-radio-group-label-size);
+      font-weight: var(--ds-radio-group-label-weight);
+      line-height: var(--ds-radio-group-line-height);
+      cursor: inherit;
+    }
+
+    /* optionTextGap is the row-gap above; the description sits under the label, not under the radio */
+    .option-description {
+      grid-column: 2;
+      grid-row: 2;
+    }
+
+    /* disabledOpacity dims option rows only, once: an option dims its own row, a disabled group
+       every row, and legend, description and errorMessage stay at full opacity. */
     .list.disabled .option,
     .option.disabled {
       opacity: var(--ds-radio-group-disabled-opacity);
       cursor: not-allowed;
     }
-    .list.disabled .radio,
-    .list.disabled .label,
-    .option.disabled .radio,
-    .option.disabled .label {
-      cursor: not-allowed;
-    }
 
-    /* optionTextGap: between radioLabel and radioDescription */
-    .text {
-      display: flex;
-      flex-direction: column;
-      gap: var(--ds-radio-group-option-text-gap);
-      min-inline-size: 0;
-    }
-
-    /* labelColor, labelSize, labelWeight */
-    .label {
-      font-size: var(--ds-radio-group-label-size);
-      font-weight: var(--ds-radio-group-label-weight);
-      line-height: var(--ds-radio-group-line-height);
-      color: var(--color-foreground);
-      cursor: pointer;
+    /* transition: the selected border color and the dot's opacity, fading in and out, with
+       motion.easing.standard. The focus border (color and width) and the invalid border switch
+       instantly, so neither is in the transition and both states clear it. */
+    @media (prefers-reduced-motion: no-preference) {
+      .radio {
+        transition: border-color var(--ds-radio-group-transition) var(--motion-easing-standard);
+      }
+      .radio::before {
+        transition: opacity var(--ds-radio-group-transition) var(--motion-easing-standard);
+      }
+      .radio:focus-visible,
+      :host([invalid]) .radio {
+        transition: none;
+      }
     }
   `;
 
@@ -281,7 +311,7 @@ export class DsRadioGroup extends LitElement {
   /** Field name used by the enclosing Form. Also links the radios into one native group. */
   @property() accessor name = '';
 
-  /** The options in display order. Two to about seven. A property, not an attribute. */
+  /** The options in display order. Two to about seven; more than that is a Select. A property, not an attribute. */
   @property({ attribute: false }) accessor options: RadioGroupOption[] = [];
 
   /** Controlled selected value. Omit for an uncontrolled group. */
@@ -305,14 +335,14 @@ export class DsRadioGroup extends LitElement {
   /** Persistent helper text under the legend. */
   @property() accessor description: string | undefined;
 
-  /** Per-instance style overrides: `{ controlRadius: 'radius.sm' }`. Locked bindings are ignored. */
+  /** Per-instance style overrides: `{ controlSize: 'space.6' }`. Locked bindings are ignored. */
   @property({ attribute: false }) accessor overrides:
     | Partial<Record<RadioGroupOverridableBinding, TokenRef | undefined>>
     | undefined;
 
   private errorValue: string | undefined;
 
-  /** The group's error message. Setting it marks the group invalid. */
+  /** The group's error message. Setting it marks the group invalid. Say what to do. */
   get error(): string | undefined {
     return this.errorValue;
   }
@@ -328,7 +358,7 @@ export class DsRadioGroup extends LitElement {
   /** Uncontrolled selection, seeded from `defaultValue`. */
   @state() private accessor internalValue: string | undefined;
 
-  /** Disabled by an owning native form / fieldset (via `formDisabledCallback`). */
+  /** Disabled by an owning native form / fieldset (via `formDisabledCallback`), or by `ds-fieldset`. */
   @state() private accessor formDisabled = false;
 
   private readonly internals: ElementInternals;
@@ -341,6 +371,7 @@ export class DsRadioGroup extends LitElement {
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('data-ds', 'RadioGroup');
+    // No value: the group has a real blur moment — focus leaving the whole fieldset.
     this.setAttribute('data-ds-field', '');
   }
 
@@ -360,15 +391,10 @@ export class DsRadioGroup extends LitElement {
     return this.internals.validity;
   }
 
-  /** The field's own copy: the error, then copy.required, then copy.invalid; empty when valid. */
+  /** The field's own copy, in the same order as the displayed error: `error`, then copy.required, then copy.invalid; empty when valid. */
   get validationMessage(): string {
-    if (this.error) {
-      return this.error;
-    }
-    if (this.required && this.currentValue === null) {
-      return COPY_REQUIRED(this.label);
-    }
-    return this.invalid ? COPY_INVALID(this.label) : '';
+    this.syncInternals();
+    return this.internals.validationMessage;
   }
 
   checkValidity(): boolean {
@@ -381,10 +407,9 @@ export class DsRadioGroup extends LitElement {
     return this.internals.reportValidity();
   }
 
-  /** Focus lands on the selected radio, or the first enabled one when none is selected — the group's one tab stop. */
+  /** Focus lands on the selected radio, else the first enabled one — the group's one tab stop. `delegatesFocus` alone would pick the first in tree order. */
   override focus(options?: FocusOptions): void {
-    const radios = this.radios;
-    const target = radios.find((radio) => radio.checked) ?? radios.find((radio) => !radio.disabled);
+    const target = this.focusTarget;
     if (target) {
       target.focus(options);
     } else {
@@ -398,6 +423,7 @@ export class DsRadioGroup extends LitElement {
     this.formDisabled = disabled;
   }
 
+  /** Back to the initial selection: `defaultValue`, else nothing. */
   formResetCallback(): void {
     this.internalValue = this.defaultValue;
   }
@@ -426,6 +452,7 @@ export class DsRadioGroup extends LitElement {
     const message = this.displayedError;
     const describedBy = [this.description ? 'description' : '', message ? 'error' : ''].filter(Boolean).join(' ');
     const selected = this.currentValue;
+    // Ids do not cross the shadow root, so a group without a name still gets stable ones.
     const groupId = this.name || 'radio-group';
     const textOverrides = this.textOverrides;
 
@@ -441,7 +468,9 @@ export class DsRadioGroup extends LitElement {
         @click=${this.handleGroupClick}
         @keydown=${this.handleKeydown}
       >
-        <legend part="legend" data-part="legend">${this.label}${this.required ? COPY_REQUIRED_INDICATOR : nothing}</legend>
+        <legend part="legend" data-part="legend">${this.label}${this.required
+          ? COPY_REQUIRED_INDICATOR
+          : nothing}</legend>
         ${this.description
           ? html`<ds-text
               id="description"
@@ -477,21 +506,20 @@ export class DsRadioGroup extends LitElement {
                   aria-disabled=${ifDefined(groupDisabled ? 'true' : undefined)}
                   @change=${(event: Event) => this.handleChange(event, option)}
                 />
-                <div class="text">
-                  <label class="label" part="radioLabel" data-part="radioLabel" for=${id}>${option.label}</label>
-                  ${option.description
-                    ? html`<ds-text
-                        id="${id}-description"
-                        part="radioDescription"
-                        data-part="radioDescription"
-                        element="p"
-                        size="sm"
-                        tone="muted"
-                        .overrides=${textOverrides}
-                        >${option.description}</ds-text
-                      >`
-                    : nothing}
-                </div>
+                <label class="label" part="radioLabel" data-part="radioLabel" for=${id}>${option.label}</label>
+                ${option.description
+                  ? html`<ds-text
+                      id="${id}-description"
+                      class="option-description"
+                      part="radioDescription"
+                      data-part="radioDescription"
+                      element="p"
+                      size="sm"
+                      tone="muted"
+                      .overrides=${textOverrides}
+                      >${option.description}</ds-text
+                    >`
+                  : nothing}
               </div>
             `;
           })}
@@ -521,7 +549,13 @@ export class DsRadioGroup extends LitElement {
     return Array.from(this.renderRoot.querySelectorAll<HTMLInputElement>('input[type="radio"]'));
   }
 
-  /** Validation precedence, as Input: `error`, then copy.required, then copy.invalid — rendered only while invalid. */
+  /** The group's one tab stop: the checked radio, else the first enabled one. */
+  private get focusTarget(): HTMLInputElement | undefined {
+    const radios = this.radios;
+    return radios.find((radio) => radio.checked) ?? radios.find((radio) => !radio.disabled);
+  }
+
+  /** Rendered error, as Input: `error`, then — only while invalid — copy.required when required and nothing is selected, else copy.invalid. */
   private get displayedError(): string {
     if (this.error) {
       return this.error;
@@ -532,7 +566,7 @@ export class DsRadioGroup extends LitElement {
     return this.required && this.currentValue === null ? COPY_REQUIRED(this.label) : COPY_INVALID(this.label);
   }
 
-  /** helperSize, fontFamily and lineHeight forwarded to the description and error Text. */
+  /** helperSize, fontFamily and lineHeight forwarded to the description, radioDescription and error Texts. */
   private get textOverrides(): Partial<Record<TextOverridableBinding, TokenRef | undefined>> | undefined {
     const o = this.overrides;
     if (!o) {
@@ -567,7 +601,7 @@ export class DsRadioGroup extends LitElement {
     }
   }
 
-  /** A disabled group swallows the native arrow movement and Space selection. */
+  /** A disabled group swallows the native arrow movement and Space selection, which aria-disabled does not stop. */
   private handleKeydown(event: KeyboardEvent): void {
     if (this.isDisabled && GUARDED_KEYS.has(event.key)) {
       event.preventDefault();
@@ -575,6 +609,7 @@ export class DsRadioGroup extends LitElement {
   }
 
   private handleChange(event: Event, option: RadioGroupOption): void {
+    // The native change is not composed; the host re-dispatches a composed one.
     event.stopPropagation();
     if (this.isDisabled || option.disabled === true) {
       // `live` restores the radios' checked state from the current selection.
@@ -602,24 +637,31 @@ export class DsRadioGroup extends LitElement {
 
   /** Mirror value and validity into ElementInternals so an owning native form sees them. */
   private syncInternals(): void {
-    const value = this.currentValue;
-    const radios = this.radios;
-    const anchor = radios.find((radio) => radio.checked) ?? radios.find((radio) => !radio.disabled);
-    this.internals.setFormValue(value === null || this.isDisabled ? null : value);
+    // A disabled field is left out of submission and validity, as a native disabled control is.
+    if (this.isDisabled) {
+      this.internals.setFormValue(null);
+      this.internals.setValidity({});
+      return;
+    }
 
-    if (this.error || this.invalid) {
-      this.internals.setValidity({ customError: true }, this.validationMessage, anchor);
+    const value = this.currentValue;
+    const anchor = this.focusTarget;
+    this.internals.setFormValue(value);
+
+    if (this.error) {
+      this.internals.setValidity({ customError: true }, this.error, anchor);
     } else if (this.required && value === null) {
       this.internals.setValidity({ valueMissing: true }, COPY_REQUIRED(this.label), anchor);
+    } else if (this.invalid) {
+      this.internals.setValidity({ customError: true }, COPY_INVALID(this.label), anchor);
     } else {
       this.internals.setValidity({});
     }
   }
 
   private applyOverrides(): void {
-    for (const binding of Object.keys(HOOKS) as RadioGroupOverridableBinding[]) {
+    for (const [binding, hook] of Object.entries(HOOKS) as [keyof typeof HOOKS, string][]) {
       const ref = this.overrides?.[binding];
-      const hook = HOOKS[binding];
       if (ref === undefined) {
         this.style.removeProperty(hook);
       } else {

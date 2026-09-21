@@ -1,11 +1,13 @@
 import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
+import { classMap } from 'lit/directives/class-map.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { live } from 'lit/directives/live.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import type { TextOverridableBinding } from './Text.js';
 import './Text.js';
 
+/** Where the label sits relative to the track. */
 export type SwitchLabelPosition = 'start' | 'end';
 
 /** Detail carried by the `change` CustomEvent. */
@@ -53,19 +55,23 @@ const HOOKS: Record<Exclude<SwitchOverridableBinding, 'helperSize'>, string> = {
  *
  * `<ds-switch label="Email notifications">`. A native
  * `<input type="checkbox" role="switch">` styled with `appearance: none` is the
- * track (with `delegatesFocus`), and keeps label association and Space toggling
- * for free; the thumb is the input's `::before` pseudo-element, so it has no
- * part. The `<label for>` sits in the same root, so a click on it toggles
- * natively; a click on the description or the row's gap is forwarded to the
- * control, so the whole row toggles.
+ * track (in a shadow root with `delegatesFocus`), which keeps label
+ * association, Space toggling and form participation for free; the thumb is a
+ * Switch-owned `aria-hidden` span stacked over it in a track wrapper (not the
+ * input's `::before`, which Firefox does not draw on an `appearance: none`
+ * input), and both key off the input's `aria-checked`, never `:checked`. The
+ * `<label for>` sits in the same root, so a click on it toggles natively; a
+ * click on the description or the row's gap is forwarded to the control, so
+ * the whole row toggles.
  *
  * The element is form-associated like `ds-checkbox`: the native form value is
- * `"on"` while checked and `null` otherwise, while `<ds-form>` discovers it by
- * `data-ds-field="change"` and collects `currentValue` as a boolean. A switch
- * never validates. The inner native `change` is not composed, so a composed
- * `change` CustomEvent with `{ checked }` is re-dispatched from the host.
- * `checked` behaves like a native input: the attribute is the initial state
- * only and the property is the live state, so it is not reflected.
+ * `"on"` while checked and `null` otherwise (and `null` while disabled or
+ * form-disabled), while `<ds-form>` discovers it by `data-ds-field="change"`
+ * and collects `currentValue` as a boolean. A switch never validates. The
+ * inner native `change` is not composed, so a composed `change` CustomEvent
+ * with `{ checked }` is re-dispatched from the host. `checked` behaves like a
+ * native input: the attribute is the initial state only and the property is
+ * the live state, so it is not reflected and there is no controlled mode.
  *
  * ## When to use
  *
@@ -102,113 +108,67 @@ export class DsSwitch extends LitElement {
       --ds-switch-line-height: var(--font-line-height-normal);
       --ds-switch-disabled-opacity: var(--opacity-disabled);
       --ds-switch-transition: var(--motion-duration-fast);
+      /* trackOff, trackOn, thumb, labelColor, focusRing, focusRingWidth and minTarget are locked, so
+         they read their token directly; helperSize and descriptionText reach the composed Text
+         through its own size and tone props and its own overrides alone. */
+
+      /* The label's first line box, which the track slot is tall, and the thumb's travel. */
+      --ds-switch-line-box: calc(var(--ds-switch-label-size) * var(--ds-switch-line-height));
+      --ds-switch-thumb-travel: calc(
+        var(--ds-switch-track-width) - var(--ds-switch-thumb-size) - 2 * var(--ds-switch-thumb-inset)
+      );
     }
 
     :host([hidden]) {
       display: none;
     }
 
-    /* minTarget: a full-width row with no padding; the whole row toggles, gap included */
-    .row {
+    /* minTarget: a full-width row with no padding; the whole row, gap included, toggles. The content
+       box is centred on the cross axis, so a one-line row sits in the middle of minTarget. */
+    .root {
       display: flex;
-      align-items: flex-start;
-      gap: var(--ds-switch-gap);
+      flex-direction: column;
+      justify-content: center;
+      inline-size: 100%;
       min-block-size: var(--size-target-comfortable);
       cursor: pointer;
     }
 
-    /* labelPosition: flex order only; start puts the switch at the row end */
+    /* The content box: the track slot aligns with the top of the text column, so a wrapping label or
+       a description grows the row downwards without pulling the track off the first line. */
+    .row {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--ds-switch-gap);
+    }
+
+    /* labelPosition changes the order of the row only: start puts the label first and pushes the
+       track to the row end; end puts the track first, as on Checkbox. */
+    .text {
+      order: 0;
+    }
+    .slot {
+      order: 1;
+    }
+    :host([label-position='start']) .row {
+      justify-content: space-between;
+    }
+    :host([label-position='end']) .text {
+      order: 1;
+    }
+    :host([label-position='end']) .slot {
+      order: 0;
+    }
+
+    /* partGap: the text column, label then description. */
     .text {
       display: flex;
       flex-direction: column;
       gap: var(--ds-switch-part-gap);
       min-inline-size: 0;
-      flex: 1 1 auto;
-      order: 0;
-    }
-    .track {
-      order: 1;
-    }
-    :host([label-position='end']) .track {
-      order: 0;
-    }
-    :host([label-position='end']) .text {
-      order: 1;
     }
 
-    /* track: trackWidth × trackHeight, radius, trackOff / trackOn; centred on the label's first line */
-    .track {
-      position: relative;
-      box-sizing: border-box;
-      flex: none;
-      inline-size: var(--ds-switch-track-width);
-      block-size: var(--ds-switch-track-height);
-      margin: 0;
-      margin-block-start: calc(
-        (var(--ds-switch-label-size) * var(--ds-switch-line-height) - var(--ds-switch-track-height)) / 2
-      );
-      border: 0;
-      border-radius: var(--ds-switch-radius);
-      background: var(--color-control-track-off);
-      cursor: pointer;
-      appearance: none;
-      -webkit-appearance: none;
-      transition: background-color var(--ds-switch-transition) var(--motion-easing-standard);
-    }
-    .track:checked {
-      background: var(--color-control-selected-background);
-    }
-
-    /* focusRing: drawn around the track, offset by focusRingWidth like every other control */
-    .track:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
-    }
-
-    /* thumb: the input's ::before; thumbSize, inset by thumbInset, travels trackWidth − thumbSize − 2 × thumbInset */
-    .track::before {
-      content: '';
-      position: absolute;
-      inset-block-start: calc((var(--ds-switch-track-height) - var(--ds-switch-thumb-size)) / 2);
-      inset-inline-start: var(--ds-switch-thumb-inset);
-      inline-size: var(--ds-switch-thumb-size);
-      block-size: var(--ds-switch-thumb-size);
-      border-radius: var(--ds-switch-radius);
-      background: var(--color-control-selected-foreground);
-      transition: transform var(--ds-switch-transition) var(--motion-easing-standard);
-    }
-    .track:checked::before {
-      transform: translateX(
-        calc(var(--ds-switch-track-width) - var(--ds-switch-thumb-size) - 2 * var(--ds-switch-thumb-inset))
-      );
-    }
-    :host(:dir(rtl)) .track:checked::before {
-      transform: translateX(
-        calc(-1 * (var(--ds-switch-track-width) - var(--ds-switch-thumb-size) - 2 * var(--ds-switch-thumb-inset)))
-      );
-    }
-
-    /* transition: under reduced motion the thumb jumps and the color changes instantly */
-    @media (prefers-reduced-motion: reduce) {
-      .track,
-      .track::before {
-        transition: none;
-      }
-    }
-
-    /* disabled: stays focusable; the track, label and description dim with disabledOpacity */
-    :host([disabled]) .row,
-    .row.form-disabled {
-      opacity: var(--ds-switch-disabled-opacity);
-      cursor: not-allowed;
-    }
-    :host([disabled]) .track,
-    :host([disabled]) .label,
-    .row.form-disabled .track,
-    .row.form-disabled .label {
-      cursor: not-allowed;
-    }
-
+    /* labelColor, labelSize, labelWeight, fontFamily, lineHeight: the label's own rule */
     .label {
       font-family: var(--ds-switch-font-family);
       font-size: var(--ds-switch-label-size);
@@ -217,18 +177,108 @@ export class DsSwitch extends LitElement {
       color: var(--color-foreground);
       cursor: pointer;
     }
+
+    /* One label line tall: the track centres on the label's first line. */
+    .slot {
+      display: flex;
+      flex: 0 0 auto;
+      align-items: center;
+      block-size: var(--ds-switch-line-box);
+    }
+
+    /* The track wrapper stacks the Switch-owned thumb span over the input. */
+    .track-wrap {
+      position: relative;
+      display: inline-flex;
+      flex: 0 0 auto;
+    }
+
+    /* track: a native input sized trackWidth × trackHeight, drawn with the control tokens. */
+    .control {
+      box-sizing: border-box;
+      flex: 0 0 auto;
+      inline-size: var(--ds-switch-track-width);
+      block-size: var(--ds-switch-track-height);
+      margin: 0;
+      padding: 0;
+      border: 0;
+      border-radius: var(--ds-switch-radius);
+      background-color: var(--color-control-track-off);
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      transition: background-color var(--ds-switch-transition) var(--motion-easing-standard);
+    }
+
+    /* trackOn: keyed off the component state, not :checked, so the look always follows checked. */
+    .control[aria-checked='true'] {
+      background-color: var(--color-control-selected-background);
+    }
+
+    /* focusRing, focusRingWidth: drawn around the track, offset by focusRingWidth like every other
+       control. Never removed. */
+    .control:focus-visible {
+      outline: var(--border-width-focus) solid var(--color-border-focus);
+      outline-offset: var(--border-width-focus);
+    }
+
+    /* thumb: a real span, not a ::before, which Firefox does not draw on an appearance: none input.
+       It is inset evenly on the short axis and click-through, so presses reach the input underneath. */
+    .thumb {
+      position: absolute;
+      inset-block-start: calc((var(--ds-switch-track-height) - var(--ds-switch-thumb-size)) / 2);
+      inset-inline-start: var(--ds-switch-thumb-inset);
+      inline-size: var(--ds-switch-thumb-size);
+      block-size: var(--ds-switch-thumb-size);
+      border-radius: var(--ds-switch-radius);
+      background-color: var(--color-control-selected-foreground);
+      pointer-events: none;
+      transition: transform var(--ds-switch-transition) var(--motion-easing-standard);
+    }
+
+    /* Travels trackWidth − thumbSize − 2 × thumbInset when on. */
+    .control[aria-checked='true'] ~ .thumb {
+      transform: translateX(var(--ds-switch-thumb-travel));
+    }
+
+    /* RTL: the thumb travels toward the inline end, which is leftward. :dir(rtl) rather than an
+       ancestor [dir='rtl'] selector, which misses an inherited direction. */
+    :host(:dir(rtl)) .control[aria-checked='true'] ~ .thumb {
+      transform: translateX(calc(-1 * var(--ds-switch-thumb-travel)));
+    }
+
+    /* transition: under reduced motion the thumb jumps and the track colour changes instantly. */
+    @media (prefers-reduced-motion: reduce) {
+      .control,
+      .thumb {
+        transition: none;
+      }
+    }
+
+    /* disabledOpacity: the track (with its thumb), the label and the description dim — on the slot
+       and on the text column, never on the composed description Text itself. The switch stays
+       visible, readable and focusable. */
+    .root.disabled,
+    .root.disabled .control,
+    .root.disabled .label {
+      cursor: not-allowed;
+    }
+    .root.disabled .slot,
+    .root.disabled .text {
+      opacity: var(--ds-switch-disabled-opacity);
+    }
   `;
 
   /** Visible label naming the thing being turned on or off. Also the accessible name. */
   @property() accessor label = '';
 
-  /** Optional field name. When inside a Form the state is collected as a boolean; most switches are not in forms. Reflected so a native `<form>` still submits it. */
+  /** Optional field name. When inside a Form the state is collected as a boolean; most switches are not in forms. Reflected so a name set as a property is still submitted by a native `<form>`. */
   @property({ reflect: true }) accessor name = '';
 
   /** Initial state when neither the `checked` attribute nor property is set. */
   @property({ type: Boolean, attribute: 'default-checked' }) accessor defaultChecked = false;
 
-  /** Cannot be toggled. Stays visible, readable and focusable. */
+  /** Cannot be toggled. Stays visible, readable and focusable, and contributes no key to the Form's values. */
   @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
   /** Persistent helper text below the label explaining the effect. */
@@ -244,7 +294,7 @@ export class DsSwitch extends LitElement {
 
   private checkedValue: boolean | undefined;
 
-  /** The live state, like a native input: starts from the `checked` attribute, else `defaultChecked`, and follows every toggle. Not reflected. */
+  /** The live state, like a native input: starts from the `checked` attribute, else `defaultChecked`, and follows every toggle. Not reflected; there is no controlled mode. */
   get checked(): boolean {
     return this.checkedValue ?? this.defaultChecked;
   }
@@ -255,13 +305,15 @@ export class DsSwitch extends LitElement {
     this.requestUpdate('checked', old);
   }
 
-  /** A switch has no required state: it never validates and never appears in an error summary. */
-  readonly required: boolean = false;
+  /** A switch has no required state: it never validates and never appears in an error summary. Setting it is ignored. */
+  get required(): boolean {
+    return false;
+  }
 
   /** Disabled by an owning native form / fieldset (via `formDisabledCallback`). */
   @state() private accessor formDisabled = false;
 
-  @query('#track') private accessor inputEl!: HTMLInputElement | null;
+  @query('#control') private accessor inputEl!: HTMLInputElement | null;
 
   private readonly internals: ElementInternals;
 
@@ -273,6 +325,7 @@ export class DsSwitch extends LitElement {
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('data-ds', 'Switch');
+    // A switch has no useful blur moment, so ds-form validates it on change (it never fails).
     this.setAttribute('data-ds-field', 'change');
   }
 
@@ -325,42 +378,52 @@ export class DsSwitch extends LitElement {
   }
 
   protected override updated(): void {
+    // Native semantics: "on" or null, and null while disabled or form-disabled, so neither a native
+    // <form> nor ds-form collects a disabled switch.
     this.internals.setFormValue(this.checked && !this.isDisabled ? 'on' : null);
   }
 
   protected override render(): TemplateResult {
     const isDisabled = this.isDisabled;
     return html`
-      <div class="row ${this.formDisabled ? 'form-disabled' : ''}" @click=${this.handleRowClick}>
-        <input
-          id="track"
-          class="track"
-          part="track"
-          data-part="track"
-          type="checkbox"
-          role="switch"
-          name=${ifDefined(this.name || undefined)}
-          .checked=${live(this.checked)}
-          aria-checked=${this.checked ? 'true' : 'false'}
-          aria-describedby=${ifDefined(this.description ? 'description' : undefined)}
-          aria-disabled=${ifDefined(isDisabled ? 'true' : undefined)}
-          @click=${this.handleControlClick}
-          @change=${this.handleChange}
-        />
-        <div class="text">
-          <label class="label" part="label" data-part="label" for="track">${this.label}</label>
-          ${this.description
-            ? html`<ds-text
-                id="description"
-                part="description"
-                data-part="description"
-                element="p"
-                size="sm"
-                tone="muted"
-                .overrides=${this.textOverrides}
-                >${this.description}</ds-text
-              >`
-            : nothing}
+      <div class=${classMap({ root: true, disabled: isDisabled })} @click=${this.handleRowClick}>
+        <!-- The row centres this content box in minTarget; inside it the track stays on the first line. -->
+        <div class="row">
+          <div class="text">
+            <label class="label" part="label" data-part="label" for="control">${this.label}</label>
+            ${this.description
+              ? html`<ds-text
+                  id="description"
+                  part="description"
+                  data-part="description"
+                  element="p"
+                  size="sm"
+                  tone="muted"
+                  .overrides=${this.textOverrides}
+                  >${this.description}</ds-text
+                >`
+              : nothing}
+          </div>
+          <span class="slot">
+            <span class="track-wrap">
+              <input
+                id="control"
+                class="control"
+                part="track"
+                data-part="track"
+                type="checkbox"
+                role="switch"
+                name=${ifDefined(this.name || undefined)}
+                .checked=${live(this.checked)}
+                aria-checked=${this.checked ? 'true' : 'false'}
+                aria-describedby=${ifDefined(this.description ? 'description' : undefined)}
+                aria-disabled=${ifDefined(isDisabled ? 'true' : undefined)}
+                @click=${this.handleControlClick}
+                @change=${this.handleChange}
+              />
+              <span class="thumb" part="thumb" data-part="thumb" aria-hidden="true"></span>
+            </span>
+          </span>
         </div>
       </div>
     `;
@@ -379,7 +442,7 @@ export class DsSwitch extends LitElement {
     return { fontSize: o.helperSize, fontFamily: o.fontFamily, lineHeight: o.lineHeight };
   }
 
-  /** Clicks on the description or the row's gap toggle the switch too. */
+  /** Clicks on the description, the text column or the row's gap toggle the switch too. */
   private handleRowClick(event: MouseEvent): void {
     const input = this.inputEl;
     const target = event.target;
@@ -402,6 +465,7 @@ export class DsSwitch extends LitElement {
   }
 
   private handleChange(event: Event): void {
+    // The native change does not cross the shadow boundary; the host re-dispatches a composed one.
     event.stopPropagation();
     const input = event.currentTarget as HTMLInputElement;
     if (this.isDisabled) {
@@ -409,10 +473,8 @@ export class DsSwitch extends LitElement {
       input.checked = this.checked;
       return;
     }
+    // Every native toggle flips the value, so there is no next-equals-checked case to guard here.
     const next = input.checked;
-    if (next === this.checked) {
-      return;
-    }
     this.checked = next;
     this.dispatchEvent(
       new CustomEvent<SwitchChangeDetail>('change', {

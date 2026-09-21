@@ -32,7 +32,7 @@ const COPY = {
 } as const;
 
 /** The indicator binding's locked token, reaching the composed Icon only through its `color` override. */
-const INDICATOR_COLOR: TokenRef = 'color.control.selectedForeground' as TokenRef;
+const INDICATOR_COLOR: TokenRef = 'color.control.selectedForeground';
 
 /** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
 export type CheckboxOverridableBinding =
@@ -52,7 +52,11 @@ export type CheckboxOverridableBinding =
   | 'disabledOpacity'
   | 'transition';
 
-const OVERRIDE_HOOK: Record<CheckboxOverridableBinding, string> = {
+/**
+ * helperSize has no hook: it reaches the description and error Texts only through their `fontSize`
+ * override. fontFamily and lineHeight are both a hook (the label's own rule) and a forward.
+ */
+const OVERRIDE_HOOK: Partial<Record<CheckboxOverridableBinding, string>> = {
   controlBackground: '--ds-checkbox-control-background',
   controlBorderWidth: '--ds-checkbox-control-border-width',
   pressedOverlay: '--ds-checkbox-pressed-overlay',
@@ -63,7 +67,6 @@ const OVERRIDE_HOOK: Record<CheckboxOverridableBinding, string> = {
   partGap: '--ds-checkbox-part-gap',
   labelSize: '--ds-checkbox-label-size',
   labelWeight: '--ds-checkbox-label-weight',
-  helperSize: '--ds-checkbox-helper-size',
   fontFamily: '--ds-checkbox-font-family', // literal-ok: CSS custom-property hook name, not a font stack
   lineHeight: '--ds-checkbox-line-height',
   disabledOpacity: '--ds-checkbox-disabled-opacity',
@@ -82,13 +85,10 @@ function resolveOverrides(overrides: Partial<Record<CheckboxOverridableBinding, 
     const ref = overrides[binding];
     if (!ref) continue;
     // Description and error are Text: helperSize, fontFamily and lineHeight reach Text's own overrides.
-    if (binding === 'helperSize') {
-      helperOverrides.fontSize = ref;
-      continue;
-    }
+    if (binding === 'helperSize') helperOverrides.fontSize = ref;
     if (binding === 'fontFamily') helperOverrides.fontFamily = ref;
     if (binding === 'lineHeight') helperOverrides.lineHeight = ref;
-    // Locked bindings have no entry in the hook table, so they are ignored if passed.
+    // Locked bindings (and helperSize) have no entry in the hook table, so no hook is written.
     const hook = OVERRIDE_HOOK[binding];
     if (hook) rootStyle[hook] = cssVar(ref);
   }
@@ -117,7 +117,10 @@ export interface CheckboxProps
   > {
   /** Visible label. Clicking or tapping it toggles the control. */
   label: string;
-  /** Visually hide the label (it remains the accessible name): a selection column in a Table, where the row name is the label. */
+  /**
+   * Visually hide the label (it remains the accessible name): a selection column in a Table, where
+   * the row name is the label.
+   */
   hideLabel?: boolean | undefined;
   /** Field name used by the enclosing Form when collecting values. */
   name: string;
@@ -140,11 +143,18 @@ export interface CheckboxProps
   disabled?: boolean | undefined;
   /** Must be checked to submit — for consent and agreement. Shown in the label, not only by color. */
   required?: boolean | undefined;
-  /** Marks the control as failing validation. Usually set by the Form; can be set directly. */
+  /**
+   * Marks the control as failing validation. Usually set by the Form; can be set directly. While true
+   * with no `error` (and no Form message), the error slot renders copy.required (required and
+   * unchecked) or copy.invalid, with role=alert, so a bare `invalid` always shows a message.
+   */
   invalid?: boolean | undefined;
   /** Persistent helper text below the label. */
   description?: string | undefined;
-  /** The error message. Setting it marks the control invalid. Say what to do ("Accept the terms to continue"). */
+  /**
+   * The error message. Setting it marks the control invalid. Say what to do ("Accept the terms to
+   * continue").
+   */
   error?: string | undefined;
   /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. */
   overrides?: Partial<Record<CheckboxOverridableBinding, TokenRef | undefined>> | undefined;
@@ -189,12 +199,20 @@ export function Checkbox({
   // The root is the wrapper div; the forwarded ref resolves to the interactive <input>, as in Input.
   useImperativeHandle(ref, () => inputRef.current as HTMLInputElement, []);
 
+  // The input is never React-controlled: it takes `defaultChecked` and keeps its native checked
+  // state. React mirrors the live state only to render the indicator, and writes the prop back onto
+  // the DOM property when a controlled `checked` differs from what the browser just did.
   const isControlled = checked !== undefined;
   const [uncontrolledChecked, setUncontrolledChecked] = useState(defaultChecked);
   const isChecked = isControlled ? checked : uncontrolledChecked;
   const isDisabled = disabled || (form?.disabled ?? false);
 
-  // A user toggle clears the mixed state; a new `indeterminate` prop value restores it.
+  useEffect(() => {
+    const el = inputRef.current;
+    if (el && el.checked !== isChecked) el.checked = isChecked;
+  }, [isChecked]);
+
+  // A user toggle clears the mixed state locally; a new `indeterminate` prop value restores it.
   const [mixedCleared, setMixedCleared] = useState(false);
   const [lastIndeterminate, setLastIndeterminate] = useState(indeterminate);
   if (lastIndeterminate !== indeterminate) {
@@ -231,6 +249,7 @@ export function Checkbox({
       // form.valueType is boolean: the checked state is collected under `name`, false when unchecked.
       getValue: () => inputRef.current?.checked ?? false,
       isDisabled: () => latest.current.disabled,
+      // Validity always follows the full order, whatever `invalid` is; only the rendered message waits.
       validate: () => {
         const { label: currentLabel, required: isRequired, invalid: isInvalidProp, error: errorProp } = latest.current;
         if (errorProp !== undefined) return errorProp;
@@ -243,6 +262,11 @@ export function Checkbox({
   }, [form, name, id]);
 
   const describedBy = [description ? descriptionId : null, resolvedError ? errorId : null].filter(Boolean).join(' ');
+
+  // Inside a Form, `validate: blur` means "on change" for a checkbox; after a failed submit every
+  // mode re-validates on change, so a fixed field stops being flagged.
+  const validateMode = form ? (form.validateMode ?? form.validate) : undefined;
+  const validatesOnChange = validateMode === 'blur' || validateMode === 'change' || (form?.submitFailed ?? false);
 
   const handleClick = (event: MouseEvent<HTMLInputElement>) => {
     if (isDisabled) {
@@ -259,11 +283,16 @@ export function Checkbox({
       return;
     }
     const next = event.target.checked;
-    if (!isControlled) setUncontrolledChecked(next);
+    if (isControlled) {
+      // Controlled: report the change, then write the prop back, so the box follows the prop.
+      event.target.checked = isChecked;
+    } else {
+      setUncontrolledChecked(next);
+    }
     if (isMixed) setMixedCleared(true);
     onChange?.(next);
     // There is no useful blur moment for a checkbox: `blur` mode validates on change too.
-    if (form && (form.validate === 'blur' || form.validate === 'change')) form.validateField(name);
+    if (form && validatesOnChange) form.validateField(name);
   };
 
   // The whole row is the hit area: the gap, the text column and the description forward to the
@@ -286,6 +315,7 @@ export function Checkbox({
   return (
     <div className={classes} data-ds="Checkbox" data-ds-field style={rootStyle}>
       <div className="ds-checkbox__row" onClick={handleRowClick}>
+        {/* The box stacks the void <input> and the indicator in one cell, one label line tall. */}
         <span className="ds-checkbox__box">
           <input
             {...rest}
@@ -294,10 +324,7 @@ export function Checkbox({
             type="checkbox"
             name={name}
             value={value}
-            checked={checked}
-            // Uncontrolled stays native (the state above only mirrors it for the indicator), so a
-            // prevented click on a disabled box reverts through the browser, not a re-render.
-            defaultChecked={isControlled ? undefined : defaultChecked}
+            defaultChecked={isChecked}
             className="ds-checkbox__control"
             data-part="control"
             aria-describedby={describedBy || undefined}
@@ -318,6 +345,7 @@ export function Checkbox({
         <div className="ds-checkbox__text">
           <label ref={labelRef} htmlFor={id} className={labelClasses} data-part="label">
             {label}
+            {/* requiredIndicator is plain label text, not aria-hidden: it is part of the name. */}
             {required ? COPY.requiredIndicator : null}
           </label>
           {description ? (
@@ -334,6 +362,7 @@ export function Checkbox({
           ) : null}
         </div>
       </div>
+      {/* The error sits below the row, outside the hit area, indented to line up with the label. */}
       {resolvedError ? (
         <div className="ds-checkbox__error">
           <Text

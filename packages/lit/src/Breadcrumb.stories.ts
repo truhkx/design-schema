@@ -20,9 +20,9 @@ const meta: Meta<BreadcrumbArgs> = {
   },
   args: {
     items: [
-      { label: 'Docs', href: '/docs' },
-      { label: 'Components', href: '/docs/components' },
-      { label: 'Breadcrumb' },
+      { label: 'Settings', href: '/settings' },
+      { label: 'Notifications', href: '/settings/notifications' },
+      { label: 'Email digest' },
     ],
     label: 'Breadcrumb',
     collapse: true,
@@ -41,6 +41,32 @@ export default meta;
 type Story = StoryObj<BreadcrumbArgs>;
 
 export const Default: Story = {};
+
+/* collapse */
+export const CollapseTrue: Story = {
+  args: {
+    collapse: true,
+    items: [
+      { label: 'Docs', href: '/docs' },
+      { label: 'Components', href: '/docs/components' },
+      { label: 'Navigation', href: '/docs/components/navigation' },
+      { label: 'Breadcrumb', href: '/docs/components/navigation/breadcrumb' },
+      { label: 'Keyboard' },
+    ],
+  },
+};
+export const CollapseFalse: Story = {
+  args: {
+    collapse: false,
+    items: [
+      { label: 'Docs', href: '/docs' },
+      { label: 'Components', href: '/docs/components' },
+      { label: 'Navigation', href: '/docs/components/navigation' },
+      { label: 'Breadcrumb', href: '/docs/components/navigation/breadcrumb' },
+      { label: 'Keyboard' },
+    ],
+  },
+};
 
 /* examples */
 export const SettingsTrail: Story = {
@@ -81,5 +107,12 @@ export const SecondBreadcrumbOnAPage: Story = {
   args: {
     label: 'Catalogue breadcrumb',
     items: [{ label: 'Catalogue', href: '/catalogue' }, { label: 'Tents' }],
+  },
+};
+
+/* notable states */
+export const AncestorWithoutHref: Story = {
+  args: {
+    items: [{ label: 'Docs', href: '/docs' }, { label: 'Guides' }, { label: 'Theming' }],
   },
 };

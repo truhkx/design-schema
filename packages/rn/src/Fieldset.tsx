@@ -58,6 +58,34 @@ const COPY = {
 } as const;
 
 /**
+ * `fieldsGap` reaches the Stack only as a token path through its own `overrides.gap`,
+ * always sent (the override, else `layout.gap.{gap}`); the Stack gets no `gap` prop.
+ */
+const FIELDS_GAP_TOKEN = {
+  tight: 'layout.gap.tight',
+  normal: 'layout.gap.normal',
+  loose: 'layout.gap.loose',
+} as const satisfies Record<FieldsetGap, TokenRef>;
+
+/**
+ * The direct child fields, with fragments flattened so `<>{street}{city}</>` counts as
+ * two children rather than one. Only elements count; raw strings and `null` are skipped.
+ */
+function collectFields(
+  children: React.ReactNode,
+  out: React.ReactElement<{ required?: boolean | undefined }>[],
+): void {
+  React.Children.forEach(children, (child) => {
+    if (!React.isValidElement(child)) return;
+    if (child.type === React.Fragment) {
+      collectFields((child.props as { children?: React.ReactNode }).children, out);
+      return;
+    }
+    out.push(child as React.ReactElement<{ required?: boolean | undefined }>);
+  });
+}
+
+/**
  * Fieldset — how a form says "these belong together." A screen-reader user moving
  * into "Street" hears "Shipping address, Street" and knows where they are.
  *
@@ -72,11 +100,15 @@ const COPY = {
  * `copy.requiredIndicator` appended when every direct child field is `required`)
  * and `accessibilityHint={description}`. The legend is plain `Text` — not a header
  * trait, which would put it in the headings rotor. The fields render in a `Stack`
- * with `gap`; `FieldsetContext` carries the legend and `disabled` to Input,
+ * that is sized only through its own `overrides.gap` (the override, else
+ * `layout.gap.{gap}`); `FieldsetContext` carries the legend and `disabled` to Input,
  * Checkbox, Switch and RadioGroup, which render disabled and prefix the legend into
  * their label. Children are never cloned; a non-field child gets no association.
  * `disabled` dims only the legend and description with `opacity.disabled` — the
- * fields dim themselves. The group error is announced as in Input
+ * fields dim themselves, and the group error is never dimmed. Those two dimmed
+ * Views also carry `aria-disabled`, which is what reaches the DOM under
+ * react-native-web (`accessibilityState` is dropped there) and what stops a
+ * checker reading dimmed-because-inapplicable text as failing contrast. The group error is announced as in Input
  * (`accessibilityLiveRegion` on Android, `announceForAccessibility` on iOS); native
  * has no invalid state, so the error text alone identifies it.
  */
@@ -101,10 +133,10 @@ export function Fieldset({
     }
   }, [error]);
 
-  // The indicator is derived: shown when every direct child field is `required`.
-  const fieldElements = React.Children.toArray(children).filter(React.isValidElement) as React.ReactElement<{
-    required?: boolean | undefined;
-  }>[];
+  // The indicator is derived: shown when every direct child field is `required`, so it is
+  // not repeated on each field. A group with no fields shows none.
+  const fieldElements: React.ReactElement<{ required?: boolean | undefined }>[] = [];
+  collectFields(children, fieldElements);
   const allRequired = fieldElements.length > 0 && fieldElements.every((child) => child.props.required === true);
   const visibleLegend = allRequired ? `${legend}${COPY.requiredIndicator}` : legend;
 
@@ -143,13 +175,21 @@ export function Fieldset({
       accessibilityHint={hasDescription ? description : undefined}
       style={groupStyle}
     >
-      <View testID="Fieldset.legend" style={dimStyle}>
+      {/*
+        The two Views that carry `disabledOpacity` also carry `aria-disabled`, as Input's
+        group View does: react-native-web renders the dimmed text into the DOM, where a
+        checker measures it against the background and the dimmed legend falls under AA.
+        The state is what says the text is dim because the group does not apply, rather
+        than because it is low-contrast copy. Native is unaffected — neither View is
+        `accessible`, so neither exposes a state, and the group root still asserts none.
+      */}
+      <View testID="Fieldset.legend" style={dimStyle} aria-disabled={disabled}>
         <Text tone="default" size="md" weight="medium" overrides={legendOverrides}>
           {visibleLegend}
         </Text>
       </View>
       {hasDescription ? (
-        <View testID="Fieldset.description" style={dimStyle}>
+        <View testID="Fieldset.description" style={dimStyle} aria-disabled={disabled}>
           <Text tone="muted" size="sm" overrides={helperOverrides}>
             {description}
           </Text>
@@ -157,9 +197,7 @@ export function Fieldset({
       ) : null}
       <View testID="Fieldset.fields">
         <FieldsetContext.Provider value={contextValue}>
-          <Stack gap={gap} overrides={overrides?.fieldsGap ? { gap: overrides.fieldsGap } : undefined}>
-            {children}
-          </Stack>
+          <Stack overrides={{ gap: overrides?.fieldsGap ?? FIELDS_GAP_TOKEN[gap] }}>{children}</Stack>
         </FieldsetContext.Provider>
       </View>
       {hasError ? (

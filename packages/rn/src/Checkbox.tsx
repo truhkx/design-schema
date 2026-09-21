@@ -8,7 +8,7 @@ import { useFormContext } from './FormContext';
 import type { FormFieldHandle } from './FormContext';
 import { Icon } from './Icon';
 import { Text } from './Text';
-import { toEasing, useReducedMotion, useTheme } from './theme';
+import { toEasing, toLineHeight, useReducedMotion, useTheme } from './theme';
 
 /** The style bindings a caller may replace with a different token; see the component's overrides contract. */
 export type CheckboxOverridableBinding =
@@ -67,6 +67,9 @@ const COPY = {
   requiredIndicator: ' (required)',
 } as const;
 
+/** The DOM element react-native-web renders for the row; this package has no DOM lib. */
+type WebElement = { setAttribute(name: string, value: string): void; removeAttribute(name: string): void };
+
 /**
  * Checkbox — a single yes/no choice that the user makes and then submits, as
  * opposed to a Switch, which takes effect the moment it is flipped.
@@ -79,23 +82,35 @@ const COPY = {
  *
  * There is no checkbox in core React Native. Renders a `Pressable` row with
  * `accessibilityRole="checkbox"`, `accessibilityLabel`, `accessibilityHint={description}`
- * and `accessibilityState={{ checked: indeterminate ? 'mixed' : checked, disabled }}`,
- * containing the drawn control (the `check`/`dash` `Icon`) and the label and
+ * and `accessibilityState={{ checked: indeterminate ? 'mixed' : checked, disabled }}`, mirrored
+ * to `aria-checked` (and, on react-native-web, `aria-disabled` set on the DOM node) because
+ * react-native-web renders only the aria-* forms and `role="checkbox"` requires `aria-checked`.
+ * `disabled` is never passed to `Pressable` itself — that would drop the row from the tab order —
+ * so a disabled checkbox stays focusable and is announced as disabled while a press guard blocks
+ * the toggle. It contains the drawn control (the `check`/`dash` `Icon`) and the label and
  * description, so the whole row — control, label or description — is the hit area and
- * never drops below the comfortable target. Space on a hardware keyboard is handled by
- * the platform once the role is set. The fill, border and indicator cross-fade over
- * `transition` with `motion.easing.standard` (skipped under reduced motion); while
- * pressed an unchecked, enabled box shows the selected fill at `pressedOverlay`.
- * Toggling an indeterminate checkbox clears the mixed state until `indeterminate`
- * changes value again. Inside a Form the control registers by `name` and submits its
- * checked state as a boolean (`value` is not used on native); the error slot shows
- * `error`, else the Form's message, else — only while `invalid` — `copy.required`
- * (required and unchecked) or `copy.invalid`, as in Input, and `validate: blur` means
- * on change. `disabledOpacity` dims the control and label, not the description or
- * error. The row has no vertical padding: it is at least `size.target.comfortable`
- * tall and centers the control and text column.
- * Inside a Fieldset the group's `disabled` applies and the legend prefixes the
- * accessibility label. Errors are announced as in Input.
+ * never drops below the comfortable target. The row aligns to the start of the cross
+ * axis and pads (minTarget − labelSize × lineHeight) / 2 above and below, so a single
+ * line is exactly the comfortable target tall while a wrapping label or a description
+ * grows it downwards with the control still centred on the label's first line (as
+ * Switch). Space on a hardware keyboard is handled by the platform once the role is
+ * set. The fill and border color cross-fade over `transition` with
+ * `motion.easing.standard` (skipped under reduced motion); the indicator is not
+ * animated — the check and dash Icons are mounted and unmounted, so they appear,
+ * disappear and swap instantly. While pressed an unchecked, enabled box shows the
+ * selected fill at `pressedOverlay` as an overlay inside the box, so the border does
+ * not fade. Border color is invalid, then selected, then rest: focus draws the border
+ * at the larger of `focusRingWidth` and `controlBorderWidth` and never hides
+ * `controlBorderInvalid`, as in Input. Toggling an indeterminate checkbox clears the
+ * mixed state until `indeterminate` changes value again. Inside a Form the control
+ * registers by `name` and submits its checked state as a boolean (`value` is not used
+ * on native); the error slot shows `error`, else the Form's message, else — only while
+ * `invalid` — `copy.required` (required and unchecked) or `copy.invalid`, as in Input,
+ * and `validate: blur` means on change. The error sits below the row, outside the hit
+ * area, indented by controlSize + gap so it lines up with the label.
+ * `disabledOpacity` dims the control and label, not the description or error. Inside a
+ * Fieldset the group's `disabled` applies and the legend prefixes the accessibility
+ * label. Errors are announced as in Input.
  */
 export function Checkbox({
   label,
@@ -186,6 +201,26 @@ export function Checkbox({
     }
   }, [displayedError, summarised]);
 
+  // react-native-web's Pressable writes `aria-disabled` from its own `disabled` prop, after any
+  // `aria-disabled` passed in, and passing `disabled` would also drop the row from the tab order —
+  // which `accessibilityState.disabled` plus a press guard exists to avoid. So on web the attribute
+  // is set on the DOM node itself: the row stays focusable and is still announced (and audited) as
+  // disabled, which is also what keeps the dimmed label out of axe's contrast check, as in Button.
+  React.useEffect(() => {
+    if (Platform.OS !== 'web') {
+      return;
+    }
+    const node = pressableRef.current as unknown as WebElement | null;
+    if (node === null) {
+      return;
+    }
+    if (isDisabled) {
+      node.setAttribute('aria-disabled', 'true');
+    } else {
+      node.removeAttribute('aria-disabled');
+    }
+  }, [isDisabled]);
+
   const handlePress = (): void => {
     if (isDisabled) {
       return;
@@ -215,11 +250,13 @@ export function Checkbox({
   const controlRadius = overrides?.controlRadius ? (resolveToken(t, overrides.controlRadius) as number) : t.radiusSm;
   const gap = overrides?.gap ? (resolveToken(t, overrides.gap) as number) : t.space2;
   const partGap = overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.space1;
+  const labelSize = overrides?.labelSize ? (resolveToken(t, overrides.labelSize) as number) : t.fontSizeMd;
+  const lineHeight = overrides?.lineHeight ? (resolveToken(t, overrides.lineHeight) as number) : t.fontLineHeightNormal;
   const disabledOpacity = overrides?.disabledOpacity ? (resolveToken(t, overrides.disabledOpacity) as number) : t.opacityDisabled;
   const transitionDuration = overrides?.transition ? (resolveToken(t, overrides.transition) as number) : t.motionDurationFast;
 
-  // Fill, border and indicator cross-fade together between unchecked and
-  // checked/indeterminate; the pressed overlay is instant, not part of this.
+  // Fill and border color cross-fade together between unchecked and
+  // checked/indeterminate; the pressed overlay and the indicator are instant.
   const fillAnim = React.useRef(new Animated.Value(filled ? 1 : 0)).current;
   React.useEffect(() => {
     const toValue = filled ? 1 : 0;
@@ -243,22 +280,37 @@ export function Checkbox({
     gap: partGap,
   };
 
+  // The row is exactly minTarget tall for a single line: it pads the difference
+  // between the target and the label's first line above and below, and grows
+  // downwards from there.
+  const firstLine = toLineHeight(labelSize, lineHeight);
   const rowStyle: ViewStyle = {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap,
     minHeight: t.sizeTargetComfortable,
+    paddingVertical: Math.max(0, (t.sizeTargetComfortable - firstLine) / 2),
+  };
+
+  // The control sits in a slot as tall as the label's first line and is centred in it,
+  // so a wrapping label or a description never pulls it off that line. With `hideLabel`
+  // the slot is the only content, so the control stays centred in the row.
+  const controlSlotStyle: ViewStyle = {
+    height: firstLine,
+    justifyContent: 'center',
   };
 
   // Dims the control (with its indicator) and the label; description and error stay readable.
   const dimStyle: ViewStyle = { opacity: isDisabled ? disabledOpacity : 1 };
 
+  // Border color precedence: invalid, then selected, then rest. Focus never hides the
+  // invalid color — only the width changes, and never to less than the rest width.
   const controlStyle: Animated.WithAnimatedValue<ViewStyle> = {
     width: controlSize,
     height: controlSize,
     borderRadius: controlRadius,
-    borderWidth: focused ? t.borderWidthFocus : controlBorderWidth,
-    borderColor: focused ? t.colorBorderFocus : isInvalid ? controlBorderInvalid : animatedBorderColor,
+    borderWidth: focused ? Math.max(t.borderWidthFocus, controlBorderWidth) : controlBorderWidth,
+    borderColor: isInvalid ? controlBorderInvalid : focused ? t.colorBorderFocus : animatedBorderColor,
     backgroundColor: animatedBackground,
     overflow: 'hidden',
     alignItems: 'center',
@@ -273,13 +325,14 @@ export function Checkbox({
     opacity: pressed && !filled && !isDisabled ? pressedOverlay : 0,
   });
 
-  const indicatorStyle: Animated.WithAnimatedValue<ViewStyle> = { opacity: fillAnim };
-
   const textColumnStyle: ViewStyle = {
     flex: 1,
     flexDirection: 'column',
     gap: partGap,
   };
+
+  // Outside the hit area, and indented past the control so it lines up with the label.
+  const errorStyle: ViewStyle = { paddingStart: controlSize + gap };
 
   const typographyOverrides = { fontFamily: overrides?.fontFamily, lineHeight: overrides?.lineHeight };
   const helperOverrides = { ...typographyOverrides, fontSize: overrides?.helperSize };
@@ -292,6 +345,10 @@ export function Checkbox({
         accessibilityLabel={accessibleName}
         accessibilityHint={description}
         accessibilityState={{ checked: isMixed ? 'mixed' : isChecked, disabled: isDisabled }}
+        // react-native-web 0.21 ignores `accessibilityState`, and `aria-checked` is required on
+        // `role="checkbox"`, so the state reaches the DOM through this mirror (native merges both).
+        // `aria-disabled` is set on the web node in an effect above.
+        aria-checked={isMixed ? 'mixed' : isChecked}
         onPress={handlePress}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
@@ -299,12 +356,17 @@ export function Checkbox({
       >
         {(state) => (
           <>
-            <Animated.View testID="Checkbox.control" style={controlStyle} accessibilityElementsHidden importantForAccessibility="no">
-              <View style={overlayStyle(state)} />
-              <Animated.View testID="Checkbox.indicator" style={indicatorStyle}>
-                <Icon name={isMixed ? 'dash' : 'check'} size="xs" color={t.colorControlSelectedForeground} />
+            <View style={controlSlotStyle}>
+              <Animated.View testID="Checkbox.control" style={controlStyle} accessibilityElementsHidden importantForAccessibility="no">
+                <View style={overlayStyle(state)} />
+                {/* Nothing is rendered while unchecked: the glyph appears, disappears and swaps instantly. */}
+                {filled ? (
+                  <View testID="Checkbox.indicator">
+                    <Icon name={isMixed ? 'dash' : 'check'} size="xs" overrides={{ color: 'color.control.selectedForeground' }} />
+                  </View>
+                ) : null}
               </Animated.View>
-            </Animated.View>
+            </View>
             <View style={textColumnStyle}>
               {hideLabel ? null : (
                 <View testID="Checkbox.label" style={dimStyle}>
@@ -330,7 +392,7 @@ export function Checkbox({
         )}
       </Pressable>
       {displayedError !== undefined ? (
-        <View accessibilityLiveRegion={summarised ? 'none' : 'assertive'} testID="Checkbox.errorMessage">
+        <View accessibilityLiveRegion={summarised ? 'none' : 'assertive'} testID="Checkbox.errorMessage" style={errorStyle}>
           <Text size="sm" tone="danger" overrides={helperOverrides}>
             {displayedError}
           </Text>

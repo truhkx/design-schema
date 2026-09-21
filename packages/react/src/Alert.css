@@ -66,7 +66,8 @@
   block-size: max(var(--ds-alert-first-line), var(--ds-alert-icon-size));
   line-height: 0;
 }
-.ds-alert:has(> .ds-alert__content > .ds-alert__heading) > .ds-alert__icon {
+/* The component sets data-has-heading on the root; no `:has()` query is used. */
+.ds-alert[data-has-heading] > .ds-alert__icon {
   --ds-alert-first-line: calc(var(--ds-alert-heading-size) * var(--ds-alert-line-height));
 }
 
@@ -92,10 +93,14 @@
   font-size: var(--ds-alert-font-size);
 }
 
-/* dismissButton: the system Button, unchanged; dismissMargin pulls it into the corner. */
+/*
+ * dismissButton: the system Button, unchanged; dismissMargin pulls it into the corner. Only
+ * margin-block-start and margin-inline-end are negative — never block-end, which would let a tall
+ * message pull the button past the bottom padding.
+ */
 .ds-alert__dismiss {
   display: inline-flex;
   flex: 0 0 auto;
-  margin-block: calc(-1 * var(--ds-alert-dismiss-margin));
+  margin-block-start: calc(-1 * var(--ds-alert-dismiss-margin));
   margin-inline-end: calc(-1 * var(--ds-alert-dismiss-margin));
 }

@@ -162,7 +162,11 @@ export { DsLandmark } from './Landmark.js';
 export type { LandmarkRole } from './Landmark.js';
 
 export { DsBreadcrumb } from './Breadcrumb.js';
-export type { BreadcrumbItem, BreadcrumbNavigateDetail, BreadcrumbOverridableBinding } from './Breadcrumb.js';
+export type {
+  BreadcrumbItem,
+  BreadcrumbNavigateDetail,
+  BreadcrumbOverridableBinding,
+} from './Breadcrumb.js';
 
 export { DsMeter } from './Meter.js';
 export type { MeterTone, MeterOverridableBinding } from './Meter.js';

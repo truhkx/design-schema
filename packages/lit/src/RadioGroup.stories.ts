@@ -73,17 +73,17 @@ export const Default: Story = {};
 
 /* orientation */
 export const OrientationVertical: Story = { args: { orientation: 'vertical' } };
-export const OrientationHorizontal: Story = { args: { orientation: 'horizontal' } };
-
-/* states */
-export const RequiredTrue: Story = { args: { required: true } };
-export const InvalidTrue: Story = { args: { invalid: true } };
-export const DisabledTrue: Story = { args: { disabled: true, defaultValue: 'standard' } };
-export const WithDescription: Story = { args: { description: 'Delivery times are estimates.' } };
-export const ErrorSet: Story = { args: { error: 'Choose a shipping method to continue.' } };
-
-/* keyboard: one tab stop, three radios moved between with the arrows */
-export const Keyboard: Story = {};
+export const OrientationHorizontal: Story = {
+  args: {
+    orientation: 'horizontal',
+    label: 'Send a receipt',
+    name: 'receipt',
+    options: [
+      { value: 'yes', label: 'Yes' },
+      { value: 'no', label: 'No' },
+    ],
+  },
+};
 
 /* examples */
 export const ShippingMethod: Story = {
@@ -97,7 +97,6 @@ export const ShippingMethod: Story = {
     ],
   },
 };
-
 export const HorizontalPair: Story = {
   args: {
     label: 'Send a receipt',
@@ -109,7 +108,6 @@ export const HorizontalPair: Story = {
     ],
   },
 };
-
 export const RequiredWithAGroupError: Story = {
   args: {
     label: 'Plan',
@@ -122,7 +120,6 @@ export const RequiredWithAGroupError: Story = {
     ],
   },
 };
-
 export const WithADisabledOption: Story = {
   args: {
     label: 'Delivery window',
@@ -134,3 +131,15 @@ export const WithADisabledOption: Story = {
     ],
   },
 };
+
+/* keyboard: one tab stop, native arrows move and select across three radios. */
+export const Keyboard: Story = {};
+
+/* states */
+export const Required: Story = { args: { required: true } };
+export const Invalid: Story = { args: { invalid: true } };
+export const Disabled: Story = { args: { disabled: true, defaultValue: 'standard' } };
+export const WithDescription: Story = {
+  args: { description: 'Delivery times are estimates from the day the order ships.' },
+};
+export const Controlled: Story = { args: { value: 'express' } };

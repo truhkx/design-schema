@@ -22,6 +22,13 @@ const COPY = {
   requiredIndicator: ' (required)',
 };
 
+/** fieldsGap → layout.gap.{gap}, resolved per enum value and sent to the Stack as a token path. */
+const FIELDS_GAP_TOKEN: Record<FieldsetGap, TokenRef> = {
+  tight: 'layout.gap.tight',
+  normal: 'layout.gap.normal',
+  loose: 'layout.gap.loose',
+};
+
 /** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
 export type FieldsetOverridableBinding =
   | 'legendSize'
@@ -88,9 +95,12 @@ export interface FieldsetProps
   legend: string;
   /** The fields as direct children, usually Inputs, Checkboxes or Switches; Fieldset renders the Stack around them. */
   children: ReactNode;
-  /** Persistent helper text under the legend. */
+  /** Persistent helper text under the legend. An empty string counts as unset (no part rendered, no link). */
   description?: string | undefined;
-  /** A group-level error (cross-field validation such as "End date must be after start date"). Field-level errors stay on the fields. */
+  /**
+   * A group-level error (cross-field validation such as "End date must be after start date"). Field-level
+   * errors stay on the fields. An empty string counts as unset (no part, no aria-invalid, no announcement).
+   */
   error?: string | undefined;
   /** Disables every field inside. Fields keep their own `disabled` for finer control. */
   disabled?: boolean | undefined;
@@ -146,7 +156,9 @@ export function Fieldset({
     fontFamily: overrides?.fontFamily,
     lineHeight: overrides?.lineHeight,
   });
-  const fieldsGap = overrides?.fieldsGap;
+  // fieldsGap reaches the Stack only through its own `overrides.gap`, and is always sent: the
+  // override when there is one, else the token layout.gap.{gap}. The Stack gets no `gap` prop.
+  const fieldsGap: TokenRef = overrides?.fieldsGap ?? FIELDS_GAP_TOKEN[gap];
 
   return (
     <fieldset
@@ -162,8 +174,7 @@ export function Fieldset({
     >
       <legend data-part="legend" className="ds-fieldset__legend">
         <Text element="span" tone="default" size="md" weight="medium" overrides={legendOverrides}>
-          {legend}
-          {allRequired ? COPY.requiredIndicator : null}
+          {allRequired ? `${legend}${COPY.requiredIndicator}` : legend}
         </Text>
       </legend>
       {description ? (
@@ -174,9 +185,7 @@ export function Fieldset({
         </div>
       ) : null}
       <div data-part="fields" className="ds-fieldset__fields">
-        <Stack gap={gap} overrides={fieldsGap ? { gap: fieldsGap } : undefined}>
-          {renderedChildren}
-        </Stack>
+        <Stack overrides={{ gap: fieldsGap }}>{renderedChildren}</Stack>
       </div>
       {error ? (
         <div id={errorId} role="alert" data-part="errorMessage" className="ds-fieldset__error">

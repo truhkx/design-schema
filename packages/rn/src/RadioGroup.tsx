@@ -18,6 +18,7 @@ export type RadioGroupOption = { value: string; label: string; description?: str
 /** The style bindings a caller may replace with a different token; see the component's overrides contract. */
 export type RadioGroupOverridableBinding =
   | 'controlBorderWidth'
+  | 'indicatorInset'
   | 'controlBorderInvalid'
   | 'controlSize'
   | 'controlRadius'
@@ -76,6 +77,9 @@ const COPY = {
 
 type TextOverrides = TextProps['overrides'];
 
+/** The DOM element react-native-web renders for an option row; this package has no DOM lib. */
+type WebElement = { setAttribute(name: string, value: string): void; removeAttribute(name: string): void };
+
 interface RadioProps {
   option: RadioGroupOption;
   index: number;
@@ -87,6 +91,7 @@ interface RadioProps {
   onSelect: (value: string) => void;
   sizes: {
     controlBorderWidth: number;
+    indicatorInset: number;
     controlBorderInvalid: string;
     controlSize: number;
     controlRadius: number;
@@ -117,6 +122,33 @@ function Radio({
   const { tokens: t } = useTheme();
   const reducedMotion = useReducedMotion();
   const [focused, setFocused] = React.useState(false);
+
+  // The row is owned here so react-native-web can be given `aria-disabled` on the DOM node (below);
+  // the group's `radioRef` (the first enabled option, focused on a failed submit) still receives it.
+  const rowRef = React.useRef<ViewInstance>(null);
+  React.useImperativeHandle(radioRef, () => rowRef.current!, []);
+
+  // A disabled option row is dimmed with disabledOpacity, so on react-native-web its label and
+  // description would fail axe's contrast check while reading as enabled. The row Pressable cannot
+  // take `disabled` — that would drop it from the tab order, and the rn notes keep every radio a
+  // stop — and react-native-web's Pressable overwrites any `aria-disabled` passed in with its own
+  // `disabled` prop, so the attribute is set on the DOM node itself, as in Button, Checkbox and
+  // Switch: the row is announced disabled and its dimmed text is audited as part of a disabled
+  // control rather than as body copy.
+  React.useEffect(() => {
+    if (Platform.OS !== 'web') {
+      return;
+    }
+    const node = rowRef.current as unknown as WebElement | null;
+    if (node === null) {
+      return;
+    }
+    if (optionDisabled) {
+      node.setAttribute('aria-disabled', 'true');
+    } else {
+      node.removeAttribute('aria-disabled');
+    }
+  }, [optionDisabled]);
 
   // The selected border and the dot cross-fade in; the fill stays controlBackground.
   const selectAnim = React.useRef(new Animated.Value(selected ? 1 : 0)).current;
@@ -159,12 +191,14 @@ function Radio({
     justifyContent: 'center',
   };
 
-  // The centre dot is controlSize minus 2 × space.1 in diameter.
-  const dotSize = sizes.controlSize - 2 * t.space1;
+  // The centre dot is controlSize minus indicatorInset on each side, and always a circle —
+  // it does not follow controlRadius. Its size does not change on focus: the thicker focus
+  // border eats into the inset, and the dot still fits while indicatorInset ≥ focusRingWidth.
+  const dotSize = sizes.controlSize - 2 * sizes.indicatorInset;
   const dotStyle: Animated.WithAnimatedValue<ViewStyle> = {
     width: dotSize,
     height: dotSize,
-    borderRadius: sizes.controlRadius,
+    borderRadius: t.radiusFull,
     backgroundColor: t.colorControlSelectedBackground,
     opacity: selectAnim,
   };
@@ -179,12 +213,16 @@ function Radio({
 
   return (
     <Pressable
-      ref={radioRef}
+      ref={rowRef}
       testID="RadioGroup.radio"
       accessibilityRole="radio"
       accessibilityLabel={accessibleName}
       accessibilityState={{ checked: selected, disabled: optionDisabled }}
       accessibilityValue={{ text: COPY.position(index, total) }}
+      // react-native-web 0.21 ignores `accessibilityState`, and `aria-checked` is required on
+      // `role="radio"` (axe's aria-required-attr), so the checked state reaches the DOM through
+      // this mirror; native merges both. `aria-disabled` is set on the web node in an effect above.
+      aria-checked={selected}
       onPress={() => {
         if (!optionDisabled) {
           onSelect(option.value);
@@ -342,6 +380,7 @@ export function RadioGroup({
 
   const sizes = {
     controlBorderWidth: overrides?.controlBorderWidth ? (resolveToken(t, overrides.controlBorderWidth) as number) : t.borderWidthThin,
+    indicatorInset: overrides?.indicatorInset ? (resolveToken(t, overrides.indicatorInset) as number) : t.space1,
     controlBorderInvalid: overrides?.controlBorderInvalid ? (resolveToken(t, overrides.controlBorderInvalid) as string) : t.colorBorderDanger,
     controlSize: overrides?.controlSize ? (resolveToken(t, overrides.controlSize) as number) : t.space5,
     controlRadius: overrides?.controlRadius ? (resolveToken(t, overrides.controlRadius) as number) : t.radiusFull,

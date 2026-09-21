@@ -36,6 +36,7 @@ const COPY = {
 /** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
 export type RadioGroupOverridableBinding =
   | 'controlBorderWidth'
+  | 'indicatorInset'
   | 'controlBorderInvalid'
   | 'controlSize'
   | 'controlRadius'
@@ -57,6 +58,7 @@ export type RadioGroupOverridableBinding =
 /** helperSize has no root hook: it reaches the composed Text only through its fontSize override. */
 const OVERRIDE_HOOK: Partial<Record<RadioGroupOverridableBinding, string>> = {
   controlBorderWidth: '--ds-radio-group-control-border-width',
+  indicatorInset: '--ds-radio-group-indicator-inset',
   controlBorderInvalid: '--ds-radio-group-control-border-invalid',
   controlSize: '--ds-radio-group-control-size',
   controlRadius: '--ds-radio-group-control-radius',
@@ -228,6 +230,12 @@ export function RadioGroup({
 
   const describedBy = [description ? descriptionId : null, resolvedError ? errorId : null].filter(Boolean).join(' ');
 
+  // `validate: change` validates on each change, `blur` when focus leaves the whole group; after a
+  // failed submit every mode re-validates on both, so a fixed group stops being flagged.
+  const validateMode = form ? (form.validateMode ?? form.validate) : undefined;
+  const validatesOnChange = validateMode === 'change' || (form?.submitFailed ?? false);
+  const validatesOnBlur = validateMode === 'blur' || (form?.submitFailed ?? false);
+
   // Roving tabindex, arrows, Space and Tab are the native radio group's; nothing is reimplemented.
   // Group `disabled` keeps the radios focusable (aria-disabled) and guards every way native radios select.
   const handleKeyDown = (event: KeyboardEvent<HTMLFieldSetElement>) => {
@@ -246,14 +254,14 @@ export function RadioGroup({
     }
     if (!isControlled) setInternalValue(option.value);
     onChange?.(option.value);
-    if (form && form.validate === 'change') form.validateField(name);
+    if (form && validatesOnChange) form.validateField(name);
   };
 
   const handleBlur = (event: FocusEvent<HTMLFieldSetElement>) => {
     onBlur?.(event);
     // `validate: blur` runs when focus leaves the group as a whole, not when it moves between radios.
     if (event.relatedTarget && fieldsetRef.current?.contains(event.relatedTarget as Node)) return;
-    if (form && form.validate === 'blur') form.validateField(name);
+    if (form && validatesOnBlur) form.validateField(name);
   };
 
   // The whole option row is the hit area: a click on its padding, gap or description selects the radio.

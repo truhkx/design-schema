@@ -64,7 +64,8 @@ function nameOf(el: Element): string {
  *
  * The property is `landmark` (attribute `role`) because `HTMLElement` already
  * defines `role`. `label` maps to `aria-label`; `banner`, `main` and
- * `contentinfo` never take a label, so on them it is not rendered.
+ * `contentinfo` never take a label, so on them neither `label` nor a
+ * composite's `aria-labelledby` is rendered.
  *
  * In development it warns when no role is set, when `region` or `form` has no
  * label, when a label is passed to a role that never takes one, when `main`
@@ -119,35 +120,45 @@ export class DsLandmark extends LitElement {
   }
 
   protected override updated(changed: PropertyValues): void {
-    this.syncLabel();
+    const refusedLabel = this.syncName();
     if (this.warnPending || changed.has('landmark') || changed.has('label')) {
       this.warnPending = false;
-      this.warnInDev();
+      this.warnInDev(refusedLabel);
     }
   }
 
-  /** Writes `aria-label` from `label`, omitting it when empty or when the role never takes a label. */
-  private syncLabel(): void {
+  /**
+   * Writes `aria-label` from `label`, omitting it when empty or when the role never takes a label,
+   * and drops a composite's `aria-labelledby` on those roles too. Returns true when a label — from
+   * either source — was passed to a role that never takes one, so it was not rendered.
+   */
+  private syncName(): boolean {
     const role = this.landmark;
-    const next = this.label && !(role !== undefined && NO_LABEL.has(role)) ? this.label : null;
-    if (this.getAttribute('aria-label') === next) return;
-    this.syncingLabel = true;
-    try {
-      if (next === null) this.removeAttribute('aria-label');
-      else this.setAttribute('aria-label', next);
-    } finally {
-      this.syncingLabel = false;
+    const refuses = role !== undefined && NO_LABEL.has(role);
+    const label = this.label ? this.label : null;
+    const next = refuses ? null : label;
+    if (this.getAttribute('aria-label') !== next) {
+      this.syncingLabel = true;
+      try {
+        if (next === null) this.removeAttribute('aria-label');
+        else this.setAttribute('aria-label', next);
+      } finally {
+        this.syncingLabel = false;
+      }
     }
+    const droppedLabelledBy = refuses && this.hasAttribute('aria-labelledby');
+    if (droppedLabelledBy) this.removeAttribute('aria-labelledby');
+    return refuses && (label !== null || droppedLabelledBy);
   }
 
-  private warnInDev(): void {
+  private warnInDev(refusedLabel: boolean): void {
     if (!import.meta.env.DEV || !this.isConnected) return;
     const role = this.landmark;
     if (role === undefined) {
       console.warn('Landmark: no role is set, so no landmark is exposed.', this);
       return;
     }
-    if (NO_LABEL.has(role) && this.label) {
+    if (refusedLabel) {
       console.warn(`Landmark: role "${role}" does not take a label; it was not rendered.`, this);
     }
     const name = nameOf(this);

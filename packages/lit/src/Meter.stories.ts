@@ -54,13 +54,8 @@ export const Default: Story = {};
 /* tone */
 export const ToneInfo: Story = { args: { tone: 'info' } };
 export const ToneSuccess: Story = { args: { tone: 'success' } };
-export const ToneWarning: Story = { args: { tone: 'warning' } };
-export const ToneDanger: Story = { args: { tone: 'danger' } };
-
-/* states */
-export const HideValue: Story = { args: { hideValue: true } };
-export const ClampedAboveMax: Story = { args: { value: 150 } };
-export const EmptyRange: Story = { args: { min: 10, max: 10, value: 10 } };
+export const ToneWarning: Story = { args: { tone: 'warning', value: 82 } };
+export const ToneDanger: Story = { args: { tone: 'danger', value: 95 } };
 
 /* examples */
 export const StorageQuota: Story = {
@@ -75,3 +70,8 @@ export const PasswordStrength: Story = {
 export const BarOnly: Story = {
   args: { label: 'Battery', value: 64, hideValue: true },
 };
+
+/* notable states */
+export const Empty: Story = { args: { value: 0 } };
+export const Full: Story = { args: { value: 100 } };
+export const AboveMaximum: Story = { args: { value: 150 } };

@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { AccessibilityInfo, Pressable, Switch as RNSwitch, View, findNodeHandle } from 'react-native';
+import { AccessibilityInfo, Platform, Pressable, Switch as RNSwitch, View, findNodeHandle } from 'react-native';
 import type { SwitchInstance, ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
@@ -10,6 +10,9 @@ import { Text } from './Text';
 import { toLineHeight, useTheme } from './theme';
 
 export type SwitchLabelPosition = 'start' | 'end';
+
+/** The DOM element react-native-web renders for the row; this package has no DOM lib. */
+type WebElement = { setAttribute(name: string, value: string): void; removeAttribute(name: string): void };
 
 /**
  * The style bindings a caller may replace with a different token; see the component's
@@ -59,13 +62,18 @@ export interface SwitchProps {
  * Use it in settings lists with `labelPosition: start` so the switches sit at the
  * row end. If a form of switches must have a Save button, they are checkboxes.
  *
- * Uses the native `Switch` with `accessibilityRole="switch"`, `accessibilityLabel`,
- * `accessibilityHint={description}`, `accessibilityState={{ checked, disabled }}`,
+ * Uses the native `Switch` with `accessibilityRole="switch"` (native only — on
+ * react-native-web the rendered `<input type="checkbox" role="switch">` already carries
+ * the role, and a second one on its container would have no state and a focusable
+ * descendant), `accessibilityLabel`, `accessibilityHint={description}`,
+ * `accessibilityState={{ checked, disabled }}`,
  * `trackColor={{ false: trackOff, true: trackOn }}`, `thumbColor` and
  * `ios_backgroundColor={trackOff}`. The row is a `Pressable` with `accessible={false}`
- * that toggles the value, so label and description are part of the target while the
- * Switch stays the single focusable element; the row is at least the comfortable
- * target tall, with the track at its top, centred on the label's first line. Track and thumb sizes, radius, thumb travel, its animation (and reduced
+ * and `tabIndex={-1}` that toggles the value, so label and description are part of the
+ * target while the Switch stays the single focusable element; the row is at least the comfortable
+ * target tall with no padding, and centres its content in that height, so a one-line
+ * row sits in the middle while a wrapping label or a description grows it downwards
+ * with the track still on the label's first line. Track and thumb sizes, radius, thumb travel, its animation (and reduced
  * motion) and the focus indicator are the OS values. With `name` inside a Form the
  * switch registers and contributes a boolean; it has no error state by design. Inside
  * a Fieldset the group's `disabled` applies and the legend prefixes the label.
@@ -87,6 +95,11 @@ export function Switch({
   const fieldset = useFieldsetContext();
   const switchRef = React.useRef<SwitchInstance>(null);
   const [internalChecked, setInternalChecked] = React.useState<boolean>(defaultChecked);
+
+  // The root is owned here so react-native-web can be given `aria-disabled` directly (below);
+  // the caller's `ref` still receives the same Pressable.
+  const rootRef = React.useRef<ViewInstance>(null);
+  React.useImperativeHandle(ref, () => rootRef.current!, []);
 
   const isChecked = checked ?? internalChecked;
   const isDisabled = disabled || (form?.disabled ?? false) || (fieldset?.disabled ?? false);
@@ -118,6 +131,27 @@ export function Switch({
     return () => unregister(name);
   }, [register, unregister, name, handle, isDisabled]);
 
+  // The row is dimmed as a whole (disabledOpacity covers track, label and description), so on
+  // react-native-web its text would fail axe's contrast check while reading as enabled. The row
+  // Pressable cannot take `disabled` — only the native Switch does — and react-native-web's
+  // Pressable overwrites any `aria-disabled` passed in with its own `disabled` prop, so the
+  // attribute is set on the DOM node itself, as in Button and Checkbox: the row is announced
+  // disabled and its dimmed text is audited as part of a disabled control rather than as body copy.
+  React.useEffect(() => {
+    if (Platform.OS !== 'web') {
+      return;
+    }
+    const node = rootRef.current as unknown as WebElement | null;
+    if (node === null) {
+      return;
+    }
+    if (isDisabled) {
+      node.setAttribute('aria-disabled', 'true');
+    } else {
+      node.removeAttribute('aria-disabled');
+    }
+  }, [isDisabled]);
+
   const setValue = (next: boolean): void => {
     if (isDisabled || next === isChecked) {
       return;
@@ -134,17 +168,27 @@ export function Switch({
   const labelSize = overrides?.labelSize ? (resolveToken(t, overrides.labelSize) as number) : t.fontSizeMd;
   const lineHeight = overrides?.lineHeight ? (resolveToken(t, overrides.lineHeight) as number) : t.fontLineHeightNormal;
 
-  // Dims the track (with its thumb), the label and the description together.
+  // The row has no padding: it is at least minTarget tall and centres its content box
+  // in that height, so a single line is vertically centred in the comfortable target
+  // while a description or a wrapping label grows the row downwards from there.
+  // The opacity dims the track (with its thumb), the label and the description together.
   const rowStyle: ViewStyle = {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap,
+    justifyContent: 'center',
     minHeight: t.sizeTargetComfortable,
     opacity: isDisabled ? disabledOpacity : 1,
   };
 
-  // The track sits at the top of the row, centred on the label's first line, so a
-  // wrapping label or a description does not pull it down.
+  // Track slot and text column, aligned to the top of the content box.
+  const contentStyle: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap,
+  };
+
+  // The track sits in a slot one label line tall and is centred in it, so a wrapping
+  // label or a description never pulls it off that line. The native Switch is taller
+  // than the slot (about 31pt on iOS) and spills evenly above and below it; the row's
+  // minHeight still contains it.
   const trackSlotStyle: ViewStyle = {
     height: toLineHeight(labelSize, lineHeight),
     justifyContent: 'center',
@@ -182,25 +226,43 @@ export function Switch({
   );
 
   return (
-    <Pressable ref={ref} testID="Switch" accessible={false} onPress={() => setValue(!isChecked)} style={rowStyle}>
-      {labelPosition === 'start' ? labelColumn : null}
-      <View style={trackSlotStyle}>
-        <RNSwitch
-          ref={switchRef}
-          testID="Switch.track"
-          accessibilityRole="switch"
-          accessibilityLabel={accessibleName}
-          accessibilityHint={description}
-          accessibilityState={{ checked: isChecked, disabled: isDisabled }}
-          value={isChecked}
-          disabled={isDisabled}
-          trackColor={{ false: t.colorControlTrackOff, true: t.colorControlSelectedBackground }}
-          thumbColor={t.colorControlSelectedForeground}
-          ios_backgroundColor={t.colorControlTrackOff}
-          onValueChange={setValue}
-        />
+    <Pressable
+      ref={rootRef}
+      testID="Switch"
+      accessible={false}
+      // The Switch is the single focusable element: react-native-web's Pressable makes its row a
+      // tab stop (tabIndex 0) unless one is given, which would put an unnamed, roleless stop in
+      // front of the control. `focusable` cannot do this — Pressable always passes its own tabIndex.
+      tabIndex={-1}
+      onPress={() => setValue(!isChecked)}
+      style={rowStyle}
+    >
+      <View style={contentStyle}>
+        {labelPosition === 'start' ? labelColumn : null}
+        <View style={trackSlotStyle}>
+          <RNSwitch
+            ref={switchRef}
+            testID="Switch.track"
+            // react-native-web's Switch is a container View holding the real
+            // `<input type="checkbox" role="switch">`, and spreads the accessibility props onto
+            // that container: `accessibilityRole` would put a second role="switch" on it, with no
+            // aria-checked of its own (aria-required-attr) and the input focusable inside it
+            // (nested-interactive). The input already carries the role, the name and the state, so
+            // the role is set on native only, where it is what makes the Switch announce as one.
+            accessibilityRole={Platform.OS === 'web' ? undefined : 'switch'}
+            accessibilityLabel={accessibleName}
+            accessibilityHint={description}
+            accessibilityState={{ checked: isChecked, disabled: isDisabled }}
+            value={isChecked}
+            disabled={isDisabled}
+            trackColor={{ false: t.colorControlTrackOff, true: t.colorControlSelectedBackground }}
+            thumbColor={t.colorControlSelectedForeground}
+            ios_backgroundColor={t.colorControlTrackOff}
+            onValueChange={setValue}
+          />
+        </View>
+        {labelPosition === 'end' ? labelColumn : null}
       </View>
-      {labelPosition === 'end' ? labelColumn : null}
     </Pressable>
   );
 }

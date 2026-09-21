@@ -7,6 +7,7 @@ import './Text.js';
 import type { StackOverridableBinding } from './Stack.js';
 import type { TextOverridableBinding } from './Text.js';
 
+/** Gap between the fields, from the layout rhythm. */
 export type FieldsetGap = 'tight' | 'normal' | 'loose';
 
 /** copy.requiredIndicator */
@@ -24,8 +25,9 @@ export type FieldsetOverridableBinding =
   | 'lineHeight';
 
 /**
- * Bindings Fieldset's own rules read. The others reach the composed Text and Stack only
- * through their `overrides`, so they have no --ds-fieldset-* hook.
+ * The two bindings Fieldset's own elements read. The rest reach the composed Text and Stack
+ * only through their `overrides`, so they declare no --ds-fieldset-* hook (a Fieldset hook
+ * would not reach a child's shadow root).
  */
 const HOOKS: Partial<Record<FieldsetOverridableBinding, string>> = {
   partGap: '--ds-fieldset-part-gap',
@@ -34,28 +36,43 @@ const HOOKS: Partial<Record<FieldsetOverridableBinding, string>> = {
 
 type TextOverrides = Partial<Record<TextOverridableBinding, TokenRef | undefined>>;
 type StackOverrides = Partial<Record<StackOverridableBinding, TokenRef | undefined>>;
+
+/** A direct light-DOM child carrying `data-ds-field` — every field component's root does. */
 type Field = HTMLElement & { disabled: boolean; required?: boolean | undefined };
 
 /**
- * `<ds-fieldset>` — Fieldset (category: input).
+ * `<ds-fieldset>` — Fieldset (category: input, role: group).
  *
- * `<ds-fieldset legend="Shipping address" gap="normal"><ds-input …></ds-input>…</ds-fieldset>`.
- * A shadow `<fieldset><legend>` wraps a Fieldset-owned `fields` wrapper around a
- * composed `<ds-stack>` and a default `<slot>`; the fields stay in the light DOM
- * so `<ds-form>` still collects them. The legend, description and error render
- * their text through `<ds-text>` (element span) inside the native `<legend>`, a
- * description wrapper and a `role="alert"` wrapper; `legendSize`, `legendWeight`,
- * `helperSize`, `fontFamily` and `lineHeight` reach them only as Text overrides,
- * and `fieldsGap` reaches the Stack only as its `overrides.gap`.
+ * `<ds-fieldset legend="Shipping address" gap="normal"><ds-input …></ds-input>…</ds-fieldset>`
+ * renders a shadow `<fieldset><legend>` around a Fieldset-owned `fields` wrapper holding a
+ * composed `<ds-stack>` and the default `<slot>`. The fields themselves stay in the light DOM,
+ * so `<ds-form>` still collects them and each keeps its own label, error and validity — the
+ * group is structure, not a field. It has no border and no padding: wrap it in a Box or Card
+ * for a surface.
  *
- * While `error` is set the `<fieldset>` carries `aria-invalid="true"` and
- * `aria-describedby` names the error. `disabled` sets `aria-disabled` on the
- * fieldset and the `disabled` property on direct `data-ds-field` children on
- * `slotchange` and whenever it changes, remembering which it set so clearing
- * never enables a field disabled on its own. The `requiredIndicator` is appended
- * inside the legend when every direct child field is `required`.
+ * The legend, description and error render their text through `<ds-text>` (element span) inside
+ * the native `<legend>`, a description wrapper and a `role="alert"` wrapper, so `legendSize`,
+ * `legendWeight`, `helperSize`, `fontFamily` and `lineHeight` reach them only as Text overrides,
+ * never as Fieldset rules; `fieldsGap` likewise reaches the Stack only as its `overrides.gap`.
+ * Ids never cross the shadow boundary, so the group's role and accessible name come from the
+ * native `<fieldset>`/`<legend>` and `aria-describedby` points at shadow ids.
  *
- * @slot - The raw fields (Inputs, Checkboxes, Switches) as direct children.
+ * While `error` is set (an empty string counts as unset) the `<fieldset>` carries
+ * `aria-invalid="true"` and the error is announced once, because inserting the `role="alert"`
+ * wrapper is what announces it. `disabled` sets `aria-disabled` on the fieldset and the
+ * `disabled` property on direct `data-ds-field` children — on `slotchange` and whenever it
+ * changes — remembering which it set so clearing never enables a field disabled on its own.
+ * The `requiredIndicator` is appended inside the legend when every direct child field is
+ * `required` (the property or the attribute), so it is not repeated on each field.
+ *
+ * ## When to use
+ *
+ * Whenever two or more fields share a name a user would say aloud — an address, a date range,
+ * "Which days?" as a set of Checkboxes. Give it a `description` when the group needs a rule,
+ * and put cross-field errors on the group rather than on one field. Not for a single field,
+ * not for a whole form, and not inside a RadioGroup, which already is a fieldset.
+ *
+ * @slot - The fields as direct children, usually Inputs, Checkboxes or Switches.
  */
 @customElement('ds-fieldset')
 export class DsFieldset extends LitElement {
@@ -64,13 +81,17 @@ export class DsFieldset extends LitElement {
       display: block;
       --ds-fieldset-part-gap: var(--layout-gap-tight);
       --ds-fieldset-disabled-opacity: var(--opacity-disabled);
+      /* legendColor, descriptionText and errorText are locked, and legendSize, legendWeight,
+         helperSize, fontFamily, lineHeight and fieldsGap only forward: the composed Text and
+         Stack realise all of them through their own props and overrides. */
     }
 
     :host([hidden]) {
       display: none;
     }
 
-    /* No border, padding or min-inline-size: the group is structure, not a box. */
+    /* partGap: between legend, description, fields and error. The browser's border, padding
+       and min-inline-size are reset — the group is structure, not a box. */
     fieldset {
       display: flex;
       flex-direction: column;
@@ -87,43 +108,47 @@ export class DsFieldset extends LitElement {
       padding: 0;
     }
 
-    /* disabledOpacity: the legend and description only; the fields dim themselves. */
+    /* disabledOpacity: the Fieldset-owned legend and description wrappers only, never the Texts.
+       The fields dim themselves and the group error is never dimmed, so neither the group root
+       nor the fields wrapper is dimmed. */
     :host([disabled]) legend,
     :host([disabled]) [data-part='description'] {
       opacity: var(--ds-fieldset-disabled-opacity);
     }
   `;
 
-  /** The group's name — what the fields together describe. Always visible; the group's accessible name. */
+  /** The group's name — what the fields together describe ("Shipping address"). Always visible, and the group's accessible name. */
   @property() accessor legend = '';
 
-  /** Persistent helper text under the legend. Linked with aria-describedby on the group. */
+  /** Persistent helper text under the legend, linked with aria-describedby. An empty string counts as unset. */
   @property() accessor description: string | undefined;
 
-  /** A group-level error (cross-field validation). Field-level errors stay on the fields. */
+  /** A group-level error (cross-field validation such as "End date must be after start date"). Field-level errors stay on the fields. An empty string counts as unset. */
   @property() accessor error: string | undefined;
 
-  /** Disables every field inside. Fields keep their own `disabled` for finer control. */
+  /** Disables every direct child field. Fields keep their own `disabled` for finer control. */
   @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
   /** Gap between the fields, from the layout rhythm. Fieldset renders the Stack itself; children are the raw fields. */
   @property({ type: String, reflect: true }) accessor gap: FieldsetGap = 'normal';
 
   /** Per-instance style overrides: `{ fieldsGap: 'layout.gap.loose' }`. Locked bindings are ignored. */
-  @property({ attribute: false }) accessor overrides: Partial<Record<FieldsetOverridableBinding, TokenRef | undefined>> | undefined;
+  @property({ attribute: false }) accessor overrides:
+    | Partial<Record<FieldsetOverridableBinding, TokenRef | undefined>>
+    | undefined;
 
   /** Every direct child field is `required`; derived on slotchange and when a child's `required` attribute changes. */
   @state() private accessor allFieldsRequired = false;
 
-  /** Fields this Fieldset disabled itself, so clearing `disabled` never enables one disabled on its own. */
+  /** The fields this Fieldset disabled itself, so clearing `disabled` never enables one disabled on its own. */
   private readonly disabledByFieldset = new WeakSet<Field>();
 
+  /** Watches the light DOM for `required` attribute changes; the callback writes state only, never an observed attribute, so it cannot re-trigger itself. */
   private readonly requiredObserver = new MutationObserver(() => this.syncRequired());
 
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('data-ds', 'Fieldset');
-    // The callback writes state only, never an observed attribute, so it cannot re-trigger itself.
     this.requiredObserver.observe(this, { subtree: true, attributes: true, attributeFilter: ['required'] });
   }
 
@@ -182,12 +207,12 @@ export class DsFieldset extends LitElement {
     `;
   }
 
-  /** fieldsGap → the Stack's `overrides.gap`, as the token path `layout.gap.{gap}` unless overridden. */
+  /** fieldsGap → the Stack's own `overrides.gap`, always sent as a token path: the override, else `layout.gap.{gap}`. The Stack gets no `gap` attribute, and Fieldset never sets --ds-stack-gap. */
   private get stackOverrides(): StackOverrides {
     return { gap: this.overrides?.fieldsGap ?? `layout.gap.${this.gap}` };
   }
 
-  /** legendSize, legendWeight, fontFamily, lineHeight → the legend Text's overrides. */
+  /** legendSize, legendWeight, fontFamily and lineHeight → the legend Text's overrides. */
   private get legendOverrides(): TextOverrides {
     return {
       fontSize: this.overrides?.legendSize ?? 'font.size.md',
@@ -196,7 +221,7 @@ export class DsFieldset extends LitElement {
     };
   }
 
-  /** helperSize, fontFamily, lineHeight → the description and error Texts' overrides. */
+  /** helperSize, fontFamily and lineHeight → the description and error Texts' overrides. */
   private get helperOverrides(): TextOverrides {
     return { fontSize: this.overrides?.helperSize ?? 'font.size.sm', ...this.typeOverrides };
   }
@@ -208,7 +233,7 @@ export class DsFieldset extends LitElement {
     };
   }
 
-  /** Direct child fields only; fields wrapped in a consumer's own container are not inspected. */
+  /** Direct children carrying `data-ds-field`; a field nested deeper is not inspected — put fields directly inside the Fieldset. */
   private directFields(): Field[] {
     return Array.from(this.children).filter((el): el is Field => el.hasAttribute('data-ds-field'));
   }
@@ -218,10 +243,14 @@ export class DsFieldset extends LitElement {
     this.syncRequired();
   }
 
+  /** The indicator appears only when every direct child field is required; a group with no fields shows none. */
   private syncRequired(): void {
     const fields = this.directFields();
-    const next = fields.length > 0 && fields.every((field) => field.required === true || field.hasAttribute('required'));
-    if (this.allFieldsRequired !== next) this.allFieldsRequired = next;
+    const next =
+      fields.length > 0 && fields.every((field) => field.required === true || field.hasAttribute('required'));
+    if (this.allFieldsRequired !== next) {
+      this.allFieldsRequired = next;
+    }
   }
 
   /** Sets `disabled` on direct fields, remembering which it set so clearing is exact. */

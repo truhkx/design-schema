@@ -12,22 +12,28 @@ interface FieldsetArgs {
   error?: string | undefined;
   disabled?: boolean | undefined;
   gap?: FieldsetGap | undefined;
-  /** The examples' `children`, as the doc words them; rendered as the fields they describe. */
+  /** The examples' `children`, worded as the doc words them; rendered as the fields they describe. */
   children?: string | undefined;
 }
+
+/** The `children` each example describes, keyed by the doc's own wording. */
+const ADDRESS = 'An Input name=street label=Street and an Input name=city label=City';
+const REQUIRED_ADDRESS = 'A required Input name=street label=Street and a required Input name=city label=City';
+const NOTIFICATIONS =
+  'A Checkbox name=email label=Email, a Checkbox name=sms label=SMS and a Checkbox name=push label=Push';
+const DATE_RANGE = 'An Input name=startDate label=Start date and an Input name=endDate label=End date';
 
 const addressFields = (): TemplateResult => html`
   <ds-input name="street" label="Street"></ds-input>
   <ds-input name="city" label="City"></ds-input>
 `;
 
-/** Real fields for each `children` description the examples give. */
-const ADDRESS = 'An Input name=street label=Street and an Input name=city label=City';
-const NOTIFICATIONS = 'A Checkbox name=email label=Email, a Checkbox name=sms label=SMS and a Checkbox name=push label=Push';
-const DATE_RANGE = 'An Input name=startDate label=Start date and an Input name=endDate label=End date';
-
 const CHILDREN: Record<string, () => TemplateResult> = {
   [ADDRESS]: addressFields,
+  [REQUIRED_ADDRESS]: () => html`
+    <ds-input name="street" label="Street" required></ds-input>
+    <ds-input name="city" label="City" required></ds-input>
+  `,
   [NOTIFICATIONS]: () => html`
     <ds-checkbox name="email" label="Email"></ds-checkbox>
     <ds-checkbox name="sms" label="SMS"></ds-checkbox>
@@ -49,8 +55,9 @@ const meta: Meta<FieldsetArgs> = {
   },
   args: {
     legend: 'Shipping address',
-    disabled: false,
     gap: 'normal',
+    disabled: false,
+    children: ADDRESS,
   },
   render: (args) => html`
     <ds-fieldset
@@ -75,18 +82,13 @@ export const GapTight: Story = { args: { gap: 'tight' } };
 export const GapNormal: Story = { args: { gap: 'normal' } };
 export const GapLoose: Story = { args: { gap: 'loose' } };
 
-/* notable states */
+/* states */
 export const WithDescription: Story = { args: { description: 'We only ship within the EU.' } };
-export const ErrorSet: Story = { args: { error: 'End date must be after start date.' } };
-export const DisabledTrue: Story = { args: { disabled: true } };
-export const AllFieldsRequired: Story = {
-  render: (args) => html`
-    <ds-fieldset legend=${args.legend} gap=${args.gap ?? 'normal'}>
-      <ds-input name="street" label="Street" required></ds-input>
-      <ds-input name="city" label="City" required></ds-input>
-    </ds-fieldset>
-  `,
+export const RequiredIndicator: Story = { args: { children: REQUIRED_ADDRESS } };
+export const WithError: Story = {
+  args: { error: 'End date must be after start date.', children: DATE_RANGE },
 };
+export const Disabled: Story = { args: { disabled: true } };
 
 /* examples */
 export const ShippingAddress: Story = {
@@ -103,11 +105,7 @@ export const NotificationPreferences: Story = {
 };
 
 export const DateRangeWithAGroupError: Story = {
-  args: {
-    legend: 'Reporting period',
-    error: 'End date must be after start date.',
-    children: DATE_RANGE,
-  },
+  args: { legend: 'Reporting period', error: 'End date must be after start date.', children: DATE_RANGE },
 };
 
 export const DisabledGroup: Story = {

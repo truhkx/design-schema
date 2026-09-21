@@ -52,6 +52,25 @@ describe('Disclosure', () => {
     expect(s.trigger()).toBeDisabled();
   });
 
+  it('controlled-open-change-reports-controlled', () => {
+    const onToggle = jest.fn();
+    const props: DisclosureProps = { ...(meta.args as DisclosureProps), open: false, onToggle };
+    const view = render(
+      <ThemeProvider mode="light">
+        <Disclosure {...props} />
+      </ThemeProvider>,
+    );
+    expect(onToggle).not.toHaveBeenCalled();
+    view.rerender(
+      <ThemeProvider mode="light">
+        <Disclosure {...props} open />
+      </ThemeProvider>,
+    );
+    expect(onToggle).toHaveBeenCalledTimes(1);
+    expect(onToggle).toHaveBeenCalledWith(true, 'controlled');
+    expect(screen.getByRole('button', { name: props.summary })).toBeExpanded();
+  });
+
   it('renders', () => {
     setup();
     expect(screen.getByTestId('Disclosure')).toBeOnTheScreen();

@@ -26,6 +26,7 @@ export type DisclosureOverridableBinding =
   | 'triggerFontFamily'
   | 'triggerFontSize'
   | 'triggerFontWeight'
+  | 'triggerLineHeight'
   | 'triggerRadius'
   | 'panelPaddingBlock'
   | 'panelPaddingInline'
@@ -39,6 +40,7 @@ const HOOKS: Record<DisclosureOverridableBinding, string> = {
   triggerFontFamily: '--ds-disclosure-trigger-font-family',
   triggerFontSize: '--ds-disclosure-trigger-font-size',
   triggerFontWeight: '--ds-disclosure-trigger-font-weight',
+  triggerLineHeight: '--ds-disclosure-trigger-line-height',
   triggerRadius: '--ds-disclosure-trigger-radius',
   panelPaddingBlock: '--ds-disclosure-panel-padding-block',
   panelPaddingInline: '--ds-disclosure-panel-padding-inline',
@@ -102,6 +104,7 @@ export class DsDisclosure extends LitElement {
       --ds-disclosure-trigger-font-family: var(--font-family-body);
       --ds-disclosure-trigger-font-size: var(--font-size-md);
       --ds-disclosure-trigger-font-weight: var(--font-weight-medium);
+      --ds-disclosure-trigger-line-height: var(--font-line-height-normal);
       --ds-disclosure-trigger-radius: var(--radius-md);
       --ds-disclosure-panel-padding-block: var(--space-sm);
       --ds-disclosure-panel-padding-inline: var(--space-sm);
@@ -135,7 +138,7 @@ export class DsDisclosure extends LitElement {
       font-family: var(--ds-disclosure-trigger-font-family);
       font-size: var(--ds-disclosure-trigger-font-size);
       font-weight: var(--ds-disclosure-trigger-font-weight);
-      line-height: var(--font-line-height-normal);
+      line-height: var(--ds-disclosure-trigger-line-height);
       text-align: start;
       color: var(--color-foreground);
       background: transparent;
@@ -159,8 +162,10 @@ export class DsDisclosure extends LitElement {
       cursor: not-allowed;
     }
 
-    /* icon: chevron-right, rotated 90° when open; mirrored under rtl */
+    /* icon: the wrapper the Disclosure owns carries the colour and the rotation; the composed
+       <ds-icon inline> is never restyled and tracks the trigger's font size through 1em. */
     [data-part='triggerIcon'] {
+      display: inline-flex;
       flex: none;
       color: var(--color-foreground-muted);
       transition: transform var(--ds-disclosure-transition) var(--motion-easing-standard);
@@ -270,7 +275,9 @@ export class DsDisclosure extends LitElement {
         aria-disabled=${ifDefined(this.disabled ? 'true' : undefined)}
         @click=${this.handleClick}
       >
-        <ds-icon data-part="triggerIcon" part="triggerIcon" name="chevron-right" inline></ds-icon>
+        <span data-part="triggerIcon" part="triggerIcon"
+          ><ds-icon name="chevron-right" inline></ds-icon
+        ></span>
         <span>${this.summary}</span>
       </button>
     `;

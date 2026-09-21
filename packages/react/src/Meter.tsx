@@ -53,17 +53,22 @@ function compact(overrides: TextOverrides): TextOverrides | undefined {
 }
 
 export interface MeterProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children' | 'role' | 'className' | 'style'> {
-  /** The current measurement. Clamped to `min`…`max` for the bar; the accessible value is the clamped number too. */
+  /**
+   * The current measurement. Clamped to `min`…`max` for the bar; the accessible value is the clamped number
+   * too, exact and unrounded (`aria-valuenow="3.14159"`) — only the percentage text is rounded.
+   */
   value: number;
-  /** Lower bound of the range. */
+  /** Lower bound of the range. A non-finite `min` (NaN, Infinity) is treated as 0. */
   min?: number | undefined;
-  /** Upper bound of the range. Must be greater than `min`. */
+  /** Upper bound of the range. Must be greater than `min`. A non-finite `max` (NaN, Infinity) is treated as 100. */
   max?: number | undefined;
   /** Visible label naming the measurement ("Storage used"). Also the accessible name. */
   label: string;
   /**
    * Human-readable value shown at the end of the label row and announced instead of the raw number
    * ("3.2 GB of 10 GB", "Strong"). Omit to show and announce the percentage, rounded to a whole number ("32%").
+   * Meter has no locale prop: the percentage uses the runtime's default locale, and the same formatter
+   * produces the "0%" of an invalid range. Rounding is for the text only; the fill uses the exact fraction.
    */
   valueText?: string | undefined;
   /**
@@ -84,6 +89,9 @@ declare const process: { env: Record<string, string | undefined> } | undefined;
 const isDev: boolean = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
 
 const PERCENT = new Intl.NumberFormat(undefined, { style: 'percent', maximumFractionDigits: 0 });
+
+/** The invalid `min`/`max` pairs already reported, so each distinct one warns once. */
+const warnedRanges = new Set<string>();
 
 /**
  * Meter — Design Schema, category: data.
@@ -113,15 +121,24 @@ export function Meter({
   };
   const labelId = useId();
 
-  const validRange = max > min;
+  // A non-finite bound is not a range end: it falls back to the prop's default, here and in the exposed range.
+  const safeMin = Number.isFinite(min) ? min : 0;
+  const safeMax = Number.isFinite(max) ? max : 100;
+
+  const validRange = safeMax > safeMin;
   useEffect(() => {
-    if (isDev && !validRange) console.warn(`Meter: \`max\` (${max}) must be greater than \`min\` (${min}).`);
-  }, [validRange, min, max]);
+    if (!isDev || validRange) return;
+    // Developer-facing, never shown to users, and warned once per distinct invalid pair.
+    const pair = `${safeMin}:${safeMax}`;
+    if (warnedRanges.has(pair)) return;
+    warnedRanges.add(pair);
+    console.warn(`Meter: \`max\` (${safeMax}) must be greater than \`min\` (${safeMin}).`);
+  }, [validRange, safeMin, safeMax]);
 
   // A non-finite value is treated as `min`; with an invalid range the meter is empty at `min`.
-  const safeValue = Number.isFinite(value) ? value : min;
-  const clamped = validRange ? Math.min(Math.max(safeValue, min), max) : min;
-  const fraction = validRange ? (clamped - min) / (max - min) : 0;
+  const safeValue = Number.isFinite(value) ? value : safeMin;
+  const clamped = validRange ? Math.min(Math.max(safeValue, safeMin), safeMax) : safeMin;
+  const fraction = validRange ? (clamped - safeMin) / (safeMax - safeMin) : 0;
   // Rounding is for the text only; the fill uses the exact fraction.
   const resolvedValueText = valueText ?? PERCENT.format(fraction);
 
@@ -170,8 +187,8 @@ export function Meter({
         role="meter"
         aria-labelledby={labelId}
         aria-valuenow={clamped}
-        aria-valuemin={min}
-        aria-valuemax={max}
+        aria-valuemin={safeMin}
+        aria-valuemax={safeMax}
         aria-valuetext={resolvedValueText}
       >
         <div className="ds-meter__fill" data-part="fill" style={{ inlineSize: `${fraction * 100}%` }} />

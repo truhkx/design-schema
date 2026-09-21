@@ -35,3 +35,14 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Breadcrumb: the anatomy has no part for a plain-text ancestor (an item without href). I rendered it as a <span> with no data-part, and it takes its colour from the item's itemColor.
 - Breadcrumb: the web notes don't say whether the `link`/`expand` wrapper spans need a display value. I left them inline, so the Link and Button lay out inside the item's inline-flex row.
 - Breadcrumb: the doc gives no story for the no-href focus fallback or for an ancestor without href. I kept the existing AncestorWithoutHref story and added no story for the fallback.
+
+## 2026-09-21 03:36 — round 1
+
+- Breadcrumb: copy.current is declared in the copy block and the rules say every copy.* string is used verbatim, but platforms.web says it is not rendered because aria-current="page" announces it. Chose not to emit it at all and documented that in the COPY comment, so the web COPY constant has three of the four strings.
+- Breadcrumb: the separatorColor binding names part `separator`, but on web the separator is the ::before of every item after the first and has no element. Styled the pseudo-element from the item's rule; it therefore gets a colour hook but no data-part and no minTarget/focus hook of its own.
+- Breadcrumb: the spec says --ds-breadcrumb-separator is 'set inline on the nav from copy.separator' but not whether the value is a quoted CSS string. `content:` needs quotes, so the component writes JSON.stringify(COPY.separator); a consumer overriding the hook from their own CSS must quote their value too, which the docs do not say.
+- Breadcrumb: focusRing and focusRingWidth are listed as locked, yet the override contract says every binding becomes a root hook and that consumer CSS setting hooks is the sanctioned escape hatch. Those two statements conflict for locked bindings. Chose to emit the hooks (matching Checkbox/RadioGroup/DatePicker) while keeping them out of the TS overrides type.
+- Breadcrumb: a plain-text ancestor is specified only as 'a <span> with no data-part'. No class name is given, so it cannot be targeted by the overrides escape hatch. Chose `ds-breadcrumb__text` and let it inherit itemColor from the <li> rather than setting colour on it.
+- Breadcrumb: expansion is one-way for the life of the instance, but no prop or event exposes the expanded state, so a consumer cannot observe it, persist it across a remount, or reset it. Left with no escape hatch as written.
+- Breadcrumb: the spec does not say whether activating a plain-text ancestor (no href, not the last item) should fire onNavigate. Chose not to — it renders no interactive element, so there is nothing to activate.
+- Breadcrumb: the focus-fallback tabindex="-1" is specified as living on index 1 and staying 'across items changes'. If items later shrinks to fewer than two entries that index no longer exists; chose to drop the attribute silently rather than warn or re-target.

@@ -126,6 +126,9 @@ export function Alert({
   const lineHeightMultiplier = overrides?.lineHeight ? (resolveToken(t, overrides.lineHeight) as number) : t.fontLineHeightNormal;
   const dismissMargin = overrides?.dismissMargin ? (resolveToken(t, overrides.dismissMargin) as number) : t.space1;
 
+  // An empty heading is the same as no heading on every platform: no heading element,
+  // and the name falls back to the body.
+  const hasHeading = heading !== undefined && heading !== '';
   const isTextBody = typeof children === 'string' || typeof children === 'number';
   const bodyText = isTextBody ? String(children) : undefined;
   const announcement = [heading, bodyText]
@@ -156,7 +159,7 @@ export function Alert({
 
   // Centre the glyph on the first line of text so it lines up with the heading (or body).
   const iconCellStyle: ViewStyle = {
-    height: Math.max(heading !== undefined ? headingLineHeight : bodyLineHeight, iconSize),
+    height: Math.max(hasHeading ? headingLineHeight : bodyLineHeight, iconSize),
     justifyContent: 'center',
   };
 
@@ -194,11 +197,14 @@ export function Alert({
       accessibilityLabel={announcement !== '' ? announcement : undefined}
       style={containerStyle}
     >
-      <View testID="Alert.icon" style={iconCellStyle} accessibilityElementsHidden importantForAccessibility="no">
+      {/* The Icon is decorative and hides itself (no `label`); the box the Alert owns adds no
+          accessibility props of its own, and no color — the tone reaches the glyph through
+          `overrides.color`, the sanctioned way to color a composed child. */}
+      <View testID="Alert.icon" style={iconCellStyle}>
         <Icon name={tone} overrides={{ color: ICON_COLOR[tone], size: iconSizeRef }} />
       </View>
       <View style={contentStyle}>
-        {heading !== undefined ? (
+        {hasHeading ? (
           <RNText testID="Alert.heading" allowFontScaling style={headingStyle}>
             {heading}
           </RNText>

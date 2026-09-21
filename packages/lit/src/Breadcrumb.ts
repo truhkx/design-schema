@@ -132,6 +132,16 @@ export class DsBreadcrumb extends LitElement {
     [data-part='current'] {
       color: var(--color-foreground);
     }
+
+    /*
+     * focusRing / focusRingWidth: only the focus-fallback item draws one — the <li> given
+     * tabindex="-1" after expanding when no revealed item is a link. Link and Button draw
+     * their own rings inside their shadow roots.
+     */
+    [data-part='item']:focus-visible {
+      outline: var(--border-width-focus) solid var(--color-border-focus);
+      outline-offset: var(--border-width-focus);
+    }
   `;
 
   /** The trail from root to current page, in order. Every item but the last needs an `href`; the last is the current page and its `href` is ignored. A property, not an attribute. */
@@ -197,7 +207,9 @@ export class DsBreadcrumb extends LitElement {
           html`<li part="item" data-part="item" data-index=${index}><span part="current" data-part="current" aria-current="page">${item.label}</span></li>`,
         );
       } else if (item.href === undefined || item.href === '') {
-        entries.push(html`<li part="item" data-part="item" data-index=${index}>${item.label}</li>`);
+        // An ancestor with no page of its own: plain text inside the item, never an empty link.
+        // It has no anatomy part, so it takes itemColor from the <li>.
+        entries.push(html`<li part="item" data-part="item" data-index=${index}><span>${item.label}</span></li>`);
       } else {
         entries.push(html`
           <li part="item" data-part="item" data-index=${index}>

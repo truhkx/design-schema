@@ -13,6 +13,22 @@ interface Given {
   label?: string | undefined;
 }
 
+/**
+ * The label each role is rendered with: none for the roles that refuse one (`banner`, `main`,
+ * `contentinfo`) or do not need one (`complementary`, `search`), and a name for `region` and
+ * `form`, which are landmarks only when named. The Default story's label does not carry over.
+ */
+const ROLE_LABEL: Readonly<Record<LandmarkRole, string | undefined>> = {
+  banner: undefined,
+  navigation: 'Main',
+  main: undefined,
+  complementary: undefined,
+  contentinfo: undefined,
+  region: 'Related articles',
+  search: undefined,
+  form: 'Sign in',
+};
+
 const ROLES = ['banner', 'navigation', 'main', 'complementary', 'contentinfo', 'region', 'search', 'form'] as const;
 
 /** The Default story's args plus the scenario's `given`, as properties on a fresh element. */
@@ -46,17 +62,17 @@ beforeEach(() => {
 
 describe('ds-landmark', () => {
   it('the-role-prop-chooses-the-landmark', async () => {
-    const el = await setup({ role: 'navigation' });
+    const el = await setup({ role: 'navigation', label: ROLE_LABEL.navigation });
     expectRole(el, 'navigation');
   });
 
   it('search-is-the-search-landmark', async () => {
-    const el = await setup({ role: 'search' });
+    const el = await setup({ role: 'search', label: ROLE_LABEL.search });
     expectRole(el, 'search');
   });
 
   it('main-is-the-primary-content-landmark', async () => {
-    const el = await setup({ role: 'main' });
+    const el = await setup({ role: 'main', label: ROLE_LABEL.main });
     expectRole(el, 'main');
   });
 
@@ -73,7 +89,7 @@ describe('ds-landmark', () => {
 
   for (const role of ROLES) {
     it(`renders-role-${role}`, async () => {
-      await expectRenders({ role });
+      await expectRenders({ role, label: ROLE_LABEL[role] });
     });
   }
 

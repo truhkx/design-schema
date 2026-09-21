@@ -9,7 +9,9 @@ import './Disclosure.js';
 import type { DisclosureHeadingLevel, DisclosureToggleDetail, DsDisclosure } from './Disclosure.js';
 import meta from './Disclosure.stories.js';
 
-type Given = Partial<Pick<DsDisclosure, 'summary' | 'defaultOpen' | 'disabled' | 'keepMounted' | 'headingLevel'>>;
+type Given = Partial<
+  Pick<DsDisclosure, 'summary' | 'open' | 'defaultOpen' | 'disabled' | 'keepMounted' | 'headingLevel'>
+>;
 
 /** The Default story's args plus the scenario's `given`, as properties on a fresh element. */
 async function setup(given: Given = {}) {
@@ -77,6 +79,18 @@ describe('ds-disclosure', () => {
     s.el.focus();
     expect(document.activeElement).toBe(s.el);
     expect(s.el.shadowRoot!.activeElement).toBe(s.trigger());
+  });
+
+  it('controlled-open-change-reports-controlled', async () => {
+    const s = await setup({ open: false });
+    expect(s.trigger()).toHaveAttribute('aria-expanded', 'false');
+    s.el.open = true;
+    await s.el.updateComplete;
+    expect(s.toggle).toHaveBeenCalledTimes(1);
+    expect(s.toggle.mock.calls[0]?.[0].detail).toEqual({ open: true, reason: 'controlled' });
+    expect(s.trigger()).toHaveAttribute('aria-expanded', 'true');
+    expect(s.el.currentOpen).toBe(true);
+    expect(s.panel()).not.toBeNull();
   });
 
   /* derived */

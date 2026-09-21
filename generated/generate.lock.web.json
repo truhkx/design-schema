@@ -45,28 +45,27 @@
     }
   },
   "Alert.web": {
-    "hash": "a9b25ed40a425adf",
-    "lastAttemptHash": "a9b25ed40a425adf",
-    "generatedAt": "2026-09-17T09:16:42+00:00",
+    "hash": "2df1f9d0215b5793",
+    "lastAttemptHash": "2df1f9d0215b5793",
+    "generatedAt": "2026-09-21T07:15:26+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.8495,
+    "costUsd": 1.3645,
     "files": [
       "packages/react/src/Alert.css",
-      "packages/react/src/Alert.stories.tsx",
-      "packages/react/src/Alert.test.tsx",
-      "packages/react/src/Alert.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Alert.tsx"
     ],
-    "gaps": 9,
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "axe": true
     }
   },
   "AlertDialog.web": {
@@ -146,26 +145,29 @@
     }
   },
   "Breadcrumb.web": {
-    "hash": "bc596df8c0cdac87",
-    "lastAttemptHash": "bc596df8c0cdac87",
-    "generatedAt": "2026-09-17T09:25:28+00:00",
+    "hash": "bc5e91dba0dce8cf",
+    "lastAttemptHash": "bc5e91dba0dce8cf",
+    "generatedAt": "2026-09-21T07:36:55+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.9836,
+    "costUsd": 1.3815,
     "files": [
       "packages/react/src/Breadcrumb.css",
+      "packages/react/src/Breadcrumb.stories.tsx",
       "packages/react/src/Breadcrumb.test.tsx",
       "packages/react/src/Breadcrumb.tsx"
     ],
-    "gaps": 5,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "axe": true
     }
   },
   "Button.web": {
@@ -247,19 +249,16 @@
     }
   },
   "Checkbox.web": {
-    "hash": "639cc516a9424296",
-    "lastAttemptHash": "639cc516a9424296",
-    "generatedAt": "2026-09-17T08:58:14+00:00",
+    "hash": "2ee58615985affaf",
+    "lastAttemptHash": "2ee58615985affaf",
+    "generatedAt": "2026-09-21T02:12:51+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.5413,
+    "costUsd": 2.4497,
     "files": [
       "packages/react/src/Checkbox.css",
-      "packages/react/src/Checkbox.stories.tsx",
-      "packages/react/src/Checkbox.test.tsx",
-      "packages/react/src/Checkbox.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Checkbox.tsx"
     ],
     "gaps": 8,
     "gates": {
@@ -268,7 +267,9 @@
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "axe": true
     }
   },
   "Combobox.web": {
@@ -397,28 +398,28 @@
     }
   },
   "Disclosure.web": {
-    "hash": "35653b3b4c8de978",
-    "lastAttemptHash": "35653b3b4c8de978",
-    "generatedAt": "2026-09-17T09:13:02+00:00",
+    "hash": "dd1b63e07ce7c2d7",
+    "lastAttemptHash": "dd1b63e07ce7c2d7",
+    "generatedAt": "2026-09-21T07:01:19+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.8985,
+    "costUsd": 1.3455,
     "files": [
       "packages/react/src/Disclosure.css",
-      "packages/react/src/Disclosure.stories.tsx",
       "packages/react/src/Disclosure.test.tsx",
-      "packages/react/src/Disclosure.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Disclosure.tsx"
     ],
-    "gaps": 6,
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "axe": true
     }
   },
   "Divider.web": {
@@ -470,29 +471,26 @@
     }
   },
   "Fieldset.web": {
-    "hash": "57cc9239cff88886",
-    "lastAttemptHash": "57cc9239cff88886",
-    "generatedAt": "2026-09-17T09:33:44+00:00",
+    "hash": "7827d8f600ffd028",
+    "lastAttemptHash": "7827d8f600ffd028",
+    "generatedAt": "2026-09-21T08:00:02+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.1017,
+    "costUsd": 1.5448,
     "files": [
-      "packages/react/src/Fieldset.css",
-      "packages/react/src/Fieldset.stories.tsx",
-      "packages/react/src/Fieldset.test.tsx",
-      "packages/react/src/Fieldset.tsx",
-      "packages/react/src/NumberInput.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Fieldset.tsx"
     ],
-    "gaps": 7,
+    "gaps": 6,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "axe": true
     }
   },
   "FocusScope.web": {
@@ -629,26 +627,28 @@
     }
   },
   "Landmark.web": {
-    "hash": "d781078a7dd948cc",
-    "lastAttemptHash": "d781078a7dd948cc",
-    "generatedAt": "2026-09-17T09:21:07+00:00",
+    "hash": "88215ade2f122c85",
+    "lastAttemptHash": "88215ade2f122c85",
+    "generatedAt": "2026-09-21T07:25:26+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.9721,
+    "costUsd": 1.4272,
     "files": [
       "packages/react/src/Landmark.stories.tsx",
       "packages/react/src/Landmark.test.tsx",
       "packages/react/src/Landmark.tsx"
     ],
-    "gaps": 6,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "axe": true
     }
   },
   "Link.web": {
@@ -731,24 +731,29 @@
     }
   },
   "Meter.web": {
-    "hash": "6e4cb7fb3eb5ecf8",
-    "lastAttemptHash": "6e4cb7fb3eb5ecf8",
-    "generatedAt": "2026-09-17T09:29:34+00:00",
+    "hash": "75ecc5baafb708ed",
+    "lastAttemptHash": "75ecc5baafb708ed",
+    "generatedAt": "2026-09-21T07:49:24+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.8794,
+    "costUsd": 1.213,
     "files": [
-      "packages/react/src/Meter.tsx"
+      "packages/react/src/Meter.css",
+      "packages/react/src/Meter.stories.tsx",
+      "packages/react/src/Meter.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 8,
+    "gaps": 6,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "axe": true
     }
   },
   "NumberInput.web": {
@@ -848,13 +853,13 @@
     }
   },
   "RadioGroup.web": {
-    "hash": "95e0e856781cf4ba",
-    "lastAttemptHash": "95e0e856781cf4ba",
-    "generatedAt": "2026-09-17T09:09:04+00:00",
+    "hash": "175f38053776dd82",
+    "lastAttemptHash": "175f38053776dd82",
+    "generatedAt": "2026-09-21T06:43:25+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.3318,
+    "costUsd": 1.7912,
     "files": [
       "packages/react/src/RadioGroup.css",
       "packages/react/src/RadioGroup.tsx"
@@ -866,7 +871,10 @@
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
     }
   },
   "Search.web": {
@@ -1059,13 +1067,13 @@
     }
   },
   "Switch.web": {
-    "hash": "d273b0f6c69e3795",
-    "lastAttemptHash": "d273b0f6c69e3795",
-    "generatedAt": "2026-09-17T09:03:43+00:00",
+    "hash": "9a0e9967cd0023ba",
+    "lastAttemptHash": "9a0e9967cd0023ba",
+    "generatedAt": "2026-09-21T02:31:55+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.2833,
+    "costUsd": 1.9534,
     "files": [
       "packages/react/src/Switch.css",
       "packages/react/src/Switch.tsx"
@@ -1077,7 +1085,9 @@
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "axe": true
     }
   },
   "Table.web": {

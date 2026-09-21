@@ -16,7 +16,7 @@ export type LandmarkRole =
 export interface LandmarkProps {
   /** Which landmark this is. `banner` (site header), `navigation`, `main` (exactly one per page), `complementary` (sidebar), `contentinfo` (site footer), `region` (a labelled section that deserves a jump point), `search`, `form` (a labelled form that is a page-level region). */
   role: LandmarkRole;
-  /** Accessible name. Required for `region` and `form`, and whenever the page has more than one landmark of the same role. Not shown visually. An empty string counts as absent. */
+  /** Accessible name. Required for `region` and `form`, and whenever the page has more than one landmark of the same role. Not shown visually. An empty string counts as absent. On React Native it is applied as `accessibilityLabel` only for `navigation`, `region` and `form`; on any other role it is silently dropped, with no warning. */
   label?: string | undefined;
   /** The region's content. String and number children are wrapped in the package `Text`. */
   children: React.ReactNode;

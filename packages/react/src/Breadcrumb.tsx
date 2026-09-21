@@ -15,9 +15,12 @@ import { Icon } from './Icon';
 import './Breadcrumb.css';
 
 /** One step of the trail. `href` is ignored on the last item, which is the current page. */
-export type BreadcrumbItem = { label: string; href?: string };
+export type BreadcrumbItem = { label: string; href?: string | undefined };
 
-/** Copy strings from the schema, used verbatim. */
+/**
+ * Copy strings from the schema, used verbatim. `copy.current` is not rendered on web: the
+ * current page carries `aria-current="page"`, which announces it.
+ */
 const COPY = {
   separator: '/',
   expandLabel: 'Show all pages',

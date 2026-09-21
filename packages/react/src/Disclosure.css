@@ -9,6 +9,7 @@
   --ds-disclosure-trigger-font-family: var(--font-family-body);
   --ds-disclosure-trigger-font-size: var(--font-size-md);
   --ds-disclosure-trigger-font-weight: var(--font-weight-medium);
+  --ds-disclosure-trigger-line-height: var(--font-line-height-normal);
   --ds-disclosure-trigger-radius: var(--radius-md);
   --ds-disclosure-icon: var(--color-foreground-muted);
   --ds-disclosure-panel-padding-block: var(--space-sm);
@@ -49,7 +50,7 @@
   font-family: var(--ds-disclosure-trigger-font-family);
   font-size: var(--ds-disclosure-trigger-font-size);
   font-weight: var(--ds-disclosure-trigger-font-weight);
-  line-height: var(--font-line-height-normal);
+  line-height: var(--ds-disclosure-trigger-line-height);
   text-align: start;
   cursor: pointer;
   -webkit-appearance: none;
@@ -82,6 +83,8 @@
   flex: 0 0 auto;
   color: var(--ds-disclosure-icon);
   line-height: 0;
+  /* transition: chevron rotation only; the panel does not animate. Instant under reduced motion. */
+  transition: transform var(--ds-disclosure-transition) var(--motion-easing-standard);
 }
 
 [dir='rtl'] .ds-disclosure__icon {
@@ -95,11 +98,6 @@
 /* Mirrored and open: rotating the mirrored chevron the other way keeps it pointing down. */
 [dir='rtl'] .ds-disclosure__trigger[aria-expanded='true'] .ds-disclosure__icon {
   transform: scaleX(-1) rotate(90deg);
-}
-
-/* transition: chevron rotation only; the panel does not animate. Instant under reduced motion. */
-.ds-disclosure__icon {
-  transition: transform var(--ds-disclosure-transition) var(--motion-easing-standard);
 }
 
 @media (prefers-reduced-motion: reduce) {

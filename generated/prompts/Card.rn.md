@@ -83,16 +83,24 @@ component:
     children:
       type: content
       required: true
-      description: The body. Usually a Stack of Text and controls; a plain string
+      description: 'The body. Usually a Stack of Text and controls; a plain string
         or number is rendered inside the system Text with its defaults (a bare string
         cannot sit in a native View), including each top-level string or number in
-        an array body.
+        an array body. The wrap is a native requirement, not a cross-platform contract:
+        Lit leaves a bare slotted text node alone, because wrapping it would mean
+        reparenting the consumer''s light-DOM children, which Card never does. Fragments
+        and arrays are flattened before the wrap, exactly as they are when the interactive
+        target is looked for, so a string directly inside a top-level Fragment is
+        wrapped too.'
     heading:
       type: string
       description: 'The card''s title, rendered as the system Heading at the card''s
         level and at `size: lg` on every platform, so a card heading reads smaller
         than a page heading. Omit for cards that are a single piece of content; an
-        empty string counts as omitted (no article, no label).'
+        empty string counts as omitted (no article, no label) — but the header row
+        still renders when `headerActions` is set, holding the actions alone. It is
+        an anatomy part by name only: it carries no `data-part`, since it is the system
+        Heading and keeps that component''s own hook.'
     headingLevel:
       type: enum
       values:
@@ -140,13 +148,19 @@ component:
         the top-level children of the body only (web and Lit also accept a native
         a[href] or button there); controls nested inside a wrapper such as a Stack
         are not searched, so place the link at the top level beside any Text. A top-level
-        Fragment is flattened, so its children count as top-level. With zero or several
+        Fragment is flattened, so its children count as top-level; on Lit there is
+        nothing to flatten, since a nested template''s nodes are already siblings
+        and are assigned to the default slot as top-level children. With zero or several
         such children the card stays non-interactive (no hit area, no hover background,
-        no press) and warns once per mounted card in development. If the child is
-        disabled the card is disabled with it: no hover background, pressing does
-        nothing, and on native the Pressable reports disabled. Controls in `headerActions`
-        and `footer` are never the target; they sit above the hit area and keep their
-        own targets.'
+        no press) and warns once per mounted card in development — latched for the
+        life of the mount, so a card that goes valid and then invalid again does not
+        warn a second time. The warning text is a development diagnostic, not user-facing
+        copy, so it is not a `copy.*` string and its wording may differ between platforms.
+        If the child is disabled the card is disabled with it: no hover background,
+        pressing does nothing, and on native the Pressable reports disabled. The card
+        itself never dims — there is no disabled opacity binding here; the child renders
+        its own disabled state. Controls in `headerActions` and `footer` are never
+        the target; they sit above the hit area and keep their own targets.'
       a11y: The card never becomes a second focus stop; its single child link or button
         is the target, and the card enlarges the hit area only (pseudo-element on
         web, wrapping Pressable on native).
@@ -159,9 +173,18 @@ component:
         also set, `interactive` wins and this is a no-op — the card already has a
         target — and a development warning says so. It stays a no-op whenever `interactive`
         is set, even when that card fell back to non-interactive for want of a single
-        target.
-      a11y: Only scripted focus (PageUp/PageDown in a Feed) lands here; the ring is
-        drawn on the card via :focus-visible.
+        target. On web and Lit the ring is an outline of focusRingWidth in focusRing,
+        drawn outside the box, so a focusable card reserves no border; React Native
+        has no outline, so there it reserves border.width.focus like an interactive
+        card. On Lit the shadow root deliberately does not use delegatesFocus — the
+        documented exemption from the rule that focusable elements delegate — so scripted
+        focus lands on the card and not on its first focusable child.
+      a11y: 'Only scripted focus (PageUp/PageDown in a Feed) lands here, so the card
+        draws the ring whenever it takes focus, not only on :focus-visible: it sets
+        a focus-ring state in its own focusin handler and clears it on focusout, skipping
+        the state when that focusin follows a pointerdown on the card. Plain :focus-visible
+        is not enough — Chromium does not match it on a programmatic focus() that
+        follows a pointer interaction, which is exactly the Feed case.'
   styles:
     paddingBlock:
       token: layout.inset.{inset}
@@ -193,6 +216,8 @@ component:
       locked: true
     border:
       token: color.border
+      description: In effect with surface default only; a subtle card draws no border,
+        so an override of this binding changes nothing there.
       locked: false
     borderWidth:
       token: border.width.thin
@@ -200,8 +225,12 @@ component:
         reserves border.width.focus instead, so the ring appearing never shifts the
         layout; at rest that border is colored `border` on surface default (the card
         keeps its visible border) and transparent on subtle, and `focusRing` while
-        the ring shows. An override of this binding therefore only changes non-interactive
-        cards.
+        the ring shows. The reserve is keyed on the `interactive` prop alone, not
+        on whether a target was found, so a card that fell back to non-interactive
+        still reserves the width rather than changing its geometry on a content change.
+        React Native reserves it for `focusable` cards too, since it has no outline
+        to draw outside the box. An override of this binding therefore only changes
+        cards that are neither interactive nor (on native) focusable.
       locked: false
     radius:
       token: radius.lg
@@ -209,11 +238,16 @@ component:
     hoverBackground:
       token: color.background.subtle
       state: hover
+      by: surface
+      values:
+        default: color.background.subtle
+        subtle: color.background.strong
       description: 'Interactive cards only, on pointer hover (a plain `:hover` on
-        web and Lit, no `@media (hover: hover)` guard, as Link); subtle cards use
-        color.background.strong. Native has no hover, so the Pressable shows it while
-        pressed, and on pointer hover where the platform reports one (iPad pointer,
-        react-native-web).'
+        web and Lit, no `@media (hover: hover)` guard, as Link). The surface picks
+        the token — a subtle card cannot hover to its own background — and the same
+        lookup applies on every platform. Native has no hover, so the Pressable shows
+        it while pressed, and on pointer hover where the platform reports one (iPad
+        pointer, react-native-web).'
       locked: true
     focusRing:
       token: color.border.focus
@@ -242,6 +276,12 @@ component:
       level: AA
     - foreground: color.link
       background: color.background.{surface}
+      level: AA
+    - foreground: color.foreground
+      background: color.background.strong
+      level: AA
+    - foreground: color.link
+      background: color.background.strong
       level: AA
   platforms:
     web:
@@ -296,24 +336,26 @@ component:
         not their descendants. A click on the extended area lands on the ds-link/ds-button
         host, not its inner native element, so the card forwards a click whose target
         is that host by calling click() on the inner a[href]/button in the child''s
-        open shadow root — the same sanctioned exception as the class. The ring shows
-        only while that target has keyboard focus: the card toggles a `target-focus`
-        custom state on focusin/focusout when the focused element matches :focus-visible
-        and draws on :host(:state(target-focus)); a focused header-actions or footer
-        control does not ring the card. On interactive cards only, the header-actions
-        and footer rows get position: relative and z-index: 1 above the hit area.
-        The hover rules use two more custom states: `has-target` (exactly one target
-        found) and `target-disabled` (the target has a `disabled` attribute or aria-disabled="true",
-        watched with a MutationObserver that writes nothing back). The zero-or-several
-        warning is not judged on the first update: it runs on the default slot''s
-        slotchange and when `interactive` changes. `focusable`: the host itself takes
-        tabindex="-1" and the shadow root does not use delegatesFocus, so scripted
-        focus lands on the card rather than its first focusable child; the ring is
-        an outline on the surface part while the host matches :focus-visible, and
-        the host''s own outline is removed. With a heading the host gets role="article"
-        as a plain attribute unless the consumer already set a role, and aria-label
-        with the heading text unless the consumer already set one; the card removes
-        only a role or aria-label it wrote itself.'
+        open shadow root — the same sanctioned exception as the class. That forwarder
+        re-checks the target''s disabled state itself: a click on the extended area
+        never reaches the child''s own guard, so without the check a disabled target
+        would still be activated. The ring shows only while that target has keyboard
+        focus: the card toggles a `target-focus` custom state on focusin/focusout
+        when the focused element matches :focus-visible and draws on :host(:state(target-focus));
+        a focused header-actions or footer control does not ring the card. On interactive
+        cards only, the header-actions and footer rows get position: relative and
+        z-index: 1 above the hit area. The hover rules use two more custom states:
+        `has-target` (exactly one target found) and `target-disabled` (the target
+        has a `disabled` attribute or aria-disabled="true", watched with a MutationObserver
+        that writes nothing back). The zero-or-several warning is not judged on the
+        first update: it runs on the default slot''s slotchange and when `interactive`
+        changes. `focusable`: the host itself takes tabindex="-1" and the shadow root
+        does not use delegatesFocus, so scripted focus lands on the card rather than
+        its first focusable child; the ring is an outline on the surface part while
+        the host matches :focus-visible, and the host''s own outline is removed. With
+        a heading the host gets role="article" as a plain attribute unless the consumer
+        already set a role, and aria-label with the heading text unless the consumer
+        already set one; the card removes only a role or aria-label it wrote itself.'
     rn:
       element: View
       props:
@@ -343,7 +385,15 @@ component:
         users reach each card by swiping, its Heading being a header. The Heading
         gets `level` from headingLevel and `size: lg`; native has no heading levels,
         so headingLevel changes nothing visible or announced there and is passed for
-        parity.'
+        parity. accessibilityRole and accessibilityLabel belong to the interactive
+        Pressable only: a non-interactive card''s root View carries neither, because
+        labelling it would collapse the card into one accessibility node and hide
+        the Heading, body and footer from swipe navigation — so on native a heading
+        names the Heading, never the container, and there is no article equivalent.
+        An interactive card whose target is a Link presses that Link''s native path
+        (Linking.openURL), so under react-native-web it opens a new window rather
+        than navigating in place, unlike a bare Link; no component in the package
+        reaches for DOM globals to change that.'
     swiftui:
       element: VStack
       props:
@@ -425,6 +475,7 @@ component:
     description: 'A card in a dense grid, on the tinted surface and with the tighter
       inset, and no heading: the story clears any Default heading.'
     given:
+      heading: ''
       children: A search result
       inset: sm
       surface: subtle
@@ -460,12 +511,12 @@ component:
 - `headerGap`: token `layout.gap.normal`; part `header`
 - `footerGap`: token `layout.gap.tight`; part `footer`
 - `actionsGap`: token `layout.gap.tight`; part `headerActions`
-- `hoverBackground`: token `color.background.subtle`; state `hover`; locked
+- `hoverBackground`: token `color.background.subtle`; state `hover`; by `surface`: default → `color.background.subtle`, subtle → `color.background.strong`, any other value → `color.background.subtle`; locked
 
 ## Constants and examples
 
 - example `plan-card`, story `PlanCard`: given `heading: "Team plan"`, `headingLevel: "3"`, `children: "What the plan includes"`; A card as a unit in a list of choices, with its own heading at the list's level.
-- example `dense-grid-card`, story `DenseGridCard`: given `children: "A search result"`, `inset: "sm"`, `surface: "subtle"`; A card in a dense grid, on the tinted surface and with the tighter inset, and no heading: the story clears any Default heading.
+- example `dense-grid-card`, story `DenseGridCard`: given `heading: ""`, `children: "A search result"`, `inset: "sm"`, `surface: "subtle"`; A card in a dense grid, on the tinted surface and with the tighter inset, and no heading: the story clears any Default heading.
 - example `whole-card-is-a-link`, story `WholeCardIsALink`: given `heading: "September invoice"`, `children: "A Link to the invoice"`, `interactive: true`; A card whose single child link leads somewhere, with the card as the hit area and the link as the only tab stop. The children string describes content, not a value: render a Link labelled with that text (href #) at the top level of the body.
 - example `card-focused-by-a-feed`, story `CardFocusedByAFeed`: given `heading: "New comment"`, `children: "The comment body"`, `focusable: true`; A card a Feed moves focus to with PageUp/PageDown, which draws its own ring when focused that way.
 
@@ -588,7 +639,15 @@ notes: "View with padding/background/border/radius from tokens; header and foote
   \ card by script; screen-reader users reach each card by swiping, its Heading being\
   \ a header. The Heading gets `level` from headingLevel and `size: lg`; native has\
   \ no heading levels, so headingLevel changes nothing visible or announced there\
-  \ and is passed for parity."
+  \ and is passed for parity. accessibilityRole and accessibilityLabel belong to the\
+  \ interactive Pressable only: a non-interactive card's root View carries neither,\
+  \ because labelling it would collapse the card into one accessibility node and hide\
+  \ the Heading, body and footer from swipe navigation \u2014 so on native a heading\
+  \ names the Heading, never the container, and there is no article equivalent. An\
+  \ interactive card whose target is a Link presses that Link's native path (Linking.openURL),\
+  \ so under react-native-web it opens a new window rather than navigating in place,\
+  \ unlike a bare Link; no component in the package reaches for DOM globals to change\
+  \ that."
 ```
 
 ## Guidance
@@ -607,7 +666,7 @@ Do not put a card inside a card. Do not use Cards to separate sections of a form
 
 ## Behavior
 
-The header renders when `heading` or `headerActions` is present, the footer when `footer` is present; body always. Header, body and footer are separated by `partGap`, and the card pads all of it by `inset`. `surface: default` draws a border, `subtle` does not. An `interactive` card grows its single child link or button's hit area to the whole card, shows `hoverBackground` on pointer hover, and draws the focus ring around the card when that child has keyboard focus — but adds no focus stop of its own. A `focusable` card carries `tabIndex={-1}` on its root and draws the same ring on its own `:focus-visible`; `tabIndex` is not a Card prop, and a caller who wants scripted focus sets `focusable` (which wins over any `tabIndex` in `...rest`). Every anatomy part carries `data-part` with its name on the element that holds it — the root is `surface`, and `header`, `headerActions`, `body` and `footer` are the row or wrapper around their content, not a slot element — except `heading`: it is the system Heading, which keeps its own hook, and is located by role heading or its text. Aria attributes passed through `...rest` (role, aria-posinset, aria-setsize, aria-describedby) land on the root, which is how Feed makes a Card an article.
+The header renders when `heading` or `headerActions` is present, the footer when `footer` is present; body always. Present means not `undefined`, `null` or `false`: a `0` or an empty string is content and renders its row. Header, body and footer are separated by `partGap`, and the card pads all of it by `inset`. `surface: default` draws a border, `subtle` does not. An `interactive` card grows its single child link or button's hit area to the whole card, shows `hoverBackground` on pointer hover, and draws the focus ring around the card when that child has keyboard focus — but adds no focus stop of its own. A `focusable` card carries `tabIndex={-1}` on its root and draws the same ring on its own `:focus-visible`; `tabIndex` is not a Card prop, and a caller who wants scripted focus sets `focusable` (which wins over any `tabIndex` in `...rest`). Every anatomy part carries `data-part` with its name on the element that holds it — the root is `surface`, and `header`, `headerActions`, `body` and `footer` are the row or wrapper around their content, not a slot element — except `heading`: it is the system Heading, which keeps its own hook, and is located by role heading or its text. Aria attributes passed through `...rest` (role, aria-posinset, aria-setsize, aria-describedby) land on the root, which is how Feed makes a Card an article.
 
 ## Content guidelines
 

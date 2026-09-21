@@ -2671,3 +2671,106 @@ One line per decision: `<date> <Component> <platform>: <gap> → <what the doc n
 2026-09-19 Form rn: plural locale, announcement separator and repeats → PluralRules default locale at submit; '. ' once per failed submit
 2026-09-19 Form rn: empty-value filtering owner → Form omits null, empty string and empty array
 2026-09-19 Form rn: summary box layout and border style → a column with a solid border
+2026-09-21 Alert web: does `locked` mean no hook or only no override → locked keeps its hook; only `icon` has none
+2026-09-21 Alert web: is a consumer aria-label dropped silently → omitted from the props type, a type error
+2026-09-21 Alert web: is the name set when live is off → yes, unconditional and inert without a role
+2026-09-21 Alert web: focus-onward before or after onDismiss → before, so a synchronous unmount still finds focus placed
+2026-09-21 Alert lit: is data-has-heading on the host or the container → the host, where the hooks live
+2026-09-21 Alert lit: does the dismiss event carry a detail → no detail at all, not an empty object
+2026-09-21 Alert lit: when does the focus-onward step run → only on :focus-within, excluding the alert's own subtree
+2026-09-21 Alert rn: does a live change re-announce → no; the effect keys on the message alone
+2026-09-21 Alert rn: is the accessibilityLabel punctuation normalised → joined verbatim, copy is never rewritten
+2026-09-21 Alert rn: which glyph does a tone name → the tone value itself is the Icon name
+2026-09-21 Breadcrumb web: is the separator hook quoted for content → yes, a quoted CSS string; overrides must quote too
+2026-09-21 Breadcrumb web: can a consumer observe the expanded state → no; it is private and resets on remount
+2026-09-21 Breadcrumb web: does a plain ancestor need a class → no; the item part already selects its container
+2026-09-21 Breadcrumb lit: force a ring after a mouse-driven programmatic focus → no; native :focus-visible semantics stand
+2026-09-21 Breadcrumb lit: does the tabindex follow the item or the index → the index; it disappears with the element
+2026-09-21 Breadcrumb rn: why raw Text for current, plain and separator → the system Text takes no testID or state and locks colour
+2026-09-21 Breadcrumb rn: is minTarget a real press target on native → no; Link owns its target, the floor is spacing
+2026-09-21 Breadcrumb rn: which is canonical, label's default or copy.navLabel → copy.navLabel
+2026-09-21 Button web: no binding for the focus ring's offset → new focusRingOffset binding on border.width.focus
+2026-09-21 Button web: cursor in each state → pointer, not-allowed under aria-disabled, progress under aria-busy
+2026-09-21 Button web: which quarter of the spinner is transparent → the block-start quarter, on every platform
+2026-09-21 Button web: does iconOnly keep a hidden label part → no element at all; the one prop that removes a part
+2026-09-21 Button web: 44x44 prose versus a single 24px floor → minTarget alone on web/Lit, touchTarget reaches 44 on touch
+2026-09-21 Button lit: which colour does the inverse hover mix take → transparent, so the real surface shows through
+2026-09-21 Button lit: is the host or the inner button the tab stop → the host; tabindex is mirrored inward, nothing else
+2026-09-21 Button lit: does accessibleName beat label under iconOnly → yes, it replaces it
+2026-09-21 Button lit: is a locked hook settable from page CSS → yes, intended; locked removes it from `overrides` only
+2026-09-21 Button rn: how is the animated fill layered → a nested fill child at radius minus the ring, ring on the root
+2026-09-21 Button rn: what does hitSlop assume before onLayout → minTarget, with slop = half the shortfall
+2026-09-21 Button rn: why the platform Text for the label → Text's enums cannot express font.size.{size} in an action foreground
+2026-09-21 Card web: does a disabled target dim the card → no; the child renders its own disabled state
+2026-09-21 Card web: what counts as a present footer → not undefined, null or false; 0 and '' render
+2026-09-21 Card web: does an empty heading with actions still render the header → yes, actions alone, root stays a div
+2026-09-21 Card lit: hoverBackground names a second token in prose → now a by: surface map, subtle hovers to strong
+2026-09-21 Card lit: is the Text wrap of a bare string cross-platform → native only; Lit never reparents slotted children
+2026-09-21 Card lit: must the click forwarder re-check disabled → yes; the extended area never reaches the child's guard
+2026-09-21 Card rn: does a non-interactive card's root take a name → no; it would collapse the card into one node
+2026-09-21 Card rn: does focusable reserve the border like interactive → on native yes, there is no outline to draw outside
+2026-09-21 Checkbox web: does a disabled box still submit natively → yes, accepted; accessibility wins over the edge
+2026-09-21 Checkbox web: which wins, indeterminate or checked → mixed, for glyph and announcement; value follows checked
+2026-09-21 Checkbox web: is the row's padding clamped → yes, max(0, ...) with minTarget as the floor
+2026-09-21 Checkbox lit: does data-ds-field carry a value → yes, "change"; that is what validate blur means here
+2026-09-21 Checkbox lit: does a form reset restore the mixed dash → yes, a reset returns the initial rendering
+2026-09-21 Checkbox rn: how is a dimmed disabled label not a contrast failure → the disabled state must always be reported
+2026-09-21 Container web: does align still emit at width full → yes, inert there, so the markup never changes shape
+2026-09-21 Container lit: ElementInternals or a plain role for main → a plain attribute, as Box; the scenario now runs on Lit
+2026-09-21 Container lit: is the align margin themable → no; structural, two values, no hook
+2026-09-21 Container rn: any flex sizing beyond the four style props → none; a row parent stays unsupported and silent
+2026-09-21 Disclosure web: where do part-scoped hooks live → on the root, read by the part's rule
+2026-09-21 Disclosure lit: what layout does the chevron wrapper take → inline-flex, flex none; no line-height 0
+2026-09-21 Disclosure lit: how is RTL matched inside a shadow root → :host(:dir(rtl)), the Lit floor
+2026-09-21 Disclosure rn: why not the package Text for the summary → it has no accessibilityRole, so it cannot be a header
+2026-09-21 Disclosure rn: is the keyboard toggle reason reachable → no; every press reports pointer
+2026-09-21 Divider web: where does the ignored-label warning's wording live → nowhere; it is a diagnostic, not copy
+2026-09-21 Divider web: does spacing apply to the labelled row → yes, around the whole divider
+2026-09-21 Divider lit: host as the line, or a line element → Lit always renders the line span; the host is a flex box
+2026-09-21 Divider rn: do both line pieces share a testID → yes; a labelled test asks for all of them
+2026-09-21 Fieldset web: what is a field for the required indicator → value-bearing children only, read from the explicit prop
+2026-09-21 Fieldset web: can a child opt out of a disabled group → no; the group wins downward only
+2026-09-21 Fieldset lit: does an error change re-announce → no; only appearing announces
+2026-09-21 Fieldset rn: is the group's accessibilityHint reachable → no; it is there for react-native-web
+2026-09-21 Fieldset rn: is error-identification met on native → no; the text and its announcement are all there is
+2026-09-21 Landmark web: is an empty aria-labelledby a label → no, absent like an empty label string
+2026-09-21 Landmark web: what else does the root forward → everything but role, children, aria-label, className and style
+2026-09-21 Landmark lit: drop, keep or only warn about a stranded label → Lit removes the attribute on the three roles
+2026-09-21 Landmark rn: should duplicates be tracked across instances → no; a registry would outlive unmounted screens
+2026-09-21 Landmark all: do search and complementary take a label → yes, and their stories must model one
+2026-09-21 Meter web: are non-finite bounds exposed raw or substituted → substituted, so aria-valuemin is never NaN
+2026-09-21 Meter web: what scope is "warns once per bad range" → the module, for the life of the process
+2026-09-21 Meter lit: can the header shrink without restyling a Text → yes, via Meter-owned wrappers carrying the parts
+2026-09-21 Meter rn: does accessibilityValue reach the DOM on web → no; the flattened aria-value props sit beside it
+2026-09-21 RadioGroup web: how is a disabled group made inert → keys on the fieldset, click per input, change by early return
+2026-09-21 RadioGroup web: does a click on the description select → yes, the whole row is the target
+2026-09-21 RadioGroup lit: a pseudo-element dot is invisible in Firefox → the dot is a real span in the label on every platform
+2026-09-21 RadioGroup rn: which wins, focus or invalid border → invalid, as in Checkbox; only the width changes
+2026-09-21 RadioGroup rn: does copy.position count disabled options → yes, all options in display order
+2026-09-21 Switch web: which box carries minTarget → the root, centring an inner content row that top-aligns the track
+2026-09-21 Switch web: is aria-checked omitted when off → no, always written, true or false
+2026-09-21 Switch web: does a disabled switch submit natively → no; the input drops its name while disabled
+2026-09-21 Switch lit: getter-only required throws on assignment → a no-op setter beside it
+2026-09-21 Switch rn: is accessibilityRole set under react-native-web → no; the platform's own Switch supplies the role
+2026-09-21 Link web: is the hidden external suffix an anatomy part → no; a naming device, with no hook anywhere
+2026-09-21 Link web: does Link forward aria-current → it never sets one, and passes a consumer's through
+2026-09-21 Link lit: which selector scopes the tone colours → not([tone=inherit]), so an un-upgraded link is coloured
+2026-09-21 Link rn: does the underline run under the space and glyph → yes; splitting the label would give it an element
+2026-09-21 Link all: no minTarget for an inline link → documented exemption under 2.5.8's inline exception
+2026-09-21 Input web: does required set the native attribute → no; aria-required only, message from copy
+2026-09-21 Input web: where does the field id come from → the id prop, else the Form id base and name, else generated
+2026-09-21 Input lit: which element carries the error's alert role → the composed Text host, the element a test reads
+2026-09-21 Input rn: what does "skipped by the Form" mean → still registered, reported through isDisabled()
+2026-09-21 Input rn: full type to keyboardType and textContentType map → spelled out for all seven types
+2026-09-21 Form web: the summary Links fall under the target floor → new locked errorSummaryLineHeight binding
+2026-09-21 Form web: is errorSummaryBorder locked → no; only the text and background carry the contrast pair
+2026-09-21 Form web: can a field know a summary will announce → yes; errorSummary is in the context shape
+2026-09-21 Form web: what does a submit do while disabled → cancelled early, neither event fires
+2026-09-21 Form lit: how is a form submitted imperatively → a public submit() method
+2026-09-21 Form lit: who owns a field's invalid flag → the Form clears only flags it set itself
+2026-09-21 Form rn: is the naming scenario assertable on native → yes, through accessibilityLabel; the scenario now covers rn
+2026-09-21 SettingsPage web: option labels with no values → slugs given for all eight options
+2026-09-21 SettingsPage web: Cancel first or Form's primary-first rule → the contract wins, Save then Cancel
+2026-09-21 SettingsPage lit: Toast shown as a node in the structure → removed; it is raised with toast(), no dedupe
+2026-09-21 SettingsPage rn: unset Tabs fit and Fieldset gap → fit=fill and gap=normal on all five Fieldsets
+2026-09-21 SettingsPage rn: the danger Alert's live value → off; it is present when the panel mounts

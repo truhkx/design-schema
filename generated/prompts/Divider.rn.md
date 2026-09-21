@@ -95,9 +95,13 @@ component:
         The development warning fires when the ignored combination appears or changes
         (an effect keyed on `label` and `orientation`), not on every render; on React
         Native a vertical divider with an ignored label and `semantic: true` gets
-        both warnings. When in effect, the label is the separator''s accessible name
-        (see the platform notes), and the two line pieces on either side are hidden
-        from assistive technology.'
+        both warnings. Those warnings are development diagnostics, not `copy.*` strings:
+        their wording is not contractual and may differ between platforms. A vertical
+        divider with an ignored label and `semantic: true` is a separator with no
+        accessible name on every platform — naming it from text that is not rendered
+        would contradict the label being ignored. When in effect, the label is the
+        separator''s accessible name (see the platform notes), and the two line pieces
+        on either side are hidden from assistive technology.'
     semantic:
       type: boolean
       default: false
@@ -119,7 +123,9 @@ component:
         used outside a Stack that already spaces them. The space is transparent: web
         and Lit use margin-block (horizontal) or margin-inline (vertical); React Native
         pads the root View on that axis (paddingVertical or paddingHorizontal) with
-        the line as an inner View.'
+        the line as an inner View. It applies to a labelled divider too, where the
+        root is the row: the space is around the whole divider, label included, not
+        around each line piece.'
   styles:
     color:
       token: color.border
@@ -137,6 +143,11 @@ component:
     labelColor:
       token: color.foreground.muted
       part: label
+      description: 'Locked, and deliberately not enforced by Divider: the colour arrives
+        from the composed Text''s `tone: muted`, which resolves to this same token,
+        and writing a colour rule here would restyle a composed child. The contrast
+        pair is therefore a claim about Text''s muted tone on the page background,
+        which no Divider code can regress.'
       locked: true
     labelSize:
       token: font.size.sm
@@ -189,26 +200,41 @@ component:
         Text also receives the platform attributes `id` and `data-part="label"`. The
         labelled row uses align-items center, so the lines sit at the label''s vertical
         center. Unlabelled, the root paints itself and is the `line` part; it carries
-        no data-part. The line is a background-color box of the thickness, not a border.
-        Vertical: display inline-block, inline-size thin, block-size auto, min-block-size
-        100%, align-self stretch. The ref is `Ref<HTMLElement>`, since the root is
-        an hr or a div, and `...rest` lands on whichever root renders.'
+        no data-part. The line is a background-color box of the thickness, not a border,
+        and the paint rule is scoped to the unlabelled case rather than being cancelled
+        on the labelled root, so no "no background" keyword is needed. The root also
+        sets `flex-shrink: 0`, so a horizontal divider inside a vertical flex Stack
+        keeps its one-token thickness; a horizontal divider is block-level and fills
+        its container''s inline size. Vertical: display inline-block, inline-size
+        thin, block-size auto, min-block-size 100%, align-self stretch. The ref is
+        `Ref<HTMLElement>`, since the root is an hr or a div, and `...rest` lands
+        on whichever root renders; the props base is the div''s, minus the ones the
+        component owns (children, role, aria-orientation, aria-hidden, className,
+        style), which accepts a few div-only attributes on the hr branch — the price
+        of one props type for two roots.'
     lit:
       tag: ds-divider
       reflect:
       - orientation
       - semantic
       - spacing
-      notes: 'Host is the line when unlabelled (`:host { display: block }`, `:host([orientation="vertical"])
-        { display: inline-block }`). When a label is in effect the host switches to
-        a flex row through an internal `data-labelled` host attribute and the shadow
-        root renders line segment, label Text, line segment, the segments aria-hidden.
-        role, aria-orientation and aria-hidden are plain host attributes, not ElementInternals,
-        because tests read them (dom-accessibility-api ignores internals). A labelled
-        host also sets aria-label to the label text: ids do not cross the shadow root,
-        and separator children are presentational. `label` is a property. Shadow elements
-        carry `part` as well as `data-part`, both the anatomy names: names tests read,
-        not a styling surface.'
+      notes: 'Unlike web, Lit always renders the `line` span in the shadow root, in
+        every orientation and whether or not there is a label, so the part has an
+        element to name and the shadow root is never empty; the host carries thickness,
+        orientation and spacing around it. The host is a flex container (`:host {
+        display: flex }`, `:host([orientation="vertical"]) { display: inline-flex
+        }`) with the line at `flex: 1 1 auto` — a line sized `block-size: 100%` collapses
+        inside a host whose own block-size is auto, which is exactly the stretched
+        vertical case — and `flex-shrink: 0` on the host itself. An unlabelled line
+        span is aria-hidden in both orientations, like the labelled pieces. When a
+        label is in effect the host switches to a row through an internal `data-labelled`
+        host attribute and the shadow root renders line segment, label Text, line
+        segment, the segments aria-hidden. role, aria-orientation and aria-hidden
+        are plain host attributes, not ElementInternals, because tests read them (dom-accessibility-api
+        ignores internals). A labelled host also sets aria-label to the label text:
+        ids do not cross the shadow root, and separator children are presentational.
+        `label` is a property. Shadow elements carry `part` as well as `data-part`,
+        both the anatomy names: names tests read, not a styling surface.'
     rn:
       element: View
       props:
@@ -231,8 +257,13 @@ component:
         `element: span` is not passed (native Text has no `element`). The label Text
         sits in a plain View carrying `testID="Divider.label"`, since Text takes no
         testID. `spacing` pads the root on the cross axis whether or not it is the
-        labelled row, each labelled line piece takes `flex: 1`, and a vertical divider''s
-        root and its inner line both use `alignSelf: stretch`.'
+        labelled row, each labelled line piece takes `flex: 1`, and the root and its
+        inner line both use `alignSelf: stretch` in either orientation — a horizontal
+        divider in a parent that does not stretch its children would otherwise collapse
+        to zero width. Both line pieces of a labelled divider carry the same `testID="Divider.line"`,
+        so a test for the labelled variant asks for all of them rather than one. The
+        label wrapper View is unflexed: it sizes to its text and the two lines take
+        the remainder, so a label too long for the row overflows rather than wrapping.'
     swiftui:
       element: Rectangle
       props:
@@ -307,8 +338,9 @@ component:
   - name: toolbar-groups
     description: 'A vertical line between groups of toolbar controls, stretching to
       the row height; shown inside a horizontal Stack with align stretch and gap tight,
-      between the Texts "Bold Italic" and "Align left", so the row has a height to
-      fill. The `orientation: vertical` enum story uses the same wrapper.'
+      between one Text reading "Bold Italic" and one reading "Align left" — two Texts,
+      one on each side — so the row has a height to fill. The `orientation: vertical`
+      enum story uses the same wrapper.'
     given:
       orientation: vertical
   - name: section-boundary
@@ -336,7 +368,7 @@ component:
 
 - example `or-between-alternatives`, story `OrBetweenAlternatives`: given `label: "or"`, `spacing: "normal"`; A labelled divider between two ways of signing in.
 - example `list-furniture`, story `ListFurniture`: given `orientation: "horizontal"`; The default line between rows of a dense list - decorative, and silent to assistive technology.
-- example `toolbar-groups`, story `ToolbarGroups`: given `orientation: "vertical"`; A vertical line between groups of toolbar controls, stretching to the row height; shown inside a horizontal Stack with align stretch and gap tight, between the Texts "Bold Italic" and "Align left", so the row has a height to fill. The `orientation: vertical` enum story uses the same wrapper.
+- example `toolbar-groups`, story `ToolbarGroups`: given `orientation: "vertical"`; A vertical line between groups of toolbar controls, stretching to the row height; shown inside a horizontal Stack with align stretch and gap tight, between one Text reading "Bold Italic" and one reading "Align left" — two Texts, one on each side — so the row has a height to fill. The `orientation: vertical` enum story uses the same wrapper.
 - example `section-boundary`, story `SectionBoundary`: given `semantic: true`, `spacing: "loose"`; An unlabelled line that still marks a real boundary a screen-reader user should hear on web, Lit and SwiftUI; on React Native it is silent by design and warns (see the rn notes).
 
 ## Overrides (per-instance styling contract)
@@ -434,8 +466,13 @@ notes: "A View with height (or width) = border.width.thin and backgroundColor co
   \ not passed (native Text has no `element`). The label Text sits in a plain View\
   \ carrying `testID=\"Divider.label\"`, since Text takes no testID. `spacing` pads\
   \ the root on the cross axis whether or not it is the labelled row, each labelled\
-  \ line piece takes `flex: 1`, and a vertical divider's root and its inner line both\
-  \ use `alignSelf: stretch`."
+  \ line piece takes `flex: 1`, and the root and its inner line both use `alignSelf:\
+  \ stretch` in either orientation \u2014 a horizontal divider in a parent that does\
+  \ not stretch its children would otherwise collapse to zero width. Both line pieces\
+  \ of a labelled divider carry the same `testID=\"Divider.line\"`, so a test for\
+  \ the labelled variant asks for all of them rather than one. The label wrapper View\
+  \ is unflexed: it sizes to its text and the two lines take the remainder, so a label\
+  \ too long for the row overflows rather than wrapping."
 ```
 
 ## Guidance

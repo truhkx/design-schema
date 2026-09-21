@@ -221,6 +221,15 @@ component:
       token: radius.md
       part: errorSummary
       locked: false
+    errorSummaryLineHeight:
+      token: font.lineHeight.normal
+      part: errorSummary
+      locked: true
+      description: Line height of the summary box, inherited by the item Links. Without
+        it they take the document's `normal` and each link's box falls under the 24px
+        target floor — Form may not give the Links a target of their own, so the box
+        sets the body line height instead and the Links inherit it. Locked because
+        it is the only thing keeping those targets reachable.
     errorSummaryPadding:
       token: space.md
       part: errorSummary
@@ -235,7 +244,9 @@ component:
         Form forwards this binding to both Stacks'' `overrides.gap` (the `overrides`
         property on Lit) and has no --ds-form-* hook for it, as Input''s helperSize
         has none. The item Links are passed to the list Stack bare: Stack wraps each
-        child in its own `li`.'
+        child in its own `li`. Having no hook of its own, it is the one binding a
+        consumer cannot reach from their own CSS — they size it through the Stacks''
+        own hooks, as with Fieldset''s fieldsGap.'
       locked: false
   copy:
     summaryHeading:
@@ -277,8 +288,30 @@ component:
         and fields with no such host go last in registration order. A field inside
         a closed Disclosure is left out because it unmounted and unregistered; Form
         does no Disclosure check of its own (web and rn). The locked summary bindings
-        (errorSummaryText, errorSummaryBackground, errorSummaryBorder) get no `--ds-form-*`
-        hook on web or Lit; their rules read the token directly.'
+        are errorSummaryText and errorSummaryBackground — the contrast pair — and
+        they get no `--ds-form-*` hook on web or Lit; their rules read the token directly.
+        errorSummaryBorder is not one of them: it keeps its hook and stays overridable,
+        since the border is decoration, not the proof. The React context is `{ disabled,
+        validateMode, submitFailed, errorSummary, validate, idBase, errors, order,
+        register, validateField, reportValidity }`, where `register` takes `{ name,
+        id, label, getValue, isDisabled, validate, focus }` and returns its own unregister;
+        `errorSummary` is in it so a field can stay silent while the Form announces,
+        and `order` is what gives a field its "next" key. It lives in its own FormContext
+        module beside the component. `gap` must space the direct children of the fields
+        part, so that part is `display: contents`: the element exists for the anatomy
+        and for tests, has no box, and can never carry a style binding of its own.
+        The summary is a sibling rendered before the fields part, whatever order the
+        anatomy list is written in. `a11y.role` is `form`, but a native form exposes
+        that role only when it has a name, so a Form with neither `label` nor `labelledBy`
+        is deliberately not a landmark and nothing warns about it — give any form
+        that shares a page with another one a label. `name` is also rendered as the
+        form element''s `name` attribute, since it is the analytics identifier as
+        well as the id base. The summary heading is a Text with `element: p` (not
+        a Heading), and the summary box carries `{idBase}-error-summary` as its id.
+        Ids are opaque: a generated id base can contain characters that are not URL-safe,
+        and the summary''s `href="#<field id>"` works only because the click default
+        is prevented and focus goes through the registration — never treat these ids
+        as real fragments.'
     lit:
       tag: ds-form
       reflect:
@@ -306,18 +339,37 @@ component:
         is not a second landmark. The `submit` and `invalid` CustomEvents keep their
         native names: the shadow <form>''s native submit is non-composed and prevented,
         and a field''s native `invalid` does not bubble, so the only `submit` and
-        `invalid` a ds-form listener sees are Form''s own.'
+        `invalid` a ds-form listener sees are Form''s own. ds-form exposes a public
+        `submit()` method so a story or a consumer can submit imperatively; both events
+        stay non-cancelable. An unnamed form takes its id base from a module-level
+        counter, `ds-form-<n>`, the Lit equivalent of the generated id web uses. The
+        default slot keeps its UA `display: contents`, so assigned nodes are flex
+        items of the container directly — which is what makes "a Stack given as children
+        spaces its own fields with its own gap" true — while the actions slot is `display:
+        flex; align-items: flex-start` so one bare action keeps its natural width.
+        While `disabled`, a childList MutationObserver re-runs propagation so a field
+        added later is disabled too, and re-enabling touches only the controls in
+        the remembered set, never one the consumer disabled itself. A `focusout` from
+        a field whose `relatedTarget` is that field''s host or inside it is not a
+        blur, which is how a RadioGroup validates when focus leaves the whole group
+        rather than on every arrow press. `validate` is not reflected: it changes
+        nothing visible and is not a styling surface. Nesting inside a native form
+        is forbidden and warns once in development when an ancestor form or ds-form
+        is found.'
     rn:
       element: View
       props:
       - accessibilityLabel
       notes: 'No native form on iOS/Android. Form provides a context { register, unregister,
-        submit, errors, validateMode, submitFailed, disabled, focusField }; fields
-        call register(name, { label, getValue, validate, focus }) in mount order (name
-        is the argument, not a handle property); a Button with type=submit calls submit().
-        Non-last fields get returnKeyType="next" (focusField), the last gets "done"
-        (submit). Disabled Inputs do not register. On failed submit the summary is
-        announced (accessibilityLiveRegion="assertive" on Android, announceForAccessibility
+        submit, errors, validateMode, submitFailed, errorSummary, disabled, order,
+        focusField, reportValidity }; fields call register(name, { label, getValue,
+        isDisabled, validate, focus }) in mount order (name is the argument, not a
+        handle property); a Button with type=submit calls submit(). `order` is what
+        gives a field its return key: non-last fields get returnKeyType="next" (focusField),
+        the last gets "done" (submit). A disabled field stays registered and reports
+        `isDisabled()`, and the Form leaves it out of the values and out of `order`,
+        so the previous field''s "next" skips past it. On failed submit the summary
+        is announced (accessibilityLiveRegion="assertive" on Android, announceForAccessibility
         on iOS) and focus moves to the summary when errorSummary is on, otherwise
         to the first invalid field — same as web. The iOS announcement is the summary
         heading followed by each item, joined with ''. '', once per failed submit
@@ -330,7 +382,11 @@ component:
         opens; each Link is nested in a `Text tone="danger"`, which is how the danger
         color reaches a `tone: inherit` Link on native. The View keeps role="form",
         which only has landmark meaning on react-native-web; iOS and Android have
-        no form landmark, so accessibilityLabel naming the group is the native alternative.'
+        no form landmark, so accessibilityLabel naming the group is the native alternative
+        — and it is assertable, which is why the label scenario covers this platform
+        too. If every invalid field has unregistered by the time a failed submit renders,
+        no summary box is drawn at all: onInvalid still fires and accessibility focus
+        stays where it was rather than moving to a heading that does not exist.'
     swiftui:
       element: VStack
       props:
@@ -361,6 +417,10 @@ component:
       platforms:
       - web
       - lit
+    - attribute: accessibilityLabel
+      is: Sign in
+      platforms:
+      - rn
   examples:
   - name: sign-in
     description: The smallest real form - two fields and one submit action, validated
@@ -425,6 +485,7 @@ component:
 - `errorSummaryBackground`: token `color.background.subtle`; part `errorSummary`; locked
 - `errorSummaryBorderWidth`: token `border.width.thin`; part `errorSummary`
 - `errorSummaryRadius`: token `radius.md`; part `errorSummary`
+- `errorSummaryLineHeight`: token `font.lineHeight.normal`; part `errorSummary`; locked
 - `errorSummaryPadding`: token `space.md`; part `errorSummary`
 - `errorSummaryGap`: token `layout.gap.tight`; part `errorSummary`
 
@@ -456,7 +517,7 @@ The component accepts `overrides: [Binding: TokenRef] = [:]` where `Binding` is 
 Overrides change values, never presence: a prop that turns a part off (`surface: none`, `border: false`, `radius: none`) makes the matching overrides no-ops; apply an override only where the binding is in effect.
 
 Overridable: `gap`, `errorSummaryBorder`, `errorSummaryBorderWidth`, `errorSummaryRadius`, `errorSummaryPadding`, `errorSummaryGap`
-Locked (accessibility-bearing, never overridable): `errorSummaryText`, `errorSummaryBackground`
+Locked (accessibility-bearing, never overridable): `errorSummaryText`, `errorSummaryBackground`, `errorSummaryLineHeight`
 
 ## Platform notes (swiftui)
 
@@ -493,7 +554,7 @@ Do not use Form for instant-apply settings (a Switch that saves on change) — t
 
 ## Behavior
 
-Submission is triggered by a Button with `type: submit`, by pressing Enter in a single-line field on web, or by the keyboard's done key on native. On submit, the form validates every field: `required` fields must have a value, fields with an `error` prop are invalid, and `invalid` fields are invalid. If anything fails, focus moves to the error summary (or the first invalid field when `errorSummary` is off), `onInvalid` fires with the errors, and `onSubmit` does not. Under `validate: submit`, nothing validates before the first submission; after a failed submission, fields re-validate on blur and change so errors clear as they are fixed. When a Form has an error summary, the Form announces errors and Inputs stay silent; a standalone Input announces its own error. If everything passes, `onSubmit` fires with values keyed by each field's `name` (see the event for the value contract). Fields are Input, Checkbox, Switch and RadioGroup — anything that registers with the Form. Each field owns its own messages: the Form renders a field's `copy.required` and never composes a message of its own. Under `validate: blur`, controls with no useful blur moment (Checkbox, Switch) validate on change, and RadioGroup validates when focus leaves the whole group. A field inside a closed Disclosure is not collected unless the Disclosure has `keepMounted`. Setting `disabled` while the request is in flight prevents double submission and is reflected on every field and action.
+Submission is triggered by a Button with `type: submit`, by pressing Enter in a single-line field on web, or by the keyboard's done key on native. On submit, the form validates every field: `required` fields must have a value, fields with an `error` prop are invalid, and `invalid` fields are invalid. If anything fails, focus moves to the error summary (or the first invalid field when `errorSummary` is off), `onInvalid` fires with the errors, and `onSubmit` does not. Under `validate: submit`, nothing validates before the first submission; after a failed submission, fields re-validate on blur and change so errors clear as they are fixed. When a Form has an error summary, the Form announces errors and Inputs stay silent; a standalone Input announces its own error. If everything passes, `onSubmit` fires with values keyed by each field's `name` (see the event for the value contract). Fields are Input, Checkbox, Switch and RadioGroup — anything that registers with the Form. Each field owns its own messages: the Form renders a field's `copy.required` and never composes a message of its own. Under `validate: blur`, controls with no useful blur moment (Checkbox, Switch) validate on change, and RadioGroup validates when focus leaves the whole group. A field inside a closed Disclosure is not collected unless the Disclosure has `keepMounted`. Setting `disabled` while the request is in flight prevents double submission and is reflected on every field and action: a submit attempted while disabled is cancelled early and fires neither `onSubmit` nor `onInvalid`. Validating sets each failing field's `invalid` and clears only the flags the Form itself set, so an `invalid` the consumer set survives re-validation; `onInvalid` carries each field's raw `validationMessage`, empty string included, and the label fallback is presentation for the summary only. "Empty" means null, an empty string or an empty array: `false` from a Switch and `0` from a NumberInput are values and are submitted, while an unchecked Checkbox contributes nothing. A submit with no registered fields still fires `onSubmit` with an empty value map. If a field has unregistered since it failed, the summary falls back to the label from the last registration the Form saw under that name. The plural locale for the summary heading is resolved once per failed submit and reused as the summary shrinks, since the heading is announced once; if the nearest `lang` is a tag `Intl.PluralRules` rejects, the runtime default locale is used instead of throwing.
 
 ## Content guidelines
 

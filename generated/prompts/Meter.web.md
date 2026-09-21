@@ -103,13 +103,21 @@ component:
       default: 0
       description: Lower bound of the range. On Lit a missing or unparseable attribute
         falls back to 0; on every platform a non-finite `min` (NaN, Infinity) is treated
-        as 0.
+        as 0, and it is the substituted bound that is exposed — aria-valuemin is always
+        a finite number, never "NaN". The reflected `min` attribute still carries
+        whatever was set, so the property and the announced range can differ; the
+        clamp lives in the getters, not in a normaliser that rewrites the attribute.
     max:
       type: number
       default: 100
       description: Upper bound of the range. Must be greater than `min`. On Lit a
         missing or unparseable attribute falls back to 100; on every platform a non-finite
-        `max` (NaN, Infinity) is treated as 100.
+        `max` (NaN, Infinity) is treated as 100, and the substituted bound is the
+        one exposed, as for `min`. An invalid range warns once per distinct min/max
+        pair for the life of the process — a module-level record, so a second Meter
+        with the same bad range is silent and a remount never repeats it. The warning
+        text is a development diagnostic; the backticks it is written with here are
+        this document's formatting, not characters in the emitted string.
     label:
       type: string
       required: true
@@ -146,8 +154,9 @@ component:
       type: boolean
       default: false
       description: Hides the visible value text (a boolean attribute can only turn
-        things on, so the flag is the hiding one). The accessible value is always
-        exposed. Lit attribute `hide-value`, not reflected.
+        things on, so the flag is the hiding one). The header row stays — the label
+        is always visible — and only the value text and its wrapper are omitted. The
+        accessible value is always exposed. Lit attribute `hide-value`, not reflected.
   styles:
     track:
       token: color.background.strong
@@ -168,7 +177,8 @@ component:
       part: track
       description: 'Rounds the track and the fill ends: the track clips the fill (overflow
         hidden) and the fill carries the same radius on every platform, so the leading
-        end of a partial fill is rounded too.'
+        end of a partial fill is rounded too. There is deliberately no separate fill
+        radius — the fill reads the same hook, and an override moves both ends together.'
       locked: false
     labelColor:
       token: color.foreground
@@ -224,8 +234,14 @@ component:
     transition:
       token: motion.duration.base
       part: fill
-      description: Fill inline-size change, with motion.easing.standard; instant under
-        reduced motion.
+      description: 'Fill inline-size change, with motion.easing.standard; instant
+        under reduced motion. The rule that a width change coming only from layout
+        (first layout, a resize) snaps is a React Native rule: there the fill is measured
+        pixels, so layout moves the animated value. On web and Lit the fill is a percentage,
+        so a resize never changes the declared width and nothing animates — the rule
+        holds there without any code. On native a fraction change arriving in the
+        same commit as a resize is indistinguishable from a pure resize, so it snaps
+        too.'
       locked: false
   a11y:
     role: meter
@@ -264,12 +280,20 @@ component:
         the track and fill are plain divs. role=meter and every aria-value* attribute
         sit on the track, while data-ds sits on the root wrapper: they are different
         elements. aria-valuetext is always set (valueText, else the formatted percentage).
-        Besides their listed composition props, the composed Texts receive only anatomy
-        plumbing: `data-part` on both and `id={labelId}` on the label. The forwarded-only
-        bindings (labelSize, labelWeight, valueSize, fontFamily, lineHeight) get no
-        `--ds-meter-*` hook and no CSS rule of their own: they reach the Texts only
-        through the Texts'' `overrides`, and only when the consumer overrides them,
-        since their default tokens are the ones the Text props already resolve to.'
+        Besides their listed composition props, the composed Texts receive only `id={labelId}`
+        on the label: the `label` and `valueText` parts are Meter-owned spans around
+        them, carrying `data-part` (and, on Lit, `part`), exactly as React Native
+        wraps them in Views. Those wrappers are where the header''s shrink rules live
+        — `flex-shrink: 1` on the label so a long label wraps inside the row, `flex-shrink:
+        0` on the value so the value text never wraps — which is how the row is laid
+        out without restyling a composed child. Locked bindings keep their hooks:
+        `--ds-meter-track` and `--ds-meter-fill` exist in CSS and are absent from
+        the overrides type, so `overrides` cannot reach them and document CSS still
+        can. The forwarded-only bindings (labelSize, labelWeight, valueSize, fontFamily,
+        lineHeight) get no `--ds-meter-*` hook and no CSS rule of their own: they
+        reach the Texts only through the Texts'' `overrides`, and only when the consumer
+        overrides them, since their default tokens are the ones the Text props already
+        resolve to.'
     lit:
       tag: ds-meter
       reflect:
@@ -287,7 +311,12 @@ component:
         bindings (labelSize, labelWeight, valueSize, fontFamily, lineHeight) get no
         `--ds-meter-*` hook on :host and the shadow CSS never sets `--ds-text-*` hooks:
         the child ds-text receives them only through its `overrides` property, when
-        the consumer overrides them.'
+        the consumer overrides them. The locked `track` and `fill` do keep their `:host`
+        hooks, as on web — locked means out of the overrides type, not out of CSS
+        — and the part names sit on the Meter-owned wrappers, not on the ds-text hosts,
+        so no `::part` styling of a composed child is implied. The reflected `value`,
+        `min` and `max` carry the raw property, so `<ds-meter value="150">` keeps
+        that attribute while the track reports the clamped aria-valuenow.'
     rn:
       element: View
       props:
@@ -305,8 +334,13 @@ component:
         Text takes no testID, so the label and value Texts each sit in a plain View
         the Meter owns, carrying `testID="Meter.label"` and `testID="Meter.valueText"`;
         the label''s wrapper View has `flexShrink: 1` so a long label wraps inside
-        the header row. RN tests check the name through accessibilityLabel and the
-        visible text; accessibilityValue is not asserted by the scenarios.'
+        the header row. react-native-web does not forward the object form of accessibilityValue,
+        and role=meter requires aria-valuenow, so the root carries the flattened `aria-valuenow`/`aria-valuemin`/`aria-valuemax`/`aria-valuetext`
+        props beside it. The bar is not focusable: `focusable={false}`, as on ProgressBar
+        — neither bar is a control. The `container` part has no testID of its own;
+        the root keeps `testID="Meter"`, as elsewhere on this platform. RN tests check
+        the name through accessibilityLabel and the visible text; accessibilityValue
+        is not asserted by the scenarios.'
     swiftui:
       element: VStack
       props:
@@ -542,18 +576,25 @@ attributes:
 - aria-valuemax
 - aria-valuetext
 - aria-labelledby
-notes: 'A <div role="meter"> per the APG rather than <meter>: the native element is
-  inconsistently announced, hard to style across browsers, and cannot take our tone
-  colors reliably. The label is a real element referenced by aria-labelledby; the
-  track and fill are plain divs. role=meter and every aria-value* attribute sit on
-  the track, while data-ds sits on the root wrapper: they are different elements.
-  aria-valuetext is always set (valueText, else the formatted percentage). Besides
-  their listed composition props, the composed Texts receive only anatomy plumbing:
-  `data-part` on both and `id={labelId}` on the label. The forwarded-only bindings
-  (labelSize, labelWeight, valueSize, fontFamily, lineHeight) get no `--ds-meter-*`
-  hook and no CSS rule of their own: they reach the Texts only through the Texts''
-  `overrides`, and only when the consumer overrides them, since their default tokens
-  are the ones the Text props already resolve to.'
+notes: "A <div role=\"meter\"> per the APG rather than <meter>: the native element\
+  \ is inconsistently announced, hard to style across browsers, and cannot take our\
+  \ tone colors reliably. The label is a real element referenced by aria-labelledby;\
+  \ the track and fill are plain divs. role=meter and every aria-value* attribute\
+  \ sit on the track, while data-ds sits on the root wrapper: they are different elements.\
+  \ aria-valuetext is always set (valueText, else the formatted percentage). Besides\
+  \ their listed composition props, the composed Texts receive only `id={labelId}`\
+  \ on the label: the `label` and `valueText` parts are Meter-owned spans around them,\
+  \ carrying `data-part` (and, on Lit, `part`), exactly as React Native wraps them\
+  \ in Views. Those wrappers are where the header's shrink rules live \u2014 `flex-shrink:\
+  \ 1` on the label so a long label wraps inside the row, `flex-shrink: 0` on the\
+  \ value so the value text never wraps \u2014 which is how the row is laid out without\
+  \ restyling a composed child. Locked bindings keep their hooks: `--ds-meter-track`\
+  \ and `--ds-meter-fill` exist in CSS and are absent from the overrides type, so\
+  \ `overrides` cannot reach them and document CSS still can. The forwarded-only bindings\
+  \ (labelSize, labelWeight, valueSize, fontFamily, lineHeight) get no `--ds-meter-*`\
+  \ hook and no CSS rule of their own: they reach the Texts only through the Texts'\
+  \ `overrides`, and only when the consumer overrides them, since their default tokens\
+  \ are the ones the Text props already resolve to."
 ```
 
 ## Guidance

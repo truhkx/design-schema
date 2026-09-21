@@ -100,8 +100,13 @@ component:
       default: center
       description: 'Where the capped column sits in a wider viewport. `start` sets
         `margin-inline: 0` on both sides, not just the start side, so the column never
-        picks up an asymmetric margin. React Native has no margin here: `center` maps
-        to `alignSelf: center` and `start` to `alignSelf: flex-start`.'
+        picks up an asymmetric margin. That margin is deliberately not a style binding:
+        it is structural, it takes only two values, and there is nothing in it for
+        a theme to tune, so it has no hook and is not overridable — unlike maxWidth
+        and paddingInline. The selector is written at every `width`, `full` included,
+        where it is simply inert (there is no cap for the column to sit inside), so
+        the markup does not change shape with the width. React Native has no margin
+        here: `center` maps to `alignSelf: center` and `start` to `alignSelf: flex-start`.'
     element:
       type: enum
       values:
@@ -112,7 +117,11 @@ component:
       description: Use `main` for the page's main column when no Landmark wraps it.
         A page has exactly one `main`; that is the author's responsibility, since
         the component cannot see the rest of the page, so it neither enforces it nor
-        warns.
+        warns. `a11y.role` is `none` because that is what the default `div` exposes;
+        the landmark contract lives here and in the main-element scenario, and applies
+        to this one value. On Lit `section` is indistinguishable from `div` — a custom
+        element cannot retag its host and a section is a region only when it is named
+        — so the value exists there for API parity and changes nothing observable.
       platforms:
       - web
       - lit
@@ -127,8 +136,10 @@ component:
       token: layout.gutter.{gutter}
       description: '`none` renders no padding (a literal 0, with no hook), which also
         makes an override of this binding a no-op at that value, with no dev warning.
-        `narrow` and `wide` are fixed at every viewport. Only `default` is responsive:
-        `layout.gutter.narrow` below layout.maxWidth.content, `layout.gutter.default`
+        `narrow`, `wide` and `none` are fixed at every viewport: their selectors carry
+        the attribute or modifier class, so they outrank the bare responsive rules
+        inside both media queries and no viewport can move them. Only `default` is
+        responsive: `layout.gutter.narrow` below layout.maxWidth.content, `layout.gutter.default`
         (the `--layout-gutter` variable) from layout.maxWidth.content, and `layout.gutter.wide`
         from layout.maxWidth.page. Both boundaries are inclusive (`>=`, a min-width
         query), so a viewport exactly at a token width takes the wider gutter. An
@@ -150,9 +161,15 @@ component:
         px come from the default theme, calm-precise (960 / 1280); the CSS is one
         theme-independent file, so under a theme with other maxWidth values the cap
         follows the theme (it is a custom property) but the gutter switches at calm-precise
-        widths — a known limit. The block `element: div` is the default; the root
-        renders whichever tag the `element` prop chooses. The root is the `column`
-        part and carries `data-part="column"`, as Box''s root carries `surface`.'
+        widths — a known limit, and an accepted one: one stylesheet for every theme
+        is worth more than exact breakpoints, so the generator emits no per-theme
+        CSS and no container-query substitute until a brand asks for it. The block
+        `element: div` is the default; the root renders whichever tag the `element`
+        prop chooses. The root is the `column` part and carries `data-part="column"`,
+        as Box''s root carries `surface`. `...rest` is spread before `data-ds` and
+        `data-part`, so a consumer cannot clobber the testability hooks; Container,
+        unlike Box, is never composed by another component that would need to rename
+        its part.'
     lit:
       tag: ds-container
       reflect:
@@ -161,15 +178,17 @@ component:
       - align
       notes: 'The host is the column (`:host { display: block }`) with a default slot.
         Same media-query note as web. A custom element cannot retag its host, so `element`
-        sets an ElementInternals role for `main` only; `div` and `section` set none,
-        since a section is a region only when it is named. The role stays on ElementInternals,
-        as in Box, with no `role` attribute added to the host; the main-landmark scenario
-        is web-only because the test accessibility lookup cannot read ElementInternals.
+        sets a role for `main` only; `div` and `section` set none, since a section
+        is a region only when it is named. That role is a plain `role` attribute on
+        the host, as Box writes it — not ElementInternals, which the accessible-role
+        tests cannot read — so Lit runs the main-landmark scenario alongside web.
         The host carries `data-part="column"`. `element` is an attribute-settable
         property that does not reflect: it changes no styling. Before the first update,
         when the width and gutter attributes are not yet reflected, the plain `:host`
         rules are the prop defaults (the content max-width and the responsive default
-        gutter).'
+        gutter). `children` is required, but an empty default slot renders a valid
+        empty column and no development warning fires: an empty page column is a legitimate
+        intermediate state, unlike an empty required field.'
     rn:
       element: View
       props: []
@@ -185,7 +204,11 @@ component:
         picks its gutter by the window here while SwiftUI measures its own width —
         one more reason a nested Container uses `gutter: none`. Container belongs
         in a column-direction parent (a screen, a vertical Stack); inside a row parent
-        `width: 100%` and alignSelf cross axes and that placement is not supported.'
+        `width: 100%` and alignSelf cross axes and that placement is not supported
+        — silently, with no development warning, since a View cannot see its parent''s
+        flexDirection. Only the four style props named here are set: no flexShrink
+        or flexGrow, so a sibling in a flex row can still shrink the column, which
+        is the same unsupported placement said another way.'
     swiftui:
       element: VStack
       props:
@@ -209,6 +232,7 @@ component:
     - role: main
       platforms:
       - web
+      - lit
   examples:
   - name: application-screen
     description: The default page column for application screens, centered at the
@@ -335,7 +359,10 @@ notes: "View with maxWidth, alignSelf (center \u2192 center, start \u2192 flex-s
   \ SwiftUI measures its own width \u2014 one more reason a nested Container uses\
   \ `gutter: none`. Container belongs in a column-direction parent (a screen, a vertical\
   \ Stack); inside a row parent `width: 100%` and alignSelf cross axes and that placement\
-  \ is not supported."
+  \ is not supported \u2014 silently, with no development warning, since a View cannot\
+  \ see its parent's flexDirection. Only the four style props named here are set:\
+  \ no flexShrink or flexGrow, so a sibling in a flex row can still shrink the column,\
+  \ which is the same unsupported placement said another way."
 ```
 
 ## Guidance
@@ -362,7 +389,7 @@ None.
 
 ## Accessibility
 
-Content reflows to a single column at 320px wide without horizontal scrolling because the Container never sets a minimum width and the gutter shrinks on narrow viewports (WCAG 1.4.10). Prose measure keeps lines under about 80 characters, which helps readers with dyslexia and low vision (1.4.8, AAA advisory). Container adds no semantics unless `element: main` is chosen, in which case it is the page's main landmark and there must be exactly one.
+Content reflows to a single column at 320px wide without horizontal scrolling because the Container never sets a minimum width and the gutter shrinks on narrow viewports (WCAG 1.4.10). Prose measure keeps lines to about 65 characters, which helps readers with dyslexia and low vision (1.4.8, AAA advisory). Container adds no semantics unless `element: main` is chosen, in which case it is the page's main landmark and there must be exactly one.
 
 ## Platform notes
 

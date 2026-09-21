@@ -78,7 +78,10 @@ component:
     label:
       type: string
       required: true
-      description: The button's text. Also its accessible name.
+      description: 'The button''s text. Also its accessible name. An empty string
+        is allowed and warns on no platform, like Lit''s initial `''''` and an `iconOnly`
+        button with no icon: it renders a nameless button, and nothing enforces WCAG
+        4.1.2 at runtime.'
       a11y: Rendered as visible text, or as aria-label / accessibilityLabel when the
         button shows only an icon.
     variant:
@@ -124,7 +127,8 @@ component:
         Consumers rarely set it directly. No default, and tri-state on every platform:
         undefined means the button discloses nothing, so no expanded state is reported
         at all (no aria-expanded on the container; `expanded` omitted from accessibilityState),
-        never a false one.'
+        never a false one. When the prop is set and an `aria-expanded` also arrives
+        through `...rest`, the prop wins.'
     disabled:
       type: boolean
       default: false
@@ -138,10 +142,12 @@ component:
     accessibleName:
       type: string
       description: Overrides the accessible name when it must say more than the visible
-        label ("Sort by Amount, ascending" on a header that shows "Amount"). The name
-        must contain the visible label (WCAG 2.5.3 label-in-name); starting with it
-        is preferred but not required, and no development warning checks it. Maps
-        to aria-label / accessibilityLabel.
+        label ("Sort by Amount, ascending" on a header that shows "Amount"). It wins
+        over `label` everywhere, `iconOnly` included, where it replaces the label
+        as the aria-label rather than being appended to it. The name must contain
+        the visible label (WCAG 2.5.3 label-in-name); starting with it is preferred
+        but not required, and no development warning checks it. Maps to aria-label
+        / accessibilityLabel.
     overflowLabel:
       type: string
       description: 'Text used for this button when a Toolbar collapses it into its
@@ -155,11 +161,17 @@ component:
       default: false
       description: 'Hides the visible label and shows only `leadingIcon`; `trailingIcon`
         is not rendered either. `label` is still required and becomes the accessible
-        name. Padding becomes equal on all sides (`space.sm`): paddingInline takes
-        the resolved paddingBlock, so a paddingBlock override keeps the sides equal
-        and a paddingInline override has no effect while `iconOnly`. An `iconOnly`
-        button with no `leadingIcon` is allowed and renders only its accessible name,
-        with no development warning.'
+        name. Padding becomes equal on all sides: paddingInline takes the resolved
+        paddingBlock (`space.sm` at its default), so a paddingBlock override keeps
+        the sides equal and a paddingInline override has no effect while `iconOnly`.
+        That also flattens the size ramp — an `iconOnly` sm and lg button differ in
+        font and spinner size, not in padding — which is intended, since a square
+        target should not stretch with its glyph. An `iconOnly` button with no `leadingIcon`
+        is allowed and renders only its accessible name, with no development warning.
+        The `label` part is not rendered at all while `iconOnly` — no visually hidden
+        node either, since the name moves to aria-label — so this is the one place
+        a prop removes an anatomy part, and a part selector or an `overrides` entry
+        targeting `label` finds nothing.'
     loading:
       type: boolean
       default: false
@@ -168,8 +180,12 @@ component:
         slot (whether or not `leadingIcon` is set; for `iconOnly` it replaces the
         sole glyph), hides `trailingIcon`, keeps the label visible and the button''s
         height unchanged, and blocks repeat activation while an action is pending.
-        With a `leadingIcon` the spinner swaps in at the same width; without one the
-        spinner and iconGap widen the button, a shift that is accepted. The spinner
+        With a `leadingIcon` the spinner swaps in at the same width, which holds exactly
+        when that icon renders at the label''s font size (the spinner is sized from
+        `spinnerSize` alone, never from the icon it replaces); without one the spinner
+        and iconGap widen the button, a shift that is accepted. `disabled` and `loading`
+        may both be true: the button reports both states (aria-disabled and aria-busy)
+        and the disabled dim applies while the spinner keeps turning. The spinner
         is not an anatomy part and carries no part name; it only takes the leadingIcon
         position, so no leadingIcon part is present while loading. `copy.loading`
         is announced as a description, never as part of the name, so it survives aria-label:
@@ -194,10 +210,12 @@ component:
         at inverseHoverOpacity over the surface (the sanctioned color-mix of tokens
         on web/Lit; an alpha of the resolved color on native); the focus ring uses
         color.inverse.focus for every variant while `inverse` is true, since the ring
-        must read against the inverse surface. Only `ghost` changes its fill on inverse
-        surfaces; other variants keep their own fills, which need no pair against
-        color.inverse.surface: their text is proven against their own fill, and the
-        label, not the fill edge, identifies the control.'
+        must read against the inverse surface — `focusRingOffset` puts it clear of
+        the button''s own fill, so it is proven against color.inverse.surface and
+        needs no pair against each variant''s background. Only `ghost` changes its
+        fill on inverse surfaces; other variants keep their own fills, which need
+        no pair against color.inverse.surface: their text is proven against their
+        own fill, and the label, not the fill edge, identifies the control.'
     track:
       type: string
       description: An event name sent to analytics when the button is pressed. Omit
@@ -244,18 +262,25 @@ component:
       token: color.action.{variant}.backgroundHover
       state: hover
       locked: true
-      description: Pointer hover and pressed state (`:hover` and `:active` on web
+      description: 'Pointer hover and pressed state (`:hover` and `:active` on web
         and Lit; pressed on rn, which does not read the Pressable `hovered` state,
-        so a react-native-web mouse hover leaves the fill alone). Never applied while
+        so a react-native-web mouse hover leaves the fill alone). The declared `state:
+        hover` names the token slot; the rule applies the value to `:is(:hover, :active)`,
+        as the two read as one pressed-or-pointed state here. Never applied while
         `disabled` or `loading`, since neither accepts a press; the same holds for
-        inverseBackgroundHover. Locked like background and foreground, so an override
-        cannot put an unproven fill behind the locked foreground.
+        inverseBackgroundHover. Web and Lit suppress it by selector — `:not([aria-disabled=''true'']):not([aria-busy=''true''])`
+        — so an `aria-busy` a caller passes through `...rest` also suppresses the
+        fill, which is right: a busy button is not accepting presses either. Locked
+        like background and foreground, so an override cannot put an unproven fill
+        behind the locked foreground.'
     foreground:
       token: color.action.{variant}.foreground
       locked: true
     iconGap:
       token: space.2
-      description: Gap between an icon and the label.
+      description: 'Gap between an icon and the label. Deliberately a step of the
+        numeric scale rather than the t-shirt ramp the paddings use: the gap between
+        a glyph and its word is one fixed distance and does not grow with `size`.'
       locked: false
     paddingInline:
       token: space.{size}
@@ -281,6 +306,12 @@ component:
     focusRingWidth:
       token: border.width.focus
       locked: true
+    focusRingOffset:
+      token: border.width.focus
+      description: Outline offset, so the ring clears the button's own fill instead
+        of sitting on its edge. The same focus token as focusRingWidth and locked
+        with it, so the rule reads the token directly and there is no literal.
+      locked: true
     inverseForeground:
       token: color.inverse.link
       description: ghost text when `inverse`.
@@ -292,10 +323,14 @@ component:
     inverseBackgroundHover:
       token: color.inverse.foreground
       state: hover
-      description: 'ghost hover and pressed fill when `inverse`: this color at inverseHoverOpacity
-        over color.inverse.surface. On native it is the resolved colour with an alpha
-        channel, drawn over whatever the transparent ghost sits on; a colour that
-        is not #rgb or #rrggbb passes through without alpha.'
+      description: 'ghost hover and pressed fill when `inverse`: this color at inverseHoverOpacity.
+        The color-mix on web and Lit takes `transparent` as its second colour, never
+        color.inverse.surface — ghost has no fill of its own, so whatever the Toast
+        or panel actually paints has to show through, and mixing against the token
+        would be right only when the two happen to match. On native it is the same
+        thing by another route: the resolved colour with an alpha channel, drawn over
+        whatever the transparent ghost sits on; a colour that is not #rgb or #rrggbb
+        passes through without alpha.'
       locked: false
     inverseHoverOpacity:
       token: opacity.disabled
@@ -320,13 +355,21 @@ component:
       locked: false
     transition:
       token: motion.duration.fast
-      description: Background transitions on hover and press, with motion.easing.standard.
-        No variant changes its foreground between states, so only the background animates.
+      description: 'Background transitions on hover and press, with motion.easing.standard.
+        No variant changes its foreground between states, so only the background animates:
+        the property list is background-color alone, and a `variant` swapped at runtime
+        therefore changes fill without a transition. Removed under `@media (prefers-reduced-motion:
+        reduce) { transition: none }` — the reduce query, never an inverted `no-preference`
+        gate, which would also strip motion where the feature is unsupported.'
       locked: false
     loadingSpin:
       token: motion.duration.loop
       description: One rotation of the loading indicator, at linear easing (a continuous
-        spin; motion.easing.standard is for `transition` only); disabled under prefers-reduced-motion.
+        spin; motion.easing.standard is for `transition` only); disabled under prefers-reduced-motion,
+        written as the same `reduce` query as `transition`. The ring stays rendered
+        and frozen at its start angle rather than being hidden — it is the only visual
+        sign that the button is busy — and `transition` likewise snaps the background
+        instead of animating.
       locked: false
     spinnerSize:
       token: font.size.{size}
@@ -338,13 +381,17 @@ component:
     spinnerStroke:
       token: border.width.focus
       description: 'Ring thickness of the loading spinner: a spinnerSize circle with
-        one quarter transparent, drawn in currentColor (the resolved foreground binding
-        on rn). Locked because border.width.focus is a focus token: it keeps its `--ds-button-spinner-stroke`
-        hook but is not a member of the overrides type. The ring is round through
-        `radius.full`, read directly with no hook, on web and Lit, and through a radius
-        of spinnerSize / 2 on rn, where it is a bordered View with a transparent top
-        border (no react-native-svg) and carries no testID. One rotation is a full
-        turn, `rotate(360deg)`: a geometric constant, not a themed value.'
+        one quarter transparent — the block-start quarter on every platform, so the
+        turn reads as starting from twelve o''clock — drawn in currentColor (the resolved
+        foreground binding on rn). Locked because border.width.focus is a focus token:
+        it keeps its `--ds-button-spinner-stroke` hook but is not a member of the
+        overrides type. That the hook stays settable from document CSS is intended
+        — locked removes a binding from `overrides`, never from the CSS escape hatch.
+        The ring is round through `radius.full`, read directly with no hook, on web
+        and Lit, and through a radius of spinnerSize / 2 on rn, where it is a bordered
+        View with a transparent top border (no react-native-svg) and carries no testID.
+        One rotation is a full turn, `rotate(360deg)`: a geometric constant, not a
+        themed value.'
       locked: true
   copy:
     loading: Loading
@@ -387,7 +434,8 @@ component:
         variant reading the token directly; spinnerStroke is the one exception. A
         blocked activation (disabled or loading) calls preventDefault() and stopPropagation()
         on the click, so a `type: submit` button submits nothing and the enclosing
-        Form never sees the event.'
+        Form never sees the event. Cursor is not a binding and is the same everywhere:
+        `pointer`, `not-allowed` under aria-disabled, `progress` under aria-busy.'
     lit:
       tag: ds-button
       reflect:
@@ -419,7 +467,21 @@ component:
         once. `expanded` is a JS property only (`attribute: false`) and stays tri-state
         — undefined means the button discloses nothing, so no aria-expanded is set
         at all. A disclosing parent sets `.expanded=`; a raw `aria-expanded` attribute
-        on the host does not reach the inner button.'
+        on the host does not reach the inner button. The host is the tab stop and
+        the inner button is never an independent one: `tabindex` written on the host
+        (Toolbar''s roving focus, TreeGrid''s chevron, NumberInput''s steppers) is
+        mirrored onto the inner button through a MutationObserver watching that attribute
+        alone, which never writes back to the host; no other global attribute crosses
+        the shadow root. The host lays out as `display: inline-flex; vertical-align:
+        middle` with the inner button filling it, so a stretched host exposes no dead
+        click area of its own. `accessibleName` is not reflected and is the plain
+        kebab attribute `accessible-name`. On `type: submit` the order is `press`,
+        then tracking, then `closest(''form'')?.requestSubmit()` guarded by `!this.closest(''ds-form'')`;
+        with neither form present the submit is a silent no-op, as on rn. A caller''s
+        `aria-describedby` on the host cannot cross the shadow root, so on Lit `copy.loading`
+        replaces rather than merges with it — an accepted divergence from web, since
+        the busy description matters more than a description the shadow root cannot
+        reach.'
     rn:
       element: Pressable
       props:
@@ -446,7 +508,22 @@ component:
         disabled button fails contrast in the web preview, because tooling does not
         see it as disabled. The role and name stay `accessibilityRole`/`accessibilityLabel`,
         which react-native-web still renders. A `type: submit` Button outside any
-        Form only fires onPress, with no warning.'
+        Form only fires onPress, with no warning. A Pressable''s own style cannot
+        hold an Animated value, so the animated fill is a nested flex child that grows
+        into the root''s box at an inner radius of `radius − focusRingWidth`, with
+        the ring on the root above it; an inset-0 overlay is the wrong reading, because
+        on Yoga it fills the padding box and stops short of every edge. The ring is
+        an always-present border of `focusRingWidth` that is transparent while unfocused,
+        so focusing never shifts the button. `loadingSpin` drives a transform, so
+        it runs on the native driver everywhere but web, while the background colour
+        interpolation stays off it (colour is not native-drivable there). The label
+        is React Native''s own `Text` with the four typography bindings applied directly:
+        the system Text''s `size` and `tone` enums cannot express `font.size.{size}`
+        in an action foreground, and composing it is the rule only where it can carry
+        the binding. `disabled-stays-focusable` is web and Lit only — the native guarantee
+        (disabled never reaches Pressable, so it keeps its place in the focus order)
+        has no focusability assertion in the RN testing library and is held by this
+        note alone.'
     swiftui:
       element: Button
       props:
@@ -633,7 +710,7 @@ The component accepts `overrides?: Partial<Record<OverridableBinding, TokenRef>>
 Overrides change values, never presence: a prop that turns a part off (`surface: none`, `border: false`, `radius: none`) makes the matching overrides no-ops; apply an override only where the binding is in effect.
 
 Overridable: `iconGap`, `paddingInline`, `paddingBlock`, `radius`, `fontFamily`, `fontWeight`, `fontSize`, `inverseBackgroundHover`, `inverseHoverOpacity`, `disabledOpacity`, `transition`, `loadingSpin`, `spinnerSize`
-Locked (accessibility-bearing, never overridable): `background`, `backgroundHover`, `foreground`, `focusRing`, `focusRingWidth`, `inverseForeground`, `inverseFocusRing`, `minTarget`, `spinnerStroke`
+Locked (accessibility-bearing, never overridable): `background`, `backgroundHover`, `foreground`, `focusRing`, `focusRingWidth`, `focusRingOffset`, `inverseForeground`, `inverseFocusRing`, `minTarget`, `spinnerStroke`
 
 ## Behavior scenarios (21)
 
@@ -818,7 +895,8 @@ notes: 'Use aria-disabled rather than the disabled attribute so the button remai
   out as one rule per variant reading the token directly; spinnerStroke is the one
   exception. A blocked activation (disabled or loading) calls preventDefault() and
   stopPropagation() on the click, so a `type: submit` button submits nothing and the
-  enclosing Form never sees the event.'
+  enclosing Form never sees the event. Cursor is not a binding and is the same everywhere:
+  `pointer`, `not-allowed` under aria-disabled, `progress` under aria-busy.'
 ```
 
 ## Guidance
@@ -847,7 +925,7 @@ Labels are sentence case, one to three words, and start with a verb. Avoid "Yes"
 
 ## Accessibility
 
-Every button must have an accessible name (WCAG 4.1.2). The name comes from the visible label or, for `iconOnly`, from the `label` prop rendered as `aria-label` / `accessibilityLabel`. Focus must be visible (WCAG 2.4.7 and 2.4.11): the focus ring uses `color.border.focus` at `border.width.focus` and is never removed without a replacement. The interactive target is at least 24×24 CSS px (WCAG 2.5.8, AA) at every `size`, and 44×44 on touch platforms following iOS and Android guidelines. Text and background pairs for every variant meet 4.5:1 (WCAG 1.4.3) in both light and dark themes — the build checks this against the tokens. Buttons are activated with Enter and Space, and never rely on hover alone to convey state.
+Every button must have an accessible name (WCAG 4.1.2). The name comes from the visible label or, for `iconOnly`, from the `label` prop rendered as `aria-label` / `accessibilityLabel`. Focus must be visible (WCAG 2.4.7 and 2.4.11): the focus ring uses `color.border.focus` at `border.width.focus` and is never removed without a replacement. The interactive target is at least 24×24 CSS px (WCAG 2.5.8, AA) at every `size` — `minTarget` alone on web and Lit, with no coarse-pointer media query — and reaches 44×44 on the touch platforms through `touchTarget` (hitSlop on React Native, `.contentShape` on SwiftUI), following iOS and Android guidelines. Text and background pairs for every variant meet 4.5:1 (WCAG 1.4.3) in both light and dark themes — the build checks this against the tokens. Buttons are activated with Enter and Space, and never rely on hover alone to convey state.
 
 ## Platform notes
 

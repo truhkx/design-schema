@@ -113,11 +113,14 @@ component:
       - alert
       - 'off'
       default: status
-      description: How the alert is announced when it appears. `status` is polite
+      description: 'How the alert is announced when it appears. `status` is polite
         (most messages), `alert` interrupts (only for errors that block the user),
-        `off` for alerts already present when the view loads.
-      a11y: Maps to role=status, role=alert, or a plain region. Never use `alert`
-        for success or info.
+        `off` for alerts already present when the view loads. Changing `live` after
+        the first render swaps the role (or the live region) in place and never re-announces
+        the message: only a change to the heading or the body is a new message.'
+      a11y: Maps to role=status, role=alert, or a plain region. React Native has no
+        status role, so `status` there is accessibilityLiveRegion="polite" with no
+        role at all. Never use `alert` for success or info.
     dismissible:
       type: boolean
       default: false
@@ -126,8 +129,11 @@ component:
         its presence in the tree).
   events:
     onDismiss:
-      description: Fired when the user activates the dismiss button. The consumer
-        removes the alert.
+      description: 'Fired when the user activates the dismiss button. The consumer
+        removes the alert. The focus-onward step runs first, so focus has already
+        left the alert by the time the handler runs and may unmount it synchronously.
+        It carries no payload: the Lit `dismiss` CustomEvent is dispatched with no
+        `detail` rather than an empty object.'
       platforms:
         web: onDismiss
         lit: dismiss
@@ -150,10 +156,12 @@ component:
     bodyColor:
       token: color.foreground
       part: body
-      description: Body text keeps the page foreground so long messages read as text,
+      description: 'Body text keeps the page foreground so long messages read as text,
         not as colored emphasis. On React Native a string or number body is wrapped
         in the system Text, whose default tone is this color, so no color is passed;
-        a non-string body is rendered as given.
+        a non-string body is rendered as given. A body of Text or Link children therefore
+        keeps its own color on every platform: this binding reaches plain text only,
+        by inheritance on web and Lit, and inheriting a value is not restyling a child.'
       locked: true
     border:
       token: color.status.{tone}.border
@@ -163,16 +171,18 @@ component:
       token: color.status.{tone}.icon
       part: icon
       description: 'Leading icon: info circle, check circle, warning triangle, or
-        error octagon by tone, rendered with the system Icon (`info`, `success`, `warning`,
-        `danger`) and colored by passing this token path as `overrides.color` to the
-        Icon on every platform, React Native included (never Icon''s RN `color` prop)
-        — the sanctioned way to color a composed child. Locked by its non-text contrast
-        pair, so there is no `overrides.icon` and no --ds-alert-icon hook: the Icon
-        always gets this tone token, and the icon part box carries no color of its
-        own. Decorative: the Icon has no `label`, so it hides itself from assistive
-        technology (aria-hidden; on React Native accessibilityElementsHidden and importantForAccessibility
-        no), and the Alert-owned box adds no accessibility props on any platform;
-        the tone is also conveyed by the heading or role.'
+        error octagon by tone, rendered with the system Icon whose glyph name is the
+        tone value itself (`info`, `success`, `warning`, `danger`), so a new tone
+        needs a glyph of the same name, and colored by passing this token path as
+        `overrides.color` to the Icon on every platform, React Native included (never
+        Icon''s RN `color` prop) — the sanctioned way to color a composed child. Locked
+        by its non-text contrast pair, so there is no `overrides.icon` and no --ds-alert-icon
+        hook: the Icon always gets this tone token, and the icon part box carries
+        no color of its own. Decorative: the Icon has no `label`, so it hides itself
+        from assistive technology (aria-hidden; on React Native accessibilityElementsHidden
+        and importantForAccessibility no), and the Alert-owned box adds no accessibility
+        props on any platform precisely because the Icon already hides itself — the
+        box must not repeat them; the tone is also conveyed by the heading or role.'
       locked: true
     borderWidth:
       token: border.width.thin
@@ -210,9 +220,12 @@ component:
         the box math reads that hook, so a consumer who sets the hook directly in
         their own CSS resizes the box but not the glyph, which is unsupported. Web
         and Lit know whether there is a heading from a `data-has-heading` attribute
-        the component sets on its root (not a CSS `:has()` query), and all hooks (fontSize,
-        headingSize, lineHeight, iconSize) are set on the root and inherited, so the
-        icon box reads them there.'
+        the component sets on its root — the `<div>` on web and the host element on
+        Lit, where the hooks also live, not the shadow `container` part — and not
+        from a CSS `:has()` query; all hooks (fontSize, headingSize, lineHeight, iconSize)
+        are set on that root and inherited, so the icon box reads them there. React
+        Native runs the same max(): the first line''s lineHeight, or iconSize when
+        the glyph is larger.'
       locked: false
     headingSize:
       token: font.size.md
@@ -252,6 +265,10 @@ component:
         its target sits in the corner without enlarging the padding; the Button keeps
         its own colors, radius and focus ring. On React Native this is the one sanctioned
         sibling margin (marginTop and marginEnd of −dismissMargin on the wrapper View).
+        Excluding block-end is a React Native rule, where the wrapper View can otherwise
+        stretch; on web and Lit the container aligns its children to the start, so
+        the wrapper never reaches the block-end padding and the exclusion has no visible
+        effect.
       locked: false
   copy:
     dismissLabel: Dismiss
@@ -299,14 +316,20 @@ component:
         body element, so an Alert always has a name even without a heading; the whole
         body text, link text included, is then the name, which is intended (a status
         region is named by its content). That content name always wins: a consumer
-        `aria-label` or `aria-labelledby` is not forwarded to the root. On dismiss,
-        "next focusable" means a[href], button, input, select, textarea, [tabindex]
-        ≥ 0 or contenteditable in document order after the alert, skipping any element
-        with a negative tabindex, disabled elements (`:disabled`, which includes descendants
-        of a disabled fieldset), elements inside `inert`, and elements that are not
-        rendered: the `hidden` attribute or computed `display: none` on the element
-        or an ancestor, or computed `visibility: hidden`; size and layout are not
-        checked (jsdom has none).'
+        `aria-label` or `aria-labelledby` is not forwarded to the root, and the props
+        type omits both, so passing one is a type error (and a silent drop for JavaScript
+        callers). The name is set for every `live`, `off` included: on a roleless
+        div it exposes nothing, but keeping it unconditional keeps the three platforms
+        identical. `locked: true` means a binding is absent from the overrides type,
+        not that it has no hook: background, foreground and bodyColor keep their --ds-alert-*
+        hooks, which the tone rules read, so document CSS can still reach them; `icon`
+        is the single exception and has no hook at all. On dismiss, "next focusable"
+        means a[href], button, input, select, textarea, [tabindex] ≥ 0 or contenteditable
+        in document order after the alert, skipping any element with a negative tabindex,
+        disabled elements (`:disabled`, which includes descendants of a disabled fieldset),
+        elements inside `inert`, and elements that are not rendered: the `hidden`
+        attribute or computed `display: none` on the element or an ancestor, or computed
+        `visibility: hidden`; size and layout are not checked (jsdom has none).'
     lit:
       tag: ds-alert
       reflect:
@@ -336,7 +359,9 @@ component:
         focus to the dismiss button, which is focusable on its own. The same next-focusable
         rule as web applies on dismiss, walked over the flat tree (into open shadow
         roots and slot-assigned content) in document order, since focusables inside
-        other components'' shadow roots are invisible to querySelector.'
+        other components'' shadow roots are invisible to querySelector. Locked bindings
+        follow the web rule: background, foreground and bodyColor keep their `:host`
+        hooks and are only absent from the overrides type; `icon` has no hook.'
     rn:
       element: View
       props:
@@ -349,23 +374,26 @@ component:
         instead of a status role; off → neither. iOS ignores live regions, so on iOS
         only (Platform.OS === 'ios', since Android already announces through accessibilityLiveRegion)
         with live≠off call AccessibilityInfo.announceForAccessibility on mount and
-        again whenever heading or body change (a changed message is a new message).
-        Use the `accessibilityRole` and `accessibilityLiveRegion` props named here,
-        not the newer `role` prop. The label is heading + body when body is a string
-        or number (the number as its text), joined by ". " exactly like the iOS announcement
-        so the two read the same; otherwise heading only — a body that is not plain
-        text should carry its own accessible text, and with no heading and a body
-        that is neither string nor number accessibilityLabel is left unset (the region
-        has no name; its children are read on their own). A string or number body
-        is wrapped in the system Text (default tone, fontFamily, fontSize and lineHeight
-        through its `overrides`). The heading is a raw Text styled with foreground,
-        headingSize, headingWeight, fontFamily and lineHeight, with no accessibilityRole="header",
-        as web renders no heading element. The icon part is a View as tall as the
-        first line holding the tone Icon with `overrides.color` set to the `icon`
-        token path; parts carry testID `Alert.<part>` on Views the Alert owns (the
-        dismissButton wrapper View also carries dismissMargin). The dismiss button
-        is the system Button (ghost, sm, iconOnly, label copy.dismissLabel) whose
-        `leadingIcon` is the Icon `close` with `overrides.color` color.action.ghost.foreground,
+        again whenever heading or body change (a changed message is a new message);
+        key the effect on the joined announcement alone, so flipping `live` on an
+        already-mounted alert never announces. Use the `accessibilityRole` and `accessibilityLiveRegion`
+        props named here, not the newer `role` prop. The label is heading + body when
+        body is a string or number (the number as its text), joined by ". " exactly
+        like the iOS announcement so the two read the same, verbatim and with no punctuation
+        normalising (a heading that ends in a full stop is announced with both, and
+        copy guidance forbids rewriting user-facing text); otherwise heading only
+        — a body that is not plain text should carry its own accessible text, and
+        with no heading and a body that is neither string nor number accessibilityLabel
+        is left unset (the region has no name; its children are read on their own).
+        A string or number body is wrapped in the system Text (default tone, fontFamily,
+        fontSize and lineHeight through its `overrides`). The heading is a raw Text
+        styled with foreground, headingSize, headingWeight, fontFamily and lineHeight,
+        with no accessibilityRole="header", as web renders no heading element. The
+        icon part is a View as tall as the first line holding the tone Icon with `overrides.color`
+        set to the `icon` token path; parts carry testID `Alert.<part>` on Views the
+        Alert owns (the dismissButton wrapper View also carries dismissMargin). The
+        dismiss button is the system Button (ghost, sm, iconOnly, label copy.dismissLabel)
+        whose `leadingIcon` is the Icon `close` with `overrides.color` color.action.ghost.foreground,
         since Button cannot recolor it. Native cannot move focus to an arbitrary element,
         so the focus-onward step the web and Lit builds perform on dismiss is skipped
         here; the dismiss Button is inside the alert and its own removal returns focus
@@ -431,6 +459,14 @@ component:
       is: null
       platforms:
       - rn
+  - name: an-empty-heading-falls-back-to-the-body
+    description: An empty heading string is the same as no heading, so no heading
+      element is rendered and the body carries the message and the name.
+    given:
+      heading: ''
+      children: Your card was declined.
+    then:
+    - text: Your card was declined.
   - name: the-heading-is-rendered
     description: The heading is a short bold first line saying what happened.
     given:
@@ -553,7 +589,7 @@ Do not use an Alert for field-level validation; Input and the form controls rend
 
 ## Behavior
 
-An Alert rendered with `live: status` or `alert` is announced by screen readers when it appears in the tree, without moving focus. An Alert present at load with `live: off` is read in sequence like any content. The dismiss button fires `onDismiss` and the consumer removes the alert. Because activation happens inside the alert, the component first moves focus to the next focusable element after the alert in reading order (or to the previous one when there is none), so focus is never lost when the alert disappears; if nothing outside the alert is focusable, focus is left alone. On native, focus cannot be moved programmatically to an arbitrary element, an acknowledged limit. Alerts never auto-dismiss and never animate in — a message that fades or slides is a Toast.
+An Alert rendered with `live: status` or `alert` is announced by screen readers when it appears in the tree, without moving focus. An Alert present at load with `live: off` is read in sequence like any content. The dismiss button fires `onDismiss` and the consumer removes the alert. Because activation happens inside the alert, the component first moves focus to the next focusable element after the alert in reading order (or to the previous one when there is none), so focus is never lost when the alert disappears; if nothing outside the alert is focusable, focus is left alone. The step runs only when focus is inside the alert when it is dismissed (`:focus-within` on web and Lit) — a mouse press that never focused anything, or a programmatic dismiss, must not move the user's focus — and it runs before `onDismiss` fires, so a handler that unmounts the alert synchronously still finds focus placed. Candidates are searched outside the alert only: nothing in its own subtree, shadow root or slotted body counts. On native, focus cannot be moved programmatically to an arbitrary element, an acknowledged limit. Alerts never auto-dismiss and never animate in — a message that fades or slides is a Toast.
 
 ## Content guidelines
 
@@ -561,7 +597,7 @@ The heading says what happened in a few words ("Changes saved", "Payment failed"
 
 ## Accessibility
 
-The message is announced when it appears, politely for `status` and immediately for `alert` (WCAG 4.1.3 Status Messages), and it is never used to move focus (3.2.1). Tone is conveyed by the icon shape and the heading, not only by color (1.4.1). Heading, body, links, the dismiss button and icon meet contrast on the tinted background in both modes — 4.5:1 for text and 3:1 for the icon (1.4.3, 1.4.11); the build checks every tone. The region is named by its own content — `aria-labelledby` the heading when there is one, otherwise the body element (on native, `accessibilityLabel`) — so the alert has a name in the accessibility tree without inventing one that repeats the tone. The dismiss button has an accessible name from `copy.dismissLabel`, visible focus, and a 24px target (2.4.7, 2.5.8). Only `danger` and blocking `warning` alerts use `live: alert`; interrupting for good news is a real cost to screen-reader users.
+The message is announced when it appears, politely for `status` and immediately for `alert` (WCAG 4.1.3 Status Messages), and it is never used to move focus (3.2.1). Tone is conveyed by the icon shape and the heading, not only by color (1.4.1). Heading, body, links, the dismiss button and icon meet contrast on the tinted background in both modes — 4.5:1 for text and 3:1 for the icon (1.4.3, 1.4.11); the build checks every tone. The region is named by its own content — `aria-labelledby` the heading when there is one, otherwise the body element (on native, `accessibilityLabel`) — so the alert has a name in the accessibility tree without inventing one that repeats the tone. The dismiss button has an accessible name from `copy.dismissLabel`, visible focus, and a 24px target (2.4.7, 2.5.8). The alert root is not interactive and owns no control, so `focus-visible`, `keyboard-operable` and `target-24px` are met entirely by that composed Button and apply only when `dismissible` is set; Alert renders nothing of its own for them and must not restyle the Button to satisfy them. Only `danger` and blocking `warning` alerts use `live: alert`; interrupting for good news is a real cost to screen-reader users.
 
 ## Platform notes
 
@@ -578,7 +614,7 @@ Render a `View` with `accessibilityRole="alert"` when `live` is `alert`, `access
 
 Form, Toast (planned), Note (planned), Dialog (planned).
 
-## Behavior scenarios (11)
+## Behavior scenarios (12)
 
 One test per scenario, in this order.
 
@@ -598,6 +634,14 @@ One test per scenario, in this order.
     live: alert
   then:
   - role: alert
+- name: an-empty-heading-falls-back-to-the-body
+  description: An empty heading string is the same as no heading, so no heading element
+    is rendered and the body carries the message and the name.
+  given:
+    heading: ''
+    children: Your card was declined.
+  then:
+  - text: Your card was declined.
 - name: the-heading-is-rendered
   description: The heading is a short bold first line saying what happened.
   given:

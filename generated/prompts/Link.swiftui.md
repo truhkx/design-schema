@@ -173,8 +173,10 @@ component:
       locked: true
     focusRingOffset:
       token: border.width.focus
-      description: outline-offset of the focus ring on web and Lit, the same token
-        as its width. Not applied on native, where the ring is the platform's own.
+      description: outline-offset of the focus ring on web and Lit, deliberately the
+        same token as its width, so the two are indistinguishable at every theme until
+        one of them is given a token of its own. Not applied on native, where the
+        ring is the platform's own.
       locked: true
     transition:
       token: motion.duration.fast
@@ -224,8 +226,22 @@ component:
         (the three colours and the focus ring bindings, which carry contrast and focus
         guarantees) get no `--ds-link-*` hook on web or Lit: their rules read the
         token directly, so consumer CSS cannot swap an accessibility-bearing colour.
-        Example stories take their `given` as args over meta args that hold only schema
-        defaults, which counts as exactly the `given`.'
+        The visually hidden span that carries copy.externalSuffix is deliberately
+        not an anatomy part: it is a naming device, not a visual piece, so it takes
+        no data-part, no part and no hook on any platform, and nothing needs to address
+        it. The external glyph is composed with no forwarded override at all: it takes
+        its colour from the text around it (currentColor on web and Lit, the enclosing
+        Text''s colour on native), which is the one case in the package where a composed
+        child is given nothing and inherits instead. Link never sets `aria-current`,
+        but it does pass one through `...rest`: a navigation that marks its own current
+        page is the consumer''s to state. `external` writes its modifier class or
+        attribute on both web and Lit even though no rule reads it, so the two platforms
+        expose the same state to a consumer''s own selectors. Example stories take
+        their `given` as args over meta args that hold the schema defaults — and,
+        since `href` and `label` are required with no default, those two as well;
+        that still counts as exactly the `given`. `ToneDefault` renders standalone,
+        with no surrounding paragraph: only `ToneInherit`, `InlineInAParagraph` and
+        `InsideMutedText` are specified inside a sentence.'
     lit:
       tag: ds-link
       reflect:
@@ -239,7 +255,12 @@ component:
         a property needs an initial value, so both start as '''' and Link does not
         warn; an empty href is the consumer''s authoring error (render Text instead).
         ds-link has no slot: the text comes only from `label`, so `<ds-link href>text</ds-link>`
-        renders an unnamed anchor.'
+        renders an unnamed anchor. An empty `href` still renders `href=""` on the
+        anchor rather than omitting the attribute, which would make it a non-link
+        and drop it from the focus order. The tone colour rules are scoped `:host(:not([tone=''inherit'']))`,
+        not `:host([tone=''default''])`, so a link is coloured before the attribute
+        reflects and for any value that is not `inherit`. `:host([hidden]) { display:
+        none }` overrides the inline default, as elsewhere in the package.'
     rn:
       element: Text
       props:
@@ -263,23 +284,33 @@ component:
         system browser. `accessibilityLabel` is the label plus `copy.externalSuffix`
         verbatim when `external`: one suffix string on every platform, kept even though
         native opens the system browser rather than a tab; `copy.external` is unused
-        on native. Icon''s inline mode renders at font.size.md rather than the enclosing
-        Text''s size, which is Icon''s own documented limit and can look mis-sized
-        inside a non-md Text. No hover or visited state; the pressed state uses colorHover.
-        On react-native-web Link forwards `href` to the Text (through an untyped prop
-        bag, since native Text types have no `href`) so it renders a real <a>, plus
-        `hrefAttrs` { target: _blank, rel: noopener noreferrer } when `external`;
-        there the browser navigates as on web, Linking is not called, and a handler
-        returning `false` calls preventDefault. A rejected `Linking.openURL` (unsupported
-        scheme, unhandled route) is swallowed silently. The forwarded focus and hover
-        handlers are typed `(event: unknown) => void` and passed through the same
-        untyped bag, since native Text types do not declare them. Each platform''s
-        own test file mocks Linking to cover the fallback and the external hand-off,
-        which the scenario cannot express. Forwards `accessibilityHint`, `accessibilityLabel`
-        (when set by a parent such as Tooltip), `onHoverIn`, `onHoverOut`, `onFocus`,
-        `onBlur` and `onLongPress` to the native element, so Tooltip can attach to
-        it through those props; Link exposes no `ref` prop and no ref to its Text
-        root.'
+        on native. No hover or visited state; the pressed state uses colorHover, and
+        `colorVisited` and the four focusRing bindings have no native effect at all
+        — Text has no visited state and no focus events, so `focus-visible` is met
+        here only under react-native-web, where the real anchor takes the browser''s
+        own outline. None of the three anatomy names carries a hook on native: one
+        element takes one testID, so the root Text keeps `testID="Link"` and is the
+        `anchor`; `label` is bare string content by design; and `externalIcon` cannot
+        be stamped without a wrapper View that would break inline text flow. `textDecorationLine`
+        is set on the whole root Text, so the underline runs under the separating
+        space and the external glyph too — splitting the label into a nested Text
+        to avoid that would contradict the label having no element of its own. `copy.externalSuffix`
+        is also exported as a package-internal constant, because Card moves a composed
+        Link''s accessible name onto its own pressable and has to append the same
+        string; it is not part of the public entry point. On react-native-web Link
+        forwards `href` to the Text (through an untyped prop bag, since native Text
+        types have no `href`) so it renders a real <a>, plus `hrefAttrs` { target:
+        _blank, rel: noopener noreferrer } when `external`; there the browser navigates
+        as on web, Linking is not called, and a handler returning `false` calls preventDefault.
+        A rejected `Linking.openURL` (unsupported scheme, unhandled route) is swallowed
+        silently. The forwarded focus and hover handlers are typed `(event: unknown)
+        => void` and passed through the same untyped bag, since native Text types
+        do not declare them. Each platform''s own test file mocks Linking to cover
+        the fallback and the external hand-off, which the scenario cannot express.
+        Forwards `accessibilityHint`, `accessibilityLabel` (when set by a parent such
+        as Tooltip), `onHoverIn`, `onHoverOut`, `onFocus`, `onBlur` and `onLongPress`
+        to the native element, so Tooltip can attach to it through those props; Link
+        exposes no `ref` prop and no ref to its Text root.'
     swiftui:
       element: Link
       props:
@@ -463,7 +494,7 @@ Link text describes the destination and makes sense out of context, because scre
 
 ## Accessibility
 
-The accessible name is the visible text (WCAG 2.4.4, 2.5.3), plus `copy.externalSuffix` for external links. Links are distinguishable from surrounding text by the underline, not by color alone (1.4.1). Link color meets 4.5:1 on the page background in both modes for the rest, hover and visited colors (1.4.3); the build checks all three. Focus is visible with the focus ring (2.4.7); because links are inline, the ring uses `focusRingRadius` and follows the text box rather than the line box. Links are keyboard operable with Enter (2.1.1). Opening a new tab is a change of context that the user is warned about in advance (3.2.5).
+The accessible name is the visible text (WCAG 2.4.4, 2.5.3), plus `copy.externalSuffix` for external links. Links are distinguishable from surrounding text by the underline, not by color alone (1.4.1). Link color meets 4.5:1 on the page background in both modes for the rest, hover and visited colors (1.4.3); the build checks all three. Focus is visible with the focus ring (2.4.7); because links are inline, the ring uses `focusRingRadius` and follows the text box rather than the line box. Links are keyboard operable with Enter (2.1.1), which the native anchor does on every platform — there is no `keyboard` block, because there is nothing for a generator to write. Link declares no minimum target and is exempt from the 24px floor (2.5.8): a link is inline text sized by its own words, and WCAG's inline exception covers exactly that case. Where a link is the whole of an interactive row rather than a word in a sentence — an error-summary entry, a card target — the container owns the target, not the Link. Opening a new tab is a change of context that the user is warned about in advance (3.2.5).
 
 ## Platform notes
 

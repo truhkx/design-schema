@@ -163,9 +163,11 @@ component:
       token: color.background.subtle
       part: trigger
       state: hover
-      description: Pointer hover and pressed state of the trigger — web and Lit apply
+      description: 'Pointer hover and pressed state of the trigger — web and Lit apply
         it on :hover and :active, RN on onHoverIn/onHoverOut or pressed; suppressed
-        while disabled. The background change is instant (no transition).
+        while disabled. The background change is instant (no transition). At rest
+        the trigger has no background: the literal `transparent` is the sanctioned
+        value there, since no token expresses the absence of a fill.'
       locked: true
     triggerPaddingBlock:
       token: space.sm
@@ -208,13 +210,20 @@ component:
       description: 'Colour of the `triggerIcon` part: a wrapper the Disclosure owns
         (a span on web/Lit, a View on native) that carries this colour and the rotation,
         around the system `Icon name="chevron-right"` (decorative, aria-hidden), which
-        keeps its own hook and is not restyled. Rotated 90° when open. On web and
-        Lit the Icon is `inline`, so it follows the trigger''s font size (including
-        a `triggerFontSize` override). On native the Icon is not inline (an inline
-        Icon ignores size) and its `overrides.size` receives the `triggerFontSize`
-        token (default `font.size.md`). Mirrored in right-to-left writing on every
-        platform (`[dir=rtl]` → `scaleX(-1)` on web and Lit, composed as `scaleX(-1)
-        rotate(90deg)` when open; `I18nManager.isRTL` → `chevron-left` on native).'
+        keeps its own hook and is not restyled. The wrapper lays out as `display:
+        inline-flex; flex: none` on web and Lit — it centres the 1em glyph without
+        the unitless `line-height: 0` trick and leaves the trigger''s height untouched.
+        Rotated 90° when open. On web and Lit the Icon is `inline`, so it follows
+        the trigger''s font size (including a `triggerFontSize` override). On native
+        the Icon is not inline (an inline Icon ignores size) and its `overrides.size`
+        receives the `triggerFontSize` token (default `font.size.md`). Mirrored in
+        right-to-left writing on every platform (`[dir=rtl]` → `scaleX(-1)` on web,
+        `:host(:dir(rtl))` on Lit — a shadow root cannot match an ancestor''s `dir`
+        attribute, so the `:dir()` pseudo-class is the Lit floor — composed as `scaleX(-1)
+        rotate(90deg)` when open; `I18nManager.isRTL` → `chevron-left` on native).
+        On native the chevron''s `overrides.size` is the `triggerFontSize` binding''s
+        own token path, read from the binding rather than restated, so the two cannot
+        drift.'
       locked: true
     panelPaddingBlock:
       token: space.sm
@@ -231,6 +240,9 @@ component:
     focusRing:
       token: color.border.focus
       part: trigger
+      description: On native, where the ring is a border rather than an outline, the
+        border is always present at focusRingWidth and merely transparent while unfocused,
+        so taking focus never shifts the trigger.
       locked: true
     focusRingWidth:
       token: border.width.focus
@@ -239,6 +251,11 @@ component:
     minTarget:
       token: size.target.min
       part: trigger
+      description: 'Applied as both a minimum height and a minimum width on the trigger.
+        That alone satisfies target-24px: with the trigger padding the box already
+        exceeds the floor, so no hitSlop is added on native. The trigger is start-aligned
+        in its column (alignSelf flex-start on native, inline-level on web), so the
+        hover fill hugs the summary instead of spanning the parent.'
       locked: true
     disabledOpacity:
       token: opacity.disabled
@@ -301,7 +318,14 @@ component:
         from `useId()` when no `id` is given. `ref` resolves to the trigger <button>,
         not the wrapping <div>, because Accordion moves focus between triggers with
         it. `disabled` sets aria-disabled="true" and never the native attribute, so
-        the button is not :disabled.'
+        the button is not :disabled. Every binding''s hook is declared on the component
+        root and read by the part''s rule, part-scoped bindings (transition, icon,
+        the panel paddings) included, so a consumer''s own CSS always targets the
+        root. React''s bubbling `onFocus`/`onBlur` stand in for the native `focusin`/`focusout`
+        the focus-restore bookkeeping describes. `copy.expanded` and `copy.collapsed`
+        are SwiftUI-only: web, Lit and rn all announce the state through the platform
+        (aria-expanded, accessibilityState), and rendering the strings as well would
+        announce it twice.'
     lit:
       tag: ds-disclosure
       reflect:
@@ -326,7 +350,8 @@ component:
         and `keepMounted` to skip hidden fields); `heading-level` and `default-open`
         are attributes (`default-open` is not reflected). The chevron is `<ds-icon
         name="chevron-right" inline>` (aria-hidden) inside the `triggerIcon` wrapper
-        span, mirrored under [dir=rtl] like web.'
+        span, mirrored under `:dir(rtl)` as the icon binding describes. Hooks all
+        live on `:host`, part-scoped bindings included, as on web.'
     rn:
       element: Pressable
       props:
@@ -354,12 +379,28 @@ component:
         false` rule is for layout props only). With `keepMounted`, the closed panel
         View gets `display: ''none''` plus `accessibilityElementsHidden` and `importantForAccessibility="no-hide-descendants"`,
         so it leaves the accessibility tree as on the other platforms. The summary
-        is the package Text with the header role when `headingLevel` is set, and its
-        `overrides` receive `triggerFontFamily`, `triggerFontSize`, `triggerFontWeight`
-        and `triggerLineHeight` (colour `triggerColor`); if the package Text does
-        not yet accept those overrides, a plain react-native Text with the same bindings
-        applied is the stopgap. A trigger press always reports reason `pointer`. The
-        component wraps string or number children in the package Text (panelColor
+        is a plain react-native `Text` with `triggerFontFamily`, `triggerFontSize`,
+        `triggerFontWeight`, `triggerLineHeight` and `triggerColor` applied directly:
+        the package Text takes all four typography overrides but has no `accessibilityRole`
+        prop at all, so it can never carry the header role `headingLevel` needs. `triggerColor`
+        is `color.foreground`, which is also what the package Text''s default tone
+        resolves to, so the two agree — but by the token, not by a channel Text exposes;
+        Text''s colour binding is locked and unreachable through overrides. react-native-web
+        0.21 ignores accessibilityState, so `expanded` and `disabled` are also mirrored
+        for it — `aria-expanded` as a prop, `aria-disabled` written onto the node
+        in an effect (Pressable''s own `disabled` would set the native attribute and
+        drop the trigger from the tab order) — as Button, Checkbox, Switch and RadioGroup
+        do. That mirror is load-bearing, not cosmetic: `disabledOpacity` dims the
+        trigger text below AA, and the dim is only permissible because an inactive
+        control is exempt, which the platform can only know from the attribute. `keepMounted`''s
+        closed panel keeps `accessibilityElementsHidden` and `importantForAccessibility="no-hide-descendants"`
+        even though it may contain a Pressable — the general rule against those on
+        a View holding a pressable does not apply here, because a hidden panel must
+        leave the accessibility tree exactly as on the other platforms. The `keyboard`
+        toggle reason is never emitted on native: a Pressable cannot tell a hardware
+        Enter from a tap, so every press reports `pointer` and the union is wider
+        than this platform uses. A trigger press always reports reason `pointer`.
+        The component wraps string or number children in the package Text (panelColor
         via its default tone); other children keep their own colour. Native has no
         notion of focus within a subtree, so a panel that closes while something inside
         it held focus cannot hand focus back to the trigger; the screen reader falls

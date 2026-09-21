@@ -123,8 +123,10 @@ component:
         default: defaultValue
     defaultValue:
       type: string
-      description: Initial selection for an uncontrolled group. Omit to start with
-        nothing selected.
+      description: 'Initial selection for an uncontrolled group. Omit to start with
+        nothing selected. It is read once, when the group first renders: assigning
+        it later — routine on a Lit element, whose properties are often set after
+        upgrade — is a no-op, exactly as a React state initialiser is.'
     orientation:
       type: enum
       values:
@@ -147,6 +149,10 @@ component:
       type: boolean
       default: false
       description: Disables every option. Individual options use `options[].disabled`.
+        The group's state folds into each option's, so every radio announces as disabled
+        rather than only the group. A disabled group submits nothing and validates
+        clean — the form value is cleared and no validity is set, as a native disabled
+        control does — so a disabled required group never blocks a submit.
     description:
       type: string
       description: Persistent helper text under the legend.
@@ -220,21 +226,32 @@ component:
         centred, and always a circle (it does not follow controlRadius). Its size
         does not change on focus: the thicker focus border eats into the inset, and
         the dot still fits whenever indicatorInset ≥ focusRingWidth (true at the default
-        tokens), so it never shrinks. One rule on every platform: the dot carries
-        a hook only where it is a real node. Web/Lit draw it as a pseudo-element of
-        the appearance:none input (::before or ::after, either is fine), which has
-        no data-part or part; on native it is a View inside the drawn control carrying
-        testID="RadioGroup.radioIndicator".'
+        tokens), so it never shrinks. One rule on every platform: the dot is a real
+        node, so it carries the part name everywhere. Web and Lit draw it as a span
+        the RadioGroup owns inside the option''s label, positioned over the appearance:none
+        input and pointer-events: none, with `data-part="radioIndicator"` (and `part`
+        on Lit) — not a pseudo-element of the input, because Firefox does not render
+        ::before or ::after on form controls and the dot would simply be missing there,
+        leaving selection conveyed by border colour alone; on native it is a View
+        inside the drawn control carrying testID="RadioGroup.radioIndicator".'
       locked: true
     indicatorInset:
       token: space.1
       part: radioIndicator
-      description: Gap between the control's outer edge and the dot on each side;
-        sets the dot diameter (controlSize − 2 × indicatorInset).
+      description: 'Gap between the control''s outer edge and the dot on each side;
+        sets the dot diameter (controlSize − 2 × indicatorInset). On React Native
+        the border is drawn inside the box and the dot does not shrink, so an inset
+        below focusRingWidth clips the dot while focused: focusRingWidth is the floor
+        this binding should be overridden above.'
       locked: false
     controlBorderInvalid:
       token: color.border.danger
       part: radio
+      description: 'Painted on every radio while the group is invalid, selected ones
+        included — it sits above controlSelectedBackground in the border-colour order
+        and below nothing: focus does not replace it. Border colour precedence is
+        invalid, then selected, then rest, the same order as Checkbox, and a focused
+        invalid radio keeps the danger colour while only the width changes to focusRingWidth.'
       locked: false
     controlSize:
       token: space.5
@@ -327,9 +344,11 @@ component:
     focusRing:
       token: color.border.focus
       part: radio
-      description: On focus-visible the radio's border becomes focusRingWidth in this
-        color, replacing controlBorderWidth/controlBorder (web, Lit and native alike);
-        the option row is not outlined.
+      description: 'On focus-visible the radio''s border becomes focusRingWidth in
+        this color, replacing controlBorderWidth/controlBorder (web, Lit and native
+        alike); the option row is not outlined. It does not replace controlBorderInvalid:
+        in an invalid group a focused radio keeps the danger colour and takes only
+        the focus width, as Checkbox does.'
       locked: true
     focusRingWidth:
       token: border.width.focus
@@ -337,7 +356,12 @@ component:
       locked: true
     minTarget:
       token: size.target.comfortable
-      description: Minimum height of each option row; the whole row is the hit area.
+      description: 'Minimum height of each option row; the whole row is the hit area,
+        radioDescription included — a click anywhere in the row, the description among
+        it, selects that option. It is a minimum, not the height: at the default tokens
+        a single-line row is exactly this tall and optionPaddingBlock has no visible
+        effect, and an override of that padding can only grow the row past this floor,
+        never shrink it below.'
       locked: true
     disabledOpacity:
       token: opacity.disabled
@@ -349,9 +373,12 @@ component:
     transition:
       token: motion.duration.fast
       part: radio
-      description: The selected border color and the dot's opacity (fading in and
+      description: 'The selected border color and the dot''s opacity (fading in and
         out), with motion.easing.standard, on every platform. Invalid and focus border
-        changes switch instantly. Instant under reduced motion.
+        changes switch instantly — one-directionally, which is all CSS can express
+        from a single border-color transition: entering those states is instant, leaving
+        them fades back over `transition`, and that asymmetry is accepted rather than
+        paid for with an extra element. Instant under reduced motion.'
       locked: false
   copy:
     required: '{label} is required.'
@@ -424,21 +451,29 @@ component:
         explicitly: a fieldset''s implicit role is `group`, which is not what this
         component declares. The root fieldset carries data-part="group"; every other
         part with a node carries its anatomy name verbatim (data-part="radioLabel",
-        "radioDescription", "errorMessage"). The radioIndicator is a ::before or ::after
-        pseudo-element of the input (either is fine) with no node of its own, so it
-        has no hook on web or Lit (native: see the rn note). aria-invalid and aria-required
-        go on the fieldset only, never on the individual radios. copy.position is
-        not rendered on web or Lit: native radios sharing a name already announce
-        their position. Native radios sharing a name already implement roving tabindex
-        and arrow-key movement; do not reimplement it. A disabled option uses the
-        real `disabled` attribute so native arrow movement skips it (the one place
-        the system prefers `disabled` over aria-disabled); a disabled group uses aria-disabled
-        on the fieldset and every radio plus preventDefault guards on the fieldset
-        for click, change, ArrowUp/ArrowDown/ArrowLeft/ArrowRight and Space (native
-        radios move and select on arrows regardless of aria-disabled), so it stays
-        focusable but inert. Each radio has its own <label for>; option descriptions
-        are linked per radio with aria-describedby. The group error is linked from
-        the fieldset.'
+        "radioDescription", "errorMessage"). The radioIndicator is a span inside the
+        option''s label, over the input, carrying data-part="radioIndicator" — a real
+        node on every platform, so every binding on it, `indicatorInset` included,
+        has its hook. aria-invalid and aria-required go on the fieldset only, never
+        on the individual radios. copy.position is not rendered on web or Lit: native
+        radios sharing a name already announce their position. Native radios sharing
+        a name already implement roving tabindex and arrow-key movement; do not reimplement
+        it, which is why `arrow-navigation` and `roving-tabindex` are satisfied here
+        with no key handling at all and the keyboard table is a description of native
+        behaviour. A disabled option uses the real `disabled` attribute so native
+        arrow movement skips it (the one place the system prefers `disabled` over
+        aria-disabled); a disabled group uses aria-disabled on the fieldset and every
+        radio plus preventDefault guards: the arrow and Space guard on the fieldset
+        (native radios move and select on arrows regardless of aria-disabled), the
+        click guard on each input rather than the fieldset, so a click on unrelated
+        content inside the group is not cancelled, and the change path stopped by
+        an early return in the option''s own handler, since `change` is not cancelable
+        and preventDefault on it would do nothing. So the group stays focusable but
+        inert. Option ids are `${groupId}-${value}`, and outside a Form that group
+        id comes from useId and contains colons; those ids are valid and work in `for`
+        and aria-describedby, and only need escaping if something selects on them.
+        Each radio has its own <label for>; option descriptions are linked per radio
+        with aria-describedby. The group error is linked from the fieldset.'
     lit:
       tag: ds-radio-group
       reflect:
@@ -454,8 +489,8 @@ component:
         as on web), data-part and part "group"; other parts use the anatomy names
         verbatim in camelCase for both `part` and `data-part` (legend on the legend,
         radio on each input, radioLabel, radioDescription, errorMessage; description
-        on the description Text); radioIndicator is a pseudo-element with no part.
-        `defaultValue` is also the attribute `default-value`. There is no Form-message
+        on the description Text); radioIndicator is the span inside the label, with
+        both. `defaultValue` is also the attribute `default-value`. There is no Form-message
         step on Lit: ds-form keeps its messages (summary and `invalid` event) and
         does not set `invalid` on the group, so the displayed error is `error`, else
         copy.required/copy.invalid while `invalid`; an app marks a group ds-form failed
@@ -502,8 +537,15 @@ component:
         Native limits: no arrow keys or roving tabindex (each radio is a screen-reader
         and keyboard stop, the accessible alternative), and no invalid accessibility
         state (the error is announced through the live region / announcement as in
-        Input). Behavior tests on rn check that onChange does not fire, the copy text,
-        and the radios'' unchecked state, not a disabled or invalid state attribute.'
+        Input). copy.position numbers every option in display order, disabled ones
+        included, so a disabled second option is still "2 of 3". react-native-web
+        renders neither `accessibilityState` nor an `aria-disabled` prop through Pressable,
+        so each option also carries `aria-checked` as a prop and has `aria-disabled`
+        written onto its node in an effect — the same mirror Button, Checkbox and
+        Switch need, without which role=radio ships stateless and a dimmed disabled
+        row is audited as ordinary body copy. Behavior tests on rn check that onChange
+        does not fire, the copy text, and the radios'' unchecked state, not a disabled
+        or invalid state attribute.'
     swiftui:
       element: VStack
       props:
@@ -540,8 +582,9 @@ component:
     - event: onChange
       with: standard
   - name: disabled-option-cannot-be-selected
-    description: A disabled option uses the native disabled attribute, so it is skipped
-      and cannot be chosen.
+    description: 'A disabled option cannot be chosen: web and Lit use the native disabled
+      attribute so arrow movement skips it, and React Native keeps it reachable with
+      a press guard, so the assertion everywhere is that pressing it selects nothing.'
     given:
       options:
       - value: standard
@@ -753,8 +796,9 @@ Each scenario below becomes one test. They are platform-neutral: `given` are pro
   - event: onChange
     with: standard
 - name: disabled-option-cannot-be-selected
-  description: A disabled option uses the native disabled attribute, so it is skipped
-    and cannot be chosen.
+  description: 'A disabled option cannot be chosen: web and Lit use the native disabled
+    attribute so arrow movement skips it, and React Native keeps it reachable with
+    a press guard, so the assertion everywhere is that pressing it selects nothing.'
   given:
     options:
     - value: standard
@@ -838,11 +882,11 @@ notes: 'Form-associated (setFormValue(value)). The radios are rendered inside th
   shadow fieldset has role="radiogroup" (plain attribute, as on web), data-part and
   part "group"; other parts use the anatomy names verbatim in camelCase for both `part`
   and `data-part` (legend on the legend, radio on each input, radioLabel, radioDescription,
-  errorMessage; description on the description Text); radioIndicator is a pseudo-element
-  with no part. `defaultValue` is also the attribute `default-value`. There is no
-  Form-message step on Lit: ds-form keeps its messages (summary and `invalid` event)
-  and does not set `invalid` on the group, so the displayed error is `error`, else
-  copy.required/copy.invalid while `invalid`; an app marks a group ds-form failed
+  errorMessage; description on the description Text); radioIndicator is the span inside
+  the label, with both. `defaultValue` is also the attribute `default-value`. There
+  is no Form-message step on Lit: ds-form keeps its messages (summary and `invalid`
+  event) and does not set `invalid` on the group, so the displayed error is `error`,
+  else copy.required/copy.invalid while `invalid`; an app marks a group ds-form failed
   by setting `invalid` or `error` from ds-form''s `invalid` event. Ids do not cross
   the shadow root: option ids are `${name || ''radio-group''}-${value}` inside it,
   and the description/error ids the fieldset references live there too. aria-invalid

@@ -5,7 +5,7 @@ import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Button } from './Button';
 import { Icon } from './Icon';
-import { toEasing, toFontWeight, useReducedMotion, useTheme } from './theme';
+import { toEasing, toFontWeight, toLineHeight, useReducedMotion, useTheme } from './theme';
 
 export type CarouselPicker = 'dots' | 'tabs' | 'none';
 export type CarouselChangeReason = 'next' | 'prev' | 'picker' | 'swipe' | 'autoplay';
@@ -19,9 +19,11 @@ export type CarouselOverridableBinding =
   | 'pickerGap'
   | 'pickerOffset'
   | 'dotSize'
+  | 'dotRadius'
   | 'radius'
   | 'tabFontSize'
   | 'tabFontWeight'
+  | 'tabLineHeight'
   | 'tabPaddingBlock'
   | 'tabPaddingInline'
   | 'fontFamily'
@@ -114,6 +116,18 @@ const SLIDE_ACTIONS = [
 ] as const;
 
 /**
+ * RN core's `View` type omits `inert`, which react-native-web supports; this alias types it.
+ * `accessibilityElementsHidden` and `importantForAccessibility` are native-only props that
+ * react-native-web drops, so on the web a hidden slide is taken out of the focus order and the
+ * accessibility tree with `inert` instead. Native ignores the props it does not know.
+ */
+type SlideViewProps = React.ComponentProps<typeof View> & { inert?: boolean | undefined };
+const SlideView = View as unknown as React.ComponentType<SlideViewProps>;
+
+/** react-native-web renders this package's components; the web platform's semantics apply there. */
+const IS_WEB = Platform.OS === 'web';
+
+/**
  * Carousel — shows several things in the space of one and lets the user page through them.
  *
  * When to use: a small set (three to eight) of peer items too rich for a grid — featured
@@ -179,9 +193,11 @@ export function Carousel({
   const pickerGap = overrides?.pickerGap ? (resolveToken(t, overrides.pickerGap) as number) : t.layoutGapTight;
   const pickerOffset = overrides?.pickerOffset ? (resolveToken(t, overrides.pickerOffset) as number) : t.space3;
   const dotSize = overrides?.dotSize ? (resolveToken(t, overrides.dotSize) as number) : t.space2;
+  const dotRadius = overrides?.dotRadius ? (resolveToken(t, overrides.dotRadius) as number) : t.radiusFull;
   const radius = overrides?.radius ? (resolveToken(t, overrides.radius) as number) : t.radiusMd;
   const tabFontSize = overrides?.tabFontSize ? (resolveToken(t, overrides.tabFontSize) as number) : t.fontSizeSm;
   const tabFontWeight = overrides?.tabFontWeight ? (resolveToken(t, overrides.tabFontWeight) as number) : t.fontWeightMedium;
+  const tabLineHeight = overrides?.tabLineHeight ? (resolveToken(t, overrides.tabLineHeight) as number) : t.fontLineHeightNormal;
   const tabPaddingBlock = overrides?.tabPaddingBlock ? (resolveToken(t, overrides.tabPaddingBlock) as number) : t.spaceSm;
   const tabPaddingInline = overrides?.tabPaddingInline ? (resolveToken(t, overrides.tabPaddingInline) as number) : t.spaceMd;
   const fontFamily = overrides?.fontFamily ? (resolveToken(t, overrides.fontFamily) as string) : t.fontFamilyBody;
@@ -239,9 +255,23 @@ export function Carousel({
   const latest = React.useRef({ currentIndex, goTo, stepTarget });
   latest.current = { currentIndex, goTo, stepTarget };
 
-  // Swipe: viewability only reports a change between onScrollBeginDrag and onMomentumScrollEnd.
+  // Swipe: viewability reports a change only while a user drag is in flight — from
+  // onScrollBeginDrag to onMomentumScrollEnd, or to onScrollEndDrag when no momentum follows, as
+  // iOS does. A drag that does throw momentum reopens the window in onMomentumScrollBegin; a
+  // programmatic animated scroll fires the same momentum events, so it clears `endedDrag` first
+  // and is never read as a swipe.
   const dragging = React.useRef(false);
+  const endedDrag = React.useRef(false);
   const [settleCount, setSettleCount] = React.useState(0);
+  const settleSwipe = (): void => {
+    if (!dragging.current) {
+      return;
+    }
+    dragging.current = false;
+    if (isControlled) {
+      setSettleCount((n) => n + 1);
+    }
+  };
   const viewabilityConfig = React.useRef({ itemVisiblePercentThreshold: VISIBLE_THRESHOLD }).current;
   const onViewableItemsChanged = React.useRef(({ viewableItems }: { viewableItems: ListViewToken[] }): void => {
     if (!dragging.current) {
@@ -261,6 +291,7 @@ export function Carousel({
     if (itemWidth <= 0 || dragging.current) {
       return;
     }
+    endedDrag.current = false;
     trackRef.current?.scrollToOffset({ offset: currentIndex * (itemWidth + slideGap), animated: positioned.current && !reducedMotion });
     positioned.current = true;
   }, [currentIndex, itemWidth, slideGap, reducedMotion, settleCount]);
@@ -329,22 +360,39 @@ export function Carousel({
     }
   };
 
+  /**
+   * Each slide is the accessible element. On native it carries `adjustable` with increment and
+   * decrement actions — the swipe alternative VoiceOver can reach — plus the position as its
+   * `accessibilityValue`, which that role announces. react-native-web maps `adjustable` to
+   * `role="slider"`, which requires `aria-valuenow` and may not contain another control, so on the
+   * web the slide is instead the `group` the web platform notes describe; there the arrows and the
+   * picker are real buttons and already are the swipe alternative. Hidden slides are inert on the
+   * web, where the native hiding props are dropped.
+   */
+  const slideSemantics = (index: number, visible: boolean): SlideViewProps =>
+    IS_WEB
+      ? { role: 'group', inert: !visible }
+      : {
+          accessible: visible,
+          accessibilityRole: 'adjustable',
+          accessibilityValue: { min: 1, max: total, now: index + 1, text: COPY.slideLabel(index + 1, total) },
+          accessibilityActions: SLIDE_ACTIONS,
+          onAccessibilityAction: handleSlideAccessibilityAction,
+          accessibilityElementsHidden: !visible,
+          importantForAccessibility: visible ? 'auto' : 'no-hide-descendants',
+        };
+
   const renderItem = ({ item, index }: ListRenderItemInfo<CollectedSlide>): React.JSX.Element => {
     const visible = index >= currentIndex && index < currentIndex + pageSize;
     return (
-      <View
+      <SlideView
         testID="Carousel.slide"
-        accessible={visible}
-        accessibilityRole="adjustable"
         accessibilityLabel={COPY.slideLabel(index + 1, total)}
-        accessibilityActions={SLIDE_ACTIONS}
-        onAccessibilityAction={handleSlideAccessibilityAction}
-        accessibilityElementsHidden={!visible}
-        importantForAccessibility={visible ? 'auto' : 'no-hide-descendants'}
+        {...slideSemantics(index, visible)}
         style={itemWidth > 0 ? { width: itemWidth } : undefined}
       >
         {item.content}
-      </View>
+      </SlideView>
     );
   };
 
@@ -370,6 +418,9 @@ export function Carousel({
     backgroundColor: t.colorOverlaySurface,
     ...controlShadow,
   };
+  // The part wrapper inside the controlSurface stretches to fill it, so the arrow's hit area is
+  // the whole `minTarget` surface. The Button keeps its own size — a child is never restyled.
+  const controlPartStyle: ViewStyle = { alignSelf: 'stretch', flexGrow: 1, alignItems: 'center', justifyContent: 'center' };
   const pickerStyle: ViewStyle = {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -405,7 +456,7 @@ export function Carousel({
       <View>
         <View style={controlsStyle} pointerEvents="box-none">
           <View testID="Carousel.controlSurface" style={controlSurfaceStyle}>
-            <View testID="Carousel.prevButton">
+            <View testID="Carousel.prevButton" style={controlPartStyle}>
               <Button
                 label={COPY.previous}
                 variant="secondary"
@@ -423,7 +474,7 @@ export function Carousel({
             </View>
           </View>
           <View testID="Carousel.controlSurface" style={controlSurfaceStyle}>
-            <View testID="Carousel.nextButton">
+            <View testID="Carousel.nextButton" style={controlPartStyle}>
               <Button
                 label={COPY.next}
                 variant="secondary"
@@ -450,6 +501,12 @@ export function Carousel({
             renderItem={renderItem}
             extraData={`${currentIndex}:${pageSize}:${itemWidth}`}
             horizontal
+            // The track is the scroll container, so it must be reachable by keyboard: without a tab
+            // stop the only way to scroll it under react-native-web is a pointer (WCAG 2.1.1; axe
+            // `scrollable-region-focusable`). Focused, it scrolls with the arrow keys natively — the
+            // picker's own model is untouched, and the stop sits after the controls, where the
+            // keyboard rules put the slides. Native has no tab order to join.
+            tabIndex={IS_WEB ? 0 : undefined}
             pagingEnabled={usePaging}
             snapToInterval={snapInterval}
             snapToAlignment="start"
@@ -458,15 +515,22 @@ export function Carousel({
             contentContainerStyle={{ gap: slideGap }}
             onScrollBeginDrag={() => {
               dragging.current = true;
+              endedDrag.current = false;
+            }}
+            onScrollEndDrag={() => {
+              endedDrag.current = dragging.current;
+              settleSwipe();
+            }}
+            onMomentumScrollBegin={() => {
+              if (endedDrag.current) {
+                // Momentum did follow the drag, so the swipe is still in flight.
+                endedDrag.current = false;
+                dragging.current = true;
+              }
             }}
             onMomentumScrollEnd={() => {
-              if (!dragging.current) {
-                return;
-              }
-              dragging.current = false;
-              if (isControlled) {
-                setSettleCount((n) => n + 1);
-              }
+              endedDrag.current = false;
+              settleSwipe();
             }}
             viewabilityConfig={viewabilityConfig}
             onViewableItemsChanged={onViewableItemsChanged}
@@ -483,6 +547,7 @@ export function Carousel({
                 selected={index === currentIndex}
                 fontSize={tabFontSize}
                 fontWeight={tabFontWeight}
+                lineHeight={tabLineHeight}
                 fontFamily={fontFamily}
                 paddingBlock={tabPaddingBlock}
                 paddingInline={tabPaddingInline}
@@ -497,6 +562,7 @@ export function Carousel({
                 label={COPY.goTo(index + 1)}
                 selected={index >= currentIndex && index < currentIndex + pageSize}
                 size={dotSize}
+                radius={dotRadius}
                 transition={itemTransition}
                 onSelect={() => goTo(index, 'picker')}
                 onFocus={onControlFocus}
@@ -553,7 +619,16 @@ interface PickerItemBaseProps {
 }
 
 /** One dot: Carousel's own Pressable, since no Button variant carries the dot tokens. */
-function CarouselDot({ label, selected, size, transition, onSelect, onFocus, onBlur }: PickerItemBaseProps & { size: number }): React.JSX.Element {
+function CarouselDot({
+  label,
+  selected,
+  size,
+  radius,
+  transition,
+  onSelect,
+  onFocus,
+  onBlur,
+}: PickerItemBaseProps & { size: number; radius: number }): React.JSX.Element {
   const { tokens: t } = useTheme();
   const [focused, setFocused] = React.useState(false);
   const progress = useSelectedProgress(selected, transition);
@@ -565,11 +640,13 @@ function CarouselDot({ label, selected, size, transition, onSelect, onFocus, onB
     justifyContent: 'center',
     borderWidth: t.borderWidthFocus,
     borderColor: focused ? t.colorBorderFocus : 'transparent',
+    // A picker item's focus ring follows `dotRadius`, so it is round on dots and square on tabs.
+    borderRadius: radius,
   };
   const dotStyle: Animated.WithAnimatedValue<ViewStyle> = {
     width: size,
     height: size,
-    borderRadius: t.radiusFull,
+    borderRadius: radius,
     backgroundColor: progress.interpolate({ inputRange: [0, 1], outputRange: [t.colorBorderStrong, t.colorControlSelectedBackground] }),
   };
 
@@ -598,6 +675,8 @@ function CarouselDot({ label, selected, size, transition, onSelect, onFocus, onB
 interface CarouselTabProps extends PickerItemBaseProps {
   fontSize: number;
   fontWeight: number;
+  /** The `font.lineHeight.*` multiplier; resolved against `fontSize` for React Native's absolute lineHeight. */
+  lineHeight: number;
   fontFamily: string;
   paddingBlock: number;
   paddingInline: number;
@@ -609,6 +688,7 @@ function CarouselTab({
   selected,
   fontSize,
   fontWeight,
+  lineHeight,
   fontFamily,
   paddingBlock,
   paddingInline,
@@ -633,6 +713,8 @@ function CarouselTab({
   const labelStyle = {
     fontFamily,
     fontSize,
+    // The tab label's line height, so a tabs picker keeps the row's rhythm.
+    lineHeight: toLineHeight(fontSize, lineHeight),
     // The same weight selected or not, so selection never shifts the row.
     fontWeight: toFontWeight(fontWeight),
     color: progress.interpolate({ inputRange: [0, 1], outputRange: [t.colorForegroundMuted, t.colorForegroundStrong] }),

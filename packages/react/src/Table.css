@@ -53,6 +53,20 @@
   block-size: var(--border-width-thin);
 }
 
+/* hideCaption: the caption part is the composed Heading itself, with no wrapper, so the clip is
+   applied to that element from the root. It stays the table's accessible name. */
+.ds-table--hide-caption > [data-part='caption'] {
+  position: absolute;
+  inline-size: 1px; /* literal-ok: visually-hidden clip pattern */
+  block-size: 1px; /* literal-ok: visually-hidden clip pattern */
+  margin: -1px; /* literal-ok: visually-hidden clip pattern */
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
 .ds-table--max-height-viewport .ds-table__frame {
   max-block-size: calc(100vh - 2 * var(--layout-gap-section));
   overflow-y: auto;
@@ -75,8 +89,13 @@
   --ds-table-fade-end-width: var(--ds-table-scroll-fade);
 }
 
-/* focusRing / focusRingWidth, locked */
+/* focusRing / focusRingWidth, locked. The mask above clips everything the region paints, its own
+   outline included, so the ring is drawn by the unmasked wrapper — the same box, and whole at a
+   faded edge. The region's own outline is removed only because this replaces it. */
 .ds-table__scroll-region:focus-visible {
+  outline: none;
+}
+.ds-table__scroll-outline:has(> .ds-table__scroll-region:focus-visible) {
   outline: var(--border-width-focus) solid var(--color-border-focus);
   outline-offset: calc(-1 * var(--border-width-focus));
 }
@@ -233,19 +252,37 @@
   }
 
   /* The header row keeps select-all and the sort buttons visible; plain column headers are
-     visually hidden (never display none) so they stay in the accessibility tree. */
-  .ds-table--stack .ds-table__header,
+     visually hidden (never display none) so they stay in the accessibility tree. It wraps on
+     stackedRowGap and its cells keep the header cell styling. */
+  .ds-table--stack .ds-table__header {
+    /* A flex thead would make the row a flex item sized to its content, and the header band has to
+       span the table: the row is the flex container, the group stays a block. */
+    display: block;
+  }
   .ds-table--stack .ds-table__header-row {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--ds-table-cell-gap);
+    gap: var(--ds-table-stacked-row-gap);
+  }
+  /* headerSurface (locked) and headerBorder move to the row, so a wrap gap is filled and a
+     wrapped header still reads as one band. Stacked, what sticks is that whole row. */
+  .ds-table--stack .ds-table__header-row {
+    background-color: var(--color-background-subtle);
+    border-block-end: var(--ds-table-header-border-width) solid var(--ds-table-header-border);
+  }
+  .ds-table--sticky-header.ds-table--stack .ds-table__header-row {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 2;
+  }
+  .ds-table--scrolled-under.ds-table--stack .ds-table__header-row {
+    box-shadow: var(--ds-table-header-shadow);
   }
   .ds-table--stack .ds-table__header-row > * {
     position: static;
-    border: 0;
+    border-block-end: 0;
     box-shadow: none;
-    background-color: transparent;
   }
   .ds-table--stack .ds-table__header-row > .ds-table__column-header:not(:has(button)) {
     position: absolute;

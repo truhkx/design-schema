@@ -3,6 +3,7 @@ import { html } from 'lit';
 import './Table.js';
 import './Button.js';
 import './Icon.js';
+import './Link.js';
 import './Text.js';
 import type {
   TableCaptionLevel,
@@ -34,25 +35,23 @@ interface TableArgs {
   emptyMessage?: string | undefined;
   loading: boolean;
   rowActions?: ((row: TableRow) => unknown) | undefined;
+  pressableRows: boolean;
 }
 
-const invoiceColumns: TableColumn[] = [
+const INVOICE_COLUMNS: TableColumn[] = [
   { key: 'invoice', header: 'Invoice', isRowHeader: true },
-  { key: 'customer', header: 'Customer' },
-  { key: 'due', header: 'Due', hideBelow: 'content' },
-  { key: 'amount', header: 'Amount (USD)', align: 'end', sortable: true },
+  { key: 'due', header: 'Due' },
+  { key: 'amount', header: 'Amount', align: 'end', sortable: true },
 ];
 
-const invoiceRows: TableRow[] = [
-  { id: 'a', invoice: 'INV-1001', customer: 'Acme Co.', due: '12 Sep', amount: 1240 },
-  { id: 'b', invoice: 'INV-1002', customer: 'Globex', due: '19 Sep', amount: 860.5 },
-  { id: 'c', invoice: 'INV-1003', customer: 'Initech', due: '26 Sep', amount: 3020 },
-  { id: 'd', invoice: 'INV-1004', customer: 'Umbrella Corp.', due: '3 Oct', amount: 412.75 },
+const INVOICES: TableRow[] = [
+  { id: 'a', invoice: 'INV-1', due: '12 Sep', amount: 100 },
+  { id: 'b', invoice: 'INV-2', due: '19 Sep', amount: 200 },
 ];
 
-const editAction = (row: TableRow): unknown => html`
-  <ds-button variant="ghost" size="sm" icon-only label="Edit ${String(row.invoice ?? row.id)}">
-    <ds-icon slot="leading-icon" name="chevron-right" inline></ds-icon>
+const moreAction = (row: TableRow): unknown => html`
+  <ds-button variant="ghost" size="sm" icon-only label="More for ${String(row['invoice'])}">
+    <ds-icon slot="leading-icon" name="ellipsis" inline></ds-icon>
   </ds-button>
 `;
 
@@ -72,14 +71,15 @@ const meta: Meta<TableArgs> = {
     stickyHeader: { control: 'boolean' },
     striped: { control: 'boolean' },
     loading: { control: 'boolean' },
+    pressableRows: { control: 'boolean' },
     emptyMessage: { control: 'text' },
   },
   args: {
     caption: 'Open invoices',
     captionLevel: '2',
     hideCaption: false,
-    columns: invoiceColumns,
-    data: invoiceRows,
+    columns: INVOICE_COLUMNS,
+    data: INVOICES,
     selectable: 'none',
     responsive: 'stack',
     stickyHeader: true,
@@ -87,6 +87,7 @@ const meta: Meta<TableArgs> = {
     density: 'comfortable',
     striped: false,
     loading: false,
+    pressableRows: false,
   },
   render: (args) => html`
     <ds-table
@@ -108,6 +109,7 @@ const meta: Meta<TableArgs> = {
       .emptyMessage=${args.emptyMessage}
       ?loading=${args.loading}
       .rowActions=${args.rowActions}
+      ?pressable-rows=${args.pressableRows}
     ></ds-table>
   `,
 };
@@ -138,28 +140,6 @@ export const MaxHeightViewport: Story = { args: { maxHeight: 'viewport' } };
 /* density */
 export const DensityCompact: Story = { args: { density: 'compact' } };
 export const DensityComfortable: Story = { args: { density: 'comfortable' } };
-
-/* notable states */
-export const HideCaption: Story = { args: { hideCaption: true } };
-export const NoStickyHeader: Story = { args: { stickyHeader: false } };
-export const Striped: Story = { args: { striped: true } };
-export const Loading: Story = { args: { loading: true } };
-export const Empty: Story = { args: { data: [] } };
-export const RowActions: Story = { args: { rowActions: editAction } };
-
-export const RowPress: Story = {
-  render: (args) => html`
-    <ds-table caption=${args.caption} .columns=${args.columns} .data=${args.data} pressable-rows></ds-table>
-  `,
-};
-
-export const WithFooter: Story = {
-  render: (args) => html`
-    <ds-table caption=${args.caption} .columns=${args.columns} .data=${args.data}>
-      <ds-text slot="footer" tone="muted" size="sm">4 rows</ds-text>
-    </ds-table>
-  `,
-};
 
 /* examples */
 export const OpenInvoices: Story = {
@@ -220,7 +200,54 @@ export const NothingToShow: Story = {
   },
 };
 
-/** Select-all, a sort button, row checkboxes and row actions: Tab moves through them in reading order. */
+/* notable states */
+export const HideCaption: Story = { args: { hideCaption: true } };
+export const NoStickyHeader: Story = { args: { stickyHeader: false } };
+export const Striped: Story = { args: { striped: true } };
+export const Empty: Story = { args: { data: [] } };
+export const Loading: Story = { args: { loading: true } };
+export const LoadingEmpty: Story = { args: { loading: true, data: [] } };
+export const DefaultSortDescending: Story = { args: { defaultSort: { column: 'amount', direction: 'descending' } } };
+
+export const LinkInRowHeader: Story = {
+  args: {
+    columns: [
+      {
+        key: 'invoice',
+        header: 'Invoice',
+        isRowHeader: true,
+        render: (row) => html`<ds-link href="#${String(row.id)}" label=${String(row['invoice'])}></ds-link>`,
+      },
+      { key: 'due', header: 'Due', hideBelow: 'prose' },
+      { key: 'amount', header: 'Amount', align: 'end', sortable: true },
+    ],
+  },
+};
+
+/** Lit cannot see whether anyone listens for `row-press`, so interactive rows are opt-in. */
+export const InteractiveRows: Story = { args: { pressableRows: true } };
+
+export const WithRowActions: Story = { args: { rowActions: moreAction } };
+
+/** Lit takes only slotted footer content; the string form has no Lit spelling, so slot a `ds-text`. */
+export const WithFooter: Story = {
+  render: (args) => html`
+    <ds-table caption=${args.caption} .columns=${args.columns} .data=${args.data}>
+      <ds-text slot="footer">Total due: 300</ds-text>
+    </ds-table>
+  `,
+};
+
+/** Other footer content brings its own typography. */
+export const WithFooterContent: Story = {
+  render: (args) => html`
+    <ds-table caption=${args.caption} .columns=${args.columns} .data=${args.data}>
+      <ds-text slot="footer" element="p" size="sm" tone="muted">2 rows</ds-text>
+    </ds-table>
+  `,
+};
+
+/** Present with more than three focusable children: select-all, a sort button, and a Checkbox per row. */
 export const Keyboard: Story = {
-  args: { selectable: 'multiple', rowActions: editAction },
+  args: { selectable: 'multiple' },
 };

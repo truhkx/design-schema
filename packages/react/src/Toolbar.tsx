@@ -108,13 +108,20 @@ function flattenChildren(children: ReactNode): ReactElement<any>[] {
   return result;
 }
 
-// The package components with a `size` prop, recognised by identity — never by probing for the prop.
-const SIZED_COMPONENTS: ReadonlySet<unknown> = new Set<unknown>([Button, SegmentedControl, Select, Search]);
+// The package components with a `size` prop, recognised by identity — never by probing for the prop —
+// mapped to the toolbar sizes each one actually accepts. Search has no `sm`, so a `sm` toolbar leaves
+// every Search at its own default.
+const SIZED_COMPONENTS: ReadonlyMap<unknown, ReadonlySet<ToolbarSize>> = new Map<unknown, ReadonlySet<ToolbarSize>>([
+  [Button, new Set<ToolbarSize>(['sm', 'md'])],
+  [SegmentedControl, new Set<ToolbarSize>(['sm', 'md'])],
+  [Select, new Set<ToolbarSize>(['sm', 'md'])],
+  [Search, new Set<ToolbarSize>(['md'])],
+]);
 
 /** Applies the toolbar's `size` to a sized package control that did not set its own. */
 function withSize(element: ReactElement<any>, size: ToolbarSize, key?: string): ReactElement<any> {
   const props = element.props as { size?: unknown };
-  if (!SIZED_COMPONENTS.has(element.type) || props.size !== undefined) {
+  if (!SIZED_COMPONENTS.get(element.type)?.has(size) || props.size !== undefined) {
     return key === undefined ? element : cloneElement(element, { key });
   }
   return cloneElement(element, key === undefined ? { size } : { size, key });

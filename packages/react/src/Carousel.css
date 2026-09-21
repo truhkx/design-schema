@@ -8,9 +8,11 @@
   --ds-carousel-picker-gap: var(--layout-gap-tight);
   --ds-carousel-picker-offset: var(--space-3);
   --ds-carousel-dot-size: var(--space-2);
+  --ds-carousel-dot-radius: var(--radius-full);
   --ds-carousel-radius: var(--radius-md);
   --ds-carousel-tab-font-size: var(--font-size-sm);
   --ds-carousel-tab-font-weight: var(--font-weight-medium);
+  --ds-carousel-tab-line-height: var(--font-line-height-normal);
   --ds-carousel-tab-padding-block: var(--space-sm);
   --ds-carousel-tab-padding-inline: var(--space-md);
   --ds-carousel-font-family: var(--font-family-body);
@@ -61,6 +63,13 @@
   display: none;
 }
 
+/* The viewport is a keyboard-reachable scroll container, so its tab stop shows a ring. The arrows
+   overlay its inline edges, so the ring is drawn inside the box rather than outside it. */
+.ds-carousel__viewport:focus-visible {
+  outline: var(--ds-carousel-focus-ring-width) solid var(--ds-carousel-focus-ring);
+  outline-offset: calc(-1 * var(--ds-carousel-focus-ring-width));
+}
+
 .ds-carousel--no-snap .ds-carousel__viewport {
   scroll-snap-type: none;
 }
@@ -101,6 +110,9 @@
   border-radius: var(--ds-carousel-control-radius);
   background-color: var(--ds-carousel-control-background);
   box-shadow: var(--ds-carousel-control-shadow);
+  /* minTarget: the arrow's hit area is the controlSurface itself. */
+  min-inline-size: var(--ds-carousel-min-target);
+  min-block-size: var(--ds-carousel-min-target);
 }
 
 .ds-carousel__control-surface--prev {
@@ -113,13 +125,13 @@
   inset-inline-end: var(--ds-carousel-control-offset);
 }
 
-/* control: extends the arrow's pointer target to minTarget. */
+/* control: the prevButton/nextButton part wrapper, stretched to fill its controlSurface. */
 .ds-carousel__control {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-inline-size: var(--ds-carousel-min-target);
-  min-block-size: var(--ds-carousel-min-target);
+  flex: 1 0 auto;
+  align-self: stretch;
 }
 
 .ds-carousel__picker {
@@ -142,7 +154,8 @@
   min-block-size: var(--ds-carousel-dot-target);
   padding: 0;
   border: 0;
-  border-radius: var(--radius-full);
+  /* dotRadius: dots are round, so their focus ring is too. */
+  border-radius: var(--ds-carousel-dot-radius);
   background: transparent;
   cursor: pointer;
 }
@@ -151,7 +164,7 @@
   display: block;
   inline-size: var(--ds-carousel-dot-size);
   block-size: var(--ds-carousel-dot-size);
-  border-radius: var(--radius-full);
+  border-radius: var(--ds-carousel-dot-radius);
   background-color: var(--ds-carousel-dot);
 }
 
@@ -159,7 +172,9 @@
   background-color: var(--ds-carousel-dot-active);
 }
 
-/* tab: Carousel's own tab button; the weight never changes, so selection never shifts the row. */
+/* tab: Carousel's own tab button; the weight never changes, so selection never shifts the row.
+   A tab has no radius (so its focus ring is square) and no min-inline-size — its inline size
+   comes from tabPaddingInline alone; minTarget is only the tab's minimum block size. */
 .ds-carousel__tab {
   box-sizing: border-box;
   display: inline-flex;
@@ -174,6 +189,7 @@
   font-family: var(--ds-carousel-font-family);
   font-size: var(--ds-carousel-tab-font-size);
   font-weight: var(--ds-carousel-tab-font-weight);
+  line-height: var(--ds-carousel-tab-line-height);
   cursor: pointer;
 }
 

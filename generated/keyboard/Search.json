@@ -32,7 +32,7 @@
       "keys": [
         "ArrowUp"
       ],
-      "action": "Moves up; from the first, back to the input with no highlight.",
+      "action": "Moves up; from the first suggestion, back to the input with no highlight. With no highlight to begin with it is a no-op: it neither opens the list nor changes one that is open.",
       "from": "first",
       "expect": "manual",
       "when": "suggestions"

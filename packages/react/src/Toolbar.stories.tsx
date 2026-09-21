@@ -4,35 +4,28 @@ import { Button } from './Button';
 import { SegmentedControl } from './SegmentedControl';
 import { Select } from './Select';
 
+/** Two labelled groups of three ghost text Buttons each, so a separator is drawn between them. */
+const twoGroups = (
+  <>
+    <ToolbarGroup label="Text style">
+      <Button variant="ghost" label="Bold" overflowLabel="Bold" />
+      <Button variant="ghost" label="Italic" overflowLabel="Italic" />
+      <Button variant="ghost" label="Underline" overflowLabel="Underline" />
+    </ToolbarGroup>
+    <ToolbarGroup label="Insert">
+      <Button variant="ghost" label="Link" overflowLabel="Link" />
+      <Button variant="ghost" label="Image" overflowLabel="Image" />
+      <Button variant="ghost" label="Table" overflowLabel="Table" />
+    </ToolbarGroup>
+  </>
+);
+
 const meta: Meta<typeof Toolbar> = {
   title: 'Toolbar/React',
   component: Toolbar,
   args: {
     label: 'Formatting',
-    children: (
-      <>
-        <ToolbarGroup label="Text style">
-          <Button variant="ghost" label="Bold" overflowLabel="Bold" />
-          <Button variant="ghost" label="Italic" overflowLabel="Italic" />
-          <Button variant="ghost" label="Underline" overflowLabel="Underline" />
-        </ToolbarGroup>
-        <ToolbarGroup label="Alignment">
-          <SegmentedControl
-            label="Alignment"
-            iconOnly
-            options={[
-              { value: 'left', label: 'Align left', icon: 'chevron-left' },
-              { value: 'center', label: 'Align center', icon: 'dash' },
-              { value: 'right', label: 'Align right', icon: 'chevron-right' },
-            ]}
-          />
-        </ToolbarGroup>
-        <ToolbarGroup label="Insert">
-          <Button variant="ghost" label="Insert link" overflowLabel="Insert link" />
-          <Button variant="ghost" label="Insert image" overflowLabel="Insert image" />
-        </ToolbarGroup>
-      </>
-    ),
+    children: twoGroups,
   },
   tags: ['autodocs'],
 };
@@ -59,18 +52,14 @@ export const SizeMd: Story = { args: { size: 'md' } };
 export const DensityCompact: Story = { args: { density: 'compact' } };
 export const DensityComfortable: Story = { args: { density: 'comfortable' } };
 
-/** Present with more than three focusable controls and nothing else focusable, for the keyboard gate. */
+/**
+ * Present with six focusable controls and nothing else focusable, for the keyboard gate.
+ * `wrap` keeps every control in the DOM at any viewport width, so the roving list never shrinks.
+ */
 export const Keyboard: Story = {
   args: {
     overflow: 'wrap',
-    children: (
-      <>
-        <Button variant="ghost" label="Bold" overflowLabel="Bold" />
-        <Button variant="ghost" label="Italic" overflowLabel="Italic" />
-        <Button variant="ghost" label="Underline" overflowLabel="Underline" />
-        <Button variant="ghost" label="Strikethrough" overflowLabel="Strikethrough" />
-      </>
-    ),
+    children: twoGroups,
   },
 };
 
@@ -139,6 +128,7 @@ export const ScrollingFilterRow: Story = {
         <Select
           label="Owner"
           name="owner"
+          hideLabel
           options={[
             { value: 'anyone', label: 'Anyone' },
             { value: 'me', label: 'Me' },
@@ -147,6 +137,7 @@ export const ScrollingFilterRow: Story = {
         <Select
           label="Sort"
           name="sort"
+          hideLabel
           options={[
             { value: 'newest', label: 'Newest' },
             { value: 'oldest', label: 'Oldest' },

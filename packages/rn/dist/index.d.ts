@@ -1,5 +1,5 @@
 import * as React from "react";
-import { EasingFunction, GestureResponderEvent, PanResponderInstance, PressableProps, TextInputProps, TextInstance, TextStyle, View, ViewInstance } from "react-native";
+import { EasingFunction, GestureResponderEvent, PanResponderInstance, PressableProps, TextInstance, TextStyle, View, ViewInstance } from "react-native";
 import * as light from "@design-schema/tokens/calm-precise/rn/light";
 import { TokenRef } from "@design-schema/tokens";
 //#region src/theme.d.ts
@@ -52,9 +52,11 @@ export declare function toLineHeight(fontSize: number, multiplier: number): numb
  */
 export declare function toEasing(value: readonly number[]): EasingFunction;
 /**
- * Whether the person has asked the OS to reduce motion. Resolves asynchronously on
- * first render (assume `false` until then) and follows later changes, so components
- * can skip `Animated` transitions and set their final value directly.
+ * Whether the person has asked the OS to reduce motion, so components can skip `Animated`
+ * transitions and set their final value directly. On web it is known synchronously for the
+ * first render — an entrance animation that plays once before an asynchronous answer arrives
+ * is motion the person asked not to see. Native resolves asynchronously (assume `false` until
+ * then). Both follow later changes.
  */
 export declare function useReducedMotion(): boolean;
 //#endregion
@@ -86,7 +88,12 @@ interface ButtonProps {
   leadingIcon?: React.ReactNode;
   /** Icon after the label. Decorative, like `leadingIcon`. */
   trailingIcon?: React.ReactNode;
-  /** Hides the visible label and shows only `leadingIcon`. `label` is still required and becomes the accessible name. Padding becomes equal on all sides (`space.sm`). */
+  /**
+   * Hides the visible label and shows only `leadingIcon`; `trailingIcon` is not rendered
+   * either. `label` is still required and becomes the accessible name. Padding becomes equal
+   * on all sides: paddingInline takes the resolved paddingBlock (`space.sm`), so a
+   * `paddingInline` override has no effect while `iconOnly`.
+   */
   iconOnly?: boolean | undefined;
   /**
    * Shows a ring spinner in the leading icon slot (whether or not `leadingIcon` is set;
@@ -321,10 +328,15 @@ export declare function Heading({ level, size, children, align, overrides, ref }
 //#region src/Input.d.ts
 type InputType = "text" | "email" | "password" | "number" | "search" | "tel" | "url";
 type InputSize = "sm" | "md";
-/** The style bindings a caller may replace with a different token; see the component's overrides contract. */
+/**
+ * The style bindings a caller may replace with a different token; see the component's
+ * overrides contract. The locked bindings (`background`, `foreground`, `placeholder`,
+ * `border`, `borderFocus`, `errorText`, `descriptionText`, `minTarget`, `minTargetSm`,
+ * `focusRingWidth`) carry contrast or target guarantees and are not in the union.
+ */
 type InputOverridableBinding = "borderInvalid" | "borderWidth" | "radius" | "paddingInline" | "paddingBlock" | "partGap" | "fontFamily" | "fontSize" | "labelWeight" | "helperSize" | "lineHeight" | "disabledOpacity" | "transition";
 interface InputProps {
-  /** Visible label (visually hidden with `hideLabel`). Never replaced by a placeholder. Also the field's `accessibilityLabel`. */
+  /** Visible label (not rendered with `hideLabel`, where it survives only as the accessible name). Never replaced by a placeholder. */
   label: string;
   /** Field name used by the enclosing Form when collecting values. */
   name: string;
@@ -336,71 +348,93 @@ interface InputProps {
   placeholder?: string | undefined;
   /** Persistent helper text below the label explaining format or purpose. Also the field's `accessibilityHint`. */
   description?: string | undefined;
-  /** Input type. Drives the keyboard on touch platforms (`keyboardType`, `textContentType`, `secureTextEntry`). */
+  /** Input type. Drives `keyboardType`, `textContentType` and `secureTextEntry`. */
   type?: InputType | undefined;
-  /** The field must have a value to submit. Shown in the label, not only by color. */
+  /** The field must have a value to submit. Shown in the label as `copy.requiredIndicator`, not only by color. */
   required?: boolean | undefined;
-  /** Visually hide the label (it remains the accessible name). Only for a field whose context already names it: a DataGrid cell editor, a Search. */
-  hideLabel?: boolean | undefined;
-  /** `sm` for fields inside grid cells and toolbars: minimum target height, tighter padding, small type. */
-  size?: InputSize | undefined;
-  /** Not editable and not submitted. Stays visible and readable. */
+  /** Not editable and not submitted. Stays visible and readable; on native it is not focusable (see the component note). */
   disabled?: boolean | undefined;
   /** Marks the field as failing validation. Usually set by the Form; can be set directly. */
   invalid?: boolean | undefined;
-  /** The error message. Setting it implies `invalid`. Explain what is wrong and how to fix it. */
+  /** The error message. Setting it implies `invalid`. An empty string counts as unset. */
   error?: string | undefined;
+  /** Do not render the label Text. `label` stays the accessible name. Only for a field whose context already names it. */
+  hideLabel?: boolean | undefined;
+  /** `sm` for fields inside grid cells and toolbars: minimum target height, tighter padding, small type. */
+  size?: InputSize | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<InputOverridableBinding, TokenRef | undefined>> | undefined;
-  /** The root view (label, description, field and error group), so a parent can measure it. */
+  /** The root group `View`, so a parent can measure the field group. */
   ref?: React.Ref<ViewInstance> | undefined;
-  /** Supplementary description forwarded to the field; Tooltip sets it when it describes the field. Read after `description`. */
+  /** Supplementary description, appended after `description` on the field's hint; Tooltip sets it when it describes the field. */
   accessibilityHint?: string | undefined;
-  /** Set by a parent (Tooltip, when its content *is* the name) to replace the name the label would give. */
+  /** Set by a parent (Tooltip, when its content *is* the name) to replace the name `label` would give. */
   accessibilityLabel?: string | undefined;
-  /** Fired on every value change with the new string value. */
-  onChange?: ((value: string) => void) | undefined;
-  /** Fired when the field receives focus. No payload. */
+  /** Fired on every value change with the new string value, and nothing else. */
+  onChangeText?: ((value: string) => void) | undefined;
+  /** Fired when the field receives focus. Called with no arguments, not the focus event. */
   onFocus?: (() => void) | undefined;
-  /** Fired when the field loses focus. The usual moment to validate. No payload. */
+  /** Fired when the field loses focus — the usual moment to validate. Called with no arguments. */
   onBlur?: (() => void) | undefined;
-  /** Forwarded to the field (pointer enter; react-native-web pointer only) so Tooltip can attach to it. */
-  onHoverIn?: TextInputProps["onPointerEnter"];
-  /** Forwarded to the field (pointer leave; react-native-web pointer only) so Tooltip can attach to it. */
-  onHoverOut?: TextInputProps["onPointerLeave"];
-  /** Forwarded to the field so Tooltip can open on long press. */
-  onLongPress?: ((event: GestureResponderEvent) => void) | undefined;
-  /** Forwarded to the field so Tooltip can close when the press ends. */
-  onPressOut?: ((event: GestureResponderEvent) => void) | undefined;
+  /** Forwarded to the field so Tooltip can attach (react-native-web pointer only; maps to `onPointerEnter`). */
+  onHoverIn?: (() => void) | undefined;
+  /** Forwarded to the field so Tooltip can attach (react-native-web pointer only; maps to `onPointerLeave`). */
+  onHoverOut?: (() => void) | undefined;
+  /** Forwarded to the field; also cancels a pending synthetic long press. */
+  onPressOut?: (() => void) | undefined;
+  /** Forwarded to the field so Tooltip can open on long press. TextInput has none, so it is timed from `onPressIn`. */
+  onLongPress?: (() => void) | undefined;
 }
 /**
- * Input — collects a single line of text, bundling label, helper text, field and
- * error message so their association is always correct.
+ * Input — collects a single line of text.
  *
- * When to use: names, emails, passwords, search terms and short free-text values.
- * Choose `type` so the touch keyboard matches; provide `description` when the
- * format matters. Not for multi-line content, a fixed set of choices, or on/off
- * values, and never with `placeholder` standing in for the label.
+ * When to use: Use Input for names, emails, passwords, search terms, and short
+ * free-text values. Choose `type` for the value so the touch keyboard matches.
+ * Provide `description` when the format matters ("Use the email you signed up
+ * with"). Do not use `placeholder` as the label; it vanishes as soon as the user
+ * types.
  *
- * Renders a `Text` label, optional description, a `TextInput`, and an error `Text`.
- * The label is also passed as `accessibilityLabel`, description as
- * `accessibilityHint`, and `accessibilityState={{ disabled }}`. `type` maps to
- * `keyboardType`, `textContentType` and `secureTextEntry`. Errors are announced
- * with `accessibilityLiveRegion` (Android) and
- * `AccessibilityInfo.announceForAccessibility` (iOS). Inside a Form the field
- * registers `{ getValue, validate, focus }` by `name` (precedence: `error`, then
- * `required`, then `invalid`); a disabled field is not registered. The border is
- * the focus ring: focus widens it to `focusRingWidth` and padding shrinks by the
- * difference so the field never shifts; an invalid field keeps its danger color
- * while focused. `disabled` dims the whole group with `disabledOpacity`. Inside a
- * Fieldset the group's `disabled` applies as if set on the field and the legend
- * prefixes the `accessibilityLabel` ("Shipping address, Street"). `size: sm` swaps
- * padding and the target height for their Sm bindings and the type to
- * `font.size.sm`. `accessibilityHint`, `accessibilityLabel`, `onHoverIn`,
- * `onHoverOut`, `onFocus`, `onBlur`, `onLongPress` and `onPressOut` reach the
- * native field so Tooltip can attach to it.
+ * Renders a group `View` (`testID="Input"`) holding the label, description, the
+ * `TextInput` and the error message, separated by `partGap`. There is no label
+ * element on native: `label` is rendered as the system `Text` at `weight="medium"`
+ * and is also the field's `accessibilityLabel`, and `description` becomes its
+ * `accessibilityHint` (a hint forwarded by a parent is appended after it, joined
+ * with a space; a forwarded `accessibilityLabel` replaces the name outright). A
+ * Fieldset legend still prefixes the name ("Shipping address, Street").
+ * `hideLabel` drops the label Text entirely, so the `label` part has no native
+ * home while hidden and the name lives only in `accessibilityLabel`.
+ *
+ * `required` appends `copy.requiredIndicator` to the visible label and to the
+ * accessible name — there is no required accessibility state on native. The error
+ * is announced through `accessibilityLiveRegion` (Android) and
+ * `AccessibilityInfo.announceForAccessibility` (iOS) rather than `role="alert"`,
+ * and both are suppressed inside a Form that renders its own error summary.
+ *
+ * `disabled` uses `editable={false}` with `accessibilityState.disabled`: iOS
+ * cannot keep a non-editable TextInput focusable, so a disabled field is not
+ * focusable on native and the state is announced instead. react-native-web drops
+ * `accessibilityState`, so it is mirrored as `aria-disabled` on both the TextInput
+ * and the group View that carries `disabledOpacity` — the group is what makes a
+ * web accessibility checker treat the dimmed label and value as disabled.
+ *
+ * The field's border *is* its focus ring: on focus it widens to `focusRingWidth`
+ * in `color.border.focus` while the padding shrinks by the difference so nothing
+ * shifts, and when the field is both invalid and focused the danger color stays so
+ * the error is never hidden by focus. Native swaps the border instantly, so the
+ * `transition` binding is accepted for parity with web and has no effect here.
+ *
+ * Inside a Form the field registers by `name`, submits its string value, and takes
+ * `returnKeyType`/`onSubmitEditing` from the Form's field order (next field, or
+ * submit on the last). Validation precedence is `error`, then `required`
+ * (`copy.required`), then `invalid` (`copy.invalid`); the error slot shows `error`,
+ * else the Form's message for this field, else — only while invalid — the derived
+ * copy, so an untouched empty required field flags nothing.
+ *
+ * TextInput has no hover or long-press handlers: `onHoverIn`/`onHoverOut` map to
+ * `onPointerEnter`/`onPointerLeave`, and `onLongPress` is timed from `onPressIn`
+ * over `longPressDelay` unless `onPressOut` comes first.
  */
-export declare function Input({ label, name, value, defaultValue, placeholder, description, type, required, hideLabel, size, disabled, invalid, error, overrides, ref, accessibilityHint, accessibilityLabel, onChange, onFocus, onBlur, onHoverIn, onHoverOut, onLongPress, onPressOut }: InputProps): React.JSX.Element;
+export declare function Input({ label, name, value, defaultValue, placeholder, description, type, required, disabled, invalid, error, hideLabel, size, overrides, ref, accessibilityHint, accessibilityLabel, onChangeText, onFocus, onBlur, onHoverIn, onHoverOut, onPressOut, onLongPress }: InputProps): React.JSX.Element;
 //#endregion
 //#region src/NumberInput.d.ts
 type NumberInputFormat = "decimal" | "currency" | "percent" | "unit";
@@ -477,8 +511,9 @@ interface NumberInputProps {
  * unless `hideSteppers`, two system `Button`s (ghost, sm, iconOnly, minus/plus) behind a
  * hairline. The `TextInput` has `accessibilityRole="adjustable"`, `accessibilityValue`
  * whose text is the formatted value with its affixes ("2 kg"), and increment/decrement
- * accessibility actions, so the steppers and affixes are hidden from assistive
- * technology; the steppers step once per tap and disable at the bounds. While focused the
+ * accessibility actions, so the affix parts are hidden from assistive technology; the
+ * steppers stay in it, labelled, because hiding a tappable Button is an
+ * `aria-hidden-focus` violation. They step once per tap and disable at the bounds. While focused the
  * field shows what was typed; on blur or Enter the value is rounded to `precision`,
  * clamped to `min`/`max` (reporting `copy.outOfRange`, `outOfRangeMin` or `outOfRangeMax`
  * until the next keystroke or step when the clamp changed it) and shown through
@@ -532,8 +567,17 @@ interface FormContextValue {
   reportValidity(name: string, error: string | null): void;
   /** `true` when the Form is disabled; every field and action inside follows. */
   disabled: boolean;
-  /** The Form's `validate` setting. */
+  /**
+   * The Form's `validate` setting, reported as `change` once a submission has failed so
+   * fields that read only this keep re-validating as they are fixed.
+   */
   validateMode: FormValidateMode;
+  /**
+   * `true` from a failed submission until a successful one. A field validates on blur when
+   * `validateMode` is `blur` or this is true, and on change when `validateMode` is `change`
+   * or this is true.
+   */
+  submitFailed: boolean;
   /** Whether the Form renders (and announces) its own error summary. */
   errorSummary: boolean;
   /** Errors from the most recent validation, keyed by field name. */
@@ -546,7 +590,11 @@ export declare const FormContext: React.Context<FormContextValue | null>;
 export declare function useFormContext(): FormContextValue | null;
 //#endregion
 //#region src/Form.d.ts
-/** The style bindings a caller may replace with a different token; see the component's overrides contract. */
+/**
+ * The style bindings a caller may replace with a different token; see the component's
+ * overrides contract. `errorSummaryText` and `errorSummaryBackground` are locked — they
+ * carry the summary's contrast pair — and are not in the union.
+ */
 type FormOverridableBinding = "gap" | "errorSummaryBorder" | "errorSummaryBorderWidth" | "errorSummaryRadius" | "errorSummaryPadding" | "errorSummaryGap";
 interface FormProps {
   /** Fields (Input etc.) and layout (Stack). The action row goes in `actions`. */
@@ -554,27 +602,40 @@ interface FormProps {
   /**
    * The action row: at least one Button with `type: submit`, primary first (Form's
    * action-order rule). Rendered after the fields with the form gap. A single action
-   * renders bare; two or more go in a horizontal Stack the consumer supplies.
+   * renders bare; two or more go in a horizontal Stack the consumer supplies. The
+   * actions part aligns its content to the inline start, so a single bare action keeps
+   * its natural width rather than stretching.
    */
   actions: React.ReactNode;
-  /** Identifier for the form, used for analytics and as the base of generated ids. React Native has no ids and focuses by ref, so it is inert here and exists for parity. */
+  /**
+   * Identifier for the form, used for analytics and as the base of generated ids. React
+   * Native has no ids and focuses by ref, so it is inert here and exists for parity.
+   */
   name?: string | undefined;
-  /** Accessible name for the form, e.g. "Sign in". Required when a screen has more than one form. Nothing enforces this at runtime and no dev warning is emitted. */
+  /**
+   * Accessible name for the form, e.g. "Sign in". Required when a screen has more than one
+   * form. Nothing enforces this at runtime and no dev warning is emitted.
+   */
   label?: string | undefined;
   /**
    * When field-level validation runs. `submit` is the least noisy; `blur` is the usual
    * choice for longer forms. `change` validates on change only, not also on blur; after a
-   * failed submission every mode re-validates as fields change.
+   * failed submission every mode re-validates on blur and change, until a successful
+   * submission resets that state.
    */
   validate?: FormValidateMode | undefined;
-  /** Disables every field and action inside. Use while submitting. Each child dims itself; the Form only exposes the disabled state. */
+  /**
+   * Disables every field and action inside. Use while submitting. Each field and action
+   * dims itself with its own disabled style; the Form container applies no opacity of its
+   * own (it would compound) and only exposes the disabled state.
+   */
   disabled?: boolean | undefined;
   /**
-   * When submission fails validation, render a summary of errors above the fields that links
-   * to each field. Each item's text is the field's own message verbatim; a field that is
-   * invalid with an empty message shows its `label` instead, and its `name` when the label
-   * is empty too. The summary appears only after a failed submission, shrinks as fields are
-   * fixed, and is removed by a successful submission.
+   * When submission fails validation, render a summary of errors above the fields that
+   * links to each field. Each item's text is the field's own message verbatim; a field that
+   * is invalid with an empty message shows its `label` instead, and its `name` when the
+   * label is empty too. The summary appears only after a failed submission, shrinks as
+   * fields are fixed, and is removed by a successful submission.
    */
   errorSummary?: boolean | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
@@ -586,8 +647,8 @@ interface FormProps {
    * keyed by field name: Input and RadioGroup contribute strings, Switch a boolean, Checkbox
    * its `value` when checked, NumberInput and Slider a number, multi-select Listbox, Select
    * and Combobox a string array, a range Slider or DatePicker a pair; an unchecked Checkbox,
-   * an unselected RadioGroup, an empty field (a null, empty-string or empty-array value) and a
-   * disabled field contribute no key at all.
+   * an unselected RadioGroup, an empty field (a null, empty-string or empty-array value) and
+   * a disabled field contribute no key at all.
    */
   onSubmit?: ((values: FormValues) => void) | undefined;
   /** Fired when submission is blocked by validation. Receives the errors keyed by field name. */
@@ -596,21 +657,27 @@ interface FormProps {
 /**
  * Form — the container that makes fields behave as a group.
  *
- * When to use: Use Form whenever two or more fields are submitted together, and for
- * any single field whose submission has consequences (sign-in, search with side
- * effects). Pass the submit and cancel Buttons in `actions`, primary first. Give
- * the form a `label` when the screen contains more than one.
+ * When to use: Use Form whenever two or more fields are submitted together, and for any
+ * single field whose submission has consequences (sign-in, search with side effects). Pass
+ * the submit and cancel Buttons in `actions`, primary first. Give the form a `label` when
+ * the screen contains more than one. Do not use it for instant-apply settings, do not nest
+ * forms, and do not use it as a layout container — that is Stack.
  *
- * React Native has no form element. Form renders a `View` with `role="form"` (a
- * landmark only on react-native-web) and `accessibilityLabel`, and provides a context;
- * each field calls `register(name, { label, getValue, validate, focus })` in mount order
- * (disabled fields do not register), a Button with `type: submit` calls `submit()`,
+ * There is no form element on native. Form renders a `View` with `role="form"` (a landmark
+ * only on react-native-web; `accessibilityLabel` is the native alternative) and provides a
+ * context: each field calls `register(name, { label, getValue, validate, focus })` in mount
+ * order (disabled fields do not register), a Button with `type: submit` calls `submit()`,
  * non-last Inputs get `returnKeyType="next"` and the last one's return key submits.
- * On a failed submission the error summary is announced (`accessibilityLiveRegion=
- * "assertive"` on Android, `announceForAccessibility` on iOS: the heading followed by
- * each item) and accessibility focus moves to the summary heading when `errorSummary`
- * is on, otherwise to the first invalid field. Each summary item is a `Link`
- * (`tone: inherit`, nested in a danger Text) that focuses its field and never navigates.
+ *
+ * On a failed submission `onInvalid` fires, the summary is announced
+ * (`accessibilityLiveRegion="assertive"` for Android, `announceForAccessibility` on iOS —
+ * the heading followed by each item joined with '. ', once per failed submit) and
+ * accessibility focus moves to the summary heading, or to the first invalid field when
+ * `errorSummary` is off. Items are in field order at the failed submit; an error a later
+ * blur or change finds is appended. Each item is a `Link` (`tone: inherit`, nested in a
+ * danger `Text`, which is how the danger color reaches it) that focuses its field and
+ * returns `false` so nothing opens; an item whose field has since unmounted stays as plain
+ * danger text with no link.
  */
 export declare function Form({ children, actions, name: _name, label, validate, disabled, errorSummary, overrides, ref, onSubmit, onInvalid }: FormProps): React.JSX.Element;
 //#endregion
@@ -721,11 +788,15 @@ interface FieldsetProps {
  * `copy.requiredIndicator` appended when every direct child field is `required`)
  * and `accessibilityHint={description}`. The legend is plain `Text` — not a header
  * trait, which would put it in the headings rotor. The fields render in a `Stack`
- * with `gap`; `FieldsetContext` carries the legend and `disabled` to Input,
+ * that is sized only through its own `overrides.gap` (the override, else
+ * `layout.gap.{gap}`); `FieldsetContext` carries the legend and `disabled` to Input,
  * Checkbox, Switch and RadioGroup, which render disabled and prefix the legend into
  * their label. Children are never cloned; a non-field child gets no association.
  * `disabled` dims only the legend and description with `opacity.disabled` — the
- * fields dim themselves. The group error is announced as in Input
+ * fields dim themselves, and the group error is never dimmed. Those two dimmed
+ * Views also carry `aria-disabled`, which is what reaches the DOM under
+ * react-native-web (`accessibilityState` is dropped there) and what stops a
+ * checker reading dimmed-because-inapplicable text as failing contrast. The group error is announced as in Input
  * (`accessibilityLiveRegion` on Android, `announceForAccessibility` on iOS); native
  * has no invalid state, so the error text alone identifies it.
  */
@@ -850,6 +921,9 @@ interface LinkProps {
  * returning `false` cancels any `Linking` hand-off. For a non-`external` link the
  * handler is the navigation and `Linking.openURL(href)` is only the fallback without
  * one; an `external` link opens through `Linking` after the handler as well.
+ * On react-native-web the Text receives `href` (plus `hrefAttrs` target/rel when
+ * `external`) and renders a real anchor: the browser navigates, `Linking` is not
+ * called, and a handler returning `false` calls `preventDefault`.
  * `accessibilityHint`, `onFocus`, `onBlur`, `onHoverIn`, `onHoverOut` and `onLongPress`
  * are forwarded to the native element, so a wrapping Tooltip can attach to this Link.
  * Link exposes no `ref`. Standalone, the Link sets the body typography via Text's
@@ -919,23 +993,35 @@ interface CheckboxProps {
  *
  * There is no checkbox in core React Native. Renders a `Pressable` row with
  * `accessibilityRole="checkbox"`, `accessibilityLabel`, `accessibilityHint={description}`
- * and `accessibilityState={{ checked: indeterminate ? 'mixed' : checked, disabled }}`,
- * containing the drawn control (the `check`/`dash` `Icon`) and the label and
+ * and `accessibilityState={{ checked: indeterminate ? 'mixed' : checked, disabled }}`, mirrored
+ * to `aria-checked` (and, on react-native-web, `aria-disabled` set on the DOM node) because
+ * react-native-web renders only the aria-* forms and `role="checkbox"` requires `aria-checked`.
+ * `disabled` is never passed to `Pressable` itself — that would drop the row from the tab order —
+ * so a disabled checkbox stays focusable and is announced as disabled while a press guard blocks
+ * the toggle. It contains the drawn control (the `check`/`dash` `Icon`) and the label and
  * description, so the whole row — control, label or description — is the hit area and
- * never drops below the comfortable target. Space on a hardware keyboard is handled by
- * the platform once the role is set. The fill, border and indicator cross-fade over
- * `transition` with `motion.easing.standard` (skipped under reduced motion); while
- * pressed an unchecked, enabled box shows the selected fill at `pressedOverlay`.
- * Toggling an indeterminate checkbox clears the mixed state until `indeterminate`
- * changes value again. Inside a Form the control registers by `name` and submits its
- * checked state as a boolean (`value` is not used on native); the error slot shows
- * `error`, else the Form's message, else — only while `invalid` — `copy.required`
- * (required and unchecked) or `copy.invalid`, as in Input, and `validate: blur` means
- * on change. `disabledOpacity` dims the control and label, not the description or
- * error. The row has no vertical padding: it is at least `size.target.comfortable`
- * tall and centers the control and text column.
- * Inside a Fieldset the group's `disabled` applies and the legend prefixes the
- * accessibility label. Errors are announced as in Input.
+ * never drops below the comfortable target. The row aligns to the start of the cross
+ * axis and pads (minTarget − labelSize × lineHeight) / 2 above and below, so a single
+ * line is exactly the comfortable target tall while a wrapping label or a description
+ * grows it downwards with the control still centred on the label's first line (as
+ * Switch). Space on a hardware keyboard is handled by the platform once the role is
+ * set. The fill and border color cross-fade over `transition` with
+ * `motion.easing.standard` (skipped under reduced motion); the indicator is not
+ * animated — the check and dash Icons are mounted and unmounted, so they appear,
+ * disappear and swap instantly. While pressed an unchecked, enabled box shows the
+ * selected fill at `pressedOverlay` as an overlay inside the box, so the border does
+ * not fade. Border color is invalid, then selected, then rest: focus draws the border
+ * at the larger of `focusRingWidth` and `controlBorderWidth` and never hides
+ * `controlBorderInvalid`, as in Input. Toggling an indeterminate checkbox clears the
+ * mixed state until `indeterminate` changes value again. Inside a Form the control
+ * registers by `name` and submits its checked state as a boolean (`value` is not used
+ * on native); the error slot shows `error`, else the Form's message, else — only while
+ * `invalid` — `copy.required` (required and unchecked) or `copy.invalid`, as in Input,
+ * and `validate: blur` means on change. The error sits below the row, outside the hit
+ * area, indented by controlSize + gap so it lines up with the label.
+ * `disabledOpacity` dims the control and label, not the description or error. Inside a
+ * Fieldset the group's `disabled` applies and the legend prefixes the accessibility
+ * label. Errors are announced as in Input.
  */
 export declare function Checkbox({ label, hideLabel, name, value, checked, defaultChecked, indeterminate, disabled, required, invalid, description, error, overrides, onChange, ref }: CheckboxProps): React.JSX.Element;
 //#endregion
@@ -979,13 +1065,18 @@ interface SwitchProps {
  * Use it in settings lists with `labelPosition: start` so the switches sit at the
  * row end. If a form of switches must have a Save button, they are checkboxes.
  *
- * Uses the native `Switch` with `accessibilityRole="switch"`, `accessibilityLabel`,
- * `accessibilityHint={description}`, `accessibilityState={{ checked, disabled }}`,
+ * Uses the native `Switch` with `accessibilityRole="switch"` (native only — on
+ * react-native-web the rendered `<input type="checkbox" role="switch">` already carries
+ * the role, and a second one on its container would have no state and a focusable
+ * descendant), `accessibilityLabel`, `accessibilityHint={description}`,
+ * `accessibilityState={{ checked, disabled }}`,
  * `trackColor={{ false: trackOff, true: trackOn }}`, `thumbColor` and
  * `ios_backgroundColor={trackOff}`. The row is a `Pressable` with `accessible={false}`
- * that toggles the value, so label and description are part of the target while the
- * Switch stays the single focusable element; the row is at least the comfortable
- * target tall, with the track at its top, centred on the label's first line. Track and thumb sizes, radius, thumb travel, its animation (and reduced
+ * and `tabIndex={-1}` that toggles the value, so label and description are part of the
+ * target while the Switch stays the single focusable element; the row is at least the comfortable
+ * target tall with no padding, and centres its content in that height, so a one-line
+ * row sits in the middle while a wrapping label or a description grows it downwards
+ * with the track still on the label's first line. Track and thumb sizes, radius, thumb travel, its animation (and reduced
  * motion) and the focus indicator are the OS values. With `name` inside a Form the
  * switch registers and contributes a boolean; it has no error state by design. Inside
  * a Fieldset the group's `disabled` applies and the legend prefixes the label.
@@ -1002,7 +1093,7 @@ type RadioGroupOption = {
   disabled?: boolean | undefined;
 };
 /** The style bindings a caller may replace with a different token; see the component's overrides contract. */
-type RadioGroupOverridableBinding = "controlBorderWidth" | "controlBorderInvalid" | "controlSize" | "controlRadius" | "optionPaddingBlock" | "optionTextGap" | "optionGap" | "listGap" | "partGap" | "legendSize" | "legendWeight" | "labelSize" | "labelWeight" | "helperSize" | "fontFamily" | "lineHeight" | "disabledOpacity" | "transition";
+type RadioGroupOverridableBinding = "controlBorderWidth" | "indicatorInset" | "controlBorderInvalid" | "controlSize" | "controlRadius" | "optionPaddingBlock" | "optionTextGap" | "optionGap" | "listGap" | "partGap" | "legendSize" | "legendWeight" | "labelSize" | "labelWeight" | "helperSize" | "fontFamily" | "lineHeight" | "disabledOpacity" | "transition";
 interface RadioGroupProps {
   /** The group's legend — the question the options answer. Always visible. Also the group's `accessibilityLabel`. */
   label: string;
@@ -1073,7 +1164,7 @@ type DisclosureHeadingLevel = "2" | "3" | "4" | "5" | "6" | 2 | 3 | 4 | 5 | 6;
  */
 type DisclosureToggleReason = "pointer" | "keyboard" | "controlled";
 /** The style bindings a caller may replace with a different token; see the component's overrides contract. */
-type DisclosureOverridableBinding = "triggerPaddingBlock" | "triggerPaddingInline" | "triggerGap" | "triggerFontFamily" | "triggerFontSize" | "triggerFontWeight" | "triggerRadius" | "panelPaddingBlock" | "panelPaddingInline" | "disabledOpacity" | "transition";
+type DisclosureOverridableBinding = "triggerPaddingBlock" | "triggerPaddingInline" | "triggerGap" | "triggerFontFamily" | "triggerFontSize" | "triggerFontWeight" | "triggerLineHeight" | "triggerRadius" | "panelPaddingBlock" | "panelPaddingInline" | "disabledOpacity" | "transition";
 interface DisclosureProps {
   /** The trigger's label. Also the trigger's accessible name. Says what will be revealed. */
   summary: string;
@@ -1167,7 +1258,7 @@ type LandmarkRole = "banner" | "navigation" | "main" | "complementary" | "conten
 interface LandmarkProps {
   /** Which landmark this is. `banner` (site header), `navigation`, `main` (exactly one per page), `complementary` (sidebar), `contentinfo` (site footer), `region` (a labelled section that deserves a jump point), `search`, `form` (a labelled form that is a page-level region). */
   role: LandmarkRole;
-  /** Accessible name. Required for `region` and `form`, and whenever the page has more than one landmark of the same role. Not shown visually. An empty string counts as absent. */
+  /** Accessible name. Required for `region` and `form`, and whenever the page has more than one landmark of the same role. Not shown visually. An empty string counts as absent. On React Native it is applied as `accessibilityLabel` only for `navigation`, `region` and `form`; on any other role it is silently dropped, with no warning. */
   label?: string | undefined;
   /** The region's content. String and number children are wrapped in the package `Text`. */
   children: React.ReactNode;
@@ -1270,18 +1361,22 @@ type MeterTone = "info" | "success" | "warning" | "danger";
 /** The style bindings a caller may replace with a different token; see the component's overrides contract. */
 type MeterOverridableBinding = "trackHeight" | "radius" | "labelSize" | "labelWeight" | "valueSize" | "fontFamily" | "lineHeight" | "partGap" | "labelGap" | "transition";
 interface MeterProps {
-  /** The current measurement. Clamped to `min`…`max` for the bar; the accessible value is the clamped number too. */
+  /**
+   * The current measurement. Clamped to `min`…`max` for the bar; the accessible value is the
+   * clamped number too, exact and unrounded (only the percentage text is rounded). A non-finite
+   * `value` is treated as `min`.
+   */
   value: number;
-  /** Lower bound of the range. */
+  /** Lower bound of the range. A non-finite `min` (NaN, Infinity) is treated as 0. */
   min?: number | undefined;
-  /** Upper bound of the range. Must be greater than `min`. */
+  /** Upper bound of the range. Must be greater than `min`. A non-finite `max` (NaN, Infinity) is treated as 100. */
   max?: number | undefined;
   /** Visible label naming the measurement ("Storage used"). Also the accessible name. */
   label: string;
   /**
    * Human-readable value shown at the end of the label row and announced instead of the raw
    * number ("3.2 GB of 10 GB", "Strong"). Omit to show and announce the percentage, rounded to a
-   * whole number ("32%").
+   * whole number ("32%"), from the runtime's default locale.
    */
   valueText?: string | undefined;
   /** Fill color. `info` is the neutral brand fill; the consumer sets `success`/`warning`/`danger` from thresholds it owns. */
@@ -1299,16 +1394,19 @@ interface MeterProps {
  *
  * When to use: a measurement with a fixed range — storage or quota used, battery,
  * password strength, a score out of ten. The consumer decides the tone from thresholds
- * it owns; the meter just paints. Not for task progress (ProgressBar, planned).
+ * it owns; the meter just paints. Not for task progress (ProgressBar).
  *
  * Renders an `accessible` `View` with `role="meter"`, `accessibilityLabel={label}` and
  * `accessibilityValue={{ min, max, now: clamped, text }}`, where `text` is always set:
  * `valueText`, else the rounded percentage web and Lit announce. Inside: a header row of
- * two composed `Text`s and a track `View` (`overflow: 'hidden'`) holding the fill. The
- * track is measured with `onLayout` and the fill's pixel width animates over `transition`
- * (`useNativeDriver: false`); it snaps before the width is known, on resize, and under
- * reduced motion. A non-finite `value` counts as `min`; if `max <= min` the track renders
- * empty, `now` is `min`, "0%" is shown, and a warning is logged in development.
+ * two composed `Text`s — each in a plain `View` the Meter owns, since `Text` takes no
+ * `testID` — and a track `View` (`overflow: 'hidden'`) holding the fill. The track is
+ * measured with `onLayout` and the fill's pixel width animates over `transition`
+ * (`useNativeDriver: false`); it snaps before the width is known, on first layout, on
+ * resize, and under reduced motion. A non-finite `value` counts as `min`, a non-finite
+ * `min`/`max` as its default; if `max <= min` the track renders empty, `now` is `min`,
+ * "0%" is shown and announced, and development warns once per distinct invalid pair.
+ * Nothing here is interactive: no focus, no events, no hover.
  */
 export declare function Meter({ value, min, max, label, valueText, tone, hideValue, overrides, ref }: MeterProps): React.JSX.Element;
 //#endregion
@@ -1422,18 +1520,20 @@ interface CardProps {
   /**
    * The whole card is one link or button target. Requires exactly one Link or Button
    * among the top-level children of the body (controls nested in a wrapper such as a
-   * Stack are not searched); its action, role and name move onto a wrapping Pressable —
-   * the card's single target and single focus stop. With zero or several such children
-   * the card stays non-interactive and warns once in development. A disabled child
-   * disables the card with it. Controls in `headerActions` and `footer` are never the
-   * target.
+   * Stack are not searched; a top-level Fragment is flattened, so its children count
+   * as top-level); its action, role and name move onto a wrapping Pressable — the
+   * card's single target and single focus stop. With zero or several such children the
+   * card stays non-interactive and warns once per mounted card in development. A
+   * disabled child disables the card with it. Controls in `headerActions` and `footer`
+   * are never the target.
    */
   interactive?: boolean | undefined;
   /**
    * The card root takes `tabIndex={-1}` so a container (Feed) can move focus to it by
    * script through `ref`, and draws its own focus ring when focused that way. Not a
-   * tab stop; not for making cards clickable (`interactive`). With `interactive` also
-   * set, `interactive` wins, this is a no-op, and a development warning says so.
+   * tab stop; not for making cards clickable (`interactive`). It is a no-op whenever
+   * `interactive` is set — even when that card fell back to non-interactive for want of
+   * a single target — and a development warning says so.
    * A react-native-web capability: on iOS and Android no container can focus a View by script.
    */
   focusable?: boolean | undefined;
@@ -1458,16 +1558,19 @@ interface CardProps {
  *
  * `interactive` wraps the content in a `Pressable` that takes the single top-level
  * child's role, accessible name and action; the child is made inert and hidden from
- * assistive technology, so the Pressable is exactly one target and one focus stop. A
- * disabled child reports the Pressable disabled, ignores presses and shows no hover
- * background. With zero or several candidates the card renders as a plain View. The
- * ring's width (`border.width.focus`) is always reserved, colored `border` on
- * `surface: default` and transparent on `subtle` until focused, so focus never shifts
- * the layout. Hover and press show `hoverBackground` instantly; native has no
- * continuous hover to animate, so `transition` has no runtime effect.
+ * assistive technology, so the Pressable is exactly one target and one focus stop —
+ * "the card adds no second stop" means exactly one here, not zero. Only `children` is
+ * searched, with top-level Fragments flattened; `headerActions` and `footer` controls
+ * keep their own targets. A disabled child reports the Pressable disabled, ignores
+ * presses and shows no hover background. With zero or several candidates the card
+ * renders as a plain View. The ring's width (`border.width.focus`) is always reserved,
+ * colored `border` on `surface: default` and transparent on `subtle` until focused, so
+ * focus never shifts the layout. Hover and press show `hoverBackground` instantly;
+ * native has no continuous hover to animate, so `transition` has no runtime effect.
  *
  * `focusable` sets `tabIndex={-1}` (scriptable, not a tab stop under react-native-web;
- * on native Android `-1` means not focusable) and draws the ring on focus.
+ * on native Android `-1` means not focusable) and draws the ring on focus. It is a
+ * no-op whenever `interactive` is set, including on the non-interactive fallback.
  */
 export declare function Card({ children, heading, headingLevel, headerActions, footer, inset, surface, interactive, focusable, overrides, ref }: CardProps): React.JSX.Element;
 //#endregion
@@ -1498,7 +1601,12 @@ interface ContainerProps {
  * Renders a `View` with `width: '100%'`, `maxWidth` from `layout.maxWidth.{width}`
  * (none for `full`), `alignSelf` from `align` and `paddingHorizontal` from
  * `layout.gutter.{gutter}`. The `default` gutter compares `useWindowDimensions().width`
- * with the content and page max-width tokens. `element` is web and Lit only.
+ * with the content and page max-width tokens, with the same inclusive `>=` boundaries
+ * as the web media queries — it reads the window, never the parent, so a nested
+ * `gutter: default` Container picks its gutter by the window; nest with `gutter: none`.
+ * Container belongs in a column-direction parent (a screen, a vertical Stack); inside
+ * a row parent `width: '100%'` and `alignSelf` cross axes and that placement is not
+ * supported. `element` is web and Lit only, as in Box.
  */
 export declare function Container({ children, width, gutter, align, overrides, ref }: ContainerProps): React.JSX.Element;
 //#endregion
@@ -1543,7 +1651,8 @@ interface DividerProps {
  * a decorative root hides itself and its line (`accessibilityElementsHidden` +
  * `importantForAccessibility="no-hide-descendants"`); a labelled root is a row (`gap` from
  * `labelGap`) of two hidden line Views around `Text size="sm" tone="muted"`, which is read.
- * `labelSize`/`fontFamily` overrides reach Text's `fontSize`/`fontFamily`.
+ * The label Text sits in a plain View carrying the `Divider.label` hook, since Text takes
+ * no `testID`. `labelSize`/`fontFamily` overrides reach Text's `fontSize`/`fontFamily`.
  */
 export declare function Divider({ orientation, label, semantic, spacing, overrides, ref }: DividerProps): React.JSX.Element;
 //#endregion
@@ -1590,17 +1699,22 @@ interface FocusScopeProps {
  *
  * Renders a `View` with `accessibilityViewIsModal={trapped && active}` so VoiceOver
  * and TalkBack ignore siblings while the scope is the active one; a paused outer
- * scope therefore does not hide a nested Menu. There is no Tab order to confine on
- * native, so hardware-keyboard Tab is not wrapped (a platform limit) and
- * `onEscapeAttempt` never fires. `autoFocus` runs once after mount and calls
- * `AccessibilityInfo.setAccessibilityFocus` on the wrapper for `first`, `last` and
- * `container` alike — children cannot be walked for a focusable descendant — so the
- * screen reader reads the scope from its top; only `none` skips it. `restoreFocus`
- * runs once on unmount and focuses `returnFocusTo` when given, otherwise the
- * `TextInput` that was focused when the scope first rendered; an opener that is
- * neither cannot be restored. The wrapper sets no `role`, `accessibilityRole` or
- * `accessibilityLabel`, and never handles Escape or the back button — the overlay
- * owns dismissal.
+ * scope therefore does not hide a nested Menu. On react-native-web the prop is
+ * omitted: it would render `aria-modal` on a role-less div, and the composing
+ * overlay's own dialog carries `aria-modal` there. There is no Tab order to confine
+ * on native, so hardware-keyboard Tab is not wrapped (a platform limit, on
+ * react-native-web too) and `onEscapeAttempt` never fires; screen-reader users are
+ * kept inside by `accessibilityViewIsModal` instead. `autoFocus` runs once after
+ * mount and calls `AccessibilityInfo.setAccessibilityFocus` on the wrapper for
+ * `first`, `last` and `container` alike — children cannot be walked for a focusable
+ * descendant — so the screen reader reads the scope from its top; only `none` skips
+ * it. iOS VoiceOver may ignore focus on a non-`accessible` View; that is a platform
+ * limit, and `accessibilityViewIsModal` is the accessibility alternative.
+ * `restoreFocus` runs once on unmount and focuses `returnFocusTo` when given,
+ * otherwise the `TextInput` that was focused when the scope first rendered; there is
+ * no document order on native, so when that opener is gone nothing is restored. The
+ * wrapper sets no `role`, `accessibilityRole` or `accessibilityLabel`, and never
+ * handles Escape or the back button — the overlay owns dismissal.
  */
 export declare function FocusScope({ children, trapped, autoFocus, restoreFocus, returnFocusTo, active, onEscapeAttempt, ref }: FocusScopeProps): React.JSX.Element;
 //#endregion
@@ -1610,7 +1724,7 @@ type DialogInitialFocus = "first" | "title" | "close";
 /** Why `onClose` fired. `action` is never emitted by Dialog itself — it exists for a footer action that reports a close through the same handler. */
 type DialogCloseReason = "escape" | "close-button" | "scrim" | "action";
 /** The style bindings a caller may replace with a different token; `surface`, `focusRing` and `focusRingWidth` are locked. */
-type DialogOverridableBinding = "scrim" | "border" | "borderWidth" | "shadow" | "radius" | "inset" | "partGap" | "headerGap" | "footerGap" | "descriptionGap" | "widthSm" | "widthMd" | "widthLg" | "layer" | "enter" | "exit";
+type DialogOverridableBinding = "scrim" | "border" | "borderWidth" | "shadow" | "radius" | "inset" | "partGap" | "gutter" | "headerGap" | "footerGap" | "descriptionGap" | "widthSm" | "widthMd" | "widthLg" | "layer" | "enter" | "exit";
 interface DialogProps {
   /** Controlled only — there is no uncontrolled mode. The consumer owns `open`; the dialog never closes itself and requests changes through `onClose`. */
   open: boolean;
@@ -1651,6 +1765,11 @@ interface DialogProps {
  * title, the close button or the body, after the enter animation; there is no visible
  * focus ring on those targets. Scroll lock has no native meaning and is not
  * implemented. The Dialog is rooted in a Modal and exposes no ref.
+ *
+ * `inset` is applied once each way so nothing doubles between parts: the surface
+ * column carries the block padding (top and bottom), the header and footer wrappers
+ * the inline padding, and the body `Box` receives it as `overrides.paddingInline`
+ * with zero block padding of its own.
  */
 export declare function Dialog({ open, heading, description, children, footer, hideHeading, size, dismissible, initialFocus, onClose, onOpened, overrides }: DialogProps): React.JSX.Element | null;
 //#endregion
@@ -1659,7 +1778,7 @@ type AlertDialogTone = "danger" | "warning" | "info";
 /** Why `onCancel` fired: the Cancel button, or Escape (the Android back button, the VoiceOver escape gesture). A scrim tap fires nothing. */
 type AlertDialogCancelReason = "cancel" | "escape";
 /** The style bindings a caller may replace with a different token; `surface`, `icon`, `focusRing` and `focusRingWidth` are locked. */
-type AlertDialogOverridableBinding = "scrim" | "border" | "borderWidth" | "shadow" | "radius" | "inset" | "partGap" | "textGap" | "iconGap" | "footerGap" | "iconSize" | "width" | "gutter" | "layer" | "enter" | "exit";
+type AlertDialogOverridableBinding = "scrim" | "border" | "borderWidth" | "shadow" | "radius" | "inset" | "partGap" | "textGap" | "iconGap" | "footerGap" | "iconSize" | "width" | "gutter" | "layer" | "rise" | "enter" | "exit";
 interface AlertDialogProps {
   /** Controlled only — there is no uncontrolled mode; the consumer owns `open` and sets it false after handling `onConfirm` or `onCancel`, as in Dialog. */
   open: boolean;
@@ -1698,6 +1817,12 @@ interface AlertDialogProps {
  * the question is read; Cancel precedes Confirm in the accessibility order. The tone
  * Icon is decorative and colored through its own `overrides.color`. Scroll lock has
  * no native meaning and is not implemented. Rooted in a Modal, it exposes no ref.
+ *
+ * `inset` is applied once each way so nothing doubles between parts: the surface column
+ * carries the block padding, the icon-and-text row and the footer wrapper the inline
+ * padding. `partGap` is the only space between the two. The `footerGap` and `iconSize`
+ * bindings always reach the composed Stack and Icon through their own `overrides` — the
+ * caller's token when one was passed, the binding's default otherwise.
  */
 export declare function AlertDialog({ open, heading, description, tone, confirmLabel, cancelLabel, confirmDisabled, onConfirm, onCancel, overrides }: AlertDialogProps): React.JSX.Element | null;
 //#endregion
@@ -1737,29 +1862,42 @@ interface BottomSheetProps {
  * button or Escape.
  *
  * At window width <= `layout.maxWidth.prose`: a native `Modal` (`transparent`,
- * `animationType="none"`, `statusBarTranslucent`) holding a scrim that fades with the
- * surface, a full-screen scrim `Pressable`, and inside a `FocusScope` (`trapped`,
- * `autoFocus="first"`, `restoreFocus`) an `Animated.View` surface anchored to the bottom
- * with `role="dialog"`, `accessibilityViewIsModal` and `accessibilityLabel={heading}`.
- * It slides up with `enter` and `motion.easing.standard` and down with `exit` and
- * `motion.easing.exit`, instantly under reduced motion. Android back (`onRequestClose`)
- * and the VoiceOver escape gesture report `onClose('escape')`, even when not dismissible.
+ * `animationType="none"` — the component animates itself, `statusBarTranslucent`) holding
+ * a scrim `Pressable` and, inside a `FocusScope` (`trapped`, `autoFocus="first"`,
+ * `restoreFocus`), an `Animated.View` surface anchored to the bottom with `role="dialog"`,
+ * `accessibilityViewIsModal` and `accessibilityLabel={heading}`. It slides up with `enter`
+ * and `motion.easing.standard` and down with `exit` and `motion.easing.exit`, instantly
+ * under reduced motion. Android back (`onRequestClose`) and the VoiceOver escape gesture
+ * report `onClose('escape')`, even when not dismissible. `autoFocus="first"` lands on the
+ * scope wrapper rather than a real control — FocusScope's own documented native limit —
+ * so the screen reader reads the sheet from the top, which is the intended result.
  *
- * A `PanResponder` on the header (handle and heading row, never the body `ScrollView`)
- * claims a move once it passes `space.1` downward, follows the finger (also under reduced
- * motion), and on release past `dismissDistance` of the measured sheet height, or faster
- * than `dismissVelocity` between the last two move samples, fires `onDragDismiss` then
- * `onClose('drag')`. The sheet holds the release position until the consumer's update
- * renders: `open` false plays the exit from there; `open` still true springs back with
- * `exit` and `motion.easing.standard`. The handle is decorative and rendered only when
- * the gesture is live.
+ * A `PanResponder` on the header (handle and heading row, never the body `ScrollView`,
+ * whatever its scroll position) claims a move once it passes `dragSlop` (`space.1`)
+ * downward, so a tap on the close button still activates it; the offset counts from where
+ * the slop was crossed, so the surface does not jump. It follows the finger even under
+ * reduced motion, since the drag is user-driven. On release past `dismissDistance` of the
+ * measured sheet height, or faster than `dismissVelocity` between the last two move
+ * samples, it fires `onDragDismiss` then `onClose('drag')` and holds the released offset
+ * until the consumer's update renders: `open` false plays the normal exit from there,
+ * `open` still true springs back over `exit` with `motion.easing.standard`. The handle is
+ * decorative, not a focus stop, and rendered only when the gesture is live.
  *
- * The closeButton part is a View sized to `size.target.comfortable` around a ghost icon
- * Button, whose own hitSlop covers the extra area. The bottom inset comes from
- * `SafeAreaView` (iOS only; Android adds none). Scroll lock has no native meaning and is
- * not implemented. Above the breakpoint the component renders `Dialog size="md"` alone
- * with the same props and the shared overrides. The Modal is its own window, so no ref
- * is exposed.
+ * `inset` is applied once each way so nothing doubles between parts: the surface column
+ * carries the block padding (`headerPaddingTop` at the top when the handle is rendered,
+ * `inset` otherwise; `inset` at the bottom), the header and footer wrappers the inline
+ * padding, and the body `Box` receives it as `overrides.paddingInline` with zero block
+ * padding of its own. The bottom safe-area inset is an empty `SafeAreaView` after the last
+ * part, whose column gap is cancelled so the only space it adds is its own inset; RN core
+ * has no Android safe-area API, and the Modal is not `navigationBarTranslucent`, so
+ * Android adds none.
+ *
+ * The closeButton part is a View sized to `size.target.comfortable`; the Button's own
+ * hitSlop already extends its hit area to that target, so the wrapper's extra area
+ * activates it. Scroll lock has no native meaning — a Modal has no page behind it to
+ * scroll — and is not implemented. Above the breakpoint the component renders
+ * `Dialog size="md"` alone, with no wrapping View, so the root testID there is Dialog's.
+ * The Modal is its own window, so no ref is exposed; callers ref their trigger.
  */
 export declare function BottomSheet({ open, heading, hideHeading, children, footer, height, dismissible, dragToDismiss, onClose, onDragDismiss, overrides }: BottomSheetProps): React.JSX.Element | null;
 //#endregion
@@ -1794,8 +1932,12 @@ type MenuSeparator = {
   separator: true;
 };
 type MenuItem = MenuAction | MenuGroup | MenuSeparator;
-/** The style bindings a caller may replace with a different token; see the component's overrides contract. */
-type MenuOverridableBinding = "border" | "borderWidth" | "shadow" | "radius" | "popupPadding" | "popupOffset" | "typeaheadReset" | "maxHeight" | "minWidth" | "itemPaddingBlock" | "itemPaddingInline" | "itemGap" | "itemRadius" | "groupLabelSize" | "groupLabelWeight" | "shortcutSize" | "separator" | "separatorMargin" | "fontFamily" | "fontSize" | "lineHeight" | "layer" | "enter" | "enterDistance";
+/**
+ * The style bindings a caller may replace with a different token; see the component's
+ * overrides contract. `typeaheadReset` is part of the contract but has nothing to reset
+ * here: `Pressable` has no key events, so native has no typeahead.
+ */
+type MenuOverridableBinding = "border" | "borderWidth" | "shadow" | "radius" | "popupPadding" | "popupOffset" | "typeaheadReset" | "maxHeight" | "gutter" | "minWidth" | "itemPaddingBlock" | "itemPaddingInline" | "itemGap" | "itemRadius" | "groupLabelSize" | "groupLabelWeight" | "shortcutSize" | "separator" | "separatorMargin" | "fontFamily" | "fontSize" | "lineHeight" | "layer" | "enter" | "enterDistance";
 interface MenuProps {
   /** The trigger's label and the menu's accessible name ("More actions", "Sort by"). */
   label: string;
@@ -1807,7 +1949,12 @@ interface MenuProps {
   triggerIcon?: MenuTriggerIcon | undefined;
   /** Render the trigger as an icon-only Button using `triggerIcon`; `label` is still required. With `triggerIcon: none` this warns in development. */
   iconOnly?: boolean | undefined;
-  /** Preferred position of the popup relative to the trigger; flips automatically when it would overflow the viewport. */
+  /**
+   * Preferred position of the popup relative to the trigger (or `anchor`). Only the block side
+   * flips (bottom and top swap) on overflow; `start` and `end` never flip — they resolve against
+   * the layout direction (`I18nManager.isRTL`) and the popup is shifted inline instead so it stays
+   * `gutter` away from the side edges.
+   */
   placement?: MenuPlacement | undefined;
   /** Controlled open state (the parent flips it from onOpenChange). Omit for an uncontrolled menu, which starts closed. A controlled menu hides, and returns focus to the trigger, only when `open` becomes false. */
   open?: boolean | undefined;
@@ -1834,8 +1981,10 @@ interface MenuProps {
  * with the items flattened: group labels, separators and shortcut hints are dropped.
  * Above it (tablets and react-native-web) a transparent `Modal` holds a
  * full-screen scrim `Pressable` and a popup `View` (`role="menu"`) positioned from the
- * trigger's (or `anchor`'s) `measureInWindow()` rect, flipped on overflow via
- * `useWindowDimensions()`. The list scrolls within `maxHeight`. The popup fades and
+ * trigger's (or `anchor`'s) `measureInWindow()` rect: the block side flips on overflow
+ * against `useWindowDimensions()`, the inline side never does and is shifted to stay
+ * `gutter` from each edge. The list scrolls within `maxHeight`, itself capped at the
+ * window height less a `gutter` at each edge. The popup fades and
  * slides `enterDistance` from the trigger side over `enter`; under reduced motion it
  * appears at once. The Modal is not modal: nothing is trapped, the backdrop closes.
  *
@@ -1892,6 +2041,9 @@ interface TooltipProps {
  * bubble, and Escape hides it without moving focus. The bubble is hidden from
  * accessibility — the hint or label on the trigger already carries the text.
  *
+ * An Escape dismissal outlives a re-hover: the tooltip stays hidden until the trigger
+ * has lost both hover and focus (or, controlled, until `open` next changes).
+ *
  * The bubble is not portaled: it is absolutely positioned inside Tooltip's root on
  * `layer.toast`, placed from the trigger's `measureInWindow` rect and flipped on
  * overflow. An ancestor that clips (`overflow: 'hidden'`) or a sibling stacking context
@@ -1907,7 +2059,7 @@ type PopoverPlacement = "bottom-start" | "bottom" | "bottom-end" | "top-start" |
 type PopoverHeadingLevel = "2" | "3" | "4" | 2 | 3 | 4;
 /** Why `onOpenChange` fired. `tab-out` is part of the contract but never emitted on this platform (Pressable sees no key events). */
 type PopoverCloseReason = "trigger" | "escape" | "outside" | "close-button" | "tab-out";
-/** The style bindings a caller may replace with a different token; see the component's overrides contract. */
+/** The style bindings a caller may replace with a different token; `surface`, `breakpoint`, `focusRing` and `focusRingWidth` are locked. */
 type PopoverOverridableBinding = "border" | "borderWidth" | "shadow" | "radius" | "inset" | "partGap" | "offset" | "arrowSize" | "maxWidth" | "layer" | "enter" | "enterDistance" | "exit";
 interface PopoverProps {
   /** Exactly one focusable element — usually a Button — that opens the popover. It is cloned with the toggle `onPress` and Button's `expanded`, so it is typed as a single element. */
@@ -1932,7 +2084,7 @@ interface PopoverProps {
   onOpenChange?: ((open: boolean, reason: PopoverCloseReason) => void) | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<PopoverOverridableBinding, TokenRef | undefined>> | undefined;
-  /** The root view (wraps the trigger; the Modal itself exposes no ref). */
+  /** The anchor view that holds the trigger. The `Modal` the panel lives in exposes no ref of its own. */
   ref?: React.Ref<ViewInstance> | undefined;
 }
 /**
@@ -1951,14 +2103,15 @@ interface PopoverProps {
  * state is announced. At or below `layout.maxWidth.prose` (phones) the panel is the
  * package's `BottomSheet` with `height="content"`, titled by `heading`, else the
  * trigger's `accessibleName`, else its string `label`; there it is always modal and
- * always shows its close button. Above it (tablets, react-native-web) a transparent
- * `Modal` holds a full-screen transparent backdrop `Pressable` (no scrim, even when
- * `modal`) and a `role="dialog"` panel positioned from the trigger's
+ * always shows its close button, and it is handed Popover's own shadow, radius, inset,
+ * partGap, enter and exit tokens. Above the breakpoint (tablets, react-native-web) a
+ * transparent `Modal` holds a full-screen transparent backdrop `Pressable` (no scrim,
+ * even when `modal`) and a `role="dialog"` panel positioned from the trigger's
  * `measureInWindow()` rect, flipped and shifted to stay in the window. The panel
- * composes `FocusScope` (`trapped` when `modal`), `Heading`, `Button` for the close
- * control and `Box` for the body. It fades and slides `enterDistance` from the trigger
- * side over `enter` (motion.easing.standard) and fades out over `exit`
- * (motion.easing.exit); instantly under reduced motion.
+ * composes `FocusScope` (`trapped` when `modal`, `active` following `open`), `Heading`,
+ * `Button` for the close control and `Box` for the body. It fades and slides
+ * `enterDistance` from the trigger side over `enter` (motion.easing.standard) and fades
+ * out over `exit` (motion.easing.exit); instantly under reduced motion.
  *
  * Dismissal: Escape (`onRequestClose`: Android back, Esc on react-native-web) always
  * closes; a backdrop tap closes when not `modal`; the close button when `dismissible`.
@@ -2085,7 +2238,12 @@ export declare function toast(options: ToastOptions): Promise<ToastResult>;
 //#endregion
 //#region src/ActionSheet.d.ts
 type ActionSheetActionTone = "default" | "danger";
-/** One row. `danger` actions are visually distinct and rendered as a group after the others, regardless of their position in the array. */
+/**
+ * One row. `danger` actions are visually distinct and rendered as a group after the
+ * others, regardless of their position in the array. Every optional field also accepts
+ * an explicit `undefined`, since `Menu` builds these objects that way under
+ * `exactOptionalPropertyTypes`.
+ */
 type ActionSheetAction = {
   id: string;
   label: string;
@@ -2102,9 +2260,9 @@ interface ActionSheetProps {
   open: boolean;
   /** What the actions apply to ("Photo.jpg"), shown muted above the list. Also the accessible name; when omitted the name is `copy.defaultLabel`. */
   heading?: string | undefined;
-  /** Two to about eight actions. `danger` actions are visually distinct and grouped last. The count is guidance, not enforced. */
+  /** Two to about eight actions. `danger` actions are visually distinct and grouped last. The count is guidance, not enforced: no dev warning outside that range. */
   actions: ActionSheetAction[];
-  /** Escape, the scrim, the cancel row and the drag all request close. When false the Cancel row, the divider above it and the drag handle are not rendered, the scrim and the drag do nothing, and Escape still reports through `onClose`. */
+  /** Escape, the scrim, the cancel row and the drag all request close. When false the Cancel row, the divider above it and the drag handle are not rendered, the scrim and the drag do nothing, and Escape still reports through `onClose`; with no `heading` either, the header is not rendered at all. */
   dismissible?: boolean | undefined;
   /** Label of the explicit cancel row. Defaults to `copy.cancelLabel`. */
   cancelLabel?: string | undefined;
@@ -2117,46 +2275,59 @@ interface ActionSheetProps {
 }
 /**
  * ActionSheet — "what can I do with this?" A short list of verbs for one item,
- * reached from an overflow button or a long-press, with the dangerous one grouped
+ * reached from an overflow button or a long-press, with the dangerous ones grouped
  * last and an explicit Cancel because thumbs miss.
  *
  * When to use: contextual actions on an item — share, rename, duplicate, delete —
  * opened from an overflow `Button` (`iconOnly`, label "More actions") or a long-press.
- * Keep it to what fits without scrolling; more than eight actions means the item
- * needs its own screen. Put destructive actions last with `tone: "danger"`. Not for
- * navigation, settings with state, choosing a value, or confirming — a danger row
- * opens an `AlertDialog`, it does not itself confirm.
+ * Keep it to what fits without scrolling; more than eight actions means the item needs
+ * its own screen. Put destructive actions last with `tone: "danger"`. Not for
+ * navigation, for settings with state, for choosing a value, or for confirming — a
+ * danger row opens an `AlertDialog`, it does not itself confirm.
  *
  * Renders a native `Modal` (`visible`, `transparent`, `onRequestClose`,
- * `statusBarTranslucent`) with a full-screen scrim `Pressable` and an `Animated.View`
- * surface (`testID="ActionSheet"`, `role="menu"`, `accessibilityViewIsModal`,
- * `accessibilityLabel={heading ?? copy.defaultLabel}`) anchored to the bottom, sliding
- * up with `enter` and `motion.easing.standard` and down with `exit` and
- * `motion.easing.exit`, the scrim fading alongside (instant under reduced motion). The
- * surface composes `FocusScope` (`trapped`, `restoreFocus`, `autoFocus="none"`), `Text`
- * (`size="sm"`, `tone="muted"`, with `fontFamily`, `titleSize` and `lineHeight`
- * forwarded as its overrides) for the heading, `Icon` for each row's glyph and `Button`
- * (`variant="secondary"`) for the Cancel row — never restyled. Rows are `Pressable`s
- * with `role="menuitem"` and `accessibilityState={{ disabled }}`; a press guard, not
- * the native `disabled` prop, makes disabled rows inert so they stay reachable and are
- * announced as disabled. Once the enter transition ends, accessibility focus moves to
- * the first enabled action in display order.
+ * `statusBarTranslucent`) holding a scrim `Pressable` and, inside a `FocusScope`
+ * (`trapped`, `restoreFocus`, `autoFocus="none"`, `active` following `open`), an
+ * `Animated.View` surface anchored to the bottom that carries `testID="ActionSheet"`,
+ * `role="menu"`, `accessibilityViewIsModal` and
+ * `accessibilityLabel={heading ?? copy.defaultLabel}` — there is no separate
+ * `ActionSheet.surface`. It slides up with `enter` and `motion.easing.standard` and
+ * down with `exit` and `motion.easing.exit`, the scrim fading with the same duration
+ * and easing, instantly under reduced motion. The sheet sizes to its content up to 90%
+ * of the window and the list scrolls inside it.
  *
- * A `PanResponder` on the header (handle plus heading) tracks from the first touch with
- * no slop; released past `dismissDistance` of the measured surface height or faster
- * than `dismissVelocity` it fires `onClose('drag')`, otherwise it springs back with
- * `exit` and `motion.easing.standard` (a tap passes neither threshold, so nothing
- * fires). `dismissible={false}` removes the handle, the drag, the Cancel row and its
- * divider and makes the scrim inert; `onRequestClose` (Android back, hardware Escape)
- * and the VoiceOver escape gesture always report `onClose('escape')`. Choosing an
- * action never closes the sheet itself.
+ * The heading composes `Text` (`size="sm"`, `tone="muted"`) with `fontFamily`,
+ * `titleSize` and `lineHeight` always passed through its `overrides` as the resolved
+ * token — the default or the caller's — since `Text` otherwise sets its own; `Icon`
+ * draws each row's glyph and `Button` (`variant="secondary"`) the Cancel row, each in a
+ * wrapping View carrying the part's testID. Rows are `Pressable`s with `role="menuitem"`
+ * and `accessibilityState={{ disabled }}`; a press guard, not the native `disabled`
+ * prop, makes a disabled row inert so it stays reachable and is announced as disabled.
+ * Once the enter transition ends, accessibility focus moves to the first enabled action
+ * in display order (the default group, then danger). Two dividers, two rules: the
+ * danger-group divider sits among the rows as `role="separator"` and is drawn only when
+ * both groups exist; the cancel divider sits above the Cancel row whenever that row is
+ * rendered and is hidden from assistive technology.
  *
- * Native limits: `Pressable` has no key events, so there are no arrow keys, Home/End
- * or roving tabindex — each row is its own accessibility focus stop and Enter/Space
- * are the platform's own activation. There is no wide presentation: the package's
- * `Menu` renders its own trigger and cannot anchor to an external element, so tablets
- * get the sheet too and `maxWidth` has no effect. Rooted in a native `Modal`, the
- * sheet exposes no ref; callers ref their opener.
+ * A `PanResponder` on the header (handle and heading) claims a move once it passes
+ * `dragSlop` (`space.1`) downward, so a tap is not a drag and nothing fires; the offset
+ * counts from where the slop was crossed, so the surface does not jump, and it follows
+ * the finger even under reduced motion. On release past `dismissDistance` of the
+ * measured surface height, or faster than `dismissVelocity` between the last two move
+ * samples (from `nativeEvent.timestamp`, not PanResponder's averaged `vy`), it fires
+ * `onClose('drag')` and holds the released offset until the consumer's update renders:
+ * `open` false plays the exit from there, `open` still true springs back over `exit`
+ * with `motion.easing.standard`. `dismissible={false}` removes the handle, the drag, the
+ * Cancel row and its divider and makes the scrim inert; `onRequestClose` (Android back,
+ * a hardware Escape) and the VoiceOver escape gesture always report `onClose('escape')`.
+ * Choosing an action never closes the sheet itself.
+ *
+ * Native limits: `Pressable` has no key events, so there are no arrow keys, no Home/End
+ * and no roving tabindex — each row is its own accessibility focus stop reached by swipe
+ * and Enter/Space are the platform's own activation. There is no wide presentation: the
+ * package's `Menu` renders its own trigger and cannot anchor to an external element, so
+ * tablets above `maxWidth` get the sheet too and `maxWidth` has no effect here. Rooted
+ * in a native `Modal`, the sheet exposes no ref; callers ref their opener.
  */
 export declare function ActionSheet({ open, heading, actions, dismissible, cancelLabel, onAction, onClose, overrides }: ActionSheetProps): React.JSX.Element | null;
 //#endregion
@@ -2166,105 +2337,170 @@ type SidePanelWidth = "narrow" | "default" | "wide";
 type SidePanelPersistent = "never" | "content" | "page";
 type SidePanelRole = "complementary" | "navigation";
 /**
- * Why `onOpenChange` fired. On React Native SidePanel itself raises only `trigger`,
- * `escape` (the Android back button), `close-button`, `scrim` and `swipe`: `outside`
- * never happens (an outside tap lands on the full-screen scrim Pressable, transparent
- * when `scrim` is false, and is `scrim`), `navigation` has no router hook to observe,
- * and `action` exists for a consumer's own footer handler reusing this callback.
+ * Why `onOpenChange` fired. React Native raises `trigger`, `escape` (the Android back
+ * button or the VoiceOver escape gesture), `close-button`, `scrim` and `swipe` only:
+ * `outside` never happens — an outside tap lands on the full-screen scrim `Pressable`,
+ * transparent when `scrim` is false, and is reported as `scrim` — `navigation` has no
+ * router hook to observe, and `action` exists for a consumer's own footer handler
+ * reusing this callback. All three stay in the type so the reason is one union across
+ * platforms.
  */
 type SidePanelCloseReason = "trigger" | "escape" | "close-button" | "scrim" | "outside" | "swipe" | "action" | "navigation";
-/** The style bindings a caller may replace with a different token; see the component's overrides contract. */
-type SidePanelOverridableBinding = "scrim" | "shadow" | "border" | "borderWidth" | "width" | "widthNarrow" | "widthWide" | "edgeGutter" | "inset" | "headerGap" | "partGap" | "footerGap" | "layer" | "enter" | "exit";
+/**
+ * The style bindings a caller may replace with a different token; `surface`, `focusRing`
+ * and `focusRingWidth` are accessibility-bearing, so they are locked and ignored if passed.
+ */
+type SidePanelOverridableBinding = "scrim" | "shadow" | "border" | "borderWidth" | "width" | "widthNarrow" | "widthWide" | "edgeGutter" | "inset" | "headerGap" | "headingGap" | "partGap" | "footerGap" | "layer" | "enter" | "exit";
 interface SidePanelProps {
-  /** The Button that shows and hides the panel (usually `iconOnly` with the `menu` Icon and a label like "Menu"). It stays a toggle — pressing it again closes — and carries `expanded`. Omit to control `open` from elsewhere (a Toolbar). Not rendered once `persistent` takes over. */
+  /**
+   * The Button that shows and hides the panel (usually `iconOnly` with the `menu` Icon and
+   * a label like "Menu"). It stays a toggle — pressing it again closes — and is cloned to
+   * carry the disclosure state as `accessibilityState.expanded`. Omit to control `open`
+   * from elsewhere (a Toolbar). Not rendered once `persistent` takes over.
+   */
   trigger?: React.ReactNode | undefined;
-  /** Controlled visibility. Omit for uncontrolled (the trigger toggles it); an uncontrolled panel always starts closed, so a panel that must start open is controlled. */
+  /**
+   * Controlled visibility. Omit for uncontrolled (the trigger toggles it); an uncontrolled
+   * panel always starts closed and there is no `defaultOpen`, so a panel that must start
+   * open is controlled.
+   */
   open?: boolean | undefined;
-  /** The panel's title and accessible name ("Menu", "Filters", "Your cart"). */
+  /** The panel's title and accessible name ("Menu", "Filters", "Your cart"). Required regardless of `hideHeading`. */
   heading: string;
-  /** Keep the title for assistive technology (the surface's `accessibilityLabel`) but do not show it. When the header would then be empty, it is not rendered. */
+  /**
+   * Keep the title for assistive technology but do not show it: on native it is the
+   * surface's `accessibilityLabel`. When the header would then be empty — no close button,
+   * because `dismissible` is false or the panel is persistent — the header part is not
+   * rendered at all: no padding, no gap, no height. When the header keeps only the close
+   * button, that button is end-aligned in it.
+   */
   hideHeading?: boolean | undefined;
-  /** The body. Scrolls inside the overlay panel when taller than the viewport. */
+  /**
+   * The body: a Stack of navigation Links, a Stack of filter controls, a Stack of Cards.
+   * Scrolls inside the overlay panel when taller than the window; the persistent sidebar
+   * takes its natural height and the screen scrolls instead.
+   */
   children: React.ReactNode;
-  /** Pinned to the bottom of the panel above the safe area. */
+  /** Pinned to the bottom of the panel above the safe area (a sign-out Button, an "Apply filters" row). */
   footer?: React.ReactNode | undefined;
-  /** The edge the panel slides from: `start` is left in left-to-right layouts, right under `I18nManager.isRTL`. */
+  /** The edge the panel slides from. `start` is left in left-to-right layouts and right under `I18nManager.isRTL`; `end` the opposite. */
   side?: SidePanelSide | undefined;
-  /** Panel width: `narrow` for a list of links, `wide` for a form or a detail. On phones the panel is the window width minus `edgeGutter`. */
+  /** `narrow` for a list of links, `wide` for a form or a detail. On phones the panel is the window width minus `edgeGutter`, so a strip of scrim stays visible. */
   width?: SidePanelWidth | undefined;
-  /** Above this window width the panel is a fixed sidebar instead of an overlay: always visible, no scrim, no trap, no close button, trigger hidden. `content` switches at `layout.maxWidth.content`, `page` at `layout.maxWidth.page`; a width exactly at the token is still the overlay. */
+  /**
+   * Above this window width the panel stops being an overlay and becomes a sidebar beside
+   * the content: always visible, no Modal, no scrim, no trap, no close button, and the
+   * trigger is not rendered. `content` switches at `layout.maxWidth.content`, `page` at
+   * `layout.maxWidth.page`; the comparison is `window width > token`, so exactly the token
+   * width is still the overlay. It is a width check, not an orientation check.
+   */
   persistent?: SidePanelPersistent | undefined;
-  /** The role the persistent sidebar carries: `navigation` for a menu of Links, `complementary` for filters, a cart, a detail. The overlay presentations expose no region role, only their label. */
+  /**
+   * The landmark the persistent sidebar exposes through the RN `role` prop: `navigation`
+   * for a menu of Links, `complementary` for filters, a cart, a detail. React Native has no
+   * landmark roles in the overlay presentations, which expose only their label.
+   */
   role?: SidePanelRole | undefined;
-  /** `false` (default, the disclosure pattern): focus stays on the trigger when it opens. `true`: a modal panel — always a scrim, screen readers confined with `accessibilityViewIsModal`. */
+  /**
+   * `false` (the default, the APG disclosure pattern): focus stays on the trigger when the
+   * panel opens. `true`: a modal panel at the edge — always a scrim, focus moved in, and
+   * screen-reader users confined by `accessibilityViewIsModal` — for a panel that must be
+   * finished or dismissed.
+   */
   modal?: boolean | undefined;
-  /** Show the scrim in non-modal mode too (modal always has one). */
+  /** Show the scrim in non-modal mode too (modal always has one). Turn it off for a panel that should feel like part of the page. */
   scrim?: boolean | undefined;
-  /** The back button (Escape), the close button, a scrim tap and the swipe all request close. When false, the close button is not rendered and the scrim tap and swipe do nothing; the back button still reports `onOpenChange(false, 'escape')` without closing an uncontrolled panel. */
+  /**
+   * Escape (the back button), the close button, a scrim tap and the swipe all request
+   * close. When false the close button is not rendered and a scrim tap and the swipe do
+   * nothing; Escape still reports `onOpenChange(false, 'escape')` — the consumer decides —
+   * so an uncontrolled non-dismissible panel reports it and stays open. Only those four are
+   * gated: the trigger toggle always closes.
+   */
   dismissible?: boolean | undefined;
-  /** A swipe on the header (not the close button) toward the edge dismisses. Purely additive. Edge-swipe-to-open is `useSidePanelEdgeSwipe`, which needs a controlled `open`. */
+  /**
+   * On touch, a swipe on the header toward the edge dismisses the panel. Purely additive:
+   * the trigger and close button always exist (WCAG 2.5.1). The edge-to-open swipe is
+   * `useSidePanelEdgeSwipe`, which needs a controlled `open`.
+   */
   swipeable?: boolean | undefined;
-  /** Fired after the panel opens or closes, with the new state and a reason. */
+  /** Fired after the panel opens or closes, with the new state and the reason it changed. */
   onOpenChange?: ((open: boolean, reason: SidePanelCloseReason) => void) | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<SidePanelOverridableBinding, TokenRef | undefined>> | undefined;
-  /** The positioned surface: the sliding panel view in overlay mode, the sidebar view when persistent. Null while the overlay is closed. */
-  ref?: React.Ref<ViewInstance> | undefined;
 }
 /**
- * SidePanel — the drawer: hidden off the edge until the trigger asks for it, then
- * sliding in beside the page. Non-modal by default (the APG disclosure pattern);
- * `modal` makes it a modal panel at the edge. Above `persistent`'s breakpoint it
- * stops being an overlay and becomes a sidebar.
+ * SidePanel — the drawer: hidden off the edge until the trigger asks for it, then sliding
+ * in beside the page. Non-modal by default (the APG disclosure pattern: the trigger keeps
+ * focus and carries the expanded state); `modal` makes it a modal panel at the edge, for
+ * content that must be finished or dismissed. Above `persistent`'s breakpoint it stops
+ * being an overlay and is simply there, as a sidebar — so a product has one menu, not a
+ * phone menu and a desktop one.
  *
- * When to use: primary navigation on phones (`start`), filters, a cart or a detail
- * panel (`end`), a settings drawer. Not for a short list of actions (Menu,
- * ActionSheet), a task with a few fields (Dialog, BottomSheet), or the page's point.
- * Do not stack side panels.
+ * When to use: primary navigation on phones (`start`), filters, a cart or a detail panel
+ * (`end`), a settings drawer. Not for a short list of actions (Menu, ActionSheet), a task
+ * with a few fields (Dialog, BottomSheet), or content that is the page's point. Do not
+ * stack side panels.
  *
- * Overlay: a native `Modal` (`transparent`, `statusBarTranslucent`) holding a
- * full-screen scrim `Pressable` (`color.overlay.scrim` when `modal` or `scrim`,
- * transparent otherwise, reported as `scrim` either way) and an `Animated.View`
- * surface at the `side` edge (`I18nManager.isRTL` flips it), its width the width
- * binding capped at the window minus `edgeGutter`. It slides in over `enter` with
- * `motion.easing.standard` and out over `exit` with `motion.easing.exit`, the scrim
- * fading with it, instantly under reduced motion. The surface composes `FocusScope`
- * (`trapped={modal}`), a header row with `Heading` (level 2, size lg) and the close
- * `Button` (ghost, iconOnly), a scrolling `Box` body and a `Stack` footer. A
- * `PanResponder` on the header — never on a touch that starts inside the close
- * button's wrapping view — drags the surface toward its edge; past a quarter of its
- * width or a fast flick it reports `swipe` and continues at the release velocity,
- * otherwise it springs back over `exit`. `onRequestClose` (the Android back button)
- * is `escape`; with `dismissible` false it reports without closing. Closing moves
- * accessibility focus back to the trigger.
+ * Overlay: a native `Modal` (`transparent`, `animationType="none"` — the component animates
+ * itself — `statusBarTranslucent`) holding a full-screen scrim (`color.overlay.scrim` when
+ * `modal` or `scrim`, fully transparent otherwise) with a `Pressable` over it that catches
+ * every outside tap and reports `scrim` either way, and an `Animated.View` surface at the
+ * `side` edge (`I18nManager.isRTL` flips it) whose width is the width binding capped at the
+ * window minus `edgeGutter`. It slides in over `enter` with `motion.easing.standard` and
+ * out over `exit` with `motion.easing.exit`, the scrim fading with it, instant under
+ * reduced motion. `FocusScope` (`trapped={modal}`, `autoFocus` only when modal, restoring
+ * to the trigger) wraps the surface from outside, since its wrapper `View` cannot be styled
+ * or height-constrained; inside the surface a `SafeAreaView` holds the parts column, which
+ * carries `partGap` and the block padding from `inset` (`SafeAreaView` ignores its own
+ * padding) around the header, the scrolling body and the pinned footer.
  *
- * Persistent (window width > the chosen `layout.maxWidth.*` token — a width check,
- * not an orientation check): a plain `View` where SidePanel sits, with the `role`
- * prop and `heading` as its label, the `border` on the edge facing the content, the
- * width binding as its width and natural height (the screen scrolls, not the body),
- * no Modal, scrim, close button or trigger.
+ * The swipe lives on the header, never on the close button: a touch that starts inside
+ * `SidePanel.closeButton` is remembered, so the header's responder declines it and the tap
+ * still activates the button. The drag claims a move past `dragSlop` (`space.1`) toward the
+ * edge and counts from where the slop was crossed, so the surface does not jump, and it
+ * follows the finger even under reduced motion because it is user-driven. Released past
+ * `dismissDistance` of the measured surface width, or faster than `dismissVelocity` between
+ * the last two move samples, it reports `swipe` and then holds the released offset — there
+ * is no momentum or decay — until the consumer's next render: closed, the normal exit plays
+ * from there; still open, it springs back over `exit` with `motion.easing.standard`, a
+ * timing animation and never a spring, which also finishes an interrupted enter.
  *
- * Native limits: the non-modal "page stays live" cannot be reproduced under `Modal`,
- * which intercepts every touch; Tab stitching and modal Tab wrap have no native
- * key-event equivalent; the inert page is the Modal window itself and scroll lock has
- * no meaning. Crossing the persistent breakpoint changes the root, so the children
- * remount.
+ * Persistent (window width > the chosen `layout.maxWidth.*` token): a plain `View` where
+ * SidePanel sits, carrying the RN `role` prop and `heading` as its label, the `border` on
+ * the edge facing the content, the width binding as its width and its natural height. It
+ * pads no safe area — the screen owns that — and renders no Modal, scrim, close button or
+ * trigger.
+ *
+ * Native limits, all accepted by the doc: the non-modal "page stays live" cannot be
+ * reproduced under `Modal`, which intercepts every touch, so only tap-outside-to-close is
+ * possible; there is no Tab order to stitch or wrap; the Modal window itself stands in for
+ * the inert page and scroll lock has no meaning, with `accessibilityViewIsModal` confining
+ * screen-reader users. `role` is not exposed in overlay mode, no ref is exposed at all, and
+ * crossing the persistent breakpoint changes the root between `Modal` and `View`, so the
+ * children remount and lose their state.
  */
-export declare function SidePanel({ trigger, open, heading, hideHeading, children, footer, side, width, persistent, role, modal, scrim, dismissible, swipeable, onOpenChange, overrides, ref }: SidePanelProps): React.JSX.Element;
+export declare function SidePanel({ trigger, open, heading, hideHeading, children, footer, side, width, persistent, role, modal, scrim, dismissible, swipeable, onOpenChange, overrides }: SidePanelProps): React.JSX.Element;
 interface UseSidePanelEdgeSwipeOptions {
   /** Must match the SidePanel's own `side`; the hook flips it for RTL the same way. */
   side?: SidePanelSide | undefined;
-  /** Turn the gesture off, e.g. while the panel is already open. */
+  /** Turn the gesture off — while the panel is already open, or on a screen that should not have it. */
   enabled?: boolean | undefined;
-  /** Fired when an edge swipe crosses the open threshold. The consumer sets its own controlled `open` — the hook has no knowledge of the panel it opens. */
+  /** Fired when an edge swipe crosses the open threshold. The consumer sets its own controlled `open`; the hook knows nothing about the panel it opens. */
   onOpen: () => void;
 }
 /**
- * A `PanResponder` for the screen root that opens a controlled `SidePanel` on a swipe
- * from its edge — additive to the trigger, never the only way in (WCAG 2.5.1). The
- * gesture has to start at the edge of the whole screen, outside the panel's own
- * (unmounted-when-closed) surface, so the consumer spreads `panHandlers` onto their
- * root view.
+ * A `PanResponder` for the screen root that opens a controlled `SidePanel` on a swipe from
+ * its `side` edge — additive to the trigger, never the only way in (WCAG 2.5.1). The panel
+ * has to be controlled: an uncontrolled one exposes nothing to open by hand. Spread the
+ * returned `panHandlers` onto the screen's root view; the gesture starts in the `edgeZone`
+ * strip (`size.target.comfortable`) at the edge, outside the closed panel's own surface.
+ *
+ * It follows the same rules as the dismiss swipe, measured toward the content: it claims a
+ * move past `dragSlop` (`space.1`), and a release past `dismissDistance` of the window
+ * width — the only extent the hook can see, and within a gutter of the panel's own width on
+ * a phone — or faster than `dismissVelocity` between the last two move samples opens the
+ * panel. The surface itself does not track the finger, since the hook does not own it.
  */
 export declare function useSidePanelEdgeSwipe({ side, enabled, onOpen }: UseSidePanelEdgeSwipeOptions): {
   panHandlers: PanResponderInstance["panHandlers"];
@@ -2285,8 +2521,10 @@ type TabsItem = {
   disabled?: boolean | undefined;
   badge?: string | undefined;
 };
+/** @deprecated Use `TabsItem`. */
+type TabsTab = TabsItem;
 /** The style bindings a caller may replace with a different token; see the component's overrides contract. */
-type TabsOverridableBinding = "tabPaddingBlock" | "tabPaddingInline" | "tabGap" | "listGap" | "listBorder" | "listBorderWidth" | "panelGap" | "badgeSize" | "fontFamily" | "fontSize" | "fontWeight" | "lineHeight" | "radius" | "transition" | "disabledOpacity";
+type TabsOverridableBinding = "tabPaddingBlock" | "tabPaddingInline" | "tabGap" | "listGap" | "listBorder" | "listBorderWidth" | "panelGap" | "badgeWeight" | "badgeSize" | "fontFamily" | "fontSize" | "fontWeight" | "lineHeight" | "radius" | "transition" | "disabledOpacity";
 interface TabsProps {
   /** The tabs in order. `badge` is a short count or status shown after the label ("3", "New"). */
   tabs: TabsItem[];
@@ -2358,8 +2596,8 @@ type SegmentedControlSize = "sm" | "md";
 type SegmentedControlOption = {
   value: string;
   label: string;
-  icon?: IconName;
-  disabled?: boolean;
+  icon?: IconName | undefined;
+  disabled?: boolean | undefined;
 };
 /** The style bindings a caller may replace with a different token; see the component's overrides contract. */
 type SegmentedControlOverridableBinding = "groupPadding" | "groupRadius" | "segmentShadow" | "segmentRadius" | "segmentPaddingInline" | "segmentPaddingBlock" | "segmentGap" | "segmentSpacing" | "selectedWeight" | "paddingBlockSm" | "fontFamily" | "fontSize" | "fontWeight" | "lineHeight" | "transition" | "disabledOpacity";
@@ -2368,14 +2606,10 @@ interface SegmentedControlProps {
   label: string;
   /**
    * Two to five options (guidance, not enforced: any count renders, with no warning). Labels
-   * are one word; with `iconOnly` the label becomes the accessible name.
+   * are one word; with `iconOnly` the label becomes the accessible name. The icon is an Icon
+   * whose `size` is the control's `size`.
    */
-  options: {
-    value: string;
-    label: string;
-    icon?: IconName;
-    disabled?: boolean;
-  }[];
+  options: SegmentedControlOption[];
   /** Controlled selected value. Omit for uncontrolled. */
   value?: string | undefined;
   /**
@@ -2446,14 +2680,14 @@ type ListboxGroup = {
   group: string;
   options: ListboxOption[];
 };
-/** One entry of `options`: an option or a group of options. */
+/** One entry of `options`: an option or a group of options. Select and Combobox take the same array. */
 type ListboxItem = ListboxOption | ListboxGroup;
 /** The selection: a value, or with `multiple` an array of values. */
 type ListboxValue = string | string[];
 /** Height in rows before the list scrolls; `all` never scrolls. */
 type ListboxMaxVisible = 5 | 8 | 12 | "5" | "8" | "12" | "all";
 /** The style bindings a caller may replace with a different token; see the component's overrides contract. */
-type ListboxOverridableBinding = "border" | "borderInvalid" | "partGap" | "borderWidth" | "radius" | "listPadding" | "optionPaddingBlock" | "optionPaddingInline" | "optionGap" | "optionRadius" | "optionDescriptionSize" | "optionSelectedWeight" | "groupLabelSize" | "groupLabelWeight" | "groupLabelPaddingBlock" | "fontFamily" | "fontSize" | "lineHeight" | "disabledOpacity" | "typeaheadReset";
+type ListboxOverridableBinding = "border" | "borderInvalid" | "partGap" | "borderWidth" | "radius" | "listPadding" | "optionPaddingBlock" | "optionPaddingInline" | "optionGap" | "optionRadius" | "optionDescriptionSize" | "optionWeight" | "optionSelectedWeight" | "groupLabelSize" | "groupLabelWeight" | "groupLabelPaddingBlock" | "fontFamily" | "fontSize" | "lineHeight" | "disabledOpacity" | "typeaheadReset";
 interface ListboxProps {
   /** Accessible name of the list; also the `{label}` in `copy.required` and `copy.invalid`. */
   label: string;
@@ -2467,14 +2701,14 @@ interface ListboxProps {
   defaultValue?: ListboxValue | undefined;
   /**
    * Single-select only: on the web keyboard model, arrow keys select as they move.
-   * Native has no arrow-key browsing, so this is accepted for parity with no runtime effect.
+   * Native rows have no key events, so this is accepted for parity with no runtime effect.
    */
   selectionFollowsFocus?: boolean | undefined;
   /** At least one option must be selected to submit when inside a Form. */
   required?: boolean | undefined;
   /** Marks the list invalid (`borderInvalid` when not `embedded`) with `copy.invalid`. */
   invalid?: boolean | undefined;
-  /** Error message rendered below the list; implies invalid. */
+  /** Error message rendered below the list; implies invalid. Not a live region: it reaches the rows as their accessibility hint. */
   error?: string | undefined;
   /**
    * The list lives inside a popup (Select, Combobox) that owns the border, surface and
@@ -2519,12 +2753,14 @@ interface ListboxProps {
  * (max(minTarget, fontSize × lineHeight + 2 × optionPaddingBlock) + 2 × focusRingWidth),
  * plus 2 × listPadding, plus 2 × borderWidth when not `embedded`; never measured. Each row
  * is its own accessibility stop and a tap is the selection: arrows, Home/End, Page keys,
- * typeahead, Shift+Arrow and Ctrl+A have no native form, and `selectionFollowsFocus` has
- * no runtime effect. The active row (focused, hovered, or pre-highlighted) gets
- * `color.background.subtle`; focus draws a `color.border.focus` border that is always
- * reserved. Selection shows by weight, and with `multiple` by the check (an invisible slot
- * when unselected, so labels align). Inside a Form the list registers by `name`; the
- * message below it follows `error` → Form error → `copy.required` / `copy.invalid`.
+ * typeahead, Shift+Arrow and Ctrl+A have no native form, and `selectionFollowsFocus` and
+ * `typeaheadReset` have no runtime effect. The active row (focused, hovered, or
+ * pre-highlighted) gets `color.background.subtle`; focus draws a `color.border.focus`
+ * border that is always reserved. Selection shows by weight, and with `multiple` by the
+ * check (an invisible slot when unselected, so labels align). Inside a Form the list
+ * registers by `name`; the message below it follows `error` → Form error →
+ * `copy.required` / `copy.invalid`, and a failed submit moves accessibility focus to the
+ * first selected row, else the first enabled one.
  */
 export declare function Listbox({ label, options, multiple, value, defaultValue, selectionFollowsFocus: _selectionFollowsFocus, required, invalid, error, embedded, initialActiveValue, loading, disabled, name, emptyMessage, maxVisible, overrides, ref, onChange, onActiveChange }: ListboxProps): React.JSX.Element;
 //#endregion
@@ -2535,8 +2771,14 @@ type SelectNative = "auto" | "always" | "never";
 type SelectValue = ListboxValue;
 /** `sm` for pickers inside toolbars and calendar headers. */
 type SelectSize = "sm" | "md";
-/** The style bindings a caller may replace with a different token; see the component's overrides contract. */
-type SelectOverridableBinding = "triggerBorderInvalid" | "triggerBorderWidth" | "triggerRadius" | "triggerPaddingInline" | "triggerPaddingBlock" | "triggerGap" | "partGap" | "labelWeight" | "helperSize" | "popupSurface" | "popupBorder" | "popupBorderWidth" | "popupShadow" | "popupRadius" | "popupOffset" | "layer" | "fontFamily" | "fontSize" | "fontWeight" | "lineHeight" | "disabledOpacity" | "enter";
+/**
+ * The style bindings a caller may replace with a different token; see the component's
+ * overrides contract. The locked bindings (`triggerBackground`, `triggerBorder`,
+ * `triggerBorderFocus`, `valueColor`, `placeholderColor`, `chevron`, `descriptionText`,
+ * `errorText`, `minTarget`, `minTargetSm`, `focusRingWidth`) carry contrast or target
+ * guarantees and are not in the union.
+ */
+type SelectOverridableBinding = "triggerBorderInvalid" | "triggerBorderWidth" | "triggerRadius" | "triggerPaddingInline" | "triggerPaddingBlock" | "triggerGap" | "chevronReserve" | "partGap" | "labelWeight" | "helperSize" | "popupSurface" | "popupBorder" | "popupBorderWidth" | "popupShadow" | "popupRadius" | "popupOffset" | "layer" | "fontFamily" | "fontSize" | "fontWeight" | "lineHeight" | "disabledOpacity" | "enter";
 interface SelectProps {
   /** Visible label. Always rendered. Also the trigger's `accessibilityLabel`. */
   label: string;
@@ -2562,7 +2804,7 @@ interface SelectProps {
   description?: string | undefined;
   /** Must have a value to submit. Shown in the label, not only by color. */
   required?: boolean | undefined;
-  /** Not openable and not submitted. Stays visible and focusable. */
+  /** Not openable and not submitted. Stays visible and focusable. Wins over a controlled `open`. */
   disabled?: boolean | undefined;
   /** Marks the field invalid. Usually set by the Form. */
   invalid?: boolean | undefined;
@@ -2595,19 +2837,31 @@ interface SelectProps {
  *
  * Renders a `Pressable` trigger (`accessibilityRole="combobox"`, `accessibilityLabel`,
  * `accessibilityHint`, `accessibilityState={{ expanded, disabled }}`,
- * `accessibilityValue={{ text }}` with the selected label(s)) showing the value or the
- * placeholder, and a `chevron-down` `Icon`. Activating it opens an `embedded` `Listbox`
- * (given no `name`, `selectionFollowsFocus: false`, and the first selection
- * as `initialActiveValue`): a `BottomSheet` on phone-width screens (`layout.maxWidth.prose`)
- * with a `copy.done` footer button for `multiple`, or else a transparent `Modal` whose
- * popup sits below the trigger (flipped above on overflow), at least as wide as it, on
- * `layer.dropdown`, fading in over `enter`. Escape (the Android back gesture) and an
- * outside tap close without changing the value; focus returns to the trigger by hand
+ * `accessibilityValue={{ text }}` with the selected label(s), the count, or the
+ * placeholder) showing the value and a `chevron-down` `Icon`. A long value is clipped to
+ * one line with an ellipsis. Activating the trigger opens an `embedded` `Listbox` (given
+ * no `name`, so Select alone is the field, `selectionFollowsFocus: false`, and the first
+ * selection as `initialActiveValue`): a `BottomSheet` on phone-width screens
+ * (`layout.maxWidth.prose` and narrower) with a `copy.done` footer button for `multiple`,
+ * or else a transparent `Modal` whose popup sits below the trigger (flipped above when
+ * there is no room), at least as wide as it, on `layer.dropdown`, fading in over `enter`.
+ * Closing is instant on every platform, as on web. Escape (the Android back gesture) and
+ * an outside tap close without changing the value; focus returns to the trigger by hand
  * (`AccessibilityInfo.setAccessibilityFocus`), since `FocusScope`'s restore only
- * recaptures a `TextInput`. Selecting an option commits and, for a single select,
- * closes. Pressable sees no keys, so Enter-as-press is the only other keyboard rule.
- * Validation works as `Input`'s: `error` prop → `required` → `invalid`, registered with
- * the enclosing `FormContext` by `name`.
+ * recaptures a `TextInput`. Selecting an option commits and, for a single select, closes;
+ * re-picking the selected option closes without firing `onChange`. `Pressable` sees no
+ * keys, so Enter-as-press is the only other keyboard rule — Tab-commits-and-closes has no
+ * native form.
+ *
+ * `disabled` wins over a controlled `open`: a disabled Select never shows its popup, is
+ * not submitted, and stays visible and focusable (the `disabled` prop is never passed to
+ * the `Pressable`, which would take it out of the tab order; react-native-web gets
+ * `aria-disabled` on the DOM node instead, and `aria-expanded` is mirrored because
+ * react-native-web drops `accessibilityState`).
+ *
+ * Validation works as `Input`'s: precedence `error`, then `required` (`copy.required`),
+ * then `invalid` (`copy.invalid`), registered with the enclosing `FormContext` by `name`
+ * with a string value for a single select and a `string[]` with `multiple`.
  */
 export declare function Select({ label, name, options, value, defaultValue, placeholder, hideLabel, size, open: openProp, multiple, description, required, disabled, invalid, error, native, overrides, ref, onChange, onOpenChange }: SelectProps): React.JSX.Element;
 //#endregion
@@ -2678,8 +2932,13 @@ interface ComboboxProps {
  * a `Pressable` summary (chips read-only) that opens a `BottomSheet height="full"`
  * with the chips and the `TextInput` at the top of its body, the `Listbox` below and
  * a `copy.done` footer Button; on tablets and react-native-web the field holds the
- * `TextInput` directly and the popup is an anchored `Modal` below it (flipped above on
- * overflow) that does not trap focus. Listbox rows are touch `Pressable`s with no key
+ * `TextInput` directly and the popup is an absolutely positioned sibling of the field,
+ * anchored under it (flipped above when there is no room) on `layer.dropdown`. It is
+ * deliberately not a `Modal`: react-native-web's `Modal` always wraps its children in a
+ * focus trap, which would pull DOM focus out of the input the moment the list opened —
+ * and the APG model keeps focus in the text input while the list is browsed. There is no
+ * scrim either: an outside tap blurs the input, and blur is what closes the list.
+ * Listbox rows are touch `Pressable`s with no key
  * events, so arrow browsing, Alt+ArrowDown and Tab-without-committing have no native
  * equivalent: a tap commits, Enter or a comma through the `TextInput` commits typed
  * custom text, Escape (hardware keyboard / react-native-web) closes then clears the
@@ -2771,7 +3030,7 @@ interface SliderMark {
 }
 type SliderValue = number | [number, number];
 /** The style bindings a caller may replace with a different token; see the component's overrides contract. */
-type SliderOverridableBinding = "track" | "trackHeight" | "trackRadius" | "thumb" | "thumbSize" | "thumbShadow" | "thumbActiveScale" | "haloSpread" | "mark" | "markSize" | "markLabelSize" | "markLabelGap" | "valueSize" | "bubblePaddingBlock" | "bubblePaddingInline" | "bubbleOffset" | "bubbleRadius" | "labelWeight" | "partGap" | "labelGap" | "trackPaddingBlock" | "fontFamily" | "fontSize" | "helperSize" | "errorText" | "disabledOpacity" | "transition";
+type SliderOverridableBinding = "track" | "trackHeight" | "trackRadius" | "thumb" | "thumbSize" | "thumbShadow" | "thumbActiveScale" | "haloSpread" | "mark" | "markSize" | "markLabelSize" | "markLabelGap" | "valueSize" | "bubblePaddingBlock" | "bubblePaddingInline" | "bubbleOffset" | "bubbleRadius" | "labelWeight" | "partGap" | "labelGap" | "trackPaddingBlock" | "fontFamily" | "fontSize" | "helperSize" | "disabledOpacity" | "transition";
 interface SliderProps {
   /** Visible label naming the quantity ("Volume", "Price range"). A range's thumbs are named from `copy.minimumLabel`/`copy.maximumLabel`. */
   label: string;
@@ -2927,7 +3186,7 @@ export declare function Toolbar({ label, children, orientation, overflow, size, 
 type CarouselPicker = "dots" | "tabs" | "none";
 type CarouselChangeReason = "next" | "prev" | "picker" | "swipe" | "autoplay";
 /** The style bindings a caller may replace with a different token; see the component's overrides contract. */
-type CarouselOverridableBinding = "slideGap" | "controlOffset" | "controlRadius" | "controlShadow" | "pickerGap" | "pickerOffset" | "dotSize" | "radius" | "tabFontSize" | "tabFontWeight" | "tabPaddingBlock" | "tabPaddingInline" | "fontFamily" | "transition";
+type CarouselOverridableBinding = "slideGap" | "controlOffset" | "controlRadius" | "controlShadow" | "pickerGap" | "pickerOffset" | "dotSize" | "dotRadius" | "radius" | "tabFontSize" | "tabFontWeight" | "tabLineHeight" | "tabPaddingBlock" | "tabPaddingInline" | "fontFamily" | "transition";
 interface CarouselSlideProps {
   /**
    * The slide's name in a `tabs` picker. A plain string, not read from the content; the slide
@@ -3680,9 +3939,9 @@ interface ProgressBarProps {
    * unknown). Clamped to `min`…`max`; a non-finite number is treated as `min`.
    */
   value?: number | null | undefined;
-  /** Start of the range. */
+  /** Start of the range. A non-finite number is treated as the default, 0. */
   min?: number | undefined;
-  /** End of the range. */
+  /** End of the range. A non-finite number is treated as the default, 100. */
   max?: number | undefined;
   /**
    * Renders the value text ("42%", "3 of 12 files"), called with the clamped value. Defaults to a whole-number
@@ -3727,9 +3986,11 @@ interface ProgressBarProps {
  * `copy.indeterminate`, as it does each later time it becomes indeterminate.
  * `milestones` announces `copy.progress` once for the highest tier 1–3 entered by an
  * update; reaching `max` announces `copy.complete` (for `milestones` and `complete`).
- * Moving to a lower tier resets the record to that tier. With `max <= min` the bar
- * renders empty, reports `now = min`, announces no progress or completion, and warns
- * in development.
+ * Moving to a lower tier resets the record to that tier, and entering the indeterminate
+ * state resets it to tier 0, so the first known value afterwards announces again. With
+ * `max <= min` the bar renders empty, reports `now = min`, records no tier, announces no
+ * progress or completion, and warns in development; the tier the range arrives at when it
+ * becomes valid again is recorded silently, as at mount.
  */
 export declare function ProgressBar({ label, value, min, max, formatValue, showValue, hideLabel, tone, announce, overrides, ref }: ProgressBarProps): React.JSX.Element;
 //#endregion
@@ -3750,7 +4011,10 @@ type StepperStep = {
 /** The style bindings a caller may replace with a different token; see the component's overrides contract. */
 type StepperOverridableBinding = "indicatorSize" | "indicatorBackground" | "indicatorRadius" | "indicatorFontSize" | "indicatorFontWeight" | "connector" | "labelWeight" | "labelCurrentWeight" | "labelSize" | "descriptionSize" | "countSize" | "stepHover" | "stepRadius" | "stepPadding" | "stepGap" | "partGap" | "fontFamily" | "transition";
 interface StepperProps {
-  /** Accessible name of the list (React Native has no navigation landmark). Defaults to `copy.navLabel`. */
+  /**
+   * Accessible name of the list (React Native has no navigation landmark, so the name sits on the list View).
+   * Defaults to `copy.navLabel`, which an empty string also falls back to.
+   */
   label?: string | undefined;
   /**
    * The steps in order. `status` is derived from `current` when omitted. An explicit `status` sets only the
@@ -3765,7 +4029,8 @@ interface StepperProps {
   }[];
   /**
    * The id of the current step. When no id matches, nothing is selected, every step without an explicit status is
-   * upcoming, no step is navigable under `completed`, the count reads "Step 1 of m", and `__DEV__` logs a warning.
+   * upcoming, no step is navigable under `completed` (all still are under `all`), the count reads "Step 1 of m",
+   * and `__DEV__` logs a warning — an empty `current` is treated as not yet set and does not warn.
    */
   current: string;
   /** Vertical shows descriptions under each label; horizontal renders no descriptions and collapses to `compact` below the prose width. */
@@ -3784,7 +4049,7 @@ interface StepperProps {
   overrides?: Partial<Record<StepperOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when a navigable step is chosen, with its id. The container changes `current`; the stepper never changes it itself. */
   onStepSelect?: ((id: string) => void) | undefined;
-  /** The root list view. */
+  /** The root view, which holds the list and the count. */
   ref?: React.Ref<ViewInstance> | undefined;
 }
 /**
@@ -3796,17 +4061,21 @@ interface StepperProps {
  * horizontal for short, familiar ones. Do not use it for two steps, for more than about eight, as Tabs, or to show
  * task progress (ProgressBar).
  *
- * Renders a `View` with `accessibilityRole="list"` named by `label` (React Native has no `nav` landmark). Each step
- * is a `Pressable` (navigable) or an `accessible` `View` whose `accessibilityLabel` is `copy.stepLabel` plus ", " and
+ * A plain root `View` holds the list `View` (`accessibilityRole="list"`, named by `label` — React Native has no
+ * `nav` landmark) and, `stepGap` after it, the `count` Text, so the count is never inside the list. Each step is a
+ * `role="listitem"` View — the `<li>` of the web anatomy, and the only child role a list may own — holding a
+ * `Pressable` (navigable) or an `accessible` `View` whose `accessibilityLabel` is `copy.stepLabel` plus ", " and
  * the status word, with `accessibilityState.selected` on the step `current` names. An explicit `status: "error"`
  * wins for the indicator and the status word, while selection and the compact reveal still follow the id. The
  * indicator switches between its four states at once; connectors cross-fade to `connectorComplete` over
- * `transition`. Compact is decided by the stepper's own `onLayout` width, rendering non-compact until the first
- * layout; the `count` Text ("Step n of m") follows the steps only while compact is in effect.
+ * `transition`. Compact is decided by the stepper's own `onLayout` width against `layout.maxWidth.prose`,
+ * rendering non-compact until the first layout; the root stretches to its parent, so the measured width is the
+ * space offered and switching to compact cannot narrow it further.
  */
 export declare function Stepper({ label, steps, current, orientation, navigable, compact, overrides, onStepSelect, ref }: StepperProps): React.JSX.Element;
 //#endregion
 //#region src/Search.d.ts
+/** `lg` for a search page's hero field. */
 type SearchSize = "md" | "lg";
 /** One row offered under the field while typing. */
 type SearchSuggestion = {
@@ -3844,10 +4113,12 @@ interface SearchProps {
   action?: string | undefined;
   /**
    * Suggestions for the current query, shown in a Listbox under the field; choosing one
-   * fills the query with the suggestion's `label` and submits. Provide them from
-   * `onChangeText` (debounced by the caller). Setting the prop at all — even to an empty
-   * array, which shows `copy.noSuggestions` — turns the field into a combobox; leaving it
-   * undefined keeps a plain search field.
+   * fills the query with the suggestion's `label` — what the user just read — and submits.
+   * Provide them from `onChangeText` (debounced by the caller). Setting the prop at all —
+   * even to an empty array after a fetch that found nothing, which shows
+   * `copy.noSuggestions` — is what turns the field into a combobox; leaving it undefined
+   * keeps a plain search field. The list opens on typing and on ArrowDown, never on focus
+   * alone, and closes on Escape, blur, a chosen suggestion, clear and submit.
    */
   suggestions?: {
     value: string;
@@ -3856,14 +4127,19 @@ interface SearchProps {
   }[] | undefined;
   /** Suggestions are being fetched; announced through `copy.loading`. */
   loading?: boolean | undefined;
-  /** Give the field the `search` landmark. Turn off when the Search sits inside another search landmark (a filter within a results page). */
+  /**
+   * Give the field the `search` landmark. Turn off when the Search sits inside another
+   * search landmark (a filter within a results page). It is `accessibilityRole="search"`
+   * on the root View this component already renders, never a composed Landmark.
+   */
   landmark?: boolean | undefined;
   /** `lg` for a search page's hero field. */
   size?: SearchSize | undefined;
   /**
    * Not editable, still readable and focusable: the input is read-only with
-   * `accessibilityState.disabled`, both Buttons are disabled, keys are inert, suggestions
-   * never open, no event fires, the whole component dims, and a Form does not register it.
+   * `accessibilityState.disabled`, both Buttons are disabled (the clear Button still renders
+   * when there is text), every key is inert, suggestions never open and an open list closes,
+   * no event fires, the label, glyph and input dim, and a Form does not register it.
    */
   disabled?: boolean | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
@@ -3872,13 +4148,13 @@ interface SearchProps {
   ref?: React.Ref<ViewInstance> | undefined;
   /**
    * Fired on every keystroke with the query; the caller fetches suggestions here. Also fired
-   * whenever Search itself changes the text: with "" before `onClear`, and with a chosen
-   * suggestion's `label` before `onSubmitEditing`.
+   * whenever Search itself changes the text, so a controlled `value` can follow: with "" before
+   * `onClear`, and with a chosen suggestion's `label` before `onSubmitEditing`.
    */
   onChangeText?: ((value: string) => void) | undefined;
-  /** Fired on Enter, the submit button, or choosing a suggestion, with the trimmed query. Never fires for an empty query. */
+  /** Fired on Enter, the submit button, or choosing a suggestion, with the trimmed query. An empty trimmed query does not fire. */
   onSubmitEditing?: ((value: string) => void) | undefined;
-  /** Fired when the field is emptied — by the clear button, or by an Escape that clears it when no suggestions are open. */
+  /** Fired when the field is emptied — by the clear button, or by the Escape that clears it when no suggestions are open. */
   onClear?: (() => void) | undefined;
 }
 /**
@@ -3887,46 +4163,78 @@ interface SearchProps {
  *
  * When to use: free-text search over a site, an app, or a large dataset. Add
  * `suggestions` when the backend can offer completions; keep `landmark` on for the one
- * primary search. Not for a specific value (Input) or choosing from a known list
+ * primary search. Not for a specific value (Input) or for choosing from a known list
  * (Select, Combobox).
  *
- * Renders a root `View` (`accessibilityRole="search"` when `landmark`, never on the
- * TextInput) holding the optional visible label (hidden from accessibility: the input
- * carries `accessibilityLabel`) and a pill row: a decorative `search` Icon, a `TextInput`
- * (`returnKeyType="search"`, `clearButtonMode="never"`), the system clear `Button` (ghost,
- * sm, iconOnly, `close`) while there is text, and the submit `Button` (ghost, sm,
- * iconOnly, `arrow-right`), always rendered. With `suggestions` set, an embedded `Listbox`
- * renders inline below the field once the user types (or presses ArrowDown on a hardware
- * keyboard) — never on focus alone — and closes on blur, Escape, a choice, clear and
- * submit. Listbox rows are touch Pressables with no key events, so there is no arrow-key
- * highlight: a tap fills the query with the row's label and submits, and Enter always
- * submits the typed query. The suggestion count, `copy.noSuggestions` or `copy.loading`
- * is announced with `AccessibilityInfo.announceForAccessibility` after `statusDebounce`.
- * `name` and `action` have no native meaning; `action` warns under `__DEV__`. The caller's
+ * Renders a root `View` — the `landmark` and `form` part in one, since native has no form
+ * element — carrying `accessibilityRole="search"` when `landmark` and never putting it on
+ * the `TextInput`, which on react-native-web would become a second search landmark. Inside
+ * it: the optional visible label (hidden from accessibility, because the input already
+ * carries `accessibilityLabel`) and a pill row holding a decorative `search` Icon, the
+ * `TextInput` (`returnKeyType="search"`, `clearButtonMode="never"` so the system clear
+ * `Button` matches across platforms), that clear Button while there is text, and the submit
+ * Button, always rendered: Enter is not reachable from every on-screen keyboard.
+ *
+ * With `suggestions` set, an embedded `Listbox` renders inline below the field — no overlay,
+ * since on a phone the list takes the space under the field — opened by typing while the
+ * field has focus or by ArrowDown from a hardware keyboard (or react-native-web), never by
+ * focus alone, and closed on blur, except while a press is in progress inside the list
+ * (react-native-web blurs the input on pointerdown). Listbox rows are touch Pressables with
+ * no key events, so there is no arrow-key highlight: a tap fills the query with the row's
+ * `label` and submits, and Enter always submits the typed query. The suggestion count,
+ * `copy.noSuggestions` or `copy.loading` is announced with
+ * `AccessibilityInfo.announceForAccessibility` after `statusDebounce`, there being no
+ * visually-hidden primitive to hold a live region.
+ *
+ * `name` and `action` are a URL query key and a GET target — neither exists on native — so
+ * both are accepted for parity and do nothing; `action` warns under `__DEV__`. The caller's
  * ScrollView needs `keyboardShouldPersistTaps="handled"` so a suggestion tap is not
- * swallowed by keyboard dismissal.
+ * swallowed by keyboard dismissal; Search has no ScrollView of its own to set it on.
  */
 export declare function Search({ label, showLabel, name, value, defaultValue, placeholder, action, suggestions, loading, landmark, size, disabled, overrides, ref, onChangeText, onSubmitEditing, onClear }: SearchProps): React.JSX.Element;
 //#endregion
 //#region src/DatePicker.d.ts
 type DatePickerSize = "sm" | "md";
-/** A single ISO date, or a `{ start, end }` pair of them when `range` is set. Never a `Date`: a calendar date has no time zone. */
+/** A single ISO calendar date, or both ends of a range. Never a `Date`: a calendar date has no time zone. */
 type DatePickerValue = string | {
   start: string;
   end: string;
 };
-/** The style bindings a caller may replace with a different token; see the component's overrides contract. */
-type DatePickerOverridableBinding = "borderInvalid" | "borderWidth" | "radius" | "paddingInline" | "paddingBlock" | "fontSize" | "calendarInset" | "calendarGap" | "headerGap" | "footerGap" | "dayGap" | "dayRadius" | "dayHover" | "weekdaySize" | "weekdayWeight" | "weekNumberSize" | "monthTitleSize" | "monthTitleWeight" | "partGap" | "fieldGap" | "dayFontSize" | "fontFamily" | "lineHeight" | "labelWeight" | "helperSize" | "disabledOpacity" | "transition";
+/**
+ * The style bindings a caller may replace with a different token; see the component's
+ * overrides contract. The locked bindings (`background`, `foreground`, `placeholder`,
+ * `border`, `borderFocus`, `rangeSeparatorColor`, `calendarSurface`, `daySize`,
+ * `daySelectedBackground`, `daySelectedForeground`, `dayInRangeBackground`,
+ * `dayTodayBorder`, `dayTodayBorderWidth`, `dayOutsideMonthColor`, `weekdayColor`,
+ * `descriptionText`, `errorText`, `minTarget`, `minTargetSm`, `focusRing`,
+ * `focusRingWidth`) carry contrast or target guarantees and are not in the union.
+ */
+type DatePickerOverridableBinding = "borderInvalid" | "borderWidth" | "radius" | "paddingInline" | "paddingBlock" | "fontSize" | "calendarInset" | "calendarGap" | "headerGap" | "footerGap" | "dayGap" | "dayRadius" | "dayHover" | "weekdaySize" | "weekdayWeight" | "weekNumberSize" | "weekNumberWeight" | "monthTitleSize" | "monthTitleWeight" | "partGap" | "fieldGap" | "dayFontSize" | "fontFamily" | "lineHeight" | "labelWeight" | "helperSize" | "disabledOpacity" | "transition";
 interface DatePickerProps {
-  /** Visible label ("Start date", "Date of birth"). Also the input's `accessibilityLabel`. */
+  /** Visible label ("Start date", "Date of birth"). Also the input's accessible name and the calendar sheet's heading. */
   label: string;
-  /** Field name for the Form. The value is an ISO date string; a range registers two fields, `name` and `name-end`. */
+  /**
+   * Field name for the Form. The value is an ISO calendar date string (`2026-09-10`)
+   * or, for a range, `{ start, end }` of them. The Form holds strings only, so a range
+   * registers two fields, `name` (start) and `name-end` (end).
+   */
   name: string;
-  /** Controlled value (ISO date, or a range). */
+  /**
+   * Controlled value (ISO date, or a range). Pass `''` for a controlled empty field
+   * (`{ start: '', end: '' }` for a range). While an input has focus it keeps the typed
+   * text; on blur, and at once after a pick or Clear, the inputs show the formatted
+   * `value`, so a controlled owner that does not update `value` sees the text revert.
+   * In a range the first pick is an internal draft shown only in the calendar.
+   */
   value?: DatePickerValue | undefined;
   /** Initial value. */
   defaultValue?: DatePickerValue | undefined;
-  /** Controlled calendar state, for programmatic use and for stories and tests. Omit for the button-driven default. */
+  /**
+   * Controlled calendar state, for programmatic use and for stories and tests. Omit for
+   * the button-driven default. Every change aims the calendar at the committed value's
+   * month (or today's) — its end when opened by ArrowDown in the end input, its start
+   * otherwise; uncommitted typed text is ignored.
+   */
   open?: boolean | undefined;
   /** Pick a start and an end date in one calendar; two inputs in the field. */
   range?: boolean | undefined;
@@ -3934,66 +4242,79 @@ interface DatePickerProps {
   min?: string | undefined;
   /** Latest selectable date (ISO). */
   max?: string | undefined;
-  /** Disable specific days (weekends, holidays, booked). Disabled days are shown, not hidden. */
+  /** Disable specific days (weekends, holidays, booked). Disabled days are shown, not hidden, and can take focus but not be selected. */
   isDateDisabled?: ((isoDate: string) => boolean) | undefined;
-  /** BCP 47 locale for month/weekday names, the first day of the week, and the typed format. Defaults to the device locale. */
+  /**
+   * BCP 47 locale for month and weekday names, the first day of the week, and the typed
+   * format. Defaults to the device locale. The typed pattern comes from `formatToParts`
+   * with 2-digit month and day and a numeric year, so en-US is MM/DD/YYYY.
+   */
   locale?: string | undefined;
   /** An ISO week-number column at the start of each row. */
   showWeekNumbers?: boolean | undefined;
   /** Defaults to the locale's pattern ("MM/DD/YYYY", "DD.MM.YYYY"). */
   placeholder?: string | undefined;
-  /** Helper text. */
+  /** Helper text. Also the input's `accessibilityHint`. */
   description?: string | undefined;
-  /** Must have a value to submit. */
+  /** Must have a value to submit. `copy.requiredIndicator` is appended to the visible label, so it is part of the accessible name. */
   required?: boolean | undefined;
-  /** Visually hide the label (it remains the accessible name). Only for a field whose context already names it. */
+  /** Do not render the label Text; `label` stays the accessible name. Only for a field whose context already names it. */
   hideLabel?: boolean | undefined;
   /** `sm` for fields inside grid cells and toolbars: minimum target height, tighter padding, small type. */
   size?: DatePickerSize | undefined;
-  /** Not editable, still readable. */
+  /** Not editable, still readable. The calendar does not open. */
   disabled?: boolean | undefined;
   /** Error message; implies invalid. */
   error?: string | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<DatePickerOverridableBinding, TokenRef | undefined>> | undefined;
-  /** The root view. */
+  /** The root group `View`, so a parent can measure the field group. */
   ref?: React.Ref<ViewInstance> | undefined;
-  /** Fired when a complete valid date (or range) is typed or picked, with the ISO value; with `undefined` when cleared. */
+  /** Fired when a complete valid date (or range) is typed or picked, and with `undefined` on Clear. */
   onChange?: ((value: DatePickerValue | undefined) => void) | undefined;
   /** Fired when the calendar opens or closes. */
   onOpenChange?: ((open: boolean) => void) | undefined;
 }
 /**
- * DatePicker — two ways to say the same date: type it, or find it on a calendar.
- * Both produce a plain ISO date (or a `{ start, end }` range), never a timestamp.
+ * DatePicker — two ways to say the same date: type it, or find it on a calendar. Both
+ * produce a plain ISO date (`2026-09-10`), never a timestamp, because a delivery date or
+ * a birthday has no time zone to get wrong.
  *
  * When to use: any date the user chooses — due dates, bookings, dates of birth, report
- * periods (`range`). Set `min`/`max` and `isDateDisabled` whenever they exist so the
+ * periods (`range`). Set `min`, `max` and `isDateDisabled` whenever they exist, so the
  * calendar shows what is possible instead of validating after the fact. Not for a
- * date-and-time, a month/year alone (Select), or relative choices (SegmentedControl).
+ * date-and-time, a month or year alone (Select), or relative choices.
  *
- * Renders the `TextInput`(s) (locale pattern, `keyboardType="number-pad"`) and a ghost,
- * icon-only calendar `Button` that opens a `BottomSheet` (`height="content"`; there is no
- * core native date picker) holding: a header of prev/next `Button`s and month/year
- * `Select`s (`hideLabel`, `size: sm`, outside any Form so they never register); a
- * 7-column grid of day `Pressable`s (`accessibilityRole="button"`,
- * `accessibilityState={{ selected, disabled }}`, `accessibilityLabel` from the full date
- * plus "today"/"selected"); and a footer of Today/Clear `Button`s. The month is announced
- * when it changes. Native has no grid role and no key events on `Pressable`, so there is
- * no roving tabindex or arrow/Page/Home/End handling: every day is its own focus stop and
- * the prev/next month Buttons stand in for PageUp/PageDown. Escape and the Android back
- * gesture close the sheet without changing the value through BottomSheet, whose own
- * FocusScope returns focus. ArrowDown (and Alt+ArrowDown, indistinguishable here) in the
- * input opens the calendar when a hardware keyboard or react-native-web supplies it.
+ * React Native has no core date picker and the package takes no date dependency (only
+ * `react-native-svg`, for Icon), so the calendar is the system's own grid here as on
+ * every other platform: a `TextInput` (`keyboardType="number-pad"`) parsed against the
+ * locale's pattern, a ghost `Button` with the "calendar" glyph, and a `BottomSheet`
+ * (`height="content"`, `heading={label}`) holding the header, the 7-column grid of
+ * `daySize` `Pressable` days and the Today/Clear footer. The `popover` part is that
+ * sheet: only `calendarInset` is forwarded (to its `inset` override) and `calendarSurface`
+ * is realised by the sheet's own locked surface.
  *
- * Selecting a day closes for a single date; for a range the first pick sets the start
- * (clearing the old range), the second sets the end and closes, and a pick before the
- * start restarts. Today acts like pressing today's cell; Clear wipes the value (both
- * ends) and leaves the sheet open. Validation: `error` → `required` → unparseable
- * (`copy.invalid`) → `tooEarly` → `tooLate` → `rangeOrder`; a range reports its message
- * only under `name`, while `name-end` always validates clean.
+ * Native has no grid or gridcell role and `Pressable` sees no keys, so there is no roving
+ * tabindex and no Arrow, Page, Home or End handling: every day is its own focus stop
+ * reached by swipe, and the prev/next month Buttons stand in for PageUp/PageDown.
+ * `TextInputKeyPressEvent` carries no modifier flags, so Alt+ArrowDown cannot be told
+ * from ArrowDown and both simply open the calendar. Focus on open lands on the sheet's
+ * first focusable element rather than the selected day, and focus on close returns
+ * through BottomSheet's own FocusScope, since Button exposes no node handle to focus by
+ * hand; only the displayed month follows the value.
+ *
+ * There is no native invalid state, so the error is appended to the input's
+ * `accessibilityHint` after `description` and announced through an assertive live region
+ * (Android) with `AccessibilityInfo.announceForAccessibility` on iOS. The label is a
+ * `Text` — React Native has no `<label>` — and `hideLabel` drops it, leaving the name in
+ * `accessibilityLabel`. Button and Select take no `testID`, so each composed part is
+ * wrapped in a `View` this component owns carrying `testID="DatePicker.<part>"`.
+ *
+ * Inside a Form the field registers by `name` with the start's ISO string; a range adds
+ * a second field, `name-end`, holding the end, and only `name` reports the combined
+ * message so one message is never read twice.
  */
-export declare function DatePicker({ label, name, value, defaultValue, open: openProp, range, min, max, isDateDisabled, locale, showWeekNumbers, placeholder, description, required, hideLabel, size, disabled, error, overrides, ref, onChange, onOpenChange }: DatePickerProps): React.JSX.Element;
+export declare function DatePicker({ label, name, value, defaultValue, open, range, min, max, isDateDisabled, locale, showWeekNumbers, placeholder, description, required, hideLabel, size, disabled, error, overrides, ref, onChange, onOpenChange }: DatePickerProps): React.JSX.Element;
 //#endregion
-export type { AccordionHeadingLevel, AccordionItem, AccordionOpenChangeReason, AccordionOverridableBinding, AccordionProps, AccordionValue, ActionSheetAction, ActionSheetActionTone, ActionSheetCloseReason, ActionSheetOverridableBinding, ActionSheetProps, AlertDialogCancelReason, AlertDialogOverridableBinding, AlertDialogProps, AlertDialogTone, AlertLive, AlertOverridableBinding, AlertProps, AlertTone, BottomSheetCloseReason, BottomSheetHeight, BottomSheetOverridableBinding, BottomSheetProps, BoxInset, BoxOverridableBinding, BoxProps, BoxRadius, BoxSurface, BreadcrumbItem, BreadcrumbOverridableBinding, BreadcrumbProps, ButtonOverridableBinding, ButtonProps, ButtonSize, ButtonType, ButtonVariant, CardHeadingLevel, CardInset, CardOverridableBinding, CardProps, CardSurface, CarouselChangeReason, CarouselOverridableBinding, CarouselPicker, CarouselProps, CarouselSlideProps, CheckboxOverridableBinding, CheckboxProps, ComboboxFilter, ComboboxOverridableBinding, ComboboxProps, ComboboxValue, ContainerAlign, ContainerGutter, ContainerOverridableBinding, ContainerProps, ContainerWidth, DataGridCaptionLevel, DataGridCellSelection, DataGridCellValue, DataGridColumn, DataGridColumnAlign, DataGridColumnOption, DataGridColumnPinned, DataGridColumnResize, DataGridDensity, DataGridEditorKind, DataGridHeight, DataGridOverridableBinding, DataGridProps, DataGridRangeSelection, DataGridRow, DataGridSelectable, DataGridSelection, DataGridSort, DataGridSortDirection, DatePickerOverridableBinding, DatePickerProps, DatePickerSize, DatePickerValue, DialogCloseReason, DialogInitialFocus, DialogOverridableBinding, DialogProps, DialogSize, DisclosureHeadingLevel, DisclosureOverridableBinding, DisclosureProps, DisclosureToggleReason, DividerOrientation, DividerOverridableBinding, DividerProps, DividerSpacing, FeedHeadingLevel, FeedItem, FeedOverridableBinding, FeedProps, FieldsetContextValue, FieldsetGap, FieldsetOverridableBinding, FieldsetProps, FocusScopeAutoFocus, FocusScopeEscapeDirection, FocusScopeProps, FormContextValue, FormFieldHandle, FormFieldValue, FormOverridableBinding, FormProps, FormValidateMode, FormValues, HeadingLevel, HeadingOverridableBinding, HeadingProps, HeadingSize, IconName, IconOverridableBinding, IconProps, IconSize, InputOverridableBinding, InputProps, InputSize, InputType, LandmarkProps, LandmarkRole, LinkOverridableBinding, LinkProps, LinkTone, ListboxGroup, ListboxItem, ListboxMaxVisible, ListboxOption, ListboxOverridableBinding, ListboxProps, ListboxValue, MenuAction, MenuGroup, MenuItem, MenuItemTone, MenuOpenChangeReason, MenuOverridableBinding, MenuPlacement, MenuProps, MenuSeparator, MenuTriggerIcon, MenuTriggerVariant, MeterOverridableBinding, MeterProps, MeterTone, NumberInputFormat, NumberInputOverridableBinding, NumberInputProps, NumberInputSize, PopoverCloseReason, PopoverHeadingLevel, PopoverOverridableBinding, PopoverPlacement, PopoverProps, ProgressBarAnnounce, ProgressBarOverridableBinding, ProgressBarProps, ProgressBarTone, RadioGroupOption, RadioGroupOrientation, RadioGroupOverridableBinding, RadioGroupProps, SearchOverridableBinding, SearchProps, SearchSize, SearchSuggestion, SegmentedControlOption, SegmentedControlOverridableBinding, SegmentedControlProps, SegmentedControlSize, SelectNative, SelectOverridableBinding, SelectProps, SelectSize, SelectValue, SidePanelCloseReason, SidePanelOverridableBinding, SidePanelPersistent, SidePanelProps, SidePanelRole, SidePanelSide, SidePanelWidth, SliderMark, SliderOverridableBinding, SliderProps, SliderShowValue, SliderValue, SplitterOrientation, SplitterOverridableBinding, SplitterProps, SplitterStackBelow, StackAlign, StackDirection, StackGap, StackJustify, StackOverridableBinding, StackProps, StepperNavigable, StepperOrientation, StepperOverridableBinding, StepperProps, StepperStep, StepperStepStatus, SwitchLabelPosition, SwitchOverridableBinding, SwitchProps, TabPanelProps, TableCaptionLevel, TableColumn, TableColumnAlign, TableColumnWidth, TableDensity, TableHideBelow, TableMaxHeight, TableOverridableBinding, TableProps, TableResponsive, TableRow, TableSelectable, TableSort, TableSortDirection, TabsActivation, TabsFit, TabsItem, TabsOrientation, TabsOverridableBinding, TabsProps, TextAlign, TextOverridableBinding, TextProps, TextSize, TextStyleContextValue, TextTone, TextWeight, Theme, ThemeMode, ThemeModeSetting, ThemeProviderProps, ToastContextValue, ToastDismissReason, ToastDuration, ToastOptions, ToastOverridableBinding, ToastProps, ToastProviderProps, ToastResult, ToastTone, Tokens, ToolbarDensity, ToolbarGroupProps, ToolbarOrientation, ToolbarOverflow, ToolbarOverridableBinding, ToolbarProps, ToolbarSize, TooltipDelay, TooltipOverridableBinding, TooltipPlacement, TooltipProps, TreeGridCaptionLevel, TreeGridCellSelection, TreeGridCellValue, TreeGridDensity, TreeGridHeight, TreeGridOverridableBinding, TreeGridProps, TreeGridRow, TreeGridSelectable, TreeGridSelection, TreeGridSort, TreeGridSortDirection, TreeHeadingLevel, TreeNode, TreeOverridableBinding, TreeProps, TreeSelectable, UseSidePanelEdgeSwipeOptions };
+export type { AccordionHeadingLevel, AccordionItem, AccordionOpenChangeReason, AccordionOverridableBinding, AccordionProps, AccordionValue, ActionSheetAction, ActionSheetActionTone, ActionSheetCloseReason, ActionSheetOverridableBinding, ActionSheetProps, AlertDialogCancelReason, AlertDialogOverridableBinding, AlertDialogProps, AlertDialogTone, AlertLive, AlertOverridableBinding, AlertProps, AlertTone, BottomSheetCloseReason, BottomSheetHeight, BottomSheetOverridableBinding, BottomSheetProps, BoxInset, BoxOverridableBinding, BoxProps, BoxRadius, BoxSurface, BreadcrumbItem, BreadcrumbOverridableBinding, BreadcrumbProps, ButtonOverridableBinding, ButtonProps, ButtonSize, ButtonType, ButtonVariant, CardHeadingLevel, CardInset, CardOverridableBinding, CardProps, CardSurface, CarouselChangeReason, CarouselOverridableBinding, CarouselPicker, CarouselProps, CarouselSlideProps, CheckboxOverridableBinding, CheckboxProps, ComboboxFilter, ComboboxOverridableBinding, ComboboxProps, ComboboxValue, ContainerAlign, ContainerGutter, ContainerOverridableBinding, ContainerProps, ContainerWidth, DataGridCaptionLevel, DataGridCellSelection, DataGridCellValue, DataGridColumn, DataGridColumnAlign, DataGridColumnOption, DataGridColumnPinned, DataGridColumnResize, DataGridDensity, DataGridEditorKind, DataGridHeight, DataGridOverridableBinding, DataGridProps, DataGridRangeSelection, DataGridRow, DataGridSelectable, DataGridSelection, DataGridSort, DataGridSortDirection, DatePickerOverridableBinding, DatePickerProps, DatePickerSize, DatePickerValue, DialogCloseReason, DialogInitialFocus, DialogOverridableBinding, DialogProps, DialogSize, DisclosureHeadingLevel, DisclosureOverridableBinding, DisclosureProps, DisclosureToggleReason, DividerOrientation, DividerOverridableBinding, DividerProps, DividerSpacing, FeedHeadingLevel, FeedItem, FeedOverridableBinding, FeedProps, FieldsetContextValue, FieldsetGap, FieldsetOverridableBinding, FieldsetProps, FocusScopeAutoFocus, FocusScopeEscapeDirection, FocusScopeProps, FormContextValue, FormFieldHandle, FormFieldValue, FormOverridableBinding, FormProps, FormValidateMode, FormValues, HeadingLevel, HeadingOverridableBinding, HeadingProps, HeadingSize, IconName, IconOverridableBinding, IconProps, IconSize, InputOverridableBinding, InputProps, InputSize, InputType, LandmarkProps, LandmarkRole, LinkOverridableBinding, LinkProps, LinkTone, ListboxGroup, ListboxItem, ListboxMaxVisible, ListboxOption, ListboxOverridableBinding, ListboxProps, ListboxValue, MenuAction, MenuGroup, MenuItem, MenuItemTone, MenuOpenChangeReason, MenuOverridableBinding, MenuPlacement, MenuProps, MenuSeparator, MenuTriggerIcon, MenuTriggerVariant, MeterOverridableBinding, MeterProps, MeterTone, NumberInputFormat, NumberInputOverridableBinding, NumberInputProps, NumberInputSize, PopoverCloseReason, PopoverHeadingLevel, PopoverOverridableBinding, PopoverPlacement, PopoverProps, ProgressBarAnnounce, ProgressBarOverridableBinding, ProgressBarProps, ProgressBarTone, RadioGroupOption, RadioGroupOrientation, RadioGroupOverridableBinding, RadioGroupProps, SearchOverridableBinding, SearchProps, SearchSize, SearchSuggestion, SegmentedControlOption, SegmentedControlOverridableBinding, SegmentedControlProps, SegmentedControlSize, SelectNative, SelectOverridableBinding, SelectProps, SelectSize, SelectValue, SidePanelCloseReason, SidePanelOverridableBinding, SidePanelPersistent, SidePanelProps, SidePanelRole, SidePanelSide, SidePanelWidth, SliderMark, SliderOverridableBinding, SliderProps, SliderShowValue, SliderValue, SplitterOrientation, SplitterOverridableBinding, SplitterProps, SplitterStackBelow, StackAlign, StackDirection, StackGap, StackJustify, StackOverridableBinding, StackProps, StepperNavigable, StepperOrientation, StepperOverridableBinding, StepperProps, StepperStep, StepperStepStatus, SwitchLabelPosition, SwitchOverridableBinding, SwitchProps, TabPanelProps, TableCaptionLevel, TableColumn, TableColumnAlign, TableColumnWidth, TableDensity, TableHideBelow, TableMaxHeight, TableOverridableBinding, TableProps, TableResponsive, TableRow, TableSelectable, TableSort, TableSortDirection, TabsActivation, TabsFit, TabsItem, TabsOrientation, TabsOverridableBinding, TabsProps, TabsTab, TextAlign, TextOverridableBinding, TextProps, TextSize, TextStyleContextValue, TextTone, TextWeight, Theme, ThemeMode, ThemeModeSetting, ThemeProviderProps, ToastContextValue, ToastDismissReason, ToastDuration, ToastOptions, ToastOverridableBinding, ToastProps, ToastProviderProps, ToastResult, ToastTone, Tokens, ToolbarDensity, ToolbarGroupProps, ToolbarOrientation, ToolbarOverflow, ToolbarOverridableBinding, ToolbarProps, ToolbarSize, TooltipDelay, TooltipOverridableBinding, TooltipPlacement, TooltipProps, TreeGridCaptionLevel, TreeGridCellSelection, TreeGridCellValue, TreeGridDensity, TreeGridHeight, TreeGridOverridableBinding, TreeGridProps, TreeGridRow, TreeGridSelectable, TreeGridSelection, TreeGridSort, TreeGridSortDirection, TreeHeadingLevel, TreeNode, TreeOverridableBinding, TreeProps, TreeSelectable, UseSidePanelEdgeSwipeOptions };
 //# sourceMappingURL=index.d.ts.map

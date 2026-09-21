@@ -74,8 +74,17 @@ const ITEM_GAP = {
   comfortable: 'layoutGapNormal',
 } as const;
 
-/** Components that take a toolbar `size`, recognised by identity, never by probing for a prop. */
-const SIZED_COMPONENTS: ReadonlySet<unknown> = new Set<unknown>([Button, SegmentedControl, Select, Search]);
+/**
+ * Components that take a toolbar `size`, recognised by identity — never by probing for a prop —
+ * mapped to the toolbar sizes each one actually accepts. Search has no `sm`, so a `sm` toolbar
+ * leaves every Search at its own default.
+ */
+const SIZED_COMPONENTS: ReadonlyMap<unknown, ReadonlySet<ToolbarSize>> = new Map<unknown, ReadonlySet<ToolbarSize>>([
+  [Button, new Set<ToolbarSize>(['sm', 'md'])],
+  [SegmentedControl, new Set<ToolbarSize>(['sm', 'md'])],
+  [Select, new Set<ToolbarSize>(['sm', 'md'])],
+  [Search, new Set<ToolbarSize>(['md'])],
+]);
 
 let warnedMenu = false;
 
@@ -100,11 +109,10 @@ function flattenChildren(children: React.ReactNode, prefix = ''): React.ReactNod
   return out;
 }
 
+/** Applies the toolbar's `size` to a sized package control that did not set its own. */
 function withSize(node: React.ReactNode, size: ToolbarSize): React.ReactNode {
-  if (!React.isValidElement<{ size?: unknown }>(node) || !SIZED_COMPONENTS.has(node.type)) return node;
-  if (node.props.size !== undefined) return node;
-  // Search has no `sm`; it keeps its own default rather than taking a value outside its union.
-  if (node.type === Search && size === 'sm') return node;
+  if (!React.isValidElement<{ size?: unknown }>(node)) return node;
+  if (!SIZED_COMPONENTS.get(node.type)?.has(size) || node.props.size !== undefined) return node;
   return React.cloneElement(node, { size });
 }
 

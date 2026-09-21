@@ -63,9 +63,11 @@ export type CarouselOverridableBinding =
   | 'pickerGap'
   | 'pickerOffset'
   | 'dotSize'
+  | 'dotRadius'
   | 'radius'
   | 'tabFontSize'
   | 'tabFontWeight'
+  | 'tabLineHeight'
   | 'tabPaddingBlock'
   | 'tabPaddingInline'
   | 'fontFamily'
@@ -79,9 +81,11 @@ const HOOKS: Record<CarouselOverridableBinding, string> = {
   pickerGap: '--ds-carousel-picker-gap',
   pickerOffset: '--ds-carousel-picker-offset',
   dotSize: '--ds-carousel-dot-size',
+  dotRadius: '--ds-carousel-dot-radius',
   radius: '--ds-carousel-radius',
   tabFontSize: '--ds-carousel-tab-font-size',
   tabFontWeight: '--ds-carousel-tab-font-weight',
+  tabLineHeight: '--ds-carousel-tab-line-height',
   tabPaddingBlock: '--ds-carousel-tab-padding-block',
   tabPaddingInline: '--ds-carousel-tab-padding-inline',
   fontFamily: '--ds-carousel-font-family',
@@ -160,9 +164,11 @@ export class DsCarousel extends LitElement {
       --ds-carousel-picker-gap: var(--layout-gap-tight);
       --ds-carousel-picker-offset: var(--space-3);
       --ds-carousel-dot-size: var(--space-2);
+      --ds-carousel-dot-radius: var(--radius-full);
       --ds-carousel-radius: var(--radius-md);
       --ds-carousel-tab-font-size: var(--font-size-sm);
       --ds-carousel-tab-font-weight: var(--font-weight-medium);
+      --ds-carousel-tab-line-height: var(--font-line-height-normal);
       --ds-carousel-tab-padding-block: var(--space-sm);
       --ds-carousel-tab-padding-inline: var(--space-md);
       --ds-carousel-font-family: var(--font-family-body);
@@ -223,6 +229,13 @@ export class DsCarousel extends LitElement {
       display: none;
     }
 
+    /* The viewport is a keyboard-reachable scroll container, so its tab stop shows a ring. The arrows
+       overlay its inline edges, so the ring is drawn inside the box rather than outside it. */
+    [data-part='viewport']:focus-visible {
+      outline: var(--border-width-focus) solid var(--color-border-focus);
+      outline-offset: calc(-1 * var(--border-width-focus));
+    }
+
     :host([no-snap]) [data-part='viewport'] {
       scroll-snap-type: none;
     }
@@ -274,8 +287,17 @@ export class DsCarousel extends LitElement {
       inset-inline-end: var(--ds-carousel-control-offset);
     }
 
+    /* The prevButton/nextButton part wrapper stretches to fill its controlSurface, so the whole
+       minTarget hit area belongs to the wrapper's click-through; the Button itself is untouched. */
     [data-part='prevButton'],
-    [data-part='nextButton'],
+    [data-part='nextButton'] {
+      display: inline-flex;
+      flex: 1 0 auto;
+      align-items: center;
+      justify-content: center;
+      align-self: stretch;
+    }
+
     [data-part='playButton'] {
       display: inline-flex;
     }
@@ -302,12 +324,13 @@ export class DsCarousel extends LitElement {
       cursor: pointer;
     }
 
-    /* dotTarget (locked): the hit area; dotSize: the visible dot */
+    /* dotTarget (locked): the hit area; dotSize: the visible dot.
+       dotRadius: dots are round, and the focus ring follows the same radius. */
     .dot {
       inline-size: var(--size-target-min);
       block-size: var(--size-target-min);
       padding: 0;
-      border-radius: var(--radius-full);
+      border-radius: var(--ds-carousel-dot-radius);
     }
 
     .dot::before {
@@ -315,7 +338,7 @@ export class DsCarousel extends LitElement {
       display: block;
       inline-size: var(--ds-carousel-dot-size);
       block-size: var(--ds-carousel-dot-size);
-      border-radius: var(--radius-full);
+      border-radius: var(--ds-carousel-dot-radius);
       /* dot: locked */
       background: var(--color-border-strong);
       transition: background-color var(--ds-carousel-transition) var(--motion-easing-standard);
@@ -326,7 +349,9 @@ export class DsCarousel extends LitElement {
       background: var(--color-control-selected-background);
     }
 
-    /* tabColor (locked), tabFontSize, tabFontWeight, tabPaddingBlock, tabPaddingInline, fontFamily, minTarget (locked) */
+    /* tabColor (locked), tabFontSize, tabFontWeight, tabLineHeight, tabPaddingBlock, tabPaddingInline,
+       fontFamily, minTarget (locked). A tab has no radius, so its focus ring is square, and no minimum
+       inline size — that comes from tabPaddingInline alone; minTarget is only its minimum block size. */
     .tab {
       min-block-size: var(--size-target-comfortable);
       padding-block: var(--ds-carousel-tab-padding-block);
@@ -334,6 +359,7 @@ export class DsCarousel extends LitElement {
       font-family: var(--ds-carousel-font-family);
       font-size: var(--ds-carousel-tab-font-size);
       font-weight: var(--ds-carousel-tab-font-weight);
+      line-height: var(--ds-carousel-tab-line-height);
       color: var(--color-foreground-muted);
       white-space: nowrap;
       transition: color var(--ds-carousel-transition) var(--motion-easing-standard);
@@ -485,6 +511,8 @@ export class DsCarousel extends LitElement {
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('data-ds', 'Carousel');
+    // The host is the `region` part: it carries the role, the roledescription and the name.
+    this.setAttribute('data-part', 'region');
     this.setAttribute('role', 'region');
     this.setAttribute('aria-roledescription', 'carousel');
     this.addEventListener('pointerenter', this.handlePointerEnter);
@@ -594,6 +622,7 @@ export class DsCarousel extends LitElement {
         <div
           data-part="viewport"
           part="viewport"
+          tabindex="0"
           @pointerdown=${this.armUserScroll}
           @touchstart=${this.armUserScroll}
           @wheel=${this.armUserScroll}

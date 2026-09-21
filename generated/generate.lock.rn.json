@@ -215,26 +215,25 @@
     }
   },
   "Carousel.rn": {
-    "hash": "b47f71da3208578f",
-    "lastAttemptHash": "b47f71da3208578f",
-    "generatedAt": "2026-09-17T17:37:06+00:00",
+    "hash": "708403df4941eb4b",
+    "lastAttemptHash": "708403df4941eb4b",
+    "generatedAt": "2026-09-21T23:09:09+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.8591,
+    "rounds": 2,
+    "costUsd": 8.7668,
     "files": [
-      "packages/rn/src/Carousel.stories.tsx",
-      "packages/rn/src/Carousel.test.tsx",
       "packages/rn/src/Carousel.tsx"
     ],
-    "gaps": 11,
+    "gaps": 24,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "Checkbox.rn": {
@@ -1023,25 +1022,25 @@
     }
   },
   "Table.rn": {
-    "hash": "111f0693ff7e7bc2",
-    "lastAttemptHash": "111f0693ff7e7bc2",
-    "generatedAt": "2026-09-17T17:45:38+00:00",
+    "hash": "80d0149b2a5b6b74",
+    "lastAttemptHash": "80d0149b2a5b6b74",
+    "generatedAt": "2026-09-21T23:44:15+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 2.6062,
+    "rounds": 2,
+    "costUsd": 16.7308,
     "files": [
-      "packages/rn/src/Table.test.tsx",
       "packages/rn/src/Table.tsx"
     ],
-    "gaps": 10,
+    "gaps": 19,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "Tabs.rn": {
@@ -1113,27 +1112,25 @@
     }
   },
   "Toolbar.rn": {
-    "hash": "27706af6a1524a36",
-    "lastAttemptHash": "27706af6a1524a36",
-    "generatedAt": "2026-09-17T17:24:43+00:00",
+    "hash": "068b99581a627e37",
+    "lastAttemptHash": "068b99581a627e37",
+    "generatedAt": "2026-09-21T22:41:01+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.3719,
+    "costUsd": 1.8438,
     "files": [
-      "packages/rn/src/Toolbar.stories.tsx",
-      "packages/rn/src/Toolbar.test.tsx",
-      "packages/rn/src/Toolbar.tsx",
-      "packages/rn/src/index.ts"
+      "packages/rn/src/Toolbar.tsx"
     ],
-    "gaps": 7,
+    "gaps": 11,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "Tooltip.rn": {

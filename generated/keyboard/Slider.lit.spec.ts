@@ -86,14 +86,14 @@ test.describe('Slider (lit) keyboard', () => {
     await page.goto('/iframe.html?id=slider-lit--keyboard&viewMode=story');
     await expect(page.locator('[data-ds="Slider"]').first()).toBeVisible({ timeout: 15_000 });
   });
-  test.skip('ArrowRight: Increases by `step`. — manual', async () => {});
-  test.skip('ArrowUp: Increases by `step`. — manual', async () => {});
-  test.skip('ArrowLeft: Decreases by `step`. — manual', async () => {});
-  test.skip('ArrowDown: Decreases by `step`. — manual', async () => {});
-  test.skip('PageUp: Changes by ten steps, clamped to the bounds (with `snapToMarks`, to the next mark, and to `max`/`min` past the last mark). — manual', async () => {});
-  test.skip('PageDown: Changes by ten steps, clamped to the bounds (with `snapToMarks`, to the next mark, and to `max`/`min` past the last mark). — manual', async () => {});
-  test.skip('Home: Sets the minimum. — manual', async () => {});
-  test.skip('End: Sets the maximum. — manual', async () => {});
+  test.skip('ArrowRight: Increases by `step`. ArrowRight is mirrored in a right-to-left layout (it decreases there), read from the thumb\'s — on Lit the host\'s — computed `direction` at keydown, as in Tabs and SegmentedControl; ArrowUp always increases. — manual', async () => {});
+  test.skip('ArrowUp: Increases by `step`. ArrowRight is mirrored in a right-to-left layout (it decreases there), read from the thumb\'s — on Lit the host\'s — computed `direction` at keydown, as in Tabs and SegmentedControl; ArrowUp always increases. — manual', async () => {});
+  test.skip('ArrowLeft: Decreases by `step`. ArrowLeft is mirrored in a right-to-left layout (it increases there); ArrowDown always decreases. — manual', async () => {});
+  test.skip('ArrowDown: Decreases by `step`. ArrowLeft is mirrored in a right-to-left layout (it increases there); ArrowDown always decreases. — manual', async () => {});
+  test.skip('PageUp: Changes by ten steps, clamped to the bounds (with `snapToMarks`, to the next mark, and to `max`/`min` past the last mark). Not mirrored in right-to-left. — manual', async () => {});
+  test.skip('PageDown: Changes by ten steps, clamped to the bounds (with `snapToMarks`, to the next mark, and to `max`/`min` past the last mark). Not mirrored in right-to-left. — manual', async () => {});
+  test.skip('Home: Sets the minimum — for a range thumb the live constraint from the other thumb, not `min`, so the action can never cross the thumbs. — manual', async () => {});
+  test.skip('End: Sets the maximum — for a range thumb the live constraint from the other thumb, not `max`. — manual', async () => {});
   test('Tab: Moves between the two thumbs of a range slider; each thumb is a tab stop. (range)', async ({ page }) => {
     const root = page.locator('[data-ds="Slider"]').first();
     await focusAt(page, root, 0);

@@ -8,7 +8,7 @@
         "ArrowRight",
         "ArrowUp"
       ],
-      "action": "Increases by `step`.",
+      "action": "Increases by `step`. ArrowRight is mirrored in a right-to-left layout (it decreases there), read from the thumb's — on Lit the host's — computed `direction` at keydown, as in Tabs and SegmentedControl; ArrowUp always increases.",
       "from": "first",
       "expect": "manual"
     },
@@ -17,7 +17,7 @@
         "ArrowLeft",
         "ArrowDown"
       ],
-      "action": "Decreases by `step`.",
+      "action": "Decreases by `step`. ArrowLeft is mirrored in a right-to-left layout (it increases there); ArrowDown always decreases.",
       "from": "first",
       "expect": "manual"
     },
@@ -26,7 +26,7 @@
         "PageUp",
         "PageDown"
       ],
-      "action": "Changes by ten steps, clamped to the bounds (with `snapToMarks`, to the next mark, and to `max`/`min` past the last mark).",
+      "action": "Changes by ten steps, clamped to the bounds (with `snapToMarks`, to the next mark, and to `max`/`min` past the last mark). Not mirrored in right-to-left.",
       "from": "first",
       "expect": "manual"
     },
@@ -34,7 +34,7 @@
       "keys": [
         "Home"
       ],
-      "action": "Sets the minimum.",
+      "action": "Sets the minimum — for a range thumb the live constraint from the other thumb, not `min`, so the action can never cross the thumbs.",
       "from": "first",
       "expect": "manual"
     },
@@ -42,7 +42,7 @@
       "keys": [
         "End"
       ],
-      "action": "Sets the maximum.",
+      "action": "Sets the maximum — for a range thumb the live constraint from the other thumb, not `max`.",
       "from": "first",
       "expect": "manual"
     },

@@ -92,5 +92,5 @@ test.describe('NumberInput (lit) keyboard', () => {
   test.skip('PageDown: Changes by ten steps (10 × `step`, clamped); the 10 is a count, not a style value. — manual', async () => {});
   test.skip('Home: Sets min / max when they are defined (component code, not native: a text input cannot do this); otherwise the key is left to the input\'s native caret movement. A jump is a step: it clears a clamp message and fires onChange only when the value changes. — manual', async () => {});
   test.skip('End: Sets min / max when they are defined (component code, not native: a text input cannot do this); otherwise the key is left to the input\'s native caret movement. A jump is a step: it clears a clamp message and fires onChange only when the value changes. — manual', async () => {});
-  test.skip('Enter: Commits (rounds and clamps) the typed value; inside a Form, submits (on React Native too: returnKeyType done, no next-field chain). — manual', async () => {});
+  test.skip('Enter: Commits (rounds and clamps) the typed value; inside a Form, submits (on React Native too: returnKeyType done, no next-field chain, submitBehavior blurAndSubmit). Outside a Form it commits and nothing else — focus and the native keyboard stay (React Native submitBehavior submit). — manual', async () => {});
 });

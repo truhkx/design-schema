@@ -1,6 +1,6 @@
 {
   "name": "Stepper",
-  "role": "none",
+  "role": "navigation",
   "identifier": "Stepper",
   "rules": [
     {

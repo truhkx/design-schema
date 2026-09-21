@@ -86,11 +86,11 @@ test.describe('DatePicker (lit) keyboard', () => {
     await page.goto('/iframe.html?id=datepicker-lit--keyboard&viewMode=story');
     await expect(page.locator('[data-ds="DatePicker"]').first()).toBeVisible({ timeout: 15_000 });
   });
-  test.skip('ArrowDown: From the input, opens the calendar with focus on the selected day (or today); when the calendar is already open, moves focus to that day (the pending range start, else the value, else today). (focus in input) — manual', async () => {});
-  test.skip('Alt+ArrowDown: From the input, opens the calendar with focus on the selected day (or today); when the calendar is already open, moves focus to that day (the pending range start, else the value, else today). (focus in input) — manual', async () => {});
+  test.skip('ArrowDown: From the input, opens the calendar with focus on the selected day (or today); when the calendar is already open, moves focus to that day (the pending range start, else the value, else today) — from the end input it aims at the end date, so ArrowDown and reopening behave the same way from the same input. (focus in input) — manual', async () => {});
+  test.skip('Alt+ArrowDown: From the input, opens the calendar with focus on the selected day (or today); when the calendar is already open, moves focus to that day (the pending range start, else the value, else today) — from the end input it aims at the end date, so ArrowDown and reopening behave the same way from the same input. (focus in input) — manual', async () => {});
   test.skip('Enter: On the calendar button, opens; on a day, selects it (and closes for a single date; for a range, selects the start then the end). — manual', async () => {});
   test.skip(' : On the calendar button, opens; on a day, selects it (and closes for a single date; for a range, selects the start then the end). — manual', async () => {});
-  test('Escape: Closes the calendar without changing the value and returns focus to the calendar button. (open)', async ({ page }) => {
+  test('Escape: Closes the calendar without changing the value. Focus returns to the calendar button when it was inside the calendar; when it is in an input or on the button itself it stays there, since Escape only takes back focus the calendar took. The handler is DatePicker\'s own, on its root: the non-modal Popover cannot hear a key pressed in the field, which is outside its panel. (open)', async ({ page }) => {
     const root = page.locator('[data-ds="DatePicker"]').first();
     await focusAt(page, root, 1);
     const before = await focusIndex(page, root);

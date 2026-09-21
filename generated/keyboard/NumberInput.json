@@ -41,7 +41,7 @@
       "keys": [
         "Enter"
       ],
-      "action": "Commits (rounds and clamps) the typed value; inside a Form, submits (on React Native too: returnKeyType done, no next-field chain).",
+      "action": "Commits (rounds and clamps) the typed value; inside a Form, submits (on React Native too: returnKeyType done, no next-field chain, submitBehavior blurAndSubmit). Outside a Form it commits and nothing else — focus and the native keyboard stay (React Native submitBehavior submit).",
       "from": "first",
       "expect": "manual"
     }

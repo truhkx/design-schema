@@ -166,6 +166,19 @@ function pageLocale(): string | undefined {
   return typeof document !== 'undefined' && document.documentElement.lang ? document.documentElement.lang : undefined;
 }
 
+/**
+ * A built length token in pixels. The arrow-key scroll step reads `space.10` from the stylesheet,
+ * and a theme may build its space scale in either unit, so px and rem are both parsed.
+ */
+function lengthToPixels(value: string, element: Element): number {
+  const text = value.trim();
+  const amount = Number.parseFloat(text);
+  if (!Number.isFinite(amount)) return Number.NaN;
+  if (!text.endsWith('rem')) return amount;
+  const root = Number.parseFloat(getComputedStyle(element.ownerDocument.documentElement).fontSize);
+  return Number.isFinite(root) ? amount * root : Number.NaN;
+}
+
 export interface TableProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children' | 'className' | 'style'> {
   /** What the table lists ("Open invoices"). Rendered as the caption and the accessible name; visually hidden with `hideCaption` when a Heading directly above already says it. */
   caption: string;
@@ -338,7 +351,9 @@ export function Table({
   const measureEdges = (region: HTMLDivElement): void => {
     const hidden = region.scrollWidth - region.clientWidth;
     const offset = Math.abs(region.scrollLeft);
-    const nextStart = offset > 0;
+    // Both edges use the same 1px tolerance, so a sub-pixel scroll position never fades an edge
+    // that has nothing hidden past it.
+    const nextStart = offset >= 1;
     const nextEnd = hidden - offset >= 1;
     setFadeStart((current) => (current === nextStart ? current : nextStart));
     setFadeEnd((current) => (current === nextEnd ? current : nextEnd));
@@ -357,7 +372,7 @@ export function Table({
     if (event.target !== event.currentTarget) return;
     if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
     const region = event.currentTarget;
-    const step = parseFloat(getComputedStyle(region).getPropertyValue('--space-10'));
+    const step = lengthToPixels(getComputedStyle(region).getPropertyValue('--space-10'), region);
     if (!Number.isFinite(step)) return;
     event.preventDefault();
     region.scrollBy({ left: event.key === 'ArrowRight' ? step : -step });
@@ -546,45 +561,53 @@ export function Table({
         stickyHeader && 'ds-table--sticky-header',
         striped && 'ds-table--striped',
         scrolledUnder && 'ds-table--scrolled-under',
+        hideCaption && 'ds-table--hide-caption',
       )}
       style={overrides ? overridesToStyle(overrides) : undefined}
     >
-      <div data-part="caption" className={joinClasses('ds-table__caption', hideCaption && 'ds-table__visually-hidden')}>
-        <Heading
-          id={captionId}
-          level={captionLevel}
-          size="md"
-          overrides={{
-            fontSize: overrides?.captionSize ?? 'font.size.md',
-            fontWeight: overrides?.captionWeight ?? 'font.weight.semibold',
-            marginBlockEnd: hideCaption ? 'space.0' : (overrides?.captionGap ?? 'space.2'),
-          }}
-        >
-          {caption}
-        </Heading>
-      </div>
+      {/* The caption part is the composed Heading itself — no wrapper — so `hideCaption` clips that
+          element (from the root modifier, since Heading owns its own className) and sends space.0
+          in place of captionGap, leaving no gap above the header. */}
+      <Heading
+        id={captionId}
+        data-part="caption"
+        level={captionLevel}
+        size="md"
+        overrides={{
+          fontSize: overrides?.captionSize ?? 'font.size.md',
+          fontWeight: overrides?.captionWeight ?? 'font.weight.semibold',
+          marginBlockEnd: hideCaption ? 'space.0' : (overrides?.captionGap ?? 'space.2'),
+        }}
+      >
+        {caption}
+      </Heading>
       <span id={rowCountId} className="ds-table__visually-hidden">
         {rowCountText}
       </span>
       {responsive === 'scroll' ? (
-        <div
-          ref={frameRef}
-          role="region"
-          aria-labelledby={captionId}
-          aria-describedby={scrollHintId}
-          tabIndex={0}
-          data-part="scrollRegion"
-          className={joinClasses(
-            frameClass,
-            'ds-table__scroll-region',
-            fadeStart && 'ds-table__scroll-region--fade-start',
-            fadeEnd && 'ds-table__scroll-region--fade-end',
-          )}
-          onScroll={onRegionScroll}
-          onKeyDown={onRegionKeyDown}
-        >
-          {sentinel}
-          {table}
+        /* The fade is a mask, and a mask clips everything its element paints — the focus ring
+           included. So the mask stays on the scrolling region and the ring is drawn by this
+           unmasked wrapper around it, whole at a faded edge. */
+        <div className="ds-table__scroll-outline">
+          <div
+            ref={frameRef}
+            role="region"
+            aria-labelledby={captionId}
+            aria-describedby={scrollHintId}
+            tabIndex={0}
+            data-part="scrollRegion"
+            className={joinClasses(
+              frameClass,
+              'ds-table__scroll-region',
+              fadeStart && 'ds-table__scroll-region--fade-start',
+              fadeEnd && 'ds-table__scroll-region--fade-end',
+            )}
+            onScroll={onRegionScroll}
+            onKeyDown={onRegionKeyDown}
+          >
+            {sentinel}
+            {table}
+          </div>
         </div>
       ) : (
         <div ref={frameRef} className={frameClass}>

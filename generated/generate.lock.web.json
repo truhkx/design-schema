@@ -239,27 +239,28 @@
     }
   },
   "Carousel.web": {
-    "hash": "af3647e25cf32094",
-    "lastAttemptHash": "af3647e25cf32094",
-    "generatedAt": "2026-09-17T17:28:40+00:00",
+    "hash": "29b9abf1abc15934",
+    "lastAttemptHash": "29b9abf1abc15934",
+    "generatedAt": "2026-09-21T22:48:26+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.9908,
+    "rounds": 2,
+    "costUsd": 4.8503,
     "files": [
       "packages/react/src/Carousel.css",
-      "packages/react/src/Carousel.stories.tsx",
-      "packages/react/src/Carousel.test.tsx",
       "packages/react/src/Carousel.tsx"
     ],
-    "gaps": 10,
+    "gaps": 22,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
     }
   },
   "Checkbox.web": {
@@ -1132,26 +1133,28 @@
     }
   },
   "Table.web": {
-    "hash": "4a2a708516aa76cf",
-    "lastAttemptHash": "4a2a708516aa76cf",
-    "generatedAt": "2026-09-17T17:39:42+00:00",
+    "hash": "1419eaa7fd386761",
+    "lastAttemptHash": "1419eaa7fd386761",
+    "generatedAt": "2026-09-21T23:19:15+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.8613,
+    "costUsd": 5.4569,
     "files": [
       "packages/react/src/Table.css",
-      "packages/react/src/Table.stories.tsx",
       "packages/react/src/Table.tsx"
     ],
-    "gaps": 11,
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
     }
   },
   "Tabs.web": {
@@ -1232,27 +1235,31 @@
     }
   },
   "Toolbar.web": {
-    "hash": "7fb743eb5769bf2b",
-    "lastAttemptHash": "7fb743eb5769bf2b",
-    "generatedAt": "2026-09-17T17:18:45+00:00",
+    "hash": "fcf62b5ef3e603dc",
+    "lastAttemptHash": "fcf62b5ef3e603dc",
+    "generatedAt": "2026-09-21T22:18:34+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.423,
+    "costUsd": 1.8447,
     "files": [
       "packages/react/src/Toolbar.css",
       "packages/react/src/Toolbar.stories.tsx",
       "packages/react/src/Toolbar.test.tsx",
-      "packages/react/src/Toolbar.tsx"
+      "packages/react/src/Toolbar.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 8,
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
     }
   },
   "Tooltip.web": {

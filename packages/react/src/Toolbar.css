@@ -105,7 +105,7 @@
   align-items: stretch;
   justify-content: center;
   block-size: var(--ds-toolbar-separator-length);
-  padding-inline: calc(var(--ds-toolbar-group-gap) - var(--ds-toolbar-item-gap));
+  padding-inline: max(0px, calc(var(--ds-toolbar-group-gap) - var(--ds-toolbar-item-gap))); /* literal-ok: zero clamp, so a groupGap under itemGap has no effect */
 }
 
 .ds-toolbar--vertical .ds-toolbar__separator {
@@ -113,7 +113,7 @@
   inline-size: var(--ds-toolbar-separator-length);
   block-size: auto;
   padding-inline: 0;
-  padding-block: calc(var(--ds-toolbar-group-gap) - var(--ds-toolbar-item-gap));
+  padding-block: max(0px, calc(var(--ds-toolbar-group-gap) - var(--ds-toolbar-item-gap))); /* literal-ok: zero clamp, so a groupGap under itemGap has no effect */
   align-self: center;
 }
 

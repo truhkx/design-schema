@@ -84,10 +84,10 @@ async function ariaState(page: Page): Promise<string> {
 test.describe('Stepper (web) keyboard', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/iframe.html?id=stepper-react--keyboard&viewMode=story');
-    await expect(page.locator('[data-ds="Stepper"]').first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('navigation').first()).toBeVisible({ timeout: 15_000 });
   });
   test('Tab: Moves between navigable steps in order; non-navigable steps are not focusable.', async ({ page }) => {
-    const root = page.locator('[data-ds="Stepper"]').first();
+    const root = page.getByRole('navigation').first();
     await focusAt(page, root, 0);
     const before = await focusIndex(page, root);
     const stateBefore = await ariaState(page);

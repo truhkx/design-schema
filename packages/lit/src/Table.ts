@@ -279,10 +279,17 @@ export class DsTable extends LitElement {
       mask-image: linear-gradient(to right, transparent, black var(--ds-table-scroll-fade), black calc(100% - var(--ds-table-scroll-fade)), transparent); /* literal-ok: mask alpha stops, not a rendered color */
     }
 
-    /* focusRing / focusRingWidth (locked) */
-    [data-part='scrollRegion']:focus-visible {
+    /* focusRing / focusRingWidth (locked). The ring is drawn on the wrapper, which the mask
+       above does not cover, so it stays whole at a faded edge. */
+    .region {
+      position: relative;
+    }
+    .region:has([data-part='scrollRegion']:focus-visible) {
       outline: var(--border-width-focus) solid var(--color-border-focus);
       outline-offset: calc(-1 * var(--border-width-focus));
+    }
+    [data-part='scrollRegion']:focus-visible {
+      outline: none;
     }
 
     table {
@@ -353,16 +360,23 @@ export class DsTable extends LitElement {
       box-shadow: inset calc(-1 * var(--border-width-focus)) 0 0 0 var(--color-control-selected-background);
     }
 
-    /* rowHover: interactive rows only */
-    [data-part='row'].interactive {
-      cursor: pointer;
+    /* rowHover: interactive rows only. A render function's output cannot be inspected, so a
+       Link in the row-header cell is found with :has() — hover alone there, with neither the
+       pointer cursor nor the row press that pressable rows get. */
+    [data-part='row'].interactive,
+    [data-part='row']:has([data-part='rowHeader'] ds-link) {
       transition: background-color var(--ds-table-transition) var(--motion-easing-standard);
     }
-    [data-part='row'].interactive:hover {
+    [data-part='row'].interactive {
+      cursor: pointer;
+    }
+    [data-part='row'].interactive:hover,
+    [data-part='row']:has([data-part='rowHeader'] ds-link):hover {
       background: var(--ds-table-row-hover);
     }
     @media (prefers-reduced-motion: reduce) {
-      [data-part='row'].interactive {
+      [data-part='row'].interactive,
+      [data-part='row']:has([data-part='rowHeader'] ds-link) {
         transition: none;
       }
     }
@@ -380,8 +394,8 @@ export class DsTable extends LitElement {
     .align-center {
       text-align: center;
     }
-    td.align-end {
-      /* numericFont: tabular figures */
+    /* numericFont: body cells of align-end columns, the row header included; never the header row */
+    tbody .align-end {
       font-family: var(--ds-table-numeric-font);
       font-variant-numeric: tabular-nums;
     }
@@ -672,23 +686,27 @@ export class DsTable extends LitElement {
           .overrides=${{
             fontSize: this.overrides?.captionSize ?? 'font.size.md',
             fontWeight: this.overrides?.captionWeight ?? 'font.weight.semibold',
-            marginBlockEnd: this.overrides?.captionGap ?? 'space.2',
+            /* The caption part is the Heading itself, with no wrapper, so a hidden caption
+               sends space.0 in place of captionGap and leaves no gap above the header. */
+            marginBlockEnd: this.hideCaption ? 'space.0' : (this.overrides?.captionGap ?? 'space.2'),
           }}
           >${this.caption}</ds-heading
         >
         <span id="row-count" class="visually-hidden">${rowCountText}</span>
         ${this.responsive === 'scroll'
-          ? html`<div
-                class="frame"
-                data-part="scrollRegion"
-                role="region"
-                aria-labelledby="caption"
-                aria-describedby="scroll-hint"
-                tabindex="0"
-                @scroll=${this.handleRegionScroll}
-                @keydown=${this.handleRegionKeydown}
-              >
-                ${sentinel}${table}
+          ? html`<div class="region">
+                <div
+                  class="frame"
+                  data-part="scrollRegion"
+                  role="region"
+                  aria-labelledby="caption"
+                  aria-describedby="scroll-hint"
+                  tabindex="0"
+                  @scroll=${this.handleRegionScroll}
+                  @keydown=${this.handleRegionKeydown}
+                >
+                  ${sentinel}${table}
+                </div>
               </div>
               <span id="scroll-hint" class="visually-hidden">${COPY_SCROLL_HINT}</span>`
           : html`<div class="frame">${sentinel}${table}</div>`}
@@ -697,7 +715,11 @@ export class DsTable extends LitElement {
             ? html`<ds-text element="p" tone="muted" size="sm">${COPY_LOADING}</ds-text>`
             : nothing}
         </div>
-        <div data-part="footer" class="footer" ?hidden=${!this.hasFooter}>
+        <div
+          class="footer"
+          data-part=${ifDefined(this.hasFooter ? 'footer' : undefined)}
+          ?hidden=${!this.hasFooter}
+        >
           <slot name="footer" @slotchange=${this.handleFooterSlotChange}></slot>
         </div>
         <div class="visually-hidden" role="status" aria-live="polite">${this.announcement}</div>
@@ -970,7 +992,15 @@ export class DsTable extends LitElement {
       return;
     }
     const region = event.currentTarget as HTMLElement;
-    const step = parseFloat(getComputedStyle(region).getPropertyValue('--space-10'));
+    const raw = getComputedStyle(region).getPropertyValue('--space-10').trim();
+    const value = parseFloat(raw);
+    if (!Number.isFinite(value)) {
+      return;
+    }
+    // A theme may build the scale in rem; a custom property is handed over unresolved either way.
+    const step = raw.endsWith('rem')
+      ? value * parseFloat(getComputedStyle(document.documentElement).fontSize)
+      : value;
     if (!Number.isFinite(step)) {
       return;
     }

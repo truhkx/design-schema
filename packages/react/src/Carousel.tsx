@@ -64,9 +64,11 @@ export type CarouselOverridableBinding =
   | 'pickerGap'
   | 'pickerOffset'
   | 'dotSize'
+  | 'dotRadius'
   | 'radius'
   | 'tabFontSize'
   | 'tabFontWeight'
+  | 'tabLineHeight'
   | 'tabPaddingBlock'
   | 'tabPaddingInline'
   | 'fontFamily'
@@ -80,9 +82,11 @@ const OVERRIDE_HOOK: Record<CarouselOverridableBinding, string> = {
   pickerGap: '--ds-carousel-picker-gap',
   pickerOffset: '--ds-carousel-picker-offset',
   dotSize: '--ds-carousel-dot-size',
+  dotRadius: '--ds-carousel-dot-radius',
   radius: '--ds-carousel-radius',
   tabFontSize: '--ds-carousel-tab-font-size',
   tabFontWeight: '--ds-carousel-tab-font-weight',
+  tabLineHeight: '--ds-carousel-tab-line-height',
   tabPaddingBlock: '--ds-carousel-tab-padding-block',
   tabPaddingInline: '--ds-carousel-tab-padding-inline',
   fontFamily: '--ds-carousel-font-family',
@@ -671,6 +675,11 @@ export function Carousel({
         ) : null}
         <div
           ref={viewportRef}
+          // The viewport is a scroll container, so it must be reachable by keyboard: without a tab
+          // stop the only way to scroll it is a pointer (WCAG 2.1.1; axe `scrollable-region-focusable`).
+          // Focused, it scrolls with the arrow keys natively — the picker's own arrow model is
+          // untouched, and the stop sits after the controls, where the keyboard model puts the slides.
+          tabIndex={0}
           className="ds-carousel__viewport"
           data-part="viewport"
           onPointerDown={markUserScroll}

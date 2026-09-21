@@ -159,6 +159,8 @@ const CELL_GAP: TokenRef = 'layout.gap.tight';
 const CAPTION_SIZE: TokenRef = 'font.size.md';
 const CAPTION_WEIGHT: TokenRef = 'font.weight.semibold';
 const CAPTION_GAP: TokenRef = 'space.2';
+/** A hidden caption leaves no gap above the header. */
+const CAPTION_GAP_HIDDEN: TokenRef = 'space.0';
 
 type Shadow = Tokens['shadowRaised'];
 
@@ -246,17 +248,20 @@ function ScrollFade({ edge, inset, length, color }: { edge: 'start' | 'end'; ins
  * `FlatList` (`accessibilityRole="list"`, `accessibilityLabel={caption}`) of bordered
  * blocks whose accessible summary joins `copy.cellLabel` for every visible column, row
  * header first, with the selected state; the selection Checkbox and `rowActions` are
- * separate stops beside it, and sortable columns become a `Toolbar` of Buttons above the
- * list (`copy.sortToolbarLabel`). At or above that width (tablets, react-native-web) the
+ * separate stops beside it, and the sort Buttons and the select-all share one `Toolbar`
+ * above the list (`copy.sortToolbarLabel`, `size: sm`, the table's own `density`), named
+ * for the table even when the Checkbox is all it holds. At or above that width the
  * same list renders a header row (`accessibilityRole="header"` cells) and rows of
  * fixed-width cells: `width: fill` flexes, `auto` and `min` are both `space.20`.
  * `responsive: scroll` keeps the columns at every width inside a horizontal scroll region
  * named by the caption with `copy.scrollHint` as its hint; the row-header cells are
  * translated by the horizontal offset so they stay pinned, and cast `stickyColumnShadow`
  * once scrolled, with a `scrollFade` gradient over each edge that still hides columns
- * (react-native-svg, as Toolbar does; the start fade begins where the pinned column ends). `stickyHeader` pins the list header (`stickyHeaderIndices`), which casts
- * `headerShadow` once the body has scrolled beneath it; with `maxHeight: none` the list
- * does not scroll itself, so the page does. `abbr` has no effect on native.
+ * (react-native-svg, as Toolbar does; the start fade begins where the pinned column ends).
+ * `stickyHeader` pins the list header (`stickyHeaderIndices`), which casts `headerShadow`
+ * once the body has scrolled beneath it — only with `maxHeight: viewport`, at every
+ * `responsive` value, since with `maxHeight: none` the page scrolls and the header belongs
+ * to the page rather than to this list. `abbr` has no effect on native.
  *
  * Sorting with a controlled `sort` leaves ordering to the caller; otherwise the table
  * sorts `data` from its own state (numbers numerically, anything else with
@@ -305,6 +310,9 @@ export function Table({
   const width = measuredWidth ?? viewport.width;
   const narrow = width < t.layoutMaxWidthProse;
   const layout: 'stack' | 'table' | 'scroll' = responsive === 'scroll' ? 'scroll' : narrow ? 'stack' : 'table';
+  // The header sticks only when the list is what scrolls — that is, with `maxHeight: viewport`.
+  // Against the page scroll the header belongs to the page, not to this list, at every `responsive`.
+  const sticksHeader = stickyHeader && maxHeight === 'viewport';
 
   const [internalSort, setInternalSort] = React.useState<TableSort | undefined>(defaultSort);
   const activeSort = sort ?? internalSort;
@@ -375,7 +383,7 @@ export function Table({
     announce(COPY.sortedAnnouncement(header, activeSort.direction), setSortAnnouncement);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortKey]);
-  const selectionKey = selectedIds.join(' ');
+  const selectionKey = selectedIds.join('\u0000');
   const lastSelectionKey = React.useRef(selectionKey);
   React.useEffect(() => {
     if (lastSelectionKey.current === selectionKey || selectable === 'none') {
@@ -540,23 +548,32 @@ export function Table({
     ...(columnScrolled ? stickyColumnShadow : null),
   });
 
+  // Every direct child of the list is a list item: the header row, each row, the empty state.
+  // `accessibilityRole="list"` is a real <ul> on react-native-web, and ARIA lets a list own only
+  // list items — a header cell, checkbox or Button owned by it rather than by an item fails
+  // aria-required-children. `role` is the RN 0.73+ spelling; native has no listitem trait.
   const headerRow = (
     <View
       testID="Table.header"
+      role="listitem"
       style={{
         flexDirection: 'row',
         alignItems: 'stretch',
         backgroundColor: t.colorBackgroundSubtle,
         borderBottomWidth: headerBorderWidth,
         borderBottomColor: headerBorder,
-        ...(stickyHeader && headerScrolled ? headerShadow : null),
+        ...(sticksHeader && headerScrolled ? headerShadow : null),
       }}
     >
       <View testID="Table.headerRow" style={{ flexDirection: 'row', alignItems: 'stretch', flexGrow: 1 }}>
-        {selectable !== 'none' ? (
+        {selectable === 'multiple' ? (
           <View style={selectCellStyle} testID="Table.selectAllCell">
             {selectAll}
           </View>
+        ) : selectable === 'single' ? (
+          // `single` has no select-all, so the header's selection position is an empty cell with
+          // no part — an empty selectAllCell would carry a name nothing fills.
+          <View style={selectCellStyle} />
         ) : null}
         {visibleColumns.map((column) => {
           const content = column.sortable === true ? (
@@ -603,6 +620,7 @@ export function Table({
     return (
       <View
         testID="Table.row"
+        role="listitem"
         accessibilityState={selectable !== 'none' ? { selected: isSelected } : undefined}
         style={{
           flexDirection: 'row',
@@ -670,11 +688,20 @@ export function Table({
 
   const sortableColumns = visibleColumns.filter((column) => column.sortable === true);
 
+  // Stacked, the only header is a Toolbar of sort Buttons and the select-all, named for the
+  // table even when the Checkbox is all it holds. The Buttons sit in it directly: a wrapper
+  // View for a `Table.sortButton` testID would not receive the Toolbar's size.
+  const stackedControls = selectAll !== null || sortableColumns.length > 0;
+
   const stackedHeader = (
-    <View testID="Table.header" style={{ backgroundColor: t.colorBackground, paddingBottom: cellPaddingBlock, ...(stickyHeader && headerScrolled ? headerShadow : null) }}>
-      {selectAll !== null ? <View testID="Table.selectAllCell">{selectAll}</View> : null}
-      {sortableColumns.length > 0 ? (
-        <Toolbar label={COPY.sortToolbarLabel(caption)} density={density}>
+    <View
+      testID="Table.header"
+      role="listitem"
+      style={{ backgroundColor: t.colorBackground, paddingBottom: cellPaddingBlock, ...(sticksHeader && headerScrolled ? headerShadow : null) }}
+    >
+      {stackedControls ? (
+        <Toolbar label={COPY.sortToolbarLabel(caption)} density={density} size="sm">
+          {selectAll !== null ? <View testID="Table.selectAllCell">{selectAll}</View> : null}
           {sortableColumns.map(sortButton)}
         </Toolbar>
       ) : null}
@@ -700,6 +727,7 @@ export function Table({
     return (
       <View
         testID="Table.row"
+        role="listitem"
         style={{
           flexDirection: 'row',
           alignItems: 'flex-start',
@@ -754,7 +782,7 @@ export function Table({
   // ---- The list ----
 
   const emptyState = (
-    <View testID="Table.emptyState" style={cellStyle}>
+    <View testID="Table.emptyState" role="listitem" style={cellStyle}>
       <Text size="sm" tone="muted" overrides={bodyText}>
         {loading ? COPY.loading : (emptyMessage ?? COPY.empty)}
       </Text>
@@ -770,7 +798,7 @@ export function Table({
       renderItem={layout === 'stack' ? renderStackedRow : renderColumnsRow}
       ListHeaderComponent={layout === 'stack' ? stackedHeader : headerRow}
       ListEmptyComponent={emptyState}
-      stickyHeaderIndices={stickyHeader ? [0] : undefined}
+      stickyHeaderIndices={sticksHeader ? [0] : undefined}
       contentContainerStyle={layout === 'stack' ? { gap: stackedBlockGap } : undefined}
       scrollEnabled={maxHeight === 'viewport'}
       style={maxHeight === 'viewport' ? { maxHeight: viewport.height - 2 * t.layoutGapSection } : undefined}
@@ -796,7 +824,7 @@ export function Table({
           overrides={{
             fontSize: overrides?.captionSize ?? CAPTION_SIZE,
             fontWeight: overrides?.captionWeight ?? CAPTION_WEIGHT,
-            marginBlockEnd: overrides?.captionGap ?? CAPTION_GAP,
+            marginBlockEnd: hideCaption ? CAPTION_GAP_HIDDEN : (overrides?.captionGap ?? CAPTION_GAP),
           }}
         >
           {caption}
@@ -844,7 +872,7 @@ export function Table({
           </Text>
         </View>
       ) : null}
-      {footer !== undefined && footer !== null ? (
+      {footer !== undefined && footer !== null && footer !== false ? (
         <View testID="Table.footer" style={cellStyle}>
           {typeof footer === 'string' ? (
             <Text size="sm" overrides={bodyText}>

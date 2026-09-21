@@ -229,25 +229,28 @@
     }
   },
   "Carousel.lit": {
-    "hash": "ca178cf8d4d67e67",
-    "lastAttemptHash": "ca178cf8d4d67e67",
-    "generatedAt": "2026-09-17T17:33:22+00:00",
+    "hash": "c76d4f3c022fbe5d",
+    "lastAttemptHash": "c76d4f3c022fbe5d",
+    "generatedAt": "2026-09-21T22:57:34+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.3006,
+    "costUsd": 5.3822,
     "files": [
       "packages/lit/src/Carousel.stories.ts",
       "packages/lit/src/Carousel.ts"
     ],
-    "gaps": 10,
+    "gaps": 11,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
     }
   },
   "Checkbox.lit": {
@@ -1108,26 +1111,28 @@
     }
   },
   "Table.lit": {
-    "hash": "e919aa7b76bf8b04",
-    "lastAttemptHash": "e919aa7b76bf8b04",
-    "generatedAt": "2026-09-17T17:42:42+00:00",
+    "hash": "932854e4d3dce3c4",
+    "lastAttemptHash": "932854e4d3dce3c4",
+    "generatedAt": "2026-09-21T23:28:22+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.2085,
+    "costUsd": 5.2963,
     "files": [
       "packages/lit/src/Table.stories.ts",
-      "packages/lit/src/Table.test.ts",
       "packages/lit/src/Table.ts"
     ],
-    "gaps": 9,
+    "gaps": 12,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
     }
   },
   "Tabs.lit": {
@@ -1209,26 +1214,29 @@
     }
   },
   "Toolbar.lit": {
-    "hash": "791042755a8c3efa",
-    "lastAttemptHash": "791042755a8c3efa",
-    "generatedAt": "2026-09-17T17:22:26+00:00",
+    "hash": "c3cec2cdd59fe306",
+    "lastAttemptHash": "c3cec2cdd59fe306",
+    "generatedAt": "2026-09-21T22:36:59+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.024,
+    "costUsd": 9.1891,
     "files": [
       "packages/lit/src/Toolbar.stories.ts",
       "packages/lit/src/Toolbar.test.ts",
       "packages/lit/src/Toolbar.ts"
     ],
-    "gaps": 8,
+    "gaps": 14,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
     }
   },
   "Tooltip.lit": {

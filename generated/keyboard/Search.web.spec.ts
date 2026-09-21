@@ -89,7 +89,7 @@ test.describe('Search (web) keyboard', () => {
   test.skip('Enter: Submits the query (or the highlighted suggestion). — manual', async () => {});
   test.skip('Escape: Closes suggestions if open; otherwise clears the field. On an already-empty field with no list open it does nothing and fires no onClear. — manual', async () => {});
   test.skip('ArrowDown: Opens suggestions and highlights the first; then moves down. (suggestions) — manual', async () => {});
-  test.skip('ArrowUp: Moves up; from the first, back to the input with no highlight. (suggestions) — manual', async () => {});
+  test.skip('ArrowUp: Moves up; from the first suggestion, back to the input with no highlight. With no highlight to begin with it is a no-op: it neither opens the list nor changes one that is open. (suggestions) — manual', async () => {});
   test('Tab: Leaves the field: to the clear button when the field has text, then the submit button.', async ({ page }) => {
     const root = page.locator('[data-ds="Search"]').first();
     await focusAt(page, root, 0);

@@ -50,6 +50,10 @@ describe('ds-toolbar', () => {
     expect(el).toHaveAttribute('data-ds', 'Toolbar');
     expect(el).toHaveAttribute('role', 'toolbar');
     expect(el.shadowRoot).not.toBeNull();
+    // Every entry reaches a per-entry slot: the toolbar renders one <slot> per child rather than a single default slot.
+    for (const child of Array.from(el.children)) {
+      expect((child as HTMLElement).assignedSlot).not.toBeNull();
+    }
   });
 
   /* derived: props.orientation */

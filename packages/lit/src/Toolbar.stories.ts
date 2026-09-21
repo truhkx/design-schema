@@ -19,20 +19,22 @@ interface ToolbarArgs {
 const button = (label: string): TemplateResult =>
   html`<ds-button variant="ghost" label=${label} overflow-label=${label}></ds-button>`;
 
-const FORMATTING_GROUPS = 'Two labelled groups of ghost Buttons: Text style (Bold, Italic, Underline) and Alignment (Align left, Align center, Align right)';
+/** The Default and Keyboard children: two labelled groups of three ghost Buttons, so a separator is drawn between them. */
+const TWO_GROUPS =
+  'Two labelled groups of three ghost text Buttons each: Text style (Bold, Italic, Underline) and Insert (Link, Image, Table)';
 
 const CHILDREN: Record<string, () => TemplateResult> = {
-  [FORMATTING_GROUPS]: () => html`
+  [TWO_GROUPS]: () => html`
     <ds-toolbar-group label="Text style">${button('Bold')}${button('Italic')}${button('Underline')}</ds-toolbar-group>
-    <ds-toolbar-group label="Alignment">${button('Align left')}${button('Align center')}${button('Align right')}</ds-toolbar-group>
+    <ds-toolbar-group label="Insert">${button('Link')}${button('Image')}${button('Table')}</ds-toolbar-group>
   `,
   'Three ghost text Buttons labelled Bold, Italic and Underline (the icon set has no formatting glyphs)': () =>
     html`${button('Bold')}${button('Italic')}${button('Underline')}`,
   'Three ghost text Buttons labelled Select, Draw and Erase': () =>
     html`${button('Select')}${button('Draw')}${button('Erase')}`,
-  'Four ghost text Buttons labelled Filter, Sort, Export and Delete, each with the same overflowLabel': () =>
-    html`${button('Filter')}${button('Sort')}${button('Export')}${button('Delete')}`,
-  'A SegmentedControl labelled View (List, Board) and two Selects: Owner (name owner; Anyone, Me) and Sort (name sort; Newest, Oldest)':
+  'Four ghost text Buttons labelled Filter, Sort, Export and Delete, each with an overflowLabel equal to its own label':
+    () => html`${button('Filter')}${button('Sort')}${button('Export')}${button('Delete')}`,
+  'A SegmentedControl labelled View (List, Board) and two Selects with hideLabel so the row stays at toolbar height: Owner (name owner; Anyone, Me) and Sort (name sort; Newest, Oldest)':
     () => html`
       <ds-segmented-control
         label="View"
@@ -74,7 +76,7 @@ const meta: Meta<ToolbarArgs> = {
   },
   args: {
     label: 'Formatting',
-    children: FORMATTING_GROUPS,
+    children: TWO_GROUPS,
     orientation: 'horizontal',
     overflow: 'menu',
     size: 'md',
@@ -88,7 +90,7 @@ const meta: Meta<ToolbarArgs> = {
       size=${args.size}
       density=${args.density}
     >
-      ${(CHILDREN[args.children] ?? CHILDREN[FORMATTING_GROUPS]!)()}
+      ${(CHILDREN[args.children] ?? CHILDREN[TWO_GROUPS]!)()}
     </ds-toolbar>
   `,
 };
@@ -98,16 +100,20 @@ type Story = StoryObj<ToolbarArgs>;
 
 export const Default: Story = {};
 
+/* orientation */
 export const OrientationHorizontal: Story = { args: { orientation: 'horizontal' } };
 export const OrientationVertical: Story = { args: { orientation: 'vertical' } };
 
+/* overflow */
 export const OverflowWrap: Story = { args: { overflow: 'wrap' } };
 export const OverflowMenu: Story = { args: { overflow: 'menu' } };
 export const OverflowScroll: Story = { args: { overflow: 'scroll' } };
 
+/* size */
 export const SizeSm: Story = { args: { size: 'sm' } };
 export const SizeMd: Story = { args: { size: 'md' } };
 
+/* density */
 export const DensityCompact: Story = { args: { density: 'compact' } };
 export const DensityComfortable: Story = { args: { density: 'comfortable' } };
 
@@ -123,9 +129,15 @@ export const OverflowScrollNarrow: Story = {
   decorators: [(story) => html`<div style="max-inline-size: 16rem;">${story()}</div>`],
 };
 
-/** Six focusable controls in two groups: Tab enters once, arrows move, Home/End jump. */
-export const Keyboard: Story = {};
+/**
+ * Present with six focusable controls and nothing else focusable, for the keyboard gate.
+ * `wrap` keeps every control in the DOM at any viewport width, so the roving list never shrinks.
+ */
+export const Keyboard: Story = { args: { overflow: 'wrap', children: TWO_GROUPS } };
 
+/* examples */
+
+/** The default row of ghost formatting buttons, named by what it controls. */
 export const FormattingToolbar: Story = {
   args: {
     label: 'Formatting',
@@ -133,6 +145,7 @@ export const FormattingToolbar: Story = {
   },
 };
 
+/** A tool palette beside a canvas, where arrows move up and down. */
 export const VerticalToolPalette: Story = {
   args: {
     label: 'Drawing tools',
@@ -141,21 +154,24 @@ export const VerticalToolPalette: Story = {
   },
 };
 
+/** A dense table-action row at toolbar height that folds trailing buttons into a More menu. */
 export const CompactActionsWithOverflow: Story = {
   args: {
     label: 'Table actions',
-    children: 'Four ghost text Buttons labelled Filter, Sort, Export and Delete, each with the same overflowLabel',
+    children:
+      'Four ghost text Buttons labelled Filter, Sort, Export and Delete, each with an overflowLabel equal to its own label',
     overflow: 'menu',
     density: 'compact',
     size: 'sm',
   },
 };
 
+/** A filter row that scrolls horizontally with faded edges instead of collapsing. */
 export const ScrollingFilterRow: Story = {
   args: {
     label: 'Filters',
     children:
-      'A SegmentedControl labelled View (List, Board) and two Selects: Owner (name owner; Anyone, Me) and Sort (name sort; Newest, Oldest)',
+      'A SegmentedControl labelled View (List, Board) and two Selects with hideLabel so the row stays at toolbar height: Owner (name owner; Anyone, Me) and Sort (name sort; Newest, Oldest)',
     overflow: 'scroll',
   },
 };

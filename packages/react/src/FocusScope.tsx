@@ -84,13 +84,13 @@ function isFocusable(element: Element): element is HTMLElement {
   return element.getAttribute('tabindex') !== '-1' && element.tabIndex >= 0;
 }
 
-/** `inert`, `aria-hidden="true"` and `fieldset[disabled]` subtrees contribute nothing. */
+/**
+ * `inert` and `aria-hidden="true"` subtrees contribute nothing. A `fieldset[disabled]` is *not*
+ * excluded as a subtree: `:disabled` already removes the form controls inside it (outside its first
+ * legend), while links and tabindex elements there stay in, as the browser keeps them focusable.
+ */
 function isExcludedSubtree(element: Element): boolean {
-  return (
-    element.hasAttribute('inert') ||
-    element.getAttribute('aria-hidden') === 'true' ||
-    (element.localName === 'fieldset' && element.hasAttribute('disabled'))
-  );
+  return element.hasAttribute('inert') || element.getAttribute('aria-hidden') === 'true';
 }
 
 /** Walks DOM order including open shadow roots and assigned slot nodes. Visibility is not tested. */
@@ -240,6 +240,8 @@ export function FocusScope({
 
   const openerRef = useRef<HTMLElement | null>(null);
   const markerRef = useRef<Comment | null>(null);
+  /** The opener's ancestor chain, nearest first: the fallback when the marker went with its parent. */
+  const openerAncestorsRef = useRef<HTMLElement[]>([]);
   const lastFocusedRef = useRef<HTMLElement | null>(null);
 
   const isEffective = (): boolean => latest.current.trapped && entry.active && topScope() === entry;
@@ -260,6 +262,15 @@ export function FocusScope({
     const openerParent = openerRef.current?.parentNode;
     if (openerParent) openerParent.insertBefore(marker, openerRef.current!.nextSibling);
     markerRef.current = openerParent ? marker : null;
+
+    // If the opener's parent is removed the marker goes with it, so record the ancestor chain too:
+    // restoring then resumes from the nearest of these still in the document.
+    const ancestors: HTMLElement[] = [];
+    for (let node = openerRef.current?.parentElement; node; node = node.parentElement) {
+      if (containsDeep(container, node)) break;
+      ancestors.push(node);
+    }
+    openerAncestorsRef.current = ancestors;
 
     const focusables = collectFocusable(container);
     if (process.env.NODE_ENV !== 'production' && latest.current.trapped && focusables.length === 0) {
@@ -288,10 +299,18 @@ export function FocusScope({
         const explicit = latest.current.returnFocusTo?.current;
         if (explicit && explicit.isConnected) explicit.focus();
         else if (recorded && recorded.isConnected) recorded.focus();
-        else if (restoreMarker?.isConnected) findNextFocusableAfter(restoreMarker, container)?.focus();
+        else {
+          // The opener is gone: resume from its old position — the marker, or, if that went with the
+          // opener's parent, the nearest recorded ancestor still in the document.
+          const anchor = restoreMarker?.isConnected
+            ? restoreMarker
+            : openerAncestorsRef.current.find((node) => node.isConnected);
+          if (anchor) findNextFocusableAfter(anchor, container)?.focus();
+        }
       }
       restoreMarker?.parentNode?.removeChild(restoreMarker);
       markerRef.current = null;
+      openerAncestorsRef.current = [];
     };
   }, []);
 
@@ -300,8 +319,9 @@ export function FocusScope({
     if (entry.active === active) return;
     entry.active = active;
     if (active && scopeStack.includes(entry)) {
+      // Moves above every scope that is not its descendant, but stays below its own descendants.
       removeScope(entry);
-      scopeStack.push(entry);
+      pushScope(entry);
     }
     syncScopes();
   }, [active]);

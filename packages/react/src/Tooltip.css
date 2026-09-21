@@ -6,9 +6,7 @@
   --ds-tooltip-padding-inline: var(--space-2);
   --ds-tooltip-offset: var(--space-1);
   --ds-tooltip-max-width: var(--space-20);
-  --ds-tooltip-font-family: var(--font-family-body); /* literal-ok: CSS custom-property hook, not a font stack */
-  --ds-tooltip-font-size: var(--font-size-sm);
-  --ds-tooltip-line-height: var(--font-line-height-normal);
+  /* fontFamily, fontSize and lineHeight are forward-only: no hook here, they reach the composed Text. */
   --ds-tooltip-shadow: var(--shadow-raised);
   --ds-tooltip-layer: var(--layer-toast);
   --ds-tooltip-enter: var(--motion-duration-fast);
@@ -29,9 +27,6 @@
   color: var(--color-inverse-foreground);
   border-radius: var(--ds-tooltip-radius);
   box-shadow: var(--ds-tooltip-shadow);
-  font-family: var(--ds-tooltip-font-family);
-  font-size: var(--ds-tooltip-font-size);
-  line-height: var(--ds-tooltip-line-height);
   overflow-wrap: break-word;
   opacity: 0;
   transition: opacity var(--ds-tooltip-exit) var(--motion-easing-standard);

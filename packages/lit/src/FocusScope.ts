@@ -28,17 +28,26 @@ const NEGATED_BOOLEAN_CONVERTER = {
 
 const FOCUSABLE_SELECTOR = [
   'a[href]',
-  'button:not(:disabled)',
-  'input:not(:disabled)',
-  'select:not(:disabled)',
-  'textarea:not(:disabled)',
+  'area[href]',
+  'button',
+  'input:not([type="hidden"])',
+  'select',
+  'textarea',
+  'summary',
+  'iframe',
   'audio[controls]',
   'video[controls]',
-  'summary',
   '[contenteditable]:not([contenteditable="false"])',
   '[tabindex]',
 ].join(',');
 
+/**
+ * "Disabled" is exactly `:disabled`, which already removes the form controls inside a
+ * `fieldset[disabled]` (outside its first legend) while leaving the links and tabindex elements
+ * there in, as the browser keeps them focusable. `aria-disabled` elements stay in: the system keeps
+ * them focusable. `tabindex="-1"` is out; the scope's own anchor and sentinels are never candidates.
+ * Visibility is not tested — an element hidden by CSS but neither `aria-hidden` nor `inert` counts.
+ */
 function isFocusable(el: Element): el is HTMLElement {
   if (!(el instanceof HTMLElement)) {
     return false;
@@ -46,23 +55,24 @@ function isFocusable(el: Element): el is HTMLElement {
   if (el.hasAttribute('data-focus-sentinel') || el.hasAttribute('data-focus-scope-anchor')) {
     return false;
   }
-  const tabindex = el.getAttribute('tabindex');
-  if (tabindex !== null && Number(tabindex) < 0) {
+  if (!el.matches(FOCUSABLE_SELECTOR) || el.matches(':disabled')) {
     return false;
   }
-  return el.matches(FOCUSABLE_SELECTOR);
+  return el.getAttribute('tabindex') !== '-1' && el.tabIndex >= 0;
+}
+
+/** `inert` and `aria-hidden="true"` subtrees contribute nothing at all. */
+function isExcludedSubtree(el: Element): boolean {
+  return el.hasAttribute('inert') || el.getAttribute('aria-hidden') === 'true';
 }
 
 /**
- * Walks light DOM, slot assignments and open shadow roots in tree order.
- * Skips `inert`, `aria-hidden="true"` and `fieldset[disabled]` subtrees;
- * `aria-disabled` elements stay in. Visibility is not tested.
+ * Walks light DOM, slot assignments and open shadow roots in tree order. A shadow host is walked
+ * through its shadow root, whose `<slot>`s bring the assigned light children back in at the
+ * position they actually render, so a slotted `<ds-button>` contributes its inner `<button>` once.
  */
 function collectFocusable(node: Element, results: HTMLElement[]): void {
-  if (node.hasAttribute('inert') || node.getAttribute('aria-hidden') === 'true') {
-    return;
-  }
-  if (node instanceof HTMLFieldSetElement && node.disabled) {
+  if (isExcludedSubtree(node)) {
     return;
   }
   if (isFocusable(node)) {
@@ -113,11 +123,16 @@ function composedContains(container: Element, node: Node): boolean {
 
 /**
  * Mounted scopes, bottom to top. Only the topmost active entry is effective.
- * A mounting scope registers below any scope nested inside it (tree order,
- * not connection order); a scope whose `active` turns back on moves to the top.
+ * A scope always sits below every stacked scope it contains and above every stacked scope that
+ * contains it; within that, activation order decides. There is no context on Lit, so the
+ * containment test walks the composed tree from the mounting scope.
  */
 const scopeStack: DsFocusScope[] = [];
 
+/**
+ * Inserts directly below the lowest stacked scope this one contains, so an outer scope connected
+ * after its inner one still registers underneath it; otherwise on top.
+ */
 function registerScope(scope: DsFocusScope): void {
   removeFromStack(scope);
   const nestedIndex = scopeStack.findIndex((entry) => composedContains(scope, entry));
@@ -126,12 +141,6 @@ function registerScope(scope: DsFocusScope): void {
   } else {
     scopeStack.splice(nestedIndex, 0, scope);
   }
-  refreshStack();
-}
-
-function raiseScope(scope: DsFocusScope): void {
-  removeFromStack(scope);
-  scopeStack.push(scope);
   refreshStack();
 }
 
@@ -154,6 +163,7 @@ function refreshStack(): void {
   }
 }
 
+/** Only active scopes count when picking the top. */
 function topActiveScope(): DsFocusScope | undefined {
   for (let i = scopeStack.length - 1; i >= 0; i -= 1) {
     const entry = scopeStack[i]!;
@@ -173,20 +183,22 @@ function topActiveScope(): DsFocusScope | undefined {
  * is the wrapper (`display: block`, not `display: contents`) with a default
  * slot for the confined content, and it is never focusable or tabbable.
  * `delegatesFocus` is deliberately off: it would send a `focus()` on the host
- * into the first focusable descendant. `autoFocus: container` instead focuses
- * an invisible anchor rendered first in the shadow root, which carries
- * `tabindex="-1"` only while `autoFocus` is `container`.
+ * into the first focusable descendant, so `host.focus()` does nothing.
+ * `autoFocus: container` instead focuses an invisible anchor rendered first in
+ * the shadow root, which carries `tabindex="-1"` only while `autoFocus` is
+ * `container` and which also carries the `scope` part.
  *
  * Two visually hidden sentinels catch focus arriving from the browser chrome:
  * the start sentinel sends it to the first descendant, the end sentinel to the
  * last. They are tab stops only while the scope is trapped, active and top of
  * the stack. A `focusin` listener on `document` pulls focus back to the last
  * focused descendant if it leaves while the scope is effective. The scope
- * never handles Escape and never makes anything inert.
+ * never handles Escape and never makes anything inert — the overlay owns both.
  *
  * Boolean props that default to `true` are exposed as negated attributes:
  * `no-trapped`, `no-active` (both reflected) and `no-restore-focus`. Composing
- * overlays set them as properties (`.active=${open}`).
+ * overlays set them as properties (`.active=${open}`), never as attributes,
+ * which cannot turn off a true default.
  *
  * @fires escape-attempt - Fired just before trapped focus wraps (Tab from the
  *   last descendant, Shift+Tab from the first), with `{ direction }`.
@@ -255,11 +267,16 @@ export class DsFocusScope extends LitElement {
   private openerElement: HTMLElement | null = null;
   /** Marker left beside the opener, so "the next focusable element" survives the opener's removal. */
   private openerMarker: Comment | null = null;
+  /** The opener's ancestors, nearest first: the fallback when the marker went with the opener's parent. */
+  private openerAncestors: HTMLElement[] = [];
   private lastFocused: HTMLElement | null = null;
   private childrenSettled: Promise<void> = Promise.resolve();
 
   private readonly handleKeydown = (event: KeyboardEvent): void => {
-    if (event.key !== 'Tab' || event.defaultPrevented || !this.isEffective()) {
+    if (event.key !== 'Tab' || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) {
+      return;
+    }
+    if (!this.isEffective()) {
       return;
     }
     const focusable = this.getFocusableDescendants();
@@ -270,7 +287,7 @@ export class DsFocusScope extends LitElement {
     }
     const current = getDeepActiveElement();
     if (current === this.anchorEl) {
-      // From the container: Tab goes to the first descendant, Shift+Tab wraps to the last.
+      // From the container: Tab goes to the first descendant and fires nothing; Shift+Tab wraps.
       event.preventDefault();
       if (event.shiftKey) {
         this.dispatchEscapeAttempt('backward');
@@ -300,7 +317,8 @@ export class DsFocusScope extends LitElement {
     if (!this.isEffective()) {
       return;
     }
-    const remembered = this.lastFocused?.isConnected ? this.lastFocused : null;
+    const remembered =
+      this.lastFocused?.isConnected && composedContains(this, this.lastFocused) ? this.lastFocused : null;
     // With nothing to pull back to, focus is left where it went (the dev warning covers it).
     (remembered ?? this.getFocusableDescendants()[0] ?? this.containerTarget())?.focus();
   };
@@ -309,6 +327,8 @@ export class DsFocusScope extends LitElement {
     if (!this.isEffective()) {
       return;
     }
+    // Each sentinel continues the direction of travel; wrapping at the real edges is the Tab
+    // handler's job.
     const focusable = this.getFocusableDescendants();
     const target = event.target === this.startSentinelEl ? focusable[0] : focusable[focusable.length - 1];
     (target ?? this.containerTarget())?.focus();
@@ -327,12 +347,14 @@ export class DsFocusScope extends LitElement {
     super.disconnectedCallback();
     this.removeEventListener('keydown', this.handleKeydown);
     document.removeEventListener('focusin', this.handleDocumentFocusIn);
+    // Leave the stack before restoring, or this scope's own pull-back would claim the restored focus.
     unregisterScope(this);
     if (this.restoreFocus) {
       this.restoreFocusOnExit();
     }
     this.openerMarker?.remove();
     this.openerMarker = null;
+    this.openerAncestors = [];
     this.openerElement = null;
     this.lastFocused = null;
   }
@@ -356,7 +378,8 @@ export class DsFocusScope extends LitElement {
 
   protected override updated(changed: PropertyValues): void {
     if (changed.has('active') && changed.get('active') === false && this.active) {
-      raiseScope(this);
+      // Reactivation moves the scope above every scope that is not its descendant.
+      registerScope(this);
     } else if (
       (changed.has('active') && changed.get('active') !== undefined) ||
       (changed.has('trapped') && changed.get('trapped') !== undefined)
@@ -392,15 +415,29 @@ export class DsFocusScope extends LitElement {
     `;
   }
 
+  /**
+   * Records the opener, a marker beside it and its ancestor chain, so focus can be restored to its
+   * former position even after the opener — or the opener's parent — is removed.
+   */
   private recordOpener(): void {
     const current = getDeepActiveElement();
     this.openerElement = current instanceof HTMLElement && current !== document.body ? current : null;
     this.openerMarker?.remove();
     this.openerMarker = null;
+    this.openerAncestors = [];
     const opener = this.openerElement;
-    if (opener?.parentNode && !composedContains(this, opener)) {
+    if (!opener || composedContains(this, opener)) {
+      return;
+    }
+    if (opener.parentNode) {
       this.openerMarker = document.createComment('ds-focus-scope opener');
       opener.after(this.openerMarker);
+    }
+    for (let node = opener.parentElement; node; node = node.parentElement) {
+      if (composedContains(this, node)) {
+        break;
+      }
+      this.openerAncestors.push(node);
     }
   }
 
@@ -436,6 +473,7 @@ export class DsFocusScope extends LitElement {
     return target?.value;
   }
 
+  /** `returnFocusTo`, then the recorded opener, then the first focusable after where it used to be. */
   private restoreFocusOnExit(): void {
     const explicit = this.resolveReturnTarget();
     if (explicit?.isConnected) {
@@ -447,8 +485,10 @@ export class DsFocusScope extends LitElement {
       opener.focus();
       return;
     }
-    const marker = this.openerMarker;
-    if (!marker?.isConnected) {
+    const anchor: Node | undefined = this.openerMarker?.isConnected
+      ? this.openerMarker
+      : this.openerAncestors.find((node) => node.isConnected);
+    if (!anchor) {
       return;
     }
     const all: HTMLElement[] = [];
@@ -456,11 +496,15 @@ export class DsFocusScope extends LitElement {
     const next = all.find(
       (el) =>
         !composedContains(this, el) &&
-        Boolean(marker.compareDocumentPosition(documentHost(el)) & Node.DOCUMENT_POSITION_FOLLOWING),
+        Boolean(anchor.compareDocumentPosition(documentHost(el)) & Node.DOCUMENT_POSITION_FOLLOWING),
     );
     next?.focus();
   }
 
+  /**
+   * Waits for the slotted elements and every custom element in their light-DOM subtrees (not
+   * elements inside those elements' own shadow roots), so the walker sees their focusable internals.
+   */
   private async settleChildren(): Promise<void> {
     const slot = this.shadowRoot?.querySelector('slot');
     const elements = (slot?.assignedElements({ flatten: true }) ?? []).flatMap((el) => [
@@ -502,7 +546,10 @@ export class DsFocusScope extends LitElement {
       return;
     }
     if (this.getFocusableDescendants().length === 0) {
-      console.warn('<ds-focus-scope> is trapped with no focusable descendants; it would trap focus with no escape.', this);
+      console.warn(
+        '<ds-focus-scope> is trapped with no focusable descendants, so focus inside it cannot move or leave. Add a focusable control (a close Button) or set the trapped property to false.',
+        this,
+      );
     }
   }
 }

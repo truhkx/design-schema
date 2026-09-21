@@ -2,11 +2,12 @@
  * <ds-focus-scope> — behavior scenarios from the component doc, one test each, in the doc's order,
  * plus the keyboard model. Runs in headless Chromium (Vitest browser mode).
  */
+import { render as renderTemplate } from 'lit';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
 import './FocusScope.js';
 import type { DsFocusScope, FocusScopeEscapeAttemptDetail } from './FocusScope.js';
-import meta from './FocusScope.stories.js';
+import meta, { NonModalDrawer } from './FocusScope.stories.js';
 
 /** Focus inside nested shadow roots shows up as a chain of hosts. */
 function activeChain(): Element[] {
@@ -145,5 +146,58 @@ describe('ds-focus-scope', () => {
     expect(document.activeElement).toBe(buttons[0]);
     el.remove();
     expect(document.activeElement).toBe(opener);
+  });
+
+  it('restores past the opener when the opener left with its parent', async () => {
+    const host = document.createElement('div');
+    const opener = document.createElement('button');
+    host.append(opener);
+    const after = document.createElement('button');
+    document.body.append(host, after);
+    opener.focus();
+    const { el } = await setup();
+    // The marker sits beside the opener, so removing the opener's parent takes it too; the
+    // recorded ancestor chain (document.body) is what is left to resume from.
+    host.remove();
+    el.remove();
+    expect(document.activeElement).toBe(after);
+  });
+
+  it('the stories bind the negated attributes the right way round', async () => {
+    // `no-trapped` present means trapped: false — the one binding a docs snippet could invert.
+    const host = document.createElement('div');
+    document.body.append(host);
+    const args = { ...meta.args, ...NonModalDrawer.args } as Parameters<NonNullable<typeof NonModalDrawer.render>>[0];
+    renderTemplate(NonModalDrawer.render!(args, {} as never), host);
+    const el = host.querySelector('ds-focus-scope')!;
+    await el.updateComplete;
+    expect(el).toHaveAttribute('no-trapped');
+    expect(el.trapped).toBe(false);
+    expect(el.active).toBe(true);
+    expect(el.restoreFocus).toBe(true);
+    expect(el.autoFocus).toBe('first');
+  });
+
+  it('excludes :disabled controls but keeps links inside a disabled fieldset', async () => {
+    const el = document.createElement('ds-focus-scope');
+    el.autoFocus = 'first';
+    el.innerHTML = `
+      <fieldset disabled>
+        <button type="button">Disabled by the fieldset</button>
+        <a href="#keep">Still focusable</a>
+      </fieldset>
+      <button type="button" aria-disabled="true">Kept</button>
+      <div aria-hidden="true"><button type="button">Hidden from AT</button></div>
+    `;
+    document.body.append(el);
+    await el.updateComplete;
+    // Tab order per the browser: the fieldset's control is out, its link and the aria-disabled
+    // button are in, and the aria-hidden subtree contributes nothing — so the last Tab wraps
+    // from "Kept" back to the link rather than reaching the hidden button.
+    expect((document.activeElement as HTMLElement).getAttribute('href')).toBe('#keep');
+    await userEvent.keyboard('{Tab}');
+    expect(document.activeElement?.textContent).toBe('Kept');
+    await userEvent.keyboard('{Tab}');
+    expect((document.activeElement as HTMLElement).getAttribute('href')).toBe('#keep');
   });
 });

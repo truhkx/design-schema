@@ -4,6 +4,7 @@ import type { LayoutChangeEvent, ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
 import { Text, TextForegroundContext } from './Text';
+import type { TextOverridableBinding } from './Text';
 import { toEasing, useReducedMotion, useTheme } from './theme';
 
 export type TooltipPlacement = 'top' | 'bottom' | 'start' | 'end';
@@ -24,6 +25,19 @@ export type TooltipOverridableBinding =
   | 'enter'
   | 'exit';
 
+/**
+ * Typography belongs to the composed Text, so `fontFamily`, `fontSize` and `lineHeight` are
+ * forward-only: the bubble never styles them itself, and the value — an override or this
+ * default — is always passed to Text's `overrides` under the same name.
+ */
+type TooltipTextBinding = TooltipOverridableBinding & TextOverridableBinding;
+
+const TEXT_DEFAULT: Record<TooltipTextBinding, TokenRef> = {
+  fontFamily: 'font.family.body', // literal-ok: a TokenRef forwarded to Text, not a font stack
+  fontSize: 'font.size.sm',
+  lineHeight: 'font.lineHeight.normal',
+};
+
 export interface TooltipProps {
   /** The tooltip text. One short phrase or sentence; no markup, no links, no line breaks. */
   content: string;
@@ -43,9 +57,6 @@ export interface TooltipProps {
 
 type Size = { width: number; height: number };
 type Rect = Size & { x: number; y: number };
-type Sources = { hover: boolean; bubble: boolean; focus: boolean; press: boolean };
-
-const NO_SOURCES: Sources = { hover: false, bubble: false, focus: false, press: false };
 
 /** Module-level "warm until" timestamp shared by every Tooltip: after one hides, a sibling hovered within `warmWindow` shows with no delay. */
 let warmUntil = 0;
@@ -114,6 +125,9 @@ type Handler = ((event: unknown) => void) | undefined;
  * bubble, and Escape hides it without moving focus. The bubble is hidden from
  * accessibility — the hint or label on the trigger already carries the text.
  *
+ * An Escape dismissal outlives a re-hover: the tooltip stays hidden until the trigger
+ * has lost both hover and focus (or, controlled, until `open` next changes).
+ *
  * The bubble is not portaled: it is absolutely positioned inside Tooltip's root on
  * `layer.toast`, placed from the trigger's `measureInWindow` rect and flipped on
  * overflow. An ancestor that clips (`overflow: 'hidden'`) or a sibling stacking context
@@ -139,7 +153,9 @@ export function Tooltip({
   const paddingBlock = overrides?.paddingBlock ? (resolveToken(t, overrides.paddingBlock) as number) : t.space1;
   const paddingInline = overrides?.paddingInline ? (resolveToken(t, overrides.paddingInline) as number) : t.space2;
   const offset = overrides?.offset ? (resolveToken(t, overrides.offset) as number) : t.space1;
-  const maxWidth = overrides?.maxWidth ? (resolveToken(t, overrides.maxWidth) as number) : t.space20 * 3; // literal-ok: schema computed times 3
+  // An override replaces the base token; the × 3 of the computed rule stays either way.
+  const maxWidthBase = overrides?.maxWidth ? (resolveToken(t, overrides.maxWidth) as number) : t.space20;
+  const maxWidth = maxWidthBase * 3; // literal-ok: schema computed times 3
   const shadow = overrides?.shadow ? (resolveToken(t, overrides.shadow) as typeof t.shadowRaised) : t.shadowRaised;
   const layer = overrides?.layer ? (resolveToken(t, overrides.layer) as number) : t.layerToast;
   const enterDuration = overrides?.enter ? (resolveToken(t, overrides.enter) as number) : t.motionDurationFast;
@@ -150,33 +166,46 @@ export function Tooltip({
   const warmWindow = t.motionDurationBase;
   const pointerGrace = t.motionDurationFast;
 
-  const [sources, setSources] = React.useState<Sources>(NO_SOURCES);
-  // Escape while controlled: hides until the `open` prop changes.
-  const [escaped, setEscaped] = React.useState(false);
-  React.useEffect(() => setEscaped(false), [openProp]);
+  const controlled = openProp !== undefined;
 
-  const visible =
-    openProp !== undefined ? openProp && !escaped : sources.hover || sources.bubble || sources.focus || sources.press;
+  /** The uncontrolled visibility; `open` replaces it when the caller provides one. */
+  const [shown, setShown] = React.useState(false);
+  /** Escape hides the tooltip until the trigger loses hover and focus, or `open` next changes. */
+  const [dismissed, setDismissed] = React.useState(false);
+  React.useEffect(() => {
+    setDismissed(false);
+  }, [openProp]);
 
-  const hoverTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  const graceTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
-  const clearTimer = (timer: React.RefObject<ReturnType<typeof setTimeout> | null>): void => {
-    if (timer.current !== null) {
-      clearTimeout(timer.current);
-      timer.current = null;
+  const visible = !dismissed && (openProp ?? shown);
+
+  // Pointer, focus and press presence, tracked in refs so the grace timer reads the
+  // current state rather than the state it closed over.
+  const hoveringTrigger = React.useRef(false);
+  const hoveringBubble = React.useRef(false);
+  const focused = React.useRef(false);
+  const pressing = React.useRef(false);
+
+  const showTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hideTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearShow = (): void => {
+    if (showTimer.current !== null) {
+      clearTimeout(showTimer.current);
+      showTimer.current = null;
+    }
+  };
+  const clearHide = (): void => {
+    if (hideTimer.current !== null) {
+      clearTimeout(hideTimer.current);
+      hideTimer.current = null;
     }
   };
   React.useEffect(
     () => () => {
-      clearTimer(hoverTimer);
-      clearTimer(graceTimer);
+      clearShow();
+      clearHide();
     },
     [],
   );
-
-  const setSource = React.useCallback((key: keyof Sources, value: boolean) => {
-    setSources((prev) => (prev[key] === value ? prev : { ...prev, [key]: value }));
-  }, []);
 
   // Leaving a visible tooltip opens the shared warm window for its siblings.
   const wasVisible = React.useRef(visible);
@@ -187,52 +216,122 @@ export function Tooltip({
     wasVisible.current = visible;
   }, [visible, warmWindow]);
 
-  const handleHoverIn = (): void => {
-    clearTimer(graceTimer);
-    clearTimer(hoverTimer);
-    if (delay === 'none' || visible || Date.now() < warmUntil) {
-      setSource('hover', true);
+  /**
+   * Waits one `pointerGrace` so the pointer can cross the `offset` gap onto the bubble,
+   * then hides if nothing still holds the tooltip open. Losing hover and focus also
+   * clears an Escape dismissal, so the next hover shows the tooltip again.
+   */
+  const scheduleHide = (): void => {
+    if (controlled) {
       return;
     }
-    hoverTimer.current = setTimeout(() => setSource('hover', true), hoverDelay);
-  };
-
-  const handleHoverOut = (): void => {
-    clearTimer(hoverTimer);
-    clearTimer(graceTimer);
-    graceTimer.current = setTimeout(() => setSource('hover', false), pointerGrace);
-  };
-
-  const handleBubbleEnter = (): void => {
-    clearTimer(graceTimer);
-    setSource('bubble', true);
-  };
-
-  const handleBubbleLeave = (): void => {
-    clearTimer(graceTimer);
-    graceTimer.current = setTimeout(() => {
-      setSource('bubble', false);
-      setSource('hover', false);
+    clearShow();
+    if (hideTimer.current !== null) {
+      return;
+    }
+    hideTimer.current = setTimeout(() => {
+      hideTimer.current = null;
+      if (hoveringTrigger.current || hoveringBubble.current || focused.current || pressing.current) {
+        return;
+      }
+      setShown(false);
+      setDismissed(false);
     }, pointerGrace);
   };
 
+  const handleHoverIn = (): void => {
+    hoveringTrigger.current = true;
+    if (controlled) {
+      return;
+    }
+    clearHide();
+    clearShow();
+    // Warm skips the delay for `default` tooltips too; `none` is always instant.
+    if (delay === 'none' || shown || Date.now() < warmUntil) {
+      setShown(true);
+      return;
+    }
+    showTimer.current = setTimeout(() => {
+      showTimer.current = null;
+      setShown(true);
+    }, hoverDelay);
+  };
+
+  const handleHoverOut = (): void => {
+    hoveringTrigger.current = false;
+    scheduleHide();
+  };
+
+  // Focus of any kind shows it immediately, so the tooltip is never hover-only.
+  const handleFocus = (): void => {
+    focused.current = true;
+    if (controlled) {
+      return;
+    }
+    clearHide();
+    clearShow();
+    setShown(true);
+  };
+
+  const handleBlur = (): void => {
+    focused.current = false;
+    scheduleHide();
+  };
+
+  const handleBubbleEnter = (): void => {
+    hoveringBubble.current = true;
+    if (controlled) {
+      return;
+    }
+    clearHide();
+  };
+
+  const handleBubbleLeave = (): void => {
+    hoveringBubble.current = false;
+    scheduleHide();
+  };
+
+  const handleLongPress = (): void => {
+    pressing.current = true;
+    if (controlled) {
+      return;
+    }
+    clearHide();
+    clearShow();
+    setShown(true);
+  };
+
+  // Releasing hides at once: `pointerGrace` covers a pointer crossing the gap, not a
+  // finger lifting. Hover or focus still holding the tooltip open wins.
+  const handlePressOut = (): void => {
+    pressing.current = false;
+    if (controlled || hoveringTrigger.current || hoveringBubble.current || focused.current) {
+      return;
+    }
+    clearShow();
+    clearHide();
+    setShown(false);
+    setDismissed(false);
+  };
+
   const dismiss = React.useCallback(() => {
-    clearTimer(hoverTimer);
-    clearTimer(graceTimer);
-    setSources(NO_SOURCES);
-    setEscaped(true);
+    clearShow();
+    setDismissed(true);
   }, []);
 
   // Escape hides without moving focus, also when the tooltip was opened by hover alone.
   // Only react-native-web has a keyboard event to listen for; native hardware keyboards
   // have no Escape binding for a non-modal view. The listener is attached only while the
-  // bubble is visible and runs in the capture phase, stopping the event, so inside a
-  // Dialog the first Escape hides the tooltip and the second closes the Dialog.
+  // bubble is visible, in the capture phase, and consumes the event with both
+  // stopPropagation and preventDefault — a native <dialog> closes on an Escape that is
+  // not default-prevented, so inside a Dialog the first Escape hides the tooltip and the
+  // second closes the Dialog.
   React.useEffect(() => {
     if (Platform.OS !== 'web' || !visible) {
       return undefined;
     }
-    type KeyListener = (event: { key?: string | undefined; stopPropagation: () => void }) => void;
+    type KeyEvent = { key?: string | undefined; stopPropagation: () => void; preventDefault: () => void };
+    type KeyListener = (event: KeyEvent) => void;
     type KeyTarget = {
       addEventListener: (type: 'keydown', listener: KeyListener, capture: boolean) => void;
       removeEventListener: (type: 'keydown', listener: KeyListener, capture: boolean) => void;
@@ -244,6 +343,7 @@ export function Tooltip({
     const handleKeyDown: KeyListener = (event) => {
       if (event.key === 'Escape') {
         event.stopPropagation();
+        event.preventDefault();
         dismiss();
       }
     };
@@ -271,14 +371,16 @@ export function Tooltip({
     child !== null
       ? React.cloneElement(child, {
           ...(describes ? { accessibilityHint: content } : { accessibilityLabel: content }),
-          onLongPress: chain('onLongPress', () => setSource('press', true)),
-          onPressOut: chain('onPressOut', () => setSource('press', false)),
+          onLongPress: chain('onLongPress', handleLongPress),
+          onPressOut: chain('onPressOut', handlePressOut),
+          // Hover and focus exist only under react-native-web; on native the bubble is
+          // long-press only.
           ...(Platform.OS === 'web'
             ? {
                 onHoverIn: chain('onHoverIn', handleHoverIn),
                 onHoverOut: chain('onHoverOut', handleHoverOut),
-                onFocus: chain('onFocus', () => setSource('focus', true)),
-                onBlur: chain('onBlur', () => setSource('focus', false)),
+                onFocus: chain('onFocus', handleFocus),
+                onBlur: chain('onBlur', handleBlur),
               }
             : {}),
         })
@@ -367,6 +469,16 @@ export function Tooltip({
     ...shadow,
   };
 
+  // Typography is forward-only: the value, an override or the binding's own token, is
+  // always passed to the composed Text rather than drawn on the bubble.
+  const textOverrides = React.useMemo<Partial<Record<TextOverridableBinding, TokenRef | undefined>>>(() => {
+    const next: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
+    for (const binding of Object.keys(TEXT_DEFAULT) as TooltipTextBinding[]) {
+      next[binding] = overrides?.[binding] ?? TEXT_DEFAULT[binding];
+    }
+    return next;
+  }, [overrides]);
+
   return (
     <View testID="Tooltip" style={{ position: 'relative', alignSelf: 'flex-start', ...(mounted ? { zIndex: layer } : {}) }}>
       {/* `collapsable={false}` keeps this View in the native tree on Android so measureInWindow stays reliable. */}
@@ -388,14 +500,7 @@ export function Tooltip({
         >
           {/* surface and text are locked: the bubble provides its foreground to the composed Text (whose color is locked too) instead of overriding it. */}
           <TextForegroundContext.Provider value={t.colorInverseForeground}>
-            <Text
-              size="sm"
-              overrides={{
-                fontFamily: overrides?.fontFamily,
-                fontSize: overrides?.fontSize,
-                lineHeight: overrides?.lineHeight,
-              }}
-            >
+            <Text size="sm" overrides={textOverrides}>
               {content}
             </Text>
           </TextForegroundContext.Provider>

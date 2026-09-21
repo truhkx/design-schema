@@ -9,10 +9,11 @@ const meta: Meta<typeof Toast> = {
   title: 'Toast/React Native',
   component: Toast,
   decorators: [withTheme({ fit: true })],
+  // No `duration`: the stories that carry an action or a danger tone are persistent anyway,
+  // and inheriting `short` here would make each of them warn.
   args: {
     message: 'Message sent',
     tone: 'neutral',
-    duration: 'short',
     dismissible: true,
   },
 };
@@ -27,19 +28,12 @@ export const Default: Story = {};
 export const ToneNeutral: Story = { args: { tone: 'neutral', message: 'Link copied' } };
 export const ToneSuccess: Story = { args: { tone: 'success', message: 'Changes saved' } };
 export const ToneWarning: Story = { args: { tone: 'warning', message: 'Connection unstable' } };
-export const ToneDanger: Story = {
-  args: { tone: 'danger', message: 'Upload failed', duration: 'persistent' },
-};
+export const ToneDanger: Story = { args: { tone: 'danger', message: 'Upload failed' } };
 
 // duration
 export const DurationShort: Story = { args: { duration: 'short' } };
 export const DurationLong: Story = { args: { duration: 'long' } };
-export const DurationPersistent: Story = { args: { duration: 'persistent', message: '3 files deleted', actionLabel: 'Undo' } };
-
-// notable states
-export const WithAction: Story = {
-  args: { message: '3 files moved to Archive', actionLabel: 'Undo', duration: 'persistent' },
-};
+export const DurationPersistent: Story = { args: { duration: 'persistent' } };
 
 // examples
 /** The reason most reversible actions need no AlertDialog; an action makes the toast persistent. */
@@ -49,12 +43,13 @@ export const UndoADelete: Story = {
 /** The plain confirmation of something the user did not have to watch. */
 export const Saved: Story = { args: { message: 'Changes saved', tone: 'success' } };
 /** A result that arrived on its own, with one way to look at it. */
-export const BackgroundResult: Story = { args: { message: 'Export ready', actionLabel: 'View', duration: 'long' } };
+export const BackgroundResult: Story = { args: { message: 'Export ready', actionLabel: 'View' } };
 /** A danger toast, persistent so nobody misses the one they needed. */
 export const FailedUpload: Story = {
   args: { message: 'Upload failed', tone: 'danger', actionLabel: 'Retry', duration: 'persistent' },
 };
 
+// notable states
 export const NotDismissible: Story = { args: { dismissible: false } };
 
 export const WithOverrides: Story = {

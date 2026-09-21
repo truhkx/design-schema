@@ -9,7 +9,7 @@ const meta: Meta<typeof Tooltip> = {
   component: Tooltip,
   args: {
     content: 'Includes archived items',
-    children: <Button label="Items" />,
+    children: <Button label="Items" variant="secondary" />,
   },
   tags: ['autodocs'],
 };
@@ -44,7 +44,7 @@ export const IconOnlyButtonName: Story = {
 export const ColumnHeaderHint: Story = {
   args: {
     content: 'Includes archived items',
-    children: <Button label="Items" />,
+    children: <Button label="Items" variant="secondary" />,
   },
   render: (args) => (
     <table>

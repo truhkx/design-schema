@@ -1,6 +1,9 @@
 /**
  * <ds-toast> — behavior scenarios from the component doc, one test each, in the doc's order.
  * Runs in headless Chromium (Vitest browser mode).
+ *
+ * `dismiss` fires after the exit transition ends (the doc's timing), and the token stylesheet is
+ * loaded here, so every dismissal assertion polls rather than reading the mock straight away.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { userEvent } from 'vitest/browser';
@@ -58,7 +61,8 @@ describe('ds-toast', () => {
 
   it('escape-dismisses-the-focused-toast', async () => {
     const t = await setup();
-    t.part('dismissButton')!.querySelector('ds-button')!.focus();
+    // Focus delegates to the first control, the dismiss button: Escape acts only from inside a toast.
+    t.el.focus();
     expect(t.el.matches(':focus-within')).toBe(true);
     await userEvent.keyboard('{Escape}');
     await expect.poll(() => t.dismiss.mock.calls.length).toBe(1);
@@ -67,7 +71,7 @@ describe('ds-toast', () => {
 
   it('danger-toasts-are-announced-assertively', async () => {
     const t = await setup({ tone: 'danger' });
-    expect(t.el.getAttribute('role')).toBe('alert');
+    expect(t.part('toast')!.getAttribute('role')).toBe('alert');
   });
 
   it('the-message-is-rendered', async () => {
@@ -97,6 +101,7 @@ describe('ds-toast', () => {
 
   it('has-accessible-name', async () => {
     const t = await setup();
-    expect(t.el).toHaveAccessibleName(t.props.message);
+    expect(t.part('toast')).toHaveAccessibleName(t.props.message);
+    expect(t.part('toast')!.getAttribute('role')).toBe('status');
   });
 });

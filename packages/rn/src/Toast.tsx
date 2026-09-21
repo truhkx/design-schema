@@ -7,6 +7,7 @@ import { Button } from './Button';
 import { Icon } from './Icon';
 import type { IconName } from './Icon';
 import { Text, TextForegroundContext } from './Text';
+import type { TextOverridableBinding } from './Text';
 import { toEasing, toLineHeight, useReducedMotion, useTheme } from './theme';
 
 export type ToastTone = 'neutral' | 'success' | 'warning' | 'danger';
@@ -84,6 +85,19 @@ const TONE_ICON = {
 
 /** constants.shortDuration / longDuration: `motion.duration.loop` × multiplier, in ms. */
 const DURATION_MULTIPLIER = { short: 6, long: 12 } as const satisfies Record<'short' | 'long', number>;
+
+/**
+ * Typography belongs to the composed Text, so `fontFamily`, `fontSize` and `lineHeight` are
+ * forward-only: the toast never styles them itself, and the value — an override or this
+ * default — is always passed to Text's `overrides` under the same name.
+ */
+type ToastTextBinding = ToastOverridableBinding & TextOverridableBinding;
+
+const TEXT_DEFAULT: Record<ToastTextBinding, TokenRef> = {
+  fontFamily: 'font.family.body', // literal-ok: a TokenRef forwarded to Text, not a font stack
+  fontSize: 'font.size.md',
+  lineHeight: 'font.lineHeight.normal',
+};
 
 type PauseSource = 'touch' | 'hidden';
 
@@ -169,15 +183,14 @@ export function Toast({
   }, []);
 
   React.useEffect(() => {
-    // Only an explicit `short` or `long` warns; the default never does.
-    if (__DEV__ && (durationProp === 'short' || durationProp === 'long') && forcedPersistent) {
+    // Only an explicit `short` or `long` warns; the default never does. It fires again
+    // whenever a change to `duration`, `actionLabel` or `tone` enters that case.
+    if (__DEV__ && forcedPersistent && (durationProp === 'short' || durationProp === 'long')) {
       console.warn(
-        `Toast: duration "${durationProp}" is overridden to "persistent" because ${actionLabel !== undefined ? 'an action is present' : 'tone is danger'}.`,
+        `Toast: \`duration: ${durationProp}\` is ignored — a toast with an action or \`tone: danger\` is persistent until dismissed.`,
       );
     }
-    // Reflects how this instance was configured on mount; a live toast is not reconfigured.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [forcedPersistent, durationProp]);
 
   React.useEffect(() => {
     if (Platform.OS === 'ios' && message !== '') {
@@ -320,7 +333,8 @@ export function Toast({
   const toastStyle: Animated.WithAnimatedValue<ViewStyle> = {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
+    // No `alignSelf`: the region centers its toasts at every width (`alignItems: 'center'`),
+    // and a standalone toast takes the cross-axis alignment of whatever holds it.
     gap,
     maxWidth,
     paddingVertical: paddingBlock,
@@ -342,6 +356,16 @@ export function Toast({
     flexGrow: 1,
   };
 
+  // Typography is forward-only: the value, an override or the binding's own token, is
+  // always passed to the composed Text rather than drawn on the toast.
+  const textOverrides = React.useMemo<Partial<Record<TextOverridableBinding, TokenRef | undefined>>>(() => {
+    const next: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
+    for (const binding of Object.keys(TEXT_DEFAULT) as ToastTextBinding[]) {
+      next[binding] = overrides?.[binding] ?? TEXT_DEFAULT[binding];
+    }
+    return next;
+  }, [overrides]);
+
   return (
     <Animated.View
       testID="Toast"
@@ -362,14 +386,8 @@ export function Toast({
         {/* text: color.inverse.foreground, locked. Text's own `color` binding is locked, so the
             inverse surface provides its foreground to the subtree instead. */}
         <TextForegroundContext.Provider value={t.colorInverseForeground}>
-          <Text
-            size="md"
-            overrides={{
-              fontFamily: overrides?.fontFamily,
-              fontSize: overrides?.fontSize,
-              lineHeight: overrides?.lineHeight,
-            }}
-          >
+          {/* React Native Text has no `element`, so the message part takes only `size: md`. */}
+          <Text size="md" overrides={textOverrides}>
             {message}
           </Text>
         </TextForegroundContext.Provider>
@@ -380,6 +398,8 @@ export function Toast({
         </View>
       ) : null}
       {isDismissible ? (
+        /* dismissColor: native has no currentColor, so the glyph takes color.inverse.link
+           through Icon's own `overrides`, the sanctioned way to color a composed child. */
         <View testID="Toast.dismissButton">
           <Button
             label={COPY.dismissLabel}
@@ -387,7 +407,7 @@ export function Toast({
             size="sm"
             iconOnly
             inverse
-            leadingIcon={<Icon name="close" color={t.colorInverseLink} />}
+            leadingIcon={<Icon name="close" overrides={{ color: 'color.inverse.link' }} />}
             onPress={() => requestDismiss('dismiss-button')}
           />
         </View>
@@ -478,9 +498,13 @@ export function ToastProvider({ children, overrides }: ToastProviderProps): Reac
         const id = options.toastId ?? `toast-${counterRef.current}`;
         settle(id, 'replaced');
         const next: ToastEntry[] = [...entriesRef.current, { id, options, resolve, exiting: null }];
-        const evicted = next.length > MAX_TOASTS ? next.shift() : undefined;
-        commit(next);
+        // A toast already playing its exit transition does not count toward the three, so the
+        // oldest one still staying is the one evicted. Only one can exceed at a time.
+        const staying = next.filter((candidate) => candidate.exiting === null);
+        const evicted = staying.length > MAX_TOASTS ? staying[0] : undefined;
+        commit(evicted === undefined ? next : next.filter((candidate) => candidate !== evicted));
         if (evicted !== undefined) {
+          // `replaced`: it leaves immediately, without its exit transition.
           evicted.options.onDismiss?.('replaced');
           evicted.resolve({ reason: 'replaced' });
         }
@@ -527,7 +551,11 @@ export function ToastProvider({ children, overrides }: ToastProviderProps): Reac
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <View testID="Toast.region" style={regionStyle} pointerEvents="box-none" accessibilityLabel={COPY.regionLabel}>
+      {/* `role="region"` carries the name: the region exists before any toast, and an
+          `accessibilityLabel` on a View with no role is an `aria-label` on a bare <div>
+          under react-native-web (axe `aria-prohibited-attr`). It is also the role the web
+          and Lit regions use, so the three platforms announce the same landmark. */}
+      <View testID="Toast.region" style={regionStyle} pointerEvents="box-none" role="region" accessibilityLabel={COPY.regionLabel}>
         {entries.map((entry) => (
           <ToastExitContext.Provider key={entry.id} value={entry.exiting}>
             <Toast {...entry.options} onDismiss={(reason) => settle(entry.id, reason)} />

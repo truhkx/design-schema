@@ -210,6 +210,74 @@ describe('FocusScope', () => {
     expect(attempts).toEqual(['backward']);
   });
 
+  it('a disabled fieldset removes its controls but keeps its links and tabindex elements', () => {
+    // "Disabled" is `:disabled`, not a subtree exclusion: the browser keeps the link focusable.
+    render(
+      <FocusScope autoFocus="first">
+        <fieldset disabled>
+          <legend>
+            <button>In legend</button>
+          </legend>
+          <button>Disabled control</button>
+          <a href="#x">Still focusable link</a>
+          <span tabIndex={0}>Still focusable span</span>
+        </fieldset>
+      </FocusScope>,
+    );
+    // The first legend's control stays enabled, so autoFocus="first" lands on it.
+    expect(screen.getByRole('button', { name: 'In legend' })).toHaveFocus();
+    fireEvent.keyDown(document.activeElement!, { key: 'Tab', shiftKey: true });
+    // Shift+Tab from the first wraps to the last, which is the span — not the :disabled button.
+    expect(screen.getByText('Still focusable span')).toHaveFocus();
+  });
+
+  it('aria-hidden and inert subtrees are excluded, aria-disabled elements are not', () => {
+    render(
+      <FocusScope autoFocus="first">
+        <button aria-disabled="true">Aria disabled</button>
+        <div aria-hidden="true">
+          <button>Hidden away</button>
+        </div>
+        {/* @ts-expect-error -- `inert` is not in this React version's JSX attribute types. */}
+        <div inert="">
+          <button>Inert</button>
+        </div>
+        <button>Last real</button>
+      </FocusScope>,
+    );
+    expect(screen.getByRole('button', { name: 'Aria disabled' })).toHaveFocus();
+    fireEvent.keyDown(document.activeElement!, { key: 'Tab', shiftKey: true });
+    expect(screen.getByRole('button', { name: 'Last real' })).toHaveFocus();
+  });
+
+  it('restores past the opener when the opener and its marker were removed together', () => {
+    function Harness({ phase }: { phase: 'before' | 'open' | 'gone' }) {
+      return (
+        <>
+          {/* The opener sits in a wrapper that is removed together with the scope. */}
+          {phase === 'gone' ? null : (
+            <div>
+              <button>Opener</button>
+            </div>
+          )}
+          <a href="#after">Link after the opener</a>
+          {phase === 'open' ? (
+            <FocusScope autoFocus="first">
+              <button>Inside</button>
+            </FocusScope>
+          ) : null}
+        </>
+      );
+    }
+    const { rerender } = render(<Harness phase="before" />);
+    screen.getByRole('button', { name: 'Opener' }).focus();
+    rerender(<Harness phase="open" />);
+    expect(screen.getByRole('button', { name: 'Inside' })).toHaveFocus();
+    // Unmount the opener's whole parent along with the scope: the marker goes with it.
+    rerender(<Harness phase="gone" />);
+    expect(screen.getByRole('link', { name: 'Link after the opener' })).toHaveFocus();
+  });
+
   it('the scope part wins over a composing data-part', () => {
     const { container } = render(
       <FocusScope autoFocus="none" data-part="focusScope">
@@ -241,7 +309,8 @@ describe('overlay composites restore focus to their opener', () => {
 
   it('Dialog — scrim click', () => {
     const { opener, dialog: el } = openFrom(dialog);
-    fireEvent.click(el);
+    // The scrim is its own element inside the <dialog>; clicking the dialog box itself is not a dismiss.
+    fireEvent.click(el.querySelector('[data-part="scrim"]')!);
     expect(opener).toHaveFocus();
   });
 

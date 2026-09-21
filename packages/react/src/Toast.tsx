@@ -116,8 +116,57 @@ function prefersReducedMotion(): boolean {
     : false;
 }
 
-const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])';
 const REGION_SELECTOR = '[data-ds="ToastRegion"]';
+
+/** The focusable selector FocusScope walks with, kept in step with it. */
+const FOCUSABLE_SELECTOR = [
+  'a[href]',
+  'area[href]',
+  'button',
+  'input:not([type="hidden"])',
+  'select',
+  'textarea',
+  'summary',
+  'iframe',
+  'audio[controls]',
+  'video[controls]',
+  '[contenteditable]:not([contenteditable="false"])',
+  '[tabindex]',
+].join(',');
+
+function isFocusable(element: Element): element is HTMLElement {
+  if (!(element instanceof HTMLElement)) return false;
+  if (!element.matches(FOCUSABLE_SELECTOR)) return false;
+  if (element.matches(':disabled')) return false;
+  return element.getAttribute('tabindex') !== '-1' && element.tabIndex >= 0;
+}
+
+function isExcludedSubtree(element: Element): boolean {
+  return element.hasAttribute('inert') || element.getAttribute('aria-hidden') === 'true';
+}
+
+/**
+ * FocusScope's focusable walker: document order, descending open shadow roots and assigned slot
+ * nodes so a focusable inside a custom element counts. F6 and the focus restore both use it.
+ */
+function collectFocusable(root: Element | ShadowRoot, results: HTMLElement[] = []): HTMLElement[] {
+  for (const child of Array.from(root.children)) {
+    if (isExcludedSubtree(child)) continue;
+    if (child instanceof HTMLSlotElement) {
+      for (const assigned of child.assignedElements({ flatten: true })) {
+        if (isExcludedSubtree(assigned)) continue;
+        if (isFocusable(assigned)) results.push(assigned);
+        if (assigned.shadowRoot) collectFocusable(assigned.shadowRoot, results);
+        collectFocusable(assigned, results);
+      }
+      continue;
+    }
+    if (isFocusable(child)) results.push(child);
+    if (child.shadowRoot) collectFocusable(child.shadowRoot, results);
+    collectFocusable(child, results);
+  }
+  return results;
+}
 
 /** Where focus was before it entered the toast region (by F6 or Tab); Escape and the buttons send it back. */
 let returnFocusTarget: HTMLElement | null = null;
@@ -130,9 +179,7 @@ function returnFocus(root: HTMLElement): void {
     target.focus();
     return;
   }
-  const candidates = Array.from(root.ownerDocument.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
-    (el) => !root.contains(el),
-  );
+  const candidates = collectFocusable(root.ownerDocument.body).filter((el) => !root.contains(el));
   const isAfter = (el: HTMLElement): boolean =>
     (root.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
   const next = candidates.find(isAfter);
@@ -220,6 +267,7 @@ export function Toast({
   const [visible, setVisible] = useState(false);
   const [gone, setGone] = useState(false);
   const dismissedRef = useRef(false);
+  const focusWithinRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const exitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onDismissLatest = useRef(onDismiss);
@@ -351,14 +399,20 @@ export function Toast({
     };
   }, [effectiveDuration, loopMs, dismiss]);
 
-  // Remember where focus came from when it enters by Tab, and dismiss on Escape.
+  // Remember where focus came from when it enters by Tab, dismiss on Escape, and restore focus when
+  // the toast leaves while holding it for any reason — including `replaced`, which is removed from
+  // the region straight away and so unmounts without going through `dismiss`.
   useEffect(() => {
     const node = rootRef.current;
     if (!node) return undefined;
+    const region = node.closest<HTMLElement>(REGION_SELECTOR) ?? node;
     const handleFocusIn = (event: FocusEvent): void => {
+      focusWithinRef.current = true;
       const from = event.relatedTarget;
-      const region = node.closest(REGION_SELECTOR) ?? node;
       if (from instanceof HTMLElement && !region.contains(from)) returnFocusTarget = from;
+    };
+    const handleFocusOut = (event: FocusEvent): void => {
+      if (!node.contains(event.relatedTarget as Node | null)) focusWithinRef.current = false;
     };
     const handleKeyDown = (event: KeyboardEvent): void => {
       if (event.key !== 'Escape') return;
@@ -367,10 +421,18 @@ export function Toast({
       dismiss('escape');
     };
     node.addEventListener('focusin', handleFocusIn);
+    node.addEventListener('focusout', handleFocusOut);
     node.addEventListener('keydown', handleKeyDown);
     return () => {
       node.removeEventListener('focusin', handleFocusIn);
+      node.removeEventListener('focusout', handleFocusOut);
       node.removeEventListener('keydown', handleKeyDown);
+      if (!focusWithinRef.current) return;
+      // `dismiss` already restored focus for every other reason; only step in when focus is still
+      // inside the toast (or has fallen to the body because the toast was taken out from under it).
+      const active = node.ownerDocument.activeElement;
+      if (active && active !== node.ownerDocument.body && !node.contains(active)) return;
+      returnFocus(region);
     };
   }, [dismiss]);
 
@@ -556,7 +618,7 @@ export function ToastRegion({
         target.focus();
         return;
       }
-      const first = region.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
+      const first = collectFocusable(region)[0];
       if (!first) return;
       event.preventDefault();
       const active = document.activeElement;

@@ -56,10 +56,6 @@ const EXIT_FALLBACK_BUFFER_MS = 50;
 /** At most this many toasts stack; showing another evicts the oldest. A fixed count, not a token. */
 const MAX_TOASTS = 3;
 
-/** Light-DOM elements a focus fallback may land on. */
-const FOCUSABLE_SELECTOR =
-  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-
 /** Overridable style hooks; see the `overrides` property. `surface`, `text`, `icon`, `actionColor`, `dismissColor`, `focusRingInverse` and `minTarget` are locked and excluded; `stackGap`, `regionInset` and `layer` belong to `<ds-toast-region>`. */
 export type ToastOverridableBinding =
   | 'radius'
@@ -133,6 +129,66 @@ function resolveConstant(el: HTMLElement, constant: TokenConstant): number | nul
   return base === null ? null : base * constant.multiply;
 }
 
+/* --- FocusScope's focusable walker, kept in step with it ------------------------------------- */
+
+const FOCUSABLE_SELECTOR = [
+  'a[href]',
+  'area[href]',
+  'button',
+  'input:not([type="hidden"])',
+  'select',
+  'textarea',
+  'summary',
+  'iframe',
+  'audio[controls]',
+  'video[controls]',
+  '[contenteditable]:not([contenteditable="false"])',
+  '[tabindex]',
+].join(',');
+
+function isFocusable(el: Element): el is HTMLElement {
+  if (!(el instanceof HTMLElement)) {
+    return false;
+  }
+  if (el.hasAttribute('data-focus-sentinel') || el.hasAttribute('data-focus-scope-anchor')) {
+    return false;
+  }
+  if (!el.matches(FOCUSABLE_SELECTOR) || el.matches(':disabled')) {
+    return false;
+  }
+  return el.getAttribute('tabindex') !== '-1' && el.tabIndex >= 0;
+}
+
+/** `inert` and `aria-hidden="true"` subtrees contribute nothing at all. */
+function isExcludedSubtree(el: Element): boolean {
+  return el.hasAttribute('inert') || el.getAttribute('aria-hidden') === 'true';
+}
+
+/**
+ * Walks light DOM, slot assignments and open shadow roots in tree order, exactly as FocusScope
+ * does, so a `<ds-button>` contributes the `<button>` inside its shadow root. F6 and the focus
+ * restore both need that: every control a toast owns lives in a shadow tree.
+ */
+function collectFocusable(node: Element, results: HTMLElement[] = []): HTMLElement[] {
+  if (isExcludedSubtree(node)) {
+    return results;
+  }
+  if (isFocusable(node)) {
+    results.push(node);
+  }
+  if (node instanceof HTMLSlotElement) {
+    for (const assigned of node.assignedElements({ flatten: true })) {
+      collectFocusable(assigned, results);
+    }
+    return results;
+  }
+  const scope = node.shadowRoot ?? node;
+  for (const child of Array.from(scope.children)) {
+    collectFocusable(child, results);
+  }
+  return results;
+}
+
 /** The deepest focused element, through open shadow roots. */
 function deepActiveElement(): HTMLElement | null {
   let active: Element | null = document.activeElement;
@@ -142,21 +198,66 @@ function deepActiveElement(): HTMLElement | null {
   return active instanceof HTMLElement && active !== document.body ? active : null;
 }
 
+/** `Node.contains`, but crossing shadow boundaries, so a button inside a toast counts as inside the region. */
+function containsDeep(root: Node, node: Node | null): boolean {
+  let current: Node | null = node;
+  while (current) {
+    if (current === root) {
+      return true;
+    }
+    current = current.parentNode ?? (current instanceof ShadowRoot ? current.host : null);
+  }
+  return false;
+}
+
+/** The element itself, or the outermost shadow host holding it, so it can be ordered against document nodes. */
+function documentHost(el: Element): Element {
+  let node: Element = el;
+  let root = node.getRootNode();
+  while (root instanceof ShadowRoot) {
+    node = root.host;
+    root = node.getRootNode();
+  }
+  return node;
+}
+
+/** Where focus was before it entered the toast region (by F6 or by Tab); Escape and the buttons send it back. */
+let returnFocusTarget: HTMLElement | null = null;
+
+/**
+ * Sends focus back to where it came from; if that element is gone, to the next focusable element
+ * after `root` (the previous one if there is none), found with FocusScope's walker so it descends
+ * open shadow roots.
+ */
+function returnFocus(root: HTMLElement): void {
+  const target = returnFocusTarget;
+  returnFocusTarget = null;
+  if (target?.isConnected) {
+    target.focus();
+    return;
+  }
+  const candidates = collectFocusable(root.ownerDocument.body).filter((el) => !containsDeep(root, el));
+  const position = (el: HTMLElement): number => root.compareDocumentPosition(documentHost(el));
+  const next = candidates.find((el) => (position(el) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0);
+  const previous = candidates.filter((el) => (position(el) & Node.DOCUMENT_POSITION_PRECEDING) !== 0).pop();
+  (next ?? previous)?.focus();
+}
+
 /**
  * `<ds-toast>` — Toast (category: feedback, APG pattern: alert).
  *
- * One notification, normally created by the `toast()` function below inside
- * a lazily created `<ds-toast-region>` in `document.body`. The host carries
- * `role="status"` (`"alert"` for `tone: "danger"`) and `aria-label` set to
- * `message`. Inside the shadow root: the tone icon (`neutral` has none), the
- * message as `<ds-text>`, a ghost + inverse `<ds-button>` for the action, and
- * a ghost + inverse icon-only `<ds-button>` for dismiss, each inside a wrapper
- * the toast owns. A timer dismisses the toast after `duration`, pausing while
- * hovered, touched, focused, or the page is hidden; a toast with an action or
- * `tone: "danger"` is persistent regardless of `duration`. Escape (while the
- * toast holds focus), the dismiss button and the action all dismiss with a
- * short exit transition (instant under reduced motion); a replaced or evicted
- * toast leaves at once.
+ * One notification, normally created by the `toast()` function below inside a
+ * lazily created `<ds-toast-region>` in `document.body`. Inside the shadow root
+ * the `toast` part carries `role="status"` (`"alert"` for `tone: "danger"`) and
+ * `aria-label` set to `message`, and holds the tone icon (`neutral` has none),
+ * the message as `<ds-text>`, a ghost + inverse `<ds-button>` for the action,
+ * and a ghost + inverse icon-only `<ds-button>` for dismiss, each inside a
+ * wrapper the toast owns. A timer dismisses the toast after `duration`, pausing
+ * while hovered, touched, focused, or the page is hidden; a toast with an
+ * action or `tone: "danger"` is persistent regardless of `duration`. Escape
+ * (while the toast holds focus), the dismiss button and the action all dismiss
+ * with a short exit transition (instant under reduced motion); a replaced or
+ * evicted toast leaves at once.
  *
  * ## When to use
  *
@@ -175,6 +276,9 @@ function deepActiveElement(): HTMLElement | null {
  */
 @customElement('ds-toast')
 export class DsToast extends LitElement {
+  /** Focus delegates to the first control, so `toast.focus()` reaches the action or dismiss button. */
+  static override shadowRootOptions: ShadowRootInit = { ...LitElement.shadowRootOptions, delegatesFocus: true };
+
   static override styles: CSSResult = css`
     :host {
       display: block;
@@ -200,6 +304,8 @@ export class DsToast extends LitElement {
       display: flex;
       align-items: center;
       gap: var(--ds-toast-gap);
+      /* minTarget: size.target.min, locked — the row never falls below the minimum target height */
+      min-block-size: var(--size-target-min);
       padding-block: var(--ds-toast-padding-block);
       padding-inline: var(--ds-toast-padding-inline);
       border-radius: var(--ds-toast-radius);
@@ -209,6 +315,7 @@ export class DsToast extends LitElement {
       /* text: color.inverse.foreground, locked. Text's color binding is locked and it has no inverse tone,
          so the toast re-scopes the token Text already reads on its own container and composes Text unchanged. */
       --color-foreground: var(--color-inverse-foreground);
+      color: var(--color-inverse-foreground);
       /* focusRingInverse: color.inverse.focus, locked — replaces color.border.focus inside the toast */
       --color-border-focus: var(--color-inverse-focus);
       opacity: 1;
@@ -226,14 +333,17 @@ export class DsToast extends LitElement {
       }
     }
 
-    /* exit: fade over exit, replacing the enter duration while leaving */
+    /* exit: the reverse of enter — sink by enterOffset while fading, over exit */
     [data-part='toast'].closing {
       opacity: 0;
+      transform: translateY(var(--ds-toast-enter-offset));
       transition-duration: var(--ds-toast-exit);
     }
 
     @media (prefers-reduced-motion: reduce) {
-      [data-part='toast'] {
+      [data-part='toast'],
+      [data-part='toast'].closing {
+        transform: none;
         transition: none;
       }
 
@@ -308,7 +418,6 @@ export class DsToast extends LitElement {
   private timerStartedAt = 0;
   private pointerOver = false;
   private focused = false;
-  private warnedForcedPersistent = false;
 
   constructor() {
     super();
@@ -358,17 +467,6 @@ export class DsToast extends LitElement {
   }
 
   protected override willUpdate(changed: PropertyValues): void {
-    if (changed.has('tone')) {
-      // A plain attribute so the accessible-role computation sees it; `alert` is assertive, `status` polite.
-      this.setAttribute('role', this.tone === 'danger' ? 'alert' : 'status');
-    }
-    if (changed.has('message')) {
-      if (this.message) {
-        this.setAttribute('aria-label', this.message);
-      } else {
-        this.removeAttribute('aria-label');
-      }
-    }
     if (changed.has('overrides')) {
       this.applyOverrides();
     }
@@ -377,8 +475,11 @@ export class DsToast extends LitElement {
   protected override updated(changed: PropertyValues): void {
     if (changed.has('duration') || changed.has('actionLabel') || changed.has('tone')) {
       this.restartTimer();
+      this.warnForcedPersistent();
     }
-    this.warnInDev();
+    if (changed.has('message') && import.meta.env.DEV && !this.message) {
+      console.warn('<ds-toast> requires a `message`.', this);
+    }
   }
 
   protected override render(): TemplateResult {
@@ -392,7 +493,13 @@ export class DsToast extends LitElement {
     };
 
     return html`
-      <div class=${this.closing ? 'closing' : ''} part="toast" data-part="toast">
+      <div
+        class=${this.closing ? 'closing' : ''}
+        part="toast"
+        data-part="toast"
+        role=${this.tone === 'danger' ? 'alert' : 'status'}
+        aria-label=${this.message || nothing}
+      >
         ${this.tone === 'neutral'
           ? nothing
           : html`<ds-icon part="icon" data-part="icon" name=${this.tone} .overrides=${iconOverrides}></ds-icon>`}
@@ -428,11 +535,8 @@ export class DsToast extends LitElement {
 
   /** The first focusable control: the action button, else the dismiss button. */
   public firstControl(): HTMLElement | null {
-    return (
-      this.shadowRoot?.querySelector<HTMLElement>(
-        '[data-part="actionButton"] ds-button, [data-part="dismissButton"] ds-button',
-      ) ?? null
-    );
+    const container = this.containerEl;
+    return container ? (collectFocusable(container)[0] ?? null) : null;
   }
 
   private readonly handleActionPress = (event: Event): void => {
@@ -452,6 +556,7 @@ export class DsToast extends LitElement {
 
   private readonly handleKeydown = (event: KeyboardEvent): void => {
     if (event.key === 'Escape' && !this.dismissed) {
+      event.preventDefault();
       event.stopPropagation();
       this.requestDismiss('escape');
     }
@@ -467,13 +572,19 @@ export class DsToast extends LitElement {
     this.maybeResumeTimer();
   };
 
-  private readonly handleFocusIn = (): void => {
+  private readonly handleFocusIn = (event: FocusEvent): void => {
     this.focused = true;
     this.pauseTimer();
+    const region = this.closest('ds-toast-region');
+    const from = event.relatedTarget;
+    // Focus tabbed in from outside the region: that is where Escape and the buttons send it back.
+    if (from instanceof HTMLElement && !containsDeep(region ?? this, from)) {
+      returnFocusTarget = from;
+    }
   };
 
   private readonly handleFocusOut = (event: FocusEvent): void => {
-    if (event.relatedTarget instanceof Node && this.contains(event.relatedTarget)) {
+    if (event.relatedTarget instanceof Node && containsDeep(this, event.relatedTarget)) {
       return;
     }
     this.focused = false;
@@ -491,7 +602,8 @@ export class DsToast extends LitElement {
   /**
    * Removes the toast and dispatches `dismiss` once it has left: after the exit
    * transition, or at once for `replaced`, under reduced motion, and when the
-   * exit time cannot be resolved.
+   * exit time cannot be resolved. A toast holding focus when it leaves — for any
+   * reason, including `replaced` and `programmatic` — sends focus back first.
    */
   public requestDismiss(reason: ToastDismissReason): void {
     if (this.dismissed) {
@@ -501,16 +613,16 @@ export class DsToast extends LitElement {
     this.clearTimer();
 
     const finish = (): void => {
-      const region = this.closest('ds-toast-region');
+      const root = this.closest('ds-toast-region') ?? this;
       const hadFocus = this.matches(':focus-within');
       // Dispatched once the toast has left the screen, while still connected so it bubbles to the region.
       this.dispatchEvent(
         new CustomEvent<ToastDismissDetail>('dismiss', { detail: { reason }, bubbles: true, composed: true }),
       );
-      this.remove();
-      if (hadFocus && region instanceof DsToastRegion) {
-        region.restoreFocus();
+      if (hadFocus) {
+        returnFocus(root);
       }
+      this.remove();
     };
 
     const container = this.containerEl;
@@ -605,22 +717,15 @@ export class DsToast extends LitElement {
     }
   }
 
-  private warnInDev(): void {
-    if (!import.meta.env.DEV) {
+  /** Warns each time a change to `duration`, `actionLabel` or `tone` makes an assigned `duration` moot. */
+  private warnForcedPersistent(): void {
+    if (!import.meta.env.DEV || !this.durationAssigned) {
       return;
     }
-    if (!this.message) {
-      console.warn('<ds-toast> requires a `message`.', this);
-    }
-    if (
-      !this.warnedForcedPersistent &&
-      this.durationAssigned &&
-      this.duration !== 'persistent' &&
-      this.effectiveDuration === 'persistent'
-    ) {
-      this.warnedForcedPersistent = true;
+    const assigned = this.duration;
+    if ((assigned === 'short' || assigned === 'long') && this.effectiveDuration === 'persistent') {
       console.warn(
-        `<ds-toast>: \`duration="${this.duration}"\` is ignored — a toast with an action or \`tone="danger"\` is persistent until dismissed.`,
+        `<ds-toast>: \`duration="${assigned}"\` is ignored — a toast with an action or \`tone="danger"\` is persistent until dismissed.`,
         this,
       );
     }
@@ -680,9 +785,6 @@ export class DsToastRegion extends LitElement {
   /** motion.duration.loop as resolved on the region at mount, in ms; `undefined` before mount, `null` when unresolved. */
   public loopMs: number | null | undefined;
 
-  /** Where focus came from when it entered the region (by F6 or by Tab). */
-  private returnTarget: HTMLElement | null = null;
-
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('data-ds', 'ToastRegion');
@@ -693,13 +795,11 @@ export class DsToastRegion extends LitElement {
     this.setAttribute('aria-live', 'polite');
     this.loopMs = readTimeMs(this, tokenProperty(DURATION_CONSTANTS.short.token));
     document.addEventListener('keydown', this.handleDocumentKeydown);
-    this.addEventListener('focusin', this.handleFocusIn);
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     document.removeEventListener('keydown', this.handleDocumentKeydown);
-    this.removeEventListener('focusin', this.handleFocusIn);
   }
 
   protected override willUpdate(changed: PropertyValues): void {
@@ -718,26 +818,8 @@ export class DsToastRegion extends LitElement {
    * previous one if there is none).
    */
   public restoreFocus(): void {
-    const target = this.returnTarget;
-    this.returnTarget = null;
-    if (target?.isConnected) {
-      target.focus();
-      return;
-    }
-    const candidates = Array.from(document.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
-      (el) => !this.contains(el),
-    );
-    const after = candidates.find((el) => this.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING);
-    const before = candidates.filter((el) => this.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_PRECEDING).pop();
-    (after ?? before)?.focus();
+    returnFocus(this);
   }
-
-  private readonly handleFocusIn = (event: FocusEvent): void => {
-    const from = event.relatedTarget;
-    if (from instanceof HTMLElement && !this.contains(from)) {
-      this.returnTarget = from;
-    }
-  };
 
   private readonly handleDocumentKeydown = (event: KeyboardEvent): void => {
     if (event.key !== 'F6') {
@@ -747,7 +829,7 @@ export class DsToastRegion extends LitElement {
     if (!first) {
       return;
     }
-    if (this.matches(':focus-within')) {
+    if (containsDeep(this, deepActiveElement())) {
       event.preventDefault();
       this.restoreFocus();
       return;
@@ -760,7 +842,7 @@ export class DsToastRegion extends LitElement {
     const origin = deepActiveElement();
     target.focus();
     // Recorded after focusing, so the deepest origin wins over the retargeted relatedTarget.
-    this.returnTarget = origin;
+    returnFocusTarget = origin;
   };
 
   private applyOverrides(): void {
@@ -803,17 +885,6 @@ function findRegion(): DsToastRegion | null {
   return regionEl;
 }
 
-function ensureRegion(): DsToastRegion {
-  const existing = findRegion();
-  if (existing) {
-    return existing;
-  }
-  const created = document.createElement('ds-toast-region');
-  document.body.appendChild(created);
-  regionEl = created;
-  return created;
-}
-
 function liveToasts(region: DsToastRegion): DsToast[] {
   return Array.from(region.querySelectorAll('ds-toast')).filter((el) => !el.dismissing);
 }
@@ -826,7 +897,12 @@ function liveToasts(region: DsToastRegion): DsToast[] {
  * evicts the oldest the same way.
  */
 export function toast(options: ToastOptions): Promise<ToastResult> {
-  const region = ensureRegion();
+  const existing = findRegion();
+  const region = existing ?? document.createElement('ds-toast-region');
+  if (!existing) {
+    document.body.appendChild(region);
+    regionEl = region;
+  }
 
   if (options.toastId !== undefined) {
     liveToasts(region)
@@ -862,7 +938,13 @@ export function toast(options: ToastOptions): Promise<ToastResult> {
     );
   });
 
-  region.appendChild(el);
+  // A region this call just created waits one frame before its first toast, so the empty live
+  // region is in the document before the content it has to announce.
+  if (!existing && typeof requestAnimationFrame === 'function') {
+    requestAnimationFrame(() => region.appendChild(el));
+  } else {
+    region.appendChild(el);
+  }
   return result;
 }
 

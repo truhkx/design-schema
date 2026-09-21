@@ -494,26 +494,28 @@
     }
   },
   "FocusScope.web": {
-    "hash": "86bbf03724557fbb",
-    "lastAttemptHash": "86bbf03724557fbb",
-    "generatedAt": "2026-09-17T13:45:10+00:00",
+    "hash": "b7721cc79ef00f54",
+    "lastAttemptHash": "b7721cc79ef00f54",
+    "generatedAt": "2026-09-21T08:41:32+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.2413,
+    "costUsd": 2.206,
     "files": [
-      "packages/react/src/FocusScope.stories.tsx",
       "packages/react/src/FocusScope.test.tsx",
       "packages/react/src/FocusScope.tsx"
     ],
-    "gaps": 8,
+    "gaps": 6,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
     }
   },
   "Form.web": {
@@ -1164,28 +1166,28 @@
     }
   },
   "Toast.web": {
-    "hash": "e74e713b5947b795",
-    "lastAttemptHash": "e74e713b5947b795",
-    "generatedAt": "2026-09-17T14:00:54+00:00",
+    "hash": "d55d02c95978c713",
+    "lastAttemptHash": "d55d02c95978c713",
+    "generatedAt": "2026-09-21T09:40:51+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.711,
+    "rounds": 2,
+    "costUsd": 6.7116,
     "files": [
-      "packages/react/src/Toast.css",
       "packages/react/src/Toast.stories.tsx",
-      "packages/react/src/Toast.test.tsx",
-      "packages/react/src/Toast.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Toast.tsx"
     ],
-    "gaps": 11,
+    "gaps": 17,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
     }
   },
   "Toolbar.web": {
@@ -1214,26 +1216,28 @@
   },
   "Tooltip.web": {
     "hash": "1088edd04b29e0c8",
-    "lastAttemptHash": "1088edd04b29e0c8",
-    "generatedAt": "2026-09-17T13:52:25+00:00",
+    "lastAttemptHash": "e989bad6e996a4cb",
+    "generatedAt": "2026-09-21T09:08:31+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.1221,
+    "rounds": 3,
+    "costUsd": 9.6826,
     "files": [
       "packages/react/src/Tooltip.css",
       "packages/react/src/Tooltip.stories.tsx",
-      "packages/react/src/Tooltip.test.tsx",
       "packages/react/src/Tooltip.tsx"
     ],
-    "gaps": 7,
+    "gaps": 22,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": false,
+      "axe": true
     }
   },
   "Tree.web": {

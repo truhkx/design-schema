@@ -9,7 +9,7 @@ interface ToastArgs {
   message: string;
   tone: ToastTone;
   actionLabel?: string | undefined;
-  duration: ToastDuration;
+  duration?: ToastDuration | undefined;
   dismissible: boolean;
   toastId?: string | undefined;
 }
@@ -28,7 +28,6 @@ const meta: Meta<ToastArgs> = {
   args: {
     message: 'Message sent',
     tone: 'neutral',
-    duration: 'short',
     dismissible: true,
   },
   // Toasts shown through `toast()` outlive the story; clear them on cleanup.
@@ -38,7 +37,7 @@ const meta: Meta<ToastArgs> = {
       message=${args.message}
       tone=${args.tone}
       action-label=${ifDefined(args.actionLabel)}
-      duration=${args.duration}
+      duration=${ifDefined(args.duration)}
       toast-id=${ifDefined(args.toastId)}
       ?no-dismiss=${!args.dismissible}
     ></ds-toast>
@@ -66,9 +65,8 @@ export const UndoADelete: Story = {
   args: { message: '3 files moved to Archive', actionLabel: 'Undo', duration: 'persistent' },
 };
 export const Saved: Story = { args: { message: 'Changes saved', tone: 'success' } };
-export const BackgroundResult: Story = {
-  args: { message: 'Export ready', actionLabel: 'View', duration: 'long' },
-};
+/* No `duration`: an action already makes the toast persistent, and passing `short`/`long` would warn. */
+export const BackgroundResult: Story = { args: { message: 'Export ready', actionLabel: 'View' } };
 export const FailedUpload: Story = {
   args: { message: 'Upload failed', tone: 'danger', actionLabel: 'Retry', duration: 'persistent' },
 };
@@ -95,17 +93,22 @@ export const Imperative: Story = {
 };
 
 /**
- * A toast present in its region with focusable content before and after it,
- * so the keyboard gate can check that `F6` moves focus to the toast's action
- * button and back, `Escape` dismisses, and `Tab` moves between the action and
- * dismiss buttons and out of the region.
+ * The region with two persistent action toasts — four focusable buttons — and a focusable element
+ * on each side of it, so `F6` has somewhere to come from and return to, and `Tab` somewhere to
+ * leave for.
+ *
+ * The first is the toast the keyboard rules act on; the second is `danger`, so it announces through
+ * `role="alert"` rather than `status`. That keeps exactly one `role="status"` on the page: Escape
+ * dismisses the toast holding focus and only that one, which a `getByRole('status')` locator can
+ * only observe when no other status toast is left to take its place.
  */
 export const Keyboard: Story = {
   render: () => html`
-    <div style="display: flex; gap: var(--space-md);">
+    <div style="display: flex; align-items: center; gap: var(--space-md);">
       <button type="button">Before</button>
       <ds-toast-region style="position: static; inset: auto;">
         <ds-toast message="3 files moved to Archive" action-label="Undo" duration="persistent"></ds-toast>
+        <ds-toast message="Upload failed" tone="danger" action-label="Retry" duration="persistent"></ds-toast>
       </ds-toast-region>
       <button type="button">After</button>
     </div>

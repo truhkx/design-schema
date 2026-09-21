@@ -458,16 +458,15 @@
     }
   },
   "FocusScope.rn": {
-    "hash": "491f3e2b9b910216",
-    "lastAttemptHash": "491f3e2b9b910216",
-    "generatedAt": "2026-09-17T13:50:25+00:00",
+    "hash": "b5ab913c2fe2a8ca",
+    "lastAttemptHash": "b5ab913c2fe2a8ca",
+    "generatedAt": "2026-09-21T08:55:25+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.05,
+    "costUsd": 2.1036,
     "files": [
       "packages/rn/src/FocusScope.stories.tsx",
-      "packages/rn/src/FocusScope.test.tsx",
       "packages/rn/src/FocusScope.tsx"
     ],
     "gaps": 7,
@@ -477,7 +476,8 @@
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "Form.rn": {
@@ -1074,25 +1074,26 @@
     }
   },
   "Toast.rn": {
-    "hash": "3e8f3aac397d0e35",
-    "lastAttemptHash": "3e8f3aac397d0e35",
-    "generatedAt": "2026-09-17T14:07:29+00:00",
+    "hash": "baf7a0c335852a33",
+    "lastAttemptHash": "baf7a0c335852a33",
+    "generatedAt": "2026-09-21T10:02:50+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.6624,
+    "rounds": 2,
+    "costUsd": 7.6995,
     "files": [
       "packages/rn/src/Toast.stories.tsx",
       "packages/rn/src/Toast.tsx"
     ],
-    "gaps": 9,
+    "gaps": 24,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "Toolbar.rn": {
@@ -1120,26 +1121,25 @@
     }
   },
   "Tooltip.rn": {
-    "hash": "5caea4048343e453",
-    "lastAttemptHash": "5caea4048343e453",
-    "generatedAt": "2026-09-17T13:57:29+00:00",
+    "hash": "d94b3a1fcc9428ae",
+    "lastAttemptHash": "d94b3a1fcc9428ae",
+    "generatedAt": "2026-09-21T09:30:45+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.0723,
+    "costUsd": 1.9198,
     "files": [
-      "packages/rn/src/Tooltip.stories.tsx",
-      "packages/rn/src/Tooltip.test.tsx",
       "packages/rn/src/Tooltip.tsx"
     ],
-    "gaps": 7,
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "Tree.rn": {

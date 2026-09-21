@@ -37,29 +37,38 @@ export type TooltipOverridableBinding =
   | 'enter'
   | 'exit';
 
-const OVERRIDE_HOOK: Record<TooltipOverridableBinding, string> = {
+/**
+ * Typography belongs to the composed Text, so `fontFamily`, `fontSize` and `lineHeight` are
+ * forward-only: they have no `--ds-tooltip-*` hook, and the value — an override or this default —
+ * is always passed to Text's `overrides` under the same name.
+ */
+type TooltipTextBinding = TooltipOverridableBinding & TextOverridableBinding;
+
+const TEXT_DEFAULT: Record<TooltipTextBinding, TokenRef> = {
+  fontFamily: 'font.family.body', // literal-ok: a TokenRef forwarded to Text, not a font stack
+  fontSize: 'font.size.sm',
+  lineHeight: 'font.lineHeight.normal',
+};
+
+/** Hooks for the bindings the bubble styles itself; the typography three are forwarded instead. */
+const OVERRIDE_HOOK: Record<Exclude<TooltipOverridableBinding, TooltipTextBinding>, string> = {
   radius: '--ds-tooltip-radius',
   paddingBlock: '--ds-tooltip-padding-block',
   paddingInline: '--ds-tooltip-padding-inline',
   offset: '--ds-tooltip-offset',
   maxWidth: '--ds-tooltip-max-width',
-  fontFamily: '--ds-tooltip-font-family', // literal-ok: CSS custom-property hook name, not a font stack
-  fontSize: '--ds-tooltip-font-size',
-  lineHeight: '--ds-tooltip-line-height',
   shadow: '--ds-tooltip-shadow',
   layer: '--ds-tooltip-layer',
   enter: '--ds-tooltip-enter',
   exit: '--ds-tooltip-exit',
 };
 
-/** Typography bindings belong to the composed Text, so they are forwarded to its `overrides` under the same names. */
-const TEXT_BINDINGS: readonly (TooltipOverridableBinding & TextOverridableBinding)[] = ['fontFamily', 'fontSize', 'lineHeight'];
-
 function overridesToStyle(overrides: Partial<Record<TooltipOverridableBinding, TokenRef | undefined>>): CSSProperties {
   const style: Record<string, string> = {};
   for (const binding of Object.keys(overrides) as TooltipOverridableBinding[]) {
+    if (binding in TEXT_DEFAULT) continue;
     const ref = overrides[binding];
-    const hook = OVERRIDE_HOOK[binding];
+    const hook = OVERRIDE_HOOK[binding as Exclude<TooltipOverridableBinding, TooltipTextBinding>];
     if (ref && hook) style[hook] = cssVar(ref);
   }
   return style as CSSProperties;
@@ -345,12 +354,15 @@ export function Tooltip({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, present]);
 
-  // Escape hides a visible tooltip without moving focus; it is consumed so an enclosing overlay stays open.
+  // Escape hides a visible tooltip without moving focus. It is consumed in the capture phase with both
+  // stopPropagation and preventDefault, because a native <dialog> closes on an Escape that is not
+  // default-prevented: inside a Dialog the first Escape hides the tooltip, the second closes the Dialog.
   useEffect(() => {
     if (!isOpen) return undefined;
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       event.stopPropagation();
+      event.preventDefault();
       clearShow();
       setDismissed(true);
     };
@@ -413,9 +425,8 @@ export function Tooltip({
   } as unknown as Attributes);
 
   const textOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
-  for (const binding of TEXT_BINDINGS) {
-    const token = overrides?.[binding];
-    if (token) textOverrides[binding] = token;
+  for (const binding of Object.keys(TEXT_DEFAULT) as TooltipTextBinding[]) {
+    textOverrides[binding] = overrides?.[binding] ?? TEXT_DEFAULT[binding];
   }
 
   const classes = ['ds-tooltip', entered ? 'ds-tooltip--entered' : null].filter(Boolean).join(' ');

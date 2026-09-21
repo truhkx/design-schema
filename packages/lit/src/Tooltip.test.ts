@@ -45,7 +45,7 @@ function bubbleShown(bubble: HTMLElement | null): boolean {
   return bubble !== null && (bubble.matches(':popover-open') || bubble.hasAttribute('data-open'));
 }
 
-/** ds-button keeps its real <button> in a shadow root, so the tooltip text reaches it as aria-description. */
+/** A custom-element trigger (a hyphenated tag) takes the text itself, since an idref cannot reach its shadow root. */
 function expectLinked(trigger: HTMLElement, content: string): void {
   expect(trigger).toHaveAttribute('aria-description', content);
 }

@@ -479,26 +479,29 @@
     }
   },
   "FocusScope.lit": {
-    "hash": "6b67856c32cb816d",
-    "lastAttemptHash": "6b67856c32cb816d",
-    "generatedAt": "2026-09-17T13:48:14+00:00",
+    "hash": "40ce6b142ee2c4be",
+    "lastAttemptHash": "40ce6b142ee2c4be",
+    "generatedAt": "2026-09-21T08:51:43+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.5958,
+    "costUsd": 6.6119,
     "files": [
       "packages/lit/src/FocusScope.stories.ts",
       "packages/lit/src/FocusScope.test.ts",
       "packages/lit/src/FocusScope.ts"
     ],
-    "gaps": 8,
+    "gaps": 13,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
     }
   },
   "Form.lit": {
@@ -1131,27 +1134,29 @@
     }
   },
   "Toast.lit": {
-    "hash": "33d5874ffeb2f016",
-    "lastAttemptHash": "33d5874ffeb2f016",
-    "generatedAt": "2026-09-17T14:04:55+00:00",
+    "hash": "51a679e94f468e67",
+    "lastAttemptHash": "51a679e94f468e67",
+    "generatedAt": "2026-09-21T09:55:10+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.1279,
+    "costUsd": 6.3144,
     "files": [
       "packages/lit/src/Toast.stories.ts",
       "packages/lit/src/Toast.test.ts",
-      "packages/lit/src/Toast.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/Toast.ts"
     ],
-    "gaps": 10,
+    "gaps": 11,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
     }
   },
   "Toolbar.lit": {
@@ -1179,25 +1184,28 @@
   },
   "Tooltip.lit": {
     "hash": "e781e38529140a52",
-    "lastAttemptHash": "e781e38529140a52",
-    "generatedAt": "2026-09-17T13:55:50+00:00",
+    "lastAttemptHash": "36e65e2fdec9f829",
+    "generatedAt": "2026-09-21T09:26:24+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.6775,
+    "rounds": 3,
+    "costUsd": 20.4009,
     "files": [
       "packages/lit/src/Tooltip.stories.ts",
       "packages/lit/src/Tooltip.test.ts",
       "packages/lit/src/Tooltip.ts"
     ],
-    "gaps": 9,
+    "gaps": 38,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": false,
+      "axe": true
     }
   },
   "Tree.lit": {

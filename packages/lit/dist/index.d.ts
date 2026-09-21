@@ -60,7 +60,7 @@ interface DisclosureToggleDetail {
   reason: DisclosureToggleReason;
 }
 /** Overridable style hooks; see the `overrides` property. `triggerColor`, `triggerBackgroundHover`, `icon`, `panelColor`, `focusRing`, `focusRingWidth` and `minTarget` are locked and excluded. */
-type DisclosureOverridableBinding = "triggerPaddingBlock" | "triggerPaddingInline" | "triggerGap" | "triggerFontFamily" | "triggerFontSize" | "triggerFontWeight" | "triggerRadius" | "panelPaddingBlock" | "panelPaddingInline" | "disabledOpacity" | "transition";
+type DisclosureOverridableBinding = "triggerPaddingBlock" | "triggerPaddingInline" | "triggerGap" | "triggerFontFamily" | "triggerFontSize" | "triggerFontWeight" | "triggerLineHeight" | "triggerRadius" | "panelPaddingBlock" | "panelPaddingInline" | "disabledOpacity" | "transition";
 export declare class DsDisclosure extends LitElement {
   static override shadowRootOptions: ShadowRootInit;
   static override styles: CSSResult;
@@ -178,41 +178,65 @@ declare global {
 //#region src/Divider.d.ts
 type DividerOrientation = "horizontal" | "vertical";
 type DividerSpacing = "none" | "tight" | "normal" | "loose";
-/** Overridable style hooks; see the `overrides` property. `labelColor` is locked and excluded. */
+/**
+ * Overridable style hooks; see the `overrides` property. The accessibility-bearing `labelColor` is
+ * locked and excluded. `labelSize` and `fontFamily` reach the composed label `Text` through its own
+ * `overrides` (as `fontSize` and `fontFamily`) rather than a `--ds-divider-*` hook: Divider does not
+ * style the Text itself, and page CSS reaches the label through Text's hooks.
+ */
 type DividerOverridableBinding = "color" | "thickness" | "spacing" | "labelSize" | "labelGap" | "fontFamily";
 export declare class DsDivider extends LitElement {
   static override styles: CSSResult;
-  /** Vertical dividers sit between inline siblings (toolbar groups) and stretch to the row height. */
+  /**
+   * Vertical dividers sit between inline siblings (toolbar groups) and stretch to the row height:
+   * `inline-block` with `block-size: auto; align-self: stretch; min-block-size: 100%`. They need a
+   * flex or grid row (a horizontal Stack with align stretch) or a parent with a definite height; in
+   * plain block flow a vertical divider has no height and draws nothing.
+   */
   accessor orientation: DividerOrientation;
   /**
    * Optional text in the middle of a horizontal divider ("or", "Earlier
-   * today"). Turns the divider into a labelled separator (`semantic` is
-   * implied). Ignored on a vertical divider, with a development warning; an
-   * ignored label implies nothing either. An empty string is no label.
+   * today"). Turns the divider from decorative into a labelled separator
+   * (`semantic` is implied). Ignored on a vertical divider, with a development
+   * warning: a vertical line has no room for centered text. An ignored label
+   * implies nothing either — a vertical divider is semantic only when
+   * `semantic` says so. An empty string is no label. When in effect, the label
+   * is the separator's accessible name (`aria-label` on the host, since ids do
+   * not cross the shadow root) and the two line pieces on either side are
+   * hidden from assistive technology.
    */
   accessor label: string | undefined;
-  /** Expose as a separator to assistive technology. Leave false for purely visual lines between list rows. */
+  /**
+   * Expose as a separator to assistive technology. Leave false for purely visual lines between list
+   * rows; set true (or provide a label) when the divider marks a real boundary between sections
+   * that a screen-reader user should hear.
+   */
   accessor semantic;
   /** Space on both sides along the cross axis, from the layout rhythm, for dividers used outside a Stack. */
   accessor spacing: DividerSpacing;
   /** Per-instance style overrides: `{ color: 'color.border.strong' }`. `labelColor` is locked and ignored. */
   accessor overrides: Partial<Record<DividerOverridableBinding, TokenRef | undefined>> | undefined;
-  /** The label/orientation pair last warned about, so the warning fires once per appearance or change. */
+  /** The ignored label last warned about, so the warning fires once per appearance or change. */
   private warnedLabel;
   override connectedCallback(): void;
   protected override willUpdate(changed: PropertyValues): void;
   /** The label in effect: none on a vertical divider, and an empty string is no label. */
   private get effectiveLabel();
-  protected override render(): TemplateResult | typeof nothing;
+  protected override render(): TemplateResult;
   /** `labelSize` → Text `fontSize`, `fontFamily` → Text `fontFamily`; only bindings the author overrode. */
   private labelOverrides;
   /**
    * Decorative → aria-hidden; semantic or labelled → role=separator with
    * aria-orientation (and the label as its name, since a separator's content
-   * is presentational). Plain host attributes so accessibility-tree readers observe them.
+   * is presentational). Plain host attributes, not ElementInternals, so that
+   * accessible-name readers observe them.
    */
   private syncSemantics;
   private warnIgnoredLabel;
+  /**
+   * Overrides change values, never presence: `spacing: none` renders no space and takes no hook,
+   * and the label bindings apply only while a label is in effect.
+   */
   private applyOverrides;
 }
 declare global {
@@ -363,8 +387,9 @@ export declare class DsButton extends LitElement {
   accessor iconOnly;
   /**
    * Shows a ring spinner in the leading icon position, hides `trailingIcon`,
-   * keeps the label visible and the layout unchanged, and blocks repeat
-   * activation while an action is pending. `copy.loading` is the description.
+   * keeps the label visible and the height unchanged, and blocks repeat
+   * activation while an action is pending. Without a `leadingIcon` the spinner
+   * and iconGap widen the button. `copy.loading` is the description.
    */
   accessor loading;
   /**
@@ -388,10 +413,33 @@ export declare class DsButton extends LitElement {
   accessor track: string | undefined;
   /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings are ignored. */
   accessor overrides: Partial<Record<ButtonOverridableBinding, TokenRef | undefined>> | undefined;
+  /**
+   * Mirror of the host's own `tabindex`, forwarded to the inner `<button>`.
+   *
+   * `delegatesFocus` makes the host focusable, but it does not make the inner
+   * button share the host's tabbability: a composer that writes `tabindex="-1"`
+   * on a `<ds-button>` — a roving-focus parent such as `ds-toolbar`, or one that
+   * keeps the control out of the tab order because the surrounding decoration is
+   * `aria-hidden` (`ds-tree-grid`'s expand chevron, `ds-number-input`'s steppers)
+   * — takes the *host* out of the tab order while the shadow `<button>` stays a
+   * tab stop of its own. Forwarding the attribute is the only way a composer can
+   * express that, since it cannot reach into this shadow root.
+   *
+   * `null` (no `tabindex` on the host) forwards nothing, so an ordinary button is
+   * tabbable exactly as before, and `disabled` still leaves it in the tab order.
+   */
+  private accessor hostTabIndex;
+  /**
+   * Watches the host's `tabindex` only. The callback writes to the inner button
+   * through `hostTabIndex`, never back to the host, so it cannot re-enter.
+   */
+  private readonly tabIndexObserver;
   override connectedCallback(): void;
+  override disconnectedCallback(): void;
   protected override willUpdate(changed: PropertyValues): void;
   protected override render(): TemplateResult;
   private handleClick;
+  private readHostTabIndex;
   private applyOverrides;
 }
 declare global {
@@ -403,7 +451,6 @@ declare global {
 //#region src/Heading.d.ts
 type HeadingLevel = "1" | "2" | "3" | "4" | "5" | "6";
 type HeadingSize = "4xl" | "3xl" | "2xl" | "xl" | "lg" | "md";
-type HeadingAlign = "start" | "center" | "end";
 /** Overridable style hooks; see the `overrides` property. `color` is locked and excluded. */
 type HeadingOverridableBinding = "fontFamily" | "fontWeight" | "fontSize" | "lineHeight" | "marginBlockEnd";
 export declare class DsHeading extends LitElement {
@@ -412,20 +459,22 @@ export declare class DsHeading extends LitElement {
    * Position in the document outline. Controls the semantic element, not the
    * visual size — screen-reader users navigate by heading level, so levels must
    * not skip (h1 → h3). Required; the canonical values are the strings `'1'`–
-   * `'6'` and the numbers `1`–`6` are accepted too. A missing or unknown level
-   * falls back to `<h2>`.
+   * `'6'` and the numbers `1`–`6` are accepted too. The property holds
+   * `undefined` until set; a missing, out-of-range or non-numeric level renders
+   * as `<h2>` at the 3xl size and warns once per element in development.
    */
-  accessor level: HeadingLevel | 1 | 2 | 3 | 4 | 5 | 6;
+  accessor level: HeadingLevel | 1 | 2 | 3 | 4 | 5 | 6 | undefined;
   /**
    * Visual size, independent of level. Defaults per level: 1 → 4xl, 2 → 3xl,
-   * 3 → 2xl, 4 → xl, 5 → lg, 6 → md.
+   * 3 → 2xl, 4 → xl, 5 → lg, 6 → md; an explicit size always wins. The resolved
+   * default is never written back, so `[size]` matches only an explicit size.
    */
   accessor size: HeadingSize | undefined;
-  /** Horizontal text alignment. `start`/`end` follow writing direction. */
-  accessor align: HeadingAlign;
+  /** Horizontal text alignment. `start`/`end` follow writing direction. Text's align type. */
+  accessor align: TextAlign;
   /** Per-instance style overrides: `{ fontSize: 'font.size.lg' }`. `color` is locked and ignored. */
   accessor overrides: Partial<Record<HeadingOverridableBinding, TokenRef | undefined>> | undefined;
-  /** Development-only: the missing-level warning is emitted at most once per element. */
+  /** Development-only: the fallback-level warning is emitted at most once per element, for its lifetime. */
   private warnedMissingLevel;
   override connectedCallback(): void;
   protected override willUpdate(changed: PropertyValues): void;
@@ -636,6 +685,12 @@ interface DsFormField extends HTMLElement {
   required: boolean;
   disabled: boolean;
   error?: string | undefined;
+  /**
+   * Set by Form from the result of `checkValidity()`, which is how the field
+   * renders its own message (every field documents `invalid` as "usually set by
+   * the Form"). Optional: a field that never validates omits it.
+   */
+  invalid?: boolean | undefined;
   readonly currentValue: string | number | boolean | string[] | [number, number] | null;
   id: string;
   focus(): void;
@@ -670,12 +725,16 @@ export declare class DsForm extends LitElement {
    * blur or change validation finds later appended at the end. Empty until a submission fails.
    */
   private accessor errors;
+  /** Each errored field's `label` as registered, so an entry whose field has since gone keeps its fallback text. */
+  private readonly errorLabels;
   /** Once a submission has failed, fields re-validate on blur/change even in `submit` mode; a successful one clears it. */
   private hasFailedSubmission;
   /** The plural locale, read at the failed submit (nearest `lang` ancestor, else the runtime default). */
   private summaryLocale;
   /** Fields and actions this Form disabled itself, so re-enabling never touches one already disabled by the consumer. */
   private readonly disabledByForm;
+  /** Fields this Form marked invalid, so re-validating never clears one the consumer marked itself. */
+  private readonly invalidByForm;
   /** Re-syncs disabled propagation when fields are added or removed; observes `childList` only, never the attributes it writes. */
   private readonly mutationObserver;
   /** Focus the error summary once it exists, after the render that follows a failed submission. */
@@ -697,6 +756,13 @@ export declare class DsForm extends LitElement {
   private handlePress;
   private handleFieldChange;
   private handleFieldFocusOut;
+  /**
+   * Runs the field's own synchronous validation and mirrors the result onto its
+   * `invalid` property, which is what makes the field render its own message.
+   * Form never composes a message of its own: the text shown is the field's
+   * copy, and `validationMessage` is what the summary repeats.
+   */
+  private runFieldValidation;
   /** A field with no useful blur moment (Checkbox, Switch) declares `data-ds-field="change"`. */
   private validatesOnChange;
   private handleSummaryLinkClick;
@@ -815,7 +881,7 @@ export declare class DsCheckbox extends LitElement {
   /** Per-instance style overrides: `{ controlRadius: 'radius.sm' }`. Locked bindings are ignored. */
   accessor overrides: Partial<Record<CheckboxOverridableBinding, TokenRef | undefined>> | undefined;
   private checkedValue;
-  /** The live checked state, like a native input. The attribute is the initial state only; not reflected. */
+  /** The live checked state, like a native input: starts from the `checked` attribute, else `defaultChecked`, and follows every toggle. Not reflected. */
   get checked(): boolean;
   set checked(value: boolean);
   private errorValue;
@@ -840,6 +906,7 @@ export declare class DsCheckbox extends LitElement {
   checkValidity(): boolean;
   reportValidity(): boolean;
   formDisabledCallback(disabled: boolean): void;
+  /** Back to the initial state: the `checked` attribute, else `defaultChecked`. */
   formResetCallback(): void;
   formStateRestoreCallback(state: File | string | FormData | null): void;
   protected override willUpdate(changed: PropertyValues): void;
@@ -867,6 +934,7 @@ declare global {
 }
 //#endregion
 //#region src/Switch.d.ts
+/** Where the label sits relative to the track. */
 type SwitchLabelPosition = "start" | "end";
 /** Detail carried by the `change` CustomEvent. */
 interface SwitchChangeDetail {
@@ -881,11 +949,11 @@ export declare class DsSwitch extends LitElement {
   static override styles: CSSResult;
   /** Visible label naming the thing being turned on or off. Also the accessible name. */
   accessor label;
-  /** Optional field name. When inside a Form the state is collected as a boolean; most switches are not in forms. Reflected so a native `<form>` still submits it. */
+  /** Optional field name. When inside a Form the state is collected as a boolean; most switches are not in forms. Reflected so a name set as a property is still submitted by a native `<form>`. */
   accessor name;
   /** Initial state when neither the `checked` attribute nor property is set. */
   accessor defaultChecked;
-  /** Cannot be toggled. Stays visible, readable and focusable. */
+  /** Cannot be toggled. Stays visible, readable and focusable, and contributes no key to the Form's values. */
   accessor disabled;
   /** Persistent helper text below the label explaining the effect. */
   accessor description: string | undefined;
@@ -894,11 +962,11 @@ export declare class DsSwitch extends LitElement {
   /** Per-instance style overrides: `{ trackWidth: 'space.12' }`. Locked bindings are ignored. */
   accessor overrides: Partial<Record<SwitchOverridableBinding, TokenRef | undefined>> | undefined;
   private checkedValue;
-  /** The live state, like a native input: starts from the `checked` attribute, else `defaultChecked`, and follows every toggle. Not reflected. */
+  /** The live state, like a native input: starts from the `checked` attribute, else `defaultChecked`, and follows every toggle. Not reflected; there is no controlled mode. */
   get checked(): boolean;
   set checked(value: boolean);
-  /** A switch has no required state: it never validates and never appears in an error summary. */
-  readonly required: boolean;
+  /** A switch has no required state: it never validates and never appears in an error summary. Setting it is ignored. */
+  get required(): boolean;
   /** Disabled by an owning native form / fieldset (via `formDisabledCallback`). */
   private accessor formDisabled;
   private accessor inputEl;
@@ -925,7 +993,7 @@ export declare class DsSwitch extends LitElement {
   private get isDisabled();
   /** helperSize, fontFamily and lineHeight forwarded to the description Text. */
   private get textOverrides();
-  /** Clicks on the description or the row's gap toggle the switch too. */
+  /** Clicks on the description, the text column or the row's gap toggle the switch too. */
   private handleRowClick;
   /** Disabled uses aria-disabled so the switch stays focusable; click and change are both guarded. */
   private handleControlClick;
@@ -939,12 +1007,17 @@ declare global {
 }
 //#endregion
 //#region src/RadioGroup.d.ts
+/** Layout of the options. */
 type RadioGroupOrientation = "vertical" | "horizontal";
 /** Shape of each entry in `options`. */
 interface RadioGroupOption {
+  /** Short identifier (letters, digits, dashes); it becomes part of an element id. */
   value: string;
+  /** The option's own label. */
   label: string;
+  /** One line: price, timing, consequence. */
   description?: string | undefined;
+  /** Natively disabled, so arrow movement skips it. */
   disabled?: boolean | undefined;
 }
 /** Detail carried by the `change` CustomEvent. */
@@ -953,7 +1026,7 @@ interface RadioGroupChangeDetail {
   value: string;
 }
 /** Overridable style hooks; see the `overrides` property. `controlBackground`, `controlBorder`, `controlSelectedBackground`, `indicator`, `legendColor`, `labelColor`, `descriptionText`, `errorText`, `focusRing`, `focusRingWidth` and `minTarget` are locked and excluded. */
-type RadioGroupOverridableBinding = "controlBorderWidth" | "controlBorderInvalid" | "controlSize" | "controlRadius" | "optionPaddingBlock" | "optionTextGap" | "optionGap" | "listGap" | "partGap" | "legendSize" | "legendWeight" | "labelSize" | "labelWeight" | "helperSize" | "fontFamily" | "lineHeight" | "disabledOpacity" | "transition";
+type RadioGroupOverridableBinding = "controlBorderWidth" | "indicatorInset" | "controlBorderInvalid" | "controlSize" | "controlRadius" | "optionPaddingBlock" | "optionTextGap" | "optionGap" | "listGap" | "partGap" | "legendSize" | "legendWeight" | "labelSize" | "labelWeight" | "helperSize" | "fontFamily" | "lineHeight" | "disabledOpacity" | "transition";
 export declare class DsRadioGroup extends LitElement {
   static formAssociated: boolean;
   static override shadowRootOptions: ShadowRootInit;
@@ -962,7 +1035,7 @@ export declare class DsRadioGroup extends LitElement {
   accessor label;
   /** Field name used by the enclosing Form. Also links the radios into one native group. */
   accessor name;
-  /** The options in display order. Two to about seven. A property, not an attribute. */
+  /** The options in display order. Two to about seven; more than that is a Select. A property, not an attribute. */
   accessor options: RadioGroupOption[];
   /** Controlled selected value. Omit for an uncontrolled group. */
   accessor value: string | undefined;
@@ -978,15 +1051,15 @@ export declare class DsRadioGroup extends LitElement {
   accessor disabled;
   /** Persistent helper text under the legend. */
   accessor description: string | undefined;
-  /** Per-instance style overrides: `{ controlRadius: 'radius.sm' }`. Locked bindings are ignored. */
+  /** Per-instance style overrides: `{ controlSize: 'space.6' }`. Locked bindings are ignored. */
   accessor overrides: Partial<Record<RadioGroupOverridableBinding, TokenRef | undefined>> | undefined;
   private errorValue;
-  /** The group's error message. Setting it marks the group invalid. */
+  /** The group's error message. Setting it marks the group invalid. Say what to do. */
   get error(): string | undefined;
   set error(value: string | undefined);
   /** Uncontrolled selection, seeded from `defaultValue`. */
   private accessor internalValue;
-  /** Disabled by an owning native form / fieldset (via `formDisabledCallback`). */
+  /** Disabled by an owning native form / fieldset (via `formDisabledCallback`), or by `ds-fieldset`. */
   private accessor formDisabled;
   private readonly internals;
   constructor();
@@ -996,13 +1069,14 @@ export declare class DsRadioGroup extends LitElement {
   /** The owning native form, if any (from `ElementInternals`). */
   get form(): HTMLFormElement | null;
   get validity(): ValidityState;
-  /** The field's own copy: the error, then copy.required, then copy.invalid; empty when valid. */
+  /** The field's own copy, in the same order as the displayed error: `error`, then copy.required, then copy.invalid; empty when valid. */
   get validationMessage(): string;
   checkValidity(): boolean;
   reportValidity(): boolean;
-  /** Focus lands on the selected radio, or the first enabled one when none is selected — the group's one tab stop. */
+  /** Focus lands on the selected radio, else the first enabled one — the group's one tab stop. `delegatesFocus` alone would pick the first in tree order. */
   override focus(options?: FocusOptions): void;
   formDisabledCallback(disabled: boolean): void;
+  /** Back to the initial selection: `defaultValue`, else nothing. */
   formResetCallback(): void;
   formStateRestoreCallback(state: File | string | FormData | null): void;
   protected override willUpdate(changed: PropertyValues): void;
@@ -1010,15 +1084,17 @@ export declare class DsRadioGroup extends LitElement {
   protected override render(): TemplateResult;
   private get isDisabled();
   private get radios();
-  /** Validation precedence, as Input: `error`, then copy.required, then copy.invalid — rendered only while invalid. */
+  /** The group's one tab stop: the checked radio, else the first enabled one. */
+  private get focusTarget();
+  /** Rendered error, as Input: `error`, then — only while invalid — copy.required when required and nothing is selected, else copy.invalid. */
   private get displayedError();
-  /** helperSize, fontFamily and lineHeight forwarded to the description and error Text. */
+  /** helperSize, fontFamily and lineHeight forwarded to the description, radioDescription and error Texts. */
   private get textOverrides();
   /** Clicks on an option's description or empty row space select it too: the whole row is the hit area. */
   private handleRowClick;
   /** A disabled group keeps its radios focusable (aria-disabled); clicks are cancelled on the fieldset so nothing is selected. */
   private handleGroupClick;
-  /** A disabled group swallows the native arrow movement and Space selection. */
+  /** A disabled group swallows the native arrow movement and Space selection, which aria-disabled does not stop. */
   private handleKeydown;
   private handleChange;
   /** Mirror value and validity into ElementInternals so an owning native form sees them. */
@@ -1032,18 +1108,19 @@ declare global {
 }
 //#endregion
 //#region src/Fieldset.d.ts
+/** Gap between the fields, from the layout rhythm. */
 type FieldsetGap = "tight" | "normal" | "loose";
 /** Overridable style bindings; see the `overrides` property. `legendColor`, `descriptionText` and `errorText` are locked and excluded. */
 type FieldsetOverridableBinding = "legendSize" | "legendWeight" | "helperSize" | "partGap" | "fieldsGap" | "disabledOpacity" | "fontFamily" | "lineHeight";
 export declare class DsFieldset extends LitElement {
   static override styles: CSSResult;
-  /** The group's name — what the fields together describe. Always visible; the group's accessible name. */
+  /** The group's name — what the fields together describe ("Shipping address"). Always visible, and the group's accessible name. */
   accessor legend;
-  /** Persistent helper text under the legend. Linked with aria-describedby on the group. */
+  /** Persistent helper text under the legend, linked with aria-describedby. An empty string counts as unset. */
   accessor description: string | undefined;
-  /** A group-level error (cross-field validation). Field-level errors stay on the fields. */
+  /** A group-level error (cross-field validation such as "End date must be after start date"). Field-level errors stay on the fields. An empty string counts as unset. */
   accessor error: string | undefined;
-  /** Disables every field inside. Fields keep their own `disabled` for finer control. */
+  /** Disables every direct child field. Fields keep their own `disabled` for finer control. */
   accessor disabled;
   /** Gap between the fields, from the layout rhythm. Fieldset renders the Stack itself; children are the raw fields. */
   accessor gap: FieldsetGap;
@@ -1051,24 +1128,26 @@ export declare class DsFieldset extends LitElement {
   accessor overrides: Partial<Record<FieldsetOverridableBinding, TokenRef | undefined>> | undefined;
   /** Every direct child field is `required`; derived on slotchange and when a child's `required` attribute changes. */
   private accessor allFieldsRequired;
-  /** Fields this Fieldset disabled itself, so clearing `disabled` never enables one disabled on its own. */
+  /** The fields this Fieldset disabled itself, so clearing `disabled` never enables one disabled on its own. */
   private readonly disabledByFieldset;
+  /** Watches the light DOM for `required` attribute changes; the callback writes state only, never an observed attribute, so it cannot re-trigger itself. */
   private readonly requiredObserver;
   override connectedCallback(): void;
   override disconnectedCallback(): void;
   protected override willUpdate(changed: PropertyValues): void;
   protected override updated(changed: PropertyValues): void;
   protected override render(): TemplateResult;
-  /** fieldsGap → the Stack's `overrides.gap`, as the token path `layout.gap.{gap}` unless overridden. */
+  /** fieldsGap → the Stack's own `overrides.gap`, always sent as a token path: the override, else `layout.gap.{gap}`. The Stack gets no `gap` attribute, and Fieldset never sets --ds-stack-gap. */
   private get stackOverrides();
-  /** legendSize, legendWeight, fontFamily, lineHeight → the legend Text's overrides. */
+  /** legendSize, legendWeight, fontFamily and lineHeight → the legend Text's overrides. */
   private get legendOverrides();
-  /** helperSize, fontFamily, lineHeight → the description and error Texts' overrides. */
+  /** helperSize, fontFamily and lineHeight → the description and error Texts' overrides. */
   private get helperOverrides();
   private get typeOverrides();
-  /** Direct child fields only; fields wrapped in a consumer's own container are not inspected. */
+  /** Direct children carrying `data-ds-field`; a field nested deeper is not inspected — put fields directly inside the Fieldset. */
   private directFields;
   private handleSlotChange;
+  /** The indicator appears only when every direct child field is required; a group with no fields shows none. */
   private syncRequired;
   /** Sets `disabled` on direct fields, remembering which it set so clearing is exact. */
   private syncDisabled;
@@ -1149,8 +1228,12 @@ export declare class DsLandmark extends LitElement {
   override attributeChangedCallback(name: string, old: string | null, value: string | null): void;
   protected override render(): typeof nothing;
   protected override updated(changed: PropertyValues): void;
-  /** Writes `aria-label` from `label`, omitting it when empty or when the role never takes a label. */
-  private syncLabel;
+  /**
+   * Writes `aria-label` from `label`, omitting it when empty or when the role never takes a label,
+   * and drops a composite's `aria-labelledby` on those roles too. Returns true when a label — from
+   * either source — was passed to a role that never takes one, so it was not rendered.
+   */
+  private syncName;
   private warnInDev;
 }
 declare global {
@@ -1207,32 +1290,50 @@ declare global {
 type MeterTone = "info" | "success" | "warning" | "danger";
 /** Overridable style hooks; see the `overrides` property. `track`, `fill`, `labelColor` and `valueColor` are locked and excluded. */
 type MeterOverridableBinding = "trackHeight" | "radius" | "labelSize" | "labelWeight" | "valueSize" | "fontFamily" | "lineHeight" | "partGap" | "labelGap" | "transition";
+type MeterOverrides = Partial<Record<MeterOverridableBinding, TokenRef | undefined>>;
 export declare class DsMeter extends LitElement {
   static override styles: CSSResult;
-  /** The current measurement. Clamped to `min`…`max` for the bar; the accessible value is the clamped number too. */
+  /**
+   * The current measurement. Clamped to `min`…`max` for the bar; the accessible value is the
+   * clamped number too, exact and unrounded (`aria-valuenow="3.14159"`) — only the percentage
+   * text is rounded.
+   */
   accessor value: number;
-  /** Lower bound of the range. */
+  /** Lower bound of the range. A missing, unparseable or non-finite `min` is treated as 0. */
   accessor min: number;
-  /** Upper bound of the range. Must be greater than `min`. */
+  /** Upper bound of the range. Must be greater than `min`. A missing, unparseable or non-finite `max` is treated as 100. */
   accessor max: number;
   /** Visible label naming the measurement ("Storage used"). Also the accessible name. */
   accessor label: string;
-  /** Human-readable value shown at the end of the label row and announced instead of the raw number ("3.2 GB of 10 GB"). */
+  /**
+   * Human-readable value shown at the end of the label row and announced instead of the raw number
+   * ("3.2 GB of 10 GB", "Strong"). Omit to show and announce the percentage, rounded to a whole
+   * number ("32%"). Attribute `value-text`, not reflected.
+   */
   accessor valueText: string | undefined;
-  /** Fill color. `info` is the neutral brand fill; the consumer sets the others from thresholds it owns. */
+  /**
+   * Fill color. `info` is the neutral brand fill; the consumer sets `success`/`warning`/`danger`
+   * from thresholds it owns — the meter does not decide what is "too full".
+   */
   accessor tone: MeterTone;
-  /** Hides the visible value text. The accessible value is always exposed. */
+  /**
+   * Hides the visible value text (a boolean attribute can only turn things on, so the flag is the
+   * hiding one). The accessible value is always exposed. Attribute `hide-value`, not reflected.
+   */
   accessor hideValue: boolean;
   /** Per-instance style overrides: `{ radius: 'radius.sm' }`. Locked bindings (track, fill, labelColor, valueColor) are ignored. */
-  accessor overrides: Partial<Record<MeterOverridableBinding, TokenRef | undefined>> | undefined;
+  accessor overrides: MeterOverrides | undefined;
   override connectedCallback(): void;
+  /** The exposed range: a non-finite bound is not a range end, so it falls back to the prop's default. */
   private get bounds();
-  /** `value` clamped to the range: the accessible value. Non-finite values and `max ≤ min` resolve to `min`. */
+  /** `value` clamped to the range: the accessible value. A non-finite value, and `max ≤ min`, resolve to `min`. */
   get clampedValue(): number;
-  /** The filled fraction of the track, 0–1. */
+  /** The filled fraction of the track, 0–1. Exact: the rounding is for the text only. */
   get fraction(): number;
   protected override willUpdate(changed: PropertyValues): void;
   protected override render(): TemplateResult;
+  /** Developer-facing, never shown to users, and warned once per distinct invalid pair. */
+  private warnInvalidRange;
   private applyOverrides;
 }
 declare global {
@@ -1306,6 +1407,13 @@ export declare class DsCard extends LitElement {
   /** `role="article"` named by `aria-label` when a heading is set; plain attributes so accessible-name tests see them. */
   private syncName;
   private syncTabindex;
+  /**
+   * Overrides change values, never presence. The border is drawn only on `surface="default"`,
+   * an interactive card always reserves `border.width.focus` instead of its own width (so a
+   * width override only reaches non-interactive cards), and the transition exists only for the
+   * interactive hover. Those bindings are not in effect otherwise, so their overrides are no-ops.
+   */
+  private isInEffect;
   private applyOverrides;
 }
 declare global {
@@ -1338,6 +1446,12 @@ export declare class DsContainer extends LitElement {
   override connectedCallback(): void;
   protected override willUpdate(changed: PropertyValues): void;
   protected override render(): TemplateResult;
+  /**
+   * Overrides change values, never presence: `width: full` renders the literal `none` and
+   * `gutter: none` a literal 0, neither read through a hook, so those bindings are not in
+   * effect and their overrides are no-ops. No dev warning fires for one that has no effect.
+   */
+  private isInEffect;
   private applyOverrides;
 }
 declare global {
@@ -1386,6 +1500,8 @@ export declare class DsFocusScope extends LitElement {
   private openerElement;
   /** Marker left beside the opener, so "the next focusable element" survives the opener's removal. */
   private openerMarker;
+  /** The opener's ancestors, nearest first: the fallback when the marker went with the opener's parent. */
+  private openerAncestors;
   private lastFocused;
   private childrenSettled;
   private readonly handleKeydown;
@@ -1397,12 +1513,21 @@ export declare class DsFocusScope extends LitElement {
   protected override getUpdateComplete(): Promise<boolean>;
   protected override updated(changed: PropertyValues): void;
   protected override render(): TemplateResult;
+  /**
+   * Records the opener, a marker beside it and its ancestor chain, so focus can be restored to its
+   * former position even after the opener — or the opener's parent — is removed.
+   */
   private recordOpener;
   private applyAutoFocus;
   /** The anchor, only while it is focusable (`autoFocus: container`). */
   private containerTarget;
   private resolveReturnTarget;
+  /** `returnFocusTo`, then the recorded opener, then the first focusable after where it used to be. */
   private restoreFocusOnExit;
+  /**
+   * Waits for the slotted elements and every custom element in their light-DOM subtrees (not
+   * elements inside those elements' own shadow roots), so the walker sees their focusable internals.
+   */
   private settleChildren;
   private getFocusableDescendants;
   /** Trapped, active, connected, and the top active scope on the stack. */
@@ -5123,5 +5248,5 @@ declare global {
   }
 }
 //#endregion
-export type { AccordionChangeDetail, AccordionHeadingLevel, AccordionItem, AccordionOpenChangeDetail, AccordionOpenChangeReason, AccordionOverridableBinding, ActionSheetAction, ActionSheetActionDetail, ActionSheetActionTone, ActionSheetCloseDetail, ActionSheetCloseReason, ActionSheetOverridableBinding, AlertDialogCancelDetail, AlertDialogCancelReason, AlertDialogConfirmDetail, AlertDialogOverridableBinding, AlertDialogTone, AlertDismissDetail, AlertLive, AlertOverridableBinding, AlertTone, BottomSheetCloseDetail, BottomSheetCloseReason, BottomSheetDragDismissDetail, BottomSheetHeight, BottomSheetOverridableBinding, BoxElement, BoxInset, BoxOverridableBinding, BoxRadius, BoxSurface, BreadcrumbItem, BreadcrumbNavigateDetail, BreadcrumbOverridableBinding, ButtonOverridableBinding, ButtonPressDetail, ButtonSize, ButtonTrackDetail, ButtonType, ButtonVariant, CardHeadingLevel, CardInset, CardOverridableBinding, CardSurface, CarouselChangeDetail, CarouselChangeReason, CarouselOverridableBinding, CarouselPicker, CheckboxChangeDetail, CheckboxOverridableBinding, ComboboxChangeDetail, ComboboxFilter, ComboboxInputChangeDetail, ComboboxOpenChangeDetail, ComboboxOverridableBinding, ComboboxValue, ContainerAlign, ContainerElement, ContainerGutter, ContainerOverridableBinding, ContainerWidth, DataGridCaptionLevel, DataGridCellChangeDetail, DataGridCellRef, DataGridCellValue, DataGridColumn, DataGridColumnAlign, DataGridColumnOption, DataGridColumnPinned, DataGridColumnResizeDetail, DataGridDensity, DataGridEditStartDetail, DataGridEditorKind, DataGridHeight, DataGridOverridableBinding, DataGridRangeNeededDetail, DataGridRangeRef, DataGridRow, DataGridSelectable, DataGridSelection, DataGridSelectionChangeDetail, DataGridSort, DataGridSortChangeDetail, DataGridSortDirection, DatePickerChangeDetail, DatePickerOpenChangeDetail, DatePickerOverridableBinding, DatePickerSize, DatePickerValue, DialogCloseDetail, DialogCloseReason, DialogInitialFocus, DialogOpenedDetail, DialogOverridableBinding, DialogSize, DisclosureHeadingLevel, DisclosureOverridableBinding, DisclosureToggleDetail, DisclosureToggleReason, DividerOrientation, DividerOverridableBinding, DividerSpacing, DsFormField, FeedHeadingLevel, FeedItem, FeedItemVisibleDetail, FeedOverridableBinding, FieldsetGap, FieldsetOverridableBinding, FocusScopeAutoFocus, FocusScopeEscapeAttemptDetail, FocusScopeEscapeAttemptDirection, FocusScopeReturnTarget, FormInvalidDetail, FormOverridableBinding, FormSubmitDetail, FormValidate, HeadingAlign, HeadingLevel, HeadingOverridableBinding, HeadingSize, IconName, IconOverridableBinding, IconSize, InputChangeDetail, InputOverridableBinding, InputSize, InputType, LandmarkRole, LinkOverridableBinding, LinkTone, ListboxActiveChangeDetail, ListboxChangeDetail, ListboxGroup, ListboxItem, ListboxMaxVisible, ListboxOption, ListboxOverridableBinding, ListboxValue, MenuActionDetail, MenuActionItem, MenuGroup, MenuItem, MenuOpenChangeDetail, MenuOpenChangeReason, MenuOverridableBinding, MenuPlacement, MenuSeparator, MenuTriggerIcon, MenuTriggerVariant, MeterOverridableBinding, MeterTone, NumberInputChangeDetail, NumberInputFormat, NumberInputOverridableBinding, NumberInputSize, PopoverCloseReason, PopoverHeadingLevel, PopoverOpenChangeDetail, PopoverOverridableBinding, PopoverPlacement, ProgressBarAnnounce, ProgressBarOverridableBinding, ProgressBarTone, RadioGroupChangeDetail, RadioGroupOption, RadioGroupOrientation, RadioGroupOverridableBinding, SearchChangeDetail, SearchClearDetail, SearchOverridableBinding, SearchSize, SearchSubmitDetail, SearchSuggestion, SegmentedControlChangeDetail, SegmentedControlOption, SegmentedControlOverridableBinding, SegmentedControlSize, SelectChangeDetail, SelectNative, SelectOpenChangeDetail, SelectOverridableBinding, SelectSize, SelectValue, SidePanelLandmark, SidePanelOpenChangeDetail, SidePanelOpenChangeReason, SidePanelOverridableBinding, SidePanelPersistent, SidePanelSide, SidePanelWidth, SliderChangeDetail, SliderMark, SliderOverridableBinding, SliderShowValue, SliderValue, SplitterCollapseChangeDetail, SplitterOrientation, SplitterOverridableBinding, SplitterSizeChangeDetail, SplitterStackBelow, StackAlign, StackDirection, StackElement, StackGap, StackJustify, StackOverridableBinding, StepperNavigable, StepperOrientation, StepperOverridableBinding, StepperStep, StepperStepSelectDetail, StepperStepStatus, SwitchChangeDetail, SwitchLabelPosition, SwitchOverridableBinding, TableCaptionLevel, TableColumn, TableColumnAlign, TableColumnHideBelow, TableColumnWidth, TableDensity, TableMaxHeight, TableOverridableBinding, TableResponsive, TableRow, TableRowPressDetail, TableSelectable, TableSelectionChangeDetail, TableSort, TableSortChangeDetail, TableSortDirection, TabsActivation, TabsChangeDetail, TabsFit, TabsItem, TabsOrientation, TabsOverridableBinding, TabsTab, TextAlign, TextElement, TextOverridableBinding, TextSize, TextTone, TextWeight, ToastActionDetail, ToastDismissDetail, ToastDismissReason, ToastDuration, ToastOptions, ToastOverridableBinding, ToastRegionOverridableBinding, ToastResult, ToastTone, ToolbarDensity, ToolbarOrientation, ToolbarOverflow, ToolbarOverridableBinding, ToolbarSize, TooltipDelay, TooltipOverridableBinding, TooltipPlacement, TreeActivateDetail, TreeExpandChangeDetail, TreeExpandDetail, TreeGridCaptionLevel, TreeGridCellChangeDetail, TreeGridCellRef, TreeGridCellValue, TreeGridColumnResizeDetail, TreeGridDensity, TreeGridEditStartDetail, TreeGridExpandChangeDetail, TreeGridExpandDetail, TreeGridHeight, TreeGridOverridableBinding, TreeGridRow, TreeGridSelectable, TreeGridSelection, TreeGridSelectionChangeDetail, TreeGridSort, TreeGridSortChangeDetail, TreeGridSortDirection, TreeHeadingLevel, TreeNode, TreeOverridableBinding, TreeSelectable, TreeSelectionChangeDetail };
+export type { AccordionChangeDetail, AccordionHeadingLevel, AccordionItem, AccordionOpenChangeDetail, AccordionOpenChangeReason, AccordionOverridableBinding, ActionSheetAction, ActionSheetActionDetail, ActionSheetActionTone, ActionSheetCloseDetail, ActionSheetCloseReason, ActionSheetOverridableBinding, AlertDialogCancelDetail, AlertDialogCancelReason, AlertDialogConfirmDetail, AlertDialogOverridableBinding, AlertDialogTone, AlertDismissDetail, AlertLive, AlertOverridableBinding, AlertTone, BottomSheetCloseDetail, BottomSheetCloseReason, BottomSheetDragDismissDetail, BottomSheetHeight, BottomSheetOverridableBinding, BoxElement, BoxInset, BoxOverridableBinding, BoxRadius, BoxSurface, BreadcrumbItem, BreadcrumbNavigateDetail, BreadcrumbOverridableBinding, ButtonOverridableBinding, ButtonPressDetail, ButtonSize, ButtonTrackDetail, ButtonType, ButtonVariant, CardHeadingLevel, CardInset, CardOverridableBinding, CardSurface, CarouselChangeDetail, CarouselChangeReason, CarouselOverridableBinding, CarouselPicker, CheckboxChangeDetail, CheckboxOverridableBinding, ComboboxChangeDetail, ComboboxFilter, ComboboxInputChangeDetail, ComboboxOpenChangeDetail, ComboboxOverridableBinding, ComboboxValue, ContainerAlign, ContainerElement, ContainerGutter, ContainerOverridableBinding, ContainerWidth, DataGridCaptionLevel, DataGridCellChangeDetail, DataGridCellRef, DataGridCellValue, DataGridColumn, DataGridColumnAlign, DataGridColumnOption, DataGridColumnPinned, DataGridColumnResizeDetail, DataGridDensity, DataGridEditStartDetail, DataGridEditorKind, DataGridHeight, DataGridOverridableBinding, DataGridRangeNeededDetail, DataGridRangeRef, DataGridRow, DataGridSelectable, DataGridSelection, DataGridSelectionChangeDetail, DataGridSort, DataGridSortChangeDetail, DataGridSortDirection, DatePickerChangeDetail, DatePickerOpenChangeDetail, DatePickerOverridableBinding, DatePickerSize, DatePickerValue, DialogCloseDetail, DialogCloseReason, DialogInitialFocus, DialogOpenedDetail, DialogOverridableBinding, DialogSize, DisclosureHeadingLevel, DisclosureOverridableBinding, DisclosureToggleDetail, DisclosureToggleReason, DividerOrientation, DividerOverridableBinding, DividerSpacing, DsFormField, FeedHeadingLevel, FeedItem, FeedItemVisibleDetail, FeedOverridableBinding, FieldsetGap, FieldsetOverridableBinding, FocusScopeAutoFocus, FocusScopeEscapeAttemptDetail, FocusScopeEscapeAttemptDirection, FocusScopeReturnTarget, FormInvalidDetail, FormOverridableBinding, FormSubmitDetail, FormValidate, HeadingLevel, HeadingOverridableBinding, HeadingSize, IconName, IconOverridableBinding, IconSize, InputChangeDetail, InputOverridableBinding, InputSize, InputType, LandmarkRole, LinkOverridableBinding, LinkTone, ListboxActiveChangeDetail, ListboxChangeDetail, ListboxGroup, ListboxItem, ListboxMaxVisible, ListboxOption, ListboxOverridableBinding, ListboxValue, MenuActionDetail, MenuActionItem, MenuGroup, MenuItem, MenuOpenChangeDetail, MenuOpenChangeReason, MenuOverridableBinding, MenuPlacement, MenuSeparator, MenuTriggerIcon, MenuTriggerVariant, MeterOverridableBinding, MeterTone, NumberInputChangeDetail, NumberInputFormat, NumberInputOverridableBinding, NumberInputSize, PopoverCloseReason, PopoverHeadingLevel, PopoverOpenChangeDetail, PopoverOverridableBinding, PopoverPlacement, ProgressBarAnnounce, ProgressBarOverridableBinding, ProgressBarTone, RadioGroupChangeDetail, RadioGroupOption, RadioGroupOrientation, RadioGroupOverridableBinding, SearchChangeDetail, SearchClearDetail, SearchOverridableBinding, SearchSize, SearchSubmitDetail, SearchSuggestion, SegmentedControlChangeDetail, SegmentedControlOption, SegmentedControlOverridableBinding, SegmentedControlSize, SelectChangeDetail, SelectNative, SelectOpenChangeDetail, SelectOverridableBinding, SelectSize, SelectValue, SidePanelLandmark, SidePanelOpenChangeDetail, SidePanelOpenChangeReason, SidePanelOverridableBinding, SidePanelPersistent, SidePanelSide, SidePanelWidth, SliderChangeDetail, SliderMark, SliderOverridableBinding, SliderShowValue, SliderValue, SplitterCollapseChangeDetail, SplitterOrientation, SplitterOverridableBinding, SplitterSizeChangeDetail, SplitterStackBelow, StackAlign, StackDirection, StackElement, StackGap, StackJustify, StackOverridableBinding, StepperNavigable, StepperOrientation, StepperOverridableBinding, StepperStep, StepperStepSelectDetail, StepperStepStatus, SwitchChangeDetail, SwitchLabelPosition, SwitchOverridableBinding, TableCaptionLevel, TableColumn, TableColumnAlign, TableColumnHideBelow, TableColumnWidth, TableDensity, TableMaxHeight, TableOverridableBinding, TableResponsive, TableRow, TableRowPressDetail, TableSelectable, TableSelectionChangeDetail, TableSort, TableSortChangeDetail, TableSortDirection, TabsActivation, TabsChangeDetail, TabsFit, TabsItem, TabsOrientation, TabsOverridableBinding, TabsTab, TextAlign, TextElement, TextOverridableBinding, TextSize, TextTone, TextWeight, ToastActionDetail, ToastDismissDetail, ToastDismissReason, ToastDuration, ToastOptions, ToastOverridableBinding, ToastRegionOverridableBinding, ToastResult, ToastTone, ToolbarDensity, ToolbarOrientation, ToolbarOverflow, ToolbarOverridableBinding, ToolbarSize, TooltipDelay, TooltipOverridableBinding, TooltipPlacement, TreeActivateDetail, TreeExpandChangeDetail, TreeExpandDetail, TreeGridCaptionLevel, TreeGridCellChangeDetail, TreeGridCellRef, TreeGridCellValue, TreeGridColumnResizeDetail, TreeGridDensity, TreeGridEditStartDetail, TreeGridExpandChangeDetail, TreeGridExpandDetail, TreeGridHeight, TreeGridOverridableBinding, TreeGridRow, TreeGridSelectable, TreeGridSelection, TreeGridSelectionChangeDetail, TreeGridSort, TreeGridSortChangeDetail, TreeGridSortDirection, TreeHeadingLevel, TreeNode, TreeOverridableBinding, TreeSelectable, TreeSelectionChangeDetail };
 //# sourceMappingURL=index.d.ts.map

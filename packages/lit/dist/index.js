@@ -391,7 +391,7 @@ new class extends _identity {
 		}
 		render() {
 			const glyph = GLYPHS[this.name];
-			if (import.meta.env.DEV && glyph === void 0) console.warn(`<ds-icon> ${this.name === void 0 ? "requires a `name`" : `has no glyph named "${this.name}"`} — no glyph in the table, so an empty svg is drawn.`);
+			if (import.meta.env.DEV && glyph === void 0) console.warn(`Icon: unknown name "${String(this.name)}"`);
 			const labelled = this.label !== void 0 && this.label !== "";
 			return html`
       <svg
@@ -515,6 +515,7 @@ const HOOKS$47 = {
 	triggerFontFamily: "--ds-disclosure-trigger-font-family",
 	triggerFontSize: "--ds-disclosure-trigger-font-size",
 	triggerFontWeight: "--ds-disclosure-trigger-font-weight",
+	triggerLineHeight: "--ds-disclosure-trigger-line-height",
 	triggerRadius: "--ds-disclosure-trigger-radius",
 	panelPaddingBlock: "--ds-disclosure-panel-padding-block",
 	panelPaddingInline: "--ds-disclosure-panel-padding-inline",
@@ -735,7 +736,9 @@ new class extends _identity {
         aria-disabled=${ifDefined(this.disabled ? "true" : void 0)}
         @click=${this.handleClick}
       >
-        <ds-icon data-part="triggerIcon" part="triggerIcon" name="chevron-right" inline></ds-icon>
+        <span data-part="triggerIcon" part="triggerIcon"
+          ><ds-icon name="chevron-right" inline></ds-icon
+        ></span>
         <span>${this.summary}</span>
       </button>
     `;
@@ -821,6 +824,7 @@ new class extends _identity {
       --ds-disclosure-trigger-font-family: var(--font-family-body);
       --ds-disclosure-trigger-font-size: var(--font-size-md);
       --ds-disclosure-trigger-font-weight: var(--font-weight-medium);
+      --ds-disclosure-trigger-line-height: var(--font-line-height-normal);
       --ds-disclosure-trigger-radius: var(--radius-md);
       --ds-disclosure-panel-padding-block: var(--space-sm);
       --ds-disclosure-panel-padding-inline: var(--space-sm);
@@ -854,7 +858,7 @@ new class extends _identity {
       font-family: var(--ds-disclosure-trigger-font-family);
       font-size: var(--ds-disclosure-trigger-font-size);
       font-weight: var(--ds-disclosure-trigger-font-weight);
-      line-height: var(--font-line-height-normal);
+      line-height: var(--ds-disclosure-trigger-line-height);
       text-align: start;
       color: var(--color-foreground);
       background: transparent;
@@ -878,8 +882,10 @@ new class extends _identity {
       cursor: not-allowed;
     }
 
-    /* icon: chevron-right, rotated 90° when open; mirrored under rtl */
+    /* icon: the wrapper the Disclosure owns carries the colour and the rotation; the composed
+       <ds-icon inline> is never restyled and tracks the trigger's font size through 1em. */
     [data-part='triggerIcon'] {
+      display: inline-flex;
       flex: none;
       color: var(--color-foreground-muted);
       transition: transform var(--ds-disclosure-transition) var(--motion-easing-standard);
@@ -1305,26 +1311,32 @@ let _init_spacing;
 let _init_extra_spacing;
 let _init_overrides$45;
 let _init_extra_overrides$45;
-/** Overridable style hooks; see the `overrides` property. `labelColor` is locked and excluded. */
+/**
+* Overridable style hooks; see the `overrides` property. The accessibility-bearing `labelColor` is
+* locked and excluded. `labelSize` and `fontFamily` reach the composed label `Text` through its own
+* `overrides` (as `fontSize` and `fontFamily`) rather than a `--ds-divider-*` hook: Divider does not
+* style the Text itself, and page CSS reaches the label through Text's hooks.
+*/
+/** The bindings Divider paints itself, and the host hook each one sets. */
 const HOOKS$45 = {
 	color: "--ds-divider-color",
 	thickness: "--ds-divider-thickness",
 	spacing: "--ds-divider-spacing",
-	labelSize: "--ds-divider-label-size",
-	labelGap: "--ds-divider-label-gap",
-	fontFamily: "--ds-divider-font-family"
+	labelGap: "--ds-divider-label-gap"
 };
 /** Divider bindings forwarded to the composed label Text's `overrides`. */
 const LABEL_FORWARDS = [["labelSize", "fontSize"], ["fontFamily", "fontFamily"]];
 /**
 * `<ds-divider>` — Divider (category: layout, role: separator).
 *
-* The host is the line. `<ds-divider>` is decorative and hidden from assistive
-* technology (`aria-hidden="true"`). `<ds-divider semantic>` or
-* `<ds-divider label="or">` is exposed as `role="separator"` with
-* `aria-orientation`; a label renders in the shadow root as a
-* `<ds-text size="sm" tone="muted">` between two aria-hidden line segments,
-* and names the separator through `aria-label` on the host.
+* The host is the line: it carries the thickness on the cross axis and the
+* shadow root paints it as the `line` part. `<ds-divider>` is decorative and
+* hidden from assistive technology (`aria-hidden="true"`); `<ds-divider
+* semantic>` or `<ds-divider label="or">` is exposed as `role="separator"`
+* with `aria-orientation`. A label renders in the shadow root as a
+* `<ds-text size="sm" tone="muted">` between two aria-hidden line segments and
+* names the separator through `aria-label` on the host — ids do not cross the
+* shadow root, and a separator's children are presentational.
 *
 * ## When to use
 *
@@ -1379,13 +1391,23 @@ new class extends _identity {
 				]
 			], 0, void 0, LitElement));
 		}
-		/** Vertical dividers sit between inline siblings (toolbar groups) and stretch to the row height. */
+		/**
+		* Vertical dividers sit between inline siblings (toolbar groups) and stretch to the row height:
+		* `inline-block` with `block-size: auto; align-self: stretch; min-block-size: 100%`. They need a
+		* flex or grid row (a horizontal Stack with align stretch) or a parent with a definite height; in
+		* plain block flow a vertical divider has no height and draws nothing.
+		*/
 		#A = _init_orientation$5(this, "horizontal");
 		/**
 		* Optional text in the middle of a horizontal divider ("or", "Earlier
-		* today"). Turns the divider into a labelled separator (`semantic` is
-		* implied). Ignored on a vertical divider, with a development warning; an
-		* ignored label implies nothing either. An empty string is no label.
+		* today"). Turns the divider from decorative into a labelled separator
+		* (`semantic` is implied). Ignored on a vertical divider, with a development
+		* warning: a vertical line has no room for centered text. An ignored label
+		* implies nothing either — a vertical divider is semantic only when
+		* `semantic` says so. An empty string is no label. When in effect, the label
+		* is the separator's accessible name (`aria-label` on the host, since ids do
+		* not cross the shadow root) and the two line pieces on either side are
+		* hidden from assistive technology.
 		*/
 		get orientation() {
 			return this.#A;
@@ -1394,7 +1416,11 @@ new class extends _identity {
 			this.#A = v;
 		}
 		#B = (_init_extra_orientation$5(this), _init_label$27(this));
-		/** Expose as a separator to assistive technology. Leave false for purely visual lines between list rows. */
+		/**
+		* Expose as a separator to assistive technology. Leave false for purely visual lines between list
+		* rows; set true (or provide a label) when the divider marks a real boundary between sections
+		* that a screen-reader user should hear.
+		*/
 		get label() {
 			return this.#B;
 		}
@@ -1418,7 +1444,7 @@ new class extends _identity {
 			this.#D = v;
 		}
 		#E = (_init_extra_spacing(this), _init_overrides$45(this));
-		/** The label/orientation pair last warned about, so the warning fires once per appearance or change. */
+		/** The ignored label last warned about, so the warning fires once per appearance or change. */
 		get overrides() {
 			return this.#E;
 		}
@@ -1431,8 +1457,8 @@ new class extends _identity {
 			this.setAttribute("data-ds", "Divider");
 		}
 		willUpdate(changed) {
-			if (changed.has("overrides")) this.applyOverrides();
 			if (changed.has("semantic") || changed.has("label") || changed.has("orientation")) this.syncSemantics();
+			if (changed.has("overrides") || changed.has("spacing") || changed.has("label") || changed.has("orientation")) this.applyOverrides();
 			if (changed.has("label") || changed.has("orientation")) this.warnIgnoredLabel();
 		}
 		/** The label in effect: none on a vertical divider, and an empty string is no label. */
@@ -1441,7 +1467,7 @@ new class extends _identity {
 		}
 		render() {
 			const label = this.effectiveLabel;
-			if (label === void 0) return nothing;
+			if (label === void 0) return html`<span part="line" data-part="line" aria-hidden="true"></span>`;
 			return html`
       <span part="line" data-part="line" aria-hidden="true"></span>
       <ds-text
@@ -1471,7 +1497,8 @@ new class extends _identity {
 		/**
 		* Decorative → aria-hidden; semantic or labelled → role=separator with
 		* aria-orientation (and the label as its name, since a separator's content
-		* is presentational). Plain host attributes so accessibility-tree readers observe them.
+		* is presentational). Plain host attributes, not ElementInternals, so that
+		* accessible-name readers observe them.
 		*/
 		syncSemantics() {
 			const label = this.effectiveLabel;
@@ -1491,13 +1518,19 @@ new class extends _identity {
 		}
 		warnIgnoredLabel() {
 			const ignored = this.orientation === "vertical" && this.label ? this.label : void 0;
-			if (ignored !== void 0 && ignored !== this.warnedLabel && import.meta.env.DEV) console.warn("ds-divider: `label` is ignored on a vertical divider: a vertical line has no room for centered text.");
+			if (ignored !== void 0 && ignored !== this.warnedLabel && import.meta.env.DEV) console.warn("<ds-divider>: `label` is ignored on a vertical divider — a vertical line has no room for centered text.", this);
 			this.warnedLabel = ignored;
 		}
+		/**
+		* Overrides change values, never presence: `spacing: none` renders no space and takes no hook,
+		* and the label bindings apply only while a label is in effect.
+		*/
 		applyOverrides() {
+			const labelled = this.effectiveLabel !== void 0;
 			for (const binding of Object.keys(HOOKS$45)) {
-				const ref = this.overrides?.[binding];
 				const hook = HOOKS$45[binding];
+				if (hook === void 0) continue;
+				const ref = (binding === "spacing" ? this.spacing !== "none" : binding === "labelGap" ? labelled : true) ? this.overrides?.[binding] : void 0;
 				if (ref === void 0) this.style.removeProperty(hook);
 				else this.style.setProperty(hook, cssVar(ref));
 			}
@@ -1507,22 +1540,27 @@ new class extends _identity {
     :host {
       --ds-divider-color: var(--color-border);
       --ds-divider-thickness: var(--border-width-thin);
-      --ds-divider-label-size: var(--font-size-sm);
       --ds-divider-label-gap: var(--layout-gap-normal);
-      --ds-divider-font-family: var(--font-family-body);
-      display: block;
+      display: flex;
       box-sizing: border-box;
       block-size: var(--ds-divider-thickness);
-      background-color: var(--ds-divider-color);
+      /* a one-token line is the smallest a divider may be: never let a flex parent shrink it away */
+      flex-shrink: 0;
     }
 
     :host([hidden]) {
       display: none;
     }
 
+    /* The host sizes the line on the cross axis; the line part paints it along the other. */
+    [data-part='line'] {
+      flex: 1 1 auto;
+      background-color: var(--ds-divider-color);
+    }
+
     /* stretches in a flex/grid row (block-size stays auto so align-self: stretch applies) and fills a parent with a definite height */
     :host([orientation='vertical']) {
-      display: inline-block;
+      display: inline-flex;
       inline-size: var(--ds-divider-thickness);
       block-size: auto;
       min-block-size: 100%;
@@ -1547,27 +1585,16 @@ new class extends _identity {
       margin-inline: var(--ds-divider-spacing);
     }
 
-    /* labelled (horizontal only): the host is a row of line, label, line */
+    /* labelled (horizontal only): the host is a row of line, label, line, and the lines paint */
     :host([data-labelled]) {
-      display: flex;
       align-items: center;
-      gap: var(--ds-divider-label-gap);
       block-size: auto;
-      background-color: transparent;
+      gap: var(--ds-divider-label-gap);
     }
 
-    [data-part='line'] {
-      flex: 1 1 auto;
+    :host([data-labelled]) [data-part='line'] {
+      flex: 1 1 0;
       block-size: var(--ds-divider-thickness);
-      background-color: var(--ds-divider-color);
-    }
-
-    /* labelSize / fontFamily reach ds-text through its documented hooks (and its overrides); color and size come from tone="muted" size="sm" */
-    [data-part='label'] {
-      --ds-text-font-size: var(--ds-divider-label-size);
-      --ds-text-font-family: var(--ds-divider-font-family);
-      flex: 0 0 auto;
-      white-space: nowrap;
     }
   `;
 	constructor() {
@@ -2113,6 +2140,8 @@ let _init_track;
 let _init_extra_track;
 let _init_overrides$43;
 let _init_extra_overrides$43;
+let _init_hostTabIndex;
+let _init_extra_hostTabIndex;
 /** Detail carried by the `press` CustomEvent (none). */
 /** Detail carried by the `track` CustomEvent. */
 /**
@@ -2180,7 +2209,7 @@ let _DsButton;
 new class extends _identity {
 	static [class DsButton extends LitElement {
 		static {
-			({e: [_init_label$26, _init_extra_label$26, _init_variant, _init_extra_variant, _init_size$10, _init_extra_size$10, _init_type$1, _init_extra_type$1, _init_expanded$3, _init_extra_expanded$3, _init_disabled$13, _init_extra_disabled$13, _init_iconOnly$2, _init_extra_iconOnly$2, _init_loading$7, _init_extra_loading$7, _init_inverse, _init_extra_inverse, _init_accessibleName, _init_extra_accessibleName, _init_overflowLabel, _init_extra_overflowLabel, _init_track, _init_extra_track, _init_overrides$43, _init_extra_overrides$43], c: [_DsButton, _initClass$45]} = applyDecs2311(this, [customElement("ds-button")], [
+			({e: [_init_label$26, _init_extra_label$26, _init_variant, _init_extra_variant, _init_size$10, _init_extra_size$10, _init_type$1, _init_extra_type$1, _init_expanded$3, _init_extra_expanded$3, _init_disabled$13, _init_extra_disabled$13, _init_iconOnly$2, _init_extra_iconOnly$2, _init_loading$7, _init_extra_loading$7, _init_inverse, _init_extra_inverse, _init_accessibleName, _init_extra_accessibleName, _init_overflowLabel, _init_extra_overflowLabel, _init_track, _init_extra_track, _init_overrides$43, _init_extra_overrides$43, _init_hostTabIndex, _init_extra_hostTabIndex], c: [_DsButton, _initClass$45]} = applyDecs2311(this, [customElement("ds-button")], [
 				[
 					property({ type: String }),
 					1,
@@ -2274,12 +2303,13 @@ new class extends _identity {
 					property({ attribute: false }),
 					1,
 					"overrides"
+				],
+				[
+					state(),
+					1,
+					"hostTabIndex"
 				]
 			], 0, void 0, LitElement));
-		}
-		constructor(...args) {
-			super(...args);
-			_init_extra_overrides$43(this);
 		}
 		/** The button's text. Also its accessible name. */
 		#A = _init_label$26(this, "");
@@ -2346,8 +2376,9 @@ new class extends _identity {
 		#G = (_init_extra_disabled$13(this), _init_iconOnly$2(this, false));
 		/**
 		* Shows a ring spinner in the leading icon position, hides `trailingIcon`,
-		* keeps the label visible and the layout unchanged, and blocks repeat
-		* activation while an action is pending. `copy.loading` is the description.
+		* keeps the label visible and the height unchanged, and blocks repeat
+		* activation while an action is pending. Without a `leadingIcon` the spinner
+		* and iconGap widen the button. `copy.loading` is the description.
 		*/
 		get iconOnly() {
 			return this.#G;
@@ -2407,15 +2438,51 @@ new class extends _identity {
 			this.#L = v;
 		}
 		#M = (_init_extra_track(this), _init_overrides$43(this));
+		/**
+		* Mirror of the host's own `tabindex`, forwarded to the inner `<button>`.
+		*
+		* `delegatesFocus` makes the host focusable, but it does not make the inner
+		* button share the host's tabbability: a composer that writes `tabindex="-1"`
+		* on a `<ds-button>` — a roving-focus parent such as `ds-toolbar`, or one that
+		* keeps the control out of the tab order because the surrounding decoration is
+		* `aria-hidden` (`ds-tree-grid`'s expand chevron, `ds-number-input`'s steppers)
+		* — takes the *host* out of the tab order while the shadow `<button>` stays a
+		* tab stop of its own. Forwarding the attribute is the only way a composer can
+		* express that, since it cannot reach into this shadow root.
+		*
+		* `null` (no `tabindex` on the host) forwards nothing, so an ordinary button is
+		* tabbable exactly as before, and `disabled` still leaves it in the tab order.
+		*/
 		get overrides() {
 			return this.#M;
 		}
 		set overrides(v) {
 			this.#M = v;
 		}
+		#N = (_init_extra_overrides$43(this), _init_hostTabIndex(this, null));
+		/**
+		* Watches the host's `tabindex` only. The callback writes to the inner button
+		* through `hostTabIndex`, never back to the host, so it cannot re-enter.
+		*/
+		get hostTabIndex() {
+			return this.#N;
+		}
+		set hostTabIndex(v) {
+			this.#N = v;
+		}
+		tabIndexObserver = (_init_extra_hostTabIndex(this), new MutationObserver(() => this.readHostTabIndex()));
 		connectedCallback() {
 			super.connectedCallback();
 			this.setAttribute("data-ds", "Button");
+			this.readHostTabIndex();
+			this.tabIndexObserver.observe(this, {
+				attributes: true,
+				attributeFilter: ["tabindex"]
+			});
+		}
+		disconnectedCallback() {
+			super.disconnectedCallback();
+			this.tabIndexObserver.disconnect();
 		}
 		willUpdate(changed) {
 			if (changed.has("overrides")) this.applyOverrides();
@@ -2426,6 +2493,7 @@ new class extends _identity {
         part="container"
         data-part="container"
         type=${this.type}
+        tabindex=${ifDefined(this.hostTabIndex ?? void 0)}
         aria-disabled=${ifDefined(this.disabled ? "true" : void 0)}
         aria-busy=${ifDefined(this.loading ? "true" : void 0)}
         aria-expanded=${ifDefined(this.expanded === void 0 ? void 0 : String(this.expanded))}
@@ -2438,7 +2506,7 @@ new class extends _identity {
           <span class="label" part="label" data-part="label">${this.label}</span>
           ${this.iconOnly || this.loading ? nothing : html`<slot name="trailing-icon" part="trailingIcon" data-part="trailingIcon"></slot>`}
         </span>
-        ${this.loading ? html`<span id="loading-description" class="visually-hidden">${COPY_LOADING$8}</span>` : nothing}
+        ${this.loading ? html`<span id="loading-description" class="visually-hidden" aria-hidden="true">${COPY_LOADING$8}</span>` : nothing}
       </button>
     `;
 		}
@@ -2464,6 +2532,9 @@ new class extends _identity {
 				}));
 			}
 			if (this.type === "submit" && !this.closest("ds-form")) this.closest("form")?.requestSubmit();
+		}
+		readHostTabIndex() {
+			this.hostTabIndex = this.getAttribute("tabindex");
 		}
 		applyOverrides() {
 			for (const binding of Object.keys(HOOKS$43)) {
@@ -2559,10 +2630,13 @@ new class extends _identity {
       --ds-button-spinner-size: var(--font-size-lg);
     }
 
-    /* iconOnly: equal padding on all sides (space.sm), regardless of size */
-    :host([icon-only]) {
-      --ds-button-padding-inline: var(--space-sm);
-      --ds-button-padding-block: var(--space-sm);
+    /*
+     * iconOnly: equal padding on all sides. paddingInline takes the resolved
+     * paddingBlock, so a paddingBlock override keeps the sides equal and a
+     * paddingInline override has no effect.
+     */
+    :host([icon-only]) [data-part='container'] {
+      padding-inline: var(--ds-button-padding-block);
     }
 
     /* background / foreground: color.action.{variant}.*, locked (no hook) */
@@ -2660,7 +2734,8 @@ new class extends _identity {
     }
     @keyframes ds-button-spin {
       to {
-        transform: rotate(1turn);
+        /* one full turn: a geometric constant, not a themed value */
+        transform: rotate(360deg);
       }
     }
     @media (prefers-reduced-motion: reduce) {
@@ -2797,13 +2872,15 @@ new class extends _identity {
 		* Position in the document outline. Controls the semantic element, not the
 		* visual size — screen-reader users navigate by heading level, so levels must
 		* not skip (h1 → h3). Required; the canonical values are the strings `'1'`–
-		* `'6'` and the numbers `1`–`6` are accepted too. A missing or unknown level
-		* falls back to `<h2>`.
+		* `'6'` and the numbers `1`–`6` are accepted too. The property holds
+		* `undefined` until set; a missing, out-of-range or non-numeric level renders
+		* as `<h2>` at the 3xl size and warns once per element in development.
 		*/
 		#A = _init_level(this);
 		/**
 		* Visual size, independent of level. Defaults per level: 1 → 4xl, 2 → 3xl,
-		* 3 → 2xl, 4 → xl, 5 → lg, 6 → md.
+		* 3 → 2xl, 4 → xl, 5 → lg, 6 → md; an explicit size always wins. The resolved
+		* default is never written back, so `[size]` matches only an explicit size.
 		*/
 		get level() {
 			return this.#A;
@@ -2812,7 +2889,7 @@ new class extends _identity {
 			this.#A = v;
 		}
 		#B = (_init_extra_level(this), _init_size$9(this));
-		/** Horizontal text alignment. `start`/`end` follow writing direction. */
+		/** Horizontal text alignment. `start`/`end` follow writing direction. Text's align type. */
 		get size() {
 			return this.#B;
 		}
@@ -2828,7 +2905,7 @@ new class extends _identity {
 			this.#C = v;
 		}
 		#D = (_init_extra_align$2(this), _init_overrides$42(this));
-		/** Development-only: the missing-level warning is emitted at most once per element. */
+		/** Development-only: the fallback-level warning is emitted at most once per element, for its lifetime. */
 		get overrides() {
 			return this.#D;
 		}
@@ -2844,7 +2921,7 @@ new class extends _identity {
 			if (changed.has("overrides")) this.applyOverrides();
 			if (import.meta.env.DEV && !this.warnedMissingLevel && normalizeLevel(this.level) === void 0) {
 				this.warnedMissingLevel = true;
-				console.warn(`<ds-heading> needs a level from 1 to 6 to sit in the document outline; got ${String(this.level)}. Rendering <h${FALLBACK_LEVEL}>.`);
+				console.warn(`Heading: level ${String(this.level)} is not one of 1–6; rendering as level ${FALLBACK_LEVEL}.`);
 			}
 		}
 		render() {
@@ -2987,6 +3064,12 @@ let _init_extra_inputEl$5;
 * `descriptionText`, `minTarget`, `minTargetSm` and `focusRingWidth` are
 * locked and excluded.
 */
+/**
+* `helperSize` has no hook: it reaches the description and error text only
+* through the composed Text's `overrides.fontSize`, so page CSS sizes helper
+* text through Text's own hooks (`fontFamily` and `lineHeight` keep their root
+* hooks as well, for the label and the field).
+*/
 const HOOKS$41 = {
 	borderInvalid: "--ds-input-border-invalid",
 	borderWidth: "--ds-input-border-width",
@@ -2997,7 +3080,6 @@ const HOOKS$41 = {
 	fontFamily: "--ds-input-font-family",
 	fontSize: "--ds-input-font-size",
 	labelWeight: "--ds-input-label-weight",
-	helperSize: "--ds-input-helper-size",
 	lineHeight: "--ds-input-line-height",
 	disabledOpacity: "--ds-input-disabled-opacity",
 	transition: "--ds-input-transition"
@@ -3473,7 +3555,6 @@ new class extends _identity {
       --ds-input-font-family: var(--font-family-body);
       --ds-input-font-size: var(--font-size-md);
       --ds-input-label-weight: var(--font-weight-medium);
-      --ds-input-helper-size: var(--font-size-sm);
       --ds-input-line-height: var(--font-line-height-normal);
       --ds-input-disabled-opacity: var(--opacity-disabled);
       --ds-input-transition: var(--motion-duration-fast);
@@ -3785,7 +3866,8 @@ new class extends _identity {
     [data-part='anchor'] {
       /* A link has no typography of its own: it takes the surrounding text's. */
       font: inherit;
-      color: var(--color-link);
+      /* tone=inherit: rest, hover and visited all resolve to the inherited color; the underline and icon follow currentColor */
+      color: inherit;
       text-decoration-line: underline;
       text-decoration-thickness: var(--ds-link-underline-thickness);
       text-underline-offset: var(--ds-link-underline-offset);
@@ -3799,21 +3881,18 @@ new class extends _identity {
       }
     }
 
-    /* colorVisited */
-    [data-part='anchor']:visited {
+    /* color, colorVisited and colorHover apply under tone=default only; locked, so they read the tokens directly */
+    :host(:not([tone='inherit'])) [data-part='anchor'] {
+      color: var(--color-link);
+    }
+
+    :host(:not([tone='inherit'])) [data-part='anchor']:visited {
       color: var(--color-link-visited);
     }
 
-    /* colorHover: pointer hover only, not :active */
-    [data-part='anchor']:hover {
+    /* colorHover: pointer hover only, not :active, with no hover-media guard */
+    :host(:not([tone='inherit'])) [data-part='anchor']:hover {
       color: var(--color-link-hover);
-    }
-
-    /* tone=inherit: color, colorHover and colorVisited are not applied; the underline and icon follow currentColor */
-    :host([tone='inherit']) [data-part='anchor'],
-    :host([tone='inherit']) [data-part='anchor']:visited,
-    :host([tone='inherit']) [data-part='anchor']:hover {
-      color: inherit;
     }
 
     /* focusRing, focusRingWidth, focusRingRadius, focusRingOffset: the ring follows the inline text box */
@@ -4086,6 +4165,8 @@ new class extends _identity {
       flex-wrap: nowrap;
       align-items: stretch;
       justify-content: flex-start;
+      /* lets a horizontal Stack shrink inside a parent flex container */
+      min-inline-size: 0;
       --ds-stack-gap: var(--layout-gap-normal);
       gap: var(--ds-stack-gap);
     }
@@ -4272,7 +4353,7 @@ new class extends _identity {
 					"label"
 				],
 				[
-					property(),
+					property({ attribute: "labelled-by" }),
 					1,
 					"labelledBy"
 				],
@@ -4375,18 +4456,22 @@ new class extends _identity {
 			this.#G = v;
 		}
 		#H = (_init_extra_overrides$38(this), _init_errors(this, /* @__PURE__ */ new Map()));
-		/** Once a submission has failed, fields re-validate on blur/change even in `submit` mode; a successful one clears it. */
+		/** Each errored field's `label` as registered, so an entry whose field has since gone keeps its fallback text. */
 		get errors() {
 			return this.#H;
 		}
 		set errors(v) {
 			this.#H = v;
 		}
-		hasFailedSubmission = (_init_extra_errors(this), false);
+		errorLabels = (_init_extra_errors(this), /* @__PURE__ */ new Map());
+		/** Once a submission has failed, fields re-validate on blur/change even in `submit` mode; a successful one clears it. */
+		hasFailedSubmission = false;
 		/** The plural locale, read at the failed submit (nearest `lang` ancestor, else the runtime default). */
 		summaryLocale;
 		/** Fields and actions this Form disabled itself, so re-enabling never touches one already disabled by the consumer. */
 		disabledByForm = /* @__PURE__ */ new Set();
+		/** Fields this Form marked invalid, so re-validating never clears one the consumer marked itself. */
+		invalidByForm = /* @__PURE__ */ new Set();
 		/** Re-syncs disabled propagation when fields are added or removed; observes `childList` only, never the attributes it writes. */
 		mutationObserver = new MutationObserver(() => {
 			if (this.disabled) this.syncDisabled();
@@ -4457,11 +4542,12 @@ new class extends _identity {
           <ds-stack element="ul" gap="tight" .overrides=${stackOverrides}>
             ${errorEntries.map(([name, message]) => {
 				const field = fieldsByName.get(name);
-				const text = message || field?.label || name;
+				const text = message || (field?.label ?? this.errorLabels.get(name)) || name;
+				if (field === void 0) return html`<ds-text tone="danger">${text}</ds-text>`;
 				return html`
                 <ds-link
                   tone="inherit"
-                  href=${field?.id ? `#${field.id}` : "#"}
+                  href=${`#${field.id}`}
                   label=${text}
                   @click=${(event) => this.handleSummaryLinkClick(event, name)}
                 ></ds-link>
@@ -4482,15 +4568,17 @@ new class extends _identity {
 			const fields = this.queryFields();
 			this.assignFieldIds(fields);
 			const errors = /* @__PURE__ */ new Map();
+			this.errorLabels.clear();
 			const values = {};
 			let firstInvalid;
 			for (const field of fields) {
 				if (field.disabled) continue;
-				if (field.checkValidity()) {
+				if (this.runFieldValidation(field)) {
 					const value = field.currentValue;
 					if (!isEmptyValue(value)) values[field.name] = value;
 				} else {
 					errors.set(field.name, field.validationMessage ?? "");
+					this.errorLabels.set(field.name, field.label);
 					firstInvalid ??= field;
 				}
 			}
@@ -4543,6 +4631,23 @@ new class extends _identity {
 			if (related instanceof Node && (related === field || field.contains(related))) return;
 			if (this.validate === "blur" && !this.validatesOnChange(field) || this.hasFailedSubmission) this.validateField(field);
 		}
+		/**
+		* Runs the field's own synchronous validation and mirrors the result onto its
+		* `invalid` property, which is what makes the field render its own message.
+		* Form never composes a message of its own: the text shown is the field's
+		* copy, and `validationMessage` is what the summary repeats.
+		*/
+		runFieldValidation(field) {
+			if (this.invalidByForm.has(field) && field.invalid === true) field.invalid = false;
+			const valid = field.checkValidity();
+			if (typeof field.invalid === "boolean") {
+				if (!valid) {
+					field.invalid = true;
+					this.invalidByForm.add(field);
+				} else this.invalidByForm.delete(field);
+			}
+			return valid;
+		}
 		/** A field with no useful blur moment (Checkbox, Switch) declares `data-ds-field="change"`. */
 		validatesOnChange(field) {
 			return field.getAttribute("data-ds-field") === "change";
@@ -4556,11 +4661,13 @@ new class extends _identity {
 		* submission: a fixed field drops out, a still-listed one keeps its place, a newly invalid one is appended.
 		*/
 		validateField(field) {
-			const invalid = !field.disabled && !field.checkValidity();
+			const invalid = !field.disabled && !this.runFieldValidation(field);
 			if (!this.hasFailedSubmission) return;
 			const next = new Map(this.errors);
-			if (invalid) next.set(field.name, field.validationMessage ?? "");
-			else next.delete(field.name);
+			if (invalid) {
+				next.set(field.name, field.validationMessage ?? "");
+				this.errorLabels.set(field.name, field.label);
+			} else next.delete(field.name);
 			this.errors = next;
 		}
 		/** The collected field an event came from, or `null`. */
@@ -5112,6 +5219,7 @@ const COPY_REQUIRED_INDICATOR$5 = " (required)";
 /** indicator (locked): reaches the composed Icon only through its `color` override. */
 const INDICATOR_OVERRIDES = { color: "color.control.selectedForeground" };
 /** Overridable style hooks; see the `overrides` property. `controlBorder`, `controlSelectedBackground`, `indicator`, `indicatorStroke`, `labelColor`, `descriptionText`, `errorText`, `focusRing`, `focusRingWidth` and `minTarget` are locked and excluded. */
+/** Hooks on `:host`. `helperSize` has none: it reaches the description and error Texts only through their `overrides`. */
 const HOOKS$36 = {
 	controlBackground: "--ds-checkbox-control-background",
 	controlBorderWidth: "--ds-checkbox-control-border-width",
@@ -5123,7 +5231,6 @@ const HOOKS$36 = {
 	partGap: "--ds-checkbox-part-gap",
 	labelSize: "--ds-checkbox-label-size",
 	labelWeight: "--ds-checkbox-label-weight",
-	helperSize: "--ds-checkbox-helper-size",
 	fontFamily: "--ds-checkbox-font-family",
 	lineHeight: "--ds-checkbox-line-height",
 	disabledOpacity: "--ds-checkbox-disabled-opacity",
@@ -5139,7 +5246,7 @@ const HOOKS$36 = {
 * indicator span stacked over it. The `<label for>` sits in the same root, so a
 * click on it toggles natively; a click on the description or the gap is
 * forwarded to the control. The error message sits below the row, outside the
-* hit area.
+* hit area, indented so it lines up with the label.
 *
 * The element is form-associated via `ElementInternals`
 * (`setFormValue(checked ? value : null)`), so a native `<form>` sees it, and
@@ -5353,7 +5460,7 @@ new class extends _identity {
 			this.#K = v;
 		}
 		checkedValue = void _init_extra_overrides$36(this);
-		/** The live checked state, like a native input. The attribute is the initial state only; not reflected. */
+		/** The live checked state, like a native input: starts from the `checked` attribute, else `defaultChecked`, and follows every toggle. Not reflected. */
 		get checked() {
 			return this.checkedValue ?? this.defaultChecked;
 		}
@@ -5404,7 +5511,7 @@ new class extends _identity {
 		connectedCallback() {
 			super.connectedCallback();
 			this.setAttribute("data-ds", "Checkbox");
-			this.setAttribute("data-ds-field", "");
+			this.setAttribute("data-ds-field", "change");
 		}
 		/** The value `<ds-form>` collects: the checked boolean. */
 		get currentValue() {
@@ -5434,6 +5541,7 @@ new class extends _identity {
 		formDisabledCallback(disabled) {
 			this.formDisabled = disabled;
 		}
+		/** Back to the initial state: the `checked` attribute, else `defaultChecked`. */
 		formResetCallback() {
 			this.checked = this.hasAttribute("checked") || this.defaultChecked;
 			this.mixedCleared = false;
@@ -5509,6 +5617,7 @@ new class extends _identity {
         </div>
         ${message ? html`<ds-text
               id="error"
+              class="error"
               role="alert"
               part="errorMessage"
               data-part="errorMessage"
@@ -5547,7 +5656,7 @@ new class extends _identity {
 		handleRowClick(event) {
 			const input = this.inputEl;
 			const target = event.target;
-			if (!input || !(target instanceof Element)) return;
+			if (!input || !(target instanceof Element) || this.isDisabled) return;
 			if (target === input || target.closest("label") !== null) return;
 			input.focus();
 			input.click();
@@ -5588,9 +5697,8 @@ new class extends _identity {
 			else this.internals.setValidity({});
 		}
 		applyOverrides() {
-			for (const binding of Object.keys(HOOKS$36)) {
+			for (const [binding, hook] of Object.entries(HOOKS$36)) {
 				const ref = this.overrides?.[binding];
-				const hook = HOOKS$36[binding];
 				if (ref === void 0) this.style.removeProperty(hook);
 				else this.style.setProperty(hook, cssVar(ref));
 			}
@@ -5614,11 +5722,15 @@ new class extends _identity {
       --ds-checkbox-part-gap: var(--space-1);
       --ds-checkbox-label-size: var(--font-size-md);
       --ds-checkbox-label-weight: var(--font-weight-regular);
-      --ds-checkbox-helper-size: var(--font-size-sm);
       --ds-checkbox-font-family: var(--font-family-body);
       --ds-checkbox-line-height: var(--font-line-height-normal);
       --ds-checkbox-disabled-opacity: var(--opacity-disabled);
       --ds-checkbox-transition: var(--motion-duration-fast);
+      /* indicator, indicatorStroke, helperSize, descriptionText and errorText have no hook: the
+         composed Icon and Texts realise them through their own props and overrides. */
+
+      /* The label's first line box; the control centres on it and the row is padded around it. */
+      --ds-checkbox-line-box: calc(var(--ds-checkbox-label-size) * var(--ds-checkbox-line-height));
     }
 
     :host([hidden]) {
@@ -5632,34 +5744,41 @@ new class extends _identity {
       gap: var(--ds-checkbox-part-gap);
     }
 
-    /* gap, minTarget: the whole row, gap included, is the hit area; no vertical padding */
+    /* minTarget: the whole row, gap included, is the hit area. The children align to the start of
+       the cross axis and the padding makes a single-line row exactly minTarget tall, so a wrapping
+       label or a description grows the row downwards without pulling the control off the first line. */
     .row {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: var(--ds-checkbox-gap);
-      min-block-size: var(--size-target-comfortable);
+      padding-block: calc((var(--size-target-comfortable) - var(--ds-checkbox-line-box)) / 2);
       cursor: pointer;
     }
 
-    /* The control and its indicator stacked in one cell. */
+    /* The box is one label line tall and stacks the control and the indicator in one grid cell,
+       which centres the control on the label's first line (and in the row when the label is hidden). */
     .box {
-      display: grid;
-      flex: none;
+      display: inline-grid;
+      place-items: center;
+      flex: 0 0 auto;
+      block-size: var(--ds-checkbox-line-box);
     }
     .box > * {
       grid-area: 1 / 1;
     }
 
+    /* control: a native input drawn with the control tokens, never a hidden input under a fake box. */
     .control {
       box-sizing: border-box;
       inline-size: var(--ds-checkbox-control-size);
       block-size: var(--ds-checkbox-control-size);
       margin: 0;
+      padding: 0;
       border-width: var(--ds-checkbox-control-border-width);
       border-style: solid;
       border-color: var(--color-control-border);
       border-radius: var(--ds-checkbox-control-radius);
-      background: var(--ds-checkbox-control-background);
+      background-color: var(--ds-checkbox-control-background);
       cursor: pointer;
       appearance: none;
       -webkit-appearance: none;
@@ -5668,45 +5787,55 @@ new class extends _identity {
         border-color var(--ds-checkbox-transition) var(--motion-easing-standard);
     }
 
-    /* pressedOverlay: an unchecked, not-mixed, enabled box shows controlSelectedBackground at this opacity */
+    /* Border color precedence: invalid, then selected, then rest — so these three rules stay in order. */
+
+    /* controlSelectedBackground: checked and indeterminate fill; the border takes the same color */
+    .control:checked,
+    .control:indeterminate {
+      border-color: var(--color-control-selected-background);
+      background-color: var(--color-control-selected-background);
+    }
+
+    /* controlBorderInvalid: replaces the border color in every state; the selected fill is unchanged */
+    :host([invalid]) .control {
+      border-color: var(--ds-checkbox-control-border-invalid);
+    }
+
+    /* pressedOverlay: an unchecked, not-mixed, enabled box shows controlSelectedBackground at this
+       opacity over controlBackground; the border is unchanged. A filled or disabled box shows none. */
     .row:not(.disabled) .control:active:not(:checked):not(:indeterminate) {
-      background: color-mix(
+      background-color: color-mix(
         in srgb,
         var(--color-control-selected-background) calc(var(--ds-checkbox-pressed-overlay) * 100%),
         var(--ds-checkbox-control-background)
       );
     }
 
-    /* controlSelectedBackground: checked and indeterminate fill; the border takes the same color */
-    .control:checked,
-    .control:indeterminate {
-      border-color: var(--color-control-selected-background);
-      background: var(--color-control-selected-background);
-    }
-
-    /* controlBorderInvalid */
-    :host([invalid]) .control {
-      border-color: var(--ds-checkbox-control-border-invalid);
-    }
-
-    /* focusRing, focusRingWidth */
+    /* focusRing, focusRingWidth: a separate outline, so an invalid box keeps controlBorderInvalid */
     .control:focus-visible {
       outline: var(--border-width-focus) solid var(--color-border-focus);
       outline-offset: var(--border-width-focus);
     }
 
-    /* indicator: the Icon centered in the control; clicks fall through to the input */
+    /* indicator: the Icon centred over the control; clicks fall through to the input */
     .indicator {
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: inline-flex;
       pointer-events: none;
     }
 
+    /* transition: fill and border only — the indicator is mounted and unmounted, never animated */
     @media (prefers-reduced-motion: reduce) {
       .control {
         transition: none;
       }
+    }
+
+    /* partGap: between label and description */
+    .text {
+      display: flex;
+      flex-direction: column;
+      gap: var(--ds-checkbox-part-gap);
+      min-inline-size: 0;
     }
 
     /* labelColor, labelSize, labelWeight, fontFamily, lineHeight: the label's own rule */
@@ -5719,25 +5848,21 @@ new class extends _identity {
       cursor: pointer;
     }
 
-    /* partGap: between label and description */
-    .text {
-      display: flex;
-      flex-direction: column;
-      gap: var(--ds-checkbox-part-gap);
-      min-inline-size: 0;
+    /* The error sits below the row, outside the hit area, indented by controlSize + gap so it lines
+       up with the label rather than the control. */
+    .error {
+      padding-inline-start: calc(var(--ds-checkbox-control-size) + var(--ds-checkbox-gap));
     }
 
     /* disabledOpacity: dims the control (with its indicator) and the label, not the description or error */
-    .row.disabled {
+    .row.disabled,
+    .row.disabled .control,
+    .row.disabled .label {
       cursor: not-allowed;
     }
     .row.disabled .box,
     .row.disabled .label {
       opacity: var(--ds-checkbox-disabled-opacity);
-    }
-    .row.disabled .control,
-    .row.disabled .label {
-      cursor: not-allowed;
     }
 
     .visually-hidden {
@@ -5779,6 +5904,7 @@ let _init_formDisabled$7;
 let _init_extra_formDisabled$7;
 let _init_inputEl$3;
 let _init_extra_inputEl$3;
+/** Where the label sits relative to the track. */
 /** Detail carried by the `change` CustomEvent. */
 /** Overridable style hooks; see the `overrides` property. `trackOff`, `trackOn`, `thumb`, `labelColor`, `descriptionText`, `focusRing`, `focusRingWidth` and `minTarget` are locked and excluded. */
 /** Hooks on `:host`. `helperSize` has none: it reaches the description Text only through its `overrides`. */
@@ -5802,19 +5928,23 @@ const HOOKS$35 = {
 *
 * `<ds-switch label="Email notifications">`. A native
 * `<input type="checkbox" role="switch">` styled with `appearance: none` is the
-* track (with `delegatesFocus`), and keeps label association and Space toggling
-* for free; the thumb is the input's `::before` pseudo-element, so it has no
-* part. The `<label for>` sits in the same root, so a click on it toggles
-* natively; a click on the description or the row's gap is forwarded to the
-* control, so the whole row toggles.
+* track (in a shadow root with `delegatesFocus`), which keeps label
+* association, Space toggling and form participation for free; the thumb is a
+* Switch-owned `aria-hidden` span stacked over it in a track wrapper (not the
+* input's `::before`, which Firefox does not draw on an `appearance: none`
+* input), and both key off the input's `aria-checked`, never `:checked`. The
+* `<label for>` sits in the same root, so a click on it toggles natively; a
+* click on the description or the row's gap is forwarded to the control, so
+* the whole row toggles.
 *
 * The element is form-associated like `ds-checkbox`: the native form value is
-* `"on"` while checked and `null` otherwise, while `<ds-form>` discovers it by
-* `data-ds-field="change"` and collects `currentValue` as a boolean. A switch
-* never validates. The inner native `change` is not composed, so a composed
-* `change` CustomEvent with `{ checked }` is re-dispatched from the host.
-* `checked` behaves like a native input: the attribute is the initial state
-* only and the property is the live state, so it is not reflected.
+* `"on"` while checked and `null` otherwise (and `null` while disabled or
+* form-disabled), while `<ds-form>` discovers it by `data-ds-field="change"`
+* and collects `currentValue` as a boolean. A switch never validates. The
+* inner native `change` is not composed, so a composed `change` CustomEvent
+* with `{ checked }` is re-dispatched from the host. `checked` behaves like a
+* native input: the attribute is the initial state only and the property is
+* the live state, so it is not reflected and there is no controlled mode.
 *
 * ## When to use
 *
@@ -5886,7 +6016,7 @@ new class extends _identity {
 					"formDisabled"
 				],
 				[
-					query("#track"),
+					query("#control"),
 					1,
 					"inputEl"
 				]
@@ -5894,7 +6024,7 @@ new class extends _identity {
 		}
 		/** Visible label naming the thing being turned on or off. Also the accessible name. */
 		#A = (_initProto$7(this), _init_label$21(this, ""));
-		/** Optional field name. When inside a Form the state is collected as a boolean; most switches are not in forms. Reflected so a native `<form>` still submits it. */
+		/** Optional field name. When inside a Form the state is collected as a boolean; most switches are not in forms. Reflected so a name set as a property is still submitted by a native `<form>`. */
 		get label() {
 			return this.#A;
 		}
@@ -5910,7 +6040,7 @@ new class extends _identity {
 			this.#B = v;
 		}
 		#C = (_init_extra_name$8(this), _init_defaultChecked(this, false));
-		/** Cannot be toggled. Stays visible, readable and focusable. */
+		/** Cannot be toggled. Stays visible, readable and focusable, and contributes no key to the Form's values. */
 		get defaultChecked() {
 			return this.#C;
 		}
@@ -5949,7 +6079,7 @@ new class extends _identity {
 			this.#G = v;
 		}
 		checkedValue = void _init_extra_overrides$35(this);
-		/** The live state, like a native input: starts from the `checked` attribute, else `defaultChecked`, and follows every toggle. Not reflected. */
+		/** The live state, like a native input: starts from the `checked` attribute, else `defaultChecked`, and follows every toggle. Not reflected; there is no controlled mode. */
 		get checked() {
 			return this.checkedValue ?? this.defaultChecked;
 		}
@@ -5958,8 +6088,10 @@ new class extends _identity {
 			this.checkedValue = value;
 			this.requestUpdate("checked", old);
 		}
-		/** A switch has no required state: it never validates and never appears in an error summary. */
-		required = false;
+		/** A switch has no required state: it never validates and never appears in an error summary. Setting it is ignored. */
+		get required() {
+			return false;
+		}
 		/** Disabled by an owning native form / fieldset (via `formDisabledCallback`). */
 		#H = _init_formDisabled$7(this, false);
 		get formDisabled() {
@@ -6026,34 +6158,45 @@ new class extends _identity {
 		render() {
 			const isDisabled = this.isDisabled;
 			return html`
-      <div class="row ${this.formDisabled ? "form-disabled" : ""}" @click=${this.handleRowClick}>
-        <input
-          id="track"
-          class="track"
-          part="track"
-          data-part="track"
-          type="checkbox"
-          role="switch"
-          name=${ifDefined(this.name || void 0)}
-          .checked=${live(this.checked)}
-          aria-checked=${this.checked ? "true" : "false"}
-          aria-describedby=${ifDefined(this.description ? "description" : void 0)}
-          aria-disabled=${ifDefined(isDisabled ? "true" : void 0)}
-          @click=${this.handleControlClick}
-          @change=${this.handleChange}
-        />
-        <div class="text">
-          <label class="label" part="label" data-part="label" for="track">${this.label}</label>
-          ${this.description ? html`<ds-text
-                id="description"
-                part="description"
-                data-part="description"
-                element="p"
-                size="sm"
-                tone="muted"
-                .overrides=${this.textOverrides}
-                >${this.description}</ds-text
-              >` : nothing}
+      <div class=${classMap({
+				root: true,
+				disabled: isDisabled
+			})} @click=${this.handleRowClick}>
+        <!-- The row centres this content box in minTarget; inside it the track stays on the first line. -->
+        <div class="row">
+          <div class="text">
+            <label class="label" part="label" data-part="label" for="control">${this.label}</label>
+            ${this.description ? html`<ds-text
+                  id="description"
+                  part="description"
+                  data-part="description"
+                  element="p"
+                  size="sm"
+                  tone="muted"
+                  .overrides=${this.textOverrides}
+                  >${this.description}</ds-text
+                >` : nothing}
+          </div>
+          <span class="slot">
+            <span class="track-wrap">
+              <input
+                id="control"
+                class="control"
+                part="track"
+                data-part="track"
+                type="checkbox"
+                role="switch"
+                name=${ifDefined(this.name || void 0)}
+                .checked=${live(this.checked)}
+                aria-checked=${this.checked ? "true" : "false"}
+                aria-describedby=${ifDefined(this.description ? "description" : void 0)}
+                aria-disabled=${ifDefined(isDisabled ? "true" : void 0)}
+                @click=${this.handleControlClick}
+                @change=${this.handleChange}
+              />
+              <span class="thumb" part="thumb" data-part="thumb" aria-hidden="true"></span>
+            </span>
+          </span>
         </div>
       </div>
     `;
@@ -6071,7 +6214,7 @@ new class extends _identity {
 				lineHeight: o.lineHeight
 			};
 		}
-		/** Clicks on the description or the row's gap toggle the switch too. */
+		/** Clicks on the description, the text column or the row's gap toggle the switch too. */
 		handleRowClick(event) {
 			const input = this.inputEl;
 			const target = event.target;
@@ -6093,7 +6236,6 @@ new class extends _identity {
 				return;
 			}
 			const next = input.checked;
-			if (next === this.checked) return;
 			this.checked = next;
 			this.dispatchEvent(new CustomEvent("change", {
 				detail: { checked: next },
@@ -6130,113 +6272,67 @@ new class extends _identity {
       --ds-switch-line-height: var(--font-line-height-normal);
       --ds-switch-disabled-opacity: var(--opacity-disabled);
       --ds-switch-transition: var(--motion-duration-fast);
+      /* trackOff, trackOn, thumb, labelColor, focusRing, focusRingWidth and minTarget are locked, so
+         they read their token directly; helperSize and descriptionText reach the composed Text
+         through its own size and tone props and its own overrides alone. */
+
+      /* The label's first line box, which the track slot is tall, and the thumb's travel. */
+      --ds-switch-line-box: calc(var(--ds-switch-label-size) * var(--ds-switch-line-height));
+      --ds-switch-thumb-travel: calc(
+        var(--ds-switch-track-width) - var(--ds-switch-thumb-size) - 2 * var(--ds-switch-thumb-inset)
+      );
     }
 
     :host([hidden]) {
       display: none;
     }
 
-    /* minTarget: a full-width row with no padding; the whole row toggles, gap included */
-    .row {
+    /* minTarget: a full-width row with no padding; the whole row, gap included, toggles. The content
+       box is centred on the cross axis, so a one-line row sits in the middle of minTarget. */
+    .root {
       display: flex;
-      align-items: flex-start;
-      gap: var(--ds-switch-gap);
+      flex-direction: column;
+      justify-content: center;
+      inline-size: 100%;
       min-block-size: var(--size-target-comfortable);
       cursor: pointer;
     }
 
-    /* labelPosition: flex order only; start puts the switch at the row end */
+    /* The content box: the track slot aligns with the top of the text column, so a wrapping label or
+       a description grows the row downwards without pulling the track off the first line. */
+    .row {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--ds-switch-gap);
+    }
+
+    /* labelPosition changes the order of the row only: start puts the label first and pushes the
+       track to the row end; end puts the track first, as on Checkbox. */
+    .text {
+      order: 0;
+    }
+    .slot {
+      order: 1;
+    }
+    :host([label-position='start']) .row {
+      justify-content: space-between;
+    }
+    :host([label-position='end']) .text {
+      order: 1;
+    }
+    :host([label-position='end']) .slot {
+      order: 0;
+    }
+
+    /* partGap: the text column, label then description. */
     .text {
       display: flex;
       flex-direction: column;
       gap: var(--ds-switch-part-gap);
       min-inline-size: 0;
-      flex: 1 1 auto;
-      order: 0;
-    }
-    .track {
-      order: 1;
-    }
-    :host([label-position='end']) .track {
-      order: 0;
-    }
-    :host([label-position='end']) .text {
-      order: 1;
     }
 
-    /* track: trackWidth × trackHeight, radius, trackOff / trackOn; centred on the label's first line */
-    .track {
-      position: relative;
-      box-sizing: border-box;
-      flex: none;
-      inline-size: var(--ds-switch-track-width);
-      block-size: var(--ds-switch-track-height);
-      margin: 0;
-      margin-block-start: calc(
-        (var(--ds-switch-label-size) * var(--ds-switch-line-height) - var(--ds-switch-track-height)) / 2
-      );
-      border: 0;
-      border-radius: var(--ds-switch-radius);
-      background: var(--color-control-track-off);
-      cursor: pointer;
-      appearance: none;
-      -webkit-appearance: none;
-      transition: background-color var(--ds-switch-transition) var(--motion-easing-standard);
-    }
-    .track:checked {
-      background: var(--color-control-selected-background);
-    }
-
-    /* focusRing: drawn around the track, offset by focusRingWidth like every other control */
-    .track:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
-    }
-
-    /* thumb: the input's ::before; thumbSize, inset by thumbInset, travels trackWidth − thumbSize − 2 × thumbInset */
-    .track::before {
-      content: '';
-      position: absolute;
-      inset-block-start: calc((var(--ds-switch-track-height) - var(--ds-switch-thumb-size)) / 2);
-      inset-inline-start: var(--ds-switch-thumb-inset);
-      inline-size: var(--ds-switch-thumb-size);
-      block-size: var(--ds-switch-thumb-size);
-      border-radius: var(--ds-switch-radius);
-      background: var(--color-control-selected-foreground);
-      transition: transform var(--ds-switch-transition) var(--motion-easing-standard);
-    }
-    .track:checked::before {
-      transform: translateX(
-        calc(var(--ds-switch-track-width) - var(--ds-switch-thumb-size) - 2 * var(--ds-switch-thumb-inset))
-      );
-    }
-    :host(:dir(rtl)) .track:checked::before {
-      transform: translateX(
-        calc(-1 * (var(--ds-switch-track-width) - var(--ds-switch-thumb-size) - 2 * var(--ds-switch-thumb-inset)))
-      );
-    }
-
-    /* transition: under reduced motion the thumb jumps and the color changes instantly */
-    @media (prefers-reduced-motion: reduce) {
-      .track,
-      .track::before {
-        transition: none;
-      }
-    }
-
-    /* disabled: stays focusable; the track, label and description dim with disabledOpacity */
-    :host([disabled]) .row,
-    .row.form-disabled {
-      opacity: var(--ds-switch-disabled-opacity);
-      cursor: not-allowed;
-    }
-    :host([disabled]) .track,
-    :host([disabled]) .label,
-    .row.form-disabled .track,
-    .row.form-disabled .label {
-      cursor: not-allowed;
-    }
-
+    /* labelColor, labelSize, labelWeight, fontFamily, lineHeight: the label's own rule */
     .label {
       font-family: var(--ds-switch-font-family);
       font-size: var(--ds-switch-label-size);
@@ -6244,6 +6340,96 @@ new class extends _identity {
       line-height: var(--ds-switch-line-height);
       color: var(--color-foreground);
       cursor: pointer;
+    }
+
+    /* One label line tall: the track centres on the label's first line. */
+    .slot {
+      display: flex;
+      flex: 0 0 auto;
+      align-items: center;
+      block-size: var(--ds-switch-line-box);
+    }
+
+    /* The track wrapper stacks the Switch-owned thumb span over the input. */
+    .track-wrap {
+      position: relative;
+      display: inline-flex;
+      flex: 0 0 auto;
+    }
+
+    /* track: a native input sized trackWidth × trackHeight, drawn with the control tokens. */
+    .control {
+      box-sizing: border-box;
+      flex: 0 0 auto;
+      inline-size: var(--ds-switch-track-width);
+      block-size: var(--ds-switch-track-height);
+      margin: 0;
+      padding: 0;
+      border: 0;
+      border-radius: var(--ds-switch-radius);
+      background-color: var(--color-control-track-off);
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      transition: background-color var(--ds-switch-transition) var(--motion-easing-standard);
+    }
+
+    /* trackOn: keyed off the component state, not :checked, so the look always follows checked. */
+    .control[aria-checked='true'] {
+      background-color: var(--color-control-selected-background);
+    }
+
+    /* focusRing, focusRingWidth: drawn around the track, offset by focusRingWidth like every other
+       control. Never removed. */
+    .control:focus-visible {
+      outline: var(--border-width-focus) solid var(--color-border-focus);
+      outline-offset: var(--border-width-focus);
+    }
+
+    /* thumb: a real span, not a ::before, which Firefox does not draw on an appearance: none input.
+       It is inset evenly on the short axis and click-through, so presses reach the input underneath. */
+    .thumb {
+      position: absolute;
+      inset-block-start: calc((var(--ds-switch-track-height) - var(--ds-switch-thumb-size)) / 2);
+      inset-inline-start: var(--ds-switch-thumb-inset);
+      inline-size: var(--ds-switch-thumb-size);
+      block-size: var(--ds-switch-thumb-size);
+      border-radius: var(--ds-switch-radius);
+      background-color: var(--color-control-selected-foreground);
+      pointer-events: none;
+      transition: transform var(--ds-switch-transition) var(--motion-easing-standard);
+    }
+
+    /* Travels trackWidth − thumbSize − 2 × thumbInset when on. */
+    .control[aria-checked='true'] ~ .thumb {
+      transform: translateX(var(--ds-switch-thumb-travel));
+    }
+
+    /* RTL: the thumb travels toward the inline end, which is leftward. :dir(rtl) rather than an
+       ancestor [dir='rtl'] selector, which misses an inherited direction. */
+    :host(:dir(rtl)) .control[aria-checked='true'] ~ .thumb {
+      transform: translateX(calc(-1 * var(--ds-switch-thumb-travel)));
+    }
+
+    /* transition: under reduced motion the thumb jumps and the track colour changes instantly. */
+    @media (prefers-reduced-motion: reduce) {
+      .control,
+      .thumb {
+        transition: none;
+      }
+    }
+
+    /* disabledOpacity: the track (with its thumb), the label and the description dim — on the slot
+       and on the text column, never on the composed description Text itself. The switch stays
+       visible, readable and focusable. */
+    .root.disabled,
+    .root.disabled .control,
+    .root.disabled .label {
+      cursor: not-allowed;
+    }
+    .root.disabled .slot,
+    .root.disabled .text {
+      opacity: var(--ds-switch-disabled-opacity);
     }
   `;
 	constructor() {
@@ -6280,6 +6466,7 @@ let _init_internalValue$8;
 let _init_extra_internalValue$8;
 let _init_formDisabled$6;
 let _init_extra_formDisabled$6;
+/** Layout of the options. */
 /** Shape of each entry in `options`. */
 /** Detail carried by the `change` CustomEvent. */
 /** copy.required */
@@ -6289,8 +6476,10 @@ const COPY_INVALID$7 = (label) => `${label} is not valid.`;
 /** copy.requiredIndicator */
 const COPY_REQUIRED_INDICATOR$4 = " (required)";
 /** Overridable style hooks; see the `overrides` property. `controlBackground`, `controlBorder`, `controlSelectedBackground`, `indicator`, `legendColor`, `labelColor`, `descriptionText`, `errorText`, `focusRing`, `focusRingWidth` and `minTarget` are locked and excluded. */
+/** Hooks on `:host`. `helperSize` has none: it reaches the description, radioDescription and error Texts only through their `overrides`. */
 const HOOKS$34 = {
 	controlBorderWidth: "--ds-radio-group-control-border-width",
+	indicatorInset: "--ds-radio-group-indicator-inset",
 	controlBorderInvalid: "--ds-radio-group-control-border-invalid",
 	controlSize: "--ds-radio-group-control-size",
 	controlRadius: "--ds-radio-group-control-radius",
@@ -6303,13 +6492,12 @@ const HOOKS$34 = {
 	legendWeight: "--ds-radio-group-legend-weight",
 	labelSize: "--ds-radio-group-label-size",
 	labelWeight: "--ds-radio-group-label-weight",
-	helperSize: "--ds-radio-group-helper-size",
 	fontFamily: "--ds-radio-group-font-family",
 	lineHeight: "--ds-radio-group-line-height",
 	disabledOpacity: "--ds-radio-group-disabled-opacity",
 	transition: "--ds-radio-group-transition"
 };
-/** Keys a disabled group swallows so native radio movement and selection stay inert. */
+/** Keys a disabled group swallows: native radios move and select on the arrows and Space regardless of aria-disabled. */
 const GUARDED_KEYS = /* @__PURE__ */ new Set([
 	"ArrowDown",
 	"ArrowRight",
@@ -6323,24 +6511,32 @@ const GUARDED_KEYS = /* @__PURE__ */ new Set([
 * `<ds-radio-group name="plan" label="Plan" .options=${[...]}>` renders a
 * `<fieldset role="radiogroup">` with a `<legend>` and one native
 * `<input type="radio">` per option inside its shadow root, where the shared
-* `name` groups them natively: roving tabindex, arrow movement and Space come
-* from the browser and are not reimplemented. Per-option `disabled` is the
-* native attribute so arrow movement skips it; a `disabled` group uses
-* `aria-disabled` plus click, key and change guards so it stays focusable but
-* inert. The indicator dot is the radio's `::after` and has no hook.
+* `name` groups them natively: one tab stop, roving tabindex, arrow movement
+* and Space come from the browser and are not reimplemented. Per-option
+* `disabled` is the native attribute so arrow movement skips it; a `disabled`
+* group uses `aria-disabled` plus click, key and change guards so it stays
+* focusable but inert. The indicator dot is the radio's `::before` and has no
+* part: it is a pseudo-element, not a node.
 *
 * The element is form-associated (`setFormValue(value)`) and carries
 * `data-ds-field`, so `<ds-form>` collects the selected value, or no key while
-* nothing is selected. The inner native `change` is not composed, so a composed
-* `change` CustomEvent with `{ value }` is re-dispatched from the host.
+* nothing is selected, and validates it when focus leaves the whole group. The
+* inner native `change` is not composed, so a composed `change` CustomEvent
+* with `{ value }` is re-dispatched from the host.
+*
+* `ds-form` keeps its own messages (the summary and the `invalid` event) and
+* does not set `invalid` here, so the displayed error is `error`, else — only
+* while `invalid` — copy.required or copy.invalid. An app marks a group that
+* `ds-form` failed by setting `invalid` or `error` from that event.
 *
 * ## When to use
 *
 * Use a RadioGroup when the user must pick exactly one of two to about seven
 * options and seeing them all helps the decision — plan tiers, shipping
 * methods. Give options a `description` when the label alone does not tell
-* them apart. Leave the group unselected when the choice is consequential and
-* you want a deliberate answer.
+* them apart. Set `defaultValue` when there is a sensible default; leave the
+* group unselected when the choice is consequential and you want a deliberate
+* answer. For a yes/no use Checkbox or Switch.
 *
 * @fires change - Fired when the selection changes, with `{ value }` in `detail`.
 */
@@ -6443,7 +6639,7 @@ new class extends _identity {
 			this.#A = v;
 		}
 		#B = (_init_extra_label$20(this), _init_name$7(this, ""));
-		/** The options in display order. Two to about seven. A property, not an attribute. */
+		/** The options in display order. Two to about seven; more than that is a Select. A property, not an attribute. */
 		get name() {
 			return this.#B;
 		}
@@ -6507,7 +6703,7 @@ new class extends _identity {
 			this.#I = v;
 		}
 		#J = (_init_extra_disabled$8(this), _init_description$8(this));
-		/** Per-instance style overrides: `{ controlRadius: 'radius.sm' }`. Locked bindings are ignored. */
+		/** Per-instance style overrides: `{ controlSize: 'space.6' }`. Locked bindings are ignored. */
 		get description() {
 			return this.#J;
 		}
@@ -6522,7 +6718,7 @@ new class extends _identity {
 			this.#K = v;
 		}
 		errorValue = void _init_extra_overrides$34(this);
-		/** The group's error message. Setting it marks the group invalid. */
+		/** The group's error message. Setting it marks the group invalid. Say what to do. */
 		get error() {
 			return this.errorValue;
 		}
@@ -6534,7 +6730,7 @@ new class extends _identity {
 		}
 		/** Uncontrolled selection, seeded from `defaultValue`. */
 		#L = _init_internalValue$8(this);
-		/** Disabled by an owning native form / fieldset (via `formDisabledCallback`). */
+		/** Disabled by an owning native form / fieldset (via `formDisabledCallback`), or by `ds-fieldset`. */
 		get internalValue() {
 			return this.#L;
 		}
@@ -6571,11 +6767,10 @@ new class extends _identity {
 			this.syncInternals();
 			return this.internals.validity;
 		}
-		/** The field's own copy: the error, then copy.required, then copy.invalid; empty when valid. */
+		/** The field's own copy, in the same order as the displayed error: `error`, then copy.required, then copy.invalid; empty when valid. */
 		get validationMessage() {
-			if (this.error) return this.error;
-			if (this.required && this.currentValue === null) return COPY_REQUIRED$5(this.label);
-			return this.invalid ? COPY_INVALID$7(this.label) : "";
+			this.syncInternals();
+			return this.internals.validationMessage;
 		}
 		checkValidity() {
 			this.syncInternals();
@@ -6585,16 +6780,16 @@ new class extends _identity {
 			this.syncInternals();
 			return this.internals.reportValidity();
 		}
-		/** Focus lands on the selected radio, or the first enabled one when none is selected — the group's one tab stop. */
+		/** Focus lands on the selected radio, else the first enabled one — the group's one tab stop. `delegatesFocus` alone would pick the first in tree order. */
 		focus(options) {
-			const radios = this.radios;
-			const target = radios.find((radio) => radio.checked) ?? radios.find((radio) => !radio.disabled);
+			const target = this.focusTarget;
 			if (target) target.focus(options);
 			else super.focus(options);
 		}
 		formDisabledCallback(disabled) {
 			this.formDisabled = disabled;
 		}
+		/** Back to the initial selection: `defaultValue`, else nothing. */
 		formResetCallback() {
 			this.internalValue = this.defaultValue;
 		}
@@ -6667,19 +6862,18 @@ new class extends _identity {
                   aria-disabled=${ifDefined(groupDisabled ? "true" : void 0)}
                   @change=${(event) => this.handleChange(event, option)}
                 />
-                <div class="text">
-                  <label class="label" part="radioLabel" data-part="radioLabel" for=${id}>${option.label}</label>
-                  ${option.description ? html`<ds-text
-                        id="${id}-description"
-                        part="radioDescription"
-                        data-part="radioDescription"
-                        element="p"
-                        size="sm"
-                        tone="muted"
-                        .overrides=${textOverrides}
-                        >${option.description}</ds-text
-                      >` : nothing}
-                </div>
+                <label class="label" part="radioLabel" data-part="radioLabel" for=${id}>${option.label}</label>
+                ${option.description ? html`<ds-text
+                      id="${id}-description"
+                      class="option-description"
+                      part="radioDescription"
+                      data-part="radioDescription"
+                      element="p"
+                      size="sm"
+                      tone="muted"
+                      .overrides=${textOverrides}
+                      >${option.description}</ds-text
+                    >` : nothing}
               </div>
             `;
 			})}
@@ -6704,13 +6898,18 @@ new class extends _identity {
 		get radios() {
 			return Array.from(this.renderRoot.querySelectorAll("input[type=\"radio\"]"));
 		}
-		/** Validation precedence, as Input: `error`, then copy.required, then copy.invalid — rendered only while invalid. */
+		/** The group's one tab stop: the checked radio, else the first enabled one. */
+		get focusTarget() {
+			const radios = this.radios;
+			return radios.find((radio) => radio.checked) ?? radios.find((radio) => !radio.disabled);
+		}
+		/** Rendered error, as Input: `error`, then — only while invalid — copy.required when required and nothing is selected, else copy.invalid. */
 		get displayedError() {
 			if (this.error) return this.error;
 			if (!this.invalid) return "";
 			return this.required && this.currentValue === null ? COPY_REQUIRED$5(this.label) : COPY_INVALID$7(this.label);
 		}
-		/** helperSize, fontFamily and lineHeight forwarded to the description and error Text. */
+		/** helperSize, fontFamily and lineHeight forwarded to the description, radioDescription and error Texts. */
 		get textOverrides() {
 			const o = this.overrides;
 			if (!o) return;
@@ -6735,7 +6934,7 @@ new class extends _identity {
 		handleGroupClick(event) {
 			if (this.isDisabled) event.preventDefault();
 		}
-		/** A disabled group swallows the native arrow movement and Space selection. */
+		/** A disabled group swallows the native arrow movement and Space selection, which aria-disabled does not stop. */
 		handleKeydown(event) {
 			if (this.isDisabled && GUARDED_KEYS.has(event.key)) event.preventDefault();
 		}
@@ -6757,18 +6956,22 @@ new class extends _identity {
 		}
 		/** Mirror value and validity into ElementInternals so an owning native form sees them. */
 		syncInternals() {
+			if (this.isDisabled) {
+				this.internals.setFormValue(null);
+				this.internals.setValidity({});
+				return;
+			}
 			const value = this.currentValue;
-			const radios = this.radios;
-			const anchor = radios.find((radio) => radio.checked) ?? radios.find((radio) => !radio.disabled);
-			this.internals.setFormValue(value === null || this.isDisabled ? null : value);
-			if (this.error || this.invalid) this.internals.setValidity({ customError: true }, this.validationMessage, anchor);
+			const anchor = this.focusTarget;
+			this.internals.setFormValue(value);
+			if (this.error) this.internals.setValidity({ customError: true }, this.error, anchor);
 			else if (this.required && value === null) this.internals.setValidity({ valueMissing: true }, COPY_REQUIRED$5(this.label), anchor);
+			else if (this.invalid) this.internals.setValidity({ customError: true }, COPY_INVALID$7(this.label), anchor);
 			else this.internals.setValidity({});
 		}
 		applyOverrides() {
-			for (const binding of Object.keys(HOOKS$34)) {
+			for (const [binding, hook] of Object.entries(HOOKS$34)) {
 				const ref = this.overrides?.[binding];
-				const hook = HOOKS$34[binding];
 				if (ref === void 0) this.style.removeProperty(hook);
 				else this.style.setProperty(hook, cssVar(ref));
 			}
@@ -6782,8 +6985,8 @@ new class extends _identity {
 	styles = css`
     :host {
       display: block;
-      font-family: var(--ds-radio-group-font-family);
       --ds-radio-group-control-border-width: var(--border-width-thin);
+      --ds-radio-group-indicator-inset: var(--space-1);
       --ds-radio-group-control-border-invalid: var(--color-border-danger);
       --ds-radio-group-control-size: var(--space-5);
       --ds-radio-group-control-radius: var(--radius-full);
@@ -6796,11 +6999,14 @@ new class extends _identity {
       --ds-radio-group-legend-weight: var(--font-weight-medium);
       --ds-radio-group-label-size: var(--font-size-md);
       --ds-radio-group-label-weight: var(--font-weight-regular);
-      --ds-radio-group-helper-size: var(--font-size-sm);
       --ds-radio-group-font-family: var(--font-family-body);
       --ds-radio-group-line-height: var(--font-line-height-normal);
       --ds-radio-group-disabled-opacity: var(--opacity-disabled);
       --ds-radio-group-transition: var(--motion-duration-fast);
+      /* controlBackground, controlBorder, controlSelectedBackground, indicator, legendColor,
+         labelColor, focusRing, focusRingWidth and minTarget are locked, so they read their token
+         directly. helperSize, descriptionText and errorText have no hook either: the composed
+         Texts realise them through their own props and overrides. */
     }
 
     :host([hidden]) {
@@ -6818,128 +7024,140 @@ new class extends _identity {
       border: 0;
     }
 
-    /* legendColor, legendSize, legendWeight. A <legend> does not take part in the fieldset's flex gap, so partGap below it is a margin. */
+    /* legendColor, legendSize, legendWeight, fontFamily, lineHeight: the legend's own rule.
+       A <legend> does not take part in the fieldset's flex gap, so partGap below it is a margin. */
     legend {
       margin-block-end: var(--ds-radio-group-part-gap);
       padding: 0;
+      color: var(--color-foreground);
+      font-family: var(--ds-radio-group-font-family);
       font-size: var(--ds-radio-group-legend-size);
       font-weight: var(--ds-radio-group-legend-weight);
       line-height: var(--ds-radio-group-line-height);
-      color: var(--color-foreground);
     }
 
-    /* listGap: between options; horizontal wraps rather than overflows */
+    /* listGap: between options, on either axis; horizontal wraps rather than overflows */
     .list {
       display: flex;
-      flex-direction: column;
       gap: var(--ds-radio-group-list-gap);
+      flex-direction: column;
     }
     :host([orientation='horizontal']) .list {
       flex-direction: row;
       flex-wrap: wrap;
     }
 
-    /* minTarget: each option row is the hit area; optionPaddingBlock on the row; optionGap between radio and label */
+    /* The option row — radio, radioLabel and radioDescription. minTarget tall, optionPaddingBlock
+       around it, and the whole row is the hit area. Not an anatomy part, so it carries no data-part. */
     .option {
-      display: flex;
-      align-items: flex-start;
-      gap: var(--ds-radio-group-option-gap);
       box-sizing: border-box;
+      display: grid;
+      grid-template-columns: var(--ds-radio-group-control-size) minmax(0, 1fr);
+      column-gap: var(--ds-radio-group-option-gap);
+      row-gap: var(--ds-radio-group-option-text-gap);
+      align-items: center;
+      align-content: center;
       min-block-size: var(--size-target-comfortable);
       padding-block: var(--ds-radio-group-option-padding-block);
       cursor: pointer;
     }
 
+    /* controlBackground, controlBorder, controlBorderWidth, controlSize, controlRadius: a native
+       input drawn with the control tokens, never a hidden input under a fake box. */
     .radio {
-      position: relative;
-      flex: none;
       box-sizing: border-box;
+      grid-column: 1;
+      grid-row: 1;
+      display: inline-grid;
+      place-items: center;
       inline-size: var(--ds-radio-group-control-size);
       block-size: var(--ds-radio-group-control-size);
       margin: 0;
-      margin-block-start: calc(
-        (var(--ds-radio-group-label-size) * var(--ds-radio-group-line-height) - var(--ds-radio-group-control-size)) / 2
-      );
-      border-width: var(--ds-radio-group-control-border-width);
-      border-style: solid;
-      border-color: var(--color-control-border);
+      padding: 0;
+      border: var(--ds-radio-group-control-border-width) solid var(--color-control-border);
       border-radius: var(--ds-radio-group-control-radius);
-      background: var(--color-control-background);
-      cursor: pointer;
+      background-color: var(--color-control-background);
+      cursor: inherit;
       appearance: none;
       -webkit-appearance: none;
-      transition: border-color var(--ds-radio-group-transition) var(--motion-easing-standard);
     }
 
-    /* indicator: the centre dot, controlSize minus 2 × space.1 in diameter */
-    .radio::after {
+    /* indicator, indicatorInset: the centre dot, controlSize minus 2 × indicatorInset across, always
+       a circle (it does not follow controlRadius). Its size is fixed and it fades rather than scales,
+       so the thicker focus border eats into the inset rather than shrinking the dot. A pseudo-element,
+       so it carries no part or data-part. */
+    .radio::before {
       content: '';
-      position: absolute;
-      inset: 0;
-      margin: auto;
-      inline-size: calc(var(--ds-radio-group-control-size) - 2 * var(--space-1));
-      block-size: calc(var(--ds-radio-group-control-size) - 2 * var(--space-1));
+      display: block;
+      inline-size: calc(var(--ds-radio-group-control-size) - 2 * var(--ds-radio-group-indicator-inset));
+      block-size: calc(var(--ds-radio-group-control-size) - 2 * var(--ds-radio-group-indicator-inset));
       border-radius: var(--radius-full);
-      background: var(--color-control-selected-background);
-      transform: scale(0);
-      transition: transform var(--ds-radio-group-transition) var(--motion-easing-standard);
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .radio,
-      .radio::after {
-        transition: none;
-      }
+      background-color: var(--color-control-selected-background);
+      opacity: 0;
     }
 
     /* controlSelectedBackground: selected border color; the fill stays controlBackground */
     .radio:checked {
       border-color: var(--color-control-selected-background);
     }
-    .radio:checked::after {
-      transform: scale(1);
+    .radio:checked::before {
+      opacity: 1;
     }
 
-    /* controlBorderInvalid */
+    /* controlBorderInvalid: aria-invalid lives on the fieldset only, so the state comes from the host */
     :host([invalid]) .radio {
       border-color: var(--ds-radio-group-control-border-invalid);
     }
 
-    /* focusRing, focusRingWidth: the radio's border becomes the focus ring; the row is not outlined */
+    /* focusRing, focusRingWidth: the radio's border becomes the focus ring, replacing
+       controlBorderWidth/controlBorder; the option row is not outlined. The transparent outline
+       keeps a ring in forced-colors mode. */
     .radio:focus-visible {
-      outline: none;
+      outline: var(--border-width-focus) solid transparent;
       border-width: var(--border-width-focus);
       border-color: var(--color-border-focus);
     }
 
-    /* disabledOpacity: a disabled group dims every option row once, a disabled option dims its own row */
+    /* labelColor, labelSize, labelWeight, fontFamily, lineHeight: the label's own rule */
+    .label {
+      grid-column: 2;
+      grid-row: 1;
+      color: var(--color-foreground);
+      font-family: var(--ds-radio-group-font-family);
+      font-size: var(--ds-radio-group-label-size);
+      font-weight: var(--ds-radio-group-label-weight);
+      line-height: var(--ds-radio-group-line-height);
+      cursor: inherit;
+    }
+
+    /* optionTextGap is the row-gap above; the description sits under the label, not under the radio */
+    .option-description {
+      grid-column: 2;
+      grid-row: 2;
+    }
+
+    /* disabledOpacity dims option rows only, once: an option dims its own row, a disabled group
+       every row, and legend, description and errorMessage stay at full opacity. */
     .list.disabled .option,
     .option.disabled {
       opacity: var(--ds-radio-group-disabled-opacity);
       cursor: not-allowed;
     }
-    .list.disabled .radio,
-    .list.disabled .label,
-    .option.disabled .radio,
-    .option.disabled .label {
-      cursor: not-allowed;
-    }
 
-    /* optionTextGap: between radioLabel and radioDescription */
-    .text {
-      display: flex;
-      flex-direction: column;
-      gap: var(--ds-radio-group-option-text-gap);
-      min-inline-size: 0;
-    }
-
-    /* labelColor, labelSize, labelWeight */
-    .label {
-      font-size: var(--ds-radio-group-label-size);
-      font-weight: var(--ds-radio-group-label-weight);
-      line-height: var(--ds-radio-group-line-height);
-      color: var(--color-foreground);
-      cursor: pointer;
+    /* transition: the selected border color and the dot's opacity, fading in and out, with
+       motion.easing.standard. The focus border (color and width) and the invalid border switch
+       instantly, so neither is in the transition and both states clear it. */
+    @media (prefers-reduced-motion: no-preference) {
+      .radio {
+        transition: border-color var(--ds-radio-group-transition) var(--motion-easing-standard);
+      }
+      .radio::before {
+        transition: opacity var(--ds-radio-group-transition) var(--motion-easing-standard);
+      }
+      .radio:focus-visible,
+      :host([invalid]) .radio {
+        transition: none;
+      }
     }
   `;
 	constructor() {
@@ -6963,38 +7181,54 @@ let _init_overrides$33;
 let _init_extra_overrides$33;
 let _init_allFieldsRequired;
 let _init_extra_allFieldsRequired;
+/** Gap between the fields, from the layout rhythm. */
 /** copy.requiredIndicator */
 const COPY_REQUIRED_INDICATOR$3 = " (required)";
 /** Overridable style bindings; see the `overrides` property. `legendColor`, `descriptionText` and `errorText` are locked and excluded. */
 /**
-* Bindings Fieldset's own rules read. The others reach the composed Text and Stack only
-* through their `overrides`, so they have no --ds-fieldset-* hook.
+* The two bindings Fieldset's own elements read. The rest reach the composed Text and Stack
+* only through their `overrides`, so they declare no --ds-fieldset-* hook (a Fieldset hook
+* would not reach a child's shadow root).
 */
 const HOOKS$33 = {
 	partGap: "--ds-fieldset-part-gap",
 	disabledOpacity: "--ds-fieldset-disabled-opacity"
 };
+/** A direct light-DOM child carrying `data-ds-field` — every field component's root does. */
 let _DsFieldset;
 /**
-* `<ds-fieldset>` — Fieldset (category: input).
+* `<ds-fieldset>` — Fieldset (category: input, role: group).
 *
-* `<ds-fieldset legend="Shipping address" gap="normal"><ds-input …></ds-input>…</ds-fieldset>`.
-* A shadow `<fieldset><legend>` wraps a Fieldset-owned `fields` wrapper around a
-* composed `<ds-stack>` and a default `<slot>`; the fields stay in the light DOM
-* so `<ds-form>` still collects them. The legend, description and error render
-* their text through `<ds-text>` (element span) inside the native `<legend>`, a
-* description wrapper and a `role="alert"` wrapper; `legendSize`, `legendWeight`,
-* `helperSize`, `fontFamily` and `lineHeight` reach them only as Text overrides,
-* and `fieldsGap` reaches the Stack only as its `overrides.gap`.
+* `<ds-fieldset legend="Shipping address" gap="normal"><ds-input …></ds-input>…</ds-fieldset>`
+* renders a shadow `<fieldset><legend>` around a Fieldset-owned `fields` wrapper holding a
+* composed `<ds-stack>` and the default `<slot>`. The fields themselves stay in the light DOM,
+* so `<ds-form>` still collects them and each keeps its own label, error and validity — the
+* group is structure, not a field. It has no border and no padding: wrap it in a Box or Card
+* for a surface.
 *
-* While `error` is set the `<fieldset>` carries `aria-invalid="true"` and
-* `aria-describedby` names the error. `disabled` sets `aria-disabled` on the
-* fieldset and the `disabled` property on direct `data-ds-field` children on
-* `slotchange` and whenever it changes, remembering which it set so clearing
-* never enables a field disabled on its own. The `requiredIndicator` is appended
-* inside the legend when every direct child field is `required`.
+* The legend, description and error render their text through `<ds-text>` (element span) inside
+* the native `<legend>`, a description wrapper and a `role="alert"` wrapper, so `legendSize`,
+* `legendWeight`, `helperSize`, `fontFamily` and `lineHeight` reach them only as Text overrides,
+* never as Fieldset rules; `fieldsGap` likewise reaches the Stack only as its `overrides.gap`.
+* Ids never cross the shadow boundary, so the group's role and accessible name come from the
+* native `<fieldset>`/`<legend>` and `aria-describedby` points at shadow ids.
 *
-* @slot - The raw fields (Inputs, Checkboxes, Switches) as direct children.
+* While `error` is set (an empty string counts as unset) the `<fieldset>` carries
+* `aria-invalid="true"` and the error is announced once, because inserting the `role="alert"`
+* wrapper is what announces it. `disabled` sets `aria-disabled` on the fieldset and the
+* `disabled` property on direct `data-ds-field` children — on `slotchange` and whenever it
+* changes — remembering which it set so clearing never enables a field disabled on its own.
+* The `requiredIndicator` is appended inside the legend when every direct child field is
+* `required` (the property or the attribute), so it is not repeated on each field.
+*
+* ## When to use
+*
+* Whenever two or more fields share a name a user would say aloud — an address, a date range,
+* "Which days?" as a set of Checkboxes. Give it a `description` when the group needs a rule,
+* and put cross-field errors on the group rather than on one field. Not for a single field,
+* not for a whole form, and not inside a RadioGroup, which already is a fieldset.
+*
+* @slot - The fields as direct children, usually Inputs, Checkboxes or Switches.
 */
 new class extends _identity {
 	static [class DsFieldset extends LitElement {
@@ -7043,9 +7277,9 @@ new class extends _identity {
 				]
 			], 0, void 0, LitElement));
 		}
-		/** The group's name — what the fields together describe. Always visible; the group's accessible name. */
+		/** The group's name — what the fields together describe ("Shipping address"). Always visible, and the group's accessible name. */
 		#A = _init_legend(this, "");
-		/** Persistent helper text under the legend. Linked with aria-describedby on the group. */
+		/** Persistent helper text under the legend, linked with aria-describedby. An empty string counts as unset. */
 		get legend() {
 			return this.#A;
 		}
@@ -7053,7 +7287,7 @@ new class extends _identity {
 			this.#A = v;
 		}
 		#B = (_init_extra_legend(this), _init_description$7(this));
-		/** A group-level error (cross-field validation). Field-level errors stay on the fields. */
+		/** A group-level error (cross-field validation such as "End date must be after start date"). Field-level errors stay on the fields. An empty string counts as unset. */
 		get description() {
 			return this.#B;
 		}
@@ -7061,7 +7295,7 @@ new class extends _identity {
 			this.#B = v;
 		}
 		#C = (_init_extra_description$7(this), _init_error$1(this));
-		/** Disables every field inside. Fields keep their own `disabled` for finer control. */
+		/** Disables every direct child field. Fields keep their own `disabled` for finer control. */
 		get error() {
 			return this.#C;
 		}
@@ -7093,7 +7327,7 @@ new class extends _identity {
 			this.#F = v;
 		}
 		#G = (_init_extra_overrides$33(this), _init_allFieldsRequired(this, false));
-		/** Fields this Fieldset disabled itself, so clearing `disabled` never enables one disabled on its own. */
+		/** The fields this Fieldset disabled itself, so clearing `disabled` never enables one disabled on its own. */
 		get allFieldsRequired() {
 			return this.#G;
 		}
@@ -7101,6 +7335,7 @@ new class extends _identity {
 			this.#G = v;
 		}
 		disabledByFieldset = (_init_extra_allFieldsRequired(this), /* @__PURE__ */ new WeakSet());
+		/** Watches the light DOM for `required` attribute changes; the callback writes state only, never an observed attribute, so it cannot re-trigger itself. */
 		requiredObserver = new MutationObserver(() => this.syncRequired());
 		connectedCallback() {
 			super.connectedCallback();
@@ -7151,11 +7386,11 @@ new class extends _identity {
       </fieldset>
     `;
 		}
-		/** fieldsGap → the Stack's `overrides.gap`, as the token path `layout.gap.{gap}` unless overridden. */
+		/** fieldsGap → the Stack's own `overrides.gap`, always sent as a token path: the override, else `layout.gap.{gap}`. The Stack gets no `gap` attribute, and Fieldset never sets --ds-stack-gap. */
 		get stackOverrides() {
 			return { gap: this.overrides?.fieldsGap ?? `layout.gap.${this.gap}` };
 		}
-		/** legendSize, legendWeight, fontFamily, lineHeight → the legend Text's overrides. */
+		/** legendSize, legendWeight, fontFamily and lineHeight → the legend Text's overrides. */
 		get legendOverrides() {
 			return {
 				fontSize: this.overrides?.legendSize ?? "font.size.md",
@@ -7163,7 +7398,7 @@ new class extends _identity {
 				...this.typeOverrides
 			};
 		}
-		/** helperSize, fontFamily, lineHeight → the description and error Texts' overrides. */
+		/** helperSize, fontFamily and lineHeight → the description and error Texts' overrides. */
 		get helperOverrides() {
 			return {
 				fontSize: this.overrides?.helperSize ?? "font.size.sm",
@@ -7176,7 +7411,7 @@ new class extends _identity {
 				lineHeight: this.overrides?.lineHeight ?? "font.lineHeight.normal"
 			};
 		}
-		/** Direct child fields only; fields wrapped in a consumer's own container are not inspected. */
+		/** Direct children carrying `data-ds-field`; a field nested deeper is not inspected — put fields directly inside the Fieldset. */
 		directFields() {
 			return Array.from(this.children).filter((el) => el.hasAttribute("data-ds-field"));
 		}
@@ -7184,6 +7419,7 @@ new class extends _identity {
 			this.syncDisabled();
 			this.syncRequired();
 		}
+		/** The indicator appears only when every direct child field is required; a group with no fields shows none. */
 		syncRequired() {
 			const fields = this.directFields();
 			const next = fields.length > 0 && fields.every((field) => field.required === true || field.hasAttribute("required"));
@@ -7214,13 +7450,17 @@ new class extends _identity {
       display: block;
       --ds-fieldset-part-gap: var(--layout-gap-tight);
       --ds-fieldset-disabled-opacity: var(--opacity-disabled);
+      /* legendColor, descriptionText and errorText are locked, and legendSize, legendWeight,
+         helperSize, fontFamily, lineHeight and fieldsGap only forward: the composed Text and
+         Stack realise all of them through their own props and overrides. */
     }
 
     :host([hidden]) {
       display: none;
     }
 
-    /* No border, padding or min-inline-size: the group is structure, not a box. */
+    /* partGap: between legend, description, fields and error. The browser's border, padding
+       and min-inline-size are reset — the group is structure, not a box. */
     fieldset {
       display: flex;
       flex-direction: column;
@@ -7237,7 +7477,9 @@ new class extends _identity {
       padding: 0;
     }
 
-    /* disabledOpacity: the legend and description only; the fields dim themselves. */
+    /* disabledOpacity: the Fieldset-owned legend and description wrappers only, never the Texts.
+       The fields dim themselves and the group error is never dimmed, so neither the group root
+       nor the fields wrapper is dimmed. */
     :host([disabled]) legend,
     :host([disabled]) [data-part='description'] {
       opacity: var(--ds-fieldset-disabled-opacity);
@@ -7281,6 +7523,8 @@ const HOOKS$32 = {
 };
 /** The web "next focusable" set: a, button, input, select, textarea, [tabindex] ≥ 0, contenteditable. */
 const FOCUSABLE = "a[href], button, input, select, textarea, [tabindex], [contenteditable]:not([contenteditable=\"false\"])";
+/** Default token for the `iconSize` binding, forwarded to the Icon as `overrides.size`. */
+const ICON_SIZE_TOKEN = "font.size.lg";
 /**
 * `<ds-alert>` — Alert (category: feedback, APG pattern: alert).
 *
@@ -7403,21 +7647,28 @@ new class extends _identity {
 					if (this.hasAttribute("role")) this.removeAttribute("role");
 				} else if (this.getAttribute("role") !== role) this.setAttribute("role", role);
 			}
+			if (changed.has("heading")) {
+				const hasHeading = this.heading !== void 0 && this.heading !== "";
+				if (hasHeading !== this.hasAttribute("data-has-heading")) {
+					if (hasHeading) this.setAttribute("data-has-heading", "");
+					else this.removeAttribute("data-has-heading");
+				}
+			}
 			if (changed.has("overrides")) this.applyOverrides();
 		}
 		updated(changed) {
 			if (changed.has("heading")) this.syncAccessibleName();
 		}
 		render() {
-			const heading = this.heading ? this.heading : void 0;
+			const heading = this.heading === void 0 || this.heading === "" ? void 0 : this.heading;
 			return html`
-      <div class="container ${heading ? "has-heading" : ""}" part="container" data-part="container">
+      <div class="container" part="container" data-part="container">
         <span class="icon" part="icon" data-part="icon">
           <ds-icon
             name=${this.tone}
             .overrides=${{
 				color: `color.status.${this.tone}.icon`,
-				size: this.overrides?.iconSize ?? "font.size.lg"
+				size: this.overrides?.iconSize ?? ICON_SIZE_TOKEN
 			}}
           ></ds-icon>
         </span>
@@ -7514,29 +7765,27 @@ new class extends _identity {
       display: none;
     }
 
-    /* {tone} bindings: background, foreground, icon (locked) and border */
+    /* {tone} bindings: background and foreground (locked) and border. The icon binding is locked by
+       its non-text contrast pair and reaches the Icon through its own overrides.color, so it has no
+       hook here and the icon box carries no color of its own. */
     :host([tone='info']) {
       --ds-alert-background: var(--color-status-info-background);
       --ds-alert-foreground: var(--color-status-info-foreground);
-      --ds-alert-icon: var(--color-status-info-icon);
       --ds-alert-border: var(--color-status-info-border);
     }
     :host([tone='success']) {
       --ds-alert-background: var(--color-status-success-background);
       --ds-alert-foreground: var(--color-status-success-foreground);
-      --ds-alert-icon: var(--color-status-success-icon);
       --ds-alert-border: var(--color-status-success-border);
     }
     :host([tone='warning']) {
       --ds-alert-background: var(--color-status-warning-background);
       --ds-alert-foreground: var(--color-status-warning-foreground);
-      --ds-alert-icon: var(--color-status-warning-icon);
       --ds-alert-border: var(--color-status-warning-border);
     }
     :host([tone='danger']) {
       --ds-alert-background: var(--color-status-danger-background);
       --ds-alert-foreground: var(--color-status-danger-foreground);
-      --ds-alert-icon: var(--color-status-danger-icon);
       --ds-alert-border: var(--color-status-danger-border);
     }
 
@@ -7554,17 +7803,20 @@ new class extends _identity {
     }
 
     /* The icon box is as tall as the first line (or the icon, when larger); the Icon is centred in it.
-       Its color and size reach the Icon through its overrides, not through these hooks. */
+       The hooks it reads are set on the host and inherited. Color and size reach the Icon through
+       its own overrides, never through this box. */
     .icon {
+      --ds-alert-first-line: calc(var(--ds-alert-font-size) * var(--ds-alert-line-height));
       flex: none;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--ds-alert-icon);
-      block-size: max(calc(var(--ds-alert-font-size) * var(--ds-alert-line-height)), var(--ds-alert-icon-size));
+      block-size: max(var(--ds-alert-first-line), var(--ds-alert-icon-size));
+      line-height: 0;
     }
-    .container.has-heading .icon {
-      block-size: max(calc(var(--ds-alert-heading-size) * var(--ds-alert-line-height)), var(--ds-alert-icon-size));
+    /* The element sets data-has-heading on its root; no :has() query is used. */
+    :host([data-has-heading]) .icon {
+      --ds-alert-first-line: calc(var(--ds-alert-heading-size) * var(--ds-alert-line-height));
     }
 
     .content {
@@ -7666,7 +7918,8 @@ function nameOf(el) {
 *
 * The property is `landmark` (attribute `role`) because `HTMLElement` already
 * defines `role`. `label` maps to `aria-label`; `banner`, `main` and
-* `contentinfo` never take a label, so on them it is not rendered.
+* `contentinfo` never take a label, so on them neither `label` nor a
+* composite's `aria-labelledby` is rendered.
 *
 * In development it warns when no role is set, when `region` or `form` has no
 * label, when a label is passed to a role that never takes one, when `main`
@@ -7740,33 +7993,43 @@ var DsLandmark = class extends LitElement {
 		return nothing;
 	}
 	updated(changed) {
-		this.syncLabel();
+		const refusedLabel = this.syncName();
 		if (this.warnPending || changed.has("landmark") || changed.has("label")) {
 			this.warnPending = false;
-			this.warnInDev();
+			this.warnInDev(refusedLabel);
 		}
 	}
-	/** Writes `aria-label` from `label`, omitting it when empty or when the role never takes a label. */
-	syncLabel() {
+	/**
+	* Writes `aria-label` from `label`, omitting it when empty or when the role never takes a label,
+	* and drops a composite's `aria-labelledby` on those roles too. Returns true when a label — from
+	* either source — was passed to a role that never takes one, so it was not rendered.
+	*/
+	syncName() {
 		const role = this.landmark;
-		const next = this.label && !(role !== void 0 && NO_LABEL.has(role)) ? this.label : null;
-		if (this.getAttribute("aria-label") === next) return;
-		this.syncingLabel = true;
-		try {
-			if (next === null) this.removeAttribute("aria-label");
-			else this.setAttribute("aria-label", next);
-		} finally {
-			this.syncingLabel = false;
+		const refuses = role !== void 0 && NO_LABEL.has(role);
+		const label = this.label ? this.label : null;
+		const next = refuses ? null : label;
+		if (this.getAttribute("aria-label") !== next) {
+			this.syncingLabel = true;
+			try {
+				if (next === null) this.removeAttribute("aria-label");
+				else this.setAttribute("aria-label", next);
+			} finally {
+				this.syncingLabel = false;
+			}
 		}
+		const droppedLabelledBy = refuses && this.hasAttribute("aria-labelledby");
+		if (droppedLabelledBy) this.removeAttribute("aria-labelledby");
+		return refuses && (label !== null || droppedLabelledBy);
 	}
-	warnInDev() {
+	warnInDev(refusedLabel) {
 		if (!import.meta.env.DEV || !this.isConnected) return;
 		const role = this.landmark;
 		if (role === void 0) {
 			console.warn("Landmark: no role is set, so no landmark is exposed.", this);
 			return;
 		}
-		if (NO_LABEL.has(role) && this.label) console.warn(`Landmark: role "${role}" does not take a label; it was not rendered.`, this);
+		if (refusedLabel) console.warn(`Landmark: role "${role}" does not take a label; it was not rendered.`, this);
 		const name = nameOf(this);
 		if (NAME_REQUIRED.has(role) && !name) console.warn(`Landmark: role "${role}" is only a landmark when it has a label.`, this);
 		const root = this.getRootNode();
@@ -7957,7 +8220,7 @@ new class extends _identity {
 					return;
 				}
 				if (index === last) entries.push(html`<li part="item" data-part="item" data-index=${index}><span part="current" data-part="current" aria-current="page">${item.label}</span></li>`);
-				else if (item.href === void 0 || item.href === "") entries.push(html`<li part="item" data-part="item" data-index=${index}>${item.label}</li>`);
+				else if (item.href === void 0 || item.href === "") entries.push(html`<li part="item" data-part="item" data-index=${index}><span>${item.label}</span></li>`);
 				else entries.push(html`
           <li part="item" data-part="item" data-index=${index}>
             <span part="link" data-part="link">
@@ -8073,6 +8336,16 @@ new class extends _identity {
     [data-part='current'] {
       color: var(--color-foreground);
     }
+
+    /*
+     * focusRing / focusRingWidth: only the focus-fallback item draws one — the <li> given
+     * tabindex="-1" after expanding when no revealed item is a link. Link and Button draw
+     * their own rings inside their shadow roots.
+     */
+    [data-part='item']:focus-visible {
+      outline: var(--border-width-focus) solid var(--color-border-focus);
+      outline-offset: var(--border-width-focus);
+    }
   `;
 	constructor() {
 		super(_DsBreadcrumb), _initClass$32();
@@ -8098,25 +8371,37 @@ let _init_extra_hideValue;
 let _init_overrides$30;
 let _init_extra_overrides$30;
 /** Overridable style hooks; see the `overrides` property. `track`, `fill`, `labelColor` and `valueColor` are locked and excluded. */
+/**
+* Bindings realised as a hook on `:host`. The forwarded-only bindings (labelSize, labelWeight,
+* valueSize, fontFamily, lineHeight) have no hook here and the shadow CSS never sets a
+* `--ds-text-*` hook: they reach the composed `ds-text` children only through their `overrides`.
+*/
 const HOOKS$30 = {
 	trackHeight: "--ds-meter-track-height",
 	radius: "--ds-meter-radius",
-	labelSize: "--ds-meter-label-size",
-	labelWeight: "--ds-meter-label-weight",
-	valueSize: "--ds-meter-value-size",
-	fontFamily: "--ds-meter-font-family",
-	lineHeight: "--ds-meter-line-height",
 	partGap: "--ds-meter-part-gap",
 	labelGap: "--ds-meter-label-gap",
 	transition: "--ds-meter-transition"
 };
+/** No locale prop: the runtime's default locale formats every percentage, including the "0%" of an invalid range. */
 const PERCENT$1 = new Intl.NumberFormat(void 0, {
 	style: "percent",
 	maximumFractionDigits: 0
 });
-/** A reflected number attribute that is missing or unparseable falls back to `fallback`. */
+/** The invalid `min`/`max` pairs already reported, so each distinct one warns once. */
+const warnedRanges = /* @__PURE__ */ new Set();
+/** A reflected number attribute that is missing, unparseable or non-finite falls back to `fallback`. */
 function finite$1(value, fallback) {
 	return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+/** Drops unset entries so the composed Text keeps its own defaults, and its `overrides` stays `undefined`. */
+function compact(overrides) {
+	const out = {};
+	for (const key of Object.keys(overrides)) {
+		const ref = overrides[key];
+		if (ref) out[key] = ref;
+	}
+	return Object.keys(out).length > 0 ? out : void 0;
 }
 /**
 * `<ds-meter>` — Meter (category: data, APG pattern: meter).
@@ -8124,14 +8409,16 @@ function finite$1(value, fallback) {
 * `<ds-meter label="Storage used" value="32" value-text="3.2 GB of 10 GB" tone="warning">`
 * renders a label row and a `<div role="meter">` track in its shadow root. The
 * label is a `<ds-text element="span">` referenced by `aria-labelledby`, which
-* resolves within the one shadow root. `tone`, `value`, `min` and `max`
-* reflect as attributes (numbers as strings, parsed as numbers). Nothing is
-* interactive: no focus, no events, no hover.
+* resolves within the one shadow root; `data-ds` sits on the root wrapper, a
+* different element from the one carrying the role. `tone`, `value`, `min` and
+* `max` reflect as attributes (numbers as strings, parsed as numbers). Nothing
+* is interactive: no focus, no events, no hover.
 *
 * The fill width is `(value − min) / (max − min)` of the track, clamped to
-* 0–100%; a non-finite `value` is treated as `min`. When `max ≤ min` the track
-* renders empty, `aria-valuenow` is `min`, and a development warning names the
-* bounds.
+* 0–100%; a non-finite `value` is treated as `min`, and a non-finite `min` or
+* `max` as its default (0, 100). When `max ≤ min` the track renders empty,
+* `aria-valuenow` is `min`, the text reads "0%" and a development warning names
+* the bounds once per distinct invalid pair.
 *
 * ## When to use
 *
@@ -8205,9 +8492,13 @@ new class extends _identity {
 			super(...args);
 			_init_extra_overrides$30(this);
 		}
-		/** The current measurement. Clamped to `min`…`max` for the bar; the accessible value is the clamped number too. */
+		/**
+		* The current measurement. Clamped to `min`…`max` for the bar; the accessible value is the
+		* clamped number too, exact and unrounded (`aria-valuenow="3.14159"`) — only the percentage
+		* text is rounded.
+		*/
 		#A = _init_value$10(this, 0);
-		/** Lower bound of the range. */
+		/** Lower bound of the range. A missing, unparseable or non-finite `min` is treated as 0. */
 		get value() {
 			return this.#A;
 		}
@@ -8215,7 +8506,7 @@ new class extends _identity {
 			this.#A = v;
 		}
 		#B = (_init_extra_value$10(this), _init_min$4(this, 0));
-		/** Upper bound of the range. Must be greater than `min`. */
+		/** Upper bound of the range. Must be greater than `min`. A missing, unparseable or non-finite `max` is treated as 100. */
 		get min() {
 			return this.#B;
 		}
@@ -8231,7 +8522,11 @@ new class extends _identity {
 			this.#C = v;
 		}
 		#D = (_init_extra_max$4(this), _init_label$17(this, ""));
-		/** Human-readable value shown at the end of the label row and announced instead of the raw number ("3.2 GB of 10 GB"). */
+		/**
+		* Human-readable value shown at the end of the label row and announced instead of the raw number
+		* ("3.2 GB of 10 GB", "Strong"). Omit to show and announce the percentage, rounded to a whole
+		* number ("32%"). Attribute `value-text`, not reflected.
+		*/
 		get label() {
 			return this.#D;
 		}
@@ -8239,7 +8534,10 @@ new class extends _identity {
 			this.#D = v;
 		}
 		#E = (_init_extra_label$17(this), _init_valueText(this));
-		/** Fill color. `info` is the neutral brand fill; the consumer sets the others from thresholds it owns. */
+		/**
+		* Fill color. `info` is the neutral brand fill; the consumer sets `success`/`warning`/`danger`
+		* from thresholds it owns — the meter does not decide what is "too full".
+		*/
 		get valueText() {
 			return this.#E;
 		}
@@ -8247,7 +8545,10 @@ new class extends _identity {
 			this.#E = v;
 		}
 		#F = (_init_extra_valueText(this), _init_tone$3(this, "info"));
-		/** Hides the visible value text. The accessible value is always exposed. */
+		/**
+		* Hides the visible value text (a boolean attribute can only turn things on, so the flag is the
+		* hiding one). The accessible value is always exposed. Attribute `hide-value`, not reflected.
+		*/
 		get tone() {
 			return this.#F;
 		}
@@ -8273,6 +8574,7 @@ new class extends _identity {
 			super.connectedCallback();
 			this.setAttribute("data-ds", "Meter");
 		}
+		/** The exposed range: a non-finite bound is not a range end, so it falls back to the prop's default. */
 		get bounds() {
 			const min = finite$1(this.min, 0);
 			const max = finite$1(this.max, 100);
@@ -8282,21 +8584,21 @@ new class extends _identity {
 				valid: max > min
 			};
 		}
-		/** `value` clamped to the range: the accessible value. Non-finite values and `max ≤ min` resolve to `min`. */
+		/** `value` clamped to the range: the accessible value. A non-finite value, and `max ≤ min`, resolve to `min`. */
 		get clampedValue() {
 			const { min, max, valid } = this.bounds;
-			const value = this.value;
-			if (!valid || typeof value !== "number" || !Number.isFinite(value)) return min;
+			if (!valid) return min;
+			const value = finite$1(this.value, min);
 			return Math.min(max, Math.max(min, value));
 		}
-		/** The filled fraction of the track, 0–1. */
+		/** The filled fraction of the track, 0–1. Exact: the rounding is for the text only. */
 		get fraction() {
 			const { min, max, valid } = this.bounds;
 			return valid ? (this.clampedValue - min) / (max - min) : 0;
 		}
 		willUpdate(changed) {
-			if ((changed.has("min") || changed.has("max")) && import.meta.env.DEV && !this.bounds.valid) console.warn(`<ds-meter> needs max (${this.max}) greater than min (${this.min}); rendering an empty track.`, this);
 			if (changed.has("overrides")) this.applyOverrides();
+			if (import.meta.env.DEV) this.warnInvalidRange();
 		}
 		render() {
 			const { min, max } = this.bounds;
@@ -8314,12 +8616,12 @@ new class extends _identity {
             size="sm"
             weight="medium"
             tone="default"
-            .overrides=${{
+            .overrides=${compact({
 				fontSize: o?.labelSize,
 				fontWeight: o?.labelWeight,
 				fontFamily: o?.fontFamily,
 				lineHeight: o?.lineHeight
-			}}
+			})}
             >${this.label}</ds-text
           >
           ${this.hideValue ? nothing : html`<ds-text
@@ -8328,11 +8630,11 @@ new class extends _identity {
                 element="span"
                 size="sm"
                 tone="muted"
-                .overrides=${{
+                .overrides=${compact({
 				fontSize: o?.valueSize,
 				fontFamily: o?.fontFamily,
 				lineHeight: o?.lineHeight
-			}}
+			})}
                 >${displayed}</ds-text
               >`}
         </div>
@@ -8351,10 +8653,20 @@ new class extends _identity {
       </div>
     `;
 		}
+		/** Developer-facing, never shown to users, and warned once per distinct invalid pair. */
+		warnInvalidRange() {
+			const { min, max, valid } = this.bounds;
+			if (valid) return;
+			const pair = `${min}:${max}`;
+			if (warnedRanges.has(pair)) return;
+			warnedRanges.add(pair);
+			console.warn(`Meter: \`max\` (${max}) must be greater than \`min\` (${min}).`);
+		}
 		applyOverrides() {
 			for (const binding of Object.keys(HOOKS$30)) {
-				const ref = this.overrides?.[binding];
 				const hook = HOOKS$30[binding];
+				if (hook === void 0) continue;
+				const ref = this.overrides?.[binding];
 				if (ref === void 0) this.style.removeProperty(hook);
 				else this.style.setProperty(hook, cssVar(ref));
 			}
@@ -8365,11 +8677,6 @@ new class extends _identity {
       display: block;
       --ds-meter-track-height: var(--space-2);
       --ds-meter-radius: var(--radius-full);
-      --ds-meter-label-size: var(--font-size-sm);
-      --ds-meter-label-weight: var(--font-weight-medium);
-      --ds-meter-value-size: var(--font-size-sm);
-      --ds-meter-font-family: var(--font-family-body);
-      --ds-meter-line-height: var(--font-line-height-normal);
       --ds-meter-part-gap: var(--space-1);
       --ds-meter-label-gap: var(--space-2);
       --ds-meter-transition: var(--motion-duration-base);
@@ -8384,9 +8691,13 @@ new class extends _identity {
       display: flex;
       flex-direction: column;
       gap: var(--ds-meter-part-gap);
+      min-inline-size: 0;
     }
 
-    /* labelGap: horizontal gap between the label and the value text */
+    /*
+     * labelGap: horizontal gap between the label and the value text. The label wraps onto more
+     * lines inside the row; neither text is truncated.
+     */
     [data-part='header'] {
       display: flex;
       align-items: baseline;
@@ -8394,47 +8705,32 @@ new class extends _identity {
       gap: var(--ds-meter-label-gap);
     }
 
-    /*
-     * label and valueText are ds-text elements (labelColor via tone="default", valueColor via tone="muted", both locked).
-     * Their bindings arrive through the child's overrides property; the documented --ds-text-* hooks are also set from
-     * the meter's hooks so a CSS-level --ds-meter-* override reaches them.
-     */
-    [data-part='label'] {
-      --ds-text-font-size: var(--ds-meter-label-size);
-      --ds-text-font-weight: var(--ds-meter-label-weight);
-      --ds-text-font-family: var(--ds-meter-font-family);
-      --ds-text-line-height: var(--ds-meter-line-height);
-    }
-    [data-part='valueText'] {
-      --ds-text-font-size: var(--ds-meter-value-size);
-      --ds-text-font-family: var(--ds-meter-font-family);
-      --ds-text-line-height: var(--ds-meter-line-height);
-      text-align: end;
-    }
-
-    /* track: color.background.strong, locked; the radius clips the fill to the rounded ends */
+    /* track: color.background.strong, locked. Deliberately low-contrast; the text identifies the meter. */
     [data-part='track'] {
       overflow: hidden;
+      inline-size: 100%;
       block-size: var(--ds-meter-track-height);
       border-radius: var(--ds-meter-radius);
-      background: var(--color-background-strong);
+      background-color: var(--color-background-strong);
     }
 
-    /* fill: color.status.{tone}.icon, locked */
+    /* fill: color.status.{tone}.icon, locked — the step guaranteed 3:1 against the page background. */
     [data-part='fill'] {
       block-size: 100%;
-      background: var(--color-status-info-icon);
+      border-radius: var(--ds-meter-radius);
+      background-color: var(--color-status-info-icon);
     }
     :host([tone='success']) [data-part='fill'] {
-      background: var(--color-status-success-icon);
+      background-color: var(--color-status-success-icon);
     }
     :host([tone='warning']) [data-part='fill'] {
-      background: var(--color-status-warning-icon);
+      background-color: var(--color-status-warning-icon);
     }
     :host([tone='danger']) [data-part='fill'] {
-      background: var(--color-status-danger-icon);
+      background-color: var(--color-status-danger-icon);
     }
 
+    /* transition: fill width change, with motion.easing.standard; instant under reduced motion. */
     @media (prefers-reduced-motion: no-preference) {
       [data-part='fill'] {
         transition: inline-size var(--ds-meter-transition) var(--motion-easing-standard);
@@ -8705,7 +9001,7 @@ new class extends _identity {
 			this.setCustomState("target-focus", false);
 		}
 		willUpdate(changed) {
-			if (changed.has("overrides")) this.applyOverrides();
+			if (changed.has("overrides") || changed.has("surface") || changed.has("interactive")) this.applyOverrides();
 			if (changed.has("heading")) this.syncName();
 			if (changed.has("focusable") || changed.has("interactive")) this.syncTabindex();
 		}
@@ -8834,11 +9130,25 @@ new class extends _identity {
 				this.ownsTabindex = false;
 			}
 		}
+		/**
+		* Overrides change values, never presence. The border is drawn only on `surface="default"`,
+		* an interactive card always reserves `border.width.focus` instead of its own width (so a
+		* width override only reaches non-interactive cards), and the transition exists only for the
+		* interactive hover. Those bindings are not in effect otherwise, so their overrides are no-ops.
+		*/
+		isInEffect(binding) {
+			switch (binding) {
+				case "border": return this.surface === "default";
+				case "borderWidth": return this.surface === "default" && !this.interactive;
+				case "transition": return this.interactive;
+				default: return true;
+			}
+		}
 		applyOverrides() {
 			for (const binding of Object.keys(HOOKS$29)) {
 				const ref = this.overrides?.[binding];
 				const hook = HOOKS$29[binding];
-				if (ref === void 0) this.style.removeProperty(hook);
+				if (ref === void 0 || !this.isInEffect(binding)) this.style.removeProperty(hook);
 				else this.style.setProperty(hook, cssVar(ref));
 			}
 		}
@@ -9128,16 +9438,27 @@ new class extends _identity {
 		}
 		willUpdate(changed) {
 			if (changed.has("element")) this.internals.role = this.element === "main" ? "main" : null;
-			if (changed.has("overrides")) this.applyOverrides();
+			if (changed.has("overrides") || changed.has("width") || changed.has("gutter")) this.applyOverrides();
 		}
 		render() {
 			return html`<slot></slot>`;
+		}
+		/**
+		* Overrides change values, never presence: `width: full` renders the literal `none` and
+		* `gutter: none` a literal 0, neither read through a hook, so those bindings are not in
+		* effect and their overrides are no-ops. No dev warning fires for one that has no effect.
+		*/
+		isInEffect(binding) {
+			switch (binding) {
+				case "maxWidth": return this.width !== "full";
+				case "paddingInline": return this.gutter !== "none";
+			}
 		}
 		applyOverrides() {
 			for (const binding of Object.keys(HOOKS$28)) {
 				const ref = this.overrides?.[binding];
 				const hook = HOOKS$28[binding];
-				if (ref === void 0) this.style.removeProperty(hook);
+				if (ref === void 0 || !this.isInEffect(binding)) this.style.removeProperty(hook);
 				else this.style.setProperty(hook, cssVar(ref));
 			}
 		}
@@ -9175,7 +9496,12 @@ new class extends _identity {
     /* paddingInline: layout.gutter.{gutter}; none renders no padding. default is responsive,
        narrow below layout.maxWidth.content and wide above layout.maxWidth.page; custom
        properties are not valid in media queries, so the breakpoints below are the resolved
-       px values of those two tokens, read from the token file at generation time. */
+       px values of those two tokens, read from the token file at generation time. Both
+       boundaries are inclusive (a min-width query), so a viewport exactly at a token width
+       takes the wider gutter. The bare :host carries the responsive default alongside
+       [gutter='default'], since before the first update the attribute is not yet reflected
+       and the plain rules have to be the prop defaults; an attribute selector is more specific
+       than :host, so narrow/wide/none still win whenever their attribute is present. */
     :host([gutter='narrow']) {
       --ds-container-padding-inline: var(--layout-gutter-narrow);
     }
@@ -9191,12 +9517,14 @@ new class extends _identity {
     }
 
     @media (min-width: 960px) { /* literal-ok: breakpoint from layout.maxWidth.content */
+      :host,
       :host([gutter='default']) {
         --ds-container-padding-inline: var(--layout-gutter);
       }
     }
 
     @media (min-width: 1280px) { /* literal-ok: breakpoint from layout.maxWidth.page */
+      :host,
       :host([gutter='default']) {
         --ds-container-padding-inline: var(--layout-gutter-wide);
       }
@@ -9243,31 +9571,42 @@ const NEGATED_BOOLEAN_CONVERTER$11 = {
 };
 const FOCUSABLE_SELECTOR$7 = [
 	"a[href]",
-	"button:not(:disabled)",
-	"input:not(:disabled)",
-	"select:not(:disabled)",
-	"textarea:not(:disabled)",
+	"area[href]",
+	"button",
+	"input:not([type=\"hidden\"])",
+	"select",
+	"textarea",
+	"summary",
+	"iframe",
 	"audio[controls]",
 	"video[controls]",
-	"summary",
 	"[contenteditable]:not([contenteditable=\"false\"])",
 	"[tabindex]"
 ].join(",");
+/**
+* "Disabled" is exactly `:disabled`, which already removes the form controls inside a
+* `fieldset[disabled]` (outside its first legend) while leaving the links and tabindex elements
+* there in, as the browser keeps them focusable. `aria-disabled` elements stay in: the system keeps
+* them focusable. `tabindex="-1"` is out; the scope's own anchor and sentinels are never candidates.
+* Visibility is not tested — an element hidden by CSS but neither `aria-hidden` nor `inert` counts.
+*/
 function isFocusable$1(el) {
 	if (!(el instanceof HTMLElement)) return false;
 	if (el.hasAttribute("data-focus-sentinel") || el.hasAttribute("data-focus-scope-anchor")) return false;
-	const tabindex = el.getAttribute("tabindex");
-	if (tabindex !== null && Number(tabindex) < 0) return false;
-	return el.matches(FOCUSABLE_SELECTOR$7);
+	if (!el.matches(FOCUSABLE_SELECTOR$7) || el.matches(":disabled")) return false;
+	return el.getAttribute("tabindex") !== "-1" && el.tabIndex >= 0;
+}
+/** `inert` and `aria-hidden="true"` subtrees contribute nothing at all. */
+function isExcludedSubtree(el) {
+	return el.hasAttribute("inert") || el.getAttribute("aria-hidden") === "true";
 }
 /**
-* Walks light DOM, slot assignments and open shadow roots in tree order.
-* Skips `inert`, `aria-hidden="true"` and `fieldset[disabled]` subtrees;
-* `aria-disabled` elements stay in. Visibility is not tested.
+* Walks light DOM, slot assignments and open shadow roots in tree order. A shadow host is walked
+* through its shadow root, whose `<slot>`s bring the assigned light children back in at the
+* position they actually render, so a slotted `<ds-button>` contributes its inner `<button>` once.
 */
 function collectFocusable$2(node, results) {
-	if (node.hasAttribute("inert") || node.getAttribute("aria-hidden") === "true") return;
-	if (node instanceof HTMLFieldSetElement && node.disabled) return;
+	if (isExcludedSubtree(node)) return;
 	if (isFocusable$1(node)) results.push(node);
 	if (node instanceof HTMLSlotElement) {
 		for (const assigned of node.assignedElements({ flatten: true })) collectFocusable$2(assigned, results);
@@ -9302,20 +9641,20 @@ function composedContains(container, node) {
 }
 /**
 * Mounted scopes, bottom to top. Only the topmost active entry is effective.
-* A mounting scope registers below any scope nested inside it (tree order,
-* not connection order); a scope whose `active` turns back on moves to the top.
+* A scope always sits below every stacked scope it contains and above every stacked scope that
+* contains it; within that, activation order decides. There is no context on Lit, so the
+* containment test walks the composed tree from the mounting scope.
 */
 const scopeStack = [];
+/**
+* Inserts directly below the lowest stacked scope this one contains, so an outer scope connected
+* after its inner one still registers underneath it; otherwise on top.
+*/
 function registerScope(scope) {
 	removeFromStack(scope);
 	const nestedIndex = scopeStack.findIndex((entry) => composedContains(scope, entry));
 	if (nestedIndex === -1) scopeStack.push(scope);
 	else scopeStack.splice(nestedIndex, 0, scope);
-	refreshStack();
-}
-function raiseScope(scope) {
-	removeFromStack(scope);
-	scopeStack.push(scope);
 	refreshStack();
 }
 function unregisterScope(scope) {
@@ -9330,6 +9669,7 @@ function removeFromStack(scope) {
 function refreshStack() {
 	for (const entry of scopeStack) entry.requestUpdate();
 }
+/** Only active scopes count when picking the top. */
 function topActiveScope() {
 	for (let i = scopeStack.length - 1; i >= 0; i -= 1) {
 		const entry = scopeStack[i];
@@ -9345,20 +9685,22 @@ function topActiveScope() {
 * is the wrapper (`display: block`, not `display: contents`) with a default
 * slot for the confined content, and it is never focusable or tabbable.
 * `delegatesFocus` is deliberately off: it would send a `focus()` on the host
-* into the first focusable descendant. `autoFocus: container` instead focuses
-* an invisible anchor rendered first in the shadow root, which carries
-* `tabindex="-1"` only while `autoFocus` is `container`.
+* into the first focusable descendant, so `host.focus()` does nothing.
+* `autoFocus: container` instead focuses an invisible anchor rendered first in
+* the shadow root, which carries `tabindex="-1"` only while `autoFocus` is
+* `container` and which also carries the `scope` part.
 *
 * Two visually hidden sentinels catch focus arriving from the browser chrome:
 * the start sentinel sends it to the first descendant, the end sentinel to the
 * last. They are tab stops only while the scope is trapped, active and top of
 * the stack. A `focusin` listener on `document` pulls focus back to the last
 * focused descendant if it leaves while the scope is effective. The scope
-* never handles Escape and never makes anything inert.
+* never handles Escape and never makes anything inert — the overlay owns both.
 *
 * Boolean props that default to `true` are exposed as negated attributes:
 * `no-trapped`, `no-active` (both reflected) and `no-restore-focus`. Composing
-* overlays set them as properties (`.active=${open}`).
+* overlays set them as properties (`.active=${open}`), never as attributes,
+* which cannot turn off a true default.
 *
 * @fires escape-attempt - Fired just before trapped focus wraps (Tab from the
 *   last descendant, Shift+Tab from the first), with `{ direction }`.
@@ -9486,10 +9828,13 @@ new class extends _identity {
 		openerElement = (_init_extra_startSentinelEl(this), null);
 		/** Marker left beside the opener, so "the next focusable element" survives the opener's removal. */
 		openerMarker = null;
+		/** The opener's ancestors, nearest first: the fallback when the marker went with the opener's parent. */
+		openerAncestors = [];
 		lastFocused = null;
 		childrenSettled = Promise.resolve();
 		handleKeydown = (event) => {
-			if (event.key !== "Tab" || event.defaultPrevented || !this.isEffective()) return;
+			if (event.key !== "Tab" || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+			if (!this.isEffective()) return;
 			const focusable = this.getFocusableDescendants();
 			const first = focusable[0];
 			const last = focusable[focusable.length - 1];
@@ -9518,7 +9863,7 @@ new class extends _identity {
 				return;
 			}
 			if (!this.isEffective()) return;
-			((this.lastFocused?.isConnected ? this.lastFocused : null) ?? this.getFocusableDescendants()[0] ?? this.containerTarget())?.focus();
+			((this.lastFocused?.isConnected && composedContains(this, this.lastFocused) ? this.lastFocused : null) ?? this.getFocusableDescendants()[0] ?? this.containerTarget())?.focus();
 		};
 		handleSentinelFocus = (event) => {
 			if (!this.isEffective()) return;
@@ -9541,6 +9886,7 @@ new class extends _identity {
 			if (this.restoreFocus) this.restoreFocusOnExit();
 			this.openerMarker?.remove();
 			this.openerMarker = null;
+			this.openerAncestors = [];
 			this.openerElement = null;
 			this.lastFocused = null;
 		}
@@ -9558,7 +9904,7 @@ new class extends _identity {
 			return result;
 		}
 		updated(changed) {
-			if (changed.has("active") && changed.get("active") === false && this.active) raiseScope(this);
+			if (changed.has("active") && changed.get("active") === false && this.active) registerScope(this);
 			else if (changed.has("active") && changed.get("active") !== void 0 || changed.has("trapped") && changed.get("trapped") !== void 0) refreshStack();
 		}
 		render() {
@@ -9586,15 +9932,25 @@ new class extends _identity {
       ></span>
     `;
 		}
+		/**
+		* Records the opener, a marker beside it and its ancestor chain, so focus can be restored to its
+		* former position even after the opener — or the opener's parent — is removed.
+		*/
 		recordOpener() {
 			const current = getDeepActiveElement$2();
 			this.openerElement = current instanceof HTMLElement && current !== document.body ? current : null;
 			this.openerMarker?.remove();
 			this.openerMarker = null;
+			this.openerAncestors = [];
 			const opener = this.openerElement;
-			if (opener?.parentNode && !composedContains(this, opener)) {
+			if (!opener || composedContains(this, opener)) return;
+			if (opener.parentNode) {
 				this.openerMarker = document.createComment("ds-focus-scope opener");
 				opener.after(this.openerMarker);
+			}
+			for (let node = opener.parentElement; node; node = node.parentElement) {
+				if (composedContains(this, node)) break;
+				this.openerAncestors.push(node);
 			}
 		}
 		applyAutoFocus() {
@@ -9619,6 +9975,7 @@ new class extends _identity {
 			if (target instanceof HTMLElement) return target;
 			return target?.value;
 		}
+		/** `returnFocusTo`, then the recorded opener, then the first focusable after where it used to be. */
 		restoreFocusOnExit() {
 			const explicit = this.resolveReturnTarget();
 			if (explicit?.isConnected) {
@@ -9630,12 +9987,16 @@ new class extends _identity {
 				opener.focus();
 				return;
 			}
-			const marker = this.openerMarker;
-			if (!marker?.isConnected) return;
+			const anchor = this.openerMarker?.isConnected ? this.openerMarker : this.openerAncestors.find((node) => node.isConnected);
+			if (!anchor) return;
 			const all = [];
 			collectFocusable$2(document.body, all);
-			all.find((el) => !composedContains(this, el) && Boolean(marker.compareDocumentPosition(documentHost$1(el)) & Node.DOCUMENT_POSITION_FOLLOWING))?.focus();
+			all.find((el) => !composedContains(this, el) && Boolean(anchor.compareDocumentPosition(documentHost$1(el)) & Node.DOCUMENT_POSITION_FOLLOWING))?.focus();
 		}
+		/**
+		* Waits for the slotted elements and every custom element in their light-DOM subtrees (not
+		* elements inside those elements' own shadow roots), so the walker sees their focusable internals.
+		*/
 		async settleChildren() {
 			const elements = ((this.shadowRoot?.querySelector("slot"))?.assignedElements({ flatten: true }) ?? []).flatMap((el) => [el, ...Array.from(el.querySelectorAll("*"))]);
 			await Promise.all(elements.map((el) => el.updateComplete));
@@ -9660,7 +10021,7 @@ new class extends _identity {
 		}
 		warnInDev() {
 			if (!import.meta.env.DEV || !this.trapped || !this.active) return;
-			if (this.getFocusableDescendants().length === 0) console.warn("<ds-focus-scope> is trapped with no focusable descendants; it would trap focus with no escape.", this);
+			if (this.getFocusableDescendants().length === 0) console.warn("<ds-focus-scope> is trapped with no focusable descendants, so focus inside it cannot move or leave. Add a focusable control (a close Button) or set the trapped property to false.", this);
 		}
 	}];
 	styles = css`

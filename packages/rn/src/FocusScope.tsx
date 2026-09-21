@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { AccessibilityInfo, TextInput, View, findNodeHandle } from 'react-native';
+import { AccessibilityInfo, Platform, TextInput, View, findNodeHandle } from 'react-native';
 import type { HostInstance, ViewInstance } from 'react-native';
 
 export type FocusScopeAutoFocus = 'first' | 'last' | 'container' | 'none';
@@ -55,17 +55,22 @@ function currentlyFocusedInput(): HostInstance | null {
  *
  * Renders a `View` with `accessibilityViewIsModal={trapped && active}` so VoiceOver
  * and TalkBack ignore siblings while the scope is the active one; a paused outer
- * scope therefore does not hide a nested Menu. There is no Tab order to confine on
- * native, so hardware-keyboard Tab is not wrapped (a platform limit) and
- * `onEscapeAttempt` never fires. `autoFocus` runs once after mount and calls
- * `AccessibilityInfo.setAccessibilityFocus` on the wrapper for `first`, `last` and
- * `container` alike — children cannot be walked for a focusable descendant — so the
- * screen reader reads the scope from its top; only `none` skips it. `restoreFocus`
- * runs once on unmount and focuses `returnFocusTo` when given, otherwise the
- * `TextInput` that was focused when the scope first rendered; an opener that is
- * neither cannot be restored. The wrapper sets no `role`, `accessibilityRole` or
- * `accessibilityLabel`, and never handles Escape or the back button — the overlay
- * owns dismissal.
+ * scope therefore does not hide a nested Menu. On react-native-web the prop is
+ * omitted: it would render `aria-modal` on a role-less div, and the composing
+ * overlay's own dialog carries `aria-modal` there. There is no Tab order to confine
+ * on native, so hardware-keyboard Tab is not wrapped (a platform limit, on
+ * react-native-web too) and `onEscapeAttempt` never fires; screen-reader users are
+ * kept inside by `accessibilityViewIsModal` instead. `autoFocus` runs once after
+ * mount and calls `AccessibilityInfo.setAccessibilityFocus` on the wrapper for
+ * `first`, `last` and `container` alike — children cannot be walked for a focusable
+ * descendant — so the screen reader reads the scope from its top; only `none` skips
+ * it. iOS VoiceOver may ignore focus on a non-`accessible` View; that is a platform
+ * limit, and `accessibilityViewIsModal` is the accessibility alternative.
+ * `restoreFocus` runs once on unmount and focuses `returnFocusTo` when given,
+ * otherwise the `TextInput` that was focused when the scope first rendered; there is
+ * no document order on native, so when that opener is gone nothing is restored. The
+ * wrapper sets no `role`, `accessibilityRole` or `accessibilityLabel`, and never
+ * handles Escape or the back button — the overlay owns dismissal.
  */
 export function FocusScope({
   children,
@@ -116,7 +121,15 @@ export function FocusScope({
   return (
     // collapsable={false}: a style-less wrapper would otherwise be flattened away,
     // leaving setAccessibilityFocus and accessibilityViewIsModal no native view.
-    <View ref={wrapperRef} collapsable={false} accessibilityViewIsModal={trapped && active} testID="FocusScope">
+    // The wrapper is never `accessible`, which would merge the children into one element.
+    <View
+      ref={wrapperRef}
+      collapsable={false}
+      // react-native-web would turn this into aria-modal on a role-less div; there the
+      // composing overlay's own dialog carries aria-modal.
+      accessibilityViewIsModal={Platform.OS === 'web' ? undefined : trapped && active}
+      testID="FocusScope"
+    >
       {children}
     </View>
   );

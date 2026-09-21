@@ -38,7 +38,8 @@ export const UndoADelete: Story = {
   args: { message: '3 files moved to Archive', actionLabel: 'Undo', duration: 'persistent' },
 };
 export const Saved: Story = { args: { message: 'Changes saved', tone: 'success' } };
-export const BackgroundResult: Story = { args: { message: 'Export ready', actionLabel: 'View', duration: 'long' } };
+/* No `duration`: an action already makes the toast persistent, and passing `short`/`long` would warn. */
+export const BackgroundResult: Story = { args: { message: 'Export ready', actionLabel: 'View' } };
 export const FailedUpload: Story = {
   args: { message: 'Upload failed', tone: 'danger', actionLabel: 'Retry', duration: 'persistent' },
 };
@@ -46,11 +47,25 @@ export const FailedUpload: Story = {
 /* notable states */
 export const NotDismissible: Story = { args: { dismissible: false } };
 
-/** The region with two persistent action toasts: four focusable buttons, reached with F6. */
+/**
+ * The region with two persistent action toasts: four focusable buttons, reached with F6 and left
+ * with Escape or Tab.
+ *
+ * The first is the toast the keyboard rules act on; the second is `danger`, so it announces through
+ * `role="alert"` rather than `status`. That keeps exactly one `role="status"` on the page: Escape
+ * dismisses the toast holding focus and only that one, which a `getByRole('status')` locator can
+ * only observe when no other status toast is left to take its place.
+ */
 function ToastKeyboardHarness(): ReactElement {
   useEffect(() => {
     void toast({ toastId: 'keyboard-undo', message: '3 files moved to Archive', actionLabel: 'Undo', duration: 'persistent' });
-    void toast({ toastId: 'keyboard-view', message: 'Export ready', actionLabel: 'View', duration: 'persistent' });
+    void toast({
+      toastId: 'keyboard-retry',
+      message: 'Upload failed',
+      tone: 'danger',
+      actionLabel: 'Retry',
+      duration: 'persistent',
+    });
     return () => dismiss();
   }, []);
   return <ToastRegion />;

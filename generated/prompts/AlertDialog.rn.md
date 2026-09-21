@@ -75,6 +75,8 @@ component:
         trapped: true
         restoreFocus: true
         autoFocus: none
+        active:
+          from: open
     icon:
       component: Icon
       forwards:
@@ -253,7 +255,9 @@ component:
       locked: false
     textGap:
       token: layout.gap.tight
-      description: Between title and description.
+      description: 'Between title and description: the gap of the unnamed column that
+        holds them inside the icon-and-text row, which is why it names no part. `inset`''s
+        inline padding covers that row, so the icon never touches the surface edge.'
       locked: false
     iconGap:
       token: layout.gap.normal
@@ -271,7 +275,9 @@ component:
         to `--ds-alert-dialog-footer-gap`, and `overrides.gap` is passed only when
         the caller set the `footerGap` override, so consumer CSS on the AlertDialog
         hook still works; on rn the resolved value (the token or the override) is
-        always passed as `overrides.gap`. It has no hook beyond `--ds-alert-dialog-footer-gap`.'
+        always passed as `overrides.gap`. It has no hook beyond `--ds-alert-dialog-footer-gap`.
+        That hook is the delivery path; the Stack''s declared `gap="tight"` prop resolves
+        to the same token and is the composition''s stated default, not a second route.'
       locked: false
     iconSize:
       token: font.size.lg
@@ -291,7 +297,9 @@ component:
         rule in the AlertDialog stylesheet sets the Icon''s own `--ds-icon-color`
         hook on the Icon element (setting `color` on an ancestor or wrapper has no
         effect, because Icon''s own rule wins); on rn `overrides.color` is always
-        passed. As in Alert and Toast.'
+        passed. These mechanics are AlertDialog''s own: Alert and Toast reach the
+        same result by passing `overrides.color` from render on every platform, and
+        the difference is deliberate, not a drift to be copied either way.'
       locked: true
     width:
       token: layout.maxWidth.prose
@@ -306,17 +314,24 @@ component:
       part: surface
       description: 'The least space between the surface and each viewport edge: caps
         the surface width at viewport width − 2 × gutter and its max height at viewport
-        height − 2 × gutter, both set on the surface. On rn spacing is never a margin:
-        the gutter is paddingHorizontal on the centering View, and the surface maxHeight
-        is window height − 2 × gutter from useWindowDimensions.'
+        height − 2 × gutter, both set on the surface. Content that exceeds that height
+        cap scrolls the surface itself — the block padding and the footer scroll with
+        it, and nothing is pinned; an alert dialog that needs a pinned footer has
+        too much content and is a Dialog. On rn spacing is never a margin: the gutter
+        is paddingHorizontal on the centering View, and the surface maxHeight is window
+        height − 2 × gutter from useWindowDimensions; the sized, shadowed, animated
+        box there is the Animated wrapper around the surface, with the surface flexShrinking
+        inside it.'
       locked: false
     layer:
       token: layer.dialog
       description: 'Kept as the hook for consistency with Dialog, but it has no effect
         anywhere this component renders: web and Lit always open with showModal()
         into the top layer and have no non-top-layer fallback (the hook is written
-        as z-index on the <dialog>, where the top layer ignores it), and rn renders
-        in a native Modal window.'
+        as z-index on the <dialog>, where the top layer ignores it), and rn applies
+        it as zIndex on the centring View, where a Modal window ignores it. An override
+        of it is therefore a silent no-op on every platform: the binding is a forward-compatibility
+        hook, kept so the overrides surface matches Dialog''s.'
       locked: false
     rise:
       token: space.2
@@ -399,9 +414,13 @@ component:
         re-open), and FocusScope keeps the trap and focus restore. As in Dialog, the
         <dialog> fills the viewport with a transparent ::backdrop and the scrim is
         a real element inside it carrying `data-part="scrim"`, behind the surface
-        and fading with it; it has no click listener, so a scrim click does nothing.
-        FocusScope writes its own `data-part="scope"`, so the `focusScope` part is
-        an AlertDialog-owned element directly inside FocusScope wrapping the surface,
+        and fading with it; it has no click listener, so a scrim click does nothing,
+        and it is `aria-hidden` (it is empty and decorative). showModal() is the only
+        mechanism for `inert-background`: it inerts the page whatever `container`
+        the portal targets, and where it does not exist (jsdom) the `dialog.open =
+        true` fallback inerts nothing and is a test path only, not a supported browser
+        one. FocusScope writes its own `data-part="scope"`, so the `focusScope` part
+        is an AlertDialog-owned element directly inside FocusScope wrapping the surface,
         carrying `data-part="focusScope"`. Icon, Heading, Text, Stack and the two
         Buttons write their own data-part, so the icon, heading, description, footer,
         cancelButton and confirmButton parts each live on an AlertDialog-owned wrapper
@@ -417,13 +436,17 @@ component:
         Dispatches composed `confirm` (no detail) and `cancel` (detail { reason })
         — only the cancel event has a reason. No slots: heading, description and labels
         are properties, so the element is fully described by attributes. The shadow
-        <dialog> is named with aria-label={heading} and described with aria-description.
-        An idref would resolve here, since the heading shares the shadow root, but
-        the package names every Lit overlay with the literal text so the name does
-        not depend on where the heading is rendered. Cancel is `<ds-button variant="secondary">`
-        and the footer `<ds-stack>` is `direction="horizontal" gap="tight" justify="end"`,
-        as on web. The scrim, focusScope and initial focus are as on web: a real `data-part="scrim"`
-        element in the full-viewport <dialog> (transparent ::backdrop, no click listener);
+        <dialog> is named with aria-label={heading}: the package names every Lit overlay
+        with the literal text so the name does not depend on where the heading is
+        rendered. The description is the exception, and goes through `aria-describedby`
+        pointing at the description element in the same shadow root (ids resolve inside
+        one shadow root; they only fail to cross it) — `aria-description` is implemented
+        in Chromium alone, so it would silently drop the description in Firefox and
+        Safari while web announces it. The scrim carries `aria-hidden`, as on web.
+        Cancel is `<ds-button variant="secondary">` and the footer `<ds-stack>` is
+        `direction="horizontal" gap="tight" justify="end"`, as on web. The scrim,
+        focusScope and initial focus are as on web: a real `data-part="scrim"` element
+        in the full-viewport <dialog> (transparent ::backdrop, no click listener);
         the `focusScope` part is an element directly inside <ds-focus-scope> carrying
         `data-part="focusScope"`; <ds-focus-scope> takes autoFocus `none` and the
         element focuses the Cancel <ds-button> right after showModal(). Every composed
@@ -453,8 +476,12 @@ component:
         which on native is accessibilityState.disabled plus a press guard (the control
         stays focusable), per Button''s own contract. Scroll lock has no native meaning
         — a Modal has no page behind it to scroll — and is not implemented, as in
-        Dialog. Heading has no levels on native: `level` only sets the visual size
-        and the heading trait comes from Heading''s own accessibilityRole="header".
+        Dialog. Nor is there a Tab order or a hardware Enter on a Modal, so of the
+        keyboard block only the Escape rule has a native expression (onRequestClose
+        and onAccessibilityEscape); the wrap and activation rules are react-native-web
+        only, and the accessible way through the two buttons on native is the swipe
+        order, Cancel then Confirm. Heading has no levels on native: `level` only
+        sets the visual size and the heading trait comes from Heading''s own accessibilityRole="header".
         Heading forwards no ref, so initial accessibility focus targets the View wrapping
         the heading rather than its Text node; the announcement is the same. FocusScope
         takes autoFocus `none` (focus is placed on the heading by hand) with no testID
@@ -616,7 +643,7 @@ component:
 
 - `scrim`: element
 - `surface`: element
-- `focusScope`: component `FocusScope`; props `trapped` = true, `restoreFocus` = true, `autoFocus` = "none"
+- `focusScope`: component `FocusScope`; props `trapped` = true, `restoreFocus` = true, `autoFocus` = "none", `active` ← prop `open`
 - `icon`: component `Icon`; forwards `icon` → `overrides.color`, `iconSize` → `overrides.size`
 - `heading`: component `Heading`; props `level` = "2"
 - `description`: component `Text`; props `tone` = "muted"
@@ -782,7 +809,11 @@ notes: "Native Modal as in Dialog; the scrim Pressable is absent (no scrim dismi
   \ which on native is accessibilityState.disabled plus a press guard (the control\
   \ stays focusable), per Button's own contract. Scroll lock has no native meaning\
   \ \u2014 a Modal has no page behind it to scroll \u2014 and is not implemented,\
-  \ as in Dialog. Heading has no levels on native: `level` only sets the visual size\
+  \ as in Dialog. Nor is there a Tab order or a hardware Enter on a Modal, so of the\
+  \ keyboard block only the Escape rule has a native expression (onRequestClose and\
+  \ onAccessibilityEscape); the wrap and activation rules are react-native-web only,\
+  \ and the accessible way through the two buttons on native is the swipe order, Cancel\
+  \ then Confirm. Heading has no levels on native: `level` only sets the visual size\
   \ and the heading trait comes from Heading's own accessibilityRole=\"header\". Heading\
   \ forwards no ref, so initial accessibility focus targets the View wrapping the\
   \ heading rather than its Text node; the announcement is the same. FocusScope takes\
@@ -815,7 +846,7 @@ Do not confirm reversible actions; provide undo (a Toast with an action) instead
 
 ## Behavior
 
-Opens like a Dialog: scrim, trapped focus, inert page, locked scroll. Focus lands on the Cancel button, placed by AlertDialog itself (FocusScope takes autoFocus `none` and keeps the trap and the restore). Escape and Cancel fire `onCancel`; Confirm fires `onConfirm`. A scrim click does nothing, so a stray tap cannot dismiss a decision, and there is no close button, so the only ways out are the two named ones. `open` is controlled only; there is no uncontrolled mode. The consumer closes by setting `open` false after handling the event — Enter on a button fires its event and nothing closes until then. The heading's id, ref and tabindex, the Buttons' labels and press handlers, the tone Icon's `name` and the aria wiring are wiring every platform passes, not composition props. Example stories start from blank args, never from Default's or the meta args: a prop absent from `given` takes its default, and every example here gives `open: true`, so it renders through a wrapper that owns `open` (starting true) and writes the events back, acting as the consumer. The Default story is open, with the delete-files example's args, so the DeleteFiles example story repeating it is expected. `confirmDisabled` keeps Confirm inert until a precondition is met, through the composed Button's own `disabled` — focusable-but-inert on every platform, so it stays in the Tab cycle. The dialog has exactly two focusable children, Cancel and Confirm, and no slot for more; its Keyboard story exercises Tab wrap across those two (the trigger behind is inert, and is labelled with the `heading` text, never `confirmLabel`, so no second button shares Confirm's name), and the three-focusable-children story rule does not apply.
+Opens like a Dialog: scrim, trapped focus, inert page, locked scroll. Focus lands on the Cancel button, placed by AlertDialog itself (FocusScope takes autoFocus `none` and keeps the trap and the restore). Escape and Cancel fire `onCancel`; Confirm fires `onConfirm`. A scrim click does nothing, so a stray tap cannot dismiss a decision, and there is no close button, so the only ways out are the two named ones. `open` is controlled only; there is no uncontrolled mode. The consumer closes by setting `open` false after handling the event — Enter on a button fires its event and nothing closes until then. When the browser closes the native `<dialog>` anyway (a close watcher firing a non-cancelable `cancel`, or a repeated Escape closing with no `cancel` at all), report `escape` once if nothing else did, then re-`showModal()` and put focus back on Cancel, as Dialog does: the re-open is a visible flash and is the accepted price of `open` staying the single source of truth. The trap releases when the exit starts (`active` follows `open`), so a scope mounted through the exit animation never pulls focus back. In development, an open alert dialog whose `heading`, `description` or `confirmLabel` is empty warns once, naming all three: they are required, and an empty heading silently removes the accessible name. The heading's id, ref and tabindex, the Buttons' labels and press handlers, the tone Icon's `name` and the aria wiring are wiring every platform passes, not composition props. Example stories read as if they started from blank args: Storybook merges `meta.args` into every story, so each example instead sets every prop its `given` names and every prop it relies on being at its default, which is the same rendered result. Every example here gives `open: true`, so it renders through a wrapper that owns `open` (starting true) and writes the events back, acting as the consumer. The stories are Default, one per tone, the four examples, `Closed` (`open: false`, for parity with Dialog) and Keyboard. The Default story is open, with the delete-files example's args, so the DeleteFiles example story repeating it is expected. `confirmDisabled` keeps Confirm inert until a precondition is met, through the composed Button's own `disabled` — focusable-but-inert on every platform, so it stays in the Tab cycle. The dialog has exactly two focusable children, Cancel and Confirm, and no slot for more; its Keyboard story exercises Tab wrap across those two (the trigger behind is inert, and is labelled with the `heading` text, never `confirmLabel`, so no second button shares Confirm's name), and the three-focusable-children story rule does not apply.
 
 ## Content guidelines
 
@@ -823,7 +854,7 @@ The title is the question, specific and countable ("Delete 3 files?", "Cancel yo
 
 ## Accessibility
 
-Role `alertdialog` tells assistive technology this is a decision, and the title and description are announced together on open (WCAG 4.1.2, APG alertdialog). Focus starts on the safe action so Enter pressed reflexively cancels rather than destroys (3.3.4 Error Prevention: reversible, checked or confirmed — this is the "confirmed" leg). Everything else is inherited from Dialog: focus trap with Escape as exit, focus restore, inert background, contrast on the overlay surface in both modes, reduced motion.
+Role `alertdialog` tells assistive technology this is a decision, and the title and description are announced together on open (WCAG 4.1.2, APG alertdialog). Focus starts on the safe action so Enter pressed reflexively cancels rather than destroys (3.3.4 Error Prevention: reversible, checked or confirmed — this is the "confirmed" leg). That is a web and Lit guarantee: React Native has no DOM focus order and no key events on a Modal, so there initial accessibility focus goes to the title instead, so the question is read first, and the protection against answering by momentum is that confirming needs a deliberate press on a button named after what it does. Everything else is inherited from Dialog: focus trap with Escape as exit, focus restore, inert background, contrast on the overlay surface in both modes, reduced motion.
 
 ## Platform notes
 

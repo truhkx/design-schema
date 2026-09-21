@@ -104,9 +104,13 @@ component:
       type: content
       description: 'The Button that shows and hides the panel (usually `iconOnly`
         with the `menu` Icon and a label like "Menu"). It is the APG disclosure button:
-        the panel sets aria-expanded and aria-controls on it, and it stays a toggle
-        — pressing it again closes. Omit to control `open` from elsewhere (a Toolbar).
-        On web it is exactly one element (it is cloned), wrapped in an overlay-owned
+        the panel sets aria-expanded on it, and aria-controls whenever the element
+        it names is in the DOM — a modal panel''s <dialog> unmounts when closed, so
+        the attribute is dropped then rather than pointing at nothing. It stays a
+        toggle — pressing it again closes. Omit to control `open` from elsewhere (a
+        Toolbar). On web and React Native it is exactly one element, because it is
+        cloned to carry that wiring; a fragment or a bare string silently never opens
+        the panel, so both warn in development. On web the clone sits in an overlay-owned
         `<span data-part="trigger">` with display: contents, and that wrapper — never
         the Button — is what persistent mode hides.'
     open:
@@ -130,10 +134,12 @@ component:
         rendered with the visually-hidden clip pattern so aria-labelledby still resolves;
         on native it is the surface''s accessibilityLabel. When the header would then
         be empty (no close button because `dismissible` is false or the panel is persistent),
-        the header part is not rendered: no padding, no gap, no height, and the hidden
-        title moves to the top of the surface. When the header keeps only the close
-        button (`dismissible` true, not persistent), the close button is end-aligned
-        in it on every platform.'
+        the header part is not rendered: no padding, no gap, no height, and on web
+        and Lit the hidden title moves to the top of the surface. On React Native
+        there is nothing to move: the name is the surface''s accessibilityLabel, which
+        has no position in the view tree, so nothing is rendered at all. When the
+        header keeps only the close button (`dismissible` true, not persistent), the
+        close button is end-aligned in it on every platform.'
       a11y: The accessible name is required regardless.
     children:
       type: content
@@ -180,13 +186,16 @@ component:
         `window width <= token` is the overlay — a width check, not an orientation
         check), and the breakpoint is read from the theme token, not per instance
         — on web and Lit from the token''s resolved custom property on <html> when
-        the component mounts (connects), converted to px; a theme change after that
-        takes effect on the next mount. Below it, the overlay behavior applies. The
-        sidebar renders where SidePanel sits in the tree (not through the portal),
-        inline-size from the width binding, natural height (the page scrolls, not
-        the body), with no close button; the page''s own layout places it beside the
-        content. This is how one component serves a phone''s hamburger menu and a
-        desktop''s sidebar.'
+        the component mounts (connects), measured once with an off-screen probe and
+        converted to px before being handed to matchMedia, because a rem breakpoint
+        inside a media query resolves against the initial font size rather than the
+        one on <html>; a theme change after that takes effect on the next mount, and
+        where matchMedia does not exist (jsdom) the overlay presentation renders.
+        Below it, the overlay behavior applies. The sidebar renders where SidePanel
+        sits in the tree (not through the portal), inline-size from the width binding,
+        natural height (the page scrolls, not the body), with no close button; the
+        page''s own layout places it beside the content. This is how one component
+        serves a phone''s hamburger menu and a desktop''s sidebar.'
     role:
       type: enum
       values:
@@ -194,7 +203,11 @@ component:
       - navigation
       default: complementary
       description: 'The landmark the panel exposes (in persistent mode and as the
-        region''s role when open): `navigation` for a menu of Links, `complementary`
+        region''s role when open), and the component''s rendered role: `a11y.roleFrom`
+        names this prop, so the panel is queried by `complementary` (the default)
+        or `navigation` on every platform, and a test roots there rather than at the
+        component''s own element — which on Lit holds the slotted trigger and would
+        make the trigger its first focusable. `navigation` for a menu of Links, `complementary`
         for filters, a cart, a detail. On web this is the composed Landmark''s own
         role, so `navigation` renders a real <nav>; a modal panel is a dialog, not
         a landmark, and takes none of this. The name `role` is the doc''s; on Lit
@@ -271,7 +284,9 @@ component:
         trigger: 'the trigger was activated. The scrim is not lifted above the trigger:
           while a scrim is shown it covers the trigger, so a pointer press at the
           trigger''s position is the scrim''s (`scrim`); `trigger` then comes from
-          the keyboard, or from a pointer when there is no scrim'
+          the keyboard, or from a pointer when there is no scrim. The outside-press
+          listener excludes the trigger wrapper, so a press that starts on the trigger
+          is the trigger''s however it ends'
         escape: Escape pressed while open
         close-button: the close button was activated
         scrim: the scrim was clicked — on web and Lit a `click` whose target is the
@@ -286,7 +301,9 @@ component:
           reusing this same handler, or on Lit a slotted form submitted with method="dialog"
           or by a submitter with formmethod="dialog", caught by a host `submit` listener
           that prevents default and fires `open-change` with `action` (ignored while
-          persistent). SidePanel never raises it on its own.
+          persistent). SidePanel never raises it on its own — on web and React Native
+          nothing raises it at all, and the reason exists there purely for a consumer's
+          footer action reusing this handler.
         navigation: 'a Link inside the panel was followed: on web and Lit a `click`
           inside the panel whose (composed) path holds an `<a href>` or a `ds-link`
           and that is not default-prevented; it does not move focus to the trigger
@@ -359,7 +376,10 @@ component:
       description: Default panel width on wide screens; narrow is space.20 × 3 (a
         link list), wide is layout.maxWidth.content. Below the prose breakpoint the
         panel is the viewport minus `edgeGutter`; on web and Lit that is `100%` of
-        the fixed containing block (which excludes a scrollbar gutter), not `100vw`.
+        the fixed containing block, written verbatim rather than as `100vw` — the
+        two differ by a classic scrollbar, and `100%` is the one that keeps the panel
+        inside the viewport. The cap applies to all three width values, so a `narrow`
+        panel on a very small screen still leaves the gutter.
       locked: false
     widthNarrow:
       token: space.20
@@ -398,9 +418,13 @@ component:
     headingGap:
       token: space.0
       part: heading
-      description: Forwarded to the Heading's marginBlockEnd, turning its own margin
+      description: 'Forwarded to the Heading''s marginBlockEnd, turning its own margin
         off (as Table and DataGrid do) so the title centers against the close button;
-        `headerGap` and `partGap` own the spacing.
+        `headerGap` and `partGap` own the spacing. It travels the way `inset` does:
+        on web and Lit the heading wrapper''s rule sets the Heading''s own `--ds-heading-margin-block-end`
+        from `--ds-side-panel-heading-gap`, so the default and any override arrive
+        by the same route and no conditional prop is needed; on rn the resolved value
+        is passed in `overrides`.'
       locked: false
     partGap:
       token: layout.gap.loose
@@ -410,11 +434,17 @@ component:
         web and Lit that column is the `focusScope` part — FocusScope writes its own
         `data-part="scope"`, so it is an overlay-owned element directly inside FocusScope
         (and inside the Landmark when non-modal) carrying `data-part="focusScope"`.
-        On React Native FocusScope''s wrapper View cannot be styled or height-constrained,
-        so FocusScope wraps the Animated surface from outside and the column is a
-        flex-filling View inside the surface holding header, body and footer (in overlay
-        mode inside a SafeAreaView, which ignores its own padding, so the column carries
-        the gap and padding-block); FocusScope takes no testID.'
+        In modal mode the surface sits between the <dialog> and FocusScope (it is
+        the edge-positioned, width-capped, sliding box), so both modes end surface
+        > FocusScope > column. On React Native FocusScope''s wrapper View cannot be
+        styled or height-constrained, so FocusScope wraps the Animated surface from
+        outside and the column is a flex-filling View inside the surface holding header,
+        body and footer (in overlay mode inside a SafeAreaView, which ignores its
+        own padding, so the column carries the gap and padding-block); FocusScope
+        itself takes no testID, and the column carries `testID="SidePanel.focusScope"`
+        — it is the View that carries this binding. Persistent mode renders no FocusScope
+        at all, and there the sidebar root View is that column and carries the same
+        testID, so the part is addressable in both modes.'
       locked: false
     footerGap:
       token: layout.gap.tight
@@ -440,11 +470,13 @@ component:
         from the token, not overridable). A swipe dismiss (React Native) has no momentum
         or decay physics: the surface holds the released offset until the consumer''s
         next render, and closing plays this same timing transition from that offset;
-        if `open` is still true on that render it springs back. A swipe released below
-        the dismiss threshold, or a dismiss the consumer did not honor, springs back
-        over this duration with motion.easing.standard (a timing animation, not a
-        spring), instant under reduced motion; an interrupted enter animation is finished
-        by the spring-back.'
+        if `open` is still true on that render it springs back. `open` is optional
+        here, and an uncontrolled panel flips its own state in the same batch as the
+        release, so the held offset is always followed by the exit and the spring-back
+        branch belongs to controlled panels alone. A swipe released below the dismiss
+        threshold, or a dismiss the consumer did not honor, springs back over this
+        duration with motion.easing.standard (a timing animation, not a spring), instant
+        under reduced motion; an interrupted enter animation is finished by the spring-back.'
       locked: false
     focusRing:
       token: color.border.focus
@@ -473,10 +505,13 @@ component:
       token: space.1
       unit: px
     edgeZone:
-      description: Width of the strip at the `side` edge of the screen root in which
+      description: 'Width of the strip at the `side` edge of the screen root in which
         `useSidePanelEdgeSwipe` starts an edge-swipe-to-open (React Native only).
         The open swipe uses the same dragSlop, dismissDistance and dismissVelocity
-        rules toward the content.
+        rules toward the content — but the hook is deliberately decoupled from the
+        panel (its options are side, enabled and onOpen), so the distance fraction
+        is of the window width, not of the panel width: exact within a gutter on a
+        phone, and wider than the panel on a tablet below the persistent breakpoint.'
       token: size.target.comfortable
       unit: px
   copy:
@@ -493,7 +528,7 @@ component:
     - swipe
     modal: false
   a11y:
-    role: none
+    roleFrom: role
     requires:
     - accessible-name
     - expanded-state
@@ -547,16 +582,17 @@ component:
         does NOT close it (unlike Popover — a navigation panel should survive a stray
         click) but a `click` on the scrim (reason `scrim`) or, with `scrim: false`,
         a pointerdown outside the panel and trigger (reason `outside`) does when dismissible.
-        Modal: the same content in the native <dialog> via showModal() as Dialog,
-        inert page and scroll lock through FocusScope''s modal contract; the <dialog>
-        fills the viewport with a transparent ::backdrop and holds a real scrim element
-        (`data-part="scrim"`, a `click` whose target it is → `scrim`) and, above it,
-        the edge-positioned surface element (`data-part="surface"`, the width `min()`
-        and the slide); where the browser closes the <dialog> through a non-cancelable
-        `cancel`, report `escape` and call showModal() again if `open` is still true,
-        as Dialog; FocusScope takes `autoFocus="none"` (its own autoFocus would run
-        before the dialog is shown) and SidePanel focuses, after showModal(), the
-        first focusable in the body, then the footer, then the close button, then
+        Modal: the same content in the native <dialog> via showModal() as Dialog —
+        showModal() inerts the page, and the scroll lock is SidePanel''s own, a reference-counted
+        class on <html> as Dialog uses, since FocusScope implements no scroll lock;
+        the <dialog> fills the viewport with a transparent ::backdrop and holds a
+        real scrim element (`data-part="scrim"`, a `click` whose target it is → `scrim`)
+        and, above it, the edge-positioned surface element (`data-part="surface"`,
+        the width `min()` and the slide); where the browser closes the <dialog> through
+        a non-cancelable `cancel`, report `escape` and call showModal() again if `open`
+        is still true, as Dialog; FocusScope takes `autoFocus="none"` (its own autoFocus
+        would run before the dialog is shown) and SidePanel focuses, after showModal(),
+        the first focusable in the body, then the footer, then the close button, then
         the heading (tabindex -1). A Link followed inside the panel closes it with
         reason navigation (a `click` whose path holds an `<a href>`, not default-prevented;
         focus is not moved to the trigger; a full navigation makes it moot). Persistent
@@ -572,13 +608,17 @@ component:
         plus the top and bottom insets added to the parts column''s padding-block;
         the persistent sidebar pads no safe area (the page layout owns it) and draws
         its `border` on the edge facing the content (border-inline-end for `side:
-        start`, border-inline-start for `side: end`). Landmark takes no className
-        or style, so `data-ds`, the classes, inline style, style hooks, `id` (the
-        aria-controls target) and ref go on SidePanel''s own root element — the fixed
-        panel element, the full-viewport <dialog> when modal, the in-page sidebar
-        element when persistent — which, unless modal, composes Landmark inside it
-        passing only `role`, `as` and `aria-labelledby`. The non-modal scrim is that
-        element''s sibling, so it cannot inherit the hooks: `.ds-side-panel__scrim`
+        start`, border-inline-start for `side: end`). Button writes its own `data-part`,
+        so the `closeButton` part is an overlay-owned <span data-part="closeButton">
+        wrapping the Button, and a click that lands on the wrapper rather than the
+        button is forwarded to it. Box never scrolls, so the `body` part is a Box
+        inside an overlay-owned scroll element; `partGap` measures to that wrapper.
+        Landmark takes no className or style, so `data-ds`, the classes, inline style,
+        style hooks, `id` (the aria-controls target) and ref go on SidePanel''s own
+        root element — the fixed panel element, the full-viewport <dialog> when modal,
+        the in-page sidebar element when persistent — which, unless modal, composes
+        Landmark inside it passing only `role`, `as` and `aria-labelledby`. The non-modal
+        scrim is that element''s sibling, so it cannot inherit the hooks: `.ds-side-panel__scrim`
         declares the same `--ds-side-panel-*` hook defaults and receives the same
         inline override style (in modal the scrim sits inside the <dialog> and inherits).
         The ref resolves to that root element and is null whenever the panel is closed
@@ -631,7 +671,14 @@ component:
       notes: 'Native Modal with an Animated.View surface translated from the start
         (or end) edge, scrim Pressable to close, PanResponder for the swipe (edge-swipe
         to open needs a gesture on the screen root; offer it via a `useSidePanelEdgeSwipe`
-        hook rather than assuming). onRequestClose → escape. Above the `persistent`
+        hook rather than assuming). onRequestClose (the Android back button) → escape,
+        and the surface also handles `onAccessibilityEscape` (the VoiceOver two-finger
+        scrub) as the same reason, as BottomSheet does — there is no Escape key here,
+        and focus returns to the trigger when the panel unmounts, at the end of the
+        exit rather than at the moment of the request. Core SafeAreaView is deprecated
+        since RN 0.81 but is still the only core per-edge source and the dependency
+        rule forbids react-native-safe-area-context, so the deprecation warning is
+        accepted until RN removes the component, as in BottomSheet. Above the `persistent`
         breakpoint (a tablet in landscape, typically): render as a sibling View beside
         the content (no Modal), matching the web sidebar. RTL flips `start`/`end`
         via I18nManager. Non-modal ''page stays live'' cannot be reproduced under
@@ -652,14 +699,16 @@ component:
         `copy.expanded` is not rendered: the trigger Button''s `expanded` sets accessibilityState.expanded,
         which the platform announces in its own words. The persistent sidebar View
         carries `role={role}` and `accessibilityLabel={heading}` (not accessibilityRole
-        none). SidePanel exposes no ref on React Native. Crossing the breakpoint while
-        open changes the root between Modal and View, so the children remount and
-        lose their state (a native limit; the web non-modal host-node move has no
-        RN equivalent). Safe area: core React Native has no per-edge inset API, so
-        in overlay mode the parts column sits inside a SafeAreaView (iOS pads the
-        top, bottom and the edge side; Android pads nothing), and the persistent sidebar
-        pads none (the screen owns it). The swipe follows `constants` (dismissDistance,
-        dismissVelocity, dragSlop, edgeZone).'
+        none). SidePanel exposes no ref on React Native, in persistent mode either,
+        so the prop does not appear and disappear with the breakpoint; callers ref
+        their trigger. Crossing the breakpoint while open changes the root between
+        Modal and View, so the children remount and lose their state (a native limit;
+        the web non-modal host-node move has no RN equivalent). Safe area: core React
+        Native has no per-edge inset API, so in overlay mode the parts column sits
+        inside a SafeAreaView (iOS pads the top, bottom and the edge side; Android
+        pads nothing), and the persistent sidebar pads none (the screen owns it).
+        The swipe follows `constants` (dismissDistance, dismissVelocity, dragSlop,
+        edgeZone).'
     swiftui:
       element: ZStack
       props:
@@ -738,8 +787,9 @@ component:
     given:
       trigger: An icon-only Button with the menu Icon, labelled Menu
       heading: Menu
-      children: A Stack of navigation Links with the current page marked (aria-current
-        on web and Lit; React Native Link has no current-page state)
+      children: A Stack of navigation Links with the current page marked where the
+        platform allows it (aria-current on web; unmarked on Lit and React Native,
+        whose Links cannot carry it yet)
       hideHeading: true
       role: navigation
       persistent: content
@@ -777,7 +827,7 @@ component:
 
 - `onOpenChange`: emit `onOpenChange`
   - payload, positional, in this order: `open: boolean`, `reason: 'trigger' | 'escape' | 'close-button' | 'scrim' | 'outside' | 'swipe' | 'action' | 'navigation'`
-  - reasons: `trigger` (the trigger was activated. The scrim is not lifted above the trigger: while a scrim is shown it covers the trigger, so a pointer press at the trigger's position is the scrim's (`scrim`); `trigger` then comes from the keyboard, or from a pointer when there is no scrim); `escape` (Escape pressed while open); `close-button` (the close button was activated); `scrim` (the scrim was clicked — on web and Lit a `click` whose target is the scrim element, modal and non-modal alike (not pointerdown)); `outside` (a pointer press landed outside a non-modal panel with no scrim to catch it (`scrim: false`), and not on the trigger (that is `trigger`); React Native never reports it, since an outside tap lands on its full-screen scrim Pressable (transparent when `scrim` is false) and is `scrim`); `swipe` (the panel was swiped away (React Native only; the value stays in the shared reason type on web and Lit, which never emit it)); `action` (something inside the panel asked to close — a consumer's footer action reusing this same handler, or on Lit a slotted form submitted with method="dialog" or by a submitter with formmethod="dialog", caught by a host `submit` listener that prevents default and fires `open-change` with `action` (ignored while persistent). SidePanel never raises it on its own.); `navigation` (a Link inside the panel was followed: on web and Lit a `click` inside the panel whose (composed) path holds an `<a href>` or a `ds-link` and that is not default-prevented; it does not move focus to the trigger (the navigation owns focus). Never emitted on React Native, which has no router hook)
+  - reasons: `trigger` (the trigger was activated. The scrim is not lifted above the trigger: while a scrim is shown it covers the trigger, so a pointer press at the trigger's position is the scrim's (`scrim`); `trigger` then comes from the keyboard, or from a pointer when there is no scrim. The outside-press listener excludes the trigger wrapper, so a press that starts on the trigger is the trigger's however it ends); `escape` (Escape pressed while open); `close-button` (the close button was activated); `scrim` (the scrim was clicked — on web and Lit a `click` whose target is the scrim element, modal and non-modal alike (not pointerdown)); `outside` (a pointer press landed outside a non-modal panel with no scrim to catch it (`scrim: false`), and not on the trigger (that is `trigger`); React Native never reports it, since an outside tap lands on its full-screen scrim Pressable (transparent when `scrim` is false) and is `scrim`); `swipe` (the panel was swiped away (React Native only; the value stays in the shared reason type on web and Lit, which never emit it)); `action` (something inside the panel asked to close — a consumer's footer action reusing this same handler, or on Lit a slotted form submitted with method="dialog" or by a submitter with formmethod="dialog", caught by a host `submit` listener that prevents default and fires `open-change` with `action` (ignored while persistent). SidePanel never raises it on its own — on web and React Native nothing raises it at all, and the reason exists there purely for a consumer's footer action reusing this handler.); `navigation` (a Link inside the panel was followed: on web and Lit a `click` inside the panel whose (composed) path holds an `<a href>` or a `ds-link` and that is not default-prevented; it does not move focus to the trigger (the navigation owns focus). Never emitted on React Native, which has no router hook)
   - fires on: user
   - timing: after-change
 
@@ -835,7 +885,7 @@ overlay:
 - constant `dismissVelocity`: 1.5 px/ms
 - constant `dragSlop`: `t.space1` (`space.1`) px
 - constant `edgeZone`: `t.sizeTargetComfortable` (`size.target.comfortable`) px
-- example `navigation-drawer`, story `NavigationDrawer`: given `trigger: "An icon-only Button with the menu Icon, labelled Menu"`, `heading: "Menu"`, `children: "A Stack of navigation Links with the current page marked (aria-current on web and Lit; React Native Link has no current-page state)"`, `hideHeading: true`, `role: "navigation"`, `persistent: "content"`; The phone hamburger menu that becomes the permanent sidebar on desktop, with a self-explanatory list.
+- example `navigation-drawer`, story `NavigationDrawer`: given `trigger: "An icon-only Button with the menu Icon, labelled Menu"`, `heading: "Menu"`, `children: "A Stack of navigation Links with the current page marked where the platform allows it (aria-current on web; unmarked on Lit and React Native, whose Links cannot carry it yet)"`, `hideHeading: true`, `role: "navigation"`, `persistent: "content"`; The phone hamburger menu that becomes the permanent sidebar on desktop, with a self-explanatory list.
 - example `filters`, story `Filters`: given `trigger: "A Filters Button"`, `heading: "Filters"`, `children: "A Stack of filter Checkboxes"`, `footer: "Clear and Apply Buttons"`, `width: "wide"`; A wide filter panel beside a results page, ending in an action row.
 - example `cart`, story `Cart`: given `open: true`, `heading: "Your cart"`, `children: "A Stack of line-item Cards"`, `footer: "A Checkout Button"`, `side: "end"`, `modal: true`; A checkout panel from the end edge that must be finished or dismissed, so it is modal.
 - example `detail-panel`, story `DetailPanel`: given `open: true`, `heading: "Order details"`, `children: "A Stack of labelled values for the selected order"`, `side: "end"`, `width: "narrow"`, `scrim: false`; A narrow detail panel that should feel like part of the page, so it has no scrim.
@@ -973,19 +1023,26 @@ props:
 notes: "Native Modal with an Animated.View surface translated from the start (or end)\
   \ edge, scrim Pressable to close, PanResponder for the swipe (edge-swipe to open\
   \ needs a gesture on the screen root; offer it via a `useSidePanelEdgeSwipe` hook\
-  \ rather than assuming). onRequestClose \u2192 escape. Above the `persistent` breakpoint\
-  \ (a tablet in landscape, typically): render as a sibling View beside the content\
-  \ (no Modal), matching the web sidebar. RTL flips `start`/`end` via I18nManager.\
-  \ Non-modal 'page stays live' cannot be reproduced under RN Modal (it intercepts\
-  \ all touches); only tap-outside-to-close is possible, and the doc accepts that.\
-  \ `role` maps to the RN >= 0.74 `role` prop on the persistent sidebar View. `navigation`\
-  \ as a close reason is never emitted natively (no router hook). `useSidePanelEdgeSwipe`\
-  \ requires the panel to be controlled (`open`). The persistent switch is `window\
-  \ width > token` (width <= token is the overlay), not an orientation check. Modal\
-  \ focus trap, inert background and scroll lock have no full native equivalent: the\
-  \ modal panel uses FocusScope `trapped={modal}` plus accessibilityViewIsModal, the\
-  \ Modal window itself stands in for the inert page, and scroll lock has no meaning\
-  \ (there is no page behind to scroll); screen-reader users are confined by accessibilityViewIsModal,\
+  \ rather than assuming). onRequestClose (the Android back button) \u2192 escape,\
+  \ and the surface also handles `onAccessibilityEscape` (the VoiceOver two-finger\
+  \ scrub) as the same reason, as BottomSheet does \u2014 there is no Escape key here,\
+  \ and focus returns to the trigger when the panel unmounts, at the end of the exit\
+  \ rather than at the moment of the request. Core SafeAreaView is deprecated since\
+  \ RN 0.81 but is still the only core per-edge source and the dependency rule forbids\
+  \ react-native-safe-area-context, so the deprecation warning is accepted until RN\
+  \ removes the component, as in BottomSheet. Above the `persistent` breakpoint (a\
+  \ tablet in landscape, typically): render as a sibling View beside the content (no\
+  \ Modal), matching the web sidebar. RTL flips `start`/`end` via I18nManager. Non-modal\
+  \ 'page stays live' cannot be reproduced under RN Modal (it intercepts all touches);\
+  \ only tap-outside-to-close is possible, and the doc accepts that. `role` maps to\
+  \ the RN >= 0.74 `role` prop on the persistent sidebar View. `navigation` as a close\
+  \ reason is never emitted natively (no router hook). `useSidePanelEdgeSwipe` requires\
+  \ the panel to be controlled (`open`). The persistent switch is `window width >\
+  \ token` (width <= token is the overlay), not an orientation check. Modal focus\
+  \ trap, inert background and scroll lock have no full native equivalent: the modal\
+  \ panel uses FocusScope `trapped={modal}` plus accessibilityViewIsModal, the Modal\
+  \ window itself stands in for the inert page, and scroll lock has no meaning (there\
+  \ is no page behind to scroll); screen-reader users are confined by accessibilityViewIsModal,\
   \ which is the accessible alternative. `action` is never raised by the component\
   \ (the footer is opaque content); it exists for a consumer's own footer handler.\
   \ `outside` is never reported: an outside tap always lands on the full-screen scrim\
@@ -993,13 +1050,15 @@ notes: "Native Modal with an Animated.View surface translated from the start (or
   \ is not rendered: the trigger Button's `expanded` sets accessibilityState.expanded,\
   \ which the platform announces in its own words. The persistent sidebar View carries\
   \ `role={role}` and `accessibilityLabel={heading}` (not accessibilityRole none).\
-  \ SidePanel exposes no ref on React Native. Crossing the breakpoint while open changes\
-  \ the root between Modal and View, so the children remount and lose their state\
-  \ (a native limit; the web non-modal host-node move has no RN equivalent). Safe\
-  \ area: core React Native has no per-edge inset API, so in overlay mode the parts\
-  \ column sits inside a SafeAreaView (iOS pads the top, bottom and the edge side;\
-  \ Android pads nothing), and the persistent sidebar pads none (the screen owns it).\
-  \ The swipe follows `constants` (dismissDistance, dismissVelocity, dragSlop, edgeZone)."
+  \ SidePanel exposes no ref on React Native, in persistent mode either, so the prop\
+  \ does not appear and disappear with the breakpoint; callers ref their trigger.\
+  \ Crossing the breakpoint while open changes the root between Modal and View, so\
+  \ the children remount and lose their state (a native limit; the web non-modal host-node\
+  \ move has no RN equivalent). Safe area: core React Native has no per-edge inset\
+  \ API, so in overlay mode the parts column sits inside a SafeAreaView (iOS pads\
+  \ the top, bottom and the edge side; Android pads nothing), and the persistent sidebar\
+  \ pads none (the screen owns it). The swipe follows `constants` (dismissDistance,\
+  \ dismissVelocity, dragSlop, edgeZone)."
 ```
 
 ## Guidance
@@ -1018,11 +1077,11 @@ Do not use a SidePanel for a short list of actions (Menu, ActionSheet), for a ta
 
 ## Behavior
 
-The trigger toggles the panel and reflects it with `aria-expanded`. Non-modal (default): opening slides the panel in from `side` and fades the scrim if shown; focus stays on the trigger, and the next Tab enters the panel as if it sat right after the trigger (on web the panel is portaled, so this is explicit focus handling; Tab from the panel's last control goes to the element after the trigger); Shift+Tab from the first control returns to the trigger with the panel still open; the page stays live. Modal: focus moves to the first focusable in the body, then the footer, then the close button, then the title (tabindex -1), the page is inert and scroll-locked, Tab is confined. In both, the body scrolls within the panel and the footer stays pinned; Escape (from inside the panel, not from the trigger), the close button, a scrim tap (`scrim`) or, with no scrim, an outside press (`outside`), and a swipe toward the edge request close; following a Link inside closes it with reason `navigation` (without moving focus); every other close returns focus to the trigger. Above the `persistent` breakpoint the panel is simply there: no scrim, no trap, the trigger hidden, the same content in the page's tab order as a `complementary` (or navigation) landmark; crossing the breakpoint while open keeps the content and drops the overlay chrome. `start` and `end` follow the writing direction. The swipe-to-dismiss gesture lives on the header (not the close button). When closed the panel is either unmounted or `hidden` — both remove it from the accessibility tree; the exit transition finishes first. The non-modal scrim fades with the panel's enter/exit durations and easing. The trigger is a single element; a `menu` Icon exists for the usual icon-only trigger. `copy.expanded` is used only on SwiftUI; the other platforms announce the trigger's expanded state natively. The parts get wiring every platform passes, not composition props: the Heading's id/ref/tabindex for naming and initial focus, the close Button's `label` from `copy.closeLabel`, its `close` Icon as `leadingIcon` and its press handler, and the trigger's aria-expanded/aria-controls and toggle. The close Button takes its default size; Button's own minimum target keeps it at 44px. Stories and examples that must start open (`open: true`) render through a wrapper that owns `open`, starting true, and writes `onOpenChange` back, acting as the consumer. Example stories start from blank args, never from Default's or the meta args: a prop absent from `given` takes its default, so an example with no `open` in its `given` (navigation-drawer, filters) renders uncontrolled and closed, opened by its trigger.
+The trigger toggles the panel and reflects it with `aria-expanded`. Non-modal (default): opening slides the panel in from `side` and fades the scrim if shown; focus stays on the trigger, and the next Tab enters the panel as if it sat right after the trigger (on web the panel is portaled, so this is explicit focus handling; Tab from the panel's last control goes to the element after the trigger); Shift+Tab from the first control returns to the trigger with the panel still open; the page stays live. Modal: focus moves to the first focusable in the body, then the footer, then the close button, then the title (tabindex -1), the page is inert and scroll-locked, Tab is confined. In both, the body scrolls within the panel and the footer stays pinned; Escape (from inside the panel, not from the trigger), the close button, a scrim tap (`scrim`) or, with no scrim, an outside press (`outside`), and a swipe toward the edge request close; following a Link inside closes it with reason `navigation` (without moving focus); every other close returns focus to the trigger. Above the `persistent` breakpoint the panel is simply there: no scrim, no trap, the trigger hidden, the same content in the page's tab order as a `complementary` (or navigation) landmark; crossing the breakpoint while open keeps the content and drops the overlay chrome. `start` and `end` follow the writing direction. The swipe-to-dismiss gesture lives on the header (not the close button). When closed the panel is either unmounted or `hidden` — both remove it from the accessibility tree; the exit transition finishes first. The non-modal scrim fades with the panel's enter/exit durations and easing. The trigger is a single element; a `menu` Icon exists for the usual icon-only trigger. `copy.expanded` is used only on SwiftUI; the other platforms announce the trigger's expanded state natively, and still carry the string in their COPY constant, unused, so the copy stays verbatim with the doc on every platform. The parts get wiring every platform passes, not composition props: the Heading's id/ref/tabindex for naming and initial focus, the close Button's `label` from `copy.closeLabel`, its `close` Icon as `leadingIcon` and its press handler, and the trigger's aria-expanded/aria-controls and toggle. The close Button takes its default size; Button's own minimum target keeps it at 44px. Stories and examples that must start open (`open: true`) render through a wrapper that owns `open`, starting true, and writes `onOpenChange` back, acting as the consumer. The Default story is the exception among the overlays and renders **closed**, behind its trigger, because that is this component's resting state — every enum-value story shows the same, and both platforms follow it. Example stories read as if they started from blank args: Storybook merges `meta.args` into every story, so each example restates the props its `given` names and the ones it relies on being at their default, so an example with no `open` in its `given` (navigation-drawer, filters) renders uncontrolled and closed, opened by its trigger. The `accessible-name` requirement is about the shown panel: a closed panel carries `hidden` on the region (Lit) or its wrapper (web) and is out of the accessibility tree, where it has no name to compute.
 
 ## Content guidelines
 
-Titles name what the panel holds ("Menu", "Filters", "Your cart"), not "Side panel". A navigation panel is a Stack (or Tree) of Links with the current page marked (`aria-current="page"` on web and Lit; React Native's Link has no current-page state to set), grouped with Dividers if long; keep it to what fits without scrolling on a typical phone. Filter panels end with an action row in the footer ("Apply", "Clear"). The trigger's label says what opens ("Menu", "Filters"), and the `menu` Icon alone is only acceptable with that label for assistive technology.
+Titles name what the panel holds ("Menu", "Filters", "Your cart"), not "Side panel". A navigation panel is a Stack (or Tree) of Links with the current page marked where the platform's Link allows it — `aria-current="page"` through Link's rest props on web; not yet on Lit, where `ds-link` has neither a `current` property nor a forward of `aria-current` to its inner `<a>`, so the Lit story leaves it unmarked until Link's own schema grows the prop; and never on React Native, whose Link has no current-page state — grouped with Dividers if long; keep it to what fits without scrolling on a typical phone. Filter panels end with an action row in the footer ("Apply", "Clear"). The trigger's label says what opens ("Menu", "Filters"), and the `menu` Icon alone is only acceptable with that label for assistive technology.
 
 ## Accessibility
 

@@ -72,7 +72,10 @@ component:
   - closeButton
   composition:
     focusScope: FocusScope
-    heading: Heading
+    heading:
+      component: Heading
+      props:
+        level: '2'
     closeButton:
       component: Button
       props:
@@ -88,6 +91,7 @@ component:
       props:
         direction: horizontal
         justify: end
+        wrap: true
       forwards:
         footerGap: gap
   props:
@@ -127,9 +131,12 @@ component:
       - half
       - full
       default: content
-      description: '`content` sizes to the body up to 90% of the viewport; `half`
-        is a fixed half-height; `full` is a near-full-screen sheet with the top gutter
-        visible so the scrim still shows.'
+      description: '`content` sizes to the body up to `contentCap` of the viewport;
+        `half` is a fixed half-height; `full` is a near-full-screen sheet with the
+        top gutter visible so the scrim still shows. A fixed height (`half`, `full`)
+        leaves slack in the column, which is what lets the footer pin to the bottom;
+        at `content` the column is intrinsic, so "pinned" means only that the footer
+        is last.'
     dismissible:
       type: boolean
       default: true
@@ -282,8 +289,10 @@ component:
         button, as Dialog's headerGap. The heading row is a sheet-owned element inside
         the header, not an anatomy part, with no data-part or testID. With the heading
         hidden (`hideHeading`) the close button is end-aligned in the row; a header
-        with no visible heading, no handle and no close button is not rendered (the
-        visually hidden heading on web then sits at the start of the column).
+        with no visible heading, no handle and no close button is not rendered, on
+        every platform — on web and Lit the visually hidden heading then sits at the
+        start of the column, and on rn nothing is rendered because the name is the
+        surface's accessibilityLabel.
       locked: false
     inset:
       token: layout.inset.lg
@@ -298,7 +307,11 @@ component:
     partGap:
       token: layout.gap.loose
       description: 'The only space between header, body and footer: the flex gap of
-        the column.'
+        the column. Box never scrolls, so the body part is a Box inside a sheet-owned
+        scroll element (unnamed, no part hook of its own); it is that wrapper the
+        gap measures to. On rn the empty SafeAreaView that adds the bottom inset is
+        not a part either and takes no gap: cancel the column gap above it, so the
+        bottom clearance is exactly `inset` plus the safe-area inset.'
       locked: false
     footerGap:
       token: layout.gap.tight
@@ -356,8 +369,10 @@ component:
         (web/Lit: a click on the wrapper outside the Button focuses the Button and
         requests close with reason `close-button` from the wrapper''s own click handler,
         never reaching into the Button''s internals or shadow root; rn: the wrapper
-        View takes the min size and the Button''s hitSlop covers it). The Button keeps
-        its own size variant (ghost, sm, icon-only, as in Dialog) and colors.'
+        View takes the min size and the Button''s own internally computed hitSlop
+        — rn Button accepts no `hitSlop` prop, it derives one from size.target.comfortable
+        — covers the extra area). The Button keeps its own size variant (ghost, sm,
+        icon-only, as in Dialog) and colors.'
       locked: true
     focusRing:
       token: color.border.focus
@@ -366,16 +381,29 @@ component:
       token: border.width.focus
       locked: true
   constants:
+    contentCap:
+      description: 'Fraction of the viewport a `height: content` sheet may grow to
+        before its body scrolls. It applies to that value alone — `half` and `full`
+        set their block size outright and are never clamped by it. No token expresses
+        a ratio, so it stays a documented module constant marked `literal-ok`.'
+      value: 0.9
+      unit: ratio
     dismissDistance:
-      description: Fraction of the sheet height a downward drag must pass for release
-        to dismiss it rather than spring back.
+      description: 'Fraction of the sheet height a downward drag must pass for release
+        to dismiss it rather than spring back. The height it is a fraction of is the
+        surface''s measured height at release (web and Lit: getBoundingClientRect),
+        not the configured `height` value — for `full` the two differ by the gutter.'
       value: 0.25
       unit: ratio
     dismissVelocity:
       description: Drag speed at release that dismisses the sheet whatever the distance
         travelled. Measured between the last two move samples before release using
-        the event timestamps (web/Lit `event.timeStamp`, rn `nativeEvent.timestamp`);
-        only downward speed counts. A documented constant with no token (`literal-ok`).
+        the event timestamps (web/Lit `event.timeStamp`, rn `nativeEvent.timestamp`,
+        never PanResponder's averaged `gestureState.vy`, which smooths differently
+        and would disagree with the other platforms on a flick ending in one slow
+        sample); only downward speed counts. A release with fewer than two samples,
+        or two samples sharing a timestamp, has velocity 0, so distance alone decides.
+        A documented constant with no token (`literal-ok`).
       value: 1.5
       unit: px/ms
     dragSlop:
@@ -385,8 +413,13 @@ component:
         heading or the close button): web/Lit setPointerCapture on the header, rn
         onMoveShouldSetPanResponderCapture; the drag offset counts from where the
         slop was crossed. The length is read at gesture start from the resolved `--space-1`
-        custom property and converted to px (rem × root font size); rn uses the resolved
-        token number. On web and Lit an unresolvable value counts as 0.'
+        custom property — the token, not the `handleHeight` hook, so overriding the
+        handle height does not move the slop — and converted to px: rem and em multiply
+        by the root font size, px and unitless values are taken verbatim; rn uses
+        the resolved token number. On web and Lit an unresolvable value counts as
+        0. A pointer with no finite `clientY` (jsdom has no PointerEvent), a non-primary
+        pointer and a secondary mouse button never claim the gesture, so the drag
+        is provable only in a browser, not in the unit gate.'
       token: space.1
       unit: px
   copy:
@@ -442,12 +475,15 @@ component:
         is a real `data-part="scrim"` element inside it, as in Dialog; a scrim dismiss
         is a `click` whose target is that element. Button, Heading and Stack write
         their own data-part, so the heading, closeButton and footer parts are sheet-owned
-        wrappers around them; the body Box takes its data-part directly. `container`
-        (the portal target every portaled overlay accepts, not a schema prop) is passed
-        through to Dialog in the wide presentation. In the wide presentation the root
-        is Dialog''s own <dialog> (its hooks, not a BottomSheet wrapper), and `ref`
-        resolves to that <dialog>; below the breakpoint `ref` resolves to the sheet''s
-        <dialog>, null while closed.'
+        wrappers around them; the body Box takes its data-part directly, inside the
+        sheet-owned scroll element that `partGap` describes. FocusScope writes its
+        own `data-part="scope"`, so the `focusScope` part is a sheet-owned element
+        directly inside FocusScope, as in Dialog. `container` (the portal target every
+        portaled overlay accepts, not a schema prop) is passed through to Dialog in
+        the wide presentation. In the wide presentation the root is Dialog''s own
+        <dialog> (its hooks, not a BottomSheet wrapper), and `ref` resolves to that
+        <dialog>; below the breakpoint `ref` resolves to the sheet''s <dialog>, null
+        while closed.'
     lit:
       tag: ds-bottom-sheet
       reflect:
@@ -501,15 +537,22 @@ component:
         system navigation bar and the footer stays reachable. The closeButton part
         is a wrapping View with `testID="BottomSheet.closeButton"` sized to minTarget,
         the Button''s hitSlop covering the extra area. The Modal is its own window,
-        so no ref is exposed; callers ref their trigger. This is the mobile-first
-        overlay: on phones prefer it to Dialog for anything the thumb should reach.
-        The surface carries the RN >= 0.74 `role="dialog"` prop alongside accessibilityViewIsModal,
-        as Dialog does; the legacy accessibilityRole union has no dialog value. Scroll
-        lock has no native meaning — a Modal has no page behind it to scroll — and
-        is not implemented. With no `initialFocus` prop, focus on open is FocusScope''s
-        `autoFocus="first"`, which on native lands on the scope wrapper rather than
-        a real first control; that is FocusScope''s own documented limit and the screen
-        reader reads the sheet from the top, which is the intended result anyway.'
+        so no ref is exposed; callers ref their trigger. The surface carries the root
+        `testID="BottomSheet"` and there is no `BottomSheet.surface`, as in Dialog;
+        `focusScope` gets no testID either, since FocusScope owns that wrapper. Of
+        the keyboard block only the Escape rule has a native path (onRequestClose,
+        onAccessibilityEscape): native has no Tab order, so the wrap rules are delegated
+        to FocusScope and are exercised on react-native-web alone; the accessible
+        way through the sheet on native is the swipe order, which follows the parts.
+        This is the mobile-first overlay: on phones prefer it to Dialog for anything
+        the thumb should reach. The surface carries the RN >= 0.74 `role="dialog"`
+        prop alongside accessibilityViewIsModal, as Dialog does; the legacy accessibilityRole
+        union has no dialog value. Scroll lock has no native meaning — a Modal has
+        no page behind it to scroll — and is not implemented. With no `initialFocus`
+        prop, focus on open is FocusScope''s `autoFocus="first"`, which on native
+        lands on the scope wrapper rather than a real first control; that is FocusScope''s
+        own documented limit and the screen reader reads the sheet from the top, which
+        is the intended result anyway.'
     swiftui:
       element: sheet
       props:
@@ -642,9 +685,9 @@ component:
 - `focusScope`: component `FocusScope`
 - `handle`: element
 - `header`: element
-- `heading`: component `Heading`
+- `heading`: component `Heading`; props `level` = "2"
 - `body`: component `Box`; forwards `inset` → `overrides.paddingInline`
-- `footer`: component `Stack`; props `direction` = "horizontal", `justify` = "end"; forwards `footerGap` → `overrides.gap`
+- `footer`: component `Stack`; props `direction` = "horizontal", `justify` = "end", `wrap` = true; forwards `footerGap` → `overrides.gap`
 - `closeButton`: component `Button`; props `variant` = "ghost", `size` = "sm", `iconOnly` = true
 
 ## Style bindings
@@ -681,6 +724,7 @@ overlay:
 
 ## Constants and examples
 
+- constant `contentCap`: 0.9 ratio
 - constant `dismissDistance`: 0.25 ratio
 - constant `dismissVelocity`: 1.5 px/ms
 - constant `dragSlop`: `var(--space-1)` (`space.1`) px
@@ -813,12 +857,14 @@ notes: 'The same native <dialog> as Dialog, positioned at the bottom edge with i
   ::backdrop and the scrim is a real `data-part="scrim"` element inside it, as in
   Dialog; a scrim dismiss is a `click` whose target is that element. Button, Heading
   and Stack write their own data-part, so the heading, closeButton and footer parts
-  are sheet-owned wrappers around them; the body Box takes its data-part directly.
-  `container` (the portal target every portaled overlay accepts, not a schema prop)
-  is passed through to Dialog in the wide presentation. In the wide presentation the
-  root is Dialog''s own <dialog> (its hooks, not a BottomSheet wrapper), and `ref`
-  resolves to that <dialog>; below the breakpoint `ref` resolves to the sheet''s <dialog>,
-  null while closed.'
+  are sheet-owned wrappers around them; the body Box takes its data-part directly,
+  inside the sheet-owned scroll element that `partGap` describes. FocusScope writes
+  its own `data-part="scope"`, so the `focusScope` part is a sheet-owned element directly
+  inside FocusScope, as in Dialog. `container` (the portal target every portaled overlay
+  accepts, not a schema prop) is passed through to Dialog in the wide presentation.
+  In the wide presentation the root is Dialog''s own <dialog> (its hooks, not a BottomSheet
+  wrapper), and `ref` resolves to that <dialog>; below the breakpoint `ref` resolves
+  to the sheet''s <dialog>, null while closed.'
 ```
 
 ## Guidance
@@ -837,7 +883,7 @@ Do not use a BottomSheet as a menu (ActionSheet or Menu), as a persistent panel 
 
 ## Behavior
 
-Opening slides the sheet up and fades the scrim; focus moves to the first control or the title; the page behind is inert and its scroll locked. The body scrolls within the sheet; a downward drag on the handle or header (never the body, whatever its scroll position) begins the dismiss gesture, and releasing past the threshold or with enough velocity fires `onDragDismiss` then `onClose('drag')` — otherwise the sheet springs back. After a drag dismiss the sheet holds the release position until the consumer's update renders: `open` false plays the exit from there; `open` still true springs the sheet back to rest. Escape, the close button and a scrim tap request close as in Dialog. The sheet never raises `action` itself; a consumer's footer action may call the same `onClose` handler with it. The `overlay.dismiss` values are the shared category vocabulary; the event's reasons are what fires: `escape`, `scrim` and `close-button` are reported as themselves, and `swipe` is reported as `drag`. `open` is controlled only; there is no uncontrolled mode. The heading's id/ref/tabindex, the close Button's `label` from `copy.closeLabel`, its `close` Icon glyph, press handlers and aria wiring are wiring every platform passes, not composition props. Gate and Keyboard stories that need it open render through a wrapper that owns `open` (starting true) and writes `onClose` back, acting as the consumer. Above the `maxWidth` breakpoint the sheet presents as a centered Dialog of size md with the same props and events, so code does not branch on device. In the wide presentation the same props are forwarded to Dialog — `heading`, `hideHeading` (Dialog has it for this reason), `dismissible`, `footer` — and every override whose binding shares a name with a Dialog binding (`scrim`, `surface`, `shadow`, `radius`, `inset`, `partGap`, `headerGap`, `footerGap`, `layer`, `enter`, `exit`, `focusRing`, `focusRingWidth`) is forwarded to Dialog's `overrides`; the rest (the handle bindings, `headerPaddingTop`, `handleGap`, `maxWidth`, `minTarget`) have no effect there. Only overrides the caller set are forwarded, so Dialog keeps its own tokens otherwise — its `layer.dialog` included — and a locked binding is never forwarded. Close reasons map one to one: Dialog's `escape`, `close-button`, `scrim` and `action` are re-emitted as the same reasons, and `drag` has no Dialog source, so it never fires in the wide presentation. Dialog's `onOpened` is not re-emitted, since BottomSheet has no such event. In the wide presentation BottomSheet renders Dialog directly, so the root carries Dialog's own hooks and a closed sheet renders nothing in both presentations; the sheet's part hooks and authored scenarios apply below the breakpoint. Crossing the breakpoint while open swaps presentation on the next render without an animated hand-off; focus and scroll lock are re-established by the new surface. Initial focus is the first focusable in the body, then in the footer, then the close button, then the heading, which takes `tabindex="-1"` for the purpose; there is no `initialFocus` prop.
+Opening slides the sheet up and fades the scrim; focus moves to the first control or the title; the page behind is inert and its scroll locked. The body scrolls within the sheet; a downward drag on the handle or header (never the body, whatever its scroll position) begins the dismiss gesture, and releasing past the threshold or with enough velocity fires `onDragDismiss` then `onClose('drag')` — otherwise the sheet springs back. After a drag dismiss the sheet holds the release position until the consumer's update renders: `open` false plays the exit from there; `open` still true springs the sheet back to rest. A release past the threshold when `open` has already gone false — a close that raced the gesture — is a spring-back that fires neither `onDragDismiss` nor `onClose`, so the sheet never reports a dismissal it did not cause. Escape, the close button and a scrim tap request close as in Dialog. When the browser closes the native `<dialog>` on its own (a repeated Escape reaching the close watcher closes it with no `cancel` event at all), report `escape` once and re-`showModal()` unless the consumer set `open` false, as Dialog does — `open` is controlled only, and a silently closed sheet would desync. With `dismissible` false, Escape reports on every press: nothing throttles or announces the repeats. The sheet never raises `action` itself; a consumer's footer action may call the same `onClose` handler with it. The `overlay.dismiss` values are the shared category vocabulary; the event's reasons are what fires: `escape`, `scrim` and `close-button` are reported as themselves, and `swipe` is reported as `drag`. `open` is controlled only; there is no uncontrolled mode. The heading's id/ref/tabindex, the close Button's `label` from `copy.closeLabel`, its `close` Icon glyph, press handlers and aria wiring are wiring every platform passes, not composition props. Gate and Keyboard stories that need it open render through a wrapper that owns `open` (starting true) and writes `onClose` back, acting as the consumer. Above the `maxWidth` breakpoint the sheet presents as a centered Dialog of size md with the same props and events, so code does not branch on device. In the wide presentation the same props are forwarded to Dialog — `heading`, `hideHeading` (Dialog has it for this reason), `dismissible`, `footer` — and every override whose binding shares a name with a Dialog binding (`scrim`, `surface`, `shadow`, `radius`, `inset`, `partGap`, `headerGap`, `footerGap`, `layer`, `enter`, `exit`, `focusRing`, `focusRingWidth`) is forwarded to Dialog's `overrides`; the rest (the handle bindings, `headerPaddingTop`, `handleGap`, `maxWidth`, `minTarget`) have no effect there. Only overrides the caller set are forwarded, so Dialog keeps its own tokens otherwise — its `layer.dialog` included — and a locked binding is never forwarded. Close reasons map one to one: Dialog's `escape`, `close-button`, `scrim` and `action` are re-emitted as the same reasons, and `drag` has no Dialog source, so it never fires in the wide presentation. Dialog's `onOpened` is not re-emitted, since BottomSheet has no such event. In the wide presentation BottomSheet renders Dialog directly, so the root carries Dialog's own hooks and a closed sheet renders nothing in both presentations; the sheet's part hooks and authored scenarios apply below the breakpoint. Crossing the breakpoint while open swaps presentation on the next render without an animated hand-off; focus and scroll lock are re-established by the new surface. Consumer CSS on the sheet's own `--ds-bottom-sheet-*` hooks stops applying in the wide presentation for the same reason — the root is Dialog's `<dialog>` with Dialog's hooks, and only the forwarded bindings reach it. Initial focus is the first focusable in the body, then in the footer, then the close button, then the heading, which takes `tabindex="-1"` only when it is the target itself, so it is not a spurious Tab stop in the common case; there is no `initialFocus` prop.
 
 ## Content guidelines
 
@@ -845,12 +891,12 @@ Titles name the task or the thing ("Filters", "Share to"). Footer actions follow
 
 ## Accessibility
 
-Role `dialog`, `aria-modal`, named by the title even when visually hidden (WCAG 4.1.2). Focus trap, restore, Escape and inert background as in Dialog. The drag gesture is an addition: every sheet the gesture can dismiss can also be closed with a single pointer activation on the close button, and every sheet with Escape (2.5.1 Pointer Gestures; gesture-alternative). The handle is decorative and skipped by keyboard and assistive technology. Touch targets in the sheet reach 44px (target-44px) because sheets are used one-handed. Motion respects reduced-motion; the drag-follow still tracks the finger, since it is user-driven, but the release animation is instant.
+Role `dialog`, `aria-modal`, named by the title even when visually hidden (WCAG 4.1.2). The name is delivered per platform and the platforms are allowed to differ: web points `aria-labelledby` at the heading element, Lit sets `aria-label` to the heading text (the package's convention for every Lit overlay, so the name does not depend on where the heading is rendered, at the cost of announcing markup in a heading as its text), rn sets the surface's accessibilityLabel. Focus trap, restore, Escape and inert background as in Dialog. The drag gesture is an addition: every sheet the gesture can dismiss can also be closed with a single pointer activation on the close button, and every sheet with Escape (2.5.1 Pointer Gestures; gesture-alternative). The handle is decorative and skipped by keyboard and assistive technology. Touch targets in the sheet reach 44px (target-44px) because sheets are used one-handed. Motion respects reduced-motion; the drag-follow still tracks the finger, since it is user-driven, but the release animation is instant.
 
 ## Platform notes
 
 ### Web
-Below the `maxWidth` breakpoint (a media query `(width > <resolved token>)` for the wide presentation, `literal-ok`), render the native `<dialog>` with `position: fixed; inset-block-end: 0; inline-size: 100%` and top-only radius; `height: content` adds `max-block-size: 90dvh`, and the cap belongs to that value alone — `half` (50dvh) and `full` (calc(100dvh - var(--layout-gutter))) set `block-size` outright and must not be clamped by it, or `full` would stop short of near-full-screen. Above it, render `<Dialog size="md">` with the same children. Pointer Events on the header: track `pointermove` deltaY once past `dragSlop`, translate the surface, and on `pointerup` decide by distance (> 25% of sheet height) or velocity; the body's scroll position is not checked. Padding-bottom adds `env(safe-area-inset-bottom)`.
+Below the `maxWidth` breakpoint (a media query `(width > <resolved token>)` for the wide presentation, `literal-ok`), render the native `<dialog>` with `position: fixed; inset-block-end: 0; inline-size: 100%` and top-only radius; `height: content` adds `max-block-size: 90dvh` (the `contentCap` constant, `literal-ok` on every platform), and the cap belongs to that value alone — `half` (50dvh) and `full` (calc(100dvh - var(--layout-gutter))) set `block-size` outright and must not be clamped by it, or `full` would stop short of near-full-screen. Above it, render `<Dialog size="md">` with the same children. Pointer Events on the header: track `pointermove` deltaY once past `dragSlop`, translate the surface, and on `pointerup` decide by distance (> 25% of sheet height) or velocity; the body's scroll position is not checked. Padding-bottom adds `env(safe-area-inset-bottom)`.
 
 ### Lit
 `<ds-bottom-sheet open heading="Filters" height="half">`; shadow `<dialog>`; `matchMedia` decides presentation and re-renders on change; drag handling as web. Composes `<ds-heading>`, `<ds-button>`, `<ds-icon>`, `<ds-box>`, `<ds-stack>`, and `<ds-dialog>` for the wide presentation.

@@ -200,7 +200,8 @@ component:
         there is no transition to wait for (reduced motion, or a zero computed duration),
         it fires on the next frame (requestAnimationFrame on every platform) after
         focus moves in. It does not fire when `open` becomes false before the enter
-        transition finishes. Use to start work that needs the dialog visible.
+        transition finishes — including on that reduced-motion path, where the pending
+        frame is cancelled. Use to start work that needs the dialog visible.
       platforms:
         web: onOpened
         lit: opened
@@ -257,10 +258,13 @@ component:
         of the surface column that holds them (once at the top, once at the bottom),
         so nothing doubles between parts. The header and the footer wrapper apply
         the inline padding themselves; the body Box receives it as `overrides.paddingInline`
-        and keeps zero block padding. The forward always reaches the Box with the
-        resolved value: on web and Lit through the stylesheet setting the Box''s `--ds-box-padding-inline`
-        to `--ds-dialog-inset`, with `overrides.paddingInline` passed only when the
-        caller overrides `inset`; on rn the resolved value is always passed.'
+        and keeps zero block padding. The forward always reaches the Box: on web and
+        Lit through the stylesheet setting the Box''s `--ds-box-padding-inline` to
+        `--ds-dialog-inset` — that hook is the whole delivery, since an element-level
+        `overrides.paddingInline` would only set the same custom property again; on
+        rn the Box takes `inset="none"` and the token path (the override, else `layout.inset.lg`)
+        in `overrides.paddingInline`, a path and never a resolved value, since a parent
+        does not resolve a token for its child.'
       locked: false
     partGap:
       token: layout.gap.loose
@@ -270,9 +274,11 @@ component:
     gutter:
       token: layout.gutter
       description: 'Minimum space between the surface and the viewport edge: web and
-        Lit cap the <dialog> at `100vw - 2 × gutter` wide and `100dvh - 2 × gutter`
-        tall; rn pads the centring container horizontally with it (never a margin)
-        and caps the surface at the window height − 2 × gutter.'
+        Lit cap the surface at `100vw - 2 × gutter` wide and `100dvh - 2 × gutter`
+        tall — never the <dialog>, which fills the viewport and holds the scrim, so
+        capping it would pull the scrim off the edges; rn pads the centring container
+        horizontally with it (never a margin) and caps the surface at the window height
+        − 2 × gutter.'
       locked: false
     headerGap:
       token: layout.gap.normal
@@ -304,7 +310,10 @@ component:
       computed:
         times: 0.75
       description: 'Surface width for size md: layout.maxWidth.content × 0.75, not
-        a new token. An override replaces the base; the × 0.75 stays in the rule.'
+        a new token. An override replaces the base; the × 0.75 stays in the rule,
+        and the rule multiplies the hook (`--ds-dialog-width-md`, itself defaulting
+        to the token) rather than the raw token, or an override would never reach
+        it.'
       locked: false
     widthLg:
       token: layout.maxWidth.content
@@ -314,7 +323,9 @@ component:
       token: layer.dialog
       description: 'Kept as the hook, but it has no effect inside the browser top
         layer or a native Modal window; it applies to a non-top-layer fallback (position:
-        fixed) only. rn ignores it.'
+        fixed) only. On rn it is still written as zIndex on the centring container,
+        as AlertDialog, BottomSheet and SidePanel do, so the override is not dead
+        code on that platform — a Modal window simply ignores it.'
       locked: false
     enter:
       token: motion.duration.base
@@ -333,8 +344,11 @@ component:
       part: heading
       description: 'The ring on the heading when it holds focus (tabindex -1), drawn
         by the Dialog-owned heading wrapper with `:has(:focus-visible)` — Heading
-        has no focus style of its own. Web and Lit only: rn draws no ring, the platform''s
-        screen-reader focus indicator stands in.'
+        has no focus style of its own. `:focus-visible` is the intent, not an accident
+        of the programmatic focus: a dialog opened from the keyboard shows the ring,
+        one opened by mouse does not, which is the same rule every other control follows.
+        Web and Lit only: rn draws no ring, the platform''s screen-reader focus indicator
+        stands in.'
       locked: true
     focusRingWidth:
       token: border.width.focus
@@ -433,7 +447,8 @@ component:
       - size
       - prop: dismissible
         attribute: no-dismiss
-      - initial-focus
+      - prop: initialFocus
+        attribute: initial-focus
       notes: 'Wraps a native <dialog> in the shadow root; the top layer works from
         inside shadow DOM. `open` is a reflected property the consumer sets; the element
         calls showModal()/close() in updated(). `close` is a composed CustomEvent
@@ -449,9 +464,14 @@ component:
         handling, initial focus and the Tab wrap are as on web: a real scrim element
         in a full-viewport <dialog> with a transparent ::backdrop, and wrapper elements
         carrying the heading, closeButton and footer parts. On Lit the description
-        and body parts are Dialog-owned wrappers too (ds-box overwrites its own data-part
-        with `surface`, ds-text carries none): `data-part="body"` is the scroll container
-        around the <ds-box>. Lit exposes no ref-like property. For `initialFocus:
+        and body parts are Dialog-owned wrappers too: `data-part="body"` is the scroll
+        container around the <ds-box>, which overwrites its own data-part with `surface`,
+        and the description wrapper holds <ds-text> for symmetry with AlertDialog''s
+        Lit shape — <ds-text> would keep a passed data-part, so this is a choice,
+        not a workaround. Lit exposes no ref-like property. A Lit property cannot
+        be required: `open` defaults to false and `heading` to the empty string, with
+        a dev-only warning when an open dialog has no heading. `opened` carries no
+        detail at all (its payload is `void`), not an empty object. For `initialFocus:
         title` and the heading fallback, `tabindex="-1"` goes on the <ds-heading>
         itself, so the heading wrapper''s `:has(:focus-visible)` ring matches. The
         footer is present when a light-DOM element child has `slot="footer"` (watched
@@ -468,10 +488,23 @@ component:
       - onRequestClose
       - statusBarTranslucent
       - accessibilityViewIsModal
-      notes: 'Native Modal with transparent background; the scrim is a full-screen
-        Pressable (accessible={false}) in color.overlay.scrim; the surface is a View
-        with accessibilityViewIsModal so VoiceOver/TalkBack ignore the page behind.
-        onRequestClose (Android back) → onClose reason escape. Focus: AccessibilityInfo.setAccessibilityFocus
+      notes: 'Native Modal with transparent background; the scrim is an Animated.View
+        carrying color.overlay.scrim and the fading opacity, with a full-bleed Pressable
+        (accessible={false}) inside it carrying `testID="Dialog.scrim"` — RN has no
+        animated Pressable without wrapping one, and the scrim element must exist
+        even when `dismissible` is false (the press handler is then inert, since the
+        non-dismissible-scrim-click-does-nothing scenario presses it). The shadow
+        and the matching radius sit on that animated wrapper around the surface, because
+        the surface needs `overflow: hidden` to clip the scrolling body and would
+        clip its own shadow. With no footer, the body''s bottom spacing is the surface
+        column''s own block padding and no part sits below it. `description` has no
+        native aria-describedby: it is the surface''s accessibilityHint, which screen
+        readers announce after a pause. Of the keyboard block only rule 1 (Escape,
+        via Android back and onAccessibilityEscape) has a native expression — there
+        is no Tab order to confine, and `trapped` maps only to accessibilityViewIsModal,
+        so the wrap rules are exercised on react-native-web alone. The surface is
+        a View with accessibilityViewIsModal so VoiceOver/TalkBack ignore the page
+        behind. onRequestClose (Android back) → onClose reason escape. Focus: AccessibilityInfo.setAccessibilityFocus
         on the title or first control after the enter animation. Keyboard avoidance
         with a KeyboardAvoidingView wrapping the whole centring container, so the
         footer as well as a Form in the body stays above the keyboard. Enter/exit
@@ -512,14 +545,15 @@ component:
       - FocusScope
       - .onExitCommand
       notes: 'Presented with `.sheet` on compact width and `.popover` (regular width,
-        iPad) when `size` is not `full`; `size: full` is `.fullScreenCover`. The dialog
-        surface, heading (`Heading`, the `.accessibilityLabel` of the container),
-        body and actions are the package''s own views inside the presentation with
-        `.presentationBackground(color.overlay.surface)` and `.presentationDragIndicator(.hidden)`.
-        `dismissOnScrim: false` → `.interactiveDismissDisabled()`. FocusScope handles
-        initial and return focus; Escape via `.onExitCommand`; VoiceOver''s two-finger
-        scrub triggers the same close through `.accessibilityAction(.escape)`. `onOpened`
-        fires from `.onAppear` of the content.'
+        iPad); the `size` enum is sm, md and lg only — there is no `full` value —
+        and `.fullScreenCover` is used for `lg` on compact width, where a sheet would
+        otherwise leave a sliver of the page. The dialog surface, heading (`Heading`,
+        the `.accessibilityLabel` of the container), body and actions are the package''s
+        own views inside the presentation with `.presentationBackground(color.overlay.surface)`
+        and `.presentationDragIndicator(.hidden)`. `dismissOnScrim: false` → `.interactiveDismissDisabled()`.
+        FocusScope handles initial and return focus; Escape via `.onExitCommand`;
+        VoiceOver''s two-finger scrub triggers the same close through `.accessibilityAction(.escape)`.
+        `onOpened` fires from `.onAppear` of the content.'
   behavior:
   - name: close-button-fires-on-close
     description: The close button requests close; the dialog never closes itself,
@@ -786,34 +820,46 @@ props:
 - onRequestClose
 - statusBarTranslucent
 - accessibilityViewIsModal
-notes: "Native Modal with transparent background; the scrim is a full-screen Pressable\
-  \ (accessible={false}) in color.overlay.scrim; the surface is a View with accessibilityViewIsModal\
-  \ so VoiceOver/TalkBack ignore the page behind. onRequestClose (Android back) \u2192\
-  \ onClose reason escape. Focus: AccessibilityInfo.setAccessibilityFocus on the title\
-  \ or first control after the enter animation. Keyboard avoidance with a KeyboardAvoidingView\
-  \ wrapping the whole centring container, so the footer as well as a Form in the\
-  \ body stays above the keyboard. Enter/exit animated with Animated (opacity + translateY;\
-  \ the scrim is an Animated.View whose opacity follows the same value), skipped under\
-  \ reduce motion. Size maps to maxWidth from the same tokens; on phones the surface\
-  \ is full-width inside the centring container's `gutter` padding. The surface carries\
-  \ the RN >= 0.74 `role=\"dialog\"` prop (as Landmark and Fieldset use `role`), alongside\
-  \ accessibilityViewIsModal; the legacy accessibilityRole union has no dialog value.\
-  \ Scroll lock has no native meaning and is not implemented. `accessibilityViewIsModal`\
-  \ goes on the surface View, not on Modal, which does not accept it. testIDs are\
-  \ the root plus scrim, header, body and footer; heading, description, closeButton\
-  \ and focusScope are reached through their own roles and names and take none, as\
-  \ in AlertDialog. The root testID `Dialog` sits on the surface View (with the role\
-  \ and name), since a closed Modal renders no content. Stack and Box write their\
-  \ own testIDs, so the footer and body testIDs sit on wrapping Views; the body wrapper\
-  \ holds the ScrollView and is also the setAccessibilityFocus target for the body.\
-  \ On rn `initialFocus: first` therefore always lands on the body wrapper (children\
-  \ is required, so a body is always present). iOS has no hardware-Escape hook, so\
-  \ the surface View also handles `onAccessibilityEscape` (the VoiceOver two-finger\
-  \ scrub) as onClose reason escape, even when not dismissible. RN has no visually\
-  \ hidden primitive: with `hideHeading` the Heading is not rendered, the surface's\
-  \ accessibilityLabel stays the name, and `initialFocus: title` focuses the surface\
-  \ View. The Dialog is rooted in a native Modal and exposes no ref; callers ref their\
-  \ trigger. Native has no descendant walker, so `initialFocus` calls setAccessibilityFocus\
+notes: "Native Modal with transparent background; the scrim is an Animated.View carrying\
+  \ color.overlay.scrim and the fading opacity, with a full-bleed Pressable (accessible={false})\
+  \ inside it carrying `testID=\"Dialog.scrim\"` \u2014 RN has no animated Pressable\
+  \ without wrapping one, and the scrim element must exist even when `dismissible`\
+  \ is false (the press handler is then inert, since the non-dismissible-scrim-click-does-nothing\
+  \ scenario presses it). The shadow and the matching radius sit on that animated\
+  \ wrapper around the surface, because the surface needs `overflow: hidden` to clip\
+  \ the scrolling body and would clip its own shadow. With no footer, the body's bottom\
+  \ spacing is the surface column's own block padding and no part sits below it. `description`\
+  \ has no native aria-describedby: it is the surface's accessibilityHint, which screen\
+  \ readers announce after a pause. Of the keyboard block only rule 1 (Escape, via\
+  \ Android back and onAccessibilityEscape) has a native expression \u2014 there is\
+  \ no Tab order to confine, and `trapped` maps only to accessibilityViewIsModal,\
+  \ so the wrap rules are exercised on react-native-web alone. The surface is a View\
+  \ with accessibilityViewIsModal so VoiceOver/TalkBack ignore the page behind. onRequestClose\
+  \ (Android back) \u2192 onClose reason escape. Focus: AccessibilityInfo.setAccessibilityFocus\
+  \ on the title or first control after the enter animation. Keyboard avoidance with\
+  \ a KeyboardAvoidingView wrapping the whole centring container, so the footer as\
+  \ well as a Form in the body stays above the keyboard. Enter/exit animated with\
+  \ Animated (opacity + translateY; the scrim is an Animated.View whose opacity follows\
+  \ the same value), skipped under reduce motion. Size maps to maxWidth from the same\
+  \ tokens; on phones the surface is full-width inside the centring container's `gutter`\
+  \ padding. The surface carries the RN >= 0.74 `role=\"dialog\"` prop (as Landmark\
+  \ and Fieldset use `role`), alongside accessibilityViewIsModal; the legacy accessibilityRole\
+  \ union has no dialog value. Scroll lock has no native meaning and is not implemented.\
+  \ `accessibilityViewIsModal` goes on the surface View, not on Modal, which does\
+  \ not accept it. testIDs are the root plus scrim, header, body and footer; heading,\
+  \ description, closeButton and focusScope are reached through their own roles and\
+  \ names and take none, as in AlertDialog. The root testID `Dialog` sits on the surface\
+  \ View (with the role and name), since a closed Modal renders no content. Stack\
+  \ and Box write their own testIDs, so the footer and body testIDs sit on wrapping\
+  \ Views; the body wrapper holds the ScrollView and is also the setAccessibilityFocus\
+  \ target for the body. On rn `initialFocus: first` therefore always lands on the\
+  \ body wrapper (children is required, so a body is always present). iOS has no hardware-Escape\
+  \ hook, so the surface View also handles `onAccessibilityEscape` (the VoiceOver\
+  \ two-finger scrub) as onClose reason escape, even when not dismissible. RN has\
+  \ no visually hidden primitive: with `hideHeading` the Heading is not rendered,\
+  \ the surface's accessibilityLabel stays the name, and `initialFocus: title` focuses\
+  \ the surface View. The Dialog is rooted in a native Modal and exposes no ref; callers\
+  \ ref their trigger. Native has no descendant walker, so `initialFocus` calls setAccessibilityFocus\
   \ on the View wrapping the title, the close button or the body, not on a literal\
   \ first focusable descendant, and there is no visible focus ring on those targets."
 ```
@@ -836,7 +882,7 @@ Do not use a Dialog for a message that needs no decision (Alert or Toast), for a
 
 Setting `open` true renders the dialog in the top layer with the scrim, moves focus in per `initialFocus`, locks page scroll and makes the page behind inert. Tab and Shift+Tab cycle within the dialog. Escape, the close button and a scrim click each call `onClose` with a reason; the dialog does not close itself — the consumer flips `open`, so an unsaved form can ask first. When `dismissible` is false, the close button is not rendered, the scrim does nothing and Escape still reports (the consumer decides), because trapping a keyboard user with no way out is never acceptable. On close, the exit animation runs, scroll and inertness are restored, and focus returns to the element that opened the dialog (or the next focusable element if it is gone). The body scrolls independently when content exceeds the viewport; header and footer are always visible.
 
-The parts nest as: the scrim and a FocusScope side by side, the FocusScope wrapping the surface, and the surface holding the header (the titles group of heading and description, then the close button), the body and the footer. The Default story is open, with the rename-project example's args; stories that need to start open render through a wrapper that owns `open` (starting true) and writes `onClose` back, acting as the consumer. Example stories start from blank args, not Default's: a prop absent from an example's `given` (reading-dialog's `footer`) takes its default, so that dialog has no footer.
+The parts nest as: the scrim and a FocusScope side by side, the FocusScope wrapping the surface, and the surface holding the header (the titles group of heading and description, then the close button), the body and the footer. The Default story is open, with the rename-project example's args; stories that need to start open render through a wrapper that owns `open` (starting true) and writes `onClose` back, acting as the consumer. Example stories read as if they started from blank args: Storybook merges `meta.args` into every story, so each example sets every prop its `given` names and restates the ones it relies on being at their default (reading-dialog's `footer`, which is absent, so that dialog has no footer). The field values inside an example's body are initial values, not controlled bindings — the uncontrolled route on every platform (`defaultValue`, not `value`), or the field could not be typed in. The stories are Default, one per `size` and `initialFocus` value, the examples, `Closed` (`open: false`) and Keyboard on every platform; a platform adds none of its own.
 
 `open` is controlled only; there is no uncontrolled mode. Focus restore runs when `open` becomes false, at the start of the exit transition. Beyond the listed composition props, the Heading's id, ref and tabindex, the close Button's label (`copy.closeLabel`), its `close` Icon as `leadingIcon` and its press handler are wiring every platform passes, not composition props.
 
@@ -846,7 +892,7 @@ Titles are short verb phrases naming the task ("Rename project", "Invite people"
 
 ## Accessibility
 
-The dialog has role `dialog`, `aria-modal`, an accessible name from the title and a description from `description` (WCAG 4.1.2, APG modal dialog). Focus moves into it on open and is trapped until close (2.4.3, 2.1.2: no keyboard trap *without an exit* — Escape is the exit), then returns to the opener (focus-restore). The page behind is inert to assistive technology and pointer (inert-background). Escape always reports, even for non-dismissible dialogs. Text on the overlay surface meets 4.5:1 in both modes; the build checks body, muted, link and ghost-button text. Motion respects reduced-motion (2.3.3). The close button is at least 24px (2.5.8). Nothing inside relies on hover.
+The dialog has role `dialog`, `aria-modal`, an accessible name from the title and a description from `description` (WCAG 4.1.2, APG modal dialog). Focus moves into it on open and is trapped until close (2.4.3, 2.1.2: no keyboard trap *without an exit* — Escape is the exit), then returns to the opener (focus-restore). The page behind is inert to assistive technology and pointer (inert-background). Escape always reports, even for non-dismissible dialogs. Text on the overlay surface meets 4.5:1 in both modes; the build checks body, muted, link and ghost-button text. Motion respects reduced-motion (2.3.3). The close button is at least 24px (2.5.8) — it is Dialog's only control, and the floor is the composed Button's own `size: sm` target, so Dialog sets no minimum of its own. Nothing inside relies on hover.
 
 ## Platform notes
 

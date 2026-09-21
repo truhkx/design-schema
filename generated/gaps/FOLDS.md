@@ -3261,3 +3261,61 @@ One line per decision: `<date> <Component> <platform>: <gap> → <what the doc n
 2026-09-21 DatePicker rn: the footer's alignment → the inline end, an action row
 2026-09-21 DatePicker rn: whether the calendar sheet is dismissible → BottomSheet's defaults, dragToDismiss off
 2026-09-21 DatePicker rn: lenient parsing left undefined → one or two digits with separators, exact widths without
+2026-09-21 Carousel web: is the interval warning once per bad value → once ever per instance, a later bad value is silent
+2026-09-21 Carousel web,lit: is the scroll viewport a tab stop → yes, tabindex 0 with a ring, no role, no name, after the picker
+2026-09-21 Carousel web: no aria-controls target for the arrows → both point at the track's id, per the APG pattern
+2026-09-21 Carousel web,lit: dotRadius's part is the item, not the dot → it reaches the dot and the item's ring; tabs ignore it
+2026-09-21 Carousel rn: tabLineHeight is a multiplier, native needs a number → resolved against the effective tabFontSize
+2026-09-21 Carousel web,lit,rn: does the Button stretch to minTarget → no, centred; the wrapper is inert on native
+2026-09-21 Carousel web,lit: which perView implementation is authoritative → the measured token pages, the CSS literal only draws
+2026-09-21 Carousel web: announcing the same slide twice → no nonce; an identical string announces once
+2026-09-21 Carousel web: which pickerItem the scenario presses → the first, index 0, while activeIndex is 1
+2026-09-21 Carousel web: stale claim that the icon set lacks play/pause → corrected; the text label is the deliberate choice
+2026-09-21 Carousel rn: adjustable becomes role=slider on react-native-web → the web semantics win there, the slide is a group
+2026-09-21 Carousel rn: react-native-web drops accessibilityElementsHidden → hidden slides take inert there as well
+2026-09-21 Carousel rn: an adjustable slide announces no value → accessibilityValue min 1, max total, now index + 1
+2026-09-21 Carousel rn: onScrollEndDrag cannot know if momentum follows → settle at drag end, reopen at momentum begin
+2026-09-21 Carousel rn: arrow-navigation on a platform with no key events → stated as a web and Lit requirement only
+2026-09-21 Carousel lit: locked bindings as hooks or direct token reads → every binding is a hook, locked ones escape-hatch only
+2026-09-21 Carousel web: picker arrows past the cap firing again → no event when the index would not change
+2026-09-21 Table web,rn: where the sortButton and select cell hooks live → wrappers that pass activation to the control
+2026-09-21 Table web,lit: the fade mask clips the region's focus ring → an unnamed wrapper draws the ring, region outline none
+2026-09-21 Table web: how far header cell styling goes when stacked wraps → cells keep the text, border and shadow move to the row
+2026-09-21 Table web: the stacked sticky header stops mid-table → the stacked thead is display block, only the row is flex
+2026-09-21 Table web,lit: hideCaption against a captionGap override → the hidden caption wins; the clip is what takes effect
+2026-09-21 Table rn: the caption part has no native spelling → a wrapper View carries the testID and the clipping
+2026-09-21 Table lit: which rows striped tints → the even ones; stacked blocks alternate the same way
+2026-09-21 Table web: what aria-rowcount and aria-colcount count → data rows plus the header, selection and actions columns in
+2026-09-21 Table lit: the arrow step in a unit that is not px or rem → the arrows stay inert rather than guess
+2026-09-21 Table lit: are the empty row and cell parts → neither, so the row part always counts data rows
+2026-09-21 Table lit: the footer slot must stay in the shadow tree → the wrapper always renders, takes the part once assigned
+2026-09-21 Table lit: container widths compile into the element once → baked in; another theme rebuilds the Lit package
+2026-09-21 Table web,lit: what a11y.requires arrow-navigation means here → the scroll region's horizontal scrolling alone
+2026-09-21 Table rn: the native list owns headings, buttons and checkboxes → header row, rows and empty state are listitems
+2026-09-21 Table rn: react-native-web drops accessibilityState.selected → the checkbox and start-edge bar carry it there
+2026-09-21 Table rn: the stickyHeader default is inert under a page scroll → silent, since the default is not the caller's doing
+2026-09-21 Table rn: single-select's empty header cell on native → an unlabelled spacer at the select-cell width
+2026-09-21 Table rn: the layout exactly at prose, and hideBelow's base → strictly below, both against the table's own width
+2026-09-21 Table rn: whether iOS announces loading with rows → no; the Android live region and the visible text stand
+2026-09-21 Table rn: rowActions in the stacked row's summary → left out, its Buttons stay separate stops
+2026-09-21 Toolbar web,lit: which sizes each control accepts → a fixed table, Search md only, the rest sm and md
+2026-09-21 Toolbar web,lit,rn: how deep size reaches → exactly one level, never a wrapper or a nested group
+2026-09-21 Toolbar lit: every sized control reflects a default size → data-ds-toolbar-size marks what the toolbar sized
+2026-09-21 Toolbar web,lit: a non-Button blocks the collapse walk → collapsing stops and the row clips, never scroll
+2026-09-21 Toolbar web,lit: the overflow Menu items need ids → entry-<i> and entry-<i>-<j>, the warning's key too
+2026-09-21 Toolbar rn: what wrap means on a vertical toolbar → onto more columns, and needs a bounded height
+2026-09-21 Toolbar web,lit: the groupGap clamp needs a zero length → max(0px, calc(…)), a blessed literal
+2026-09-21 Toolbar rn: how a short separator aligns across the axis → centred on the cross axis
+2026-09-21 Toolbar rn: does the fade apply to menu-as-scroll → yes, any scrolling row, inside the padding; wrap never fades
+2026-09-21 Toolbar web: the last-focused control is gone → focus enters on the first control that is not disabled
+2026-09-21 Toolbar lit: how children reach the per-entry slots → a slot attribute per child, not manual assignment
+2026-09-21 Toolbar lit: host or inner row is the container part → the inner scrolling row; the host paints the chrome
+2026-09-21 Toolbar lit: only ds-button forwards the host tabindex → stated as a limit, arrows alone for the others
+2026-09-21 Toolbar web,lit: focus and collapse for a wrapper entry → its first focusable descendant roves, it never collapses
+2026-09-21 Toolbar web,lit: measurement wrapper and reserve probe outside the anatomy → allowed, unnamed, in menu mode only
+2026-09-21 Toolbar rn: accessibilityRole or role for the group → role="group", matching Fieldset and Menu
+2026-09-21 Toolbar rn: copy.more has no consumer on native → stated as unused, since the overflow Menu does not exist
+2026-09-21 Toolbar rn: orientation is unobservable on native → stated as layout only, the label carries the purpose
+2026-09-21 Toolbar web,lit: the Keyboard story's overflow and children → the Default two groups with overflow wrap pinned
+2026-09-21 Toolbar rn: a separator between nested groups → top-level adjacency only, no separator and no size pass
+2026-09-21 Toolbar lit: no scenarios for separator, collapse or fades → stated as deliberate, platform tests cover them

@@ -92,11 +92,12 @@ export const NotClearable: Story = { args: { clearable: false, defaultValue: 'ap
 
 /**
  * Open with its input, for the keyboard gate: the options are the focusable children, reached
- * through aria-activedescendant while DOM focus stays in the input. Args come from the story URL;
+ * through aria-activedescendant while DOM focus stays in the input. `defaultValue` is set so the
+ * clear button renders and the story has enough focusable children. Args come from the story URL;
  * the story owns `open` so Escape and Tab really close it.
  */
 export const Keyboard: Story = {
-  args: { open: true },
+  args: { open: true, defaultValue: 'apple' },
   render: function KeyboardStory(args) {
     const [open, setOpen] = useState(args.open ?? true);
     return (

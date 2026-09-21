@@ -20,13 +20,6 @@ const OPTIONS: SegmentedControlOption[] = [
   { value: 'month', label: 'Month' },
 ];
 
-const KEYBOARD_OPTIONS: SegmentedControlOption[] = [
-  { value: 'day', label: 'Day' },
-  { value: 'week', label: 'Week' },
-  { value: 'month', label: 'Month' },
-  { value: 'year', label: 'Year', disabled: true },
-];
-
 const meta: Meta<SegmentedControlArgs> = {
   title: 'SegmentedControl/Lit',
   tags: ['autodocs'],
@@ -69,12 +62,18 @@ export const Default: Story = {};
 export const SizeSm: Story = { args: { size: 'sm' } };
 export const SizeMd: Story = { args: { size: 'md' } };
 
+/* notable states */
+export const Fill: Story = { args: { fill: true } };
 export const Controlled: Story = { args: { value: 'week' } };
-
-export const DisabledOption: Story = { args: { options: KEYBOARD_OPTIONS, defaultValue: 'week' } };
-
-/** Three enabled segments and a disabled one, for arrow wrapping, skipping and Home/End. */
-export const Keyboard: Story = { args: { options: KEYBOARD_OPTIONS } };
+export const DisabledSegment: Story = {
+  args: {
+    options: [
+      { value: 'day', label: 'Day' },
+      { value: 'week', label: 'Week', disabled: true },
+      { value: 'month', label: 'Month' },
+    ],
+  },
+};
 
 /* examples */
 export const ViewMode: Story = {
@@ -112,3 +111,6 @@ export const FilledRangeSwitch: Story = {
     fill: true,
   },
 };
+
+/** Present with three enabled segments and no decorators, for the keyboard gate. */
+export const Keyboard: Story = {};

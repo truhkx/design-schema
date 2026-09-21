@@ -59,6 +59,14 @@ const HOOKS: Record<SegmentedControlOverridableBinding, string> = {
   disabledOpacity: '--ds-segmented-control-disabled-opacity',
 };
 
+/** The selected segment's box inside the group, in physical pixels, as the pill is drawn. */
+interface IndicatorRect {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+
 /**
  * `<ds-segmented-control>` — SegmentedControl (category: input, APG pattern: radio).
  *
@@ -75,8 +83,10 @@ const HOOKS: Record<SegmentedControlOverridableBinding, string> = {
  *
  * Selecting a segment fires a composed `change` CustomEvent with `{ value }`.
  * With `value` set the element is controlled: it reports the choice and shows
- * it only once `value` changes. Not form-associated: a segmented control has
- * nothing to submit, it only switches a mode.
+ * it only once `value` changes — an arrow still moves focus and fires
+ * `change`, while the checked state, the pill and the tab stop stay where
+ * `value` says. Not form-associated: a segmented control has nothing to
+ * submit, it only switches a mode.
  *
  * ## When to use
  *
@@ -140,7 +150,7 @@ export class DsSegmentedControl extends LitElement {
       --ds-segmented-control-font-size: var(--font-size-md);
     }
 
-    /* groupBackground: color.background.strong, locked */
+    /* groupBackground: color.background.strong, locked. segmentSpacing is the group's gap, never a segment margin. */
     [data-part='group'] {
       position: relative;
       box-sizing: border-box;
@@ -152,41 +162,11 @@ export class DsSegmentedControl extends LitElement {
       background: var(--color-background-strong);
     }
 
-    /* segmentSelectedBackground: color.background, locked; segmentShadow — the raised pill under the selected segment */
-    [data-part='indicator'] {
-      position: absolute;
-      left: 0;
-      top: 0;
-      z-index: 0;
-      box-sizing: border-box;
-      background: var(--color-background);
-      border-radius: var(--ds-segmented-control-segment-radius);
-      box-shadow: var(--ds-segmented-control-segment-shadow);
-      opacity: 0;
-      pointer-events: none;
-      transition:
-        transform var(--ds-segmented-control-transition) var(--motion-easing-standard),
-        inline-size var(--ds-segmented-control-transition) var(--motion-easing-standard),
-        block-size var(--ds-segmented-control-transition) var(--motion-easing-standard);
-    }
-
-    /* The first placement jumps; only later selections slide. */
-    [data-part='indicator']:not([data-placed]) {
-      transition: none;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      [data-part='indicator'] {
-        transition: none;
-      }
-    }
-
     [data-part='segment'] {
       position: relative;
       z-index: 1;
       box-sizing: border-box;
       display: inline-flex;
-      flex: none;
       align-items: center;
       justify-content: center;
       gap: var(--ds-segmented-control-segment-gap);
@@ -205,59 +185,99 @@ export class DsSegmentedControl extends LitElement {
       line-height: var(--ds-segmented-control-line-height);
       /* segmentColor: color.foreground.muted, locked */
       color: var(--color-foreground-muted);
+      white-space: nowrap;
       cursor: pointer;
       appearance: none;
       -webkit-appearance: none;
     }
 
-    /* ds-tooltip is display: contents, so the button stays the flex item */
+    /* ds-tooltip is display: contents, so the button stays the group's flex item */
     :host([fill]) [data-part='segment'] {
-      flex: 1 1 0%;
+      flex: 1 1 0;
     }
 
+    /* paddingBlockSm: vertical padding at size sm; md keeps segmentPaddingBlock. */
     :host([size='sm']) [data-part='segment'] {
       padding-block: var(--ds-segmented-control-padding-block-sm);
     }
 
-    /* segmentSelectedColor: color.foreground.strong, locked; selectedWeight marks the selection alongside the pill and checked state, not color alone */
+    /* segmentSelectedColor: color.foreground.strong, locked. Selection is the text pair plus the
+       checked state plus the pill — never color alone (1.4.1). */
     [data-part='segment'][aria-checked='true'] {
       color: var(--color-foreground-strong);
       font-weight: var(--ds-segmented-control-selected-weight);
     }
 
-    /* focusRing / focusRingWidth: color.border.focus / border.width.focus, locked */
+    /* focusRing / focusRingWidth: color.border.focus / border.width.focus, locked. Never removed. */
     [data-part='segment']:focus-visible {
       outline: var(--border-width-focus) solid var(--color-border-focus);
       outline-offset: calc(-1 * var(--border-width-focus));
     }
 
-    [data-part='segment']:disabled {
+    [data-part='segment'][aria-disabled='true'] {
       opacity: var(--ds-segmented-control-disabled-opacity);
-      cursor: not-allowed;
+      cursor: default;
     }
 
     [data-part='segmentIcon'] {
       flex: none;
+      line-height: 0;
     }
 
     [data-part='segmentLabel'] {
       min-inline-size: 0;
     }
+
+    /* The raised pill under the selected segment: segmentSelectedBackground (color.background,
+       locked) plus segmentShadow. Placed in JS from the selected segment's measured offset, and
+       unmounted entirely when nothing is selected — see updateIndicator(). */
+    [data-part='indicator'] {
+      position: absolute;
+      z-index: 0;
+      box-sizing: border-box;
+      background: var(--color-background);
+      border-radius: var(--ds-segmented-control-segment-radius);
+      box-shadow: var(--ds-segmented-control-segment-shadow);
+      pointer-events: none;
+      transition-property: left, top, width, height;
+      transition-duration: var(--ds-segmented-control-transition);
+      transition-timing-function: var(--motion-easing-standard);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      [data-part='indicator'] {
+        transition: none;
+      }
+    }
   `;
 
-  /** Accessible name of the control ("View mode"). Not shown. */
+  /** Accessible name of the control ("View mode"). Not shown; put a visible Text label beside it when the meaning is not obvious from context. */
   @property() accessor label: string = '';
 
-  /** Two to five options in display order. A property, not an attribute. */
+  /**
+   * Two to five options (guidance, not enforced: any count renders, with no warning) in display
+   * order. Labels are one word; with `iconOnly` the label becomes the accessible name. The icon is
+   * an Icon whose `size` is the control's `size`. A property, not an attribute.
+   */
   @property({ attribute: false }) accessor options: SegmentedControlOption[] = [];
 
   /** Controlled selected value. Omit for uncontrolled. */
   @property({ type: String, reflect: true }) accessor value: string | undefined;
 
-  /** Initially selected value. Defaults to the first enabled option. */
+  /**
+   * Initially selected value. Defaults to the first enabled option — a segmented control always has
+   * a selection. A `value` or `defaultValue` is taken as given, never corrected: one naming a
+   * disabled option keeps that segment checked with the pill under it (arrows still skip it); one
+   * matching no option checks nothing and draws no pill. In both cases the tab stop is the first
+   * enabled segment. Reads the `default-value` attribute; not reflected.
+   */
   @property({ attribute: 'default-value' }) accessor defaultValue: string | undefined;
 
-  /** Show icons only; every option must have one. Labels become accessible names and Tooltips. */
+  /**
+   * Show icons only (every option must have one); labels become accessible names and Tooltips. An
+   * option without `icon` warns in development once per instance and shows its label as text
+   * instead, so it never renders empty; that segment gets no Tooltip and no `aria-label`.
+   */
   @property({ type: Boolean, reflect: true, attribute: 'icon-only' }) accessor iconOnly = false;
 
   /** Toolbar (`sm`) or standard (`md`) height. */
@@ -267,18 +287,18 @@ export class DsSegmentedControl extends LitElement {
   @property({ type: Boolean, reflect: true }) accessor fill = false;
 
   /** Per-instance style overrides: `{ segmentRadius: 'radius.md' }`. Locked bindings are not in the type. */
-  @property({ attribute: false }) accessor overrides: Partial<Record<SegmentedControlOverridableBinding, TokenRef | undefined>> | undefined;
+  @property({ attribute: false }) accessor overrides:
+    | Partial<Record<SegmentedControlOverridableBinding, TokenRef | undefined>>
+    | undefined;
 
   /** Uncontrolled selection, seeded from `defaultValue` (or the first enabled option). */
   @state() private accessor internalValue: string | undefined;
-
-  /** The segment carrying the roving tabindex. */
-  @state() private accessor focusedValue: string | undefined;
 
   @query('[data-part="group"]') private accessor groupEl!: HTMLElement | null;
   @query('[data-part="indicator"]') private accessor indicatorEl!: HTMLElement | null;
 
   private resizeObserver: ResizeObserver | undefined;
+  private placedRect: IndicatorRect | undefined;
   private warnedLabel = false;
   private warnedIcon = false;
 
@@ -324,16 +344,22 @@ export class DsSegmentedControl extends LitElement {
   protected override render(): TemplateResult {
     const selected = this.currentValue;
     const tabStop = this.tabStopValue();
+    // A selection matching no option draws no pill: the element is unmounted rather than hidden,
+    // so the next selection mounts it in place instead of sliding it in from nowhere.
+    const hasPill = selected !== null && this.options.some((option) => option.value === selected);
     return html`
       <div data-part="group" part="group" role="radiogroup" aria-label=${this.label} @keydown=${this.handleKeydown}>
-        <span data-part="indicator" part="indicator" aria-hidden="true"></span>
-        ${this.options.map((option) => this.renderSegment(option, option.value === selected, option.value === tabStop))}
+        ${this.options.map((option) =>
+          this.renderSegment(option, option.value === selected, option.value === tabStop),
+        )}
+        ${hasPill ? html`<span data-part="indicator" part="indicator" aria-hidden="true"></span>` : nothing}
       </div>
     `;
   }
 
   private renderSegment(option: SegmentedControlOption, selected: boolean, tabStop: boolean): TemplateResult {
-    // An `iconOnly` option without an icon shows its label as text, so the segment never renders empty.
+    // An `iconOnly` option without an icon shows its label as text, so the segment never renders
+    // empty — and then carries no Tooltip and no aria-label, since its visible text is its name.
     const iconOnly = this.iconOnly && option.icon !== undefined;
     const button = html`
       <button
@@ -343,17 +369,15 @@ export class DsSegmentedControl extends LitElement {
         role="radio"
         data-value=${option.value}
         aria-checked=${selected ? 'true' : 'false'}
+        aria-disabled=${ifDefined(option.disabled === true ? 'true' : undefined)}
         aria-label=${ifDefined(iconOnly ? option.label : undefined)}
         tabindex=${tabStop ? 0 : -1}
-        ?disabled=${option.disabled === true}
         @click=${() => this.handleSegmentClick(option)}
       >
         ${option.icon
-          ? html`<ds-icon data-part="segmentIcon" part="segmentIcon" name=${option.icon}></ds-icon>`
+          ? html`<ds-icon data-part="segmentIcon" part="segmentIcon" name=${option.icon} size=${this.size}></ds-icon>`
           : nothing}
-        ${iconOnly
-          ? nothing
-          : html`<span data-part="segmentLabel" part="segmentLabel">${option.label}</span>`}
+        ${iconOnly ? nothing : html`<span data-part="segmentLabel" part="segmentLabel">${option.label}</span>`}
       </button>
     `;
     return iconOnly
@@ -362,42 +386,69 @@ export class DsSegmentedControl extends LitElement {
   }
 
   private readonly handleKeydown = (event: KeyboardEvent): void => {
+    if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) {
+      return;
+    }
+    const enabled = this.enabledOptions();
+    if (enabled.length === 0) {
+      return;
+    }
+
+    // In right-to-left writing ArrowLeft is "next" and ArrowRight "previous"; the vertical arrows
+    // are unchanged. The direction is the host's computed one, read at keydown.
     const rtl = getComputedStyle(this).direction === 'rtl';
-    let delta: number;
+    let step: 1 | -1 | 'first' | 'last';
     switch (event.key) {
       case 'ArrowDown':
-        delta = 1;
+        step = 1;
         break;
       case 'ArrowUp':
-        delta = -1;
+        step = -1;
         break;
       case 'ArrowRight':
-        delta = rtl ? -1 : 1;
+        step = rtl ? -1 : 1;
         break;
       case 'ArrowLeft':
-        delta = rtl ? 1 : -1;
+        step = rtl ? 1 : -1;
         break;
       case 'Home':
-      case 'End': {
-        // Inside a toolbar, Home and End belong to the toolbar.
-        if (this.insideToolbar()) return;
-        const items = this.enabledOptions();
-        const target = event.key === 'Home' ? items[0] : items[items.length - 1];
-        event.preventDefault();
-        if (target) this.focusAndSelect(target.value);
-        return;
-      }
+        step = 'first';
+        break;
+      case 'End':
+        step = 'last';
+        break;
       default:
         return;
     }
-    const items = this.enabledOptions();
-    if (items.length === 0) return;
-    const currentIndex = items.findIndex((option) => option.value === this.tabStopValue());
-    const nextIndex = currentIndex + delta;
-    // Inside a toolbar the arrows do not wrap: an arrow pointing out of the ends is left to the toolbar.
-    if ((nextIndex < 0 || nextIndex >= items.length) && this.insideToolbar()) return;
+
+    // Movement starts at the focused segment, and at the tab stop only when no segment has focus.
+    const origin = enabled.findIndex((option) => option.value === (this.focusedValue() ?? this.tabStopValue()));
+    // Inside a toolbar the arrows do not wrap, and Home/End belong to the toolbar: leaving the key
+    // unhandled lets the toolbar move focus to the neighbouring control.
+    const inToolbar = this.insideToolbar();
+
+    let position: number;
+    if (step === 'first' || step === 'last') {
+      if (inToolbar) return;
+      position = step === 'first' ? 0 : enabled.length - 1;
+    } else if (origin < 0) {
+      // Focus is on no enabled segment: an outward arrow moves inside the control instead.
+      position = step === 1 ? 0 : enabled.length - 1;
+    } else {
+      position = origin + step;
+      if (position < 0 || position >= enabled.length) {
+        if (inToolbar) return;
+        position = (position + enabled.length) % enabled.length;
+      }
+    }
+
+    const target = enabled[position];
+    if (target === undefined) {
+      return;
+    }
     event.preventDefault();
-    this.focusAndSelect(items[(nextIndex + items.length) % items.length]!.value);
+    this.segmentElement(target.value)?.focus();
+    this.select(target.value);
   };
 
   /** Whether a `role="toolbar"` ancestor contains this element, walking host ancestors across shadow roots. */
@@ -430,27 +481,27 @@ export class DsSegmentedControl extends LitElement {
     return this.options.find((option) => option.disabled !== true);
   }
 
-  /** The focused segment if it is still enabled, else the selected one, else the first enabled. */
-  private tabStopValue(): string | undefined {
-    const items = this.enabledOptions();
-    const candidates = [this.focusedValue, this.currentValue ?? undefined];
-    for (const candidate of candidates) {
-      if (candidate !== undefined && items.some((option) => option.value === candidate)) {
-        return candidate;
-      }
-    }
-    return items[0]?.value;
+  private segmentElement(value: string): HTMLElement | null {
+    return this.renderRoot.querySelector<HTMLElement>(`[data-part="segment"][data-value="${CSS.escape(value)}"]`);
   }
 
-  private focusAndSelect(value: string): void {
-    this.select(value);
-    void this.updateComplete.then(() => {
-      this.renderRoot.querySelector<HTMLElement>(`[data-part="segment"][data-value="${CSS.escape(value)}"]`)?.focus();
-    });
+  /** The value of the segment that holds focus right now, or undefined when none does. */
+  private focusedValue(): string | undefined {
+    const active = this.shadowRoot?.activeElement;
+    const segment = active?.closest<HTMLElement>('[data-part="segment"]');
+    return segment?.dataset['value'];
+  }
+
+  /** One tab stop: the selected segment when it is enabled, otherwise the first enabled one. */
+  private tabStopValue(): string | undefined {
+    const selected = this.currentValue;
+    const option = this.options.find((candidate) => candidate.value === selected);
+    return option !== undefined && option.disabled !== true ? option.value : this.firstEnabled()?.value;
   }
 
   private select(next: string): void {
-    this.focusedValue = next;
+    // `change` fires only when the target differs from the current value, so moving back onto the
+    // checked segment fires nothing.
     if (next === this.currentValue) {
       return;
     }
@@ -472,31 +523,41 @@ export class DsSegmentedControl extends LitElement {
     this.resizeObserver.observe(group);
   }
 
+  /**
+   * Place the pill over the selected segment. Writes only when the measured box moved, so the
+   * ResizeObserver that feeds it cannot drive itself.
+   */
   private updateIndicator(): void {
     const indicator = this.indicatorEl;
-    const group = this.groupEl;
-    if (!indicator || !group) {
-      return;
-    }
     const selected = this.currentValue;
-    const segment = selected
-      ? this.renderRoot.querySelector<HTMLElement>(`[data-part="segment"][data-value="${CSS.escape(selected)}"]`)
-      : null;
-    if (!segment) {
-      indicator.style.opacity = '0';
+    const segment = selected !== null ? this.segmentElement(selected) : null;
+    if (!indicator || !segment) {
+      this.placedRect = undefined;
       return;
     }
-    const groupBox = group.getBoundingClientRect();
-    const segmentBox = segment.getBoundingClientRect();
-    const x = segmentBox.left - groupBox.left - group.clientLeft;
-    const y = segmentBox.top - groupBox.top - group.clientTop;
-    indicator.style.opacity = '1';
-    indicator.style.transform = `translate(${x}px, ${y}px)`;
-    indicator.style.inlineSize = `${segmentBox.width}px`;
-    indicator.style.blockSize = `${segmentBox.height}px`;
-    if (!indicator.hasAttribute('data-placed')) {
-      requestAnimationFrame(() => indicator.setAttribute('data-placed', ''));
+    // offsetLeft/offsetTop are physical and measured against the group, which is the only
+    // positioned ancestor, so the pill is placed with physical insets in either direction.
+    const next: IndicatorRect = {
+      left: segment.offsetLeft,
+      top: segment.offsetTop,
+      width: segment.offsetWidth,
+      height: segment.offsetHeight,
+    };
+    const prev = this.placedRect;
+    if (
+      prev !== undefined &&
+      prev.left === next.left &&
+      prev.top === next.top &&
+      prev.width === next.width &&
+      prev.height === next.height
+    ) {
+      return;
     }
+    this.placedRect = next;
+    indicator.style.left = `${next.left}px`;
+    indicator.style.top = `${next.top}px`;
+    indicator.style.width = `${next.width}px`;
+    indicator.style.height = `${next.height}px`;
   }
 
   private applyOverrides(): void {
@@ -520,12 +581,17 @@ export class DsSegmentedControl extends LitElement {
       console.warn("<ds-segmented-control> requires a `label`, the group's accessible name.", this);
     }
     // The two-to-five option count is guidance only: any count renders, with no warning.
-    if (this.iconOnly && !this.warnedIcon && this.options.some((option) => option.icon === undefined)) {
-      this.warnedIcon = true;
-      console.warn(
-        '<ds-segmented-control> `iconOnly` requires every option to have an `icon`; options without one show their label.',
-        this,
-      );
+    if (this.iconOnly && !this.warnedIcon) {
+      const missing = this.options.filter((option) => option.icon === undefined);
+      if (missing.length > 0) {
+        this.warnedIcon = true;
+        console.warn(
+          `<ds-segmented-control>: \`icon-only\` needs an \`icon\` on every option; ${missing
+            .map((option) => `"${option.value}"`)
+            .join(', ')} show their label as text instead.`,
+          this,
+        );
+      }
     }
   }
 }

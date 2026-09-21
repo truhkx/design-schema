@@ -31,6 +31,9 @@ export type TabsItem = {
   badge?: string | undefined;
 };
 
+/** @deprecated Use `TabsItem`. */
+export type TabsTab = TabsItem;
+
 /** The style bindings a caller may replace with a different token; see the component's overrides contract. */
 export type TabsOverridableBinding =
   | 'tabPaddingBlock'
@@ -40,6 +43,7 @@ export type TabsOverridableBinding =
   | 'listBorder'
   | 'listBorderWidth'
   | 'panelGap'
+  | 'badgeWeight'
   | 'badgeSize'
   | 'fontFamily'
   | 'fontSize'
@@ -112,6 +116,9 @@ function collectPanels(children: React.ReactNode): Map<string, React.ReactNode> 
 }
 
 const isWeb = Platform.OS === 'web';
+
+/** The DOM element react-native-web renders for a `Pressable`; this package has no DOM lib. */
+type WebElement = { setAttribute(name: string, value: string): void; removeAttribute(name: string): void };
 
 /**
  * Tabs — one region of a screen showing one of several equal-standing views.
@@ -188,6 +195,8 @@ export function Tabs({
   const listBorderColor = overrides?.listBorder ? (resolveToken(t, overrides.listBorder) as string) : t.colorBorder;
   const listBorderWidth = overrides?.listBorderWidth ? (resolveToken(t, overrides.listBorderWidth) as number) : t.borderWidthThin;
   const panelGap = overrides?.panelGap ? (resolveToken(t, overrides.panelGap) as number) : t.layoutGapLoose;
+  // Lighter than the label's `fontWeight` so the count reads as secondary.
+  const badgeWeight = overrides?.badgeWeight ? (resolveToken(t, overrides.badgeWeight) as number) : t.fontWeightRegular;
   const badgeSize = overrides?.badgeSize ? (resolveToken(t, overrides.badgeSize) as number) : t.fontSizeXs;
   const fontFamily = overrides?.fontFamily ? (resolveToken(t, overrides.fontFamily) as string) : t.fontFamilyBody;
   const fontSize = overrides?.fontSize ? (resolveToken(t, overrides.fontSize) as number) : t.fontSizeMd;
@@ -349,6 +358,7 @@ export function Tabs({
     color: t.colorForegroundMuted,
     selectedColor: t.colorForegroundStrong,
     badgeColor: t.colorForegroundMuted,
+    badgeWeight,
     badgeSize,
   };
 
@@ -496,6 +506,7 @@ interface TabButtonStyleTokens {
   color: string;
   selectedColor: string;
   badgeColor: string;
+  badgeWeight: number;
   badgeSize: number;
 }
 
@@ -531,6 +542,32 @@ function TabButton({
   const [hovered, setHovered] = React.useState(false);
   const disabled = tab.disabled === true;
   const foreground = selected ? s.selectedColor : s.color;
+  const nodeRef = React.useRef<ViewInstance | null>(null);
+
+  // react-native-web 0.21 ignores `accessibilityState` and `focusable`, so neither the disabled
+  // state nor the roving tab stop would reach the DOM: every tab renders `tabindex="0"` and no
+  // tab is announced as disabled. Both are set on the node itself here, as Button, Checkbox and
+  // Disclosure do for `aria-disabled` — passing Pressable's own `disabled` prop instead would drop
+  // the tab out of the accessibility tree, which the press guard exists to avoid. The attribute is
+  // also what keeps the dimmed disabled tab out of axe's contrast check (WCAG 1.4.3 exempts
+  // inactive components, and `opacity.disabled` over `color.foreground.muted` cannot reach 4.5:1).
+  React.useEffect(() => {
+    if (!isWeb) {
+      return;
+    }
+    const node = nodeRef.current as unknown as WebElement | null;
+    if (node === null) {
+      return;
+    }
+    if (disabled) {
+      node.setAttribute('aria-disabled', 'true');
+    } else {
+      node.removeAttribute('aria-disabled');
+    }
+    // The list is one tab stop: the selected tab, or the first enabled one. A disabled tab is
+    // never a stop (it has nothing to reach), but stays in the tree and readable.
+    node.setAttribute('tabindex', tabStop && !disabled ? '0' : '-1');
+  }, [disabled, tabStop]);
 
   const rowStyle = ({ pressed }: PressableStateCallbackType): ViewStyle => ({
     flexDirection: 'row',
@@ -562,23 +599,27 @@ function TabButton({
   const badgeStyle: TextStyle = {
     fontFamily: s.fontFamily,
     fontSize: s.badgeSize,
+    fontWeight: toFontWeight(s.badgeWeight),
     lineHeight: toLineHeight(s.badgeSize, s.lineHeightMultiplier),
     color: s.badgeColor,
   };
 
   // The badge is part of the name: label, a plain space, badge ("Inbox 3").
   const accessibleName = tab.badge !== undefined ? `${tab.label} ${tab.badge}` : tab.label;
-  // Roving tab stop on react-native-web; on native every tab stays its own stop.
-  const webFocusProps: Record<string, unknown> = Platform.OS === 'web' ? { focusable: tabStop && !disabled } : {};
 
   return (
     <Pressable
-      ref={(instance: ViewInstance | null) => registerRef(tab.id, instance)}
+      ref={(instance: ViewInstance | null) => {
+        nodeRef.current = instance;
+        registerRef(tab.id, instance);
+      }}
       accessibilityRole="tab"
       accessibilityLabel={accessibleName}
       accessibilityState={{ selected, disabled }}
+      // react-native-web 0.21 ignores `accessibilityState`, so selection reaches the DOM through
+      // this mirror (native merges both); `aria-disabled` and `tabindex` are set in the effect above.
+      aria-selected={selected}
       accessibilityValue={{ text: position }}
-      {...webFocusProps}
       // Never the native `disabled` prop: it would drop the tab from the accessibility order.
       onPress={() => {
         if (!disabled) {

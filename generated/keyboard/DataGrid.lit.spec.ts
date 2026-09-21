@@ -61,20 +61,30 @@ async function focusIndex(page: Page, root: Locator): Promise<number> {
 function trigger(page: Page): Locator {
   return page.locator('[aria-haspopup], [aria-expanded], [aria-controls]').first();
 }
-/** aria-expanded / aria-checked / aria-selected of the deep active element (or the trigger), for toggles/selects. */
+/** aria-expanded / aria-checked / aria-selected of the deep active element (or the trigger), for toggles/selects,
+ *  followed by the same three of its aria-activedescendant item. A composite that keeps DOM focus on a container
+ *  and points at the active item (Listbox, Combobox) carries the selected state on that item, never on the focused
+ *  container — the same resolution focusIndex already does. The item's state is appended rather than substituted
+ *  because the container is what holds aria-expanded: a Combobox input is both at once. Appending can only add a
+ *  state, so it never turns a passing toggles/selects assertion red. */
 async function ariaState(page: Page): Promise<string> {
   return page.evaluate(() => {
     let a: Element | null = document.activeElement;
     while (a && (a as HTMLElement).shadowRoot && (a as HTMLElement).shadowRoot!.activeElement) a = (a as HTMLElement).shadowRoot!.activeElement;
     const el = a ?? document.querySelector('[aria-haspopup], [aria-expanded]');
-    return [el?.getAttribute('aria-expanded'), el?.getAttribute('aria-checked'), el?.getAttribute('aria-selected')].join('|');
+    const desc = el?.getAttribute('aria-activedescendant');
+    const scope = (el?.getRootNode() ?? document) as Document | ShadowRoot;
+    const item = desc && scope.getElementById ? scope.getElementById(desc) : null;
+    const read = (n: Element | null | undefined): (string | null | undefined)[] =>
+      [n?.getAttribute('aria-expanded'), n?.getAttribute('aria-checked'), n?.getAttribute('aria-selected')];
+    return [...read(el), ...read(item)].join('|');
   });
 }
 
 test.describe('DataGrid (lit) keyboard', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/iframe.html?id=datagrid-lit--keyboard&viewMode=story');
-    await expect(page.getByRole('grid').first()).toBeVisible();
+    await expect(page.getByRole('grid').first()).toBeVisible({ timeout: 15_000 });
   });
   test.skip('Tab: Enters the grid on the last-focused cell (initially the first header cell) and, from inside, leaves it — the grid is one tab stop. Inside a cell that contains a control, Tab still leaves the grid; use Enter to interact with the control. While an editor is open, Tab commits and opens the next editable cell in the row (Shift+Tab the previous); from the last editable cell it commits and leaves the grid — the editor is removed in the same task so the browser\'s own Tab lands outside, unless `validate` rejects that commit, in which case the editor stays open and the key does nothing. — manual', async () => {});
   test.skip('ArrowRight: Next cell in the row. — manual', async () => {});

@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useId,
   useLayoutEffect,
   useRef,
@@ -17,7 +18,7 @@ import './SegmentedControl.css';
 export type SegmentedControlSize = 'sm' | 'md';
 
 /** One segment. `label` is one word; with `iconOnly` it becomes the accessible name and Tooltip text. */
-export type SegmentedControlOption = { value: string; label: string; icon?: IconName; disabled?: boolean };
+export type SegmentedControlOption = { value: string; label: string; icon?: IconName | undefined; disabled?: boolean | undefined };
 
 /** Style bindings that can be overridden per instance; accessibility-bearing bindings are never in this list. */
 export type SegmentedControlOverridableBinding =
@@ -77,18 +78,33 @@ type IndicatorRect = { left: number; top: number; width: number; height: number 
 /* Only declared when the bundler defines it; never assumed. */
 declare const process: { env: Record<string, string | undefined> } | undefined;
 const isDev = typeof process !== 'undefined' && process.env.NODE_ENV !== 'production';
-let warnedMissingIcon = false;
 
 export interface SegmentedControlProps extends Omit<ComponentPropsWithoutRef<'div'>, 'onChange' | 'defaultValue' | 'className' | 'style' | 'role'> {
   /** Accessible name of the control ("View mode"). Not shown; put a visible Text label beside it when the meaning is not obvious from context. */
   label: string;
-  /** Two to five options (guidance, not enforced: any count renders, with no warning). Labels are one word; with `iconOnly` the label becomes the accessible name. */
+  /**
+   * Two to five options (guidance, not enforced: any count renders, with no warning). Labels are
+   * one word; with `iconOnly` the label becomes the accessible name. The icon is an Icon whose
+   * `size` is the control's `size` (`sm` or `md`).
+   */
   options: SegmentedControlOption[];
   /** Controlled selected value. Omit for uncontrolled. */
   value?: string | undefined;
-  /** Initially selected value. Defaults to the first enabled option — a segmented control always has a selection. A value naming a disabled option keeps it checked; one matching no option checks nothing. */
+  /**
+   * Initially selected value. Defaults to the first enabled option — a segmented control always has
+   * a selection. A `value` or `defaultValue` is taken as given, never corrected: one naming a
+   * disabled option keeps that segment checked with the pill under it (arrows still skip it); one
+   * matching no option checks nothing and draws no pill (the pill is unmounted, and the next
+   * selection places it instantly rather than sliding it in). In both cases the tab stop is the
+   * first enabled segment, and arrows move from there when no segment has focus.
+   */
   defaultValue?: string | undefined;
-  /** Show icons only (every option must have one); labels become accessible names and Tooltips. An option without `icon` warns in development (once) and shows its label as text. */
+  /**
+   * Show icons only (every option must have one); labels become accessible names and Tooltips. An
+   * option without `icon` warns in development once per instance (one message listing every option
+   * without an icon) and that segment shows its label as text instead, so it never renders empty;
+   * that segment gets no Tooltip and no `aria-label`, since its visible text is its name.
+   */
   iconOnly?: boolean | undefined;
   /** Toolbar (`sm`) or standard (`md`) height. */
   size?: SegmentedControlSize | undefined;
@@ -135,10 +151,21 @@ export function SegmentedControl({
   const [indicator, setIndicator] = useState<IndicatorRect | undefined>(undefined);
   const lastRect = useRef<IndicatorRect | undefined>(undefined);
 
-  if (isDev && iconOnly && !warnedMissingIcon && options.some((option) => !option.icon)) {
-    warnedMissingIcon = true;
-    console.warn('SegmentedControl: every option needs an `icon` when `iconOnly` is set; options without one show their label as text.');
-  }
+  // One message per instance, listing every option that has no icon; those segments fall back to
+  // their label as text, so the control never renders an empty segment.
+  const warnedMissingIcon = useRef(false);
+  const missingIcons = isDev && iconOnly ? options.filter((option) => !option.icon).map((option) => option.value) : [];
+  useEffect(() => {
+    if (missingIcons.length === 0 || warnedMissingIcon.current) return;
+    warnedMissingIcon.current = true;
+    console.warn(
+      `SegmentedControl: \`iconOnly\` needs an \`icon\` on every option; ${missingIcons
+        .map((value) => `"${value}"`)
+        .join(', ')} show their label as text instead.`,
+    );
+    // Warn once per instance, whatever `options` becomes later.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [missingIcons.length]);
 
   // Segments wrapped by an icon-only Tooltip hand their ref to the Tooltip, so lookups go through ids.
   const getSegmentElement = (index: number): HTMLButtonElement | null =>
@@ -249,9 +276,11 @@ export function SegmentedControl({
     .join(' ');
 
   // offsetLeft/offsetTop are physical, so the pill is placed with physical insets in either direction.
-  const indicatorStyle: CSSProperties = indicator
+  // A `value` matching no option leaves `indicator` undefined: the pill is unmounted rather than
+  // hidden, so the next selection mounts it in place instead of sliding it in from nowhere.
+  const indicatorStyle: CSSProperties | undefined = indicator
     ? { left: indicator.left, top: indicator.top, width: indicator.width, height: indicator.height }
-    : { display: 'none' };
+    : undefined;
 
   return (
     <div
@@ -288,7 +317,7 @@ export function SegmentedControl({
           >
             {option.icon ? (
               <span className="ds-segmented-control__segment-icon" data-part="segmentIcon">
-                <Icon name={option.icon} inline />
+                <Icon name={option.icon} size={size} />
               </span>
             ) : null}
             {showsIconOnly ? null : (
@@ -307,7 +336,9 @@ export function SegmentedControl({
           segment
         );
       })}
-      <span aria-hidden="true" data-part="indicator" className="ds-segmented-control__indicator" style={indicatorStyle} />
+      {indicatorStyle ? (
+        <span aria-hidden="true" data-part="indicator" className="ds-segmented-control__indicator" style={indicatorStyle} />
+      ) : null}
     </div>
   );
 }

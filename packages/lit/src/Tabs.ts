@@ -34,6 +34,7 @@ export type TabsOverridableBinding =
   | 'listBorder'
   | 'listBorderWidth'
   | 'panelGap'
+  | 'badgeWeight'
   | 'badgeSize'
   | 'fontFamily'
   | 'fontSize'
@@ -51,6 +52,7 @@ const HOOKS: Record<TabsOverridableBinding, string> = {
   listBorder: '--ds-tabs-list-border',
   listBorderWidth: '--ds-tabs-list-border-width',
   panelGap: '--ds-tabs-panel-gap',
+  badgeWeight: '--ds-tabs-badge-weight',
   badgeSize: '--ds-tabs-badge-size',
   fontFamily: '--ds-tabs-font-family', // literal-ok: CSS custom-property name, not a font stack
   fontSize: '--ds-tabs-font-size',
@@ -147,6 +149,7 @@ export class DsTabs extends LitElement {
       --ds-tabs-list-border-width: var(--border-width-thin);
       --ds-tabs-panel-gap: var(--layout-gap-loose);
       --ds-tabs-badge-color: var(--color-foreground-muted);
+      --ds-tabs-badge-weight: var(--font-weight-regular);
       --ds-tabs-badge-size: var(--font-size-xs);
       --ds-tabs-font-family: var(--font-family-body);
       --ds-tabs-font-size: var(--font-size-md);
@@ -253,9 +256,12 @@ export class DsTabs extends LitElement {
       min-inline-size: 0;
     }
 
+    /* The badge is lighter than the label, so the count reads as secondary; its
+       line height is the label's multiplier applied to the badge's own size. */
     [data-part='tabBadge'] {
       flex: none;
       font-size: var(--ds-tabs-badge-size);
+      font-weight: var(--ds-tabs-badge-weight);
       line-height: var(--ds-tabs-line-height);
       color: var(--ds-tabs-badge-color);
     }
@@ -271,10 +277,14 @@ export class DsTabs extends LitElement {
         block-size var(--ds-tabs-transition) var(--motion-easing-standard);
     }
 
-    /* Horizontal: an underline flush against the list border at the bottom edge. */
+    /* Horizontal: an underline flush against the list border at the bottom edge.
+       Anchored physically (left, not inset-inline-start) because it is moved by
+       translateX(offsetLeft), and offsetLeft measures from that same physical
+       edge in both directions; a logical anchor would flip one and not the
+       other in RTL. */
     :host(:not([orientation='vertical'])) [data-part='indicator'] {
       inset-block-end: 0;
-      inset-inline-start: 0;
+      left: 0;
       block-size: var(--ds-tabs-indicator-thickness);
     }
 
@@ -391,6 +401,7 @@ export class DsTabs extends LitElement {
         aria-label=${this.label}
         aria-orientation=${this.orientation}
         @keydown=${this.handleKeydown}
+        @focusin=${this.handleFocusIn}
         @focusout=${this.handleFocusOut}
       >
         ${this.tabs.map((tab, index) => this.renderTab(tab, index, tab.id === selected, tab.id === rovingId))}
@@ -417,7 +428,9 @@ export class DsTabs extends LitElement {
         tabindex=${roving ? 0 : -1}
         @click=${() => this.handleTabClick(tab)}
       >
-        ${tab.icon ? html`<ds-icon data-part="tabIcon" part="tabIcon" name=${tab.icon}></ds-icon>` : nothing}
+        ${tab.icon
+          ? html`<ds-icon data-part="tabIcon" part="tabIcon" name=${tab.icon} size="md"></ds-icon>`
+          : nothing}
         <span data-part="tabLabel" part="tabLabel" id="tab-${index}-label">${tab.label}</span>
         ${hasBadge
           ? html`<span data-part="tabBadge" part="tabBadge" id="tab-${index}-badge">${tab.badge}</span>`
@@ -448,8 +461,12 @@ export class DsTabs extends LitElement {
 
   private readonly handleKeydown = (event: KeyboardEvent): void => {
     const vertical = this.orientation === 'vertical';
-    const nextKey = vertical ? 'ArrowDown' : 'ArrowRight';
-    const prevKey = vertical ? 'ArrowUp' : 'ArrowLeft';
+    // Only the orientation's own axis moves between tabs. In a right-to-left
+    // layout ArrowLeft and ArrowRight swap, as in SegmentedControl; Up/Down,
+    // Home and End do not.
+    const rtl = getComputedStyle(this).direction === 'rtl';
+    const nextKey = vertical ? 'ArrowDown' : rtl ? 'ArrowLeft' : 'ArrowRight';
+    const prevKey = vertical ? 'ArrowUp' : rtl ? 'ArrowRight' : 'ArrowLeft';
     if (event.key === nextKey) {
       event.preventDefault();
       this.moveFocus(1);
@@ -462,6 +479,18 @@ export class DsTabs extends LitElement {
     } else if (event.key === 'End') {
       event.preventDefault();
       this.focusEdge('last');
+    }
+  };
+
+  /**
+   * The roving stop follows the tab that actually has focus, however it got it —
+   * Tab into the list, a click, or a programmatic `focus()` — so the next arrow
+   * key moves from there rather than from the selected tab.
+   */
+  private readonly handleFocusIn = (event: FocusEvent): void => {
+    const id = (event.target as HTMLElement | null)?.closest<HTMLElement>('[data-part=tab]')?.dataset['id'];
+    if (id !== undefined && id !== this.focusedId) {
+      this.focusedId = id;
     }
   };
 

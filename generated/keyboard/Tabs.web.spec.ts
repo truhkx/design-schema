@@ -61,20 +61,30 @@ async function focusIndex(page: Page, root: Locator): Promise<number> {
 function trigger(page: Page): Locator {
   return page.locator('[aria-haspopup], [aria-expanded], [aria-controls]').first();
 }
-/** aria-expanded / aria-checked / aria-selected of the deep active element (or the trigger), for toggles/selects. */
+/** aria-expanded / aria-checked / aria-selected of the deep active element (or the trigger), for toggles/selects,
+ *  followed by the same three of its aria-activedescendant item. A composite that keeps DOM focus on a container
+ *  and points at the active item (Listbox, Combobox) carries the selected state on that item, never on the focused
+ *  container — the same resolution focusIndex already does. The item's state is appended rather than substituted
+ *  because the container is what holds aria-expanded: a Combobox input is both at once. Appending can only add a
+ *  state, so it never turns a passing toggles/selects assertion red. */
 async function ariaState(page: Page): Promise<string> {
   return page.evaluate(() => {
     let a: Element | null = document.activeElement;
     while (a && (a as HTMLElement).shadowRoot && (a as HTMLElement).shadowRoot!.activeElement) a = (a as HTMLElement).shadowRoot!.activeElement;
     const el = a ?? document.querySelector('[aria-haspopup], [aria-expanded]');
-    return [el?.getAttribute('aria-expanded'), el?.getAttribute('aria-checked'), el?.getAttribute('aria-selected')].join('|');
+    const desc = el?.getAttribute('aria-activedescendant');
+    const scope = (el?.getRootNode() ?? document) as Document | ShadowRoot;
+    const item = desc && scope.getElementById ? scope.getElementById(desc) : null;
+    const read = (n: Element | null | undefined): (string | null | undefined)[] =>
+      [n?.getAttribute('aria-expanded'), n?.getAttribute('aria-checked'), n?.getAttribute('aria-selected')];
+    return [...read(el), ...read(item)].join('|');
   });
 }
 
 test.describe('Tabs (web) keyboard', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/iframe.html?id=tabs-react--keyboard&viewMode=story');
-    await expect(page.getByRole('tablist').first()).toBeVisible();
+    await expect(page.getByRole('tablist').first()).toBeVisible({ timeout: 15_000 });
   });
   test.skip('Tab: Moves focus to the selected tab, then out of the tab list into the panel (the list is one tab stop). — manual', async () => {});
   test('ArrowRight: Moves to the next tab, wrapping; selects it under automatic activation. (horizontal)', async ({ page }) => {
@@ -97,7 +107,7 @@ test.describe('Tabs (web) keyboard', () => {
   });
   test('ArrowDown: Moves to the next tab, wrapping; selects it under automatic activation. (vertical)', async ({ page }) => {
     await page.goto('/iframe.html?id=tabs-react--keyboard&viewMode=story&args=orientation:vertical');
-    await expect(page.getByRole('tablist').first()).toBeVisible();
+    await expect(page.getByRole('tablist').first()).toBeVisible({ timeout: 15_000 });
     const root = page.getByRole('tablist').first();
     await focusAt(page, root, 0);
     const before = await focusIndex(page, root);
@@ -108,7 +118,7 @@ test.describe('Tabs (web) keyboard', () => {
   });
   test('ArrowUp: Moves to the previous tab, wrapping; selects it under automatic activation. (vertical)', async ({ page }) => {
     await page.goto('/iframe.html?id=tabs-react--keyboard&viewMode=story&args=orientation:vertical');
-    await expect(page.getByRole('tablist').first()).toBeVisible();
+    await expect(page.getByRole('tablist').first()).toBeVisible({ timeout: 15_000 });
     const root = page.getByRole('tablist').first();
     await focusAt(page, root, await focusableCount(page, root) - 1);
     const before = await focusIndex(page, root);

@@ -49,6 +49,7 @@ export type SelectOverridableBinding =
   | 'triggerPaddingInline'
   | 'triggerPaddingBlock'
   | 'triggerGap'
+  | 'chevronReserve'
   | 'partGap'
   | 'labelWeight'
   | 'helperSize'
@@ -73,6 +74,7 @@ const HOOKS: Record<SelectOverridableBinding, string> = {
   triggerPaddingInline: '--ds-select-trigger-padding-inline',
   triggerPaddingBlock: '--ds-select-trigger-padding-block',
   triggerGap: '--ds-select-trigger-gap',
+  chevronReserve: '--ds-select-chevron-reserve',
   partGap: '--ds-select-part-gap',
   labelWeight: '--ds-select-label-weight',
   helperSize: '--ds-select-helper-size',
@@ -91,21 +93,46 @@ const HOOKS: Record<SelectOverridableBinding, string> = {
   enter: '--ds-select-enter',
 };
 
-/** copy.placeholder */
-const COPY_PLACEHOLDER = 'Select…';
-/** copy.selectedCount */
-const COPY_SELECTED_COUNT = (count: number): string => `${count} selected`;
-/** copy.required */
-const COPY_REQUIRED = (label: string): string => `${label} is required.`;
-/** copy.invalid */
-const COPY_INVALID = (label: string): string => `${label} is not valid.`;
-/** copy.requiredIndicator */
-const COPY_REQUIRED_INDICATOR = ' (required)';
+/**
+ * The doc's `copy.*`, verbatim. `done` is the phone sheet's footer button: only
+ * the React Native picker renders it, web and Lit declare the key and never
+ * show it.
+ */
+const COPY = {
+  placeholder: 'Select…',
+  selectedCount: '{count} selected',
+  done: 'Done',
+  required: '{label} is required.',
+  invalid: '{label} is not valid.',
+  requiredIndicator: ' (required)',
+} as const;
+
+/** `copy.selectedCount` — one string, the count formatted for the runtime's locale, never concatenated. */
+const COPY_SELECTED_COUNT = (count: number): string =>
+  COPY.selectedCount.replace('{count}', new Intl.NumberFormat().format(count));
+
+/** `copy.required` / `copy.invalid`, which name the field. */
+const COPY_REQUIRED = (label: string): string => COPY.required.replace('{label}', label);
+const COPY_INVALID = (label: string): string => COPY.invalid.replace('{label}', label);
 
 /** chevron (locked): color.foreground.muted, forwarded to the composed Icon's `color` binding. */
 const CHEVRON_OVERRIDES: Partial<Record<IconOverridableBinding, TokenRef | undefined>> = {
   color: 'color.foreground.muted',
 };
+
+/**
+ * Forward defaults. Every forward into a composed child carries the resolved
+ * token — the consumer's override, else this default — because the children
+ * have no size or weight prop that would reproduce the Select's own bindings.
+ */
+const FONT_FAMILY: TokenRef = 'font.family.body'; // literal-ok: a TokenRef forwarded to Text, not a font stack
+const LINE_HEIGHT: TokenRef = 'font.lineHeight.normal';
+/** helperSize: font.size.sm */
+const HELPER_SIZE: TokenRef = 'font.size.sm';
+/** labelWeight: font.weight.medium */
+const LABEL_WEIGHT: TokenRef = 'font.weight.medium';
+/** fontWeight: font.weight.regular — the trigger's value text only. */
+const VALUE_WEIGHT: TokenRef = 'font.weight.regular';
 
 /** Whether the running browser implements the Popover API. Evaluated once. */
 const POPOVER_SUPPORTED = typeof HTMLElement !== 'undefined' && typeof HTMLElement.prototype.showPopover === 'function';
@@ -190,6 +217,7 @@ export class DsSelect extends LitElement {
       --ds-select-trigger-padding-inline: var(--space-md);
       --ds-select-trigger-padding-block: var(--space-sm);
       --ds-select-trigger-gap: var(--layout-gap-normal);
+      --ds-select-chevron-reserve: var(--font-size-sm);
       --ds-select-part-gap: var(--space-1);
       --ds-select-label-weight: var(--font-weight-medium);
       --ds-select-helper-size: var(--font-size-sm);
@@ -242,7 +270,8 @@ export class DsSelect extends LitElement {
       border: 0;
     }
 
-    [data-part='label'] {
+    /* The <label for> wraps the composed Text, which carries data-part="label". */
+    label {
       display: block;
     }
 
@@ -282,12 +311,18 @@ export class DsSelect extends LitElement {
       outline: none;
       border-color: var(--color-border-focus);
       border-width: var(--border-width-focus);
-      padding-block: calc(
-        var(--ds-select-trigger-padding-block) - (var(--border-width-focus) - var(--ds-select-trigger-border-width))
-      );
-      padding-inline: calc(
-        var(--ds-select-trigger-padding-inline) - (var(--border-width-focus) - var(--ds-select-trigger-border-width))
-      );
+      padding-block: max(
+        0px,
+        calc(
+          var(--ds-select-trigger-padding-block) - (var(--border-width-focus) - var(--ds-select-trigger-border-width))
+        )
+      ); /* literal-ok: the doc's clamp at zero, so the trigger never takes a negative padding */
+      padding-inline: max(
+        0px,
+        calc(
+          var(--ds-select-trigger-padding-inline) - (var(--border-width-focus) - var(--ds-select-trigger-border-width))
+        )
+      ); /* literal-ok: the doc's clamp at zero */
     }
 
     :host([invalid]) [data-part='trigger'],
@@ -354,8 +389,13 @@ export class DsSelect extends LitElement {
     .native [data-part='trigger'] {
       display: block;
       appearance: none;
+    }
+
+    /* chevronReserve: the inline-end space the native <select> leaves for the chevron glyph, added
+       to triggerPaddingInline and triggerGap. Single only — <select multiple> has no dropdown. */
+    :host(:not([multiple])) .native [data-part='trigger'] {
       padding-inline-end: calc(
-        2 * var(--ds-select-trigger-padding-inline) + var(--ds-select-trigger-gap) + var(--font-size-md)
+        var(--ds-select-trigger-padding-inline) + var(--ds-select-trigger-gap) + var(--ds-select-chevron-reserve)
       );
     }
 
@@ -492,6 +532,11 @@ export class DsSelect extends LitElement {
     return this.open ?? this.internalOpen;
   }
 
+  /** `disabled` wins over a controlled `open`: a disabled Select never shows its popup. */
+  private get showsPopup(): boolean {
+    return this.usesPopup && this.currentOpen && !this.isDisabled;
+  }
+
   /** The current selection: a value, an array with `multiple`, or null when nothing is selected. */
   get currentValue(): SelectValue | null {
     const value = this.value !== undefined ? this.value : this.internalValue;
@@ -567,7 +612,7 @@ export class DsSelect extends LitElement {
     if (changed.has('overrides')) {
       this.applyOverrides();
     }
-    const isOpen = this.usesPopup && this.currentOpen;
+    const isOpen = this.showsPopup;
     if (isOpen && !this.shown) {
       // The popup opens with the selected (or first) option active.
       this.activeValue = this.defaultActiveValue();
@@ -578,7 +623,7 @@ export class DsSelect extends LitElement {
 
   protected override updated(): void {
     this.syncInternals();
-    const isOpen = this.usesPopup && this.currentOpen;
+    const isOpen = this.showsPopup;
     if (isOpen && !this.shown) {
       this.shown = true;
       this.showPopup();
@@ -599,36 +644,34 @@ export class DsSelect extends LitElement {
     const describedBy = [
       this.description ? 'description' : '',
       message ? 'error' : '',
-      this.usesPopup && this.currentOpen ? 'active-option' : '',
+      this.showsPopup ? 'active-option' : '',
     ]
       .filter(Boolean)
       .join(' ');
     const o = this.overrides;
     const helperOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {
-      fontSize: o?.helperSize,
-      fontFamily: o?.fontFamily,
-      lineHeight: o?.lineHeight,
+      fontSize: o?.helperSize ?? HELPER_SIZE,
+      fontFamily: o?.fontFamily ?? FONT_FAMILY,
+      lineHeight: o?.lineHeight ?? LINE_HEIGHT,
     };
     // fontSize: font.size.{size}, so the label and value follow `size` unless overridden.
     const fontSize: TokenRef = o?.fontSize ?? (`font.size.${this.size}` as TokenRef);
     const labelOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {
-      fontWeight: o?.labelWeight,
+      fontWeight: o?.labelWeight ?? LABEL_WEIGHT,
       fontSize,
-      fontFamily: o?.fontFamily,
-      lineHeight: o?.lineHeight,
+      fontFamily: o?.fontFamily ?? FONT_FAMILY,
+      lineHeight: o?.lineHeight ?? LINE_HEIGHT,
     };
 
     return html`
       <div class=${classMap({ group: true, disabled: isDisabled })}>
         <label
           id="label"
-          data-part="label"
-          part="label"
           for="trigger"
           class=${classMap({ 'visually-hidden': this.hideLabel })}
           @click=${this.handleLabelClick}
-          ><ds-text element="span" weight="medium" .overrides=${labelOverrides}
-            >${this.label}${this.required ? COPY_REQUIRED_INDICATOR : nothing}</ds-text
+          ><ds-text data-part="label" part="label" element="span" weight="medium" .overrides=${labelOverrides}
+            >${this.label}${this.required ? COPY.requiredIndicator : nothing}</ds-text
           ></label
         >
         ${this.description
@@ -667,19 +710,20 @@ export class DsSelect extends LitElement {
     const o = this.overrides;
     const valueOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {
       fontSize,
-      fontWeight: o?.fontWeight,
-      fontFamily: o?.fontFamily,
-      lineHeight: o?.lineHeight,
+      fontWeight: o?.fontWeight ?? VALUE_WEIGHT,
+      fontFamily: o?.fontFamily ?? FONT_FAMILY,
+      lineHeight: o?.lineHeight ?? LINE_HEIGHT,
     };
+    // fontSize is not forwarded: the popup does not follow `size`, so options keep Listbox's own.
     const listboxOverrides: Partial<Record<ListboxOverridableBinding, TokenRef | undefined>> = {
-      fontFamily: o?.fontFamily,
-      lineHeight: o?.lineHeight,
+      fontFamily: o?.fontFamily ?? FONT_FAMILY,
+      lineHeight: o?.lineHeight ?? LINE_HEIGHT,
     };
-    const isOpen = this.currentOpen;
+    const isOpen = this.showsPopup;
     const labels = this.displayLabels();
     const text =
       labels.length === 0
-        ? this.placeholder || COPY_PLACEHOLDER
+        ? this.placeholder || COPY.placeholder
         : labels.length <= 2
           ? labels.join(', ')
           : COPY_SELECTED_COUNT(labels.length);
@@ -735,6 +779,7 @@ export class DsSelect extends LitElement {
           data-part="listbox"
           part="listbox"
           embedded
+          label=${this.label}
           .labelledBy=${'label'}
           .selectionFollowsFocus=${false}
           .options=${this.options}
@@ -781,7 +826,7 @@ export class DsSelect extends LitElement {
           ${this.multiple
             ? nothing
             : html`<option value="" .selected=${live(selected.size === 0)}>
-                ${this.placeholder || COPY_PLACEHOLDER}
+                ${this.placeholder || COPY.placeholder}
               </option>`}
           ${renderOptions(this.options)}
         </select>
@@ -848,7 +893,8 @@ export class DsSelect extends LitElement {
       case 'Enter':
         event.preventDefault();
         if (this.multiple) {
-          this.listboxEl?.handleKey(new KeyboardEvent('keydown', { key: ' ' }));
+          // Listbox's Enter is a no-op with `multiple`, so Select toggles the active option itself.
+          this.toggleActive();
         } else {
           this.commitActive();
           this.requestOpen(false, true);
@@ -916,7 +962,7 @@ export class DsSelect extends LitElement {
   /** Focus leaving the element closes the popup. */
   private readonly handleFocusOut = (event: FocusEvent): void => {
     const next = event.relatedTarget;
-    if (this.currentOpen && next instanceof Node && next !== this && !this.contains(next)) {
+    if (this.showsPopup && next instanceof Node && next !== this && !this.contains(next)) {
       this.requestOpen(false, false);
     }
   };
@@ -931,6 +977,25 @@ export class DsSelect extends LitElement {
     if (item && item.disabled !== true) {
       this.commitValue(item.value);
     }
+  }
+
+  /** `multiple`: toggles the active option, keeping the value in option order as the Listbox does. */
+  private toggleActive(): void {
+    const item = this.flatItems.find((candidate) => candidate.value === this.activeValue);
+    if (!item || item.disabled === true) {
+      return;
+    }
+    const selected = this.selectedSet;
+    if (selected.has(item.value)) {
+      selected.delete(item.value);
+    } else {
+      selected.add(item.value);
+    }
+    const known = this.flatItems.map((candidate) => candidate.value);
+    this.commitValue([
+      ...known.filter((value) => selected.has(value)),
+      ...[...selected].filter((value) => !known.includes(value)),
+    ]);
   }
 
   /** Reports the new popup state; only an uncontrolled element applies it. */

@@ -1,6 +1,6 @@
 {
   "name": "SidePanel",
-  "role": "none",
+  "role": "complementary",
   "identifier": "SidePanel",
   "rules": [
     {

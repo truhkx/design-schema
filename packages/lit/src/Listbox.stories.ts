@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Listbox.js';
-import type { ListboxMaxVisible, ListboxItem, ListboxValue } from './Listbox.js';
+import type { ListboxMaxVisible, ListboxItem, ListboxOption, ListboxValue } from './Listbox.js';
 
 interface ListboxArgs {
   label: string;
@@ -24,22 +24,33 @@ interface ListboxArgs {
   maxVisible: ListboxMaxVisible;
 }
 
-const FRUIT_OPTIONS: ListboxItem[] = [
+const FRUITS: ListboxOption[] = [
   { value: 'apple', label: 'Apple' },
   { value: 'banana', label: 'Banana' },
   { value: 'cherry', label: 'Cherry' },
+  { value: 'date', label: 'Date' },
+  { value: 'elderberry', label: 'Elderberry' },
 ];
 
-const PLAN_OPTIONS: ListboxItem[] = [
-  { value: 'starter', label: 'Starter', description: 'For individuals trying things out' },
-  { value: 'team', label: 'Team', description: 'For small teams shipping together' },
-  { value: 'enterprise', label: 'Enterprise', description: 'For organizations with custom needs', icon: 'info' },
+const MANY_FRUITS: ListboxItem[] = [
+  ...FRUITS,
+  { value: 'fig', label: 'Fig' },
+  { value: 'grape', label: 'Grape' },
+  { value: 'honeydew', label: 'Honeydew' },
+  { value: 'kiwi', label: 'Kiwi' },
+  { value: 'lemon', label: 'Lemon' },
+  { value: 'mango', label: 'Mango' },
+  { value: 'nectarine', label: 'Nectarine' },
+  { value: 'orange', label: 'Orange' },
+  { value: 'papaya', label: 'Papaya' },
 ];
 
-const MANY_OPTIONS: ListboxItem[] = Array.from({ length: 20 }, (_, index) => ({
-  value: `option-${index + 1}`,
-  label: `Option ${index + 1}`,
-}));
+const PEOPLE: ListboxOption[] = [
+  { value: 'ana', label: 'Ana Souza', description: 'Product design' },
+  { value: 'bo', label: 'Bo Lin', description: 'Engineering' },
+  { value: 'cara', label: 'Cara Nash', description: 'Engineering', icon: 'success' },
+  { value: 'deshawn', label: 'DeShawn Reid', description: 'Out of office', disabled: true },
+];
 
 const meta: Meta<ListboxArgs> = {
   title: 'Listbox/Lit',
@@ -52,7 +63,7 @@ const meta: Meta<ListboxArgs> = {
   },
   args: {
     label: 'Fruit',
-    options: FRUIT_OPTIONS,
+    options: FRUITS,
     multiple: false,
     selectionFollowsFocus: true,
     required: false,
@@ -91,10 +102,10 @@ type Story = StoryObj<ListboxArgs>;
 export const Default: Story = {};
 
 /* maxVisible */
-export const MaxVisible5: Story = { args: { options: MANY_OPTIONS, maxVisible: '5' } };
-export const MaxVisible8: Story = { args: { options: MANY_OPTIONS, maxVisible: '8' } };
-export const MaxVisible12: Story = { args: { options: MANY_OPTIONS, maxVisible: '12' } };
-export const MaxVisibleAll: Story = { args: { options: MANY_OPTIONS, maxVisible: 'all' } };
+export const MaxVisible5: Story = { args: { maxVisible: '5', options: MANY_FRUITS } };
+export const MaxVisible8: Story = { args: { maxVisible: '8', options: MANY_FRUITS } };
+export const MaxVisible12: Story = { args: { maxVisible: '12', options: MANY_FRUITS } };
+export const MaxVisibleAll: Story = { args: { maxVisible: 'all', options: MANY_FRUITS } };
 
 /* examples */
 export const SinglePicker: Story = {
@@ -151,30 +162,53 @@ export const EmbeddedInAPopup: Story = {
 };
 
 /* notable states */
-export const SelectionFollowsFocusFalse: Story = { args: { selectionFollowsFocus: false, defaultValue: 'apple' } };
-export const WithDescriptionsAndIcons: Story = { args: { label: 'Plan', options: PLAN_OPTIONS, defaultValue: 'team' } };
-export const DisabledOption: Story = {
-  args: {
-    options: [
-      { value: 'apple', label: 'Apple', disabled: true },
-      { value: 'banana', label: 'Banana' },
-    ],
-  },
-};
+export const WithDescriptions: Story = { args: { label: 'Assignee', options: PEOPLE } };
+export const SelectionFollowsFocusFalse: Story = { args: { selectionFollowsFocus: false } };
 export const Required: Story = { args: { required: true, name: 'fruit' } };
 export const Invalid: Story = { args: { invalid: true } };
 export const ErrorMessage: Story = { args: { error: 'Fix this before continuing.' } };
 export const Disabled: Story = { args: { disabled: true, defaultValue: 'banana' } };
-export const Empty: Story = { args: { options: [] } };
-export const EmptyCustomMessage: Story = { args: { options: [], emptyMessage: 'No fruit matches that.' } };
-export const Loading: Story = { args: { options: [], loading: true } };
+export const Loading: Story = { args: { loading: true, options: [] } };
 export const InitialActiveValue: Story = { args: { initialActiveValue: 'cherry' } };
+export const Empty: Story = { args: { options: [] } };
+export const EmptyWithMessage: Story = { args: { options: [], emptyMessage: 'No matching people' } };
+export const Controlled: Story = { args: { value: 'cherry' } };
+export const Multiple: Story = { args: { multiple: true, defaultValue: ['banana'] } };
 
 /**
- * Keyboard gate: a single tab stop with at least three options; arrows, Home/End,
- * PageUp/PageDown, Space/Enter and typeahead move `aria-activedescendant`. The
- * `multiple` rules read `?args=multiple:!true` from the story URL.
+ * `labelledBy` is accepted for parity with web, but ids do not cross a shadow
+ * root: the list is still named by `label`, and the visible paragraph is only
+ * a caption beside it.
  */
+export const LabelledBy: Story = {
+  args: { labelledBy: 'listbox-story-label' },
+  render: (args) => html`
+    <div>
+      <p id="listbox-story-label">Favourite fruit</p>
+      <ds-listbox
+        label=${args.label}
+        labelled-by=${ifDefined(args.labelledBy)}
+        .options=${args.options}
+        ?multiple=${args.multiple}
+        .value=${args.value}
+        .defaultValue=${args.defaultValue}
+        .selectionFollowsFocus=${args.selectionFollowsFocus}
+        ?required=${args.required}
+        ?invalid=${args.invalid}
+        .error=${args.error}
+        ?embedded=${args.embedded}
+        initial-active-value=${ifDefined(args.initialActiveValue)}
+        ?loading=${args.loading}
+        ?disabled=${args.disabled}
+        name=${ifDefined(args.name)}
+        empty-message=${ifDefined(args.emptyMessage)}
+        max-visible=${args.maxVisible}
+      ></ds-listbox>
+    </div>
+  `,
+};
+
+/** Present with at least three options, for the keyboard gate — Listbox has no trigger or popup. */
 export const Keyboard: Story = {
-  args: { options: MANY_OPTIONS.slice(0, 8), label: 'Options' },
+  args: { options: FRUITS },
 };

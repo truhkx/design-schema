@@ -240,17 +240,19 @@ export function Accordion({
     triggerRefs.current.get(items[next]!.id)?.focus();
   };
 
+  // Every forward carries the resolved token — the consumer's override, else the Accordion default — even when it
+  // equals the child's own default, so the accordion's value always wins over the child's.
   const disclosureOverrides: Partial<Record<DisclosureOverridableBinding, TokenRef | undefined>> = {
     triggerPaddingBlock: overrides?.triggerPaddingBlock ?? 'space.md',
+    triggerFontFamily: overrides?.fontFamily ?? 'font.family.body',
+    triggerFontSize: overrides?.triggerFontSize ?? 'font.size.md',
+    triggerFontWeight: overrides?.triggerFontWeight ?? 'font.weight.medium',
   };
-  if (overrides?.fontFamily) disclosureOverrides.triggerFontFamily = overrides.fontFamily;
-  if (overrides?.triggerFontSize) disclosureOverrides.triggerFontSize = overrides.triggerFontSize;
-  if (overrides?.triggerFontWeight) disclosureOverrides.triggerFontWeight = overrides.triggerFontWeight;
 
-  const dividerOverrides: Partial<Record<DividerOverridableBinding, TokenRef | undefined>> = {};
-  if (overrides?.divider) dividerOverrides.color = overrides.divider;
-  if (overrides?.dividerWidth) dividerOverrides.thickness = overrides.dividerWidth;
-  const hasDividerOverrides = Object.keys(dividerOverrides).length > 0;
+  const dividerOverrides: Partial<Record<DividerOverridableBinding, TokenRef | undefined>> = {
+    color: overrides?.divider ?? 'color.border',
+    thickness: overrides?.dividerWidth ?? 'border.width.thin',
+  };
 
   const rootStyle: CSSProperties | undefined = overrides?.itemGap
     ? ({ '--ds-accordion-item-gap': cssVar(overrides.itemGap) } as CSSProperties)
@@ -259,9 +261,7 @@ export function Accordion({
   const children: ReactNode[] = [];
   items.forEach((item, index) => {
     if (divided && index > 0) {
-      children.push(
-        <Divider key={`divider-${item.id}`} overrides={hasDividerOverrides ? dividerOverrides : undefined} />,
-      );
+      children.push(<Divider key={`divider-${item.id}`} overrides={dividerOverrides} />);
     }
     children.push(
       <Disclosure

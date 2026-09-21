@@ -1,24 +1,27 @@
 {
   "Accordion.rn": {
-    "hash": "5b6f1e3b84e435dd",
-    "lastAttemptHash": "5b6f1e3b84e435dd",
-    "generatedAt": "2026-09-17T16:06:27+00:00",
+    "hash": "87dabd6a89be1aa8",
+    "lastAttemptHash": "87dabd6a89be1aa8",
+    "generatedAt": "2026-09-21T18:34:05+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.0797,
+    "costUsd": 1.2579,
     "files": [
+      "packages/rn/src/Accordion.stories.tsx",
       "packages/rn/src/Accordion.test.tsx",
-      "packages/rn/src/Accordion.tsx"
+      "packages/rn/src/Accordion.tsx",
+      "packages/rn/src/index.ts"
     ],
-    "gaps": 6,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "ActionSheet.rn": {
@@ -257,24 +260,25 @@
     }
   },
   "Combobox.rn": {
-    "hash": "3c455a1671dea735",
-    "lastAttemptHash": "3c455a1671dea735",
-    "generatedAt": "2026-09-17T16:00:56+00:00",
+    "hash": "d8a4fbd39e23dc04",
+    "lastAttemptHash": "d8a4fbd39e23dc04",
+    "generatedAt": "2026-09-21T18:19:34+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.6467,
+    "costUsd": 2.0805,
     "files": [
       "packages/rn/src/Combobox.tsx"
     ],
-    "gaps": 8,
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "Container.rn": {
@@ -634,24 +638,25 @@
     }
   },
   "Listbox.rn": {
-    "hash": "43dce8c98b64de88",
-    "lastAttemptHash": "43dce8c98b64de88",
-    "generatedAt": "2026-09-17T15:49:01+00:00",
+    "hash": "18327c6bcd229027",
+    "lastAttemptHash": "18327c6bcd229027",
+    "generatedAt": "2026-09-21T17:14:56+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.7033,
+    "rounds": 2,
+    "costUsd": 10.4289,
     "files": [
       "packages/rn/src/Listbox.tsx"
     ],
-    "gaps": 12,
+    "gaps": 22,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "Menu.rn": {
@@ -832,34 +837,35 @@
     }
   },
   "SegmentedControl.rn": {
-    "hash": "d466167f289a358d",
-    "lastAttemptHash": "d466167f289a358d",
-    "generatedAt": "2026-09-17T15:38:08+00:00",
+    "hash": "7bd6cb5b2f7c7f72",
+    "lastAttemptHash": "7bd6cb5b2f7c7f72",
+    "generatedAt": "2026-09-21T16:16:35+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.1384,
+    "rounds": 2,
+    "costUsd": 4.9429,
     "files": [
       "packages/rn/src/SegmentedControl.tsx"
     ],
-    "gaps": 7,
+    "gaps": 20,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "Select.rn": {
-    "hash": "f307e5acc5cd9c0b",
-    "lastAttemptHash": "f307e5acc5cd9c0b",
-    "generatedAt": "2026-09-17T15:55:35+00:00",
+    "hash": "f1accd8293336a2a",
+    "lastAttemptHash": "f1accd8293336a2a",
+    "generatedAt": "2026-09-21T17:42:20+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.5664,
+    "costUsd": 4.7526,
     "files": [
       "packages/rn/src/Select.tsx"
     ],
@@ -870,7 +876,8 @@
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "SidePanel.rn": {
@@ -1030,27 +1037,26 @@
     }
   },
   "Tabs.rn": {
-    "hash": "524e1a9e0b2b6f11",
-    "lastAttemptHash": "524e1a9e0b2b6f11",
-    "generatedAt": "2026-09-17T15:33:39+00:00",
+    "hash": "6ae7a77022954c6f",
+    "lastAttemptHash": "6ae7a77022954c6f",
+    "generatedAt": "2026-09-21T15:58:55+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.1918,
+    "rounds": 2,
+    "costUsd": 5.9942,
     "files": [
-      "packages/rn/demo/SettingsPage.tsx",
-      "packages/rn/src/Tabs.stories.tsx",
       "packages/rn/src/Tabs.tsx",
       "packages/rn/src/index.ts"
     ],
-    "gaps": 7,
+    "gaps": 24,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "Text.rn": {

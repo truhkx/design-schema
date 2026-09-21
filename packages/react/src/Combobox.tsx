@@ -279,7 +279,12 @@ export interface ComboboxProps
    * commits it; the list shows `copy.addCustom` as a synthetic first row, suppressed when the
    * trimmed text already matches an existing option by either its `value` or its `label`.
    * Committing text that matches an option that way (Enter or a comma, same case- and
-   * diacritic-insensitive match) commits that option's `value`, never a custom string.
+   * diacritic-insensitive match) commits that option's `value`, never a custom string. If the
+   * matching option is disabled, the row stays suppressed and the commit does nothing (neither the
+   * disabled value nor a custom string). With `multiple`, text matching an already-selected option
+   * leaves it selected (no `onChange`, unlike Enter on its row, which toggles) and clears the text.
+   * A comma typed when there is nothing to commit (empty text, or only a disabled match) is dropped
+   * and the text before it kept.
    */
   allowCustom?: boolean | undefined;
   /**
@@ -313,8 +318,9 @@ export interface ComboboxProps
   onChange?: ((value: string | string[]) => void) | undefined;
   /**
    * Fired on every text change the user causes — each keystroke, and the text a commit, Escape-to-clear
-   * or the clear button leaves behind — with the input text. Not fired when a controlled `value` change
-   * rewrites the label. The hook for `async` filtering.
+   * or the clear button leaves behind (so `async` consumers can reset) — with the input text. Not fired
+   * when a controlled `value` change rewrites the label, nor when a commit, Escape or the clear button
+   * leaves the text unchanged. The hook for `async` filtering.
    */
   onInputChange?: ((value: string) => void) | undefined;
   /** Fired when the list opens or closes. */
@@ -434,9 +440,19 @@ export function Combobox({
     }
   }
 
+  // Error slot order, as Input: the `error` prop, the Form's entry, then `copy.invalid` while
+  // `invalid`. An empty message is not a message, but the Form's entry still marks the field.
+  const formError = form?.errors[name];
+  const markedInvalid = invalid || formError !== undefined;
   const resolvedError =
-    error ?? form?.errors[name] ?? (invalid ? COPY.invalid.replace('{label}', label) : undefined);
-  const isInvalid = invalid || resolvedError !== undefined;
+    error !== undefined && error !== ''
+      ? error
+      : formError !== undefined && formError !== ''
+        ? formError
+        : markedInvalid
+          ? COPY.invalid.replace('{label}', label)
+          : undefined;
+  const isInvalid = markedInvalid || resolvedError !== undefined;
   const isLoading = filter === 'async' && loading;
 
   // What the Listbox shows: filtered rows, the synthetic custom row first, nothing while loading.
@@ -483,6 +499,17 @@ export function Combobox({
     listboxRef.current?.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, activeRequest.generation]);
+
+  // An open list is driven from the input: DOM focus never leaves it, so aria-activedescendant has a
+  // focused element to announce from and Escape, Tab and the arrows reach the input's own handler. An
+  // opening the user drove already focuses it; one driven by the `open` prop (programmatic, stories,
+  // tests) does not, so claim focus here — but never steal it from the clear or chip-remove Button,
+  // which are tab stops inside the field by design.
+  useLayoutEffect(() => {
+    if (!isOpen) return;
+    const input = inputRef.current;
+    if (input && !fieldRef.current?.contains(document.activeElement)) input.focus();
+  }, [isOpen]);
 
   // New results (async pages, loading) replace the rows under the active option.
   const rowSignature = `${isLoading}|${rows.map((row) => row.value).join(' ')}`;
@@ -763,6 +790,7 @@ export function Combobox({
   };
 
   const handleClear = () => {
+    if (isDisabled) return;
     updateText('');
     if (selectedValues.length > 0) commitValue(multiple ? [] : '');
     inputRef.current?.focus();
@@ -780,6 +808,7 @@ export function Combobox({
   };
 
   const handleRemoveChip = (chipValue: string) => {
+    if (isDisabled) return;
     commitValue(selectedValues.filter((v) => v !== chipValue));
     inputRef.current?.focus();
   };
@@ -829,8 +858,14 @@ export function Combobox({
               return (
                 <span key={chipValue} className="ds-combobox__chip" data-part="chip">
                   <span className="ds-combobox__chip-label">{chipLabel}</span>
-                  {/* Button owns its own data-part; the wrapper carries the anatomy name. */}
-                  <span className="ds-combobox__control" data-part="chipRemove">
+                  {/* Button owns its own data-part, so the wrapper carries the anatomy name — and the
+                      handler, so that pressing the Button (whose click bubbles here) and clicking the
+                      part itself both act. A disabled Button stops its own click, so it never reaches here. */}
+                  <span
+                    className="ds-combobox__control"
+                    data-part="chipRemove"
+                    onClick={() => handleRemoveChip(chipValue)}
+                  >
                     <Button
                       variant="ghost"
                       size="sm"
@@ -838,7 +873,6 @@ export function Combobox({
                       label={COPY.removeChip.replace('{label}', chipLabel)}
                       leadingIcon={<Icon name="close" inline overrides={{ color: 'color.foreground.muted' as TokenRef }} />}
                       disabled={isDisabled}
-                      onClick={() => handleRemoveChip(chipValue)}
                     />
                   </span>
                 </span>
@@ -873,18 +907,18 @@ export function Combobox({
           onBlur={handleInputBlur}
         />
         {showClear ? (
-          <span className="ds-combobox__control" data-part="clearButton">
+          <span className="ds-combobox__control" data-part="clearButton" onClick={handleClear}>
             <Button
               variant="ghost"
               size="sm"
               iconOnly
               label={COPY.clearLabel}
               leadingIcon={<Icon name="close" inline overrides={{ color: 'color.foreground.muted' as TokenRef }} />}
-              onClick={handleClear}
             />
           </span>
         ) : null}
-        <span className="ds-combobox__control" data-part="toggleButton">
+        {/* The input is the tab stop, per APG, so the toggle leaves the tab order. */}
+        <span className="ds-combobox__control" data-part="toggleButton" onClick={handleToggle}>
           <Button
             variant="ghost"
             size="sm"
@@ -893,7 +927,6 @@ export function Combobox({
             leadingIcon={<Icon name="chevron-down" inline overrides={{ color: 'color.foreground.muted' as TokenRef }} />}
             disabled={isDisabled}
             tabIndex={-1}
-            onClick={handleToggle}
           />
         </span>
       </div>

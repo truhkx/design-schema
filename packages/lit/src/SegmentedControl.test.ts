@@ -78,7 +78,8 @@ describe('ds-segmented-control', () => {
       ],
       defaultValue: 'grid',
     });
-    // Playwright will not click a disabled control on its own; a person can try.
+    // Playwright's actionability check treats `aria-disabled` as not enabled; a person can still
+    // press it, and the handler is what refuses the selection.
     await userEvent.click(s.segment(), { force: true });
     await s.el.updateComplete;
     expect(s.change).not.toHaveBeenCalled();
@@ -99,6 +100,22 @@ describe('ds-segmented-control', () => {
     await s.el.updateComplete;
     expect(s.change).toHaveBeenCalledTimes(1);
     expect(s.change.mock.calls[0]?.[0].detail).toEqual({ value: 'table' });
+  });
+
+  it('end-selects-the-last-enabled-segment', async () => {
+    const s = await setup({
+      options: [
+        { value: 'list', label: 'List' },
+        { value: 'grid', label: 'Grid' },
+        { value: 'table', label: 'Table', disabled: true },
+      ],
+      defaultValue: 'list',
+    });
+    s.checked().focus();
+    await userEvent.keyboard('{End}');
+    await s.el.updateComplete;
+    expect(s.change).toHaveBeenCalledTimes(1);
+    expect(s.change.mock.calls[0]?.[0].detail).toEqual({ value: 'grid' });
   });
 
   /* derived */

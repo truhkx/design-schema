@@ -144,6 +144,7 @@ export type {
   TabsOverridableBinding,
   TabsProps,
   TabsItem,
+  TabsTab,
   TabPanelProps,
 } from './Tabs';
 

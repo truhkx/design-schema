@@ -1,11 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import './Accordion.js';
-import './Disclosure.js';
 import './Text.js';
 import type { AccordionHeadingLevel } from './Accordion.js';
 
-/** A story item: the schema's item shape, with `content` rendered as the light-DOM child slotted by `id`. */
+/**
+ * A story item: the schema's item shape, with `content` a plain string. On Lit
+ * `content` is not part of `AccordionItem` — the panel body is the light-DOM
+ * child slotted by the item's id, which is what the render below builds.
+ */
 interface StoryItem {
   id: string;
   summary: string;
@@ -19,11 +22,13 @@ interface AccordionArgs {
   exclusive: boolean;
   divided: boolean;
   keepMounted: boolean;
+  value?: string | string[] | undefined;
   defaultValue?: string | string[] | undefined;
 }
 
-const FAQ: StoryItem[] = [
+const ITEMS: StoryItem[] = [
   { id: 'cancel', summary: 'What happens if I cancel?', content: 'You keep access until the end of the billing period.' },
+  { id: 'plans', summary: 'Can I change plans later?', content: 'Yes. Changes take effect at the next billing date.' },
   { id: 'refunds', summary: 'Do you offer refunds?', content: 'Within 14 days of a charge, in full.' },
 ];
 
@@ -40,7 +45,7 @@ const meta: Meta<AccordionArgs> = {
     keepMounted: { control: 'boolean' },
   },
   args: {
-    items: FAQ,
+    items: ITEMS,
     headingLevel: '3',
     exclusive: false,
     divided: true,
@@ -53,6 +58,7 @@ const meta: Meta<AccordionArgs> = {
       ?exclusive=${args.exclusive}
       .divided=${args.divided}
       ?keep-mounted=${args.keepMounted}
+      .value=${args.value}
       .defaultValue=${args.defaultValue}
     >
       ${args.items.map((item) => html`<div slot=${item.id}><ds-text>${item.content}</ds-text></div>`)}
@@ -114,34 +120,18 @@ export const Undivided: Story = {
 };
 
 /* notable states */
-export const WithDefaultValue: Story = { args: { defaultValue: ['cancel', 'refunds'] } };
+
+/** Controlled: `value` owns the open set, so a trigger reports `change` and waits for the consumer. */
+export const Controlled: Story = { args: { value: ['cancel', 'plans'] } };
 
 export const DisabledItem: Story = {
   args: {
     items: [
-      { id: 'cancel', summary: 'What happens if I cancel?', content: 'You keep access until the end of the billing period.' },
-      { id: 'refunds', summary: 'Do you offer refunds?', content: 'Within 14 days of a charge, in full.', disabled: true },
+      ...ITEMS,
+      { id: 'support', summary: 'How do I contact support?', content: 'Write to the support team.', disabled: true },
     ],
   },
 };
 
-/**
- * Light-DOM `<ds-disclosure>` children, the primary Lit form: three enabled
- * triggers so the keyboard gate can verify ArrowUp/ArrowDown wrapping and
- * Home/End, with every trigger still a Tab stop.
- */
-export const Keyboard: Story = {
-  render: () => html`
-    <ds-accordion>
-      <ds-disclosure id="cancel" summary="What happens if I cancel?">
-        <ds-text>You keep access until the end of the billing period.</ds-text>
-      </ds-disclosure>
-      <ds-disclosure id="refunds" summary="Do you offer refunds?">
-        <ds-text>Within 14 days of a charge, in full.</ds-text>
-      </ds-disclosure>
-      <ds-disclosure id="shipping" summary="Shipping">
-        <ds-text>Orders ship within two business days.</ds-text>
-      </ds-disclosure>
-    </ds-accordion>
-  `,
-};
+/** Present with three enabled triggers and nothing open, for the keyboard gate. */
+export const Keyboard: Story = { args: { items: ITEMS } };

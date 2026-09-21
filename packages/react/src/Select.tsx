@@ -56,6 +56,7 @@ export type SelectOverridableBinding =
   | 'triggerPaddingInline'
   | 'triggerPaddingBlock'
   | 'triggerGap'
+  | 'chevronReserve'
   | 'partGap'
   | 'labelWeight'
   | 'helperSize'
@@ -80,6 +81,7 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<SelectOverridableBinding, string>> = {
   triggerPaddingInline: '--ds-select-trigger-padding-inline',
   triggerPaddingBlock: '--ds-select-trigger-padding-block',
   triggerGap: '--ds-select-trigger-gap',
+  chevronReserve: '--ds-select-chevron-reserve',
   partGap: '--ds-select-part-gap',
   fontFamily: '--ds-select-font-family', // literal-ok: CSS custom-property hook name, not a font stack
   fontSize: '--ds-select-font-size',
@@ -108,8 +110,8 @@ type ResolvedOverrides = {
   popupStyle: CSSProperties;
   label: TextOverrides;
   value: TextOverrides;
-  helper: TextOverrides | undefined;
-  listbox: ListboxOverrides | undefined;
+  helper: TextOverrides;
+  listbox: ListboxOverrides;
 };
 
 /** Splits `overrides` into the root and popup hooks and the forwards into each composed part. */
@@ -129,19 +131,22 @@ function resolveOverrides(
     const popupHook = POPUP_OVERRIDE_HOOK[binding];
     if (popupHook) popupStyle[popupHook] = cssVar(ref);
   }
-  // fontSize is font.size.{size}: the label and value follow `size` unless overridden.
-  const fontSize = given.fontSize ?? (`font.size.${size}` as TokenRef);
-  const { fontFamily, lineHeight } = given;
-  const shared = { ...(fontFamily ? { fontFamily } : {}), ...(lineHeight ? { lineHeight } : {}) };
-  const hasShared = Object.keys(shared).length > 0;
+  // Every forward carries the resolved token — the consumer's override, else the Select default —
+  // because the composed Text has no size prop of its own. fontSize is font.size.{size}, so the
+  // label and value follow `size` unless overridden.
+  const fontSize: TokenRef = given.fontSize ?? (`font.size.${size}` as TokenRef);
+  const shared: TextOverrides = {
+    fontFamily: given.fontFamily ?? 'font.family.body', // literal-ok: a TokenRef forwarded to Text, not a font stack
+    lineHeight: given.lineHeight ?? 'font.lineHeight.normal',
+  };
   return {
     rootStyle: Object.keys(rootStyle).length > 0 ? (rootStyle as CSSProperties) : undefined,
     popupStyle: popupStyle as CSSProperties,
-    label: { ...shared, fontSize, ...(given.labelWeight ? { fontWeight: given.labelWeight } : {}) },
-    value: { ...shared, fontSize, ...(given.fontWeight ? { fontWeight: given.fontWeight } : {}) },
-    helper: given.helperSize || hasShared ? { ...shared, ...(given.helperSize ? { fontSize: given.helperSize } : {}) } : undefined,
-    // fontSize is not forwarded: the popup does not follow `size`.
-    listbox: hasShared ? shared : undefined,
+    label: { ...shared, fontSize, fontWeight: given.labelWeight ?? 'font.weight.medium' },
+    value: { ...shared, fontSize, fontWeight: given.fontWeight ?? 'font.weight.regular' },
+    helper: { ...shared, fontSize: given.helperSize ?? 'font.size.sm' },
+    // fontSize is not forwarded: the popup does not follow `size`, so options keep Listbox's own.
+    listbox: shared,
   };
 }
 
@@ -639,18 +644,13 @@ export function Select({
     </Text>
   ) : null;
 
+  // The live region and the aria-describedby target sit on the wrapper; the part is the composed Text.
   const errorNode = resolvedError ? (
-    <Text
-      element="span"
-      id={errorId}
-      role="alert"
-      size="sm"
-      tone="danger"
-      data-part="errorMessage"
-      overrides={resolved.helper}
-    >
-      {resolvedError}
-    </Text>
+    <span className="ds-select__error" id={errorId} role="alert">
+      <Text element="span" size="sm" tone="danger" data-part="errorMessage" overrides={resolved.helper}>
+        {resolvedError}
+      </Text>
+    </span>
   ) : null;
 
   // The wrapper only places the composed Icon; it never styles it.
@@ -780,6 +780,7 @@ export function Select({
               <Listbox
                 ref={listboxRef}
                 id={listboxId}
+                data-part="listbox"
                 label={label}
                 labelledBy={labelId}
                 options={options}

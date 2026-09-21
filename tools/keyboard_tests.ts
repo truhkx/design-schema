@@ -195,13 +195,23 @@ async function focusIndex(page: Page, root: Locator): Promise<number> {
 function trigger(page: Page): Locator {
   return page.locator('[aria-haspopup], [aria-expanded], [aria-controls]').first();
 }
-/** aria-expanded / aria-checked / aria-selected of the deep active element (or the trigger), for toggles/selects. */
+/** aria-expanded / aria-checked / aria-selected of the deep active element (or the trigger), for toggles/selects,
+ *  followed by the same three of its aria-activedescendant item. A composite that keeps DOM focus on a container
+ *  and points at the active item (Listbox, Combobox) carries the selected state on that item, never on the focused
+ *  container — the same resolution focusIndex already does. The item's state is appended rather than substituted
+ *  because the container is what holds aria-expanded: a Combobox input is both at once. Appending can only add a
+ *  state, so it never turns a passing toggles/selects assertion red. */
 async function ariaState(page: Page): Promise<string> {
   return page.evaluate(() => {
     let a: Element | null = document.activeElement;
     while (a && (a as HTMLElement).shadowRoot && (a as HTMLElement).shadowRoot!.activeElement) a = (a as HTMLElement).shadowRoot!.activeElement;
     const el = a ?? document.querySelector('[aria-haspopup], [aria-expanded]');
-    return [el?.getAttribute('aria-expanded'), el?.getAttribute('aria-checked'), el?.getAttribute('aria-selected')].join('|');
+    const desc = el?.getAttribute('aria-activedescendant');
+    const scope = (el?.getRootNode() ?? document) as Document | ShadowRoot;
+    const item = desc && scope.getElementById ? scope.getElementById(desc) : null;
+    const read = (n: Element | null | undefined): (string | null | undefined)[] =>
+      [n?.getAttribute('aria-expanded'), n?.getAttribute('aria-checked'), n?.getAttribute('aria-selected')];
+    return [...read(el), ...read(item)].join('|');
   });
 }
 `;
@@ -217,7 +227,14 @@ export function specFor(c: Dict, platform: string): string {
     `test.describe('${name} (${platform}) keyboard', () => {`,
     '  test.beforeEach(async ({ page }) => {',
     `    await page.goto('${storyUrl(sid)}');`,
-    `    await expect(${rootLocator(c)}).toBeVisible();`,
+    // Precondition, not an assertion about behavior: it only asks whether the story has rendered yet.
+    // The Storybooks are Vite dev servers that compile a story's module on first request, which under a
+    // full-suite run (one worker per core, three Storybooks) routinely passes 5s — and a story that never
+    // rendered fails every test in the file with "element(s) not found", reported against whichever
+    // component the job happens to be generating. The behavior assertions keep the default timeout.
+    // 15s is above a cold compile and below Playwright's 30s test timeout, so a root that renders but
+    // stays hidden still fails as a readable expect ("Received: hidden") rather than a hook timeout.
+    `    await expect(${rootLocator(c)}).toBeVisible({ timeout: 15_000 });`,
     '  });',
   ];
   const rules = truthy(c.keyboard) ? (c.keyboard as Dict[]) : [];
@@ -237,7 +254,8 @@ export function specFor(c: Dict, platform: string): string {
         continue;
       }
       lines.push(`  test('${title}${when}', async ({ page }) => {`);
-      if (given !== null) lines.push(`    await page.goto('${storyUrl(sid, given)}');`, `    await expect(${rootLocator(c, given)}).toBeVisible();`);
+      // Same precondition after a re-goto with the rule's `given` args.
+      if (given !== null) lines.push(`    await page.goto('${storyUrl(sid, given)}');`, `    await expect(${rootLocator(c, given)}).toBeVisible({ timeout: 15_000 });`);
       const press = `await page.keyboard.press('${keyName}');`;
       lines.push(
         `    const root = ${rootLocator(c, given)};`,

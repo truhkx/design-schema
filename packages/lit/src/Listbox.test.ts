@@ -125,7 +125,7 @@ describe('ds-listbox', () => {
   it('renders', async () => {
     const s = await setup();
     expect(s.list()).not.toBeNull();
-    expect(s.el.shadowRoot!.querySelectorAll('[data-part=option]')).toHaveLength(3);
+    expect(s.el.shadowRoot!.querySelectorAll('[data-part=option]')).toHaveLength(meta.args!.options!.length);
   });
 
   for (const maxVisible of ['5', '8', '12', 'all'] as ListboxMaxVisible[]) {

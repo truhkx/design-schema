@@ -18,8 +18,8 @@ interface TabsArgs {
 const TABS: TabsItem[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'activity', label: 'Activity', badge: '3' },
-  { id: 'files', label: 'Files' },
-  { id: 'members', label: 'Members', disabled: true },
+  { id: 'files', label: 'Files', icon: 'external' },
+  { id: 'settings', label: 'Settings', disabled: true },
 ];
 
 const meta: Meta<TabsArgs> = {
@@ -29,9 +29,20 @@ const meta: Meta<TabsArgs> = {
     actions: { handles: ['change'] },
   },
   argTypes: {
-    activation: { control: 'select', options: ['automatic', 'manual'] },
-    orientation: { control: 'select', options: ['horizontal', 'vertical'] },
-    fit: { control: 'select', options: ['start', 'fill'] },
+    // The enum props carry an explicit enum argType: the keyboard gate drives `orientation` from
+    // the story URL (`?args=orientation:vertical`), and Storybook drops a URL arg whose argType is
+    // missing or whose type it cannot map.
+    activation: {
+      control: 'inline-radio',
+      options: ['automatic', 'manual'],
+      type: { name: 'enum', value: ['automatic', 'manual'] },
+    },
+    orientation: {
+      control: 'inline-radio',
+      options: ['horizontal', 'vertical'],
+      type: { name: 'enum', value: ['horizontal', 'vertical'] },
+    },
+    fit: { control: 'inline-radio', options: ['start', 'fill'], type: { name: 'enum', value: ['start', 'fill'] } },
     keepMounted: { control: 'boolean' },
     value: { control: 'text' },
     defaultValue: { control: 'text' },
@@ -44,6 +55,8 @@ const meta: Meta<TabsArgs> = {
     fit: 'start',
     keepMounted: false,
   },
+  // One <ds-tab-panel> per entry in `tabs`, id = the tab id, so a story that
+  // replaces `tabs` replaces the panels with it and leaves no orphans.
   render: (args) => html`
     <ds-tabs
       label=${args.label}
@@ -55,7 +68,7 @@ const meta: Meta<TabsArgs> = {
       fit=${args.fit ?? 'start'}
       ?keep-mounted=${args.keepMounted ?? false}
     >
-      ${args.tabs.map((tab) => html`<ds-tab-panel id=${tab.id}>${tab.label}</ds-tab-panel>`)}
+      ${args.tabs.map((tab) => html`<ds-tab-panel id=${tab.id}>${tab.label} panel.</ds-tab-panel>`)}
     </ds-tabs>
   `,
 };
@@ -75,27 +88,36 @@ export const OrientationVertical: Story = { args: { orientation: 'vertical' } };
 
 /* fit */
 export const FitStart: Story = { args: { fit: 'start' } };
-export const FitFill: Story = { args: { fit: 'fill' } };
+export const FitFill: Story = { args: { fit: 'fill', tabs: TABS.slice(0, 3) } };
 
 /* notable states */
 export const KeepMounted: Story = { args: { keepMounted: true } };
-export const WithDefaultValue: Story = { args: { defaultValue: 'activity' } };
-export const Controlled: Story = { args: { value: 'files' } };
+export const Controlled: Story = { args: { value: 'activity' } };
 
 /**
  * The tab list with three enabled tabs, for the keyboard gate. Manual activation so
  * Enter/Space selection is observable; `orientation` is read from the story URL
  * (`args=orientation:vertical`) for the Up/Down rules.
  */
-export const Keyboard: Story = {
-  args: {
-    tabs: [
-      { id: 'overview', label: 'Overview' },
-      { id: 'activity', label: 'Activity' },
-      { id: 'files', label: 'Files' },
-    ],
-    activation: 'manual',
-  },
+export const Keyboard: Story = { args: { activation: 'manual', tabs: TABS.slice(0, 3) } };
+
+/** A tab without a matching `<ds-tab-panel>` is still rendered; its panel region is empty (dev warning). */
+export const TabWithoutPanel: Story = {
+  args: { defaultValue: 'files' },
+  render: (args) => html`
+    <ds-tabs
+      label=${args.label}
+      .tabs=${args.tabs}
+      value=${ifDefined(args.value)}
+      default-value=${ifDefined(args.defaultValue)}
+      activation=${args.activation ?? 'automatic'}
+      orientation=${args.orientation ?? 'horizontal'}
+      fit=${args.fit ?? 'start'}
+      ?keep-mounted=${args.keepMounted ?? false}
+    >
+      ${args.tabs.slice(0, 2).map((tab) => html`<ds-tab-panel id=${tab.id}>${tab.label} panel.</ds-tab-panel>`)}
+    </ds-tabs>
+  `,
 };
 
 /* examples */

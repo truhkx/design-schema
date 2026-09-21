@@ -11,7 +11,12 @@ import type { Tokens } from './theme';
 export type SegmentedControlSize = 'sm' | 'md';
 
 /** One option. Labels are one word; with `iconOnly` the label becomes the accessible name. */
-export type SegmentedControlOption = { value: string; label: string; icon?: IconName; disabled?: boolean };
+export type SegmentedControlOption = {
+  value: string;
+  label: string;
+  icon?: IconName | undefined;
+  disabled?: boolean | undefined;
+};
 
 /** The style bindings a caller may replace with a different token; see the component's overrides contract. */
 export type SegmentedControlOverridableBinding =
@@ -37,9 +42,10 @@ export interface SegmentedControlProps {
   label: string;
   /**
    * Two to five options (guidance, not enforced: any count renders, with no warning). Labels
-   * are one word; with `iconOnly` the label becomes the accessible name.
+   * are one word; with `iconOnly` the label becomes the accessible name. The icon is an Icon
+   * whose `size` is the control's `size`.
    */
-  options: { value: string; label: string; icon?: IconName; disabled?: boolean }[];
+  options: SegmentedControlOption[];
   /** Controlled selected value. Omit for uncontrolled. */
   value?: string | undefined;
   /**
@@ -74,6 +80,9 @@ const FONT_SIZE = {
 type SegmentLayout = { x: number; y: number; width: number; height: number };
 
 const isWeb = Platform.OS === 'web';
+
+/** The DOM element react-native-web renders for a `Pressable`; this package has no DOM lib. */
+type WebElement = { setAttribute(name: string, value: string): void; removeAttribute(name: string): void };
 
 /**
  * SegmentedControl — switches a mode: list or grid, day or week, metric or imperial.
@@ -132,8 +141,9 @@ export function SegmentedControl({
       const missing = options.filter((option) => option.icon === undefined).map((option) => `"${option.value}"`);
       if (missing.length > 0) {
         hasWarnedIconRef.current = true;
+        // One message per instance listing every option without an icon.
         console.warn(
-          `SegmentedControl: iconOnly is set but option ${missing.join(', ')} has no icon; its label is shown as text instead.`,
+          `SegmentedControl: iconOnly is set but ${missing.join(', ')} ${missing.length === 1 ? 'has' : 'have'} no icon; the label is shown as text instead.`,
         );
       }
     }
@@ -273,6 +283,8 @@ export function SegmentedControl({
     lineHeightMultiplier,
     color: t.colorForegroundMuted,
     selectedColor: t.colorForegroundStrong,
+    // The glyph is an Icon at the control's own size, as on every other platform.
+    iconSize: size,
   };
 
   const groupStyle: ViewStyle = {
@@ -363,6 +375,7 @@ interface SegmentStyleTokens {
   lineHeightMultiplier: number;
   color: string;
   selectedColor: string;
+  iconSize: SegmentedControlSize;
 }
 
 interface SegmentProps {
@@ -394,6 +407,32 @@ function Segment({
   const [focused, setFocused] = React.useState(false);
   const disabled = option.disabled === true;
   const foreground = selected ? s.selectedColor : s.color;
+  const nodeRef = React.useRef<ViewInstance | null>(null);
+
+  // react-native-web 0.21 ignores `accessibilityState` and `focusable`, so neither the disabled
+  // state nor the roving tab stop would reach the DOM: every segment renders `tabindex="0"` and no
+  // segment is announced as disabled. Both are set on the node itself here, as Tabs, Button and
+  // Checkbox do — passing Pressable's own `disabled` prop instead would drop the segment out of the
+  // accessibility tree, which the press guard exists to avoid. The attribute is also what keeps the
+  // dimmed disabled segment out of axe's contrast check (WCAG 1.4.3 exempts inactive components,
+  // and `opacity.disabled` over `color.foreground.muted` cannot reach 4.5:1).
+  React.useEffect(() => {
+    if (!isWeb) {
+      return;
+    }
+    const node = nodeRef.current as unknown as WebElement | null;
+    if (node === null) {
+      return;
+    }
+    if (disabled) {
+      node.setAttribute('aria-disabled', 'true');
+    } else {
+      node.removeAttribute('aria-disabled');
+    }
+    // The group is one tab stop: the selected segment, or the first enabled one. A disabled
+    // segment is never a stop (it has nothing to reach), but stays in the tree and readable.
+    node.setAttribute('tabindex', tabStop && !disabled ? '0' : '-1');
+  }, [disabled, tabStop]);
 
   const rowStyle = (_state: PressableStateCallbackType): ViewStyle => ({
     flexDirection: 'row',
@@ -425,17 +464,23 @@ function Segment({
     color: foreground,
   };
 
-  // Roving tab stop on react-native-web; on native every segment stays its own stop.
-  const webFocusProps: Record<string, unknown> = isWeb ? { focusable: tabStop && !disabled } : {};
-
   return (
     <Pressable
-      ref={(instance: ViewInstance | null) => registerRef(option.value, instance)}
+      ref={(instance: ViewInstance | null) => {
+        nodeRef.current = instance;
+        registerRef(option.value, instance);
+      }}
       testID="SegmentedControl.segment"
       accessibilityRole="radio"
-      accessibilityLabel={option.label}
+      // An `iconOnly` segment carries its label as the accessible name; a segment showing its
+      // label as text is named by that text, and gets no label of its own. No
+      // `accessibilityHint` either: it would only repeat the name, and a press already selects.
+      accessibilityLabel={showLabel ? undefined : option.label}
       accessibilityState={{ checked: selected, disabled }}
-      {...webFocusProps}
+      // `role="radio"` requires `aria-checked`, and react-native-web 0.21 ignores
+      // `accessibilityState`, so the checked state reaches the DOM through this mirror (native
+      // merges both); `aria-disabled` and `tabindex` are set in the effect above.
+      aria-checked={selected}
       // Never the native `disabled` prop: it would drop the segment from the focus order.
       onPress={() => {
         if (!disabled) {
@@ -455,7 +500,7 @@ function Segment({
     >
       {showIcon ? (
         <View testID="SegmentedControl.segmentIcon" accessibilityElementsHidden importantForAccessibility="no">
-          <Icon name={option.icon!} size="sm" color={foreground} />
+          <Icon name={option.icon!} size={s.iconSize} color={foreground} />
         </View>
       ) : null}
       {!showLabel ? null : (

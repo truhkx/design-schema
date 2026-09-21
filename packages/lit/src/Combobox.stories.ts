@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Combobox.js';
-import type { ComboboxFilter, ComboboxValue } from './Combobox.js';
+import type { ComboboxFilter, ComboboxOpenChangeDetail, ComboboxValue, DsCombobox } from './Combobox.js';
 import type { ListboxItem } from './Listbox.js';
 
 interface ComboboxArgs {
@@ -95,15 +95,54 @@ export const Open: Story = { args: { open: true } };
 export const Multiple: Story = { args: { multiple: true, defaultValue: ['apple', 'banana'] } };
 export const AllowCustom: Story = { args: { allowCustom: true, multiple: true } };
 export const Loading: Story = { args: { filter: 'async', loading: true, open: true } };
-export const NotClearable: Story = { args: { clearable: false, defaultValue: 'banana' } };
-export const WithDescription: Story = { args: { description: 'Pick one for the order.', placeholder: 'Search fruit' } };
+export const NotClearable: Story = { args: { clearable: false, defaultValue: 'apple' } };
+export const WithDescription: Story = {
+  args: { description: 'Used for the produce order.', placeholder: 'Search fruit' },
+};
 export const Required: Story = { args: { required: true } };
-export const Disabled: Story = { args: { disabled: true, defaultValue: 'apple' } };
+export const Disabled: Story = { args: { disabled: true, defaultValue: 'banana' } };
 export const Invalid: Story = { args: { invalid: true } };
-export const WithError: Story = { args: { error: 'Fix this before continuing.' } };
+export const WithError: Story = { args: { error: 'Choose a fruit from the list.' } };
 
-/** Rendered open with its input, clear button and toggle button, for the keyboard gate. */
-export const Keyboard: Story = { args: { open: true, defaultValue: 'apple' } };
+/**
+ * Open with its input, for the keyboard gate: the options are reached through the Listbox while DOM
+ * focus stays in the input, and the clear and toggle buttons are the other focus stops.
+ * `defaultValue` is set so the clear button renders. The story owns `open` — it writes `open-change`
+ * back onto the element — so Escape and Tab really close the popup.
+ */
+export const Keyboard: Story = {
+  args: { open: true, defaultValue: 'apple' },
+  play: async ({ canvasElement }) => {
+    const combobox = canvasElement.querySelector('ds-combobox');
+    await combobox?.updateComplete;
+    combobox?.shadowRoot?.querySelector<HTMLElement>('[data-part=input]')?.focus();
+  },
+  render: (args) => html`
+    <ds-combobox
+      label=${args.label}
+      name=${args.name}
+      .options=${args.options}
+      .value=${args.value}
+      .defaultValue=${args.defaultValue}
+      .open=${args.open}
+      .inputValue=${args.inputValue}
+      ?multiple=${args.multiple}
+      ?allow-custom=${args.allowCustom}
+      filter=${args.filter}
+      placeholder=${ifDefined(args.placeholder)}
+      description=${ifDefined(args.description)}
+      ?required=${args.required}
+      ?disabled=${args.disabled}
+      ?invalid=${args.invalid}
+      error=${ifDefined(args.error)}
+      ?loading=${args.loading}
+      .clearable=${args.clearable}
+      @open-change=${(event: CustomEvent<ComboboxOpenChangeDetail>) => {
+        (event.currentTarget as DsCombobox).open = event.detail.open;
+      }}
+    ></ds-combobox>
+  `,
+};
 
 /* examples */
 export const FruitPicker: Story = {

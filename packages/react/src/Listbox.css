@@ -17,6 +17,7 @@
   --ds-listbox-option-description-color: var(--color-foreground-muted);
   --ds-listbox-option-description-size: var(--font-size-sm);
   --ds-listbox-option-active-background: var(--color-background-subtle);
+  --ds-listbox-option-weight: var(--font-weight-regular);
   --ds-listbox-option-selected-weight: var(--font-weight-medium);
   --ds-listbox-option-selected-check: var(--color-control-selected-background);
   --ds-listbox-group-label-color: var(--color-foreground-muted);
@@ -141,6 +142,8 @@
   min-block-size: var(--ds-listbox-min-target);
   border-radius: var(--ds-listbox-option-radius);
   color: var(--ds-listbox-option-color);
+  /* Unselected rows; selected ones take optionSelectedWeight from the rule below. */
+  font-weight: var(--ds-listbox-option-weight);
   cursor: pointer;
   user-select: none;
   transition: background-color var(--motion-duration-fast) var(--motion-easing-standard);

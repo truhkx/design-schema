@@ -73,7 +73,7 @@ describe('rootLocator', () => {
     const props = { role: { type: 'enum', values: ['navigation', 'main'], required: true, description: 'Which landmark.' } };
     const c = { ...DIALOG, name: 'Landmark', props, a11y: { roleFrom: 'role', requires: [] } };
     const spec = kt.specFor(c, 'web');
-    expect(spec).toContain('await expect(page.locator(\'[data-ds="Landmark"]\').first()).toBeVisible();');
+    expect(spec).toContain('await expect(page.locator(\'[data-ds="Landmark"]\').first()).toBeVisible({ timeout: 15_000 });');
     expect(spec).not.toContain('getByRole');
     expect(kt.specData(c).role).toBeNull();
   });
@@ -164,7 +164,10 @@ describe('specFor', () => {
   test('the root locator and story are wired into beforeEach', () => {
     const s = spec();
     expect(s).toContain("page.goto('/iframe.html?id=dialog-react--keyboard&viewMode=story')");
-    expect(s).toContain("await expect(page.getByRole('dialog').first()).toBeVisible();");
+    // The precondition waits longer than the default: it only asks whether the Vite dev server has
+    // compiled and rendered the story yet, which a full-suite run can push past 5s. The behavior
+    // assertions below (`opens`, `closes`) keep the default timeout.
+    expect(s).toContain("await expect(page.getByRole('dialog').first()).toBeVisible({ timeout: 15_000 });");
     expect(s).toContain("const root = page.getByRole('dialog').first();");
   });
 

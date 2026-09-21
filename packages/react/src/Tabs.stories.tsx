@@ -31,6 +31,16 @@ const meta: Meta<typeof Tabs> = {
     children: panelsFor(TABS),
   },
   argTypes: {
+    // The enum props carry an explicit enum argType: the keyboard gate drives `orientation` from
+    // the story URL (`?args=orientation:vertical`), and Storybook drops a URL arg whose argType is
+    // missing or whose type it cannot map.
+    activation: { control: 'inline-radio', options: ['automatic', 'manual'], type: { name: 'enum', value: ['automatic', 'manual'] } },
+    orientation: {
+      control: 'inline-radio',
+      options: ['horizontal', 'vertical'],
+      type: { name: 'enum', value: ['horizontal', 'vertical'] },
+    },
+    fit: { control: 'inline-radio', options: ['start', 'fill'], type: { name: 'enum', value: ['start', 'fill'] } },
     onChange: { action: 'onChange' },
   },
   tags: ['autodocs'],

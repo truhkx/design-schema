@@ -161,11 +161,10 @@ export function Accordion({
     lastEmittedRef.current = null;
     if (emitted !== null && sameSet(emitted, openIds)) return;
     if (sameSet(previous, openIds)) return;
-    for (const id of openIds) {
-      if (!previous.includes(id)) onOpenChange?.(id, true, 'controlled');
-    }
-    for (const id of previous) {
-      if (!openIds.includes(id)) onOpenChange?.(id, false, 'controlled');
+    // Item order, as for the `exclusive` closes: one pass, opens and closes interleaved.
+    for (const item of items) {
+      const nowOpen = openIds.includes(item.id);
+      if (nowOpen !== previous.includes(item.id)) onOpenChange?.(item.id, nowOpen, 'controlled');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openKey, valueKey, isControlled]);

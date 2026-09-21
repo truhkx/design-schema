@@ -1,16 +1,5 @@
 import * as React from 'react';
-import {
-  AccessibilityInfo,
-  Animated,
-  Modal,
-  Platform,
-  Pressable,
-  StyleSheet,
-  TextInput,
-  View,
-  findNodeHandle,
-  useWindowDimensions,
-} from 'react-native';
+import { AccessibilityInfo, Animated, Platform, Pressable, TextInput, View, findNodeHandle, useWindowDimensions } from 'react-native';
 import type { LayoutChangeEvent, TextInputInstance, TextInputKeyPressEvent, TextStyle, ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
@@ -162,6 +151,8 @@ function fold(text: string): string {
 
 type Rect = { x: number; y: number; width: number; height: number };
 
+type WebElement = { setAttribute(name: string, value: string): void; removeAttribute(name: string): void };
+
 /**
  * Combobox — an input that narrows as you type and lets you pick, or, with
  * `allowCustom`, keep what you typed.
@@ -174,8 +165,13 @@ type Rect = { x: number; y: number; width: number; height: number };
  * a `Pressable` summary (chips read-only) that opens a `BottomSheet height="full"`
  * with the chips and the `TextInput` at the top of its body, the `Listbox` below and
  * a `copy.done` footer Button; on tablets and react-native-web the field holds the
- * `TextInput` directly and the popup is an anchored `Modal` below it (flipped above on
- * overflow) that does not trap focus. Listbox rows are touch `Pressable`s with no key
+ * `TextInput` directly and the popup is an absolutely positioned sibling of the field,
+ * anchored under it (flipped above when there is no room) on `layer.dropdown`. It is
+ * deliberately not a `Modal`: react-native-web's `Modal` always wraps its children in a
+ * focus trap, which would pull DOM focus out of the input the moment the list opened —
+ * and the APG model keeps focus in the text input while the list is browsed. There is no
+ * scrim either: an outside tap blurs the input, and blur is what closes the list.
+ * Listbox rows are touch `Pressable`s with no key
  * events, so arrow browsing, Alt+ArrowDown and Tab-without-committing have no native
  * equivalent: a tap commits, Enter or a comma through the `TextInput` commits typed
  * custom text, Escape (hardware keyboard / react-native-web) closes then clears the
@@ -216,6 +212,7 @@ export function Combobox({
 
   const fieldRef = React.useRef<ViewInstance>(null);
   const inputRef = React.useRef<TextInputInstance>(null);
+  const popupId = React.useId();
 
   const emptyValue: ComboboxValue = multiple ? [] : '';
   const [internalValue, setInternalValue] = React.useState<ComboboxValue>(defaultValue ?? emptyValue);
@@ -231,11 +228,17 @@ export function Combobox({
   // The toggle button opens the full, unfiltered list for that opening; the next keystroke filters again.
   const [showAll, setShowAll] = React.useState(false);
   const [focused, setFocused] = React.useState(false);
-  const [popupMounted, setPopupMounted] = React.useState(openProp ?? false);
   const [fieldRect, setFieldRect] = React.useState<Rect | null>(null);
   const [popupHeight, setPopupHeight] = React.useState<number | null>(null);
   const [statusText, setStatusText] = React.useState<string>('');
   const progress = React.useRef(new Animated.Value(0)).current;
+  // A press that starts inside the list blurs the input first; without this the list would
+  // close under the finger before the row's own press handler ran (as Search).
+  const pressingList = React.useRef(false);
+  // Only typing opens a filtered list: the toggle button and the `open` prop open the full one
+  // for that opening, and the next keystroke filters again.
+  const openedByTyping = React.useRef(false);
+  const wasOpen = React.useRef(false);
 
   const isValueControlled = value !== undefined;
   const currentValue: ComboboxValue = isValueControlled ? value : internalValue;
@@ -244,9 +247,15 @@ export function Combobox({
   const isOpenControlled = openProp !== undefined;
   const open = isOpenControlled ? openProp : internalOpen;
   const isDisabled = disabled || (form?.disabled ?? false);
-  const formError = form?.errors[name];
-  const displayedError = error !== undefined && error !== '' ? error : formError;
-  const isInvalid = invalid || displayedError !== undefined;
+
+  // The Form marks a failing field by putting an entry under its name; the entry's presence
+  // is the mark, and an entry with an empty message falls through to the derived copy.
+  // `error` is the consumer's and the Form never sets it. Precedence as Input's.
+  const formErrors = form?.errors;
+  const formMarked = formErrors !== undefined && Object.prototype.hasOwnProperty.call(formErrors, name);
+  const formError = formErrors?.[name];
+  const ownError = error !== undefined && error !== '' ? error : undefined;
+  const isInvalid = ownError !== undefined || invalid || formMarked;
   const summarised = form !== null && form.errorSummary;
 
   // Typing on a phone with a floating list under the keyboard is unusable, so phones get a BottomSheet.
@@ -261,6 +270,14 @@ export function Combobox({
   const selectedValues: string[] = multiple ? (Array.isArray(currentValue) ? currentValue : currentValue !== '' ? [currentValue] : []) : [];
   const selectedValue: string | undefined = !multiple && typeof currentValue === 'string' && currentValue !== '' ? currentValue : undefined;
   const hasSelection = multiple ? selectedValues.length > 0 : selectedValue !== undefined;
+
+  // `required` beats `invalid` only while nothing is selected, as Input's derivation.
+  const derivedError = isInvalid
+    ? required && !hasSelection
+      ? COPY.required.replace('{label}', label)
+      : COPY.invalid.replace('{label}', label)
+    : undefined;
+  const displayedError = ownError ?? (formError !== undefined && formError !== '' ? formError : derivedError);
 
   // A controlled `value` change rewrites the label without firing onInputChange.
   const lastSingleValue = React.useRef(multiple ? undefined : currentValue);
@@ -317,6 +334,11 @@ export function Combobox({
 
   const validateValue = React.useCallback(
     (candidate: ComboboxValue): string | null => {
+      // Precedence: `error` prop, then `required`, then `invalid`. The Form's own entry is
+      // ignored here, since this is what the Form calls to produce it. A disabled field is skipped.
+      if (isDisabled) {
+        return null;
+      }
       if (error !== undefined && error !== '') {
         return error;
       }
@@ -331,7 +353,7 @@ export function Combobox({
       }
       return null;
     },
-    [required, label, error, invalid],
+    [isDisabled, required, label, error, invalid],
   );
 
   const changeOpen = (next: boolean): void => {
@@ -395,6 +417,24 @@ export function Combobox({
     }
   }, [displayedError, summarised]);
 
+  // React Native 0.87 has no `aria-controls` prop, so on web it goes on the DOM node itself: an
+  // expanded `combobox` must name the popup it controls, and the popup (with its id) is unmounted
+  // while the list is closed.
+  React.useEffect(() => {
+    if (Platform.OS !== 'web') {
+      return;
+    }
+    const node = inputRef.current as unknown as WebElement | null;
+    if (node === null) {
+      return;
+    }
+    if (open) {
+      node.setAttribute('aria-controls', popupId);
+    } else {
+      node.removeAttribute('aria-controls');
+    }
+  }, [open, popupId]);
+
   // constant statusDebounce: motion.duration.base × 2.
   const statusDebounce = t.motionDurationBase * 2;
   React.useEffect(() => {
@@ -440,7 +480,13 @@ export function Combobox({
     }
   };
 
+  // `onInputChange` reports user text changes only: a commit, Escape or the clear button that
+  // leaves the text as it was is silent (and a controlled `value` rewriting the label never
+  // comes through here at all).
   const commitInputText = (next: string): void => {
+    if (next === currentInputText) {
+      return;
+    }
     if (!isInputControlled) {
       setInternalInputText(next);
     }
@@ -523,6 +569,7 @@ export function Combobox({
 
   const handleChangeText = (text: string): void => {
     setShowAll(false);
+    openedByTyping.current = true;
     if (allowCustom && text.includes(',')) {
       // A comma commits the text before it exactly as Enter does; with nothing to commit the comma is dropped.
       const before = text.slice(0, text.indexOf(','));
@@ -566,8 +613,9 @@ export function Combobox({
 
   const handleBlur = (): void => {
     setFocused(false);
-    // In the sheet, tapping a row dismisses the keyboard; only the anchored field closes on blur.
-    if (!usesSheet) {
+    // In the sheet, tapping a row dismisses the keyboard; only the anchored field closes on
+    // blur — and an outside tap is exactly that blur, which is why there is no scrim.
+    if (!usesSheet && !pressingList.current) {
       closePopup(false);
     }
     if (form !== null && form.validateMode === 'blur') {
@@ -575,11 +623,31 @@ export function Combobox({
     }
   };
 
+  // Every route into an open list except a keystroke shows the whole option set for that opening —
+  // the toggle button, and a controlled `open` (which is how the Keyboard story opens it).
   React.useEffect(() => {
-    if (open) {
-      setPopupMounted(true);
+    if (open && !wasOpen.current) {
+      setShowAll(!openedByTyping.current);
     }
+    if (!open) {
+      openedByTyping.current = false;
+    }
+    wasOpen.current = open;
   }, [open]);
+
+  const handleListPressStart = (): void => {
+    pressingList.current = true;
+  };
+
+  const handleListPressEnd = (): void => {
+    // The row's press handler runs after the release; close afterwards if focus did not come back.
+    setTimeout(() => {
+      pressingList.current = false;
+      if (!usesSheet && inputRef.current?.isFocused() !== true) {
+        closePopup(false);
+      }
+    }, 0);
+  };
 
   const handlePopupLayout = (event: LayoutChangeEvent): void => {
     setPopupHeight(event.nativeEvent.layout.height);
@@ -605,50 +673,40 @@ export function Combobox({
   const layer = overrides?.layer ? (resolveToken(t, overrides.layer) as number) : t.layerDropdown;
   const disabledOpacity = overrides?.disabledOpacity ? (resolveToken(t, overrides.disabledOpacity) as number) : t.opacityDisabled;
   const enterDuration = overrides?.enter ? (resolveToken(t, overrides.enter) as number) : t.motionDurationFast;
-  const iconColor = t.colorForegroundMuted;
+  // The locked `iconColor` binding always carries this token, forwarded as each composed Icon's
+  // own `color` override rather than as its `color` prop, which would win over an override.
+  const iconOverrides = { color: 'color.foreground.muted' as TokenRef };
 
-  // Anchored-popup path only; the BottomSheet runs its own animation.
+  // Anchored-popup path only; the BottomSheet runs its own animation. The popup fades in over
+  // `enter` and closes instantly, as on web; reduced motion skips the fade.
   React.useEffect(() => {
-    if (usesSheet || !popupMounted) {
+    if (usesSheet) {
       return undefined;
     }
-    if (open) {
-      fieldRef.current?.measureInWindow((x, y, width, height) => setFieldRect({ x, y, width, height }));
-      if (reducedMotion) {
-        progress.setValue(1);
-        return undefined;
-      }
-      const animation = Animated.timing(progress, {
-        toValue: 1,
-        duration: enterDuration,
-        easing: toEasing(t.motionEasingStandard),
-        // react-native-web has no native animated module.
-        useNativeDriver: false,
-      });
-      animation.start();
-      return () => animation.stop();
-    }
-    setFieldRect(null);
-    setPopupHeight(null);
-    if (reducedMotion) {
+    if (!open) {
       progress.setValue(0);
-      setPopupMounted(false);
+      setFieldRect(null);
+      setPopupHeight(null);
+      return undefined;
+    }
+    // Only the window rect is measured, and only to decide whether the popup flips above the
+    // field: its position comes from being the field's absolutely positioned sibling.
+    fieldRef.current?.measureInWindow((x, y, width, height) => setFieldRect({ x, y, width, height }));
+    if (reducedMotion) {
+      progress.setValue(1);
       return undefined;
     }
     const animation = Animated.timing(progress, {
-      toValue: 0,
+      toValue: 1,
       duration: enterDuration,
       easing: toEasing(t.motionEasingStandard),
+      // react-native-web has no native animated module.
       useNativeDriver: false,
     });
-    animation.start(({ finished }) => {
-      if (finished) {
-        setPopupMounted(false);
-      }
-    });
+    animation.start();
     return () => animation.stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, popupMounted, reducedMotion, usesSheet]);
+  }, [open, reducedMotion, usesSheet, enterDuration]);
 
   const visibleLabel = required ? `${label}${COPY.requiredIndicator}` : label;
   const showClear = clearable && !isDisabled && (hasSelection || currentInputText !== '');
@@ -736,7 +794,7 @@ export function Combobox({
               size="sm"
               iconOnly
               disabled={isDisabled}
-              leadingIcon={<Icon name="close" size="xs" color={iconColor} />}
+              leadingIcon={<Icon name="close" size="xs" overrides={iconOverrides} />}
               onPress={() => handleRemoveChip(chipValue)}
             />
           </View>
@@ -753,6 +811,9 @@ export function Combobox({
       accessibilityHint={description}
       accessibilityState={{ disabled: isDisabled, expanded: open }}
       accessibilityValue={!multiple && selectedValue !== undefined ? { text: labelFor(selectedValue) } : undefined}
+      // react-native-web 0.21 drops `accessibilityState`, and a `combobox` without
+      // `aria-expanded` fails an accessibility audit (as Select's trigger).
+      aria-expanded={open}
       editable={!isDisabled}
       value={currentInputText}
       placeholder={placeholder}
@@ -803,21 +864,24 @@ export function Combobox({
   const spaceAbove = fieldRect !== null ? fieldRect.y : 0;
   const measuredPopupHeight = popupHeight ?? 0;
   const flipAbove = fieldRect !== null && spaceBelow < measuredPopupHeight + popupOffset && spaceAbove > spaceBelow;
-  const popupTop =
-    fieldRect === null ? 0 : flipAbove ? fieldRect.y - popupOffset - measuredPopupHeight : fieldRect.y + fieldRect.height + popupOffset;
 
-  const hostStyle: ViewStyle = { flex: 1 };
-
+  // The field's own wrapper is the anchor, so the popup needs no measured coordinates: it sits
+  // at the wrapper's block edge and is at least as wide as it. `popupOffset` is the gap to the
+  // field, applied on the side that faces it.
   const popupOuterStyle: Animated.WithAnimatedValue<ViewStyle> = {
     position: 'absolute',
-    top: popupTop,
-    left: fieldRect?.x ?? 0,
-    minWidth: fieldRect?.width ?? 0,
+    left: 0,
+    right: 0,
+    ...(flipAbove ? { bottom: '100%', marginBottom: popupOffset } : { top: '100%', marginTop: popupOffset }),
     borderRadius: popupRadius,
     zIndex: layer,
     opacity: progress,
     ...popupShadow,
   };
+
+  // react-native-web gives every View `z-index: 0`, so the anchor has to out-rank the status and
+  // error siblings itself for the popup inside it to paint over them.
+  const anchorStyle: ViewStyle = { zIndex: layer };
 
   const popupInnerStyle: ViewStyle = {
     borderRadius: popupRadius,
@@ -837,14 +901,16 @@ export function Combobox({
         variant="ghost"
         size="sm"
         iconOnly
-        leadingIcon={<Icon name="close" size="xs" color={iconColor} />}
+        leadingIcon={<Icon name="close" size="xs" overrides={iconOverrides} />}
         onPress={handleClear}
       />
     </View>
   ) : null;
 
   return (
-    <View ref={ref} testID="Combobox" style={containerStyle}>
+    // react-native-web drops `accessibilityState`, and a disabled field that only dims through
+    // `opacity.disabled` reads as a contrast failure unless the subtree is marked inactive.
+    <View ref={ref} testID="Combobox" style={containerStyle} aria-disabled={isDisabled}>
       <View testID="Combobox.label">
         <Text weight="medium" overrides={labelOverrides}>
           {visibleLabel}
@@ -881,30 +947,47 @@ export function Combobox({
             </Text>
           )}
           <View testID="Combobox.toggleButton" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-            <Icon name="chevron-down" size="xs" color={iconColor} />
+            <Icon name="chevron-down" size="xs" overrides={iconOverrides} />
           </View>
         </Pressable>
       ) : (
-        <View ref={fieldRef} style={fieldRowStyle} testID="Combobox.field">
-          {multiple && selectedValues.length > 0 ? (
-            <View style={sheetChipsRowStyle} testID="Combobox.chips">
-              {selectedValues.map((v) => renderChip(v, true))}
+        <View style={anchorStyle}>
+          <View ref={fieldRef} style={fieldRowStyle} testID="Combobox.field">
+            {multiple && selectedValues.length > 0 ? (
+              <View style={sheetChipsRowStyle} testID="Combobox.chips">
+                {selectedValues.map((v) => renderChip(v, true))}
+              </View>
+            ) : null}
+            {textInput}
+            {clearButton}
+            <View testID="Combobox.toggleButton">
+              <Button
+                label={COPY.toggleLabel}
+                variant="ghost"
+                size="sm"
+                iconOnly
+                expanded={open}
+                disabled={isDisabled}
+                leadingIcon={<Icon name="chevron-down" size="xs" overrides={iconOverrides} />}
+                onPress={handleTogglePress}
+              />
             </View>
-          ) : null}
-          {textInput}
-          {clearButton}
-          <View testID="Combobox.toggleButton">
-            <Button
-              label={COPY.toggleLabel}
-              variant="ghost"
-              size="sm"
-              iconOnly
-              expanded={open}
-              disabled={isDisabled}
-              leadingIcon={<Icon name="chevron-down" size="xs" color={iconColor} />}
-              onPress={handleTogglePress}
-            />
           </View>
+          {open ? (
+            <Animated.View
+              style={popupOuterStyle}
+              nativeID={popupId}
+              onLayout={handlePopupLayout}
+              // A press that starts in the list must not close it through the input's blur.
+              onTouchStart={handleListPressStart}
+              onTouchEnd={handleListPressEnd}
+              onPointerDown={handleListPressStart}
+              onPointerUp={handleListPressEnd}
+              testID="Combobox.popup"
+            >
+              <View style={popupInnerStyle}>{listbox}</View>
+            </Animated.View>
+          ) : null}
         </View>
       )}
       {usesSheet ? null : status}
@@ -923,7 +1006,7 @@ export function Combobox({
           onClose={() => closePopup(true)}
           footer={<Button label={COPY.done} onPress={() => closePopup(true)} />}
         >
-          <View style={sheetFieldStyle} testID="Combobox.popup">
+          <View style={sheetFieldStyle} nativeID={popupId} testID="Combobox.popup">
             {multiple && selectedValues.length > 0 ? (
               <View style={sheetChipsRowStyle} testID="Combobox.chips">
                 {selectedValues.map((v) => renderChip(v, true))}
@@ -937,18 +1020,7 @@ export function Combobox({
             {listbox}
           </View>
         </BottomSheet>
-      ) : (
-        <Modal visible={popupMounted} transparent animationType="none" onRequestClose={() => closePopup(true)} statusBarTranslucent>
-          <View style={hostStyle}>
-            <Pressable style={StyleSheet.absoluteFill} onPress={() => closePopup(true)} accessible={false} testID="Combobox.scrim" />
-            {fieldRect !== null ? (
-              <Animated.View style={popupOuterStyle} onLayout={handlePopupLayout} testID="Combobox.popup">
-                <View style={popupInnerStyle}>{listbox}</View>
-              </Animated.View>
-            ) : null}
-          </View>
-        </Modal>
-      )}
+      ) : null}
     </View>
   );
 }

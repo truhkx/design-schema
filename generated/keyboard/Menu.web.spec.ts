@@ -61,20 +61,30 @@ async function focusIndex(page: Page, root: Locator): Promise<number> {
 function trigger(page: Page): Locator {
   return page.locator('[aria-haspopup], [aria-expanded], [aria-controls]').first();
 }
-/** aria-expanded / aria-checked / aria-selected of the deep active element (or the trigger), for toggles/selects. */
+/** aria-expanded / aria-checked / aria-selected of the deep active element (or the trigger), for toggles/selects,
+ *  followed by the same three of its aria-activedescendant item. A composite that keeps DOM focus on a container
+ *  and points at the active item (Listbox, Combobox) carries the selected state on that item, never on the focused
+ *  container — the same resolution focusIndex already does. The item's state is appended rather than substituted
+ *  because the container is what holds aria-expanded: a Combobox input is both at once. Appending can only add a
+ *  state, so it never turns a passing toggles/selects assertion red. */
 async function ariaState(page: Page): Promise<string> {
   return page.evaluate(() => {
     let a: Element | null = document.activeElement;
     while (a && (a as HTMLElement).shadowRoot && (a as HTMLElement).shadowRoot!.activeElement) a = (a as HTMLElement).shadowRoot!.activeElement;
     const el = a ?? document.querySelector('[aria-haspopup], [aria-expanded]');
-    return [el?.getAttribute('aria-expanded'), el?.getAttribute('aria-checked'), el?.getAttribute('aria-selected')].join('|');
+    const desc = el?.getAttribute('aria-activedescendant');
+    const scope = (el?.getRootNode() ?? document) as Document | ShadowRoot;
+    const item = desc && scope.getElementById ? scope.getElementById(desc) : null;
+    const read = (n: Element | null | undefined): (string | null | undefined)[] =>
+      [n?.getAttribute('aria-expanded'), n?.getAttribute('aria-checked'), n?.getAttribute('aria-selected')];
+    return [...read(el), ...read(item)].join('|');
   });
 }
 
 test.describe('Menu (web) keyboard', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/iframe.html?id=menu-react--keyboard&viewMode=story');
-    await expect(page.getByRole('menu').first()).toBeVisible();
+    await expect(page.getByRole('menu').first()).toBeVisible({ timeout: 15_000 });
   });
   test.skip('Enter: Opens the menu and focuses the first item (ArrowDown on an already open menu just focuses the first item). (focus on trigger) — manual', async () => {});
   test.skip(' : Opens the menu and focuses the first item (ArrowDown on an already open menu just focuses the first item). (focus on trigger) — manual', async () => {});
@@ -143,7 +153,7 @@ test.describe('Menu (web) keyboard', () => {
     await page.keyboard.press('Space');
     await expect(root).toBeHidden();
   });
-  test('Escape: Closes and returns focus to the trigger; pressed on the trigger while the menu is open it also closes (reason `escape`) and focus stays there. (menu open)', async ({ page }) => {
+  test('Escape: Closes and returns focus to the trigger; pressed on the trigger while the menu is open it also closes (reason `escape`) and focus stays there. The key is prevented and its propagation stopped in both places, so a Menu inside a Dialog closes only the menu. (menu open)', async ({ page }) => {
     const root = page.getByRole('menu').first();
     await focusAt(page, root, 1);
     const before = await focusIndex(page, root);
@@ -153,7 +163,7 @@ test.describe('Menu (web) keyboard', () => {
     await expect(root).toBeHidden();
     await expect(trigger(page)).toBeFocused();
   });
-  test('Tab: Closes; Tab moves focus to the tabbable element after the trigger, Shift+Tab to the one before it, in document order (the anchor stands in for the trigger when there is none). The key is not prevented: the menu sets every item to tabindex -1 and moves focus to the trigger, so the browser\'s own Tab continues from there and a popup a controlled parent still shows holds no tab stop (web and Lit alike). With `anchor`, focus is parked on the anchor when it is focusable; otherwise the menu prevents the key and focuses the first tabbable after (Tab) or the last before (Shift+Tab) the anchor in document order, excluding its descendants. (menu open)', async ({ page }) => {
+  test('Tab: Closes; Tab moves focus to the tabbable element after the trigger, Shift+Tab to the one before it, in document order (the anchor stands in for the trigger when there is none). The key is not prevented: the menu sets every item to tabindex -1 and moves focus to the trigger, so the browser\'s own Tab continues from there and a popup a controlled parent still shows holds no tab stop (web and Lit alike) — that is a suppression state of its own, not a roving 0 parked somewhere, and the next open starts from the first item again. The focusout this parking causes is part of the Tab: it reports `tab-out` only, never a second `focus-out`. With `anchor`, focus is parked on the anchor when it is focusable; otherwise the menu prevents the key and focuses the first tabbable after (Tab) or the last before (Shift+Tab) the anchor in document order, excluding its descendants. (menu open)', async ({ page }) => {
     const root = page.getByRole('menu').first();
     await focusAt(page, root, 1);
     const before = await focusIndex(page, root);
@@ -162,7 +172,7 @@ test.describe('Menu (web) keyboard', () => {
     await page.keyboard.press('Tab');
     await expect(root).toBeHidden();
   });
-  test('Shift+Tab: Closes; Tab moves focus to the tabbable element after the trigger, Shift+Tab to the one before it, in document order (the anchor stands in for the trigger when there is none). The key is not prevented: the menu sets every item to tabindex -1 and moves focus to the trigger, so the browser\'s own Tab continues from there and a popup a controlled parent still shows holds no tab stop (web and Lit alike). With `anchor`, focus is parked on the anchor when it is focusable; otherwise the menu prevents the key and focuses the first tabbable after (Tab) or the last before (Shift+Tab) the anchor in document order, excluding its descendants. (menu open)', async ({ page }) => {
+  test('Shift+Tab: Closes; Tab moves focus to the tabbable element after the trigger, Shift+Tab to the one before it, in document order (the anchor stands in for the trigger when there is none). The key is not prevented: the menu sets every item to tabindex -1 and moves focus to the trigger, so the browser\'s own Tab continues from there and a popup a controlled parent still shows holds no tab stop (web and Lit alike) — that is a suppression state of its own, not a roving 0 parked somewhere, and the next open starts from the first item again. The focusout this parking causes is part of the Tab: it reports `tab-out` only, never a second `focus-out`. With `anchor`, focus is parked on the anchor when it is focusable; otherwise the menu prevents the key and focuses the first tabbable after (Tab) or the last before (Shift+Tab) the anchor in document order, excluding its descendants. (menu open)', async ({ page }) => {
     const root = page.getByRole('menu').first();
     await focusAt(page, root, 1);
     const before = await focusIndex(page, root);

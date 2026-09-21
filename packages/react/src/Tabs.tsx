@@ -37,6 +37,7 @@ export type TabsOverridableBinding =
   | 'listBorder'
   | 'listBorderWidth'
   | 'panelGap'
+  | 'badgeWeight'
   | 'badgeSize'
   | 'fontFamily'
   | 'fontSize'
@@ -54,6 +55,7 @@ const OVERRIDE_HOOK: Record<TabsOverridableBinding, string> = {
   listBorder: '--ds-tabs-list-border',
   listBorderWidth: '--ds-tabs-list-border-width',
   panelGap: '--ds-tabs-panel-gap',
+  badgeWeight: '--ds-tabs-badge-weight',
   badgeSize: '--ds-tabs-badge-size',
   fontFamily: '--ds-tabs-font-family', // literal-ok: CSS custom-property hook name, not a font stack
   fontSize: '--ds-tabs-font-size',
@@ -77,6 +79,12 @@ function overridesToStyle(overrides: Partial<Record<TabsOverridableBinding, Toke
 
 function firstEnabledId(items: TabsItem[]): string | undefined {
   return items.find((item) => !item.disabled)?.id ?? items[0]?.id;
+}
+
+/** The list's writing direction: RTL swaps ArrowLeft/ArrowRight and mirrors the indicator's offset. */
+function isRtl(el: HTMLElement | null): boolean {
+  if (!el || typeof getComputedStyle !== 'function') return false;
+  return getComputedStyle(el).direction === 'rtl';
 }
 
 /* Only declared when the bundler defines it; never assumed. */
@@ -122,7 +130,9 @@ export function TabPanel({ ref, id, children, ...rest }: TabPanelProps & { ref?:
 export interface TabsProps extends Omit<ComponentPropsWithoutRef<'div'>, 'children' | 'onChange' | 'defaultValue' | 'className' | 'style'> {
   /**
    * The tabs in order. `badge` is a short count or status shown after the label ("3", "New"). The
-   * icon is an Icon at `size: md` (the label's size) in the tab's current foreground color.
+   * icon is an Icon at `size: md` (the label's size) in the tab's current foreground color. An `id`
+   * must be a valid IDREF token (no whitespace), since tab and panel element ids are built from it;
+   * the component does not sanitize it.
    */
   tabs: TabsItem[];
   /**
@@ -217,7 +227,10 @@ export function Tabs({
   // The roving-tabindex target: follows the selection, but under manual activation leads it until
   // Enter/Space catches the selection up, or focus leaves the list.
   const [activeId, setActiveId] = useState<string | undefined>(selected);
-  const [indicatorStyle, setIndicatorStyle] = useState<CSSProperties | undefined>(undefined);
+  // The indicator is placed instantly on first render and when the selected tab first appears; it
+  // animates only when the selection moves from one tab to another.
+  const [indicator, setIndicator] = useState<{ style: CSSProperties; animate: boolean } | undefined>(undefined);
+  const placedFor = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     setActiveId(selected);
@@ -238,24 +251,35 @@ export function Tabs({
     const list = listRef.current;
     const tabEl = selected ? tabRefs.current.get(selected) : undefined;
     if (!list || !tabEl) {
-      setIndicatorStyle(undefined);
+      placedFor.current = undefined;
+      setIndicator(undefined);
       return undefined;
     }
 
+    const moved = placedFor.current !== undefined && placedFor.current !== selected;
+    placedFor.current = selected;
+
     let last = '';
     const measure = (): void => {
+      // inset-inline-start is measured from the list's inline-start edge, so under RTL it is
+      // computed from the right rather than taken from offsetLeft directly.
+      const inlineStart = isRtl(list)
+        ? list.clientWidth - tabEl.offsetLeft - tabEl.offsetWidth + list.scrollLeft
+        : tabEl.offsetLeft;
       const next =
         orientation === 'horizontal'
-          ? { insetInlineStart: tabEl.offsetLeft, inlineSize: tabEl.offsetWidth }
+          ? { insetInlineStart: inlineStart, inlineSize: tabEl.offsetWidth }
           : { insetBlockStart: tabEl.offsetTop, blockSize: tabEl.offsetHeight };
       const key = JSON.stringify(next);
+      // Writing only on a real change keeps the ResizeObserver from re-firing itself.
       if (key === last) return;
+      const isFirst = last === '';
       last = key;
-      setIndicatorStyle(next);
+      setIndicator({ style: next, animate: moved && isFirst });
     };
-    measure();
 
-    // Scroll the list only, never the page (no scrollIntoView).
+    // Scroll the list only, never the page (no scrollIntoView) — before measuring, since the
+    // indicator's RTL offset is computed from the list's scroll offset.
     if (orientation === 'horizontal') {
       const start = tabEl.offsetLeft;
       const end = start + tabEl.offsetWidth;
@@ -268,6 +292,8 @@ export function Tabs({
       else if (end > list.scrollTop + list.clientHeight) list.scrollTop = end - list.clientHeight;
     }
 
+    measure();
+
     if (typeof ResizeObserver === 'undefined') return undefined;
     const observer = new ResizeObserver(measure);
     observer.observe(list);
@@ -278,8 +304,10 @@ export function Tabs({
     if (enabled.length === 0) return;
     const focusedId = (event.target as HTMLElement).closest<HTMLElement>('[role="tab"]')?.dataset.tabId ?? tabStopId;
     const currentIndex = enabled.findIndex((tab) => tab.id === focusedId);
-    const nextKey = orientation === 'horizontal' ? 'ArrowRight' : 'ArrowDown';
-    const prevKey = orientation === 'horizontal' ? 'ArrowLeft' : 'ArrowUp';
+    // In a right-to-left layout ArrowLeft and ArrowRight swap; Up/Down, Home and End do not.
+    const rtl = orientation === 'horizontal' && isRtl(listRef.current);
+    const nextKey = orientation === 'vertical' ? 'ArrowDown' : rtl ? 'ArrowLeft' : 'ArrowRight';
+    const prevKey = orientation === 'vertical' ? 'ArrowUp' : rtl ? 'ArrowRight' : 'ArrowLeft';
 
     const moveTo = (index: number): void => {
       const id = enabled[index]!.id;
@@ -394,7 +422,13 @@ export function Tabs({
             </button>
           );
         })}
-        <span aria-hidden="true" data-part="indicator" className="ds-tabs__indicator" style={indicatorStyle} />
+        <span
+          aria-hidden="true"
+          data-part="indicator"
+          data-animate={indicator?.animate ? 'true' : 'false'}
+          className="ds-tabs__indicator"
+          style={indicator?.style}
+        />
       </div>
       <div className="ds-tabs__panels">
         <TabsPanelContext.Provider value={{ tabDomId, panelDomId, selected }}>

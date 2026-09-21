@@ -2,8 +2,8 @@ import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Select.js';
-import type { SelectNative, SelectSize, SelectValue } from './Select.js';
-import type { ListboxItem } from './Listbox.js';
+import type { DsSelect, SelectNative, SelectOpenChangeDetail, SelectSize, SelectValue } from './Select.js';
+import type { ListboxItem, ListboxOption } from './Listbox.js';
 
 interface SelectArgs {
   label: string;
@@ -24,11 +24,30 @@ interface SelectArgs {
   native: SelectNative;
 }
 
-const COUNTRY_OPTIONS: ListboxItem[] = [
+const COUNTRIES: ListboxOption[] = [
   { value: 'ca', label: 'Canada' },
   { value: 'fr', label: 'France' },
+  { value: 'de', label: 'Germany' },
   { value: 'jp', label: 'Japan' },
+  { value: 'mx', label: 'Mexico' },
   { value: 'us', label: 'United States' },
+];
+
+const ROLES: ListboxItem[] = [
+  {
+    group: 'Engineering',
+    options: [
+      { value: 'frontend', label: 'Frontend' },
+      { value: 'backend', label: 'Backend' },
+    ],
+  },
+  {
+    group: 'Design',
+    options: [
+      { value: 'product', label: 'Product design' },
+      { value: 'brand', label: 'Brand design' },
+    ],
+  },
 ];
 
 const meta: Meta<SelectArgs> = {
@@ -45,7 +64,7 @@ const meta: Meta<SelectArgs> = {
   args: {
     label: 'Country',
     name: 'country',
-    options: COUNTRY_OPTIONS,
+    options: COUNTRIES,
     hideLabel: false,
     size: 'md',
     multiple: false,
@@ -89,17 +108,6 @@ export const SizeMd: Story = { args: { size: 'md' } };
 export const NativeAuto: Story = { args: { native: 'auto' } };
 export const NativeAlways: Story = { args: { native: 'always' } };
 export const NativeNever: Story = { args: { native: 'never' } };
-
-/* states */
-export const Multiple: Story = { args: { multiple: true, defaultValue: ['ca', 'fr', 'jp'] } };
-export const WithDescription: Story = { args: { description: 'Where the account is registered.' } };
-export const Required: Story = { args: { required: true } };
-export const Disabled: Story = { args: { disabled: true, defaultValue: 'fr' } };
-export const Invalid: Story = { args: { invalid: true } };
-export const WithError: Story = { args: { error: 'Fix this before continuing.' } };
-
-/** Rendered open with its trigger and four options, for the keyboard gate. */
-export const Keyboard: Story = { args: { open: true } };
 
 /* examples */
 export const CountryPicker: Story = {
@@ -151,4 +159,60 @@ export const CompactPickerInAHeader: Story = {
       { value: '2', label: 'February' },
     ],
   },
+};
+
+/* notable states */
+export const Multiple: Story = {
+  args: { label: 'Role', name: 'role', options: ROLES, multiple: true, defaultValue: ['frontend', 'backend', 'brand'] },
+};
+
+export const WithDescription: Story = { args: { description: 'Used for shipping and tax rates.' } };
+
+export const Required: Story = { args: { required: true } };
+
+export const Disabled: Story = { args: { disabled: true, defaultValue: 'fr' } };
+
+export const Invalid: Story = { args: { invalid: true } };
+
+export const WithError: Story = { args: { error: 'Choose the country you ship to.' } };
+
+export const DefaultValue: Story = { args: { defaultValue: 'fr' } };
+
+/**
+ * Open with its trigger, for the keyboard gate: the popup's Listbox holds the six country options
+ * (focusable through the trigger's keyboard model) while DOM focus stays on the trigger. Args come
+ * from the story URL; the story owns `open` — it writes the new state back onto the element — so
+ * Escape and Tab really close it. The play step puts DOM focus where the popup's keyboard model
+ * lives — on the trigger — since the embedded list is never a tab stop.
+ */
+export const Keyboard: Story = {
+  args: { open: true },
+  play: async ({ canvasElement }) => {
+    const select = canvasElement.querySelector('ds-select');
+    await select?.updateComplete;
+    select?.shadowRoot?.querySelector<HTMLElement>('[data-part=trigger]')?.focus();
+  },
+  render: (args) => html`
+    <ds-select
+      label=${args.label}
+      name=${args.name}
+      .options=${args.options}
+      .value=${args.value}
+      .defaultValue=${args.defaultValue}
+      placeholder=${ifDefined(args.placeholder)}
+      ?hide-label=${args.hideLabel}
+      size=${args.size}
+      .open=${args.open}
+      ?multiple=${args.multiple}
+      description=${ifDefined(args.description)}
+      ?required=${args.required}
+      ?disabled=${args.disabled}
+      ?invalid=${args.invalid}
+      error=${ifDefined(args.error)}
+      native=${args.native}
+      @open-change=${(event: CustomEvent<SelectOpenChangeDetail>) => {
+        (event.currentTarget as DsSelect).open = event.detail.open;
+      }}
+    ></ds-select>
+  `,
 };

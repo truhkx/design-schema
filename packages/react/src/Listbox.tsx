@@ -61,6 +61,7 @@ export type ListboxOverridableBinding =
   | 'optionGap'
   | 'optionRadius'
   | 'optionDescriptionSize'
+  | 'optionWeight'
   | 'optionSelectedWeight'
   | 'groupLabelSize'
   | 'groupLabelWeight'
@@ -83,6 +84,7 @@ const OVERRIDE_HOOK: Record<ListboxOverridableBinding, string> = {
   optionGap: '--ds-listbox-option-gap',
   optionRadius: '--ds-listbox-option-radius',
   optionDescriptionSize: '--ds-listbox-option-description-size',
+  optionWeight: '--ds-listbox-option-weight',
   optionSelectedWeight: '--ds-listbox-option-selected-weight',
   groupLabelSize: '--ds-listbox-group-label-size',
   groupLabelWeight: '--ds-listbox-group-label-weight',
@@ -201,7 +203,8 @@ export interface ListboxProps
   /**
    * The list lives inside a popup (Select, Combobox) that owns the border, surface and radius; the
    * list draws none of its own. It keeps its own `listPadding`, and an override of `border`,
-   * `borderWidth`, `surface` or `radius` is a no-op while it is set.
+   * `borderWidth`, `surface` or `radius` is a no-op while it is set. An embedded list is not a tab
+   * stop (`tabindex="-1"`): its host keeps focus on the trigger or input and forwards keys.
    */
   embedded?: boolean | undefined;
   /**
@@ -276,6 +279,7 @@ export function Listbox({
   const generatedId = useId();
   const id = idProp ?? (form?.idBase && name ? `${form.idBase}-${name}` : `ds-listbox${generatedId}`);
   const errorId = `${id}-error`;
+  const emptyId = `${id}-empty`;
 
   const listRef = useRef<HTMLDivElement | null>(null);
   const optionRefs = useRef(new Map<string, HTMLDivElement>());
@@ -315,6 +319,18 @@ export function Listbox({
   const rows = useMemo(() => flattenRows(options), [options]);
   const enabledRows = useMemo(() => rows.filter((row) => !row.disabled), [rows]);
   const maxVisibleKey = String(maxVisible) as '5' | '8' | '12' | 'all';
+
+  // When `initialActiveValue` changes while the list has no focus (Combobox updates it as the user
+  // types), the active option moves to it — silently, without firing onActiveChange.
+  const lastInitialActive = useRef(initialActiveValue);
+  useEffect(() => {
+    if (lastInitialActive.current === initialActiveValue) return;
+    lastInitialActive.current = initialActiveValue;
+    const list = listRef.current;
+    if (initialActiveValue === undefined || (list !== null && list.contains(document.activeElement))) return;
+    if (!enabledRows.some((row) => row.value === initialActiveValue)) return;
+    setActiveValueState((current) => (current === initialActiveValue ? current : initialActiveValue));
+  }, [initialActiveValue, enabledRows]);
 
   const latest = useRef({ label, required, invalid, error, disabled: isDisabled, selected, multiple });
   latest.current = { label, required, invalid, error, disabled: isDisabled, selected, multiple };
@@ -500,6 +516,8 @@ export function Listbox({
 
   const handleFocus = (event: FocusEvent<HTMLDivElement>) => {
     onFocus?.(event);
+    // Focusing a disabled list sets no active option and fires no onActiveChange; the ring still shows.
+    if (isDisabled) return;
     // The list itself, or a host signalling focus on the root (Select keeps DOM focus on its trigger).
     if ((event.target !== listRef.current && event.target !== event.currentTarget) || activeValue !== null) return;
     const initial = resolveInitialActive();
@@ -563,7 +581,8 @@ export function Listbox({
         {multiple ? (
           // Always present with `multiple` (invisible when unselected) so labels align.
           <span className="ds-listbox__check" data-part="optionCheck" aria-hidden="true">
-            <Icon name="check" size="sm" overrides={{ color: 'color.control.selectedBackground' as TokenRef }} />
+            {/* optionSelectedCheck is locked; it reaches the child as the Icon's own `color` override. */}
+            <Icon name="check" size="sm" overrides={{ color: 'color.control.selectedBackground' }} />
           </span>
         ) : null}
         {row.icon ? (
@@ -600,6 +619,11 @@ export function Listbox({
     );
   };
 
+  const isEmpty = rows.length === 0;
+  // Joins the empty/loading description and the error message, in reading order.
+  const describedBy =
+    [isEmpty ? emptyId : null, resolvedError !== undefined ? errorId : null].filter(Boolean).join(' ') || undefined;
+
   const classes = [
     'ds-listbox',
     `ds-listbox--max-visible-${maxVisibleKey}`,
@@ -627,7 +651,8 @@ export function Listbox({
         id={id}
         data-part="list"
         role="listbox"
-        tabIndex={0}
+        // Embedded lists are not a tab stop: the host popup keeps focus on its trigger or input.
+        tabIndex={embedded ? -1 : 0}
         className="ds-listbox__list"
         aria-label={label}
         aria-labelledby={labelledBy}
@@ -635,12 +660,17 @@ export function Listbox({
         aria-activedescendant={activeValue !== null ? `${id}-option-${activeValue}` : undefined}
         aria-invalid={showsInvalid ? 'true' : undefined}
         aria-required={required ? 'true' : undefined}
-        aria-describedby={resolvedError !== undefined ? errorId : undefined}
+        aria-describedby={describedBy}
         aria-busy={loading ? 'true' : undefined}
         aria-disabled={isDisabled ? 'true' : undefined}
       >
-        {rows.length === 0 ? (
-          <div className="ds-listbox__empty">
+        {isEmpty ? (
+          /*
+           * A listbox owns only options and groups, so the empty/loading row is hidden from the
+           * accessibility tree and reaches the user as the list's description instead (aria-describedby
+           * resolves hidden text): the still-focusable empty list announces "No options" either way.
+           */
+          <div id={emptyId} className="ds-listbox__empty" aria-hidden="true">
             <Text data-part="emptyState" tone="muted">
               {loading ? COPY.loading : (emptyMessage ?? COPY.empty)}
             </Text>

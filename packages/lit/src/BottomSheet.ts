@@ -12,6 +12,7 @@ import './FocusScope.js';
 import './Dialog.js';
 import type { DsFocusScope } from './FocusScope.js';
 import type { DialogCloseDetail, DialogOverridableBinding } from './Dialog.js';
+import type { BoxOverridableBinding } from './Box.js';
 import type { StackOverridableBinding } from './Stack.js';
 
 export type BottomSheetHeight = 'content' | 'half' | 'full';
@@ -64,7 +65,12 @@ const HOOKS: Record<BottomSheetOverridableBinding, string> = {
   exit: '--ds-bottom-sheet-exit',
 };
 
-/** The overrides whose binding Dialog shares by name; forwarded to its `overrides` in the wide presentation. */
+/**
+ * The overrides whose binding Dialog shares by name; only these reach Dialog's own `overrides` in
+ * the wide presentation, and only when the caller set them, so Dialog keeps its own tokens
+ * otherwise — its `layer.dialog` included. The handle bindings, `headerPaddingTop` and `handleGap`
+ * have no counterpart there, and a locked binding is never forwarded.
+ */
 const DIALOG_SHARED_BINDINGS = [
   'scrim',
   'shadow',
@@ -81,7 +87,7 @@ const DIALOG_SHARED_BINDINGS = [
 /** maxWidth (layout.maxWidth.prose): the breakpoint, read from the theme token, not per instance. */
 const MAX_WIDTH_PROPERTY = '--layout-max-width-prose';
 
-/** constants.dragSlop (space.1): read through the token at gesture time. */
+/** constants.dragSlop (space.1): read from the resolved custom property at gesture time. */
 const DRAG_SLOP_PROPERTY = '--space-1';
 
 /** constants.dismissDistance: fraction of the sheet height a release must pass to dismiss. */
@@ -141,17 +147,19 @@ function firstFocusableIn(node: Element): HTMLElement | null {
   return null;
 }
 
-/** A resolved length custom property (`4px`, `0.25rem`) in CSS pixels. */
+/** A resolved length custom property (`4px`, `0.25rem`) in CSS pixels; an unresolvable value is 0. */
 function lengthInPx(element: Element, value: string): number {
   const amount = Number.parseFloat(value);
   if (!Number.isFinite(amount)) {
     return 0;
   }
   if (value.endsWith('rem')) {
-    return amount * Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
+    const root = Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
+    return Number.isFinite(root) ? amount * root : 0;
   }
   if (value.endsWith('em')) {
-    return amount * Number.parseFloat(getComputedStyle(element).fontSize);
+    const own = Number.parseFloat(getComputedStyle(element).fontSize);
+    return Number.isFinite(own) ? amount * own : 0;
   }
   return amount;
 }
@@ -185,15 +193,22 @@ function unlockPageScroll(): void {
   }
 }
 
+/** One move sample, for the release velocity. */
+interface DragSample {
+  y: number;
+  time: number;
+}
+
 /** A pointer that went down on the header; it becomes a drag only once it has moved `dragSlop` downward. */
 interface DragGesture {
   pointerId: number;
+  /** Where the pointer went down; the slop is measured from here. */
   startY: number;
+  /** Where the slop was crossed; the offset counts from here, so the surface does not jump. */
+  originY: number;
   claimed: boolean;
-  previousY: number;
-  previousTime: number;
-  lastY: number;
-  lastTime: number;
+  previous: DragSample | null;
+  last: DragSample | null;
 }
 
 /**
@@ -203,8 +218,8 @@ interface DragGesture {
  * dialog: a native `<dialog>` in the shadow root opened with `showModal()` (top layer, inert
  * background, Escape), covering the viewport with a scrim element and the surface anchored to the
  * bottom edge. `<ds-focus-scope>` wraps the surface, wraps Tab and returns focus to the opener on
- * close. Above the `layout.maxWidth.prose` viewport width (a `matchMedia` listener) the same props
- * render `<ds-dialog size="md">` instead, so screens are written once.
+ * close. Above the `layout.maxWidth.prose` viewport width (a `matchMedia` listener on the resolved
+ * token) the same props render `<ds-dialog size="md">` instead, so screens are written once.
  *
  * Escape, the close button, a scrim click and a downward drag on the handle or header each request
  * close through the composed `close` event; the sheet never closes itself, the consumer flips
@@ -221,7 +236,7 @@ interface DragGesture {
  *
  * Not as a menu (ActionSheet or Menu), a persistent panel (a bottom Landmark region), or content
  * the user must read at length (a page). Never stack sheets, and never rely on the drag gesture to
- * teach dismissal.
+ * teach dismissal — the close button is visible on every dismissible sheet.
  *
  * @fires close - Requests close, with `{ reason: 'escape' | 'close-button' | 'scrim' | 'drag' | 'action' }`.
  * @fires drag-dismiss - Fired before `close` (reason `drag`) when a drag passes the dismiss threshold.
@@ -259,6 +274,7 @@ export class DsBottomSheet extends LitElement {
       display: none;
     }
 
+    /* The <dialog> fills the viewport and stacks its content at the bottom edge. */
     dialog {
       box-sizing: border-box;
       position: fixed;
@@ -288,6 +304,7 @@ export class DsBottomSheet extends LitElement {
       background: transparent;
     }
 
+    /* scrim: color.overlay.scrim, fading in with the enter duration and easing. */
     .scrim {
       position: absolute;
       inset: 0;
@@ -296,43 +313,54 @@ export class DsBottomSheet extends LitElement {
       transition: opacity var(--ds-bottom-sheet-enter) var(--motion-easing-standard);
     }
 
+    /* focusScope: the <ds-focus-scope> host is the part element. Layout only. */
     .scope {
       position: relative;
-      display: flex;
-      box-sizing: border-box;
+      display: block;
       inline-size: 100%;
+      min-inline-size: 0;
     }
 
-    /* height: content sizes to the body up to 90% of the viewport; the cap belongs to content alone. */
-    :host([height='content']) .scope {
-      max-block-size: 90dvh; /* literal-ok: 90% of the viewport, from the height prop's description */
-    }
-    :host([height='half']) .scope {
-      block-size: 50dvh; /* literal-ok: half of the viewport, from the height prop's description */
-    }
-    :host([height='full']) .scope {
-      block-size: calc(100dvh - var(--layout-gutter)); /* literal-ok: the full viewport less the top gutter */
-    }
-
+    /* surface: color.overlay.surface (locked), top corners only, shadow, partGap. The block edges
+       are padded once, here: inset at the start (headerPaddingTop when the handle is rendered) and
+       inset plus the safe area at the end. No part carries block padding of its own. */
     .surface {
       box-sizing: border-box;
+      position: relative;
       display: flex;
       flex-direction: column;
-      flex: 1 1 auto;
+      inline-size: 100%;
       min-inline-size: 0;
-      max-block-size: 100%;
       gap: var(--ds-bottom-sheet-part-gap);
+      padding-block-start: var(--ds-bottom-sheet-inset);
+      padding-block-end: calc(var(--ds-bottom-sheet-inset) + env(safe-area-inset-bottom));
       font-family: var(--font-family-body);
       color: var(--color-foreground);
-      /* surface: color.overlay.surface, locked — no hook */
       background: var(--color-overlay-surface);
-      /* radius: top corners only on phones */
       border-start-start-radius: var(--ds-bottom-sheet-radius);
       border-start-end-radius: var(--ds-bottom-sheet-radius);
       box-shadow: var(--ds-bottom-sheet-shadow);
+      overflow: hidden;
       transform: translateY(0);
-      /* enter: slide up with the scrim, same duration and easing */
+      /* enter: slide up from the bottom edge, with the scrim, same duration and easing. */
       transition: transform var(--ds-bottom-sheet-enter) var(--motion-easing-standard);
+    }
+
+    /* headerPaddingTop: the column's block-start padding above the handle, in place of inset. */
+    :host(:not([no-dismiss]):not([no-drag-to-dismiss])) .surface {
+      padding-block-start: var(--ds-bottom-sheet-header-padding-top);
+    }
+
+    /* height: content caps at 90% of the viewport; half and full set the block size outright and
+       are deliberately not clamped by that cap, or full would stop short of near-full-screen. */
+    :host([height='content']) .surface {
+      max-block-size: 90dvh; /* literal-ok: the height prop's content cap, from the doc */
+    }
+    :host([height='half']) .surface {
+      block-size: 50dvh; /* literal-ok: the height prop's half value, from the doc */
+    }
+    :host([height='full']) .surface {
+      block-size: calc(100dvh - var(--layout-gutter)); /* literal-ok: full less the top gutter */
     }
 
     @starting-style {
@@ -344,24 +372,25 @@ export class DsBottomSheet extends LitElement {
       }
     }
 
-    /* exit: slide down with motion.easing.exit, from wherever the surface is; the scrim fades alike */
-    .closing .scrim {
-      opacity: 0;
+    /* exit: slide down with motion.easing.exit, from wherever the surface is; the scrim fades alike. */
+    .closing .scrim,
+    .closing .surface {
       transition-duration: var(--ds-bottom-sheet-exit);
       transition-timing-function: var(--motion-easing-exit);
+    }
+    .closing .scrim {
+      opacity: 0;
     }
     .closing .surface {
       transform: translateY(100%);
-      transition-duration: var(--ds-bottom-sheet-exit);
-      transition-timing-function: var(--motion-easing-exit);
     }
 
-    /* The drag follows the finger directly, even under reduced motion. */
+    /* The drag-follow tracks the finger directly, reduced motion or not. */
     .surface.dragging {
       transition: none;
     }
 
-    /* A below-threshold release returns to rest with the exit duration and the standard easing. */
+    /* A below-threshold release springs back to rest with the exit duration and the standard easing. */
     .surface.springing {
       transition: transform var(--ds-bottom-sheet-exit) var(--motion-easing-standard);
     }
@@ -374,22 +403,22 @@ export class DsBottomSheet extends LitElement {
       }
     }
 
+    /* header: a column of the handle over the heading row, handleGap between them. Inline padding
+       only — the surface owns the block edges, so nothing doubles between parts. */
     .header {
       display: flex;
+      flex: 0 0 auto;
       flex-direction: column;
       gap: var(--ds-bottom-sheet-handle-gap);
-      flex: none;
       padding-inline: var(--ds-bottom-sheet-inset);
-      /* No handle: the header's block-start padding is inset. */
-      padding-block-start: var(--ds-bottom-sheet-inset);
-    }
-    .header.draggable {
-      padding-block-start: var(--ds-bottom-sheet-header-padding-top);
-      touch-action: none;
-      cursor: grab;
     }
 
-    /* handle: color.foreground.muted, locked; a decorative pill, aria-hidden and never a focus stop */
+    /* The header starts the drag gesture, so the browser must not pan on it. */
+    .header.draggable {
+      touch-action: none;
+    }
+
+    /* handle: color.foreground.muted (locked), a decorative pill — aria-hidden, never a focus stop. */
     .handle {
       align-self: center;
       inline-size: var(--ds-bottom-sheet-handle-width);
@@ -398,6 +427,8 @@ export class DsBottomSheet extends LitElement {
       background: var(--color-foreground-muted);
     }
 
+    /* headerGap: the heading row's flex gap. Sheet-owned, not an anatomy part. With the heading
+       hidden it is out of flow, so the close button's auto margin end-aligns it. */
     .title-row {
       display: flex;
       align-items: center;
@@ -406,19 +437,11 @@ export class DsBottomSheet extends LitElement {
       min-inline-size: 0;
     }
 
-    /* minTarget: size.target.comfortable, locked — the Button keeps its own size and colors */
-    .close-button {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex: none;
-      margin-inline-start: auto;
-      min-inline-size: var(--size-target-comfortable);
-      min-block-size: var(--size-target-comfortable);
-      cursor: pointer;
+    .heading {
+      min-inline-size: 0;
     }
 
-    /* The heading wrapper draws the ring when the heading holds focus (tabindex -1). */
+    /* focusRing / focusRingWidth (locked): drawn by the wrapper when the heading holds focus. */
     .heading ds-heading:focus {
       outline: none;
     }
@@ -441,51 +464,76 @@ export class DsBottomSheet extends LitElement {
       border: 0;
     }
 
+    /* minTarget: size.target.comfortable (locked). Sheets are used one-handed, so the wrapper
+       raises the pointer target; the Button keeps its own ghost / sm / icon-only size and colours. */
+    .close-button {
+      display: inline-flex;
+      flex: 0 0 auto;
+      align-items: center;
+      justify-content: center;
+      margin-inline-start: auto;
+      min-inline-size: var(--size-target-comfortable);
+      min-block-size: var(--size-target-comfortable);
+    }
+
+    /* body: the only region that scrolls, so the header and footer stay put. */
     .body {
       flex: 1 1 auto;
       min-block-size: 0;
       overflow-y: auto;
-      padding-inline: var(--ds-bottom-sheet-inset);
+      overscroll-behavior: contain;
+    }
+    /* inset reaches the body Box as inline padding through the Box's own hook (and through
+       overrides when the caller set it); the Box keeps the zero block padding the surface provides. */
+    .body > ds-box {
+      --ds-box-padding-inline: var(--ds-bottom-sheet-inset);
     }
 
+    /* footer: end-aligned action row, inline inset only. */
     .footer {
-      flex: none;
+      flex: 0 0 auto;
       padding-inline: var(--ds-bottom-sheet-inset);
     }
-    /* footerGap reaches the Stack through its own hook (and through overrides when set). */
+    /* footerGap reaches the Stack through its own gap hook (and through overrides when set). */
     .footer > ds-stack {
       --ds-stack-gap: var(--ds-bottom-sheet-footer-gap);
     }
-
-    /* inset: the last part's block-end padding, plus the bottom safe area. */
-    .surface > :last-child {
-      padding-block-end: calc(var(--ds-bottom-sheet-inset) + env(safe-area-inset-bottom));
-    }
   `;
 
-  /** Controlled visibility, as in Dialog. The consumer owns it; the sheet requests changes through `close`. */
+  /**
+   * Controlled visibility, as in Dialog. Controlled only — there is no uncontrolled mode; the
+   * consumer owns `open` and the sheet requests changes through `close`, never changing it itself.
+   */
   @property({ type: Boolean, reflect: true }) accessor open = false;
 
   /** The sheet's title and accessible name. May be visually hidden with `hideHeading`. */
   @property() accessor heading = '';
 
-  /** Keep the heading for assistive technology but do not render it. Attribute: `hide-heading`. */
+  /**
+   * Keep the heading for assistive technology but do not render it (forwarded to Dialog above the
+   * breakpoint). The accessible name is required regardless. Attribute: `hide-heading`.
+   */
   @property({ type: Boolean, attribute: 'hide-heading' }) accessor hideHeading = false;
 
-  /** `content` sizes to the body up to 90% of the viewport; `half` is a fixed half-height; `full` is near-full-screen. */
+  /**
+   * `content` sizes to the body up to 90% of the viewport; `half` is a fixed half-height; `full`
+   * is a near-full-screen sheet with the top gutter visible so the scrim still shows.
+   */
   @property({ type: String, reflect: true }) accessor height: BottomSheetHeight = 'content';
 
   /**
-   * Escape, the close button, a scrim tap and the drag gesture all request close. When false,
-   * the close button and handle are not rendered, a scrim tap and a drag do nothing, and Escape
-   * still reports. Attribute: `no-dismiss`.
+   * Escape, the close button, a scrim tap and the drag gesture all request close. When false, only
+   * the footer actions close it: the close button and the drag handle are not rendered, a scrim tap
+   * and a drag do nothing, and Escape still reports with reason `escape`. Attribute: `no-dismiss`.
    */
   @property({ attribute: 'no-dismiss', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
   accessor dismissible = true;
 
   /**
-   * Drag the handle or header downward to dismiss. Purely additive: Escape always exists and the
-   * close button exists whenever the gesture does. Attribute: `no-drag-to-dismiss`.
+   * Drag the handle (or the header) downward to dismiss: release past 25% of the sheet height, or
+   * faster than 1.5 px/ms, dismisses; otherwise the sheet springs back. Purely additive — Escape
+   * always exists and the close button exists whenever the gesture does, so the handle is rendered
+   * only when `dragToDismiss` and `dismissible` are both true. Attribute: `no-drag-to-dismiss`.
    */
   @property({ attribute: 'no-drag-to-dismiss', reflect: true, converter: NEGATED_BOOLEAN_CONVERTER })
   accessor dragToDismiss = true;
@@ -504,7 +552,7 @@ export class DsBottomSheet extends LitElement {
   /** A light-DOM child is assigned to the `footer` slot; the footer part renders only then. */
   @state() private accessor hasFooter = false;
 
-  /** Nothing else could take initial focus, so the heading takes tabindex -1. */
+  /** Nothing else could take initial focus, so the heading takes tabindex -1 for the purpose. */
   @state() private accessor headingIsFallback = false;
 
   @query('dialog') private accessor dialogEl!: HTMLDialogElement | null;
@@ -536,6 +584,7 @@ export class DsBottomSheet extends LitElement {
     this.addEventListener('submit', this.handleSubmit);
     this.syncHasFooter();
     this.footerObserver.observe(this, { childList: true, subtree: true, attributeFilter: ['slot'] });
+    // maxWidth is the breakpoint, read from the theme token: unresolved (no stylesheet, SSR) is a sheet.
     const breakpoint = getComputedStyle(document.documentElement).getPropertyValue(MAX_WIDTH_PROPERTY).trim();
     if (breakpoint) {
       this.wideQuery = matchMedia(`(width > ${breakpoint})`);
@@ -562,6 +611,7 @@ export class DsBottomSheet extends LitElement {
       this.headingIsFallback = false;
     }
     if (this.wide) {
+      // Dialog plays its own exit; the sheet's closing beat has nothing to render.
       this.closing = false;
       return;
     }
@@ -602,7 +652,11 @@ export class DsBottomSheet extends LitElement {
     return this.renderSheet();
   }
 
-  /** Above the breakpoint: the same props and slots on Dialog, with the shared overrides forwarded. */
+  /**
+   * Above the breakpoint the sheet is a Dialog: the same props and slots, the shared overrides
+   * forwarded, and its `escape` / `close-button` / `scrim` / `action` reasons re-emitted as the
+   * sheet's own. `drag` has no Dialog source, and Dialog's `opened` is not re-emitted.
+   */
   private renderDialog(): TemplateResult {
     return html`
       <ds-dialog
@@ -622,8 +676,16 @@ export class DsBottomSheet extends LitElement {
   }
 
   private renderSheet(): TemplateResult {
-    const draggable = this.dismissible && this.dragToDismiss;
+    // The handle is a drag affordance, so it only exists where the gesture does.
+    const showHandle = this.dismissible && this.dragToDismiss;
+    const showClose = this.dismissible;
+    /** A header with no visible heading, no handle and no close button holds nothing: it is not rendered. */
+    const showHeader = !this.hideHeading || showHandle || showClose;
+
     // Forwards reach the child's overrides only when set, so the CSS hook route keeps working otherwise.
+    const inset = this.overrides?.inset;
+    const bodyOverrides: Partial<Record<BoxOverridableBinding, TokenRef | undefined>> | undefined =
+      inset === undefined ? undefined : { paddingInline: inset };
     const footerGap = this.overrides?.footerGap;
     const footerOverrides: Partial<Record<StackOverridableBinding, TokenRef | undefined>> | undefined =
       footerGap === undefined ? undefined : { gap: footerGap };
@@ -632,7 +694,7 @@ export class DsBottomSheet extends LitElement {
       <dialog
         class=${classMap({ closing: this.closing })}
         aria-modal="true"
-        aria-labelledby="heading"
+        aria-label=${this.heading}
         @cancel=${this.handleCancel}
         @close=${this.handleNativeClose}
       >
@@ -645,48 +707,44 @@ export class DsBottomSheet extends LitElement {
           .active=${!this.closing}
         >
           <div class="surface" part="surface" data-part="surface">
-            <div
-              class=${classMap({ header: true, draggable })}
-              part="header"
-              data-part="header"
-              @pointerdown=${this.handlePointerDown}
-              @pointermove=${this.handlePointerMove}
-              @pointerup=${this.handlePointerUp}
-              @pointercancel=${this.handlePointerCancel}
-            >
-              ${draggable ? html`<span class="handle" part="handle" data-part="handle" aria-hidden="true"></span>` : nothing}
-              <div class="title-row">
-                <div
-                  id="heading"
-                  class=${classMap({ heading: true, 'visually-hidden': this.hideHeading })}
-                  part="heading"
-                  data-part="heading"
+            ${showHeader
+              ? html`<div
+                  class=${classMap({ header: true, draggable: showHandle })}
+                  part="header"
+                  data-part="header"
+                  @pointerdown=${this.handlePointerDown}
+                  @pointermove=${this.handlePointerMove}
+                  @pointerup=${this.handlePointerUp}
+                  @pointercancel=${this.handlePointerCancel}
                 >
-                  <ds-heading level="2" tabindex=${ifDefined(this.headingIsFallback ? '-1' : undefined)}
-                    >${this.heading}</ds-heading
-                  >
-                </div>
-                ${this.dismissible
-                  ? html`<div
-                      class="close-button"
-                      part="closeButton"
-                      data-part="closeButton"
-                      @click=${this.handleCloseWrapperClick}
-                    >
-                      <ds-button
-                        variant="ghost"
-                        size="sm"
-                        icon-only
-                        label=${COPY_CLOSE_LABEL}
-                        @press=${this.handleCloseButtonPress}
-                        ><ds-icon slot="leading-icon" name="close"></ds-icon
-                      ></ds-button>
-                    </div>`
-                  : nothing}
-              </div>
-            </div>
+                  ${showHandle
+                    ? html`<span class="handle" part="handle" data-part="handle" aria-hidden="true"></span>`
+                    : nothing}
+                  <div class="title-row">
+                    ${this.renderHeading()}
+                    ${showClose
+                      ? html`<div
+                          class="close-button"
+                          part="closeButton"
+                          data-part="closeButton"
+                          @click=${this.handleCloseWrapperClick}
+                        >
+                          <ds-button
+                            variant="ghost"
+                            size="sm"
+                            icon-only
+                            label=${COPY_CLOSE_LABEL}
+                            @press=${this.handleCloseButtonPress}
+                            ><ds-icon slot="leading-icon" name="close"></ds-icon
+                          ></ds-button>
+                        </div>`
+                      : nothing}
+                  </div>
+                </div>`
+              : // No header to put it in: the visually hidden heading sits at the start of the column.
+                this.renderHeading()}
             <div class="body" part="body" data-part="body">
-              <ds-box><slot></slot></ds-box>
+              <ds-box .overrides=${bodyOverrides}><slot></slot></ds-box>
             </div>
             ${this.hasFooter
               ? html`<div class="footer" part="footer" data-part="footer">
@@ -698,6 +756,21 @@ export class DsBottomSheet extends LitElement {
           </div>
         </ds-focus-scope>
       </dialog>
+    `;
+  }
+
+  /** Heading writes its own data-part, so the heading part is this sheet-owned wrapper around it. */
+  private renderHeading(): TemplateResult {
+    return html`
+      <div
+        class=${classMap({ heading: true, 'visually-hidden': this.hideHeading })}
+        part="heading"
+        data-part="heading"
+      >
+        <ds-heading level="2" tabindex=${ifDefined(this.headingIsFallback ? '-1' : undefined)}
+          >${this.heading}</ds-heading
+        >
+      </div>
     `;
   }
 
@@ -732,6 +805,7 @@ export class DsBottomSheet extends LitElement {
     event.preventDefault();
     // A non-cancelable cancel (Chromium without user activation) is followed by a native close.
     this.escapeReported = !event.cancelable;
+    // Escape reports even when the sheet is not dismissible.
     this.dispatchClose('escape');
   };
 
@@ -765,7 +839,10 @@ export class DsBottomSheet extends LitElement {
     this.dispatchClose('close-button');
   };
 
-  /** The wrapper's extra target area activates the close button. */
+  /**
+   * The wrapper's extra target area activates the Button: it focuses it and requests close itself,
+   * never reaching into the Button's internals or shadow root. A click on the Button is its own.
+   */
   private readonly handleCloseWrapperClick = (event: MouseEvent): void => {
     const button = this.closeButtonEl;
     if (!button || event.composedPath().includes(button)) {
@@ -790,7 +867,7 @@ export class DsBottomSheet extends LitElement {
     if (method === 'dialog') {
       event.preventDefault();
       if (this.wide) {
-        // ds-dialog handles the same submit and reports `action` through its own close.
+        // ds-dialog catches the same submit and reports `action` through its own close.
         return;
       }
       this.dispatchClose('action');
@@ -804,44 +881,54 @@ export class DsBottomSheet extends LitElement {
     }
   }
 
+  /**
+   * Nothing is claimed on pointerdown, so a tap on the close button still activates it; the drag
+   * begins only once the pointer has moved `dragSlop` downward on the handle or header.
+   */
   private readonly handlePointerDown = (event: PointerEvent): void => {
-    if (!this.dismissible || !this.dragToDismiss || this.closing || !event.isPrimary || event.button !== 0) {
+    if (!this.dismissible || !this.dragToDismiss || !this.open || this.closing || this.gesture) {
       return;
     }
-    // Not claimed yet: a tap on the close button still activates it.
+    if (event.pointerType === 'mouse' && event.button !== 0) {
+      return;
+    }
+    // No coordinate, no gesture: an environment without real pointer data must not move the surface.
+    if (!Number.isFinite(event.clientY)) {
+      return;
+    }
     this.gesture = {
       pointerId: event.pointerId,
       startY: event.clientY,
+      originY: event.clientY,
       claimed: false,
-      previousY: event.clientY,
-      previousTime: event.timeStamp,
-      lastY: event.clientY,
-      lastTime: event.timeStamp,
+      previous: null,
+      last: null,
     };
   };
 
   private readonly handlePointerMove = (event: PointerEvent): void => {
     const gesture = this.gesture;
     const surface = this.surfaceEl;
-    if (!gesture || !surface || event.pointerId !== gesture.pointerId) {
+    if (!gesture || !surface || event.pointerId !== gesture.pointerId || !Number.isFinite(event.clientY)) {
       return;
     }
-    const deltaY = event.clientY - gesture.startY;
     if (!gesture.claimed) {
+      const moved = event.clientY - gesture.startY;
       const slop = lengthInPx(this, getComputedStyle(this).getPropertyValue(DRAG_SLOP_PROPERTY).trim());
-      if (deltaY < slop || deltaY <= 0) {
+      if (moved <= 0 || moved < slop) {
         return;
       }
       gesture.claimed = true;
+      // The offset counts from where the slop was crossed, so the surface does not jump.
+      gesture.originY = event.clientY;
+      // Past the slop the header takes the move over from the child it started on.
       (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
       surface.classList.remove('springing');
       surface.classList.add('dragging');
     }
-    gesture.previousY = gesture.lastY;
-    gesture.previousTime = gesture.lastTime;
-    gesture.lastY = event.clientY;
-    gesture.lastTime = event.timeStamp;
-    surface.style.transform = `translateY(${Math.max(0, deltaY)}px)`;
+    gesture.previous = gesture.last;
+    gesture.last = { y: event.clientY, time: event.timeStamp };
+    surface.style.transform = `translateY(${Math.max(0, event.clientY - gesture.originY)}px)`;
   };
 
   private readonly handlePointerUp = (event: PointerEvent): void => {
@@ -855,37 +942,45 @@ export class DsBottomSheet extends LitElement {
       return;
     }
     surface.classList.remove('dragging');
-    const deltaY = Math.max(0, event.clientY - gesture.startY);
-    const sheetHeight = surface.getBoundingClientRect().height;
-    const elapsed = gesture.lastTime - gesture.previousTime;
-    // Measured between the last two move samples; only downward speed counts.
-    const velocity = elapsed > 0 ? Math.max(0, (gesture.lastY - gesture.previousY) / elapsed) : 0;
-    const pastDistance = sheetHeight > 0 && deltaY > sheetHeight * DISMISS_DISTANCE;
-    const pastVelocity = velocity > DISMISS_VELOCITY;
 
-    if (deltaY > 0 && (pastDistance || pastVelocity)) {
+    const travelled = Number.isFinite(event.clientY) ? Math.max(0, event.clientY - gesture.originY) : 0;
+    const sheetHeight = surface.getBoundingClientRect().height;
+    const pastDistance = sheetHeight > 0 && travelled > sheetHeight * DISMISS_DISTANCE;
+    // Velocity between the last two move samples before release; only downward speed counts.
+    const { previous, last } = gesture;
+    const velocity = previous && last && last.time > previous.time ? (last.y - previous.y) / (last.time - previous.time) : 0;
+    const fastEnough = velocity > DISMISS_VELOCITY;
+
+    if (this.open && (pastDistance || fastEnough)) {
       this.dispatchEvent(
         new CustomEvent<BottomSheetDragDismissDetail>('drag-dismiss', { bubbles: true, composed: true }),
       );
       this.dispatchClose('drag');
-      // Hold the release position until the consumer's update renders.
+      // Hold the released offset until the consumer's next render, then exit or spring back from there.
       void this.settleRelease(surface);
       return;
     }
     void this.springBack(surface);
   };
 
-  private readonly handlePointerCancel = (): void => {
+  private readonly handlePointerCancel = (event: PointerEvent): void => {
     const gesture = this.gesture;
+    if (!gesture || event.pointerId !== gesture.pointerId) {
+      return;
+    }
     this.gesture = null;
     const surface = this.surfaceEl;
-    if (gesture?.claimed && surface) {
+    if (gesture.claimed && surface) {
       surface.classList.remove('dragging');
       void this.springBack(surface);
     }
   };
 
-  /** After a drag dismiss: `open` false plays the exit from here (handleClose); still true springs back. */
+  /**
+   * After a dismissing release: `updateComplete` after the `close` dispatch plus one animation
+   * frame. If `open` is still true then, the sheet springs back; otherwise `handleClose` plays the
+   * normal exit from the released offset.
+   */
   private async settleRelease(surface: HTMLElement): Promise<void> {
     await this.updateComplete;
     await nextFrame();
@@ -894,6 +989,7 @@ export class DsBottomSheet extends LitElement {
     }
   }
 
+  /** A spring-back also finishes an interrupted enter animation: it returns the surface to rest. */
   private async springBack(surface: HTMLElement): Promise<void> {
     surface.classList.add('springing');
     surface.style.removeProperty('transform');
@@ -929,7 +1025,7 @@ export class DsBottomSheet extends LitElement {
     this.gesture = null;
     const surface = this.surfaceEl;
     surface?.classList.remove('dragging', 'springing');
-    // A released drag left an inline transform: dropping it lets the exit run from that position.
+    // A released drag left an inline transform: dropping it plays the exit from that position.
     surface?.style.removeProperty('transform');
     await this.transitionsSettled();
     if (this.open || this.wide) {

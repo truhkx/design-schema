@@ -60,7 +60,15 @@
   transition-timing-function: var(--motion-easing-standard);
 }
 
-/* surface → color.overlay.surface (locked); radius (top corners only), shadow, partGap; the last part's block-end padding adds the safe area. */
+/* focusScope: the sheet-owned part element inside FocusScope, wrapping the surface. Layout only. */
+.ds-bottom-sheet__scope {
+  display: block;
+  min-inline-size: 0;
+}
+
+/* surface → color.overlay.surface (locked); radius (top corners only), shadow, partGap.
+   The block edges are padded once, here: inset at the start (headerPaddingTop when the handle is
+   rendered) and inset plus the safe area at the end. No part carries block padding of its own. */
 .ds-bottom-sheet__surface {
   box-sizing: border-box;
   position: relative;
@@ -68,6 +76,7 @@
   flex-direction: column;
   gap: var(--ds-bottom-sheet-part-gap);
   inline-size: 100%;
+  padding-block-start: var(--ds-bottom-sheet-inset);
   padding-block-end: calc(var(--ds-bottom-sheet-inset) + env(safe-area-inset-bottom));
   background-color: var(--color-overlay-surface);
   border-start-start-radius: var(--ds-bottom-sheet-radius);
@@ -81,6 +90,11 @@
   transition-timing-function: var(--motion-easing-exit);
 }
 
+/* headerPaddingTop: the column's block-start padding above the handle, in place of inset. */
+.ds-bottom-sheet--draggable .ds-bottom-sheet__surface {
+  padding-block-start: var(--ds-bottom-sheet-header-padding-top);
+}
+
 /* enter: slide up with motion.easing.standard */
 .ds-bottom-sheet--visible .ds-bottom-sheet__surface {
   transform: translateY(0);
@@ -88,7 +102,8 @@
   transition-timing-function: var(--motion-easing-standard);
 }
 
-/* The drag-follow tracks the finger with no transition, and holds a dismissed release position. */
+/* The drag-follow tracks the finger with no transition; a dismissing release keeps the transition
+   so dropping the inline offset plays the exit from where the finger left the sheet. */
 .ds-bottom-sheet--dragging .ds-bottom-sheet__surface {
   transition: none;
 }
@@ -113,19 +128,18 @@
   block-size: calc(100dvh - var(--layout-gutter)); /* literal-ok: height full from the doc */
 }
 
-/* header: inline padding is inset; block-start is inset when there is no handle, headerPaddingTop above the handle. */
+/* header: a column of the handle over the heading row, with handleGap between them. Inline padding
+   only — the surface owns the block edges, so nothing doubles between parts. */
 .ds-bottom-sheet__header {
   display: flex;
   flex-direction: column;
   gap: var(--ds-bottom-sheet-handle-gap);
-  padding-block-start: var(--ds-bottom-sheet-inset);
   padding-inline: var(--ds-bottom-sheet-inset);
   flex: 0 0 auto;
 }
 
 /* The header starts the drag gesture, so the browser must not pan on it. */
 .ds-bottom-sheet--draggable .ds-bottom-sheet__header {
-  padding-block-start: var(--ds-bottom-sheet-header-padding-top);
   touch-action: none;
 }
 
@@ -138,7 +152,8 @@
   background-color: var(--color-foreground-muted);
 }
 
-/* headerGap: between the heading and the close button. */
+/* headerGap: the heading row's flex gap, between the heading and the close button. With the heading
+   hidden it is out of flow, so the close button's auto margin end-aligns it. */
 .ds-bottom-sheet__title-row {
   display: flex;
   align-items: center;
@@ -174,7 +189,8 @@
   border: 0;
 }
 
-/* minTarget → size.target.comfortable (locked): the wrapper raises the pointer target; the Button keeps its own size and colors. */
+/* minTarget → size.target.comfortable (locked): the wrapper raises the pointer target for a
+   one-handed reach; the Button keeps its own ghost/sm/icon-only size and colours. */
 .ds-bottom-sheet__close {
   display: inline-flex;
   align-items: center;
@@ -185,16 +201,21 @@
   min-block-size: var(--size-target-comfortable);
 }
 
-/* body: the only region that scrolls, so header and footer stay put. */
+/* The sheet-owned scroll container: the only region that scrolls, so header and footer stay put. */
 .ds-bottom-sheet__scroll {
   flex: 1 1 auto;
   min-block-size: 0;
   overflow: auto;
   overscroll-behavior: contain;
-  padding-inline: var(--ds-bottom-sheet-inset);
 }
 
-/* footer: end-aligned action row; the Stack's own gap hook reads footerGap. */
+/* inset reaches the body Box as inline padding only, as footerGap reaches the Stack below; the Box
+   keeps zero block padding, which the surface's block padding already provides. */
+.ds-bottom-sheet__scroll > .ds-box {
+  --ds-box-padding-inline: var(--ds-bottom-sheet-inset);
+}
+
+/* footer: end-aligned action row, inline inset only; the Stack's own gap hook reads footerGap. */
 .ds-bottom-sheet__footer {
   flex: 0 0 auto;
   padding-inline: var(--ds-bottom-sheet-inset);

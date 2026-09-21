@@ -51,7 +51,11 @@ export type MenuGroup = { group: string; items: MenuItem[] };
 export type MenuSeparator = { separator: true };
 export type MenuItem = MenuAction | MenuGroup | MenuSeparator;
 
-/** The style bindings a caller may replace with a different token; see the component's overrides contract. */
+/**
+ * The style bindings a caller may replace with a different token; see the component's
+ * overrides contract. `typeaheadReset` is part of the contract but has nothing to reset
+ * here: `Pressable` has no key events, so native has no typeahead.
+ */
 export type MenuOverridableBinding =
   | 'border'
   | 'borderWidth'
@@ -61,6 +65,7 @@ export type MenuOverridableBinding =
   | 'popupOffset'
   | 'typeaheadReset'
   | 'maxHeight'
+  | 'gutter'
   | 'minWidth'
   | 'itemPaddingBlock'
   | 'itemPaddingInline'
@@ -89,7 +94,12 @@ export interface MenuProps {
   triggerIcon?: MenuTriggerIcon | undefined;
   /** Render the trigger as an icon-only Button using `triggerIcon`; `label` is still required. With `triggerIcon: none` this warns in development. */
   iconOnly?: boolean | undefined;
-  /** Preferred position of the popup relative to the trigger; flips automatically when it would overflow the viewport. */
+  /**
+   * Preferred position of the popup relative to the trigger (or `anchor`). Only the block side
+   * flips (bottom and top swap) on overflow; `start` and `end` never flip — they resolve against
+   * the layout direction (`I18nManager.isRTL`) and the popup is shifted inline instead so it stays
+   * `gutter` away from the side edges.
+   */
   placement?: MenuPlacement | undefined;
   /** Controlled open state (the parent flips it from onOpenChange). Omit for an uncontrolled menu, which starts closed. A controlled menu hides, and returns focus to the trigger, only when `open` becomes false. */
   open?: boolean | undefined;
@@ -142,7 +152,12 @@ function mapActionSheetCloseReason(reason: ActionSheetCloseReason): MenuOpenChan
   return reason === 'escape' ? 'escape' : 'outside';
 }
 
-/** Positions the popup from the anchor's measured rect for `placement`, flipping either axis on overflow. `start`/`end` resolve against the writing direction. */
+/**
+ * Positions the popup from the anchor's measured rect for `placement`. Only the block side
+ * flips on overflow, keeping `popupOffset` on its new side; the inline side never flips —
+ * `start`/`end` resolve against the writing direction and the popup is shifted along the
+ * inline axis so it stays `gutter` from each viewport edge.
+ */
 function computeMenuPosition(
   anchor: Rect,
   popupWidth: number,
@@ -150,6 +165,7 @@ function computeMenuPosition(
   placement: MenuPlacement,
   windowSize: WindowSize,
   offset: number,
+  gutter: number,
 ): { top: number; left: number; side: 'bottom' | 'top' } {
   const [vert, horiz] = placement.split('-') as ['bottom' | 'top', 'start' | 'end'];
 
@@ -162,18 +178,15 @@ function computeMenuPosition(
     vertical = 'bottom';
   }
 
-  let alignLeft = I18nManager.isRTL ? horiz === 'end' : horiz === 'start';
-  const spaceRightOfLeftAlign = windowSize.width - anchor.x;
-  const spaceLeftOfRightAlign = anchor.x + anchor.width;
-  if (alignLeft && spaceRightOfLeftAlign < popupWidth && spaceLeftOfRightAlign >= popupWidth) {
-    alignLeft = false;
-  } else if (!alignLeft && spaceLeftOfRightAlign < popupWidth && spaceRightOfLeftAlign >= popupWidth) {
-    alignLeft = true;
-  }
+  const alignStart = I18nManager.isRTL ? horiz === 'end' : horiz === 'start';
+  const preferredLeft = alignStart ? anchor.x : anchor.x + anchor.width - popupWidth;
+  // A popup too wide for the gutters still starts at the leading gutter rather than off-screen.
+  const maxLeft = Math.max(gutter, windowSize.width - gutter - popupWidth);
+  const left = Math.min(Math.max(preferredLeft, gutter), maxLeft);
 
   return {
     top: vertical === 'bottom' ? anchor.y + anchor.height + offset : anchor.y - offset - popupHeight,
-    left: alignLeft ? anchor.x : anchor.x + anchor.width - popupWidth,
+    left,
     side: vertical,
   };
 }
@@ -192,8 +205,10 @@ function computeMenuPosition(
  * with the items flattened: group labels, separators and shortcut hints are dropped.
  * Above it (tablets and react-native-web) a transparent `Modal` holds a
  * full-screen scrim `Pressable` and a popup `View` (`role="menu"`) positioned from the
- * trigger's (or `anchor`'s) `measureInWindow()` rect, flipped on overflow via
- * `useWindowDimensions()`. The list scrolls within `maxHeight`. The popup fades and
+ * trigger's (or `anchor`'s) `measureInWindow()` rect: the block side flips on overflow
+ * against `useWindowDimensions()`, the inline side never does and is shifted to stay
+ * `gutter` from each edge. The list scrolls within `maxHeight`, itself capped at the
+ * window height less a `gutter` at each edge. The popup fades and
  * slides `enterDistance` from the trigger side over `enter`; under reduced motion it
  * appears at once. The Modal is not modal: nothing is trapped, the backdrop closes.
  *
@@ -248,6 +263,7 @@ export function Menu({
   const popupPadding = overrides?.popupPadding ? (resolveToken(t, overrides.popupPadding) as number) : t.space1;
   const popupOffset = overrides?.popupOffset ? (resolveToken(t, overrides.popupOffset) as number) : t.space1;
   const maxHeightCap = overrides?.maxHeight ? (resolveToken(t, overrides.maxHeight) as number) : t.layoutMaxWidthProse;
+  const gutter = overrides?.gutter ? (resolveToken(t, overrides.gutter) as number) : t.layoutGutter;
   const minWidth = overrides?.minWidth ? (resolveToken(t, overrides.minWidth) as number) : t.space20 * 2.5; // literal-ok: schema-computed multiplier
   const itemPaddingBlock = overrides?.itemPaddingBlock ? (resolveToken(t, overrides.itemPaddingBlock) as number) : t.spaceSm;
   const itemPaddingInline = overrides?.itemPaddingInline ? (resolveToken(t, overrides.itemPaddingInline) as number) : t.spaceMd;
@@ -277,14 +293,14 @@ export function Menu({
   const focusRingWidth = t.borderWidthFocus;
   const triggerIconColor = t[TRIGGER_FOREGROUND[triggerVariant]];
 
-  // The only development warning Menu issues.
+  // The only development warning Menu issues, and not when `anchor` is set: there is no trigger then.
   const hasWarnedRef = React.useRef(false);
   React.useEffect(() => {
-    if (__DEV__ && iconOnly && triggerIcon === 'none' && !hasWarnedRef.current) {
+    if (__DEV__ && iconOnly && triggerIcon === 'none' && anchor === undefined && !hasWarnedRef.current) {
       hasWarnedRef.current = true;
       console.warn('Menu: `iconOnly` with `triggerIcon` "none" leaves the trigger with nothing visible to press.');
     }
-  }, [iconOnly, triggerIcon]);
+  }, [iconOnly, triggerIcon, anchor]);
 
   const registerItemRef = (id: string) => (node: ViewInstance | null): void => {
     if (node) itemRefs.current.set(id, node);
@@ -337,7 +353,8 @@ export function Menu({
     setPopupSize((prev) => (prev !== null && prev.width === width && prev.height === height ? prev : { width, height }));
   };
 
-  // Measure the anchor the moment the menu opens; reset everything the moment it closes.
+  // Measure the anchor the moment the menu opens, and again whenever the window changes
+  // under it (rotation, a resized react-native-web page); reset it all when it closes.
   React.useEffect(() => {
     if (isPhoneWidth || !isOpen) {
       hasFocusedInitialRef.current = false;
@@ -349,7 +366,7 @@ export function Menu({
     const node = anchor ? anchor.current : triggerRef.current;
     node?.measureInWindow((x, y, width, height) => setAnchorRect({ x, y, width, height }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, isPhoneWidth]);
+  }, [isOpen, isPhoneWidth, windowSize.width, windowSize.height]);
 
   // Once the anchor and the popup's own size are known, fade/rise the popup in (or
   // snap under reduced motion) and move accessibility focus to the first enabled item.
@@ -410,11 +427,16 @@ export function Menu({
     );
   }
 
-  const popupWidth = anchorRect ? Math.max(minWidth, anchorRect.width) : minWidth;
+  // The × 2.5 rule is the floor, raised to the trigger's measured width; with `anchor` there
+  // is no trigger-width floor. The popup grows past it with its content, so the placed width
+  // is the measured one once `onLayout` has run.
+  const popupMinWidth = anchorRect && anchor === undefined ? Math.max(minWidth, anchorRect.width) : minWidth;
+  const popupWidth = popupSize?.width ?? popupMinWidth;
   const position = anchorRect
-    ? computeMenuPosition(anchorRect, popupWidth, popupSize?.height ?? 0, placement, windowSize, popupOffset)
+    ? computeMenuPosition(anchorRect, popupWidth, popupSize?.height ?? 0, placement, windowSize, popupOffset, gutter)
     : { top: 0, left: 0, side: placement.startsWith('top') ? ('top' as const) : ('bottom' as const) };
-  const maxListHeight = Math.max(0, Math.min(maxHeightCap, windowSize.height - popupOffset * 2));
+  // `gutter` at each viewport edge caps the block size; past it the list scrolls.
+  const maxListHeight = Math.max(0, Math.min(maxHeightCap, windowSize.height - 2 * gutter));
   const lineHeight = toLineHeight(fontSize, lineHeightMultiplier);
 
   // Rendered (transparent) before it is measured, so its own size is known before it is placed.
@@ -422,7 +444,7 @@ export function Menu({
     position: 'absolute',
     top: position.top,
     left: position.left,
-    width: popupWidth,
+    minWidth: popupMinWidth,
     borderRadius: radius,
     borderWidth,
     borderColor: border,

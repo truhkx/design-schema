@@ -1,8 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
-import { html, type TemplateResult } from 'lit';
+import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './ActionSheet.js';
-import './Button.js';
 import type { ActionSheetAction, DsActionSheet } from './ActionSheet.js';
 
 interface ActionSheetArgs {
@@ -13,31 +12,20 @@ interface ActionSheetArgs {
   cancelLabel?: string | undefined;
 }
 
-/** The consumer's side of the controlled contract: a choice or a dismissal closes the sheet. */
+const PHOTO_ACTIONS: ActionSheetAction[] = [
+  { id: 'share', label: 'Share', icon: 'external' },
+  { id: 'rename', label: 'Rename' },
+  { id: 'duplicate', label: 'Duplicate' },
+  { id: 'delete', label: 'Delete photo', icon: 'danger', tone: 'danger' },
+];
+
+/**
+ * The consumer's side of the controlled contract: `open` is owned here, and both a choice and a
+ * dismissal close the sheet. No trigger is rendered — there is no copy key for one — so the sheet's
+ * own rows and the Cancel row are the only focusable elements on the page.
+ */
 function closeSheet(event: Event): void {
   (event.currentTarget as DsActionSheet).open = false;
-}
-
-function openSheet(event: Event): void {
-  const sheet = (event.currentTarget as HTMLElement).nextElementSibling as DsActionSheet | null;
-  if (sheet) {
-    sheet.open = true;
-  }
-}
-
-function renderSheet(args: ActionSheetArgs): TemplateResult {
-  return html`
-    <ds-button label="More actions" variant="secondary" @press=${openSheet}></ds-button>
-    <ds-action-sheet
-      ?open=${args.open}
-      heading=${ifDefined(args.heading)}
-      .actions=${args.actions}
-      ?no-dismiss=${args.dismissible === false}
-      cancel-label=${ifDefined(args.cancelLabel)}
-      @action=${closeSheet}
-      @close=${closeSheet}
-    ></ds-action-sheet>
-  `;
 }
 
 const meta: Meta<ActionSheetArgs> = {
@@ -49,28 +37,28 @@ const meta: Meta<ActionSheetArgs> = {
   args: {
     open: true,
     heading: 'Photo.jpg',
-    actions: [
-      { id: 'share', label: 'Share', icon: 'external' },
-      { id: 'rename', label: 'Rename' },
-      { id: 'duplicate', label: 'Duplicate' },
-      { id: 'delete', label: 'Delete photo', icon: 'danger', tone: 'danger' },
-    ],
-    dismissible: true,
+    actions: PHOTO_ACTIONS,
   },
-  render: renderSheet,
+  render: (args) => html`
+    <ds-action-sheet
+      ?open=${args.open}
+      heading=${ifDefined(args.heading)}
+      .actions=${args.actions}
+      ?no-dismiss=${args.dismissible === false}
+      cancel-label=${ifDefined(args.cancelLabel)}
+      @action=${closeSheet}
+      @close=${closeSheet}
+    ></ds-action-sheet>
+  `,
 };
 
 export default meta;
 type Story = StoryObj<ActionSheetArgs>;
 
+/** Open, with the photo-actions example's args. */
 export const Default: Story = {};
 
-export const Closed: Story = { args: { open: false } };
-
-export const DismissibleFalse: Story = { args: { dismissible: false } };
-
-/* examples */
-
+/** Contextual actions on an item, with the destructive one last. */
 export const PhotoActions: Story = {
   args: {
     open: true,
@@ -84,6 +72,7 @@ export const PhotoActions: Story = {
   },
 };
 
+/** A sheet with no heading, named by copy.defaultLabel for assistive technology. */
 export const UnnamedSheet: Story = {
   args: {
     open: true,
@@ -95,6 +84,7 @@ export const UnnamedSheet: Story = {
   },
 };
 
+/** An action that is shown but cannot be used here, announced as disabled rather than hidden. */
 export const WithAnUnavailableAction: Story = {
   args: {
     open: true,
@@ -107,19 +97,17 @@ export const WithAnUnavailableAction: Story = {
   },
 };
 
-/**
- * Open with its trigger and four enabled actions plus the Cancel row, so the keyboard gate can check
- * arrow wrapping, Home/End, Enter/Space and Escape. Choosing or dismissing closes it; the trigger reopens.
- */
+/** No Cancel row, no handle; the scrim does nothing and Escape still reports through `close`. */
+export const DismissibleFalse: Story = {
+  args: { dismissible: false },
+};
+
+/** The controlled sheet with `open` false renders nothing. */
+export const Closed: Story = {
+  args: { open: false },
+};
+
+/** Open with four focusable actions and the Cancel row, for the keyboard gate. */
 export const Keyboard: Story = {
-  args: {
-    open: true,
-    heading: 'Photo.jpg',
-    actions: [
-      { id: 'share', label: 'Share', icon: 'external' },
-      { id: 'rename', label: 'Rename' },
-      { id: 'duplicate', label: 'Duplicate' },
-      { id: 'delete', label: 'Delete photo', icon: 'danger', tone: 'danger' },
-    ],
-  },
+  args: { open: true, heading: 'Photo.jpg', actions: PHOTO_ACTIONS },
 };

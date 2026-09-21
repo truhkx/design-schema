@@ -3,10 +3,11 @@
  * order. On native a click is `fireEvent.press`; the test renderer's window is wider
  * than `layout.maxWidth.prose`, so the anchored panel (not BottomSheet) is what renders.
  * `escape-closes-a-modal-popover` is scoped to web and lit, so it has no test here.
+ * A closed Modal renders nothing, so the root testID `Popover` is the panel itself.
  * See generated/prompts/Popover.rn.md.
  */
 import * as React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, within } from '@testing-library/react-native';
 import { Popover } from './Popover';
 import type { PopoverProps } from './Popover';
 import meta from './Popover.stories';
@@ -40,13 +41,15 @@ function setup(given: Partial<PopoverProps> = {}) {
 describe('Popover', () => {
   it('close-button-fires-on-open-change', () => {
     const p = setup({ open: true });
-    fireEvent.press(screen.getByLabelText('Close'));
+    fireEvent.press(within(screen.getByTestId('Popover.closeButton')).getByLabelText('Close'));
     expect(p.onOpenChange).toHaveBeenCalledWith(false, 'close-button');
   });
 
   it('the-panel-is-named-by-its-heading', () => {
     setup({ open: true, heading: 'Filters' });
-    const panel = screen.getByTestId('Popover.panel');
+    // Asserted on props, not `getByRole`: the panel groups focusable controls, so it is
+    // not itself an `accessible` host element and the ByRole query cannot reach it.
+    const panel = screen.getByTestId('Popover');
     expect(panel.props.role).toBe('dialog');
     expect(panel.props.accessibilityLabel).toBe('Filters');
   });
@@ -117,7 +120,6 @@ describe('Popover', () => {
   /* derived: a11y.requires — the open Default panel is named */
   it('has-accessible-name', () => {
     setup();
-    const panel = screen.getByTestId('Popover.panel');
-    expect(panel.props.accessibilityLabel).toBe('Filters');
+    expect(screen.getByTestId('Popover').props.accessibilityLabel).toBe('Filters');
   });
 });

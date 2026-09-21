@@ -13,6 +13,7 @@
   --ds-action-sheet-handle-height: var(--space-1);
   --ds-action-sheet-handle-width: var(--space-10);
   --ds-action-sheet-handle-radius: var(--radius-full);
+  --ds-action-sheet-title-size: var(--font-size-sm);
   --ds-action-sheet-font-family: var(--font-family-body);
   --ds-action-sheet-font-size: var(--font-size-md);
   --ds-action-sheet-line-height: var(--font-line-height-normal);
@@ -64,7 +65,6 @@
 
 /* surface → color.overlay.surface (locked); shadow; radius on the top corners only; height: content, capped at 90% of the viewport. */
 .ds-action-sheet__surface {
-  --ds-action-sheet-drag: 0;
   box-sizing: border-box;
   position: relative;
   display: flex;
@@ -86,12 +86,12 @@
 
 /* enter: slide up with motion.easing.standard */
 .ds-action-sheet--visible .ds-action-sheet__surface {
-  transform: translateY(var(--ds-action-sheet-drag));
+  transform: translateY(0);
   transition-duration: var(--ds-action-sheet-enter);
   transition-timing-function: var(--motion-easing-standard);
 }
 
-/* The drag-follow tracks the pointer with no transition, and holds a dismissed release position. */
+/* The drag-follow (an inline transform) tracks the pointer with no transition. */
 .ds-action-sheet--dragging .ds-action-sheet__surface {
   transition: none;
 }
@@ -122,6 +122,16 @@
   block-size: var(--ds-action-sheet-handle-height);
   border-radius: var(--ds-action-sheet-handle-radius);
   background-color: var(--color-foreground-muted);
+}
+
+/* heading: the composed Text's own hooks point at the sheet's, so titleSize, fontFamily and
+   lineHeight reach it by default; `overrides` is passed to Text only when the caller set one.
+   Two classes of specificity, so this wins over Text's own `.ds-text--size-sm`. */
+.ds-action-sheet .ds-action-sheet__header [data-part='heading'] {
+  --ds-text-font-size: var(--ds-action-sheet-title-size);
+  --ds-text-font-family: var(--ds-action-sheet-font-family);
+  --ds-text-line-height: var(--ds-action-sheet-line-height);
+  margin: 0;
 }
 
 /* list: scrolls inside the capped surface. */
@@ -159,7 +169,7 @@
   color: var(--color-foreground-danger);
 }
 
-/* itemHover (locked): paint only. */
+/* itemHover (locked): paint only — hovering a row never moves focus. */
 .ds-action-sheet__item:hover:not([aria-disabled='true']) {
   background-color: var(--color-background-subtle);
 }

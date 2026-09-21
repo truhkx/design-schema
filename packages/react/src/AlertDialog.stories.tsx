@@ -3,14 +3,18 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { AlertDialog, type AlertDialogProps } from './AlertDialog';
 import { Button } from './Button';
 
-/** AlertDialog is controlled; the harness owns `open` and the trigger, as a real consumer would. */
+/**
+ * AlertDialog is controlled; the harness owns `open` and the trigger, as a real consumer would.
+ * The trigger is labelled with the `heading` text, never `confirmLabel`, so no second button on the
+ * page shares Confirm's accessible name.
+ */
 function AlertDialogHarness({ open: initialOpen, onConfirm, onCancel, ...rest }: AlertDialogProps): ReactElement {
   const [open, setOpen] = useState(initialOpen);
   useEffect(() => setOpen(initialOpen), [initialOpen]);
 
   return (
     <>
-      <Button label={rest.confirmLabel} onClick={() => setOpen(true)} />
+      <Button label={rest.heading} onClick={() => setOpen(true)} />
       <AlertDialog
         {...rest}
         open={open}
@@ -60,7 +64,10 @@ export const ConfirmDisabled: Story = { args: { confirmDisabled: true } };
 
 export const Closed: Story = { args: { open: false } };
 
-/** Open with its trigger; the focusable children are Cancel and Confirm, the trigger sits behind the inert page. */
+/**
+ * Open with its trigger. The dialog has exactly two focusable children, Cancel and Confirm — there
+ * is no slot for more — so Tab wraps across those two and the trigger sits behind the inert page.
+ */
 export const Keyboard: Story = { args: { open: true } };
 
 /* examples */

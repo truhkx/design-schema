@@ -27,7 +27,7 @@ export type PopoverHeadingLevel = '2' | '3' | '4' | 2 | 3 | 4;
 /** Why `onOpenChange` fired. `tab-out` is part of the contract but never emitted on this platform (Pressable sees no key events). */
 export type PopoverCloseReason = 'trigger' | 'escape' | 'outside' | 'close-button' | 'tab-out';
 
-/** The style bindings a caller may replace with a different token; see the component's overrides contract. */
+/** The style bindings a caller may replace with a different token; `surface`, `breakpoint`, `focusRing` and `focusRingWidth` are locked. */
 export type PopoverOverridableBinding =
   | 'border'
   | 'borderWidth'
@@ -66,7 +66,7 @@ export interface PopoverProps {
   onOpenChange?: ((open: boolean, reason: PopoverCloseReason) => void) | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<PopoverOverridableBinding, TokenRef | undefined>> | undefined;
-  /** The root view (wraps the trigger; the Modal itself exposes no ref). */
+  /** The anchor view that holds the trigger. The `Modal` the panel lives in exposes no ref of its own. */
   ref?: React.Ref<ViewInstance> | undefined;
 }
 
@@ -74,17 +74,24 @@ const COPY = {
   closeLabel: 'Close',
 } as const;
 
-// Bindings Popover shares by name with BottomSheet, forwarded on phone widths. Not
-// `maxWidth`, which BottomSheet reads as its breakpoint rather than a panel width.
-const SHEET_BINDINGS: readonly (PopoverOverridableBinding & BottomSheetOverridableBinding)[] = [
-  'shadow',
-  'radius',
-  'inset',
-  'partGap',
-  'layer',
-  'enter',
-  'exit',
-];
+/** The bindings Popover shares by name with BottomSheet, minus `layer`, which the sheet keeps unless the caller overrode it. */
+type SheetBinding = Exclude<Extract<PopoverOverridableBinding, BottomSheetOverridableBinding>, 'layer'>;
+
+/**
+ * Popover's own default token for each shared binding. The sheet is given Popover's
+ * resolved value — this default or the caller's override — rather than falling back to
+ * BottomSheet's own defaults, so the phone presentation matches the anchored one.
+ */
+const SHEET_DEFAULTS: Readonly<Record<SheetBinding, TokenRef>> = {
+  shadow: 'shadow.overlay',
+  radius: 'radius.md',
+  inset: 'layout.inset.md',
+  partGap: 'layout.gap.normal',
+  enter: 'motion.duration.fast',
+  exit: 'motion.duration.fast',
+};
+
+const SHEET_BINDINGS: readonly SheetBinding[] = ['shadow', 'radius', 'inset', 'partGap', 'enter', 'exit'];
 
 const SHEET_REASON: Record<BottomSheetCloseReason, PopoverCloseReason> = {
   escape: 'escape',
@@ -100,6 +107,7 @@ const RESTORE_REASONS: ReadonlySet<PopoverCloseReason> = new Set<PopoverCloseRea
 
 type Rect = { x: number; y: number; width: number; height: number };
 type WindowSize = { width: number; height: number };
+type PanelSize = { width: number; height: number };
 type ArrowEdge = 'top' | 'bottom' | 'left' | 'right';
 
 function clamp(value: number, min: number, max: number): number {
@@ -163,6 +171,31 @@ function computePopoverPosition(
 }
 
 /**
+ * Places the arrow on the panel edge facing the trigger and edges its two outer sides.
+ *
+ * The square is centered along that edge and its center sits on the centerline of the
+ * panel's border — half `borderWidth` in from the outer edge — so the edged sides meet
+ * the panel border and the fill covers the border under the base. Rotating the square
+ * 45° clockwise sends its unrotated top side to the upper right, its right side to the
+ * lower right, and so on, which is what picks the two sides bordered below.
+ */
+function arrowEdgeStyle(edge: ArrowEdge, arrowSize: number, borderWidth: number, panel: PanelSize | null): ViewStyle {
+  // Before the panel is measured, assume an edge two arrows wide so the arrow is not off-centre by much.
+  const along = (length: number | undefined): number => (length ?? arrowSize * 2) / 2 - arrowSize / 2;
+  const across = borderWidth / 2 - arrowSize / 2;
+  switch (edge) {
+    case 'top':
+      return { top: across, left: along(panel?.width), borderTopWidth: borderWidth, borderLeftWidth: borderWidth };
+    case 'bottom':
+      return { bottom: across, left: along(panel?.width), borderBottomWidth: borderWidth, borderRightWidth: borderWidth };
+    case 'left':
+      return { left: across, top: along(panel?.height), borderLeftWidth: borderWidth, borderBottomWidth: borderWidth };
+    default:
+      return { right: across, top: along(panel?.height), borderTopWidth: borderWidth, borderRightWidth: borderWidth };
+  }
+}
+
+/**
  * Popover — a small panel that appears next to the thing you pressed and stays out of
  * the way of everything else: a date picker under a field, a filter panel, a help note
  * with a link. Unlike a Tooltip it can hold controls; unlike a Dialog it does not take
@@ -178,14 +211,15 @@ function computePopoverPosition(
  * state is announced. At or below `layout.maxWidth.prose` (phones) the panel is the
  * package's `BottomSheet` with `height="content"`, titled by `heading`, else the
  * trigger's `accessibleName`, else its string `label`; there it is always modal and
- * always shows its close button. Above it (tablets, react-native-web) a transparent
- * `Modal` holds a full-screen transparent backdrop `Pressable` (no scrim, even when
- * `modal`) and a `role="dialog"` panel positioned from the trigger's
+ * always shows its close button, and it is handed Popover's own shadow, radius, inset,
+ * partGap, enter and exit tokens. Above the breakpoint (tablets, react-native-web) a
+ * transparent `Modal` holds a full-screen transparent backdrop `Pressable` (no scrim,
+ * even when `modal`) and a `role="dialog"` panel positioned from the trigger's
  * `measureInWindow()` rect, flipped and shifted to stay in the window. The panel
- * composes `FocusScope` (`trapped` when `modal`), `Heading`, `Button` for the close
- * control and `Box` for the body. It fades and slides `enterDistance` from the trigger
- * side over `enter` (motion.easing.standard) and fades out over `exit`
- * (motion.easing.exit); instantly under reduced motion.
+ * composes `FocusScope` (`trapped` when `modal`, `active` following `open`), `Heading`,
+ * `Button` for the close control and `Box` for the body. It fades and slides
+ * `enterDistance` from the trigger side over `enter` (motion.easing.standard) and fades
+ * out over `exit` (motion.easing.exit); instantly under reduced motion.
  *
  * Dismissal: Escape (`onRequestClose`: Android back, Esc on react-native-web) always
  * closes; a backdrop tap closes when not `modal`; the close button when `dismissible`.
@@ -229,7 +263,7 @@ export function Popover({
 
   const [mounted, setMounted] = React.useState(isOpen);
   const [triggerRect, setTriggerRect] = React.useState<Rect | null>(null);
-  const [panelSize, setPanelSize] = React.useState<{ width: number; height: number } | null>(null);
+  const [panelSize, setPanelSize] = React.useState<PanelSize | null>(null);
   const progress = React.useRef(new Animated.Value(0)).current;
 
   const border = overrides?.border ? (resolveToken(t, overrides.border) as string) : t.colorBorder;
@@ -374,12 +408,15 @@ export function Popover({
   );
 
   if (isPhoneWidth) {
+    // Popover's resolved value for every shared binding; `layer` alone is forwarded only
+    // when overridden, so the sheet otherwise keeps its own `layer.sheet`.
     const sheetOverrides: Partial<Record<BottomSheetOverridableBinding, TokenRef | undefined>> = {};
     for (const binding of SHEET_BINDINGS) {
-      if (overrides?.[binding]) sheetOverrides[binding] = overrides[binding];
+      sheetOverrides[binding] = overrides?.[binding] ?? SHEET_DEFAULTS[binding];
     }
+    if (overrides?.layer !== undefined) sheetOverrides.layer = overrides.layer;
     return (
-      <View ref={ref} testID="Popover">
+      <View ref={ref}>
         {triggerView}
         <BottomSheet
           open={isOpen}
@@ -434,26 +471,18 @@ export function Popover({
     gap: partGap,
   };
 
-  const arrowAlong = (length: number | undefined): number => (length ?? arrowSize * 2) / 2 - arrowSize / 2;
   const arrowStyle: ViewStyle = {
     position: 'absolute',
     width: arrowSize,
     height: arrowSize,
     backgroundColor: surfaceColor,
-    borderWidth,
     borderColor: border,
-    transform: [{ rotate: '45deg' }], // literal-ok: diamond rotation, not a size
-    ...(edge === 'top'
-      ? { top: -arrowSize / 2, left: arrowAlong(panelSize?.width) }
-      : edge === 'bottom'
-        ? { bottom: -arrowSize / 2, left: arrowAlong(panelSize?.width) }
-        : edge === 'left'
-          ? { left: -arrowSize / 2, top: arrowAlong(panelSize?.height) }
-          : { right: -arrowSize / 2, top: arrowAlong(panelSize?.height) }),
+    transform: [{ rotate: '45deg' }], // literal-ok: the diamond rotation, not a size
+    ...arrowEdgeStyle(edge, arrowSize, borderWidth, panelSize),
   };
 
   return (
-    <View ref={ref} testID="Popover">
+    <View ref={ref}>
       {triggerView}
       <Modal
         visible={mounted}
@@ -472,16 +501,15 @@ export function Popover({
             accessible={false}
             testID="Popover.backdrop"
           />
-          <FocusScope trapped={modal} active={mounted} autoFocus="none" restoreFocus={false}>
+          <FocusScope trapped={modal} active={isOpen} autoFocus="none" restoreFocus={false}>
             <Animated.View
               style={panelStyle}
               onLayout={handlePanelLayout}
               role="dialog"
               accessibilityLabel={accessibleName}
               accessibilityViewIsModal={modal}
-              testID="Popover.panel"
+              testID="Popover"
             >
-              {showArrow ? <View style={arrowStyle} testID="Popover.arrow" /> : null}
               <View style={surfaceStyle}>
                 {heading !== undefined || dismissible ? (
                   <View style={headerStyle}>
@@ -491,14 +519,16 @@ export function Popover({
                       </View>
                     ) : null}
                     {dismissible ? (
-                      <Button
-                        label={COPY.closeLabel}
-                        variant="ghost"
-                        size="sm"
-                        iconOnly
-                        leadingIcon={<Icon name="close" color={t.colorActionGhostForeground} />}
-                        onPress={() => closePopover('close-button')}
-                      />
+                      <View testID="Popover.closeButton">
+                        <Button
+                          label={COPY.closeLabel}
+                          variant="ghost"
+                          size="sm"
+                          iconOnly
+                          leadingIcon={<Icon name="close" color={t.colorActionGhostForeground} />}
+                          onPress={() => closePopover('close-button')}
+                        />
+                      </View>
                     ) : null}
                   </View>
                 ) : null}
@@ -506,6 +536,8 @@ export function Popover({
                   <Box>{children}</Box>
                 </View>
               </View>
+              {/* After the surface, so the arrow's fill paints over the panel border beneath its base. */}
+              {showArrow ? <View style={arrowStyle} testID="Popover.arrow" /> : null}
             </Animated.View>
           </FocusScope>
         </View>

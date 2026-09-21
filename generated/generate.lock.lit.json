@@ -22,15 +22,15 @@
     }
   },
   "ActionSheet.lit": {
-    "hash": "a50dc9f74b8bca4b",
-    "lastAttemptHash": "a50dc9f74b8bca4b",
-    "generatedAt": "2026-09-17T15:07:01+00:00",
+    "hash": "a2992ad891fcc624",
+    "lastAttemptHash": "a2992ad891fcc624",
+    "generatedAt": "2026-09-21T13:42:02+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.1727,
+    "costUsd": 6.3581,
     "files": [
-      "packages/lit/src/ActionSheet.test.ts",
+      "packages/lit/src/ActionSheet.stories.ts",
       "packages/lit/src/ActionSheet.ts"
     ],
     "gaps": 8,
@@ -40,7 +40,10 @@
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
     }
   },
   "Alert.lit": {
@@ -68,51 +71,54 @@
     }
   },
   "AlertDialog.lit": {
-    "hash": "d51dd8c7407cb3f1",
-    "lastAttemptHash": "d51dd8c7407cb3f1",
-    "generatedAt": "2026-09-17T14:28:47+00:00",
+    "hash": "db464b570e57cddc",
+    "lastAttemptHash": "db464b570e57cddc",
+    "generatedAt": "2026-09-21T11:10:36+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.8636,
+    "costUsd": 6.136,
     "files": [
       "packages/lit/src/AlertDialog.stories.ts",
       "packages/lit/src/AlertDialog.test.ts",
-      "packages/lit/src/AlertDialog.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/AlertDialog.ts"
     ],
-    "gaps": 7,
+    "gaps": 12,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
     }
   },
   "BottomSheet.lit": {
-    "hash": "b90bf0ab05212a8e",
-    "lastAttemptHash": "b90bf0ab05212a8e",
-    "generatedAt": "2026-09-17T14:58:59+00:00",
+    "hash": "8f54a827c999a34d",
+    "lastAttemptHash": "8f54a827c999a34d",
+    "generatedAt": "2026-09-21T13:04:16+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.2154,
+    "costUsd": 6.2615,
     "files": [
       "packages/lit/src/BottomSheet.stories.ts",
-      "packages/lit/src/BottomSheet.test.ts",
-      "packages/lit/src/BottomSheet.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/BottomSheet.ts"
     ],
-    "gaps": 11,
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
     }
   },
   "Box.lit": {
@@ -362,24 +368,28 @@
   },
   "Dialog.lit": {
     "hash": "6d1ca16ebdb7e97a",
-    "lastAttemptHash": "6d1ca16ebdb7e97a",
-    "generatedAt": "2026-09-17T14:20:00+00:00",
+    "lastAttemptHash": "079c0bd3e21a105b",
+    "generatedAt": "2026-09-21T10:49:23+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 2.09,
+    "rounds": 3,
+    "costUsd": 35.5123,
     "files": [
-      "packages/lit/src/Dialog.test.ts",
-      "packages/lit/src/Dialog.ts"
+      "packages/lit/src/Dialog.stories.ts",
+      "packages/lit/src/Dialog.ts",
+      "packages/lit/src/FocusScope.ts"
     ],
-    "gaps": 9,
+    "gaps": 33,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": false,
+      "axe": true
     }
   },
   "Disclosure.lit": {
@@ -692,25 +702,28 @@
     }
   },
   "Menu.lit": {
-    "hash": "1f37cc86754f9f12",
-    "lastAttemptHash": "1f37cc86754f9f12",
-    "generatedAt": "2026-09-17T14:38:11+00:00",
+    "hash": "cea81cf18d15014a",
+    "lastAttemptHash": "cea81cf18d15014a",
+    "generatedAt": "2026-09-21T11:41:17+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.999,
+    "costUsd": 8.9265,
     "files": [
-      "packages/lit/src/Menu.test.ts",
+      "packages/lit/src/Menu.stories.ts",
       "packages/lit/src/Menu.ts"
     ],
-    "gaps": 9,
+    "gaps": 18,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
     }
   },
   "Meter.lit": {
@@ -784,26 +797,31 @@
     }
   },
   "Popover.lit": {
-    "hash": "49d15e73fb167525",
-    "lastAttemptHash": "49d15e73fb167525",
-    "generatedAt": "2026-09-17T14:48:28+00:00",
+    "hash": "40b0c2a396a0cf1b",
+    "lastAttemptHash": "40b0c2a396a0cf1b",
+    "generatedAt": "2026-09-21T12:28:17+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 3.0507,
+    "rounds": 3,
+    "costUsd": 29.0696,
     "files": [
+      "packages/lit/src/FocusScope.ts",
       "packages/lit/src/Popover.stories.ts",
       "packages/lit/src/Popover.test.ts",
-      "packages/lit/src/Popover.ts"
+      "packages/lit/src/Popover.ts",
+      "tools/keyboard_tests.ts"
     ],
-    "gaps": 12,
+    "gaps": 27,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
     }
   },
   "ProgressBar.lit": {
@@ -922,24 +940,28 @@
   },
   "SidePanel.lit": {
     "hash": "6d43167378a74e4b",
-    "lastAttemptHash": "6d43167378a74e4b",
-    "generatedAt": "2026-09-17T15:15:51+00:00",
+    "lastAttemptHash": "eb279bc001dbf73d",
+    "generatedAt": "2026-09-21T15:03:39+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.4794,
+    "rounds": 3,
+    "costUsd": 24.7336,
     "files": [
       "packages/lit/src/SidePanel.stories.ts",
+      "packages/lit/src/SidePanel.test.ts",
       "packages/lit/src/SidePanel.ts"
     ],
-    "gaps": 11,
+    "gaps": 15,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": false,
+      "axe": true
     }
   },
   "Slider.lit": {

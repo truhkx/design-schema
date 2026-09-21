@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
-import { html, type TemplateResult } from 'lit';
+import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './AlertDialog.js';
 import './Button.js';
@@ -20,6 +20,10 @@ function closeAlertDialog(event: Event): void {
   (event.currentTarget as DsAlertDialog).open = false;
 }
 
+/**
+ * The trigger, as a real consumer would write it: focus returns here when the dialog closes. It is
+ * labelled with the `heading` text, never `confirmLabel`, so no second button shares Confirm's name.
+ */
 function openAlertDialog(event: Event): void {
   const dialog = (event.currentTarget as HTMLElement).nextElementSibling as DsAlertDialog | null;
   if (dialog) {
@@ -27,9 +31,25 @@ function openAlertDialog(event: Event): void {
   }
 }
 
-function renderAlertDialog(args: AlertDialogArgs): TemplateResult {
-  return html`
-    <ds-button variant="secondary" label="Open alert dialog" @press=${openAlertDialog}></ds-button>
+const meta: Meta<AlertDialogArgs> = {
+  title: 'AlertDialog/Lit',
+  tags: ['autodocs'],
+  parameters: {
+    actions: { handles: ['confirm', 'cancel'] },
+  },
+  argTypes: {
+    tone: { control: 'inline-radio', options: ['danger', 'warning', 'info'] },
+  },
+  args: {
+    open: true,
+    heading: 'Delete 3 files?',
+    description: 'They will be removed from all shared folders. This cannot be undone.',
+    tone: 'danger',
+    confirmLabel: 'Delete files',
+    confirmDisabled: false,
+  },
+  render: (args) => html`
+    <ds-button label=${args.heading} @press=${openAlertDialog}></ds-button>
     <ds-alert-dialog
       ?open=${args.open}
       heading=${args.heading}
@@ -41,27 +61,7 @@ function renderAlertDialog(args: AlertDialogArgs): TemplateResult {
       @confirm=${closeAlertDialog}
       @cancel=${closeAlertDialog}
     ></ds-alert-dialog>
-  `;
-}
-
-const meta: Meta<AlertDialogArgs> = {
-  title: 'AlertDialog/Lit',
-  tags: ['autodocs'],
-  parameters: {
-    actions: { handles: ['confirm', 'cancel'] },
-  },
-  argTypes: {
-    tone: { control: 'select', options: ['danger', 'warning', 'info'] },
-  },
-  args: {
-    open: true,
-    heading: 'Delete 3 files?',
-    description: 'They will be removed from all shared folders. This cannot be undone.',
-    tone: 'danger',
-    confirmLabel: 'Delete files',
-    confirmDisabled: false,
-  },
-  render: renderAlertDialog,
+  `,
 };
 
 export default meta;
@@ -76,6 +76,14 @@ export const ToneInfo: Story = { args: { tone: 'info' } };
 
 /* notable states */
 export const ConfirmDisabled: Story = { args: { confirmDisabled: true } };
+
+export const Closed: Story = { args: { open: false } };
+
+/**
+ * Open with its trigger. The dialog has exactly two focusable children, Cancel and Confirm — there
+ * is no slot for more — so Tab wraps across those two and the trigger sits behind the inert page.
+ */
+export const Keyboard: Story = { args: { open: true } };
 
 /* examples */
 export const DeleteFiles: Story = {
@@ -119,10 +127,3 @@ export const PublishToTheTeam: Story = {
     confirmLabel: 'Publish',
   },
 };
-
-/**
- * Open with its trigger. The dialog has exactly two focusable children (Cancel, then Confirm): an
- * alert dialog carries no other controls, so the keyboard gate checks Escape and Tab / Shift+Tab
- * wrapping between those two.
- */
-export const Keyboard: Story = {};

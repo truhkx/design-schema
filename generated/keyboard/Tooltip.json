@@ -8,13 +8,14 @@
         "Escape"
       ],
       "action": "Hides the tooltip without moving focus.",
-      "from": "trigger",
-      "expect": "closes",
+      "from": "any",
+      "expect": "manual",
       "when": "tooltip visible",
       "expectAll": [
         "closes",
         "focus-unchanged"
-      ]
+      ],
+      "target": "popup"
     }
   ]
 }

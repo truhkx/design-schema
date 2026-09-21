@@ -32,6 +32,12 @@ function OpenHarness(props: PopoverProps): ReactElement {
   return <Popover {...props} open={open} onOpenChange={handleOpenChange} />;
 }
 
+/** Every story but the examples renders through the consumer wrapper; there is no meta-level one. */
+const controlled = (args: Partial<PopoverProps>): ReactElement => <OpenHarness {...(args as PopoverProps)} />;
+
+/** The examples render the popover itself — closed and uncontrolled, as a page first shows it. */
+const uncontrolled = (args: Partial<PopoverProps>): ReactElement => <Popover {...(args as PopoverProps)} />;
+
 const meta: Meta<typeof Popover> = {
   title: 'Popover/React',
   component: Popover,
@@ -54,7 +60,6 @@ const meta: Meta<typeof Popover> = {
       options: ['bottom-start', 'bottom', 'bottom-end', 'top-start', 'top', 'top-end', 'start', 'end'],
     },
   },
-  render: (args) => <OpenHarness {...(args as PopoverProps)} />,
   tags: ['autodocs'],
 };
 
@@ -62,39 +67,45 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 /** Open, with the filter-panel example's args. */
-export const Default: Story = { args: { open: true } };
+export const Default: Story = { args: { open: true }, render: controlled };
 
 /* headingLevel */
-export const HeadingLevel2: Story = { args: { headingLevel: '2' } };
-export const HeadingLevel3: Story = { args: { headingLevel: '3' } };
-export const HeadingLevel4: Story = { args: { headingLevel: '4' } };
+export const HeadingLevel2: Story = { args: { headingLevel: '2' }, render: controlled };
+export const HeadingLevel3: Story = { args: { headingLevel: '3' }, render: controlled };
+export const HeadingLevel4: Story = { args: { headingLevel: '4' }, render: controlled };
 
 /* placement */
-export const PlacementBottomStart: Story = { args: { placement: 'bottom-start' } };
-export const PlacementBottom: Story = { args: { placement: 'bottom' } };
-export const PlacementBottomEnd: Story = { args: { placement: 'bottom-end' } };
-export const PlacementTopStart: Story = { args: { placement: 'top-start' } };
-export const PlacementTop: Story = { args: { placement: 'top' } };
-export const PlacementTopEnd: Story = { args: { placement: 'top-end' } };
-export const PlacementStart: Story = { args: { placement: 'start' } };
-export const PlacementEnd: Story = { args: { placement: 'end' } };
+export const PlacementBottomStart: Story = { args: { placement: 'bottom-start' }, render: controlled };
+export const PlacementBottom: Story = { args: { placement: 'bottom' }, render: controlled };
+export const PlacementBottomEnd: Story = { args: { placement: 'bottom-end' }, render: controlled };
+export const PlacementTopStart: Story = { args: { placement: 'top-start' }, render: controlled };
+export const PlacementTop: Story = { args: { placement: 'top' }, render: controlled };
+export const PlacementTopEnd: Story = { args: { placement: 'top-end' }, render: controlled };
+export const PlacementStart: Story = { args: { placement: 'start' }, render: controlled };
+export const PlacementEnd: Story = { args: { placement: 'end' }, render: controlled };
 
 /* notable states */
-export const NotDismissible: Story = { args: { dismissible: false } };
-export const WithArrow: Story = { args: { showArrow: true } };
-export const Modal: Story = { args: { modal: true } };
+export const NotDismissible: Story = { args: { dismissible: false }, render: controlled };
+export const WithArrow: Story = { args: { showArrow: true }, render: controlled };
+export const Modal: Story = { args: { modal: true }, render: controlled };
 
-/** Uncontrolled: starts closed; the trigger toggles it. */
-export const Uncontrolled: Story = { render: (args) => <Popover {...(args as PopoverProps)} /> };
-
-/* examples */
+/*
+ * Examples. Each one starts from blank args rather than Default's or meta's: every prop the example
+ * does not give is written out at its own default, so the four render closed and uncontrolled.
+ */
 export const FilterPanel: Story = {
   args: {
     trigger: <Button label="Filters" variant="secondary" />,
     children: filterForm,
     heading: 'Filters',
+    headingLevel: '3',
     placement: 'bottom-start',
+    modal: false,
+    showArrow: false,
+    dismissible: true,
+    open: undefined,
   },
+  render: uncontrolled,
 };
 
 export const DatePickerPanel: Story = {
@@ -108,7 +119,14 @@ export const DatePickerPanel: Story = {
       </Stack>
     ),
     heading: undefined,
+    headingLevel: '3',
+    placement: 'bottom',
+    modal: false,
+    showArrow: false,
+    dismissible: true,
+    open: undefined,
   },
+  render: uncontrolled,
 };
 
 export const RequiredStep: Story = {
@@ -120,8 +138,14 @@ export const RequiredStep: Story = {
       </Form>
     ),
     heading: 'Add member',
+    headingLevel: '3',
+    placement: 'bottom',
     modal: true,
+    showArrow: false,
+    dismissible: true,
+    open: undefined,
   },
+  render: uncontrolled,
 };
 
 export const ContextualHelp: Story = {
@@ -133,9 +157,14 @@ export const ContextualHelp: Story = {
       </Text>
     ),
     heading: undefined,
-    showArrow: true,
+    headingLevel: '3',
     placement: 'end',
+    modal: false,
+    showArrow: true,
+    dismissible: true,
+    open: undefined,
   },
+  render: uncontrolled,
 };
 
 /** Open with its trigger and three focusable body children, for the keyboard gate. */
@@ -150,4 +179,5 @@ export const Keyboard: Story = {
       </Stack>
     ),
   },
+  render: controlled,
 };

@@ -22,26 +22,29 @@
     }
   },
   "ActionSheet.web": {
-    "hash": "2e40e5a0d725fb72",
-    "lastAttemptHash": "2e40e5a0d725fb72",
-    "generatedAt": "2026-09-17T15:04:17+00:00",
+    "hash": "e849de3914b7f9cd",
+    "lastAttemptHash": "e849de3914b7f9cd",
+    "generatedAt": "2026-09-21T13:32:54+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.8008,
+    "rounds": 2,
+    "costUsd": 12.6668,
     "files": [
       "packages/react/src/ActionSheet.css",
       "packages/react/src/ActionSheet.stories.tsx",
       "packages/react/src/ActionSheet.tsx"
     ],
-    "gaps": 9,
+    "gaps": 28,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
     }
   },
   "Alert.web": {
@@ -69,42 +72,18 @@
     }
   },
   "AlertDialog.web": {
-    "hash": "2c82cae7ffbf66bf",
-    "lastAttemptHash": "2c82cae7ffbf66bf",
-    "generatedAt": "2026-09-17T14:25:52+00:00",
+    "hash": "26b1d4dd55cc55c7",
+    "lastAttemptHash": "26b1d4dd55cc55c7",
+    "generatedAt": "2026-09-21T11:02:18+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.5743,
+    "costUsd": 4.9518,
     "files": [
       "packages/react/src/AlertDialog.css",
       "packages/react/src/AlertDialog.stories.tsx",
       "packages/react/src/AlertDialog.test.tsx",
-      "packages/react/src/AlertDialog.tsx",
-      "packages/react/src/index.ts"
-    ],
-    "gaps": 7,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true
-    }
-  },
-  "BottomSheet.web": {
-    "hash": "44d691494ba80555",
-    "lastAttemptHash": "44d691494ba80555",
-    "generatedAt": "2026-09-17T14:54:59+00:00",
-    "model": "opus",
-    "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.9884,
-    "files": [
-      "packages/react/src/BottomSheet.css",
-      "packages/react/src/BottomSheet.test.tsx",
-      "packages/react/src/BottomSheet.tsx"
+      "packages/react/src/AlertDialog.tsx"
     ],
     "gaps": 9,
     "gates": {
@@ -113,7 +92,36 @@
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
+    }
+  },
+  "BottomSheet.web": {
+    "hash": "7e203a39feaabe29",
+    "lastAttemptHash": "7e203a39feaabe29",
+    "generatedAt": "2026-09-21T12:51:45+00:00",
+    "model": "opus",
+    "runner": "cli",
+    "rounds": 1,
+    "costUsd": 6.9505,
+    "files": [
+      "packages/react/src/BottomSheet.css",
+      "packages/react/src/BottomSheet.stories.tsx",
+      "packages/react/src/BottomSheet.tsx"
+    ],
+    "gaps": 12,
+    "gates": {
+      "parse": true,
+      "contrast": true,
+      "literals": true,
+      "typecheck": true,
+      "deps": true,
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
     }
   },
   "Box.web": {
@@ -375,26 +383,29 @@
     }
   },
   "Dialog.web": {
-    "hash": "79f4dc61aa98325a",
-    "lastAttemptHash": "79f4dc61aa98325a",
-    "generatedAt": "2026-09-17T14:16:06+00:00",
+    "hash": "aefe1f63fc419a5e",
+    "lastAttemptHash": "aefe1f63fc419a5e",
+    "generatedAt": "2026-09-21T10:19:15+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.843,
+    "costUsd": 3.743,
     "files": [
       "packages/react/src/Dialog.css",
-      "packages/react/src/Dialog.test.tsx",
+      "packages/react/src/Dialog.stories.tsx",
       "packages/react/src/Dialog.tsx"
     ],
-    "gaps": 12,
+    "gaps": 11,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
     }
   },
   "Disclosure.web": {
@@ -708,28 +719,28 @@
     }
   },
   "Menu.web": {
-    "hash": "ac77f231084cb9b2",
-    "lastAttemptHash": "ac77f231084cb9b2",
-    "generatedAt": "2026-09-17T14:34:38+00:00",
+    "hash": "1b5cb769052b3b8c",
+    "lastAttemptHash": "1b5cb769052b3b8c",
+    "generatedAt": "2026-09-21T11:26:38+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 2.0639,
+    "rounds": 2,
+    "costUsd": 12.7106,
     "files": [
       "packages/react/src/Menu.css",
-      "packages/react/src/Menu.stories.tsx",
-      "packages/react/src/Menu.test.tsx",
-      "packages/react/src/Menu.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Menu.tsx"
     ],
-    "gaps": 9,
+    "gaps": 20,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
     }
   },
   "Meter.web": {
@@ -806,27 +817,29 @@
     }
   },
   "Popover.web": {
-    "hash": "332e752d90cfe31e",
-    "lastAttemptHash": "332e752d90cfe31e",
-    "generatedAt": "2026-09-17T14:42:50+00:00",
+    "hash": "9a0e6596e6d39c91",
+    "lastAttemptHash": "9a0e6596e6d39c91",
+    "generatedAt": "2026-09-21T11:54:42+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.7917,
+    "costUsd": 4.346,
     "files": [
       "packages/react/src/Popover.css",
       "packages/react/src/Popover.stories.tsx",
-      "packages/react/src/Popover.test.tsx",
       "packages/react/src/Popover.tsx"
     ],
-    "gaps": 8,
+    "gaps": 11,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
     }
   },
   "ProgressBar.web": {
@@ -952,26 +965,30 @@
     }
   },
   "SidePanel.web": {
-    "hash": "f4ea4dde78c6950b",
-    "lastAttemptHash": "f4ea4dde78c6950b",
-    "generatedAt": "2026-09-17T15:13:52+00:00",
+    "hash": "93cb7b98dfdaa4e3",
+    "lastAttemptHash": "93cb7b98dfdaa4e3",
+    "generatedAt": "2026-09-21T13:59:50+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.2527,
+    "costUsd": 5.8653,
     "files": [
       "packages/react/src/SidePanel.css",
       "packages/react/src/SidePanel.stories.tsx",
+      "packages/react/src/SidePanel.test.tsx",
       "packages/react/src/SidePanel.tsx"
     ],
-    "gaps": 11,
+    "gaps": 13,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
     }
   },
   "Slider.web": {

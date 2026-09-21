@@ -68,8 +68,13 @@ export type ActionSheetOverridableBinding =
   | 'enter'
   | 'exit';
 
-/** Host hooks. `titleSize` has none: it is forwarded to the heading Text, which sets its own size. */
-const HOOKS: Partial<Record<ActionSheetOverridableBinding, string>> = {
+/**
+ * Host hooks, one per overridable binding. `titleSize`, `fontFamily` and `lineHeight` reach the
+ * composed heading Text through Text's own documented hooks, set from these in the stylesheet, so
+ * consumer CSS on the sheet hook still lands; `overrides` also forwards them to Text's `overrides`
+ * when the caller set one.
+ */
+const HOOKS: Record<ActionSheetOverridableBinding, string> = {
   scrim: '--ds-action-sheet-scrim',
   shadow: '--ds-action-sheet-shadow',
   radius: '--ds-action-sheet-radius',
@@ -81,7 +86,8 @@ const HOOKS: Partial<Record<ActionSheetOverridableBinding, string>> = {
   handleHeight: '--ds-action-sheet-handle-height',
   handleWidth: '--ds-action-sheet-handle-width',
   handleRadius: '--ds-action-sheet-handle-radius',
-  fontFamily: `--ds-action-sheet-font-family`,
+  titleSize: '--ds-action-sheet-title-size',
+  fontFamily: '--ds-action-sheet-font-family',
   fontSize: '--ds-action-sheet-font-size',
   lineHeight: '--ds-action-sheet-line-height',
   divider: '--ds-action-sheet-divider',
@@ -109,10 +115,15 @@ const MENU_FORWARDS: ReadonlyArray<readonly [ActionSheetOverridableBinding, Menu
 /** maxWidth (locked): the theme token the presentation breakpoint is built from, read from the root. */
 const MAX_WIDTH_PROPERTY = '--layout-max-width-prose';
 
+/** constants.dragSlop (space.1): read from the resolved custom property at gesture time, as BottomSheet. */
+const DRAG_SLOP_PROPERTY = '--space-1';
+
 /** constants.dismissDistance: fraction of the sheet height a release must pass to dismiss. */
+/* literal-ok: a ratio, which no token expresses; the same value as BottomSheet */
 const DISMISS_DISTANCE = 0.25;
 
 /** constants.dismissVelocity: release speed, in px/ms, that dismisses whatever the distance. */
+/* literal-ok: px/ms, which no token expresses; the same value as BottomSheet */
 const DISMISS_VELOCITY = 1.5;
 
 /** copy.cancelLabel */
@@ -129,6 +140,27 @@ const NEGATED_BOOLEAN_CONVERTER = {
     return value ? null : '';
   },
 };
+
+/** A resolved length custom property (`4px`, `0.25rem`) in CSS pixels; an unresolvable value is 0. */
+function lengthInPx(element: Element, value: string): number {
+  const amount = Number.parseFloat(value);
+  if (!Number.isFinite(amount)) {
+    return 0;
+  }
+  if (value.endsWith('rem')) {
+    const root = Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
+    return Number.isFinite(root) ? amount * root : 0;
+  }
+  if (value.endsWith('em')) {
+    const own = Number.parseFloat(getComputedStyle(element).fontSize);
+    return Number.isFinite(own) ? amount * own : 0;
+  }
+  return amount;
+}
+
+function nextFrame(): Promise<void> {
+  return new Promise((resolve) => requestAnimationFrame(() => resolve()));
+}
 
 function getDeepActiveElement(): Element | null {
   let active = document.activeElement;
@@ -163,11 +195,22 @@ function unlockPageScroll(): void {
   }
 }
 
+/** One pointer sample, kept in pairs so release velocity comes from the last two moves. */
 interface DragSample {
+  y: number;
+  time: number;
+}
+
+/** A pointer down on the handle or header; it becomes a drag only once it has moved `dragSlop` down. */
+interface DragGesture {
+  pointerId: number;
+  /** Where the pointer went down; the slop is measured from here. */
   startY: number;
-  lastY: number;
-  lastTime: number;
-  velocity: number;
+  /** Where the slop was crossed; the offset counts from here, so the surface does not jump. */
+  originY: number;
+  claimed: boolean;
+  previous: DragSample | null;
+  last: DragSample | null;
 }
 
 function toMenuItem(action: ActionSheetAction): MenuActionItem {
@@ -226,6 +269,7 @@ export class DsActionSheet extends LitElement {
       --ds-action-sheet-handle-height: var(--space-1);
       --ds-action-sheet-handle-width: var(--space-10);
       --ds-action-sheet-handle-radius: var(--radius-full);
+      --ds-action-sheet-title-size: var(--font-size-sm);
       --ds-action-sheet-font-family: var(--font-family-body);
       --ds-action-sheet-font-size: var(--font-size-md);
       --ds-action-sheet-line-height: var(--font-line-height-normal);
@@ -364,6 +408,17 @@ export class DsActionSheet extends LitElement {
       background: var(--color-foreground-muted);
     }
 
+    /* heading: the sheet-owned wrapper around the composed <ds-text> (ds-* hosts carry no data-part
+       of their own). titleColor is Text's own tone="muted" and is locked; titleSize, fontFamily and
+       lineHeight reach Text through its documented hooks, set here from this sheet's hooks, so
+       consumer CSS on the --ds-action-sheet-* hooks lands even though Text sets its own from
+       size="sm". */
+    .heading ds-text {
+      --ds-text-font-size: var(--ds-action-sheet-title-size);
+      --ds-text-font-family: var(--ds-action-sheet-font-family);
+      --ds-text-line-height: var(--ds-action-sheet-line-height);
+    }
+
     .list {
       display: flex;
       flex-direction: column;
@@ -491,7 +546,7 @@ export class DsActionSheet extends LitElement {
   private closingProgrammatically = false;
   private focusBeforeCancel: HTMLElement | null = null;
   private wideQuery: MediaQueryList | null = null;
-  private drag: DragSample | null = null;
+  private gesture: DragGesture | null = null;
   /** The wide Menu reported a choice since `open` became true: no later (or earlier, pending) close is a dismissal. */
   private menuChoiceMade = false;
   /** A wide dismissal is already queued in this task (Menu can follow `outside` with `focus-out`). */
@@ -597,7 +652,11 @@ export class DsActionSheet extends LitElement {
     const name = this.accessibleName();
     const regular = this.actions.filter((action) => action.tone !== 'danger');
     const danger = this.actions.filter((action) => action.tone === 'danger');
+    // The handle and the drag belong to the dismissible sheet. With no handle and no heading the
+    // header would be an empty padded strip, so it is not rendered at all.
     const draggable = this.dismissible;
+    const hasHeading = (this.heading ?? '') !== '';
+    const showHeader = draggable || hasHeading;
 
     return html`
       <dialog
@@ -615,32 +674,31 @@ export class DsActionSheet extends LitElement {
           .trapped=${true}
           .restoreFocus=${true}
           auto-focus="none"
+          .active=${this.open}
         >
           <div class="surface" part="surface" data-part="surface">
-            <div
-              class=${classMap({ header: true, draggable })}
-              part="header"
-              data-part="header"
-              @pointerdown=${this.handlePointerDown}
-              @pointermove=${this.handlePointerMove}
-              @pointerup=${this.handlePointerUp}
-              @pointercancel=${this.handlePointerCancel}
-            >
-              ${draggable
-                ? html`<span class="handle" part="handle" data-part="handle" aria-hidden="true"></span>`
-                : nothing}
-              ${this.heading
-                ? html`<ds-text
-                    part="heading"
-                    data-part="heading"
-                    element="p"
-                    tone="muted"
-                    size="sm"
-                    .overrides=${this.headingOverrides()}
-                    >${this.heading}</ds-text
-                  >`
-                : nothing}
-            </div>
+            ${showHeader
+              ? html`<div
+                  class=${classMap({ header: true, draggable })}
+                  part="header"
+                  data-part="header"
+                  @pointerdown=${this.handlePointerDown}
+                  @pointermove=${this.handlePointerMove}
+                  @pointerup=${this.handlePointerUp}
+                  @pointercancel=${this.handlePointerCancel}
+                >
+                  ${draggable
+                    ? html`<span class="handle" part="handle" data-part="handle" aria-hidden="true"></span>`
+                    : nothing}
+                  ${hasHeading
+                    ? html`<div class="heading" part="heading" data-part="heading">
+                        <ds-text element="p" tone="muted" size="sm" .overrides=${this.headingOverrides()}
+                          >${this.heading}</ds-text
+                        >
+                      </div>`
+                    : nothing}
+                </div>`
+              : nothing}
             <div class="list" part="list" data-part="list" role="menu" aria-label=${name} @keydown=${this.handleListKeydown}>
               ${regular.map((action) => this.renderItem(action))}
               ${regular.length > 0 && danger.length > 0
@@ -832,87 +890,124 @@ export class DsActionSheet extends LitElement {
     this.dispatchClose('cancel');
   };
 
+  /**
+   * Nothing is claimed on pointerdown, so a tap on the header is not a drag and nothing fires; the
+   * drag begins only once the pointer has moved `dragSlop` downward on the handle or header.
+   */
   private readonly handlePointerDown = (event: PointerEvent): void => {
-    if (!this.dismissible || this.closing || !event.isPrimary || event.button !== 0) {
+    if (!this.dismissible || !this.open || this.closing || this.gesture) {
       return;
     }
-    const surface = this.surfaceEl;
-    if (!surface) {
+    if (event.pointerType === 'mouse' && event.button !== 0) {
       return;
     }
-    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
-    this.drag = { startY: event.clientY, lastY: event.clientY, lastTime: event.timeStamp, velocity: 0 };
-    // The drag follows the finger directly, even under reduced motion.
-    surface.classList.remove('springing');
-    surface.classList.add('dragging');
+    // No coordinate, no gesture: an environment without real pointer data must not move the surface.
+    if (!Number.isFinite(event.clientY)) {
+      return;
+    }
+    this.gesture = {
+      pointerId: event.pointerId,
+      startY: event.clientY,
+      originY: event.clientY,
+      claimed: false,
+      previous: null,
+      last: null,
+    };
   };
 
   private readonly handlePointerMove = (event: PointerEvent): void => {
-    const drag = this.drag;
+    const gesture = this.gesture;
     const surface = this.surfaceEl;
-    if (!drag || !surface) {
+    if (!gesture || !surface || event.pointerId !== gesture.pointerId || !Number.isFinite(event.clientY)) {
       return;
     }
-    const elapsed = event.timeStamp - drag.lastTime;
-    if (elapsed > 0) {
-      drag.velocity = (event.clientY - drag.lastY) / elapsed;
+    if (!gesture.claimed) {
+      const moved = event.clientY - gesture.startY;
+      const slop = lengthInPx(this, getComputedStyle(this).getPropertyValue(DRAG_SLOP_PROPERTY).trim());
+      if (moved <= 0 || moved < slop) {
+        return;
+      }
+      gesture.claimed = true;
+      // The offset counts from where the slop was crossed, so the surface does not jump.
+      gesture.originY = event.clientY;
+      // Past the slop the header takes the move over from the child it started on.
+      (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+      // The drag follows the finger directly, even under reduced motion.
+      surface.classList.remove('springing');
+      surface.classList.add('dragging');
     }
-    drag.lastY = event.clientY;
-    drag.lastTime = event.timeStamp;
-    const deltaY = Math.max(0, event.clientY - drag.startY);
-    surface.style.transform = `translateY(${deltaY}px)`;
+    gesture.previous = gesture.last;
+    gesture.last = { y: event.clientY, time: event.timeStamp };
+    surface.style.transform = `translateY(${Math.max(0, event.clientY - gesture.originY)}px)`;
   };
 
   private readonly handlePointerUp = (event: PointerEvent): void => {
-    const drag = this.drag;
+    const gesture = this.gesture;
     const surface = this.surfaceEl;
-    this.drag = null;
-    if (!drag || !surface) {
+    if (!gesture || event.pointerId !== gesture.pointerId) {
       return;
     }
-    const deltaY = Math.max(0, event.clientY - drag.startY);
-    const sheetHeight = surface.getBoundingClientRect().height;
-    const pastDistance = sheetHeight > 0 && deltaY > sheetHeight * DISMISS_DISTANCE;
-    const pastVelocity = drag.velocity > DISMISS_VELOCITY;
-
+    this.gesture = null;
+    if (!gesture.claimed || !surface) {
+      return;
+    }
     surface.classList.remove('dragging');
-    if (deltaY > 0 && (pastDistance || pastVelocity)) {
+
+    const travelled = Number.isFinite(event.clientY) ? Math.max(0, event.clientY - gesture.originY) : 0;
+    const sheetHeight = surface.getBoundingClientRect().height;
+    const pastDistance = sheetHeight > 0 && travelled > sheetHeight * DISMISS_DISTANCE;
+    // Velocity between the last two move samples before release; only downward speed counts.
+    const { previous, last } = gesture;
+    const velocity = previous && last && last.time > previous.time ? (last.y - previous.y) / (last.time - previous.time) : 0;
+
+    if (this.open && (pastDistance || velocity > DISMISS_VELOCITY)) {
       this.dispatchClose('drag');
-      if (!this.open) {
-        // The consumer closed: the exit runs from where the finger left the sheet.
-        return;
-      }
-    }
-    this.springBack(surface);
-  };
-
-  private readonly handlePointerCancel = (): void => {
-    this.drag = null;
-    const surface = this.surfaceEl;
-    if (surface) {
-      surface.classList.remove('dragging');
-      this.springBack(surface);
-    }
-  };
-
-  /** Below the threshold (a tap included): back in place with the exit duration and the standard easing. */
-  private springBack(surface: HTMLElement): void {
-    if (!surface.style.getPropertyValue('transform')) {
+      // Hold the released offset until the consumer's next render, then exit or spring back from there.
+      void this.settleRelease(surface);
       return;
     }
+    void this.springBack(surface);
+  };
+
+  private readonly handlePointerCancel = (event: PointerEvent): void => {
+    const gesture = this.gesture;
+    if (!gesture || event.pointerId !== gesture.pointerId) {
+      return;
+    }
+    this.gesture = null;
+    const surface = this.surfaceEl;
+    if (gesture.claimed && surface) {
+      surface.classList.remove('dragging');
+      void this.springBack(surface);
+    }
+  };
+
+  /**
+   * After a dismissing release: `updateComplete` after the `close` dispatch plus one animation
+   * frame. If `open` is still true then the sheet springs back; otherwise `handleClose` plays the
+   * exit from the released offset.
+   */
+  private async settleRelease(surface: HTMLElement): Promise<void> {
+    await this.updateComplete;
+    await nextFrame();
+    if (this.open && !this.closing && !this.wide && surface.isConnected) {
+      await this.springBack(surface);
+    }
+  }
+
+  /**
+   * Below the threshold (a tap included): back in place with the exit duration and the standard
+   * easing. It also finishes an interrupted enter animation, by returning the surface to rest.
+   */
+  private async springBack(surface: HTMLElement): Promise<void> {
     surface.classList.add('springing');
     surface.style.removeProperty('transform');
-    const settle = (): void => {
-      surface.classList.remove('springing');
-    };
     // Flush style so the transition exists before it is looked up.
     void getComputedStyle(surface).transform;
-    const running = surface.getAnimations();
-    if (running.length === 0) {
-      settle();
-      return;
+    await Promise.all(surface.getAnimations().map((animation) => animation.finished.catch(() => undefined)));
+    if (!this.gesture?.claimed) {
+      surface.classList.remove('springing');
     }
-    void Promise.all(running.map((animation) => animation.finished.catch(() => undefined))).then(settle);
   }
 
   /* ---- wide Menu handlers ---- */
@@ -976,7 +1071,16 @@ export class DsActionSheet extends LitElement {
 
   private async handleClose(): Promise<void> {
     await this.updateComplete;
-    this.surfaceEl?.style.removeProperty('transform');
+    // The scope's `active` follows `open`, so it is already paused and cannot pull focus back
+    // during the exit. Focus is handed to the opener here, at the start of the exit; while the
+    // modal <dialog> is still open its inert background refuses it, and the scope's own restore on
+    // unmount — one exit later — lands it instead.
+    this.restoreFocusToOpener();
+    this.gesture = null;
+    const surface = this.surfaceEl;
+    surface?.classList.remove('dragging', 'springing');
+    // A released drag left an inline transform: dropping it plays the exit from that position.
+    surface?.style.removeProperty('transform');
     await this.transitionsSettled();
     if (this.open || this.wide) {
       return;
@@ -998,6 +1102,17 @@ export class DsActionSheet extends LitElement {
     }
     const running = parts.flatMap((part) => part.getAnimations());
     await Promise.all(running.map((animation) => animation.finished.catch(() => undefined)));
+  }
+
+  /** Focus is still inside the closing sheet: hand it back to the opener before the exit plays. */
+  private restoreFocusToOpener(): void {
+    if (this.shadowRoot?.activeElement == null) {
+      return;
+    }
+    const opener = this.opener;
+    if (opener?.isConnected) {
+      opener.focus();
+    }
   }
 
   /** First enabled action; the cancel row when every action is disabled. */
@@ -1048,9 +1163,6 @@ export class DsActionSheet extends LitElement {
   private applyOverrides(): void {
     for (const binding of Object.keys(HOOKS) as ActionSheetOverridableBinding[]) {
       const hook = HOOKS[binding];
-      if (!hook) {
-        continue;
-      }
       const ref = this.overrides?.[binding];
       if (ref === undefined) {
         this.style.removeProperty(hook);

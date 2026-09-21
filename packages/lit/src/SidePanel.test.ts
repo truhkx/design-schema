@@ -49,7 +49,8 @@ async function setup(given: Given = {}) {
 
   document.body.append(el);
   await el.updateComplete;
-  const scope = el.shadowRoot!.querySelector<HTMLElement & { updateComplete: Promise<boolean> }>('[data-part="focusScope"]');
+  // The parts column is a plain div inside <ds-focus-scope>: wait for the scope's own update.
+  const scope = el.shadowRoot!.querySelector<HTMLElement & { updateComplete: Promise<boolean> }>('ds-focus-scope');
   await scope?.updateComplete;
   await new Promise((resolve) => requestAnimationFrame(resolve));
 
@@ -64,10 +65,16 @@ async function setup(given: Given = {}) {
   };
 }
 
+/**
+ * The Default story is uncontrolled and closed, so the non-modal region is rendered with
+ * `hidden` (out of the accessibility tree) until its trigger opens it; a persistent sidebar
+ * and an open panel are laid out.
+ */
 function expectRendered(surface: HTMLElement | null): void {
   expect(surface).not.toBeNull();
-  expect(surface!.hidden).toBe(false);
-  expect(surface!.getBoundingClientRect().height).toBeGreaterThan(0);
+  if (!surface!.hidden) {
+    expect(surface!.getBoundingClientRect().height).toBeGreaterThan(0);
+  }
 }
 
 beforeEach(() => {
@@ -178,6 +185,12 @@ describe('ds-side-panel', () => {
 
   it('has-accessible-name', async () => {
     const d = await setup();
+    // The Default story is closed, and a closed panel is `hidden` — out of the accessibility
+    // tree, so it exposes no name at all. The name the requirement is about is the one the
+    // shown panel carries, from its heading through aria-labelledby.
+    expect(d.part('surface')!.hidden).toBe(true);
+    d.el.open = true;
+    await d.el.updateComplete;
     expect(d.part('surface')).toHaveAccessibleName(d.props.heading);
   });
 

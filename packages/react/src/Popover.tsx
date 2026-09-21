@@ -173,6 +173,10 @@ function positionPanel(trigger: HTMLElement, panel: HTMLElement, placement: Popo
   if (!fits(side) && fits(OPPOSITE[side])) side = OPPOSITE[side];
   if (panel.dataset.side !== side) panel.dataset.side = side;
 
+  // The panel is placed by `top`/`left`, where the offset margin moves the box only when the side
+  // facing the trigger is the panel's own top or left edge (data-side bottom or right). On the other
+  // two the margin is inert, so the position math subtracts the value read back above instead, and
+  // the gap comes out the same on all four sides.
   const coords: { top: string; right: string; bottom: string; left: string } = { top: '', right: '', bottom: '', left: '' };
   if (side === 'top' || side === 'bottom') {
     const align = placement.endsWith('-start') ? 'start' : placement.endsWith('-end') ? 'end' : 'center';
@@ -180,12 +184,10 @@ function positionPanel(trigger: HTMLElement, panel: HTMLElement, placement: Popo
     if (align === 'start') x = rtl ? t.right - p.width : t.left;
     if (align === 'end') x = rtl ? t.left : t.right - p.width;
     coords.left = `${clamp(x, 0, viewportWidth - p.width)}px`;
-    if (side === 'bottom') coords.top = `${t.bottom}px`;
-    else coords.bottom = `${viewportHeight - t.top}px`;
+    coords.top = side === 'bottom' ? `${t.bottom}px` : `${t.top - p.height - offset}px`;
   } else {
     coords.top = `${clamp(t.top + (t.height - p.height) / 2, 0, viewportHeight - p.height)}px`;
-    if (side === 'right') coords.left = `${t.right}px`;
-    else coords.right = `${viewportWidth - t.left}px`;
+    coords.left = side === 'right' ? `${t.right}px` : `${t.left - p.width - offset}px`;
   }
   for (const key of ['top', 'right', 'bottom', 'left'] as const) {
     if (panel.style[key] !== coords[key]) panel.style[key] = coords[key];
@@ -309,7 +311,9 @@ export function Popover({
   }
 
   const changeOpen = (next: boolean, reason: PopoverOpenChangeReason): void => {
-    if (!next) restoreFocusRef.current = reason !== 'outside' && reason !== 'tab-out';
+    // Opening resets the flag, so a later close the popover did not cause — a controlled consumer
+    // setting `open` false — restores focus whenever focus is still inside the panel.
+    restoreFocusRef.current = next || (reason !== 'outside' && reason !== 'tab-out');
     if (!isControlled) setInternalOpen(next);
     onOpenChange?.(next, reason);
   };
@@ -444,6 +448,14 @@ export function Popover({
     }
   };
 
+  // The `closeButton` part hook is the wrapper, since Button names its own root part: a click that
+  // lands on the wrapper rather than the button is forwarded to it instead of being swallowed.
+  const handleCloseTargetClick = (event: ReactMouseEvent<HTMLSpanElement>): void => {
+    const button = closeButtonRef.current;
+    if (!button || button.contains(event.target as Node)) return;
+    button.click();
+  };
+
   const handleCancel = (event: SyntheticEvent<HTMLDialogElement>): void => {
     // The consumer owns `open`: the browser never closes the dialog by itself.
     event.preventDefault();
@@ -505,7 +517,7 @@ export function Popover({
                 </div>
               ) : null}
               {dismissible ? (
-                <span className="ds-popover__close" data-part="closeButton">
+                <span className="ds-popover__close" data-part="closeButton" onClick={handleCloseTargetClick}>
                   <Button
                     ref={closeButtonRef}
                     variant="ghost"

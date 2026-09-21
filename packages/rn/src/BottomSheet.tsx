@@ -3,9 +3,11 @@ import {
   Animated,
   Modal,
   PanResponder,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
+  StatusBar,
   StyleSheet,
   View,
   useWindowDimensions,
@@ -80,14 +82,15 @@ const COPY = {
   closeLabel: 'Close',
 } as const;
 
-/** Schema constants without a token; `dragSlop` is read from `space.1` at render time. */
+/** Schema constants without a token; `dragSlop` has one (`space.1`) and is read from the theme. */
 const CONSTANTS = {
   dismissDistance: 0.25, // literal-ok: schema constant dismissDistance (ratio of sheet height)
   dismissVelocity: 1.5, // literal-ok: schema constant dismissVelocity (px/ms)
 } as const;
 
 // Overrides whose binding shares a name with a Dialog binding, forwarded in the wide
-// presentation; the handle bindings, `headerPaddingTop` and `handleGap` have no effect there.
+// presentation; the handle bindings, `headerPaddingTop` and `handleGap` have no effect
+// there, and a locked binding is never forwarded.
 const DIALOG_BINDINGS: readonly (BottomSheetOverridableBinding & DialogOverridableBinding)[] = [
   'scrim',
   'shadow',
@@ -112,29 +115,42 @@ interface DragSample {
  * button or Escape.
  *
  * At window width <= `layout.maxWidth.prose`: a native `Modal` (`transparent`,
- * `animationType="none"`, `statusBarTranslucent`) holding a scrim that fades with the
- * surface, a full-screen scrim `Pressable`, and inside a `FocusScope` (`trapped`,
- * `autoFocus="first"`, `restoreFocus`) an `Animated.View` surface anchored to the bottom
- * with `role="dialog"`, `accessibilityViewIsModal` and `accessibilityLabel={heading}`.
- * It slides up with `enter` and `motion.easing.standard` and down with `exit` and
- * `motion.easing.exit`, instantly under reduced motion. Android back (`onRequestClose`)
- * and the VoiceOver escape gesture report `onClose('escape')`, even when not dismissible.
+ * `animationType="none"` — the component animates itself, `statusBarTranslucent`) holding
+ * a scrim `Pressable` and, inside a `FocusScope` (`trapped`, `autoFocus="first"`,
+ * `restoreFocus`), an `Animated.View` surface anchored to the bottom with `role="dialog"`,
+ * `accessibilityViewIsModal` and `accessibilityLabel={heading}`. It slides up with `enter`
+ * and `motion.easing.standard` and down with `exit` and `motion.easing.exit`, instantly
+ * under reduced motion. Android back (`onRequestClose`) and the VoiceOver escape gesture
+ * report `onClose('escape')`, even when not dismissible. `autoFocus="first"` lands on the
+ * scope wrapper rather than a real control — FocusScope's own documented native limit —
+ * so the screen reader reads the sheet from the top, which is the intended result.
  *
- * A `PanResponder` on the header (handle and heading row, never the body `ScrollView`)
- * claims a move once it passes `space.1` downward, follows the finger (also under reduced
- * motion), and on release past `dismissDistance` of the measured sheet height, or faster
- * than `dismissVelocity` between the last two move samples, fires `onDragDismiss` then
- * `onClose('drag')`. The sheet holds the release position until the consumer's update
- * renders: `open` false plays the exit from there; `open` still true springs back with
- * `exit` and `motion.easing.standard`. The handle is decorative and rendered only when
- * the gesture is live.
+ * A `PanResponder` on the header (handle and heading row, never the body `ScrollView`,
+ * whatever its scroll position) claims a move once it passes `dragSlop` (`space.1`)
+ * downward, so a tap on the close button still activates it; the offset counts from where
+ * the slop was crossed, so the surface does not jump. It follows the finger even under
+ * reduced motion, since the drag is user-driven. On release past `dismissDistance` of the
+ * measured sheet height, or faster than `dismissVelocity` between the last two move
+ * samples, it fires `onDragDismiss` then `onClose('drag')` and holds the released offset
+ * until the consumer's update renders: `open` false plays the normal exit from there,
+ * `open` still true springs back over `exit` with `motion.easing.standard`. The handle is
+ * decorative, not a focus stop, and rendered only when the gesture is live.
  *
- * The closeButton part is a View sized to `size.target.comfortable` around a ghost icon
- * Button, whose own hitSlop covers the extra area. The bottom inset comes from
- * `SafeAreaView` (iOS only; Android adds none). Scroll lock has no native meaning and is
- * not implemented. Above the breakpoint the component renders `Dialog size="md"` alone
- * with the same props and the shared overrides. The Modal is its own window, so no ref
- * is exposed.
+ * `inset` is applied once each way so nothing doubles between parts: the surface column
+ * carries the block padding (`headerPaddingTop` at the top when the handle is rendered,
+ * `inset` otherwise; `inset` at the bottom), the header and footer wrappers the inline
+ * padding, and the body `Box` receives it as `overrides.paddingInline` with zero block
+ * padding of its own. The bottom safe-area inset is an empty `SafeAreaView` after the last
+ * part, whose column gap is cancelled so the only space it adds is its own inset; RN core
+ * has no Android safe-area API, and the Modal is not `navigationBarTranslucent`, so
+ * Android adds none.
+ *
+ * The closeButton part is a View sized to `size.target.comfortable`; the Button's own
+ * hitSlop already extends its hit area to that target, so the wrapper's extra area
+ * activates it. Scroll lock has no native meaning — a Modal has no page behind it to
+ * scroll — and is not implemented. Above the breakpoint the component renders
+ * `Dialog size="md"` alone, with no wrapping View, so the root testID there is Dialog's.
+ * The Modal is its own window, so no ref is exposed; callers ref their trigger.
  */
 export function BottomSheet({
   open,
@@ -158,13 +174,15 @@ export function BottomSheet({
   if (open && !mounted) {
     setMounted(true);
   }
-  // Bumped after a drag dismiss so an effect can check `open` once the consumer's update has rendered.
+  // Bumped after a drag dismiss so an effect can read `open` once the consumer's update has rendered.
   const [dragReleases, setDragReleases] = React.useState(0);
 
   const progress = React.useRef(new Animated.Value(0)).current;
   const dragY = React.useRef(new Animated.Value(0)).current;
   const sheetHeightRef = React.useRef(0);
   const samplesRef = React.useRef<DragSample[]>([]);
+  // Where the slop was crossed; the drag offset counts from there.
+  const grantDyRef = React.useRef(0);
 
   const scrimColor = overrides?.scrim ? (resolveToken(t, overrides.scrim) as string) : t.colorOverlayScrim;
   const shadow = overrides?.shadow ? (resolveToken(t, overrides.shadow) as typeof t.shadowOverlay) : t.shadowOverlay;
@@ -182,9 +200,12 @@ export function BottomSheet({
   const layer = overrides?.layer ? (resolveToken(t, overrides.layer) as number) : t.layerSheet;
   const enterDuration = overrides?.enter ? (resolveToken(t, overrides.enter) as number) : t.motionDurationBase;
   const exitDuration = overrides?.exit ? (resolveToken(t, overrides.exit) as number) : t.motionDurationFast;
+  // The schema constant `dragSlop`; a constant, not an overridable binding.
   const dragSlop = t.space1;
 
+  // The breakpoint is the theme token, not a per-instance value: exactly the token width is still a sheet.
   const isWide = windowWidth > t.layoutMaxWidthProse;
+  // The handle only exists where dragging does something, so there is no affordance that lies.
   const canDrag = dragToDismiss && dismissible;
 
   const springBack = (): void => {
@@ -192,6 +213,7 @@ export function BottomSheet({
       dragY.setValue(0);
       return;
     }
+    // A timing animation, not a spring: the theme's motion never bounces.
     Animated.timing(dragY, {
       toValue: 0,
       duration: exitDuration,
@@ -244,10 +266,12 @@ export function BottomSheet({
   }, [open, mounted, reducedMotion]);
 
   React.useEffect(() => {
+    // The release and the consumer's `setState` batch into one render, so `open` here is
+    // the consumer's answer to the dismiss: still true means spring back to rest.
     if (dragReleases > 0 && open) {
       springBack();
     }
-    // Only a drag release triggers this check; `open` is read as rendered with the consumer's update.
+    // Only a drag release triggers this check.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dragReleases]);
 
@@ -260,25 +284,32 @@ export function BottomSheet({
     const claims = (_: GestureResponderEvent, g: PanResponderGestureState): boolean =>
       g.dy > latest.current.dragSlop && Math.abs(g.dy) > Math.abs(g.dx);
     panResponder.current = PanResponder.create({
-      // Capture so a drag that starts on the heading or close button can still claim, but only past the slop.
+      // Capture so a drag that started on the heading or the close button is taken over by
+      // the header — but only past the slop, so a tap still reaches the button.
       onMoveShouldSetPanResponderCapture: claims,
       onMoveShouldSetPanResponder: claims,
-      onPanResponderGrant: () => {
+      onPanResponderGrant: (_: GestureResponderEvent, g: PanResponderGestureState) => {
         samplesRef.current = [];
+        grantDyRef.current = g.dy;
       },
       // Follows the finger even under reduced motion: the drag is user-driven.
       onPanResponderMove: (event: GestureResponderEvent, g: PanResponderGestureState) => {
-        dragY.setValue(Math.max(0, g.dy));
-        const sample: DragSample = { dy: g.dy, time: event.nativeEvent.timestamp };
+        const offset = Math.max(0, g.dy - grantDyRef.current);
+        dragY.setValue(offset);
+        const sample: DragSample = { dy: offset, time: event.nativeEvent.timestamp };
         samplesRef.current = [samplesRef.current[samplesRef.current.length - 1] ?? sample, sample];
       },
       onPanResponderRelease: (_: GestureResponderEvent, g: PanResponderGestureState) => {
+        const offset = Math.max(0, g.dy - grantDyRef.current);
         const [previous, last] = samplesRef.current;
         const elapsed = previous !== undefined && last !== undefined ? last.time - previous.time : 0;
-        // Only downward speed counts.
-        const velocity = previous !== undefined && last !== undefined && elapsed > 0 ? Math.max(0, (last.dy - previous.dy) / elapsed) : 0;
+        // Between the last two move samples, and only downward speed counts.
+        const velocity =
+          previous !== undefined && last !== undefined && elapsed > 0
+            ? Math.max(0, (last.dy - previous.dy) / elapsed)
+            : 0;
         const sheetHeight = sheetHeightRef.current > 0 ? sheetHeightRef.current : latest.current.windowHeight;
-        const dismiss = g.dy > sheetHeight * CONSTANTS.dismissDistance || velocity > CONSTANTS.dismissVelocity;
+        const dismiss = offset > sheetHeight * CONSTANTS.dismissDistance || velocity > CONSTANTS.dismissVelocity;
         if (!dismiss) {
           latest.current.springBack();
           return;
@@ -292,6 +323,9 @@ export function BottomSheet({
   }
 
   if (isWide) {
+    // Rendered alone, with no wrapping View: a View around a Modal would take layout space
+    // in the caller's tree. Only overrides the caller set are forwarded, so Dialog keeps
+    // its own tokens — `layer.dialog` included — otherwise.
     let dialogOverrides: Partial<Record<DialogOverridableBinding, TokenRef | undefined>> | undefined;
     if (overrides) {
       dialogOverrides = {};
@@ -309,6 +343,7 @@ export function BottomSheet({
         size="md"
         dismissible={dismissible}
         footer={footer}
+        // Dialog's reasons map one to one; `drag` has no Dialog source, so it never fires here.
         onClose={onClose}
         overrides={dialogOverrides}
       >
@@ -340,6 +375,9 @@ export function BottomSheet({
     sheetHeightRef.current = event.nativeEvent.layout.height;
   };
 
+  // Nothing to show in the header: no handle, no visible heading, no close button.
+  const showHeader = canDrag || !hideHeading || dismissible;
+
   const hostStyle: ViewStyle = { flex: 1 };
 
   const scrimStyle: Animated.WithAnimatedValue<ViewStyle> = {
@@ -350,15 +388,22 @@ export function BottomSheet({
 
   const anchorStyle: ViewStyle = { flex: 1, justifyContent: 'flex-end', zIndex: layer };
 
+  // With `statusBarTranslucent` the Modal window starts under the Android status bar, so a
+  // `full` sheet clears the larger of the gutter and the status bar. iOS core exposes no
+  // status-bar height, so there the gutter is all there is.
+  const fullInset =
+    Platform.OS === 'android' ? Math.max(t.layoutGutter, StatusBar.currentHeight ?? 0) : t.layoutGutter;
+
   const sheetHeight: Record<BottomSheetHeight, number | undefined> = {
     content: undefined,
     half: windowHeight * 0.5, // literal-ok: half the window, per the height enum
-    full: windowHeight - t.layoutGutter,
+    full: windowHeight - fullInset,
   };
 
   const surfaceStyle: Animated.WithAnimatedValue<ViewStyle> = {
     width: '100%',
     height: sheetHeight[height],
+    // The 90% cap belongs to `content` alone; `half` and `full` set the height outright.
     maxHeight: height === 'content' ? windowHeight * 0.9 : undefined, // literal-ok: 90% of the window, per height content
     borderTopLeftRadius: radius,
     borderTopRightRadius: radius,
@@ -366,18 +411,18 @@ export function BottomSheet({
     backgroundColor: t.colorOverlaySurface,
     overflow: 'hidden',
     gap: partGap,
+    // The block edges are padded once, here on the column that holds the parts.
+    paddingTop: canDrag ? headerPaddingTop : inset,
+    paddingBottom: inset,
     transform: [
       {
-        translateY: Animated.add(
-          progress.interpolate({ inputRange: [0, 1], outputRange: [windowHeight, 0] }),
-          dragY,
-        ),
+        translateY: Animated.add(progress.interpolate({ inputRange: [0, 1], outputRange: [windowHeight, 0] }), dragY),
       },
     ],
   };
 
+  // A column of the handle over the heading row; no block padding of its own.
   const headerStyle: ViewStyle = {
-    paddingTop: canDrag ? headerPaddingTop : inset,
     paddingHorizontal: inset,
     gap: handleGap,
   };
@@ -390,9 +435,11 @@ export function BottomSheet({
     backgroundColor: t.colorForegroundMuted,
   };
 
+  // A sheet-owned element inside the header, not an anatomy part: no testID.
   const headingRowStyle: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
+    // With the heading hidden the close button is end-aligned in the row.
     justifyContent: hideHeading ? 'flex-end' : 'space-between',
     gap: headerGap,
   };
@@ -411,25 +458,23 @@ export function BottomSheet({
 
   const footerStyle: ViewStyle = {
     paddingHorizontal: inset,
-    paddingBottom: inset,
   };
 
-  const bodyOverrides = overrides?.inset ? { paddingBlock: overrides.inset, paddingInline: overrides.inset } : undefined;
-  const footerOverrides = overrides?.footerGap ? { gap: overrides.footerGap } : undefined;
-
-  const body = (
-    <ScrollView style={bodyStyle} keyboardShouldPersistTaps="handled" testID="BottomSheet.body">
-      <Box inset="lg" overrides={bodyOverrides}>
-        {children}
-      </Box>
-    </ScrollView>
-  );
+  // Empty, after the last part: its bottom-edge padding is the only height it adds, and the
+  // negative margin cancels the column gap that would otherwise sit above it.
+  const safeAreaStyle: ViewStyle = { marginTop: -partGap };
 
   return (
     <Modal visible transparent animationType="none" onRequestClose={handleEscape} statusBarTranslucent>
       <View style={hostStyle}>
-        <Animated.View style={scrimStyle} pointerEvents="none" />
-        <Pressable style={StyleSheet.absoluteFill} onPress={handleScrimPress} accessible={false} testID="BottomSheet.scrim" />
+        <Animated.View style={scrimStyle}>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={handleScrimPress}
+            accessible={false}
+            testID="BottomSheet.scrim"
+          />
+        </Animated.View>
         <View style={anchorStyle} pointerEvents="box-none">
           <FocusScope trapped active={open} autoFocus="first" restoreFocus>
             <Animated.View
@@ -441,51 +486,59 @@ export function BottomSheet({
               onAccessibilityEscape={handleEscape}
               testID="BottomSheet"
             >
-              <View
-                {...(canDrag ? panResponder.current.panHandlers : undefined)}
-                style={headerStyle}
-                testID="BottomSheet.header"
-              >
-                {canDrag ? (
-                  <View
-                    style={handleStyle}
-                    accessibilityElementsHidden
-                    importantForAccessibility="no"
-                    testID="BottomSheet.handle"
-                  />
-                ) : null}
-                <View style={headingRowStyle}>
-                  {!hideHeading ? (
-                    <View style={headingStyle} testID="BottomSheet.heading">
-                      <Heading level="2">{heading}</Heading>
-                    </View>
+              {showHeader ? (
+                <View
+                  {...(canDrag ? panResponder.current.panHandlers : undefined)}
+                  style={headerStyle}
+                  testID="BottomSheet.header"
+                >
+                  {canDrag ? (
+                    <View
+                      style={handleStyle}
+                      accessibilityElementsHidden
+                      importantForAccessibility="no"
+                      testID="BottomSheet.handle"
+                    />
                   ) : null}
-                  {dismissible ? (
-                    <View style={closeButtonStyle} testID="BottomSheet.closeButton">
-                      <Button
-                        label={COPY.closeLabel}
-                        variant="ghost"
-                        size="sm"
-                        iconOnly
-                        leadingIcon={<Icon name="close" color={t.colorActionGhostForeground} />}
-                        onPress={handleCloseButtonPress}
-                      />
-                    </View>
-                  ) : null}
+                  <View style={headingRowStyle}>
+                    {!hideHeading ? (
+                      <View style={headingStyle} testID="BottomSheet.heading">
+                        <Heading level="2">{heading}</Heading>
+                      </View>
+                    ) : null}
+                    {dismissible ? (
+                      <View style={closeButtonStyle} testID="BottomSheet.closeButton">
+                        <Button
+                          label={COPY.closeLabel}
+                          variant="ghost"
+                          size="sm"
+                          iconOnly
+                          leadingIcon={<Icon name="close" color={t.colorActionGhostForeground} />}
+                          onPress={handleCloseButtonPress}
+                        />
+                      </View>
+                    ) : null}
+                  </View>
                 </View>
-              </View>
+              ) : null}
+              <ScrollView style={bodyStyle} keyboardShouldPersistTaps="handled" testID="BottomSheet.body">
+                {/* `inset` reaches the Box only as a token path through its own overrides, always sent; the block padding stays on the surface. */}
+                <Box inset="none" overrides={{ paddingInline: overrides?.inset ?? 'layout.inset.lg' }}>
+                  {children}
+                </Box>
+              </ScrollView>
               {footer !== undefined ? (
-                <>
-                  {body}
-                  <SafeAreaView style={footerStyle} testID="BottomSheet.footer">
-                    <Stack direction="horizontal" gap="tight" justify="end" overrides={footerOverrides}>
-                      {footer}
-                    </Stack>
-                  </SafeAreaView>
-                </>
-              ) : (
-                <SafeAreaView style={bodyStyle}>{body}</SafeAreaView>
-              )}
+                <View style={footerStyle} testID="BottomSheet.footer">
+                  <Stack
+                    direction="horizontal"
+                    justify="end"
+                    overrides={{ gap: overrides?.footerGap ?? 'layout.gap.tight' }}
+                  >
+                    {footer}
+                  </Stack>
+                </View>
+              ) : null}
+              <SafeAreaView style={safeAreaStyle} />
             </Animated.View>
           </FocusScope>
         </View>

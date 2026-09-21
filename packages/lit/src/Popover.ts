@@ -3,7 +3,7 @@ import { customElement, property, query, state } from 'lit/decorators.js';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
-import './FocusScope.js';
+import { focusableIn } from './FocusScope.js';
 import './Heading.js';
 import './Box.js';
 import './Button.js';
@@ -67,32 +67,6 @@ const COPY_CLOSE_LABEL = 'Close';
 
 /** Whether the running browser implements the Popover API. Evaluated once. */
 const POPOVER_SUPPORTED = typeof HTMLElement !== 'undefined' && typeof HTMLElement.prototype.showPopover === 'function';
-
-/** Elements considered a focusable control. */
-const FOCUSABLE_SELECTOR = [
-  'a[href]',
-  'button:not([disabled])',
-  'input:not([disabled]):not([type="hidden"])',
-  'select:not([disabled])',
-  'textarea:not([disabled])',
-  '[tabindex]:not([tabindex="-1"])',
-  'ds-button:not([disabled])',
-  'ds-link',
-  'ds-input:not([disabled])',
-  'ds-checkbox:not([disabled])',
-  'ds-switch:not([disabled])',
-  'ds-radio-group:not([disabled])',
-  'ds-date-picker:not([disabled])',
-  'ds-disclosure:not([disabled])',
-].join(',');
-
-function collectFocusable(root: HTMLElement, into: HTMLElement[]): void {
-  if (root.matches(FOCUSABLE_SELECTOR)) {
-    into.push(root);
-    return;
-  }
-  into.push(...Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)));
-}
 
 function getDeepActiveElement(): Element | null {
   let active = document.activeElement;
@@ -344,18 +318,25 @@ export class DsPopover extends LitElement {
       gap: var(--ds-popover-part-gap);
     }
 
+    /* The heading part is a popover-owned wrapper: <ds-heading> itself is never restyled. */
     [data-part='heading'] {
       flex: 1 1 auto;
       min-inline-size: 0;
     }
 
-    [data-part='heading']:focus-visible {
+    /* The heading is focused only when the panel has no controls; its wrapper draws the ring. */
+    [data-part='heading']:has(:focus-visible) {
       outline: var(--border-width-focus) solid var(--color-border-focus);
       outline-offset: var(--border-width-focus);
     }
 
     [data-part='closeButton'] {
+      display: inline-flex;
       flex: none;
+    }
+
+    [data-part='body'] {
+      min-inline-size: 0;
     }
 
     /* arrowSize: a rotated square centered on the panel edge that faces the trigger, edged on its two outer sides. */
@@ -439,8 +420,11 @@ export class DsPopover extends LitElement {
   @state() private accessor side: Side = 'bottom';
 
   @query('[data-part="panel"]') private accessor panelEl!: HTMLElement | null;
+  /** The `heading` part is the popover-owned wrapper; `tabindex="-1"` sits on the <ds-heading> inside it. */
   @query('[data-part="heading"]') private accessor headingEl!: HTMLElement | null;
-  @query('[data-part="closeButton"]') private accessor closeButtonEl!: HTMLElement | null;
+  @query('[data-part="heading"] ds-heading') private accessor headingControlEl!: HTMLElement | null;
+  @query('[data-part="closeButton"] ds-button') private accessor closeButtonControlEl!: HTMLElement | null;
+  @query('[data-part="body"]') private accessor bodyEl!: HTMLElement | null;
   @query('slot:not([name])') private accessor bodySlotEl!: HTMLSlotElement | null;
 
   private readonly popoverSupported = POPOVER_SUPPORTED;
@@ -522,29 +506,31 @@ export class DsPopover extends LitElement {
                 ? html`
                     <div class="header">
                       ${this.heading
-                        ? html`<ds-heading data-part="heading" part="heading" level=${this.headingLevel} tabindex="-1"
-                            >${this.heading}</ds-heading
-                          >`
+                        ? html`
+                            <div data-part="heading" part="heading">
+                              <ds-heading level=${this.headingLevel} tabindex="-1">${this.heading}</ds-heading>
+                            </div>
+                          `
                         : nothing}
                       ${this.dismissible
                         ? html`
-                            <ds-button
-                              data-part="closeButton"
-                              part="closeButton"
-                              variant="ghost"
-                              size="sm"
-                              icon-only
-                              label=${COPY_CLOSE_LABEL}
-                              @press=${this.handleCloseButtonPress}
-                            >
-                              <ds-icon slot="leading-icon" name="close"></ds-icon>
-                            </ds-button>
+                            <span data-part="closeButton" part="closeButton" @click=${this.handleCloseTargetClick}>
+                              <ds-button
+                                variant="ghost"
+                                size="sm"
+                                icon-only
+                                label=${COPY_CLOSE_LABEL}
+                                @press=${this.handleCloseButtonPress}
+                              >
+                                <ds-icon slot="leading-icon" name="close"></ds-icon>
+                              </ds-button>
+                            </span>
                           `
                         : nothing}
                     </div>
                   `
                 : nothing}
-              <ds-box data-part="body" part="body"><slot></slot></ds-box>
+              <div data-part="body" part="body"><ds-box><slot></slot></ds-box></div>
             </div>
           </ds-focus-scope>
         `
@@ -662,6 +648,16 @@ export class DsPopover extends LitElement {
     // The composite reports `open-change`; the button's own `press` stays inside.
     event.stopPropagation();
     this.requestOpenChange(false, 'close-button', true);
+  };
+
+  /**
+   * The `closeButton` part hook is the popover-owned wrapper, so a press that lands on the
+   * wrapper rather than on <ds-button> is forwarded to the button rather than swallowed.
+   */
+  private readonly handleCloseTargetClick = (event: Event): void => {
+    if (event.target === event.currentTarget) {
+      this.closeButtonControlEl?.click();
+    }
   };
 
   private readonly handleDialogCancel = (event: Event): void => {
@@ -852,43 +848,44 @@ export class DsPopover extends LitElement {
       ...Array.from(el.querySelectorAll('*')),
     ]);
     await Promise.all(
-      [...slotted, this.headingEl, this.closeButtonEl].map((el) => (el as Partial<LitElement> | null)?.updateComplete),
+      [...slotted, this.headingControlEl, this.closeButtonControlEl].map(
+        (el) => (el as Partial<LitElement> | null)?.updateComplete,
+      ),
     );
     if (!this.currentOpen) {
       return;
     }
     // Content that rendered after the first pass changes the panel's size.
     this.updatePosition();
-    const target = this.getBodyFocusables()[0] ?? this.closeButtonEl ?? this.headingEl ?? this.panelEl;
+    const target = this.getBodyFocusables()[0] ?? this.closeButtonControlEl ?? this.headingControlEl ?? this.panelEl;
     target?.focus();
   }
 
+  /** The controls in the panel body, in flat-tree order. The first is where focus lands on open. */
   private getBodyFocusables(): HTMLElement[] {
-    const results: HTMLElement[] = [];
-    for (const element of this.bodySlotEl?.assignedElements({ flatten: true }) ?? []) {
-      if (element instanceof HTMLElement) {
-        collectFocusable(element, results);
-      }
-    }
-    return results;
+    const body = this.bodyEl;
+    return body === null ? [] : focusableIn(body);
   }
 
-  /** Tabbable elements in panel order: the close button in the header row, then the body content. */
+  /**
+   * Tabbable elements in panel DOM order, by FocusScope's walker — the header row (so the close
+   * button) comes before the body, which the walker reaches through the `<slot>` assignments.
+   */
   private getPanelFocusables(): HTMLElement[] {
-    const body = this.getBodyFocusables();
-    return this.closeButtonEl ? [this.closeButtonEl, ...body] : body;
+    const panel = this.panelEl;
+    return panel === null ? [] : focusableIn(panel);
   }
 
-  /** Focuses the first focusable element after the host in document order, else the trigger. */
+  /**
+   * Focuses the first focusable element after the host, else the trigger. "Focusable" is
+   * FocusScope's walker run over the document in DOM order, so the elements inside the host —
+   * trigger slot then panel, the panel included wherever the top layer draws it — sit together,
+   * and the first one past them is the element a native Tab would have reached.
+   */
   private focusAfterHost(): void {
-    const next = Array.from(document.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).find(
-      (el) =>
-        !this.contains(el) &&
-        (this.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0 &&
-        el.getAttribute('tabindex') !== '-1' &&
-        el.closest('[inert]') === null &&
-        el.getClientRects().length > 0,
-    );
+    const all = focusableIn(document.documentElement);
+    const start = all.findIndex((el) => this.isWithin(el, this));
+    const next = start === -1 ? undefined : all.slice(start).find((el) => !this.isWithin(el, this));
     (next ?? this.triggerEl)?.focus();
   }
 

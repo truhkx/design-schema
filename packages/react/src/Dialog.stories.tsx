@@ -76,6 +76,11 @@ export const InitialFocusClose: Story = { args: { initialFocus: 'close' } };
 /* notable states */
 export const HideHeading: Story = { args: { hideHeading: true } };
 
+/** The description is one sentence of consequence under the title, and the accessible description. */
+export const WithDescription: Story = {
+  args: { description: 'Everyone with access will see the new name.' },
+};
+
 export const NotDismissible: Story = { args: { dismissible: false } };
 
 export const Closed: Story = { args: { open: false } };

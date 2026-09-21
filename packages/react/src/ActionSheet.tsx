@@ -61,8 +61,8 @@ export type ActionSheetOverridableBinding =
   | 'enter'
   | 'exit';
 
-/** Host hooks. `titleSize` has none: it reaches the heading Text only. */
-const OVERRIDE_HOOK: Partial<Record<ActionSheetOverridableBinding, string>> = {
+/** Host hooks; the sheet's stylesheet reads each one. */
+const OVERRIDE_HOOK: Record<ActionSheetOverridableBinding, string> = {
   scrim: '--ds-action-sheet-scrim',
   shadow: '--ds-action-sheet-shadow',
   radius: '--ds-action-sheet-radius',
@@ -74,6 +74,7 @@ const OVERRIDE_HOOK: Partial<Record<ActionSheetOverridableBinding, string>> = {
   handleHeight: '--ds-action-sheet-handle-height',
   handleWidth: '--ds-action-sheet-handle-width',
   handleRadius: '--ds-action-sheet-handle-radius',
+  titleSize: '--ds-action-sheet-title-size',
   fontFamily: '--ds-action-sheet-font-family', // literal-ok: CSS custom-property hook name, not a font stack
   fontSize: '--ds-action-sheet-font-size',
   lineHeight: '--ds-action-sheet-line-height',
@@ -84,14 +85,23 @@ const OVERRIDE_HOOK: Partial<Record<ActionSheetOverridableBinding, string>> = {
   exit: '--ds-action-sheet-exit',
 };
 
-/** Bindings forwarded to the composed heading Text, under Text's own binding name. */
+/**
+ * Bindings forwarded to the composed heading Text, under Text's own binding name. The default value
+ * reaches Text through its CSS hook (the stylesheet points `--ds-text-*` at the sheet's hooks), so
+ * `overrides` is passed only for the bindings the caller actually set and consumer CSS on the sheet
+ * hook keeps working.
+ */
 const TEXT_FORWARD: Partial<Record<ActionSheetOverridableBinding, TextOverridableBinding>> = {
   titleSize: 'fontSize',
   fontFamily: 'fontFamily', // literal-ok: Text binding name, not a font stack
   lineHeight: 'lineHeight',
 };
 
-/** Bindings forwarded to the wide Menu: the ones sharing a name, plus divider → separator. */
+/**
+ * Bindings forwarded to the wide Menu: the overridable ones it shares by name, plus divider →
+ * separator. Locked bindings are never forwarded, and the rest (scrim, header, handle, title,
+ * dividerWidth, exit) have no effect there.
+ */
 const MENU_FORWARD: Partial<Record<ActionSheetOverridableBinding, MenuOverridableBinding>> = {
   shadow: 'shadow',
   radius: 'radius',
@@ -108,10 +118,30 @@ const MENU_FORWARD: Partial<Record<ActionSheetOverridableBinding, MenuOverridabl
 
 const COPY = { cancelLabel: 'Cancel', defaultLabel: 'Actions' } as const;
 
-/** Fraction of the sheet height a downward drag must pass for release to dismiss it. */
+/** constants.dismissDistance — fraction of the sheet height a downward drag must pass to dismiss on release. */
 const DISMISS_DISTANCE = 0.25;
-/** Drag speed at release (px/ms) that dismisses the sheet whatever the distance travelled. */
+/** constants.dismissVelocity — downward px/ms at release that dismisses whatever the distance travelled. */
 const DISMISS_VELOCITY = 1.5;
+/** constants.dragSlop — `space.1`, read from the resolved custom property at gesture time, as BottomSheet. */
+const DRAG_SLOP_TOKEN = '--space-1';
+
+/**
+ * `space.1` in px: the token resolves to a rem length, so it is multiplied by the root font size.
+ * An unresolvable value (no theme stylesheet, jsdom) counts as 0.
+ */
+function resolveDragSlop(element: HTMLElement): number {
+  const raw = getComputedStyle(element).getPropertyValue(DRAG_SLOP_TOKEN).trim();
+  const length = Number.parseFloat(raw);
+  if (!Number.isFinite(length)) return 0;
+  if (!raw.endsWith('rem') && !raw.endsWith('em')) return length;
+  const rootFontSize = Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
+  return Number.isFinite(rootFontSize) ? length * rootFontSize : 0;
+}
+
+function hasNoTransition(element: HTMLElement): boolean {
+  const duration = getComputedStyle(element).transitionDuration || '';
+  return !duration.split(',').some((part) => Number.parseFloat(part) > 0);
+}
 
 function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
@@ -129,15 +159,53 @@ function wideQuery(): MediaQueryList | null {
 function useIsWide(): boolean {
   const [isWide, setIsWide] = useState(() => wideQuery()?.matches ?? false);
   useEffect(() => {
-    const query = wideQuery();
-    if (!query) return undefined;
-    const onChange = (): void => setIsWide(query.matches);
-    onChange();
-    query.addEventListener('change', onChange);
-    return () => query.removeEventListener('change', onChange);
+    let frame = 0;
+    let query: MediaQueryList | null = null;
+    const onChange = (): void => setIsWide(query?.matches ?? false);
+    const attach = (): void => {
+      query = wideQuery();
+      if (query) {
+        onChange();
+        query.addEventListener('change', onChange);
+        return;
+      }
+      // The theme stylesheet has not been applied yet, so the breakpoint reads as empty. Retry until
+      // the document has finished loading rather than pinning the presentation to the narrow
+      // fallback for the component's lifetime — which would strand a desktop sheet below its Menu.
+      if (typeof document !== 'undefined' && document.readyState !== 'complete') {
+        frame = requestAnimationFrame(attach);
+      }
+    };
+    attach();
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      query?.removeEventListener('change', onChange);
+    };
   }, []);
   return isWide;
 }
+
+interface DragSample {
+  y: number;
+  time: number;
+}
+
+interface DragState {
+  pointerId: number;
+  /** Where the pointer went down; the slop is measured from here. */
+  startY: number;
+  /** Where the slop was crossed; the drag offset counts from here, so the surface does not jump. */
+  originY: number;
+  claimed: boolean;
+  previous: DragSample | null;
+  last: DragSample | null;
+}
+
+/**
+ * idle → dragging (past the slop) → settling (spring back to rest)
+ *                                 | held (dismissed, holding the released offset) → exiting | settling
+ */
+type DragPhase = 'idle' | 'dragging' | 'settling' | 'held' | 'exiting';
 
 /** Danger actions are grouped last, after a divider, in both presentations. */
 function partition(actions: ActionSheetAction[]): { normal: ActionSheetAction[]; danger: ActionSheetAction[] } {
@@ -160,7 +228,7 @@ function toMenuItems(actions: ActionSheetAction[]): MenuItem[] {
 }
 
 export interface ActionSheetProps
-  extends Omit<ComponentPropsWithoutRef<'dialog'>, 'children' | 'title' | 'onClose' | 'open' | 'className' | 'style'> {
+  extends Omit<ComponentPropsWithoutRef<'dialog'>, 'children' | 'title' | 'onCancel' | 'onClose' | 'open' | 'className' | 'style'> {
   /**
    * Controlled only — there is no uncontrolled mode; the consumer owns `open`, the sheet requests a
    * dismissal through `onClose` and reports a choice through `onAction`, and the consumer sets
@@ -180,9 +248,9 @@ export interface ActionSheetProps
   /**
    * Escape, the scrim, the cancel row and the drag all request close. When false, as in Dialog: the
    * Cancel row and the divider above it are not rendered, the drag handle is not rendered, the scrim
-   * and the drag do nothing, and Escape still reports through onClose. It gates the sheet
-   * presentation only — the wide Menu presentation has no scrim, drag or cancel row, and clicking
-   * outside always closes it.
+   * and the drag do nothing, and Escape still reports through onClose; with no `heading` either, the
+   * header has nothing to show and is not rendered at all. It gates the sheet presentation only —
+   * the wide Menu presentation has no scrim, drag or cancel row, and clicking outside always closes it.
    */
   dismissible?: boolean | undefined;
   /** Label of the explicit cancel row on phones. Defaults to `copy.cancelLabel`. */
@@ -224,7 +292,7 @@ export function ActionSheet({
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const surfaceRef = useRef<HTMLDivElement | null>(null);
   const itemRefs = useRef(new Map<string, HTMLButtonElement>());
-  const dragRef = useRef<{ startY: number; startTime: number } | null>(null);
+  const dragRef = useRef<DragState | null>(null);
 
   // The element focused when `open` became true: the wide Menu anchors to it, and both
   // presentations return focus to it. Captured during render, before any child effect moves focus.
@@ -232,20 +300,25 @@ export function ActionSheet({
   const wasOpenRef = useRef(false);
   // A choice was made in the wide Menu during this opening: no close reason may follow it.
   const choseRef = useRef(false);
-  if (open && !wasOpenRef.current && typeof document !== 'undefined') {
-    const active = document.activeElement;
-    openerRef.current = active instanceof HTMLElement ? active : document.body;
+  // The flag flips here rather than in an effect: the enter layout effect focuses the first item and
+  // sets state, which re-renders before any passive effect runs, and a capture still armed on that
+  // re-render would record the focused item as the opener — leaving `anchor` and the focus restore
+  // pointing inside the sheet. One capture per opening, decided the moment `open` turns true.
+  if (open && !wasOpenRef.current) {
+    if (typeof document !== 'undefined') {
+      const active = document.activeElement;
+      openerRef.current = active instanceof HTMLElement ? active : document.body;
+    }
     choseRef.current = false;
+    wasOpenRef.current = true;
+  } else if (!open && wasOpenRef.current) {
+    wasOpenRef.current = false;
   }
-  useEffect(() => {
-    wasOpenRef.current = open;
-  }, [open]);
 
   // Mounted while open, and while the exit transition finishes after `open` goes false.
   const [present, setPresent] = useState(open);
   const [visible, setVisible] = useState(false);
-  const [dragging, setDragging] = useState(false);
-  const [settling, setSettling] = useState(false);
+  const [dragPhase, setDragPhase] = useState<DragPhase>('idle');
   const [activeId, setActiveId] = useState<string | null>(null);
 
   if (open && !present) setPresent(true);
@@ -264,8 +337,20 @@ export function ActionSheet({
     const dialog = dialogRef.current;
     if (!dialog) return undefined;
     if (!dialog.open) {
-      if (typeof dialog.showModal === 'function') dialog.showModal();
-      else dialog.setAttribute('open', '');
+      // inert-background is showModal()'s guarantee; the `open`-attribute fallback exists only so
+      // tests can render in jsdom and makes nothing inert. A refused showModal() (the dialog is
+      // already in the top layer, or detached) must not throw out of this effect and take the whole
+      // sheet down with it — the sheet still renders, just without the inert background.
+      let shown = false;
+      if (typeof dialog.showModal === 'function') {
+        try {
+          dialog.showModal();
+          shown = true;
+        } catch {
+          shown = false;
+        }
+      }
+      if (!shown) dialog.setAttribute('open', '');
     }
     const first = enabled[0];
     if (first) {
@@ -281,11 +366,13 @@ export function ActionSheet({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [present, isWide, open]);
 
-  // Exit: slide out, then close() and unmount once the transition ends (at once when there is none).
+  // Exit: focus returns to the opener at the start of the transition (the FocusScope is inactive
+  // from this moment, so a mounted scope never pulls it back), then close() and unmount at the end.
   useEffect(() => {
     if (open || !present) return undefined;
     setVisible(false);
-    setSettling(false);
+    const opener = openerRef.current;
+    if (opener?.isConnected) opener.focus();
     const dialog = dialogRef.current;
     const surface = surfaceRef.current;
     const finish = (): void => {
@@ -294,19 +381,59 @@ export function ActionSheet({
         else dialog.removeAttribute('open');
       }
       setPresent(false);
-      setDragging(false);
     };
-    const duration = surface ? Number.parseFloat(getComputedStyle(surface).transitionDuration || '0') : 0;
-    if (isWide || !surface || prefersReducedMotion() || !(duration > 0)) {
+    if (isWide || !surface || hasNoTransition(surface)) {
       finish();
       return undefined;
     }
-    const handleEnd = (event: TransitionEvent): void => {
+    const handleExited = (event: TransitionEvent): void => {
       if (event.target === surface && event.propertyName === 'transform') finish();
     };
-    surface.addEventListener('transitionend', handleEnd);
-    return () => surface.removeEventListener('transitionend', handleEnd);
+    surface.addEventListener('transitionend', handleExited);
+    return () => surface.removeEventListener('transitionend', handleExited);
   }, [open, present, isWide]);
+
+  // The released offset stays on the surface until the consumer's next render decides what it means.
+  useLayoutEffect(() => {
+    const surface = surfaceRef.current;
+
+    // held: the render that follows the `onClose` call has arrived (a setState in the handler is
+    // batched into it). `open` still true springs back; `open` false plays the normal exit.
+    if (dragPhase === 'held') {
+      setDragPhase(open ? 'settling' : 'exiting');
+      return undefined;
+    }
+
+    // exiting: `--visible` came off in the same commit, so dropping the inline offset animates the
+    // exit from wherever the finger left the sheet.
+    if (dragPhase === 'exiting') {
+      if (open) {
+        setDragPhase('settling');
+        return undefined;
+      }
+      if (surface) surface.style.transform = '';
+      setDragPhase('idle');
+      return undefined;
+    }
+
+    // settling: spring back to rest over the exit duration with motion.easing.standard. Clearing the
+    // offset also finishes an interrupted enter animation.
+    if (dragPhase !== 'settling') return undefined;
+    if (!surface) {
+      setDragPhase('idle');
+      return undefined;
+    }
+    surface.style.transform = '';
+    if (hasNoTransition(surface)) {
+      setDragPhase('idle');
+      return undefined;
+    }
+    const handleSettled = (event: TransitionEvent): void => {
+      if (event.target === surface && event.propertyName === 'transform') setDragPhase('idle');
+    };
+    surface.addEventListener('transitionend', handleSettled);
+    return () => surface.removeEventListener('transitionend', handleSettled);
+  }, [dragPhase, open]);
 
   // Body scroll lock while the sheet is present.
   useEffect(() => {
@@ -316,6 +443,7 @@ export function ActionSheet({
   }, [present, isWide]);
 
   const requestClose = (reason: ActionSheetCloseReason): void => {
+    // Escape reports even when the sheet is not dismissible, as in Dialog.
     if (reason !== 'escape' && !dismissible) return;
     onClose?.(reason);
   };
@@ -333,39 +461,68 @@ export function ActionSheet({
     requestClose('escape');
   };
 
-  // Drag lives on the header (handle + heading), as in BottomSheet; only while dismissible.
+  // Drag lives on the header (which holds the handle), as in BottomSheet. Nothing is claimed until
+  // the pointer has moved `dragSlop` downward, so a tap on the header is not a drag.
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>): void => {
-    if (!dismissible || !surfaceRef.current) return;
-    event.currentTarget.setPointerCapture?.(event.pointerId);
-    dragRef.current = { startY: event.clientY, startTime: event.timeStamp };
-    setSettling(false);
-    setDragging(true);
+    if (!dismissible || !open || dragRef.current) return;
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    // No coordinate, no gesture: an environment without Pointer Events must not translate the surface.
+    if (!Number.isFinite(event.clientY)) return;
+    dragRef.current = {
+      pointerId: event.pointerId,
+      startY: event.clientY,
+      originY: event.clientY,
+      claimed: false,
+      previous: null,
+      last: null,
+    };
   };
 
   const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>): void => {
     const drag = dragRef.current;
     const surface = surfaceRef.current;
-    if (!drag || !surface) return;
-    surface.style.setProperty('--ds-action-sheet-drag', `${Math.max(0, event.clientY - drag.startY)}px`);
+    if (!drag || drag.pointerId !== event.pointerId || !surface) return;
+    if (!Number.isFinite(event.clientY)) return;
+    if (!drag.claimed) {
+      const moved = event.clientY - drag.startY;
+      if (moved <= 0 || moved < resolveDragSlop(surface)) return;
+      drag.claimed = true;
+      // The offset counts from where the slop was crossed, so the surface does not jump.
+      drag.originY = event.clientY;
+      if (typeof event.currentTarget.setPointerCapture === 'function') {
+        event.currentTarget.setPointerCapture(event.pointerId);
+      }
+      // The drag-follow tracks the finger directly, reduced motion or not.
+      setDragPhase('dragging');
+    }
+    drag.previous = drag.last;
+    drag.last = { y: event.clientY, time: event.timeStamp };
+    surface.style.transform = `translateY(${Math.max(0, event.clientY - drag.originY)}px)`;
   };
 
-  const finishDrag = (event: ReactPointerEvent<HTMLDivElement>): void => {
+  const endDrag = (event: ReactPointerEvent<HTMLDivElement>, cancelled: boolean): void => {
     const drag = dragRef.current;
-    const surface = surfaceRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
     dragRef.current = null;
-    if (!drag || !surface) return;
-    const distance = Math.max(0, event.clientY - drag.startY);
-    const elapsed = Math.max(1, event.timeStamp - drag.startTime);
-    const height = surface.getBoundingClientRect().height;
-    const pastDistance = height > 0 && distance / height > DISMISS_DISTANCE;
-    if (pastDistance || distance / elapsed > DISMISS_VELOCITY) {
-      // Hold the released position; the exit slides on from there once the consumer closes.
-      requestClose('drag');
+    const surface = surfaceRef.current;
+    if (!drag.claimed || !surface) return;
+
+    const travelled = Number.isFinite(event.clientY) ? Math.max(0, event.clientY - drag.originY) : 0;
+    const sheetHeight = surface.getBoundingClientRect().height;
+    const pastDistance = sheetHeight > 0 && travelled > sheetHeight * DISMISS_DISTANCE;
+    // Velocity between the last two move samples before release; only downward speed counts.
+    let velocity = 0;
+    if (drag.previous && drag.last && drag.last.time > drag.previous.time) {
+      velocity = (drag.last.y - drag.previous.y) / (drag.last.time - drag.previous.time);
+    }
+
+    if (cancelled || !open || !(pastDistance || velocity > DISMISS_VELOCITY)) {
+      setDragPhase('settling');
       return;
     }
-    surface.style.removeProperty('--ds-action-sheet-drag');
-    setDragging(false);
-    setSettling(!prefersReducedMotion());
+    // Hold the released offset until the consumer's next render, then exit or spring back from there.
+    setDragPhase('held');
+    requestClose('drag');
   };
 
   const focusAction = (action: ActionSheetAction | undefined): void => {
@@ -432,6 +589,7 @@ export function ActionSheet({
       const forward = MENU_FORWARD[binding];
       if (token && forward) menuOverrides[forward] = token;
     }
+    // Menu owns every part and its own hooks here; no ActionSheet `data-part` values appear.
     return (
       <Menu
         label={accessibleLabel}
@@ -452,8 +610,7 @@ export function ActionSheet({
   const textOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {};
   for (const [binding, token] of Object.entries(overrides ?? {}) as [ActionSheetOverridableBinding, TokenRef | undefined][]) {
     if (!token) continue;
-    const hook = OVERRIDE_HOOK[binding];
-    if (hook) rootStyle[hook] = cssVar(token);
+    rootStyle[OVERRIDE_HOOK[binding]] = cssVar(token);
     const forward = TEXT_FORWARD[binding];
     if (forward) textOverrides[forward] = token;
   }
@@ -494,8 +651,8 @@ export function ActionSheet({
   const className = [
     'ds-action-sheet',
     visible ? 'ds-action-sheet--visible' : '',
-    dragging ? 'ds-action-sheet--dragging' : '',
-    settling ? 'ds-action-sheet--settling' : '',
+    dragPhase === 'dragging' ? 'ds-action-sheet--dragging' : '',
+    dragPhase === 'settling' ? 'ds-action-sheet--settling' : '',
   ]
     .filter(Boolean)
     .join(' ');
@@ -513,23 +670,16 @@ export function ActionSheet({
       onCancel={handleCancel}
     >
       <div className="ds-action-sheet__scrim" data-part="scrim" aria-hidden="true" onClick={() => requestClose('scrim')} />
-      <FocusScope trapped autoFocus="none" restoreFocus returnFocusTo={openerRef} data-part="focusScope">
-        <div
-          ref={surfaceRef}
-          className="ds-action-sheet__surface"
-          data-part="surface"
-          onTransitionEnd={(event) => {
-            if (event.target === event.currentTarget && settling) setSettling(false);
-          }}
-        >
+      <FocusScope trapped autoFocus="none" restoreFocus active={open} returnFocusTo={openerRef} data-part="focusScope">
+        <div ref={surfaceRef} className="ds-action-sheet__surface" data-part="surface">
           {dismissible || heading ? (
             <div
               className="ds-action-sheet__header"
               data-part="header"
               onPointerDown={handlePointerDown}
               onPointerMove={handlePointerMove}
-              onPointerUp={finishDrag}
-              onPointerCancel={finishDrag}
+              onPointerUp={(event) => endDrag(event, false)}
+              onPointerCancel={(event) => endDrag(event, true)}
             >
               {dismissible ? <span className="ds-action-sheet__handle" data-part="handle" aria-hidden="true" /> : null}
               {heading ? (

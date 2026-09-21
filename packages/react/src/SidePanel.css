@@ -1,6 +1,7 @@
 /* SidePanel — styled only through Design Schema token custom properties. */
 
-/* Hook defaults. The scrim is the surface's sibling, so it carries the same hooks (and inline overrides). */
+/* Hook defaults. The non-modal scrim is the root's sibling, so it declares the same hooks (and takes
+   the same inline override style); the modal scrim sits inside the <dialog> and inherits them. */
 .ds-side-panel,
 .ds-side-panel__scrim {
   --ds-side-panel-scrim: var(--color-overlay-scrim);
@@ -13,6 +14,7 @@
   --ds-side-panel-edge-gutter: var(--space-12);
   --ds-side-panel-inset: var(--layout-inset-lg);
   --ds-side-panel-header-gap: var(--layout-gap-normal);
+  --ds-side-panel-heading-gap: var(--space-0);
   --ds-side-panel-part-gap: var(--layout-gap-loose);
   --ds-side-panel-footer-gap: var(--layout-gap-tight);
   --ds-side-panel-layer: var(--layer-sheet);
@@ -32,7 +34,39 @@
   display: none;
 }
 
-/* scrim → color.overlay.scrim; fades with the panel (enter/exit durations and easings). */
+/* The non-modal root is the surface itself; `hidden` after the exit transition takes it out of the tree. */
+.ds-side-panel[hidden] {
+  display: none;
+}
+
+/* modal: the <dialog> fills the viewport with a transparent ::backdrop and holds the scrim and surface. */
+dialog.ds-side-panel {
+  box-sizing: border-box;
+  position: fixed;
+  inset: 0;
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  max-inline-size: none;
+  max-block-size: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  background: transparent;
+  color: var(--color-foreground);
+  font-family: var(--font-family-body);
+}
+
+dialog.ds-side-panel::backdrop {
+  background: transparent;
+}
+
+dialog.ds-side-panel:not([open]) {
+  display: none;
+}
+
+/* scrim → color.overlay.scrim; fades over the panel's enter/exit durations and easings. */
 .ds-side-panel__scrim {
   position: fixed;
   inset: 0;
@@ -54,18 +88,15 @@
   transition-timing-function: var(--motion-easing-standard);
 }
 
-/* surface → color.overlay.surface (locked), shadow (overlay only); fixed at the edge, full height, on layer.sheet. */
-.ds-side-panel {
+/* surface → color.overlay.surface (locked) and shadow (overlay only); fixed at the edge, full height.
+   The non-modal scrim precedes the root in the DOM and they share `layer`, so the surface paints above it. */
+.ds-side-panel__surface {
   box-sizing: border-box;
   position: fixed;
   inset-block: 0;
   z-index: var(--ds-side-panel-layer);
-  margin: 0;
-  padding: 0;
-  border: 0;
+  display: block;
   block-size: 100%;
-  max-inline-size: none;
-  max-block-size: none;
   overflow: hidden;
   color: var(--color-foreground);
   font-family: var(--font-family-body);
@@ -77,96 +108,78 @@
   transition-timing-function: var(--motion-easing-exit);
 }
 
-.ds-side-panel[hidden],
-dialog.ds-side-panel:not([open]) {
-  display: none;
-}
-
-/* modal: the <dialog> is the panel; the scrim is its ::backdrop. */
-dialog.ds-side-panel {
-  display: block;
-}
-
-.ds-side-panel--modal::backdrop {
-  background-color: var(--ds-side-panel-scrim);
-  opacity: 0;
-  transition-property: opacity;
-  transition-duration: var(--ds-side-panel-exit);
-  transition-timing-function: var(--motion-easing-exit);
-}
-
-.ds-side-panel--visible.ds-side-panel--modal::backdrop {
-  opacity: 1;
-  transition-duration: var(--ds-side-panel-enter);
-  transition-timing-function: var(--motion-easing-standard);
-}
-
 /* side: start/end follow the writing direction; the off-edge transform flips under rtl. */
-.ds-side-panel--start {
+.ds-side-panel__surface--start {
   inset-inline-start: 0;
   inset-inline-end: auto;
   transform: translateX(-100%);
 }
 
-.ds-side-panel--end {
+.ds-side-panel__surface--end {
   inset-inline-end: 0;
   inset-inline-start: auto;
   transform: translateX(100%);
 }
 
-.ds-side-panel--start:where(:dir(rtl)) {
+.ds-side-panel__surface--start:where(:dir(rtl)) {
   transform: translateX(100%);
 }
 
-.ds-side-panel--end:where(:dir(rtl)) {
+.ds-side-panel__surface--end:where(:dir(rtl)) {
   transform: translateX(-100%);
 }
 
 /* enter: slide in over motion.duration.base with motion.easing.standard */
-.ds-side-panel.ds-side-panel--visible {
+.ds-side-panel__surface--visible {
   transform: none;
   transition-duration: var(--ds-side-panel-enter);
   transition-timing-function: var(--motion-easing-standard);
 }
 
-/* width: capped at the viewport minus edgeGutter, so a strip of scrim stays visible on phones. */
-.ds-side-panel--default {
-  inline-size: min(var(--ds-side-panel-width), calc(100vw - var(--ds-side-panel-edge-gutter)));
+/* width: capped at the containing block minus edgeGutter, so a strip of scrim stays visible on phones. */
+.ds-side-panel__surface--default {
+  inline-size: min(var(--ds-side-panel-width), calc(100% - var(--ds-side-panel-edge-gutter)));
 }
 
-/* widthNarrow → calc(var(--space-20) * 3) */
-.ds-side-panel--narrow {
-  inline-size: min(calc(var(--ds-side-panel-width-narrow) * 3), calc(100vw - var(--ds-side-panel-edge-gutter)));
+/* widthNarrow holds the space.20 unit; the rule multiplies it, so an override replaces the unit. */
+.ds-side-panel__surface--narrow {
+  inline-size: min(calc(var(--ds-side-panel-width-narrow) * 3), calc(100% - var(--ds-side-panel-edge-gutter)));
 }
 
-.ds-side-panel--wide {
-  inline-size: min(var(--ds-side-panel-width-wide), calc(100vw - var(--ds-side-panel-edge-gutter)));
+.ds-side-panel__surface--wide {
+  inline-size: min(var(--ds-side-panel-width-wide), calc(100% - var(--ds-side-panel-edge-gutter)));
 }
 
-/* partGap: the column that holds header, body and footer (FocusScope and Landmark stay unstyled around it). */
-.ds-side-panel__layout {
+/* focusScope: the overlay-owned column that holds header, body and footer. partGap is its gap and the
+   block edges are padded here once, never per part, so nothing doubles with the gap. */
+.ds-side-panel__scope {
   box-sizing: border-box;
   position: absolute;
   inset: 0;
   display: flex;
   flex-direction: column;
   gap: var(--ds-side-panel-part-gap);
-  padding-block-start: env(safe-area-inset-top);
-  padding-block-end: env(safe-area-inset-bottom);
+  padding-block: var(--ds-side-panel-inset);
 }
 
-/* Safe area on the physical edge the panel touches. */
-.ds-side-panel--start:where(:dir(ltr)) .ds-side-panel__layout,
-.ds-side-panel--end:where(:dir(rtl)) .ds-side-panel__layout {
+/* Overlay mode only: the safe-area insets add to the column's block padding, and the physical edge
+   the panel touches takes its own (flipped under rtl). The persistent sidebar pads no safe area. */
+.ds-side-panel__surface:not(.ds-side-panel__surface--persistent) .ds-side-panel__scope {
+  padding-block-start: calc(var(--ds-side-panel-inset) + env(safe-area-inset-top));
+  padding-block-end: calc(var(--ds-side-panel-inset) + env(safe-area-inset-bottom));
+}
+
+.ds-side-panel__surface--start:not(.ds-side-panel__surface--persistent):where(:dir(ltr)) .ds-side-panel__scope,
+.ds-side-panel__surface--end:not(.ds-side-panel__surface--persistent):where(:dir(rtl)) .ds-side-panel__scope {
   padding-left: env(safe-area-inset-left);
 }
 
-.ds-side-panel--end:where(:dir(ltr)) .ds-side-panel__layout,
-.ds-side-panel--start:where(:dir(rtl)) .ds-side-panel__layout {
+.ds-side-panel__surface--end:not(.ds-side-panel__surface--persistent):where(:dir(ltr)) .ds-side-panel__scope,
+.ds-side-panel__surface--start:not(.ds-side-panel__surface--persistent):where(:dir(rtl)) .ds-side-panel__scope {
   padding-right: env(safe-area-inset-right);
 }
 
-/* header: title and close button, headerGap between them; inset padding like the body. */
+/* header: title and close button with headerGap between them; the inline edges take the inset. */
 .ds-side-panel__header {
   display: flex;
   align-items: center;
@@ -175,14 +188,24 @@ dialog.ds-side-panel {
   flex: 0 0 auto;
   min-inline-size: 0;
   padding-inline: var(--ds-side-panel-inset);
-  padding-block-start: var(--ds-side-panel-inset);
+}
+
+/* hideHeading with a close button: the hidden title leaves the flow, so the button is end-aligned. */
+.ds-side-panel__header:has(> .ds-side-panel__visually-hidden) {
+  justify-content: flex-end;
 }
 
 .ds-side-panel__heading {
   min-inline-size: 0;
 }
 
-/* focus-visible: the title is focused programmatically when a modal panel has no control to focus. */
+/* headingGap → the Heading's own marginBlockEnd hook, turning its margin off so the title centres
+   against the close button; headerGap and partGap own the spacing. */
+.ds-side-panel .ds-side-panel__heading > * {
+  --ds-heading-margin-block-end: var(--ds-side-panel-heading-gap);
+}
+
+/* focus-visible: the title is the last initial-focus target of a modal panel. */
 .ds-side-panel__heading:has(:focus-visible) {
   outline: var(--border-width-focus) solid var(--color-border-focus);
   outline-offset: var(--border-width-focus);
@@ -201,17 +224,14 @@ dialog.ds-side-panel {
   border: 0;
 }
 
-/* target-44px → size.target.comfortable: the wrapper raises the pointer target; the Button keeps its own size and colors. */
+/* closeButton: the wrapper only holds the Button's place in the header row, so it never shrinks beside
+   a long title. The Button keeps its own default size, whose minimum target is size.target.comfortable. */
 .ds-side-panel__close {
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
   flex: 0 0 auto;
-  min-inline-size: var(--size-target-comfortable);
-  min-block-size: var(--size-target-comfortable);
 }
 
-/* body: the only region that scrolls, so the header and footer stay put; the Box carries the inset. */
+/* body: the only region that scrolls, so the header and footer stay put. */
 .ds-side-panel__scroll {
   flex: 1 1 auto;
   min-block-size: 0;
@@ -219,15 +239,24 @@ dialog.ds-side-panel {
   overscroll-behavior: contain;
 }
 
-/* footer: pinned action row; footerGap is forwarded to the Stack's own `gap` override. */
+/* inset → the body Box's own paddingInline hook; its block padding stays zero (insetBlock="none"). */
+.ds-side-panel [data-part='body'] {
+  --ds-box-padding-inline: var(--ds-side-panel-inset);
+}
+
+/* footer: pinned action row; footerGap → the footer Stack's own gap hook. */
 .ds-side-panel__footer {
   flex: 0 0 auto;
   padding-inline: var(--ds-side-panel-inset);
-  padding-block-end: var(--ds-side-panel-inset);
 }
 
-/* persistent: a sidebar in the page — no scrim, no shadow, no slide, natural height; border on the inner edge. */
-.ds-side-panel.ds-side-panel--persistent {
+.ds-side-panel .ds-side-panel__footer > * {
+  --ds-stack-gap: var(--ds-side-panel-footer-gap);
+}
+
+/* persistent: a sidebar in the page — no scrim, no shadow, no slide, natural height; the page scrolls.
+   `border` is drawn on the edge facing the content. */
+.ds-side-panel__surface--persistent {
   position: static;
   z-index: auto;
   block-size: auto;
@@ -237,40 +266,39 @@ dialog.ds-side-panel {
   transition: none;
 }
 
-.ds-side-panel--persistent.ds-side-panel--default {
+.ds-side-panel__surface--persistent.ds-side-panel__surface--default {
   inline-size: var(--ds-side-panel-width);
 }
 
-.ds-side-panel--persistent.ds-side-panel--narrow {
+.ds-side-panel__surface--persistent.ds-side-panel__surface--narrow {
   inline-size: calc(var(--ds-side-panel-width-narrow) * 3);
 }
 
-.ds-side-panel--persistent.ds-side-panel--wide {
+.ds-side-panel__surface--persistent.ds-side-panel__surface--wide {
   inline-size: var(--ds-side-panel-width-wide);
 }
 
-.ds-side-panel--persistent.ds-side-panel--start {
+.ds-side-panel__surface--persistent.ds-side-panel__surface--start {
   border-inline-end: var(--ds-side-panel-border-width) solid var(--ds-side-panel-border);
 }
 
-.ds-side-panel--persistent.ds-side-panel--end {
+.ds-side-panel__surface--persistent.ds-side-panel__surface--end {
   border-inline-start: var(--ds-side-panel-border-width) solid var(--ds-side-panel-border);
 }
 
-.ds-side-panel--persistent .ds-side-panel__layout {
+.ds-side-panel__surface--persistent .ds-side-panel__scope {
   position: static;
-  padding: 0;
 }
 
-.ds-side-panel--persistent .ds-side-panel__scroll {
+.ds-side-panel__surface--persistent .ds-side-panel__scroll {
   overflow: visible;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .ds-side-panel__scrim,
-  .ds-side-panel--modal::backdrop,
-  .ds-side-panel,
-  .ds-side-panel.ds-side-panel--visible {
+  .ds-side-panel__scrim--visible,
+  .ds-side-panel__surface,
+  .ds-side-panel__surface--visible {
     transition: none;
   }
 }

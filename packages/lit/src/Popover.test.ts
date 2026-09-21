@@ -9,14 +9,14 @@ import './Popover.js';
 import './Button.js';
 import './Checkbox.js';
 import type { DsPopover, PopoverOpenChangeDetail } from './Popover.js';
-import { Default } from './Popover.stories.js';
+import meta, { Default } from './Popover.stories.js';
 
 type Given = Partial<Pick<DsPopover, 'heading' | 'headingLevel' | 'placement' | 'modal' | 'showArrow' | 'dismissible' | 'open'>>;
 
 /** The Default story's args plus the scenario's `given`, as properties on a fresh element with the story's trigger and body. */
 async function setup(given: Given = {}) {
   const el = document.createElement('ds-popover');
-  const props = { ...Default.args, ...given } as Record<string, unknown>;
+  const props = { ...meta.args, ...Default.args, ...given } as Record<string, unknown>;
   for (const key of ['heading', 'headingLevel', 'placement', 'modal', 'showArrow', 'dismissible', 'open']) {
     if (props[key] !== undefined) (el as unknown as Record<string, unknown>)[key] = props[key];
   }

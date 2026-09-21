@@ -41,9 +41,10 @@ describe('AlertDialog', () => {
   });
 
   it('a-scrim-click-does-nothing', () => {
-    // The scrim is the <dialog>'s ::backdrop; a backdrop click targets the <dialog> element itself.
+    // The scrim is a real element inside the full-viewport <dialog>, with no click listener.
     const d = setup({ open: true });
-    const scrim = d.dialog()!;
+    const scrim = d.dialog()!.querySelector<HTMLElement>('[data-part="scrim"]')!;
+    expect(scrim).not.toBeNull();
     fireEvent.pointerDown(scrim);
     fireEvent.click(scrim);
     expect(d.onCancel).not.toHaveBeenCalled();

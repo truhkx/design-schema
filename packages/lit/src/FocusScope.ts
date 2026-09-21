@@ -90,6 +90,17 @@ function collectFocusable(node: Element, results: HTMLElement[]): void {
   }
 }
 
+/**
+ * The focusable elements inside `node`, in flat-tree order — the same walk the scope itself uses.
+ * Shared so a component that resolves "the first/last focusable element" outside a trap (`<ds-popover>`
+ * deciding where Tab leaves its panel) answers by exactly the rules a trapped scope would.
+ */
+export function focusableIn(node: Element): HTMLElement[] {
+  const results: HTMLElement[] = [];
+  collectFocusable(node, results);
+  return results;
+}
+
 function getDeepActiveElement(root: Document | ShadowRoot = document): Element | null {
   const active = root.activeElement;
   if (active?.shadowRoot?.activeElement) {
@@ -109,14 +120,22 @@ function documentHost(el: Element): Element {
   return node;
 }
 
-/** Composed-tree containment: a node inside a descendant's shadow root still counts as inside. */
+/**
+ * Flat-tree containment: a node inside a descendant's shadow root counts as inside, and so does a
+ * node slotted in from outside. `parentNode` never crosses a slot assignment — a scope whose
+ * `<slot>` is filled from a host's light DOM renders those nodes inside itself, but their
+ * `parentNode` chain climbs to that host instead, so an assigned node is followed to the `<slot>`
+ * it renders in. This is the walk `collectFocusable` already makes; without it here, a trapped
+ * scope counts its own slotted content as an escape and pulls focus straight back out of it.
+ */
 function composedContains(container: Element, node: Node): boolean {
   let current: Node | null = node;
   while (current) {
     if (current === container) {
       return true;
     }
-    current = current instanceof ShadowRoot ? current.host : current.parentNode;
+    const slot: HTMLSlotElement | null = current instanceof Element ? current.assignedSlot : null;
+    current = slot ?? (current instanceof ShadowRoot ? current.host : current.parentNode);
   }
   return false;
 }

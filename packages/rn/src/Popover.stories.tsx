@@ -28,10 +28,6 @@ const meta: Meta<typeof Popover> = {
     ),
     heading: 'Filters',
     placement: 'bottom-start',
-    headingLevel: '3',
-    modal: false,
-    showArrow: false,
-    dismissible: true,
   },
 };
 
@@ -63,15 +59,15 @@ export const HeadingLevel2: Story = { args: { headingLevel: '2' }, render: rende
 export const HeadingLevel3: Story = { args: { headingLevel: '3' }, render: renderOpen };
 export const HeadingLevel4: Story = { args: { headingLevel: '4' }, render: renderOpen };
 
-// placement
-export const PlacementBottomStart: Story = { args: { placement: 'bottom-start' } };
-export const PlacementBottom: Story = { args: { placement: 'bottom' } };
-export const PlacementBottomEnd: Story = { args: { placement: 'bottom-end' } };
-export const PlacementTopStart: Story = { args: { placement: 'top-start' } };
-export const PlacementTop: Story = { args: { placement: 'top' } };
-export const PlacementTopEnd: Story = { args: { placement: 'top-end' } };
-export const PlacementStart: Story = { args: { placement: 'start' } };
-export const PlacementEnd: Story = { args: { placement: 'end' } };
+// placement — only visible open, so these render through the wrapper too
+export const PlacementBottomStart: Story = { args: { placement: 'bottom-start' }, render: renderOpen };
+export const PlacementBottom: Story = { args: { placement: 'bottom' }, render: renderOpen };
+export const PlacementBottomEnd: Story = { args: { placement: 'bottom-end' }, render: renderOpen };
+export const PlacementTopStart: Story = { args: { placement: 'top-start' }, render: renderOpen };
+export const PlacementTop: Story = { args: { placement: 'top' }, render: renderOpen };
+export const PlacementTopEnd: Story = { args: { placement: 'top-end' }, render: renderOpen };
+export const PlacementStart: Story = { args: { placement: 'start' }, render: renderOpen };
+export const PlacementEnd: Story = { args: { placement: 'end' }, render: renderOpen };
 
 // notable states
 export const Modal: Story = { args: { modal: true }, render: renderOpen };
@@ -79,7 +75,8 @@ export const ShowArrow: Story = { args: { showArrow: true }, render: renderOpen 
 export const NotDismissible: Story = { args: { dismissible: false }, render: renderOpen };
 export const NoHeading: Story = { args: { heading: undefined }, render: renderOpen };
 
-// examples
+// Examples start from their own `given`, so every prop the example does not name takes
+// its default; `heading` and `placement` are reset where meta's filter-panel args set them.
 export const FilterPanel: Story = {
   args: {
     trigger: <Button label="Filters" variant="secondary" />,
@@ -110,6 +107,7 @@ export const DatePickerPanel: Story = {
       </Stack>
     ),
     heading: undefined,
+    placement: 'bottom',
   },
 };
 
@@ -124,6 +122,7 @@ export const RequiredStep: Story = {
     ),
     heading: 'Add member',
     modal: true,
+    placement: 'bottom',
   },
 };
 

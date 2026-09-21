@@ -9,6 +9,7 @@ import './Icon.js';
 import './Stack.js';
 import './FocusScope.js';
 import type { DsFocusScope } from './FocusScope.js';
+import type { ButtonVariant } from './Button.js';
 import type { IconOverridableBinding } from './Icon.js';
 import type { StackOverridableBinding } from './Stack.js';
 
@@ -39,6 +40,7 @@ export type AlertDialogOverridableBinding =
   | 'width'
   | 'gutter'
   | 'layer'
+  | 'rise'
   | 'enter'
   | 'exit';
 
@@ -57,12 +59,20 @@ const HOOKS: Record<AlertDialogOverridableBinding, string> = {
   width: '--ds-alert-dialog-width',
   gutter: '--ds-alert-dialog-gutter',
   layer: '--ds-alert-dialog-layer',
+  rise: '--ds-alert-dialog-rise',
   enter: '--ds-alert-dialog-enter',
   exit: '--ds-alert-dialog-exit',
 };
 
 /** copy.cancelLabel */
 const COPY_CANCEL_LABEL = 'Cancel';
+
+/** tone → the confirm Button's variant: danger → danger; warning and info → primary. */
+const CONFIRM_VARIANT: Record<AlertDialogTone, ButtonVariant> = {
+  danger: 'danger',
+  warning: 'primary',
+  info: 'primary',
+};
 
 /** How many open `<ds-alert-dialog>`s hold the page-scroll lock, so a second one does not release it early. */
 let scrollLocks = 0;
@@ -94,13 +104,13 @@ function unlockPageScroll(): void {
  *
  * A Dialog with one job: get a considered yes or no. `<ds-alert-dialog open
  * tone="danger" heading="Delete 3 files?" description="…"
- * confirm-label="Delete files">` — no slots: title, description and labels are
+ * confirm-label="Delete files">` — no slots: heading, description and labels are
  * properties, so the element is fully described by attributes. The same shadow
  * `<dialog>` approach as `<ds-dialog>`, with `role="alertdialog"`: opened with
  * `showModal()` for the top layer and background inertness, the page scroll
- * locked while open, and `<ds-focus-scope>` (trapped, restoring focus)
- * wrapping Tab between the two buttons and returning focus to the opener on
- * close. Each anatomy part is an AlertDialog-owned wrapper carrying
+ * locked while open, and `<ds-focus-scope>` (trapped, restoring focus, auto-focus
+ * `none`) wrapping Tab between the two buttons and returning focus to the opener
+ * on close. Each anatomy part is an AlertDialog-owned wrapper carrying
  * `data-part`, since the composed children write their own.
  *
  * There is no close button and a scrim click does nothing, so the only ways
@@ -150,6 +160,7 @@ export class DsAlertDialog extends LitElement {
       --ds-alert-dialog-width: var(--layout-max-width-prose);
       --ds-alert-dialog-gutter: var(--layout-gutter);
       --ds-alert-dialog-layer: var(--layer-dialog);
+      --ds-alert-dialog-rise: var(--space-2);
       --ds-alert-dialog-enter: var(--motion-duration-base);
       --ds-alert-dialog-exit: var(--motion-duration-fast);
     }
@@ -172,7 +183,7 @@ export class DsAlertDialog extends LitElement {
       background: transparent;
       color: inherit;
       overflow: hidden;
-      /* Only a non-top-layer fallback honours this; the top layer ignores z-index. */
+      /* layer: only a non-top-layer fallback honours this; the top layer ignores z-index. */
       z-index: var(--ds-alert-dialog-layer);
     }
 
@@ -181,7 +192,8 @@ export class DsAlertDialog extends LitElement {
       place-items: center;
     }
 
-    /* The scrim is the element below; the native backdrop stays clear. */
+    /* The scrim is the element below; the native backdrop stays clear. It has no click
+       listener, so a scrim click answers nothing. */
     dialog::backdrop {
       background: transparent;
     }
@@ -194,24 +206,31 @@ export class DsAlertDialog extends LitElement {
       transition: opacity var(--ds-alert-dialog-enter) var(--motion-easing-standard);
     }
 
+    /* The <ds-focus-scope> host carries no part: it only traps and restores focus. */
+    ds-focus-scope {
+      min-inline-size: 0;
+    }
+
+    /* focusScope: the AlertDialog-owned part element inside the scope, wrapping the surface. */
     .scope {
       position: relative;
-      display: flex;
-      box-sizing: border-box;
-      inline-size: min(var(--ds-alert-dialog-width), calc(100% - 2 * var(--ds-alert-dialog-gutter)));
-      max-block-size: calc(100% - 2 * var(--ds-alert-dialog-gutter));
+      display: block;
+      min-inline-size: 0;
     }
 
     .surface {
       box-sizing: border-box;
       display: flex;
       flex-direction: column;
-      flex: 1 1 auto;
-      min-inline-size: 0;
-      max-block-size: 100%;
+      /* width: always the small size; gutter is the least space to each viewport edge. */
+      inline-size: min(var(--ds-alert-dialog-width), calc(100vw - 2 * var(--ds-alert-dialog-gutter)));
+      max-block-size: calc(100dvh - 2 * var(--ds-alert-dialog-gutter));
       overflow-y: auto;
+      /* partGap: between the icon-and-text row and the footer. */
       gap: var(--ds-alert-dialog-part-gap);
-      padding: var(--ds-alert-dialog-inset);
+      /* inset: the surface column carries the block padding once; each part pads its own
+         inline edges, so nothing doubles between them. */
+      padding-block: var(--ds-alert-dialog-inset);
       font-family: var(--font-family-body);
       color: var(--color-foreground);
       /* surface: color.overlay.surface, locked — no hook */
@@ -228,13 +247,14 @@ export class DsAlertDialog extends LitElement {
         transform var(--ds-alert-dialog-enter) var(--motion-easing-standard);
     }
 
+    /* enter: the scrim fades and the surface fades and rises from rise to 0. */
     @starting-style {
       .scrim {
         opacity: 0;
       }
       .surface {
         opacity: 0;
-        transform: translateY(var(--space-2));
+        transform: translateY(var(--ds-alert-dialog-rise));
       }
     }
 
@@ -246,7 +266,7 @@ export class DsAlertDialog extends LitElement {
       transition-timing-function: var(--motion-easing-exit);
     }
     .closing .surface {
-      transform: translateY(var(--space-2));
+      transform: translateY(var(--ds-alert-dialog-rise));
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -254,25 +274,45 @@ export class DsAlertDialog extends LitElement {
       .surface {
         transition: none;
       }
+      /* rise: zero under reduced motion. */
+      .surface,
+      .closing .surface {
+        transform: none;
+      }
     }
 
-    /* The icon sits inline with the text block; partGap measures from this whole row. */
+    /* iconGap: the gap of the row inside the surface that holds the icon and the text block. */
     .row {
       display: flex;
+      flex: 0 0 auto;
       align-items: flex-start;
       gap: var(--ds-alert-dialog-icon-gap);
+      padding-inline: var(--ds-alert-dialog-inset);
     }
 
-    /* icon: color.status.{tone}.icon, locked — no hook; forwarded to the Icon's overrides.color. */
     .icon {
-      display: flex;
-      flex: none;
+      display: inline-flex;
+      flex: 0 0 auto;
     }
-    /* iconSize reaches the Icon through its own hook (and through overrides when set). */
+
+    /* iconSize reaches the Icon through its own hook (and through overrides when the caller sets it). */
     .icon > ds-icon {
       --ds-icon-size: var(--ds-alert-dialog-icon-size);
     }
 
+    /* icon: color.status.{tone}.icon, locked — set on the Icon's own hook, because colouring an
+       ancestor has no effect: Icon's own rule wins. */
+    :host([tone='danger']) .icon > ds-icon {
+      --ds-icon-color: var(--color-status-danger-icon);
+    }
+    :host([tone='warning']) .icon > ds-icon {
+      --ds-icon-color: var(--color-status-warning-icon);
+    }
+    :host([tone='info']) .icon > ds-icon {
+      --ds-icon-color: var(--color-status-info-icon);
+    }
+
+    /* textGap: between the heading and the description. */
     .text {
       display: flex;
       flex-direction: column;
@@ -280,9 +320,19 @@ export class DsAlertDialog extends LitElement {
       min-inline-size: 0;
     }
 
-    /* footerGap reaches the Stack through its own hook (and through overrides when set). */
+    /* footer: end-aligned action row, inline inset only. */
+    .footer {
+      flex: 0 0 auto;
+      padding-inline: var(--ds-alert-dialog-inset);
+    }
+
+    /* footerGap reaches the Stack through its own hook (and through overrides when the caller sets it). */
     .footer > ds-stack {
       --ds-stack-gap: var(--ds-alert-dialog-footer-gap);
+    }
+
+    .action {
+      display: inline-flex;
     }
   `;
 
@@ -304,7 +354,11 @@ export class DsAlertDialog extends LitElement {
   /** The declining action. Defaults to `copy.cancelLabel`. */
   @property({ attribute: 'cancel-label' }) accessor cancelLabel: string | undefined;
 
-  /** Blocks confirm while a precondition is unmet. Forwarded to the confirm Button's own `disabled`. Cancel always works. */
+  /**
+   * Blocks confirm while a precondition is unmet. Forwarded to the confirm Button's own
+   * `disabled`, which is focusable-but-inert, so Confirm stays the last Tab stop. Cancel
+   * always works.
+   */
   @property({ type: Boolean, attribute: 'confirm-disabled' }) accessor confirmDisabled = false;
 
   /** Per-instance style overrides: `{ radius: 'radius.md' }`. Locked bindings are ignored. */
@@ -316,7 +370,7 @@ export class DsAlertDialog extends LitElement {
   @state() private accessor closing = false;
 
   @query('dialog') private accessor dialogEl!: HTMLDialogElement | null;
-  @query('.scope') private accessor scopeEl!: DsFocusScope | null;
+  @query('ds-focus-scope') private accessor focusScopeEl!: DsFocusScope | null;
   @query('.scrim') private accessor scrimEl!: HTMLElement | null;
   @query('.surface') private accessor surfaceEl!: HTMLElement | null;
   @query('[data-part="cancelButton"] ds-button') private accessor cancelButtonEl!: HTMLElement | null;
@@ -369,16 +423,14 @@ export class DsAlertDialog extends LitElement {
     if (!this.open && !this.closing) {
       return nothing;
     }
-    // icon is locked: the tone's status color always reaches the Icon's own color hook.
-    const iconColor: TokenRef = `color.status.${this.tone}.icon`;
-    // Other forwards reach the child's overrides only when set, so the CSS hook route keeps working otherwise.
+    // The forwards reach the child's overrides only when the caller set them, so the CSS hook
+    // route — and consumer CSS on the AlertDialog hook — keeps working otherwise.
     const iconSize = this.overrides?.iconSize;
-    const iconOverrides: Partial<Record<IconOverridableBinding, TokenRef | undefined>> =
-      iconSize === undefined ? { color: iconColor } : { color: iconColor, size: iconSize };
+    const iconOverrides: Partial<Record<IconOverridableBinding, TokenRef | undefined>> | undefined =
+      iconSize === undefined ? undefined : { size: iconSize };
     const footerGap = this.overrides?.footerGap;
     const footerOverrides: Partial<Record<StackOverridableBinding, TokenRef | undefined>> | undefined =
       footerGap === undefined ? undefined : { gap: footerGap };
-    const confirmVariant = this.tone === 'danger' ? 'danger' : 'primary';
 
     return html`
       <dialog
@@ -391,41 +443,47 @@ export class DsAlertDialog extends LitElement {
         @close=${this.handleNativeClose}
       >
         <div class="scrim" part="scrim" data-part="scrim"></div>
-        <ds-focus-scope class="scope" part="focusScope" data-part="focusScope" .trapped=${true} .restoreFocus=${true}>
-          <div class="surface" part="surface" data-part="surface">
-            <div class="row">
-              <div class="icon" part="icon" data-part="icon" aria-hidden="true">
-                <ds-icon name=${this.tone} .overrides=${iconOverrides}></ds-icon>
+        <ds-focus-scope auto-focus="none" .trapped=${true} .restoreFocus=${true}>
+          <div class="scope" part="focusScope" data-part="focusScope">
+            <div class="surface" part="surface" data-part="surface">
+              <!-- The icon-and-text row is AlertDialog-owned and carries no part: it only holds iconGap. -->
+              <div class="row">
+                <!-- Decorative: the heading and description already carry the tone. -->
+                <span class="icon" part="icon" data-part="icon" aria-hidden="true">
+                  <ds-icon name=${this.tone} .overrides=${iconOverrides}></ds-icon>
+                </span>
+                <div class="text">
+                  <div part="heading" data-part="heading">
+                    <ds-heading level="2">${this.heading}</ds-heading>
+                  </div>
+                  <div part="description" data-part="description">
+                    <ds-text tone="muted">${this.description}</ds-text>
+                  </div>
+                </div>
               </div>
-              <div class="text">
-                <div part="heading" data-part="heading">
-                  <ds-heading level="2">${this.heading}</ds-heading>
-                </div>
-                <div part="description" data-part="description">
-                  <ds-text tone="muted">${this.description}</ds-text>
-                </div>
+              <div class="footer" part="footer" data-part="footer">
+                <ds-stack direction="horizontal" gap="tight" justify="end" .overrides=${footerOverrides}>
+                  <!-- Cancel first in DOM order: the first focusable, focused on open; justify end
+                       puts the confirming action at the visual end of the row. -->
+                  <span class="action" part="cancelButton" data-part="cancelButton">
+                    <ds-button
+                      variant="secondary"
+                      size="md"
+                      label=${this.cancelLabel ?? COPY_CANCEL_LABEL}
+                      @press=${this.handleCancelPress}
+                    ></ds-button>
+                  </span>
+                  <span class="action" part="confirmButton" data-part="confirmButton">
+                    <ds-button
+                      variant=${CONFIRM_VARIANT[this.tone]}
+                      size="md"
+                      label=${this.confirmLabel}
+                      ?disabled=${this.confirmDisabled}
+                      @press=${this.handleConfirmPress}
+                    ></ds-button>
+                  </span>
+                </ds-stack>
               </div>
-            </div>
-            <div class="footer" part="footer" data-part="footer">
-              <ds-stack direction="horizontal" justify="end" .overrides=${footerOverrides}>
-                <div part="cancelButton" data-part="cancelButton">
-                  <ds-button
-                    variant="secondary"
-                    size="md"
-                    label=${this.cancelLabel ?? COPY_CANCEL_LABEL}
-                    @press=${this.handleCancelPress}
-                  ></ds-button>
-                </div>
-                <div part="confirmButton" data-part="confirmButton">
-                  <ds-button
-                    variant=${confirmVariant}
-                    size="md"
-                    label=${this.confirmLabel}
-                    ?disabled=${this.confirmDisabled}
-                    @press=${this.handleConfirmPress}
-                  ></ds-button>
-                </div>
-              </ds-stack>
             </div>
           </div>
         </ds-focus-scope>
@@ -436,6 +494,9 @@ export class DsAlertDialog extends LitElement {
   private readonly handleCancel = (event: Event): void => {
     // The consumer owns `open`: never let the browser close the <dialog> on its own.
     event.preventDefault();
+    if (!this.open) {
+      return;
+    }
     // A non-cancelable cancel (Chromium without user activation) is followed by a native close.
     this.escapeReported = !event.cancelable;
     this.dispatchCancel('escape');
@@ -444,6 +505,9 @@ export class DsAlertDialog extends LitElement {
   private readonly handleNativeClose = (): void => {
     if (this.closingProgrammatically) {
       this.closingProgrammatically = false;
+      return;
+    }
+    if (!this.open) {
       return;
     }
     // The browser closed the <dialog> itself. If no `cancel` announced it, that was Escape too.
@@ -482,11 +546,13 @@ export class DsAlertDialog extends LitElement {
     if (!dialog.open) {
       dialog.showModal();
     }
-    await this.scopeEl?.updateComplete;
+    // The composed buttons render their own <button> after this update.
+    await this.focusScopeEl?.updateComplete;
     if (!this.open || this.closing) {
       return;
     }
-    // Initial focus on Cancel, so Enter pressed reflexively never confirms.
+    // Initial focus on Cancel, placed here rather than by the scope (auto-focus `none`), whose
+    // update runs while the <dialog> is still closed and cannot take focus.
     this.cancelButtonEl?.focus();
   }
 

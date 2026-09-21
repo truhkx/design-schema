@@ -72,6 +72,15 @@ export const NotDismissible: Story = {
 
 export const DragToDismissOff: Story = { args: { dragToDismiss: false } };
 
+/** Nothing left for the header to hold — no visible heading, no handle, no close button — so it is not rendered. */
+export const HiddenHeadingNotDismissible: Story = {
+  args: {
+    hideHeading: true,
+    dismissible: false,
+    footer: <Button label="Done" variant="primary" size="sm" />,
+  },
+};
+
 /* examples */
 export const Filters: Story = {
   args: {

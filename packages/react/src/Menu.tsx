@@ -60,6 +60,7 @@ export type MenuOverridableBinding =
   | 'popupOffset'
   | 'typeaheadReset'
   | 'maxHeight'
+  | 'gutter'
   | 'minWidth'
   | 'itemPaddingBlock'
   | 'itemPaddingInline'
@@ -86,6 +87,7 @@ const OVERRIDE_HOOK: Record<MenuOverridableBinding, string> = {
   popupOffset: '--ds-menu-popup-offset',
   typeaheadReset: '--ds-menu-typeahead-reset',
   maxHeight: '--ds-menu-max-height',
+  gutter: '--ds-menu-gutter',
   minWidth: '--ds-menu-min-width',
   itemPaddingBlock: '--ds-menu-item-padding-block',
   itemPaddingInline: '--ds-menu-item-padding-inline',
@@ -124,6 +126,21 @@ function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
     ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
     : false;
+}
+
+/**
+ * Reads a resolved length custom property in px (`popupOffset`, `gutter`): a rem value is multiplied
+ * by the root font size. `null` when it cannot be read — no stylesheet loaded, or not a length.
+ */
+function readLengthVar(element: Element, name: string): number | null {
+  const raw = getComputedStyle(element).getPropertyValue(name).trim();
+  const value = Number.parseFloat(raw);
+  if (!Number.isFinite(value)) return null;
+  if (raw.endsWith('rem')) {
+    const rootSize = Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
+    return Number.isFinite(rootSize) ? value * rootSize : null;
+  }
+  return raw.endsWith('px') || /^[\d.]+$/.test(raw) ? value : null;
 }
 
 /** Reads a resolved CSS `<time>` value (`"800ms"`, `"0.8s"`) as milliseconds; 0 when unresolvable. */
@@ -171,6 +188,11 @@ const TABBABLE_SELECTOR = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(',');
 
+/** Whether focus can be parked on this element — an `anchor` is any element, and need not take focus. */
+function isFocusable(element: HTMLElement): boolean {
+  return element.matches(TABBABLE_SELECTOR) || element.tabIndex >= 0;
+}
+
 /**
  * Focuses the tabbable element after (or before) `from` in document order, skipping the popup. `from`
  * need not be tabbable itself (an `anchor` stands in for the trigger), and its own descendants are
@@ -190,15 +212,27 @@ function focusAdjacent(from: HTMLElement, exclude: HTMLElement | null, direction
 
 type ResolvedPosition = { style: CSSProperties; vertical: 'top' | 'bottom' };
 
+/** minWidth's runtime floor: the trigger's measured width. `0px` in `anchor` mode, which has no floor. */
+const TRIGGER_WIDTH_HOOK = '--ds-menu-trigger-width';
+
 /**
- * Places the popup from the anchor rect for `placement`, flipping either axis when it would overflow.
- * `offset` (popupOffset, resolved) is part of the vertical flip check; the gap itself is the popup's
- * block margin, so a flipped popup keeps it on its new side.
+ * Places the popup from the anchor rect for `placement`. Only the block side flips (bottom and top
+ * swap) when the popup would overflow; `start` and `end` never flip — they resolve against the layout
+ * direction (in right-to-left `start` is the right edge) and the popup is shifted inline instead so it
+ * stays `gutter` away from the side edges. `offset` (popupOffset, resolved) is part of the flip check;
+ * the gap itself is the popup's block margin, so a flipped popup keeps it on its new side.
  */
-function computePosition(anchorRect: DOMRect, popupRect: DOMRect, placement: MenuPlacement, offset: number): ResolvedPosition {
+function computePosition(
+  anchorRect: DOMRect,
+  popupRect: DOMRect,
+  placement: MenuPlacement,
+  offset: number,
+  gutter: number,
+  rtl: boolean,
+): ResolvedPosition {
   const viewportWidth = window.innerWidth;
   const viewportHeight = window.innerHeight;
-  const [preferredVertical, preferredHorizontal] = placement.split('-') as ['bottom' | 'top', 'start' | 'end'];
+  const [preferredVertical, side] = placement.split('-') as ['bottom' | 'top', 'start' | 'end'];
   const needed = popupRect.height + offset;
 
   let vertical = preferredVertical;
@@ -208,18 +242,17 @@ function computePosition(anchorRect: DOMRect, popupRect: DOMRect, placement: Men
     vertical = 'bottom';
   }
 
-  let horizontal = preferredHorizontal;
-  if (horizontal === 'start' && anchorRect.left + popupRect.width > viewportWidth && anchorRect.right - popupRect.width >= 0) {
-    horizontal = 'end';
-  } else if (horizontal === 'end' && anchorRect.right - popupRect.width < 0 && anchorRect.left + popupRect.width <= viewportWidth) {
-    horizontal = 'start';
-  }
+  // `start` is the anchor's leading edge: its left in left-to-right, its right in right-to-left.
+  const alignsToLeadingEdge = rtl ? side === 'end' : side === 'start';
+  const preferredLeft = alignsToLeadingEdge ? anchorRect.left : anchorRect.right - popupRect.width;
+  // Shifted, never flipped: clamped into the gutter on both sides (the near edge wins when the popup
+  // is wider than the space between them).
+  const furthestLeft = Math.max(gutter, viewportWidth - gutter - popupRect.width);
+  const left = Math.min(Math.max(preferredLeft, gutter), furthestLeft);
 
-  const style: Record<string, string | number> = { '--ds-menu-trigger-width': `${anchorRect.width}px` };
+  const style: Record<string, string | number> = { left };
   if (vertical === 'bottom') style.top = anchorRect.bottom;
   else style.bottom = viewportHeight - anchorRect.top;
-  if (horizontal === 'start') style.left = anchorRect.left;
-  else style.right = viewportWidth - anchorRect.right;
   return { style: style as CSSProperties, vertical };
 }
 
@@ -247,20 +280,31 @@ export interface MenuProps extends Omit<ComponentPropsWithoutRef<'div'>, 'childr
   triggerIcon?: MenuTriggerIcon | undefined;
   /**
    * Render the trigger as an icon-only Button using `triggerIcon`; `label` is still required. With
-   * `triggerIcon: none` there would be nothing visible to press, so that pairing warns in development (once).
+   * `triggerIcon: none` there would be nothing visible to press, so that pairing warns in development
+   * (once), unless `anchor` is set (there is no trigger then). It is the only development warning Menu
+   * issues — no warning for empty items, a missing label or an uncontrolled anchor.
    */
   iconOnly?: boolean | undefined;
-  /** Preferred position of the popup relative to the trigger; flips automatically when it would overflow the viewport. */
+  /**
+   * Preferred position of the popup relative to the trigger (or `anchor`). Only the block side flips
+   * (bottom and top swap) when the popup would overflow the viewport; `start` and `end` never flip.
+   * They resolve against the layout direction (in right-to-left `start` is the right edge), and the
+   * popup is shifted inline instead so it stays `gutter` away from the side edges.
+   */
   placement?: MenuPlacement | undefined;
   /**
    * Controlled open state (the parent flips it from onOpenChange). Omit for an uncontrolled menu, which
-   * starts closed; there is no defaultOpen. A controlled menu hides, and returns focus to the trigger,
-   * only when `open` becomes false.
+   * starts closed; there is no defaultOpen. A controlled menu hides only when `open` becomes false — a
+   * parent that never flips it keeps the menu open. Focus on close follows the reason; a close the menu
+   * did not request moves focus to the trigger only when focus is inside the popup at that moment.
    */
   open?: boolean | undefined;
   /**
    * Position the popup relative to this element instead of rendering a trigger; the trigger part is
-   * omitted and `open` must be controlled. Used by ActionSheet above its breakpoint and by context menus.
+   * omitted and `open` must be controlled. Used by ActionSheet above its breakpoint and by context
+   * menus. The anchor stands in for the trigger: a pointerdown on it is not `outside` and focus moving
+   * onto it is not `focus-out`, and focus that would return to the trigger returns to the element that
+   * had focus when the menu opened.
    */
   anchor?: RefObject<HTMLElement | null> | undefined;
   /** An item was chosen; receives its `id`. The menu closes itself first. */
@@ -325,6 +369,8 @@ export function Menu({
   });
   const warnedRef = useRef(false);
   const swallowSpaceKeyUpRef = useRef(false);
+  // The last position written, so a scroll that does not move the popup does not re-render it.
+  const lastPositionRef = useRef('');
 
   const latest = useRef({ items, placement });
   latest.current = { items, placement };
@@ -389,6 +435,23 @@ export function Menu({
     itemRefs.current.get(id)?.focus();
   };
 
+  /**
+   * The item that actually holds focus. The menu moves real focus rather than pointing at an item
+   * with aria-activedescendant, so focus is the source of truth: it can land on an item without
+   * passing through `focusAction` (a click, a screen reader, a consumer calling `focus()`), and the
+   * arrows, Home/End and typeahead must all move from wherever it really is, not from the last item
+   * this component happened to highlight. `activeId` only backs the roving tabindex.
+   */
+  const focusedActionId = (): string | null => {
+    const active = document.activeElement;
+    if (active instanceof HTMLElement) {
+      for (const [id, element] of itemRefs.current) {
+        if (element === active || element.contains(active)) return id;
+      }
+    }
+    return activeId;
+  };
+
   const activateAction = (action: MenuAction) => {
     if (action.disabled) return;
     // The menu closes itself first: onOpenChange(false, 'action') precedes onAction.
@@ -404,12 +467,20 @@ export function Menu({
       const opener = openerRef.current;
       const from = anchorElement();
       if (opener || from) {
-        if (focusAfter === 'opener' || (focusAfter === null && focusInsideRef.current)) opener?.focus();
-        else if ((focusAfter === 'next' || focusAfter === 'previous') && from) focusAdjacent(from, null, focusAfter);
+        // `escape` and `action` return focus to the trigger; `tab-out` follows the Tab rule; `trigger`,
+        // `outside` and `focus-out` leave it alone — except that a popup hiding with focus still inside
+        // it (including a controlled close the menu did not request) hands focus back to the trigger,
+        // so it never drops to the page body.
+        if (focusAfter === 'next' || focusAfter === 'previous') {
+          if (from) focusAdjacent(from, null, focusAfter);
+        } else if (focusAfter === 'opener' || focusInsideRef.current) {
+          opener?.focus();
+        }
       }
       focusAfterCloseRef.current = null;
       focusInsideRef.current = false;
       openerRef.current = null;
+      lastPositionRef.current = '';
       setEntered(false);
       return undefined;
     }
@@ -423,10 +494,28 @@ export function Menu({
     const reposition = () => {
       const target = anchor?.current ?? triggerRef.current;
       if (!target) return;
-      // popupOffset is read through its hook, resolved by the popup's block margin.
-      const offset = parseFloat(getComputedStyle(popup).marginBlockStart) || 0;
-      const result = computePosition(target.getBoundingClientRect(), popup.getBoundingClientRect(), latest.current.placement, offset);
-      setPopupStyle(result.style);
+      // The trigger width is only known at runtime, so the floor is measured here and applied before
+      // the popup is measured; with `anchor` there is no trigger-width floor.
+      const triggerWidth = anchor ? '0px' : `${target.getBoundingClientRect().width}px`;
+      popup.style.setProperty(TRIGGER_WIDTH_HOOK, triggerWidth);
+      // popupOffset and gutter are read in px from the popup's resolved hooks (rem × root font size).
+      const offset = readLengthVar(popup, OVERRIDE_HOOK.popupOffset) ?? 0;
+      const gutter = readLengthVar(popup, OVERRIDE_HOOK.gutter) ?? 0;
+      const rtl = getComputedStyle(target).direction === 'rtl';
+      const result = computePosition(
+        target.getBoundingClientRect(),
+        popup.getBoundingClientRect(),
+        latest.current.placement,
+        offset,
+        gutter,
+        rtl,
+      );
+      // Converging write: reposition runs on every scroll and resize event, so an unchanged position
+      // must not re-render.
+      const next = `${result.vertical}|${triggerWidth}|${JSON.stringify(result.style)}`;
+      if (next === lastPositionRef.current) return;
+      lastPositionRef.current = next;
+      setPopupStyle({ ...result.style, [TRIGGER_WIDTH_HOOK]: triggerWidth } as CSSProperties);
       setVertical(result.vertical);
     };
     reposition();
@@ -491,13 +580,21 @@ export function Menu({
   };
 
   const handleTriggerKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
-    if (open) return;
+    const enabled = flattenActions(items).filter((action) => !action.disabled);
     if (event.key === 'ArrowDown') {
       event.preventDefault();
-      openMenu('first', 'trigger');
+      // On an already open menu the arrows just move focus in, first or last.
+      if (!open) openMenu('first', 'trigger');
+      else if (enabled[0]) focusAction(enabled[0].id);
     } else if (event.key === 'ArrowUp') {
       event.preventDefault();
-      openMenu('last', 'trigger');
+      if (!open) openMenu('last', 'trigger');
+      else if (enabled[enabled.length - 1]) focusAction(enabled[enabled.length - 1]!.id);
+    } else if (event.key === 'Escape' && open) {
+      // Escape on the trigger while the menu is open closes it too; focus stays where it is.
+      event.preventDefault();
+      event.stopPropagation();
+      closeMenu('escape', 'none');
     }
   };
 
@@ -535,9 +632,33 @@ export function Menu({
     }
   };
 
+  /**
+   * Tab and Shift+Tab close and let the browser carry on. The key is not prevented when there is
+   * somewhere to park focus — the trigger, or a focusable `anchor` standing in for it: every item
+   * drops to tabindex -1 and focus moves there, so the browser's own Tab continues from that point
+   * and a popup a controlled parent still shows holds no tab stop. Only an unfocusable anchor makes
+   * the menu move focus itself, to the first tabbable after (Tab) or last before (Shift+Tab) it.
+   */
+  const handleTab = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    const anchorTarget = anchor?.current ?? null;
+    const park = triggerRef.current ?? (anchorTarget && isFocusable(anchorTarget) ? anchorTarget : null);
+    if (park) {
+      for (const element of itemRefs.current.values()) {
+        // Converging write: a same-value tabIndex assignment still queues a mutation record.
+        if (element.tabIndex !== -1) element.tabIndex = -1;
+      }
+      setActiveId(null);
+      park.focus();
+      closeMenu('tab-out', 'none');
+      return;
+    }
+    event.preventDefault();
+    closeMenu('tab-out', event.shiftKey ? 'previous' : 'next');
+  };
+
   const handleListKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     const enabled = flattenActions(items).filter((action) => !action.disabled);
-    const currentIndex = enabled.findIndex((action) => action.id === activeId);
+    const currentIndex = enabled.findIndex((action) => action.id === focusedActionId());
 
     switch (event.key) {
       case 'ArrowDown': {
@@ -580,14 +701,17 @@ export function Menu({
         closeMenu('escape', 'opener');
         break;
       case 'Tab':
-        event.preventDefault();
-        closeMenu('tab-out', event.shiftKey ? 'previous' : 'next');
+        handleTab(event);
         break;
-      default:
-        if (/^[a-z]$/i.test(event.key) && !event.metaKey && !event.ctrlKey && !event.altKey && enabled.length > 0) {
+      default: {
+        const char = event.key;
+        // Typeahead takes any single printable character (letters of any script and digits, not only
+        // a–z); Space stays activation, and keys held with Ctrl, Meta or Alt are ignored.
+        if (char.length === 1 && char !== ' ' && !event.metaKey && !event.ctrlKey && !event.altKey && enabled.length > 0) {
           event.preventDefault();
-          handleTypeahead(event.key, enabled, currentIndex);
+          handleTypeahead(char, enabled, currentIndex);
         }
+      }
     }
   };
 
@@ -603,6 +727,12 @@ export function Menu({
     if (!next) return; // Pointer presses on non-focusable ground are handled by pointerdown; window blur by its listener.
     if (anchorElement()?.contains(next)) return;
     closeMenu('focus-out', 'none');
+  };
+
+  // The one roving tabindex follows real focus, however the item got it. Converging write: React bails
+  // out of a same-value setState, so this cannot loop with the re-render that moves the tabindex.
+  const handleItemFocus = (action: MenuAction) => {
+    if (action.id !== activeId) setActiveId(action.id);
   };
 
   const handleItemMouseEnter = (action: MenuAction) => {
@@ -635,6 +765,7 @@ export function Menu({
         tabIndex={action.id === activeId ? 0 : -1}
         aria-disabled={action.disabled ? 'true' : undefined}
         className={classes}
+        onFocus={() => handleItemFocus(action)}
         onMouseEnter={() => handleItemMouseEnter(action)}
         onClick={handleItemClick(action)}
       >
@@ -675,9 +806,15 @@ export function Menu({
   const icon = triggerIcon === 'none' ? undefined : <Icon name={triggerIcon} inline />;
   const overrideStyle = overrides ? overridesToStyle(overrides) : undefined;
   const popupClasses = ['ds-menu__popup', entered ? 'ds-menu__popup--entered' : null].filter(Boolean).join(' ');
+  // `className` and `style` are not in MenuProps; one that arrives through an untyped spread is still
+  // dropped, since `overrides` is the only per-instance styling.
+  const { className: _className, style: _style, ...rootProps } = rest as typeof rest & {
+    className?: unknown;
+    style?: unknown;
+  };
 
   return (
-    <div {...rest} data-ds="Menu" className="ds-menu">
+    <div {...rootProps} data-ds="Menu" className="ds-menu">
       {anchor ? null : (
         <span data-part="trigger" className="ds-menu__trigger">
           <Button
@@ -690,7 +827,7 @@ export function Menu({
             leadingIcon={iconOnly ? icon : undefined}
             trailingIcon={iconOnly ? undefined : icon}
             aria-haspopup="menu"
-            aria-expanded={open ? 'true' : 'false'}
+            expanded={open}
             aria-controls={open ? listId : undefined}
             onClick={handleTriggerClick}
             onKeyDown={handleTriggerKeyDown}

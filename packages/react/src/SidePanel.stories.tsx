@@ -82,7 +82,8 @@ export const HiddenHeading: Story = { args: { open: true, hideHeading: true } };
 /** hideHeading with no close button: the header part is not rendered and the hidden title leads the column. */
 export const HiddenHeadingNotDismissible: Story = { args: { open: true, hideHeading: true, dismissible: false } };
 
-/* examples */
+/* examples — each starts from blank args, never from Default's or the meta args: a prop absent from
+   the doc's `given` takes its default, so `trigger` is cleared where the example names none. */
 export const NavigationDrawer: Story = {
   args: {
     trigger: menuTrigger,
@@ -117,6 +118,7 @@ export const Filters: Story = {
 
 export const Cart: Story = {
   args: {
+    trigger: undefined,
     open: true,
     heading: 'Your cart',
     children: (
@@ -137,6 +139,7 @@ export const Cart: Story = {
 
 export const DetailPanel: Story = {
   args: {
+    trigger: undefined,
     open: true,
     heading: 'Order details',
     children: (

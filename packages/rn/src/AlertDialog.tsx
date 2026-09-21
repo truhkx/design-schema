@@ -33,6 +33,7 @@ export type AlertDialogOverridableBinding =
   | 'width'
   | 'gutter'
   | 'layer'
+  | 'rise'
   | 'enter'
   | 'exit';
 
@@ -85,6 +86,12 @@ const TONE = {
  * the question is read; Cancel precedes Confirm in the accessibility order. The tone
  * Icon is decorative and colored through its own `overrides.color`. Scroll lock has
  * no native meaning and is not implemented. Rooted in a Modal, it exposes no ref.
+ *
+ * `inset` is applied once each way so nothing doubles between parts: the surface column
+ * carries the block padding, the icon-and-text row and the footer wrapper the inline
+ * padding. `partGap` is the only space between the two. The `footerGap` and `iconSize`
+ * bindings always reach the composed Stack and Icon through their own `overrides` — the
+ * caller's token when one was passed, the binding's default otherwise.
  */
 export function AlertDialog({
   open,
@@ -123,6 +130,8 @@ export function AlertDialog({
   const width = overrides?.width ? (resolveToken(t, overrides.width) as number) : t.layoutMaxWidthProse;
   const gutter = overrides?.gutter ? (resolveToken(t, overrides.gutter) as number) : t.layoutGutter;
   const layer = overrides?.layer ? (resolveToken(t, overrides.layer) as number) : t.layerDialog;
+  // The distance the surface rises during enter; zero under reduced motion.
+  const rise = overrides?.rise ? (resolveToken(t, overrides.rise) as number) : t.space2;
   const enterDuration = overrides?.enter ? (resolveToken(t, overrides.enter) as number) : t.motionDurationBase;
   const exitDuration = overrides?.exit ? (resolveToken(t, overrides.exit) as number) : t.motionDurationFast;
 
@@ -219,7 +228,7 @@ export function AlertDialog({
     borderRadius: radius,
     ...shadow,
     opacity: progress,
-    transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [t.space2, 0] }) }],
+    transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [rise, 0] }) }],
   };
 
   const surfaceStyle: ViewStyle = {
@@ -229,7 +238,9 @@ export function AlertDialog({
     borderColor,
     backgroundColor: t.colorOverlaySurface,
     overflow: 'hidden',
-    padding: inset,
+    // The block half of `inset`, once at the top and once at the bottom of the column;
+    // the inline half sits on each part, so nothing doubles.
+    paddingVertical: inset,
     gap: partGap,
   };
 
@@ -237,6 +248,7 @@ export function AlertDialog({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: iconGap,
+    paddingHorizontal: inset,
   };
 
   const textGroupStyle: ViewStyle = {
@@ -244,8 +256,13 @@ export function AlertDialog({
     gap: textGap,
   };
 
+  const footerStyle: ViewStyle = {
+    paddingHorizontal: inset,
+  };
+
   const iconOverrides = { color: toneEntry.icon, size: overrides?.iconSize ?? 'font.size.lg' } as const;
-  const footerOverrides = overrides?.footerGap ? { gap: overrides.footerGap } : undefined;
+  // The forward always reaches the Stack: the override when the caller set one, the binding's own token otherwise.
+  const footerOverrides = { gap: overrides?.footerGap ?? 'layout.gap.tight' } as const;
 
   return (
     <Modal visible transparent animationType="none" onRequestClose={handleEscape} statusBarTranslucent>
@@ -280,7 +297,7 @@ export function AlertDialog({
                     </View>
                   </View>
                 </View>
-                <View testID="AlertDialog.footer">
+                <View style={footerStyle} testID="AlertDialog.footer">
                   <Stack direction="horizontal" gap="tight" justify="end" overrides={footerOverrides}>
                     <View testID="AlertDialog.cancelButton">
                       <Button

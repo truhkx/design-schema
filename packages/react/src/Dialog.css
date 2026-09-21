@@ -9,6 +9,7 @@
   --ds-dialog-radius: var(--radius-lg);
   --ds-dialog-inset: var(--layout-inset-lg);
   --ds-dialog-part-gap: var(--layout-gap-loose);
+  --ds-dialog-gutter: var(--layout-gutter);
   --ds-dialog-header-gap: var(--layout-gap-normal);
   --ds-dialog-footer-gap: var(--layout-gap-tight);
   --ds-dialog-description-gap: var(--layout-gap-tight);
@@ -60,15 +61,24 @@
   transition-timing-function: var(--motion-easing-standard);
 }
 
-/* surface → color.overlay.surface (locked); border, borderWidth, radius, shadow, partGap. */
+/* focusScope: the Dialog-owned part element inside FocusScope, wrapping the surface. Layout only. */
+.ds-dialog__scope {
+  display: block;
+  min-inline-size: 0;
+}
+
+/* surface → color.overlay.surface (locked); border, borderWidth, radius, shadow, partGap.
+   The surface column carries the inset as block padding once at the top and once at the bottom. */
 .ds-dialog__surface {
   box-sizing: border-box;
   position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--ds-dialog-part-gap);
-  max-inline-size: calc(100vw - 2 * var(--layout-gutter));
-  max-block-size: calc(100vh - 2 * var(--layout-gutter));
+  padding-block: var(--ds-dialog-inset);
+  /* gutter: the minimum space between the surface and the viewport edge. */
+  max-inline-size: calc(100vw - 2 * var(--ds-dialog-gutter));
+  max-block-size: calc(100dvh - 2 * var(--ds-dialog-gutter));
   background-color: var(--color-overlay-surface);
   border-style: solid;
   border-width: var(--ds-dialog-border-width);
@@ -97,13 +107,14 @@
 .ds-dialog--md .ds-dialog__surface { inline-size: calc(var(--ds-dialog-width-md) * 0.75); }
 .ds-dialog--lg .ds-dialog__surface { inline-size: var(--ds-dialog-width-lg); }
 
-/* header: inset padding; headerGap between the titles group and the close button. */
+/* header: inline inset only — the surface owns the block padding, so nothing doubles between parts.
+   headerGap sits between the titles group and the close button. */
 .ds-dialog__header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--ds-dialog-header-gap);
-  padding: var(--ds-dialog-inset);
+  padding-inline: var(--ds-dialog-inset);
   flex: 0 0 auto;
 }
 
@@ -145,22 +156,22 @@
 }
 
 /* body: the only region that scrolls, so header and footer stay put. */
-.ds-dialog__scroll {
+.ds-dialog__body {
   flex: 1 1 auto;
   min-block-size: 0;
   overflow: auto;
 }
 
-/* inset reaches the body Box through its own hooks, as footerGap reaches the Stack below. */
-.ds-dialog__scroll > .ds-box {
-  --ds-box-padding-block: var(--ds-dialog-inset);
+/* inset reaches the body Box as inline padding only, as footerGap reaches the Stack below;
+   the Box keeps zero block padding, which the surface's block padding already provides. */
+.ds-dialog__body > .ds-box {
   --ds-box-padding-inline: var(--ds-dialog-inset);
 }
 
-/* footer: end-aligned action row; the Stack's own gap hook reads footerGap. */
+/* footer: end-aligned action row, inline inset only; the Stack's own gap hook reads footerGap. */
 .ds-dialog__footer {
   flex: 0 0 auto;
-  padding: var(--ds-dialog-inset);
+  padding-inline: var(--ds-dialog-inset);
 }
 
 .ds-dialog__footer > .ds-stack {

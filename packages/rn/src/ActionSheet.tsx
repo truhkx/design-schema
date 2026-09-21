@@ -5,6 +5,7 @@ import {
   Modal,
   PanResponder,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text as RNText,
   View,
@@ -32,7 +33,12 @@ import { toEasing, toLineHeight, useReducedMotion, useTheme } from './theme';
 
 export type ActionSheetActionTone = 'default' | 'danger';
 
-/** One row. `danger` actions are visually distinct and rendered as a group after the others, regardless of their position in the array. */
+/**
+ * One row. `danger` actions are visually distinct and rendered as a group after the
+ * others, regardless of their position in the array. Every optional field also accepts
+ * an explicit `undefined`, since `Menu` builds these objects that way under
+ * `exactOptionalPropertyTypes`.
+ */
 export type ActionSheetAction = {
   id: string;
   label: string;
@@ -72,9 +78,9 @@ export interface ActionSheetProps {
   open: boolean;
   /** What the actions apply to ("Photo.jpg"), shown muted above the list. Also the accessible name; when omitted the name is `copy.defaultLabel`. */
   heading?: string | undefined;
-  /** Two to about eight actions. `danger` actions are visually distinct and grouped last. The count is guidance, not enforced. */
+  /** Two to about eight actions. `danger` actions are visually distinct and grouped last. The count is guidance, not enforced: no dev warning outside that range. */
   actions: ActionSheetAction[];
-  /** Escape, the scrim, the cancel row and the drag all request close. When false the Cancel row, the divider above it and the drag handle are not rendered, the scrim and the drag do nothing, and Escape still reports through `onClose`. */
+  /** Escape, the scrim, the cancel row and the drag all request close. When false the Cancel row, the divider above it and the drag handle are not rendered, the scrim and the drag do nothing, and Escape still reports through `onClose`; with no `heading` either, the header is not rendered at all. */
   dismissible?: boolean | undefined;
   /** Label of the explicit cancel row. Defaults to `copy.cancelLabel`. */
   cancelLabel?: string | undefined;
@@ -91,54 +97,72 @@ const COPY = {
   defaultLabel: 'Actions',
 } as const;
 
-/** Schema constants: `dismissDistance` (ratio of sheet height) and `dismissVelocity` (px/ms, PanResponder's own unit). */
+/** Schema constants without a token; `dragSlop` has one (`space.1`) and is read from the theme. */
 const CONSTANTS = {
-  dismissDistance: 0.25, // literal-ok: schema constant dismissDistance
-  dismissVelocity: 1.5, // literal-ok: schema constant dismissVelocity
+  dismissDistance: 0.25, // literal-ok: schema constant dismissDistance (ratio of sheet height)
+  dismissVelocity: 1.5, // literal-ok: schema constant dismissVelocity (px/ms)
 } as const;
+
+interface DragSample {
+  dy: number;
+  time: number;
+}
 
 /**
  * ActionSheet — "what can I do with this?" A short list of verbs for one item,
- * reached from an overflow button or a long-press, with the dangerous one grouped
+ * reached from an overflow button or a long-press, with the dangerous ones grouped
  * last and an explicit Cancel because thumbs miss.
  *
  * When to use: contextual actions on an item — share, rename, duplicate, delete —
  * opened from an overflow `Button` (`iconOnly`, label "More actions") or a long-press.
- * Keep it to what fits without scrolling; more than eight actions means the item
- * needs its own screen. Put destructive actions last with `tone: "danger"`. Not for
- * navigation, settings with state, choosing a value, or confirming — a danger row
- * opens an `AlertDialog`, it does not itself confirm.
+ * Keep it to what fits without scrolling; more than eight actions means the item needs
+ * its own screen. Put destructive actions last with `tone: "danger"`. Not for
+ * navigation, for settings with state, for choosing a value, or for confirming — a
+ * danger row opens an `AlertDialog`, it does not itself confirm.
  *
  * Renders a native `Modal` (`visible`, `transparent`, `onRequestClose`,
- * `statusBarTranslucent`) with a full-screen scrim `Pressable` and an `Animated.View`
- * surface (`testID="ActionSheet"`, `role="menu"`, `accessibilityViewIsModal`,
- * `accessibilityLabel={heading ?? copy.defaultLabel}`) anchored to the bottom, sliding
- * up with `enter` and `motion.easing.standard` and down with `exit` and
- * `motion.easing.exit`, the scrim fading alongside (instant under reduced motion). The
- * surface composes `FocusScope` (`trapped`, `restoreFocus`, `autoFocus="none"`), `Text`
- * (`size="sm"`, `tone="muted"`, with `fontFamily`, `titleSize` and `lineHeight`
- * forwarded as its overrides) for the heading, `Icon` for each row's glyph and `Button`
- * (`variant="secondary"`) for the Cancel row — never restyled. Rows are `Pressable`s
- * with `role="menuitem"` and `accessibilityState={{ disabled }}`; a press guard, not
- * the native `disabled` prop, makes disabled rows inert so they stay reachable and are
- * announced as disabled. Once the enter transition ends, accessibility focus moves to
- * the first enabled action in display order.
+ * `statusBarTranslucent`) holding a scrim `Pressable` and, inside a `FocusScope`
+ * (`trapped`, `restoreFocus`, `autoFocus="none"`, `active` following `open`), an
+ * `Animated.View` surface anchored to the bottom that carries `testID="ActionSheet"`,
+ * `role="menu"`, `accessibilityViewIsModal` and
+ * `accessibilityLabel={heading ?? copy.defaultLabel}` — there is no separate
+ * `ActionSheet.surface`. It slides up with `enter` and `motion.easing.standard` and
+ * down with `exit` and `motion.easing.exit`, the scrim fading with the same duration
+ * and easing, instantly under reduced motion. The sheet sizes to its content up to 90%
+ * of the window and the list scrolls inside it.
  *
- * A `PanResponder` on the header (handle plus heading) tracks from the first touch with
- * no slop; released past `dismissDistance` of the measured surface height or faster
- * than `dismissVelocity` it fires `onClose('drag')`, otherwise it springs back with
- * `exit` and `motion.easing.standard` (a tap passes neither threshold, so nothing
- * fires). `dismissible={false}` removes the handle, the drag, the Cancel row and its
- * divider and makes the scrim inert; `onRequestClose` (Android back, hardware Escape)
- * and the VoiceOver escape gesture always report `onClose('escape')`. Choosing an
- * action never closes the sheet itself.
+ * The heading composes `Text` (`size="sm"`, `tone="muted"`) with `fontFamily`,
+ * `titleSize` and `lineHeight` always passed through its `overrides` as the resolved
+ * token — the default or the caller's — since `Text` otherwise sets its own; `Icon`
+ * draws each row's glyph and `Button` (`variant="secondary"`) the Cancel row, each in a
+ * wrapping View carrying the part's testID. Rows are `Pressable`s with `role="menuitem"`
+ * and `accessibilityState={{ disabled }}`; a press guard, not the native `disabled`
+ * prop, makes a disabled row inert so it stays reachable and is announced as disabled.
+ * Once the enter transition ends, accessibility focus moves to the first enabled action
+ * in display order (the default group, then danger). Two dividers, two rules: the
+ * danger-group divider sits among the rows as `role="separator"` and is drawn only when
+ * both groups exist; the cancel divider sits above the Cancel row whenever that row is
+ * rendered and is hidden from assistive technology.
  *
- * Native limits: `Pressable` has no key events, so there are no arrow keys, Home/End
- * or roving tabindex — each row is its own accessibility focus stop and Enter/Space
- * are the platform's own activation. There is no wide presentation: the package's
- * `Menu` renders its own trigger and cannot anchor to an external element, so tablets
- * get the sheet too and `maxWidth` has no effect. Rooted in a native `Modal`, the
- * sheet exposes no ref; callers ref their opener.
+ * A `PanResponder` on the header (handle and heading) claims a move once it passes
+ * `dragSlop` (`space.1`) downward, so a tap is not a drag and nothing fires; the offset
+ * counts from where the slop was crossed, so the surface does not jump, and it follows
+ * the finger even under reduced motion. On release past `dismissDistance` of the
+ * measured surface height, or faster than `dismissVelocity` between the last two move
+ * samples (from `nativeEvent.timestamp`, not PanResponder's averaged `vy`), it fires
+ * `onClose('drag')` and holds the released offset until the consumer's update renders:
+ * `open` false plays the exit from there, `open` still true springs back over `exit`
+ * with `motion.easing.standard`. `dismissible={false}` removes the handle, the drag, the
+ * Cancel row and its divider and makes the scrim inert; `onRequestClose` (Android back,
+ * a hardware Escape) and the VoiceOver escape gesture always report `onClose('escape')`.
+ * Choosing an action never closes the sheet itself.
+ *
+ * Native limits: `Pressable` has no key events, so there are no arrow keys, no Home/End
+ * and no roving tabindex — each row is its own accessibility focus stop reached by swipe
+ * and Enter/Space are the platform's own activation. There is no wide presentation: the
+ * package's `Menu` renders its own trigger and cannot anchor to an external element, so
+ * tablets above `maxWidth` get the sheet too and `maxWidth` has no effect here. Rooted
+ * in a native `Modal`, the sheet exposes no ref; callers ref their opener.
  */
 export function ActionSheet({
   open,
@@ -153,55 +177,84 @@ export function ActionSheet({
   const { tokens: t } = useTheme();
   const reducedMotion = useReducedMotion();
   const { height: windowHeight } = useWindowDimensions();
+
   const resolvedCancelLabel = cancelLabel ?? COPY.cancelLabel;
   const accessibleName = heading ?? COPY.defaultLabel;
 
+  // Kept mounted while the exit animation runs; derived during render so the Modal content exists on the open commit.
   const [mounted, setMounted] = React.useState(open);
-  const progress = React.useRef(new Animated.Value(open ? 1 : 0)).current;
+  if (open && !mounted) {
+    setMounted(true);
+  }
+  // Bumped after a drag dismiss so an effect can read `open` once the consumer's update has rendered.
+  const [dragReleases, setDragReleases] = React.useState(0);
+
+  const progress = React.useRef(new Animated.Value(0)).current;
   const dragY = React.useRef(new Animated.Value(0)).current;
   const surfaceHeightRef = React.useRef(0);
+  const samplesRef = React.useRef<DragSample[]>([]);
+  // Where the slop was crossed; the drag offset counts from there.
+  const grantDyRef = React.useRef(0);
   const itemRefs = React.useRef(new Map<string, ViewInstance>());
-  const openRef = React.useRef(open);
-  openRef.current = open;
 
   const scrimColor = overrides?.scrim ? (resolveToken(t, overrides.scrim) as string) : t.colorOverlayScrim;
   const shadow = overrides?.shadow ? (resolveToken(t, overrides.shadow) as typeof t.shadowOverlay) : t.shadowOverlay;
   const radius = overrides?.radius ? (resolveToken(t, overrides.radius) as number) : t.radiusLg;
-  const itemPaddingBlock = overrides?.itemPaddingBlock ? (resolveToken(t, overrides.itemPaddingBlock) as number) : t.spaceSm;
+  const itemPaddingBlock = overrides?.itemPaddingBlock
+    ? (resolveToken(t, overrides.itemPaddingBlock) as number)
+    : t.spaceSm;
   const itemPaddingInline = overrides?.itemPaddingInline
     ? (resolveToken(t, overrides.itemPaddingInline) as number)
     : t.layoutInsetMd;
   const itemGap = overrides?.itemGap ? (resolveToken(t, overrides.itemGap) as number) : t.layoutGapNormal;
-  const headerPaddingBlock = overrides?.headerPaddingBlock ? (resolveToken(t, overrides.headerPaddingBlock) as number) : t.spaceSm;
+  const headerPaddingBlock = overrides?.headerPaddingBlock
+    ? (resolveToken(t, overrides.headerPaddingBlock) as number)
+    : t.spaceSm;
   const headerGap = overrides?.headerGap ? (resolveToken(t, overrides.headerGap) as number) : t.layoutGapTight;
   const handleHeight = overrides?.handleHeight ? (resolveToken(t, overrides.handleHeight) as number) : t.space1;
   const handleWidth = overrides?.handleWidth ? (resolveToken(t, overrides.handleWidth) as number) : t.space10;
   const handleRadius = overrides?.handleRadius ? (resolveToken(t, overrides.handleRadius) as number) : t.radiusFull;
   const fontFamily = overrides?.fontFamily ? (resolveToken(t, overrides.fontFamily) as string) : t.fontFamilyBody;
   const fontSize = overrides?.fontSize ? (resolveToken(t, overrides.fontSize) as number) : t.fontSizeMd;
-  const lineHeightMultiplier = overrides?.lineHeight ? (resolveToken(t, overrides.lineHeight) as number) : t.fontLineHeightNormal;
+  const lineHeightMultiplier = overrides?.lineHeight
+    ? (resolveToken(t, overrides.lineHeight) as number)
+    : t.fontLineHeightNormal;
   const dividerColor = overrides?.divider ? (resolveToken(t, overrides.divider) as string) : t.colorBorder;
   const dividerWidth = overrides?.dividerWidth ? (resolveToken(t, overrides.dividerWidth) as number) : t.borderWidthThin;
   const layer = overrides?.layer ? (resolveToken(t, overrides.layer) as number) : t.layerSheet;
   const enterDuration = overrides?.enter ? (resolveToken(t, overrides.enter) as number) : t.motionDurationBase;
   const exitDuration = overrides?.exit ? (resolveToken(t, overrides.exit) as number) : t.motionDurationFast;
+  // The schema constant `dragSlop`; a constant, not an overridable binding.
+  const dragSlop = t.space1;
 
-  const normalActions = actions.filter((action) => action.tone !== 'danger');
+  // The handle and the drag only exist where dismissing does something, so no affordance lies.
+  const canDrag = dismissible;
+
+  // Display order: the default group, then the danger group, whatever the array order.
+  const defaultActions = actions.filter((action) => action.tone !== 'danger');
   const dangerActions = actions.filter((action) => action.tone === 'danger');
 
-  React.useEffect(() => {
-    if (open) {
-      setMounted(true);
-    }
-  }, [open]);
-
   const focusFirstEnabledAction = (): void => {
-    const target = [...normalActions, ...dangerActions].find((action) => action.disabled !== true);
+    const target = [...defaultActions, ...dangerActions].find((action) => action.disabled !== true);
     const node = target ? itemRefs.current.get(target.id) : undefined;
     const handle = node ? findNodeHandle(node) : null;
     if (handle != null) {
       AccessibilityInfo.setAccessibilityFocus(handle);
     }
+  };
+
+  const springBack = (): void => {
+    if (reducedMotion || exitDuration === 0) {
+      dragY.setValue(0);
+      return;
+    }
+    // A timing animation, not a spring: the theme's motion never bounces.
+    Animated.timing(dragY, {
+      toValue: 0,
+      duration: exitDuration,
+      easing: toEasing(t.motionEasingStandard),
+      useNativeDriver: false,
+    }).start();
   };
 
   React.useEffect(() => {
@@ -210,7 +263,7 @@ export function ActionSheet({
     }
     if (open) {
       dragY.setValue(0);
-      if (reducedMotion) {
+      if (reducedMotion || enterDuration === 0) {
         progress.setValue(1);
         focusFirstEnabledAction();
         return undefined;
@@ -229,12 +282,12 @@ export function ActionSheet({
       });
       return () => animation.stop();
     }
-    if (reducedMotion) {
+    if (reducedMotion || exitDuration === 0) {
       progress.setValue(0);
       setMounted(false);
       return undefined;
     }
-    // Plays from wherever the surface is, including a drag offset left by a dismiss.
+    // Plays from wherever the surface is, including the offset a drag dismiss left it at.
     const animation = Animated.timing(progress, {
       toValue: 0,
       duration: exitDuration,
@@ -247,10 +300,71 @@ export function ActionSheet({
       }
     });
     return () => animation.stop();
-    // Reacts to the open/closed transition and the mount gate it drives; the
-    // animation's own config and the focus helper are read fresh each run.
+    // Runs on the open/closed transition and the mount gate it drives; the animation
+    // config and the focus helper are read fresh each run.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, mounted, reducedMotion]);
+
+  React.useEffect(() => {
+    // The release and the consumer's `setState` batch into one render, so `open` here is
+    // the consumer's answer to the dismiss: still true means spring back to rest, which
+    // also finishes an enter animation the drag interrupted.
+    if (dragReleases > 0 && open) {
+      springBack();
+    }
+    // Only a drag release triggers this check.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dragReleases]);
+
+  // The responder is created once; it reads the current render's values through this ref.
+  const latest = React.useRef({ dragSlop, windowHeight, onClose, springBack });
+  latest.current = { dragSlop, windowHeight, onClose, springBack };
+
+  const panResponder = React.useRef<PanResponderInstance | null>(null);
+  if (panResponder.current === null) {
+    const claims = (_: GestureResponderEvent, g: PanResponderGestureState): boolean =>
+      g.dy > latest.current.dragSlop && Math.abs(g.dy) > Math.abs(g.dx);
+    panResponder.current = PanResponder.create({
+      // Capture so a drag that started on the heading is taken over by the header — but
+      // only past the slop, so a shorter press is not a drag and nothing fires.
+      onMoveShouldSetPanResponderCapture: claims,
+      onMoveShouldSetPanResponder: claims,
+      onPanResponderGrant: (_: GestureResponderEvent, g: PanResponderGestureState) => {
+        samplesRef.current = [];
+        grantDyRef.current = g.dy;
+      },
+      // Follows the finger even under reduced motion: the drag is user-driven.
+      onPanResponderMove: (event: GestureResponderEvent, g: PanResponderGestureState) => {
+        const offset = Math.max(0, g.dy - grantDyRef.current);
+        dragY.setValue(offset);
+        const sample: DragSample = { dy: offset, time: event.nativeEvent.timestamp };
+        samplesRef.current = [samplesRef.current[samplesRef.current.length - 1] ?? sample, sample];
+      },
+      onPanResponderRelease: (_: GestureResponderEvent, g: PanResponderGestureState) => {
+        const offset = Math.max(0, g.dy - grantDyRef.current);
+        const [previous, last] = samplesRef.current;
+        const elapsed = previous !== undefined && last !== undefined ? last.time - previous.time : 0;
+        // Between the last two move samples, and only downward speed counts.
+        const velocity =
+          previous !== undefined && last !== undefined && elapsed > 0
+            ? Math.max(0, (last.dy - previous.dy) / elapsed)
+            : 0;
+        const sheetHeight = surfaceHeightRef.current > 0 ? surfaceHeightRef.current : latest.current.windowHeight;
+        const dismiss = offset > sheetHeight * CONSTANTS.dismissDistance || velocity > CONSTANTS.dismissVelocity;
+        if (!dismiss) {
+          latest.current.springBack();
+          return;
+        }
+        latest.current.onClose?.('drag');
+        setDragReleases((count) => count + 1);
+      },
+      onPanResponderTerminate: () => latest.current.springBack(),
+    });
+  }
+
+  if (!mounted) {
+    return null;
+  }
 
   const handleScrimPress = (): void => {
     if (dismissible) {
@@ -262,6 +376,8 @@ export function ActionSheet({
     onClose?.('cancel');
   };
 
+  // Android back, a hardware Escape and the VoiceOver escape gesture: always reported,
+  // even when not dismissible; the consumer decides.
   const handleEscape = (): void => {
     onClose?.('escape');
   };
@@ -274,57 +390,6 @@ export function ActionSheet({
     onAction?.(id);
   };
 
-  const springBack = (): void => {
-    if (reducedMotion) {
-      dragY.setValue(0);
-      return;
-    }
-    Animated.timing(dragY, {
-      toValue: 0,
-      duration: exitDuration,
-      easing: toEasing(t.motionEasingStandard),
-      useNativeDriver: false,
-    }).start();
-  };
-
-  // The responder is created once; it reads the current render's values through this ref.
-  const latest = React.useRef({ windowHeight, onClose, springBack });
-  latest.current = { windowHeight, onClose, springBack };
-
-  const panResponder = React.useRef<PanResponderInstance | null>(null);
-  if (panResponder.current === null) {
-    panResponder.current = PanResponder.create({
-      // No separate slop: a touch on the header starts tracking, and a tap passes neither threshold.
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      // Follows the finger even under reduced motion: the drag is user-driven.
-      onPanResponderMove: (_: GestureResponderEvent, g: PanResponderGestureState) => {
-        dragY.setValue(Math.max(0, g.dy));
-      },
-      onPanResponderRelease: (_: GestureResponderEvent, g: PanResponderGestureState) => {
-        const sheetHeight = surfaceHeightRef.current > 0 ? surfaceHeightRef.current : latest.current.windowHeight;
-        const dismiss = g.dy > sheetHeight * CONSTANTS.dismissDistance || g.vy > CONSTANTS.dismissVelocity;
-        if (!dismiss) {
-          latest.current.springBack();
-          return;
-        }
-        latest.current.onClose?.('drag');
-        // Hold the release position for the exit transition; if the consumer keeps
-        // the sheet open, spring back once the update has rendered.
-        setTimeout(() => {
-          if (openRef.current) {
-            latest.current.springBack();
-          }
-        }, 0);
-      },
-      onPanResponderTerminate: () => latest.current.springBack(),
-    });
-  }
-
-  if (!mounted && !open) {
-    return null;
-  }
-
   const hostStyle: ViewStyle = { flex: 1 };
 
   const scrimStyle: Animated.WithAnimatedValue<ViewStyle> = {
@@ -335,19 +400,23 @@ export function ActionSheet({
 
   const anchorStyle: ViewStyle = { flex: 1, justifyContent: 'flex-end', zIndex: layer };
 
-  const entryTranslateY = progress.interpolate({ inputRange: [0, 1], outputRange: [windowHeight, 0] });
-
   const surfaceStyle: Animated.WithAnimatedValue<ViewStyle> = {
     width: '100%',
-    maxHeight: windowHeight * 0.9, // literal-ok: 90% of the viewport, BottomSheet's height: content cap
+    // The sheet sizes to its content up to BottomSheet's `height: content` cap.
+    maxHeight: windowHeight * 0.9, // literal-ok: 90% of the window, BottomSheet's content cap
     borderTopLeftRadius: radius,
     borderTopRightRadius: radius,
     ...shadow,
     backgroundColor: t.colorOverlaySurface,
     overflow: 'hidden',
-    transform: [{ translateY: Animated.add(entryTranslateY, dragY) }],
+    transform: [
+      {
+        translateY: Animated.add(progress.interpolate({ inputRange: [0, 1], outputRange: [windowHeight, 0] }), dragY),
+      },
+    ],
   };
 
+  // The header has no inline binding of its own: it takes the rows' inline padding.
   const headerStyle: ViewStyle = {
     paddingHorizontal: itemPaddingInline,
     paddingVertical: headerPaddingBlock,
@@ -362,11 +431,15 @@ export function ActionSheet({
     backgroundColor: t.colorForegroundMuted,
   };
 
+  // Everything past the cap scrolls; below it the list is exactly as tall as its rows.
+  const listStyle: ViewStyle = { flexGrow: 0, flexShrink: 1 };
+
   const dividerStyle: ViewStyle = {
     borderBottomWidth: dividerWidth,
     borderBottomColor: dividerColor,
   };
 
+  // Its vertical padding is headerPaddingBlock, its inline padding the rows'.
   const cancelRowStyle: ViewStyle = {
     paddingHorizontal: itemPaddingInline,
     paddingVertical: headerPaddingBlock,
@@ -375,11 +448,13 @@ export function ActionSheet({
   const itemRowStyle = (highlighted: boolean, focused: boolean, disabled: boolean): ViewStyle => ({
     flexDirection: 'row',
     alignItems: 'center',
+    // Between icon and label; the rows' own rhythm is itemPaddingBlock, not a gap.
     gap: itemGap,
     minHeight: t.sizeTargetComfortable,
     paddingVertical: itemPaddingBlock,
     paddingHorizontal: itemPaddingInline,
     backgroundColor: highlighted ? t.colorBackgroundSubtle : 'transparent',
+    // Always drawn so the focus ring costs no layout shift.
     borderWidth: t.borderWidthFocus,
     borderColor: focused ? t.colorBorderFocus : 'transparent',
     opacity: disabled ? t.opacityDisabled : 1,
@@ -400,7 +475,7 @@ export function ActionSheet({
       else itemRefs.current.delete(id);
     };
 
-  function renderAction(action: ActionSheetAction): React.JSX.Element {
+  const renderAction = (action: ActionSheetAction): React.JSX.Element => {
     const danger = action.tone === 'danger';
     return (
       <ActionSheetItemRow
@@ -413,22 +488,32 @@ export function ActionSheet({
         onActivate={handleActionPress}
       />
     );
-  }
+  };
 
-  let headingOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> | undefined;
-  if (overrides?.fontFamily !== undefined || overrides?.titleSize !== undefined || overrides?.lineHeight !== undefined) {
-    headingOverrides = { fontFamily: overrides.fontFamily, fontSize: overrides.titleSize, lineHeight: overrides.lineHeight };
-  }
+  // Always sent: Text otherwise applies its own family, size and line height, so the
+  // sheet's resolved value — the default token or the caller's override — is passed on.
+  const headingOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {
+    fontFamily: overrides?.fontFamily ?? 'font.family.body',
+    fontSize: overrides?.titleSize ?? 'font.size.sm',
+    lineHeight: overrides?.lineHeight ?? 'font.lineHeight.normal',
+  };
 
-  const showHeader = dismissible || heading !== undefined;
+  // With nothing to show the header is not rendered at all — no empty padded strip.
+  const showHeader = canDrag || heading !== undefined;
 
   return (
-    <Modal visible={mounted} transparent animationType="none" onRequestClose={handleEscape} statusBarTranslucent>
+    <Modal visible transparent animationType="none" onRequestClose={handleEscape} statusBarTranslucent>
       <View style={hostStyle}>
-        <Animated.View style={scrimStyle} />
-        <Pressable style={StyleSheet.absoluteFill} onPress={handleScrimPress} accessible={false} testID="ActionSheet.scrim" />
+        <Animated.View style={scrimStyle}>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={handleScrimPress}
+            accessible={false}
+            testID="ActionSheet.scrim"
+          />
+        </Animated.View>
         <View style={anchorStyle} pointerEvents="box-none">
-          <FocusScope trapped active={mounted} autoFocus="none" restoreFocus>
+          <FocusScope trapped active={open} autoFocus="none" restoreFocus>
             <Animated.View
               style={surfaceStyle}
               onLayout={handleSurfaceLayout}
@@ -439,9 +524,18 @@ export function ActionSheet({
               testID="ActionSheet"
             >
               {showHeader ? (
-                <View {...(dismissible ? panResponder.current.panHandlers : null)} style={headerStyle} testID="ActionSheet.header">
-                  {dismissible ? (
-                    <View style={handleStyle} accessibilityElementsHidden importantForAccessibility="no" testID="ActionSheet.handle" />
+                <View
+                  {...(canDrag ? panResponder.current.panHandlers : undefined)}
+                  style={headerStyle}
+                  testID="ActionSheet.header"
+                >
+                  {canDrag ? (
+                    <View
+                      style={handleStyle}
+                      accessibilityElementsHidden
+                      importantForAccessibility="no"
+                      testID="ActionSheet.handle"
+                    />
                   ) : null}
                   {heading !== undefined ? (
                     <View testID="ActionSheet.heading">
@@ -452,15 +546,17 @@ export function ActionSheet({
                   ) : null}
                 </View>
               ) : null}
-              <View testID="ActionSheet.list">
-                {normalActions.map(renderAction)}
-                {dangerActions.length > 0 && normalActions.length > 0 ? (
+              <ScrollView style={listStyle} testID="ActionSheet.list">
+                {defaultActions.map(renderAction)}
+                {/* Drawn only when both groups exist, and exposed: it separates the menu's rows. */}
+                {dangerActions.length > 0 && defaultActions.length > 0 ? (
                   <View style={dividerStyle} role="separator" testID="ActionSheet.divider" />
                 ) : null}
                 {dangerActions.map(renderAction)}
-              </View>
+              </ScrollView>
               {dismissible ? (
                 <>
+                  {/* Decorative: it only sets the Cancel row apart from the actions. */}
                   <View
                     style={dividerStyle}
                     accessibilityElementsHidden
@@ -516,18 +612,17 @@ function ActionSheetItemRow({
       onBlur={() => setFocused(false)}
       onHoverIn={() => setHovered(true)}
       onHoverOut={() => setHovered(false)}
-      // itemHover is paint only; RN has no hover on touch, so pressed paints it too.
+      // itemHover is paint only; React Native has no hover on touch, so pressed paints it too.
       style={({ pressed }) => rowStyle(!disabled && (hovered || pressed), focused, disabled)}
       testID="ActionSheet.item"
     >
       {action.icon !== undefined ? (
+        // The glyph is hidden inside the control, never the control itself: the label names the row.
         <View accessibilityElementsHidden importantForAccessibility="no" testID="ActionSheet.itemIcon">
           <Icon name={action.icon} color={iconColor} />
         </View>
       ) : null}
-      <RNText numberOfLines={1} style={labelStyle}>
-        {action.label}
-      </RNText>
+      <RNText style={labelStyle}>{action.label}</RNText>
     </Pressable>
   );
 }

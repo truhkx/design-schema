@@ -3,13 +3,23 @@ import { test, expect, type Page, type Locator } from '@playwright/test';
 
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]):not([data-focus-sentinel]), [role="menuitem"], [role="option"], [role="radio"]';
 
-/** Focusable elements inside the root, in DOM order, crossing shadow roots. */
+/** Focusable elements inside the root, in flat-tree order: light DOM, open shadow roots, and the
+ *  elements a <slot> renders. Following slots is what makes a component whose content is slotted
+ *  report the order the browser actually tabs in — a walk that stops at the <slot> sees only the
+ *  component's own shadow-side controls, so `first` and `last` collapse onto the same element and
+ *  demand opposite behavior of it. React output has neither shadow roots nor slots: it walks as
+ *  before, element for element. */
 async function focusables(page: Page, root: Locator): Promise<number> {
   return root.evaluate((el, sel) => {
     const out: Element[] = [];
-    const walk = (n: Element | ShadowRoot) => {
-      for (const c of Array.from(n.querySelectorAll(sel))) out.push(c);
-      for (const c of Array.from(n.querySelectorAll('*'))) if ((c as HTMLElement).shadowRoot) walk((c as HTMLElement).shadowRoot!);
+    const walk = (n: Element) => {
+      if (n !== el && n.matches(sel)) out.push(n);
+      if (n instanceof HTMLSlotElement) {
+        for (const assigned of n.assignedElements({ flatten: true })) walk(assigned);
+        return;
+      }
+      const scope: Element | ShadowRoot = (n as HTMLElement).shadowRoot ?? n;
+      for (const c of Array.from(scope.children)) walk(c);
     };
     walk(el);
     (window as any).__dsFocusables = out;
@@ -68,12 +78,12 @@ test.describe('Tooltip (lit) keyboard', () => {
   });
   test('Escape: Hides the tooltip without moving focus. (tooltip visible)', async ({ page }) => {
     const root = page.getByRole('tooltip').first();
-    await trigger(page).focus();
+    
     const before = await focusIndex(page, root);
     const stateBefore = await ariaState(page);
     void before; void stateBefore;
     await page.keyboard.press('Escape');
-    await expect(root).toBeHidden();
+    await expect(page.locator('[data-part="popup"]').first()).toBeHidden();
     expect(await focusIndex(page, root)).toBe(before);
   });
 });

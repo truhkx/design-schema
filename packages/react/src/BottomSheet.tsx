@@ -65,7 +65,12 @@ const OVERRIDE_HOOK: Record<BottomSheetOverridableBinding, string> = {
   exit: '--ds-bottom-sheet-exit',
 };
 
-/** Bindings sharing a name with a Dialog binding; the wide presentation forwards them to Dialog's `overrides`. */
+/**
+ * Bindings sharing a name with a Dialog binding; the wide presentation forwards those the caller set
+ * to Dialog's `overrides`, so Dialog keeps its own tokens (its `layer.dialog` included) otherwise.
+ * The handle bindings, `headerPaddingTop` and `handleGap` have no counterpart there, and a locked
+ * binding (`surface`, `maxWidth`, `minTarget`, the focus ring) is never forwarded.
+ */
 const DIALOG_FORWARDED: ReadonlyArray<BottomSheetOverridableBinding & DialogOverridableBinding> = [
   'scrim',
   'shadow',
@@ -97,8 +102,21 @@ const COPY = { closeLabel: 'Close' };
 const DISMISS_DISTANCE = 0.25;
 /** constants.dismissVelocity — downward px/ms at release that dismisses whatever the distance travelled. */
 const DISMISS_VELOCITY = 1.5;
-/** constants.dragSlop — `space.1`, read from the token at gesture time. */
+/** constants.dragSlop — `space.1`, read from the resolved custom property at gesture time. */
 const DRAG_SLOP_TOKEN = '--space-1';
+
+/**
+ * `space.1` in px: the token resolves to a rem length, so it is multiplied by the root font size.
+ * An unresolvable value (no theme stylesheet, jsdom) counts as 0, as the doc says.
+ */
+function resolveDragSlop(element: HTMLElement): number {
+  const raw = getComputedStyle(element).getPropertyValue(DRAG_SLOP_TOKEN).trim();
+  const length = parseFloat(raw);
+  if (!Number.isFinite(length)) return 0;
+  if (!raw.endsWith('rem') && !raw.endsWith('em')) return length;
+  const rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
+  return Number.isFinite(rootFontSize) ? length * rootFontSize : 0;
+}
 
 const FOCUSABLE_SELECTOR = [
   'a[href]',
@@ -139,13 +157,15 @@ function lockScroll(): () => void {
 }
 
 /**
- * maxWidth — `layout.maxWidth.prose`, read from the loaded theme (a media query cannot read a custom
- * property). Wide is `(width > token)`; exactly the token width is still a sheet.
+ * maxWidth — `layout.maxWidth.prose`, read from the loaded theme, since a media query cannot read a
+ * custom property. Wide is `(width > token)`; exactly the token width is still a sheet. When the token
+ * does not resolve (no theme stylesheet, jsdom, SSR) the sheet presentation renders.
  */
 function wideQuery(): MediaQueryList | null {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return null;
   const breakpoint = getComputedStyle(document.documentElement).getPropertyValue('--layout-max-width-prose').trim();
   if (!breakpoint) return null;
+  // literal-ok: the media query text is the resolved token value, not an authored length.
   return window.matchMedia(`(width > ${breakpoint})`);
 }
 
@@ -169,14 +189,20 @@ interface DragSample {
 
 interface DragState {
   pointerId: number;
+  /** Where the pointer went down; the slop is measured from here. */
   startY: number;
+  /** Where the slop was crossed; the drag offset counts from here, so the surface does not jump. */
+  originY: number;
   claimed: boolean;
   previous: DragSample | null;
   last: DragSample | null;
 }
 
-/** idle → dragging (past the slop) → settling (spring back) | held (dismissed, waiting for the consumer). */
-type DragPhase = 'idle' | 'dragging' | 'settling' | 'held';
+/**
+ * idle → dragging (past the slop) → settling (spring back to rest)
+ *                                 | held (dismissed, holding the released offset) → exiting | settling
+ */
+type DragPhase = 'idle' | 'dragging' | 'settling' | 'held' | 'exiting';
 
 export interface BottomSheetProps
   extends Omit<ComponentPropsWithoutRef<'dialog'>, 'children' | 'title' | 'onCancel' | 'onClose' | 'open'> {
@@ -203,20 +229,22 @@ export interface BottomSheetProps
    */
   dismissible?: boolean | undefined;
   /**
-   * Drag the handle (or the header) downward to dismiss: release past 25% of the sheet height, or faster
-   * than 1.5 px/ms, dismisses; otherwise the sheet springs back. The body does not start the gesture;
-   * only the handle and header do, once the pointer has moved `dragSlop` downward. Purely additive: the
-   * handle is rendered only when `dragToDismiss` and `dismissible` are both true. A gesture is never the
-   * only way to dismiss (WCAG 2.5.1); the handle is not a focus stop.
+   * Drag the handle (or the header) downward to dismiss: release past 25% of the sheet height, or
+   * faster than 1.5 px/ms, dismisses; otherwise the sheet springs back. The body does not start the
+   * gesture whatever its scroll position; only the handle and header do, and only once the pointer has
+   * moved `dragSlop` downward, so a tap on the close button still activates it. Purely additive: the
+   * handle is rendered only when `dragToDismiss` and `dismissible` are both true, so there is no drag
+   * affordance where dragging does nothing. A gesture is never the only way to dismiss (WCAG 2.5.1);
+   * the handle is not a focus stop.
    */
   dragToDismiss?: boolean | undefined;
-  /** Requested close with reason: `escape`, `close-button`, `scrim`, `drag`, or `action`. */
+  /** Requested close with reason: `escape`, `close-button`, `scrim`, `drag`, or `action`. The sheet never raises `action` itself; it exists for a consumer's footer action reusing the same handler. */
   onClose?: ((reason: BottomSheetCloseReason) => void) | undefined;
-  /** The user dragged the sheet past the dismiss threshold. Fired before `onClose` with reason drag; provided so analytics can distinguish gestures. It carries no payload. */
+  /** The user dragged the sheet past the dismiss threshold. Fired before `onClose` with reason drag, so analytics can distinguish gestures. It carries no payload — the distance and velocity that triggered it are not part of the contract. */
   onDragDismiss?: (() => void) | undefined;
   /** Portal target. Defaults to `document.body`. A platform prop, not part of the schema. */
   container?: HTMLElement | undefined;
-  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. Bindings Dialog shares are forwarded to it above the breakpoint. */
+  /** Per-instance style overrides: each entry sets the matching CSS hook to that token, inline. Bindings Dialog shares by name are forwarded to it above the breakpoint. */
   overrides?: Partial<Record<BottomSheetOverridableBinding, TokenRef | undefined>> | undefined;
 }
 
@@ -231,8 +259,9 @@ export interface BottomSheetProps
  * actions, ActionSheet is the lighter component.
  *
  * Above the `layout.maxWidth.prose` breakpoint the same props render `Dialog` of size md directly, so
- * the root and `ref` are Dialog's `<dialog>`. Below it `ref` resolves to the sheet's `<dialog>`, null
- * while closed. The sheet never closes itself: every close path calls `onClose` with a reason.
+ * the root and `ref` are Dialog's `<dialog>` and `drag` never fires. Below it `ref` resolves to the
+ * sheet's `<dialog>`, null while closed. The sheet never closes itself: Escape, the close button, a
+ * scrim tap and the drag gesture all call `onClose` with a reason and the consumer flips `open`.
  */
 export function BottomSheet({
   ref,
@@ -273,7 +302,9 @@ export function BottomSheet({
   const footerRef = useRef<HTMLDivElement | null>(null);
   const headingRef = useRef<HTMLHeadingElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
-  const escapeHandledRef = useRef(false);
+  /** True from the moment Escape is reported until the end of the task, so the browser's `cancel` and
+   * `close` for that same key are not reported a second time. */
+  const escapeReportedRef = useRef(false);
   const selfClosingRef = useRef(false);
   const dragRef = useRef<DragState | null>(null);
 
@@ -292,10 +323,10 @@ export function BottomSheet({
     console.warn('BottomSheet: `heading` is required and becomes the accessible name; it must not be empty.');
   }
 
-  // The wide presentation is Dialog's own lifecycle; the sheet's presence just follows `open` there.
+  // The wide presentation is Dialog's own lifecycle, so presence there just follows `open`.
   if (isWide ? present !== open : open && !present) setPresent(open);
 
-  /** Body, then footer, then the close button, then the heading (tabindex -1). */
+  /** Initial focus: the body, then the footer, then the close button, then the heading (tabindex -1). */
   const placeInitialFocus = (): void => {
     const target = firstFocusableIn(bodyRef.current) ?? firstFocusableIn(footerRef.current) ?? closeButtonRef.current;
     if (target) {
@@ -308,14 +339,16 @@ export function BottomSheet({
     headingElement.focus();
   };
 
-  // Narrow open: showModal(), move focus in, reveal on the next frame.
+  // Narrow open: showModal(), move focus in, reveal on the next frame. It also runs when `open`
+  // returns true while the exit transition is still running, which reveals the surface again.
   useLayoutEffect(() => {
     if (!present || isWide) return undefined;
     const dialog = dialogRef.current;
     if (!dialog) return undefined;
     selfClosingRef.current = false;
     if (!dialog.open) {
-      // jsdom implements the `open` IDL attribute but not showModal(); the assignment is the fallback there.
+      // showModal() gives the top layer, Escape and background inertness. jsdom implements the
+      // `open` IDL attribute but not showModal(), so the assignment is the fallback there.
       if (typeof dialog.showModal === 'function') dialog.showModal();
       else dialog.open = true;
     }
@@ -350,12 +383,20 @@ export function BottomSheet({
     return () => surface.removeEventListener('transitionend', handleExited);
   }, [open, present, isWide]);
 
-  // After a drag dismiss the sheet holds the release position until the consumer's update renders:
-  // `open` false exits from there (the offset drops in the same commit as the visible class);
-  // `open` still true springs back.
+  // The released offset stays on the surface until the consumer's next render decides what it means.
   useLayoutEffect(() => {
     const surface = surfaceRef.current;
+
+    // held: the render that follows the `onClose` call has arrived (a setState in the handler is
+    // batched into it). `open` still true springs back; `open` false plays the normal exit.
     if (dragPhase === 'held') {
+      setDragPhase(open ? 'settling' : 'exiting');
+      return undefined;
+    }
+
+    // exiting: `--visible` came off in the same commit, so dropping the inline offset animates the
+    // exit from wherever the finger left the sheet — no momentum, just the exit transition.
+    if (dragPhase === 'exiting') {
       if (open) {
         setDragPhase('settling');
         return undefined;
@@ -364,6 +405,9 @@ export function BottomSheet({
       setDragPhase('idle');
       return undefined;
     }
+
+    // settling: spring back to rest over the exit duration with motion.easing.standard. Clearing the
+    // offset also finishes an interrupted enter animation.
     if (dragPhase !== 'settling') return undefined;
     if (!surface) {
       setDragPhase('idle');
@@ -387,32 +431,19 @@ export function BottomSheet({
     return lockScroll();
   }, [present, isWide]);
 
-  const handleKeyDown = (event: ReactKeyboardEvent<HTMLDialogElement>): void => {
-    rest.onKeyDown?.(event);
-    if (event.key !== 'Escape' || event.defaultPrevented || !open) return;
-    event.preventDefault();
-    escapeHandledRef.current = true;
-    // The browser's `cancel` for this same key follows the keydown's listeners; skip it once.
+  /** Each Escape is reported exactly once, whichever of keydown, `cancel` or `close` reaches us first. */
+  const reportEscape = (): void => {
+    escapeReportedRef.current = true;
+    // The browser's `cancel` and `close` for this same key follow the keydown's listeners; skip them once.
     setTimeout(() => {
-      escapeHandledRef.current = false;
+      escapeReportedRef.current = false;
     }, 0);
-    // Reported even when not dismissible, as in Dialog.
+    // Reported even when not dismissible: Escape is the keyboard user's exit.
     onClose?.('escape');
   };
 
-  const handleCancel = (event: SyntheticEvent<HTMLDialogElement>): void => {
-    // The consumer owns `open`: never let the browser close the sheet, dismissible or not.
-    event.preventDefault();
-    if (escapeHandledRef.current || !open) return;
-    onClose?.('escape');
-  };
-
-  // A non-cancelable `cancel` closes the native dialog anyway; reopen unless the consumer set `open` false.
-  const handleNativeClose = (): void => {
-    if (selfClosingRef.current) {
-      selfClosingRef.current = false;
-      return;
-    }
+  /** Reopen after a close the component did not ask for, and put focus back in. */
+  const reopenAfterNativeClose = (): void => {
     requestAnimationFrame(() => {
       const dialog = dialogRef.current;
       if (!dialog || dialog.open || !latest.current.open) return;
@@ -422,16 +453,46 @@ export function BottomSheet({
     });
   };
 
+  const handleKeyDown = (event: ReactKeyboardEvent<HTMLDialogElement>): void => {
+    rest.onKeyDown?.(event);
+    if (event.key !== 'Escape' || event.defaultPrevented || !open) return;
+    event.preventDefault();
+    if (!escapeReportedRef.current) reportEscape();
+  };
+
+  const handleCancel = (event: SyntheticEvent<HTMLDialogElement>): void => {
+    // The consumer owns `open`: never let the browser close the sheet, dismissible or not.
+    event.preventDefault();
+    if (escapeReportedRef.current || !open) return;
+    reportEscape();
+  };
+
+  // A non-cancelable `cancel` closes the native dialog anyway, and a close watcher can close it with
+  // no `cancel` at all (repeated Escape): report `escape` if nothing else did, then reopen unless the
+  // consumer set `open` false.
+  const handleNativeClose = (): void => {
+    if (selfClosingRef.current) {
+      selfClosingRef.current = false;
+      return;
+    }
+    if (!open) return;
+    if (!escapeReportedRef.current) reportEscape();
+    reopenAfterNativeClose();
+  };
+
   const handleScrimClick = (): void => {
     if (!open || !dismissible) return;
     onClose?.('scrim');
   };
 
-  // minTarget: the close Button keeps its own size; a click on the wrapper outside it clicks the Button.
+  // minTarget: the closeButton wrapper is bigger than the Button, and its extra area activates it.
+  // The wrapper focuses the Button and requests close itself, never reaching into the Button's internals.
   const handleCloseTargetClick = (event: ReactMouseEvent<HTMLSpanElement>): void => {
     const button = closeButtonRef.current;
-    if (!button || button.contains(event.target as Node)) return;
-    button.click();
+    // A click on the Button itself is the Button's own onClick.
+    if (button && button.contains(event.target as Node)) return;
+    button?.focus();
+    onClose?.('close-button');
   };
 
   const canDrag = dragToDismiss && dismissible;
@@ -441,18 +502,30 @@ export function BottomSheet({
   const handleHeaderPointerDown = (event: ReactPointerEvent<HTMLDivElement>): void => {
     if (!canDrag || !open || dragRef.current) return;
     if (event.pointerType === 'mouse' && event.button !== 0) return;
-    dragRef.current = { pointerId: event.pointerId, startY: event.clientY, claimed: false, previous: null, last: null };
+    // No coordinate, no gesture: an environment without Pointer Events must not translate the surface.
+    if (!Number.isFinite(event.clientY)) return;
+    dragRef.current = {
+      pointerId: event.pointerId,
+      startY: event.clientY,
+      originY: event.clientY,
+      claimed: false,
+      previous: null,
+      last: null,
+    };
   };
 
   const handleHeaderPointerMove = (event: ReactPointerEvent<HTMLDivElement>): void => {
     const drag = dragRef.current;
     const surface = surfaceRef.current;
     if (!drag || drag.pointerId !== event.pointerId || !surface) return;
-    const deltaY = event.clientY - drag.startY;
+    if (!Number.isFinite(event.clientY)) return;
     if (!drag.claimed) {
-      const slop = parseFloat(getComputedStyle(surface).getPropertyValue(DRAG_SLOP_TOKEN));
-      if (deltaY < (Number.isNaN(slop) ? 0 : slop) || deltaY <= 0) return;
+      const moved = event.clientY - drag.startY;
+      if (moved <= 0 || moved < resolveDragSlop(surface)) return;
       drag.claimed = true;
+      // The offset counts from where the slop was crossed, so the surface does not jump.
+      drag.originY = event.clientY;
+      // Past the slop the header takes the move over from the child it started on.
       if (typeof event.currentTarget.setPointerCapture === 'function') {
         event.currentTarget.setPointerCapture(event.pointerId);
       }
@@ -461,7 +534,7 @@ export function BottomSheet({
     }
     drag.previous = drag.last;
     drag.last = { y: event.clientY, time: event.timeStamp };
-    surface.style.transform = `translateY(${Math.max(0, deltaY)}px)`;
+    surface.style.transform = `translateY(${Math.max(0, event.clientY - drag.originY)}px)`;
   };
 
   const endDrag = (event: ReactPointerEvent<HTMLDivElement>, cancelled: boolean): void => {
@@ -471,25 +544,29 @@ export function BottomSheet({
     const surface = surfaceRef.current;
     if (!drag.claimed || !surface) return;
 
-    const deltaY = Math.max(0, event.clientY - drag.startY);
+    const travelled = Number.isFinite(event.clientY) ? Math.max(0, event.clientY - drag.originY) : 0;
     const sheetHeight = surface.getBoundingClientRect().height;
-    const pastDistance = sheetHeight > 0 && deltaY > sheetHeight * DISMISS_DISTANCE;
+    const pastDistance = sheetHeight > 0 && travelled > sheetHeight * DISMISS_DISTANCE;
+    // Velocity between the last two move samples before release; only downward speed counts.
     let velocity = 0;
     if (drag.previous && drag.last && drag.last.time > drag.previous.time) {
       velocity = (drag.last.y - drag.previous.y) / (drag.last.time - drag.previous.time);
     }
-    // Only downward speed counts.
     const fastEnough = velocity > DISMISS_VELOCITY;
 
     if (cancelled || !open || !(pastDistance || fastEnough)) {
       setDragPhase('settling');
       return;
     }
+    // Hold the released offset until the consumer's next render, then exit or spring back from there.
     setDragPhase('held');
     onDragDismiss?.();
     onClose?.('drag');
   };
 
+  // Above the breakpoint the sheet *is* a Dialog: the root carries Dialog's own hooks, `ref` resolves
+  // to its <dialog>, and its `escape` / `close-button` / `scrim` / `action` reasons pass straight
+  // through. `drag` has no Dialog source, and Dialog's `onOpened` is not re-emitted.
   if (isWide) {
     let dialogOverrides: Partial<Record<DialogOverridableBinding, TokenRef | undefined>> | undefined;
     for (const binding of DIALOG_FORWARDED) {
@@ -522,14 +599,35 @@ export function BottomSheet({
     `ds-bottom-sheet--${height}`,
     canDrag ? 'ds-bottom-sheet--draggable' : null,
     visible && open ? 'ds-bottom-sheet--visible' : null,
-    dragPhase === 'dragging' || dragPhase === 'held' ? 'ds-bottom-sheet--dragging' : null,
+    dragPhase === 'dragging' ? 'ds-bottom-sheet--dragging' : null,
     dragPhase === 'settling' ? 'ds-bottom-sheet--settling' : null,
   ]
     .filter(Boolean)
     .join(' ');
 
+  const insetOverride = overrides?.inset;
   const footerGapOverride = overrides?.footerGap;
   const hasFooter = footer !== undefined && footer !== null && footer !== false;
+
+  // The handle is a drag affordance, so it only exists where the gesture does.
+  const showHandle = canDrag;
+  const showClose = dismissible;
+  /** A header with no visible heading, no handle and no close button is not rendered. */
+  const showHeader = !hideHeading || showHandle || showClose;
+
+  // Heading writes its own data-part, so the heading part is this sheet-owned wrapper around it.
+  const headingNode = (
+    <div
+      className={
+        hideHeading ? 'ds-bottom-sheet__heading ds-bottom-sheet__visually-hidden' : 'ds-bottom-sheet__heading'
+      }
+      data-part="heading"
+    >
+      <Heading level="2" id={headingId} ref={headingRef}>
+        {heading}
+      </Heading>
+    </div>
+  );
 
   const node = (
     <dialog
@@ -545,58 +643,62 @@ export function BottomSheet({
       onClose={handleNativeClose}
     >
       <div className="ds-bottom-sheet__scrim" data-part="scrim" onClick={handleScrimClick} />
-      <FocusScope trapped autoFocus="none" restoreFocus data-part="focusScope">
-        <div className="ds-bottom-sheet__surface" ref={surfaceRef} data-part="surface">
-          <div
-            className="ds-bottom-sheet__header"
-            data-part="header"
-            onPointerDown={handleHeaderPointerDown}
-            onPointerMove={handleHeaderPointerMove}
-            onPointerUp={(event) => endDrag(event, false)}
-            onPointerCancel={(event) => endDrag(event, true)}
-          >
-            {canDrag ? <span className="ds-bottom-sheet__handle" data-part="handle" aria-hidden="true" /> : null}
-            <div className="ds-bottom-sheet__title-row">
+      {/* FocusScope writes its own data-part="scope", so the focusScope part is this wrapper inside it. */}
+      <FocusScope trapped autoFocus="none" restoreFocus>
+        <div className="ds-bottom-sheet__scope" data-part="focusScope">
+          <div className="ds-bottom-sheet__surface" ref={surfaceRef} data-part="surface">
+            {showHeader ? (
               <div
-                className={hideHeading ? 'ds-bottom-sheet__heading ds-bottom-sheet__visually-hidden' : 'ds-bottom-sheet__heading'}
-                data-part="heading"
+                className="ds-bottom-sheet__header"
+                data-part="header"
+                onPointerDown={handleHeaderPointerDown}
+                onPointerMove={handleHeaderPointerMove}
+                onPointerUp={(event) => endDrag(event, false)}
+                onPointerCancel={(event) => endDrag(event, true)}
               >
-                <Heading level="2" id={headingId} ref={headingRef}>
-                  {heading}
-                </Heading>
+                {/* handle: decorative, aria-hidden, never a focus stop. */}
+                {showHandle ? <span className="ds-bottom-sheet__handle" data-part="handle" aria-hidden="true" /> : null}
+                {/* The heading row is sheet-owned and carries no data-part: it only holds headerGap. */}
+                <div className="ds-bottom-sheet__title-row">
+                  {headingNode}
+                  {showClose ? (
+                    <span className="ds-bottom-sheet__close" data-part="closeButton" onClick={handleCloseTargetClick}>
+                      <Button
+                        ref={closeButtonRef}
+                        variant="ghost"
+                        size="sm"
+                        iconOnly
+                        label={COPY.closeLabel}
+                        leadingIcon={<Icon name="close" inline />}
+                        onClick={() => onClose?.('close-button')}
+                      />
+                    </span>
+                  ) : null}
+                </div>
               </div>
-              {dismissible ? (
-                <span className="ds-bottom-sheet__close" data-part="closeButton" onClick={handleCloseTargetClick}>
-                  <Button
-                    ref={closeButtonRef}
-                    variant="ghost"
-                    size="sm"
-                    iconOnly
-                    label={COPY.closeLabel}
-                    leadingIcon={<Icon name="close" inline />}
-                    onClick={() => onClose?.('close-button')}
-                  />
-                </span>
-              ) : null}
+            ) : (
+              // No header to put it in: the visually hidden heading sits at the start of the column.
+              headingNode
+            )}
+            {/* The sheet owns the scroll container, since Box never scrolls; the Box is the body part. */}
+            <div className="ds-bottom-sheet__scroll">
+              {/* inset reaches the Box through the stylesheet; the override is passed only when the caller sets it. */}
+              <Box data-part="body" ref={bodyRef} overrides={insetOverride ? { paddingInline: insetOverride } : undefined}>
+                {children}
+              </Box>
             </div>
+            {hasFooter ? (
+              <div className="ds-bottom-sheet__footer" data-part="footer" ref={footerRef}>
+                <Stack
+                  direction="horizontal"
+                  justify="end"
+                  overrides={footerGapOverride ? { gap: footerGapOverride } : undefined}
+                >
+                  {footer}
+                </Stack>
+              </div>
+            ) : null}
           </div>
-          <div className="ds-bottom-sheet__scroll">
-            <Box data-part="body" inset="none" ref={bodyRef}>
-              {children}
-            </Box>
-          </div>
-          {hasFooter ? (
-            <div className="ds-bottom-sheet__footer" data-part="footer" ref={footerRef}>
-              <Stack
-                direction="horizontal"
-                justify="end"
-                wrap
-                overrides={footerGapOverride ? { gap: footerGapOverride } : undefined}
-              >
-                {footer}
-              </Stack>
-            </div>
-          ) : null}
         </div>
       </FocusScope>
     </dialog>

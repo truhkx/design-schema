@@ -10,7 +10,6 @@ import {
   type CSSProperties,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
-  type PointerEvent as ReactPointerEvent,
   type ReactElement,
   type ReactNode,
   type Ref,
@@ -53,6 +52,7 @@ export type SidePanelOverridableBinding =
   | 'edgeGutter'
   | 'inset'
   | 'headerGap'
+  | 'headingGap'
   | 'partGap'
   | 'footerGap'
   | 'layer'
@@ -70,6 +70,7 @@ const OVERRIDE_HOOK: Record<SidePanelOverridableBinding, string> = {
   edgeGutter: '--ds-side-panel-edge-gutter',
   inset: '--ds-side-panel-inset',
   headerGap: '--ds-side-panel-header-gap',
+  headingGap: '--ds-side-panel-heading-gap',
   partGap: '--ds-side-panel-part-gap',
   footerGap: '--ds-side-panel-footer-gap',
   layer: '--ds-side-panel-layer',
@@ -151,15 +152,34 @@ function lockScroll(): () => void {
 }
 
 /**
+ * The breakpoint width in px. A media query cannot read a custom property, and a `rem` breakpoint in a
+ * media query resolves against the initial font size rather than the one on <html>, so the token's
+ * resolved value is measured once and handed to matchMedia as px.
+ */
+function breakpointPx(property: string): string | null {
+  const raw = getComputedStyle(document.documentElement).getPropertyValue(property).trim();
+  if (!raw) return null;
+  const probe = document.createElement('div');
+  probe.setAttribute('aria-hidden', 'true');
+  probe.style.position = 'absolute';
+  probe.style.visibility = 'hidden';
+  probe.style.inlineSize = raw;
+  document.documentElement.appendChild(probe);
+  const measured = probe.getBoundingClientRect().width;
+  probe.remove();
+  return measured > 0 ? `${measured}px` : raw;
+}
+
+/**
  * persistent — `layout.maxWidth.content` or `layout.maxWidth.page`, read from the loaded token
- * stylesheet (a media query cannot read a custom property). Above it the panel is a sidebar;
- * exactly the token width is still the overlay.
+ * stylesheet on <html> when the component mounts. Above it the panel is a sidebar; exactly the token
+ * width is still the overlay, so the comparison is `(width > token)`.
  */
 function persistentQuery(persistent: SidePanelPersistent): MediaQueryList | null {
   if (persistent === 'never') return null;
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return null;
-  const token = persistent === 'content' ? '--layout-max-width-content' : '--layout-max-width-page';
-  const breakpoint = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
+  const property = persistent === 'content' ? '--layout-max-width-content' : '--layout-max-width-page';
+  const breakpoint = breakpointPx(property);
   if (!breakpoint) return null;
   return window.matchMedia(`(width > ${breakpoint})`);
 }
@@ -198,9 +218,11 @@ export interface SidePanelProps extends Omit<ComponentPropsWithoutRef<'aside'>, 
   heading: string;
   /**
    * Keep the title for assistive technology but hide it visually (a navigation panel whose Links are
-   * self-explanatory). When the header would then be empty (no close button because `dismissible` is
-   * false or the panel is persistent), the header part is not rendered. The accessible name is
-   * required regardless.
+   * self-explanatory): it stays rendered with the visually-hidden clip pattern so aria-labelledby
+   * still resolves. When the header would then be empty (no close button because `dismissible` is
+   * false or the panel is persistent), the header part is not rendered: no padding, no gap, no
+   * height, and the hidden title moves to the top of the surface. The accessible name is required
+   * regardless.
    */
   hideHeading?: boolean | undefined;
   /**
@@ -226,47 +248,56 @@ export interface SidePanelProps extends Omit<ComponentPropsWithoutRef<'aside'>, 
    * Above this layout width the panel stops being an overlay and becomes a fixed sidebar beside the
    * content: always visible, no scrim, no trap, part of the page's tab order, and the trigger is
    * hidden. `content` switches at layout.maxWidth.content, `page` at layout.maxWidth.page; the
-   * comparison is `(width > token)`. Below it, the overlay behavior applies.
+   * comparison is `(width > token)`, read from the theme token on <html> when the component mounts.
+   * Below it, the overlay behavior applies.
    */
   persistent?: SidePanelPersistent | undefined;
   /**
    * The landmark the panel exposes (in persistent mode and as the region's role when open):
-   * `navigation` for a menu of Links, `complementary` for filters, a cart, a detail. On web this is
-   * the composed Landmark's own role, so `navigation` renders a real <nav>; a modal panel is a
-   * dialog, not a landmark, and takes none of this.
+   * `navigation` for a menu of Links, `complementary` for filters, a cart, a detail. This is the
+   * composed Landmark's own role, so `navigation` renders a real <nav>; a modal panel is a dialog,
+   * not a landmark, and takes none of this.
    */
   role?: SidePanelRole | undefined;
   /**
    * False (the default, the disclosure pattern): the panel is a disclosed region — the page stays
    * live and in the tab order after the panel, focus stays on the trigger when it opens, and Escape
    * from inside or a click outside closes it. True: the panel is a modal Dialog at the edge — scrim,
-   * focus moved in and trapped, page inert and scroll-locked.
+   * focus moved in and trapped, page inert and scroll-locked — for a panel that must be finished or
+   * dismissed (a cart checkout, a required filter).
    */
   modal?: boolean | undefined;
-  /** Show the scrim in non-modal mode too (modal always has one). Turn it off for a panel that should feel like part of the page. */
+  /**
+   * Show the scrim in non-modal mode too (modal always has one). It defaults to true, so turn it off
+   * for a panel that should feel like part of the page.
+   */
   scrim?: boolean | undefined;
   /**
    * Escape, the close button, a scrim tap / outside click, and the swipe gesture all request close.
-   * When false, the close button is not rendered and a scrim tap or an outside press do nothing;
+   * When false, the close button is not rendered and a scrim tap and an outside press do nothing;
    * Escape still reports through onOpenChange with reason escape (the consumer decides), as in
-   * Dialog. The trigger toggle, a followed Link and a consumer's `action` always close.
+   * Dialog. Only those are gated: the trigger toggle, a followed Link (`navigation`) and a consumer's
+   * `action` always close.
    */
   dismissible?: boolean | undefined;
   /**
-   * On touch, a swipe toward the edge dismisses (native only). Accepted on web for parity; no
-   * gesture is wired, since dragging a panel with a mouse is not a web idiom.
+   * On touch, a swipe toward the edge dismisses (native only). Purely additive, and accepted here for
+   * parity: the web wires no gesture, since dragging a panel with a mouse is not a web idiom. The
+   * trigger and close button are always there (WCAG 2.5.1).
    */
   swipeable?: boolean | undefined;
   /**
    * Fired when the panel opens or closes, with the new state and a reason: `trigger`, `escape`,
    * `close-button`, `scrim`, `outside`, `swipe`, `action`, `navigation` (a Link inside was followed).
+   * `swipe` never comes from the web; `action` is a consumer's own footer handler reusing this.
    */
   onOpenChange?: ((open: boolean, reason: SidePanelOpenChangeReason) => void) | undefined;
   /** Portal target for the overlay. Defaults to `document.body`. A platform prop, not part of the schema. */
   container?: HTMLElement | undefined;
   /**
    * Per-instance style overrides: each entry sets the matching CSS hook to that token, inline.
-   * `inset` is forwarded to the body Box's `paddingBlock`, `footerGap` to the footer Stack's `gap`.
+   * `inset` is also forwarded to the body Box's `paddingInline` and `footerGap` to the footer Stack's
+   * `gap`, so the composed children follow.
    */
   overrides?: Partial<Record<SidePanelOverridableBinding, TokenRef | undefined>> | undefined;
 }
@@ -283,8 +314,8 @@ export interface SidePanelProps extends Omit<ComponentPropsWithoutRef<'aside'>, 
  *
  * The panel renders into one stable host node that moves between the portal target (overlay) and
  * the component's place in the page (persistent sidebar), so crossing the breakpoint keeps a
- * non-modal panel's children state. The ref resolves to the positioned surface element — the fixed
- * panel, the <dialog> when modal, the in-page sidebar when persistent — and is null while closed.
+ * non-modal panel's children state. The ref resolves to the root element — the fixed panel, the
+ * full-viewport <dialog> when modal, the in-page sidebar when persistent — and is null while closed.
  */
 export function SidePanel({
   ref,
@@ -319,13 +350,14 @@ export function SidePanel({
   const headingId = `ds-side-panel${generatedId}-heading`;
 
   const rootRef = useRef<HTMLElement | null>(null);
+  const surfaceRef = useRef<HTMLElement | null>(null);
   const bodyRef = useRef<HTMLDivElement | null>(null);
   const footerRef = useRef<HTMLDivElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+  const headingRef = useRef<HTMLHeadingElement | null>(null);
   const triggerWrapRef = useRef<HTMLSpanElement | null>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
   const slotRef = useRef<HTMLDivElement | null>(null);
-  const pointerDownInsideRef = useRef(false);
   const escapeHandledRef = useRef(false);
 
   // The one node the panel is portaled into; it moves, the React subtree does not.
@@ -346,8 +378,8 @@ export function SidePanel({
 
   if (open && !present) setPresent(true);
 
-  const surfaceShown = isPersistent || present;
-  useImperativeHandle(ref, () => (surfaceShown ? rootRef.current : null) as HTMLElement, [surfaceShown, modalActive]);
+  const rootShown = isPersistent || present;
+  useImperativeHandle(ref, () => (rootShown ? rootRef.current : null) as HTMLElement, [rootShown, modalActive]);
 
   const warnedRef = useRef(false);
   if (process.env.NODE_ENV !== 'production' && !heading && !warnedRef.current) {
@@ -404,12 +436,8 @@ export function SidePanel({
       target.focus();
       return;
     }
-    const title = document.getElementById(headingId);
-    if (title) {
-      if (title.tabIndex !== -1) title.tabIndex = -1;
-      title.focus();
-    }
-  }, [present, modalActive, headingId]);
+    headingRef.current?.focus();
+  }, [present, modalActive]);
 
   // Reveal on the next frame so the slide-in runs from the off-edge position.
   useLayoutEffect(() => {
@@ -428,12 +456,12 @@ export function SidePanel({
     if (active && host.contains(active)) triggerRef.current?.focus();
   }, [open, isPersistent, modalActive, host]);
 
-  // Close: run the exit transition, then hide (non-modal) or close() and unmount (modal).
+  // Close: run the exit transition on the surface, then hide (non-modal) or close() and unmount (modal).
   useEffect(() => {
     if (open || !present || isPersistent) return undefined;
     const wasVisible = visibleRef.current;
     setVisible(false);
-    const surface = rootRef.current;
+    const surface = surfaceRef.current;
     const finish = (): void => {
       const root = rootRef.current;
       if (root instanceof HTMLDialogElement && root.open) {
@@ -482,7 +510,7 @@ export function SidePanel({
   const handleTriggerKeyDown = (event: ReactKeyboardEvent<HTMLSpanElement>): void => {
     if (event.key !== 'Tab' || event.shiftKey || event.defaultPrevented) return;
     if (!open || modalActive || isPersistent || event.target !== triggerRef.current) return;
-    const first = tabbablesIn(rootRef.current)[0];
+    const first = tabbablesIn(surfaceRef.current)[0];
     if (!first) return;
     event.preventDefault();
     first.focus();
@@ -506,7 +534,7 @@ export function SidePanel({
     // The modal's FocusScope wraps Tab; the non-modal seam hands focus back to the page around the trigger.
     if (event.key !== 'Tab' || modalActive) return;
     const triggerElement = triggerRef.current;
-    const tabbables = tabbablesIn(rootRef.current);
+    const tabbables = tabbablesIn(surfaceRef.current);
     if (!triggerElement || tabbables.length === 0) return;
     const active = document.activeElement;
     if (event.shiftKey && active === tabbables[0]) {
@@ -520,6 +548,7 @@ export function SidePanel({
     }
   };
 
+  // A non-cancelable `cancel` closes the <dialog> anyway: report `escape` and show it again if `open` stands.
   const handleDialogCancel = (event: SyntheticEvent<HTMLDialogElement>): void => {
     // The consumer owns `open`: never let the browser close the panel, dismissible or not.
     event.preventDefault();
@@ -527,23 +556,21 @@ export function SidePanel({
     requestClose('escape');
   };
 
-  const handleDialogPointerDown = (event: ReactPointerEvent<HTMLElement>): void => {
-    rest.onPointerDown?.(event);
-    pointerDownInsideRef.current = event.target !== rootRef.current;
+  const handleDialogClose = (): void => {
+    if (!open || !modalActive) return;
+    requestAnimationFrame(() => {
+      const dialog = rootRef.current;
+      if (!(dialog instanceof HTMLDialogElement) || dialog.open || !dialog.isConnected) return;
+      if (typeof dialog.showModal === 'function') dialog.showModal();
+      else dialog.open = true;
+    });
   };
 
-  // A click whose target is the <dialog> itself and lands outside its box is a click on ::backdrop (the scrim).
-  const handleDialogClick = (event: ReactMouseEvent<HTMLElement>): void => {
-    rest.onClick?.(event);
-    const startedInside = pointerDownInsideRef.current;
-    pointerDownInsideRef.current = false;
-    const dialog = rootRef.current;
-    if (!dialog || event.target !== dialog || startedInside) return;
-    const box = dialog.getBoundingClientRect();
-    const onPanel =
-      event.clientX >= box.left && event.clientX <= box.right && event.clientY >= box.top && event.clientY <= box.bottom;
-    if (onPanel && box.width > 0) return;
-    requestClose('scrim');
+  // The closeButton part is the wrapper, so a press on it that missed the Button activates the Button.
+  const handleCloseTargetClick = (event: ReactMouseEvent<HTMLSpanElement>): void => {
+    const button = closeButtonRef.current;
+    if (!button || button.contains(event.target as Node)) return;
+    button.click();
   };
 
   // A Link followed inside the panel closes it; a client-side router's preventDefault still counts.
@@ -554,13 +581,6 @@ export function SidePanel({
     if (anchor.target === '_blank' || anchor.hasAttribute('download')) return;
     if (!open || isPersistent) return;
     changeOpen(false, 'navigation');
-  };
-
-  // target-44px: the close Button keeps its own size; its wrapper extends the pointer target to the comfortable size.
-  const handleCloseTargetClick = (event: ReactMouseEvent<HTMLSpanElement>): void => {
-    const button = closeButtonRef.current;
-    if (!button || button.contains(event.target as Node)) return;
-    button.click();
   };
 
   const clonedTrigger = trigger
@@ -581,19 +601,23 @@ export function SidePanel({
       className={hideHeading ? 'ds-side-panel__heading ds-side-panel__visually-hidden' : 'ds-side-panel__heading'}
       data-part="heading"
     >
-      <Heading level="2" size="lg" id={headingId}>
+      <Heading level="2" size="lg" id={headingId} ref={headingRef} tabIndex={modalActive ? -1 : undefined}>
         {heading}
       </Heading>
     </div>
   );
 
-  const content = (
-    <div className="ds-side-panel__layout" onClick={handleContentClick}>
+  // The partGap column: the overlay-owned focusScope part, since FocusScope writes its own data-part="scope".
+  const parts = (
+    <div className="ds-side-panel__scope" data-part="focusScope" onClick={handleContentClick}>
       {headerShown ? (
         <div className="ds-side-panel__header" data-part="header">
           {headingPart}
           {closeShown ? (
+            // Button writes its own data-part="container", so the closeButton part is this wrapper; a
+            // press that lands on it rather than on the Button is forwarded.
             <span className="ds-side-panel__close" data-part="closeButton" onClick={handleCloseTargetClick}>
+              {/* Default size: Button's own minimum target is size.target.comfortable. */}
               <Button
                 ref={closeButtonRef}
                 variant="ghost"
@@ -612,7 +636,8 @@ export function SidePanel({
         <Box
           data-part="body"
           inset="lg"
-          overrides={overrides?.inset ? { paddingBlock: overrides.inset } : undefined}
+          insetBlock="none"
+          overrides={overrides?.inset ? { paddingInline: overrides.inset } : undefined}
         >
           {children}
         </Box>
@@ -633,20 +658,31 @@ export function SidePanel({
   );
 
   const shown = visible && open && !isPersistent;
-  const classes = [
+  const hookStyle = overrides ? overridesToStyle(overrides) : undefined;
+  const rootClasses = [
     'ds-side-panel',
-    `ds-side-panel--${side}`,
-    `ds-side-panel--${width}`,
     modalActive ? 'ds-side-panel--modal' : null,
     isPersistent ? 'ds-side-panel--persistent' : null,
     shown ? 'ds-side-panel--visible' : null,
   ]
     .filter(Boolean)
     .join(' ');
-  const hookStyle = overrides ? overridesToStyle(overrides) : undefined;
+  // side/width/visible live on the surface, which is the root itself unless the panel is modal.
+  const surfaceClasses = [
+    'ds-side-panel__surface',
+    `ds-side-panel__surface--${side}`,
+    `ds-side-panel__surface--${width}`,
+    isPersistent ? 'ds-side-panel__surface--persistent' : null,
+    shown ? 'ds-side-panel__surface--visible' : null,
+  ]
+    .filter(Boolean)
+    .join(' ');
+  const scrimClasses = shown ? 'ds-side-panel__scrim ds-side-panel__scrim--visible' : 'ds-side-panel__scrim';
 
   let panel: ReactElement | null = null;
   if (modalActive) {
+    // The <dialog> fills the viewport with a transparent ::backdrop; the scrim and the edge-positioned
+    // surface are real elements inside it, so both take the hooks and the scrim is a click target.
     panel = present ? (
       <dialog
         {...rest}
@@ -655,19 +691,26 @@ export function SidePanel({
         }}
         id={panelId}
         data-ds="SidePanel"
-        data-part="surface"
-        className={classes}
+        className={rootClasses}
         style={hookStyle}
         aria-modal="true"
         aria-labelledby={headingId}
         onKeyDown={handleRootKeyDown}
         onCancel={handleDialogCancel}
-        onPointerDown={handleDialogPointerDown}
-        onClick={handleDialogClick}
+        onClose={handleDialogClose}
       >
-        <FocusScope trapped autoFocus="none" restoreFocus returnFocusTo={triggerRef} data-part="focusScope">
-          {content}
-        </FocusScope>
+        <div className={scrimClasses} data-part="scrim" onClick={() => requestClose('scrim')} />
+        <div
+          className={surfaceClasses}
+          data-part="surface"
+          ref={(node) => {
+            surfaceRef.current = node;
+          }}
+        >
+          <FocusScope trapped autoFocus="none" restoreFocus returnFocusTo={triggerRef}>
+            {parts}
+          </FocusScope>
+        </div>
       </dialog>
     ) : null;
   } else {
@@ -675,30 +718,31 @@ export function SidePanel({
       <>
         {!isPersistent && scrim ? (
           <div
-            className={shown ? 'ds-side-panel__scrim ds-side-panel__scrim--visible' : 'ds-side-panel__scrim'}
+            className={scrimClasses}
             style={hookStyle}
             data-part="scrim"
             aria-hidden="true"
             hidden={!present}
-            onPointerDown={() => requestClose('scrim')}
+            onClick={() => requestClose('scrim')}
           />
         ) : null}
         <div
           {...rest}
           ref={(node) => {
             rootRef.current = node;
+            surfaceRef.current = node;
           }}
           id={panelId}
           data-ds="SidePanel"
           data-part="surface"
-          className={classes}
+          className={`${rootClasses} ${surfaceClasses}`}
           style={hookStyle}
-          hidden={!surfaceShown}
+          hidden={!rootShown}
           onKeyDown={handleRootKeyDown}
         >
-          <FocusScope trapped={false} autoFocus="none" restoreFocus={false} data-part="focusScope">
+          <FocusScope trapped={false} autoFocus="none" restoreFocus={false}>
             <Landmark role={role} as={role === 'navigation' ? 'nav' : 'aside'} aria-labelledby={headingId}>
-              {content}
+              {parts}
             </Landmark>
           </FocusScope>
         </div>

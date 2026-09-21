@@ -10,6 +10,7 @@ import {
   StyleSheet,
   View,
   findNodeHandle,
+  useWindowDimensions,
 } from 'react-native';
 import type { ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
@@ -37,6 +38,7 @@ export type DialogOverridableBinding =
   | 'radius'
   | 'inset'
   | 'partGap'
+  | 'gutter'
   | 'headerGap'
   | 'footerGap'
   | 'descriptionGap'
@@ -92,6 +94,11 @@ const COPY = {
  * title, the close button or the body, after the enter animation; there is no visible
  * focus ring on those targets. Scroll lock has no native meaning and is not
  * implemented. The Dialog is rooted in a Modal and exposes no ref.
+ *
+ * `inset` is applied once each way so nothing doubles between parts: the surface
+ * column carries the block padding (top and bottom), the header and footer wrappers
+ * the inline padding, and the body `Box` receives it as `overrides.paddingInline`
+ * with zero block padding of its own.
  */
 export function Dialog({
   open,
@@ -109,6 +116,7 @@ export function Dialog({
 }: DialogProps): React.JSX.Element | null {
   const { tokens: t } = useTheme();
   const reducedMotion = useReducedMotion();
+  const { height: windowHeight } = useWindowDimensions();
 
   // Kept mounted while the exit animation runs; derived during render so the Modal content exists on the open commit.
   const [mounted, setMounted] = React.useState(open);
@@ -129,6 +137,7 @@ export function Dialog({
   const radius = overrides?.radius ? (resolveToken(t, overrides.radius) as number) : t.radiusLg;
   const inset = overrides?.inset ? (resolveToken(t, overrides.inset) as number) : t.layoutInsetLg;
   const partGap = overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.layoutGapLoose;
+  const gutter = overrides?.gutter ? (resolveToken(t, overrides.gutter) as number) : t.layoutGutter;
   const headerGap = overrides?.headerGap ? (resolveToken(t, overrides.headerGap) as number) : t.layoutGapNormal;
   const descriptionGap = overrides?.descriptionGap
     ? (resolveToken(t, overrides.descriptionGap) as number)
@@ -181,6 +190,7 @@ export function Dialog({
         // react-native-web has no native animated module.
         useNativeDriver: false,
       });
+      // `finished` is false when `open` went false first, so onOpened does not fire for an interrupted enter.
       animation.start(({ finished }) => {
         if (finished) {
           focusInitial();
@@ -242,14 +252,14 @@ export function Dialog({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: t.layoutGutter,
+    paddingHorizontal: gutter,
     zIndex: layer,
   };
 
   const motionStyle: Animated.WithAnimatedValue<ViewStyle> = {
     width: '100%',
     maxWidth: sizeWidth[size],
-    maxHeight: '90%', // literal-ok: a proportion of the viewport so the surface never fills it edge to edge
+    maxHeight: windowHeight - 2 * gutter,
     borderRadius: radius,
     ...shadow,
     opacity: progress,
@@ -264,6 +274,8 @@ export function Dialog({
     backgroundColor: t.colorOverlaySurface,
     overflow: 'hidden',
     gap: partGap,
+    // The block half of `inset`, once at the top and once at the bottom of the column.
+    paddingVertical: inset,
   };
 
   const headerStyle: ViewStyle = {
@@ -271,7 +283,7 @@ export function Dialog({
     alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: headerGap,
-    padding: inset,
+    paddingHorizontal: inset,
   };
 
   const titleGroupStyle: ViewStyle = {
@@ -282,17 +294,20 @@ export function Dialog({
   const bodyStyle: ViewStyle = { flexShrink: 1 };
 
   const footerStyle: ViewStyle = {
-    padding: inset,
+    paddingHorizontal: inset,
   };
-
-  const bodyOverrides = overrides?.inset ? { paddingBlock: overrides.inset, paddingInline: overrides.inset } : undefined;
-  const footerOverrides = overrides?.footerGap ? { gap: overrides.footerGap } : undefined;
 
   return (
     <Modal visible transparent animationType="none" onRequestClose={handleEscape} statusBarTranslucent>
       <View style={hostStyle}>
-        <Animated.View style={scrimStyle} pointerEvents="none" />
-        <Pressable style={StyleSheet.absoluteFill} onPress={handleScrimPress} accessible={false} testID="Dialog.scrim" />
+        <Animated.View style={scrimStyle}>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={handleScrimPress}
+            accessible={false}
+            testID="Dialog.scrim"
+          />
+        </Animated.View>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={centerStyle}
@@ -330,14 +345,20 @@ export function Dialog({
                 </View>
                 <View ref={bodyRef} style={bodyStyle} testID="Dialog.body">
                   <ScrollView style={bodyStyle} keyboardShouldPersistTaps="handled">
-                    <Box inset="lg" overrides={bodyOverrides}>
+                    {/* `inset` reaches the Box only as a token path through its own overrides, always sent; the block padding stays on the surface. */}
+                    <Box inset="none" overrides={{ paddingInline: overrides?.inset ?? 'layout.inset.lg' }}>
                       {children}
                     </Box>
                   </ScrollView>
                 </View>
                 {footer !== undefined ? (
                   <View style={footerStyle} testID="Dialog.footer">
-                    <Stack direction="horizontal" gap="tight" justify="end" overrides={footerOverrides}>
+                    <Stack
+                      direction="horizontal"
+                      justify="end"
+                      wrap
+                      overrides={{ gap: overrides?.footerGap ?? 'layout.gap.tight' }}
+                    >
                       {footer}
                     </Stack>
                   </View>

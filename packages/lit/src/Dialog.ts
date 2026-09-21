@@ -35,6 +35,7 @@ export type DialogOverridableBinding =
   | 'radius'
   | 'inset'
   | 'partGap'
+  | 'gutter'
   | 'headerGap'
   | 'footerGap'
   | 'descriptionGap'
@@ -53,6 +54,7 @@ const HOOKS: Record<DialogOverridableBinding, string> = {
   radius: '--ds-dialog-radius',
   inset: '--ds-dialog-inset',
   partGap: '--ds-dialog-part-gap',
+  gutter: '--ds-dialog-gutter',
   headerGap: '--ds-dialog-header-gap',
   footerGap: '--ds-dialog-footer-gap',
   descriptionGap: '--ds-dialog-description-gap',
@@ -199,6 +201,7 @@ export class DsDialog extends LitElement {
       --ds-dialog-radius: var(--radius-lg);
       --ds-dialog-inset: var(--layout-inset-lg);
       --ds-dialog-part-gap: var(--layout-gap-loose);
+      --ds-dialog-gutter: var(--layout-gutter);
       --ds-dialog-header-gap: var(--layout-gap-normal);
       --ds-dialog-footer-gap: var(--layout-gap-tight);
       --ds-dialog-description-gap: var(--layout-gap-tight);
@@ -250,30 +253,25 @@ export class DsDialog extends LitElement {
       transition: opacity var(--ds-dialog-enter) var(--motion-easing-standard);
     }
 
+    /* focusScope: the <ds-focus-scope> host is the part element. Layout only. */
     .scope {
-      position: relative;
-      display: flex;
-      box-sizing: border-box;
-      /* widthMd: layout.maxWidth.content × 0.75; an override replaces the base, the × 0.75 stays. */
-      --ds-dialog-width: calc(var(--ds-dialog-width-md) * 0.75);
-      inline-size: min(var(--ds-dialog-width), calc(100% - 2 * var(--layout-gutter)));
-      max-block-size: calc(100% - 2 * var(--layout-gutter));
-    }
-    :host([size='sm']) .scope {
-      --ds-dialog-width: var(--ds-dialog-width-sm);
-    }
-    :host([size='lg']) .scope {
-      --ds-dialog-width: var(--ds-dialog-width-lg);
+      display: block;
+      min-inline-size: 0;
     }
 
     .surface {
       box-sizing: border-box;
+      position: relative;
       display: flex;
       flex-direction: column;
-      flex: 1 1 auto;
-      min-inline-size: 0;
-      max-block-size: 100%;
+      /* widthMd: layout.maxWidth.content × 0.75; an override replaces the base, the × 0.75 stays. */
+      inline-size: calc(var(--ds-dialog-width-md) * 0.75);
+      /* gutter: the minimum space between the surface and the viewport edge. */
+      max-inline-size: calc(100vw - 2 * var(--ds-dialog-gutter));
+      max-block-size: calc(100dvh - 2 * var(--ds-dialog-gutter));
       gap: var(--ds-dialog-part-gap);
+      /* inset: the surface column carries the block padding, once at the top and once at the bottom. */
+      padding-block: var(--ds-dialog-inset);
       font-family: var(--font-family-body);
       color: var(--color-foreground);
       /* surface: color.overlay.surface, locked — no hook */
@@ -288,6 +286,13 @@ export class DsDialog extends LitElement {
       transition:
         opacity var(--ds-dialog-enter) var(--motion-easing-standard),
         transform var(--ds-dialog-enter) var(--motion-easing-standard);
+    }
+
+    :host([size='sm']) .surface {
+      inline-size: var(--ds-dialog-width-sm);
+    }
+    :host([size='lg']) .surface {
+      inline-size: var(--ds-dialog-width-lg);
     }
 
     @starting-style {
@@ -318,12 +323,14 @@ export class DsDialog extends LitElement {
       }
     }
 
+    /* header: inline inset only — the surface owns the block padding, so nothing doubles between parts. */
     .header {
       display: flex;
+      flex: 0 0 auto;
       align-items: flex-start;
       justify-content: space-between;
       gap: var(--ds-dialog-header-gap);
-      padding: var(--ds-dialog-inset);
+      padding-inline: var(--ds-dialog-inset);
     }
 
     /* The titles group: Dialog-owned, not an anatomy part. */
@@ -361,19 +368,22 @@ export class DsDialog extends LitElement {
       border: 0;
     }
 
+    /* body: the only region that scrolls, so header and footer stay put. */
     .body {
       flex: 1 1 auto;
       min-block-size: 0;
       overflow-y: auto;
     }
-    /* inset reaches the body Box through its own hooks (and through overrides when set). */
+    /* inset reaches the body Box as inline padding only (and through overrides when set); the
+       Box keeps zero block padding, which the surface's block padding already provides. */
     .body > ds-box {
-      --ds-box-padding-block: var(--ds-dialog-inset);
       --ds-box-padding-inline: var(--ds-dialog-inset);
     }
 
+    /* footer: end-aligned action row, inline inset only. */
     .footer {
-      padding: var(--ds-dialog-inset);
+      flex: 0 0 auto;
+      padding-inline: var(--ds-dialog-inset);
     }
     /* footerGap reaches the Stack through its own hook (and through overrides when set). */
     .footer > ds-stack {
@@ -490,7 +500,7 @@ export class DsDialog extends LitElement {
     // Forwards reach the child's overrides only when set, so the CSS hook route keeps working otherwise.
     const inset = this.overrides?.inset;
     const bodyOverrides: Partial<Record<BoxOverridableBinding, TokenRef | undefined>> | undefined =
-      inset === undefined ? undefined : { paddingBlock: inset, paddingInline: inset };
+      inset === undefined ? undefined : { paddingInline: inset };
     const footerGap = this.overrides?.footerGap;
     const footerOverrides: Partial<Record<StackOverridableBinding, TokenRef | undefined>> | undefined =
       footerGap === undefined ? undefined : { gap: footerGap };
@@ -525,7 +535,9 @@ export class DsDialog extends LitElement {
                   >
                 </div>
                 ${description
-                  ? html`<ds-text part="description" data-part="description">${description}</ds-text>`
+                  ? html`<div part="description" data-part="description">
+                      <ds-text tone="muted">${description}</ds-text>
+                    </div>`
                   : nothing}
               </div>
               ${this.dismissible
@@ -546,7 +558,7 @@ export class DsDialog extends LitElement {
             </div>
             ${this.hasFooter
               ? html`<div class="footer" part="footer" data-part="footer">
-                  <ds-stack direction="horizontal" justify="end" .overrides=${footerOverrides}
+                  <ds-stack direction="horizontal" justify="end" wrap .overrides=${footerOverrides}
                     ><slot name="footer"></slot
                   ></ds-stack>
                 </div>`
@@ -560,6 +572,9 @@ export class DsDialog extends LitElement {
   private readonly handleCancel = (event: Event): void => {
     // The consumer owns `open`: never let the browser close the <dialog> on its own.
     event.preventDefault();
+    if (!this.open) {
+      return;
+    }
     // A non-cancelable cancel (Chromium without user activation) is followed by a native close.
     this.escapeReported = !event.cancelable;
     this.dispatchClose('escape');
@@ -570,13 +585,16 @@ export class DsDialog extends LitElement {
       this.closingProgrammatically = false;
       return;
     }
+    if (!this.open) {
+      return;
+    }
     // The browser closed the <dialog> itself. If no `cancel` announced it, that was Escape too.
     if (!this.escapeReported) {
       this.dispatchClose('escape');
     }
     this.escapeReported = false;
     const dialog = this.dialogEl;
-    if (this.open && dialog && !dialog.open) {
+    if (dialog && !dialog.open) {
       dialog.showModal();
       void this.applyInitialFocus();
     }

@@ -13,13 +13,18 @@ const ACTIONS: ActionSheetAction[] = [
   { id: 'delete', label: 'Delete photo', icon: 'danger', tone: 'danger' },
 ];
 
-/** Acts as the consumer: owns `open` (starting from the args) and closes on `onAction` and `onClose`. */
-function ActionSheetConsumer(args: ActionSheetProps): React.JSX.Element {
+/**
+ * Acts as the consumer: owns `open` (starting from the args), calls the story's own
+ * handler first and then closes, on both `onAction` and `onClose`. It renders no trigger
+ * — there is no copy key for one — except in `Keyboard`, which needs an opener to check
+ * focus restore.
+ */
+function ActionSheetConsumer({ trigger = false, ...args }: ActionSheetProps & { trigger?: boolean }): React.JSX.Element {
   const [open, setOpen] = React.useState(args.open);
   React.useEffect(() => setOpen(args.open), [args.open]);
   return (
     <Stack gap="loose" align="start">
-      <Button label="More actions" onPress={() => setOpen(true)} />
+      {trigger ? <Button label="More actions" onPress={() => setOpen(true)} /> : null}
       <ActionSheet
         {...args}
         open={open}
@@ -103,4 +108,6 @@ export const WithOverrides: Story = {
 };
 
 /** Open with its trigger, four rows and the Cancel row, for the axe gate and manual keyboard checks. */
-export const Keyboard: Story = {};
+export const Keyboard: Story = {
+  render: (args) => <ActionSheetConsumer {...args} trigger />,
+};

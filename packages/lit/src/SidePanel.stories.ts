@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
-import { html, type TemplateResult } from 'lit';
+import { html } from 'lit';
 import './SidePanel.js';
 import './Button.js';
 import './Icon.js';
@@ -19,7 +19,8 @@ import type {
 } from './SidePanel.js';
 
 interface SidePanelArgs {
-  open: boolean;
+  /** Omitted, the panel is uncontrolled: it starts closed and its trigger toggles it. */
+  open?: boolean | undefined;
   heading: string;
   hideHeading: boolean;
   side: SidePanelSide;
@@ -32,45 +33,16 @@ interface SidePanelArgs {
   swipeable: boolean;
 }
 
-/** The consumer side of controlled `open`: follow every `open-change`. */
+/**
+ * The consumer side of controlled `open`: a story given `open` owns the state and
+ * follows every `open-change`. An uncontrolled story keeps its own state.
+ */
 function followOpenChange(event: CustomEvent<SidePanelOpenChangeDetail>): void {
-  (event.currentTarget as DsSidePanel).open = event.detail.open;
+  const panel = event.currentTarget as DsSidePanel;
+  if (panel.open !== undefined) {
+    panel.open = event.detail.open;
+  }
 }
-
-function panel(args: SidePanelArgs, trigger: TemplateResult, body: TemplateResult, footer?: TemplateResult): TemplateResult {
-  return html`
-    <ds-side-panel
-      .open=${args.open}
-      heading=${args.heading}
-      ?hide-heading=${args.hideHeading}
-      side=${args.side}
-      width=${args.width}
-      persistent=${args.persistent}
-      landmark=${args.landmark}
-      ?modal=${args.modal}
-      .scrim=${args.scrim}
-      .dismissible=${args.dismissible}
-      .swipeable=${args.swipeable}
-      @open-change=${followOpenChange}
-    >
-      ${trigger} ${body} ${footer ?? ''}
-    </ds-side-panel>
-  `;
-}
-
-const menuTrigger = html`
-  <ds-button slot="trigger" variant="ghost" icon-only label="Menu">
-    <ds-icon slot="leading-icon" name="menu"></ds-icon>
-  </ds-button>
-`;
-
-const navLinks = html`
-  <ds-stack gap="tight">
-    <ds-link href="#home" label="Home"></ds-link>
-    <ds-link href="#orders" label="Orders"></ds-link>
-    <ds-link href="#settings" label="Settings"></ds-link>
-  </ds-stack>
-`;
 
 const meta: Meta<SidePanelArgs> = {
   title: 'SidePanel/Lit',
@@ -85,7 +57,6 @@ const meta: Meta<SidePanelArgs> = {
     landmark: { control: 'select', options: ['complementary', 'navigation'] },
   },
   args: {
-    open: true,
     heading: 'Menu',
     hideHeading: false,
     side: 'start',
@@ -97,7 +68,31 @@ const meta: Meta<SidePanelArgs> = {
     dismissible: true,
     swipeable: true,
   },
-  render: (args) => panel(args, menuTrigger, navLinks),
+  render: (args) => html`
+    <ds-side-panel
+      .open=${args.open}
+      heading=${args.heading}
+      ?hide-heading=${args.hideHeading}
+      side=${args.side}
+      width=${args.width}
+      persistent=${args.persistent}
+      landmark=${args.landmark}
+      ?modal=${args.modal}
+      .scrim=${args.scrim}
+      .dismissible=${args.dismissible}
+      .swipeable=${args.swipeable}
+      @open-change=${followOpenChange}
+    >
+      <ds-button slot="trigger" variant="ghost" icon-only label="Menu">
+        <ds-icon slot="leading-icon" name="menu"></ds-icon>
+      </ds-button>
+      <ds-stack gap="tight">
+        <ds-link href="#dashboard" label="Dashboard"></ds-link>
+        <ds-link href="#projects" label="Projects"></ds-link>
+        <ds-link href="#settings" label="Settings"></ds-link>
+      </ds-stack>
+    </ds-side-panel>
+  `,
 };
 
 export default meta;
@@ -119,88 +114,165 @@ export const PersistentNever: Story = { args: { persistent: 'never' } };
 export const PersistentContent: Story = { args: { persistent: 'content' } };
 export const PersistentPage: Story = { args: { persistent: 'page' } };
 
-/* role (the Lit property is `landmark`) */
+/* role (the Lit property is `landmark`: a custom element inherits `Element.role`) */
 export const RoleComplementary: Story = { args: { landmark: 'complementary' } };
 export const RoleNavigation: Story = { args: { landmark: 'navigation' } };
 
 /* notable states */
-export const Closed: Story = { args: { open: false } };
-export const HideHeading: Story = { args: { hideHeading: true } };
-export const Modal: Story = { args: { modal: true } };
-export const ScrimFalse: Story = { args: { scrim: false } };
-export const DismissibleFalse: Story = { args: { dismissible: false } };
-export const SwipeableFalse: Story = { args: { swipeable: false } };
+export const Open: Story = { args: { open: true } };
+export const Modal: Story = { args: { open: true, modal: true } };
+export const NoScrim: Story = { args: { open: true, scrim: false } };
+export const NotDismissible: Story = { args: { open: true, dismissible: false } };
+export const HiddenHeading: Story = { args: { open: true, hideHeading: true } };
+/** hideHeading with no close button: the header part is not rendered and the hidden title leads the column. */
+export const HiddenHeadingNotDismissible: Story = {
+  args: { open: true, hideHeading: true, dismissible: false },
+};
 
-/* examples: `open` is not in their `given`, so the panel starts closed behind its trigger. */
+/* examples — each starts from blank args, never from Default's or the meta args: a prop absent from
+   the doc's `given` takes its default, so an example with no `open` renders uncontrolled and closed. */
+
+/** The phone hamburger menu that becomes the permanent sidebar on desktop, with a self-explanatory list. */
 export const NavigationDrawer: Story = {
-  args: { open: false, heading: 'Menu', hideHeading: true, landmark: 'navigation', persistent: 'content' },
+  args: { heading: 'Menu', hideHeading: true, landmark: 'navigation', persistent: 'content' },
+  render: (args) => html`
+    <ds-side-panel
+      .open=${args.open}
+      heading=${args.heading}
+      ?hide-heading=${args.hideHeading}
+      side=${args.side}
+      width=${args.width}
+      persistent=${args.persistent}
+      landmark=${args.landmark}
+      ?modal=${args.modal}
+      .scrim=${args.scrim}
+      .dismissible=${args.dismissible}
+      .swipeable=${args.swipeable}
+      @open-change=${followOpenChange}
+    >
+      <ds-button slot="trigger" variant="ghost" icon-only label="Menu">
+        <ds-icon slot="leading-icon" name="menu"></ds-icon>
+      </ds-button>
+      <ds-stack gap="tight">
+        <ds-link href="#dashboard" label="Dashboard"></ds-link>
+        <ds-link href="#projects" label="Projects"></ds-link>
+        <ds-link href="#settings" label="Settings"></ds-link>
+      </ds-stack>
+    </ds-side-panel>
+  `,
 };
 
+/** A wide filter panel beside a results page, ending in an action row. */
 export const Filters: Story = {
-  args: { open: false, heading: 'Filters', width: 'wide' },
-  render: (args) =>
-    panel(
-      args,
-      html`<ds-button slot="trigger" variant="secondary" label="Filters"></ds-button>`,
-      html`
-        <ds-stack gap="normal">
-          <ds-checkbox label="In stock" name="inStock"></ds-checkbox>
-          <ds-checkbox label="On sale" name="onSale"></ds-checkbox>
-          <ds-checkbox label="Free shipping" name="freeShipping"></ds-checkbox>
-        </ds-stack>
-      `,
-      html`
-        <ds-button slot="footer" variant="secondary" label="Clear"></ds-button>
-        <ds-button slot="footer" variant="primary" label="Apply"></ds-button>
-      `,
-    ),
+  args: { heading: 'Filters', width: 'wide' },
+  render: (args) => html`
+    <ds-side-panel
+      .open=${args.open}
+      heading=${args.heading}
+      ?hide-heading=${args.hideHeading}
+      side=${args.side}
+      width=${args.width}
+      persistent=${args.persistent}
+      landmark=${args.landmark}
+      ?modal=${args.modal}
+      .scrim=${args.scrim}
+      .dismissible=${args.dismissible}
+      .swipeable=${args.swipeable}
+      @open-change=${followOpenChange}
+    >
+      <ds-button slot="trigger" variant="secondary" label="Filters"></ds-button>
+      <ds-stack gap="normal">
+        <ds-checkbox name="in-stock" label="In stock"></ds-checkbox>
+        <ds-checkbox name="free-shipping" label="Free shipping"></ds-checkbox>
+        <ds-checkbox name="on-sale" label="On sale"></ds-checkbox>
+      </ds-stack>
+      <ds-button slot="footer" variant="secondary" label="Clear"></ds-button>
+      <ds-button slot="footer" variant="primary" label="Apply"></ds-button>
+    </ds-side-panel>
+  `,
 };
 
+/** A checkout panel from the end edge that must be finished or dismissed, so it is modal. */
 export const Cart: Story = {
   args: { open: true, heading: 'Your cart', side: 'end', modal: true },
-  render: (args) =>
-    panel(
-      args,
-      html``,
-      html`
-        <ds-stack gap="normal">
-          <ds-card inset="md"><ds-text>Notebook × 2</ds-text></ds-card>
-          <ds-card inset="md"><ds-text>Pen × 1</ds-text></ds-card>
-        </ds-stack>
-      `,
-      html`<ds-button slot="footer" variant="primary" label="Checkout"></ds-button>`,
-    ),
+  render: (args) => html`
+    <ds-side-panel
+      .open=${args.open}
+      heading=${args.heading}
+      ?hide-heading=${args.hideHeading}
+      side=${args.side}
+      width=${args.width}
+      persistent=${args.persistent}
+      landmark=${args.landmark}
+      ?modal=${args.modal}
+      .scrim=${args.scrim}
+      .dismissible=${args.dismissible}
+      .swipeable=${args.swipeable}
+      @open-change=${followOpenChange}
+    >
+      <ds-stack gap="normal">
+        <ds-card heading="Linen shirt"><ds-text>1 × $48.00</ds-text></ds-card>
+        <ds-card heading="Canvas tote"><ds-text>2 × $22.00</ds-text></ds-card>
+      </ds-stack>
+      <ds-button slot="footer" variant="primary" label="Checkout"></ds-button>
+    </ds-side-panel>
+  `,
 };
 
+/** A narrow detail panel that should feel like part of the page, so it has no scrim. */
 export const DetailPanel: Story = {
   args: { open: true, heading: 'Order details', side: 'end', width: 'narrow', scrim: false },
-  render: (args) =>
-    panel(
-      args,
-      html``,
-      html`
-        <ds-stack gap="tight">
-          <ds-text tone="muted">Order</ds-text>
-          <ds-text>No. 1042</ds-text>
-          <ds-text tone="muted">Status</ds-text>
-          <ds-text>Shipped</ds-text>
-        </ds-stack>
-      `,
-    ),
+  render: (args) => html`
+    <ds-side-panel
+      .open=${args.open}
+      heading=${args.heading}
+      ?hide-heading=${args.hideHeading}
+      side=${args.side}
+      width=${args.width}
+      persistent=${args.persistent}
+      landmark=${args.landmark}
+      ?modal=${args.modal}
+      .scrim=${args.scrim}
+      .dismissible=${args.dismissible}
+      .swipeable=${args.swipeable}
+      @open-change=${followOpenChange}
+    >
+      <ds-stack gap="tight">
+        <ds-text tone="muted">Order</ds-text>
+        <ds-text>#10482</ds-text>
+        <ds-text tone="muted">Status</ds-text>
+        <ds-text>Shipped</ds-text>
+      </ds-stack>
+    </ds-side-panel>
+  `,
 };
 
 /** Open with its trigger and three focusable children, for the keyboard gate. */
 export const Keyboard: Story = {
-  render: (args) =>
-    panel(
-      args,
-      menuTrigger,
-      html`
-        <ds-stack gap="tight">
-          <ds-link href="#home" label="Home"></ds-link>
-          <ds-link href="#orders" label="Orders"></ds-link>
-          <ds-input label="Search" name="search"></ds-input>
-        </ds-stack>
-      `,
-    ),
+  args: { open: true },
+  render: (args) => html`
+    <ds-side-panel
+      .open=${args.open}
+      heading=${args.heading}
+      ?hide-heading=${args.hideHeading}
+      side=${args.side}
+      width=${args.width}
+      persistent=${args.persistent}
+      landmark=${args.landmark}
+      ?modal=${args.modal}
+      .scrim=${args.scrim}
+      .dismissible=${args.dismissible}
+      .swipeable=${args.swipeable}
+      @open-change=${followOpenChange}
+    >
+      <ds-button slot="trigger" variant="ghost" icon-only label="Menu">
+        <ds-icon slot="leading-icon" name="menu"></ds-icon>
+      </ds-button>
+      <ds-stack gap="tight">
+        <ds-link href="#dashboard" label="Dashboard"></ds-link>
+        <ds-link href="#projects" label="Projects"></ds-link>
+        <ds-input label="Search" name="search"></ds-input>
+      </ds-stack>
+    </ds-side-panel>
+  `,
 };

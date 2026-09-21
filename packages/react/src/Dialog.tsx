@@ -37,6 +37,7 @@ export type DialogOverridableBinding =
   | 'radius'
   | 'inset'
   | 'partGap'
+  | 'gutter'
   | 'headerGap'
   | 'footerGap'
   | 'descriptionGap'
@@ -55,6 +56,7 @@ const OVERRIDE_HOOK: Record<DialogOverridableBinding, string> = {
   radius: '--ds-dialog-radius',
   inset: '--ds-dialog-inset',
   partGap: '--ds-dialog-part-gap',
+  gutter: '--ds-dialog-gutter',
   headerGap: '--ds-dialog-header-gap',
   footerGap: '--ds-dialog-footer-gap',
   descriptionGap: '--ds-dialog-description-gap',
@@ -195,11 +197,13 @@ export function Dialog({
   );
 
   const surfaceRef = useRef<HTMLDivElement | null>(null);
-  const bodyRef = useRef<HTMLElement | null>(null);
+  const bodyRef = useRef<HTMLDivElement | null>(null);
   const footerRef = useRef<HTMLDivElement | null>(null);
   const headingRef = useRef<HTMLHeadingElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
-  const escapeHandledRef = useRef(false);
+  /** True from the moment Escape is reported until the end of the task, so the browser's `cancel` and
+   * `close` for that same key are not reported a second time. */
+  const escapeReportedRef = useRef(false);
   const selfClosingRef = useRef(false);
 
   // Mounted while open, and while the exit transition finishes after `open` goes false.
@@ -237,9 +241,10 @@ export function Dialog({
     headingElement.focus();
   };
 
-  // Open: showModal(), move focus in per `initialFocus`, then reveal on the next frame.
+  // Open: showModal(), move focus in per `initialFocus`, then reveal on the next frame. It also runs
+  // when `open` returns true while the exit transition is still running, which reveals the surface again.
   useLayoutEffect(() => {
-    if (!present) return undefined;
+    if (!present || !open) return undefined;
     const dialog = dialogRef.current;
     const surface = surfaceRef.current;
     if (!dialog || !surface) return undefined;
@@ -254,7 +259,8 @@ export function Dialog({
 
     let fired = false;
     const fireOpened = (): void => {
-      if (fired) return;
+      // Never fired when `open` became false again before the enter transition finished.
+      if (fired || !latest.current.open) return;
       fired = true;
       latest.current.onOpened?.();
     };
@@ -270,7 +276,7 @@ export function Dialog({
       cancelAnimationFrame(frame);
       surface.removeEventListener('transitionend', handleEntered);
     };
-  }, [present]);
+  }, [present, open]);
 
   // Close: run the exit transition, then close() and unmount (FocusScope restores the opener).
   useEffect(() => {
@@ -304,33 +310,19 @@ export function Dialog({
     return lockScroll();
   }, [present]);
 
-  // Escape arrives as keydown; the native `cancel` covers any other close request the browser raises.
-  const handleKeyDown = (event: ReactKeyboardEvent<HTMLDialogElement>): void => {
-    rest.onKeyDown?.(event);
-    if (event.key !== 'Escape' || event.defaultPrevented || !open) return;
-    event.preventDefault();
-    escapeHandledRef.current = true;
-    // The browser's `cancel` for this same key follows the keydown's listeners; skip it once.
+  /** Each Escape is reported exactly once, whichever of keydown, `cancel` or `close` reaches us first. */
+  const reportEscape = (): void => {
+    escapeReportedRef.current = true;
+    // The browser's `cancel` and `close` for this same key follow the keydown's listeners; skip them once.
     setTimeout(() => {
-      escapeHandledRef.current = false;
+      escapeReportedRef.current = false;
     }, 0);
     // Reported even when not dismissible: Escape is the keyboard user's exit.
     onClose?.('escape');
   };
 
-  const handleCancel = (event: SyntheticEvent<HTMLDialogElement>): void => {
-    // The consumer owns `open`: never let the browser close the dialog, dismissible or not.
-    event.preventDefault();
-    if (escapeHandledRef.current || !open) return;
-    onClose?.('escape');
-  };
-
-  // A non-cancelable `cancel` closes the native dialog anyway; reopen unless the consumer set `open` false.
-  const handleNativeClose = (): void => {
-    if (selfClosingRef.current) {
-      selfClosingRef.current = false;
-      return;
-    }
+  /** Reopen after a close the component did not ask for, and put focus back in per `initialFocus`. */
+  const reopenAfterNativeClose = (): void => {
     requestAnimationFrame(() => {
       const dialog = dialogRef.current;
       if (!dialog || dialog.open || !latest.current.open) return;
@@ -338,6 +330,34 @@ export function Dialog({
       else dialog.open = true;
       placeInitialFocus();
     });
+  };
+
+  // Escape arrives as keydown; the native `cancel` covers any other close request the browser raises.
+  const handleKeyDown = (event: ReactKeyboardEvent<HTMLDialogElement>): void => {
+    rest.onKeyDown?.(event);
+    if (event.key !== 'Escape' || event.defaultPrevented || !open) return;
+    event.preventDefault();
+    if (!escapeReportedRef.current) reportEscape();
+  };
+
+  const handleCancel = (event: SyntheticEvent<HTMLDialogElement>): void => {
+    // The consumer owns `open`: never let the browser close the dialog, dismissible or not.
+    event.preventDefault();
+    if (escapeReportedRef.current || !open) return;
+    reportEscape();
+  };
+
+  // A non-cancelable `cancel` closes the native dialog anyway, and a close watcher can close it with no
+  // `cancel` at all (repeated Escape): report `escape` if nothing else did, then reopen unless the
+  // consumer set `open` false.
+  const handleNativeClose = (): void => {
+    if (selfClosingRef.current) {
+      selfClosingRef.current = false;
+      return;
+    }
+    if (!open) return;
+    if (!escapeReportedRef.current) reportEscape();
+    reopenAfterNativeClose();
   };
 
   const handleScrimClick = (): void => {
@@ -370,63 +390,59 @@ export function Dialog({
       onClose={handleNativeClose}
     >
       <div className="ds-dialog__scrim" data-part="scrim" onClick={handleScrimClick} />
+      {/* FocusScope writes its own data-part="scope", so the focusScope part is this wrapper inside it. */}
       <FocusScope trapped autoFocus="none" restoreFocus>
-        <div className="ds-dialog__surface" ref={surfaceRef} data-part="surface">
-          <div className="ds-dialog__header" data-part="header">
-            <div className="ds-dialog__titles">
-              <div
-                className={hideHeading ? 'ds-dialog__heading ds-dialog__visually-hidden' : 'ds-dialog__heading'}
-                data-part="heading"
-              >
-                <Heading
-                  level="2"
-                  id={headingId}
-                  ref={headingRef}
-                  tabIndex={initialFocus === 'title' ? -1 : undefined}
+        <div className="ds-dialog__scope" data-part="focusScope">
+          <div className="ds-dialog__surface" ref={surfaceRef} data-part="surface">
+            <div className="ds-dialog__header" data-part="header">
+              {/* The titles group is Dialog-owned and carries no data-part: it only holds descriptionGap. */}
+              <div className="ds-dialog__titles">
+                <div
+                  className={hideHeading ? 'ds-dialog__heading ds-dialog__visually-hidden' : 'ds-dialog__heading'}
+                  data-part="heading"
                 >
-                  {heading}
-                </Heading>
+                  <Heading level="2" id={headingId} ref={headingRef} tabIndex={initialFocus === 'title' ? -1 : undefined}>
+                    {heading}
+                  </Heading>
+                </div>
+                {description ? (
+                  <Text id={descriptionId} data-part="description" tone="muted">
+                    {description}
+                  </Text>
+                ) : null}
               </div>
-              {description ? (
-                <Text id={descriptionId} data-part="description">
-                  {description}
-                </Text>
+              {dismissible ? (
+                <span className="ds-dialog__close" data-part="closeButton">
+                  <Button
+                    ref={closeButtonRef}
+                    variant="ghost"
+                    size="sm"
+                    iconOnly
+                    label={COPY.closeLabel}
+                    leadingIcon={<Icon name="close" inline />}
+                    onClick={() => onClose?.('close-button')}
+                  />
+                </span>
               ) : null}
             </div>
-            {dismissible ? (
-              <span className="ds-dialog__close" data-part="closeButton">
-                <Button
-                  ref={closeButtonRef}
-                  variant="ghost"
-                  size="sm"
-                  iconOnly
-                  label={COPY.closeLabel}
-                  leadingIcon={<Icon name="close" inline />}
-                  onClick={() => onClose?.('close-button')}
-                />
-              </span>
+            {/* body: the Dialog-owned scroll container, since Box never scrolls. */}
+            <div className="ds-dialog__body" data-part="body" ref={bodyRef}>
+              {/* inset reaches the Box through the stylesheet; the override is passed only when the caller sets it. */}
+              <Box overrides={insetOverride ? { paddingInline: insetOverride } : undefined}>{children}</Box>
+            </div>
+            {hasFooter ? (
+              <div className="ds-dialog__footer" data-part="footer" ref={footerRef}>
+                <Stack
+                  direction="horizontal"
+                  justify="end"
+                  wrap
+                  overrides={footerGapOverride ? { gap: footerGapOverride } : undefined}
+                >
+                  {footer}
+                </Stack>
+              </div>
             ) : null}
           </div>
-          <div className="ds-dialog__scroll">
-            <Box
-              data-part="body"
-              ref={bodyRef}
-              overrides={insetOverride ? { paddingBlock: insetOverride, paddingInline: insetOverride } : undefined}
-            >
-              {children}
-            </Box>
-          </div>
-          {hasFooter ? (
-            <div className="ds-dialog__footer" data-part="footer" ref={footerRef}>
-              <Stack
-                direction="horizontal"
-                justify="end"
-                overrides={footerGapOverride ? { gap: footerGapOverride } : undefined}
-              >
-                {footer}
-              </Stack>
-            </div>
-          ) : null}
         </div>
       </FocusScope>
     </dialog>

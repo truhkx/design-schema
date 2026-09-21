@@ -1,8 +1,6 @@
 import { useEffect, useState, type ComponentProps, type ReactElement } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ActionSheet, type ActionSheetAction, type ActionSheetCloseReason } from './ActionSheet';
-import { Button } from './Button';
-import { Icon } from './Icon';
 
 const PHOTO_ACTIONS: ActionSheetAction[] = [
   { id: 'share', label: 'Share', icon: 'external' },
@@ -11,32 +9,27 @@ const PHOTO_ACTIONS: ActionSheetAction[] = [
   { id: 'delete', label: 'Delete photo', icon: 'danger', tone: 'danger' },
 ];
 
-/** Acts as the consumer: owns `open` (starting from the arg) and closes on onAction and onClose. */
+/**
+ * Acts as the consumer: owns `open` (starting from the arg) and sets it false on onAction and
+ * onClose, calling the story's own handlers first. It renders no trigger — there is no copy key
+ * for one — so the sheet's focusable children are the only ones on the page.
+ */
 function Consumer(args: ComponentProps<typeof ActionSheet>): ReactElement {
   const [open, setOpen] = useState(args.open);
   useEffect(() => setOpen(args.open), [args.open]);
   return (
-    <>
-      <Button
-        label="More actions"
-        iconOnly
-        leadingIcon={<Icon name="ellipsis" inline />}
-        aria-haspopup="menu"
-        onClick={() => setOpen(true)}
-      />
-      <ActionSheet
-        {...args}
-        open={open}
-        onAction={(id: string) => {
-          args.onAction?.(id);
-          setOpen(false);
-        }}
-        onClose={(reason: ActionSheetCloseReason) => {
-          args.onClose?.(reason);
-          setOpen(false);
-        }}
-      />
-    </>
+    <ActionSheet
+      {...args}
+      open={open}
+      onAction={(id: string) => {
+        args.onAction?.(id);
+        setOpen(false);
+      }}
+      onClose={(reason: ActionSheetCloseReason) => {
+        args.onClose?.(reason);
+        setOpen(false);
+      }}
+    />
   );
 }
 
@@ -59,8 +52,10 @@ const meta: Meta<typeof ActionSheet> = {
 export default meta;
 type Story = StoryObj<typeof ActionSheet>;
 
+/** Open, with the photo-actions example's args. */
 export const Default: Story = {};
 
+/** Contextual actions on an item, with the destructive one last. */
 export const PhotoActions: Story = {
   args: {
     open: true,
@@ -74,6 +69,7 @@ export const PhotoActions: Story = {
   },
 };
 
+/** A sheet with no heading, named by copy.defaultLabel for assistive technology. */
 export const UnnamedSheet: Story = {
   args: {
     open: true,
@@ -85,6 +81,7 @@ export const UnnamedSheet: Story = {
   },
 };
 
+/** An action that is shown but cannot be used here, announced as disabled rather than hidden. */
 export const WithAnUnavailableAction: Story = {
   args: {
     open: true,
@@ -102,11 +99,12 @@ export const DismissibleFalse: Story = {
   args: { dismissible: false },
 };
 
+/** The controlled sheet with `open` false renders nothing. */
 export const Closed: Story = {
   args: { open: false },
 };
 
-/** Open with its trigger and four focusable actions, for the keyboard gate. */
+/** Open with four focusable actions and the Cancel row, for the keyboard gate. */
 export const Keyboard: Story = {
   args: { open: true, heading: 'Photo.jpg', actions: PHOTO_ACTIONS },
 };

@@ -152,6 +152,9 @@ export const ReadingDialog: Story = {
         <Text>You can close your account at any time. Your content is deleted within thirty days of closing.</Text>
       </Stack>
     ),
+    // Example args start from blank, not from Default's: `footer` is absent from the
+    // example's `given`, so this dialog has none.
+    footer: undefined,
     size: 'lg',
     initialFocus: 'title',
   },

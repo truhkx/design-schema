@@ -17,6 +17,7 @@
   --ds-menu-popup-offset: var(--space-1);
   --ds-menu-typeahead-reset: var(--motion-duration-loop);
   --ds-menu-max-height: var(--layout-max-width-prose);
+  --ds-menu-gutter: var(--layout-gutter);
   --ds-menu-min-width: var(--space-20);
   --ds-menu-item-padding-block: var(--space-sm);
   --ds-menu-item-padding-inline: var(--space-md);
@@ -46,9 +47,11 @@
   padding: var(--ds-menu-popup-padding);
   /* minWidth: space.20 × 2.5 (≈200px at comfortable density), and at least the trigger's width. */
   min-inline-size: max(calc(var(--ds-menu-min-width) * 2.5), var(--ds-menu-trigger-width, 0px));
-  max-inline-size: calc(100vw - 2 * var(--layout-gutter));
+  /* gutter: the space kept between the popup and each viewport edge. It caps maxHeight and bounds the
+     inline shift, which Menu.tsx reads in px from this hook. */
+  max-inline-size: calc(100vw - 2 * var(--ds-menu-gutter));
   /* maxHeight: the cap used on wide screens; never exceeds the viewport minus the gutter either. */
-  max-block-size: min(var(--ds-menu-max-height), calc(100vh - 2 * var(--layout-gutter)));
+  max-block-size: min(var(--ds-menu-max-height), calc(100vh - 2 * var(--ds-menu-gutter)));
   overflow: auto;
   /* surface: locked — never overridable. */
   background-color: var(--color-overlay-surface);
@@ -124,13 +127,7 @@
   color: var(--color-foreground);
   cursor: pointer;
   user-select: none;
-  transition: background-color var(--ds-menu-enter) var(--motion-easing-standard);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ds-menu__item {
-    transition: none;
-  }
+  /* `enter` is the popup's transition only: the item highlight changes instantly. */
 }
 
 /* itemHover: locked — pointer hover and keyboard focus share this highlight. Hover moves the real

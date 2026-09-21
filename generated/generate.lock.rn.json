@@ -22,16 +22,15 @@
     }
   },
   "ActionSheet.rn": {
-    "hash": "7efbe9ae742131a9",
-    "lastAttemptHash": "7efbe9ae742131a9",
-    "generatedAt": "2026-09-17T15:09:53+00:00",
+    "hash": "ff3ae6851cf6a340",
+    "lastAttemptHash": "ff3ae6851cf6a340",
+    "generatedAt": "2026-09-21T13:48:08+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.9012,
+    "costUsd": 2.9314,
     "files": [
       "packages/rn/src/ActionSheet.stories.tsx",
-      "packages/rn/src/ActionSheet.test.tsx",
       "packages/rn/src/ActionSheet.tsx"
     ],
     "gaps": 9,
@@ -41,7 +40,8 @@
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "Alert.rn": {
@@ -68,13 +68,13 @@
     }
   },
   "AlertDialog.rn": {
-    "hash": "d0cad972319e1599",
-    "lastAttemptHash": "d0cad972319e1599",
-    "generatedAt": "2026-09-17T14:30:36+00:00",
+    "hash": "4a1ce2149a4ea85c",
+    "lastAttemptHash": "4a1ce2149a4ea85c",
+    "generatedAt": "2026-09-21T11:13:58+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.2067,
+    "costUsd": 1.8452,
     "files": [
       "packages/rn/src/AlertDialog.stories.tsx",
       "packages/rn/src/AlertDialog.tsx"
@@ -86,28 +86,30 @@
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "BottomSheet.rn": {
-    "hash": "65b8c99777322bf5",
-    "lastAttemptHash": "65b8c99777322bf5",
-    "generatedAt": "2026-09-17T15:01:16+00:00",
+    "hash": "041ab8e894196da5",
+    "lastAttemptHash": "041ab8e894196da5",
+    "generatedAt": "2026-09-21T13:09:37+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.3368,
+    "costUsd": 2.2841,
     "files": [
       "packages/rn/src/BottomSheet.tsx"
     ],
-    "gaps": 9,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "Box.rn": {
@@ -346,26 +348,26 @@
     }
   },
   "Dialog.rn": {
-    "hash": "2d31a5b2fac39023",
-    "lastAttemptHash": "2d31a5b2fac39023",
-    "generatedAt": "2026-09-17T14:23:14+00:00",
+    "hash": "842bea891a62a004",
+    "lastAttemptHash": "842bea891a62a004",
+    "generatedAt": "2026-09-21T10:53:44+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.677,
+    "costUsd": 2.0818,
     "files": [
       "packages/rn/src/Dialog.stories.tsx",
-      "packages/rn/src/Dialog.test.tsx",
       "packages/rn/src/Dialog.tsx"
     ],
-    "gaps": 15,
+    "gaps": 14,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "Disclosure.rn": {
@@ -653,25 +655,25 @@
     }
   },
   "Menu.rn": {
-    "hash": "d97c4a86dca1d6db",
-    "lastAttemptHash": "d97c4a86dca1d6db",
-    "generatedAt": "2026-09-17T14:40:01+00:00",
+    "hash": "6e28eec48079f96d",
+    "lastAttemptHash": "6e28eec48079f96d",
+    "generatedAt": "2026-09-21T11:45:56+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.4712,
+    "costUsd": 2.516,
     "files": [
-      "packages/rn/src/Menu.stories.tsx",
       "packages/rn/src/Menu.tsx"
     ],
-    "gaps": 8,
+    "gaps": 12,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "Meter.rn": {
@@ -741,26 +743,27 @@
     }
   },
   "Popover.rn": {
-    "hash": "243abea695f854bc",
-    "lastAttemptHash": "243abea695f854bc",
-    "generatedAt": "2026-09-17T14:51:18+00:00",
+    "hash": "c7928aeca6d25b93",
+    "lastAttemptHash": "c7928aeca6d25b93",
+    "generatedAt": "2026-09-21T12:36:07+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.8577,
+    "costUsd": 4.5654,
     "files": [
       "packages/rn/src/Popover.stories.tsx",
       "packages/rn/src/Popover.test.tsx",
       "packages/rn/src/Popover.tsx"
     ],
-    "gaps": 10,
+    "gaps": 13,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "ProgressBar.rn": {
@@ -871,17 +874,15 @@
     }
   },
   "SidePanel.rn": {
-    "hash": "9d500ec1b10367e1",
-    "lastAttemptHash": "9d500ec1b10367e1",
-    "generatedAt": "2026-09-17T15:19:09+00:00",
+    "hash": "ae6c1369454d9670",
+    "lastAttemptHash": "ae6c1369454d9670",
+    "generatedAt": "2026-09-21T15:11:52+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.1514,
+    "costUsd": 3.0526,
     "files": [
-      "packages/rn/src/SidePanel.stories.tsx",
-      "packages/rn/src/SidePanel.tsx",
-      "packages/rn/src/index.ts"
+      "packages/rn/src/SidePanel.tsx"
     ],
     "gaps": 10,
     "gates": {
@@ -890,7 +891,8 @@
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "Slider.rn": {

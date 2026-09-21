@@ -56,6 +56,7 @@ export type MenuOverridableBinding =
   | 'popupOffset'
   | 'typeaheadReset'
   | 'maxHeight'
+  | 'gutter'
   | 'minWidth'
   | 'itemPaddingBlock'
   | 'itemPaddingInline'
@@ -82,6 +83,7 @@ const HOOKS: Record<MenuOverridableBinding, string> = {
   popupOffset: '--ds-menu-popup-offset',
   typeaheadReset: '--ds-menu-typeahead-reset',
   maxHeight: '--ds-menu-max-height',
+  gutter: '--ds-menu-gutter',
   minWidth: '--ds-menu-min-width',
   itemPaddingBlock: '--ds-menu-item-padding-block',
   itemPaddingInline: '--ds-menu-item-padding-inline',
@@ -101,8 +103,21 @@ const HOOKS: Record<MenuOverridableBinding, string> = {
   enterDistance: '--ds-menu-enter-distance',
 };
 
+/** minWidth's runtime floor: the trigger's measured width. `0px` in `anchor` mode, which has no floor. */
+const TRIGGER_WIDTH_HOOK = '--ds-menu-trigger-width';
+
 /** Whether the running browser implements the Popover API. Evaluated once. */
 const POPOVER_SUPPORTED = typeof HTMLElement !== 'undefined' && typeof HTMLElement.prototype.showPopover === 'function';
+
+const TABBABLE_SELECTOR = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[contenteditable]:not([contenteditable="false"])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',');
 
 function isSeparator(item: MenuItem): item is MenuSeparator {
   return 'separator' in item;
@@ -137,6 +152,50 @@ function parseDuration(value: string): number {
 }
 
 /**
+ * Reads a resolved length custom property in px (`popupOffset`, `gutter`): a rem value is multiplied
+ * by the root font size. `null` when it cannot be read — no token stylesheet loaded, or not a length.
+ */
+function readLengthPx(element: Element, name: string): number | null {
+  const raw = getComputedStyle(element).getPropertyValue(name).trim();
+  const value = Number.parseFloat(raw);
+  if (!Number.isFinite(value)) return null;
+  if (raw.endsWith('rem')) {
+    const rootSize = Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
+    return Number.isFinite(rootSize) ? value * rootSize : null;
+  }
+  return raw.endsWith('px') || /^[\d.]+$/.test(raw) ? value : null;
+}
+
+/** Whether focus can be parked on this element — an `anchor` is any element, and need not take focus. */
+function isFocusable(element: HTMLElement): boolean {
+  return element.matches(TABBABLE_SELECTOR) || element.tabIndex >= 0;
+}
+
+/**
+ * Focuses the tabbable element after (or before) `from` in document order, skipping `exclude`. `from`
+ * need not be tabbable itself (an `anchor` stands in for the trigger), and its own descendants are
+ * neither before nor after it.
+ */
+function focusAdjacent(from: HTMLElement, exclude: Element | null, direction: 'next' | 'previous'): void {
+  const all = [...document.querySelectorAll<HTMLElement>(TABBABLE_SELECTOR)].filter(
+    (element) => !(exclude && exclude.contains(element)) && !from.contains(element),
+  );
+  if (direction === 'next') {
+    all.find((element) => from.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_FOLLOWING)?.focus();
+  } else {
+    const preceding = all.filter((element) => from.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_PRECEDING);
+    preceding[preceding.length - 1]?.focus();
+  }
+}
+
+/** The focused element, following open shadow roots down to the leaf that really has focus. */
+function deepActiveElement(): HTMLElement | null {
+  let active: Element | null = document.activeElement;
+  while (active?.shadowRoot?.activeElement) active = active.shadowRoot.activeElement;
+  return active instanceof HTMLElement ? active : null;
+}
+
+/**
  * `<ds-menu>` — Menu (category: overlay, APG pattern: menu-button).
  *
  * `<ds-menu label="More actions" .items=${items}>` composes a `<ds-button>`
@@ -144,9 +203,15 @@ function parseDuration(value: string): number {
  * `role="menu"` popup in the shadow root. The popup uses the Popover API
  * (`popover="manual"`, `showPopover()`) for top-layer rendering when available,
  * and `position: fixed` with `layer.dropdown` otherwise; either way it is placed
- * from the trigger's `getBoundingClientRect()` for `placement` and flipped at
- * the viewport edge. Items use one roving tabindex with real focus, and hover
- * moves that focus, so pointer and keyboard never highlight two things.
+ * from the trigger's `getBoundingClientRect()` for `placement`. Only the block
+ * side flips at the viewport edge — `start` and `end` resolve against the layout
+ * direction and are shifted inline instead, so the popup stays `gutter` away
+ * from the side edges.
+ *
+ * Items use one roving tabindex over real focus, and hover moves that focus, so
+ * pointer and keyboard never highlight two things; DOM focus is authoritative,
+ * so an item focused from outside the component (a click, a screen reader) is
+ * still where the arrows, Home/End and typeahead move from.
  *
  * `open` is controlled when set: the element reports `open-change` and shows
  * the new state (hiding, and returning focus to the trigger) only once the
@@ -154,7 +219,8 @@ function parseDuration(value: string): number {
  * Choosing an item fires `open-change` (reason `action`) and then `action`.
  *
  * Setting `anchor` positions the popup relative to that element and omits the
- * trigger; `open` must then be controlled.
+ * trigger; `open` must then be controlled, and focus that would return to the
+ * trigger returns to whatever had focus when the menu opened.
  *
  * @fires open-change - The menu opened or closed; `{ open, reason }` in `detail`. Fired before `action`.
  * @fires action - An item was chosen; `{ id }` in `detail`. The menu closes itself first.
@@ -177,6 +243,7 @@ export class DsMenu extends LitElement {
       --ds-menu-popup-offset: var(--space-1);
       --ds-menu-typeahead-reset: var(--motion-duration-loop);
       --ds-menu-max-height: var(--layout-max-width-prose);
+      --ds-menu-gutter: var(--layout-gutter);
       --ds-menu-min-width: var(--space-20);
       --ds-menu-item-padding-block: var(--space-sm);
       --ds-menu-item-padding-inline: var(--space-md);
@@ -218,10 +285,11 @@ export class DsMenu extends LitElement {
       box-shadow: var(--ds-menu-shadow);
       color: var(--color-foreground);
       z-index: var(--ds-menu-layer);
-      /* minWidth: an override replaces the base; the × 2.5 stays in the rule */
-      min-inline-size: calc(var(--ds-menu-min-width) * 2.5);
-      max-inline-size: calc(100vw - 2 * var(--layout-gutter));
-      max-block-size: min(var(--ds-menu-max-height), calc(100vh - 2 * var(--layout-gutter)));
+      /* minWidth: an override replaces the base; the × 2.5 stays in the rule, and the trigger's
+         measured width is the runtime floor (0 in anchor mode, which has no trigger). */
+      min-inline-size: max(calc(var(--ds-menu-min-width) * 2.5), var(--ds-menu-trigger-width, 0px));
+      max-inline-size: calc(100vw - 2 * var(--ds-menu-gutter));
+      max-block-size: min(var(--ds-menu-max-height), calc(100vh - 2 * var(--ds-menu-gutter)));
       overflow-y: auto;
       font-family: var(--ds-menu-font-family);
       font-size: var(--ds-menu-font-size);
@@ -247,7 +315,7 @@ export class DsMenu extends LitElement {
       display: none;
     }
 
-    /* enter: fade plus an enterDistance slide from the trigger side */
+    /* enter: fade plus an enterDistance slide from the side facing the trigger, after any flip */
     @starting-style {
       [data-part='popup'][data-side='bottom'] {
         opacity: 0;
@@ -304,7 +372,8 @@ export class DsMenu extends LitElement {
       outline: none;
     }
 
-    /* itemHover: color.background.subtle, locked; keyboard focus shares it, so the highlight is never hover-only */
+    /* itemHover: color.background.subtle, locked; keyboard focus shares it, so the highlight is
+       never hover-only. The highlight changes instantly: enter is the popup's transition only. */
     [data-part='item']:hover,
     [data-part='item']:focus {
       background: var(--color-background-subtle);
@@ -362,15 +431,28 @@ export class DsMenu extends LitElement {
   /** Render the trigger as an icon-only Button using `triggerIcon`; `label` is still required. */
   @property({ type: Boolean, reflect: true, attribute: 'icon-only' }) accessor iconOnly = false;
 
-  /** Preferred position of the popup relative to the trigger; flips when it would overflow the viewport. */
+  /**
+   * Preferred position of the popup relative to the trigger (or `anchor`). Only
+   * the block side flips when the popup would overflow the viewport; `start` and
+   * `end` never flip — they resolve against the layout direction (in
+   * right-to-left `start` is the right edge) and the popup is shifted inline
+   * instead so it stays `gutter` away from the side edges.
+   */
   @property({ type: String, reflect: true }) accessor placement: MenuPlacement = 'bottom-start';
 
-  /** Controlled open state (the parent flips it from `open-change`). Omit for an uncontrolled menu. */
+  /**
+   * Controlled open state (the parent flips it from `open-change`). Omit for an
+   * uncontrolled menu, which starts closed; there is no defaultOpen. A
+   * controlled menu hides only when `open` becomes false — a parent that never
+   * flips it keeps the menu open.
+   */
   @property({ type: Boolean, reflect: true }) accessor open: boolean | undefined;
 
   /**
-   * Position the popup relative to this element instead of rendering a
-   * trigger; the trigger part is omitted and `open` must be controlled.
+   * Position the popup relative to this element instead of rendering a trigger;
+   * the trigger part is omitted and `open` must be controlled. The anchor stands
+   * in for the trigger: a pointerdown on it is not `outside` and focus moving
+   * onto it is not `focus-out`.
    */
   @property({ attribute: false }) accessor anchor: HTMLElement | undefined;
 
@@ -382,8 +464,11 @@ export class DsMenu extends LitElement {
   /** Uncontrolled open state, used when `open` is omitted. */
   @state() private accessor internalOpen = false;
 
-  /** The item carrying the roving tabindex. */
+  /** The item carrying the roving tabindex; `null` puts it on the first enabled item. */
   @state() private accessor activeId: string | null = null;
+
+  /** Set while the popup is shown but must hold no tab stop at all, after Tab moved focus out of it. */
+  @state() private accessor tabStopSuppressed = false;
 
   @query('[data-part="trigger"]') private accessor triggerEl!: HTMLElement | null;
   @query('[data-part="trigger"] ds-button') private accessor buttonEl!: HTMLElement | null;
@@ -392,8 +477,12 @@ export class DsMenu extends LitElement {
   private wasOpen = false;
   private pendingFocus: 'first' | 'last' = 'first';
   private restoreOnClose = false;
+  /** With `anchor` there is no trigger, so focus returns to whatever held it when the menu opened. */
+  private opener: HTMLElement | null = null;
   private typeaheadBuffer = '';
   private typeaheadTimer: ReturnType<typeof setTimeout> | undefined;
+  /** A window blur and the focusout it causes are one focus loss, and report once. */
+  private focusLossReported = false;
   private warnedNothingToPress = false;
 
   /** Whether the menu is open, controlled or not. */
@@ -405,11 +494,13 @@ export class DsMenu extends LitElement {
     super.connectedCallback();
     this.setAttribute('data-ds', 'Menu');
     this.addEventListener('focusout', this.handleFocusOut);
+    this.addEventListener('focusin', this.handleFocusIn);
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this.removeEventListener('focusout', this.handleFocusOut);
+    this.removeEventListener('focusin', this.handleFocusIn);
     this.removeGlobalListeners();
     clearTimeout(this.typeaheadTimer);
     this.wasOpen = false;
@@ -434,12 +525,11 @@ export class DsMenu extends LitElement {
   protected override render(): TemplateResult {
     const isOpen = this.currentOpen;
     const navigable = this.navigableItems();
-    const rovingId = this.activeId ?? navigable[0]?.id ?? null;
+    const rovingId = this.tabStopSuppressed ? null : (this.activeId ?? navigable[0]?.id ?? null);
     let groupIndex = 0;
 
     const renderItem = (item: MenuActionItem): TemplateResult => html`
       <div
-        part="item"
         data-part="item"
         role="menuitem"
         data-id=${item.id}
@@ -447,25 +537,24 @@ export class DsMenu extends LitElement {
         tabindex=${rovingId === item.id && !item.disabled ? 0 : -1}
         aria-disabled=${ifDefined(item.disabled ? 'true' : undefined)}
         @click=${() => this.handleItemClick(item)}
+        @focus=${() => this.handleItemFocus(item)}
         @pointerenter=${() => this.handleItemPointerEnter(item)}
       >
-        ${item.icon ? html`<ds-icon part="itemIcon" data-part="itemIcon" name=${item.icon}></ds-icon>` : nothing}
+        ${item.icon ? html`<ds-icon data-part="itemIcon" name=${item.icon}></ds-icon>` : nothing}
         <span class="label">${item.label}</span>
-        ${item.shortcut
-          ? html`<span part="itemShortcut" data-part="itemShortcut" aria-hidden="true">${item.shortcut}</span>`
-          : nothing}
+        ${item.shortcut ? html`<span data-part="itemShortcut" aria-hidden="true">${item.shortcut}</span>` : nothing}
       </div>
     `;
 
     const entries = this.items.map((item) => {
       if (isSeparator(item)) {
-        return html`<div part="separator" data-part="separator" role="separator"></div>`;
+        return html`<div data-part="separator" role="separator"></div>`;
       }
       if (isGroup(item)) {
         const labelId = `group-label-${groupIndex++}`;
         return html`
-          <div part="group" data-part="group" role="group" aria-labelledby=${labelId}>
-            <div part="groupLabel" data-part="groupLabel" id=${labelId} role="presentation">${item.group}</div>
+          <div data-part="group" role="group" aria-labelledby=${labelId}>
+            <div data-part="groupLabel" id=${labelId} role="presentation">${item.group}</div>
             ${groupActions(item).map(renderItem)}
           </div>
         `;
@@ -482,7 +571,7 @@ export class DsMenu extends LitElement {
       ${this.anchor
         ? nothing
         : html`
-            <span part="trigger" data-part="trigger">
+            <span data-part="trigger">
               <ds-button
                 variant=${this.triggerVariant}
                 label=${this.label}
@@ -526,6 +615,10 @@ export class DsMenu extends LitElement {
   }
 
   private handleOpened(): void {
+    this.tabStopSuppressed = false;
+    this.focusLossReported = false;
+    // The element that had focus when the menu opened stands in for the trigger in `anchor` mode.
+    if (this.anchor) this.opener = deepActiveElement();
     const popup = this.popupEl;
     if (popup && POPOVER_SUPPORTED && !popup.matches(':popover-open')) popup.showPopover();
     this.updatePosition();
@@ -543,6 +636,7 @@ export class DsMenu extends LitElement {
     if (this.restoreOnClose || focusInPopup) this.restoreFocus();
     this.restoreOnClose = false;
     this.activeId = null;
+    this.opener = null;
     this.typeaheadBuffer = '';
   }
 
@@ -556,8 +650,9 @@ export class DsMenu extends LitElement {
     }
   }
 
+  /** The element focus goes back to: the trigger, or in `anchor` mode whatever had it when the menu opened. */
   private restoreFocus(): void {
-    (this.anchor ?? this.buttonEl)?.focus();
+    (this.anchor ? this.opener : this.buttonEl)?.focus();
   }
 
   /** Closes and returns focus to the trigger once the menu actually closes (controlled: when `open` becomes false). */
@@ -580,11 +675,20 @@ export class DsMenu extends LitElement {
   };
 
   private readonly handleTriggerKeydown = (event: KeyboardEvent): void => {
-    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
-    event.preventDefault();
-    this.pendingFocus = event.key === 'ArrowDown' ? 'first' : 'last';
-    if (this.currentOpen) void this.focusItem(this.pendingFocus);
-    else this.requestOpen(true, 'trigger');
+    const key = event.key;
+    if (key === 'ArrowDown' || key === 'ArrowUp') {
+      event.preventDefault();
+      const target = key === 'ArrowDown' ? 'first' : 'last';
+      this.pendingFocus = target;
+      // On an already open menu the arrows just move focus in, first or last.
+      if (this.currentOpen) void this.focusItem(target);
+      else this.requestOpen(true, 'trigger');
+    } else if (key === 'Escape' && this.currentOpen) {
+      // Escape on the trigger while the menu is open closes it too; focus stays where it is.
+      event.preventDefault();
+      event.stopPropagation();
+      this.requestOpen(false, 'escape');
+    }
   };
 
   private readonly handleMenuKeydown = (event: KeyboardEvent): void => {
@@ -603,28 +707,65 @@ export class DsMenu extends LitElement {
       void this.focusItem('last');
     } else if (key === 'Enter' || key === ' ') {
       event.preventDefault();
-      const item = this.navigableItems().find((entry) => entry.id === this.activeId);
+      const focused = this.focusedActionId();
+      const item = this.navigableItems().find((entry) => entry.id === focused);
       if (item) this.selectItem(item);
     } else if (key === 'Escape') {
       event.preventDefault();
       event.stopPropagation();
       this.closeAndRestore('escape');
     } else if (key === 'Tab') {
-      // Park focus on the trigger (or anchor) and let the browser's own Tab /
-      // Shift+Tab move on from there, to the tabbable after or before it.
-      // An uncontrolled popup hides first so Tab cannot land back inside it.
-      this.restoreFocus();
-      if (this.open === undefined) this.hidePopup();
-      this.requestOpen(false, 'tab-out');
-    } else if (key.length === 1 && /^[a-z]$/i.test(key) && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      this.handleTab(event);
+    } else if (key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      // Typeahead takes any single printable character (letters of any script and digits, not only
+      // a–z); Space is activation above, and keys held with Ctrl, Meta or Alt never reach here.
       event.preventDefault();
       this.typeahead(key);
     }
   };
 
+  /**
+   * Tab and Shift+Tab close and let the browser carry on. The key is not prevented when there is
+   * somewhere to park focus — the trigger, or a focusable `anchor` standing in for it: every item
+   * drops to tabindex -1 and focus moves there, so the browser's own Tab continues from that point
+   * and a popup a controlled parent still shows holds no tab stop. Only an unfocusable anchor makes
+   * the menu move focus itself, to the first tabbable after (Tab) or last before (Shift+Tab) it.
+   */
+  private handleTab(event: KeyboardEvent): void {
+    // Focus is on its way out either way, so the focusout this causes is not a second focus loss.
+    this.focusLossReported = true;
+    const anchorEl = this.anchor ?? null;
+    const park = this.buttonEl ?? (anchorEl && isFocusable(anchorEl) ? anchorEl : null);
+    if (park) {
+      for (const item of this.itemElements()) {
+        // Converging write: a same-value tabIndex assignment still queues a mutation record.
+        if (item.tabIndex !== -1) item.tabIndex = -1;
+      }
+      this.tabStopSuppressed = true;
+      this.activeId = null;
+      park.focus();
+      this.requestOpen(false, 'tab-out');
+      return;
+    }
+    event.preventDefault();
+    this.requestOpen(false, 'tab-out');
+    if (anchorEl) focusAdjacent(anchorEl, this.popupEl, event.shiftKey ? 'previous' : 'next');
+  }
+
   private handleItemClick(item: MenuActionItem): void {
     if (item.disabled) return;
     this.selectItem(item);
+  }
+
+  /**
+   * The one roving tabindex follows real focus, however the item got it. Converging write: the
+   * guard makes a same-value assignment a no-op, so this cannot loop with the re-render that
+   * moves the tabindex.
+   */
+  private handleItemFocus(item: MenuActionItem): void {
+    this.tabStopSuppressed = false;
+    if (item.disabled) return;
+    if (this.activeId !== item.id) this.activeId = item.id;
   }
 
   private handleItemPointerEnter(item: MenuActionItem): void {
@@ -646,12 +787,24 @@ export class DsMenu extends LitElement {
   private readonly handleFocusOut = (event: FocusEvent): void => {
     if (!this.currentOpen) return;
     if (this.isInside(event.relatedTarget)) return;
-    this.requestOpen(false, 'focus-out');
+    this.reportFocusLoss();
+  };
+
+  private readonly handleFocusIn = (): void => {
+    // Focus came back: a later loss is a new one.
+    this.focusLossReported = false;
   };
 
   private readonly handleWindowBlur = (): void => {
-    this.requestOpen(false, 'focus-out');
+    if (this.currentOpen) this.reportFocusLoss();
   };
+
+  /** One close per focus loss: the window blur and the focusout it causes report once between them. */
+  private reportFocusLoss(): void {
+    if (this.focusLossReported) return;
+    this.focusLossReported = true;
+    this.requestOpen(false, 'focus-out');
+  }
 
   private readonly handleReposition = (): void => {
     if (this.currentOpen) this.updatePosition();
@@ -677,10 +830,31 @@ export class DsMenu extends LitElement {
     return flattenActionItems(this.items).filter((item) => !item.disabled);
   }
 
+  private itemElements(): HTMLElement[] {
+    return [...this.renderRoot.querySelectorAll<HTMLElement>('[data-part="item"]')];
+  }
+
+  /**
+   * The item that actually holds focus. The menu moves real focus rather than pointing at an item
+   * with aria-activedescendant, so focus is the source of truth: it can land on an item without
+   * passing through `focusItem` (a click, a screen reader, a consumer calling focus()), and the
+   * arrows, Home/End and typeahead all move from wherever it really is. `activeId` only backs the
+   * roving tabindex.
+   */
+  private focusedActionId(): string | null {
+    const active = this.shadowRoot?.activeElement;
+    if (active instanceof HTMLElement) {
+      const id = active.closest<HTMLElement>('[data-part="item"]')?.dataset['id'];
+      if (id !== undefined) return id;
+    }
+    return this.activeId;
+  }
+
   private async focusItem(target: 'first' | 'last' | string): Promise<void> {
     const items = this.navigableItems();
     if (items.length === 0) return;
     const id = target === 'first' ? items[0]!.id : target === 'last' ? items[items.length - 1]!.id : target;
+    this.tabStopSuppressed = false;
     this.activeId = id;
     await this.updateComplete;
     this.renderRoot.querySelector<HTMLElement>(`[data-part="item"][data-id="${CSS.escape(id)}"]`)?.focus();
@@ -689,7 +863,8 @@ export class DsMenu extends LitElement {
   private moveFocus(delta: 1 | -1): void {
     const items = this.navigableItems();
     if (items.length === 0) return;
-    const current = items.findIndex((item) => item.id === this.activeId);
+    // A disabled item can hold focus (a click puts it there); the arrows then start from the end.
+    const current = items.findIndex((item) => item.id === this.focusedActionId());
     const next = current === -1 ? (delta === 1 ? 0 : items.length - 1) : (current + delta + items.length) % items.length;
     void this.focusItem(items[next]!.id);
   }
@@ -706,7 +881,7 @@ export class DsMenu extends LitElement {
     clearTimeout(this.typeaheadTimer);
     this.typeaheadBuffer += char.toLowerCase();
     const items = this.navigableItems();
-    const current = Math.max(0, items.findIndex((item) => item.id === this.activeId));
+    const current = Math.max(0, items.findIndex((item) => item.id === this.focusedActionId()));
     // A fresh single character looks past the current item; a longer buffer may keep it.
     const start = this.typeaheadBuffer.length === 1 ? current + 1 : current;
     for (let offset = 0; offset < items.length; offset++) {
@@ -716,7 +891,8 @@ export class DsMenu extends LitElement {
         break;
       }
     }
-    // typeaheadReset is read at runtime from the popup.
+    // typeaheadReset is read at runtime from the popup; with no token stylesheet it resolves to
+    // nothing, and the buffer clears after each keypress rather than accumulating forever.
     const source = this.popupEl ?? this;
     const reset = parseDuration(getComputedStyle(source).getPropertyValue(HOOKS.typeaheadReset));
     this.typeaheadTimer = setTimeout(() => {
@@ -726,39 +902,52 @@ export class DsMenu extends LitElement {
 
   /* ---- positioning ---- */
 
+  /**
+   * Places the popup from the trigger (or `anchor`) rect for `placement`. Only the block side flips;
+   * the inline side resolves against the layout direction and is shifted, never flipped, so the popup
+   * stays `gutter` from both viewport edges (the leading edge wins when it cannot have both).
+   */
   private updatePosition(): void {
     const reference = this.anchor ?? this.triggerEl;
     const popup = this.popupEl;
     if (!reference || !popup) return;
+
+    // The trigger width is only known at runtime, so the minWidth floor is written before the popup
+    // is measured; with `anchor` there is no trigger-width floor.
+    const triggerWidth = this.anchor ? '0px' : `${reference.getBoundingClientRect().width}px`;
+    if (popup.style.getPropertyValue(TRIGGER_WIDTH_HOOK) !== triggerWidth) {
+      popup.style.setProperty(TRIGGER_WIDTH_HOOK, triggerWidth);
+    }
+
+    // popupOffset and gutter are read in px from the popup's resolved hooks (rem × root font size).
+    const offset = readLengthPx(popup, HOOKS.popupOffset) ?? 0;
+    const gutter = readLengthPx(popup, HOOKS.gutter) ?? 0;
+    const rtl = getComputedStyle(reference).direction === 'rtl';
     const rect = reference.getBoundingClientRect();
-    const viewportWidth = document.documentElement.clientWidth;
-    const viewportHeight = document.documentElement.clientHeight;
-    const [vertical, horizontal] = this.placement.split('-') as ['top' | 'bottom', 'start' | 'end'];
-
-    popup.style.minInlineSize = `max(calc(var(${HOOKS.minWidth}) * 2.5), ${rect.width}px)`;
-    popup.dataset['side'] = vertical;
-    const style = getComputedStyle(popup);
-    const offset = Math.max(parseFloat(style.marginBlockStart) || 0, parseFloat(style.marginBlockEnd) || 0);
     const size = popup.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const [preferred, side] = this.placement.split('-') as ['bottom' | 'top', 'start' | 'end'];
+    const needed = size.height + offset;
 
-    let side = vertical;
-    if (side === 'bottom' && rect.bottom + offset + size.height > viewportHeight && rect.top - offset - size.height >= 0) {
-      side = 'top';
-    } else if (side === 'top' && rect.top - offset - size.height < 0 && rect.bottom + offset + size.height <= viewportHeight) {
-      side = 'bottom';
-    }
-    let align = horizontal;
-    if (align === 'start' && rect.left + size.width > viewportWidth && rect.right - size.width >= 0) {
-      align = 'end';
-    } else if (align === 'end' && rect.right - size.width < 0 && rect.left + size.width <= viewportWidth) {
-      align = 'start';
+    let vertical = preferred;
+    if (vertical === 'bottom' && rect.bottom + needed > viewportHeight && rect.top - needed >= 0) {
+      vertical = 'top';
+    } else if (vertical === 'top' && rect.top - needed < 0 && rect.bottom + needed <= viewportHeight) {
+      vertical = 'bottom';
     }
 
-    popup.dataset['side'] = side;
-    popup.style.top = side === 'bottom' ? `${rect.bottom}px` : 'auto';
-    popup.style.bottom = side === 'top' ? `${viewportHeight - rect.top}px` : 'auto';
-    popup.style.left = align === 'start' ? `${rect.left}px` : 'auto';
-    popup.style.right = align === 'end' ? `${viewportWidth - rect.right}px` : 'auto';
+    // `start` is the reference's leading edge: its left in left-to-right, its right in right-to-left.
+    const alignsToLeadingEdge = rtl ? side === 'end' : side === 'start';
+    const preferredLeft = alignsToLeadingEdge ? rect.left : rect.right - size.width;
+    const furthestLeft = Math.max(gutter, viewportWidth - gutter - size.width);
+    const left = Math.min(Math.max(preferredLeft, gutter), furthestLeft);
+
+    popup.dataset['side'] = vertical;
+    popup.style.left = `${left}px`;
+    popup.style.right = 'auto';
+    popup.style.top = vertical === 'bottom' ? `${rect.bottom}px` : 'auto';
+    popup.style.bottom = vertical === 'top' ? `${viewportHeight - rect.top}px` : 'auto';
   }
 
   private applyOverrides(): void {

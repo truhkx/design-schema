@@ -21,6 +21,7 @@
   --ds-date-picker-header-gap: var(--layout-gap-tight);
   --ds-date-picker-footer-gap: var(--layout-gap-tight);
   --ds-date-picker-week-number-size: var(--font-size-xs);
+  --ds-date-picker-week-number-weight: var(--font-weight-regular);
   --ds-date-picker-day-size: var(--size-target-comfortable);
   --ds-date-picker-day-gap: var(--space-0);
   --ds-date-picker-day-radius: var(--radius-md);
@@ -180,10 +181,10 @@
   text-align: center;
 }
 
-/* Week numbers: weekdayColor at the regular weight. */
+/* Week numbers: weekdayColor at weekNumberSize / weekNumberWeight. */
 .ds-date-picker__week-number {
   font-size: var(--ds-date-picker-week-number-size);
-  font-weight: var(--font-weight-regular);
+  font-weight: var(--ds-date-picker-week-number-weight);
 }
 
 .ds-date-picker__grid td {

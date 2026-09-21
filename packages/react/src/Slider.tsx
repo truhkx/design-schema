@@ -61,7 +61,6 @@ export type SliderOverridableBinding =
   | 'fontFamily'
   | 'fontSize'
   | 'helperSize'
-  | 'errorText'
   | 'disabledOpacity'
   | 'transition';
 
@@ -133,7 +132,6 @@ function resolveOverrides(overrides: Partial<Record<SliderOverridableBinding, To
       case 'helperSize':
         helper.fontSize = ref;
         break;
-      // errorText: realised by the error Text's `danger` tone, whose colour is locked; accepted and ignored.
       default:
         break;
     }
@@ -254,8 +252,12 @@ export function Slider({
     if (isDev && !validBounds) console.warn(`Slider: \`max\` (${max}) must be greater than \`min\` (${min}).`);
   }, [validBounds, min, max]);
 
-  // "The default": defaultValue when set, otherwise what value falls back to. Shared by state and `required`.
-  const fallback: SliderValue = defaultValue ?? (range ? [min, max] : min);
+  // "The default": defaultValue when set, otherwise what `value` itself falls back to — clamped to
+  // [min, max] so `required` and the initial value share one notion of it.
+  const given: SliderValue = defaultValue ?? (range ? [min, max] : min);
+  const fallback: SliderValue = Array.isArray(given)
+    ? [clamp(given[0], min, max), clamp(given[1], min, max)]
+    : clamp(given, min, max);
   const [internalValue, setInternalValue] = useState<SliderValue>(fallback);
   const current: SliderValue = value !== undefined ? value : internalValue;
   const latestValue = useRef<SliderValue>(current);
@@ -264,6 +266,14 @@ export function Slider({
   const isDisabled = disabled || (form?.disabled ?? false);
   const errorMessage = error ?? form?.errors[name] ?? (invalid ? COPY.invalid.replace('{label}', label) : undefined);
   const isInvalid = invalid || errorMessage !== undefined;
+
+  // The Form's mode decides when the field re-validates; after a failed submission every mode also
+  // re-validates on change. A pointer-driven control has no meaningful blur, so `blur` validates when
+  // an interaction ends (pointer or drag release, key-up), not when a thumb loses focus.
+  const validateMode = form ? (form.validateMode ?? form.validate) : undefined;
+  const afterFailedSubmit = form?.submitFailed ?? false;
+  const validatesOnChange = validateMode === 'change' || afterFailedSubmit;
+  const validatesOnInteractionEnd = validateMode === 'blur' || validateMode === 'change' || afterFailedSubmit;
 
   const trackRef = useRef<HTMLDivElement | null>(null);
   const thumbRefs = useRef<Record<ThumbKey, HTMLDivElement | null>>({ single: null, min: null, max: null });
@@ -347,15 +357,14 @@ export function Slider({
     changedInInteraction.current = true;
     if (value === undefined) setInternalValue(nextValue);
     onChange?.(nextValue);
-    if (form?.validate === 'change') form.validateField(name);
+    if (form && validatesOnChange) form.validateField(name);
   }
 
   function endInteraction(): void {
     if (!changedInInteraction.current) return;
     changedInInteraction.current = false;
     onChangeEnd?.(latestValue.current);
-    // A pointer-driven control has no meaningful blur, so `validate: blur` runs when an interaction ends.
-    if (form?.validate === 'blur') form.validateField(name);
+    if (form && validatesOnInteractionEnd) form.validateField(name);
   }
 
   const percent = (v: number): number => (validBounds ? ((clamp(v, min, max) - min) / (max - min)) * 100 : 0);
@@ -450,8 +459,11 @@ export function Slider({
     .filter(Boolean)
     .join(' ');
 
+  // disabledOpacity dims the whole root, so the whole root is the inactive user interface component
+  // WCAG 1.4.3 exempts from contrast. aria-disabled (a global state) says so on the element that dims,
+  // not only on the thumbs; without it the dimmed value text reads as failing text rather than inactive.
   return (
-    <div {...rest} ref={ref} data-ds="Slider" data-ds-field className={classes} style={resolved.rootStyle}>
+    <div {...rest} ref={ref} data-ds="Slider" data-ds-field aria-disabled={isDisabled ? 'true' : undefined} className={classes} style={resolved.rootStyle}>
       <div className="ds-slider__header">
         <span className="ds-slider__label" data-part="label">
           <Text element="span" id={labelId} size="md" weight="medium" tone="default" overrides={resolved.label}>
@@ -576,7 +588,7 @@ export function Slider({
         </span>
       ) : null}
       {errorMessage ? (
-        <span className="ds-slider__error" data-part="errorMessage">
+        <span className="ds-slider__error" data-part="errorMessage" role="alert">
           <Text element="span" id={errorId} size="sm" tone="danger" overrides={resolved.helper}>
             {errorMessage}
           </Text>

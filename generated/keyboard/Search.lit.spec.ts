@@ -84,14 +84,14 @@ async function ariaState(page: Page): Promise<string> {
 test.describe('Search (lit) keyboard', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/iframe.html?id=search-lit--keyboard&viewMode=story');
-    await expect(page.getByRole('searchbox').first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('[data-ds="Search"]').first()).toBeVisible({ timeout: 15_000 });
   });
   test.skip('Enter: Submits the query (or the highlighted suggestion). — manual', async () => {});
   test.skip('Escape: Closes suggestions if open; otherwise clears the field. On an already-empty field with no list open it does nothing and fires no onClear. — manual', async () => {});
   test.skip('ArrowDown: Opens suggestions and highlights the first; then moves down. (suggestions) — manual', async () => {});
   test.skip('ArrowUp: Moves up; from the first, back to the input with no highlight. (suggestions) — manual', async () => {});
   test('Tab: Leaves the field: to the clear button when the field has text, then the submit button.', async ({ page }) => {
-    const root = page.getByRole('searchbox').first();
+    const root = page.locator('[data-ds="Search"]').first();
     await focusAt(page, root, 0);
     const before = await focusIndex(page, root);
     const stateBefore = await ariaState(page);

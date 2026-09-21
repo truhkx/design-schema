@@ -1,4 +1,13 @@
-import { useEffect, useId, useRef, useState, type ComponentPropsWithoutRef, type CSSProperties, type Ref, type ReactElement } from 'react';
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ComponentPropsWithoutRef,
+  type CSSProperties,
+  type Ref,
+  type ReactElement,
+} from 'react';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import { Text, type TextOverridableBinding } from './Text';
 import './ProgressBar.css';
@@ -6,6 +15,7 @@ import './ProgressBar.css';
 export type ProgressBarTone = 'neutral' | 'success' | 'danger';
 export type ProgressBarAnnounce = 'none' | 'milestones' | 'complete';
 
+/** Announcement copy, used verbatim. `{label}` and `{value}` are the only parameters. */
 const COPY = {
   progress: '{label}: {value}',
   complete: '{label}: complete',
@@ -75,23 +85,27 @@ export interface ProgressBarProps
    * announcement tiers; a non-finite number (NaN, Infinity) is treated as `min`.
    */
   value?: number | null | undefined;
-  /** Start of the range. */
+  /** Start of the range. A non-finite number is treated as the default, 0. */
   min?: number | undefined;
-  /** End of the range. */
+  /** End of the range. A non-finite number is treated as the default, 100. */
   max?: number | undefined;
   /**
    * Renders the value text ("42%", "3 of 12 files"). Defaults to a percentage over the whole range —
-   * `(value − min) / (max − min)` — rounded to a whole number. Called with the clamped value. A `max` at or
-   * below `min` is not a range: the bar renders empty, exposes `min` as its value, shows "0%" unless a custom
-   * formatter says otherwise, makes no progress or completion announcements, and warns in development.
+   * `(value − min) / (max − min)`, the same arithmetic the fill uses, so a non-zero `min` reads correctly
+   * without a custom formatter — rounded to a whole number in the runtime's default locale (there is no locale
+   * prop), so 99.5% of the way shows "100%" before completion; completion is only the clamped value reaching
+   * `max`. Called with the clamped value. Rounding is for the text only; the fill uses the exact fraction.
+   * A `max` at or below `min` is not a range: the bar renders empty, exposes `min` as its value with the given
+   * bounds, shows and exposes "0%" unless a custom formatter says otherwise, makes no progress or completion
+   * announcements, and warns in development.
    */
   formatValue?: ((value: number, min: number, max: number) => string) | undefined;
   /** Show the value text at the end of the label row. Ignored when indeterminate. */
   showValue?: boolean | undefined;
   /**
    * Visually hide the label (it remains the accessible name). For bars inside a Card whose heading already
-   * says what is happening. The value text, when shown, stays at the end of the row; when there is no visible
-   * value text either, the label row takes no space and `partGap` is not applied.
+   * says what is happening. The value text, when shown, stays at the inline end of the row; when there is no
+   * visible value text either, the label row takes no space and `partGap` is not applied.
    */
   hideLabel?: boolean | undefined;
   /**
@@ -115,6 +129,7 @@ const isDev: boolean = typeof process !== 'undefined' && process.env.NODE_ENV !=
 
 const PERCENT = new Intl.NumberFormat(undefined, { style: 'percent', maximumFractionDigits: 0 });
 
+/** The same arithmetic the fill uses, so a non-zero `min` reads correctly without a custom formatter. */
 function defaultFormatValue(value: number, min: number, max: number): string {
   return PERCENT.format(max > min ? (value - min) / (max - min) : 0);
 }
@@ -123,6 +138,10 @@ function interpolate(template: string, params: Record<string, string>): string {
   return template.replace(/\{(\w+)\}/g, (match, key: string) => params[key] ?? match);
 }
 
+/** The invalid `min`/`max` pairs already reported, so each distinct one warns once. */
+const warnedRanges = new Set<string>();
+
+/** What the bar has already announced. Tiers are recorded for every `announce` value, including `none`. */
 interface AnnounceRecord {
   mounted: boolean;
   indeterminate: boolean;
@@ -165,42 +184,69 @@ export function ProgressBar({
   } = rest as typeof rest & { className?: unknown; style?: unknown; tabIndex?: unknown };
   const labelId = useId();
 
-  const validRange = max > min;
+  // A non-finite bound is not a range end: it falls back to the prop's default, here and in the exposed range.
+  const safeMin = Number.isFinite(min) ? min : 0;
+  const safeMax = Number.isFinite(max) ? max : 100;
+
+  const validRange = safeMax > safeMin;
   useEffect(() => {
-    if (isDev && !validRange) {
-      console.warn(`ProgressBar: \`max\` (${max}) must be greater than \`min\` (${min}); the bar renders empty.`);
-    }
-  }, [validRange, min, max]);
+    if (!isDev || validRange) return;
+    // Developer-facing, never shown to users, and warned once per distinct invalid pair.
+    const pair = `${safeMin}:${safeMax}`;
+    if (warnedRanges.has(pair)) return;
+    warnedRanges.add(pair);
+    console.warn(`ProgressBar: \`max\` (${safeMax}) must be greater than \`min\` (${safeMin}); the bar renders empty.`);
+  }, [validRange, safeMin, safeMax]);
 
   const indeterminate = value === undefined || value === null;
   // A non-finite value is treated as `min`; with an invalid range the bar is empty at `min`.
-  const safeValue = !indeterminate && Number.isFinite(value) ? value : min;
-  const clamped = validRange ? Math.min(Math.max(safeValue, min), max) : min;
+  const safeValue = !indeterminate && Number.isFinite(value) ? value : safeMin;
+  const clamped = validRange ? Math.min(Math.max(safeValue, safeMin), safeMax) : safeMin;
   // The fill uses the exact fraction; rounding is for the text only.
-  const fraction = validRange ? (clamped - min) / (max - min) : 0;
-  const valueText = indeterminate ? undefined : (formatValue ?? defaultFormatValue)(clamped, min, max);
+  const fraction = validRange ? (clamped - safeMin) / (safeMax - safeMin) : 0;
+  const valueText = indeterminate ? undefined : (formatValue ?? defaultFormatValue)(clamped, safeMin, safeMax);
+  // 74.6% is tier 2, 75% is tier 3; tier 4 is `max`.
   const tier = Math.floor(fraction * 4);
-  const complete = validRange && clamped >= max;
+  const complete = validRange && clamped >= safeMax;
 
   /* Announcements. Each message gets a fresh key so a repeated string replaces the node and is read again. */
   const [message, setMessage] = useState<{ text: string; key: number }>({ text: '', key: 0 });
   const latest = useRef({ label, valueText });
   latest.current = { label, valueText };
-  const record = useRef<AnnounceRecord>({ mounted: false, indeterminate: false, validRange: false, tier: 0, complete: false });
+  const record = useRef<AnnounceRecord>({
+    mounted: false,
+    indeterminate: false,
+    validRange: false,
+    tier: 0,
+    complete: false,
+  });
+  const frame = useRef(0);
+  useEffect(() => () => cancelAnimationFrame(frame.current), []);
 
   useEffect(() => {
     const r = record.current;
-    const say = (template: string): void => {
+    const say = (template: string, defer: boolean): void => {
+      // `{value}` is the formatted value text — the same string as aria-valuetext — never the raw number.
       const text = interpolate(template, { label: latest.current.label, value: latest.current.valueText ?? '' });
-      setMessage((prev) => ({ text, key: prev.key + 1 }));
+      const emit = (): void => setMessage((prev) => ({ text, key: prev.key + 1 }));
+      // Text already in a newly inserted region is often not read, so the first message waits a frame,
+      // by which time the live region has rendered empty.
+      if (defer) frame.current = requestAnimationFrame(emit);
+      else emit();
     };
     const firstRun = !r.mounted;
     r.mounted = true;
 
     if (indeterminate) {
+      // Tracked even while indeterminate, so a value arriving later is not mistaken for entering the range.
+      r.validRange = validRange;
       if (firstRun || !r.indeterminate) {
         r.indeterminate = true;
-        if (announce !== 'none') say(COPY.indeterminate);
+        // Entering the state resets the record: the first known value afterwards announces its tier under
+        // `milestones`, and completion is armed again.
+        r.tier = 0;
+        r.complete = false;
+        if (announce !== 'none') say(COPY.indeterminate, firstRun);
       }
       return;
     }
@@ -208,6 +254,7 @@ export function ProgressBar({
 
     const enteredRange = validRange && !r.validRange;
     r.validRange = validRange;
+    // With `max` at or below `min` nothing is announced and no tier is recorded.
     if (!validRange) return;
 
     // Progress reached at mount (or when the range becomes valid) is recorded silently.
@@ -222,15 +269,16 @@ export function ProgressBar({
     if (!complete) r.complete = false;
 
     if (complete && !r.complete) {
+      // Reaching `max` announces completion, never `copy.progress` with "100%".
       r.complete = true;
       r.tier = tier;
-      if (announce !== 'none') say(COPY.complete);
+      if (announce !== 'none') say(COPY.complete, false);
       return;
     }
     if (tier > r.tier) {
-      // Tiers are tracked for every `announce` value, so switching it mid-task never replays them.
+      // An update crossing several tiers makes one announcement, for the highest.
       r.tier = tier;
-      if (announce === 'milestones') say(COPY.progress);
+      if (announce === 'milestones') say(COPY.progress, false);
     }
   }, [announce, indeterminate, validRange, tier, complete]);
 
@@ -261,11 +309,14 @@ export function ProgressBar({
     </Text>
   );
 
-  const headerClass = !showValueText && hideLabel
-    ? 'ds-progress-bar__header ds-progress-bar__visually-hidden'
-    : hideLabel
-      ? 'ds-progress-bar__header ds-progress-bar__header--label-hidden'
-      : 'ds-progress-bar__header';
+  // With nothing visible in it the row takes no space, but the header element stays so aria-labelledby
+  // still resolves; with only the value text visible the row aligns to the inline end.
+  const headerClass =
+    hideLabel && !showValueText
+      ? 'ds-progress-bar__header ds-progress-bar__visually-hidden'
+      : hideLabel
+        ? 'ds-progress-bar__header ds-progress-bar__header--label-hidden'
+        : 'ds-progress-bar__header';
 
   return (
     <div
@@ -289,8 +340,8 @@ export function ProgressBar({
         data-part="track"
         role="progressbar"
         aria-labelledby={labelId}
-        aria-valuemin={min}
-        aria-valuemax={max}
+        aria-valuemin={safeMin}
+        aria-valuemax={safeMax}
         {...(indeterminate ? { 'aria-busy': true as const } : { 'aria-valuenow': clamped, 'aria-valuetext': valueText })}
       >
         <div
@@ -299,6 +350,7 @@ export function ProgressBar({
           style={indeterminate ? undefined : { inlineSize: `${fraction * 100}%` }}
         />
       </div>
+      {/* Not an anatomy part: the bar is never focusable, so progress is learned from here. */}
       <div className="ds-progress-bar__visually-hidden" role="status" aria-live="polite">
         {message.text ? <span key={message.key}>{message.text}</span> : null}
       </div>

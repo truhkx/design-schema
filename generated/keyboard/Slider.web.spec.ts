@@ -84,7 +84,7 @@ async function ariaState(page: Page): Promise<string> {
 test.describe('Slider (web) keyboard', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/iframe.html?id=slider-react--keyboard&viewMode=story');
-    await expect(page.getByRole('slider').first()).toBeVisible({ timeout: 15_000 });
+    await expect(page.locator('[data-ds="Slider"]').first()).toBeVisible({ timeout: 15_000 });
   });
   test.skip('ArrowRight: Increases by `step`. — manual', async () => {});
   test.skip('ArrowUp: Increases by `step`. — manual', async () => {});
@@ -95,7 +95,7 @@ test.describe('Slider (web) keyboard', () => {
   test.skip('Home: Sets the minimum. — manual', async () => {});
   test.skip('End: Sets the maximum. — manual', async () => {});
   test('Tab: Moves between the two thumbs of a range slider; each thumb is a tab stop. (range)', async ({ page }) => {
-    const root = page.getByRole('slider').first();
+    const root = page.locator('[data-ds="Slider"]').first();
     await focusAt(page, root, 0);
     const before = await focusIndex(page, root);
     const stateBefore = await ariaState(page);

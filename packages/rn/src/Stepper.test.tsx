@@ -18,7 +18,8 @@ function setup(given: Partial<StepperProps> = {}) {
       <Stepper {...props} />
     </ThemeProvider>,
   );
-  return { ...utils, onStepSelect, props, container: () => screen.getByTestId('Stepper') };
+  // React Native has no navigation landmark, so the name sits on the list View inside the root.
+  return { ...utils, onStepSelect, props, container: () => screen.getByTestId('Stepper.list') };
 }
 
 const firstIndicator = () => screen.getAllByTestId('Stepper.indicator', { includeHiddenElements: true })[0]!;

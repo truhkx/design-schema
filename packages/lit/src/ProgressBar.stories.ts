@@ -10,6 +10,7 @@ interface ProgressBarArgs {
   value?: number | undefined;
   min: number;
   max: number;
+  formatValue?: ((value: number, min: number, max: number) => string) | undefined;
   showValue: boolean;
   hideLabel: boolean;
   tone: ProgressBarTone;
@@ -49,6 +50,7 @@ const meta: Meta<ProgressBarArgs> = {
       announce=${args.announce}
       ?hide-label=${args.hideLabel}
       ?hide-value=${!args.showValue}
+      .formatValue=${args.formatValue}
     ></ds-progress-bar>
   `,
 };
@@ -68,19 +70,27 @@ export const AnnounceNone: Story = { args: { announce: 'none' } };
 export const AnnounceMilestones: Story = { args: { announce: 'milestones' } };
 export const AnnounceComplete: Story = { args: { announce: 'complete' } };
 
-/* states */
-export const Indeterminate: Story = { args: { value: undefined } };
-export const HideLabel: Story = { args: { hideLabel: true } };
-export const HideValue: Story = { args: { showValue: false } };
-
 /* examples */
 export const Upload: Story = { args: { label: 'Uploading photos', value: 42 } };
 export const LongImport: Story = { args: { label: 'Importing contacts', value: 10, announce: 'milestones' } };
 export const Finished: Story = { args: { label: 'Export', value: 100, tone: 'success' } };
-export const InACard: Story = {
-  args: { label: 'Rendering preview', value: 60, hideLabel: true, showValue: false },
-};
+export const InACard: Story = { args: { label: 'Rendering preview', value: 60, hideLabel: true, showValue: false } };
 
+/* other states */
+export const Indeterminate: Story = { args: { value: undefined } };
+export const HideLabel: Story = { args: { hideLabel: true } };
+export const ShowValueFalse: Story = { args: { showValue: false } };
+export const CustomFormatValue: Story = {
+  args: {
+    label: 'Importing contacts',
+    value: 3,
+    max: 12,
+    formatValue: (value, _min, max) => `${value} of ${max} files`,
+  },
+};
+export const NonZeroMin: Story = { args: { min: 50, max: 150, value: 100 } };
+
+/** The three tones side by side; each is paired with text that says what happened, never colour alone. */
 export const Tones: Story = {
   render: () => html`
     <ds-stack gap="loose">

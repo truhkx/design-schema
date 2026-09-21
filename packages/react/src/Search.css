@@ -4,7 +4,6 @@
   --ds-search-background: var(--color-control-background);
   --ds-search-foreground: var(--color-foreground);
   --ds-search-placeholder: var(--color-foreground-muted);
-  --ds-search-icon-color: var(--color-foreground-muted);
   --ds-search-border: var(--color-border-strong);
   --ds-search-border-focus: var(--color-border-focus);
   --ds-search-border-width: var(--border-width-thin);
@@ -16,7 +15,6 @@
   --ds-search-font-size: var(--font-size-md);
   --ds-search-line-height: var(--font-line-height-normal);
   --ds-search-part-gap: var(--space-1);
-  --ds-search-label-weight: var(--font-weight-medium);
   --ds-search-min-target: var(--size-target-comfortable);
   --ds-search-focus-ring-width: var(--border-width-focus);
   --ds-search-disabled-opacity: var(--opacity-disabled);
@@ -39,8 +37,13 @@
   --ds-search-font-size: var(--font-size-lg);
 }
 
-/* The whole component dims once. */
-.ds-search--disabled {
+/*
+ * disabledOpacity dims the label, the glyph and the input only. The Buttons receive `disabled` and
+ * dim once through their own style, and the field frame (border, background) is not dimmed.
+ */
+.ds-search--disabled .ds-search__label,
+.ds-search--disabled .ds-search__icon,
+.ds-search--disabled .ds-search__input {
   opacity: var(--ds-search-disabled-opacity);
 }
 

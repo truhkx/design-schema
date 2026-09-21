@@ -69,10 +69,17 @@ const ROOT_OVERRIDE_HOOK: Partial<Record<StepperOverridableBinding, string>> = {
   transition: '--ds-stepper-transition',
 };
 
-/** Binding defaults the composed children need as tokens (Text's own weight scale has no default for these). */
+/**
+ * Every forward carries its binding's token, overridden or not — the composed Text's own `weight`
+ * prop is not set, so the weight has to arrive as an override, and the rest follow the same rule.
+ */
 const DEFAULT_TOKEN = {
+  labelSize: 'font.size.sm',
   labelWeight: 'font.weight.medium',
   labelCurrentWeight: 'font.weight.semibold',
+  descriptionSize: 'font.size.xs',
+  countSize: 'font.size.sm',
+  fontFamily: 'font.family.body', // literal-ok: a TokenRef forwarded to Text, not a font stack
   indicatorFontSize: 'font.size.sm',
   indicatorCompleteForeground: 'color.control.selectedForeground',
   indicatorErrorForeground: 'color.status.danger.foreground',
@@ -85,8 +92,8 @@ interface ResolvedOverrides {
   rootStyle: CSSProperties | undefined;
   label: TextOverrides;
   currentLabel: TextOverrides;
-  description: TextOverrides | undefined;
-  count: TextOverrides | undefined;
+  description: TextOverrides;
+  count: TextOverrides;
   indicatorFontSize: TokenRef;
 }
 
@@ -94,10 +101,21 @@ function resolveOverrides(
   overrides: Partial<Record<StepperOverridableBinding, TokenRef | undefined>> | undefined,
 ): ResolvedOverrides {
   const rootStyle: Record<string, string> = {};
-  const label: TextOverrides = { fontWeight: DEFAULT_TOKEN.labelWeight };
-  const currentLabel: TextOverrides = { fontWeight: DEFAULT_TOKEN.labelCurrentWeight };
-  const description: TextOverrides = {};
-  const count: TextOverrides = {};
+  const label: TextOverrides = {
+    fontSize: DEFAULT_TOKEN.labelSize,
+    fontWeight: DEFAULT_TOKEN.labelWeight,
+    fontFamily: DEFAULT_TOKEN.fontFamily,
+  };
+  const currentLabel: TextOverrides = {
+    fontSize: DEFAULT_TOKEN.labelSize,
+    fontWeight: DEFAULT_TOKEN.labelCurrentWeight,
+    fontFamily: DEFAULT_TOKEN.fontFamily,
+  };
+  const description: TextOverrides = {
+    fontSize: DEFAULT_TOKEN.descriptionSize,
+    fontFamily: DEFAULT_TOKEN.fontFamily,
+  };
+  const count: TextOverrides = { fontSize: DEFAULT_TOKEN.countSize, fontFamily: DEFAULT_TOKEN.fontFamily };
   let indicatorFontSize: TokenRef = DEFAULT_TOKEN.indicatorFontSize;
 
   for (const binding of Object.keys(overrides ?? {}) as StepperOverridableBinding[]) {
@@ -140,8 +158,8 @@ function resolveOverrides(
     rootStyle: Object.keys(rootStyle).length > 0 ? (rootStyle as CSSProperties) : undefined,
     label,
     currentLabel,
-    description: Object.keys(description).length > 0 ? description : undefined,
-    count: Object.keys(count).length > 0 ? count : undefined,
+    description,
+    count,
     indicatorFontSize,
   };
 }
@@ -161,7 +179,8 @@ export interface StepperProps
    * The id of the current step. The step whose id matches is the selected one (`aria-current="step"`) and
    * the one compact reveals, whatever its `status`. When no id matches, nothing is selected, every step
    * without an explicit status is upcoming, no step is navigable under `completed` (all still are under
-   * `all`), the count reads "Step 1 of m", and development builds log a warning.
+   * `all`), the count reads "Step 1 of m", and development builds log a warning. The warning needs a
+   * non-empty `current`: an empty one is treated as not yet set and does not warn.
    */
   current: string;
   /**
@@ -225,7 +244,8 @@ export function Stepper({
   const currentIndex = steps.findIndex((step) => step.id === current);
   const resolved = resolveOverrides(overrides);
 
-  if (isDev && currentIndex === -1) {
+  // An empty `current` is "not yet set", not a mistake, so it does not warn.
+  if (isDev && current !== '' && currentIndex === -1) {
     console.warn(`Stepper: current "${current}" matches no step id — nothing is selected.`);
   }
 
@@ -260,7 +280,9 @@ export function Stepper({
           const isNavigable = navigable === 'all' || (navigable === 'completed' && isBefore);
           const statusWord = STATUS_WORD[status];
           const hasDescription = orientation === 'vertical' && step.description !== undefined && step.description !== '';
-          const descriptionId = hasDescription ? `${baseId}-d${index}` : undefined;
+          // Only a button computes its name from its content, so only there does the description need
+          // hiding and referencing; inside a plain <div> it is read once as ordinary text.
+          const descriptionId = hasDescription && isNavigable ? `${baseId}-d${index}` : undefined;
           const isLast = index === steps.length - 1;
 
           const iconOverrides = (color: TokenRef): IconOverrides => ({ size: resolved.indicatorFontSize, color });
@@ -281,24 +303,27 @@ export function Stepper({
                   element="span"
                   size="sm"
                   tone={status === 'upcoming' ? 'muted' : 'default'}
+                  align={orientation === 'horizontal' ? 'center' : 'start'}
                   data-part="label"
                   overrides={isCurrent ? resolved.currentLabel : resolved.label}
                 >
                   {step.label}
                 </Text>
+                {/* The status word follows the label directly, so compact clips the two together. */}
+                {statusWord ? <span className="ds-stepper__visually-hidden">{`, ${statusWord}`}</span> : null}
                 {hasDescription ? (
                   <Text
                     element="span"
                     size="xs"
                     tone="muted"
                     id={descriptionId}
+                    aria-hidden={descriptionId ? 'true' : undefined}
                     data-part="description"
                     overrides={resolved.description}
                   >
                     {step.description}
                   </Text>
                 ) : null}
-                {statusWord ? <span className="ds-stepper__visually-hidden">{`, ${statusWord}`}</span> : null}
               </span>
             </>
           );

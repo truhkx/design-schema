@@ -1,6 +1,7 @@
 /* Slider — styled only through Design Schema token custom properties.
    labelWeight, fontSize, fontFamily, valueSize, markLabelSize and helperSize style composed Texts and
-   are forwarded to their `overrides`; the hooks below are the ones this file reads. */
+   are forwarded to their `overrides`; valueColor, markLabelColor, descriptionText and errorText are
+   those Texts' tones (locked, no hooks). The hooks below are the ones this file reads. */
 
 .ds-slider {
   --ds-slider-track: var(--color-background-strong);

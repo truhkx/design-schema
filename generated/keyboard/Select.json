@@ -50,6 +50,15 @@
     },
     {
       "keys": [
+        " "
+      ],
+      "action": "Commits the active option and closes (single); with `multiple`, toggles it and stays open. Listbox's own model, which Select forwards rather than suppresses.",
+      "from": "first",
+      "expect": "manual",
+      "when": "popup open"
+    },
+    {
+      "keys": [
         "ArrowDown",
         "ArrowUp",
         "Home",

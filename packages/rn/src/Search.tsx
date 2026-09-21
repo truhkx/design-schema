@@ -13,6 +13,7 @@ import { Text } from './Text';
 import { toLineHeight, useTheme } from './theme';
 import type { Tokens } from './theme';
 
+/** `lg` for a search page's hero field. */
 export type SearchSize = 'md' | 'lg';
 
 /** One row offered under the field while typing. */
@@ -67,22 +68,29 @@ export interface SearchProps {
   action?: string | undefined;
   /**
    * Suggestions for the current query, shown in a Listbox under the field; choosing one
-   * fills the query with the suggestion's `label` and submits. Provide them from
-   * `onChangeText` (debounced by the caller). Setting the prop at all — even to an empty
-   * array, which shows `copy.noSuggestions` — turns the field into a combobox; leaving it
-   * undefined keeps a plain search field.
+   * fills the query with the suggestion's `label` — what the user just read — and submits.
+   * Provide them from `onChangeText` (debounced by the caller). Setting the prop at all —
+   * even to an empty array after a fetch that found nothing, which shows
+   * `copy.noSuggestions` — is what turns the field into a combobox; leaving it undefined
+   * keeps a plain search field. The list opens on typing and on ArrowDown, never on focus
+   * alone, and closes on Escape, blur, a chosen suggestion, clear and submit.
    */
   suggestions?: { value: string; label: string; description?: string }[] | undefined;
   /** Suggestions are being fetched; announced through `copy.loading`. */
   loading?: boolean | undefined;
-  /** Give the field the `search` landmark. Turn off when the Search sits inside another search landmark (a filter within a results page). */
+  /**
+   * Give the field the `search` landmark. Turn off when the Search sits inside another
+   * search landmark (a filter within a results page). It is `accessibilityRole="search"`
+   * on the root View this component already renders, never a composed Landmark.
+   */
   landmark?: boolean | undefined;
   /** `lg` for a search page's hero field. */
   size?: SearchSize | undefined;
   /**
    * Not editable, still readable and focusable: the input is read-only with
-   * `accessibilityState.disabled`, both Buttons are disabled, keys are inert, suggestions
-   * never open, no event fires, the whole component dims, and a Form does not register it.
+   * `accessibilityState.disabled`, both Buttons are disabled (the clear Button still renders
+   * when there is text), every key is inert, suggestions never open and an open list closes,
+   * no event fires, the label, glyph and input dim, and a Form does not register it.
    */
   disabled?: boolean | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
@@ -91,13 +99,13 @@ export interface SearchProps {
   ref?: React.Ref<ViewInstance> | undefined;
   /**
    * Fired on every keystroke with the query; the caller fetches suggestions here. Also fired
-   * whenever Search itself changes the text: with "" before `onClear`, and with a chosen
-   * suggestion's `label` before `onSubmitEditing`.
+   * whenever Search itself changes the text, so a controlled `value` can follow: with "" before
+   * `onClear`, and with a chosen suggestion's `label` before `onSubmitEditing`.
    */
   onChangeText?: ((value: string) => void) | undefined;
-  /** Fired on Enter, the submit button, or choosing a suggestion, with the trimmed query. Never fires for an empty query. */
+  /** Fired on Enter, the submit button, or choosing a suggestion, with the trimmed query. An empty trimmed query does not fire. */
   onSubmitEditing?: ((value: string) => void) | undefined;
-  /** Fired when the field is emptied — by the clear button, or by an Escape that clears it when no suggestions are open. */
+  /** Fired when the field is emptied — by the clear button, or by the Escape that clears it when no suggestions are open. */
   onClear?: (() => void) | undefined;
 }
 
@@ -110,7 +118,7 @@ const COPY = {
   noSuggestions: 'No suggestions',
 } as const;
 
-function suggestionsCount(count: number): string {
+function suggestionsCountText(count: number): string {
   const form = new Intl.PluralRules(undefined).select(count) === 'one' ? COPY.suggestionsCount.one : COPY.suggestionsCount.other;
   return form.replace('{count}', String(count));
 }
@@ -120,6 +128,8 @@ const FONT_SIZE_REF = { md: 'font.size.md', lg: 'font.size.lg' } as const satisf
 const PADDING_BLOCK_TOKEN = { md: 'spaceSm', lg: 'spaceMd' } as const satisfies Record<SearchSize, keyof Tokens>;
 /** The glyph keeps its proportion to the text: `sm` at `md`, `md` at `lg`. */
 const ICON_SIZE = { md: 'sm', lg: 'md' } as const satisfies Record<SearchSize, 'sm' | 'md'>;
+/** The locked `iconColor` binding, forwarded as the glyph Icon's own `color` override rather than its `color` prop. */
+const ICON_OVERRIDES = { color: 'color.foreground.muted' as TokenRef };
 
 /**
  * Search — the field people look for first: a magnifier glyph, a pill, a clear button,
@@ -127,24 +137,33 @@ const ICON_SIZE = { md: 'sm', lg: 'md' } as const satisfies Record<SearchSize, '
  *
  * When to use: free-text search over a site, an app, or a large dataset. Add
  * `suggestions` when the backend can offer completions; keep `landmark` on for the one
- * primary search. Not for a specific value (Input) or choosing from a known list
+ * primary search. Not for a specific value (Input) or for choosing from a known list
  * (Select, Combobox).
  *
- * Renders a root `View` (`accessibilityRole="search"` when `landmark`, never on the
- * TextInput) holding the optional visible label (hidden from accessibility: the input
- * carries `accessibilityLabel`) and a pill row: a decorative `search` Icon, a `TextInput`
- * (`returnKeyType="search"`, `clearButtonMode="never"`), the system clear `Button` (ghost,
- * sm, iconOnly, `close`) while there is text, and the submit `Button` (ghost, sm,
- * iconOnly, `arrow-right`), always rendered. With `suggestions` set, an embedded `Listbox`
- * renders inline below the field once the user types (or presses ArrowDown on a hardware
- * keyboard) — never on focus alone — and closes on blur, Escape, a choice, clear and
- * submit. Listbox rows are touch Pressables with no key events, so there is no arrow-key
- * highlight: a tap fills the query with the row's label and submits, and Enter always
- * submits the typed query. The suggestion count, `copy.noSuggestions` or `copy.loading`
- * is announced with `AccessibilityInfo.announceForAccessibility` after `statusDebounce`.
- * `name` and `action` have no native meaning; `action` warns under `__DEV__`. The caller's
+ * Renders a root `View` — the `landmark` and `form` part in one, since native has no form
+ * element — carrying `accessibilityRole="search"` when `landmark` and never putting it on
+ * the `TextInput`, which on react-native-web would become a second search landmark. Inside
+ * it: the optional visible label (hidden from accessibility, because the input already
+ * carries `accessibilityLabel`) and a pill row holding a decorative `search` Icon, the
+ * `TextInput` (`returnKeyType="search"`, `clearButtonMode="never"` so the system clear
+ * `Button` matches across platforms), that clear Button while there is text, and the submit
+ * Button, always rendered: Enter is not reachable from every on-screen keyboard.
+ *
+ * With `suggestions` set, an embedded `Listbox` renders inline below the field — no overlay,
+ * since on a phone the list takes the space under the field — opened by typing while the
+ * field has focus or by ArrowDown from a hardware keyboard (or react-native-web), never by
+ * focus alone, and closed on blur, except while a press is in progress inside the list
+ * (react-native-web blurs the input on pointerdown). Listbox rows are touch Pressables with
+ * no key events, so there is no arrow-key highlight: a tap fills the query with the row's
+ * `label` and submits, and Enter always submits the typed query. The suggestion count,
+ * `copy.noSuggestions` or `copy.loading` is announced with
+ * `AccessibilityInfo.announceForAccessibility` after `statusDebounce`, there being no
+ * visually-hidden primitive to hold a live region.
+ *
+ * `name` and `action` are a URL query key and a GET target — neither exists on native — so
+ * both are accepted for parity and do nothing; `action` warns under `__DEV__`. The caller's
  * ScrollView needs `keyboardShouldPersistTaps="handled"` so a suggestion tap is not
- * swallowed by keyboard dismissal.
+ * swallowed by keyboard dismissal; Search has no ScrollView of its own to set it on.
  */
 export function Search({
   label,
@@ -168,7 +187,7 @@ export function Search({
   const { tokens: t } = useTheme();
   const form = useFormContext();
   const inputRef = React.useRef<TextInputInstance>(null);
-  /** True between a press starting in the list and its release, so the input's blur does not unmount the row being tapped. */
+  /** True from a touch start or pointerdown inside the list until its release plus one tick, so the input's blur does not unmount the row being tapped. */
   const pressingList = React.useRef(false);
 
   const [internalValue, setInternalValue] = React.useState<string>(defaultValue ?? '');
@@ -181,7 +200,7 @@ export function Search({
   const hasSuggestions = suggestions !== undefined;
   const showList = open && hasSuggestions && !isDisabled;
 
-  // A controlled query is always the prop; an uncontrolled one follows the typed text immediately.
+  // The Form handle is built once; the query it submits is read through this.
   const latest = React.useRef(currentValue);
   latest.current = currentValue;
 
@@ -202,6 +221,7 @@ export function Search({
     onSubmitEditing?.(trimmed);
   };
 
+  /** Reports `onChangeText("")` first, then `onClear`, for both routes into an emptied field. */
   const clear = (): void => {
     setOpen(false);
     setQuery('');
@@ -216,6 +236,7 @@ export function Search({
 
   const handle = React.useMemo<FormFieldHandle>(
     () => ({
+      // The trimmed query, "" when empty and never omitted; validation always passes.
       getValue: () => latest.current.trim(),
       validate: () => null,
       focus: () => {
@@ -236,6 +257,7 @@ export function Search({
   const register = form?.register;
   const unregister = form?.unregister;
   React.useEffect(() => {
+    // A disabled Search is neither registered with nor submitted by a Form.
     if (register === undefined || unregister === undefined || isDisabled) {
       return undefined;
     }
@@ -248,7 +270,10 @@ export function Search({
       return;
     }
     setQuery(text);
-    setOpen(true);
+    // Typing is what opens the list; a `suggestions` array arriving on its own never does.
+    if (hasSuggestions) {
+      setOpen(true);
+    }
   };
 
   const handleFocus = (): void => {
@@ -267,7 +292,7 @@ export function Search({
   };
 
   const handleListPressEnd = (): void => {
-    // The row's press handler runs after the release; close afterwards if focus did not come back.
+    // The row's press handler runs after the release; close a tick later if focus did not come back.
     setTimeout(() => {
       pressingList.current = false;
       if (inputRef.current?.isFocused() !== true) {
@@ -276,7 +301,8 @@ export function Search({
     }, 0);
   };
 
-  // Reported only where a hardware keyboard (or react-native-web) delivers the key.
+  // Keys arrive only where a hardware keyboard (or react-native-web) delivers them; the clear
+  // Button is the accessible path to Escape's clear.
   const handleKeyPress = (event: TextInputKeyPressEvent): void => {
     if (isDisabled) {
       return;
@@ -295,7 +321,8 @@ export function Search({
       setOpen(false);
       return;
     }
-    if (latest.current !== '') {
+    // An already-empty field with no list open does nothing and fires no onClear.
+    if (currentValue !== '') {
       clear();
     }
   };
@@ -304,7 +331,7 @@ export function Search({
     if (isDisabled) {
       return;
     }
-    submit(latest.current);
+    submit(currentValue);
   };
 
   const handleClearPress = (): void => {
@@ -315,6 +342,7 @@ export function Search({
     inputRef.current?.focus();
   };
 
+  /** A tap fills the query with the suggestion's `label` — what the user just read — and submits it. */
   const handleSuggestionChange = (next: ListboxValue): void => {
     if (isDisabled) {
       return;
@@ -330,8 +358,10 @@ export function Search({
   };
 
   const count = suggestions?.length ?? 0;
-  const statusText = !showList ? '' : loading ? COPY.loading : count === 0 ? COPY.noSuggestions : suggestionsCount(count);
-  // statusDebounce: `motion.duration.base` × 2. Native tokens are never zeroed for reduced motion, so this is the standard value.
+  const announceStatus = hasSuggestions && !isDisabled && (showList || loading);
+  const statusText = !announceStatus ? '' : loading ? COPY.loading : count === 0 ? COPY.noSuggestions : suggestionsCountText(count);
+  // constant statusDebounce: `motion.duration.base` × 2. The theme token is never zeroed —
+  // reduced motion is the separate useReducedMotion — so this is always the standard value.
   const statusDebounce = t.motionDurationBase * 2;
 
   React.useEffect(() => {
@@ -358,18 +388,17 @@ export function Search({
   const popupShadow = overrides?.popupShadow ? (resolveToken(t, overrides.popupShadow) as typeof t.shadowOverlay) : t.shadowOverlay;
   const partGap = overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.space1;
   const disabledOpacity = overrides?.disabledOpacity ? (resolveToken(t, overrides.disabledOpacity) as number) : t.opacityDisabled;
-  // `layer` stacks the web popup; the native list is inline, so the binding is accepted and unused.
+  // `layer` stacks the popup on web and Lit; the native list is inline, so the binding is
+  // accepted for parity and never applied.
 
-  // The focus border is wider than the resting one; the padding gives the difference back so the text does not move.
-  const activeBorderWidth = focused ? t.borderWidthFocus : borderWidth;
-  const borderCompensation = Math.max(0, Math.max(t.borderWidthFocus, borderWidth) - activeBorderWidth);
+  // The field border in `borderFocus` is the focus ring: it replaces `borderWidth` with
+  // `focusRingWidth` while the input itself has focus (a focused clear or submit Button shows
+  // only its own ring), and the padding shrinks by the difference so the content does not shift.
+  const insetShrink = focused ? t.borderWidthFocus - borderWidth : 0;
 
-  const rootStyle: ViewStyle = {
-    flexDirection: 'column',
-    gap: partGap,
-    opacity: isDisabled ? disabledOpacity : 1,
-  };
-
+  const rootStyle: ViewStyle = { flexDirection: 'column', gap: partGap };
+  /** The label, glyph and input dim; the field frame does not, and the Buttons dim once through their own `disabled`. */
+  const dimStyle: ViewStyle = { opacity: isDisabled ? disabledOpacity : 1 };
   const fieldGroupStyle: ViewStyle = { flexDirection: 'column', gap: suggestionsOffset };
 
   const fieldStyle: ViewStyle = {
@@ -378,11 +407,11 @@ export function Search({
     gap: affixGap,
     minHeight: t.sizeTargetComfortable,
     backgroundColor: t.colorControlBackground,
-    borderWidth: activeBorderWidth,
+    borderWidth: focused ? t.borderWidthFocus : borderWidth,
     borderColor: focused ? t.colorBorderFocus : t.colorBorderStrong,
     borderRadius: radius,
-    paddingHorizontal: paddingInline + borderCompensation,
-    paddingVertical: paddingBlock + borderCompensation,
+    paddingHorizontal: paddingInline - insetShrink,
+    paddingVertical: paddingBlock - insetShrink,
   };
 
   const inputStyle: TextStyle = {
@@ -394,6 +423,7 @@ export function Search({
     fontSize,
     lineHeight: toLineHeight(fontSize, lineHeight),
     color: t.colorForeground,
+    opacity: isDisabled ? disabledOpacity : 1,
   };
 
   const suggestionsStyle: ViewStyle = {
@@ -408,7 +438,7 @@ export function Search({
   return (
     <View ref={ref} testID="Search" accessibilityRole={landmark ? 'search' : undefined} style={rootStyle}>
       {showLabel ? (
-        <View testID="Search.label" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+        <View testID="Search.label" style={dimStyle} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
           <Text
             overrides={{
               fontWeight: overrides?.labelWeight ?? 'font.weight.medium',
@@ -421,14 +451,19 @@ export function Search({
       ) : null}
       <View style={fieldGroupStyle}>
         <View testID="Search.field" style={fieldStyle}>
-          <View testID="Search.icon" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-            <Icon name="search" size={ICON_SIZE[size]} overrides={{ color: 'color.foreground.muted' }} />
+          <View testID="Search.icon" style={dimStyle} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+            <Icon name="search" size={ICON_SIZE[size]} overrides={ICON_OVERRIDES} />
           </View>
           <TextInput
             ref={inputRef}
             testID="Search.input"
+            // `role` carries the schema's `searchbox`; the `search` landmark stays on the root View.
+            role="searchbox"
             accessibilityLabel={label}
             accessibilityState={{ disabled: isDisabled, expanded: hasSuggestions ? showList : undefined }}
+            // react-native-web 0.21 drops `accessibilityState`, and a read-only field that only
+            // dims through `opacity.disabled` reads as a contrast failure unless it is marked inactive.
+            aria-disabled={isDisabled}
             editable={!isDisabled}
             value={currentValue}
             placeholder={placeholder}
@@ -473,16 +508,22 @@ export function Search({
           <View
             testID="Search.suggestions"
             style={suggestionsStyle}
+            // A press that starts in the list must not close it through the input's blur.
             onTouchStart={handleListPressStart}
             onTouchEnd={handleListPressEnd}
+            onTouchCancel={handleListPressEnd}
             onPointerDown={handleListPressStart}
             onPointerUp={handleListPressEnd}
+            onPointerCancel={handleListPressEnd}
           >
             <Listbox
               label={label}
+              // While loading, no options are passed and the empty row carries `copy.loading`;
+              // Listbox's own `loading` prop is never used, so the verbatim string is what shows.
               options={loading ? [] : (suggestions ?? [])}
               value=""
               embedded
+              selectionFollowsFocus={false}
               emptyMessage={loading ? COPY.loading : COPY.noSuggestions}
               onChange={handleSuggestionChange}
             />

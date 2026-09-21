@@ -90,23 +90,40 @@ type Story = StoryObj<NumberInputArgs>;
 export const Default: Story = {};
 
 /* format */
-export const FormatDecimal: Story = { args: { format: 'decimal', defaultValue: 1234.5, step: 0.1 } };
-export const FormatCurrency: Story = { args: { format: 'currency', currency: 'USD', step: 0.01, defaultValue: 19.99 } };
-export const FormatPercent: Story = { args: { format: 'percent', min: 0, max: 100, step: 5, defaultValue: 10 } };
-export const FormatUnit: Story = { args: { format: 'unit', unit: 'kilogram', step: 0.5, defaultValue: 2.5 } };
+export const FormatDecimal: Story = { args: { format: 'decimal', defaultValue: 1234.5, precision: 1 } };
+export const FormatCurrency: Story = {
+  args: { format: 'currency', currency: 'USD', label: 'Price', name: 'price', step: 0.01, defaultValue: 19.99 },
+};
+export const FormatPercent: Story = {
+  args: { format: 'percent', label: 'Discount', name: 'discount', min: 0, max: 100, step: 5, defaultValue: 25 },
+};
+export const FormatUnit: Story = {
+  args: { format: 'unit', unit: 'kilogram', label: 'Weight', name: 'weight', step: 0.5, defaultValue: 3.5 },
+};
 
 /* size */
 export const SizeSm: Story = { args: { size: 'sm', defaultValue: 3 } };
 export const SizeMd: Story = { args: { size: 'md', defaultValue: 3 } };
 
 /* states */
-export const WithDescription: Story = { args: { description: 'How many to order.', defaultValue: 3 } };
-export const WithLeadingText: Story = { args: { label: 'Budget', name: 'budget', leadingText: '$', defaultValue: 50 } };
-export const HideSteppers: Story = { args: { hideSteppers: true, defaultValue: 5 } };
+export const HideSteppers: Story = { args: { hideSteppers: true, defaultValue: 3 } };
+export const WithLeadingText: Story = {
+  args: { label: 'Budget', name: 'budget', leadingText: '$', min: 0, defaultValue: 500 },
+};
+export const WithTrailingText: Story = {
+  args: { label: 'Duration', name: 'duration', trailingText: 'min', min: 0, defaultValue: 30 },
+};
+export const WithDescription: Story = { args: { description: 'Whole units only.', defaultValue: 1 } };
+export const Placeholder: Story = { args: { label: 'Weight (kg)', name: 'weight', placeholder: '12.5', step: 0.1 } };
 export const Required: Story = { args: { required: true } };
+export const HideLabel: Story = { args: { hideLabel: true, defaultValue: 1 } };
 export const Disabled: Story = { args: { disabled: true, defaultValue: 5 } };
 export const Invalid: Story = { args: { invalid: true, defaultValue: 5 } };
-export const WithError: Story = { args: { error: 'Fix this before continuing.', defaultValue: 5 } };
+export const WithError: Story = { args: { error: 'Quantity must be between 1 and 99.', defaultValue: 120 } };
+
+/* keyboard: ArrowUp/Down, PageUp/Down, Home/End (bounds set), Enter commits. One field, since it is
+   a single tab stop; min/max are set so Home and End have somewhere to go. */
+export const Keyboard: Story = { args: { defaultValue: 5, min: 0, max: 20, step: 1 } };
 
 /* examples */
 export const Quantity: Story = {
@@ -128,12 +145,4 @@ export const CompactCellEditor: Story = {
     trailingText: 'kg',
     defaultValue: 2,
   },
-};
-
-/**
- * The keyboard model on the single tab stop: ArrowUp/Down, PageUp/Down,
- * Home/End (bounds are set) and Enter.
- */
-export const Keyboard: Story = {
-  args: { min: 0, max: 20, defaultValue: 5 },
 };

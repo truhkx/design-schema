@@ -331,24 +331,27 @@
     }
   },
   "DatePicker.rn": {
-    "hash": "04c0c0362b754597",
-    "lastAttemptHash": "04c0c0362b754597",
-    "generatedAt": "2026-09-17T17:08:20+00:00",
+    "hash": "997aad601984219a",
+    "lastAttemptHash": "997aad601984219a",
+    "generatedAt": "2026-09-21T21:52:30+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.6015,
+    "costUsd": 6.1461,
     "files": [
+      "packages/rn/src/DatePicker.stories.tsx",
+      "packages/rn/src/DatePicker.test.tsx",
       "packages/rn/src/DatePicker.tsx"
     ],
-    "gaps": 9,
+    "gaps": 14,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "Dialog.rn": {
@@ -704,25 +707,26 @@
     }
   },
   "NumberInput.rn": {
-    "hash": "41045f4986ad124c",
-    "lastAttemptHash": "41045f4986ad124c",
-    "generatedAt": "2026-09-17T16:31:23+00:00",
+    "hash": "0e235d29bdc5d547",
+    "lastAttemptHash": "0e235d29bdc5d547",
+    "generatedAt": "2026-09-21T20:06:14+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.5644,
+    "rounds": 2,
+    "costUsd": 7.9328,
     "files": [
       "packages/rn/src/NumberInput.stories.tsx",
       "packages/rn/src/NumberInput.tsx"
     ],
-    "gaps": 9,
+    "gaps": 22,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "Pattern.SettingsPage.rn": {
@@ -772,24 +776,25 @@
     }
   },
   "ProgressBar.rn": {
-    "hash": "77ae8768a5cf0784",
-    "lastAttemptHash": "77ae8768a5cf0784",
-    "generatedAt": "2026-09-17T16:37:24+00:00",
+    "hash": "5546ff49c90a1e68",
+    "lastAttemptHash": "5546ff49c90a1e68",
+    "generatedAt": "2026-09-21T20:24:46+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.1819,
+    "costUsd": 2.7721,
     "files": [
       "packages/rn/src/ProgressBar.tsx"
     ],
-    "gaps": 13,
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "RadioGroup.rn": {
@@ -815,15 +820,14 @@
     }
   },
   "Search.rn": {
-    "hash": "8524e037ed6f5d36",
-    "lastAttemptHash": "8524e037ed6f5d36",
-    "generatedAt": "2026-09-17T16:54:22+00:00",
+    "hash": "f23b97483e5658f5",
+    "lastAttemptHash": "f23b97483e5658f5",
+    "generatedAt": "2026-09-21T21:19:10+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.4084,
+    "costUsd": 2.58,
     "files": [
-      "packages/rn/src/Search.stories.tsx",
       "packages/rn/src/Search.tsx"
     ],
     "gaps": 10,
@@ -833,7 +837,8 @@
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "SegmentedControl.rn": {
@@ -903,24 +908,25 @@
     }
   },
   "Slider.rn": {
-    "hash": "bcf0e430ba8c7464",
-    "lastAttemptHash": "bcf0e430ba8c7464",
-    "generatedAt": "2026-09-17T16:24:50+00:00",
+    "hash": "d3bbc150de56360f",
+    "lastAttemptHash": "d3bbc150de56360f",
+    "generatedAt": "2026-09-21T19:41:49+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 2.2492,
+    "rounds": 2,
+    "costUsd": 7.2967,
     "files": [
       "packages/rn/src/Slider.tsx"
     ],
-    "gaps": 11,
+    "gaps": 24,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "Splitter.rn": {
@@ -972,24 +978,26 @@
     }
   },
   "Stepper.rn": {
-    "hash": "b097b43a82e5c46a",
-    "lastAttemptHash": "b097b43a82e5c46a",
-    "generatedAt": "2026-09-17T16:44:40+00:00",
+    "hash": "2ab670d26045a9d9",
+    "lastAttemptHash": "2ab670d26045a9d9",
+    "generatedAt": "2026-09-21T20:46:42+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.3644,
+    "rounds": 2,
+    "costUsd": 4.9323,
     "files": [
+      "packages/rn/src/Stepper.test.tsx",
       "packages/rn/src/Stepper.tsx"
     ],
-    "gaps": 9,
+    "gaps": 22,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "Switch.rn": {

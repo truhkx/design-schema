@@ -111,5 +111,5 @@ test.describe('Combobox (lit) keyboard', () => {
   test.skip('Home: Move the text caret (input semantics), never the list. — native', async () => {});
   test.skip('End: Move the text caret (input semantics), never the list. — native', async () => {});
   test.skip(',: With allowCustom, commits the typed text exactly as Enter does: multiple clears the input and stays open; single shows the committed text and closes. (allowCustom) — manual', async () => {});
-  test.skip('Alt+ArrowDown: Opens the list with the selected option active, or no active option when nothing is selected; does nothing while the list is already open. — manual', async () => {});
+  test.skip('Alt+ArrowDown: Opens the list with the selected option active, or no active option when nothing is selected; changes nothing while the list is already open, though the default action is still suppressed — ArrowDown and ArrowUp never move the text caret, open or closed. — manual', async () => {});
 });

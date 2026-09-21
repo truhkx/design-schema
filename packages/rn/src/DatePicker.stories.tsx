@@ -1,3 +1,4 @@
+import * as React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { DatePicker } from './DatePicker';
 import { withTheme } from './decorators';
@@ -39,9 +40,26 @@ export const ShowWeekNumbers: Story = { args: { defaultValue: '2026-09-10', show
 
 export const WithMinMax: Story = { args: { defaultValue: '2026-09-10', min: '2026-09-01', max: '2026-09-30' } };
 
+/** Weekends are shown but cannot be picked. */
+export const WithDisabledDays: Story = {
+  args: {
+    defaultValue: '2026-09-10',
+    isDateDisabled: (isoDate: string) => {
+      const weekday = new Date(`${isoDate}T00:00:00Z`).getUTCDay();
+      return weekday === 0 || weekday === 6;
+    },
+  },
+};
+
+export const WithDescription: Story = { args: { description: 'Must be at least 18 years ago.' } };
+
+export const Required: Story = { args: { required: true } };
+
 export const Disabled: Story = { args: { disabled: true, defaultValue: '2026-09-10' } };
 
-export const WithError: Story = { args: { error: 'Date of birth is required.' } };
+export const WithError: Story = { args: { error: 'Start date is required.' } };
+
+export const HideLabel: Story = { args: { hideLabel: true } };
 
 // examples
 /** A single date in the past, typed or picked. */
@@ -59,10 +77,15 @@ export const AppointmentWithWeekNumbers: Story = {
 export const CompactCellEditor: Story = { args: { label: 'Due date', name: 'due', size: 'sm', hideLabel: true } };
 
 /**
- * At least three focusable elements with the calendar open, for the axe gate and
- * manual keyboard checks on react-native-web: the previous/next month buttons and the
- * month/year Selects (the day grid and Today/Clear buttons add more beyond that).
+ * Starts open with at least three focusable children in the sheet — the previous/next
+ * month Buttons, the month and year Selects, the day grid and Today/Clear — for the axe
+ * gate and manual keyboard checks on react-native-web. `open` is kept in story state
+ * following `onOpenChange`, as Select and Combobox, so Escape can close it.
  */
 export const Keyboard: Story = {
   args: { defaultValue: '2026-09-10', open: true },
+  render: function KeyboardStory(args) {
+    const [open, setOpen] = React.useState(args.open ?? true);
+    return <DatePicker {...args} open={open} onOpenChange={setOpen} />;
+  },
 };

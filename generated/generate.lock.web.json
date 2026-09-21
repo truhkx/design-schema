@@ -364,13 +364,13 @@
     }
   },
   "DatePicker.web": {
-    "hash": "0e453ee8dc90925e",
-    "lastAttemptHash": "0e453ee8dc90925e",
-    "generatedAt": "2026-09-17T16:58:18+00:00",
+    "hash": "03717ec4e21e2ab7",
+    "lastAttemptHash": "03717ec4e21e2ab7",
+    "generatedAt": "2026-09-21T21:28:19+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 2.4806,
+    "rounds": 2,
+    "costUsd": 5.835,
     "files": [
       "packages/react/src/DatePicker.css",
       "packages/react/src/DatePicker.stories.tsx",
@@ -378,14 +378,17 @@
       "packages/react/src/DatePicker.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 10,
+    "gaps": 17,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
     }
   },
   "Dialog.web": {
@@ -775,28 +778,29 @@
     }
   },
   "NumberInput.web": {
-    "hash": "07fa24c156f58200",
-    "lastAttemptHash": "07fa24c156f58200",
-    "generatedAt": "2026-09-17T16:26:53+00:00",
+    "hash": "98c184172cefab52",
+    "lastAttemptHash": "98c184172cefab52",
+    "generatedAt": "2026-09-21T19:50:46+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.2984,
+    "costUsd": 4.1735,
     "files": [
       "packages/react/src/NumberInput.css",
       "packages/react/src/NumberInput.stories.tsx",
-      "packages/react/src/NumberInput.test.tsx",
-      "packages/react/src/NumberInput.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/NumberInput.tsx"
     ],
-    "gaps": 7,
+    "gaps": 11,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
     }
   },
   "Pattern.SettingsPage.web": {
@@ -848,28 +852,29 @@
     }
   },
   "ProgressBar.web": {
-    "hash": "4efa19075b4fbe1a",
-    "lastAttemptHash": "4efa19075b4fbe1a",
-    "generatedAt": "2026-09-17T16:33:22+00:00",
+    "hash": "2f94cc81acef764e",
+    "lastAttemptHash": "2f94cc81acef764e",
+    "generatedAt": "2026-09-21T20:11:32+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.1538,
+    "costUsd": 1.9901,
     "files": [
       "packages/react/src/ProgressBar.css",
       "packages/react/src/ProgressBar.stories.tsx",
-      "packages/react/src/ProgressBar.test.tsx",
       "packages/react/src/ProgressBar.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 7,
+    "gaps": 6,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "axe": true
     }
   },
   "RadioGroup.web": {
@@ -898,28 +903,30 @@
     }
   },
   "Search.web": {
-    "hash": "f0799f97d5e2ee24",
-    "lastAttemptHash": "f0799f97d5e2ee24",
-    "generatedAt": "2026-09-17T16:48:29+00:00",
+    "hash": "629595d84efef2c1",
+    "lastAttemptHash": "629595d84efef2c1",
+    "generatedAt": "2026-09-21T21:05:59+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 2.3758,
+    "rounds": 2,
+    "costUsd": 15.604,
     "files": [
       "packages/react/src/Search.css",
       "packages/react/src/Search.stories.tsx",
-      "packages/react/src/Search.test.tsx",
       "packages/react/src/Search.tsx",
-      "packages/react/src/index.ts"
+      "tools/keyboard_tests.ts"
     ],
-    "gaps": 9,
+    "gaps": 23,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
     }
   },
   "SegmentedControl.web": {
@@ -1004,24 +1011,27 @@
   },
   "Slider.web": {
     "hash": "66be73a4672305e4",
-    "lastAttemptHash": "66be73a4672305e4",
-    "generatedAt": "2026-09-17T16:16:39+00:00",
+    "lastAttemptHash": "816df82e9193aa67",
+    "generatedAt": "2026-09-21T19:10:21+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.638,
+    "rounds": 3,
+    "costUsd": 15.24,
     "files": [
       "packages/react/src/Slider.css",
       "packages/react/src/Slider.tsx"
     ],
-    "gaps": 10,
+    "gaps": 35,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": false,
+      "axe": true
     }
   },
   "Splitter.web": {
@@ -1073,27 +1083,28 @@
     }
   },
   "Stepper.web": {
-    "hash": "51ed11867cca62c1",
-    "lastAttemptHash": "51ed11867cca62c1",
-    "generatedAt": "2026-09-17T16:40:08+00:00",
+    "hash": "083f607ffd95b129",
+    "lastAttemptHash": "083f607ffd95b129",
+    "generatedAt": "2026-09-21T20:32:24+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.673,
+    "costUsd": 3.9025,
     "files": [
       "packages/react/src/Stepper.css",
-      "packages/react/src/Stepper.stories.tsx",
-      "packages/react/src/Stepper.test.tsx",
       "packages/react/src/Stepper.tsx"
     ],
-    "gaps": 10,
+    "gaps": 9,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
     }
   },
   "Switch.web": {

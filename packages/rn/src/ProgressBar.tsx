@@ -34,9 +34,9 @@ export interface ProgressBarProps {
    * unknown). Clamped to `min`…`max`; a non-finite number is treated as `min`.
    */
   value?: number | null | undefined;
-  /** Start of the range. */
+  /** Start of the range. A non-finite number is treated as the default, 0. */
   min?: number | undefined;
-  /** End of the range. */
+  /** End of the range. A non-finite number is treated as the default, 100. */
   max?: number | undefined;
   /**
    * Renders the value text ("42%", "3 of 12 files"), called with the clamped value. Defaults to a whole-number
@@ -102,9 +102,11 @@ function defaultFormatValue(value: number, min: number, max: number): string {
  * `copy.indeterminate`, as it does each later time it becomes indeterminate.
  * `milestones` announces `copy.progress` once for the highest tier 1–3 entered by an
  * update; reaching `max` announces `copy.complete` (for `milestones` and `complete`).
- * Moving to a lower tier resets the record to that tier. With `max <= min` the bar
- * renders empty, reports `now = min`, announces no progress or completion, and warns
- * in development.
+ * Moving to a lower tier resets the record to that tier, and entering the indeterminate
+ * state resets it to tier 0, so the first known value afterwards announces again. With
+ * `max <= min` the bar renders empty, reports `now = min`, records no tier, announces no
+ * progress or completion, and warns in development; the tier the range arrives at when it
+ * becomes valid again is recorded silently, as at mount.
  */
 export function ProgressBar({
   label,
@@ -123,19 +125,27 @@ export function ProgressBar({
   const reducedMotion = useReducedMotion();
 
   const indeterminate = value === undefined || value === null;
-  const validRange = max > min;
 
+  // A non-finite bound falls back to its default, on every platform.
+  const safeMin = Number.isFinite(min) ? min : 0;
+  const safeMax = Number.isFinite(max) ? max : 100;
+  const validRange = safeMax > safeMin;
+
+  // Development warning: an inverted or empty range is not a range. Warned once per distinct pair.
+  const warnedRef = React.useRef<string | null>(null);
   React.useEffect(() => {
-    if (__DEV__ && !validRange) {
-      console.warn(`ProgressBar: max (${max}) must be greater than min (${min}); the bar renders empty.`);
-    }
-  }, [validRange, min, max]);
+    if (!__DEV__ || validRange) return;
+    const key = `${safeMin}/${safeMax}`;
+    if (warnedRef.current === key) return;
+    warnedRef.current = key;
+    console.warn(`ProgressBar: \`max\` (${safeMax}) must be greater than \`min\` (${safeMin}); the bar renders empty.`);
+  });
 
-  const safeValue = typeof value === 'number' && Number.isFinite(value) ? value : min;
-  const clamped = validRange ? Math.min(max, Math.max(min, safeValue)) : min;
+  const safeValue = typeof value === 'number' && Number.isFinite(value) ? value : safeMin;
+  const clamped = validRange ? Math.min(safeMax, Math.max(safeMin, safeValue)) : safeMin;
+  const fraction = validRange ? (clamped - safeMin) / (safeMax - safeMin) : 0;
   // Rounding is for the text only; the fill width uses the exact fraction.
-  const fraction = validRange ? (clamped - min) / (max - min) : 0;
-  const valueText = formatValue(clamped, min, max);
+  const valueText = formatValue(clamped, safeMin, safeMax);
 
   const trackColor = overrides?.track ? (resolveToken(t, overrides.track) as string) : t.colorBackgroundStrong;
   const trackHeight = overrides?.trackHeight ? (resolveToken(t, overrides.trackHeight) as number) : t.space2;
@@ -211,41 +221,47 @@ export function ProgressBar({
 
   // Announcement record, tracked whatever `announce` is, so switching it mid-task
   // never replays tiers already passed.
-  const mounted = React.useRef(false);
   const wasIndeterminate = React.useRef(false);
   const recordedTier = React.useRef(0);
+  // The next determinate tier is recorded without announcing: true at mount, and again
+  // whenever the range has been invalid, since neither is progress the user made.
+  const recordSilently = React.useRef(true);
 
   React.useEffect(() => {
-    const isMount = !mounted.current;
-    mounted.current = true;
-
     if (indeterminate) {
-      // Entering the indeterminate state (including at mount) announces once.
-      if (!wasIndeterminate.current && announce !== 'none') {
-        AccessibilityInfo.announceForAccessibility(COPY.indeterminate(label));
+      // Entering the indeterminate state (including at mount) announces once, resets the
+      // record to tier 0 and re-arms completion, so the first known value afterwards speaks.
+      if (!wasIndeterminate.current) {
+        wasIndeterminate.current = true;
+        recordedTier.current = 0;
+        recordSilently.current = false;
+        if (announce !== 'none') {
+          AccessibilityInfo.announceForAccessibility(COPY.indeterminate(label));
+        }
       }
-      wasIndeterminate.current = true;
       return;
     }
     wasIndeterminate.current = false;
 
     if (!validRange) {
+      // Not a range: no tier is recorded, and the one the bar arrives at when the range
+      // becomes valid is recorded silently.
+      recordSilently.current = true;
       return;
     }
 
     const tier = Math.floor(fraction * TIERS);
-    if (isMount) {
+    if (recordSilently.current) {
+      recordSilently.current = false;
       recordedTier.current = tier;
       return;
     }
-    if (tier < recordedTier.current) {
-      // Backward: the tiers above re-arm, the ones below stay announced.
+    if (tier <= recordedTier.current) {
+      // Backward: the tiers above re-arm (completion included), the ones below stay announced.
       recordedTier.current = tier;
       return;
     }
-    if (tier === recordedTier.current) {
-      return;
-    }
+    // Several tiers crossed at once make one announcement, for the highest.
     recordedTier.current = tier;
 
     if (announce === 'none') {
@@ -270,13 +286,15 @@ export function ProgressBar({
       alignItems: 'baseline',
       gap: labelGap,
     };
+    // A long label wraps onto more lines inside the row rather than truncating.
+    const labelWrapper: ViewStyle = { flexShrink: 1 };
     const track: ViewStyle = {
       height: trackHeight,
       borderRadius: radius,
       backgroundColor: trackColor,
       overflow: 'hidden',
     };
-    return { container, header, track };
+    return { container, header, labelWrapper, track };
   }, [partGap, labelGap, hideLabel, trackHeight, radius, trackColor]);
 
   const fillStyle: Animated.WithAnimatedValue<ViewStyle> = indeterminate
@@ -301,14 +319,22 @@ export function ProgressBar({
       focusable={false}
       accessibilityRole="progressbar"
       accessibilityLabel={label}
-      accessibilityValue={indeterminate ? { min, max } : { min, max, now: clamped, text: valueText }}
+      // An indeterminate bar carries the bounds only: it never names a progress it does not know.
+      accessibilityValue={indeterminate ? { min: safeMin, max: safeMax } : { min: safeMin, max: safeMax, now: clamped, text: valueText }}
       accessibilityState={indeterminate ? { busy: true } : undefined}
+      // The aria-* aliases carry the same value and busy state. React Native merges them
+      // into `accessibilityValue` / `accessibilityState`; react-native-web forwards only these.
+      aria-valuemin={safeMin}
+      aria-valuemax={safeMax}
+      aria-valuenow={indeterminate ? undefined : clamped}
+      aria-valuetext={indeterminate ? undefined : valueText}
+      aria-busy={indeterminate ? true : undefined}
       style={styles.container}
     >
       {showHeader ? (
         <View testID="ProgressBar.header" style={styles.header}>
           {hideLabel ? null : (
-            <View testID="ProgressBar.label">
+            <View testID="ProgressBar.label" style={styles.labelWrapper}>
               <Text
                 size="sm"
                 weight="medium"

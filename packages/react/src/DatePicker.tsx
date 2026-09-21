@@ -77,6 +77,7 @@ export type DatePickerOverridableBinding =
   | 'weekdaySize'
   | 'weekdayWeight'
   | 'weekNumberSize'
+  | 'weekNumberWeight'
   | 'monthTitleSize'
   | 'monthTitleWeight'
   | 'partGap'
@@ -111,6 +112,7 @@ const OVERRIDE_HOOK: Partial<Record<DatePickerOverridableBinding, string>> = {
   weekdaySize: '--ds-date-picker-weekday-size',
   weekdayWeight: '--ds-date-picker-weekday-weight',
   weekNumberSize: '--ds-date-picker-week-number-size',
+  weekNumberWeight: '--ds-date-picker-week-number-weight',
   partGap: '--ds-date-picker-part-gap',
   fieldGap: '--ds-date-picker-field-gap',
   dayFontSize: '--ds-date-picker-day-font-size',
@@ -138,9 +140,9 @@ function resolveOverrides(overrides: Partial<Record<DatePickerOverridableBinding
   for (const binding of Object.keys(overrides) as DatePickerOverridableBinding[]) {
     const ref = overrides[binding];
     if (!ref) continue;
+    // The description and error Text take exactly the two declared forwards, and nothing else.
     if (binding === 'helperSize') helperOverrides.fontSize = ref;
     if (binding === 'fontFamily') helperOverrides.fontFamily = ref;
-    if (binding === 'lineHeight') helperOverrides.lineHeight = ref;
     if (binding === 'monthTitleSize') selectOverrides.fontSize = ref;
     if (binding === 'monthTitleWeight') selectOverrides.fontWeight = ref;
     if (binding === 'calendarInset') popoverOverrides = { inset: ref };
@@ -521,6 +523,7 @@ export function DatePicker({
   }
 
   const calendarRef = useRef<HTMLDivElement | null>(null);
+  const calendarButtonRef = useRef<HTMLButtonElement | null>(null);
   const focusDayPending = useRef(false);
   const wasOpen = useRef(false);
 
@@ -633,7 +636,14 @@ export function DatePicker({
     onKeyDown?.(event);
     if (event.defaultPrevented || isDisabled || event.key !== 'ArrowDown') return;
     event.preventDefault();
-    openedFrom.current = open ? 'start' : which;
+    if (open) {
+      // Already open: move focus to that day — the pending range start, else the value, else today.
+      const target =
+        pendingStart ?? (which === 'end' ? (committedEnd ?? committedStart) : committedStart) ?? todayISO();
+      moveFocusTo(target);
+      return;
+    }
+    openedFrom.current = which;
     requestOpen(true);
   }
 
@@ -721,6 +731,20 @@ export function DatePicker({
         : stops[index + 1];
     event.preventDefault();
     next?.focus();
+  }
+
+  /**
+   * Escape closes the calendar wherever the focus is, and returns it to the calendar button. The
+   * Popover only hears the key when focus is inside its portaled panel — from the field itself (the
+   * input, or the calendar button, which is the trigger and so never inside the panel) the keydown
+   * reaches this root instead. Popover stops propagation on the Escape it handles, so exactly one of
+   * the two runs.
+   */
+  function handleRootKeyDown(event: ReactKeyboardEvent<HTMLDivElement>): void {
+    if (event.key !== 'Escape' || !open || event.defaultPrevented) return;
+    event.preventDefault();
+    requestOpen(false);
+    calendarButtonRef.current?.focus();
   }
 
   /* --- Form registration ------------------------------------------------------------------------ */
@@ -856,6 +880,7 @@ export function DatePicker({
 
   const calendarButton = (
     <Button
+      ref={calendarButtonRef}
       variant="ghost"
       size={size}
       iconOnly
@@ -866,7 +891,14 @@ export function DatePicker({
   );
 
   return (
-    <div ref={ref} className={classes} data-ds="DatePicker" data-ds-field="" style={resolved?.style}>
+    <div
+      ref={ref}
+      className={classes}
+      data-ds="DatePicker"
+      data-ds-field=""
+      style={resolved?.style}
+      onKeyDown={handleRootKeyDown}
+    >
       <label
         id={labelId}
         htmlFor={id}

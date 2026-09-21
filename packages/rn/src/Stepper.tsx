@@ -40,7 +40,10 @@ export type StepperOverridableBinding =
   | 'transition';
 
 export interface StepperProps {
-  /** Accessible name of the list (React Native has no navigation landmark). Defaults to `copy.navLabel`. */
+  /**
+   * Accessible name of the list (React Native has no navigation landmark, so the name sits on the list View).
+   * Defaults to `copy.navLabel`, which an empty string also falls back to.
+   */
   label?: string | undefined;
   /**
    * The steps in order. `status` is derived from `current` when omitted. An explicit `status` sets only the
@@ -50,7 +53,8 @@ export interface StepperProps {
   steps: { id: string; label: string; description?: string; status?: "complete" | "current" | "upcoming" | "error" }[];
   /**
    * The id of the current step. When no id matches, nothing is selected, every step without an explicit status is
-   * upcoming, no step is navigable under `completed`, the count reads "Step 1 of m", and `__DEV__` logs a warning.
+   * upcoming, no step is navigable under `completed` (all still are under `all`), the count reads "Step 1 of m",
+   * and `__DEV__` logs a warning — an empty `current` is treated as not yet set and does not warn.
    */
   current: string;
   /** Vertical shows descriptions under each label; horizontal renders no descriptions and collapses to `compact` below the prose width. */
@@ -69,7 +73,7 @@ export interface StepperProps {
   overrides?: Partial<Record<StepperOverridableBinding, TokenRef | undefined>> | undefined;
   /** Fired when a navigable step is chosen, with its id. The container changes `current`; the stepper never changes it itself. */
   onStepSelect?: ((id: string) => void) | undefined;
-  /** The root list view. */
+  /** The root view, which holds the list and the count. */
   ref?: React.Ref<ViewInstance> | undefined;
 }
 
@@ -118,6 +122,17 @@ interface Resolved {
   transition: number;
 }
 
+/** The token each composed Text is handed, overridden or not — the Text's own `size`/`weight` props never carry it. */
+interface Forwards {
+  labelSize: TokenRef;
+  labelWeight: TokenRef;
+  labelCurrentWeight: TokenRef;
+  descriptionSize: TokenRef;
+  countSize: TokenRef;
+  indicatorFontSize: TokenRef;
+  fontFamily: TokenRef;
+}
+
 /**
  * Stepper — a map of a journey with a "you are here". It sets expectations, shows progress without a bar, and
  * gives people a way back to a step they finished. Navigation, not a form control (the number-stepping field is
@@ -127,13 +142,16 @@ interface Resolved {
  * horizontal for short, familiar ones. Do not use it for two steps, for more than about eight, as Tabs, or to show
  * task progress (ProgressBar).
  *
- * Renders a `View` with `accessibilityRole="list"` named by `label` (React Native has no `nav` landmark). Each step
- * is a `Pressable` (navigable) or an `accessible` `View` whose `accessibilityLabel` is `copy.stepLabel` plus ", " and
+ * A plain root `View` holds the list `View` (`accessibilityRole="list"`, named by `label` — React Native has no
+ * `nav` landmark) and, `stepGap` after it, the `count` Text, so the count is never inside the list. Each step is a
+ * `role="listitem"` View — the `<li>` of the web anatomy, and the only child role a list may own — holding a
+ * `Pressable` (navigable) or an `accessible` `View` whose `accessibilityLabel` is `copy.stepLabel` plus ", " and
  * the status word, with `accessibilityState.selected` on the step `current` names. An explicit `status: "error"`
  * wins for the indicator and the status word, while selection and the compact reveal still follow the id. The
  * indicator switches between its four states at once; connectors cross-fade to `connectorComplete` over
- * `transition`. Compact is decided by the stepper's own `onLayout` width, rendering non-compact until the first
- * layout; the `count` Text ("Step n of m") follows the steps only while compact is in effect.
+ * `transition`. Compact is decided by the stepper's own `onLayout` width against `layout.maxWidth.prose`,
+ * rendering non-compact until the first layout; the root stretches to its parent, so the measured width is the
+ * space offered and switching to compact cannot narrow it further.
  */
 export function Stepper({
   label,
@@ -171,12 +189,23 @@ export function Stepper({
     transition: pick('transition', t.motionDurationFast),
   };
 
+  const f: Forwards = {
+    labelSize: overrides?.labelSize ?? 'font.size.sm',
+    labelWeight: overrides?.labelWeight ?? 'font.weight.medium',
+    labelCurrentWeight: overrides?.labelCurrentWeight ?? 'font.weight.semibold',
+    descriptionSize: overrides?.descriptionSize ?? 'font.size.xs',
+    countSize: overrides?.countSize ?? 'font.size.sm',
+    indicatorFontSize: overrides?.indicatorFontSize ?? 'font.size.sm',
+    fontFamily: overrides?.fontFamily ?? 'font.family.body',
+  };
+
   const currentIndex = steps.findIndex((step) => step.id === current);
   const isHorizontal = orientation === 'horizontal';
   const isCompact = isHorizontal && (compact || (width !== undefined && width < t.layoutMaxWidthProse));
 
   React.useEffect(() => {
-    if (__DEV__ && currentIndex === -1) {
+    // An empty `current` is a property that has not been set yet, not a wrong id.
+    if (__DEV__ && current !== '' && currentIndex === -1) {
       console.warn(`Stepper: current "${current}" matches no step id; nothing is selected.`);
     }
   }, [current, currentIndex]);
@@ -201,7 +230,7 @@ export function Stepper({
         isHorizontal={isHorizontal}
         t={t}
         r={r}
-        overrides={overrides}
+        f={f}
         onStepSelect={onStepSelect}
       />,
     );
@@ -220,20 +249,18 @@ export function Stepper({
   });
 
   return (
-    <View
-      ref={ref}
-      testID="Stepper"
-      accessibilityRole="list"
-      accessibilityLabel={label ?? COPY.navLabel}
-      onLayout={onLayout}
-      style={{ flexDirection: 'column', gap: r.stepGap }}
-    >
-      <View style={isHorizontal ? { flexDirection: 'row', alignItems: 'flex-start' } : { flexDirection: 'column' }}>
+    <View ref={ref} testID="Stepper" onLayout={onLayout} style={{ alignSelf: 'stretch', flexDirection: 'column', gap: r.stepGap }}>
+      <View
+        testID="Stepper.list"
+        accessibilityRole="list"
+        accessibilityLabel={label || COPY.navLabel}
+        style={isHorizontal ? { flexDirection: 'row', alignItems: 'flex-start' } : { flexDirection: 'column' }}
+      >
         {nodes}
       </View>
       {isCompact ? (
         <View testID="Stepper.count">
-          <Text size="sm" tone="muted" overrides={{ fontSize: overrides?.countSize, fontFamily: overrides?.fontFamily }}>
+          <Text size="sm" tone="muted" overrides={{ fontSize: f.countSize, fontFamily: f.fontFamily }}>
             {format(COPY.stepOf, { current: currentIndex === -1 ? 1 : currentIndex + 1, total: steps.length })}
           </Text>
         </View>
@@ -252,7 +279,7 @@ interface StepControlProps {
   isHorizontal: boolean;
   t: Tokens;
   r: Resolved;
-  overrides: StepperProps['overrides'];
+  f: Forwards;
   onStepSelect: StepperProps['onStepSelect'];
 }
 
@@ -267,7 +294,7 @@ function StepControl({
   isHorizontal,
   t,
   r,
-  overrides,
+  f,
   onStepSelect,
 }: StepControlProps): React.JSX.Element {
   const [focused, setFocused] = React.useState(false);
@@ -304,14 +331,13 @@ function StepControl({
     fontWeight: toFontWeight(r.indicatorFontWeight),
     color: t.colorForeground,
   };
-  const iconSize: TokenRef = overrides?.indicatorFontSize ?? 'font.size.sm';
 
   const indicator = (
     <View testID="Stepper.indicator" style={indicatorStyle} accessibilityElementsHidden importantForAccessibility="no">
       {status === 'complete' ? (
-        <Icon name="check" size="sm" overrides={{ color: 'color.control.selectedForeground', size: iconSize }} />
+        <Icon name="check" size="sm" overrides={{ color: 'color.control.selectedForeground', size: f.indicatorFontSize }} />
       ) : status === 'error' ? (
-        <Icon name="danger" size="sm" overrides={{ color: 'color.status.danger.foreground', size: iconSize }} />
+        <Icon name="danger" size="sm" overrides={{ color: 'color.status.danger.foreground', size: f.indicatorFontSize }} />
       ) : (
         <RNText style={numeralStyle}>{n}</RNText>
       )}
@@ -329,12 +355,11 @@ function StepControl({
             <Text
               size="sm"
               tone={status === 'upcoming' ? 'muted' : 'default'}
+              align={isHorizontal ? 'center' : 'start'}
               overrides={{
-                fontSize: overrides?.labelSize,
-                fontWeight: isCurrent
-                  ? (overrides?.labelCurrentWeight ?? 'font.weight.semibold')
-                  : (overrides?.labelWeight ?? 'font.weight.medium'),
-                fontFamily: overrides?.fontFamily,
+                fontSize: f.labelSize,
+                fontWeight: isCurrent ? f.labelCurrentWeight : f.labelWeight,
+                fontFamily: f.fontFamily,
               }}
             >
               {step.label}
@@ -343,7 +368,7 @@ function StepControl({
         ) : null}
         {showDescription ? (
           <View testID="Stepper.description">
-            <Text size="xs" tone="muted" overrides={{ fontSize: overrides?.descriptionSize, fontFamily: overrides?.fontFamily }}>
+            <Text size="xs" tone="muted" overrides={{ fontSize: f.descriptionSize, fontFamily: f.fontFamily }}>
               {step.description}
             </Text>
           </View>
@@ -351,36 +376,28 @@ function StepControl({
       </View>
     ) : null;
 
+  // The transparent focus border is on every step, navigable or not, so the two line up in one list; only a
+  // navigable control can be focused, and only it takes the 24px minimum target.
   const containerStyle = (active: boolean): ViewStyle => ({
     ...(isHorizontal ? { alignItems: 'center' } : { flexDirection: 'row', alignItems: 'flex-start', paddingVertical: r.stepPadding }),
+    ...(isNavigable ? { minWidth: t.sizeTargetMin, minHeight: t.sizeTargetMin } : null),
     paddingHorizontal: r.stepPadding,
     gap: r.partGap,
-    minWidth: t.sizeTargetMin,
-    minHeight: t.sizeTargetMin,
     borderRadius: r.stepRadius,
     borderWidth: t.borderWidthFocus,
     borderColor: focused ? t.colorBorderFocus : 'transparent',
     backgroundColor: active ? r.stepHover : 'transparent',
   });
 
-  if (!isNavigable) {
-    return (
-      <View
-        testID="Stepper.step"
-        accessible
-        accessibilityLabel={accessibleName}
-        accessibilityState={{ selected: isCurrent }}
-        style={containerStyle(false)}
-      >
-        {indicator}
-        {textBlock}
-      </View>
-    );
-  }
-
-  return (
+  // The `step` part is the list item, as it is the <li> on web: a list role owns list items and nothing else, so
+  // the control (Pressable or plain View) sits inside it rather than being the item itself.
+  const control = !isNavigable ? (
+    <View accessible accessibilityLabel={accessibleName} accessibilityState={{ selected: isCurrent }} style={containerStyle(false)}>
+      {indicator}
+      {textBlock}
+    </View>
+  ) : (
     <Pressable
-      testID="Stepper.step"
       accessibilityRole="button"
       accessibilityLabel={accessibleName}
       accessibilityState={{ selected: isCurrent }}
@@ -394,6 +411,12 @@ function StepControl({
       {indicator}
       {textBlock}
     </Pressable>
+  );
+
+  return (
+    <View testID="Stepper.step" role="listitem">
+      {control}
+    </View>
   );
 }
 
@@ -431,9 +454,18 @@ function Connector({ isHorizontal, complete, reducedMotion, t, r }: ConnectorPro
   const backgroundColor = anim.interpolate({ inputRange: [0, 1], outputRange: [r.connector, t.colorControlSelectedBackground] });
 
   // The line is a sibling of the steps, so a track as tall (or wide) as the indicator, inset by the step's focus
-  // border (and its padding on the indicator's axis), centres it on the indicator without a margin.
+  // border (and its padding on the indicator's axis), centres it on the indicator without a margin. Horizontally it
+  // takes the row's free space from a minimum of stepGap; vertically stepGap is the whole of it.
   const track: ViewStyle = isHorizontal
-    ? { width: r.stepGap, height: r.indicatorSize, paddingTop: t.borderWidthFocus, boxSizing: 'content-box', justifyContent: 'center' }
+    ? {
+        flexGrow: 1,
+        flexShrink: 0,
+        flexBasis: r.stepGap,
+        height: r.indicatorSize,
+        paddingTop: t.borderWidthFocus,
+        boxSizing: 'content-box',
+        justifyContent: 'center',
+      }
     : {
         width: r.indicatorSize,
         height: r.stepGap,

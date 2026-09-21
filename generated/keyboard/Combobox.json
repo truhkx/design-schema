@@ -80,7 +80,7 @@
       "keys": [
         "Alt+ArrowDown"
       ],
-      "action": "Opens the list with the selected option active, or no active option when nothing is selected; does nothing while the list is already open.",
+      "action": "Opens the list with the selected option active, or no active option when nothing is selected; changes nothing while the list is already open, though the default action is still suppressed — ArrowDown and ArrowUp never move the text caret, open or closed.",
       "from": "first",
       "expect": "manual"
     }

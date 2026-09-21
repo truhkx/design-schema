@@ -45,7 +45,6 @@ export type SliderOverridableBinding =
   | 'fontFamily'
   | 'fontSize'
   | 'helperSize'
-  | 'errorText'
   | 'disabledOpacity'
   | 'transition';
 
@@ -213,6 +212,8 @@ interface SliderThumbProps {
   disabled: boolean;
   pressed: boolean;
   accessibilityLabel: string;
+  /** The error message when one shows, else the description: what ties them to the thumb. */
+  accessibilityHint: string | undefined;
   formatValue: (value: number) => string;
   showBubble: boolean;
   bubbleTypography: { fontFamily: TokenRef | undefined; fontSize: TokenRef | undefined };
@@ -259,6 +260,7 @@ function SliderThumb({
   disabled,
   pressed,
   accessibilityLabel,
+  accessibilityHint,
   formatValue,
   showBubble,
   bubbleTypography,
@@ -360,8 +362,17 @@ function SliderThumb({
       focusable
       accessibilityRole="adjustable"
       accessibilityLabel={accessibilityLabel}
+      accessibilityHint={accessibilityHint}
       accessibilityValue={{ min, max, now: value, text: formatValue(value) }}
       accessibilityState={{ disabled }}
+      // The aria-* aliases carry the same value and state. React Native merges them into
+      // `accessibilityValue`/`accessibilityState`; react-native-web has neither prop and forwards
+      // only these, and role="slider" (its mapping of `adjustable`) requires aria-valuenow.
+      aria-valuemin={min}
+      aria-valuemax={max}
+      aria-valuenow={value}
+      aria-valuetext={formatValue(value)}
+      aria-disabled={disabled ? true : undefined}
       accessibilityActions={THUMB_ACTIONS}
       onAccessibilityAction={handleAccessibilityAction}
       onFocus={() => setFocused(true)}
@@ -446,7 +457,13 @@ export function Slider({
 
   const snapMarks = snapToMarks && marks !== undefined && marks.length > 0 ? marks : undefined;
 
-  const [internalValue, setInternalValue] = React.useState<SliderValue>(() => defaultValue ?? (range ? [min, max] : min));
+  // "The default": `defaultValue` when set, otherwise what `value` itself falls back to — `min`, or
+  // `[min, max]` for a range — clamped to [min, max] so `required` and the initial value share one
+  // notion of it.
+  const given: SliderValue = defaultValue ?? (range ? [min, max] : min);
+  const fallback: SliderValue = Array.isArray(given) ? [clamp(given[0], min, max), clamp(given[1], min, max)] : clamp(given, min, max);
+
+  const [internalValue, setInternalValue] = React.useState<SliderValue>(fallback);
 
   const isDisabled = disabled || (form?.disabled ?? false) || (fieldset?.disabled ?? false);
   const currentValue = value ?? internalValue;
@@ -467,14 +484,11 @@ export function Slider({
   const reportedRef = React.useRef<SliderValue>(normalized);
   reportedRef.current = normalized;
 
-  // "The default" for `required` is `defaultValue` when set, otherwise what `value` falls back to.
-  const requiredDefault: SliderValue = defaultValue ?? (range ? [min, max] : min);
-
   const validateValue = (candidate: SliderValue): string | null => {
     if (error !== undefined && error !== '') {
       return error;
     }
-    if (required && isSameSliderValue(candidate, requiredDefault)) {
+    if (required && isSameSliderValue(candidate, fallback)) {
       return COPY.required(label);
     }
     if (invalid) {
@@ -522,8 +536,10 @@ export function Slider({
       return;
     }
     onSlidingComplete?.(final);
-    // A pointer-driven control has no meaningful blur: `validate: blur` runs when an interaction ends.
-    if (form !== null && form.validateMode === 'blur') {
+    // A pointer-driven control has no meaningful blur: `validate: blur` runs when an interaction
+    // ends. `validateMode` already reports `change` once a submission has failed, so every mode but
+    // `submit` re-validates here.
+    if (form !== null && form.validateMode !== 'submit') {
       form.reportValidity(name, validateValue(final));
     }
   };
@@ -733,6 +749,8 @@ export function Slider({
 
   const thumbShared = {
     disabled: isDisabled,
+    // RN has no aria-describedby: the hint is what ties the error, else the description, to the thumb.
+    accessibilityHint: displayedError !== undefined ? displayedError : description,
     formatValue,
     showBubble: showValue === 'hover',
     bubbleTypography: valueTypography,
@@ -749,7 +767,17 @@ export function Slider({
   const singleFraction = percentOf(singleValue, min, max);
 
   return (
-    <View ref={ref} testID="Slider" style={{ flexDirection: 'column', gap: partGap, opacity: isDisabled ? disabledOpacity : 1 }}>
+    // `disabledOpacity` dims the whole root, so the whole root is the inactive user interface
+    // component WCAG 1.4.3 exempts from contrast. The disabled state has to be on the element that
+    // dims, not only on the thumbs, or the dimmed label and value read as failing text rather than
+    // as inactive. `aria-disabled` is the spelling react-native-web renders (it has no
+    // `accessibilityState`); React Native merges it into the root's accessibility state.
+    <View
+      ref={ref}
+      testID="Slider"
+      aria-disabled={isDisabled ? true : undefined}
+      style={{ flexDirection: 'column', gap: partGap, opacity: isDisabled ? disabledOpacity : 1 }}
+    >
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: labelGap }}>
         <View testID="Slider.label">
           <Text size="md" weight="medium" tone="default" overrides={{ fontFamily, fontSize: overrides?.fontSize, fontWeight: overrides?.labelWeight }}>

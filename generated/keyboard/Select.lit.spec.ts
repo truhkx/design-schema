@@ -110,6 +110,7 @@ test.describe('Select (lit) keyboard', () => {
     await page.keyboard.press('Tab');
     await expect(page.locator('[data-part="popup"]').first()).toBeHidden();
   });
+  test.skip(' : Commits the active option and closes (single); with `multiple`, toggles it and stays open. Listbox\'s own model, which Select forwards rather than suppresses. (popup open) — manual', async () => {});
   test.skip('ArrowDown: As Listbox. (popup open) — manual', async () => {});
   test.skip('ArrowUp: As Listbox. (popup open) — manual', async () => {});
   test.skip('Home: As Listbox. (popup open) — manual', async () => {});

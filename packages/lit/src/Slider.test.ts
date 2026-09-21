@@ -10,10 +10,7 @@ import type { DsSlider, SliderChangeDetail } from './Slider.js';
 import meta from './Slider.stories.js';
 
 type Given = Partial<
-  Pick<
-    DsSlider,
-    'label' | 'name' | 'min' | 'max' | 'step' | 'defaultValue' | 'disabled' | 'invalid' | 'error' | 'showValue'
-  >
+  Pick<DsSlider, 'defaultValue' | 'step' | 'min' | 'max' | 'range' | 'showValue' | 'disabled' | 'invalid' | 'error'>
 >;
 
 /** The Default story's args plus the scenario's `given`, as properties on a fresh element. */
@@ -35,9 +32,11 @@ async function setup(given: Given = {}) {
     change,
     changeEnd,
     props,
-    thumb: () => root.querySelector<HTMLElement>('[role=slider]')!,
+    thumbs: () => [...root.querySelectorAll<HTMLElement>('[data-part=thumb]')],
+    thumb: () => root.querySelector<HTMLElement>('[data-part=thumb]')!,
     part: (name: string) => root.querySelector<HTMLElement>(`[data-part=${name}]`),
     detail: () => change.mock.calls.at(-1)?.[0].detail.value,
+    endDetail: () => changeEnd.mock.calls.at(-1)?.[0].detail.value,
   };
 }
 
@@ -95,7 +94,7 @@ describe('ds-slider', () => {
     s.el.focus();
     await press('ArrowRight');
     expect(s.changeEnd).toHaveBeenCalledTimes(1);
-    expect(s.changeEnd.mock.calls[0]?.[0].detail.value).toBe(51);
+    expect(s.endDetail()).toBe(51);
   });
 
   it('a-disabled-slider-does-not-move', async () => {
@@ -108,8 +107,7 @@ describe('ds-slider', () => {
 
   it('the-thumb-is-the-slider', async () => {
     const s = await setup();
-    expect(s.thumb()).toBeTruthy();
-    expect(s.thumb()).toBe(s.part('thumb'));
+    expect(s.thumb()).toHaveAttribute('role', 'slider');
     expect(s.part('track')).not.toHaveAttribute('role');
   });
 
@@ -126,20 +124,21 @@ describe('ds-slider', () => {
 
   it('renders-show-value-always', async () => {
     const s = await setup({ showValue: 'always' });
-    expect(s.part('track')).toBeTruthy();
-    expect(s.part('valueText')).toBeTruthy();
+    expect(s.part('valueText')).toBeVisible();
+    expect(s.part('bubble')).toBeNull();
   });
 
   it('renders-show-value-hover', async () => {
     const s = await setup({ showValue: 'hover' });
-    expect(s.part('track')).toBeTruthy();
     expect(s.part('valueText')).toBeNull();
+    expect(s.part('bubble')).toBeTruthy();
   });
 
   it('renders-show-value-never', async () => {
     const s = await setup({ showValue: 'never' });
-    expect(s.part('track')).toBeTruthy();
     expect(s.part('valueText')).toBeNull();
+    expect(s.part('bubble')).toBeNull();
+    expect(s.thumb()).toBeVisible();
   });
 
   it('has-accessible-name', async () => {
@@ -156,7 +155,26 @@ describe('ds-slider', () => {
   it('error-is-identified', async () => {
     const s = await setup({ error: 'Fix this before continuing.' });
     expect(s.part('errorMessage')).toHaveTextContent('Fix this before continuing.');
-    expect(s.el.invalid).toBe(true);
+    // `error` never changes the `invalid` prop; the invalid state is carried by aria-invalid.
     expect(s.thumb()).toHaveAttribute('aria-invalid', 'true');
+  });
+
+  /* The range form: two thumbs, each a tab stop, named from the minimum/maximum copy. */
+  it('a-range-names-each-thumb', async () => {
+    const s = await setup({ range: true, defaultValue: [20, 80] });
+    const low = s.thumbs()[0]!;
+    const high = s.thumbs()[1]!;
+    expect(s.thumbs()).toHaveLength(2);
+    expect(low).toHaveAccessibleName(`${s.props.label} minimum`);
+    expect(high).toHaveAccessibleName(`${s.props.label} maximum`);
+    expect(low).toHaveAttribute('aria-valuemax', '80');
+    expect(high).toHaveAttribute('aria-valuemin', '20');
+  });
+
+  it('range-thumbs-cannot-cross', async () => {
+    const s = await setup({ range: true, defaultValue: [20, 20] });
+    s.el.focus();
+    await press('ArrowRight');
+    expect(s.change).not.toHaveBeenCalled();
   });
 });

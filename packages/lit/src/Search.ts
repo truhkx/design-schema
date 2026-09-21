@@ -234,8 +234,12 @@ export class DsSearch extends LitElement {
       margin: 0;
     }
 
-    /* disabledOpacity: the whole component dims */
-    :host([disabled]) [data-part='form'] {
+    /* disabledOpacity: the label, glyph and input dim; the field frame keeps its
+       border and background, and the Buttons dim once through their own
+       disabled style rather than through a dimmed ancestor. */
+    :host([disabled]) [data-part='label'],
+    :host([disabled]) [data-part='icon'],
+    :host([disabled]) [data-part='input'] {
       opacity: var(--ds-search-disabled-opacity);
     }
 
@@ -471,9 +475,22 @@ export class DsSearch extends LitElement {
     return this.suggestions !== undefined;
   }
 
-  /** Inside `<ds-form>` the enclosing Form owns submission. */
+  /**
+   * Inside `<ds-form>` the enclosing Form owns submission. The walk crosses
+   * shadow boundaries through `getRootNode().host`, since a Search composed
+   * into another element's shadow root is still inside the light-DOM Form that
+   * element sits in, and `closest()` alone stops at the shadow boundary.
+   */
   private get insideForm(): boolean {
-    return this.closest('ds-form') !== null;
+    let node: Element | null = this;
+    while (node) {
+      if (node.closest('ds-form') !== null) {
+        return true;
+      }
+      const root = node.getRootNode();
+      node = root instanceof ShadowRoot ? root.host : null;
+    }
+    return false;
   }
 
   /** What the Listbox shows: nothing while loading, so its empty row carries `copy.loading`. */
@@ -597,7 +614,6 @@ export class DsSearch extends LitElement {
             data-part="input"
             part="input"
             type="search"
-            name=${this.name}
             enterkeyhint="search"
             autocomplete="off"
             role=${combobox ? 'combobox' : 'searchbox'}
@@ -866,6 +882,9 @@ export class DsSearch extends LitElement {
       this.append(form);
     }
     form.action = action;
+    // The query key lives on this hidden input, never on the visible one: the URL
+    // must carry the trimmed query (the controlled value or the chosen label),
+    // not whatever text the input happens to hold.
     const field = form.firstElementChild as HTMLInputElement;
     field.name = this.name;
     field.value = query;
@@ -902,6 +921,11 @@ export class DsSearch extends LitElement {
       return;
     }
     const delay = parseDuration(getComputedStyle(this).getPropertyValue(STATUS_DEBOUNCE.token)) * STATUS_DEBOUNCE.multiply;
+    if (delay <= 0) {
+      // No theme loaded (or a stylesheet that does not carry the token): announce at once.
+      this.announcedStatus = next;
+      return;
+    }
     this.statusTimer = setTimeout(() => {
       this.announcedStatus = next;
     }, delay);

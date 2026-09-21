@@ -74,7 +74,7 @@
       "keys": [
         "a-z"
       ],
-      "action": "Typeahead to the next option whose label starts with the typed characters; typing the same character repeatedly cycles through the options starting with it (APG). The buffer clears after `typeaheadReset`.",
+      "action": "Typeahead to the next option whose label starts with the typed characters; typing the same character repeatedly cycles through the options starting with it (APG) — a buffer of one letter repeated collapses back to that single letter and searches from the option after the active one, while any other buffer is a prefix searched from the active one. The buffer clears after `typeaheadReset`.",
       "from": "first",
       "expect": "manual"
     },
@@ -83,7 +83,7 @@
         "PageDown",
         "PageUp"
       ],
-      "action": "Moves by the `maxVisible` row count, clamped to the last/first enabled option; with `maxVisible: all` jumps to the last/first enabled option. Follows `selectionFollowsFocus` like the arrows.",
+      "action": "Moves by the `maxVisible` count of enabled options — not of drawn rows, so disabled rows and group labels do not consume the move — clamped to the last/first enabled option; with `maxVisible: all` jumps to the last/first enabled option. Follows `selectionFollowsFocus` like the arrows.",
       "from": "first",
       "expect": "manual"
     }

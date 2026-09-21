@@ -161,8 +161,11 @@ function finite(value: number | null | undefined): number | undefined {
  * carrying `aria-valuenow/min/max/text`. Optional leading/trailing text sits
  * inside the field, and (unless `hide-steppers`) two `<ds-button variant="ghost"
  * size="sm" icon-only>` steppers with minus/plus icons sit flush at its end,
- * `tabindex="-1"` and `aria-hidden` because the arrow keys on the input do the
- * same job. Typing is parsed leniently on every keystroke; on blur and Enter the
+ * forwarded `tabindex="-1"` so the input stays the single tab stop while the
+ * buttons keep their own names in the accessibility tree — `ds-button` is
+ * `aria-disabled`, never natively disabled, so a subtree hidden from assistive
+ * technology around them would be focusable-but-hidden (axe `aria-hidden-focus`).
+ * Typing is parsed leniently on every keystroke; on blur and Enter the
  * value is rounded to `precision`, clamped to `min`/`max` (reporting the clamp
  * with the out-of-range copy) and re-formatted with `Intl.NumberFormat`.
  *
@@ -236,8 +239,11 @@ export class DsNumberInput extends LitElement {
     }
 
     /*
-     * disabledOpacity: the label, description, input and affix parts dim; the
-     * stepper Buttons receive disabled and dim once through their own style.
+     * disabledOpacity: the label, description, input and affix parts dim. The
+     * description part is a wrapper this element owns, so the dimming never
+     * reaches into the composed ds-text. The field frame and the error message
+     * are not dimmed, and the stepper Buttons take disabled instead, dimming
+     * once through their own style.
      */
     .group.disabled [data-part='label'],
     .group.disabled [data-part='description'],
@@ -269,16 +275,23 @@ export class DsNumberInput extends LitElement {
       color: var(--color-foreground);
     }
 
-    /* background, border (locked); borderWidth, radius, paddingInline, affixGap */
+    /*
+     * background, border (locked); borderWidth, radius, paddingInline, affixGap.
+     * --field-border is the width actually drawn — borderWidth normally, and
+     * focusRingWidth while the input has focus. Both paddings subtract the
+     * difference, so swapping to the ring neither grows nor shifts the field.
+     */
     [data-part='field'] {
+      --field-border: var(--ds-number-input-border-width);
+      --field-ring-delta: calc(var(--field-border) - var(--ds-number-input-border-width));
       box-sizing: border-box;
       display: flex;
       align-items: stretch;
       inline-size: 100%;
       min-block-size: var(--size-target-comfortable);
-      padding-inline: var(--ds-number-input-padding-inline);
+      padding-inline: calc(var(--ds-number-input-padding-inline) - var(--field-ring-delta));
       gap: var(--ds-number-input-affix-gap);
-      border: var(--ds-number-input-border-width) solid var(--color-border-strong);
+      border: var(--field-border) solid var(--color-border-strong);
       border-radius: var(--ds-number-input-radius);
       background: var(--color-background);
       transition: border-color var(--motion-duration-fast) var(--motion-easing-standard);
@@ -300,11 +313,13 @@ export class DsNumberInput extends LitElement {
       padding-inline-end: 0;
     }
 
-    /* borderFocus / focusRingWidth (locked): the field shows the input's focus-visible ring */
+    /*
+     * borderFocus / focusRingWidth (locked): the ring is the field's own border,
+     * drawn while the input matches :focus-visible — no outline, as Input.
+     */
     [data-part='field']:has([data-part='input']:focus-visible) {
+      --field-border: var(--border-width-focus);
       border-color: var(--color-border-focus);
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: calc(-1 * var(--ds-number-input-border-width));
     }
 
     /* borderInvalid */
@@ -320,7 +335,8 @@ export class DsNumberInput extends LitElement {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      padding-block: var(--ds-number-input-padding-block);
+      /* paddingBlock, shrunk by the focus-ring width difference inherited from the field */
+      padding-block: calc(var(--ds-number-input-padding-block) - var(--field-ring-delta));
       border: 0;
       outline: none;
       background: transparent;
@@ -599,16 +615,11 @@ export class DsNumberInput extends LitElement {
           >${this.label}${this.required ? COPY.requiredIndicator : nothing}</label
         >
         ${this.description
-          ? html`<ds-text
-              id="description"
-              part="description"
-              data-part="description"
-              element="p"
-              size="sm"
-              tone="muted"
-              .overrides=${textOverrides}
-              >${this.description}</ds-text
-            >`
+          ? html`<div id="description" part="description" data-part="description">
+              <ds-text element="p" size="sm" tone="muted" .overrides=${textOverrides}
+                >${this.description}</ds-text
+              >
+            </div>`
           : nothing}
         <div
           class=${classMap({ 'has-steppers': !this.hideSteppers, invalid: isInvalid })}
@@ -647,14 +658,14 @@ export class DsNumberInput extends LitElement {
             : nothing}
           ${this.hideSteppers
             ? nothing
-            : html`<span class="steppers" aria-hidden="true">
+            : html`<span class="steppers">
                 <span
                   part="decrementButton"
                   data-part="decrementButton"
                   @pointerdown=${(event: PointerEvent) => this.handleStepperPointerDown(event, -1)}
                   @pointerup=${this.stopRepeat}
-                  @pointerleave=${this.stopRepeat}
-                  @pointercancel=${this.stopRepeat}
+                  @pointerleave=${this.endPointerStep}
+                  @pointercancel=${this.endPointerStep}
                   @click=${(event: MouseEvent) => this.handleStepperClick(event, -1)}
                   @press=${this.stopInnerPress}
                   ><ds-button
@@ -671,8 +682,8 @@ export class DsNumberInput extends LitElement {
                   data-part="incrementButton"
                   @pointerdown=${(event: PointerEvent) => this.handleStepperPointerDown(event, 1)}
                   @pointerup=${this.stopRepeat}
-                  @pointerleave=${this.stopRepeat}
-                  @pointercancel=${this.stopRepeat}
+                  @pointerleave=${this.endPointerStep}
+                  @pointercancel=${this.endPointerStep}
                   @click=${(event: MouseEvent) => this.handleStepperClick(event, 1)}
                   @press=${this.stopInnerPress}
                   ><ds-button
@@ -939,6 +950,12 @@ export class DsNumberInput extends LitElement {
       window.clearTimeout(this.repeatTimer);
       this.repeatTimer = undefined;
     }
+  };
+
+  /** A press that ends without a click (the pointer left the button) must not swallow the next one. */
+  private readonly endPointerStep = (): void => {
+    this.stopRepeat();
+    this.pointerStepped = false;
   };
 
   /** Hold-to-repeat timings read from the resolved theme at pointerdown; `undefined` steps once. */

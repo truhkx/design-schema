@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Search.js';
-import type { SearchSize, SearchSuggestion } from './Search.js';
+import type { DsSearch, SearchChangeDetail, SearchSize, SearchSuggestion } from './Search.js';
 
 interface SearchArgs {
   label: string;
@@ -22,7 +22,7 @@ interface SearchArgs {
 const SUGGESTIONS: SearchSuggestion[] = [
   { value: 'invoices-march', label: 'Invoices from March' },
   { value: 'invoices-april', label: 'Invoices from April' },
-  { value: 'invoice-templates', label: 'Invoice templates' },
+  { value: 'invoices-overdue', label: 'Overdue invoices', description: 'Past their due date' },
 ];
 
 const meta: Meta<SearchArgs> = {
@@ -68,12 +68,6 @@ export const Default: Story = {};
 export const SizeMd: Story = { args: { size: 'md' } };
 export const SizeLg: Story = { args: { size: 'lg' } };
 
-/* states */
-export const ShowLabel: Story = { args: { showLabel: true } };
-export const Disabled: Story = { args: { disabled: true, defaultValue: 'invoices' } };
-export const Loading: Story = { args: { defaultValue: 'inv', suggestions: [], loading: true } };
-export const NoSuggestions: Story = { args: { defaultValue: 'zzz', suggestions: [] } };
-
 /* examples */
 export const HeaderSearch: Story = {
   args: { label: 'Search this site', placeholder: 'Search products and orders' },
@@ -97,18 +91,43 @@ export const FilterWithinAResultsPage: Story = {
   args: { label: 'Filter results', landmark: false, name: 'filter' },
 };
 
+/* notable states */
+export const WithValue: Story = { args: { defaultValue: 'invoices' } };
+
+export const Disabled: Story = { args: { disabled: true, defaultValue: 'invoices' } };
+
+export const Loading: Story = { args: { defaultValue: 'invoices', suggestions: [], loading: true } };
+
+export const NoSuggestions: Story = { args: { defaultValue: 'zzz', suggestions: [] } };
+
+/** Suggestions supplied from `change`, the way a caller wires a fetch. */
+export const SuggestionsFromOnChange: Story = {
+  render: (args) => html`
+    <ds-search
+      label=${args.label}
+      ?show-label=${args.showLabel === true}
+      name=${ifDefined(args.name)}
+      default-value=${ifDefined(args.defaultValue)}
+      placeholder=${ifDefined(args.placeholder)}
+      ?no-landmark=${args.landmark === false}
+      size=${ifDefined(args.size)}
+      @change=${(event: CustomEvent<SearchChangeDetail>) => {
+        const search = event.currentTarget as DsSearch;
+        const needle = event.detail.value.trim().toLowerCase();
+        search.suggestions = needle
+          ? SUGGESTIONS.filter((item) => item.label.toLowerCase().includes(needle))
+          : undefined;
+      }}
+    ></ds-search>
+  `,
+};
+
 /**
- * Open with its suggestions, and three focusable children in the field
- * (input, clear button, submit button). Search has no `open` prop, so `play`
- * focuses the input and presses ArrowDown, which opens the list.
+ * For the keyboard gate: the closed field with a query and suggestions, so the
+ * input, the clear button (there is text) and the submit button are the three
+ * focus stops the Tab rule walks, and the first ArrowDown opens the list. There
+ * is no `open` prop — focus alone never opens it.
  */
 export const Keyboard: Story = {
   args: { defaultValue: 'invoices', suggestions: SUGGESTIONS },
-  play: async ({ canvasElement }) => {
-    const search = canvasElement.querySelector('ds-search');
-    await search?.updateComplete;
-    const input = search?.shadowRoot?.querySelector<HTMLInputElement>('[data-part=input]');
-    input?.focus();
-    input?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, composed: true }));
-  },
 };

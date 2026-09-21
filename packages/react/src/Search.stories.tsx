@@ -77,7 +77,11 @@ export const SuggestionsFromOnChange: Story = {
   },
 };
 
-/** For the keyboard gate: the input, the clear button (there is text) and the submit button are three focus stops. */
+/**
+ * For the keyboard gate: the closed field with a query and suggestions, so the input, the clear
+ * button (there is text) and the submit button are the three focus stops the Tab rule walks, and the
+ * first ArrowDown opens the list. There is no `open` prop — focus alone never opens it.
+ */
 export const Keyboard: Story = {
   args: { defaultValue: 'invoices', suggestions: SUGGESTIONS },
 };

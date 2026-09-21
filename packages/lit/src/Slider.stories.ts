@@ -16,6 +16,7 @@ interface SliderArgs {
   value?: SliderValue | undefined;
   defaultValue?: SliderValue | undefined;
   range: boolean;
+  formatValue?: ((value: number) => string) | undefined;
   showValue: SliderShowValue;
   marks?: SliderMark[] | undefined;
   disabled: boolean;
@@ -30,52 +31,47 @@ const meta: Meta<SliderArgs> = {
     actions: { handles: ['change', 'change-end'] },
   },
   argTypes: {
-    showValue: { control: 'select', options: ['always', 'hover', 'never'] },
+    showValue: { control: 'inline-radio', options: ['always', 'hover', 'never'] },
     range: { control: 'boolean' },
-    disabled: { control: 'boolean' },
     snapToMarks: { control: 'boolean' },
     required: { control: 'boolean' },
     invalid: { control: 'boolean' },
+    disabled: { control: 'boolean' },
   },
   args: {
     label: 'Volume',
     name: 'volume',
+    defaultValue: 40,
     min: 0,
     max: 100,
     step: 1,
     snapToMarks: false,
     required: false,
     invalid: false,
-    value: undefined,
-    defaultValue: undefined,
     range: false,
     showValue: 'always',
-    marks: undefined,
     disabled: false,
-    description: undefined,
-    error: undefined,
   },
   render: (args) => html`
-    <div style="inline-size: min(100%, 24rem)">
-      <ds-slider
-        label=${args.label}
-        name=${args.name}
-        min=${args.min}
-        max=${args.max}
-        step=${args.step}
-        ?snap-to-marks=${args.snapToMarks}
-        ?required=${args.required}
-        ?invalid=${args.invalid}
-        .value=${args.value}
-        .defaultValue=${args.defaultValue}
-        ?range=${args.range}
-        show-value=${args.showValue}
-        .marks=${args.marks}
-        ?disabled=${args.disabled}
-        description=${ifDefined(args.description)}
-        error=${ifDefined(args.error)}
-      ></ds-slider>
-    </div>
+    <ds-slider
+      label=${args.label}
+      name=${args.name}
+      .min=${args.min}
+      .max=${args.max}
+      .step=${args.step}
+      ?snap-to-marks=${args.snapToMarks}
+      ?required=${args.required}
+      ?invalid=${args.invalid}
+      .value=${args.value}
+      .defaultValue=${args.defaultValue}
+      ?range=${args.range}
+      .formatValue=${args.formatValue}
+      show-value=${args.showValue}
+      .marks=${args.marks}
+      ?disabled=${args.disabled}
+      description=${ifDefined(args.description)}
+      error=${ifDefined(args.error)}
+    ></ds-slider>
   `,
 };
 
@@ -91,11 +87,7 @@ export const ShowValueNever: Story = { args: { showValue: 'never' } };
 
 /* examples */
 export const Volume: Story = { args: { label: 'Volume', name: 'volume', defaultValue: 30 } };
-
-export const PriceRange: Story = {
-  args: { label: 'Price range', name: 'price', range: true, defaultValue: [20, 80] },
-};
-
+export const PriceRange: Story = { args: { label: 'Price range', name: 'price', range: true, defaultValue: [20, 80] } };
 export const EffortWithMarks: Story = {
   args: {
     label: 'Effort',
@@ -110,25 +102,18 @@ export const EffortWithMarks: Story = {
     snapToMarks: true,
   },
 };
-
 export const PairedWithANumberInput: Story = {
   args: { label: 'Zoom', name: 'zoom', min: 50, max: 200, step: 10, defaultValue: 100, showValue: 'never' },
 };
 
 /* states */
-export const WithDescription: Story = { args: { description: 'Applies to all devices.', defaultValue: 30 } };
-export const Disabled: Story = { args: { disabled: true, defaultValue: 50 } };
+export const Disabled: Story = { args: { disabled: true } };
 export const Required: Story = { args: { required: true } };
 export const Invalid: Story = { args: { invalid: true } };
-export const ErrorState: Story = { args: { error: 'Fix this before continuing.', defaultValue: 10 } };
-export const WithMarks: Story = {
-  args: {
-    defaultValue: 50,
-    marks: [{ value: 0, label: 'Min' }, { value: 25 }, { value: 50, label: 'Half' }, { value: 75 }, { value: 100, label: 'Max' }],
-  },
-};
+export const WithDescription: Story = { args: { description: 'Applies to all notifications.' } };
+export const WithError: Story = { args: { error: 'Fix this before continuing.' } };
 
-/** The range form: two thumbs, each its own tab stop, are the whole keyboard model. */
+/* keyboard: the range form — two thumbs, each a tab stop */
 export const Keyboard: Story = {
   args: { label: 'Price range', name: 'price', range: true, defaultValue: [20, 80] },
 };

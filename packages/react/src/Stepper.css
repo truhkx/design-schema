@@ -30,7 +30,10 @@
   --ds-stepper-min-target: var(--size-target-min);
   --ds-stepper-focus-ring: var(--color-border-focus);
   --ds-stepper-focus-ring-width: var(--border-width-focus);
-  display: block;
+  /* The count follows the list, stepGap after it; while it is display:none the gap collapses with it. */
+  display: flex;
+  flex-direction: column;
+  gap: var(--ds-stepper-step-gap);
   container-type: inline-size;
   font-family: var(--ds-stepper-font-family);
 }
@@ -55,8 +58,6 @@
   display: flex;
   align-items: center;
   gap: var(--ds-stepper-part-gap);
-  min-block-size: var(--ds-stepper-min-target);
-  min-inline-size: var(--ds-stepper-min-target);
   padding-block: 0;
   padding-inline: var(--ds-stepper-step-padding);
   margin: 0;
@@ -68,7 +69,10 @@
   text-align: start;
 }
 
+/* minTarget is the floor for the navigable control only; display-only steps are not targets. */
 .ds-stepper__control--navigable {
+  min-block-size: var(--ds-stepper-min-target);
+  min-inline-size: var(--ds-stepper-min-target);
   cursor: pointer;
 }
 
@@ -156,24 +160,35 @@
   display: none;
 }
 
-/* horizontal */
+/* horizontal: each step is a column — indicator above a centred label — and the connector runs
+   across from the indicator's centre line. */
 .ds-stepper--horizontal .ds-stepper__list {
-  align-items: center;
+  align-items: flex-start;
 }
 
 .ds-stepper--horizontal .ds-stepper__step {
   flex: 1 1 auto;
-  align-items: center;
+  align-items: flex-start;
 }
 
 .ds-stepper--horizontal .ds-stepper__step:last-child {
   flex: none;
 }
 
+.ds-stepper--horizontal .ds-stepper__control {
+  flex-direction: column;
+  align-items: center;
+}
+
+.ds-stepper--horizontal .ds-stepper__content {
+  align-items: center;
+}
+
 .ds-stepper--horizontal .ds-stepper__connector {
   flex: 1 1 auto;
   min-inline-size: var(--ds-stepper-step-gap);
   block-size: var(--ds-stepper-connector-width);
+  margin-block-start: calc((var(--ds-stepper-indicator-size) - var(--ds-stepper-connector-width)) / 2);
 }
 
 /* vertical: descriptions under each label; the connector runs down from the indicator's centre. */

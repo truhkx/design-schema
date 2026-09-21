@@ -15,7 +15,7 @@
       "keys": [
         "ArrowRight"
       ],
-      "action": "Moves to the next tab, wrapping; selects it under automatic activation.",
+      "action": "Moves to the next tab, wrapping; selects it under automatic activation. In a right-to-left layout ArrowRight is \"previous\" and ArrowLeft \"next\" — the direction is read from the list's (on Lit the host's) computed `direction` at keydown, as in SegmentedControl.",
       "from": "first",
       "expect": "focus-next",
       "when": "horizontal"
@@ -24,7 +24,7 @@
       "keys": [
         "ArrowLeft"
       ],
-      "action": "Moves to the previous tab, wrapping; selects it under automatic activation.",
+      "action": "Moves to the previous tab, wrapping; selects it under automatic activation. Swapped with ArrowRight in a right-to-left layout.",
       "from": "last",
       "expect": "focus-prev",
       "when": "horizontal"

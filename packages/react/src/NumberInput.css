@@ -75,11 +75,6 @@
   border: 0;
 }
 
-.ds-number-input__description,
-.ds-number-input__error {
-  margin: 0;
-}
-
 /* The field is the bordered box: affixes and the input sit inside its padding, the steppers
    flush at its end. */
 .ds-number-input__field {
@@ -107,12 +102,22 @@
   padding-inline-end: var(--ds-number-input-padding-inline);
 }
 
-/* borderFocus + focusRingWidth: the border is the focus ring, replacing borderWidth; padding
-   shrinks by the difference so the field does not shift. */
+/* borderFocus + focusRingWidth: the border is the focus ring, replacing borderWidth; both paddings
+   shrink by the difference so the field neither grows nor shifts. */
 .ds-number-input__field:has(.ds-number-input__input:focus-visible) {
   border-color: var(--ds-number-input-border-focus);
   border-width: var(--ds-number-input-focus-ring-width);
   padding-inline-start: calc(var(--ds-number-input-padding-inline) - (var(--ds-number-input-focus-ring-width) - var(--ds-number-input-border-width)));
+}
+
+/* The end padding exists only without steppers, so it shrinks only there. */
+.ds-number-input__field:not(:has(.ds-number-input__steppers)):has(.ds-number-input__input:focus-visible) {
+  padding-inline-end: calc(var(--ds-number-input-padding-inline) - (var(--ds-number-input-focus-ring-width) - var(--ds-number-input-border-width)));
+}
+
+/* paddingBlock lives on the input, so the block compensation does too. */
+.ds-number-input__field:has(.ds-number-input__input:focus-visible) .ds-number-input__input {
+  padding-block: calc(var(--ds-number-input-padding-block) - (var(--ds-number-input-focus-ring-width) - var(--ds-number-input-border-width)));
 }
 
 /* borderInvalid: stays when focused too, so focus never hides the error; only the width changes. */

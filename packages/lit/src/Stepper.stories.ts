@@ -34,6 +34,9 @@ const meta: Meta<StepperArgs> = {
   args: {
     steps: [...checkout, { id: 'confirm', label: 'Confirmation' }],
     current: 'payment',
+    orientation: 'horizontal',
+    navigable: 'completed',
+    compact: false,
   },
   render: (args) => html`
     <ds-stepper
@@ -64,7 +67,19 @@ export const NavigableAll: Story = { args: { navigable: 'all' } };
 /* states */
 export const Compact: Story = { args: { compact: true } };
 
-/** Every step is a navigable native button: Tab moves between them, Enter or Space selects. */
+/** The current step also carries `status: 'error'`: the error indicator wins, the selection stays. */
+export const CurrentStepWithError: Story = {
+  args: {
+    current: 'payment',
+    steps: [
+      { id: 'shipping', label: 'Shipping address' },
+      { id: 'payment', label: 'Payment', status: 'error' },
+      { id: 'review', label: 'Review order' },
+    ],
+  },
+};
+
+/** Tab moves between the navigable steps (four here, with `navigable: all`); Enter and Space select. */
 export const Keyboard: Story = { args: { navigable: 'all' } };
 
 /* examples */

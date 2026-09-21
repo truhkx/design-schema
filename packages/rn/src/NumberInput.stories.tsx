@@ -1,7 +1,6 @@
 import * as React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { NumberInput } from './NumberInput';
-import { Stack } from './Stack';
 import { withTheme } from './decorators';
 
 const meta: Meta<typeof NumberInput> = {
@@ -51,13 +50,11 @@ export const WithDescription: Story = { args: { description: 'Up to 99 per order
 export const HideSteppers: Story = { args: { hideSteppers: true, defaultValue: 5 } };
 export const WithAffixes: Story = { args: { label: 'Amount', name: 'amount', leadingText: '$', trailingText: 'kg', defaultValue: 2 } };
 
-/** The input and both steppers: ArrowUp/Down, PageUp/Down and Home/End (to the bounds) on a hardware keyboard, Enter commits. */
+/**
+ * One field with bounds so Home and End have somewhere to go: ArrowUp/Down step, PageUp/Down step by
+ * ten, Home/End jump to the bounds on a hardware keyboard, Enter commits. The field is a single tab
+ * stop, so the three-focusable-children rule does not apply here.
+ */
 export const Keyboard: Story = {
-  args: { min: 0, max: 99, defaultValue: 5 },
-  render: (args) => (
-    <Stack gap="normal">
-      <NumberInput {...args} />
-      <NumberInput label="Price" name="price" format="currency" currency="USD" step={0.01} defaultValue={19.99} />
-    </Stack>
-  ),
+  args: { min: 0, max: 20, defaultValue: 5 },
 };

@@ -55,6 +55,7 @@ export type DatePickerOverridableBinding =
   | 'weekdaySize'
   | 'weekdayWeight'
   | 'weekNumberSize'
+  | 'weekNumberWeight'
   | 'monthTitleSize'
   | 'monthTitleWeight'
   | 'partGap'
@@ -84,6 +85,7 @@ const HOOKS: Record<DatePickerOverridableBinding, string> = {
   weekdaySize: '--ds-date-picker-weekday-size',
   weekdayWeight: '--ds-date-picker-weekday-weight',
   weekNumberSize: '--ds-date-picker-week-number-size',
+  weekNumberWeight: '--ds-date-picker-week-number-weight',
   monthTitleSize: '--ds-date-picker-month-title-size',
   monthTitleWeight: '--ds-date-picker-month-title-weight',
   partGap: '--ds-date-picker-part-gap',
@@ -424,6 +426,7 @@ export class DsDatePicker extends LitElement {
       --ds-date-picker-weekday-size: var(--font-size-xs);
       --ds-date-picker-weekday-weight: var(--font-weight-medium);
       --ds-date-picker-week-number-size: var(--font-size-xs);
+      --ds-date-picker-week-number-weight: var(--font-weight-regular);
       --ds-date-picker-month-title-size: var(--font-size-md);
       --ds-date-picker-month-title-weight: var(--font-weight-semibold);
       --ds-date-picker-part-gap: var(--space-1);
@@ -542,16 +545,14 @@ export class DsDatePicker extends LitElement {
       color: var(--color-foreground-muted);
     }
 
-    /* errorText (locked), helperSize */
+    /* errorText (locked) and helperSize come from the composed ds-text (tone="danger", the
+       helperSize / fontFamily forwards); the role="alert" wrapper only carries the part. */
     [data-part='errorMessage'] {
       margin: 0;
-      font-family: var(--ds-date-picker-font-family);
-      font-size: var(--ds-date-picker-helper-size);
-      line-height: var(--ds-date-picker-line-height);
-      color: var(--color-foreground-danger);
     }
 
-    /* calendarGap: between header, grid and footer */
+    /* calendarGap: between header, grid and footer. This is the popover part — the calendar
+       content wrapper, not the ds-popover host, which also holds the always-visible trigger. */
     .calendar {
       display: flex;
       flex-direction: column;
@@ -600,10 +601,10 @@ export class DsDatePicker extends LitElement {
       text-align: center;
     }
 
-    /* weekNumberSize, in weekdayColor at the regular weight */
+    /* weekNumberSize / weekNumberWeight, in weekdayColor (locked) */
     [data-part='weekNumber'] {
       font-size: var(--ds-date-picker-week-number-size);
-      font-weight: var(--font-weight-regular);
+      font-weight: var(--ds-date-picker-week-number-weight);
       color: var(--color-foreground-muted);
       text-align: center;
     }
@@ -945,9 +946,14 @@ export class DsDatePicker extends LitElement {
     const invalid = Boolean(this.error);
     const describedBy = [this.description ? 'description' : '', invalid ? 'error' : ''].filter(Boolean).join(' ') || undefined;
     const placeholder = this.placeholder || patternPlaceholder(this.resolvedLocale);
+    // The description and error Texts take exactly the two declared forwards, and nothing else.
+    const helperOverrides = {
+      fontSize: this.overrides?.helperSize ?? 'font.size.sm',
+      fontFamily: this.overrides?.fontFamily ?? 'font.family.body',
+    } satisfies Record<string, TokenRef>;
 
     return html`
-      <div class=${classMap({ group: true, disabled: isDisabled })}>
+      <div class=${classMap({ group: true, disabled: isDisabled })} @keydown=${this.handleRootKeydown}>
         <label
           id="label"
           class=${classMap({ 'visually-hidden': this.hideLabel })}
@@ -957,7 +963,14 @@ export class DsDatePicker extends LitElement {
           >${this.label}${this.required ? COPY_REQUIRED_INDICATOR : nothing}</label
         >
         ${this.description
-          ? html`<ds-text id="description" part="description" data-part="description" element="p" size="sm" tone="muted"
+          ? html`<ds-text
+              id="description"
+              part="description"
+              data-part="description"
+              element="p"
+              size="sm"
+              tone="muted"
+              .overrides=${helperOverrides}
               >${this.description}</ds-text
             >`
           : nothing}
@@ -969,8 +982,6 @@ export class DsDatePicker extends LitElement {
             : nothing}
           <ds-popover
             id="popover"
-            part="popover"
-            data-part="popover"
             placement="bottom-start"
             no-dismiss
             .open=${this.isOpen}
@@ -995,7 +1006,9 @@ export class DsDatePicker extends LitElement {
           </ds-popover>
         </div>
         ${invalid
-          ? html`<p id="error" role="alert" part="errorMessage" data-part="errorMessage">${this.error}</p>`
+          ? html`<div id="error" role="alert" part="errorMessage" data-part="errorMessage">
+              <ds-text element="p" size="sm" tone="danger" .overrides=${helperOverrides}>${this.error}</ds-text>
+            </div>`
           : nothing}
       </div>
     `;
@@ -1049,7 +1062,7 @@ export class DsDatePicker extends LitElement {
     const weekdays = Array.from({ length: 7 }, (_, i) => (weekStart + i) % 7);
 
     return html`
-      <div class="calendar" @keydown=${this.handleCalendarKeydown}>
+      <div class="calendar" part="popover" data-part="popover" @keydown=${this.handleCalendarKeydown}>
         <div part="header" data-part="header">
           <ds-button
             part="prevMonthButton"
@@ -1382,6 +1395,22 @@ export class DsDatePicker extends LitElement {
 
   private readonly stopPress = (event: Event): void => {
     event.stopPropagation();
+  };
+
+  /**
+   * Escape closes the calendar wherever the focus is, and returns it to the
+   * calendar button. `ds-popover` only hears the key when focus is inside its
+   * panel — from the field itself (an input, or the calendar button, which is
+   * the trigger and so outside the panel) the keydown reaches this root
+   * instead. The popover stops propagation on the Escape it handles, so
+   * exactly one of the two runs.
+   */
+  private readonly handleRootKeydown = (event: KeyboardEvent): void => {
+    if (event.key !== 'Escape' || !this.isOpen || event.defaultPrevented) {
+      return;
+    }
+    event.preventDefault();
+    this.closeCalendar();
   };
 
   private handleInputKeydown(event: KeyboardEvent, which: 'start' | 'end'): void {

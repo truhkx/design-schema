@@ -12,8 +12,9 @@
  *   - every component with a `keyboard` block ships a story named `Keyboard` (id `<title-id>--keyboard`)
  *     that renders the component OPEN / present with at least three focusable children, and the
  *     trigger (if any) in the same story;
- *   - the component root carries the schema's resolved role (or `data-ds="<Name>"` when that role is unresolved
- *     or one of NON_QUERYABLE_ROLES).
+ *   - the component root carries the schema's resolved role (or `data-ds="<Name>"` when that role is unresolved,
+ *     one of NON_QUERYABLE_ROLES, or one of LEAF_CONTROL_ROLES — a role that names a control inside the
+ *     component rather than its root).
  *
  * Rules whose `expect` is `manual` are listed in the spec as `test.skip` so the report shows
  * coverage, not silence (`— native` when the rule is the rendered element's own behavior, `— manual`
@@ -84,9 +85,20 @@ export function storyUrl(id: string, given?: Dict | null): string {
   return `${base}&args=${entries.map(([key, value]) => `${key}:${arg(value)}`).join(';')}`;
 }
 
+/** Roles that name a single control *inside* the component, not the component root. The generated
+ *  tests walk the root for the component's focusables, so anchoring one to a leaf control finds
+ *  nothing: an `<input role="searchbox">` and a slider thumb have no focusable descendants, so
+ *  `focusables` returns 0 and every focus-order assertion resolves to -1 no matter what the key does
+ *  (Search's Tab across input → clear → submit, Slider's Tab between the two thumbs). A leaf role is
+ *  also not stable — Search's input becomes `combobox` once `suggestions` is set, so the `searchbox`
+ *  probe cannot even find the field. Anchor to `data-ds`, the component root, as an unresolved role
+ *  already does. */
+const LEAF_CONTROL_ROLES = ['searchbox', 'slider'] as const;
+
 export function rootLocator(c: Dict, given?: Dict | null): string {
   const role = resolveRole(c, given ?? undefined);
-  if (role === null || roleIn(NON_QUERYABLE_ROLES, role)) return `page.locator('[data-ds="${c.name as string}"]').first()`;
+  if (role === null || roleIn(NON_QUERYABLE_ROLES, role) || roleIn(LEAF_CONTROL_ROLES, role))
+    return `page.locator('[data-ds="${c.name as string}"]').first()`;
   return `page.getByRole('${role}').first()`;
 }
 

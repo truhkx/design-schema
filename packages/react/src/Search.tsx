@@ -200,10 +200,11 @@ export interface SearchProps
   /** Example query, not a label ("Try "invoices from March""). */
   placeholder?: string | undefined;
   /**
-   * URL to submit to with GET (web and Lit); when omitted, `onSubmit` handles it and nothing
-   * navigates. The URL carries the same trimmed query `onSubmit` receives (the field value is
-   * trimmed before the native submit). Ignored, with a development warning, when Search sits inside
-   * a Form component: the enclosing Form owns submission.
+   * URL to submit to with GET; when omitted, `onSubmit` handles it and nothing navigates. The URL
+   * carries the same trimmed query `onSubmit` receives: the visible input carries no `name`, and a
+   * hidden input named `name` is set to the trimmed query (the controlled value or chosen label,
+   * never stale DOM text) in the submit handler. Ignored, with a development warning, when Search
+   * sits inside a Form component: the enclosing Form owns submission.
    */
   action?: string | undefined;
   /**
@@ -212,8 +213,11 @@ export interface SearchProps
    * `onChange` (debounced by the caller). Setting the prop at all is what turns the field into a
    * combobox, including an explicitly empty array after a fetch that found nothing, which shows
    * `copy.noSuggestions`; leaving it undefined keeps a plain search field. The list opens on typing
-   * and on ArrowDown — never on focus alone — and closes on Escape, Tab or blur, a pointer press
-   * outside the field and list, a chosen suggestion, clear, and submit.
+   * and on ArrowDown — never on focus alone, and an array arriving while the field is focused but
+   * untouched does not open it — and closes on Escape, Tab, blur to an element outside Search (a
+   * blur with no new focus target, such as a window switch, does not close it), a pointer press
+   * outside the field and list, a chosen suggestion, clear, and submit. ArrowDown on the last
+   * suggestion stays there, as ArrowUp never wraps.
    */
   suggestions?: SearchSuggestion[] | undefined;
   /** Suggestions are being fetched; announced through `copy.loading`. */
@@ -228,9 +232,10 @@ export interface SearchProps
   size?: SearchSize | undefined;
   /**
    * Not editable, still readable and focusable: the input is read-only with aria-disabled, both
-   * Buttons are disabled, every key in the keyboard table is inert, suggestions never open, no event
-   * fires, the whole component dims to `disabledOpacity`, and a disabled Search is not registered
-   * with (or submitted by) a Form.
+   * Buttons are disabled (the clear Button still renders when there is text), every key in the
+   * keyboard table is inert, suggestions never open and an open list closes, no event fires, the
+   * label, glyph and input dim to `disabledOpacity` (the Buttons dim through their own style and the
+   * field frame is not dimmed), and a disabled Search is not registered with (or submitted by) a Form.
    */
   disabled?: boolean | undefined;
   /** Portal target for the suggestions popup. Defaults to `document.body`. Platform prop; never affects semantics. */
@@ -392,16 +397,23 @@ export function Search({
   const closeRef = useRef(closeList);
   closeRef.current = closeList;
 
-  // Outside pointerdown and focus moving outside close the list.
+  // Outside pointerdown and focus moving outside close the list. The two have different scopes: a
+  // pointer press closes it from anywhere outside the field and the list, while focus only closes it
+  // when it lands outside Search as a whole (Tab to the clear or submit Button keeps it open).
   useEffect(() => {
     if (!showPopup) return undefined;
-    const isOutside = (target: EventTarget | null) =>
-      !(target instanceof Node) || (!fieldRef.current?.contains(target) && !popupRef.current?.contains(target));
+    const outsideOf = (root: HTMLElement | null, target: EventTarget | null) =>
+      !(target instanceof Node) || (!root?.contains(target) && !popupRef.current?.contains(target));
     const handlePointerDown = (event: PointerEvent) => {
-      if (isOutside(event.target)) closeRef.current();
+      if (outsideOf(fieldRef.current, event.target)) closeRef.current();
     };
     const handleFocusOut = (event: FocusEvent) => {
-      if (fieldRef.current?.contains(event.target as Node) && isOutside(event.relatedTarget)) closeRef.current();
+      // A blur with no new focus target (a window switch) leaves the list open; only focus landing
+      // outside Search closes it.
+      if (event.relatedTarget === null) return;
+      if (rootRef.current?.contains(event.target as Node) && outsideOf(rootRef.current, event.relatedTarget)) {
+        closeRef.current();
+      }
     };
     document.addEventListener('pointerdown', handlePointerDown);
     document.addEventListener('focusout', handleFocusOut);

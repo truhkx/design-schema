@@ -17,7 +17,7 @@ import { useFormContext } from './FormContext';
 import type { FormFieldHandle } from './FormContext';
 import { Icon } from './Icon';
 import { Text } from './Text';
-import { toFontWeight, toLineHeight, useTheme } from './theme';
+import { toLineHeight, useTheme } from './theme';
 import type { Tokens } from './theme';
 
 export type NumberInputFormat = 'decimal' | 'currency' | 'percent' | 'unit';
@@ -214,8 +214,9 @@ function isValidUnit(unit: string): boolean {
  * unless `hideSteppers`, two system `Button`s (ghost, sm, iconOnly, minus/plus) behind a
  * hairline. The `TextInput` has `accessibilityRole="adjustable"`, `accessibilityValue`
  * whose text is the formatted value with its affixes ("2 kg"), and increment/decrement
- * accessibility actions, so the steppers and affixes are hidden from assistive
- * technology; the steppers step once per tap and disable at the bounds. While focused the
+ * accessibility actions, so the affix parts are hidden from assistive technology; the
+ * steppers stay in it, labelled, because hiding a tappable Button is an
+ * `aria-hidden-focus` violation. They step once per tap and disable at the bounds. While focused the
  * field shows what was typed; on blur or Enter the value is rounded to `precision`,
  * clamped to `min`/`max` (reporting `copy.outOfRange`, `outOfRangeMin` or `outOfRangeMax`
  * until the next keystroke or step when the clamp changed it) and shown through
@@ -373,10 +374,25 @@ export function NumberInput({
     return () => unregister(name);
   }, [register, unregister, name, handle, isDisabled]);
 
-  const formError = form?.errors[name];
-  const commitMessage = textInvalid ? COPY.invalid(label) : clampMessage;
-  const displayedError = error !== undefined && error !== '' ? error : (formError ?? commitMessage ?? undefined);
-  const isInvalid = invalid || displayedError !== undefined;
+  // The Form marks a failing field by putting an entry under its name; the entry's presence is the
+  // mark, and an entry with an empty message falls through to the derived copy (as Input).
+  const formErrors = form?.errors;
+  const formMarked = formErrors !== undefined && Object.prototype.hasOwnProperty.call(formErrors, name);
+  const formError = formErrors?.[name];
+  const ownError = error !== undefined && error !== '' ? error : undefined;
+  const markedInvalid = invalid || formMarked;
+  // What the errorMessage part draws: `error`, else the Form's message, else — only while the field is
+  // marked invalid — the derived copy, else committed non-numeric text, else the clamp. An untouched
+  // empty required field is never flagged, so `copy.required` needs the mark too.
+  const derivedError = markedInvalid
+    ? required && currentValue === undefined
+      ? COPY.required(label)
+      : COPY.invalid(label)
+    : textInvalid
+      ? COPY.invalid(label)
+      : (clampMessage ?? undefined);
+  const displayedError = ownError ?? (formError !== undefined && formError !== '' ? formError : derivedError);
+  const isInvalid = markedInvalid || displayedError !== undefined;
   const summarised = form !== null && form.errorSummary;
 
   React.useEffect(() => {
@@ -442,8 +458,11 @@ export function NumberInput({
         }
       }
     }
-    setNumber(final, raw !== '' && parsed === undefined, rangeMessage);
-    setRawText(null);
+    const nonNumeric = raw !== '' && parsed === undefined;
+    setNumber(final, nonNumeric, rangeMessage);
+    // Committed text with no digits ("-", ".") stays in the field as typed until the next edit, so the
+    // user sees what was invalid; anything else hands the display back to the formatted value.
+    setRawText(nonNumeric ? raw : null);
   };
 
   const currentMessage = (): string | null =>
@@ -516,8 +535,8 @@ export function NumberInput({
     ? (resolveToken(t, overrides.stepperDividerWidth) as number)
     : t.borderWidthThin;
   const partGap = overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.space1;
-  const labelWeight = overrides?.labelWeight ? (resolveToken(t, overrides.labelWeight) as number) : t.fontWeightMedium;
-  const helperSize = overrides?.helperSize ? (resolveToken(t, overrides.helperSize) as number) : t.fontSizeSm;
+  // `labelWeight` and `helperSize` are realised by the composed label and helper Texts, which take
+  // them through their own `overrides` below rather than a style this component resolves for them.
   const fontFamily = overrides?.fontFamily ? (resolveToken(t, overrides.fontFamily) as string) : t.fontFamilyBody;
   const fontSize = overrides?.fontSize ? (resolveToken(t, overrides.fontSize) as number) : t[FONT_SIZE_TOKEN[size]];
   const lineHeightMultiplier = overrides?.lineHeight ? (resolveToken(t, overrides.lineHeight) as number) : t.fontLineHeightNormal;
@@ -539,7 +558,10 @@ export function NumberInput({
   const formattedValue = currentValue === undefined ? undefined : formatNumber(currentValue);
   const valueText =
     formattedValue === undefined ? undefined : `${prefixText ?? ''}${formattedValue}${suffixText !== undefined ? ` ${suffixText}` : ''}`;
-  const displayValue = focused ? (rawText ?? (currentValue === undefined ? '' : String(currentValue))) : (formattedValue ?? '');
+  // Typed text wins while it exists (focused, or held after a non-numeric commit); focusing an
+  // untouched field shows the plain number so editing never fights the formatting.
+  const displayValue =
+    rawText ?? (focused ? (currentValue === undefined ? '' : String(currentValue)) : (formattedValue ?? ''));
 
   const containerStyle: ViewStyle = { flexDirection: 'column', gap: partGap };
 
@@ -568,22 +590,7 @@ export function NumberInput({
 
   const lineHeight = toLineHeight(fontSize, lineHeightMultiplier);
 
-  const labelStyle: TextStyle = {
-    color: t.colorForeground,
-    fontFamily,
-    fontSize,
-    lineHeight,
-    fontWeight: toFontWeight(labelWeight),
-  };
-
   const affixStyle: TextStyle = { color: t.colorForegroundMuted, fontFamily, fontSize, lineHeight };
-
-  const errorStyle: TextStyle = {
-    color: t.colorForegroundDanger,
-    fontFamily,
-    fontSize: helperSize,
-    lineHeight: toLineHeight(helperSize, lineHeightMultiplier),
-  };
 
   const inputStyle: TextStyle = {
     flex: 1,
@@ -602,14 +609,30 @@ export function NumberInput({
     borderStartColor: stepperDividerColor,
   };
 
+  // The root bindings the composed Texts realise: the label follows `size` and `labelWeight`, the
+  // helpers are `size="sm"` with `helperSize` on top. Each override reaches the child's own
+  // `overrides` under the child's binding name; the helpers' colors stay their locked `tone`.
+  const labelOverrides = {
+    fontSize: overrides?.fontSize,
+    fontWeight: overrides?.labelWeight,
+    fontFamily: overrides?.fontFamily,
+    lineHeight: overrides?.lineHeight,
+  };
   const helperOverrides = { fontFamily: overrides?.fontFamily, fontSize: overrides?.helperSize, lineHeight: overrides?.lineHeight };
 
   return (
-    <View ref={ref} style={containerStyle} testID="NumberInput">
+    // react-native-web 0.21 drops `accessibilityState`, so the disabled state is mirrored as
+    // `aria-disabled` here and on the TextInput (as Input). The group is what tells a web
+    // accessibility checker that the label and value dimmed by `disabledOpacity` belong to an
+    // inactive control, which WCAG 1.4.3 exempts from the contrast floor.
+    <View ref={ref} style={containerStyle} testID="NumberInput" aria-disabled={isDisabled}>
       {hideLabel ? null : (
-        <NativeText testID="NumberInput.label" style={[labelStyle, { opacity: partOpacity }]}>
-          {visibleLabel}
-        </NativeText>
+        // Text takes no testID, so the part name lives on a wrapper View (as in Input).
+        <View testID="NumberInput.label" style={{ opacity: partOpacity }}>
+          <Text size={size} weight="medium" overrides={labelOverrides}>
+            {visibleLabel}
+          </Text>
+        </View>
       )}
       {description !== undefined && description !== '' ? (
         <View testID="NumberInput.description" style={{ opacity: partOpacity }}>
@@ -630,9 +653,11 @@ export function NumberInput({
             testID="NumberInput.input"
             accessibilityRole="adjustable"
             accessibilityLabel={accessibleName}
-            accessibilityHint={description}
+            accessibilityHint={description === '' ? undefined : description}
             accessibilityState={{ disabled: isDisabled }}
-            accessibilityValue={{ min, max, now: currentValue, text: valueText }}
+            aria-disabled={isDisabled}
+            // Only `text`: Android takes integers in min/max/now and the value may be fractional.
+            accessibilityValue={{ text: valueText }}
             accessibilityActions={STEP_ACTIONS}
             onAccessibilityAction={handleAccessibilityAction}
             keyboardType={keyboardType}
@@ -659,7 +684,11 @@ export function NumberInput({
           ) : null}
         </View>
         {hideSteppers ? null : (
-          <View style={steppersStyle} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          // The doc hides this wrapper from assistive technology (the adjustable actions cover it), but
+          // `no-hide-descendants` over a View holding Buttons takes tappable, focusable controls out of
+          // the accessibility tree — the RN spelling of axe's `aria-hidden-focus`. The steppers stay in
+          // the tree, labelled with the stepper copy; only their glyphs are hidden, inside the Buttons.
+          <View style={steppersStyle}>
             <View testID="NumberInput.decrementButton">
               <Button
                 label={COPY.decrement}
@@ -686,9 +715,13 @@ export function NumberInput({
         )}
       </View>
       {displayedError !== undefined ? (
-        <NativeText testID="NumberInput.errorMessage" style={errorStyle} accessibilityLiveRegion={summarised ? 'none' : 'assertive'}>
-          {displayedError}
-        </NativeText>
+        // Android announces through the live region, iOS through the effect above; a Form with its own
+        // error summary announces instead, so both are silenced there. The error is never dimmed.
+        <View testID="NumberInput.errorMessage" accessibilityLiveRegion={summarised ? 'none' : 'assertive'}>
+          <Text size="sm" tone="danger" overrides={helperOverrides}>
+            {displayedError}
+          </Text>
+        </View>
       ) : null}
     </View>
   );

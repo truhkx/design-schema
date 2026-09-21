@@ -153,4 +153,6 @@ test.describe('SegmentedControl (lit) keyboard', () => {
     await page.keyboard.press('End');
     expect(await focusIndex(page, root)).toBe(await focusableCount(page, root) - 1);
   });
+  test.skip(' : Selects the focused segment. Each segment is a native button (web and Lit), so this is its own activation — the component adds no handler and nothing else is bound to these keys. — native', async () => {});
+  test.skip('Enter: Selects the focused segment. Each segment is a native button (web and Lit), so this is its own activation — the component adds no handler and nothing else is bound to these keys. — native', async () => {});
 });

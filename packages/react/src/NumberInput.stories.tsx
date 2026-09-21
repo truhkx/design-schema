@@ -61,8 +61,9 @@ export const Disabled: Story = { args: { disabled: true, defaultValue: 5 } };
 export const Invalid: Story = { args: { invalid: true, defaultValue: 5 } };
 export const WithError: Story = { args: { error: 'Quantity must be between 1 and 99.', defaultValue: 120 } };
 
-/* keyboard: ArrowUp/Down, PageUp/Down, Home/End (bounds set), Enter commits. */
-export const Keyboard: Story = { args: { defaultValue: 5, min: 0, max: 10, step: 1 } };
+/* keyboard: ArrowUp/Down, PageUp/Down, Home/End (bounds set), Enter commits. One field, since it is
+   a single tab stop; min/max are set so Home and End have somewhere to go. */
+export const Keyboard: Story = { args: { defaultValue: 5, min: 0, max: 20, step: 1 } };
 
 /* examples */
 export const Quantity: Story = { args: { label: 'Quantity', name: 'quantity', min: 1, max: 99, defaultValue: 1 } };

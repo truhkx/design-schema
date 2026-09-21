@@ -360,7 +360,7 @@ export function NumberInput({
   const [textInvalid, setTextInvalid] = useState(false);
   const [rangeMessage, setRangeMessage] = useState<string | undefined>(undefined);
 
-  const isDisabled = disabled ||(form?.disabled ?? false);
+  const isDisabled = disabled || (form?.disabled ?? false);
 
   /** The shown number, advanced synchronously by `report` so steps and Form submission within the
    * same event see it; a controlled field is re-synced to its prop on every render. */
@@ -396,6 +396,29 @@ export function NumberInput({
   const latest = useRef({ label, required, disabled: isDisabled, invalid, error, textInvalid, rangeMessage });
   latest.current = { label, required, disabled: isDisabled, invalid, error, textInvalid, rangeMessage };
 
+  /** The full precedence: `error` → required (empty) → invalid / non-numeric committed text → range. */
+  const validationMessage = (): string | null => {
+    const current = latest.current;
+    if (current.error !== undefined && current.error !== '') return current.error;
+    if (current.required && valueRef.current === undefined && !current.textInvalid) {
+      return COPY.required.replace('{label}', current.label);
+    }
+    if (current.invalid || current.textInvalid) return COPY.invalid.replace('{label}', current.label);
+    if (current.rangeMessage) return current.rangeMessage;
+    return null;
+  };
+  const validationRef = useRef(validationMessage);
+  validationRef.current = validationMessage;
+
+  // validationMessage/validity follow the same precedence, so a submit straight after a clamp fails
+  // once (outside a Form too) and the browser never shows its own text.
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    const message = isDisabled ? '' : (validationRef.current() ?? '');
+    if (el.validationMessage !== message) el.setCustomValidity(message);
+  });
+
   useEffect(() => {
     if (!form) return undefined;
     return form.register({
@@ -408,19 +431,17 @@ export function NumberInput({
       getValue: () =>
         latest.current.disabled || valueRef.current === undefined ? undefined : String(valueRef.current),
       isDisabled: () => latest.current.disabled,
-      validate: () => {
-        const current = latest.current;
-        if (current.error !== undefined && current.error !== '') return current.error;
-        if (current.required && valueRef.current === undefined && !current.textInvalid) {
-          return COPY.required.replace('{label}', current.label);
-        }
-        if (current.invalid || current.textInvalid) return COPY.invalid.replace('{label}', current.label);
-        if (current.rangeMessage) return current.rangeMessage;
-        return null;
-      },
+      validate: () => validationRef.current(),
       focus: () => inputRef.current?.focus(),
     });
   }, [form, name, id]);
+
+  // The Form's mode decides when the field re-validates; after a failed submission every mode
+  // re-validates on blur and on change, so a fixed field stops being flagged as the user types.
+  const validateMode = form ? (form.validateMode ?? form.validate) : undefined;
+  const afterFailedSubmit = form?.submitFailed ?? false;
+  const validatesOnChange = validateMode === 'change' || afterFailedSubmit;
+  const validatesOnBlur = validateMode === 'blur' || validateMode === 'change' || afterFailedSubmit;
 
   function report(next: number | undefined): void {
     if (Object.is(next, valueRef.current)) return;
@@ -430,7 +451,7 @@ export function NumberInput({
       setInternalValue(next);
     }
     onChange?.(next);
-    if (form && form.validate === 'change') form.validateField(name);
+    if (form && validatesOnChange) form.validateField(name);
   }
 
   function clamp(num: number): number {
@@ -547,7 +568,7 @@ export function NumberInput({
   const handleBlur = (event: FocusEvent<HTMLInputElement>): void => {
     onBlur?.(event);
     if (!isDisabled && !readOnly) commit();
-    if (form && (form.validate === 'blur' || form.validate === 'change')) form.validateField(name);
+    if (form && validatesOnBlur) form.validateField(name);
   };
 
   /* Steppers: a press steps once, and repeats while held when the theme's durations resolve. */
@@ -559,6 +580,12 @@ export function NumberInput({
       window.clearTimeout(repeatTimer.current);
       repeatTimer.current = null;
     }
+  }
+
+  /** A press that ends without a click (the pointer left the button) must not swallow the next one. */
+  function endPointerStep(): void {
+    stopRepeat();
+    pointerStepped.current = false;
   }
 
   useEffect(() => stopRepeat, []);
@@ -598,10 +625,25 @@ export function NumberInput({
     stepBy(direction * step);
   }
 
-  const resolvedError = error ?? form?.errors[name] ?? rangeMessage;
-  const hasError = resolvedError !== undefined && resolvedError !== '';
-  const isInvalid = invalid || hasError || textInvalid;
-  const describedBy = [description ? descriptionId : null, hasError ? errorId : null].filter(Boolean).join(' ');
+  // What the errorMessage part draws, following Input: the `error` prop, the Form's context entry,
+  // then — only while the field is marked invalid — copy.required for an empty required field, else
+  // copy.invalid; then committed non-numeric text, then a clamp. An empty required field is never
+  // flagged on first render, so `required` alone draws nothing here.
+  const withLabel = (message: string): string => message.replace('{label}', label);
+  const formError = form?.errors[name];
+  const markedInvalid = invalid || formError !== undefined;
+  const slotMessage =
+    error !== undefined && error !== ''
+      ? error
+      : formError !== undefined && formError !== ''
+        ? formError
+        : markedInvalid
+          ? withLabel(required && committedValue === undefined && !textInvalid ? COPY.required : COPY.invalid)
+          : textInvalid
+            ? withLabel(COPY.invalid)
+            : rangeMessage;
+  const isInvalid = slotMessage !== undefined;
+  const describedBy = [description ? descriptionId : null, isInvalid ? errorId : null].filter(Boolean).join(' ');
 
   const valueText =
     committedValue === undefined
@@ -631,17 +673,13 @@ export function NumberInput({
         {required ? COPY.requiredIndicator : null}
       </label>
       {description ? (
-        <Text
-          element="p"
-          id={descriptionId}
-          data-part="description"
-          size="sm"
-          tone="muted"
-          className="ds-number-input__description"
-          overrides={helperOverrides}
-        >
-          {description}
-        </Text>
+        // The wrapper is NumberInput's own: it carries the part and takes the disabled dimming, so
+        // no rule of ours ever reaches the composed Text.
+        <div className="ds-number-input__description" id={descriptionId} data-part="description">
+          <Text element="p" size="sm" tone="muted" overrides={helperOverrides}>
+            {description}
+          </Text>
+        </div>
       ) : null}
       <div className="ds-number-input__field" data-part="field">
         {resolvedLeading ? (
@@ -681,14 +719,18 @@ export function NumberInput({
           </span>
         ) : null}
         {hideSteppers ? null : (
-          <span className="ds-number-input__steppers" aria-hidden="true">
+          // Not aria-hidden: these are real <button>s, and tabIndex={-1} removes them from the tab
+          // order without removing focus, so hiding them would be axe's aria-hidden-focus. They stay
+          // exposed under their own labels; the arrow keys, not this markup, are what make the field
+          // one tab stop.
+          <span className="ds-number-input__steppers">
             <span
               className="ds-number-input__stepper"
               data-part="decrementButton"
               onPointerDown={(event) => stepperPointerDown(event, -1)}
               onPointerUp={stopRepeat}
-              onPointerLeave={stopRepeat}
-              onPointerCancel={stopRepeat}
+              onPointerLeave={endPointerStep}
+              onPointerCancel={endPointerStep}
               onClick={(event) => stepperClick(event, -1)}
             >
               <Button
@@ -706,8 +748,8 @@ export function NumberInput({
               data-part="incrementButton"
               onPointerDown={(event) => stepperPointerDown(event, 1)}
               onPointerUp={stopRepeat}
-              onPointerLeave={stopRepeat}
-              onPointerCancel={stopRepeat}
+              onPointerLeave={endPointerStep}
+              onPointerCancel={endPointerStep}
               onClick={(event) => stepperClick(event, 1)}
             >
               <Button
@@ -723,7 +765,7 @@ export function NumberInput({
           </span>
         )}
       </div>
-      {hasError ? (
+      {isInvalid ? (
         <Text
           element="p"
           id={errorId}
@@ -731,10 +773,9 @@ export function NumberInput({
           data-part="errorMessage"
           size="sm"
           tone="danger"
-          className="ds-number-input__error"
           overrides={helperOverrides}
         >
-          {resolvedError}
+          {slotMessage}
         </Text>
       ) : null}
     </div>

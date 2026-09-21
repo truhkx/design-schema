@@ -87,7 +87,7 @@ test.describe('Tabs (web) keyboard', () => {
     await expect(page.getByRole('tablist').first()).toBeVisible({ timeout: 15_000 });
   });
   test.skip('Tab: Moves focus to the selected tab, then out of the tab list into the panel (the list is one tab stop). — manual', async () => {});
-  test('ArrowRight: Moves to the next tab, wrapping; selects it under automatic activation. (horizontal)', async ({ page }) => {
+  test('ArrowRight: Moves to the next tab, wrapping; selects it under automatic activation. In a right-to-left layout ArrowRight is "previous" and ArrowLeft "next" — the direction is read from the list\'s (on Lit the host\'s) computed `direction` at keydown, as in SegmentedControl. (horizontal)', async ({ page }) => {
     const root = page.getByRole('tablist').first();
     await focusAt(page, root, 0);
     const before = await focusIndex(page, root);
@@ -96,7 +96,7 @@ test.describe('Tabs (web) keyboard', () => {
     await page.keyboard.press('ArrowRight');
     expect(await focusIndex(page, root)).toBe(before + 1);
   });
-  test('ArrowLeft: Moves to the previous tab, wrapping; selects it under automatic activation. (horizontal)', async ({ page }) => {
+  test('ArrowLeft: Moves to the previous tab, wrapping; selects it under automatic activation. Swapped with ArrowRight in a right-to-left layout. (horizontal)', async ({ page }) => {
     const root = page.getByRole('tablist').first();
     await focusAt(page, root, await focusableCount(page, root) - 1);
     const before = await focusIndex(page, root);

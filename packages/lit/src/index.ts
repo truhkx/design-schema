@@ -355,7 +355,11 @@ export type {
 } from './NumberInput.js';
 
 export { DsProgressBar } from './ProgressBar.js';
-export type { ProgressBarTone, ProgressBarAnnounce, ProgressBarOverridableBinding } from './ProgressBar.js';
+export type {
+  ProgressBarTone,
+  ProgressBarAnnounce,
+  ProgressBarOverridableBinding,
+} from './ProgressBar.js';
 
 export { DsStepper } from './Stepper.js';
 export type {

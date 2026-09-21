@@ -1,7 +1,7 @@
-import { LitElement, css, html, nothing, type PropertyValues, type CSSResult, type TemplateResult } from 'lit';
+import { LitElement, css, html, nothing, type CSSResult, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, property, query, state } from 'lit/decorators.js';
-import { ifDefined } from 'lit/directives/if-defined.js';
 import { classMap } from 'lit/directives/class-map.js';
+import { ifDefined } from 'lit/directives/if-defined.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { cssVar, type TokenRef } from '@design-schema/tokens';
 import './Text.js';
@@ -9,41 +9,25 @@ import type { TextOverridableBinding } from './Text.js';
 
 export type SliderShowValue = 'always' | 'hover' | 'never';
 
-/** Shape of each entry in `marks`. */
+/** One entry of `marks`: a tick on the track, optionally labelled. */
 export interface SliderMark {
   value: number;
   label?: string | undefined;
 }
 
-/** A single value, or `[low, high]` for `range`. */
+/** A single value, or the low and high values of a range. */
 export type SliderValue = number | [number, number];
 
 /** Detail carried by the `change` and `change-end` CustomEvents. */
 export interface SliderChangeDetail {
+  /** The new value, or the low and high values of a range. */
   value: SliderValue;
 }
-
-/** copy.minimumLabel */
-const COPY_MINIMUM = (label: string): string => `${label} minimum`;
-/** copy.maximumLabel */
-const COPY_MAXIMUM = (label: string): string => `${label} maximum`;
-/** copy.rangeText */
-const COPY_RANGE = (low: string, high: string): string => `${low} – ${high}`;
-/** copy.required */
-const COPY_REQUIRED = (label: string): string => `${label} is required.`;
-/** copy.invalid */
-const COPY_INVALID = (label: string): string => `${label} is not valid.`;
-
-/** Keys handled by the keyboard model; their `keyup` ends the interaction. */
-const NAV_KEYS = new Set(['ArrowRight', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End']);
-
-/** Keyboard table: PageUp/PageDown change by ten steps (without `snapToMarks`). */
-const PAGE_STEPS = 10;
 
 /**
  * Overridable style hooks; see the `overrides` property. `fill`, `thumbBorder`,
  * `thumbBorderWidth`, `markLabelColor`, `valueColor`, `bubbleSurface`,
- * `bubbleText`, `descriptionText`, `minTarget`, `focusRing` and
+ * `bubbleText`, `descriptionText`, `errorText`, `minTarget`, `focusRing` and
  * `focusRingWidth` are locked and excluded.
  */
 export type SliderOverridableBinding =
@@ -71,11 +55,14 @@ export type SliderOverridableBinding =
   | 'fontFamily'
   | 'fontSize'
   | 'helperSize'
-  | 'errorText'
   | 'disabledOpacity'
   | 'transition';
 
-const HOOKS: Record<SliderOverridableBinding, string> = {
+/**
+ * `fontSize`, `labelWeight`, `helperSize` and `valueSize` have no hook of their
+ * own: they are forwarded to the composed Texts' `overrides`.
+ */
+const HOOKS: Record<SliderOverridableBinding, string | undefined> = {
   track: '--ds-slider-track',
   trackHeight: '--ds-slider-track-height',
   trackRadius: '--ds-slider-track-radius',
@@ -88,48 +75,110 @@ const HOOKS: Record<SliderOverridableBinding, string> = {
   markSize: '--ds-slider-mark-size',
   markLabelSize: '--ds-slider-mark-label-size',
   markLabelGap: '--ds-slider-mark-label-gap',
-  valueSize: '--ds-slider-value-size',
+  valueSize: undefined,
   bubblePaddingBlock: '--ds-slider-bubble-padding-block',
   bubblePaddingInline: '--ds-slider-bubble-padding-inline',
   bubbleOffset: '--ds-slider-bubble-offset',
   bubbleRadius: '--ds-slider-bubble-radius',
-  labelWeight: '--ds-slider-label-weight',
+  labelWeight: undefined,
   partGap: '--ds-slider-part-gap',
   labelGap: '--ds-slider-label-gap',
   trackPaddingBlock: '--ds-slider-track-padding-block',
-  fontFamily: '--ds-slider-font-family', // literal-ok: CSS custom-property name, not a font stack
-  fontSize: '--ds-slider-font-size',
-  helperSize: '--ds-slider-helper-size',
-  errorText: '--ds-slider-error-text',
+  fontFamily: '--ds-slider-font-family',
+  fontSize: undefined,
+  helperSize: undefined,
   disabledOpacity: '--ds-slider-disabled-opacity',
   transition: '--ds-slider-transition',
 };
 
 /**
+ * copy.* — used verbatim; `{label}`, `{low}` and `{high}` are the only
+ * interpolations. `pageUpAction`, `pageDownAction`, `homeAction` and `endAction`
+ * are React Native accessibility action labels: web and Lit do not render them.
+ */
+const COPY = {
+  minimumLabel: '{label} minimum',
+  maximumLabel: '{label} maximum',
+  rangeText: '{low} – {high}',
+  required: '{label} is required.',
+  invalid: '{label} is not valid.',
+  pageUpAction: 'Increase by a page',
+  pageDownAction: 'Decrease by a page',
+  homeAction: 'Set to minimum',
+  endAction: 'Set to maximum',
+} as const;
+
+/** PageUp/PageDown move by ten steps. */
+const PAGE_STEPS = 10;
+
+/** Decimal places in `step` (`0.1` → 1), so arithmetic on it stays exact. */
+function decimalsIn(step: number): number {
+  const str = String(step);
+  const exp = /e-(\d+)$/.exec(str);
+  if (exp) return Number(exp[1]);
+  const dot = str.indexOf('.');
+  return dot === -1 ? 0 : str.length - dot - 1;
+}
+
+function roundTo(num: number, digits: number): number {
+  const factor = 10 ** digits;
+  return Math.round(num * factor) / factor;
+}
+
+/** A number property read from an attribute is `null` once the attribute is removed. */
+function finite(value: number | null | undefined, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+/** Any value as a low/high pair; a single value sits on both ends. */
+function toPair(value: SliderValue): [number, number] {
+  return Array.isArray(value) ? value : [value, value];
+}
+
+function sameValue(a: SliderValue, b: SliderValue): boolean {
+  if (Array.isArray(a) && Array.isArray(b)) return a[0] === b[0] && a[1] === b[1];
+  return a === b;
+}
+
+/**
  * `<ds-slider>` — Slider (category: input, APG pattern: slider-multithumb).
  *
  * `<ds-slider label="Price range" name="price" range min="0" max="500" step="10">`
- * renders a label row, a track area (the pointer hit area) holding the track,
- * its fill and one `<div role="slider" tabindex="0">` thumb per value (two for
- * `range`, each its own tab stop), and the tick marks below it, all in the
- * shadow root. Pointer Events with `setPointerCapture` on the track area drive
- * dragging and track clicks (the nearest thumb moves); the keyboard table
- * (arrows, Page Up/Down, Home/End) is implemented on each thumb. The element is
- * form-associated (`ElementInternals`; a range submits two entries under
- * `name`) and dispatches composed `change` (`{ value }`, on every change) and
- * `change-end` (`{ value }`, once per interaction that changed the value)
- * CustomEvents.
+ * renders a label row (the label `<ds-text>` carrying the id `aria-labelledby`
+ * resolves within the one shadow root, and the value Text when
+ * `show-value="always"`), a track with a fill sized from the value, optional
+ * tick marks and their labels, and one or two thumbs — each a
+ * `<div role="slider" tabindex="0">` carrying `aria-valuenow/min/max/text` and
+ * positioned by percentage. A range's thumbs are named from
+ * `copy.minimumLabel` / `copy.maximumLabel`, cannot cross, and each reports the
+ * live constraint from the other as its own bound. Pointer Events on the track
+ * area move the nearest thumb (ties go to the low thumb) with pointer capture;
+ * the keyboard table is implemented on each thumb. Pointer math is logical, so
+ * a right-to-left slider mirrors.
  *
- * `value` is controlled: when it is set, the element reports `change` and shows
- * the new value only once the property is updated. Otherwise the element keeps
- * its own value, seeded from `defaultValue`.
+ * The element is form-associated (`ElementInternals`) and implements
+ * `DsFormField`: `currentValue` is the decimal string, or two strings for a
+ * range, which `setFormValue` submits as two `FormData` entries of the same
+ * name. `<ds-form>` discovers it by `data-ds-field`; the Lit form contract has
+ * no interaction-end hook, so under `validate: blur` it validates on focusout.
+ * Dispatches composed `change` on every value change and `change-end` once per
+ * interaction that changed the value, both carrying numbers.
  *
- * @fires change - Every value change while dragging or with keys, `{ value }` in `detail`.
- * @fires change-end - Once when an interaction that changed the value ends (pointer up, key released).
+ * ## When to use
+ *
+ * Use a Slider for a bounded numeric value where approximate is fine and
+ * immediate feedback matters: volume, brightness, a price range, a zoom level.
+ * Use `range` for "between" filters, `marks` when a few values are meaningful
+ * stops, and `show-value="never"` when a NumberInput beside it shows the value.
+ * Reach for NumberInput instead whenever the value must be exact or is usually
+ * typed.
+ *
+ * @fires change - On every value change while dragging or with keys, with `{ value }` in `detail`.
+ * @fires change-end - Once when an interaction that changed the value ends, with `{ value }` in `detail`.
  */
 @customElement('ds-slider')
 export class DsSlider extends LitElement {
-  static formAssociated = true;
+  static formAssociated: boolean = true;
 
   static override shadowRootOptions: ShadowRootInit = {
     ...LitElement.shadowRootOptions,
@@ -151,19 +200,14 @@ export class DsSlider extends LitElement {
       --ds-slider-mark-size: var(--space-1);
       --ds-slider-mark-label-size: var(--font-size-xs);
       --ds-slider-mark-label-gap: var(--space-1);
-      --ds-slider-value-size: var(--font-size-sm);
       --ds-slider-bubble-padding-block: var(--space-1);
       --ds-slider-bubble-padding-inline: var(--space-2);
       --ds-slider-bubble-offset: var(--space-1);
       --ds-slider-bubble-radius: var(--radius-sm);
-      --ds-slider-label-weight: var(--font-weight-medium);
       --ds-slider-part-gap: var(--space-1);
       --ds-slider-label-gap: var(--space-2);
       --ds-slider-track-padding-block: var(--space-3);
       --ds-slider-font-family: var(--font-family-body);
-      --ds-slider-font-size: var(--font-size-md);
-      --ds-slider-helper-size: var(--font-size-sm);
-      --ds-slider-error-text: var(--color-foreground-danger);
       --ds-slider-disabled-opacity: var(--opacity-disabled);
       --ds-slider-transition: var(--motion-duration-fast);
     }
@@ -172,29 +216,39 @@ export class DsSlider extends LitElement {
       display: none;
     }
 
-    /* partGap: vertical gap between the label row, the track area and the messages */
+    /* partGap: between the label row, the track area and the messages */
     .root {
-      display: flex;
-      flex-direction: column;
+      display: grid;
       gap: var(--ds-slider-part-gap);
+      font-family: var(--ds-slider-font-family);
     }
 
-    /* disabledOpacity: the whole slider (label row, track area, marks, messages) */
-    .root.is-disabled {
+    /* disabledOpacity: the whole slider stays readable, only dimmer */
+    .root.disabled {
       opacity: var(--ds-slider-disabled-opacity);
     }
 
     /* labelGap: between the label and the value text */
-    .row {
+    .label-row {
       display: flex;
       align-items: baseline;
       justify-content: space-between;
       gap: var(--ds-slider-label-gap);
     }
 
-    /* trackPaddingBlock: the unparted track area around track and thumbs, also the pointer hit area */
+    /* markLabelGap: the track area and the mark label row, outside partGap */
+    .track-column {
+      display: grid;
+      gap: var(--ds-slider-mark-label-gap);
+    }
+
+    /*
+     * trackPaddingBlock pads the hit area around the rail, never the rail
+     * itself, so the thumb and its halo have room and the touch target reaches
+     * the comfortable size.
+     */
     .track-area {
-      box-sizing: border-box;
+      position: relative;
       padding-block: var(--ds-slider-track-padding-block);
       touch-action: none;
     }
@@ -207,152 +261,149 @@ export class DsSlider extends LitElement {
       background: var(--ds-slider-track);
     }
 
-    /* fill: color.control.selectedBackground, locked */
+    /* fill: color.control.selectedBackground (locked) */
     [data-part='fill'] {
       position: absolute;
       inset-block: 0;
       border-radius: var(--ds-slider-track-radius);
       background: var(--color-control-selected-background);
-      pointer-events: none;
     }
 
-    /* tickMarks: dots drawn back up on the track centre line; labels on their own line below the track area */
+    /* tickMarks: a layer on the track centre line */
     [data-part='tickMarks'] {
-      position: relative;
-      pointer-events: none;
-    }
-    [data-part='tickMarks'].has-labels {
-      padding-block-start: var(--ds-slider-mark-label-gap);
+      position: absolute;
+      inset: 0;
     }
 
     /* mark, markSize */
     .mark {
       position: absolute;
-      inset-block-start: calc(-1 * var(--ds-slider-track-padding-block) - var(--ds-slider-track-height) / 2);
+      inset-block-start: 50%;
+      margin-block-start: calc(var(--ds-slider-mark-size) / -2);
       inline-size: var(--ds-slider-mark-size);
       block-size: var(--ds-slider-mark-size);
       border-radius: var(--radius-full);
       background: var(--ds-slider-mark);
-      transform: translate(-50%, -50%);
-    }
-    :host(:dir(rtl)) .mark {
-      transform: translate(50%, -50%);
     }
 
-    /* mark labels share one grid cell, each centred under its mark */
+    /* The slider grows by one label line only when some mark is labelled. */
     .mark-labels {
-      display: grid;
-    }
-    .mark-label {
-      grid-area: 1 / 1;
-      justify-self: start;
       position: relative;
-      white-space: nowrap;
-      transform: translateX(-50%);
-    }
-    :host(:dir(rtl)) .mark-label {
-      transform: translateX(50%);
+      block-size: calc(var(--ds-slider-mark-label-size) * var(--font-line-height-normal));
     }
 
-    /* minTarget: size.target.comfortable hit area centred on the knob, locked */
+    /* A zero-width centring box, so the label centres on its mark in both directions. */
+    .mark-label {
+      position: absolute;
+      inset-block-start: 0;
+      inline-size: 0;
+      display: flex;
+      justify-content: center;
+    }
+
+    .mark-label > * {
+      white-space: nowrap;
+    }
+
+    /* minTarget (locked): the hit area, centred on the knob */
     [data-part='thumb'] {
       position: absolute;
-      z-index: 1;
       inset-block-start: 50%;
+      margin-block-start: calc(var(--size-target-comfortable) / -2);
       inline-size: var(--size-target-comfortable);
       block-size: var(--size-target-comfortable);
-      transform: translate(-50%, -50%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
       outline: none;
-    }
-    :host(:dir(rtl)) [data-part='thumb'] {
-      transform: translate(50%, -50%);
+      touch-action: none;
     }
 
-    .root.is-disabled [data-part='thumb'] {
-      cursor: not-allowed;
-    }
-
-    /* thumb, thumbSize, thumbShadow; thumbBorder + thumbBorderWidth locked */
-    .knob {
-      position: relative;
-      box-sizing: border-box;
-      inline-size: var(--ds-slider-thumb-size);
-      block-size: var(--ds-slider-thumb-size);
-      border-radius: var(--radius-full);
-      background: var(--ds-slider-thumb);
-      border: var(--border-width-focus) solid var(--color-control-selected-background);
-      box-shadow: var(--ds-slider-thumb-shadow);
-    }
-
-    /* thumbActiveScale + haloSpread: a halo of the fill colour at this opacity, haloSpread beyond the knob */
-    .halo {
+    /*
+     * thumbActiveScale is not a scale: the pressed thumb shows a halo of the
+     * fill colour at that opacity, thumbSize + 2 × haloSpread across. It is
+     * drawn before the knob, so the knob paints over it.
+     */
+    [data-part='thumb']::before {
+      content: '';
       position: absolute;
       inset-block-start: 50%;
       inset-inline-start: 50%;
-      inline-size: calc(var(--ds-slider-thumb-size) + 2 * var(--ds-slider-halo-spread));
-      block-size: calc(var(--ds-slider-thumb-size) + 2 * var(--ds-slider-halo-spread));
-      transform: translate(-50%, -50%);
+      inline-size: calc(var(--ds-slider-thumb-size) + var(--ds-slider-halo-spread) * 2);
+      block-size: calc(var(--ds-slider-thumb-size) + var(--ds-slider-halo-spread) * 2);
+      margin-block-start: calc((var(--ds-slider-thumb-size) + var(--ds-slider-halo-spread) * 2) / -2);
+      margin-inline-start: calc((var(--ds-slider-thumb-size) + var(--ds-slider-halo-spread) * 2) / -2);
       border-radius: var(--radius-full);
       background: var(--color-control-selected-background);
       opacity: 0;
-      pointer-events: none;
       transition: opacity var(--ds-slider-transition) var(--motion-easing-standard);
     }
-    [data-part='thumb'].is-active .halo {
+
+    [data-part='thumb'].pressed::before {
       opacity: var(--ds-slider-thumb-active-scale);
     }
 
-    /* focusRing / focusRingWidth, both locked: around the knob, offset by the same width */
-    [data-part='thumb']:focus-visible .knob {
+    /* thumb, thumbSize, thumbShadow; thumbBorder / thumbBorderWidth (locked) */
+    [data-part='thumb']::after {
+      content: '';
+      position: absolute;
+      inset-block-start: 50%;
+      inset-inline-start: 50%;
+      box-sizing: border-box;
+      inline-size: var(--ds-slider-thumb-size);
+      block-size: var(--ds-slider-thumb-size);
+      margin-block-start: calc(var(--ds-slider-thumb-size) / -2);
+      margin-inline-start: calc(var(--ds-slider-thumb-size) / -2);
+      border: var(--border-width-focus) solid var(--color-control-selected-background);
+      border-radius: var(--radius-full);
+      background: var(--ds-slider-thumb);
+      box-shadow: var(--ds-slider-thumb-shadow);
+    }
+
+    /* focusRing / focusRingWidth (locked): a ring around the knob, not the hit area */
+    [data-part='thumb']:focus-visible::after {
       outline: var(--border-width-focus) solid var(--color-border-focus);
       outline-offset: var(--border-width-focus);
     }
 
-    /* bubbleSurface / bubbleText (locked), padding, offset, radius. The composed ds-text (tone default)
-       reads color.foreground, so the bubble re-scopes that token to the inverse foreground. */
+    /* bubbleOffset: above the top of the thumb's hit area, centred on the knob */
+    .bubble-anchor {
+      position: absolute;
+      inset-block-end: calc(50% + var(--size-target-comfortable) / 2 + var(--ds-slider-bubble-offset));
+      inline-size: 0;
+      display: flex;
+      justify-content: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity var(--ds-slider-transition) var(--motion-easing-standard);
+    }
+
+    .bubble-anchor.shown {
+      opacity: 1;
+    }
+
+    /*
+     * bubbleSurface / bubbleText (locked): an inverse-surface pill, with
+     * --color-foreground re-scoped so the Text inside reads as inverse.
+     */
     [data-part='bubble'] {
       --color-foreground: var(--color-inverse-foreground);
-      position: absolute;
-      inset-block-end: calc(100% + var(--ds-slider-bubble-offset));
-      inset-inline-start: 50%;
-      transform: translateX(-50%);
-      box-sizing: border-box;
       padding-block: var(--ds-slider-bubble-padding-block);
       padding-inline: var(--ds-slider-bubble-padding-inline);
       border-radius: var(--ds-slider-bubble-radius);
       background: var(--color-inverse-surface);
       white-space: nowrap;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity var(--ds-slider-transition) var(--motion-easing-standard);
-    }
-    :host(:dir(rtl)) [data-part='bubble'] {
-      transform: translateX(50%);
-    }
-    [data-part='bubble'].is-shown {
-      opacity: 1;
     }
 
     @media (prefers-reduced-motion: reduce) {
-      .halo,
-      [data-part='bubble'] {
+      [data-part='thumb']::before,
+      .bubble-anchor {
         transition: none;
       }
     }
-
-    [data-part='errorMessage']:empty {
-      display: none;
-    }
   `;
 
-  /** Visible label naming the quantity ("Volume", "Price range"). */
+  /** Visible label naming the quantity ("Volume", "Price range"); the accessible name of the thumbs. */
   @property() accessor label = '';
 
-  /** Field name for the Form. A range submits two entries under this name. */
+  /** Field name for the Form. A single value submits as one decimal string, a range as two under this name. */
   @property() accessor name = '';
 
   /** Lower bound. */
@@ -364,11 +415,14 @@ export class DsSlider extends LitElement {
   /** Arrow-key increment and snapping granularity for drag, click and keys. */
   @property({ type: Number }) accessor step = 1;
 
-  /** With `marks`, snap drag and click to the marks instead of `step`; PageUp/Down go to the next mark. */
+  /** With `marks`, snap drag and click to the marks instead of `step`. */
   @property({ type: Boolean, reflect: true, attribute: 'snap-to-marks' }) accessor snapToMarks = false;
 
-  /** Must have a value other than the default to submit (`copy.required`). */
+  /** Must have a value other than the default to submit. */
   @property({ type: Boolean, reflect: true }) accessor required = false;
+
+  /** Marks the slider invalid; independent of `error`. */
+  @property({ type: Boolean, reflect: true }) accessor invalid = false;
 
   /** Controlled value; for a range, a two-number array. */
   @property({ attribute: false }) accessor value: SliderValue | undefined;
@@ -382,105 +436,76 @@ export class DsSlider extends LitElement {
   /** Renders the displayed and announced value ("$40", "3 h 20 min"). Defaults to the number. */
   @property({ attribute: false }) accessor formatValue: ((value: number) => string) | undefined;
 
-  /** Where the value text appears: beside the label, as a bubble while pressed or focused, or not at all. */
-  @property({ reflect: true, attribute: 'show-value' }) accessor showValue: SliderShowValue = 'always';
+  /** Where the value text appears: beside the label, as a bubble while pressed or focused, or nowhere. */
+  @property({ type: String, reflect: true, attribute: 'show-value' }) accessor showValue: SliderShowValue = 'always';
 
   /** Tick marks on the track, optionally labelled. */
   @property({ attribute: false }) accessor marks: SliderMark[] | undefined;
 
-  /** Not adjustable, still readable (and focusable); no value is submitted. */
+  /** Not adjustable, still readable: the thumbs stay focusable and nothing is submitted. */
   @property({ type: Boolean, reflect: true }) accessor disabled = false;
 
   /** Helper text. */
   @property() accessor description: string | undefined;
 
-  /** Per-instance style overrides: `{ trackRadius: 'radius.sm' }`. Locked bindings are ignored. */
+  /** Error message. Setting it never changes the `invalid` prop; both make the slider aria-invalid. */
+  @property() accessor error: string | undefined;
+
+  /** Per-instance style overrides: `{ trackHeight: 'space.2' }`. Locked bindings are ignored. */
   @property({ attribute: false }) accessor overrides:
     | Partial<Record<SliderOverridableBinding, TokenRef | undefined>>
     | undefined;
 
-  private errorValue: string | undefined;
-
-  /** Error message. Setting it marks the slider invalid. */
-  get error(): string | undefined {
-    return this.errorValue;
-  }
-  @property()
-  set error(value: string | undefined) {
-    const old = this.errorValue;
-    this.errorValue = value || undefined;
-    // Synchronous, so `checkValidity()` right after the assignment is already correct.
-    this.invalid = Boolean(value);
-    this.syncValidity();
-    this.requestUpdate('error', old);
-  }
-
-  /** Marks the slider invalid (`copy.invalid` when no `error`). */
-  @property({ type: Boolean, reflect: true }) accessor invalid = false;
-
-  /** Uncontrolled value, seeded from `defaultValue`. */
+  /** The uncontrolled value; `undefined` falls back to `defaultValue`. */
   @state() private accessor internalValue: SliderValue | undefined;
 
-  /** Disabled by an owning fieldset or form. */
+  /** The thumb being dragged, for the halo and the bubble. */
+  @state() private accessor pressedIndex: 0 | 1 | undefined;
+
+  /** The thumb holding focus (any focus, not only :focus-visible), for the bubble. */
+  @state() private accessor focusedIndex: 0 | 1 | undefined;
+
+  /** Disabled by an owning native form / fieldset. */
   @state() private accessor formDisabled = false;
 
-  /** Thumb being pressed or dragged (halo and bubble). */
-  @state() private accessor draggingIndex: number | null = null;
+  @query('[data-part="track"]') private accessor trackEl!: HTMLElement | null;
 
-  /** Thumb holding focus (bubble in `showValue: hover`). */
-  @state() private accessor focusedIndex: number | null = null;
+  private readonly internals: ElementInternals = this.attachInternals();
 
-  /** The message `reportValidity()` last reported; cleared once the field is valid again. */
-  @state() private accessor reportedMessage = '';
+  /** The value last emitted in the running interaction; the comparison baseline within it. */
+  private emitted: SliderValue | undefined;
 
-  /** Value when the current pointer or key interaction began; `null` outside one. */
-  private interactionStart: SliderValue | null = null;
+  private interactionChanged = false;
 
-  /** Last value reported by `change` in the current interaction. */
-  private interactionLast: SliderValue | null = null;
-
-  /** Thumb whose handled `keydown` awaits its `keyup`. */
-  private pendingKeyIndex: number | null = null;
-
-  @query('[data-part="track"]') private accessor trackEl!: HTMLDivElement | null;
-
-  @query('.track-area') private accessor trackAreaEl!: HTMLDivElement | null;
-
-  private readonly internals: ElementInternals;
-
-  constructor() {
-    super();
-    this.internals = this.attachInternals();
-  }
-
-  /** DsFormField: the decimal string, or `[low, high]` as two strings for a range; `null` while disabled. */
-  get currentValue(): string | [string, string] | null {
+  /** The value `<ds-form>` collects: the decimal string, or two strings for a range. */
+  get currentValue(): string | string[] | null {
     if (this.isDisabled) return null;
-    const value = this.resolvedValue;
-    return Array.isArray(value) ? [String(value[0]), String(value[1])] : String(value);
+    const current = this.resolvedValue;
+    return Array.isArray(current) ? [String(current[0]), String(current[1])] : String(current);
   }
 
+  /** The owning native form, if any. */
   get form(): HTMLFormElement | null {
     return this.internals.form;
   }
 
   get validity(): ValidityState {
+    this.syncInternals();
     return this.internals.validity;
   }
 
-  /** The field's own copy: `copy.required`, then `error` / `copy.invalid`; empty when valid. */
+  /** The field's own message, by validation order: error, required, invalid. */
   get validationMessage(): string {
-    return this.messageFor();
+    return this.message ?? '';
   }
 
   checkValidity(): boolean {
-    this.syncValidity();
+    this.syncInternals();
     return this.internals.checkValidity();
   }
 
   reportValidity(): boolean {
-    this.syncValidity();
-    this.reportedMessage = this.messageFor();
+    this.syncInternals();
     return this.internals.reportValidity();
   }
 
@@ -490,18 +515,23 @@ export class DsSlider extends LitElement {
 
   formResetCallback(): void {
     this.internalValue = undefined;
-    this.reportedMessage = '';
+    this.emitted = undefined;
+    this.interactionChanged = false;
   }
 
   formStateRestoreCallback(restored: File | string | FormData | null): void {
+    if (this.value !== undefined) return;
     if (typeof restored === 'string') {
-      const n = Number(restored);
-      if (!Number.isNaN(n)) this.internalValue = n;
-    } else if (restored instanceof FormData) {
-      const entries = restored.getAll(this.name).map((entry) => Number(entry));
-      if (entries.length === 2 && entries.every((n) => !Number.isNaN(n))) {
-        this.internalValue = [entries[0]!, entries[1]!];
-      }
+      const num = Number(restored);
+      if (Number.isFinite(num)) this.internalValue = num;
+      return;
+    }
+    if (restored instanceof FormData && this.name) {
+      const entries = restored.getAll(this.name).filter((entry): entry is string => typeof entry === 'string');
+      const low = Number(entries[0]);
+      const high = Number(entries[1]);
+      if (Number.isFinite(low) && Number.isFinite(high)) this.internalValue = [low, high];
+      else if (Number.isFinite(low)) this.internalValue = low;
     }
   }
 
@@ -512,52 +542,66 @@ export class DsSlider extends LitElement {
   }
 
   protected override willUpdate(changed: PropertyValues): void {
-    if (changed.has('overrides')) this.applyOverrides();
-    if (this.reportedMessage && !this.messageFor()) this.reportedMessage = '';
-    this.warnInDev(changed);
+    if (changed.has('overrides')) {
+      this.applyOverrides();
+    }
   }
 
   protected override updated(): void {
-    this.syncFormValue();
-    this.syncValidity();
+    this.syncInternals();
   }
 
   protected override render(): TemplateResult {
-    const value = this.resolvedValue;
-    const [lo, hi] = this.range ? this.pairValue() : [Number(this.min), this.singleValue()];
-    const loPercent = this.range ? this.percentFor(lo) : 0;
-    const hiPercent = this.percentFor(hi);
-    const message = this.visibleMessage();
-    const valueText = Array.isArray(value)
-      ? COPY_RANGE(this.formatOne(value[0]), this.formatOne(value[1]))
-      : this.formatOne(value);
+    const disabled = this.isDisabled;
+    const pair = toPair(this.resolvedValue);
+    const message = this.displayedMessage;
+    const invalid = this.invalid || (this.error !== undefined && this.error !== '');
+    const describedBy = [this.description ? 'description' : '', message ? 'error' : ''].filter(Boolean).join(' ');
+    const o = this.overrides;
+    const labelOverrides = this.textOverrides({
+      fontSize: o?.fontSize,
+      fontWeight: o?.labelWeight,
+      fontFamily: o?.fontFamily,
+    });
+    const valueOverrides = this.textOverrides({ fontSize: o?.valueSize, fontFamily: o?.fontFamily });
+    const helperOverrides = this.textOverrides({ fontSize: o?.helperSize, fontFamily: o?.fontFamily });
+    const markOverrides = this.textOverrides({ fontSize: o?.markLabelSize, fontFamily: o?.fontFamily });
+    const marks = this.marks ?? [];
+    const labelledMarks = marks.filter((mark) => mark.label !== undefined && mark.label !== '');
 
     return html`
-      <div class=${classMap({ root: true, 'is-disabled': this.isDisabled })}>
-        <div class="row">
+      <!--
+        disabledOpacity dims the whole root, so the whole root is the inactive
+        user interface component WCAG 1.4.3 exempts from contrast. aria-disabled
+        says so on the element that dims, not only on the thumbs; without it the
+        dimmed value text reads to axe as failing text rather than as inactive.
+      -->
+      <div class=${classMap({ root: true, disabled })} aria-disabled=${ifDefined(disabled ? 'true' : undefined)}>
+        <div class="label-row">
           <ds-text
             id="label"
-            part="label" data-part="label"
+            part="label"
+            data-part="label"
             element="span"
             size="md"
             weight="medium"
             tone="default"
-            .overrides=${this.labelOverrides}
+            .overrides=${labelOverrides}
             >${this.label}</ds-text
           >
           ${this.showValue === 'always'
             ? html`<ds-text
-                part="valueText" data-part="valueText"
+                part="valueText"
+                data-part="valueText"
                 element="span"
                 size="sm"
                 tone="default"
-                aria-hidden="true"
-                .overrides=${this.valueOverrides}
-                >${valueText}</ds-text
+                .overrides=${valueOverrides}
+                >${this.valueLabel}</ds-text
               >`
             : nothing}
         </div>
-        <div>
+        <div class="track-column">
           <div
             class="track-area"
             @pointerdown=${this.handlePointerDown}
@@ -567,416 +611,465 @@ export class DsSlider extends LitElement {
           >
             <div part="track" data-part="track">
               <div
-                part="fill" data-part="fill"
-                style=${styleMap({ insetInlineStart: `${loPercent}%`, inlineSize: `${hiPercent - loPercent}%` })}
+                part="fill"
+                data-part="fill"
+                style=${styleMap({
+                  insetInlineStart: `${this.range ? this.percent(pair[0]) : 0}%`,
+                  inlineSize: `${this.percent(pair[1]) - (this.range ? this.percent(pair[0]) : 0)}%`,
+                })}
               ></div>
-              ${this.renderThumb(0)} ${this.range ? this.renderThumb(1) : nothing}
+              ${marks.length > 0
+                ? html`<div part="tickMarks" data-part="tickMarks" aria-hidden="true">
+                    ${marks.map(
+                      (mark) => html`<span
+                        class="mark"
+                        style=${styleMap({
+                          insetInlineStart: `calc(${this.percent(this.clamp(mark.value))}% - var(--ds-slider-mark-size) / 2)`,
+                        })}
+                      ></span>`,
+                    )}
+                  </div>`
+                : nothing}
+              ${this.renderThumb(0, pair, disabled, invalid, describedBy)}
+              ${this.range ? this.renderThumb(1, pair, disabled, invalid, describedBy) : nothing}
+              ${this.showValue === 'hover'
+                ? html`${this.renderBubble(0, pair, valueOverrides)}
+                  ${this.range ? this.renderBubble(1, pair, valueOverrides) : nothing}`
+                : nothing}
             </div>
           </div>
-          ${this.renderTickMarks()}
+          ${labelledMarks.length > 0
+            ? html`<div class="mark-labels" aria-hidden="true">
+                ${labelledMarks.map(
+                  (mark) => html`<span
+                    class="mark-label"
+                    style=${styleMap({ insetInlineStart: `${this.percent(this.clamp(mark.value))}%` })}
+                    ><ds-text element="span" size="xs" tone="muted" .overrides=${markOverrides}
+                      >${mark.label}</ds-text
+                    ></span
+                  >`,
+                )}
+              </div>`
+            : nothing}
         </div>
         ${this.description
           ? html`<ds-text
               id="description"
-              part="description" data-part="description"
+              part="description"
+              data-part="description"
               element="span"
               size="sm"
               tone="muted"
-              .overrides=${this.helperOverrides}
+              .overrides=${helperOverrides}
               >${this.description}</ds-text
             >`
           : nothing}
-        <div id="error" part="errorMessage" data-part="errorMessage" role="alert">${message
-          ? html`<ds-text element="span" size="sm" tone="danger" .overrides=${this.helperOverrides}
-              >${message}</ds-text
-            >`
-          : nothing}</div>
-      </div>
-    `;
-  }
-
-  private renderTickMarks(): TemplateResult | typeof nothing {
-    const marks = this.marks ?? [];
-    if (marks.length === 0) return nothing;
-    const labelled = marks.filter((mark) => Boolean(mark.label));
-    return html`
-      <div
-        part="tickMarks" data-part="tickMarks"
-        class=${classMap({ 'has-labels': labelled.length > 0 })}
-        aria-hidden="true"
-      >
-        ${marks.map(
-          (mark) =>
-            html`<span class="mark" style=${styleMap({ insetInlineStart: `${this.percentFor(mark.value)}%` })}></span>`,
-        )}
-        ${labelled.length > 0
-          ? html`<div class="mark-labels">
-              ${labelled.map(
-                (mark) => html`<span
-                  class="mark-label"
-                  style=${styleMap({ insetInlineStart: `${this.percentFor(mark.value)}%` })}
-                  ><ds-text element="span" size="xs" tone="muted" .overrides=${this.markLabelOverrides}
-                    >${mark.label}</ds-text
-                  ></span
-                >`,
-              )}
+        ${message
+          ? html`<div role="alert">
+              <ds-text
+                id="error"
+                part="errorMessage"
+                data-part="errorMessage"
+                element="span"
+                size="sm"
+                tone="danger"
+                .overrides=${helperOverrides}
+                >${message}</ds-text
+              >
             </div>`
           : nothing}
       </div>
     `;
   }
 
-  private renderThumb(index: number): TemplateResult {
-    const thumbValue = this.thumbValue(index);
-    const text = this.formatOne(thumbValue);
-    const [lo, hi] = this.range ? this.pairValue() : [Number(this.min), Number(this.max)];
-    // A range thumb's bounds are the live constraint from the other thumb.
-    const valueMin = this.range && index === 1 ? lo : Number(this.min);
-    const valueMax = this.range && index === 0 ? hi : Number(this.max);
-    const ariaLabel = this.range ? (index === 0 ? COPY_MINIMUM(this.label) : COPY_MAXIMUM(this.label)) : undefined;
-    const describedBy =
-      [this.description ? 'description' : '', this.visibleMessage() ? 'error' : ''].filter(Boolean).join(' ') ||
-      undefined;
-    const bubbleShown = this.draggingIndex === index || this.focusedIndex === index;
+  /**
+   * One thumb: the slider element itself, named by the label (single) or by the
+   * minimum/maximum copy (range), and bounded by the other thumb in a range.
+   */
+  private renderThumb(
+    index: 0 | 1,
+    pair: [number, number],
+    disabled: boolean,
+    invalid: boolean,
+    describedBy: string,
+  ): TemplateResult {
+    const current = pair[index];
+    const low = this.range && index === 1 ? pair[0] : this.minValue;
+    const high = this.range && index === 0 ? pair[1] : this.maxValue;
+    const thumbLabel = this.range
+      ? (index === 0 ? COPY.minimumLabel : COPY.maximumLabel).replace('{label}', this.label)
+      : undefined;
 
-    return html`
-      <div
-        class=${classMap({ 'is-active': this.draggingIndex === index })}
-        part="thumb" data-part="thumb"
-        role="slider"
-        tabindex="0"
-        aria-valuenow=${thumbValue}
-        aria-valuemin=${valueMin}
-        aria-valuemax=${valueMax}
-        aria-valuetext=${text}
-        aria-label=${ifDefined(ariaLabel)}
-        aria-labelledby=${ifDefined(this.range ? undefined : 'label')}
-        aria-describedby=${ifDefined(describedBy)}
-        aria-orientation="horizontal"
-        aria-disabled=${ifDefined(this.isDisabled ? 'true' : undefined)}
-        aria-invalid=${ifDefined(this.invalid ? 'true' : undefined)}
-        aria-required=${ifDefined(this.required ? 'true' : undefined)}
-        style=${styleMap({ insetInlineStart: `${this.percentFor(thumbValue)}%` })}
-        @keydown=${(event: KeyboardEvent) => this.handleKeydown(event, index)}
-        @keyup=${(event: KeyboardEvent) => this.handleKeyup(event, index)}
-        @focus=${() => {
-          this.focusedIndex = index;
-        }}
-        @blur=${() => {
-          if (this.focusedIndex === index) this.focusedIndex = null;
-        }}
-      >
-        <div class="knob"><div class="halo"></div></div>
-        ${this.showValue === 'hover'
-          ? html`<div part="bubble" data-part="bubble" class=${classMap({ 'is-shown': bubbleShown })} aria-hidden="true">
-              <ds-text element="span" size="sm" tone="default" .overrides=${this.valueOverrides}>${text}</ds-text>
-            </div>`
-          : nothing}
-      </div>
-    `;
+    return html`<div
+      id=${ifDefined(index === 0 ? this.id || 'thumb' : undefined)}
+      part="thumb"
+      data-part="thumb"
+      class=${classMap({ pressed: this.pressedIndex === index })}
+      role="slider"
+      tabindex="0"
+      aria-orientation="horizontal"
+      aria-valuenow=${String(current)}
+      aria-valuemin=${String(low)}
+      aria-valuemax=${String(high)}
+      aria-valuetext=${this.format(current)}
+      aria-label=${ifDefined(thumbLabel)}
+      aria-labelledby=${ifDefined(thumbLabel === undefined ? 'label' : undefined)}
+      aria-describedby=${ifDefined(describedBy || undefined)}
+      aria-disabled=${ifDefined(disabled ? 'true' : undefined)}
+      aria-invalid=${ifDefined(invalid ? 'true' : undefined)}
+      aria-required=${ifDefined(this.required ? 'true' : undefined)}
+      style=${styleMap({
+        insetInlineStart: `calc(${this.percent(current)}% - var(--size-target-comfortable) / 2)`,
+      })}
+      @keydown=${(event: KeyboardEvent) => this.handleKeydown(event, index)}
+      @keyup=${this.handleKeyup}
+      @focus=${() => this.handleThumbFocus(index)}
+      @blur=${() => this.handleThumbBlur(index)}
+    ></div>`;
+  }
+
+  /**
+   * The value bubble above a thumb under `show-value="hover"`. It stays
+   * rendered while inactive so `transition` can fade it, and is always
+   * aria-hidden: the thumb's `aria-valuetext` announces the same value.
+   */
+  private renderBubble(
+    index: 0 | 1,
+    pair: [number, number],
+    valueOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> | undefined,
+  ): TemplateResult {
+    const shown = this.pressedIndex === index || this.focusedIndex === index;
+    return html`<span
+      class=${classMap({ 'bubble-anchor': true, shown })}
+      aria-hidden="true"
+      style=${styleMap({ insetInlineStart: `${this.percent(pair[index])}%` })}
+      ><span part="bubble" data-part="bubble"
+        ><ds-text element="span" size="sm" tone="default" .overrides=${valueOverrides}
+          >${this.format(pair[index])}</ds-text
+        ></span
+      ></span
+    >`;
   }
 
   private get isDisabled(): boolean {
     return this.disabled || this.formDisabled;
   }
 
-  /** `value` when controlled, otherwise the internal value, then the default. */
-  private get resolvedValue(): SliderValue {
-    if (this.value !== undefined) return this.value;
-    if (this.internalValue !== undefined) return this.internalValue;
-    return this.fallbackValue;
+  private get minValue(): number {
+    return finite(this.min, 0);
   }
 
-  /** What `value` falls back to: `defaultValue`, else `min` (or `[min, max]`). Also the `required` baseline. */
-  private get fallbackValue(): SliderValue {
-    if (this.defaultValue !== undefined) return this.defaultValue;
-    return this.range ? [Number(this.min), Number(this.max)] : Number(this.min);
-  }
-
-  private pairValue(): [number, number] {
-    const value = this.resolvedValue;
-    return Array.isArray(value) ? value : [Number(this.min), Number(this.max)];
-  }
-
-  private singleValue(): number {
-    const value = this.resolvedValue;
-    return Array.isArray(value) ? value[0] : value;
-  }
-
-  private thumbValue(index: number): number {
-    return this.range ? this.pairValue()[index === 0 ? 0 : 1] : this.singleValue();
-  }
-
-  private formatOne(value: number): string {
-    return this.formatValue ? this.formatValue(value) : String(value);
-  }
-
-  private percentFor(value: number): number {
-    const min = Number(this.min);
-    const max = Number(this.max);
-    if (!(max > min)) return 0;
-    return ((this.clamp(value) - min) / (max - min)) * 100;
-  }
-
-  private clamp(value: number): number {
-    return Math.min(Number(this.max), Math.max(Number(this.min), value));
+  private get maxValue(): number {
+    const high = finite(this.max, 100);
+    return high > this.minValue ? high : this.minValue;
   }
 
   private get stepSize(): number {
-    const step = Number(this.step);
+    const step = finite(this.step, 1);
     return step > 0 ? step : 1;
   }
 
-  /** Nearest multiple of `step` from `min`, clamped to the bounds. */
-  private snapToStep(value: number): number {
-    const min = Number(this.min);
-    const step = this.stepSize;
-    const snapped = min + Math.round((value - min) / step) * step;
-    // Drop floating-point residue from fractional steps (0.1 * 3).
-    const decimals = (String(step).split('.')[1] ?? '').length;
-    return this.clamp(Number(snapped.toFixed(decimals)));
-  }
-
+  /** Mark values, clamped into the bounds and in ascending order. */
   private get markValues(): number[] {
-    return (this.marks ?? []).map((mark) => mark.value).sort((a, b) => a - b);
+    return (this.marks ?? []).map((mark) => this.clamp(mark.value)).sort((a, b) => a - b);
   }
 
-  /** Drag and click snap to the marks only with `snapToMarks`; otherwise to `step`. */
-  private snapPointerValue(value: number): number {
+  /** The displayed value: `value` when controlled, the uncontrolled value otherwise, always normalized. */
+  private get resolvedValue(): SliderValue {
+    return this.normalizeValue(this.value ?? this.internalValue ?? this.defaultValue);
+  }
+
+  /** The value the slider falls back to, which `required` compares against. */
+  private get pristineValue(): SliderValue {
+    return this.normalizeValue(this.defaultValue);
+  }
+
+  /** The value text beside the label: one formatted number, or the range copy. */
+  private get valueLabel(): string {
+    const current = this.resolvedValue;
+    return Array.isArray(current)
+      ? COPY.rangeText.replace('{low}', this.format(current[0])).replace('{high}', this.format(current[1]))
+      : this.format(current);
+  }
+
+  private format(value: number): string {
+    const formatter = this.formatValue;
+    return formatter ? formatter(value) : String(value);
+  }
+
+  private clamp(value: number): number {
+    return Math.min(this.maxValue, Math.max(this.minValue, value));
+  }
+
+  private percent(value: number): number {
+    const span = this.maxValue - this.minValue;
+    return span > 0 ? ((value - this.minValue) / span) * 100 : 0;
+  }
+
+  /**
+   * Clamp into the bounds, order a pair, and fill in the fallback for an absent
+   * value. Named `normalizeValue` because `normalize` is an HTMLElement member.
+   */
+  private normalizeValue(raw: SliderValue | undefined): SliderValue {
+    if (this.range) {
+      const pair: [number, number] = raw === undefined ? [this.minValue, this.maxValue] : toPair(raw);
+      const low = this.clamp(pair[0]);
+      const high = this.clamp(pair[1]);
+      return low <= high ? [low, high] : [high, low];
+    }
+    if (raw === undefined) return this.minValue;
+    return this.clamp(Array.isArray(raw) ? raw[0] : raw);
+  }
+
+  /** Snap a raw value to the marks (with `snapToMarks`) or to the step grid. */
+  private snap(raw: number): number {
+    const clamped = this.clamp(raw);
     const marks = this.markValues;
     if (this.snapToMarks && marks.length > 0) {
-      let nearest = marks[0]!;
+      let best = marks[0]!;
       for (const mark of marks) {
-        if (Math.abs(mark - value) < Math.abs(nearest - value)) nearest = mark;
+        if (Math.abs(mark - clamped) < Math.abs(best - clamped)) best = mark;
       }
-      return this.clamp(nearest);
+      return best;
     }
-    return this.snapToStep(value);
+    const step = this.stepSize;
+    const steps = Math.round((clamped - this.minValue) / step);
+    return this.clamp(roundTo(this.minValue + steps * step, decimalsIn(step)));
   }
 
-  /** Logical position on the track (mirrored in right-to-left) to a raw value. */
-  private valueAt(clientX: number): number {
-    const rect = this.trackEl?.getBoundingClientRect();
-    if (!rect || rect.width === 0) return Number(this.min);
-    let ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
-    if (getComputedStyle(this).direction === 'rtl') ratio = 1 - ratio;
-    return Number(this.min) + ratio * (Number(this.max) - Number(this.min));
-  }
-
-  private readonly handlePointerDown = (event: PointerEvent): void => {
-    if (this.isDisabled || event.button !== 0) return;
-    event.preventDefault();
-    const raw = this.valueAt(event.clientX);
-    let index = 0;
-    if (this.range) {
-      const [lo, hi] = this.pairValue();
-      const toLo = Math.abs(raw - lo);
-      const toHi = Math.abs(raw - hi);
-      // A tie (coincident thumbs) goes to the thumb on the side of the press.
-      index = toLo < toHi || (toLo === toHi && raw < lo) ? 0 : 1;
-    }
-    this.beginInteraction();
-    this.draggingIndex = index;
-    this.trackAreaEl?.setPointerCapture(event.pointerId);
-    this.moveThumb(index, this.snapPointerValue(raw));
-    this.renderRoot.querySelectorAll<HTMLElement>('[role="slider"]')[index]?.focus();
-  };
-
-  private readonly handlePointerMove = (event: PointerEvent): void => {
-    if (this.draggingIndex === null) return;
-    this.moveThumb(this.draggingIndex, this.snapPointerValue(this.valueAt(event.clientX)));
-  };
-
-  private readonly handlePointerUp = (event: PointerEvent): void => {
-    if (this.draggingIndex === null) return;
-    if (this.trackAreaEl?.hasPointerCapture(event.pointerId)) this.trackAreaEl.releasePointerCapture(event.pointerId);
-    this.draggingIndex = null;
-    this.endInteraction();
-  };
-
-  private handleKeydown(event: KeyboardEvent, index: number): void {
-    if (!NAV_KEYS.has(event.key)) return;
-    // Disabled: still focusable and readable, but the keys do nothing (and are not swallowed).
-    if (this.isDisabled) return;
-    event.preventDefault();
-    if (this.pendingKeyIndex !== index) this.beginInteraction();
-    this.pendingKeyIndex = index;
-    const current = this.thumbValue(index);
-    switch (event.key) {
-      case 'ArrowRight':
-      case 'ArrowUp':
-        this.moveThumb(index, this.snapToStep(current + this.stepSize));
-        break;
-      case 'ArrowLeft':
-      case 'ArrowDown':
-        this.moveThumb(index, this.snapToStep(current - this.stepSize));
-        break;
-      case 'PageUp':
-        this.moveThumb(index, this.pageTarget(current, 1));
-        break;
-      case 'PageDown':
-        this.moveThumb(index, this.pageTarget(current, -1));
-        break;
-      case 'Home':
-        this.moveThumb(index, Number(this.min));
-        break;
-      case 'End':
-        this.moveThumb(index, Number(this.max));
-        break;
-    }
-  }
-
-  private handleKeyup(event: KeyboardEvent, index: number): void {
-    if (this.pendingKeyIndex !== index || !NAV_KEYS.has(event.key)) return;
-    this.pendingKeyIndex = null;
-    this.endInteraction();
-  }
-
-  /** PageUp/PageDown: ten steps; with `snapToMarks`, the next mark, and past the last mark the bound. */
-  private pageTarget(current: number, direction: 1 | -1): number {
+  /** The first mark past `from` in `direction`; the bound itself past the last one. */
+  private markPast(from: number, direction: 1 | -1): number {
     const marks = this.markValues;
-    if (this.snapToMarks && marks.length > 0) {
-      const next = direction === 1 ? marks.find((v) => v > current) : [...marks].reverse().find((v) => v < current);
-      return this.clamp(next ?? (direction === 1 ? Number(this.max) : Number(this.min)));
-    }
-    return this.snapToStep(current + direction * PAGE_STEPS * this.stepSize);
+    if (direction > 0) return marks.find((mark) => mark > from) ?? this.maxValue;
+    return [...marks].reverse().find((mark) => mark < from) ?? this.minValue;
   }
 
-  /** Moves one thumb to an already-snapped value, keeping a range's thumbs from crossing. */
-  private moveThumb(index: number, target: number): void {
+  /** The live value of one thumb: the last emitted one inside an interaction, the displayed one otherwise. */
+  private thumbValue(index: 0 | 1): number {
+    return toPair(this.emitted ?? this.resolvedValue)[index];
+  }
+
+  /** Move one thumb, keeping a range ordered: neither thumb may cross the other. */
+  private setThumb(index: 0 | 1, raw: number): void {
     if (this.isDisabled) return;
-    let next: SliderValue;
-    if (this.range) {
-      const [lo, hi] = this.pairValue();
-      next = index === 0 ? [Math.min(target, hi), hi] : [lo, Math.max(target, lo)];
-      if (next[0] === lo && next[1] === hi) return;
-    } else {
-      if (target === this.singleValue()) return;
-      next = target;
+    const pair = toPair(this.emitted ?? this.resolvedValue);
+    const next = this.clamp(raw);
+    if (!this.range) {
+      this.emit(next);
+      return;
     }
-    this.interactionLast = next;
-    // Controlled: report only; the element shows the new value once `value` changes.
+    if (index === 0) this.emit([Math.min(next, pair[1]), pair[1]]);
+    else this.emit([pair[0], Math.max(next, pair[0])]);
+  }
+
+  /**
+   * Reports a changed value against the last one emitted in this interaction:
+   * an uncontrolled slider shows it at once, a controlled one once `value` is
+   * rebound.
+   */
+  private emit(next: SliderValue): void {
+    if (sameValue(next, this.emitted ?? this.resolvedValue)) return;
+    this.emitted = next;
+    this.interactionChanged = true;
     if (this.value === undefined) this.internalValue = next;
+    else this.requestUpdate();
     this.dispatchEvent(
       new CustomEvent<SliderChangeDetail>('change', { detail: { value: next }, bubbles: true, composed: true }),
     );
   }
 
-  private beginInteraction(): void {
-    this.interactionStart = this.resolvedValue;
-    this.interactionLast = null;
-  }
-
-  /** `change-end` once per interaction, only when it changed the value. */
+  /** Pointer up, key up: `change-end` fires once, and only for an interaction that moved the value. */
   private endInteraction(): void {
-    const start = this.interactionStart;
-    const last = this.interactionLast;
-    this.interactionStart = null;
-    this.interactionLast = null;
-    if (start === null || last === null || sameValue(start, last)) return;
+    const emitted = this.emitted;
+    const changed = this.interactionChanged;
+    this.emitted = undefined;
+    this.interactionChanged = false;
+    if (!changed || emitted === undefined) return;
     this.dispatchEvent(
-      new CustomEvent<SliderChangeDetail>('change-end', { detail: { value: last }, bubbles: true, composed: true }),
+      new CustomEvent<SliderChangeDetail>('change-end', { detail: { value: emitted }, bubbles: true, composed: true }),
     );
   }
 
-  private get labelOverrides(): Partial<Record<TextOverridableBinding, TokenRef | undefined>> {
-    return {
-      fontFamily: this.overrides?.fontFamily,
-      fontSize: this.overrides?.fontSize,
-      fontWeight: this.overrides?.labelWeight,
-    };
+  private handleKeydown(event: KeyboardEvent, index: 0 | 1): void {
+    if (this.isDisabled) return;
+    const step = this.stepSize;
+    const digits = decimalsIn(step);
+    const current = this.thumbValue(index);
+    switch (event.key) {
+      case 'ArrowRight':
+      case 'ArrowUp':
+        event.preventDefault();
+        this.setThumb(index, roundTo(current + step, digits));
+        break;
+      case 'ArrowLeft':
+      case 'ArrowDown':
+        event.preventDefault();
+        this.setThumb(index, roundTo(current - step, digits));
+        break;
+      case 'PageUp':
+        event.preventDefault();
+        this.setThumb(
+          index,
+          this.snapToMarks && this.markValues.length > 0
+            ? this.markPast(current, 1)
+            : roundTo(current + step * PAGE_STEPS, digits),
+        );
+        break;
+      case 'PageDown':
+        event.preventDefault();
+        this.setThumb(
+          index,
+          this.snapToMarks && this.markValues.length > 0
+            ? this.markPast(current, -1)
+            : roundTo(current - step * PAGE_STEPS, digits),
+        );
+        break;
+      case 'Home':
+        event.preventDefault();
+        this.setThumb(index, this.minValue);
+        break;
+      case 'End':
+        event.preventDefault();
+        this.setThumb(index, this.maxValue);
+        break;
+      default:
+        break;
+    }
   }
 
-  private get valueOverrides(): Partial<Record<TextOverridableBinding, TokenRef | undefined>> {
-    return { fontFamily: this.overrides?.fontFamily, fontSize: this.overrides?.valueSize };
+  private handleKeyup(): void {
+    this.endInteraction();
   }
 
-  private get markLabelOverrides(): Partial<Record<TextOverridableBinding, TokenRef | undefined>> {
-    return { fontFamily: this.overrides?.fontFamily, fontSize: this.overrides?.markLabelSize };
+  private handleThumbFocus(index: 0 | 1): void {
+    this.focusedIndex = index;
   }
 
-  private get helperOverrides(): Partial<Record<TextOverridableBinding, TokenRef | undefined>> {
-    return { fontFamily: this.overrides?.fontFamily, fontSize: this.overrides?.helperSize };
+  private handleThumbBlur(index: 0 | 1): void {
+    if (this.focusedIndex === index) this.focusedIndex = undefined;
+    // A key held while focus moves away still ends its interaction.
+    this.endInteraction();
   }
 
-  /** The error region: `error`, else the reported validation message, else `copy.invalid` while `invalid`. */
-  private visibleMessage(): string {
+  /** The thumb the press belongs to: the nearest one, the low thumb on a tie. */
+  private nearestThumb(target: number): 0 | 1 {
+    if (!this.range) return 0;
+    const [low, high] = toPair(this.resolvedValue);
+    if (target < low) return 0;
+    if (target > high) return 1;
+    return target - low <= high - target ? 0 : 1;
+  }
+
+  /** Pointer position → a snapped value; logical, so right-to-left mirrors. */
+  private valueFromPointer(clientX: number): number | undefined {
+    const track = this.trackEl;
+    if (!track) return undefined;
+    const rect = track.getBoundingClientRect();
+    if (rect.width === 0) return undefined;
+    let ratio = (clientX - rect.left) / rect.width;
+    if (getComputedStyle(this).direction === 'rtl') ratio = 1 - ratio;
+    return this.snap(this.minValue + ratio * (this.maxValue - this.minValue));
+  }
+
+  private handlePointerDown(event: PointerEvent): void {
+    if (this.isDisabled || !event.isPrimary) return;
+    const target = this.valueFromPointer(event.clientX);
+    if (target === undefined) return;
+    const index = this.nearestThumb(target);
+    // Keep the press from selecting text; focus moves to the thumb explicitly.
+    event.preventDefault();
+    this.pressedIndex = index;
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+    this.thumbAt(index)?.focus();
+    this.setThumb(index, target);
+  }
+
+  private handlePointerMove(event: PointerEvent): void {
+    const index = this.pressedIndex;
+    if (index === undefined || this.isDisabled) return;
+    const target = this.valueFromPointer(event.clientX);
+    if (target === undefined) return;
+    this.setThumb(index, target);
+  }
+
+  private handlePointerUp(event: PointerEvent): void {
+    if (this.pressedIndex === undefined) return;
+    const area = event.currentTarget as HTMLElement;
+    if (area.hasPointerCapture(event.pointerId)) area.releasePointerCapture(event.pointerId);
+    this.pressedIndex = undefined;
+    this.endInteraction();
+  }
+
+  private thumbAt(index: number): HTMLElement | null {
+    return this.renderRoot.querySelectorAll<HTMLElement>('[data-part="thumb"]')[index] ?? null;
+  }
+
+  /** Validity order: `error`, then a required miss, then `invalid`. */
+  private get message(): string | undefined {
     if (this.error) return this.error;
-    if (this.reportedMessage) return this.reportedMessage;
-    return this.invalid ? COPY_INVALID(this.label) : '';
+    if (this.valueMissing) return COPY.required.replace('{label}', this.label);
+    if (this.invalid) return COPY.invalid.replace('{label}', this.label);
+    return undefined;
   }
 
-  /** Validation in the form contract's order: required, then invalid. */
-  private messageFor(): string {
-    if (this.isDisabled) return '';
-    if (this.required && this.isAtDefault) return COPY_REQUIRED(this.label);
+  /** `copy.required` is not rendered standalone: it appears once validation reports it. */
+  private get displayedMessage(): string | undefined {
     if (this.error) return this.error;
-    return this.invalid ? COPY_INVALID(this.label) : '';
+    if (!this.invalid) return undefined;
+    return this.message;
   }
 
-  private get isAtDefault(): boolean {
-    return sameValue(this.fallbackValue, this.resolvedValue);
+  /** A required slider still sitting on its default has no value to submit. */
+  private get valueMissing(): boolean {
+    return this.required && sameValue(this.resolvedValue, this.pristineValue);
   }
 
-  private syncFormValue(): void {
-    if (this.isDisabled || !this.name) {
-      this.internals.setFormValue(null);
-      return;
-    }
-    const value = this.resolvedValue;
-    if (Array.isArray(value)) {
-      const data = new FormData();
-      data.append(this.name, String(value[0]));
-      data.append(this.name, String(value[1]));
-      this.internals.setFormValue(data);
-    } else {
-      this.internals.setFormValue(String(value));
-    }
-  }
-
-  private syncValidity(): void {
-    const message = this.messageFor();
-    // The registration and focus-on-error target is the (low) thumb.
-    const anchor = this.renderRoot?.querySelector<HTMLElement>('[role="slider"]') ?? undefined;
-    if (!message) {
-      this.internals.setValidity({});
-    } else if (this.required && this.isAtDefault) {
-      this.internals.setValidity({ valueMissing: true }, message, anchor);
-    } else {
-      this.internals.setValidity({ customError: true }, message, anchor);
-    }
+  private textOverrides(
+    forwarded: Partial<Record<TextOverridableBinding, TokenRef | undefined>>,
+  ): Partial<Record<TextOverridableBinding, TokenRef | undefined>> | undefined {
+    return this.overrides ? forwarded : undefined;
   }
 
   private applyOverrides(): void {
     for (const binding of Object.keys(HOOKS) as SliderOverridableBinding[]) {
+      const hook = HOOKS[binding];
+      if (hook === undefined) continue;
       const ref = this.overrides?.[binding];
-      if (ref === undefined) this.style.removeProperty(HOOKS[binding]);
-      else this.style.setProperty(HOOKS[binding], cssVar(ref));
+      if (ref === undefined) this.style.removeProperty(hook);
+      else this.style.setProperty(hook, cssVar(ref));
     }
   }
 
-  private warnInDev(changed: PropertyValues): void {
-    if (!import.meta.env.DEV) return;
-    if ((changed.has('min') || changed.has('max')) && !(Number(this.max) > Number(this.min))) {
-      console.warn(`<ds-slider> needs max (${this.max}) greater than min (${this.min}).`, this);
+  /** Mirror the value and validity into ElementInternals so an owning form sees them. */
+  private syncInternals(): void {
+    if (this.isDisabled) {
+      this.internals.setFormValue(null);
+      this.internals.setValidity({});
+      return;
     }
-    if (changed.has('range') || changed.has('value') || changed.has('defaultValue')) {
-      const value = this.value ?? this.defaultValue;
-      if (value !== undefined && this.range !== Array.isArray(value)) {
-        console.warn(
-          `<ds-slider${this.range ? ' range' : ''}> expects ${this.range ? 'a [low, high] pair' : 'a single number'} for value/defaultValue.`,
-          this,
-        );
+    const current = this.currentValue;
+    if (Array.isArray(current)) {
+      if (this.name) {
+        const data = new FormData();
+        for (const entry of current) data.append(this.name, entry);
+        this.internals.setFormValue(data);
+      } else {
+        this.internals.setFormValue(null);
       }
+    } else {
+      this.internals.setFormValue(current);
+    }
+    const anchor = this.thumbAt(0) ?? undefined;
+    if (this.error) {
+      this.internals.setValidity({ customError: true }, this.error, anchor);
+    } else if (this.valueMissing) {
+      this.internals.setValidity({ valueMissing: true }, COPY.required.replace('{label}', this.label), anchor);
+    } else if (this.invalid) {
+      this.internals.setValidity({ customError: true }, COPY.invalid.replace('{label}', this.label), anchor);
+    } else {
+      this.internals.setValidity({});
     }
   }
-}
-
-function sameValue(a: SliderValue, b: SliderValue): boolean {
-  if (Array.isArray(a) || Array.isArray(b)) {
-    return Array.isArray(a) && Array.isArray(b) && a[0] === b[0] && a[1] === b[1];
-  }
-  return a === b;
 }
 
 declare global {

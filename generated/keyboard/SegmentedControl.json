@@ -52,6 +52,16 @@
       "action": "Moves to and selects the last enabled segment.",
       "from": "first",
       "expect": "focus-last"
+    },
+    {
+      "keys": [
+        " ",
+        "Enter"
+      ],
+      "action": "Selects the focused segment. Each segment is a native button (web and Lit), so this is its own activation — the component adds no handler and nothing else is bound to these keys.",
+      "from": "first",
+      "expect": "manual",
+      "native": true
     }
   ]
 }

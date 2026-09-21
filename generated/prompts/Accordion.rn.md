@@ -84,7 +84,12 @@ component:
         `<ds-disclosure>` nor slotted by an item id are not rendered, and only child
         additions and removals are observed (changing an existing child''s `slot`
         attribute later is not). The optional field follows the package convention
-        for optional properties (`disabled?: boolean | undefined`).'
+        for optional properties (`disabled?: boolean | undefined`). `disabled` forwards
+        to the Disclosure''s own `disabled`: the section cannot be toggled, and its
+        trigger stays focusable and a tab stop (`aria-disabled`, not `disabled`),
+        so arrow keys and Home/End skip it on web and Lit. On React Native, which
+        has no arrow navigation, a disabled item differs only in that its trigger
+        does not respond to a press and carries `accessibilityState.disabled`.'
     headingLevel:
       type: enum
       values:
@@ -102,7 +107,11 @@ component:
       description: 'Opening one section closes the others. Off by default: users usually
         want to compare, and forced-closing is a common frustration. Turning it on
         while several sections are open trims the open set to the first open id without
-        firing any event or the development warning (the same as several ids in `value`/`defaultValue`).
+        firing any event. The development warning is about a declared set, not about
+        a trim: it fires whenever `exclusive` is on and the resolved `value`/`defaultValue`
+        holds more than one id — a standing controlled `value` is such a declaration
+        and keeps warning (once per distinct id list) as long as it holds several
+        ids — and never fires for the trim of sections a user opened while uncontrolled.
         "First" is array order: the order of `value`/`defaultValue`, and for uncontrolled
         state the order the sections were opened, not item order. Uncontrolled, the
         trim changes state for good, so turning `exclusive` off again does not reopen
@@ -120,7 +129,8 @@ component:
         default: defaultValue
     defaultValue:
       type: union
-      description: Initially open ids; the same shapes as `value`.
+      description: Initially open ids; the same shapes as `value`. Given both, `value`
+        controls and `defaultValue` is ignored, with no warning.
       shape: string | string[]
     divided:
       type: boolean
@@ -129,7 +139,10 @@ component:
     keepMounted:
       type: boolean
       default: false
-      description: Passed to every Disclosure; required when panels contain form fields.
+      description: 'Passed to every Disclosure; required when panels contain form
+        fields. Accordion-wide, like `headingLevel`: the `items` shape carries no
+        per-item override for either, so an accordion cannot keep only some panels
+        mounted.'
   events:
     onChange:
       description: Fired when the set of open sections changes, with the open ids
@@ -237,7 +250,10 @@ component:
       description: 'Passed to each composed Divider as its `color` override (always,
         even when it equals Divider''s default); Accordion writes no divider rule
         of its own. The Divider keeps its default `spacing: none`: `itemGap` is the
-        only space around it.'
+        only space around it, and its default `semantic: false`, so the dividers are
+        decorative and the accordion reads as a list of headings. Like `dividerWidth`
+        and `fontFamily`, this is an overridable hook even though it names no `part`:
+        all seven bindings are overridable, whether or not they carry one.'
       locked: false
     dividerWidth:
       token: border.width.thin
@@ -250,7 +266,8 @@ component:
         the `list` container (flex `gap` on web and Lit, the `gap` style on React
         Native), never on the Disclosure itself, so when `divided` the gap also falls
         between each item and its Divider — intended: the divider sits centred in
-        the space between items.'
+        the space between items. At the default `layout.gap.none` that space is zero,
+        so the centring is only observable through an `itemGap` override.'
       locked: false
     triggerPaddingBlock:
       token: space.md
@@ -317,7 +334,10 @@ component:
         The root <div> is the `list` part (`data-part="list"`). Each trigger is Disclosure's
         own inline trigger, so its hit area ends at the summary rather than spanning
         the row; Accordion does not stretch it (a full-width trigger needs a Disclosure
-        prop).
+        prop). Every forwarded binding reaches the child through its `overrides` prop,
+        not through a rule the accordion writes into the child, so `--ds-accordion-item-gap`
+        is the only hook a consumer can set from CSS; the other six are settable only
+        through Accordion's own `overrides`.
     lit:
       tag: ds-accordion
       reflect:
@@ -325,6 +345,7 @@ component:
       - prop: divided
         attribute: no-divided
       - heading-level
+      - keep-mounted
       notes: 'Light-DOM <ds-disclosure> children are the items (slot), so their content
         stays in the document; ds-accordion sets heading-level and keep-mounted on
         them, listens for their `toggle` to enforce exclusive, and handles arrow keys
@@ -343,7 +364,16 @@ component:
         or a `value` change opens or closes it, so a page listening to slotted children
         sees those as well as the accordion''s `open-change`; the `toggle` of disclosures
         rendered from `items` is stopped at the accordion, which reports `change`/`open-change`
-        instead. The trigger hit area ends at the summary, as on web.'
+        instead. The trigger hit area ends at the summary, as on web. The `ds-accordion
+        > ds-disclosure` address holds for the slotted form only: in `items` mode
+        the disclosures live in the accordion''s shadow root, so address them as `ds-accordion`''s
+        `shadowRoot.querySelectorAll(''ds-disclosure'')`. `change` is not stopped
+        from bubbling out of panel content either, so a page listening on `<ds-accordion>`
+        also receives the composed `change` of a field inside a panel; the accordion''s
+        own event is the one whose `detail` carries `openIds`, and a listener that
+        cares must check for it rather than assume every `change` is the accordion''s.
+        The generated keyboard gate runs against the `items` form (its story passes
+        `items`, matching the React story''s args), not the slotted form.'
     rn:
       element: View
       props: []
@@ -355,8 +385,13 @@ component:
         do nothing on react-native-web too. Native has no heading levels: `headingLevel`
         only gives each Disclosure summary `accessibilityRole="header"`, so every
         heading-level scenario renders the same tree and RN tests check the header
-        role, not a level. The `list` part is the root View, and `itemGap` is its
-        `gap` style.'
+        role, not a level. The `list` part is the root View (the root `testID="Accordion"`,
+        with no `Accordion.list` hook) and `itemGap` is its `gap` style; the `item`
+        part is each composed Disclosure root, and `trigger`, `triggerIcon` and `panel`
+        keep Disclosure''s own testIDs — Accordion adds no `Accordion.*` testID for
+        any inherited part. `keyboard` stays in the `onOpenChange` reason union for
+        parity with the other platforms but is never emitted here, and no keyboard
+        scenario is generated for this platform.'
     swiftui:
       element: VStack
       props:
@@ -443,6 +478,18 @@ component:
       - id: billing
         summary: Billing address
         content: Street and city fields.
+  - name: initially-open
+    description: An accordion that starts with one section open, uncontrolled from
+      there.
+    given:
+      defaultValue: setup
+      items:
+      - id: setup
+        summary: Getting set up
+        content: Install the package and add the provider.
+      - id: upgrade
+        summary: Upgrading
+        content: Read the migration notes before bumping a major.
   - name: undivided
     description: Sections without the hairline, for an accordion that already sits
       inside a Card.
@@ -494,6 +541,7 @@ component:
 - example `faq`, story `Faq`: given `items: [{"id":"cancel","summary":"What happens if I cancel?","content":"You keep access until the end of the billing period."},{"id":"refunds","summary":"Do you offer refunds?","content":"Within 14 days of a charge, in full."}]`; A list of questions, several of which can be open at once.
 - example `one-open-at-a-time`, story `OneOpenAtATime`: given `exclusive: true`, `items: [{"id":"free","summary":"Free","content":"One project and community support."},{"id":"pro","summary":"Pro","content":"Unlimited projects and email support."}]`; A comparison list where opening a section closes the rest.
 - example `form-sections`, story `FormSections`: given `keepMounted: true`, `headingLevel: "2"`, `items: [{"id":"contact","summary":"Contact details","content":"Name and email fields."},{"id":"billing","summary":"Billing address","content":"Street and city fields."}]`; Form sections whose panels stay mounted so the Form still collects the fields inside.
+- example `initially-open`, story `InitiallyOpen`: given `defaultValue: "setup"`, `items: [{"id":"setup","summary":"Getting set up","content":"Install the package and add the provider."},{"id":"upgrade","summary":"Upgrading","content":"Read the migration notes before bumping a major."}]`; An accordion that starts with one section open, uncontrolled from there.
 - example `undivided`, story `Undivided`: given `divided: false`, `items: [{"id":"shipping","summary":"Shipping","content":"Orders ship within two business days."},{"id":"returns","summary":"Returns","content":"Items can be returned within 30 days."}]`; Sections without the hairline, for an accordion that already sits inside a Card.
 
 ## Overrides (per-instance styling contract)
@@ -582,15 +630,20 @@ Each scenario below becomes one test. They are platform-neutral: `given` are pro
 ```yaml
 element: View
 props: []
-notes: 'A View of Disclosures with dividers; exclusive logic and headingLevel passed
-  through. Native has no key events on Pressable, so ArrowUp/Down/Home/End are not
-  implemented and `reason` is never `keyboard`; every trigger is an ordinary accessibility
-  focus stop reached by swipe, which is the native equivalent of the arrow shortcut.
-  No web-only key handler is added either, so arrow keys do nothing on react-native-web
-  too. Native has no heading levels: `headingLevel` only gives each Disclosure summary
-  `accessibilityRole="header"`, so every heading-level scenario renders the same tree
-  and RN tests check the header role, not a level. The `list` part is the root View,
-  and `itemGap` is its `gap` style.'
+notes: "A View of Disclosures with dividers; exclusive logic and headingLevel passed\
+  \ through. Native has no key events on Pressable, so ArrowUp/Down/Home/End are not\
+  \ implemented and `reason` is never `keyboard`; every trigger is an ordinary accessibility\
+  \ focus stop reached by swipe, which is the native equivalent of the arrow shortcut.\
+  \ No web-only key handler is added either, so arrow keys do nothing on react-native-web\
+  \ too. Native has no heading levels: `headingLevel` only gives each Disclosure summary\
+  \ `accessibilityRole=\"header\"`, so every heading-level scenario renders the same\
+  \ tree and RN tests check the header role, not a level. The `list` part is the root\
+  \ View (the root `testID=\"Accordion\"`, with no `Accordion.list` hook) and `itemGap`\
+  \ is its `gap` style; the `item` part is each composed Disclosure root, and `trigger`,\
+  \ `triggerIcon` and `panel` keep Disclosure's own testIDs \u2014 Accordion adds\
+  \ no `Accordion.*` testID for any inherited part. `keyboard` stays in the `onOpenChange`\
+  \ reason union for parity with the other platforms but is never emitted here, and\
+  \ no keyboard scenario is generated for this platform."
 ```
 
 ## Guidance
@@ -609,7 +662,7 @@ Do not use an Accordion for content most users need — show it. Do not use it a
 
 ## Behavior
 
-Each item is a Disclosure with a heading. Enter or Space toggles the focused item; with `exclusive`, opening one closes the others (closing does not open anything). Arrow keys, Home and End move focus among the triggers and wrap; Tab moves through triggers and open panel content in document order, since every trigger remains a tab stop. `onChange` receives the open ids. Disabled items are visible and skipped by arrows: arrow keys, Home and End never land on a disabled trigger, but they still work when focus starts on one (it remains a tab stop). `onOpenChange` reasons come from Disclosure's `onToggle(open, reason)` — `pointer` becomes `trigger`, `keyboard` stays `keyboard`, and Disclosure's `controlled` (the echo of the accordion setting `open`) is ignored — so `keyboard` is distinguishable from `trigger` on web and Lit (native always reports `trigger`). One toggle fires, in order: `onChange` with the new set, then `onOpenChange` for the toggled section, then one `onOpenChange(id, false, 'exclusive')` per section `exclusive` closed, in item order. With `exclusive` and several ids in `value`/`defaultValue`, the first is opened and a development warning notes the rest. Items are identified by `id` (on Lit, the slotted `<ds-disclosure>`'s `id` attribute). The `item` part is the composed Disclosure root itself — Accordion does not add a `data-part="item"` hook and must not wrap items in an extra element to carry one, since Dividers are direct siblings of the items (on web and React Native; on Lit they sit between per-item slots in the shadow root, see its notes); address an item as `[data-ds="Accordion"] > [data-ds="Disclosure"]`. The `trigger`, `triggerIcon` and `panel` parts are tagged by Disclosure. Nothing open is `[]` or `''`, never `undefined`. `reason: 'controlled'` is reported when `value` arrives holding a set the accordion did not itself just emit; a controlled parent that answers a trigger with some other set therefore sees `controlled`, which is the intended reading. The just-emitted set is compared only with the next `value` change and then cleared, as Disclosure does for `open`: a parent that ignores `onChange` leaves it pending until `value` next changes, and a change caused only by toggling `exclusive` does not consume it. A `controlled` `value` change fires `onOpenChange` only for sections whose open state actually changed, in item order; a `value` that resolves to the set already shown (for example several ids trimmed back to the same one under `exclusive`) fires nothing. Events fire from the toggle handler with the new set as the payload, in controlled and uncontrolled mode alike; they do not wait for the re-render. Every forward (to Disclosure and to Divider) always carries the resolved token — the consumer's override, else the Accordion default — even when it equals the child's own default. An item's `id` is the accordion's key, not a DOM id: on web and React Native each Disclosure generates its own element ids, so two accordions with the same item ids never collide. On Lit, `value`/`defaultValue` are the only source of the open set: a slotted `<ds-disclosure>`'s own `open` or `default-open` attribute is overwritten, not read.
+Each item is a Disclosure with a heading. Enter or Space toggles the focused item; with `exclusive`, opening one closes the others (closing does not open anything). Arrow keys, Home and End move focus among the triggers and wrap; Tab moves through triggers and open panel content in document order, since every trigger remains a tab stop. `onChange` receives the open ids. Disabled items are visible and skipped by arrows: arrow keys, Home and End never land on a disabled trigger, but they still work when focus starts on one (it remains a tab stop). `onOpenChange` reasons come from Disclosure's `onToggle(open, reason)` — `pointer` becomes `trigger`, `keyboard` stays `keyboard`, and Disclosure's `controlled` (the echo of the accordion setting `open`) is ignored — so `keyboard` is distinguishable from `trigger` on web and Lit (native always reports `trigger`). One toggle fires, in order: `onChange` with the new set, then `onOpenChange` for the toggled section, then one `onOpenChange(id, false, 'exclusive')` per section `exclusive` closed, in item order. With `exclusive` and several ids in `value`/`defaultValue`, the first is opened and a development warning notes the rest, once per distinct id list; the warning is a development aid, not copy, so its wording is not contract — only the condition and the frequency are. Arrow keys, Home and End are live only when the event target is one of the triggers, so a key pressed inside an open panel is left to the page; when every item is disabled the key is left unhandled too, rather than trapping focus. Because a disabled trigger stays focusable, a keyboard scenario must not include disabled items — the `from: first`/`from: last` index would otherwise count one. Items are identified by `id` (on Lit, the slotted `<ds-disclosure>`'s `id` attribute). The `item` part is the composed Disclosure root itself — Accordion does not add a `data-part="item"` hook and must not wrap items in an extra element to carry one, since Dividers are direct siblings of the items (on web and React Native; on Lit they sit between per-item slots in the shadow root, see its notes); address an item as `[data-ds="Accordion"] > [data-ds="Disclosure"]`. The `trigger`, `triggerIcon` and `panel` parts are tagged by Disclosure. Nothing open is `[]` or `''`, never `undefined`. `reason: 'controlled'` is reported when `value` arrives holding a set the accordion did not itself just emit; a controlled parent that answers a trigger with some other set therefore sees `controlled`, which is the intended reading. The just-emitted set is compared only with the next `value` change and then cleared, as Disclosure does for `open`: a parent that ignores `onChange` leaves it pending until `value` next changes, and a change caused only by toggling `exclusive` does not consume it. A `controlled` `value` change fires `onOpenChange` only for sections whose open state actually changed, in item order; a `value` that resolves to the set already shown (for example several ids trimmed back to the same one under `exclusive`) fires nothing. That is one pass over `items`: opens and closes are not grouped by direction, they interleave in item order. An id in `value`/`defaultValue` that matches no item is silently ignored — it reports nothing and opens nothing — and duplicate ids in `items` are not detected; neither warns. Only a `value` change is diffed, so replacing `items` while controlled reports nothing, even for an added id whose open state differs. Replacing `items` never prunes the open set either: an id whose section is gone stays in it, matching nothing, and opens that section again if the item returns. Events fire from the toggle handler with the new set as the payload, in controlled and uncontrolled mode alike; they do not wait for the re-render. Every forward (to Disclosure and to Divider) always carries the resolved token — the consumer's override, else the Accordion default — even when it equals the child's own default. An item's `id` is the accordion's key, not a DOM id: on web and React Native each Disclosure generates its own element ids, so two accordions with the same item ids never collide. On Lit, `value`/`defaultValue` are the only source of the open set: a slotted `<ds-disclosure>`'s own `open` or `default-open` attribute is overwritten, not read.
 
 ## Content guidelines
 

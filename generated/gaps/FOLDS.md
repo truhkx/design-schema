@@ -2774,3 +2774,58 @@ One line per decision: `<date> <Component> <platform>: <gap> → <what the doc n
 2026-09-21 SettingsPage lit: Toast shown as a node in the structure → removed; it is raised with toast(), no dedupe
 2026-09-21 SettingsPage rn: unset Tabs fit and Fieldset gap → fit=fill and gap=normal on all five Fieldsets
 2026-09-21 SettingsPage rn: the danger Alert's live value → off; it is present when the panel mounts
+2026-09-21 Tooltip web: Escape keyboard rule matches no trigger and never closes → from: any, target: popup on the rule
+2026-09-21 Tooltip web: where the visually-hidden role=tooltip span lives → sibling right after the trigger, never a composite item
+2026-09-21 Tooltip web: what property a duration probe reads back → transition-duration, as a length reads padding-left
+2026-09-21 Tooltip web: is blur hiding delayed like pointer-leave → yes, one shared pointerGrace timer
+2026-09-21 Tooltip web: typography hooks or forward-only to Text → forward-only, stated on all three bindings
+2026-09-21 Tooltip web: describes false when the child label differs → tooltip text wins, no warning
+2026-09-21 Tooltip web: warm window per Toolbar or global → module-global on every platform
+2026-09-21 Tooltip web: warm-toolbar example names an inexpressible sibling trigger → sibling dropped from children, kept in the description
+2026-09-21 Tooltip lit: which element carries the resolved flipped side → data-placement on the bubble, in web attributes
+2026-09-21 Tooltip lit: non-focusable child warning cannot read a custom element → warns only for a plain element with negative tabindex
+2026-09-21 Tooltip lit: probe element for resolving constants → the existing hidden node, not an appended probe
+2026-09-21 Tooltip lit: placement enum stories render nothing visible → the four placement stories render open
+2026-09-21 Tooltip rn: does an override replace the whole times-3 expression → no, (override ?? space.20) × 3
+2026-09-21 Tooltip rn: what re-arms an Escape dismissal with no hover → onPressOut, the last of press/hover/focus ending
+2026-09-21 Tooltip rn: does long-press show a controlled tooltip → no, open is authoritative everywhere
+2026-09-21 Tooltip rn: press-out versus still-held hover on hybrid devices → press-out hides unless hover or focus remains
+2026-09-21 Tooltip rn: layer.toast promised but no native portal → limit stated, honoured within its own window only
+2026-09-21 Tooltip rn: no ref contradicts the platform root-ref rule → no ref on any platform, stated as an override
+2026-09-21 Tooltip rn: what the Keyboard story contains for a one-child overlay → three sibling triggers, the first open
+2026-09-21 FocusScope web: does jsdom propagate :disabled through a disabled fieldset → yes, the tests exercise it
+2026-09-21 FocusScope web: reactivated scope above non-descendants versus below its descendants → containment wins, re-inserted at its mount position
+2026-09-21 FocusScope web: does "after an ancestor" include focusables inside it → yes, document order as compareDocumentPosition reports it
+2026-09-21 FocusScope lit: the scope part on the wrapper or the anchor → the anchor on Lit, the wrapper elsewhere
+2026-09-21 FocusScope lit: pull-back target when the last descendant is gone → first descendant, then the container wrapper, then nothing
+2026-09-21 FocusScope lit: are ineffective sentinels removed from the DOM → no, tabindex -1 is enough
+2026-09-21 FocusScope lit: returnFocusTo shape is a React Native type → shape is a cross-platform sketch, not an emitted type
+2026-09-21 FocusScope rn: stories need a trigger the scope outlives → Open/Close panel scaffolding named as story machinery
+2026-09-21 FocusScope rn: which of the three Keyboard Buttons acts → Third closes the panel on rn
+2026-09-21 FocusScope rn: example Button variants unstated → Accept is primary, the rest default
+2026-09-21 FocusScope rn: how react-native-web is detected for accessibilityViewIsModal → Platform.OS web, with no scenario covering it
+2026-09-21 FocusScope rn: no empty-scope dev warning on native → stated as a limit of having no walker
+2026-09-21 FocusScope rn: Keyboard story ships but Tab escapes on react-native-web → expected result of the limit, not a failure
+2026-09-21 Toast lit: onDismiss after the exit transition is untestable → it fires when the toast begins to leave
+2026-09-21 Toast lit: which element carries role and name on Lit → the toast part inside the shadow root
+2026-09-21 Toast lit: focus() on a toast needs delegatesFocus → sanctioned, with the click-focuses-action side effect
+2026-09-21 Toast lit: how a declarative toast starts → entered, with enterOffset in @starting-style
+2026-09-21 Toast lit: duration default marked assigned by story meta args → meta args never carry duration
+2026-09-21 Toast lit: does the Lit region wait an animation frame → yes, as on web, with the same dismiss caveat
+2026-09-21 Toast web: ToastRegion has no data-ds, part or props → ToastRegion, region part, one container prop
+2026-09-21 Toast web: ordering of the restore for a replaced toast → at unmount, only while focus is still inside
+2026-09-21 Toast web: is the F6 origin per region, toast or global → one per document, overwritten on each entry
+2026-09-21 Toast web: restore target when focus never came from outside → the same next-then-previous focusable fallback
+2026-09-21 Toast web: is the exit time runtime-resolved like the durations → yes, and unresolvable means instant
+2026-09-21 Toast web: auto-mounted region's own root and SSR → client-only, called from a handler not a render
+2026-09-21 Toast web: Keyboard story cannot have three focusables → trigger plus two action toasts, second danger
+2026-09-21 Toast web: no ref contradicts the platform root-ref rule → no ref on any platform, stated as an override
+2026-09-21 Toast rn: region aria-label on a role-less div fails axe → the region View takes role region
+2026-09-21 Toast rn: root role for a polite toast on native → accessibilityRole alert for danger only, not accessible
+2026-09-21 Toast rn: what mechanism pauses timers while touched → root touch handlers, never a Pressable wrapper
+2026-09-21 Toast rn: declared element View but enter needs animation → the root is an Animated.View
+2026-09-21 Toast rn: exiting toasts not observable in the stack count → only provider-marked exits are excluded
+2026-09-21 Toast rn: minTarget is locked but lands nowhere → the minimum block size of the toast row
+2026-09-21 Toast rn: region keys in a single overrides union → a region binding group; no-ops on a standalone Toast
+2026-09-21 Toast rn: does the persistent fallback exist on native → only a resolved 0, the token is always a number
+2026-09-21 Toast rn: does the dev warning re-fire on short to long → yes, each time the case is entered

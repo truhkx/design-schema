@@ -20,7 +20,7 @@ import type { CheckboxChangeDetail, DsCheckbox } from './Checkbox.js';
 import type { DatePickerOverridableBinding, DsDatePicker } from './DatePicker.js';
 import type { DsInput, InputOverridableBinding } from './Input.js';
 import type { DsNumberInput, NumberInputOverridableBinding } from './NumberInput.js';
-import type { DsSelect, SelectOverridableBinding } from './Select.js';
+import type { DsSelect, SelectOpenChangeDetail, SelectOverridableBinding } from './Select.js';
 
 /** A single record. `id` must be stable across renders. */
 export interface DataGridRow {
@@ -365,6 +365,12 @@ export class DsDataGrid extends LitElement {
       --ds-data-grid-transition: var(--motion-duration-fast);
       /* rowHeight (locked); rowHeightComfortable below. Virtualization measures a rendered row instead. */
       --ds-data-grid-row-size: var(--size-target-min);
+      /*
+       * selectColumnWidth (locked): the selection column's total inline size is the token plus 2 × cellPaddingInline,
+       * and the cell carries no inline padding of its own — the Checkbox is centred in it. Pinned-start offsets add
+       * the same total.
+       */
+      --ds-data-grid-select-column-size: calc(var(--size-target-min) + 2 * var(--ds-data-grid-cell-padding-inline));
       font-family: var(--ds-data-grid-font-family);
       font-size: var(--ds-data-grid-font-size);
       line-height: var(--ds-data-grid-line-height);
@@ -393,8 +399,10 @@ export class DsDataGrid extends LitElement {
       border: 0;
     }
 
+    /* surface (locked) */
     [data-part='container'] {
       position: relative;
+      background: var(--color-background);
     }
     /*
      * viewport and fixed size the whole component; the scroll region takes what the caption and status bar leave,
@@ -425,8 +433,7 @@ export class DsDataGrid extends LitElement {
     [data-part='scrollRegion'] {
       position: relative;
       overflow: auto;
-      /* surface (locked) */
-      background: var(--color-background);
+      /* surface is on the container, which paints behind this region. */
       border: var(--ds-data-grid-grid-line-width) solid var(--ds-data-grid-grid-line);
     }
     :host([height='viewport']) [data-part='scrollRegion'],
@@ -558,7 +565,20 @@ export class DsDataGrid extends LitElement {
     .select-all-cell {
       justify-content: center;
       padding-inline: 0;
-      min-inline-size: var(--size-target-min);
+      min-inline-size: var(--ds-data-grid-select-column-size);
+    }
+    /*
+     * minTarget (locked) answers the target-24px requirement for the composed Checkbox. A compact row is
+     * rowHeight -- size.target.min -- tall, so two neighbouring select Checkboxes sit exactly one minimum
+     * target apart; with Checkbox's own smaller control that leaves no safe clickable space between them,
+     * every selectable grid fails the target-size rule. The grid raises the child's documented controlSize
+     * hook to the minimum instead of restyling its shadow tree, so the control is a full target in its own
+     * right. The hook is set on the ds-checkbox element, not on the cell: an inherited value would lose to
+     * Checkbox's own :host default.
+     */
+    [data-part='selectCell'],
+    [data-part='selectAllCell'] {
+      --ds-checkbox-control-size: var(--size-target-min);
     }
 
     .pinned-start,
@@ -665,10 +685,6 @@ export class DsDataGrid extends LitElement {
     .status-bar ds-text {
       --ds-text-font-size: var(--ds-data-grid-status-bar-size);
     }
-    /* The position sits at the trailing edge; everything else reads from the start. */
-    .status-bar .trailing {
-      margin-inline-start: auto;
-    }
 
     /* minTarget (locked) and the overridable resizeStep / columnWidth read as lengths, never as numbers in code. */
     .probe {
@@ -763,6 +779,8 @@ export class DsDataGrid extends LitElement {
   /** The range anchor survives Escape: with the range cleared, plain navigation keys only move it. */
   @state() private accessor rangeAnchor: CellPos | null = null;
   @state() private accessor editing: EditingState | undefined;
+  /** A select editor's popup, which the grid opens with the editor. */
+  @state() private accessor selectOpen = false;
   @state() private accessor columnWidths: Record<string, number> = {};
   @state() private accessor message = '';
   @state() private accessor bodyScrollTop = 0;
@@ -875,7 +893,9 @@ export class DsDataGrid extends LitElement {
             tabindex="0"
             style=${styleMap({ inlineSize: `max(100%, ${layout.width})` })}
             aria-labelledby="caption"
-            aria-describedby=${ifDefined(this.overflowX && !this.scrolledX ? 'scroll-hint' : undefined)}
+            aria-describedby=${ifDefined(
+              this.showStatusBar && this.overflowX && !this.scrolledX ? 'scroll-hint' : undefined,
+            )}
             aria-rowcount=${total + 1}
             aria-colcount=${this.colCount}
             aria-multiselectable=${ifDefined(
@@ -895,7 +915,7 @@ export class DsDataGrid extends LitElement {
           >
             ${this.renderHeader(layout)}
             <div role="rowgroup" data-part="body" style=${styleMap(bodyStyle)}>
-              ${rows.length === 0 ? this.renderEmpty() : nothing} ${this.renderRangeOverlay(rows)}
+              ${rows.length === 0 && !this.loading ? this.renderEmpty() : nothing} ${this.renderRangeOverlay(rows)}
               ${repeat(
                 this.windowIndexes(rows.length),
                 (index) => rows[index]!.id,
@@ -971,7 +991,11 @@ export class DsDataGrid extends LitElement {
     const active = this.currentSort;
     const sorted = active?.column === column.key ? active.direction : undefined;
     const next: DataGridSortDirection = sorted === 'ascending' ? 'descending' : 'ascending';
-    const width = this.widthOf(column);
+    /*
+     * aria-valuenow is set only once the column has a pixel width — an explicit `width` or one the user has
+     * resized — and omitted while it sits at the columnWidth token, whose pixel value is not known at render.
+     */
+    const pixelWidth = this.columnWidths[column.key] ?? column.width;
     return html`<div
       role="columnheader"
       id="h-${col}"
@@ -1015,7 +1039,7 @@ export class DsDataGrid extends LitElement {
             class=${classMap({ 'resize-handle': true, dragging: this.draggingColumn === column.key })}
             role="separator"
             aria-orientation="vertical"
-            aria-valuenow=${width}
+            aria-valuenow=${ifDefined(pixelWidth === undefined ? undefined : this.widthOf(column))}
             aria-label=${COPY_RESIZE(column.header)}
             @pointerdown=${(event: PointerEvent) => this.handleResizeDown(event, column)}
             @pointermove=${this.handleResizeMove}
@@ -1142,6 +1166,7 @@ export class DsDataGrid extends LitElement {
         break;
       }
       case 'select':
+        /* The popup opens at once, and closing it without a choice cancels the edit. */
         editor = html`<ds-select
           data-part="editor"
           label=${column.header}
@@ -1149,7 +1174,19 @@ export class DsDataGrid extends LitElement {
           size="sm"
           .options=${column.options ?? []}
           .defaultValue=${value === undefined ? undefined : String(value)}
+          .open=${this.selectOpen}
           .overrides=${SELECT_INSET}
+          @open-change=${(event: CustomEvent<SelectOpenChangeDetail>) => {
+            event.stopPropagation();
+            if (event.detail.open) {
+              return;
+            }
+            this.selectOpen = false;
+            /* A choice commits on `change` first, so by here the edit is already closed. */
+            if (this.editing) {
+              this.cancelEdit();
+            }
+          }}
           @change=${(event: Event) => {
             event.stopPropagation();
             this.commitAndReturn(0);
@@ -1243,6 +1280,9 @@ export class DsDataGrid extends LitElement {
    * The visible counterpart of the live region. Only the leading span is `role="status"`, so the row count, the
    * selection count, `copy.scrollHint` and `copy.position` are shown but never announced — `aria-rowindex` and
    * `aria-colindex` already carry position, and a polite region on every arrow press would be noise.
+   *
+   * The items follow in this order and no other, with no separator characters between them. With `showStatusBar`
+   * false the bar stays in the DOM, visually hidden, holding only the live span.
    */
   private renderStatusBar(rows: DataGridRow[], total: number): TemplateResult {
     const error = this.editing?.error;
@@ -1263,11 +1303,11 @@ export class DsDataGrid extends LitElement {
         ? html`<ds-text element="span" size="xs" tone="muted">${COPY_ROW_COUNT[pluralForm(total)](total)}</ds-text>
             ${selection ? html`<ds-text element="span" size="xs" tone="muted">${selection}</ds-text>` : nothing}`
         : nothing}
-      ${this.overflowX && !this.scrolledX
+      ${this.showStatusBar && this.overflowX && !this.scrolledX
         ? html`<ds-text id="scroll-hint" element="span" size="xs" tone="muted">${COPY_SCROLL_HINT}</ds-text>`
         : nothing}
       ${this.showStatusBar && position
-        ? html`<ds-text class="trailing" element="span" size="xs" tone="muted">${position}</ds-text>`
+        ? html`<ds-text element="span" size="xs" tone="muted">${position}</ds-text>`
         : nothing}
     </div>`;
   }
@@ -1335,8 +1375,8 @@ export class DsDataGrid extends LitElement {
     const tracks = widths.map((width) => `${width}px`);
     if (this.hasSelectColumn) {
       return {
-        columns: ['var(--size-target-min)', ...tracks].join(' '),
-        width: `calc(var(--size-target-min) + ${sum}px)`,
+        columns: ['var(--ds-data-grid-select-column-size)', ...tracks].join(' '),
+        width: `calc(var(--ds-data-grid-select-column-size) + ${sum}px)`,
       };
     }
     return { columns: tracks.join(' '), width: `${sum}px` };
@@ -1364,7 +1404,9 @@ export class DsDataGrid extends LitElement {
         }
       }
       return {
-        insetInlineStart: this.hasSelectColumn ? `calc(var(--size-target-min) + ${offset}px)` : `${offset}px`,
+        insetInlineStart: this.hasSelectColumn
+          ? `calc(var(--ds-data-grid-select-column-size) + ${offset}px)`
+          : `${offset}px`,
       };
     }
     if (column.pinned === 'end') {
@@ -1624,6 +1666,7 @@ export class DsDataGrid extends LitElement {
       column: column.key,
       seed: kind === 'text' || kind === 'number' ? seed : undefined,
     };
+    this.selectOpen = kind === 'select';
     this.message = COPY_EDITING(column.header);
     void this.updateComplete.then(() => {
       this.renderRoot.querySelector<HTMLElement>('[data-part="editor"]')?.focus();
@@ -1671,6 +1714,7 @@ export class DsDataGrid extends LitElement {
     }
     const previous = cellValue(row[column.key]);
     this.editing = undefined;
+    this.selectOpen = false;
     this.message = '';
     /* Reported only when the committed value differs; `validate` still ran on an unchanged commit. */
     if (!Object.is(value, previous)) {
@@ -1681,6 +1725,7 @@ export class DsDataGrid extends LitElement {
 
   private cancelEdit(): void {
     this.editing = undefined;
+    this.selectOpen = false;
     this.message = '';
     this.focusGrid();
   }
@@ -1841,7 +1886,8 @@ export class DsDataGrid extends LitElement {
         break;
       case 'Delete':
       case 'Backspace':
-        handled = this.editable;
+        /* Clearing needs both `editable` and a selection; `none` mode clears nothing and keeps the key. */
+        handled = this.editable && this.selectable !== 'none';
         if (handled) {
           this.clearSelection();
         }
@@ -2112,6 +2158,9 @@ export class DsDataGrid extends LitElement {
       if (row) {
         this.toggleRow(row.id);
       }
+    } else if (this.hasSelectColumn && !body && pos.col === 0) {
+      /* A click anywhere on the selectAllCell toggles its Checkbox, as one on a selectCell does. */
+      this.toggleAll();
     }
     this.focusGrid();
   }

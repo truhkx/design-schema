@@ -52,6 +52,12 @@ const COPY = {
 const TYPEAHEAD_RESET = 500; // literal-ok: constants.typeaheadReset, 500 ms
 
 /**
+ * `defaultExpanded: ["*"]` — every node whose `children` is a non-empty array, now or once loaded, and
+ * never a `"lazy"` node. Reserved as the sentinel, so a node whose id is literally `"*"` never matches it.
+ */
+const EXPAND_ALL = '*';
+
+/**
  * Style bindings that can be overridden per instance; the accessibility-bearing bindings (rowHeight,
  * rowSelected, rowSelectedBorder, rowSelectedBorderWidth, labelColor, iconColor, badgeColor,
  * expandButtonSize, checkboxBorder, checkboxSelected, checkboxMark, minTarget, focusRing,
@@ -143,23 +149,34 @@ function allNodes(nodes: TreeNode[], out: TreeNode[] = []): TreeNode[] {
   return out;
 }
 
-/** The ids a selection toggle touches: the node, plus its enabled descendants when cascading. */
-function cascadeIds(node: TreeNode, cascade: boolean): string[] {
-  if (!cascade) return [node.id];
-  const ids = [node.id];
-  for (const descendant of allNodes(loadedChildren(node))) if (!descendant.disabled) ids.push(descendant.id);
-  return ids;
+/**
+ * Every enabled loaded descendant. A disabled node is skipped as a target but does not wall off its
+ * subtree — the walk carries on through it — and a `"lazy"` subtree contributes nothing until loaded.
+ */
+function enabledDescendants(node: TreeNode): TreeNode[] {
+  return allNodes(loadedChildren(node)).filter((descendant) => !descendant.disabled);
 }
 
-/** With `selectChildren`, a parent is selected exactly when every enabled child is. */
+/** The ids a selection toggle touches: the node, plus its enabled loaded descendants when cascading. */
+function cascadeIds(node: TreeNode, cascade: boolean): string[] {
+  if (!cascade) return [node.id];
+  return [node.id, ...enabledDescendants(node).map((descendant) => descendant.id)];
+}
+
+/**
+ * With `selectChildren`, a parent's id is in `selected` exactly when all its enabled loaded descendants
+ * are, so unchecking any descendant removes it and every ancestor id. A parent with no enabled loaded
+ * descendants at all behaves as a leaf and keeps only whatever its own id already carried.
+ */
 function normalizeCascade(nodes: TreeNode[], set: Set<string>): void {
   for (const node of nodes) {
     const children = loadedChildren(node);
     if (children.length === 0) continue;
     normalizeCascade(children, set);
-    const enabled = children.filter((child) => !child.disabled);
-    if (enabled.length === 0 || node.disabled) continue;
-    if (enabled.every((child) => set.has(child.id))) set.add(node.id);
+    if (node.disabled) continue;
+    const descendants = enabledDescendants(node);
+    if (descendants.length === 0) continue;
+    if (descendants.every((descendant) => set.has(descendant.id))) set.add(node.id);
     else set.delete(node.id);
   }
 }
@@ -177,9 +194,18 @@ export interface TreeProps extends Omit<ComponentPropsWithoutRef<'div'>, 'childr
    * `children: "lazy"` loads on first expand through `onExpand`.
    */
   nodes: TreeNode[];
-  /** Controlled expanded ids. */
+  /**
+   * Controlled expanded ids. A still-`"lazy"` id here is held closed until the user opens it, exactly as in
+   * `defaultExpanded` — the id stays in the array the caller passed and in what onExpandChange reports, but
+   * the node does not render open and fires no onExpand.
+   */
   expanded?: string[] | undefined;
-  /** Initially expanded ids; `["*"]` for all. */
+  /**
+   * Initially expanded ids. `["*"]` opens every node whose `children` is a non-empty array and never a
+   * `"lazy"` node; `"*"` is reserved as that sentinel, so a node whose id is literally `"*"` is never matched
+   * by it. A lazy id listed explicitly stays closed until the user opens it (onExpand only fires for user
+   * acts), and the same rule covers the controlled `expanded`.
+   */
   defaultExpanded?: string[] | undefined;
   /**
    * `single`: one current node (the usual for navigation and pickers). `multiple`: checkbox-like
@@ -249,37 +275,65 @@ export function Tree({
     buffer: '',
     timer: undefined,
   });
-  const requestedLazy = useRef(new Set<string>());
 
   const everyNode = useMemo(() => allNodes(nodes), [nodes]);
   const nodeById = useMemo(() => new Map(everyNode.map((node) => [node.id, node])), [everyNode]);
 
   /* ---------- expansion (controlled or uncontrolled) ---------- */
-  const [internalExpanded, setInternalExpanded] = useState<string[]>(() =>
-    defaultExpanded?.includes('*')
-      ? // `*` opens every loaded parent; lazy nodes wait for a user expand, which is when onExpand fires.
-        allNodes(nodes)
-          .filter((node) => Array.isArray(node.children) && node.children.length > 0)
-          .map((node) => node.id)
-      : (defaultExpanded ?? []),
-  );
-  const expandedIds = expanded ?? internalExpanded;
-  const expandedSet = useMemo(() => new Set(expandedIds), [expandedIds]);
+  const [internalExpanded, setInternalExpanded] = useState<string[]>(defaultExpanded ?? []);
+  /** Lazy ids the user has opened: a lazy id listed in `expanded`/`defaultExpanded` alone never opens itself. */
+  const [openedLazy, setOpenedLazy] = useState<string[]>([]);
+  const rawExpanded = expanded ?? internalExpanded;
 
-  const commitExpanded = (next: string[]): void => {
-    for (const id of next) {
-      if (expandedSet.has(id) || requestedLazy.current.has(id)) continue;
-      if (nodeById.get(id)?.children === 'lazy') {
-        requestedLazy.current.add(id);
-        onExpand?.(id);
-      }
+  /** The caller's list with `"*"` resolved to concrete ids; a held-lazy id stays in it and in what is reported. */
+  const expandedIds = useMemo(() => {
+    const seen = new Set<string>();
+    const out: string[] = [];
+    const add = (id: string): void => {
+      if (seen.has(id)) return;
+      seen.add(id);
+      out.push(id);
+    };
+    for (const id of rawExpanded) if (id !== EXPAND_ALL) add(id);
+    if (rawExpanded.includes(EXPAND_ALL)) {
+      const walk = (list: TreeNode[]): void => {
+        for (const node of list) {
+          if (!Array.isArray(node.children) || node.children.length === 0) continue;
+          add(node.id);
+          walk(node.children);
+        }
+      };
+      walk(nodes);
     }
+    return out;
+  }, [rawExpanded, nodes]);
+
+  /** What actually renders open: a still-`"lazy"` id waits for the user act that fires onExpand. */
+  const expandedSet = useMemo(
+    () => new Set(expandedIds.filter((id) => nodeById.get(id)?.children !== 'lazy' || openedLazy.includes(id))),
+    [expandedIds, openedLazy, nodeById],
+  );
+
+  const commitExpanded = (next: string[], opened: string[]): void => {
+    // onExpand fires each time a still-`"lazy"` node is opened, so a failed load can retry; once the caller
+    // replaces `children` it never fires again. It fires before the onExpandChange of the same act.
+    const lazy = opened.filter((id) => nodeById.get(id)?.children === 'lazy');
+    if (lazy.length > 0) setOpenedLazy((prev) => [...prev, ...lazy.filter((id) => !prev.includes(id))]);
+    for (const id of lazy) onExpand?.(id);
     if (expanded === undefined) setInternalExpanded(next);
     onExpandChange?.(next);
   };
 
   const toggleExpanded = (id: string): void => {
-    commitExpanded(expandedSet.has(id) ? expandedIds.filter((existing) => existing !== id) : [...expandedIds, id]);
+    if (expandedSet.has(id)) {
+      commitExpanded(
+        expandedIds.filter((existing) => existing !== id),
+        [],
+      );
+      return;
+    }
+    // A held-lazy id is already in the array: opening it only marks it opened and fires onExpand.
+    commitExpanded(expandedIds.includes(id) ? expandedIds : [...expandedIds, id], [id]);
   };
 
   /* ---------- visible, navigable nodes ---------- */
@@ -334,17 +388,22 @@ export function Tree({
     else if (selectable === 'multiple') toggleSelection(node);
   };
 
+  /**
+   * What a node's checkbox shows. Under `selectChildren` it is derived from the node's enabled loaded
+   * descendants (mixed when only some are selected); a node with none of those behaves as a leaf and shows
+   * its own id's state.
+   */
   const checkedMemo = new Map<string, CheckedState>();
   function checkedState(node: TreeNode): CheckedState {
     const cached = checkedMemo.get(node.id);
     if (cached) return cached;
     let state: CheckedState = selectedSet.has(node.id) ? 'true' : 'false';
-    const children = loadedChildren(node).filter((child) => !child.disabled);
-    if (selectChildren && children.length > 0) {
-      const states = children.map((child) => checkedState(child));
-      if (states.every((s) => s === 'true')) state = 'true';
-      else if (states.some((s) => s !== 'false')) state = 'mixed';
-      else state = 'false';
+    if (selectChildren) {
+      const descendants = enabledDescendants(node);
+      if (descendants.length > 0) {
+        const count = descendants.filter((descendant) => selectedSet.has(descendant.id)).length;
+        state = count === descendants.length ? 'true' : count > 0 ? 'mixed' : 'false';
+      }
     }
     checkedMemo.set(node.id, state);
     return state;
@@ -400,9 +459,12 @@ export function Tree({
   };
 
   const handleKeyDown = (event: ReactKeyboardEvent<HTMLUListElement>): void => {
-    const target = event.target as HTMLElement;
-    if (target.getAttribute('role') !== 'treeitem') return;
-    const index = navigable.findIndex((entry) => itemRefs.current.get(entry.node.id) === target);
+    // Keys drive the tree whenever focus is inside a node — the treeitem itself, or a composed control it
+    // holds (the chevron Button, an href Link). Both are out of the tab order but still focusable, so a
+    // click or an assistive-technology move can land on one, and the tree must keep answering the arrows.
+    const item = (event.target as HTMLElement).closest<HTMLElement>('[role="treeitem"]');
+    if (!item) return;
+    const index = navigable.findIndex((entry) => itemRefs.current.get(entry.node.id) === item);
     const current = navigable[index];
     if (!current) return;
     const { node } = current;
@@ -469,10 +531,10 @@ export function Tree({
       case '*': {
         event.preventDefault();
         // Every enabled sibling, the focused node included; a lazy sibling opens and fires onExpand.
-        const openable = current.siblings.filter(
-          (sibling) => !sibling.disabled && hasChildren(sibling) && !expandedSet.has(sibling.id),
-        );
-        if (openable.length > 0) commitExpanded([...expandedIds, ...openable.map((sibling) => sibling.id)]);
+        const opened = current.siblings
+          .filter((sibling) => !sibling.disabled && hasChildren(sibling) && !expandedSet.has(sibling.id))
+          .map((sibling) => sibling.id);
+        if (opened.length > 0) commitExpanded([...expandedIds, ...opened.filter((id) => !expandedIds.includes(id))], opened);
         return;
       }
       default:
@@ -568,6 +630,11 @@ export function Tree({
                 }}
                 onDoubleClick={(event) => event.stopPropagation()}
               >
+                {/* Not aria-hidden, though the platform notes ask for it: this is a real <button>, and
+                    tabIndex={-1} removes it from the tab order without removing focus, so hiding it would be
+                    axe's aria-hidden-focus (the rule TreeGrid's own chevron settled). It stays exposed under
+                    copy.expand/collapse; ArrowLeft/Right remain the keyboard path and the treeitem's own
+                    aria-expanded is what conveys the state. */}
                 <Button
                   variant="ghost"
                   size="sm"
@@ -579,7 +646,6 @@ export function Tree({
                     </span>
                   }
                   disabled={node.disabled ?? false}
-                  aria-hidden="true"
                   tabIndex={-1}
                 />
               </span>
@@ -598,9 +664,11 @@ export function Tree({
               ) : null}
               <span className="ds-tree__body">
                 {node.icon ? (
-                  <span className="ds-tree__icon" aria-hidden="true">
-                    {/* iconColor is locked, so it always reaches the composed Icon as its own override. */}
-                    <Icon data-part="icon" name={node.icon} inline overrides={{ color: 'color.foreground.muted' }} />
+                  /* Icon keeps its own data-part="glyph", so the `icon` part is a wrapper the tree owns —
+                     the same shape as `heading` and `expandButton`. iconColor is locked, so it always
+                     reaches the composed Icon through its own `overrides`, never as CSS on the child. */
+                  <span className="ds-tree__icon" data-part="icon">
+                    <Icon name={node.icon} inline overrides={{ color: 'color.foreground.muted' }} />
                   </span>
                 ) : null}
                 <span className="ds-tree__label">

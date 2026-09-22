@@ -7,7 +7,7 @@
       "keys": [
         "Tab"
       ],
-      "action": "Moves focus into the toolbar (to the last-focused control, initially the first) and, from inside, out of it — the toolbar is one tab stop.",
+      "action": "Moves focus into the toolbar (to the last-focused control, initially the first; when that control is gone — collapsed into the Menu or unmounted — the first control that is not disabled) and, from inside, out of it — the toolbar is one tab stop.",
       "from": "any",
       "expect": "manual"
     },

@@ -220,7 +220,8 @@
   justify-content: center;
   text-align: center;
 }
-.ds-tree-grid__body .ds-tree-grid__cell--align-end {
+/* numericFont: cells whose raw value is a number and that have no `render`, as DataGrid. */
+.ds-tree-grid__cell--numeric {
   font-family: var(--font-family-mono);
   font-variant-numeric: tabular-nums;
 }

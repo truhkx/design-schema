@@ -520,7 +520,7 @@ export class DsTreeGrid extends LitElement {
       justify-content: center;
       inline-size: var(--size-target-min);
     }
-    [data-part='expandButton'] {
+    [data-part='expandButton'] ds-button {
       inline-size: var(--size-target-min);
       block-size: var(--size-target-min);
     }
@@ -738,6 +738,12 @@ export class DsTreeGrid extends LitElement {
     | undefined;
 
   @state() private accessor internalExpanded: string[] = [];
+  /**
+   * The `"lazy"` rows the user has opened. A lazy row cannot be opened programmatically: its id in `expanded` or
+   * `defaultExpanded` (or a `"*"` there) is held collapsed until a user act, and the id still travels in the
+   * caller's array and in what `expand-change` reports.
+   */
+  @state() private accessor lazyOpened: string[] = [];
   @state() private accessor internalSort: TreeGridSort | undefined;
   @state() private accessor internalSelected: string[] = [];
   /** The active cell: row -1 is the header row; col 0 is the selection column in row mode. */
@@ -760,7 +766,13 @@ export class DsTreeGrid extends LitElement {
   @query('.probe-step') private accessor probeStepEl!: HTMLElement | null;
 
   private visibleCache:
-    | { data: TreeGridRow[]; expanded: string[]; sort: TreeGridSort | undefined; rows: VisibleRow[] }
+    | {
+        data: TreeGridRow[];
+        expanded: string[];
+        lazyOpened: string[];
+        sort: TreeGridSort | undefined;
+        rows: VisibleRow[];
+      }
     | undefined;
   private indexCache:
     | { data: TreeGridRow[]; byId: Map<string, { row: TreeGridRow; parentId: string | undefined }>; loaded: TreeGridRow[] }
@@ -1130,8 +1142,14 @@ export class DsTreeGrid extends LitElement {
   }
 
   /**
-   * The row header's indent (with one guide line per ancestor level), expand button and content. The chevron's
-   * rotation is on the span this element owns around the Button, never on the Icon.
+   * The row header's indent (with one guide line per ancestor level), expand button and content. The `expandButton`
+   * part is the span this element owns around the composed Button: it is the pointer target and carries the
+   * rotation, never the Icon.
+   *
+   * Neither the span nor the Button is `aria-hidden`. The Button is a real, focusable control — `tabindex="-1"`
+   * only takes it out of the tab order — so hiding either would be axe's `aria-hidden-focus`. It stays exposed
+   * under `copy.expand`/`copy.collapse`; ArrowLeft/Right remain the keyboard path, and the row's own
+   * `aria-expanded` is what conveys the state.
    */
   private renderTreeColumn(entry: VisibleRow, content: TemplateResult | typeof nothing): TemplateResult {
     const row = entry.row;
@@ -1155,22 +1173,22 @@ export class DsTreeGrid extends LitElement {
         ${row && entry.hasChildren
           ? html`<span
               class="expand-chevron"
+              data-part="expandButton"
               data-expanded=${ifDefined(entry.expanded ? '' : undefined)}
-              aria-hidden="true"
+              @click=${(event: MouseEvent) => {
+                event.stopPropagation();
+                this.setExpanded([row], !entry.expanded);
+                this.focusGrid();
+              }}
             >
               <ds-button
-                data-part="expandButton"
                 variant="ghost"
                 size="sm"
                 icon-only
                 tabindex="-1"
                 label=${entry.expanded ? COPY_COLLAPSE(name) : COPY_EXPAND(name)}
                 .overrides=${EXPAND_BUTTON_INSET}
-                @press=${(event: Event) => {
-                  event.stopPropagation();
-                  this.setExpanded([row], !entry.expanded);
-                  this.focusGrid();
-                }}
+                @press=${(event: Event) => event.stopPropagation()}
               >
                 <ds-icon slot="leading-icon" name="chevron-right" inline></ds-icon>
               </ds-button>
@@ -1255,9 +1273,10 @@ export class DsTreeGrid extends LitElement {
   }
 
   /**
-   * The visible counterpart of the live region. Only the leading span is `role="status"`, so the row count, the
-   * selection count, `copy.scrollHint` and `copy.position` are shown but never announced — `aria-rowindex` and
-   * `aria-colindex` already carry position, and a polite region on every arrow press would be noise.
+   * The visible counterpart of the live region. Only the leading span is `role="status"`, so the row count,
+   * `copy.scrollHint` and `copy.position` are shown but never announced — `aria-rowindex` and `aria-colindex`
+   * already carry position, and a polite region on every arrow press would be noise. The selection count is shown
+   * here and announced through the live region when it changes, as DataGrid.
    */
   private renderStatusBar(): TemplateResult {
     const total = this.index.loaded.length;
@@ -1346,12 +1365,21 @@ export class DsTreeGrid extends LitElement {
   /** The flattened visible rows: siblings ordered by an uncontrolled sort, collapsed subtrees left out. */
   private get visible(): VisibleRow[] {
     const expanded = this.rawExpanded;
+    const lazyOpened = this.lazyOpened;
     const sort = this.sort === undefined ? this.internalSort : undefined;
     const cache = this.visibleCache;
-    if (cache && cache.data === this.data && cache.expanded === expanded && cache.sort === sort) {
+    if (
+      cache &&
+      cache.data === this.data &&
+      cache.expanded === expanded &&
+      cache.lazyOpened === lazyOpened &&
+      cache.sort === sort
+    ) {
       return cache.rows;
     }
     const open = new Set(expanded);
+    /* A lazy row opens only by a user act, so its shown state is this set and never `expanded`. */
+    const openLazy = new Set(lazyOpened);
     /* `*` opens every row with loaded children, including ones loaded later, and never a lazy row. */
     const all = open.has('*');
     const rows: VisibleRow[] = [];
@@ -1365,7 +1393,7 @@ export class DsTreeGrid extends LitElement {
         const lazy = row.children === 'lazy';
         const children = loadedChildren(row);
         const hasChildren = lazy || children.length > 0;
-        const isOpen = hasChildren && (open.has(row.id) || (all && !lazy));
+        const isOpen = hasChildren && (lazy ? openLazy.has(row.id) : open.has(row.id) || all);
         rows.push({
           key: row.id,
           row,
@@ -1396,7 +1424,7 @@ export class DsTreeGrid extends LitElement {
       });
     };
     walk(this.data, 1, undefined);
-    this.visibleCache = { data: this.data, expanded, sort, rows };
+    this.visibleCache = { data: this.data, expanded, lazyOpened, sort, rows };
     return rows;
   }
 
@@ -1572,7 +1600,7 @@ export class DsTreeGrid extends LitElement {
     return indexes;
   }
 
-  /** The live region's text: loading, invalid, sort and editing announcements only. */
+  /** The live region's text: loading, invalid, sort, selection and editing announcements only. */
   private announcement(): string {
     if (this.editing?.error) {
       return COPY_INVALID(this.editing.error);
@@ -1610,34 +1638,45 @@ export class DsTreeGrid extends LitElement {
   }
 
   /**
-   * Opens or closes `targets`. Each lazy row that opens from collapsed fires `expand` (every time, so a failed load
-   * can retry), then one `expand-change` carries the whole new set.
+   * Opens or closes `targets`, from each row's shown state: a lazy row's is `lazyOpened`, so its id already sitting
+   * in `expanded` neither opens it nor suppresses this act. Each lazy row that opens from collapsed fires `expand`
+   * (every time, so a failed load can retry), then one `expand-change` carries the whole new set of ids.
    */
   private setExpanded(targets: TreeGridRow[], open: boolean): void {
-    const current = this.expandedIds();
-    const next = new Set(current);
-    const opened: TreeGridRow[] = [];
+    const ids = new Set(this.expandedIds());
+    const lazy = new Set(this.lazyOpened);
+    const opened: string[] = [];
+    let changed = false;
     for (const row of targets) {
-      if (open && !next.has(row.id)) {
-        next.add(row.id);
-        opened.push(row);
-      } else if (!open && next.has(row.id)) {
-        next.delete(row.id);
+      const isLazy = row.children === 'lazy';
+      const shown = isLazy ? lazy.has(row.id) : ids.has(row.id);
+      if (open === shown) {
+        continue;
+      }
+      changed = true;
+      if (open) {
+        ids.add(row.id);
+        if (isLazy) {
+          lazy.add(row.id);
+          opened.push(row.id);
+        }
+      } else {
+        ids.delete(row.id);
+        lazy.delete(row.id);
       }
     }
-    if (opened.length === 0 && next.size === current.length && current.every((id) => next.has(id))) {
+    if (!changed) {
       return;
     }
-    const ids = [...next];
-    for (const row of opened) {
-      if (row.children === 'lazy') {
-        this.emit<TreeGridExpandDetail>('expand', row.id);
-      }
+    const next = [...ids];
+    this.lazyOpened = [...lazy];
+    for (const id of opened) {
+      this.emit<TreeGridExpandDetail>('expand', id);
     }
     if (this.expanded === undefined) {
-      this.internalExpanded = ids;
+      this.internalExpanded = next;
     }
-    this.emit<TreeGridExpandChangeDetail>('expand-change', ids);
+    this.emit<TreeGridExpandChangeDetail>('expand-change', next);
   }
 
   /** `*`: every expandable sibling of the focused row under the same parent, the focused row included. */
@@ -1665,6 +1704,8 @@ export class DsTreeGrid extends LitElement {
     if (this.selected === undefined) {
       this.internalSelected = next;
     }
+    /* The live region announces the selection count, as DataGrid; the total is every loaded row at every level. */
+    this.message = COPY_SELECTED_ROWS(next.length, this.index.loaded.length);
     this.emit<TreeGridSelectionChangeDetail>('selection-change', { selection: next });
   }
 

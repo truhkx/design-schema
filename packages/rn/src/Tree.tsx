@@ -93,9 +93,54 @@ const COPY = {
 const LABEL_SELECTED_WEIGHT: TokenRef = 'font.weight.medium';
 const HEADING_SIZE: TokenRef = 'font.size.md';
 const BADGE_SIZE: TokenRef = 'font.size.xs';
+const FONT_FAMILY: TokenRef = 'font.family.body';
+const FONT_SIZE: TokenRef = 'font.size.sm';
+const LINE_HEIGHT: TokenRef = 'font.lineHeight.normal';
 
 /** Clips content to one point while keeping it in the accessibility tree (the Android live region). */
 const HIDDEN_STYLE: ViewStyle = { position: 'absolute', width: 1, height: 1, overflow: 'hidden' };
+
+const isWeb = Platform.OS === 'web';
+
+/** The DOM node behind a View or Pressable on react-native-web, for the attributes it does not forward. */
+type WebElement = {
+  setAttribute(name: string, value: string): void;
+  removeAttribute(name: string): void;
+  querySelector(selectors: string): { setAttribute(name: string, value: string): void } | null;
+};
+
+/**
+ * Marks a disabled row on react-native-web. Pressable writes `aria-disabled` from its own
+ * `disabled` prop, which the press guard deliberately never sets — that would take the row out of
+ * the accessibility tree — so the attribute is written on the node instead, as Button and Listbox
+ * record. It is also what keeps a dimmed row out of axe's contrast check: WCAG 1.4.3 exempts
+ * inactive components, and `opacity.disabled` over `color.foreground` cannot reach 4.5:1.
+ */
+function markDisabled(instance: ViewInstance | null, disabled: boolean): void {
+  if (!isWeb || instance === null) {
+    return;
+  }
+  const node = instance as unknown as WebElement;
+  if (disabled) {
+    node.setAttribute('aria-disabled', 'true');
+  } else {
+    node.removeAttribute('aria-disabled');
+  }
+}
+
+/**
+ * Demotes the composed Link inside a node's label out of the tab order on react-native-web, the
+ * platform's form of the `tabIndex={-1}` web and lit put on it: the row Pressable follows `href`
+ * itself, so the row stays the tab stop and the one target. A widget outside the tab order whose
+ * ancestor is in it is also not a target of its own, which is what keeps the short inline anchor
+ * out of axe's target-size rule.
+ */
+function demoteLink(instance: ViewInstance | null): void {
+  if (!isWeb || instance === null) {
+    return;
+  }
+  (instance as unknown as WebElement).querySelector('[data-testid="Link"]')?.setAttribute('tabindex', '-1');
+}
 
 function tokenOr<T>(t: Tokens, ref: TokenRef | undefined, fallback: T): T {
   return ref === undefined ? fallback : (resolveToken(t, ref) as T);
@@ -282,8 +327,16 @@ export function Tree({
   const labelSelectedWeight = overrides?.labelSelectedWeight ?? LABEL_SELECTED_WEIGHT;
   const headingSize = overrides?.headingSize ?? HEADING_SIZE;
   const badgeSize = overrides?.badgeSize ?? BADGE_SIZE;
-  // fontFamily/fontSize/lineHeight have no part of their own; they reach the label Text only when overridden.
-  const labelTypography = { fontFamily: overrides?.fontFamily, fontSize: overrides?.fontSize, lineHeight: overrides?.lineHeight };
+  /**
+   * fontFamily/fontSize/lineHeight set the container's type and, resolved the same way (the
+   * override when there is one, the token otherwise), are always forwarded to the label Text,
+   * so the root and the composed label never disagree.
+   */
+  const labelTypography = {
+    fontFamily: overrides?.fontFamily ?? FONT_FAMILY,
+    fontSize: overrides?.fontSize ?? FONT_SIZE,
+    lineHeight: overrides?.lineHeight ?? LINE_HEIGHT,
+  } satisfies Partial<Record<'fontFamily' | 'fontSize' | 'lineHeight', TokenRef>>;
 
   /** Parent and tree order for every node, loaded subtrees included. */
   const index = React.useMemo(() => indexNodes(nodes, undefined, new Map<string, NodeEntry>()), [nodes]);
@@ -327,7 +380,6 @@ export function Tree({
   const [internalSelected, setInternalSelected] = React.useState<string[]>(defaultSelected ?? []);
   const selectedIds = selected ?? internalSelected;
   const selectedSet = React.useMemo(() => new Set(selectedIds), [selectedIds]);
-  const [announcement, setAnnouncement] = React.useState('');
 
   /** Selected ids as the event reports them: tree (document) order, unknown ids last. */
   const inTreeOrder = (ids: Iterable<string>): string[] =>
@@ -341,12 +393,9 @@ export function Tree({
       setInternalSelected(next);
     }
     onSelectionChange?.(next);
-    if (selectable === 'multiple') {
-      const message = COPY.selectedCount(next.length);
-      setAnnouncement(message);
-      if (Platform.OS === 'ios') {
-        AccessibilityInfo.announceForAccessibility(message);
-      }
+    // iOS has no live region: the Android region below holds the same string, written by the render.
+    if (selectable === 'multiple' && Platform.OS === 'ios') {
+      AccessibilityInfo.announceForAccessibility(COPY.selectedCount(next.length));
     }
   };
 
@@ -492,6 +541,9 @@ export function Tree({
   const renderPlaceholder = (item: FlatNode): React.JSX.Element => (
     <View
       testID="Tree.node"
+      role="listitem"
+      accessible
+      accessibilityLabel={COPY.loading}
       style={{ flexDirection: 'row', alignItems: 'center', minHeight: rowHeight, paddingHorizontal: rowPaddingInline, gap: rowGap }}
     >
       {guides(item.level)}
@@ -534,6 +586,9 @@ export function Tree({
     return (
       <View
         testID="Tree.node"
+        // `accessibilityRole="list"` is a real <ul> on react-native-web and ARIA lets a list own
+        // only listitems, so the node — not the row's button — is the list's child, as Table.
+        role="listitem"
         style={{
           flexDirection: 'row',
           alignItems: 'center',
@@ -566,8 +621,12 @@ export function Tree({
         </View>
         <Pressable
           testID="Tree.nodeRow"
+          ref={(instance) => {
+            markDisabled(instance, disabled);
+          }}
           accessibilityRole={node.href !== undefined ? 'link' : 'button'}
-          accessibilityLabel={`${node.label}, level ${level}`}
+          // The label replaces the row's rendered content for a screen reader, so the badge is folded in.
+          accessibilityLabel={node.badge === undefined ? `${node.label}, level ${level}` : `${node.label}, ${node.badge}, level ${level}`}
           accessibilityState={{
             disabled,
             expanded: parent ? isExpanded : undefined,
@@ -594,13 +653,24 @@ export function Tree({
                 <Icon name={node.icon} size="sm" color={t.colorForegroundMuted} />
               </View>
             ) : null}
-            <View style={{ flex: 1 }}>
-              {node.href !== undefined ? (
-                <View testID="Tree.link">
-                  <Text size="sm" truncate overrides={labelTypography}>
+            {/*
+              The label is always the composed Text (the `label` part). An `href` node nests a
+              `tone="inherit"` Link inside it, through the tree-owned `link` view, so the link takes
+              the label's font and colour; labelSelectedWeight is not forwarded then, since the row
+              itself marks a selected navigation node.
+            */}
+            <View testID="Tree.label" style={{ flex: 1 }}>
+              <Text
+                size="sm"
+                truncate
+                overrides={isSelected && node.href === undefined ? { ...labelTypography, fontWeight: labelSelectedWeight } : labelTypography}
+              >
+                {node.href !== undefined ? (
+                  <View testID="Tree.link" ref={demoteLink}>
                     <Link
                       href={node.href}
                       label={node.label}
+                      tone="inherit"
                       onPress={() => {
                         // The row decides: it selects and opens `href` itself, so Link's own hand-off is skipped.
                         press(node);
@@ -608,15 +678,11 @@ export function Tree({
                       }}
                       onLongPress={selectable === 'multiple' ? () => longPress(node) : undefined}
                     />
-                  </Text>
-                </View>
-              ) : (
-                <View testID="Tree.label">
-                  <Text size="sm" truncate overrides={isSelected ? { ...labelTypography, fontWeight: labelSelectedWeight } : labelTypography}>
-                    {node.label}
-                  </Text>
-                </View>
-              )}
+                  </View>
+                ) : (
+                  node.label
+                )}
+              </Text>
             </View>
             {node.badge !== undefined ? (
               <View testID="Tree.badge">
@@ -655,7 +721,11 @@ export function Tree({
         keyExtractor={(item) => item.key}
         renderItem={renderNode}
         ListEmptyComponent={
-          <View testID="Tree.emptyState" style={{ minHeight: rowHeight, paddingHorizontal: rowPaddingInline, justifyContent: 'center' }}>
+          <View
+            testID="Tree.emptyState"
+            role="listitem"
+            style={{ minHeight: rowHeight, paddingHorizontal: rowPaddingInline, justifyContent: 'center' }}
+          >
             <Text size="sm" tone="muted">
               {COPY.empty}
             </Text>
@@ -663,8 +733,10 @@ export function Tree({
         }
       />
       {selectable === 'multiple' ? (
+        // Present from mount and always the current count, so nothing is announced at mount and
+        // two selections that read the same ("1 selected") are announced once.
         <View accessibilityLiveRegion="polite" style={HIDDEN_STYLE}>
-          <Text size="sm">{announcement}</Text>
+          <Text size="sm">{COPY.selectedCount(selectedIds.length)}</Text>
         </View>
       ) : null}
     </View>

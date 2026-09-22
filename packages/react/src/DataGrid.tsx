@@ -24,7 +24,7 @@ import { Icon } from './Icon';
 import { Input } from './Input';
 import { NumberInput } from './NumberInput';
 import { Select } from './Select';
-import { Text } from './Text';
+import { Text, type TextOverridableBinding } from './Text';
 import './DataGrid.css';
 
 export type DataGridSelectable = 'none' | 'row' | 'cell' | 'range';
@@ -321,6 +321,7 @@ export function DataGrid({
   const warnedRef = useRef(false);
   if (isDev && !warnedRef.current) {
     warnedRef.current = true;
+    if (!caption) console.warn('DataGrid: `caption` is required; the grid falls back to an empty caption.');
     const rowHeaders = columns.filter((column) => column.isRowHeader).length;
     if (rowHeaders !== 1) console.warn(`DataGrid: exactly one column may be \`isRowHeader\`; found ${rowHeaders}.`);
     const pins = columns.map((column) => column.pinned);
@@ -1151,6 +1152,8 @@ export function DataGrid({
     const inRange = bounds !== null && rowIndex >= bounds.top && rowIndex <= bounds.bottom && index >= bounds.left && index <= bounds.right;
     const cellSelected =
       selectable === 'cell' ? activeRow === rowIndex && activeCol === col : selectable === 'range' ? inRange : undefined;
+    /** numericFont: cells whose raw value is a number and that have no `render`. */
+    const numeric = !column.render && typeof row[column.key] === 'number';
     return (
       <div
         key={column.key}
@@ -1165,6 +1168,7 @@ export function DataGrid({
         className={joinClasses(
           'ds-data-grid__cell',
           column.align && column.align !== 'start' && `ds-data-grid__cell--align-${column.align}`,
+          numeric && 'ds-data-grid__cell--numeric',
           column.pinned && 'ds-data-grid__cell--pinned',
           activeRow === rowIndex && activeCol === col && 'ds-data-grid__cell--active',
           isEditing && 'ds-data-grid__cell--editing',
@@ -1268,17 +1272,24 @@ export function DataGrid({
   }
 
   /* ---------- status bar ---------- */
-  const summary = [interpolate(pluralForm(COPY.rowCount, total), { count: total })];
-  if (selectable === 'row' && selectedIds.length > 0) {
-    summary.push(interpolate(COPY.selectedRows, { count: selectedIds.length, total }));
-  }
-  if (bounds) {
-    summary.push(interpolate(COPY.selectedRange, { rows: bounds.bottom - bounds.top + 1, columns: bounds.right - bounds.left + 1 }));
-  }
   const liveText = loading ? COPY.loading : editError ? interpolate(COPY.invalid, { message: editError }) : announcement;
   const activeColumn = dataColumnAt(activeCol);
   const position = activeRow >= 0 && activeColumn ? interpolate(COPY.position, { row: activeRow + 1, column: activeColumn.header }) : '';
-  const statusTextOverrides = overrides?.statusBarSize ? { fontSize: overrides.statusBarSize } : undefined;
+  const statusTextOverrides: Partial<Record<TextOverridableBinding, TokenRef | undefined>> = {
+    fontSize: overrides?.statusBarSize ?? 'font.size.xs',
+  };
+  /** Beside the live span, in this order and no other: row count, selection count, scroll hint, position. */
+  const statusItems = [interpolate(pluralForm(COPY.rowCount, total), { count: total })];
+  if (selectable === 'row' && selectedIds.length > 0) {
+    statusItems.push(interpolate(COPY.selectedRows, { count: selectedIds.length, total }));
+  }
+  if (bounds) {
+    statusItems.push(
+      interpolate(COPY.selectedRange, { rows: bounds.bottom - bounds.top + 1, columns: bounds.right - bounds.left + 1 }),
+    );
+  }
+  if (overflowX && !scrolledX) statusItems.push(COPY.scrollHint);
+  if (position) statusItems.push(position);
 
   const empty = loaded === 0 && !loading;
 
@@ -1327,7 +1338,7 @@ export function DataGrid({
           aria-describedby={showStatusBar ? statusId : undefined}
           aria-rowcount={total + 1}
           aria-colcount={colCount}
-          aria-multiselectable={selectable === 'row' || selectable === 'range' ? true : undefined}
+          aria-multiselectable={selectable === 'none' ? undefined : selectable !== 'cell'}
           aria-readonly={!editable}
           aria-busy={loading ? true : undefined}
           aria-activedescendant={activeRendered && colCount > 0 ? cellId(activeRow, activeCol) : undefined}
@@ -1396,36 +1407,28 @@ export function DataGrid({
           </div>
         </div>
       </div>
-      <div
-        data-part="statusBar"
-        className={showStatusBar ? 'ds-data-grid__status-bar' : 'ds-data-grid__visually-hidden'}
-      >
-        <span className="ds-data-grid__status-group">
-          {showStatusBar
-            ? summary.map((text) => (
-                <Text key={text} element="span" size="xs" tone="muted" overrides={statusTextOverrides}>
-                  {text}
-                </Text>
-              ))
-            : null}
-          <Text id={statusId} element="span" size="xs" tone="muted" role="status" aria-live="polite" overrides={statusTextOverrides}>
-            {liveText}
-          </Text>
-        </span>
-        {showStatusBar ? (
-          <span className="ds-data-grid__status-group">
-            {overflowX && !scrolledX ? (
-              <Text element="span" size="xs" tone="muted" overrides={statusTextOverrides}>
-                {COPY.scrollHint}
+      {/* The bar the grid owns carries statusBarSurface/Padding/Gap and no part of its own; the
+          statusBar part is the live status Text, the only live region in it. */}
+      <div className={showStatusBar ? 'ds-data-grid__status-bar' : 'ds-data-grid__visually-hidden'}>
+        <Text
+          id={statusId}
+          data-part="statusBar"
+          element="span"
+          size="xs"
+          tone="muted"
+          role="status"
+          aria-live="polite"
+          overrides={statusTextOverrides}
+        >
+          {liveText}
+        </Text>
+        {showStatusBar
+          ? statusItems.map((text) => (
+              <Text key={text} element="span" size="xs" tone="muted" overrides={statusTextOverrides}>
+                {text}
               </Text>
-            ) : null}
-            {position ? (
-              <Text element="span" size="xs" tone="muted" overrides={statusTextOverrides}>
-                {position}
-              </Text>
-            ) : null}
-          </span>
-        ) : null}
+            ))
+          : null}
       </div>
     </div>
   );

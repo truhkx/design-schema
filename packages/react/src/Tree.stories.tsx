@@ -57,6 +57,10 @@ export const SelectChildren: Story = {
   args: { selectable: 'multiple', selectChildren: true, defaultExpanded: ['*'], defaultSelected: ['invoices'] },
 };
 export const GuidesHidden: Story = { args: { showGuides: false, defaultExpanded: ['*'] } };
+/**
+ * A `children: "lazy"` branch. `videos` is listed in `defaultExpanded` but stays closed — a lazy id only opens
+ * on a user act, which is what fires `onExpand`; open it to see the placeholder and the parent's `aria-busy`.
+ */
 export const LazyLoading: Story = { args: { defaultExpanded: ['media', 'videos'] } };
 export const Empty: Story = { args: { nodes: [] } };
 

@@ -139,9 +139,24 @@ export const HeightFixed: Story = { args: { height: 'fixed' } };
 export const HideCaption: Story = { args: { hideCaption: true } };
 export const Loading: Story = { args: { loading: true } };
 export const Empty: Story = { args: { data: [] } };
-export const NoStatusBar: Story = { args: { showStatusBar: false } };
+export const EmptyMessage: Story = { args: { data: [], emptyMessage: 'No prices loaded.' } };
 export const DefaultSort: Story = { args: { defaultSort: { column: 'price', direction: 'descending' } } };
-export const ServerPaged: Story = { args: { rowCount: 200, height: 'fixed' } };
+export const Editable: Story = { args: { editable: true } };
+export const NoStatusBar: Story = { args: { showStatusBar: false } };
+export const ServerPaged: Story = { args: { rowCount: 500 } };
+export const ManyRows: Story = {
+  args: {
+    data: Array.from({ length: 2000 }, (_, i) => ({
+      id: `r${i}`,
+      sku: `S-${i + 1}`,
+      name: `Item ${i + 1}`,
+      price: (i % 40) + 1,
+      qty: i % 50,
+      category: i % 2 === 0 ? 'hardware' : 'software',
+      inStock: i % 3 !== 0,
+    })),
+  },
+};
 
 /* examples */
 export const PriceList: Story = {
@@ -207,7 +222,10 @@ export const RangeSelection: Story = {
   },
 };
 
-/** The grid present with sortable headers, a resizable column and editable cells to navigate between. */
+/**
+ * The grid present with a sortable header, the select-all Checkbox and one Checkbox per row — well over
+ * three focusable children — for the keyboard gate. No decorators.
+ */
 export const Keyboard: Story = {
-  args: { selectable: 'range', editable: true, height: 'content' },
+  args: { selectable: 'row', editable: true },
 };

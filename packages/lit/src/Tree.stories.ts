@@ -18,17 +18,28 @@ interface TreeArgs {
   defaultSelected?: string[] | undefined;
 }
 
-const FOLDER_NODES: TreeNode[] = [
+const NODES: TreeNode[] = [
   {
     id: 'docs',
     label: 'Documents',
     icon: 'folder',
+    badge: '3',
     children: [
       { id: 'invoices', label: 'Invoices', icon: 'file' },
       { id: 'contracts', label: 'Contracts', icon: 'file' },
+      { id: 'archive', label: 'Archive', icon: 'file', disabled: true },
     ],
   },
-  { id: 'media', label: 'Media', icon: 'folder', children: 'lazy' },
+  {
+    id: 'media',
+    label: 'Media',
+    icon: 'folder',
+    children: [
+      { id: 'photos', label: 'Photos', icon: 'folder', children: [{ id: 'holiday', label: 'Holiday', icon: 'file' }] },
+      { id: 'videos', label: 'Videos', icon: 'folder', children: 'lazy' },
+    ],
+  },
+  { id: 'notes', label: 'Notes', icon: 'file' },
 ];
 
 const meta: Meta<TreeArgs> = {
@@ -43,14 +54,13 @@ const meta: Meta<TreeArgs> = {
   },
   args: {
     label: 'Folders',
+    nodes: NODES,
     showLabel: false,
     headingLevel: '2',
-    nodes: FOLDER_NODES,
     selectable: 'single',
     selectChildren: false,
     selectOnFocus: false,
     showGuides: true,
-    defaultExpanded: ['docs'],
   },
   render: (args) => html`
     <ds-tree
@@ -75,32 +85,38 @@ type Story = StoryObj<TreeArgs>;
 
 export const Default: Story = {};
 
-/* headingLevel */
+/* selectable */
+export const SelectableNone: Story = { args: { selectable: 'none', defaultExpanded: ['docs'] } };
+export const SelectableSingle: Story = {
+  args: { selectable: 'single', defaultExpanded: ['docs'], defaultSelected: ['invoices'] },
+};
+export const SelectableMultiple: Story = {
+  args: { selectable: 'multiple', defaultExpanded: ['docs'], defaultSelected: ['invoices', 'notes'] },
+};
+
+/* headingLevel — visible with showLabel */
 export const HeadingLevel2: Story = { args: { showLabel: true, headingLevel: '2' } };
 export const HeadingLevel3: Story = { args: { showLabel: true, headingLevel: '3' } };
 export const HeadingLevel4: Story = { args: { showLabel: true, headingLevel: '4' } };
 
-/* selectable */
-export const SelectableNone: Story = { args: { selectable: 'none' } };
-export const SelectableSingle: Story = { args: { selectable: 'single', defaultSelected: ['invoices'] } };
-export const SelectableMultiple: Story = { args: { selectable: 'multiple', defaultSelected: ['invoices'] } };
-
+/* notable states */
 export const SelectChildren: Story = {
-  args: { selectable: 'multiple', selectChildren: true, defaultSelected: ['invoices'] },
+  args: { selectable: 'multiple', selectChildren: true, defaultExpanded: ['*'], defaultSelected: ['invoices'] },
 };
-export const SelectOnFocus: Story = { args: { selectOnFocus: true } };
-export const HideGuides: Story = { args: { showGuides: false } };
-export const DisabledNode: Story = {
-  args: {
-    nodes: [
-      { id: 'docs', label: 'Documents', icon: 'folder', children: [{ id: 'invoices', label: 'Invoices', disabled: true }] },
-      { id: 'media', label: 'Media', icon: 'folder' },
-    ],
-  },
-};
+export const GuidesHidden: Story = { args: { showGuides: false, defaultExpanded: ['*'] } };
+/**
+ * A `children: "lazy"` branch. `videos` is listed in `defaultExpanded` but stays closed — a lazy id only opens
+ * on a user act, which is what fires `expand`; open it to see the placeholder and the parent's `aria-busy`.
+ */
+export const LazyLoading: Story = { args: { defaultExpanded: ['media', 'videos'] } };
 export const Empty: Story = { args: { nodes: [] } };
 
+/** Keyboard gate: present with the first branch open — Documents, Invoices, Contracts, Media, Notes are focusable. */
+export const Keyboard: Story = { args: { defaultExpanded: ['docs'] } };
+
 /* examples */
+
+/** The everyday file tree, one branch open, each node with its glyph. */
 export const FolderTree: Story = {
   args: {
     label: 'Folders',
@@ -120,6 +136,7 @@ export const FolderTree: Story = {
   },
 };
 
+/** A settings sidebar whose visible heading names it and whose selection drives the panel beside it. */
 export const NavigationSidebar: Story = {
   args: {
     label: 'Settings sections',
@@ -133,6 +150,7 @@ export const NavigationSidebar: Story = {
   },
 };
 
+/** Multi-select categories where choosing a parent chooses everything under it. */
 export const CategoryPickerWithCascade: Story = {
   args: {
     label: 'Categories',
@@ -152,6 +170,7 @@ export const CategoryPickerWithCascade: Story = {
   },
 };
 
+/** A tree that only expands and collapses, with counts after each branch. */
 export const ReadOnlySiteMap: Story = {
   args: {
     label: 'Site map',
@@ -161,9 +180,4 @@ export const ReadOnlySiteMap: Story = {
       { id: 'api', label: 'API', badge: '48', children: 'lazy' },
     ],
   },
-};
-
-/** Present with at least three focusable treeitems for the keyboard gate. */
-export const Keyboard: Story = {
-  args: { defaultExpanded: ['docs'] },
 };

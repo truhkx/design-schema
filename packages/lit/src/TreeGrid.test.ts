@@ -30,6 +30,14 @@ type Given = Partial<
 
 type Updatable = HTMLElement & { updateComplete: Promise<boolean> };
 
+/**
+ * The `expandButton` part is the span around the composed Button, so the click goes to the Button's own
+ * `<button>`; its composed native click is what reaches the span's handler.
+ */
+function clickExpand(part: HTMLElement): void {
+  part.querySelector('ds-button')!.shadowRoot!.querySelector('button')!.click();
+}
+
 /** The Default story's args plus the scenario's `given`, as properties on a fresh element. */
 async function setup(given: Given = {}) {
   const el = document.createElement('ds-tree-grid');
@@ -88,7 +96,7 @@ describe('ds-tree-grid', () => {
         { id: 'assets', account: 'Assets', balance: 100, children: [{ id: 'cash', account: 'Cash', balance: 40 }] },
       ],
     });
-    s.part('expandButton')!.shadowRoot!.querySelector('button')!.click();
+    clickExpand(s.part('expandButton')!);
     await s.el.updateComplete;
     expect(s.expandChange).toHaveBeenCalledTimes(1);
     expect(s.expandChange.mock.calls[0]![0].detail).toEqual(['assets']);
@@ -100,13 +108,30 @@ describe('ds-tree-grid', () => {
       columns: [{ key: 'account', header: 'Account', isRowHeader: true }],
       data: [{ id: 'assets', account: 'Assets', children: 'lazy' }],
     });
-    s.part('expandButton')!.shadowRoot!.querySelector('button')!.click();
+    clickExpand(s.part('expandButton')!);
     await s.el.updateComplete;
     expect(s.expand).toHaveBeenCalledTimes(1);
     expect(s.expand.mock.calls[0]![0].detail).toBe('assets');
     expect(s.expandChange).toHaveBeenCalledTimes(1);
     expect(s.expandChange.mock.calls[0]![0].detail).toEqual(['assets']);
     expect(s.order).toEqual(['expand', 'expand-change']);
+  });
+
+  /* A lazy row cannot be opened programmatically: its id in `defaultExpanded`/`expanded` waits for a user act. */
+  it('a-lazy-id-in-default-expanded-is-held-collapsed', async () => {
+    const s = await setup({
+      defaultExpanded: ['assets'],
+      columns: [{ key: 'account', header: 'Account', isRowHeader: true }],
+      data: [{ id: 'assets', account: 'Assets', children: 'lazy' }],
+    });
+    expect(s.parts('row')).toHaveLength(1);
+    expect(s.parts('row')[0]!).toHaveAttribute('aria-expanded', 'false');
+    expect(s.expand).not.toHaveBeenCalled();
+    clickExpand(s.part('expandButton')!);
+    await s.el.updateComplete;
+    expect(s.expand.mock.calls[0]![0].detail).toBe('assets');
+    expect(s.expandChange.mock.calls[0]![0].detail).toEqual(['assets']);
+    expect(s.parts('row')).toHaveLength(2);
   });
 
   it('activating-a-sortable-header-reports-the-sort', async () => {

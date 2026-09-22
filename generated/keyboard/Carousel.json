@@ -7,7 +7,7 @@
       "keys": [
         "Tab"
       ],
-      "action": "Moves through the controls (play/pause, previous, next, picker) and then into the current slide's focusable content; hidden slides are inert.",
+      "action": "Moves through the controls (play/pause, previous, next, picker), then the viewport — a scroll container is a tab stop of its own, with a focus ring but no role and no name, so the region's name is not read twice — and then into the current slide's focusable content; hidden slides are inert.",
       "from": "any",
       "expect": "manual"
     },

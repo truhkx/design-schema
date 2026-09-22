@@ -557,12 +557,19 @@ export function TreeGrid({
     const kept = selectedIds.filter((id) => !drop.has(id));
     commitRows(shownState(row) === 'checked' ? kept : [...kept, ...ids]);
   };
+  /** A plain toggle of one row's own id, with no cascade — what a range act does to its endpoint. */
+  const toggleRowPlain = (row: TreeGridRow): void => {
+    rowAnchorRef.current = row.id;
+    commitRows(selectedSet.has(row.id) ? selectedIds.filter((id) => id !== row.id) : [...selectedIds, row.id]);
+  };
   /** Shift+Space / Shift+click: anchor through target over the visible rows; never cascades. */
   const extendRows = (target: number): void => {
     const anchor = rowAnchorRef.current !== null ? indexByKey.get(rowAnchorRef.current) : undefined;
     const entry = visible[target];
     if (!entry || entry.placeholder) return;
-    if (anchor === undefined) return toggleRow(entry.row);
+    // The anchor row is no longer visible (its subtree collapsed, or sorting moved it): a plain,
+    // non-cascading toggle of the focused row, even under selectChildren.
+    if (anchor === undefined) return toggleRowPlain(entry.row);
     const span = visible
       .slice(Math.min(anchor, target), Math.max(anchor, target) + 1)
       .filter((item) => !item.placeholder)
@@ -1200,6 +1207,10 @@ export function TreeGrid({
               data-part="expandButton"
               onClick={() => toggleExpand(entry.key)}
             >
+              {/* Not aria-hidden: this is a real <button>, and tabIndex={-1} removes it from the tab order
+                  without removing focus, so hiding it (or this span) would be axe's aria-hidden-focus. It
+                  stays exposed under copy.expand/collapse; ArrowLeft/Right remain the keyboard path, and the
+                  row's own aria-expanded is what conveys the state. */}
               <Button
                 variant="ghost"
                 size="sm"
@@ -1208,7 +1219,6 @@ export function TreeGrid({
                 leadingIcon={<Icon name="chevron-right" inline />}
                 overrides={{ paddingInline: 'space.0', paddingBlock: 'space.0' }}
                 tabIndex={-1}
-                aria-hidden="true"
               />
             </span>
           ) : (
@@ -1229,6 +1239,8 @@ export function TreeGrid({
     const col = index + colOffset;
     const isEditing = editing?.rowId === entry.key && editing.column === column.key;
     const isActive = activeRow === rowIndex && activeCol === col;
+    /** numericFont, as DataGrid: cells whose raw value is a number and that have no `render`. */
+    const numeric = !column.render && typeof entry.row[column.key] === 'number';
     return (
       <div
         key={column.key}
@@ -1244,6 +1256,7 @@ export function TreeGrid({
           'ds-tree-grid__cell',
           column.isRowHeader && 'ds-tree-grid__cell--row-header',
           column.align && column.align !== 'start' && `ds-tree-grid__cell--align-${column.align}`,
+          numeric && 'ds-tree-grid__cell--numeric',
           column.pinned && 'ds-tree-grid__cell--pinned',
           isActive && 'ds-tree-grid__cell--active',
           isEditing && 'ds-tree-grid__cell--editing',
@@ -1489,7 +1502,9 @@ export function TreeGrid({
           </div>
         </div>
       </div>
-      <div data-part="statusBar" className={showStatusBar ? 'ds-tree-grid__status-bar' : 'ds-tree-grid__visually-hidden'}>
+      {/* The bar TreeGrid owns carries the status-bar surface and no part of its own; the statusBar part
+          is the live status Text, the only live region in it, as DataGrid. */}
+      <div className={showStatusBar ? 'ds-tree-grid__status-bar' : 'ds-tree-grid__visually-hidden'}>
         <span className="ds-tree-grid__status-group">
           {showStatusBar
             ? summary.map((text) => (
@@ -1498,7 +1513,7 @@ export function TreeGrid({
                 </Text>
               ))
             : null}
-          <Text id={statusId} element="span" size="xs" tone="muted" role="status" aria-live="polite">
+          <Text id={statusId} data-part="statusBar" element="span" size="xs" tone="muted" role="status" aria-live="polite">
             {liveText}
           </Text>
         </span>

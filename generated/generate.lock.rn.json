@@ -306,27 +306,25 @@
     }
   },
   "DataGrid.rn": {
-    "hash": "10bd7406cb90a9c3",
-    "lastAttemptHash": "10bd7406cb90a9c3",
-    "generatedAt": "2026-09-17T18:27:23+00:00",
+    "hash": "1f76cd0ee08cc834",
+    "lastAttemptHash": "1f76cd0ee08cc834",
+    "generatedAt": "2026-09-22T01:25:32+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 3.4942,
+    "rounds": 2,
+    "costUsd": 8.5544,
     "files": [
-      "packages/rn/src/DataGrid.stories.tsx",
-      "packages/rn/src/DataGrid.test.tsx",
-      "packages/rn/src/DataGrid.tsx",
-      "packages/rn/src/index.ts"
+      "packages/rn/src/DataGrid.tsx"
     ],
-    "gaps": 11,
+    "gaps": 23,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "DatePicker.rn": {
@@ -1156,49 +1154,47 @@
     }
   },
   "Tree.rn": {
-    "hash": "f2d6a3707b01dd94",
-    "lastAttemptHash": "f2d6a3707b01dd94",
-    "generatedAt": "2026-09-17T19:32:26+00:00",
+    "hash": "b0d052d6ec7bda2d",
+    "lastAttemptHash": "b0d052d6ec7bda2d",
+    "generatedAt": "2026-09-22T02:34:41+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 3.0739,
+    "rounds": 2,
+    "costUsd": 8.0426,
     "files": [
-      "packages/rn/src/Tree.stories.tsx",
       "packages/rn/src/Tree.tsx"
     ],
-    "gaps": 13,
+    "gaps": 26,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "TreeGrid.rn": {
-    "hash": "e6d3fbc5ff886405",
-    "lastAttemptHash": "e6d3fbc5ff886405",
-    "generatedAt": "2026-09-17T19:03:04+00:00",
+    "hash": "41ed523c5c49fea9",
+    "lastAttemptHash": "41ed523c5c49fea9",
+    "generatedAt": "2026-09-22T01:54:42+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 5.8232,
+    "costUsd": 4.6329,
     "files": [
-      "packages/rn/src/TreeGrid.stories.tsx",
-      "packages/rn/src/TreeGrid.test.tsx",
-      "packages/rn/src/TreeGrid.tsx",
-      "packages/rn/src/index.ts"
+      "packages/rn/src/TreeGrid.tsx"
     ],
-    "gaps": 10,
+    "gaps": 18,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   }
 }

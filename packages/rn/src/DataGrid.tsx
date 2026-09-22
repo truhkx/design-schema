@@ -180,7 +180,7 @@ const COPY = {
   empty: 'Nothing to show.',
   scrollHint: 'Scroll sideways to see more columns',
   cellLabel: (column: string, value: string): string => `${column}: ${value}`,
-  editHint: 'Double tap to edit',
+  editHint: 'Opens the cell editor',
 } as const;
 
 const JUSTIFY = { start: 'flex-start', center: 'center', end: 'flex-end' } as const;
@@ -338,7 +338,10 @@ function ResizeHandle({ width, minWidth, color, handleWidth, hitSlop, onResize, 
  * The web keyboard model has no equivalent in core React Native (View and Pressable have no
  * key events), so touch replaces it: a sortable header is a `Button`; `selectable="row"`
  * (and `range`, which degrades to it with a `__DEV__` warning) adds `Checkbox` cells and a
- * select-all Checkbox that stands in for Ctrl+A; `cell` selects the tapped cell. An editable
+ * select-all Checkbox that stands in for Ctrl+A; `cell` selects the tapped cell, where selection
+ * follows focus and the inset `cellFocusRing` is its only visual. The scroll region draws
+ * `focusRing` while a cell inside it reports focus, so the region's overflow never clips it
+ * (react-native-web only — core RN gives View and Pressable no focus events). An editable
  * cell opens its editor on tap (`copy.editHint`), after `onEditStart` allows it: `Input`
  * (commits on blur), `NumberInput` and `DatePicker` (commit when another cell or a sort header
  * is pressed, or through the cell's `activate` accessibility action), `Select` (opens at once
@@ -409,13 +412,29 @@ export function DataGrid({
     if (!__DEV__) {
       return;
     }
+    if (caption === '') {
+      console.warn('DataGrid: `caption` is required; the grid falls back to an empty accessible name.');
+    }
     if (selectable === 'range') {
       console.warn('DataGrid: `selectable="range"` has no touch model on React Native and degrades to `"row"`.');
     }
+    if (!stickyHeader && height !== 'content') {
+      console.warn('DataGrid: the header is always sticky while the grid virtualizes; `stickyHeader={false}` only applies to `height="content"`, where it has no effect anyway.');
+    }
+    // The two column rules with no runtime consequence — exactly one `isRowHeader`, pinned columns
+    // contiguous at one end — are development warnings, never thrown errors.
     if (columns.filter((column) => column.isRowHeader === true).length > 1) {
       console.warn('DataGrid: only one column may set `isRowHeader`; the first one is used.');
     }
-  }, [selectable, columns]);
+    const pinnedStart = columns.filter((column) => column.pinned === 'start').length;
+    const pinnedEnd = columns.filter((column) => column.pinned === 'end').length;
+    const contiguous =
+      columns.slice(0, pinnedStart).every((column) => column.pinned === 'start') &&
+      columns.slice(columns.length - pinnedEnd).every((column) => column.pinned === 'end');
+    if (!contiguous) {
+      console.warn('DataGrid: pinned columns must be contiguous at the start or the end of `columns`, in their order there.');
+    }
+  }, [caption, selectable, columns, stickyHeader, height]);
 
   /** Puts a message in the status bar's live region, and speaks it on iOS, which has no live regions. */
   const announce = (message: string): void => {
@@ -467,7 +486,17 @@ export function DataGrid({
   const statusBarGap = tokenOr<number>(t, overrides?.statusBarGap, t.space2);
   const fixedHeight = tokenOr<number>(t, overrides?.fixedHeight, t.space20);
   const transition = tokenOr<number>(t, overrides?.transition, t.motionDurationFast);
-  const rowHeight = density === 'comfortable' ? t.sizeTargetComfortable : t.sizeTargetMin;
+  // Locked: the scroll region's ring, drawn by the region so its own overflow cannot clip it.
+  const focusRing = t.colorBorderFocus;
+  const focusRingWidth = t.borderWidthFocus;
+  const densityRowHeight = density === 'comfortable' ? t.sizeTargetComfortable : t.sizeTargetMin;
+  // A compact row is the minimum target tall, but the selection column holds a Checkbox, and this
+  // package's Checkbox is a whole comfortable-target row that cannot be made shorter: its height is
+  // not one of its overridable bindings, and a composed child is never restyled. Left at the
+  // minimum, every row's Checkbox would overlap the next row's — `target-24px`, and a getItemLayout
+  // that no longer matches what a row measures. So a selection column raises the row to the
+  // comfortable target at both densities, and the virtualizer is told the same height.
+  const rowHeight = mode === 'row' ? Math.max(densityRowHeight, t.sizeTargetComfortable) : densityRowHeight;
   // selectColumnWidth plus the cell's own inline padding on both sides.
   const selectColumnWidth = t.sizeTargetMin + 2 * cellPaddingInline;
 
@@ -791,13 +820,9 @@ export function DataGrid({
           const isEditing = sameCell(editing, row.id, column.key);
           const invalid = isEditing && editError !== undefined;
           const cellSelected = mode === 'cell' && sameCell(activeCell, row.id, column.key);
-          const cellBackground = invalid
-            ? t.colorStatusDangerBackground
-            : isEditing
-              ? t.colorControlBackground
-              : cellSelected
-                ? t.colorBackgroundSubtle
-                : 'transparent';
+          // In `cell` mode selection follows focus and the focus ring is its only visual —
+          // a selected cell takes no fill of its own.
+          const cellBackground = invalid ? t.colorStatusDangerBackground : isEditing ? t.colorControlBackground : 'transparent';
           const style: ViewStyle[] = [
             {
               width: widthFor(column),
@@ -905,12 +930,15 @@ export function DataGrid({
   // ---- Paging ----
 
   const requestedEnd = React.useRef<number | null>(null);
+  // Checked on scroll only, never on mount: FlatList calls onEndReached for a list that is
+  // shorter than its region as soon as it lays out, and a page request there is not a user's.
+  const hasScrolled = React.useRef(false);
   React.useEffect(() => {
     requestedEnd.current = null;
   }, [data.length]);
   const pageRows = Math.max(1, Math.ceil((listHeight ?? viewport.height) / rowHeight));
   const handleEndReached = (): void => {
-    if (rowCount === undefined || data.length >= rowCount) {
+    if (!hasScrolled.current || rowCount === undefined || data.length >= rowCount) {
       return;
     }
     const end = Math.min(rowCount, data.length + pageRows) - 1;
@@ -926,6 +954,9 @@ export function DataGrid({
   const contentWidth = columns.reduce((sum, column) => sum + widthFor(column), mode === 'row' ? selectColumnWidth : 0) + t.borderWidthFocus;
   const overflows = regionWidth !== null && contentWidth > regionWidth;
   const bounded = height !== 'content';
+  // "The grid inside the region has focus": a cell that reported focus (react-native-web only —
+  // core RN gives View and Pressable no focus events) or an open editor.
+  const gridFocused = focusedCell !== null || editing !== null;
   const flexStyle: ViewStyle = { flexGrow: 1, flexShrink: 1 };
 
   const emptyState = (
@@ -959,10 +990,14 @@ export function DataGrid({
       getItemLayout={(_items, index) => ({ length: rowHeight, offset: rowHeight * index, index })}
       ListHeaderComponent={headerRow}
       ListEmptyComponent={emptyState}
-      stickyHeaderIndices={stickyHeader || bounded ? [0] : undefined}
+      // Always sticky when virtualized; with `height: content` the page scrolls, so it has no effect.
+      stickyHeaderIndices={bounded ? [0] : undefined}
       scrollEnabled={bounded}
       initialNumToRender={bounded ? undefined : data.length}
-      onScroll={(event) => setHeaderScrolled(event.nativeEvent.contentOffset.y > 0)}
+      onScroll={(event) => {
+        hasScrolled.current = true;
+        setHeaderScrolled(event.nativeEvent.contentOffset.y > 0);
+      }}
       scrollEventThrottle={16} // literal-ok: one frame between the header shadow and the scroll position
       onEndReached={rowCount !== undefined ? handleEndReached : undefined}
       onEndReachedThreshold={1}
@@ -1012,13 +1047,18 @@ export function DataGrid({
           scrollEventThrottle={16} // literal-ok: one frame between the pinned shadow and the scroll position
           onLayout={(event: LayoutChangeEvent) => setRegionWidth(event.nativeEvent.layout.width)}
           contentContainerStyle={{ minWidth: contentWidth, flexGrow: 1 }}
-          style={bounded ? flexStyle : undefined}
+          // The ring is the scroll region's, not the cell's, so the region's own overflow never
+          // clips it; it is always laid out and only coloured, so focus shifts nothing.
+          style={[
+            { borderWidth: focusRingWidth, borderColor: gridFocused ? focusRing : 'transparent' },
+            bounded ? flexStyle : null,
+          ]}
         >
           <View style={[{ width: contentWidth }, bounded ? flexStyle : null]}>{list}</View>
         </ScrollView>
       </View>
+      {/* The bar element the grid owns carries no part of its own: `statusBar` stays on the live Text. */}
       <View
-        testID="DataGrid.statusBar"
         style={
           showStatusBar
             ? {
@@ -1033,7 +1073,7 @@ export function DataGrid({
         }
       >
         {/* The live region: what a screen reader hears. Everything beside it is shown, never announced. */}
-        <View role="status" accessibilityLiveRegion="polite">
+        <View testID="DataGrid.statusBar" role="status" accessibilityLiveRegion="polite">
           {editError !== undefined && !loading ? (
             <View style={{ backgroundColor: t.colorStatusDangerBackground }}>
               <TextForegroundContext.Provider value={t.colorStatusDangerForeground}>

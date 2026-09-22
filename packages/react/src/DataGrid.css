@@ -210,7 +210,8 @@
   justify-content: center;
   text-align: center;
 }
-.ds-data-grid__body .ds-data-grid__cell--align-end {
+/* numericFont: cells whose raw value is a number and that have no `render`. */
+.ds-data-grid__cell--numeric {
   font-family: var(--ds-data-grid-numeric-font);
   font-variant-numeric: tabular-nums;
 }
@@ -314,11 +315,12 @@
   z-index: calc(var(--layer-raised) + 1);
 }
 
-/* statusBarSurface / statusBarColor: locked */
+/* statusBarSurface / statusBarColor: locked. statusBarGap sits between the items, which are laid
+   out in the declared order with no separator characters. */
 .ds-data-grid__status-bar {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
+  align-items: baseline;
   gap: var(--ds-data-grid-status-bar-gap);
   padding: var(--ds-data-grid-status-bar-padding);
   background-color: var(--color-background-subtle);
@@ -326,11 +328,4 @@
   font-size: var(--ds-data-grid-status-bar-size);
   border: var(--ds-data-grid-grid-line-width) solid var(--ds-data-grid-grid-line);
   border-block-start: 0;
-}
-
-/* statusBarGap: between status bar items, with no separator characters. */
-.ds-data-grid__status-group {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: var(--ds-data-grid-status-bar-gap);
 }

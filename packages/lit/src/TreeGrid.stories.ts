@@ -166,11 +166,15 @@ export const HeightFixed: Story = { args: { height: 'fixed' } };
 
 /* notable states */
 export const HideCaption: Story = { args: { hideCaption: true } };
+export const Collapsed: Story = { args: { defaultExpanded: [] } };
+/** `*` opens every row with loaded children; the lazy row stays shut until someone opens it. */
+export const ExpandAll: Story = { args: { defaultExpanded: ['*'] } };
 export const SelectChildren: Story = { args: { selectable: 'row', selectChildren: true, defaultExpanded: ['*'] } };
 export const Editable: Story = { args: { editable: true } };
 export const Loading: Story = { args: { loading: true } };
-export const LazyRowLoading: Story = { args: { defaultExpanded: ['equity'] } };
 export const Empty: Story = { args: { data: [] } };
+export const EmptyMessage: Story = { args: { data: [], emptyMessage: 'No accounts loaded.' } };
+export const DefaultSort: Story = { args: { defaultSort: { column: 'balance', direction: 'descending' } } };
 export const NoStatusBar: Story = { args: { showStatusBar: false } };
 export const NoStickyHeader: Story = { args: { stickyHeader: false, height: 'content' } };
 

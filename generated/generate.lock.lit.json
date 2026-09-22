@@ -329,27 +329,27 @@
     }
   },
   "DataGrid.lit": {
-    "hash": "f1afc34f2400e8d2",
-    "lastAttemptHash": "f1afc34f2400e8d2",
-    "generatedAt": "2026-09-17T18:20:18+00:00",
+    "hash": "2137d2cb0bfb2b8d",
+    "lastAttemptHash": "2137d2cb0bfb2b8d",
+    "generatedAt": "2026-09-22T00:59:40+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 3.2644,
+    "rounds": 2,
+    "costUsd": 13.8515,
     "files": [
-      "packages/lit/src/DataGrid.stories.ts",
-      "packages/lit/src/DataGrid.test.ts",
-      "packages/lit/src/DataGrid.ts",
-      "packages/lit/src/index.ts"
+      "packages/lit/src/DataGrid.ts"
     ],
-    "gaps": 16,
+    "gaps": 17,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
     }
   },
   "DatePicker.lit": {
@@ -1266,50 +1266,41 @@
     }
   },
   "Tree.lit": {
-    "hash": "925e6a9bb90be1ff",
-    "lastAttemptHash": "925e6a9bb90be1ff",
-    "generatedAt": "2026-09-17T19:25:31+00:00",
+    "hash": "237829599960185f",
+    "lastAttemptHash": "237829599960185f",
+    "generatedAt": "2026-09-22T02:20:45+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 6.118,
+    "costUsd": 6.3394,
     "files": [
       "packages/lit/src/Tree.stories.ts",
-      "packages/lit/src/Tree.test.ts",
       "packages/lit/src/Tree.ts"
     ],
-    "gaps": 9,
+    "gaps": 15,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "keyboard-run": true,
+      "axe": true
     }
   },
   "TreeGrid.lit": {
-    "hash": "6a83b2dd4f88f03e",
-    "lastAttemptHash": "6a83b2dd4f88f03e",
-    "generatedAt": "2026-09-17T18:51:07+00:00",
+    "hash": null,
+    "lastAttemptHash": "1707f231ffd7c6c0",
+    "error": "claude reported an error: API Error: 500 Internal server error. This is a server-side issue, usually temporary — try again in a moment. If it persists, check https://status.claude.com.",
+    "generatedAt": "2026-09-22T01:45:30+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 8.4415,
-    "files": [
-      "packages/lit/src/TreeGrid.stories.ts",
-      "packages/lit/src/TreeGrid.test.ts",
-      "packages/lit/src/TreeGrid.ts",
-      "packages/lit/src/index.ts"
-    ],
-    "gaps": 12,
-    "gates": {
-      "parse": true,
-      "contrast": true,
-      "literals": true,
-      "typecheck": true,
-      "deps": true,
-      "modules": true
-    }
+    "costUsd": 0.0,
+    "files": [],
+    "gaps": 0,
+    "gates": {}
   }
 }

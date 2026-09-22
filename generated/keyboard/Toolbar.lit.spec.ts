@@ -86,7 +86,7 @@ test.describe('Toolbar (lit) keyboard', () => {
     await page.goto('/iframe.html?id=toolbar-lit--keyboard&viewMode=story');
     await expect(page.getByRole('toolbar').first()).toBeVisible({ timeout: 15_000 });
   });
-  test.skip('Tab: Moves focus into the toolbar (to the last-focused control, initially the first) and, from inside, out of it — the toolbar is one tab stop. — manual', async () => {});
+  test.skip('Tab: Moves focus into the toolbar (to the last-focused control, initially the first; when that control is gone — collapsed into the Menu or unmounted — the first control that is not disabled) and, from inside, out of it — the toolbar is one tab stop. — manual', async () => {});
   test('ArrowRight: Next control (ArrowDown when vertical). Skips disabled controls; does not wrap.', async ({ page }) => {
     const root = page.getByRole('toolbar').first();
     await focusAt(page, root, 0);

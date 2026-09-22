@@ -45,7 +45,7 @@ export type FeedOverridableBinding =
   | 'fontFamily';
 
 export interface FeedProps {
-  /** What the feed contains ("Activity", "Notifications"). The list's accessible name; an empty label warns in development. */
+  /** What the feed contains ("Activity", "Notifications"). The list's accessible name; an empty or whitespace-only label warns once per mount in development. */
   label: string;
   /**
    * Articles, newest first. `heading` names the article (the Card's heading); `timestamp`
@@ -58,7 +58,10 @@ export interface FeedProps {
   /**
    * More items exist beyond the last; the feed asks for them with `onEndReached` as the end
    * approaches, and whenever `items` is empty and not `loading` — on mount and again if the
-   * caller clears `items` — so an empty feed fetches its first page itself. Never while `loading`.
+   * caller clears `items` — so an empty feed fetches its first page itself. While the last
+   * article stays in view it asks at most once per change of the last item's id, `hasMore` or
+   * `loading`, and never while `loading`; a prepend from `onShowNew` leaves the last id
+   * unchanged, so it does not ask again.
    */
   hasMore?: boolean | undefined;
   /** More items are being fetched; a loading indicator is shown after the last article and the list is marked busy. */
@@ -140,10 +143,12 @@ function formatTimestamp(timestamp: string, now: number): string {
  * an article stay individually focusable; the hidden "unread" word and, when the total
  * is known (`hasMore` false), the "{index} of {total}" position sit before each Card,
  * because Card takes a heading string and a footer slot with nothing between them.
- * `onEndReached` fires with threshold one screen; `maintainVisibleContentPosition` keeps
- * the reader's place when the caller prepends after `onShowNew`. The new-items row is a
- * `View` above the list, so it never scrolls away, and is `accessibilityLiveRegion="polite"`
- * — Android announces the count; on iOS VoiceOver users reach the button at the top.
+ * `onEndReached` fires with threshold one screen, at most once per change of the last item's
+ * id, `hasMore` or `loading`, so a list that keeps reporting the end asks only once;
+ * `maintainVisibleContentPosition` keeps the reader's place when the caller prepends after
+ * `onShowNew`. The new-items row is a `View` above the list, so it never scrolls away; it is
+ * always rendered as `accessibilityLiveRegion="polite"` and padded only while shown — Android
+ * announces the count; on iOS VoiceOver users reach the button at the top.
  * While `loading` with no items the indicator shows, not `copy.empty`, so an empty feed
  * about to fetch stays blank rather than flashing it. There is no hardware keyboard feed
  * model on native (no Page or Ctrl keys); screen readers browse with their own gestures.
@@ -214,9 +219,9 @@ export function Feed({
 
   const warnedLabel = React.useRef(false);
   React.useEffect(() => {
-    if (__DEV__ && label === '' && !warnedLabel.current) {
+    if (__DEV__ && label.trim() === '' && !warnedLabel.current) {
       warnedLabel.current = true;
-      console.warn('Feed: `label` is empty; the feed has no accessible name. Say what the feed contains ("Activity").');
+      console.warn('Feed: label is the accessible name of the feed and must not be empty.');
     }
   }, [label]);
 
@@ -233,9 +238,19 @@ export function Feed({
     }
   }, [empty, hasMore, loading]);
 
+  // While the last article stays in view the list keeps reporting the end, so the request is
+  // made at most once per change of the last item's id, `hasMore` or `loading`. A prepend from
+  // `onShowNew` leaves the last id unchanged, so it does not ask again.
+  const lastId = items.length > 0 ? items[items.length - 1]!.id : undefined;
+  const asked = React.useRef(false);
+  React.useEffect(() => {
+    asked.current = false;
+  }, [lastId, hasMore, loading]);
+
   const handleEndReached = (): void => {
     // The empty case is the request above; the list asks only once it has articles.
-    if (hasMore && !loading && !empty) {
+    if (hasMore && !loading && !empty && !asked.current) {
+      asked.current = true;
       onEndReached?.();
     }
   };
@@ -267,6 +282,11 @@ export function Feed({
     ({ item, index }: ListRenderItemInfo<FeedItem>): React.JSX.Element => (
       <View
         testID="Feed.article"
+        // The list's rows. `accessibilityRole` has no `listitem`, so the `role` prop carries it;
+        // react-native-web maps both to the same ARIA role and renders an <li>. Without it the
+        // articles' headings, Buttons and Links are children of role="list" that ARIA does not
+        // allow, and an articleless feed has no required child at all.
+        role="listitem"
         style={item.unread ? { borderStartWidth: unreadWidth, borderStartColor: unreadColor } : undefined}
       >
         {item.unread ? (
@@ -316,12 +336,16 @@ export function Feed({
     ],
   );
 
+  // The footer and the empty state are rendered inside the list (`ListFooterComponent` /
+  // `ListEmptyComponent`), so they are rows of it: `role="listitem"` keeps the ProgressBar from
+  // being a child role="list" does not allow, and gives a feed with no articles its one required
+  // child.
   const footer = loading ? (
-    <View testID="Feed.loadingIndicator" style={{ padding: loadingInset }}>
+    <View testID="Feed.loadingIndicator" role="listitem" style={{ padding: loadingInset }}>
       <ProgressBar label={COPY.loading} hideLabel />
     </View>
   ) : !hasMore && !empty ? (
-    <View testID="Feed.endMessage" style={{ padding: endMessageInset }}>
+    <View testID="Feed.endMessage" role="listitem" style={{ padding: endMessageInset }}>
       <Text size="sm" tone="muted" overrides={endMessageOverrides}>
         {endMessage ?? COPY.end}
       </Text>
@@ -331,7 +355,7 @@ export function Feed({
   // copy.empty shows only with no items, not loading and nothing more to fetch: a feed
   // about to ask for its first page stays blank rather than flashing it.
   const emptyState = !hasMore && !loading ? (
-    <View testID="Feed.emptyState" style={{ padding: emptyStateInset }}>
+    <View testID="Feed.emptyState" role="listitem" style={{ padding: emptyStateInset }}>
       <Text size="sm" tone="muted" overrides={emptyStateOverrides}>
         {COPY.empty}
       </Text>
@@ -342,21 +366,26 @@ export function Feed({
 
   return (
     <View ref={ref} testID="Feed">
-      {showNewItems ? (
-        <View
-          testID="Feed.newItemsButton"
-          accessibilityLiveRegion="polite"
-          style={{ alignSelf: 'flex-start', paddingTop: newItemsOffset, zIndex: newItemsLayer }}
-        >
+      {/*
+        The row is always rendered as the live region and padded only while shown: a region
+        that mounts together with its text is not reliably announced on Android. Android
+        announces the count; on iOS VoiceOver users reach the button at the top of the feed.
+      */}
+      <View
+        testID="Feed.newItemsButton"
+        accessibilityLiveRegion="polite"
+        style={{ alignSelf: 'flex-start', paddingTop: showNewItems ? newItemsOffset : 0, zIndex: newItemsLayer }}
+      >
+        {showNewItems ? (
           <Button
-            label={COPY.showNew(Math.trunc(newItemsCount))}
+            label={COPY.showNew(newItemsCount)}
             variant="secondary"
             size="sm"
             overrides={buttonOverrides}
             onPress={onShowNew}
           />
-        </View>
-      ) : null}
+        ) : null}
+      </View>
       <FlatList
         testID="Feed.container"
         accessibilityRole="list"

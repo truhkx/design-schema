@@ -258,14 +258,33 @@ export function Splitter({
     onSizeChangeEnd,
   };
   const containerExtentRef = React.useRef(0);
-  const dragRef = React.useRef({ active: false, start: 0, last: 0 });
+  const dragRef = React.useRef({ active: false, moved: false, start: 0, last: 0 });
+
+  /** A gesture that never moved the separator is not a drag and commits nothing; one the
+   * platform cancels counts as a release, so both paths end here. */
+  const endDrag = (): void => {
+    const drag = dragRef.current;
+    if (drag.moved) {
+      // A drag commits once, carrying the last expanded size even when the gesture
+      // collapsed the pane.
+      latest.current.onSizeChangeEnd?.(clamp(drag.last, latest.current.minSize, latest.current.maxSize));
+    }
+    drag.active = false;
+    drag.moved = false;
+    setDragging(false);
+  };
 
   const panResponder = React.useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => !latest.current.isCollapsed,
       onMoveShouldSetPanResponder: () => !latest.current.isCollapsed,
       onPanResponderGrant: () => {
-        dragRef.current = { active: true, start: latest.current.baseSize, last: latest.current.baseSize };
+        dragRef.current = {
+          active: true,
+          moved: false,
+          start: latest.current.baseSize,
+          last: latest.current.baseSize,
+        };
         setDragging(true);
       },
       onPanResponderMove: (_event, gesture) => {
@@ -274,10 +293,16 @@ export function Splitter({
         if (!drag.active || extent <= 0) {
           return;
         }
-        const raw = drag.start + ((latest.current.horizontal ? gesture.dx : gesture.dy) / extent) * 100;
+        const delta = latest.current.horizontal ? gesture.dx : gesture.dy;
+        if (delta === 0 && !drag.moved) {
+          // Still a press, not yet a drag: a stray tap on the separator stays silent.
+          return;
+        }
+        drag.moved = true;
+        const raw = drag.start + (delta / extent) * 100;
         if (latest.current.collapsible && raw < latest.current.minSize) {
-          // Past the minimum: collapse, and the rest of this gesture is ignored. `last`
-          // keeps the last expanded size, which the release event carries.
+          // Strictly past the minimum: collapse, and the rest of this gesture is ignored.
+          // `last` keeps the last expanded size, which the release event carries.
           drag.active = false;
           setDragging(false);
           latest.current.setCollapsedState(true);
@@ -286,17 +311,8 @@ export function Splitter({
         drag.last = raw;
         latest.current.applySize(raw, false);
       },
-      onPanResponderRelease: () => {
-        // A drag always commits once on release, carrying the last expanded size even
-        // when the gesture collapsed the pane.
-        latest.current.onSizeChangeEnd?.(clamp(dragRef.current.last, latest.current.minSize, latest.current.maxSize));
-        dragRef.current.active = false;
-        setDragging(false);
-      },
-      onPanResponderTerminate: () => {
-        dragRef.current.active = false;
-        setDragging(false);
-      },
+      onPanResponderRelease: endDrag,
+      onPanResponderTerminate: endDrag,
     }),
   ).current;
 
@@ -433,8 +449,11 @@ export function Splitter({
     ...(collapsible ? [{ name: 'activate', label: toggleLabel }] : []),
   ];
 
-  // `aria-valuemin` is 0 while collapsed so the reported value stays in range.
+  // Only the reported value rounds; the size events carry the unrounded number. The
+  // minimum is 0 while collapsed so the reported value stays in range, while the
+  // maximum stays `maxSize`.
   const reportedSize = Math.round(effectiveSize);
+  const reportedMin = isCollapsed ? 0 : minSize;
 
   return (
     <View ref={ref} testID="Splitter" style={containerStyle} onLayout={handleContainerLayout}>
@@ -455,11 +474,18 @@ export function Splitter({
           accessibilityRole="adjustable"
           accessibilityLabel={label}
           accessibilityValue={{
-            min: isCollapsed ? 0 : minSize,
+            min: reportedMin,
             max: maxSize,
             now: reportedSize,
             text: COPY.sizeText(reportedSize),
           }}
+          // The aria-* aliases carry the same value. React Native merges them into
+          // `accessibilityValue`; react-native-web has no such prop and forwards only these,
+          // and role="slider" (its mapping of `adjustable`) requires aria-valuenow.
+          aria-valuemin={reportedMin}
+          aria-valuemax={maxSize}
+          aria-valuenow={reportedSize}
+          aria-valuetext={COPY.sizeText(reportedSize)}
           accessibilityActions={separatorActions}
           onAccessibilityAction={handleSeparatorAction}
           hitSlop={horizontal ? { left: hitExtra, right: hitExtra } : { top: hitExtra, bottom: hitExtra }}
@@ -478,6 +504,8 @@ export function Splitter({
             variant="ghost"
             size="sm"
             iconOnly
+            // The Button discloses the primary pane, as `aria-expanded={!collapsed}` on web.
+            expanded={!isCollapsed}
             leadingIcon={<Icon name={collapseIcon} color={t.colorActionGhostForeground} />}
             onPress={toggleCollapse}
           />

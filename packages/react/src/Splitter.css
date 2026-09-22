@@ -4,7 +4,7 @@
    supported; elsewhere they are instant and only the separator colour transitions. */
 @property --ds-splitter-primary-size {
   syntax: '<percentage>';
-  inherits: true;
+  inherits: false;
   initial-value: 0%;
 }
 
@@ -162,8 +162,8 @@
   background-color: var(--ds-splitter-separator-hover);
 }
 
-/* separatorActive (locked): while dragging or focused. */
-.ds-splitter__separator:focus,
+/* separatorActive (locked): while dragging or focused (:focus-visible). */
+.ds-splitter__separator:focus-visible,
 .ds-splitter--dragging .ds-splitter__separator {
   background-color: var(--ds-splitter-separator-active);
 }

@@ -454,6 +454,9 @@ export class DsSplitter extends LitElement {
   private observedWidth = -1;
   /** The last committed expanded size during a drag; the size a collapse keeps for restoring. */
   private dragSize = 0;
+  /** True once a drag has actually changed the size. A press that never moved the separator is not
+      a drag and fires nothing, so a stray tap on the separator is silent. */
+  private dragMoved = false;
 
   @query('.container') private accessor containerEl!: HTMLDivElement | null;
   @query('.track') private accessor trackEl!: HTMLDivElement | null;
@@ -632,6 +635,7 @@ export class DsSplitter extends LitElement {
     this.animating = false;
     this.dragging = true;
     this.dragSize = this.currentSize;
+    this.dragMoved = false;
   }
 
   private handlePointerMove(event: PointerEvent): void {
@@ -653,19 +657,25 @@ export class DsSplitter extends LitElement {
     const committed = this.changeSize(raw);
     if (committed !== undefined) {
       this.dragSize = committed;
+      this.dragMoved = true;
     }
   }
 
+  /** A gesture the platform cancels counts as a release; a press that never moved is silent. */
   private handlePointerEnd(event: PointerEvent): void {
     if (!this.dragging) {
       return;
     }
+    const moved = this.dragMoved;
     this.stopDrag(event.pointerId);
-    this.dispatchSize('size-change-end', this.dragSize);
+    if (moved) {
+      this.dispatchSize('size-change-end', this.dragSize);
+    }
   }
 
   private stopDrag(pointerId: number): void {
     this.dragging = false;
+    this.dragMoved = false;
     if (this.separatorEl?.hasPointerCapture(pointerId)) {
       this.separatorEl.releasePointerCapture(pointerId);
     }

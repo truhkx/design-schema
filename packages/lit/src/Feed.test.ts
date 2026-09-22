@@ -44,6 +44,11 @@ function rendered(el: DsFeed) {
   expect(el.shadowRoot!.querySelector('[data-part=container]')).not.toBeNull();
 }
 
+/** The role="feed" column: the element whose direct children are the articles. */
+function feed(el: DsFeed): HTMLElement | null {
+  return el.shadowRoot!.querySelector<HTMLElement>('[data-part=container]');
+}
+
 afterEach(() => {
   document.body.replaceChildren();
 });
@@ -80,7 +85,7 @@ describe('ds-feed behavior', () => {
 
   it('loading-marks-the-feed-busy', async () => {
     const { el } = await setup({ loading: true, hasMore: true });
-    expect(el.getAttribute('aria-busy')).toBe('true');
+    expect(feed(el)?.getAttribute('aria-busy')).toBe('true');
   });
 
   it('renders', async () => {
@@ -101,7 +106,73 @@ describe('ds-feed behavior', () => {
 
   it('has-accessible-name', async () => {
     const { el } = await setup();
-    expect(el.getAttribute('role')).toBe('feed');
-    expect(el.getAttribute('aria-label')).toBe(meta.args?.label);
+    // role and the name sit on the items column, not the host: a feed owns its articles directly.
+    expect(feed(el)?.getAttribute('role')).toBe('feed');
+    expect(feed(el)?.getAttribute('aria-label')).toBe(meta.args?.label);
+  });
+
+  it('a feed owning no article carries no role, so it is never an empty feed', async () => {
+    const { el } = await setup({ items: [], hasMore: false, loading: false });
+    expect(feed(el)?.hasAttribute('role')).toBe(false);
+  });
+
+  it('only articles are children of the feed element', async () => {
+    const { el } = await setup({ hasMore: false });
+    const children = Array.from(feed(el)!.children);
+    expect(children.length).toBeGreaterThan(0);
+    expect(children.every((child) => child.getAttribute('data-part') === 'article')).toBe(true);
+  });
+
+  /**
+   * A negative tabindex on a *shadow host* takes that host's whole flat-tree subtree out of
+   * sequential focus navigation, so the article's focus target has to be Feed's own wrapper
+   * div. With it on the composed Card instead, Tab reaches nothing inside any article.
+   */
+  it('articles are focusable without taking their content out of the tab order', async () => {
+    const { el } = await setup();
+    const articles = Array.from(el.shadowRoot!.querySelectorAll<HTMLElement>('[data-part=article]'));
+    expect(articles.length).toBeGreaterThan(0);
+    for (const article of articles) {
+      expect(article.getAttribute('tabindex')).toBe('-1');
+      expect(article.getAttribute('role')).toBe('article');
+      expect(article.querySelector('ds-card')?.hasAttribute('tabindex')).toBe(false);
+    }
+    articles[0]!.focus();
+    expect(el.shadowRoot!.activeElement).toBe(articles[0]);
+  });
+
+  it('PageDown and PageUp move between articles', async () => {
+    const { el } = await setup();
+    const articles = Array.from(el.shadowRoot!.querySelectorAll<HTMLElement>('[data-part=article]'));
+    articles[0]!.focus();
+    await userEvent.keyboard('{PageDown}');
+    expect(el.shadowRoot!.activeElement).toBe(articles[1]);
+    await userEvent.keyboard('{PageUp}');
+    expect(el.shadowRoot!.activeElement).toBe(articles[0]);
+  });
+
+  it('Ctrl+End asks for more from inside an article, and does nothing while loading', async () => {
+    const { el, loadMore } = await setup({ hasMore: true });
+    el.shadowRoot!.querySelector<HTMLElement>('[data-part=article]')!.focus();
+    // The last article is in view here, so the observer asks too; count the key's own asks.
+    await new Promise(requestAnimationFrame);
+    await new Promise(requestAnimationFrame);
+
+    const beforeKey = loadMore.mock.calls.length;
+    await userEvent.keyboard('{Control>}{End}{/Control}');
+    expect(loadMore.mock.calls.length).toBe(beforeKey + 1);
+
+    el.loading = true;
+    await el.updateComplete;
+    const whileLoading = loadMore.mock.calls.length;
+    await userEvent.keyboard('{Control>}{End}{/Control}');
+    expect(loadMore.mock.calls.length).toBe(whileLoading);
+  });
+
+  it('Ctrl+Home goes to the new-items button when it is shown', async () => {
+    const { el } = await setup({ newItemsCount: 2 });
+    el.shadowRoot!.querySelector<HTMLElement>('[data-part=article]')!.focus();
+    await userEvent.keyboard('{Control>}{Home}{/Control}');
+    expect(el.shadowRoot!.activeElement).toBe(el.shadowRoot!.querySelector('.new-items-row ds-button'));
   });
 });

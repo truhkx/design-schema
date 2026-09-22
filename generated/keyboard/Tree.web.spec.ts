@@ -86,7 +86,7 @@ test.describe('Tree (web) keyboard', () => {
     await page.goto('/iframe.html?id=tree-react--keyboard&viewMode=story');
     await expect(page.getByRole('tree').first()).toBeVisible({ timeout: 15_000 });
   });
-  test.skip('Tab: Moves into the tree (to the selected node — the first selected in tree order when several are — else the first node) and out of it — one tab stop. Leaving the tree forgets which node was focused, so re-entry follows the same rule instead of restoring it. — manual', async () => {});
+  test.skip('Tab: Moves into the tree (to the selected node — the first selected in tree order when several are — else the first node) and out of it — one tab stop. Leaving the tree forgets which node was focused, so re-entry follows the same rule instead of restoring it. Every key in this table is handled by the nearest enclosing treeitem, so a key pressed while focus sits on a composed control inside a node (the chevron Button, an `href` Link — both tabindex=-1 but still focusable) still drives the tree. — manual', async () => {});
   test('ArrowDown: Next visible node.', async ({ page }) => {
     const root = page.getByRole('tree').first();
     await focusAt(page, root, 0);
@@ -130,6 +130,6 @@ test.describe('Tree (web) keyboard', () => {
   test.skip('*: Opens every enabled sibling of the focused node, the focused node included; lazy siblings open and fire onExpand. — manual', async () => {});
   test.skip('Shift+ArrowDown: Moves focus to the next / previous node and adds it to the selection (the APG rule; no anchor range). Outside `multiple` they act as plain arrows. (multiple) — manual', async () => {});
   test.skip('Shift+ArrowUp: Moves focus to the next / previous node and adds it to the selection (the APG rule; no anchor range). Outside `multiple` they act as plain arrows. (multiple) — manual', async () => {});
-  test.skip('Control+a: Adds every visible, enabled node at the current expansion state to the selection; nodes already selected inside a collapsed branch stay selected (the key never deselects). Bound by key code KeyA, with Control or Meta (Cmd on macOS). (multiple) — manual', async () => {});
+  test.skip('Control+a: Adds every visible, enabled node at the current expansion state to the selection; nodes already selected inside a collapsed branch stay selected (the key never deselects). With `selectChildren` the parent invariant wins over that rule: a collapsed parent whose hidden descendants stay unselected is not added, so Ctrl+A is a no-op for it rather than breaking the invariant. Bound by key code KeyA, with Control or Meta (Cmd on macOS). (multiple) — manual', async () => {});
   test.skip('typeahead letter: Type-ahead: any printable character (letters, digits, punctuation) moves to the next visible node whose label starts with the typed characters; `*` and Space keep their own bindings and never enter the buffer. A fresh one-character buffer searches from the node after the focused one; a longer buffer may re-match the focused node (as Listbox). The buffer clears after 500 ms (literal-ok, as Listbox). — manual', async () => {});
 });

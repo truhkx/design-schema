@@ -111,7 +111,10 @@ export const LoadingTheNextPage: Story = {
   },
 };
 
-/** Present with the new-items button and three focusable children inside the articles. */
-export const Keyboard: Story = {
-  args: { newItemsCount: 2 },
-};
+/**
+ * Present with three focusable children inside the feed's own articles (a Reply button, a Link and a
+ * Download button). The new-items row is a sibling of the `role="feed"` element rather than one of
+ * its children, so its button is deliberately absent here: it would be the first Tab stop on the
+ * page while sitting outside the feed the keyboard gate walks.
+ */
+export const Keyboard: Story = {};

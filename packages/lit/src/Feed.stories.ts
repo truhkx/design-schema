@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 import { html } from 'lit';
 import './Feed.js';
-import './Text.js';
+import './Button.js';
 import './Link.js';
+import './Text.js';
 import type { FeedHeadingLevel, FeedItem } from './Feed.js';
 
 interface FeedArgs {
@@ -15,32 +16,27 @@ interface FeedArgs {
   items: FeedItem[];
 }
 
-function minutesAgo(minutes: number): string {
-  return new Date(Date.now() - minutes * 60_000).toISOString();
-}
-
-const BASE_ITEMS: FeedItem[] = [
+const SAMPLE_ITEMS: FeedItem[] = [
   {
-    id: 'evt-3',
+    id: 'a1',
     heading: 'Ana commented on Invoice 42',
-    timestamp: minutesAgo(3),
-    content: html`<ds-text size="sm">Looks right to me.</ds-text>`,
-    actions: html`<ds-link href="#invoice-42" label="View invoice"></ds-link>`,
+    timestamp: '2026-09-15T09:00:00Z',
+    content: html`<ds-text>Looks right to me.</ds-text>`,
+    actions: html`<ds-button label="Reply" variant="secondary" size="sm"></ds-button>`,
     unread: true,
   },
   {
-    id: 'evt-47',
+    id: 'a2',
     heading: 'Bo approved Invoice 41',
-    timestamp: minutesAgo(47),
-    content: html`<ds-text size="sm">Approved for payment.</ds-text>`,
-    actions: html`<ds-link href="#invoice-41" label="View invoice"></ds-link>`,
+    timestamp: '2026-09-14T16:20:00Z',
+    content: html`<ds-link href="#invoice-41" label="Open Invoice 41"></ds-link>`,
   },
   {
-    id: 'evt-95',
-    heading: 'Dae opened a ticket',
-    timestamp: minutesAgo(95),
-    content: html`<ds-text size="sm">Export fails for large workspaces.</ds-text>`,
-    actions: html`<ds-link href="#ticket-108" label="View ticket"></ds-link>`,
+    id: 'a3',
+    heading: 'Cy exported the March report',
+    timestamp: '2026-09-10T12:00:00Z',
+    content: html`<ds-text>The export is ready to download.</ds-text>`,
+    actions: html`<ds-button label="Download" variant="secondary" size="sm"></ds-button>`,
   },
 ];
 
@@ -51,7 +47,7 @@ const meta: Meta<FeedArgs> = {
     actions: { handles: ['load-more', 'show-new', 'item-visible'] },
   },
   argTypes: {
-    headingLevel: { control: 'select', options: ['2', '3', '4'] },
+    headingLevel: { control: 'inline-radio', options: ['2', '3', '4'] },
     hasMore: { control: 'boolean' },
     loading: { control: 'boolean' },
     newItemsCount: { control: 'number' },
@@ -59,12 +55,12 @@ const meta: Meta<FeedArgs> = {
   },
   args: {
     label: 'Activity',
-    headingLevel: '3',
+    items: SAMPLE_ITEMS,
     hasMore: false,
     loading: false,
+    headingLevel: '3',
     newItemsCount: undefined,
     endMessage: undefined,
-    items: BASE_ITEMS,
   },
   render: (args) => html`
     <ds-feed
@@ -93,7 +89,7 @@ export const HeadingLevel4: Story = { args: { headingLevel: '4' } };
 export const HasMore: Story = { args: { hasMore: true } };
 export const Loading: Story = { args: { hasMore: true, loading: true } };
 export const NewItems: Story = { args: { newItemsCount: 4 } };
-export const Empty: Story = { args: { items: [] } };
+export const Empty: Story = { args: { items: [], hasMore: false } };
 export const EmptyLoading: Story = { args: { items: [], hasMore: true, loading: true } };
 
 /* examples */
@@ -147,16 +143,9 @@ export const LoadingTheNextPage: Story = {
 };
 
 /**
- * The new-items button plus three articles, each with a link, so Tab moves
- * through each article's content and PageUp/PageDown/Ctrl+Home/Ctrl+End move
- * between and out of articles. Links before and after give Ctrl+Home/End
- * somewhere to land.
+ * Present with three focusable children inside the feed's own articles (a Reply button, a Link and a
+ * Download button). The new-items row is a sibling of the `role="feed"` element rather than one of
+ * its children, so its button is deliberately absent here: it would be the first Tab stop on the
+ * page while sitting outside the feed the keyboard gate walks.
  */
-export const Keyboard: Story = {
-  args: { newItemsCount: 2 },
-  render: (args, context) => html`
-    <ds-link href="#before" label="Before the feed"></ds-link>
-    ${meta.render!(args, context)}
-    <ds-link href="#after" label="After the feed"></ds-link>
-  `,
-};
+export const Keyboard: Story = {};

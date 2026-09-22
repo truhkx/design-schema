@@ -14,7 +14,9 @@
 }
 
 /* The live row is always rendered so the count is announced when the button appears; it takes
-   space only while the button is shown. newItemsOffset is padding: the row is the first child. */
+   space only while the button is shown. newItemsOffset is padding: the row is the first child.
+   role="status" is not an article, so the row is a sibling of the role="feed" column, never a
+   child of it — a feed owns its articles directly. */
 .ds-feed__new-items {
   position: sticky;
   inset-block-start: 0;
@@ -27,6 +29,7 @@
   padding-block-start: var(--ds-feed-new-items-offset);
 }
 
+/* The items column is the role="feed" element: its direct children are the article wrappers. */
 .ds-feed__items {
   display: flex;
   flex-direction: column;

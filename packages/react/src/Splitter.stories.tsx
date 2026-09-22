@@ -104,6 +104,8 @@ export const SidebarAndContent: Story = {
     secondary: 'The selected document',
     defaultSize: 25,
     persistKey: 'app-sidebar',
+    // Pinned so the story shows the split itself: a stacked splitter renders no separator.
+    stackBelow: 'never',
   },
 };
 

@@ -56,6 +56,7 @@ export const SidebarAndContent: Story = {
     secondary: 'The selected document',
     defaultSize: 25,
     persistKey: 'app-sidebar',
+    stackBelow: 'never',
   },
 };
 export const CollapsibleNavigation: Story = {

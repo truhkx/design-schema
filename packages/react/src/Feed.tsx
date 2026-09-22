@@ -194,7 +194,7 @@ export interface FeedProps
   items: FeedItem[];
   /**
    * More items exist beyond the last; the feed asks for them with `onLoadMore` as the end approaches,
-   * and once on mount when `items` is empty and not `loading`.
+   * and whenever `items` is empty and not `loading` — on mount and again if the caller clears `items`.
    */
   hasMore?: boolean | undefined;
   /** More items are being fetched; a loading indicator is shown after the last article and the feed is `aria-busy`. */
@@ -243,6 +243,9 @@ export const Feed = function Feed({
 }: FeedProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
   const baseId = `ds-feed${useId()}`;
   const rootRef = useRef<HTMLDivElement | null>(null);
+  // The element that carries role="feed": its direct children are the articles, so the live row and
+  // the loading indicator are siblings of it rather than children (a feed owns its articles).
+  const feedRef = useRef<HTMLDivElement | null>(null);
   useImperativeHandle(ref, () => rootRef.current!, []);
 
   const articleRefs = useRef(new Map<string, HTMLElement>());
@@ -268,25 +271,27 @@ export const Feed = function Feed({
   const total = items.length;
   const firstId = items[0]?.id;
   const lastId = items[total - 1]?.id;
-  const idsKey = items.map((item) => item.id).join(' ');
+  const idsKey = items.map((item) => item.id).join(' ');
   const showNewButton = newItemsCount !== undefined && newItemsCount > 0;
 
-  // After "Show new", focus moves to the first new article once the caller has prepended it.
+  // After "Show new", focus moves to the first new article once the caller has prepended it. The
+  // request lives until the next change of `items` and no further: that change takes it when it puts
+  // a new id first, and otherwise drops it, so an unrelated later prepend never steals focus.
   const pendingFocusNewRef = useRef(false);
   const lastFirstIdRef = useRef(firstId);
   useEffect(() => {
-    if (pendingFocusNewRef.current && firstId !== undefined && firstId !== lastFirstIdRef.current) {
-      pendingFocusNewRef.current = false;
-      const node = articleRefs.current.get(firstId);
-      if (node) {
-        node.focus({ preventScroll: true });
-        if (typeof node.scrollIntoView === 'function') {
-          node.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
-        }
-      }
-    }
+    const previousFirstId = lastFirstIdRef.current;
     lastFirstIdRef.current = firstId;
-  }, [firstId]);
+    if (!pendingFocusNewRef.current) return;
+    pendingFocusNewRef.current = false;
+    if (firstId === undefined || firstId === previousFirstId) return;
+    const node = articleRefs.current.get(firstId);
+    if (!node) return;
+    node.focus({ preventScroll: true });
+    if (typeof node.scrollIntoView === 'function') {
+      node.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
+    }
+  }, [idsKey, firstId]);
 
   // An empty feed has no last article to observe, so it asks for its first page itself, once.
   const firedEmptyLoadRef = useRef(false);
@@ -304,7 +309,7 @@ export const Feed = function Feed({
     if (!hasMore || loading || lastId === undefined || typeof IntersectionObserver === 'undefined') return undefined;
     const node = articleRefs.current.get(lastId);
     if (!node) return undefined;
-    // While the last article stays in view the feed asks at most once per change of items, hasMore or loading.
+    // While the last article stays in view the feed asks at most once per change of the last id, hasMore or loading.
     let asked = false;
     const observer = new IntersectionObserver(
       (entries) => {
@@ -318,7 +323,7 @@ export const Feed = function Feed({
     return () => observer.disconnect();
   }, [lastId, hasMore, loading]);
 
-  // Half visible for a second → onItemVisible, once per item.
+  // Half visible for a second → onItemVisible, once per item id per mount.
   const reportedVisibleRef = useRef(new Set<string>());
   useEffect(() => {
     if (typeof IntersectionObserver === 'undefined') return undefined;
@@ -368,14 +373,15 @@ export const Feed = function Feed({
   const handleKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>): void => {
     onKeyDown?.(event);
     const root = rootRef.current;
-    if (event.defaultPrevented || !root) return;
+    const feed = feedRef.current;
+    if (event.defaultPrevented || !root || !feed) return;
     const article = (event.target as HTMLElement).closest<HTMLElement>('[role="article"]');
     // Feed commands apply only while focus is within one of this feed's articles.
-    if (!article || article.closest('[role="feed"]') !== root) return;
+    if (!article || article.closest('[role="feed"]') !== feed) return;
 
     if ((event.key === 'PageDown' || event.key === 'PageUp') && !event.ctrlKey && !event.altKey && !event.metaKey) {
-      const articles = Array.from(root.querySelectorAll<HTMLElement>('[role="article"]')).filter(
-        (el) => el.closest('[role="feed"]') === root,
+      const articles = Array.from(feed.querySelectorAll<HTMLElement>('[role="article"]')).filter(
+        (el) => el.closest('[role="feed"]') === feed,
       );
       const index = articles.indexOf(article);
       event.preventDefault();
@@ -410,37 +416,21 @@ export const Feed = function Feed({
   const resolved = resolveOverrides(overrides);
   const now = Date.now();
   const totalKnown = !hasMore;
-
-  let footer: ReactNode = null;
-  if (loading) {
-    footer = (
-      <div className="ds-feed__loading" data-part="loadingIndicator">
-        <ProgressBar label={COPY.loading} hideLabel />
-      </div>
-    );
-  } else if (!hasMore && total > 0) {
-    footer = (
-      <div className="ds-feed__end-message" data-part="endMessage">
-        <Text tone="muted" size="sm" overrides={resolved.endMessage}>
-          {endMessage ?? COPY.end}
-        </Text>
-      </div>
-    );
-  }
+  // A feed has to own at least one article: with none, the column is a plain container rather than an
+  // unowned role="feed" (which is an ARIA error, and axe's aria-required-children reports it). While
+  // `loading` the role stays with aria-busy, which is the sanctioned way to own nothing yet.
+  const isFeed = total > 0 || loading;
 
   return (
     <div
       {...rest}
       ref={rootRef}
       data-ds="Feed"
-      data-part="container"
       className="ds-feed"
       style={resolved.rootStyle}
-      role="feed"
-      aria-label={label}
-      aria-busy={loading}
       onKeyDown={handleKeyDown}
     >
+      {/* Always rendered so the button's count is announced the moment it first appears; padded only while shown. */}
       <div
         className={showNewButton ? 'ds-feed__new-items ds-feed__new-items--shown' : 'ds-feed__new-items'}
         data-part={showNewButton ? 'newItemsButton' : undefined}
@@ -457,7 +447,14 @@ export const Feed = function Feed({
           />
         ) : null}
       </div>
-      <div className="ds-feed__items">
+      <div
+        ref={feedRef}
+        className="ds-feed__items"
+        data-part="container"
+        role={isFeed ? 'feed' : undefined}
+        aria-label={isFeed ? label : undefined}
+        aria-busy={isFeed ? loading : undefined}
+      >
         {items.map((item, index) => {
           const timestampId = `${baseId}-${index}-time`;
           const absolute = formatAbsolute(item.timestamp);
@@ -511,15 +508,28 @@ export const Feed = function Feed({
             </div>
           );
         })}
-        {total === 0 && !loading && !hasMore ? (
+        {/* The footer is one slot: loading wins, then an empty feed without `hasMore`, then the end message. */}
+        {!loading && total === 0 && !hasMore ? (
           <div className="ds-feed__empty-state" data-part="emptyState">
             <Text tone="muted" size="sm" overrides={resolved.emptyState}>
               {COPY.empty}
             </Text>
           </div>
         ) : null}
-        {footer}
+        {!loading && total > 0 && !hasMore ? (
+          <div className="ds-feed__end-message" data-part="endMessage">
+            <Text tone="muted" size="sm" overrides={resolved.endMessage}>
+              {endMessage ?? COPY.end}
+            </Text>
+          </div>
+        ) : null}
       </div>
+      {/* Outside the feed element: a progressbar is not an article, so it may not be one of its children. */}
+      {loading ? (
+        <div className="ds-feed__loading" data-part="loadingIndicator">
+          <ProgressBar label={COPY.loading} hideLabel />
+        </div>
+      ) : null}
     </div>
   );
 };

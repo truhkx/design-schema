@@ -421,24 +421,25 @@
     }
   },
   "Feed.rn": {
-    "hash": "5d2db5a331707757",
-    "lastAttemptHash": "5d2db5a331707757",
-    "generatedAt": "2026-09-17T20:37:01+00:00",
+    "hash": "8d0aa13982e133a4",
+    "lastAttemptHash": "8d0aa13982e133a4",
+    "generatedAt": "2026-09-22T04:06:19+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 2.0799,
+    "rounds": 2,
+    "costUsd": 7.5158,
     "files": [
       "packages/rn/src/Feed.tsx"
     ],
-    "gaps": 9,
+    "gaps": 20,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "Fieldset.rn": {
@@ -927,26 +928,26 @@
     }
   },
   "Splitter.rn": {
-    "hash": "ce25ea172b62ecdb",
-    "lastAttemptHash": "ce25ea172b62ecdb",
-    "generatedAt": "2026-09-17T20:14:30+00:00",
+    "hash": "5698c117873efda8",
+    "lastAttemptHash": "5698c117873efda8",
+    "generatedAt": "2026-09-22T03:15:06+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 2.8727,
+    "rounds": 2,
+    "costUsd": 4.5055,
     "files": [
       "packages/rn/src/Splitter.stories.tsx",
-      "packages/rn/src/Splitter.test.tsx",
       "packages/rn/src/Splitter.tsx"
     ],
-    "gaps": 13,
+    "gaps": 25,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "Stack.rn": {

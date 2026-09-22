@@ -79,7 +79,7 @@
       "keys": [
         "Enter"
       ],
-      "action": "On a header cell: sorts (if sortable). On an editable cell: opens the editor; while editing, commits and moves focus down one row. On the selection cell: toggles its checkbox. On a cell whose `render` contains a control (Link, Button, Checkbox): focuses the first focusable descendant and clicks it (on a custom element, its inner native control), and Escape hands focus back to the cell. Controls inside `render` are demoted to tabindex=-1 after every update so the grid stays one tab stop.",
+      "action": "On a header cell: sorts (if sortable). On an editable cell: opens the editor; while editing, commits and moves focus down one row. On the selection cell: toggles its checkbox. On a cell whose `render` contains a control (Link, Button, Checkbox) and whose column is not `editable` — an editable column opens its editor instead, the editor always winning over the control: focuses the first focusable descendant and clicks it (on a custom element, its inner native control), and Escape hands focus back to the cell, which on web and Lit means the grid element with aria-activedescendant left on that cell, cells never being real focus targets. A control here is a link, button, input, select, textarea, any element carrying a tabindex, or a composed Link, Button or Checkbox; anything outside that set is neither reached by Enter nor demoted, so do not render one. Controls inside `render` are demoted to tabindex=-1 after every update so the grid stays one tab stop.",
       "from": "inside",
       "expect": "manual"
     },
@@ -95,7 +95,7 @@
       "keys": [
         "Escape"
       ],
-      "action": "While editing, cancels the edit and restores the value. Otherwise clears a range selection.",
+      "action": "While editing, cancels the edit and restores the value. Otherwise clears a range selection. With no editor open and no range, the key is left unhandled and bubbles, so an overlay the grid sits in still closes.",
       "from": "inside",
       "expect": "manual"
     },

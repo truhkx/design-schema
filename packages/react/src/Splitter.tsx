@@ -310,6 +310,8 @@ export function Splitter({
   // ── Pointer drag ────────────────────────────────────────────────────────────
   const [isDragging, setIsDragging] = useState(false);
   const draggingRef = useRef(false);
+  // A press that never moved the separator is not a drag and fires no end event.
+  const movedRef = useRef(false);
 
   function percentFromPoint(clientX: number, clientY: number): number {
     const el = containerRef.current;
@@ -326,6 +328,7 @@ export function Splitter({
 
   function stopDrag(target: HTMLDivElement, pointerId: number): void {
     draggingRef.current = false;
+    movedRef.current = false;
     setIsDragging(false);
     if (target.hasPointerCapture(pointerId)) target.releasePointerCapture(pointerId);
   }
@@ -336,6 +339,7 @@ export function Splitter({
     event.currentTarget.focus();
     event.currentTarget.setPointerCapture(event.pointerId);
     draggingRef.current = true;
+    movedRef.current = false;
     setIsDragging(true);
     setAnimateCollapse(false);
   };
@@ -350,13 +354,15 @@ export function Splitter({
       setCollapsed(true);
       return;
     }
-    changeSize(raw);
+    if (changeSize(raw)) movedRef.current = true;
   };
 
+  // A cancelled gesture counts as a release; a press that never moved the separator is silent.
   const handlePointerEnd = (event: ReactPointerEvent<HTMLDivElement>): void => {
     if (!draggingRef.current) return;
+    const moved = movedRef.current;
     stopDrag(event.currentTarget, event.pointerId);
-    onSizeChangeEnd?.(latestSizeRef.current);
+    if (moved) onSizeChangeEnd?.(latestSizeRef.current);
   };
 
   // ── Keyboard ────────────────────────────────────────────────────────────────
@@ -517,6 +523,8 @@ export function Splitter({
                 variant="ghost"
                 size="sm"
                 iconOnly
+                expanded={!effectiveCollapsed}
+                aria-controls={primaryId}
                 label={(effectiveCollapsed ? COPY.expand : COPY.collapse).replace('{label}', label)}
                 leadingIcon={<Icon name={collapseIcon} inline />}
                 onClick={() => setCollapsed(!collapsedState)}

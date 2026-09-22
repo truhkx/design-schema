@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
-import { html, type TemplateResult } from 'lit';
+import { html } from 'lit';
 import { ifDefined } from 'lit/directives/if-defined.js';
 import './Splitter.js';
 import './Box.js';
@@ -21,28 +21,6 @@ interface SplitterArgs {
   persistKey: string | undefined;
   stackBelow: SplitterStackBelow;
 }
-
-const frame = (content: TemplateResult): TemplateResult => html`
-  <div style="block-size: 20rem; border: var(--border-width-thin) solid var(--color-border);">${content}</div>
-`;
-
-const splitter = (args: SplitterArgs, primary: TemplateResult, secondary: TemplateResult): TemplateResult => html`
-  <ds-splitter
-    label=${args.label}
-    orientation=${args.orientation}
-    default-size=${args.defaultSize}
-    min-size=${args.minSize}
-    max-size=${args.maxSize}
-    step=${args.step}
-    ?collapsible=${args.collapsible}
-    ?default-collapsed=${args.defaultCollapsed}
-    persist-key=${ifDefined(args.persistKey)}
-    stack-below=${args.stackBelow}
-  >
-    <ds-box slot="primary" inset="md">${primary}</ds-box>
-    <ds-box slot="secondary" inset="md">${secondary}</ds-box>
-  </ds-splitter>
-`;
 
 const meta: Meta<SplitterArgs> = {
   title: 'Splitter/Lit',
@@ -70,7 +48,27 @@ const meta: Meta<SplitterArgs> = {
     persistKey: undefined,
     stackBelow: 'prose',
   },
-  render: (args) => frame(splitter(args, html`${args.primary}`, html`${args.secondary}`)),
+  // The splitter fills its parent, so a vertical one needs a parent with a definite height; the
+  // frame is a plain, non-focusable box.
+  render: (args) => html`
+    <div style="block-size: var(--layout-max-width-prose); border: var(--border-width-thin) solid var(--color-border);">
+      <ds-splitter
+        label=${args.label}
+        orientation=${args.orientation}
+        default-size=${args.defaultSize}
+        min-size=${args.minSize}
+        max-size=${args.maxSize}
+        step=${args.step}
+        ?collapsible=${args.collapsible}
+        ?default-collapsed=${args.defaultCollapsed}
+        persist-key=${ifDefined(args.persistKey)}
+        stack-below=${args.stackBelow}
+      >
+        <ds-box slot="primary" inset="md">${args.primary}</ds-box>
+        <ds-box slot="secondary" inset="md">${args.secondary}</ds-box>
+      </ds-splitter>
+    </div>
+  `,
 };
 
 export default meta;
@@ -80,16 +78,53 @@ export const Default: Story = {};
 
 /* orientation */
 export const OrientationHorizontal: Story = { args: { orientation: 'horizontal' } };
-export const OrientationVertical: Story = { args: { orientation: 'vertical' } };
+export const OrientationVertical: Story = {
+  args: { orientation: 'vertical', label: 'Preview height', primary: 'Editor', secondary: 'Preview' },
+};
 
 /* stackBelow */
 export const StackBelowProse: Story = { args: { stackBelow: 'prose' } };
 export const StackBelowContent: Story = { args: { stackBelow: 'content' } };
 export const StackBelowNever: Story = { args: { stackBelow: 'never' } };
 
-/* states */
+/* notable states */
 export const Collapsible: Story = { args: { collapsible: true } };
 export const Collapsed: Story = { args: { collapsible: true, defaultCollapsed: true } };
+
+/**
+ * Present with its separator, collapse Button and at least three focusable children, for the
+ * keyboard gate: Tab, arrows, Home/End, Enter and F6. `stackBelow: never` keeps the separator
+ * rendered at the narrow widths the gate runs at — a stacked splitter renders none.
+ */
+export const Keyboard: Story = {
+  args: { collapsible: true, stackBelow: 'never' },
+  render: (args) => html`
+    <div style="block-size: var(--layout-max-width-prose); border: var(--border-width-thin) solid var(--color-border);">
+      <ds-splitter
+        label=${args.label}
+        orientation=${args.orientation}
+        default-size=${args.defaultSize}
+        min-size=${args.minSize}
+        max-size=${args.maxSize}
+        step=${args.step}
+        ?collapsible=${args.collapsible}
+        ?default-collapsed=${args.defaultCollapsed}
+        persist-key=${ifDefined(args.persistKey)}
+        stack-below=${args.stackBelow}
+      >
+        <ds-box slot="primary" inset="md">
+          <ds-stack gap="normal" align="start">
+            <ds-button label="Overview" variant="secondary" size="sm"></ds-button>
+            <ds-button label="Reports" variant="secondary" size="sm"></ds-button>
+          </ds-stack>
+        </ds-box>
+        <ds-box slot="secondary" inset="md">
+          <ds-button label="Detail action" variant="secondary" size="sm"></ds-button>
+        </ds-box>
+      </ds-splitter>
+    </div>
+  `,
+};
 
 /* examples */
 export const SidebarAndContent: Story = {
@@ -99,6 +134,8 @@ export const SidebarAndContent: Story = {
     secondary: 'The selected document',
     defaultSize: 25,
     persistKey: 'app-sidebar',
+    // Pinned so the story shows the split itself: a stacked splitter renders no separator.
+    stackBelow: 'never',
   },
 };
 
@@ -130,24 +167,4 @@ export const NeverStackingWorkbench: Story = {
     stackBelow: 'never',
     step: 5,
   },
-};
-
-/**
- * The separator between two panes holding three focusable buttons, with the collapse button, so the keyboard
- * gate can exercise Tab, arrows, Home/End, Enter and F6. `stackBelow: never` keeps the separator rendered at
- * narrow test widths.
- */
-export const Keyboard: Story = {
-  args: { collapsible: true, stackBelow: 'never' },
-  render: (args) =>
-    frame(
-      splitter(
-        args,
-        html`<ds-stack gap="tight">
-          <ds-button label="First"></ds-button>
-          <ds-button label="Second"></ds-button>
-        </ds-stack>`,
-        html`<ds-stack gap="tight"><ds-button label="Third"></ds-button></ds-stack>`,
-      ),
-    ),
 };

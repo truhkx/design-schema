@@ -88,6 +88,8 @@ const COPY_DAYS_AGO = (n: number): string => `${n} d ago`;
 const MINUTE_MS = 60_000;
 /** How long an article must stay 50% visible before `item-visible` fires ("a moment"). */
 const VISIBLE_DWELL_MS = 1000;
+/** Relative text stops at seven days — strictly under, so day seven shows the absolute date. */
+const RELATIVE_LIMIT_DAYS = 7;
 
 /**
  * justNow under a minute (and for a future timestamp), minutesAgo/hoursAgo/daysAgo
@@ -111,7 +113,7 @@ function formatRelativeTime(iso: string): string {
     return COPY_HOURS_AGO(hours);
   }
   const days = Math.floor(hours / 24);
-  if (days < 7) {
+  if (days < RELATIVE_LIMIT_DAYS) {
     return COPY_DAYS_AGO(days);
   }
   return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(time);
@@ -123,6 +125,10 @@ function formatAbsoluteTime(iso: string): string | undefined {
   return Number.isNaN(time)
     ? undefined
     : new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(time);
+}
+
+function prefersReducedMotion(): boolean {
+  return typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
 /** Elements the Ctrl+Home/Ctrl+End feed commands can escape to. */
@@ -184,15 +190,25 @@ function documentHost(el: Element): Element {
 /**
  * `<ds-feed>` — Feed (category: container, APG pattern: feed).
  *
- * A `role="feed"` host (set as a plain attribute, along with `aria-label` and
- * `aria-busy`, so accessible-name tooling reads them) around a shadow root of
- * `<ds-card focusable>` articles built from `items`, newest first. Card gives
- * each article `role="article"`, its heading name, `tabindex="-1"` and its own
- * focus ring; Feed adds `aria-describedby` (the article's `<time>`, in the same
- * tree) and `aria-posinset`/`aria-setsize` (`-1` while `hasMore`). The `article`
- * part is a Feed-owned wrapper around each Card that draws the unread bar, and
- * `newItemsButton` is the sticky `role="status"` row around the Button — Card and
- * Button host their own anatomy.
+ * A shadow root of `<ds-card>` articles built from `items`, newest first. The
+ * `article` part is a Feed-owned wrapper around each Card: it is the
+ * `role="article"`, the scripted focus target (`tabindex="-1"`), the focus ring
+ * and the unread bar, labelled by the item's heading and carrying
+ * `aria-describedby` (the article's `<time>`, in the same tree) plus
+ * `aria-posinset`/`aria-setsize` (`-1` while `hasMore`); the Card inside it is
+ * the presentation. That split is forced on this platform: a negative tabindex
+ * on a *shadow host* takes the host's whole flat-tree subtree out of sequential
+ * focus navigation, so `<ds-card focusable>` would leave every link and button
+ * inside an article unreachable by Tab. `newItemsButton` is the sticky
+ * `role="status"` row around the Button — Card and Button host their own anatomy.
+ *
+ * `role="feed"` sits on the items column, the element whose direct children are
+ * the articles: ARIA requires a feed to own its articles, and anything else
+ * among them (the live row, a progressbar, the end message) is an unallowed
+ * child. So the new-items row and every footer part are siblings of that
+ * column, not children of it. A column owning no article carries no role at
+ * all unless it is `loading`, which is `aria-busy` — the sanctioned way to own
+ * nothing yet.
  *
  * `IntersectionObserver`s drive `load-more` (the last article within one viewport,
  * while `hasMore` and not `loading`) and `item-visible` (50% visible for one
@@ -251,6 +267,13 @@ export class DsFeed extends LitElement {
       display: none;
     }
 
+    /* The shell holds the live row, the role="feed" column and the footer chrome as siblings:
+       a feed element's children may only be articles. */
+    .shell {
+      display: flex;
+      flex-direction: column;
+    }
+
     /* newItemsOffset / newItemsLayer: the live row is always rendered so the count is announced
        when the button appears, and takes space only while it is shown (padding, not a margin:
        the row is the first child). It stays over the scrolling articles. */
@@ -266,15 +289,27 @@ export class DsFeed extends LitElement {
       padding-block-start: var(--ds-feed-new-items-offset);
     }
 
-    /* itemGap: layout.gap.normal, between the articles and the footer row */
+    /* itemGap: layout.gap.normal, between the articles */
     .items {
       display: flex;
       flex-direction: column;
       gap: var(--ds-feed-item-gap);
     }
 
+    /* The article is Feed's own wrapper, not the Card: a negative tabindex on a shadow host takes
+       that host's whole flat-tree subtree out of sequential focus navigation, so a focusable
+       <ds-card> would make every link and button inside an article unreachable by Tab. A plain
+       div does not, so the wrapper is the role="article", the focus target and the ring. */
     [data-part='article'] {
       position: relative;
+      border-radius: var(--radius-lg);
+      outline: none;
+    }
+
+    /* focusRing / focusRingWidth (locked): an outline of focusRingWidth in focusRing sitting on the
+       card's edge, no offset — the treatment a composed Card draws for itself. */
+    [data-part='article']:focus-visible {
+      outline: var(--border-width-focus) solid var(--color-border-focus);
     }
 
     /* articleInset: layout.inset.md, forwarded to the Card's own padding hooks rather than
@@ -380,19 +415,29 @@ export class DsFeed extends LitElement {
     | undefined;
 
   private loadMoreObserver: IntersectionObserver | undefined;
+  /** `lastId|hasMore|loading`: the feed asks at most once per change of these, so a prepend does not re-ask. */
+  private loadMoreKey: string | null = null;
   private visibilityObserver: IntersectionObserver | undefined;
   private readonly visibilityTimers = new Map<string, number>();
   private readonly reportedVisible = new Set<string>();
-  /** The first item's id when `show-new` was fired; focus moves once the caller's prepend changes it. */
-  private showNewFirstId: string | null = null;
-  private mounted = false;
+  /** The joined item ids; a change of this is a change of `items`. */
+  private itemsKey: string | null = null;
+  private firstItemId: string | undefined;
+  /** Armed by `show-new`, spent on the next change of `items` whether or not it moved focus. */
+  private pendingShowNewFocus = false;
+  /** An empty feed asks for its first page once, until the caller fills or clears `items` again. */
+  private askedForFirstPage = false;
   private warnedLabel = false;
 
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('data-ds', 'Feed');
-    if (this.getAttribute('role') !== 'feed') this.setAttribute('role', 'feed');
-    if (this.hasUpdated) this.syncObservers();
+    if (this.hasUpdated) {
+      // Rebuild from scratch: disconnectedCallback dropped the observers.
+      this.loadMoreKey = null;
+      this.syncVisibilityObserver();
+      this.syncLoadMoreObserver();
+    }
   }
 
   override disconnectedCallback(): void {
@@ -404,17 +449,21 @@ export class DsFeed extends LitElement {
     if (changed.has('overrides')) {
       this.applyOverrides();
     }
-    if (changed.has('label') || changed.has('loading')) {
-      this.syncHostAria();
+    if (changed.has('label')) {
+      this.warnMissingLabel();
     }
   }
 
   protected override render(): TemplateResult {
     const count = this.newItemsCount ?? 0;
     const shown = count > 0;
+    /* A feed has to own at least one article: with none, and nothing on its way, the column is a
+       plain container rather than an unowned role="feed". While `loading` the role stays, with
+       aria-busy, which is the sanctioned way to own nothing yet. */
+    const isFeed = this.items.length > 0 || this.loading;
 
     return html`
-      <div part="container" data-part="container" @keydown=${this.handleKeydown}>
+      <div class="shell" @keydown=${this.handleKeydown}>
         <div
           class=${shown ? 'new-items-row shown' : 'new-items-row'}
           part=${shown ? 'newItemsButton' : nothing}
@@ -430,32 +479,37 @@ export class DsFeed extends LitElement {
               ></ds-button>`
             : nothing}
         </div>
-        <div class="items">
+        <div
+          class="items"
+          part="container"
+          data-part="container"
+          role=${isFeed ? 'feed' : nothing}
+          aria-label=${isFeed ? this.label : nothing}
+          aria-busy=${isFeed ? String(this.loading) : nothing}
+        >
           ${repeat(
             this.items,
             (item) => item.id,
             (item, index) => this.renderArticle(item, index),
           )}
-          ${this.renderFooter()}
         </div>
+        ${this.renderFooter()}
       </div>
     `;
   }
 
-  protected override updated(changed: PropertyValues): void {
-    const streamChanged = changed.has('items') || changed.has('hasMore') || changed.has('loading');
-    if (streamChanged || !this.mounted) {
-      this.syncObservers();
-      // An empty feed has no last article to observe, so it asks for its first page itself.
-      if (this.items.length === 0 && this.hasMore && !this.loading) {
-        this.dispatchLoadMore();
-      }
+  protected override updated(): void {
+    const itemsKey = this.items.map((item) => item.id).join(' ');
+    const itemsChanged = itemsKey !== this.itemsKey;
+    this.itemsKey = itemsKey;
+
+    if (itemsChanged) {
+      this.syncVisibilityObserver();
     }
-    this.mounted = true;
-    if (this.showNewFirstId !== null && changed.has('items') && this.items[0]?.id !== this.showNewFirstId) {
-      // The caller prepended; the first new article takes focus. Nothing prepended, nothing to move to.
-      this.showNewFirstId = null;
-      this.getArticles()[0]?.focus();
+    this.syncLoadMoreObserver();
+    this.askForFirstPage();
+    if (itemsChanged) {
+      this.moveFocusToFirstNewArticle();
     }
   }
 
@@ -468,18 +522,20 @@ export class DsFeed extends LitElement {
       <div
         part="article"
         data-part="article"
+        role="article"
+        tabindex="-1"
+        aria-label=${item.heading}
+        aria-describedby=${timestampId}
+        aria-posinset=${index + 1}
+        aria-setsize=${total}
         data-item-id=${item.id}
         ?data-unread=${item.unread === true}
       >
         <ds-card
-          class="article-card"
+          role="none"
           heading=${item.heading}
           heading-level=${this.headingLevel}
           inset="md"
-          focusable
-          aria-describedby=${timestampId}
-          aria-posinset=${index + 1}
-          aria-setsize=${total}
         >
           <ds-stack part="articleBody" data-part="articleBody" gap="tight">
             ${item.unread === true ? html`<span class="visually-hidden">${COPY_UNREAD}</span>` : nothing}
@@ -512,9 +568,11 @@ export class DsFeed extends LitElement {
   }
 
   /**
-   * While `loading` the indicator shows rather than the empty state, so a feed
-   * about to fetch never flashes `copy.empty`; an empty feed with more to come
-   * stays blank for the same reason.
+   * One slot with a fixed precedence: `loading` wins, then an empty feed with
+   * `hasMore` shows nothing (so a feed about to fetch never flashes `copy.empty`),
+   * then an empty feed without it shows `copy.empty`, then the end message. Every
+   * one of these is a sibling of the `role="feed"` column: a progressbar and a
+   * paragraph are not articles, so a feed may not own them.
    */
   private renderFooter(): TemplateResult | typeof nothing {
     if (this.loading) {
@@ -543,13 +601,8 @@ export class DsFeed extends LitElement {
     return nothing;
   }
 
-  /** The focusable Cards, in document order. */
+  /** The `role="article"` wrappers — the focus targets and the observers' targets — in document order. */
   private getArticles(): HTMLElement[] {
-    return Array.from(this.renderRoot.querySelectorAll<HTMLElement>('.article-card'));
-  }
-
-  /** The Feed-owned wrappers the observers watch. */
-  private getArticleWrappers(): HTMLElement[] {
     return Array.from(this.renderRoot.querySelectorAll<HTMLElement>('[data-part="article"]'));
   }
 
@@ -558,14 +611,14 @@ export class DsFeed extends LitElement {
   }
 
   private dispatchLoadMore(): void {
-    this.dispatchEvent(new CustomEvent<void>('load-more', { bubbles: true, composed: true }));
+    this.dispatchEvent(new CustomEvent('load-more', { bubbles: true, composed: true }));
   }
 
   private readonly handleShowNewPress = (event: Event): void => {
     // Feed announces its own request; the inner Button's press stays internal.
     event.stopPropagation();
-    this.showNewFirstId = this.items[0]?.id ?? null;
-    this.dispatchEvent(new CustomEvent<void>('show-new', { bubbles: true, composed: true }));
+    this.pendingShowNewFocus = true;
+    this.dispatchEvent(new CustomEvent('show-new', { bubbles: true, composed: true }));
   };
 
   private readonly handleKeydown = (event: KeyboardEvent): void => {
@@ -628,48 +681,105 @@ export class DsFeed extends LitElement {
     }
   }
 
-  private syncHostAria(): void {
-    if (this.label) {
-      if (this.getAttribute('aria-label') !== this.label) this.setAttribute('aria-label', this.label);
-    } else {
-      this.removeAttribute('aria-label');
-      if (import.meta.env.DEV && !this.warnedLabel) {
-        this.warnedLabel = true;
-        console.warn("<ds-feed>: `label` is required; it is the feed's accessible name.");
-      }
-    }
-    if (this.loading) {
-      this.setAttribute('aria-busy', 'true');
-    } else {
-      this.removeAttribute('aria-busy');
+  /** `label` is the feed's only accessible name; there is no default. */
+  private warnMissingLabel(): void {
+    if (import.meta.env.DEV && this.label.trim() === '' && !this.warnedLabel) {
+      this.warnedLabel = true;
+      console.warn('Feed: `label` is the accessible name of the feed and must not be empty.');
     }
   }
 
-  /** (Re)builds the load-more and visibility observers against the current articles. */
-  private syncObservers(): void {
-    this.teardownObservers();
-    const wrappers = this.getArticleWrappers();
+  /** An empty feed has no last article to observe, so it asks for its first page itself, once. */
+  private askForFirstPage(): void {
+    if (this.items.length > 0) {
+      this.askedForFirstPage = false;
+      return;
+    }
+    if (this.hasMore && !this.loading && !this.askedForFirstPage) {
+      this.askedForFirstPage = true;
+      this.dispatchLoadMore();
+    }
+  }
+
+  /**
+   * After `show-new` the first new article takes focus and is scrolled into view
+   * (instantly under reduced motion — the feed's only motion on this platform).
+   * The request lives until the next change of `items` and no further: that change
+   * takes it when it puts a new id first, and otherwise drops it, so an unrelated
+   * later prepend never steals focus.
+   */
+  private moveFocusToFirstNewArticle(): void {
+    const previous = this.firstItemId;
+    const first = this.items[0]?.id;
+    this.firstItemId = first;
+    if (!this.pendingShowNewFocus) {
+      return;
+    }
+    this.pendingShowNewFocus = false;
+    if (first === undefined || first === previous) {
+      return;
+    }
+    const article = this.getArticles()[0];
+    if (article === undefined) {
+      return;
+    }
+    article.focus({ preventScroll: true });
+    article.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
+  }
+
+  /** Watches the last article, at most one ask per change of its id, `hasMore` or `loading`. */
+  private syncLoadMoreObserver(): void {
+    const lastId = this.items[this.items.length - 1]?.id;
+    const key = `${lastId ?? ''}|${this.hasMore}|${this.loading}`;
+    if (key === this.loadMoreKey) {
+      return;
+    }
+    this.loadMoreKey = key;
+    this.loadMoreObserver?.disconnect();
+    this.loadMoreObserver = undefined;
+    if (!this.hasMore || this.loading) {
+      return;
+    }
+    const wrappers = this.getArticles();
     const last = wrappers[wrappers.length - 1];
     if (last === undefined) {
       return;
     }
+    const observer = new IntersectionObserver((entries) => {
+      if (!entries.some((entry) => entry.isIntersecting)) {
+        return;
+      }
+      observer.disconnect();
+      if (this.loadMoreObserver === observer) {
+        this.loadMoreObserver = undefined;
+      }
+      this.dispatchLoadMore();
+    }, { rootMargin: '100% 0px' });
+    observer.observe(last);
+    this.loadMoreObserver = observer;
+  }
 
-    if (this.hasMore && !this.loading) {
-      this.loadMoreObserver = new IntersectionObserver(this.handleLoadMoreIntersect, { rootMargin: '100% 0px' });
-      this.loadMoreObserver.observe(last);
+  /** Watches every article whose id has not reported yet; ids already reported stay reported. */
+  private syncVisibilityObserver(): void {
+    this.visibilityObserver?.disconnect();
+    for (const timer of this.visibilityTimers.values()) {
+      clearTimeout(timer);
     }
-
-    this.visibilityObserver = new IntersectionObserver(this.handleVisibilityIntersect, { threshold: 0.5 });
-    for (const wrapper of wrappers) {
-      if (!this.reportedVisible.has(wrapper.dataset.itemId ?? '')) {
-        this.visibilityObserver.observe(wrapper);
+    this.visibilityTimers.clear();
+    const observer = new IntersectionObserver(this.handleVisibilityIntersect, { threshold: 0.5 });
+    for (const wrapper of this.getArticles()) {
+      const id = wrapper.dataset.itemId;
+      if (id !== undefined && !this.reportedVisible.has(id)) {
+        observer.observe(wrapper);
       }
     }
+    this.visibilityObserver = observer;
   }
 
   private teardownObservers(): void {
     this.loadMoreObserver?.disconnect();
     this.loadMoreObserver = undefined;
+    this.loadMoreKey = null;
     this.visibilityObserver?.disconnect();
     this.visibilityObserver = undefined;
     for (const timer of this.visibilityTimers.values()) {
@@ -678,15 +788,6 @@ export class DsFeed extends LitElement {
     this.visibilityTimers.clear();
   }
 
-  private readonly handleLoadMoreIntersect = (entries: IntersectionObserverEntry[]): void => {
-    if (entries.some((entry) => entry.isIntersecting)) {
-      // One request per approach: the observer is rebuilt when `items`, `hasMore` or `loading` change.
-      this.loadMoreObserver?.disconnect();
-      this.loadMoreObserver = undefined;
-      this.dispatchLoadMore();
-    }
-  };
-
   private readonly handleVisibilityIntersect = (entries: IntersectionObserverEntry[]): void => {
     for (const entry of entries) {
       const target = entry.target as HTMLElement;
@@ -694,12 +795,11 @@ export class DsFeed extends LitElement {
       if (id === undefined || this.reportedVisible.has(id)) {
         continue;
       }
-      const existing = this.visibilityTimers.get(id);
-      if (existing !== undefined) {
-        clearTimeout(existing);
-        this.visibilityTimers.delete(id);
-      }
-      if (entry.isIntersecting) {
+      const pending = this.visibilityTimers.get(id);
+      if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
+        if (pending !== undefined) {
+          continue;
+        }
         const timer = window.setTimeout(() => {
           this.visibilityTimers.delete(id);
           // Once per id per mount: an item that scrolls out and back does not fire again.
@@ -714,6 +814,9 @@ export class DsFeed extends LitElement {
           );
         }, VISIBLE_DWELL_MS);
         this.visibilityTimers.set(id, timer);
+      } else if (pending !== undefined) {
+        clearTimeout(pending);
+        this.visibilityTimers.delete(id);
       }
     }
   };

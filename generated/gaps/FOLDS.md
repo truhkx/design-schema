@@ -3319,3 +3319,66 @@ One line per decision: `<date> <Component> <platform>: <gap> → <what the doc n
 2026-09-21 Toolbar web,lit: the Keyboard story's overflow and children → the Default two groups with overflow wrap pinned
 2026-09-21 Toolbar rn: a separator between nested groups → top-level adjacency only, no separator and no size pass
 2026-09-21 Toolbar lit: no scenarios for separator, collapse or fades → stated as deliberate, platform tests cover them
+2026-09-21 DataGrid lit,rn: compact rows cannot hold a select Checkbox → a selection column is comfortable at both densities
+2026-09-21 DataGrid lit: minTarget has no part and no description → it is the resize floor and the Checkbox's forwarded controlSize
+2026-09-21 DataGrid rn,lit,web: the status bar position with no body cell → shown only while the active cell is a body cell
+2026-09-21 DataGrid rn: stickyHeader has no reachable effect anywhere → accepted for parity, false neither honoured nor warned
+2026-09-21 DataGrid lit,rn: an empty grid while loading shows what → the empty state is suppressed, copy.loading stands alone
+2026-09-21 DataGrid rn: no copy key for the cell accessibilityLabel → copy.cellLabel added, rn and swiftui
+2026-09-21 DataGrid lit: rangeOverlay cannot be under and over the cells → one element, the border under pinned and hovered rows
+2026-09-21 DataGrid lit: pinnedShadow asks for a mirrored side-specific offset → the token applied unmirrored to both sides
+2026-09-21 DataGrid web: which sort copy names a sortable header → the direction the next activation will produce
+2026-09-21 DataGrid web: rowsPerPage counts the sticky header or not → floor(height / rowHeight) − 1, one row of context
+2026-09-21 DataGrid web: Enter on a cell both editable and holding a control → the editor wins, with the control set named
+2026-09-21 DataGrid web: Escape with no editor and no range selection → unhandled, so it bubbles to an ancestor overlay
+2026-09-21 DataGrid web: statusBar part on the live Text or on the bar div → the live Text, the bar div carries no part
+2026-09-21 DataGrid web: the caption part has no element of its own → a grid-owned span around the Heading, as sortButton
+2026-09-21 DataGrid web: aria-valuemin/valuemax on the resize separator → valuemin from minWidth, valuemax omitted
+2026-09-21 DataGrid web,rn: a token's pixel value for resize logic → measured from a hidden probe, never hard-coded
+2026-09-21 DataGrid rn: fixedHeight's default is shorter than one row → stated as a floor, fixed needs an override
+2026-09-21 DataGrid rn: focusRing has no native focus to follow → laid out always, only recoloured, invisible on a device
+2026-09-21 DataGrid rn: onEndReached fires at layout against never-on-mount → suppressed until the list has scrolled once
+2026-09-21 DataGrid rn: an open editor when the grid unmounts or data changes → the draft is dropped silently
+2026-09-21 Tree web,lit: aria-hidden on a focusable chevron is a failure → the chevron stays exposed and named
+2026-09-21 Tree web,lit: a treeitem's name repeats the exposed chevron → an explicit aria-label of label, or label and badge
+2026-09-21 Tree web,lit: which element carries the icon part → a tree-owned span wrapper on both, not the ds-icon host
+2026-09-21 Tree web,lit: a key pressed on a control inside a treeitem → handled by the nearest enclosing treeitem
+2026-09-21 Tree web,lit: what onExpandChange reports for ["*"] → the first toggle resolves it to concrete ids
+2026-09-21 Tree web,lit: Ctrl+A against the selectChildren invariant → the invariant wins, Ctrl+A is a no-op there
+2026-09-21 Tree web,lit: does selectOnFocus count Tab-in and pointer focus → keyboard movement only
+2026-09-21 Tree web,lit: focus when a controlled collapse closes an ancestor → focus moves up to that ancestor
+2026-09-21 Tree web: a node whose id is literally "*" → never matched as a listed id, opened only as a loaded parent
+2026-09-21 Tree web: the loading placeholder has no story that shows it → stated as user-act only, covered by tests
+2026-09-21 Tree lit: a hook for a forwarded-only binding is dead CSS → no hook for labelSelectedWeight, headingSize, badgeSize
+2026-09-21 Tree lit: headingSize versus the Heading's own size prop → composed at size md, overrides.fontSize renders
+2026-09-21 Tree rn: what role the FlatList's rows carry → a listitem View per item, the row Pressable inside it
+2026-09-21 Tree rn: disabled nodes cannot meet the contrast pairs → recorded as exempt, an inactive component
+2026-09-21 Tree rn: the href anchor is a second tab stop on rn-web → demoted to tabindex -1, as on web
+2026-09-21 Tree rn: target-24px against a 20px label line box → the row is the target, inline text never is
+2026-09-21 Tree rn: the lazy placeholder's name against TreeGrid's → copy.loading alone, it is not a node and has no level
+2026-09-21 Tree rn: does focusing the chevron light the node's ring → no, only the row's own focus does
+2026-09-21 Tree rn: the link part had no structure on native → a View inside the label Text, mirroring web
+2026-09-21 Tree rn: the container font with no cascade → placeholder and empty state take the same resolved values
+2026-09-21 Tree rn: copy.selectedCount derived or written on user acts → derived from selected, iOS announces on user acts
+2026-09-21 Tree rn: a tap also activating in the click-selects scenario → the scenario asserts the selection every platform reports
+2026-09-21 Tree rn: onExpand once per mount or on every open → on every open, replacing children is the only stop
+2026-09-21 Tree rn: headingLevel has no meaning on native → accepted for parity, as DataGrid's captionLevel
+2026-09-21 Tree rn,lit: checkboxGap in single and none, and against rowGap → no effect there, the row is two nested groups
+2026-09-21 TreeGrid web: aria-hidden over the expand Button → dropped, the Button stays exposed, as rn and Tree
+2026-09-21 TreeGrid web: Shift+Space fallback against selectChildren → the keyboard block wins, non-cascading
+2026-09-21 TreeGrid web: which element carries the statusBar part → the live Text, the bar unparted, as DataGrid
+2026-09-21 TreeGrid web: copy.position cannot agree with aria-rowindex → the active row + 1, one less than aria-rowindex
+2026-09-21 TreeGrid web: guide lines clipped by the row header cell → drawn on the row, offset by the selection column
+2026-09-21 TreeGrid web: the lazy placeholder's cell count → one real cell per column, matching aria-colcount
+2026-09-21 TreeGrid web: a pointer click on a parent row header → toggles and never selects, matching rn
+2026-09-21 TreeGrid web: does numericFont's condition carry over → yes, DataGrid's condition with DataGrid's token
+2026-09-21 TreeGrid rn: no copy key for the cell accessibilityLabel → copy.cellLabel added, as DataGrid
+2026-09-21 TreeGrid rn: the caption bindings were declared web-only → the sharing rule restated for every platform
+2026-09-21 TreeGrid rn: density compact against the select Checkbox → comfortable at both, as DataGrid
+2026-09-21 TreeGrid rn: expandButtonSize cannot size the composed Button → the wrapper is the target, as Tree
+2026-09-21 TreeGrid rn: focusRing and focusRingWidth had no part → the scroll region, as DataGrid
+2026-09-21 TreeGrid rn: undefined is unreachable without Delete/Backspace → stated, an emptied number editor is the path
+2026-09-21 TreeGrid rn: the expand Button inside an accessible row header → iOS uses the row's actions, rn-web both
+2026-09-21 TreeGrid rn: long-press on a leaf row header → unbound, press already edits there
+2026-09-21 TreeGrid rn: loadingColor on a composed Text whose color is locked → delivered as tone muted
+2026-09-21 TreeGrid rn: the sorted announcement's direction word → the enum value itself, as DataGrid

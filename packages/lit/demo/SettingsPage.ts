@@ -114,11 +114,11 @@ export class DsPatternSettingsPage extends LitElement {
           <ds-stack gap="section">
             <ds-heading level="1">Settings</ds-heading>
 
-            <ds-tabs label="Settings sections" .tabs=${SETTINGS_TABS} keep-mounted>
+            <ds-tabs label="Settings sections" .tabs=${SETTINGS_TABS} fit="fill" keep-mounted>
               <ds-tab-panel id="profile">
                 <ds-form name="profile" no-error-summary @submit=${this.handleProfileSubmit}>
                   <ds-stack gap="loose">
-                    <ds-fieldset legend="Your details">
+                    <ds-fieldset legend="Your details" gap="normal">
                       <ds-input
                         label="Name"
                         name="name"
@@ -136,7 +136,7 @@ export class DsPatternSettingsPage extends LitElement {
                         @change=${(event: CustomEvent<InputChangeDetail>) => this.editProfile('email', event)}
                       ></ds-input>
                     </ds-fieldset>
-                    <ds-fieldset legend="Public profile">
+                    <ds-fieldset legend="Public profile" gap="normal">
                       <ds-input
                         label="Display name"
                         name="displayName"
@@ -153,15 +153,15 @@ export class DsPatternSettingsPage extends LitElement {
                     </ds-fieldset>
                   </ds-stack>
                   <ds-stack slot="actions" direction="horizontal" gap="tight" justify="end">
-                    <ds-button variant="secondary" label="Cancel" @press=${this.handleProfileCancel}></ds-button>
                     <ds-button variant="primary" type="submit" label="Save changes"></ds-button>
+                    <ds-button variant="secondary" label="Cancel" @press=${this.handleProfileCancel}></ds-button>
                   </ds-stack>
                 </ds-form>
               </ds-tab-panel>
 
               <ds-tab-panel id="notifications">
                 <ds-stack gap="loose">
-                  <ds-fieldset legend="Email me about">
+                  <ds-fieldset legend="Email me about" gap="normal">
                     <ds-checkbox
                       name="productUpdates"
                       label="Product updates"
@@ -170,7 +170,7 @@ export class DsPatternSettingsPage extends LitElement {
                     <ds-checkbox name="securityAlerts" label="Security alerts" default-checked></ds-checkbox>
                     <ds-checkbox name="tips" label="Tips and tutorials"></ds-checkbox>
                   </ds-fieldset>
-                  <ds-fieldset legend="Push notifications">
+                  <ds-fieldset legend="Push notifications" gap="normal">
                     <ds-switch
                       label="Enable push notifications"
                       .checked=${this.pushEnabled}
@@ -191,6 +191,7 @@ export class DsPatternSettingsPage extends LitElement {
                 <ds-stack gap="loose">
                   <ds-fieldset
                     legend="Theme"
+                    gap="normal"
                     description="A preview only: the app sets the color mode, and System means no override."
                   >
                     <ds-segmented-control
@@ -200,7 +201,11 @@ export class DsPatternSettingsPage extends LitElement {
                       @change=${this.handleColorModeChange}
                     ></ds-segmented-control>
                   </ds-fieldset>
-                  <ds-fieldset legend="Density" description="A preview only: the theme has no density setting yet.">
+                  <ds-fieldset
+                    legend="Density"
+                    gap="normal"
+                    description="A preview only: the theme has no density setting yet."
+                  >
                     <ds-radio-group
                       name="density"
                       label="Layout density"
@@ -223,7 +228,7 @@ export class DsPatternSettingsPage extends LitElement {
                   </ds-card>
                   <ds-card surface="subtle" inset="lg" heading="Delete account" heading-level="2">
                     <ds-stack gap="normal" align="start">
-                      <ds-alert tone="warning">This cannot be undone.</ds-alert>
+                      <ds-alert tone="warning" live="off">This cannot be undone.</ds-alert>
                       <ds-button
                         variant="danger"
                         label="Delete account…"

@@ -49,7 +49,7 @@
       "keys": [
         "Enter"
       ],
-      "action": "Collapses the primary pane, or restores it to its previous size. While collapsed, arrows, Home, End and pointer drag do nothing; only Enter or the collapse button restores.",
+      "action": "Collapses the primary pane, or restores it to its previous size. While collapsed, arrows, Home, End and pointer drag do nothing; only Enter or the collapse button restores. Those keys are still consumed (preventDefault) so a focused separator does not scroll the page instead — the exception is Shift+F6, which the splitter leaves to the browser entirely.",
       "from": "first",
       "expect": "manual",
       "when": "collapsible"

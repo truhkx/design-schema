@@ -14,10 +14,22 @@ type Entry = { id: string; type: string; title: string; name: string; importPath
 // gates:axe` — it still sweeps everything, which is what the repo-wide gate is for.
 const ONLY = process.env['DS_GATE_COMPONENT']?.trim() ?? '';
 
-/** A story belongs to `ONLY` when its Storybook title is `<Component>/<Platform>`, or its module is `<Component>.stories.*`. */
+const escapeRegExp = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * A story belongs to `ONLY` when its Storybook title is `<Component>/<Platform>`, or its module is
+ * `<Component>.stories.*`.
+ *
+ * A pattern page is targeted as `Pattern.<Name>` (that is the generated prompt's name, and what
+ * tools/checks.ts puts in DS_GATE_COMPONENT), but its story is titled `Patterns/<Name>` and its module is
+ * `demo/<Name>.stories.*` — neither of which contains the target name — so match on the name alone there.
+ */
 function isComponent(e: Entry, component: string): boolean {
-  if ((e.title ?? '').split('/')[0] === component) return true;
-  return new RegExp(`(^|/)${component}\\.stories\\.[jt]sx?$`).test(e.importPath ?? '');
+  const isPattern = component.startsWith('Pattern.');
+  const name = isPattern ? component.slice(component.indexOf('.') + 1) : component;
+  const segments = (e.title ?? '').split('/');
+  if (isPattern ? segments[0] === 'Patterns' && segments[1] === name : segments[0] === component) return true;
+  return new RegExp(`(^|/)${escapeRegExp(name)}\\.stories\\.[jt]sx?$`).test(e.importPath ?? '');
 }
 
 test.describe('axe', () => {

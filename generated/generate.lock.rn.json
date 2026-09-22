@@ -728,13 +728,13 @@
     }
   },
   "Pattern.SettingsPage.rn": {
-    "hash": "a41154c97ac90c15",
-    "lastAttemptHash": "a41154c97ac90c15",
-    "generatedAt": "2026-09-17T20:56:38+00:00",
+    "hash": "f4bbf566df0f8156",
+    "lastAttemptHash": "f4bbf566df0f8156",
+    "generatedAt": "2026-09-22T04:30:30+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.0782,
+    "costUsd": 2.3005,
     "files": [
       "packages/rn/demo/SettingsPage.stories.tsx",
       "packages/rn/demo/SettingsPage.tsx"
@@ -746,7 +746,8 @@
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "axe": true
     }
   },
   "Popover.rn": {

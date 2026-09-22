@@ -116,7 +116,7 @@ export function SettingsPage(): React.JSX.Element {
           <Stack gap="section">
             <Heading level={1}>Settings</Heading>
 
-            <Tabs label="Settings sections" tabs={SETTINGS_TABS} keepMounted>
+            <Tabs label="Settings sections" tabs={SETTINGS_TABS} fit="fill" keepMounted>
               <TabPanel id="profile">
                 <Form
                   name="profile"
@@ -124,13 +124,13 @@ export function SettingsPage(): React.JSX.Element {
                   onSubmit={handleSubmit}
                   actions={
                     <Stack direction="horizontal" gap="tight" justify="end">
-                      <Button label="Cancel" variant="secondary" onPress={handleCancel} />
                       <Button label="Save changes" variant="primary" type="submit" />
+                      <Button label="Cancel" variant="secondary" onPress={handleCancel} />
                     </Stack>
                   }
                 >
                   <Stack gap="loose">
-                    <Fieldset legend="Your details">
+                    <Fieldset legend="Your details" gap="normal">
                       <Input label="Name" name="name" required value={profile.name} onChangeText={setField('name')} />
                       <Input
                         label="Email"
@@ -142,7 +142,7 @@ export function SettingsPage(): React.JSX.Element {
                         onChangeText={setField('email')}
                       />
                     </Fieldset>
-                    <Fieldset legend="Public profile">
+                    <Fieldset legend="Public profile" gap="normal">
                       <Input
                         label="Display name"
                         name="displayName"
@@ -163,12 +163,12 @@ export function SettingsPage(): React.JSX.Element {
 
               <TabPanel id="notifications">
                 <Stack gap="loose">
-                  <Fieldset legend="Email me about">
+                  <Fieldset legend="Email me about" gap="normal">
                     <Checkbox label="Product updates" name="productUpdates" description="About once a month." />
                     <Checkbox label="Security alerts" name="securityAlerts" defaultChecked />
                     <Checkbox label="Tips and tutorials" name="tips" />
                   </Fieldset>
-                  <Fieldset legend="Push notifications">
+                  <Fieldset legend="Push notifications" gap="normal">
                     <Switch label="Enable push notifications" checked={pushEnabled} onValueChange={setPushEnabled} />
                     <RadioGroup
                       label="Frequency"
@@ -183,7 +183,7 @@ export function SettingsPage(): React.JSX.Element {
 
               <TabPanel id="appearance">
                 <Stack gap="loose">
-                  <Fieldset legend="Theme" description={COPY.themeNote}>
+                  <Fieldset legend="Theme" gap="normal" description={COPY.themeNote}>
                     <SegmentedControl
                       label="Color mode"
                       options={COLOR_MODE_OPTIONS}
@@ -191,7 +191,7 @@ export function SettingsPage(): React.JSX.Element {
                       onChange={setColorMode}
                     />
                   </Fieldset>
-                  <Fieldset legend="Density" description={COPY.densityNote}>
+                  <Fieldset legend="Density" gap="normal" description={COPY.densityNote}>
                     <RadioGroup
                       label="Layout density"
                       name="density"
@@ -214,7 +214,9 @@ export function SettingsPage(): React.JSX.Element {
                   </Card>
                   <Card surface="subtle" inset="lg" heading="Delete account" headingLevel={2}>
                     <Stack gap="normal" align="start">
-                      <Alert tone="warning">This cannot be undone.</Alert>
+                      <Alert tone="warning" live="off">
+                        This cannot be undone.
+                      </Alert>
                       <Button label="Delete account…" variant="danger" onPress={() => setDeleteDialogOpen(true)} />
                     </Stack>
                   </Card>

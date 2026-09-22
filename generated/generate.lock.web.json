@@ -812,25 +812,28 @@
     }
   },
   "Pattern.SettingsPage.web": {
-    "hash": "345a258cdb5ece6b",
-    "lastAttemptHash": "345a258cdb5ece6b",
-    "generatedAt": "2026-09-17T20:49:04+00:00",
+    "hash": "216327760dff2340",
+    "lastAttemptHash": "216327760dff2340",
+    "generatedAt": "2026-09-22T04:22:35+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 1.5135,
+    "rounds": 2,
+    "costUsd": 4.8708,
     "files": [
       "packages/react/demo/SettingsPage.stories.tsx",
-      "packages/react/demo/SettingsPage.tsx"
+      "packages/react/demo/SettingsPage.tsx",
+      "tests/gates/axe.spec.ts"
     ],
-    "gaps": 10,
+    "gaps": 17,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "axe": true
     }
   },
   "Popover.web": {

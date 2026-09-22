@@ -789,25 +789,27 @@
     }
   },
   "Pattern.SettingsPage.lit": {
-    "hash": "fe41208c6f0b5c9f",
-    "lastAttemptHash": "fe41208c6f0b5c9f",
-    "generatedAt": "2026-09-17T20:53:12+00:00",
+    "hash": "87be61dff582c8f6",
+    "lastAttemptHash": "87be61dff582c8f6",
+    "generatedAt": "2026-09-22T04:26:38+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.9362,
+    "costUsd": 2.0328,
     "files": [
       "packages/lit/demo/SettingsPage.stories.ts",
       "packages/lit/demo/SettingsPage.ts"
     ],
-    "gaps": 8,
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,
       "literals": true,
       "typecheck": true,
       "deps": true,
-      "modules": true
+      "modules": true,
+      "keyboard": true,
+      "axe": true
     }
   },
   "Popover.lit": {

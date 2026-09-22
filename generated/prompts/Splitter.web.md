@@ -103,8 +103,11 @@ component:
         in `Text` on React Native, as `primary`; on Lit this is the `secondary` slot.
     size:
       type: number
-      description: Controlled size of the primary pane as a percentage of the container
-        (0–100).
+      description: 'Controlled size of the primary pane as a percentage of the container
+        (0–100). A value outside `minSize`–`maxSize` is clamped for the layout, the
+        value text and aria-valuenow, and fires nothing: the caller is told nothing
+        it did not already know, and a controlled splitter only ever re-renders from
+        its own prop.'
       controls:
         event: onSizeChange
         default: defaultSize
@@ -138,7 +141,9 @@ component:
       default: false
       description: 'The primary pane can collapse to nothing: drag past the minimum,
         press Enter on the separator, or use the collapse button. Enter again restores
-        the last size.'
+        the last size. Without it the collapsed state is pinned false whatever `collapsed`/`defaultCollapsed`
+        say, no collapse button is rendered, and `onCollapseChange` never fires by
+        any route.'
     collapsed:
       type: boolean
       description: 'Controlled collapsed state. Ignored unless `collapsible`. On Lit
@@ -160,7 +165,11 @@ component:
         in either mode, so a controlled splitter still remembers what its parent chose;
         on mount the stored value seeds only an uncontrolled `size` or `collapsed`
         (beating `defaultSize`/`defaultCollapsed`), while a controlled prop wins over
-        the store.'
+        the store. The record is JSON `{size, collapsed}` under the key exactly as
+        given, with no namespace prefix, written whenever either value settles — including
+        once on the first render, before the user has changed anything. The native
+        map is keyed the same way and is neither namespaced nor evicted; it is a per-process
+        cache of a handful of splitters, not a store.'
     stackBelow:
       type: enum
       values:
@@ -176,15 +185,20 @@ component:
         name and no size value. A vertical splitter never stacks. While stacked both
         panes render in full and a collapsed primary pane keeps its collapsed state
         without showing it (no hiding, no collapse Button); growing back past the
-        breakpoint applies it again. All three values apply on every platform (`content`
-        = layout.maxWidth.content, `never` = no stacking).'
+        breakpoint applies it again. All three values apply on every platform (`prose`
+        = layout.maxWidth.prose, `content` = layout.maxWidth.content, `never` = no
+        stacking). The token is read as a length in px, rem or em (rem against the
+        root font size, em against the splitter''s own); a value in any other unit
+        is unreadable and the splitter never stacks, as when the token is absent.'
   events:
     onSizeChange:
       description: 'Fired continuously while dragging and on each key press that changes
-        the size, with the primary size in percent (unrounded). A key press at a bound
-        (End at `maxSize`, Home at `minSize`) fires nothing, and the same holds for
-        the native increment/decrement/setMinimum/setMaximum actions: nothing fires
-        when the clamped target equals the current size.'
+        the size, with the primary size in percent (unrounded). It never repeats the
+        size it last reported: a key press at a bound (End at `maxSize`, Home at `minSize`)
+        fires nothing, the native increment/decrement/setMinimum/setMaximum actions
+        fire nothing when the clamped target equals the current size, and a drag on
+        past `maxSize` is just as silent — "continuously" means on every move that
+        moves the separator, not on every event the platform emits.'
       platforms:
         web: onSizeChange
         lit: size-change
@@ -201,10 +215,14 @@ component:
         key press that changed the size (a key press is a complete interaction), so
         a caller can persist on it. A drag always fires it once on release; if the
         drag collapsed the pane, the rest of that gesture is ignored and it carries
-        the last expanded size, since a collapsed pane keeps its size for restoring.
-        A press that never moved the separator is not a drag and fires nothing, so
-        a stray tap on the separator is silent; a gesture the platform cancels counts
-        as a release.
+        the last expanded size, since a collapsed pane keeps its size for restoring
+        — that holds even when the gesture collapsed before ever changing the size,
+        a pointer down followed straight by a move below `minSize`. A press that never
+        moved the separator is not a drag and fires nothing, so a stray tap on the
+        separator is silent; "moved" is a change of the clamped size, not pointer
+        travel, so a drag held against `maxSize` is a press by this rule, and a native
+        pan responder's move events with a zero delta never make one. A gesture the
+        platform cancels counts as a release.
       platforms:
         web: onSizeChangeEnd
         lit: size-change-end
@@ -265,7 +283,9 @@ component:
     - Enter
     action: Collapses the primary pane, or restores it to its previous size. While
       collapsed, arrows, Home, End and pointer drag do nothing; only Enter or the
-      collapse button restores.
+      collapse button restores. Those keys are still consumed (preventDefault) so
+      a focused separator does not scroll the page instead — the exception is Shift+F6,
+      which the splitter leaves to the browser entirely.
     when: collapsible
     from: first
     expect: manual
@@ -356,9 +376,11 @@ component:
         tracks beneath the percent clamp (a very narrow container can therefore show
         the pane wider than its percent). Dropped for the primary track while collapsed
         so collapse reaches zero. On native it is minWidth (or minHeight when vertical)
-        on both panes, dropped for the primary pane while collapsed; where the container
-        is too narrow for both floors plus the separator, the secondary pane gives
-        way first, since it is the flexible track.'
+        on both panes, dropped for the primary pane while collapsed. A React Native
+        floor is hard, not a preference: the primary pane takes `flexShrink: 0`, so
+        where the container is too narrow for both floors plus the separator the secondary
+        shrinks to its own floor and then the splitter overflows, rather than either
+        pane dropping below its floor as the web grid allows.'
       locked: true
     minTarget:
       token: size.target.min
@@ -388,8 +410,11 @@ component:
         animating state gets a named hook of its own, as the dragging state does:
         a `ds-splitter--animate` root class on web and a `data-animating` attribute
         on the Lit container, set when the collapsed state changes and cleared by
-        the next size change. On native, collapse and restore animate and the separator
-        colour switches instantly.'
+        the next size change or the next pointerdown — a collapse that is never followed
+        by a resize leaves it set, which is what lets a second toggle animate too.
+        On native, collapse and restore animate an `Animated.Value` interpolated to
+        the primary pane''s flexBasis percentage (no native driver, since react-native-web
+        has none) and the separator colour switches instantly.'
       locked: false
   copy:
     collapse: Collapse {label}
@@ -402,10 +427,10 @@ component:
         percent:
           type: number
           description: The primary pane's size as a percentage of the container, rounded
-            to a whole number (as is aria-valuenow); 0 while collapsed, with aria-valuemin
-            0 so the value stays in range while aria-valuemax stays `maxSize`. Only
-            this text and aria-valuenow round; the size events report the unrounded
-            value.
+            to a whole number (as is aria-valuenow); 0 while collapsed, where aria-valuemin
+            drops to 0 so the value stays in range — expanded it is `minSize` — while
+            aria-valuemax stays `maxSize` throughout. Only this text and aria-valuenow
+            round; the size events report the unrounded value.
   a11y:
     role: separator
     requires:
@@ -453,18 +478,20 @@ component:
         has presentational children, so the Button is not inside it: the middle grid
         item is a Splitter-owned track wrapper holding the separator and, as its sibling,
         a span[data-part=collapseButton] wrapper around the Button (Button writes
-        its own data-part). The Button''s Icon is chevron-left/chevron-right when
-        horizontal and chevron-up/chevron-down when vertical, pointing toward the
-        primary pane while expanded and away from it while collapsed (mirrored in
-        RTL), in the Button''s own ghost foreground; it follows the separator in tab
-        order. Below the stackBelow width the observed inline size switches the grid
-        to a single column, the separator is not rendered, and both panes render in
-        full. Direction is read once with getComputedStyle at mount and not observed
-        afterwards (the same on Lit), so a document that flips `dir` later keeps the
-        arrows and chevron it started with. copy.setMinimum and copy.setMaximum name
-        the native accessibility actions and the SwiftUI custom actions only: Home
-        and End are bare keys on web and Lit, which render neither string. persistKey
-        reads/writes localStorage inside try/catch.'
+        its own data-part). That wrapper is not focusable and adds no semantics, but
+        a click anywhere on it is forwarded to the Button, so its padding over the
+        separator line enlarges the target rather than being dead space. The Button''s
+        Icon is chevron-left/chevron-right when horizontal and chevron-up/chevron-down
+        when vertical, pointing toward the primary pane while expanded and away from
+        it while collapsed (mirrored in RTL), in the Button''s own ghost foreground;
+        it follows the separator in tab order. Below the stackBelow width the observed
+        inline size switches the grid to a single column, the separator is not rendered,
+        and both panes render in full. Direction is read once with getComputedStyle
+        at mount and not observed afterwards (the same on Lit), so a document that
+        flips `dir` later keeps the arrows and chevron it started with. copy.setMinimum
+        and copy.setMaximum name the native accessibility actions and the SwiftUI
+        custom actions only: Home and End are bare keys on web and Lit, which render
+        neither string. persistKey reads/writes localStorage inside try/catch.'
     lit:
       tag: ds-splitter
       reflect:
@@ -483,9 +510,12 @@ component:
         loaded --layout-max-width-* custom property, as web (@container cannot read
         custom properties; no literal breakpoints). The F6 pane wrapper takes tabindex=-1
         only while focused that way and drops it on blur, so it never becomes the
-        delegatesFocus target. Parts, the collapse Button wrapper and its Icon follow
-        the web notes. Example string values for `primary`/`secondary` render as slotted
-        text in stories.'
+        delegatesFocus target. Parts, the collapse Button wrapper (including the click
+        it forwards) and its Icon follow the web notes. Example string values for
+        `primary`/`secondary` render as slotted text in stories, each inside a `ds-box
+        inset="md"`, and every Lit story wraps the splitter in a bordered frame the
+        width of layout.maxWidth.prose with a definite height — a vertical splitter
+        has none of its own — so that scaffolding is part of the published Lit sample.'
     rn:
       element: View
       props:
@@ -493,6 +523,11 @@ component:
       - accessibilityLabel
       - accessibilityValue
       - accessibilityActions
+      - aria-valuenow
+      - aria-valuemin
+      - aria-valuemax
+      - aria-valuetext
+      - focusable
       notes: 'Tablets and react-native-web only; below the stackBelow width the panes
         always stack and the separator is not rendered. a11y.role `separator` has
         no React Native equivalent, so the separator''s role here is `adjustable`:
@@ -501,22 +536,38 @@ component:
         fight its own responder), so it cannot show a keyboard focus ring itself (a
         known platform limit; the composed collapse Button has full focus treatment).
         accessibilityRole="adjustable", accessibilityValue={{ min, max, now, text
-        }}, accessibilityActions increment/decrement (step; the system names them),
-        setMinimum/setMaximum (Home/End; labelled copy.setMinimum/copy.setMaximum)
-        and activate (Enter: collapse/restore; labelled copy.collapse/copy.expand)
-        — the gesture alternative. RN View has no typed key handler, so hardware arrows,
-        Home, End and Enter do nothing, including on react-native-web; the accessibility
-        actions and the collapse Button are the keyboard and screen-reader route.
-        F6 has no native equivalent. stackBelow is measured with onLayout on the splitter''s
-        own width (all three values); before the first layout it renders side by side.
-        hitSlop is ignored by react-native-web, so the handle part is an absolutely
-        positioned child View overflowing the separator by max(handleSize, minTarget);
-        hitSlop is set as well, so a native build gets the wider grab area too. Every
-        keyboard rule is web and Lit here, so the Keyboard story the rules require
-        is a visual and axe fixture rather than a keyboard one. The collapse Button
-        is a positioned sibling of the separator placed from its measured position,
-        not a child (Android drops touches outside a parent''s bounds). persistKey
-        is a module-level memory map.'
+        }} together with the aria-valuenow/valuemin/valuemax/valuetext aliases, as
+        Slider''s thumb sets both: react-native-web has no accessibilityValue prop
+        but does map the adjustable role to role="slider", which axe requires a value
+        on, so the notes'' native form alone fails the gate on every story. accessibilityActions
+        increment/decrement (step; the system names them), setMinimum/setMaximum (Home/End;
+        labelled copy.setMinimum/copy.setMaximum) and, only when `collapsible`, activate
+        (Enter: collapse/restore; labelled copy.collapse/copy.expand) — the gesture
+        alternative. Without `collapsible` the activate action is not registered at
+        all, so assistive technology is never offered an action that does nothing.
+        RN View has no typed key handler, so hardware arrows, Home, End and Enter
+        do nothing, including on react-native-web; the accessibility actions and the
+        collapse Button are the keyboard and screen-reader route. F6 has no native
+        equivalent. stackBelow is measured with onLayout on the splitter''s own width
+        (all three values); before the first layout it renders side by side. hitSlop
+        is ignored by react-native-web, so the handle part is an absolutely positioned
+        child View overflowing the separator by max(handleSize, minTarget); hitSlop
+        is set as well, so a native build gets the wider grab area too. Every keyboard
+        rule is web and Lit here, so the Keyboard story the rules require is a visual
+        and axe fixture rather than a keyboard one. The collapse Button is a positioned
+        sibling of the separator placed from its measured position, not a child (Android
+        drops touches outside a parent''s bounds); before the first onLayout of either
+        it sits at offset 0, so it renders at the container''s start edge for one
+        frame and then settles. The separator View is `focusable` so it stays a tab
+        stop under react-native-web, matching the Tab rule, even though it can show
+        no ring there. The RTL mirroring the arrow and chevron rules describe is web
+        and Lit only: the native drag maps the raw dx and the chevron keeps its left/right
+        direction whatever `I18nManager` reports. Collapsed content has no `inert`
+        here, so the collapsed primary pane takes accessibilityElementsHidden, importantForAccessibility="no-hide-descendants"
+        and pointerEvents="none" together — the package''s rule against hiding a View
+        that contains a Pressable is about leaving it tappable, which pointerEvents
+        settles — and none of the three is applied while stacked, where the pane is
+        shown in full. persistKey is a module-level memory map.'
     swiftui:
       element: HStack
       props:
@@ -988,17 +1039,20 @@ notes: 'A container with CSS grid (grid-template-columns: minmax(paneMinTarget, 
   aria-controls={primaryId}) is positioned over the separator line. role=separator
   has presentational children, so the Button is not inside it: the middle grid item
   is a Splitter-owned track wrapper holding the separator and, as its sibling, a span[data-part=collapseButton]
-  wrapper around the Button (Button writes its own data-part). The Button''s Icon
-  is chevron-left/chevron-right when horizontal and chevron-up/chevron-down when vertical,
-  pointing toward the primary pane while expanded and away from it while collapsed
-  (mirrored in RTL), in the Button''s own ghost foreground; it follows the separator
-  in tab order. Below the stackBelow width the observed inline size switches the grid
-  to a single column, the separator is not rendered, and both panes render in full.
-  Direction is read once with getComputedStyle at mount and not observed afterwards
-  (the same on Lit), so a document that flips `dir` later keeps the arrows and chevron
-  it started with. copy.setMinimum and copy.setMaximum name the native accessibility
-  actions and the SwiftUI custom actions only: Home and End are bare keys on web and
-  Lit, which render neither string. persistKey reads/writes localStorage inside try/catch.'
+  wrapper around the Button (Button writes its own data-part). That wrapper is not
+  focusable and adds no semantics, but a click anywhere on it is forwarded to the
+  Button, so its padding over the separator line enlarges the target rather than being
+  dead space. The Button''s Icon is chevron-left/chevron-right when horizontal and
+  chevron-up/chevron-down when vertical, pointing toward the primary pane while expanded
+  and away from it while collapsed (mirrored in RTL), in the Button''s own ghost foreground;
+  it follows the separator in tab order. Below the stackBelow width the observed inline
+  size switches the grid to a single column, the separator is not rendered, and both
+  panes render in full. Direction is read once with getComputedStyle at mount and
+  not observed afterwards (the same on Lit), so a document that flips `dir` later
+  keeps the arrows and chevron it started with. copy.setMinimum and copy.setMaximum
+  name the native accessibility actions and the SwiftUI custom actions only: Home
+  and End are bare keys on web and Lit, which render neither string. persistKey reads/writes
+  localStorage inside try/catch.'
 ```
 
 ## Guidance
@@ -1017,7 +1071,7 @@ Do not use a Splitter on phone-width layouts — it stacks below `stackBelow`, a
 
 ## Behavior
 
-Dragging the separator resizes the primary pane within `minSize`–`maxSize`; arrow keys move it by `step`, Home/End to the bounds. With `collapsible`, dragging past `minSize`, Enter, or the collapse button collapses the primary pane to nothing (its content becomes inert) and Enter or the button restores the previous size; while collapsed the separator ignores drag and every key but Enter. `collapsed` is controlled or starts from `defaultCollapsed`. `onSizeChange` fires continuously, `onSizeChangeEnd` once per drag or key press. F6 cycles primary → separator → secondary and wraps, landing on the first focusable element in the target region or, when it has none, on the region wrapper itself, which takes `tabindex="-1"` for the purpose. Below `stackBelow` (measured on the splitter's own width with a ResizeObserver, the breakpoint read from the loaded `--layout-max-width-*` custom property in px, rem or em; with no tokens loaded, or no ResizeObserver, it never stacks) a horizontal splitter stacks its panes in source order at full width and does not render the separator; a vertical one never stacks. With `persistKey` the last size and collapsed state are restored on mount.
+Dragging the separator resizes the primary pane within `minSize`–`maxSize`; arrow keys move it by `step`, Home/End to the bounds. With `collapsible`, dragging past `minSize`, Enter, or the collapse button collapses the primary pane to nothing (its content becomes inert) and Enter or the button restores the previous size; while collapsed the separator ignores drag and every key but Enter. `collapsed` is controlled or starts from `defaultCollapsed`. `onSizeChange` fires continuously, `onSizeChangeEnd` once per drag or key press. F6 cycles primary → separator → secondary and wraps, landing on the first focusable element in the target region or, when it has none, on the region wrapper itself, which takes `tabindex="-1"` for the purpose. "Focusable" there is the standard selector, skipping anything with a negative tabindex, inside an `[inert]` subtree, or `aria-disabled="true"`; on Lit it is applied to the slot's assigned light-DOM elements, and a custom element whose shadow root delegates focus (a `ds-button`) counts as focusable, while one that does not is invisible to the cycle. Below `stackBelow` (measured on the splitter's own width with a ResizeObserver, the breakpoint read from the loaded `--layout-max-width-*` custom property in px, rem or em; with no tokens loaded, no ResizeObserver, or a breakpoint in any other unit, it never stacks) a horizontal splitter stacks its panes in source order at full width and does not render the separator; a vertical one never stacks. With `persistKey` the last size and collapsed state are restored on mount. The Keyboard fixture pins `stackBelow: never` on every platform, since the gates run at widths narrow enough to stack the separator away and a splitter without a separator has no keyboard model to check.
 
 ## Content guidelines
 

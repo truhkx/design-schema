@@ -3382,3 +3382,48 @@ One line per decision: `<date> <Component> <platform>: <gap> → <what the doc n
 2026-09-21 TreeGrid rn: long-press on a leaf row header → unbound, press already edits there
 2026-09-21 TreeGrid rn: loadingColor on a composed Text whose color is locked → delivered as tone muted
 2026-09-21 TreeGrid rn: the sorted announcement's direction word → the enum value itself, as DataGrid
+2026-09-22 Feed web: which element is the article, the Card or the wrapper → the Card; the wrapper is roleless and axe descends through it
+2026-09-22 Feed web: the aria-required-children diagnosis in the notes was wrong → restated: a roleless, tabindex-less wrapper is fine, any other role is not
+2026-09-22 Feed web: loading indicator, end message and empty state inside role=feed → all chrome renders as siblings outside the feed element
+2026-09-22 Feed web: an empty feed fails aria-required-children → role, label and busy only with an article or while loading
+2026-09-22 Feed web: which element is the container part → the role="feed" column; data-ds and the keydown handler on the shell
+2026-09-22 Feed web: the Keyboard fixture's given is undeclared → no newItemsCount, and the two Ctrl targets go unexercised there
+2026-09-22 Feed web: "the next change of items" read as array identity → a change of the item ids in order
+2026-09-22 Feed web: should the first article take tabindex="0" → no, no article is ever a tab stop
+2026-09-22 Feed lit: aria-busy on the host or on the items column → role, label and busy all on the column
+2026-09-22 Feed lit: a focusable ds-card takes its whole subtree out of Tab → the wrapper is the article, the Card takes role="none"
+2026-09-22 Feed lit: focusRing said Feed owns no focus target → child-owned on web and rn, wrapper-drawn on Lit
+2026-09-22 Feed lit: the article wrapper's focus ring had no radius → new articleRadius binding on radius.lg, Card's own default
+2026-09-22 Feed lit: Stack and Card need no display:contents wrappers here → the web wrapper rationale is marked web-only
+2026-09-22 Feed rn: what role the rows carry under accessibilityRole=list → article, footer and empty wrappers all role="listitem"
+2026-09-22 Feed rn: React Native has no feed role → stated: announced as a plain list, tests look for list
+2026-09-22 Feed rn: what resets the load-more latch after a failed fetch → a loading cycle with the same last id re-arms it
+2026-09-22 Feed rn: a fractional newItemsCount → interpolated as given, the component does not truncate
+2026-09-22 Feed rn: newItemsLayer described as inert on native → restated as no visual effect, applied as zIndex
+2026-09-22 Feed rn: the unread bar insets the Card, read rows misaligned → accepted and stated, read rows reserve nothing
+2026-09-22 Feed rn: timestampSize's part element and styled element differ → stated for rn as well as web and Lit
+2026-09-22 Feed rn: articleActions for an item with no actions → no footer row, the part is absent rather than empty
+2026-09-22 Splitter web: "a press that never moved the separator" undefined → moved is a change of the clamped size
+2026-09-22 Splitter web: a controlled size outside minSize/maxSize → clamped for layout and aria, firing nothing
+2026-09-22 Splitter web: persistKey's storage shape and write timing → JSON {size, collapsed} under the raw key, written on settle
+2026-09-22 Splitter web: onCollapseChange without collapsible → collapsed pinned false, no collapse event by any route
+2026-09-22 Splitter web: "first focusable descendant" undefined for F6 → standard selector, skipping negative tabindex, inert, aria-disabled
+2026-09-22 Splitter web: a stackBelow breakpoint in some other unit → unreadable, so it never stacks
+2026-09-22 Splitter web: the animate hook is never cleared without a resize → left set, and cleared on pointerdown
+2026-09-22 Splitter web: whether the collapseButton wrapper is clickable → a click on it is forwarded to the Button
+2026-09-22 Splitter web: does a collapsed separator preventDefault → yes, so the page does not scroll; Shift+F6 excepted
+2026-09-22 Splitter lit: a drag that collapses before changing the size → the end event fires there too
+2026-09-22 Splitter lit: aria-valuemin always 0, or only while collapsed → minSize expanded, 0 collapsed
+2026-09-22 Splitter lit: what the Lit stories should slot → ds-box panes in a prose-width frame with a definite height
+2026-09-22 Splitter lit: the Keyboard story pinned stackBelow on one platform → pinned stackBelow never on every platform
+2026-09-22 Splitter rn: accessibilityValue alone leaves role=slider valueless → both spellings, as Slider's thumb
+2026-09-22 Splitter rn: no dedupe of drag size events at a bound → no size event ever repeats the size it last reported
+2026-09-22 Splitter rn: paneMinTarget's floors are hard on native → the secondary shrinks to its floor, then the splitter overflows
+2026-09-22 Splitter rn: the activate action offered without collapsible → registered only when collapsible
+2026-09-22 Splitter rn: where the collapse Button sits before the first onLayout → offset 0, the start edge for one frame
+2026-09-22 Splitter rn: which property the collapse animates on native → an Animated.Value on the primary pane's flexBasis
+2026-09-22 Splitter rn: stackBelow prose was left unmapped → layout.maxWidth.prose
+2026-09-22 Splitter rn: RTL mirroring of the drag and the chevron → web and Lit only, unmirrored on native
+2026-09-22 Splitter rn: is the separator focusable under react-native-web → yes, a tab stop that can show no ring
+2026-09-22 Splitter rn: no inert equivalent for a collapsed pane → hidden, no-hide-descendants and pointerEvents none, never while stacked
+2026-09-22 Splitter rn: persistKey's map has no bound or namespace → stated as a per-process cache keyed raw, not a store

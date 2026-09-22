@@ -111,7 +111,9 @@ component:
         first page itself. While the last article stays in view it asks at most once
         per change of the last item's id, `hasMore` or `loading`, and never while
         `loading`; a prepend from `onShowNew` leaves the last id unchanged, so it
-        does not ask again.
+        does not ask again. A `loading` cycle that ends with the same last id re-arms
+        the request, so a page that failed can be asked for again while the reader
+        is still at the end.
     loading:
       type: boolean
       default: false
@@ -119,11 +121,13 @@ component:
         the last article and the feed is `aria-busy`.
     newItemsCount:
       type: integer
-      description: Number of newer items available above (from polling or a socket).
+      description: 'Number of newer items available above (from polling or a socket).
         The feed does not insert them — that would shift what the reader is looking
         at — it shows a "Show {count} new" button at the top which prepends and scrolls.
         Undefined, zero or a negative count shows no button; the live row stays in
-        the DOM unpadded so the count is announced the moment it first appears.
+        the DOM unpadded so the count is announced the moment it first appears. A
+        fractional count is the caller''s error, not the component''s to repair: it
+        is interpolated into `copy.showNew` as given, with no truncation.'
     headingLevel:
       type: enum
       values:
@@ -157,8 +161,10 @@ component:
       description: 'Fired when the new-items button is pressed; the caller prepends
         the items and clears `newItemsCount`. Focus moves to the first article once
         the first item''s id changes; if nothing is prepended, focus stays on the
-        button. The pending focus request lives until the next change of `items` and
-        no further: that change moves focus when it puts a new id first, and otherwise
+        button. The pending focus request lives until the next change of `items` —
+        a change of the item ids in order, not of the array''s identity, so a caller
+        that re-renders a fresh array with the same ids keeps the request — and no
+        further: that change moves focus when it puts a new id first, and otherwise
         drops the request, so an unrelated later prepend never steals focus. The move
         is web, Lit and SwiftUI only — nothing can focus a View by script on iOS or
         Android, so React Native relies on `maintainVisibleContentPosition` and leaves
@@ -251,12 +257,24 @@ component:
         and the bar is drawn by that wrapper over the Card's start edge (mirrored
         in RTL); the Card itself is not restyled. On React Native there is no overlay
         without a negative offset, so the wrapper draws a start border instead, which
-        insets the Card by the bar's width.
+        insets the Card by the bar's width. Read articles reserve nothing in its place,
+        so on that platform an unread row's Card starts `unreadBorderWidth` further
+        in than a read one; the shift is accepted rather than padded away, since padding
+        every read row would inset the whole feed for the sake of a few marks.
       locked: true
     unreadBorderWidth:
       token: border.width.focus
       part: article
       locked: true
+    articleRadius:
+      token: radius.lg
+      part: article
+      description: 'Corner radius of the Feed-owned article wrapper, matching Card''s
+        own default radius. It matters where the wrapper draws something of its own:
+        on Lit the wrapper is the article and draws the focus ring, which would otherwise
+        be a square around a rounded Card; on web and React Native it only rounds
+        the ends of the unread bar.'
+      locked: false
     timestampColor:
       token: color.foreground.muted
       part: timestamp
@@ -270,7 +288,10 @@ component:
         Text's `overrides.fontSize`. The `timestamp` part hook sits on the `<time>`
         element inside that Text, so the size applies to the wrapping Text rather
         than to the part element — as the endMessage and emptyState sizes apply to
-        the Text inside their part wrapper.
+        the Text inside their part wrapper. On React Native the part hook sits on
+        a wrapping View instead (Text takes no testID) and both `size="xs"` and the
+        override go to the Text inside it, so the part element is again not the styled
+        one.
       locked: false
     newItemsOffset:
       token: space.3
@@ -282,8 +303,9 @@ component:
       token: layer.raised
       part: newItemsButton
       description: Stacking order of the sticky new-items row over the scrolling articles
-        (web and Lit). Inert on React Native, where the row is a sibling View above
-        the FlatList and nothing overlaps; it is still applied so an override resolves.
+        (web and Lit). On React Native the row is a sibling View above the FlatList
+        with nothing to overlap, so the value changes nothing there; it is still applied
+        as `zIndex`, which under react-native-web does stack, so an override resolves.
       locked: false
     loadingInset:
       token: layout.inset.md
@@ -333,14 +355,17 @@ component:
       locked: false
     focusRing:
       token: color.border.focus
-      description: 'Child-owned: the article ring is drawn by the composed Card and
-        the button ring by the composed Button. Feed has no focusable element of its
-        own, so it declares no hook for this — the binding names the token a theme
-        has to keep in step, it is not something the feed sets.'
+      description: 'Child-owned on web and React Native: the article ring is drawn
+        by the composed Card and the button ring by the composed Button, and the binding
+        only names the token a theme has to keep in step. On Lit the article wrapper
+        is itself the focus target (the Card cannot be `focusable` there), so Feed
+        draws that ring — an outline in this colour over `articleRadius` corners,
+        with no offset, mirroring Card''s own focus treatment.'
       locked: true
     focusRingWidth:
       token: border.width.focus
-      description: Child-owned with `focusRing`, on the same elements.
+      description: 'Width of that ring, on the same elements: child-owned on web and
+        React Native, the wrapper''s outline width on Lit.'
       locked: true
   copy:
     showNew:
@@ -433,8 +458,8 @@ component:
         still reaches the Stack). The `article` part element is therefore the wrapper,
         not the role="article" Card inside it: the wrapper carries the part and the
         unread bar, the Card carries the role, aria-posinset/aria-setsize and aria-describedby.
-        The empty state is a Feed-owned wrapper inside the items column, like the
-        end message, and is not a live region — only the new-items row is role="status",
+        The empty state is a Feed-owned wrapper after the feed element, like the end
+        message, and is not a live region — only the new-items row is role="status",
         and aria-busy covers loading. The new-items row is always rendered as role="status"
         (padded only while shown) so the button''s count is announced when it appears;
         the end message and loading indicator are not live, aria-busy covers loading.
@@ -446,14 +471,22 @@ component:
         at the top and its press prepends and moves focus to the first new article.
         The loading indicator is an indeterminate ProgressBar with label copy.loading,
         aria-busy on the feed while loading. Under reduced motion no scroll animation.
-        role="feed" goes on the element whose direct children are the articles, not
-        on an ancestor: ARIA requires a feed to own its article children, and axe
-        reports aria-required-children when a wrapper sits between them. So the items
-        column itself carries role="feed" (with the label and aria-busy), the new-items
-        role="status" row and any other chrome stay outside it as siblings, and each
-        Feed-owned article wrapper carries role="article" with aria-posinset/aria-setsize/aria-describedby,
-        while the Card inside it is the presentation. Put another way: nothing may
-        sit between the feed element and an article element.'
+        role="feed" goes on the element whose direct children are the article wrappers,
+        not on an ancestor: ARIA requires a feed to own its article children. A wrapper
+        that has no role, no global aria attribute and no tabindex is descended through
+        — axe''s aria-required-children looks past the Feed-owned article wrapper
+        and finds the Card''s role="article" — while any child whose own role is something
+        else is reported as unallowed. So the items column itself carries role="feed"
+        with the label and aria-busy and is the `container` part, its only children
+        are the article wrappers, and every piece of chrome is a sibling outside it:
+        the role="status" new-items row, the loading indicator (a progressbar), the
+        end message and the empty state (a Text, so a paragraph) would each be an
+        unallowed child. data-ds="Feed", the override hooks and the keydown handler
+        sit on the Feed-owned outer shell around the column. An empty feed cannot
+        own an article and `feed` is not in axe''s reviewEmpty list, so the column
+        carries role/aria-label/aria-busy only when it holds at least one article
+        or is `loading`; with neither it is a plain container holding copy.empty,
+        and the feed has no named region until it has something to own.'
     lit:
       tag: ds-feed
       reflect:
@@ -462,17 +495,30 @@ component:
       - heading-level
       - new-items-count
       notes: '`items` as a property (`content` and `actions` typed as any lit-html
-        renderable); articles rendered in the shadow root as <ds-card focusable> with
-        slotted content templates; Card labels itself with aria-label from its heading
-        (ids do not cross shadow roots), so Feed sets no aria-labelledby. Parts, run
-        order, the always-present role="status" new-items row and aria-busy on the
-        host follow the web notes. Ctrl+Home/End walk the document for focusables
-        (shadow-piercing, as FocusScope). No `shadowRootOptions.delegatesFocus`: the
-        host is not focusable and delegating would pull focus into the first article
-        on any click in the feed''s whitespace — the package declares it for focusable
-        hosts only. After `show-new` the first new article is scrolled into view (smooth
-        normally, instant under `prefers-reduced-motion`), which is the feed''s only
-        motion on this platform. Composed `load-more`, `show-new`, `item-visible`.'
+        renderable); articles rendered in the shadow root as Feed-owned wrappers around
+        <ds-card> with slotted content templates. The wrapper is the article on this
+        platform, not the Card: a negative tabindex on a shadow host takes the host''s
+        whole flat-tree subtree out of sequential focus navigation, so a <ds-card
+        focusable> would make every Link and Button inside an article unreachable
+        by Tab (a WCAG 2.1.1 failure). The wrapper therefore carries role="article",
+        tabindex="-1", aria-label copied from the item heading (ids do not cross shadow
+        roots, so the name is copied rather than referenced), aria-describedby for
+        the timestamp (which lives in the same shadow root), aria-posinset/aria-setsize,
+        and draws the focus ring; the ds-card takes role="none" and is not `focusable`.
+        role="feed", the label and aria-busy go on the items column in the shadow
+        root and never on the host, which nothing walking the column can see. Stack
+        and Card write their own data-part inside their own shadow roots, so `articleBody`
+        and `articleActions` sit directly on the ds-stack hosts and need none of the
+        web display:contents wrappers — that rationale is web-only, and only `article`
+        and `newItemsButton` are Feed-owned here. Run order, the always-present role="status"
+        new-items row, the chrome-as-siblings rule and the empty-feed role drop follow
+        the web notes. Ctrl+Home/End walk the document for focusables (shadow-piercing,
+        as FocusScope). No `shadowRootOptions.delegatesFocus`: the host is not focusable
+        and delegating would pull focus into the first article on any click in the
+        feed''s whitespace — the package declares it for focusable hosts only. After
+        `show-new` the first new article is scrolled into view (smooth normally, instant
+        under `prefers-reduced-motion`), which is the feed''s only motion on this
+        platform. Composed `load-more`, `show-new`, `item-visible`.'
     rn:
       element: FlatList
       props:
@@ -489,23 +535,33 @@ component:
         so prepending via onShowNew does not jump, and the new-items Button rendered
         above the list. `accessibilityState.busy` follows `loading`. The outer View
         (new-items row and list) carries testID `Feed` and the FlatList `Feed.container`.
-        There is no status role: the new-items row is always rendered with `accessibilityLiveRegion="polite"`
-        and padded only while shown, as the web row is — a region that mounts together
-        with its text is not reliably announced on Android. Android announces it;
-        iOS does not, and VoiceOver users reach the button at the top of the feed.
-        Articles are Cards left un-collapsed (no `accessible` on the Card: collapsing
-        would hide the action Buttons and Links from focus), with visually-hidden
-        Text runs for copy.unread and, when the total is known, copy.position. Card
-        takes a heading string and a footer slot with nothing between them, so those
-        runs sit before the Card rather than after the heading; the reading order
-        still puts them ahead of the body. Text and Card take no testID, so the timestamp,
-        articleBody and articleActions parts are wrapping Views that carry theirs.
-        There is no hardware-keyboard feed model on native (no Page or Ctrl keys);
-        screen readers use their own browse gestures, so the Keyboard story the rules
-        require is a visual and axe fixture here rather than a keyboard one — none
-        of the four feed commands exists on this platform. The absolute time is not
-        exposed on native. onViewableItemsChanged with 50% for one second drives onItemVisible,
-        deduped once per id per mount as the event describes.'
+        React Native has no `feed` role — neither `AccessibilityRole` nor `Role` carries
+        one — so `list` is the substitute and a feed is announced here as a plain
+        list named by `accessibilityLabel`, without the APG feed semantics; a test
+        looks for `list`, never `feed`. A list owns list items, so the Feed-owned
+        `article` wrapper carries `role="listitem"` (there is no article role either),
+        and so do the `ListFooterComponent` loading and end wrappers and the `ListEmptyComponent`
+        wrapper: they render inside the FlatList and cannot leave it without leaving
+        the scrolling area, so on this platform the loading row, the end message and
+        the empty state are counted as rows of the list, where web and Lit keep them
+        outside the feed element. There is no status role: the new-items row is always
+        rendered with `accessibilityLiveRegion="polite"` and padded only while shown,
+        as the web row is — a region that mounts together with its text is not reliably
+        announced on Android. Android announces it; iOS does not, and VoiceOver users
+        reach the button at the top of the feed. Articles are Cards left un-collapsed
+        (no `accessible` on the Card: collapsing would hide the action Buttons and
+        Links from focus), with visually-hidden Text runs for copy.unread and, when
+        the total is known, copy.position. Card takes a heading string and a footer
+        slot with nothing between them, so those runs sit before the Card rather than
+        after the heading; the reading order still puts them ahead of the body. Text
+        and Card take no testID, so the timestamp, articleBody and articleActions
+        parts are wrapping Views that carry theirs. There is no hardware-keyboard
+        feed model on native (no Page or Ctrl keys); screen readers use their own
+        browse gestures, so the Keyboard story the rules require is a visual and axe
+        fixture here rather than a keyboard one — none of the four feed commands exists
+        on this platform. The absolute time is not exposed on native. onViewableItemsChanged
+        with 50% for one second drives onItemVisible, deduped once per id per mount
+        as the event describes.'
     swiftui:
       element: ScrollView
       props:
@@ -669,6 +725,7 @@ component:
 - `articleBodyGap`: token `layout.gap.tight`; part `articleBody`
 - `unreadBorder`: token `color.control.selectedBackground`; part `article`; locked
 - `unreadBorderWidth`: token `border.width.focus`; part `article`; locked
+- `articleRadius`: token `radius.lg`; part `article`
 - `timestampColor`: token `color.foreground.muted`; part `timestamp`; locked
 - `timestampSize`: token `font.size.xs`; part `timestamp`
 - `newItemsLayer`: token `layer.raised`; part `newItemsButton`
@@ -708,7 +765,7 @@ Overrides change values, never presence: a prop that turns a part off (`surface:
 
 The `platforms.rn.props` list names the native props the schema cares about; `overrides` and `testID` apply to every component regardless of whether that list mentions them.
 
-Overridable: `itemGap`, `articleInset`, `articleBodyGap`, `timestampSize`, `newItemsOffset`, `newItemsLayer`, `loadingInset`, `endMessageInset`, `endMessageSize`, `emptyStateInset`, `emptyStateSize`, `fontFamily`
+Overridable: `itemGap`, `articleInset`, `articleBodyGap`, `articleRadius`, `timestampSize`, `newItemsOffset`, `newItemsLayer`, `loadingInset`, `endMessageInset`, `endMessageSize`, `emptyStateInset`, `emptyStateSize`, `fontFamily`
 Locked (accessibility-bearing, never overridable): `unreadBorder`, `unreadBorderWidth`, `timestampColor`, `endMessageColor`, `emptyStateColor`, `focusRing`, `focusRingWidth`
 
 ## Behavior scenarios (10)
@@ -812,8 +869,17 @@ notes: "A FlatList newest-first with onEndReached (threshold 1 screen) for onLoa
   \ ListFooterComponent for the loading indicator / end message, maintainVisibleContentPosition\
   \ so prepending via onShowNew does not jump, and the new-items Button rendered above\
   \ the list. `accessibilityState.busy` follows `loading`. The outer View (new-items\
-  \ row and list) carries testID `Feed` and the FlatList `Feed.container`. There is\
-  \ no status role: the new-items row is always rendered with `accessibilityLiveRegion=\"\
+  \ row and list) carries testID `Feed` and the FlatList `Feed.container`. React Native\
+  \ has no `feed` role \u2014 neither `AccessibilityRole` nor `Role` carries one \u2014\
+  \ so `list` is the substitute and a feed is announced here as a plain list named\
+  \ by `accessibilityLabel`, without the APG feed semantics; a test looks for `list`,\
+  \ never `feed`. A list owns list items, so the Feed-owned `article` wrapper carries\
+  \ `role=\"listitem\"` (there is no article role either), and so do the `ListFooterComponent`\
+  \ loading and end wrappers and the `ListEmptyComponent` wrapper: they render inside\
+  \ the FlatList and cannot leave it without leaving the scrolling area, so on this\
+  \ platform the loading row, the end message and the empty state are counted as rows\
+  \ of the list, where web and Lit keep them outside the feed element. There is no\
+  \ status role: the new-items row is always rendered with `accessibilityLiveRegion=\"\
   polite\"` and padded only while shown, as the web row is \u2014 a region that mounts\
   \ together with its text is not reliably announced on Android. Android announces\
   \ it; iOS does not, and VoiceOver users reach the button at the top of the feed.\
@@ -848,7 +914,7 @@ Do not use a Feed for a finite list that fits on a page (a Stack of Cards), for 
 
 ## Behavior
 
-Items render newest first; when the last is within a screen of view and `hasMore`, `onLoadMore` fires and a loading indicator appears; when `hasMore` is false the end message shows. PageDown/PageUp move focus between articles, Ctrl+Home/End leave the feed at either end (End loads instead if there is more; press again after). While `loading` with no items the loading indicator shows, not `copy.empty`; `copy.empty` shows only with no items, not `loading` and `hasMore` false, so an empty feed about to fetch stays blank rather than flashing it. The footer is one slot with a fixed precedence: `loading` wins over everything; then an empty feed with `hasMore` shows nothing; then an empty feed without `hasMore` shows `copy.empty`; then a feed with items and without `hasMore` shows the end message, which is suppressed whenever `items` is empty. New items are announced by the button count, prepended only on request, and focus moves to the first new one. Unread items show a start-edge bar and an "unread" word for assistive technology; `onItemVisible` lets the caller clear it.
+Items render newest first; when the last is within a screen of view and `hasMore`, `onLoadMore` fires and a loading indicator appears; when `hasMore` is false the end message shows. PageDown/PageUp move focus between articles, Ctrl+Home/End leave the feed at either end (End loads instead if there is more; press again after). While `loading` with no items the loading indicator shows, not `copy.empty`; `copy.empty` shows only with no items, not `loading` and `hasMore` false, so an empty feed about to fetch stays blank rather than flashing it. The footer is one slot with a fixed precedence: `loading` wins over everything; then an empty feed with `hasMore` shows nothing; then an empty feed without `hasMore` shows `copy.empty`; then a feed with items and without `hasMore` shows the end message, which is suppressed whenever `items` is empty. New items are announced by the button count, prepended only on request, and focus moves to the first new one. Unread items show a start-edge bar and an "unread" word for assistive technology; `onItemVisible` lets the caller clear it. An item without `actions` renders no footer row, so the `articleActions` part is absent rather than empty. The Keyboard fixture renders the feed with no `newItemsCount`: the new-items row is a sibling outside the feed element, so its button would be the first tab stop in the document while sitting outside the feed the gate walks — which leaves Ctrl+Home's new-items target and Ctrl+End's escape target unexercised there.
 
 ## Content guidelines
 
@@ -856,12 +922,12 @@ Headings say what happened, with the actor first ("Ana commented on Invoice 42")
 
 ## Accessibility
 
-The container is a `feed` with a name and `aria-busy` while loading (APG feed; WCAG 4.1.2), and each item an `article` labelled by its heading, described by its timestamp, and positioned with `aria-posinset`/`aria-setsize` so a reader knows where they are (1.3.1). Articles are focusable so PageUp/PageDown move article by article, and Ctrl+Home/End escape the feed without tabbing through everything (2.1.1, 2.4.3). New content never moves under the reader; it is offered by a button (2.2.2, 3.2.5). Headings follow the page outline (2.4.6). Unread state is bar plus text, not color alone (1.4.1).
+The container is a `feed` with a name and `aria-busy` while loading (APG feed; WCAG 4.1.2), and each item an `article` labelled by its heading, described by its timestamp, and positioned with `aria-posinset`/`aria-setsize` so a reader knows where they are (1.3.1). Articles are focusable so PageUp/PageDown move article by article, and Ctrl+Home/End escape the feed without tabbing through everything (2.1.1, 2.4.3); no article ever takes `tabindex="0"`, since putting one in the tab order is the thing the pattern exists to avoid. A feed owns articles: with none and not `loading` the container drops the `feed` role and its name rather than claiming an empty region. New content never moves under the reader; it is offered by a button (2.2.2, 3.2.5). Headings follow the page outline (2.4.6). Unread state is bar plus text, not color alone (1.4.1).
 
 ## Platform notes
 
 ### Web
-Render `<div role="feed" aria-label aria-busy data-ds="Feed">` with the sticky `newItemsButton` when `newItemsCount > 0`, then a `Card focusable heading headingLevel role="article" aria-describedby aria-posinset aria-setsize` per item (Card renders the `<article>`, its heading and the ring) whose body holds a `<time dateTime title>` inside `Text tone="muted" size="xs"`, the content, and an actions row (`Stack` horizontal, `gap: tight`); a visually-hidden span "unread" and the `unreadBorder` bar on the Feed-owned article wrapper when `unread`. Keydown on the feed implements the table when the event target is inside an article. `IntersectionObserver`s for load-more (`rootMargin: '100% 0px'`) and visibility (`threshold: 0.5`, one-second timer). Footer: indeterminate `ProgressBar label={copy.loading} hideLabel` inside `loadingInset` while `loading`, else the end message `Text` inside `endMessageInset` when `!hasMore`. On mount with no items, `hasMore` and not `loading`, fire `onLoadMore` once (there is no last article to observe). `role="feed"` sits on the items column — the element whose direct children are the article wrappers — and never on an ancestor with the new-items row inside it: a feed must own its articles directly, or `aria-required-children` fails on every story. The sticky `newItemsButton` row is a sibling of the feed element, not a child.
+Render `<div role="feed" aria-label aria-busy data-ds="Feed">` with the sticky `newItemsButton` when `newItemsCount > 0`, then a `Card focusable heading headingLevel role="article" aria-describedby aria-posinset aria-setsize` per item (Card renders the `<article>`, its heading and the ring) whose body holds a `<time dateTime title>` inside `Text tone="muted" size="xs"`, the content, and an actions row (`Stack` horizontal, `gap: tight`); a visually-hidden span "unread" and the `unreadBorder` bar on the Feed-owned article wrapper when `unread`. Keydown on the feed implements the table when the event target is inside an article. `IntersectionObserver`s for load-more (`rootMargin: '100% 0px'`) and visibility (`threshold: 0.5`, one-second timer). Footer: indeterminate `ProgressBar label={copy.loading} hideLabel` inside `loadingInset` while `loading`, else the end message `Text` inside `endMessageInset` when `!hasMore`. On mount with no items, `hasMore` and not `loading`, fire `onLoadMore` once (there is no last article to observe). `role="feed"` sits on the items column — the element whose direct children are the article wrappers — and never on an ancestor with the new-items row inside it: a feed must own its articles directly, or `aria-required-children` fails on every story. The sticky `newItemsButton` row is a sibling of the feed element, not a child, and so are the loading indicator, the end message and the empty state: only the article wrappers are children of the feed element.
 
 ### Lit
 `<ds-feed label="Activity" .items=${items} has-more @load-more=${load}></ds-feed>`; shadow articles as `ds-card`; composed events.

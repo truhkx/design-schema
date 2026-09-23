@@ -34,6 +34,7 @@ export type FeedOverridableBinding =
   | 'itemGap'
   | 'articleInset'
   | 'articleBodyGap'
+  | 'articleRadius'
   | 'timestampSize'
   | 'newItemsOffset'
   | 'newItemsLayer'
@@ -61,7 +62,8 @@ export interface FeedProps {
    * caller clears `items` — so an empty feed fetches its first page itself. While the last
    * article stays in view it asks at most once per change of the last item's id, `hasMore` or
    * `loading`, and never while `loading`; a prepend from `onShowNew` leaves the last id
-   * unchanged, so it does not ask again.
+   * unchanged, so it does not ask again. A `loading` cycle that ends with the same last id
+   * re-arms the request, so a page that failed can be asked for again.
    */
   hasMore?: boolean | undefined;
   /** More items are being fetched; a loading indicator is shown after the last article and the list is marked busy. */
@@ -179,6 +181,7 @@ export function Feed({
   const loadingInset = token<number>(overrides?.loadingInset, t.layoutInsetMd);
   const endMessageInset = token<number>(overrides?.endMessageInset, t.layoutInsetMd);
   const emptyStateInset = token<number>(overrides?.emptyStateInset, t.layoutInsetMd);
+  const articleRadius = token<number>(overrides?.articleRadius, t.radiusLg);
 
   // Forwarded to the composed child's own `overrides` rather than resolved here.
   const articleInset = overrides?.articleInset;
@@ -287,7 +290,14 @@ export function Feed({
         // articles' headings, Buttons and Links are children of role="list" that ARIA does not
         // allow, and an articleless feed has no required child at all.
         role="listitem"
-        style={item.unread ? { borderStartWidth: unreadWidth, borderStartColor: unreadColor } : undefined}
+        // A start border rather than an overlay (RN has none without a negative offset), so an
+        // unread row's Card sits `unreadBorderWidth` further in; read rows reserve nothing.
+        // `articleRadius` only rounds the ends of that bar.
+        style={
+          item.unread
+            ? { borderStartWidth: unreadWidth, borderStartColor: unreadColor, borderRadius: articleRadius }
+            : { borderRadius: articleRadius }
+        }
       >
         {item.unread ? (
           <View style={HIDDEN_STYLE}>
@@ -326,6 +336,7 @@ export function Feed({
     ),
     [
       articleBodyOverrides,
+      articleRadius,
       cardOverrides,
       headingLevel,
       textOverrides,
@@ -374,6 +385,7 @@ export function Feed({
       <View
         testID="Feed.newItemsButton"
         accessibilityLiveRegion="polite"
+        aria-live="polite"
         style={{ alignSelf: 'flex-start', paddingTop: showNewItems ? newItemsOffset : 0, zIndex: newItemsLayer }}
       >
         {showNewItems ? (
@@ -390,7 +402,9 @@ export function Feed({
         testID="Feed.container"
         accessibilityRole="list"
         accessibilityLabel={label}
+        aria-label={label}
         accessibilityState={{ busy: loading }}
+        aria-busy={loading}
         data={items}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}

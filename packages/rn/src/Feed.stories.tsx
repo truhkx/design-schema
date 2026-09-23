@@ -68,8 +68,20 @@ export const EndOfFeed: Story = { args: { hasMore: false } };
 export const NewItemsAvailable: Story = { args: { newItemsCount: 4 } };
 export const Empty: Story = { args: { items: [], hasMore: false } };
 
-/** Three newer items waiting above and articles with actions and a Link: at least three focusable children. */
-export const Keyboard: Story = { args: { newItemsCount: 3, hasMore: false } };
+/**
+ * A visual and axe fixture on native (no Page or Ctrl keys here): articles with actions and a
+ * Link, so at least three focusable children. No `newItemsCount`, as the guidance asks — the
+ * new-items row sits outside the list.
+ */
+export const Keyboard: Story = {
+  args: {
+    hasMore: false,
+    items: [
+      ...SAMPLE_ITEMS.slice(0, 2),
+      { ...SAMPLE_ITEMS[2]!, actions: <Button label="Undo" variant="secondary" size="sm" /> },
+    ],
+  },
+};
 
 // Examples from the schema, with exactly their `given` as args.
 export const ActivityStream: Story = {

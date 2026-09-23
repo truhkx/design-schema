@@ -158,24 +158,20 @@ export function Splitter({
   const baseSize = clamp(size ?? internalSize, minSize, maxSize);
   const effectiveSize = isCollapsed ? 0 : baseSize;
 
+  // Recorded whenever either value settles, in both modes and once on the first render,
+  // so a controlled splitter still remembers what its parent chose. A collapsed pane
+  // keeps its size for restoring.
   React.useEffect(() => {
-    if (__DEV__ && minSize >= maxSize) {
-      console.warn(`Splitter: minSize (${minSize}) must be less than maxSize (${maxSize}).`);
-    }
-  }, [minSize, maxSize]);
-
-  const persist = (nextSize: number, nextCollapsed: boolean): void => {
     if (persistKey !== undefined) {
-      persisted.set(persistKey, { size: nextSize, collapsed: nextCollapsed });
+      persisted.set(persistKey, { size: baseSize, collapsed: isCollapsed });
     }
-  };
+  }, [persistKey, baseSize, isCollapsed]);
 
   const applySize = (raw: number, commit: boolean): void => {
     const next = clamp(raw, minSize, maxSize);
     if (size === undefined) {
       setInternalSize(next);
     }
-    persist(next, false);
     onSizeChange?.(next);
     if (commit) {
       onSizeChangeEnd?.(next);
@@ -196,8 +192,6 @@ export function Splitter({
     if (collapsed === undefined) {
       setInternalCollapsed(next);
     }
-    // A collapsed pane keeps its size for restoring.
-    persist(baseSize, next);
     onCollapseChange?.(next);
   };
 
@@ -260,14 +254,15 @@ export function Splitter({
   const containerExtentRef = React.useRef(0);
   const dragRef = React.useRef({ active: false, moved: false, start: 0, last: 0 });
 
-  /** A gesture that never moved the separator is not a drag and commits nothing; one the
-   * platform cancels counts as a release, so both paths end here. */
+  /** A gesture that never moved the separator (no change of the clamped size, and no
+   * collapse) is not a drag and commits nothing; one the platform cancels counts as a
+   * release, so both paths end here. */
   const endDrag = (): void => {
     const drag = dragRef.current;
     if (drag.moved) {
       // A drag commits once, carrying the last expanded size even when the gesture
       // collapsed the pane.
-      latest.current.onSizeChangeEnd?.(clamp(drag.last, latest.current.minSize, latest.current.maxSize));
+      latest.current.onSizeChangeEnd?.(drag.last);
     }
     drag.active = false;
     drag.moved = false;
@@ -294,22 +289,26 @@ export function Splitter({
           return;
         }
         const delta = latest.current.horizontal ? gesture.dx : gesture.dy;
-        if (delta === 0 && !drag.moved) {
-          // Still a press, not yet a drag: a stray tap on the separator stays silent.
-          return;
-        }
-        drag.moved = true;
         const raw = drag.start + (delta / extent) * 100;
         if (latest.current.collapsible && raw < latest.current.minSize) {
           // Strictly past the minimum: collapse, and the rest of this gesture is ignored.
-          // `last` keeps the last expanded size, which the release event carries.
+          // `last` keeps the last expanded size, which the release event carries, even
+          // when the gesture collapsed before ever changing the size.
           drag.active = false;
+          drag.moved = true;
           setDragging(false);
           latest.current.setCollapsedState(true);
           return;
         }
-        drag.last = raw;
-        latest.current.applySize(raw, false);
+        const next = clamp(raw, latest.current.minSize, latest.current.maxSize);
+        if (next === drag.last) {
+          // Never repeat the last reported size: a zero delta or a drag held against a
+          // bound is still a press, not a drag, and stays silent.
+          return;
+        }
+        drag.moved = true;
+        drag.last = next;
+        latest.current.applySize(next, false);
       },
       onPanResponderRelease: endDrag,
       onPanResponderTerminate: endDrag,
@@ -353,8 +352,10 @@ export function Splitter({
     return () => animation.stop();
   }, [effectiveSize, isCollapsed, reducedMotion, sizeAnim, transitionDuration, t.motionEasingStandard]);
 
-  const stackThreshold = stackBelow === 'never' ? null : t[STACK_BELOW[stackBelow]];
-  // Unmeasured (first frame, test renderer) renders side by side.
+  const stackToken: unknown = stackBelow === 'never' ? undefined : t[STACK_BELOW[stackBelow]];
+  // An absent or unreadable breakpoint never stacks; unmeasured (first frame, test
+  // renderer) renders side by side. The comparison is strict.
+  const stackThreshold = typeof stackToken === 'number' ? stackToken : null;
   const stacked = horizontal && stackThreshold !== null && containerWidth !== null && containerWidth < stackThreshold;
 
   const handleContainerLayout = (event: LayoutChangeEvent): void => {
@@ -473,6 +474,7 @@ export function Splitter({
           focusable
           accessibilityRole="adjustable"
           accessibilityLabel={label}
+          aria-label={label}
           accessibilityValue={{
             min: reportedMin,
             max: maxSize,

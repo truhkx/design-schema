@@ -429,17 +429,18 @@
     }
   },
   "Feed.rn": {
-    "hash": "8d0aa13982e133a4",
-    "lastAttemptHash": "8d0aa13982e133a4",
-    "generatedAt": "2026-09-22T04:06:19+00:00",
+    "hash": "511b3be5268dc5f7",
+    "lastAttemptHash": "511b3be5268dc5f7",
+    "generatedAt": "2026-09-23T19:05:03+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 7.5158,
+    "rounds": 1,
+    "costUsd": 0.9003,
     "files": [
+      "packages/rn/src/Feed.stories.tsx",
       "packages/rn/src/Feed.tsx"
     ],
-    "gaps": 20,
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -944,18 +945,15 @@
     }
   },
   "Splitter.rn": {
-    "hash": "5698c117873efda8",
-    "lastAttemptHash": "5698c117873efda8",
-    "generatedAt": "2026-09-22T03:15:06+00:00",
+    "hash": "26a40773118020e3",
+    "lastAttemptHash": "26a40773118020e3",
+    "generatedAt": "2026-09-23T19:03:37+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 4.5055,
-    "files": [
-      "packages/rn/src/Splitter.stories.tsx",
-      "packages/rn/src/Splitter.tsx"
-    ],
-    "gaps": 25,
+    "rounds": 1,
+    "costUsd": 0.5299,
+    "files": [],
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,

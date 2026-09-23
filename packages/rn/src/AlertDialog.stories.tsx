@@ -64,8 +64,6 @@ export const ToneWarning: Story = { args: { tone: 'warning' } };
 export const ToneInfo: Story = { args: { tone: 'info' } };
 
 /* notable states */
-export const ConfirmDisabled: Story = { args: { confirmDisabled: true } };
-
 export const Closed: Story = { args: { open: false } };
 
 /**
@@ -75,7 +73,10 @@ export const Closed: Story = { args: { open: false } };
  */
 export const Keyboard: Story = { args: { open: true } };
 
-/* examples */
+/*
+ * examples — Storybook merges meta.args into every story, so each example also sets the
+ * props it relies on being at their defaults, and renders as if from blank args.
+ */
 export const DeleteFiles: Story = {
   args: {
     open: true,
@@ -83,6 +84,8 @@ export const DeleteFiles: Story = {
     heading: 'Delete 3 files?',
     description: 'They will be removed from all shared folders. This cannot be undone.',
     confirmLabel: 'Delete files',
+    cancelLabel: undefined,
+    confirmDisabled: false,
   },
 };
 
@@ -94,6 +97,7 @@ export const LeaveWithoutSaving: Story = {
     description: 'Your changes to this draft will be lost.',
     confirmLabel: 'Leave',
     cancelLabel: 'Keep editing',
+    confirmDisabled: false,
   },
 };
 
@@ -104,6 +108,7 @@ export const TypedConfirmation: Story = {
     heading: 'Cancel your subscription?',
     description: 'Your workspace stays read-only after the current billing period ends.',
     confirmLabel: 'Cancel subscription',
+    cancelLabel: undefined,
     confirmDisabled: true,
   },
 };
@@ -115,5 +120,7 @@ export const PublishToTheTeam: Story = {
     heading: 'Publish to the team?',
     description: 'Everyone in the workspace will be able to see this page.',
     confirmLabel: 'Publish',
+    cancelLabel: undefined,
+    confirmDisabled: false,
   },
 };

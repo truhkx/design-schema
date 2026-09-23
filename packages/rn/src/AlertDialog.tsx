@@ -1,5 +1,15 @@
 import * as React from 'react';
-import { AccessibilityInfo, Animated, Modal, StyleSheet, View, findNodeHandle, useWindowDimensions } from 'react-native';
+import {
+  AccessibilityInfo,
+  Animated,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  View,
+  findNodeHandle,
+  useWindowDimensions,
+} from 'react-native';
 import type { ViewInstance, ViewStyle } from 'react-native';
 import { resolveToken } from '@design-schema/tokens';
 import type { TokenRef } from '@design-schema/tokens';
@@ -75,7 +85,7 @@ const TONE = {
  * that destroys data, spends money, or cannot be undone.
  *
  * A native `Modal` (`transparent`, `animationType="none"` — the component animates
- * itself, `statusBarTranslucent`). The scrim is a plain `View` with no press handler
+ * itself, `statusBarTranslucent`). The scrim is an `Animated.View` with no press handler
  * or responder, so a stray tap reaches nothing, and there is no close button: the
  * only ways out are Cancel and Confirm. Android back (`onRequestClose`) and the
  * VoiceOver escape gesture report `onCancel('escape')`. Inside a `FocusScope`
@@ -86,6 +96,11 @@ const TONE = {
  * the question is read; Cancel precedes Confirm in the accessibility order. The tone
  * Icon is decorative and colored through its own `overrides.color`. Scroll lock has
  * no native meaning and is not implemented. Rooted in a Modal, it exposes no ref.
+ *
+ * The surface is capped at window height − 2 × gutter and scrolls itself past that (a
+ * `ScrollView` holding the whole column), so nothing is pinned. The exit is a fade only;
+ * the rise plays on enter. In development an open dialog with an empty `heading`,
+ * `description` or `confirmLabel` warns once.
  *
  * `inset` is applied once each way so nothing doubles between parts: the surface column
  * carries the block padding, the icon-and-text row and the footer wrapper the inline
@@ -109,14 +124,30 @@ export function AlertDialog({
   const reducedMotion = useReducedMotion();
   const { height: windowHeight } = useWindowDimensions();
   const toneEntry = TONE[tone];
+  const headingId = React.useId();
+  const descriptionId = React.useId();
 
   // Kept mounted while the exit animation runs; derived during render so the Modal content exists on the open commit.
   const [mounted, setMounted] = React.useState(open);
   if (open && !mounted) {
     setMounted(true);
   }
+  // `progress` drives the scrim and surface opacity both ways; `riseProgress` drives the surface's
+  // translateY on enter only, since the exit is a fade.
   const progress = React.useRef(new Animated.Value(0)).current;
+  const riseProgress = React.useRef(new Animated.Value(0)).current;
   const headingRef = React.useRef<ViewInstance>(null);
+
+  // The three required strings: an empty heading silently removes the accessible name.
+  const warnedEmpty = React.useRef(false);
+  React.useEffect(() => {
+    if (__DEV__ && open && !warnedEmpty.current && (!heading || !description || !confirmLabel)) {
+      warnedEmpty.current = true;
+      console.warn(
+        'AlertDialog: `heading`, `description` and `confirmLabel` are required and must not be empty; an empty `heading` removes the accessible name.',
+      );
+    }
+  }, [open, heading, description, confirmLabel]);
 
   const scrimColor = overrides?.scrim ? (resolveToken(t, overrides.scrim) as string) : t.colorOverlayScrim;
   const borderColor = overrides?.border ? (resolveToken(t, overrides.border) as string) : t.colorBorder;
@@ -149,16 +180,22 @@ export function AlertDialog({
     if (open) {
       if (reducedMotion || enterDuration === 0) {
         progress.setValue(1);
+        riseProgress.setValue(1);
         focusHeading();
         return undefined;
       }
-      const animation = Animated.timing(progress, {
+      // `riseProgress` is not reset here: a reopen that interrupts the exit fade is already at rest and must not jump down.
+      const enterConfig = {
         toValue: 1,
         duration: enterDuration,
         easing: toEasing(t.motionEasingStandard),
         // react-native-web has no native animated module.
         useNativeDriver: false,
-      });
+      };
+      const animation = Animated.parallel([
+        Animated.timing(progress, enterConfig),
+        Animated.timing(riseProgress, enterConfig),
+      ]);
       animation.start(({ finished }) => {
         if (finished) {
           focusHeading();
@@ -166,9 +203,14 @@ export function AlertDialog({
       });
       return () => animation.stop();
     }
-    if (reducedMotion || exitDuration === 0) {
+    const unmount = (): void => {
       progress.setValue(0);
+      // The next open rises from `rise` below again.
+      riseProgress.setValue(0);
       setMounted(false);
+    };
+    if (reducedMotion || exitDuration === 0) {
+      unmount();
       return undefined;
     }
     const animation = Animated.timing(progress, {
@@ -179,7 +221,7 @@ export function AlertDialog({
     });
     animation.start(({ finished }) => {
       if (finished) {
-        setMounted(false);
+        unmount();
       }
     });
     return () => animation.stop();
@@ -228,7 +270,7 @@ export function AlertDialog({
     borderRadius: radius,
     ...shadow,
     opacity: progress,
-    transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [rise, 0] }) }],
+    transform: [{ translateY: riseProgress.interpolate({ inputRange: [0, 1], outputRange: [rise, 0] }) }],
   };
 
   const surfaceStyle: ViewStyle = {
@@ -238,6 +280,12 @@ export function AlertDialog({
     borderColor,
     backgroundColor: t.colorOverlaySurface,
     overflow: 'hidden',
+  };
+
+  // Content past the height cap scrolls the surface itself: the block padding and the footer scroll with it.
+  const scrollStyle: ViewStyle = { flexShrink: 1 };
+
+  const columnStyle: ViewStyle = {
     // The block half of `inset`, once at the top and once at the bottom of the column;
     // the inline half sits on each part, so nothing doubles.
     paddingVertical: inset,
@@ -260,6 +308,9 @@ export function AlertDialog({
     paddingHorizontal: inset,
   };
 
+  // RN has no aria-describedby; on react-native-web the description's id resolves in the DOM.
+  const webSurfaceProps: Record<string, unknown> = Platform.OS === 'web' ? { 'aria-describedby': descriptionId } : {};
+
   const iconOverrides = { color: toneEntry.icon, size: overrides?.iconSize ?? 'font.size.lg' } as const;
   // The forward always reaches the Stack: the override when the caller set one, the binding's own token otherwise.
   const footerOverrides = { gap: overrides?.footerGap ?? 'layout.gap.tight' } as const;
@@ -275,49 +326,56 @@ export function AlertDialog({
                 style={surfaceStyle}
                 role="alertdialog"
                 accessibilityViewIsModal
+                aria-modal
                 accessibilityLabel={heading}
+                aria-label={heading}
+                aria-labelledby={headingId}
                 accessibilityHint={description}
                 onAccessibilityEscape={handleEscape}
                 testID="AlertDialog.surface"
+                {...webSurfaceProps}
               >
-                <View style={contentRowStyle}>
-                  <View
-                    testID="AlertDialog.icon"
-                    accessibilityElementsHidden
-                    importantForAccessibility="no-hide-descendants"
-                  >
-                    <Icon name={toneEntry.glyph} overrides={iconOverrides} />
+                <ScrollView style={scrollStyle} contentContainerStyle={columnStyle}>
+                  <View style={contentRowStyle}>
+                    <View
+                      testID="AlertDialog.icon"
+                      accessibilityElementsHidden
+                      importantForAccessibility="no-hide-descendants"
+                      aria-hidden
+                    >
+                      <Icon name={toneEntry.glyph} overrides={iconOverrides} />
+                    </View>
+                    <View style={textGroupStyle}>
+                      <View ref={headingRef} nativeID={headingId} testID="AlertDialog.heading">
+                        <Heading level="2">{heading}</Heading>
+                      </View>
+                      <View nativeID={descriptionId} testID="AlertDialog.description">
+                        <Text tone="muted">{description}</Text>
+                      </View>
+                    </View>
                   </View>
-                  <View style={textGroupStyle}>
-                    <View ref={headingRef} testID="AlertDialog.heading">
-                      <Heading level="2">{heading}</Heading>
-                    </View>
-                    <View testID="AlertDialog.description">
-                      <Text tone="muted">{description}</Text>
-                    </View>
+                  <View style={footerStyle} testID="AlertDialog.footer">
+                    <Stack direction="horizontal" gap="tight" justify="end" overrides={footerOverrides}>
+                      <View testID="AlertDialog.cancelButton">
+                        <Button
+                          label={cancelLabel ?? COPY.cancelLabel}
+                          variant="secondary"
+                          size="md"
+                          onPress={handleCancelPress}
+                        />
+                      </View>
+                      <View testID="AlertDialog.confirmButton">
+                        <Button
+                          label={confirmLabel}
+                          variant={toneEntry.confirmVariant}
+                          size="md"
+                          disabled={confirmDisabled}
+                          onPress={handleConfirmPress}
+                        />
+                      </View>
+                    </Stack>
                   </View>
-                </View>
-                <View style={footerStyle} testID="AlertDialog.footer">
-                  <Stack direction="horizontal" gap="tight" justify="end" overrides={footerOverrides}>
-                    <View testID="AlertDialog.cancelButton">
-                      <Button
-                        label={cancelLabel ?? COPY.cancelLabel}
-                        variant="secondary"
-                        size="md"
-                        onPress={handleCancelPress}
-                      />
-                    </View>
-                    <View testID="AlertDialog.confirmButton">
-                      <Button
-                        label={confirmLabel}
-                        variant={toneEntry.confirmVariant}
-                        size="md"
-                        disabled={confirmDisabled}
-                        onPress={handleConfirmPress}
-                      />
-                    </View>
-                  </Stack>
-                </View>
+                </ScrollView>
               </View>
             </Animated.View>
           </FocusScope>

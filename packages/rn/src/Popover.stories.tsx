@@ -69,16 +69,31 @@ export const PlacementTopEnd: Story = { args: { placement: 'top-end' }, render: 
 export const PlacementStart: Story = { args: { placement: 'start' }, render: renderOpen };
 export const PlacementEnd: Story = { args: { placement: 'end' }, render: renderOpen };
 
-// notable states
+// initialFocus
+export const InitialFocusFirst: Story = { args: { initialFocus: 'first' }, render: renderOpen };
+export const InitialFocusNone: Story = { args: { initialFocus: 'none' }, render: renderOpen };
+
+// notable states, named for the effect
 export const Modal: Story = { args: { modal: true }, render: renderOpen };
-export const ShowArrow: Story = { args: { showArrow: true }, render: renderOpen };
+export const WithArrow: Story = { args: { showArrow: true }, render: renderOpen };
 export const NotDismissible: Story = { args: { dismissible: false }, render: renderOpen };
 export const NoHeading: Story = { args: { heading: undefined }, render: renderOpen };
 
-// Examples start from their own `given`, so every prop the example does not name takes
-// its default; `heading` and `placement` are reset where meta's filter-panel args set them.
+// Examples read as if from blank args: Storybook merges meta.args in, so each writes out
+// every prop at its schema default. None gives `open`, so they render closed and uncontrolled.
+const EXAMPLE_DEFAULTS = {
+  heading: undefined,
+  headingLevel: '3',
+  placement: 'bottom',
+  modal: false,
+  showArrow: false,
+  dismissible: true,
+  initialFocus: 'first',
+} as const satisfies Partial<PopoverProps>;
+
 export const FilterPanel: Story = {
   args: {
+    ...EXAMPLE_DEFAULTS,
     trigger: <Button label="Filters" variant="secondary" />,
     children: (
       <Form actions={<Button label="Apply" type="submit" />}>
@@ -98,7 +113,9 @@ function CalendarIcon(): React.JSX.Element {
 
 export const DatePickerPanel: Story = {
   args: {
-    trigger: <Button label="17 September 2026" variant="secondary" leadingIcon={<CalendarIcon />} />,
+    ...EXAMPLE_DEFAULTS,
+    // A literal date: the story does not compute today, and every platform uses this string.
+    trigger: <Button label="16 September 2026" variant="secondary" leadingIcon={<CalendarIcon />} />,
     children: (
       <Stack gap="tight" align="start">
         <Button label="Today" variant="ghost" />
@@ -106,23 +123,20 @@ export const DatePickerPanel: Story = {
         <Button label="Next week" variant="ghost" />
       </Stack>
     ),
-    heading: undefined,
-    placement: 'bottom',
   },
 };
 
 export const RequiredStep: Story = {
   args: {
+    ...EXAMPLE_DEFAULTS,
     trigger: <Button label="Add member" />,
     children: (
-      <Stack gap="normal" align="start">
+      <Form actions={<Button label="Save" type="submit" />}>
         <Input label="Email" name="email" type="email" />
-        <Button label="Save" />
-      </Stack>
+      </Form>
     ),
     heading: 'Add member',
     modal: true,
-    placement: 'bottom',
   },
 };
 
@@ -133,13 +147,13 @@ function HelpIcon(): React.JSX.Element {
 
 export const ContextualHelp: Story = {
   args: {
+    ...EXAMPLE_DEFAULTS,
     trigger: <Button label="Help" variant="ghost" iconOnly leadingIcon={<HelpIcon />} />,
     children: (
       <Text>
         Filters apply to every view in this project. <Link href="https://example.com/guide" label="Read the guide" />
       </Text>
     ),
-    heading: undefined,
     showArrow: true,
     placement: 'end',
   },

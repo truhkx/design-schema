@@ -1,6 +1,7 @@
 import * as React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { BottomSheet } from './BottomSheet';
+import type { BottomSheetCloseReason, BottomSheetProps } from './BottomSheet';
 import { Button } from './Button';
 import { Input } from './Input';
 import { Link } from './Link';
@@ -8,10 +9,22 @@ import { Stack } from './Stack';
 import { Text } from './Text';
 import { withTheme } from './decorators';
 
+/** Acts as the consumer: owns `open` (starting from the args) and writes `onClose` back. */
+function ConsumerSheet(props: BottomSheetProps): React.JSX.Element {
+  const [open, setOpen] = React.useState(props.open);
+  React.useEffect(() => setOpen(props.open), [props.open]);
+  const handleClose = (reason: BottomSheetCloseReason): void => {
+    props.onClose?.(reason);
+    setOpen(false);
+  };
+  return <BottomSheet {...props} open={open} onClose={handleClose} />;
+}
+
 const meta: Meta<typeof BottomSheet> = {
   title: 'BottomSheet/React Native',
   component: BottomSheet,
   decorators: [withTheme()],
+  render: (args) => <ConsumerSheet {...args} />,
   args: {
     open: true,
     heading: 'Filters',

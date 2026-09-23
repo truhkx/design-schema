@@ -61,21 +61,6 @@ export const InitialFocusFirst: Story = { args: { initialFocus: 'first' } };
 export const InitialFocusTitle: Story = { args: { initialFocus: 'title' } };
 export const InitialFocusClose: Story = { args: { initialFocus: 'close' } };
 
-// notable states
-export const WithDescription: Story = { args: { description: 'The new name appears everywhere the project is listed.' } };
-
-export const NoFooter: Story = { args: { footer: undefined } };
-
-export const HideHeading: Story = { args: { hideHeading: true } };
-
-export const NotDismissible: Story = { args: { dismissible: false } };
-
-export const WithOverrides: Story = {
-  args: {
-    overrides: { radius: 'radius.md', border: 'color.border.strong', widthMd: 'layout.maxWidth.prose' },
-  },
-};
-
 // examples
 export const RenameProject: Story = {
   args: {
@@ -159,6 +144,8 @@ export const ReadingDialog: Story = {
     initialFocus: 'title',
   },
 };
+
+export const Closed: Story = { args: { open: false } };
 
 /** Open with its trigger and several focusable children, for the axe gate and manual keyboard checks. */
 export const Keyboard: Story = {

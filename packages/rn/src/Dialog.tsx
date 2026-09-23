@@ -59,7 +59,7 @@ export interface DialogProps {
   /** The body — a Form, Text, or controls. Scrolls inside the surface when taller than the viewport; header and footer stay put. */
   children: React.ReactNode;
   /** The action row. Primary action first, then one secondary; follows Form's action-order rule. A dialog with no footer must be dismissable from its body. */
-  footer?: React.ReactNode;
+  footer?: React.ReactNode | undefined;
   /** Visually hide the heading while it remains the accessible name. RN has no visually hidden primitive, so the Heading is not rendered and the surface's accessibilityLabel stays the name. */
   hideHeading?: boolean | undefined;
   /** Surface width on wide viewports. Full-width below the content measure on every size. */
@@ -123,7 +123,10 @@ export function Dialog({
   if (open && !mounted) {
     setMounted(true);
   }
+  // `progress` drives the scrim and surface opacity both ways; `rise` drives the surface's
+  // translateY on enter only, since the exit is a fade.
   const progress = React.useRef(new Animated.Value(0)).current;
+  const rise = React.useRef(new Animated.Value(0)).current;
 
   const surfaceRef = React.useRef<ViewInstance>(null);
   const titleGroupRef = React.useRef<ViewInstance>(null);
@@ -179,17 +182,23 @@ export function Dialog({
     if (open) {
       if (reducedMotion || enterDuration === 0) {
         progress.setValue(1);
+        rise.setValue(1);
         focusInitial();
         const frame = requestAnimationFrame(() => onOpened?.());
         return () => cancelAnimationFrame(frame);
       }
-      const animation = Animated.timing(progress, {
+      // `rise` is not reset here: a reopen that interrupts the exit fade is already at rest and must not jump down.
+      const enterConfig = {
         toValue: 1,
         duration: enterDuration,
         easing: toEasing(t.motionEasingStandard),
         // react-native-web has no native animated module.
         useNativeDriver: false,
-      });
+      };
+      const animation = Animated.parallel([
+        Animated.timing(progress, enterConfig),
+        Animated.timing(rise, enterConfig),
+      ]);
       // `finished` is false when `open` went false first, so onOpened does not fire for an interrupted enter.
       animation.start(({ finished }) => {
         if (finished) {
@@ -199,9 +208,14 @@ export function Dialog({
       });
       return () => animation.stop();
     }
-    if (reducedMotion || exitDuration === 0) {
+    const unmount = (): void => {
       progress.setValue(0);
+      // The next open rises from space.2 below again.
+      rise.setValue(0);
       setMounted(false);
+    };
+    if (reducedMotion || exitDuration === 0) {
+      unmount();
       return undefined;
     }
     const animation = Animated.timing(progress, {
@@ -212,7 +226,7 @@ export function Dialog({
     });
     animation.start(({ finished }) => {
       if (finished) {
-        setMounted(false);
+        unmount();
       }
     });
     return () => animation.stop();
@@ -263,7 +277,7 @@ export function Dialog({
     borderRadius: radius,
     ...shadow,
     opacity: progress,
-    transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [t.space2, 0] }) }],
+    transform: [{ translateY: rise.interpolate({ inputRange: [0, 1], outputRange: [t.space2, 0] }) }],
   };
 
   const surfaceStyle: ViewStyle = {
@@ -320,7 +334,9 @@ export function Dialog({
                 style={surfaceStyle}
                 role="dialog"
                 accessibilityViewIsModal
+                aria-modal
                 accessibilityLabel={heading}
+                aria-label={heading}
                 accessibilityHint={description}
                 onAccessibilityEscape={handleEscape}
                 testID="Dialog"

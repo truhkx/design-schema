@@ -80,3 +80,38 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Menu: the backdrop Pressable has no anatomy part (the parts are trigger/popup/list/group/groupLabel/item/itemIcon/itemShortcut/separator) but needs a testability hook. Used `testID="Menu.scrim"` to match Combobox's existing precedent, even though the rn note explicitly says a non-modal menu has no scrim colour — the name may mislead.
 - Menu: `statusBarTranslucent` is prescribed for modal dialogs/sheets, not for a non-modal anchored popup. Kept it so the Modal's coordinate space matches measureInWindow()'s, which includes the status bar area; without it the popup is offset by the status bar height on Android.
 - Menu: the behavior list has no scenario for the `outside` or `escape` close reasons on rn (escape-closes-without-choosing is scoped to web/lit). The scrim is press-reachable from RNTL, so `outside` is testable here and is currently uncovered; `escape` (Modal onRequestClose) is not reachable from the test renderer at all.
+
+## 2026-09-23 14:12 — round 1
+
+- Menu: the popup's name — the spec says it is named by the trigger (aria-labelledby) but gives no rn mechanism; Button writes its own id/nativeID, so I used accessibilityLabel + aria-label = `label` on the popup, the way anchor mode and Lit do.
+- Menu: the rn notes name both `accessibilityRole="menuitem"` and `role="menuitem"` for items without saying which; I set both (react-native-web maps them to the same ARIA role).
+- Menu: groups — the web version labels a group with aria-labelledby pointing at its label row; rn has no way to reference an element here, so the group gets accessibilityLabel/aria-label = the group string. A screen reader may say it twice (group name plus the visible label Text).
+- Menu: maxHeight on rn caps the popup View, but the spec doesn't say how the ScrollView should size inside it; I gave the ScrollView flexGrow 0 / flexShrink 1 so the list scrolls instead of the popup overflowing.
+- Menu: `enter` fade/slide vs the 'held at opacity 0 until measured' rule — the spec doesn't say whether the enter animation starts when opened or once measured; it starts once both measurements are in, and accessibility focus moves to the first enabled item when the animation finishes (immediately under reduced motion). The spec does not say whether focus should wait for the animation.
+- Menu: escape-closes-without-choosing is limited to web and lit, so rn has no test for onRequestClose → `escape`; the doc could add an rn scenario driven by the Modal's onRequestClose.
+- Menu: a-disabled-item-does-nothing on rn — the test asserts toBeDisabled via accessibilityState, since `disabled` is never passed to Pressable (it would drop focus); the doc's 'do nothing on click' is met by a press guard, and the doc doesn't say how the disabled state should be exposed on rn.
+- Menu: the minWidth trigger-width floor uses the measured width of the wrapping `Menu.trigger` View, since Button exposes no ref; the doc says this View is the measured node but not that its width is the floor.
+
+## 2026-09-23 14:12 — round 1
+
+- Menu: aborted mid-job because another session was editing Menu.tsx and Menu.stories.tsx in the same worktree at the same time; the output mixes both sessions' edits and was not typechecked or tested
+- Menu: the web notes require aria-haspopup="menu" on the trigger, but the rn Button has no haspopup prop, so the trigger only carries accessibilityState.expanded; either Button's schema grows a haspopup prop or the rn notes should waive it, as the Lit notes waive aria-controls
+- Menu: placement says the block side flips 'when the popup would overflow the viewport', but not whether the flip check counts gutter or whether it flips when the other side is no roomier; kept the existing rule: flip when the popup plus popupOffset doesn't fit and the opposite side has more room, then clamp to gutter
+- Menu: escape-closes-without-choosing is scoped to web and lit, so the rn test has no Escape case even though onRequestClose implements it
+
+## 2026-09-23 14:13 — round 2
+
+- Menu: the typecheck gate is still red because another session keeps editing Menu.tsx in the same worktree at the same time; three identical edits collided, and the file now declares `listStyle` twice (lines 474 and 476). Deleting either copy passes the gate once the other session is stopped. This is a job-scheduling problem, not a spec gap
+- Menu: the web notes require aria-haspopup="menu" on the trigger, but the rn Button has no haspopup prop, so only accessibilityState.expanded reaches it; either Button's schema grows a haspopup prop or the rn notes should waive it, as the Lit notes waive aria-controls
+- Menu: placement says the block side flips 'when the popup would overflow the viewport', but not whether the flip check counts gutter or whether it flips when the other side is no roomier; kept the existing rule: flip when the popup plus popupOffset doesn't fit and the opposite side has more room, then clamp to gutter
+- Menu: escape-closes-without-choosing is scoped to web and lit, so the rn test has no Escape case even though onRequestClose implements it
+
+## 2026-09-23 14:13 — round 2
+
+- Menu: no spec conflict in this round — the typecheck failure was a missing `listStyle` declaration, left behind when another writer edited Menu.tsx at the same time (see the reply above), not a spec issue.
+- Menu: maxHeight caps the popup View on rn, but the spec doesn't say how the ScrollView inside it should size; it gets flexGrow 0 / flexShrink 1 so the list scrolls instead of the popup overflowing.
+- Menu: the rn notes name both `accessibilityRole="menuitem"` and `role="menuitem"` for items; both are set.
+- Menu: the popup and groups are named with accessibilityLabel + aria-label (label / group string), since rn cannot reference another element by id the way web's aria-labelledby does; a screen reader may say a group's name twice.
+- Menu: when the enter animation starts relative to accessibility focus is unspecified; the popup animates once both measurements are in, and focus moves to the first enabled item when the animation finishes (immediately under reduced motion).
+- Menu: escape-closes-without-choosing is limited to web and lit, so rn has no test for onRequestClose → `escape`.
+- Menu: the minWidth trigger-width floor uses the width of the wrapping `Menu.trigger` View, since Button exposes no ref; the doc names this View as the measured node but not as the width source.

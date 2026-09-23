@@ -63,7 +63,7 @@ export interface BottomSheetProps {
   /** The body. Scrolls inside the sheet when taller than the sheet's height. */
   children: React.ReactNode;
   /** Action row, pinned to the bottom of the sheet above the safe area. */
-  footer?: React.ReactNode;
+  footer?: React.ReactNode | undefined;
   /** `content` sizes to the body up to 90% of the window; `half` is a fixed half-height; `full` is a near-full-screen sheet with the top gutter visible so the scrim still shows. */
   height?: BottomSheetHeight | undefined;
   /** Escape, the close button, a scrim tap and the drag gesture all request close. When false the close button and handle are not rendered, a scrim tap and a drag do nothing, and Escape still reports with reason `escape`. */
@@ -84,6 +84,7 @@ const COPY = {
 
 /** Schema constants without a token; `dragSlop` has one (`space.1`) and is read from the theme. */
 const CONSTANTS = {
+  contentCap: 0.9, // literal-ok: schema constant contentCap (ratio of the window, height content only)
   dismissDistance: 0.25, // literal-ok: schema constant dismissDistance (ratio of sheet height)
   dismissVelocity: 1.5, // literal-ok: schema constant dismissVelocity (px/ms)
 } as const;
@@ -208,18 +209,28 @@ export function BottomSheet({
   // The handle only exists where dragging does something, so there is no affordance that lies.
   const canDrag = dragToDismiss && dismissible;
 
+  // Back to rest from wherever a drag left the surface; also finishes an enter the drag interrupted.
   const springBack = (): void => {
+    // Closed already (a close that raced the gesture): only the offset returns, the exit keeps playing.
     if (reducedMotion || exitDuration === 0) {
       dragY.setValue(0);
+      if (open) {
+        progress.setValue(1);
+      }
       return;
     }
     // A timing animation, not a spring: the theme's motion never bounces.
-    Animated.timing(dragY, {
+    const config = {
       toValue: 0,
       duration: exitDuration,
       easing: toEasing(t.motionEasingStandard),
       useNativeDriver: false,
-    }).start();
+    };
+    const toRest = [Animated.timing(dragY, config)];
+    if (open) {
+      toRest.push(Animated.timing(progress, { ...config, toValue: 1 }));
+    }
+    Animated.parallel(toRest).start();
   };
 
   React.useEffect(() => {
@@ -227,24 +238,33 @@ export function BottomSheet({
       return undefined;
     }
     if (open) {
-      dragY.setValue(0);
       if (reducedMotion || enterDuration === 0) {
         progress.setValue(1);
+        dragY.setValue(0);
         return undefined;
       }
-      const animation = Animated.timing(progress, {
+      const enterConfig = {
         toValue: 1,
         duration: enterDuration,
         easing: toEasing(t.motionEasingStandard),
         // react-native-web has no native animated module.
         useNativeDriver: false,
-      });
+      };
+      // A reopen that interrupts a drag-dismiss exit also brings any held offset back to rest.
+      const animation = Animated.parallel([
+        Animated.timing(progress, enterConfig),
+        Animated.timing(dragY, { ...enterConfig, toValue: 0 }),
+      ]);
       animation.start();
       return () => animation.stop();
     }
-    if (reducedMotion || exitDuration === 0) {
+    const unmount = (): void => {
       progress.setValue(0);
+      dragY.setValue(0);
       setMounted(false);
+    };
+    if (reducedMotion || exitDuration === 0) {
+      unmount();
       return undefined;
     }
     // Plays from wherever the surface is, including the position a drag dismiss left it at.
@@ -256,7 +276,7 @@ export function BottomSheet({
     });
     animation.start(({ finished }) => {
       if (finished) {
-        setMounted(false);
+        unmount();
       }
     });
     return () => animation.stop();
@@ -276,8 +296,8 @@ export function BottomSheet({
   }, [dragReleases]);
 
   // The responder is created once; it reads the current render's values through this ref.
-  const latest = React.useRef({ dragSlop, windowHeight, onClose, onDragDismiss, springBack });
-  latest.current = { dragSlop, windowHeight, onClose, onDragDismiss, springBack };
+  const latest = React.useRef({ open, dragSlop, windowHeight, onClose, onDragDismiss, springBack });
+  latest.current = { open, dragSlop, windowHeight, onClose, onDragDismiss, springBack };
 
   const panResponder = React.useRef<PanResponderInstance | null>(null);
   if (panResponder.current === null) {
@@ -291,6 +311,8 @@ export function BottomSheet({
       onPanResponderGrant: (_: GestureResponderEvent, g: PanResponderGestureState) => {
         samplesRef.current = [];
         grantDyRef.current = g.dy;
+        // An enter still running holds where it is; the release's spring-back finishes it.
+        progress.stopAnimation();
       },
       // Follows the finger even under reduced motion: the drag is user-driven.
       onPanResponderMove: (event: GestureResponderEvent, g: PanResponderGestureState) => {
@@ -310,7 +332,8 @@ export function BottomSheet({
             : 0;
         const sheetHeight = sheetHeightRef.current > 0 ? sheetHeightRef.current : latest.current.windowHeight;
         const dismiss = offset > sheetHeight * CONSTANTS.dismissDistance || velocity > CONSTANTS.dismissVelocity;
-        if (!dismiss) {
+        // A close that raced the gesture: spring back and report nothing the sheet did not cause.
+        if (!dismiss || !latest.current.open) {
           latest.current.springBack();
           return;
         }
@@ -399,12 +422,13 @@ export function BottomSheet({
     half: windowHeight * 0.5, // literal-ok: half the window, per the height enum
     full: windowHeight - fullInset,
   };
+  // The cap belongs to `content` alone; `half` and `full` set the height outright.
+  const maxSheetHeight = height === 'content' ? windowHeight * CONSTANTS.contentCap : undefined;
 
   const surfaceStyle: Animated.WithAnimatedValue<ViewStyle> = {
     width: '100%',
     height: sheetHeight[height],
-    // The 90% cap belongs to `content` alone; `half` and `full` set the height outright.
-    maxHeight: height === 'content' ? windowHeight * 0.9 : undefined, // literal-ok: 90% of the window, per height content
+    maxHeight: maxSheetHeight,
     borderTopLeftRadius: radius,
     borderTopRightRadius: radius,
     ...shadow,
@@ -482,7 +506,9 @@ export function BottomSheet({
               onLayout={handleSurfaceLayout}
               role="dialog"
               accessibilityViewIsModal
+              aria-modal
               accessibilityLabel={heading}
+              aria-label={heading}
               onAccessibilityEscape={handleEscape}
               testID="BottomSheet"
             >
@@ -497,6 +523,7 @@ export function BottomSheet({
                       style={handleStyle}
                       accessibilityElementsHidden
                       importantForAccessibility="no"
+                      aria-hidden
                       testID="BottomSheet.handle"
                     />
                   ) : null}
@@ -521,17 +548,21 @@ export function BottomSheet({
                   </View>
                 </View>
               ) : null}
-              <ScrollView style={bodyStyle} keyboardShouldPersistTaps="handled" testID="BottomSheet.body">
-                {/* `inset` reaches the Box only as a token path through its own overrides, always sent; the block padding stays on the surface. */}
-                <Box inset="none" overrides={{ paddingInline: overrides?.inset ?? 'layout.inset.lg' }}>
-                  {children}
-                </Box>
+              {/* The sheet-owned scroll element, unnamed; Box writes its own testID, so the body hook is a wrapper inside it. */}
+              <ScrollView style={bodyStyle} keyboardShouldPersistTaps="handled">
+                <View testID="BottomSheet.body">
+                  {/* `inset` reaches the Box only as a token path through its own overrides, always sent; the block padding stays on the surface. */}
+                  <Box inset="none" overrides={{ paddingInline: overrides?.inset ?? 'layout.inset.lg' }}>
+                    {children}
+                  </Box>
+                </View>
               </ScrollView>
               {footer !== undefined ? (
                 <View style={footerStyle} testID="BottomSheet.footer">
                   <Stack
                     direction="horizontal"
                     justify="end"
+                    wrap
                     overrides={{ gap: overrides?.footerGap ?? 'layout.gap.tight' }}
                   >
                     {footer}

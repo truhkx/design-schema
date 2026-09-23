@@ -24,6 +24,7 @@ import { toEasing, useReducedMotion, useTheme } from './theme';
 
 export type PopoverPlacement = 'bottom-start' | 'bottom' | 'bottom-end' | 'top-start' | 'top' | 'top-end' | 'start' | 'end';
 export type PopoverHeadingLevel = '2' | '3' | '4' | 2 | 3 | 4;
+export type PopoverInitialFocus = 'first' | 'none';
 /** Why `onOpenChange` fired. `tab-out` is part of the contract but never emitted on this platform (Pressable sees no key events). */
 export type PopoverCloseReason = 'trigger' | 'escape' | 'outside' | 'close-button' | 'tab-out';
 
@@ -38,17 +39,18 @@ export type PopoverOverridableBinding =
   | 'offset'
   | 'arrowSize'
   | 'maxWidth'
+  | 'gutter'
   | 'layer'
   | 'enter'
   | 'enterDistance'
   | 'exit';
 
 export interface PopoverProps {
-  /** Exactly one focusable element — usually a Button — that opens the popover. It is cloned with the toggle `onPress` and Button's `expanded`, so it is typed as a single element. */
+  /** Exactly one focusable element — usually a Button — that opens the popover. It is cloned with the toggle `onPress` and Button's `expanded`, so it is typed as a single element; a fragment or anything else warns in development. */
   trigger: React.ReactElement;
   /** The panel content. May contain controls, links and a short Form; keep it to what fits without scrolling. */
   children: React.ReactNode;
-  /** Optional heading at the top of the panel, also the accessible name. Without it, the panel is named by the trigger's `accessibleName`, else its string `label`. */
+  /** Optional heading at the top of the panel, also the accessible name. Without it, the panel is named by the trigger's `accessibleName`, else its `accessibilityLabel`, else its string `label`. */
   heading?: string | undefined;
   /** Heading level of the panel heading. React Native has no heading levels: this only selects the Heading's typography, and has no effect in the phone (BottomSheet) presentation. */
   headingLevel?: PopoverHeadingLevel | undefined;
@@ -62,36 +64,32 @@ export interface PopoverProps {
   showArrow?: boolean | undefined;
   /** Show the close button. Escape and (non-modal) an outside tap work regardless. No effect on phones, where the sheet always shows it. */
   dismissible?: boolean | undefined;
+  /** Where focus goes on open. `first` (default) moves accessibility focus into the panel (its body wrapper — native has no descendant walker); `none` moves none, and the composer must move it. No effect on phones, where the sheet always takes focus. */
+  initialFocus?: PopoverInitialFocus | undefined;
   /** Fired when the popover opens or closes, with the new state and a reason. */
   onOpenChange?: ((open: boolean, reason: PopoverCloseReason) => void) | undefined;
   /** Replace individual style bindings with a different token from the theme. The only per-instance styling surface — there is no `style` prop. */
   overrides?: Partial<Record<PopoverOverridableBinding, TokenRef | undefined>> | undefined;
-  /** The anchor view that holds the trigger. The `Modal` the panel lives in exposes no ref of its own. */
-  ref?: React.Ref<ViewInstance> | undefined;
 }
 
 const COPY = {
   closeLabel: 'Close',
 } as const;
 
-/** The bindings Popover shares by name with BottomSheet, minus `layer`, which the sheet keeps unless the caller overrode it. */
-type SheetBinding = Exclude<Extract<PopoverOverridableBinding, BottomSheetOverridableBinding>, 'layer'>;
-
 /**
- * Popover's own default token for each shared binding. The sheet is given Popover's
- * resolved value — this default or the caller's override — rather than falling back to
- * BottomSheet's own defaults, so the phone presentation matches the anchored one.
+ * Popover's own default token for each binding the sheet always receives: Popover's
+ * resolved value — this default or the caller's override — so the sheet's surface
+ * matches the anchored panel.
  */
-const SHEET_DEFAULTS: Readonly<Record<SheetBinding, TokenRef>> = {
+const SHEET_DEFAULTS: Readonly<Record<'shadow' | 'radius' | 'inset' | 'partGap', TokenRef>> = {
   shadow: 'shadow.overlay',
   radius: 'radius.md',
   inset: 'layout.inset.md',
   partGap: 'layout.gap.normal',
-  enter: 'motion.duration.fast',
-  exit: 'motion.duration.fast',
 };
 
-const SHEET_BINDINGS: readonly SheetBinding[] = ['shadow', 'radius', 'inset', 'partGap', 'enter', 'exit'];
+/** Forwarded only when the caller overrode them, so the sheet otherwise keeps its own layer and durations. */
+const SHEET_OVERRIDE_ONLY: readonly ('layer' | 'enter' | 'exit')[] = ['layer', 'enter', 'exit'];
 
 const SHEET_REASON: Record<BottomSheetCloseReason, PopoverCloseReason> = {
   escape: 'escape',
@@ -115,9 +113,10 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 /**
- * Places the panel from the trigger's window rect for `placement`: flips the main
- * axis when the preferred side overflows and shifts along the cross axis to stay in
- * the window. Returns the panel edge that faces the trigger (arrow and slide side).
+ * Places the panel from the trigger's window rect for `placement`. The main axis flips
+ * only when the preferred side overflows and the opposite side fits within `gutter`;
+ * otherwise it stays (and may overflow) while the cross axis shifts to keep `gutter`
+ * from each window edge. Returns the panel edge that faces the trigger (arrow and slide side).
  */
 function computePopoverPosition(
   trigger: Rect,
@@ -126,34 +125,33 @@ function computePopoverPosition(
   placement: PopoverPlacement,
   windowSize: WindowSize,
   offset: number,
+  gutter: number,
 ): { top: number; left: number; edge: ArrowEdge } {
   const rtl = I18nManager.isRTL;
 
   if (placement === 'start' || placement === 'end') {
     let onLeft = rtl ? placement === 'end' : placement === 'start';
+    const need = panelWidth + offset + gutter;
     const spaceLeft = trigger.x;
     const spaceRight = windowSize.width - (trigger.x + trigger.width);
-    if (onLeft && spaceLeft < panelWidth + offset && spaceRight > spaceLeft) {
+    if (onLeft && spaceLeft < need && spaceRight >= need) {
       onLeft = false;
-    } else if (!onLeft && spaceRight < panelWidth + offset && spaceLeft > spaceRight) {
+    } else if (!onLeft && spaceRight < need && spaceLeft >= need) {
       onLeft = true;
     }
-    const left = clamp(
-      onLeft ? trigger.x - offset - panelWidth : trigger.x + trigger.width + offset,
-      offset,
-      windowSize.width - panelWidth - offset,
-    );
-    const top = clamp(trigger.y + trigger.height / 2 - panelHeight / 2, offset, windowSize.height - panelHeight - offset);
+    const left = onLeft ? trigger.x - offset - panelWidth : trigger.x + trigger.width + offset;
+    const top = clamp(trigger.y + trigger.height / 2 - panelHeight / 2, gutter, windowSize.height - panelHeight - gutter);
     return { top, left, edge: onLeft ? 'right' : 'left' };
   }
 
   const [side, align] = placement.split('-') as ['top' | 'bottom', 'start' | 'end' | undefined];
   let vertical = side;
+  const need = panelHeight + offset + gutter;
   const spaceBelow = windowSize.height - (trigger.y + trigger.height);
   const spaceAbove = trigger.y;
-  if (vertical === 'bottom' && spaceBelow < panelHeight + offset && spaceAbove > spaceBelow) {
+  if (vertical === 'bottom' && spaceBelow < need && spaceAbove >= need) {
     vertical = 'top';
-  } else if (vertical === 'top' && spaceAbove < panelHeight + offset && spaceBelow > spaceAbove) {
+  } else if (vertical === 'top' && spaceAbove < need && spaceBelow >= need) {
     vertical = 'bottom';
   }
 
@@ -164,7 +162,7 @@ function computePopoverPosition(
     const alignLeft = rtl ? align === 'end' : align === 'start';
     left = alignLeft ? trigger.x : trigger.x + trigger.width - panelWidth;
   }
-  left = clamp(left, offset, windowSize.width - panelWidth - offset);
+  left = clamp(left, gutter, windowSize.width - panelWidth - gutter);
 
   const top = vertical === 'bottom' ? trigger.y + trigger.height + offset : trigger.y - offset - panelHeight;
   return { top, left, edge: vertical === 'bottom' ? 'top' : 'bottom' };
@@ -210,12 +208,15 @@ function arrowEdgeStyle(edge: ArrowEdge, arrowSize: number, borderWidth: number,
  * The trigger is cloned with the toggle `onPress` and Button's `expanded`, so the
  * state is announced. At or below `layout.maxWidth.prose` (phones) the panel is the
  * package's `BottomSheet` with `height="content"`, titled by `heading`, else the
- * trigger's `accessibleName`, else its string `label`; there it is always modal and
- * always shows its close button, and it is handed Popover's own shadow, radius, inset,
- * partGap, enter and exit tokens. Above the breakpoint (tablets, react-native-web) a
+ * trigger's `accessibleName`, else its `accessibilityLabel`, else its string `label`;
+ * there it is always modal and always shows its close button, and it is handed
+ * Popover's resolved shadow, radius, inset and partGap, plus layer, enter and exit only
+ * when the caller overrode them. The Modal exposes no ref, so Popover takes no `ref`:
+ * callers ref their trigger. Above the breakpoint (tablets, react-native-web) a
  * transparent `Modal` holds a full-screen transparent backdrop `Pressable` (no scrim,
  * even when `modal`) and a `role="dialog"` panel positioned from the trigger's
- * `measureInWindow()` rect, flipped and shifted to stay in the window. The panel
+ * `measureInWindow()` rect, flipped and shifted to keep `gutter` from the window edges,
+ * its width clamped to `min(maxWidth, window − 2 × gutter)`. The panel
  * composes `FocusScope` (`trapped` when `modal`, `active` following `open`), `Heading`,
  * `Button` for the close control and `Box` for the body. It fades and slides
  * `enterDistance` from the trigger side over `enter` (motion.easing.standard) and fades
@@ -225,7 +226,8 @@ function arrowEdgeStyle(edge: ArrowEdge, arrowSize: number, borderWidth: number,
  * closes; a backdrop tap closes when not `modal`; the close button when `dismissible`.
  * Closing by the trigger, Escape or the close button returns accessibility focus to the
  * trigger once `open` goes false; an outside tap does not. On open, focus lands on the
- * body wrapper — native has no descendant walker to find the first control.
+ * body wrapper — native has no descendant walker to find the first control — unless
+ * `initialFocus` is `none`.
  *
  * Acknowledged native limits: `Modal` intercepts every touch behind it, so non-modal
  * means only "tapping outside closes"; Pressable sees no key events, so Tab never
@@ -242,9 +244,9 @@ export function Popover({
   modal = false,
   showArrow = false,
   dismissible = true,
+  initialFocus = 'first',
   onOpenChange,
   overrides,
-  ref,
 }: PopoverProps): React.JSX.Element {
   const { tokens: t } = useTheme();
   const reducedMotion = useReducedMotion();
@@ -274,30 +276,41 @@ export function Popover({
   const partGap = overrides?.partGap ? (resolveToken(t, overrides.partGap) as number) : t.layoutGapNormal;
   const offset = overrides?.offset ? (resolveToken(t, overrides.offset) as number) : t.space2;
   const arrowSize = overrides?.arrowSize ? (resolveToken(t, overrides.arrowSize) as number) : t.space2;
-  const maxWidth = overrides?.maxWidth ? (resolveToken(t, overrides.maxWidth) as number) : t.layoutMaxWidthProse;
+  const gutter = overrides?.gutter ? (resolveToken(t, overrides.gutter) as number) : t.layoutGutter;
+  const maxWidthToken = overrides?.maxWidth ? (resolveToken(t, overrides.maxWidth) as number) : t.layoutMaxWidthProse;
+  // Flip-shift cannot bring a panel wider than the window into view.
+  const maxWidth = Math.max(0, Math.min(maxWidthToken, windowSize.width - 2 * gutter));
   const layer = overrides?.layer ? (resolveToken(t, overrides.layer) as number) : t.layerDropdown;
   const enterDuration = overrides?.enter ? (resolveToken(t, overrides.enter) as number) : t.motionDurationFast;
   const enterDistance = overrides?.enterDistance ? (resolveToken(t, overrides.enterDistance) as number) : t.space1;
   const exitDuration = overrides?.exit ? (resolveToken(t, overrides.exit) as number) : t.motionDurationFast;
   const surfaceColor = t.colorOverlaySurface;
 
-  const triggerProps = trigger.props as {
+  const triggerIsElement = React.isValidElement(trigger) && trigger.type !== React.Fragment;
+  const triggerProps = (triggerIsElement ? trigger.props : {}) as {
     accessibleName?: unknown;
+    accessibilityLabel?: unknown;
     label?: unknown;
     onPress?: ((...args: unknown[]) => void) | undefined;
   };
-  const triggerName =
-    typeof triggerProps.accessibleName === 'string'
-      ? triggerProps.accessibleName
-      : typeof triggerProps.label === 'string'
-        ? triggerProps.label
-        : undefined;
+  // Button's own name chain; native cannot read rendered text.
+  const triggerName = [triggerProps.accessibleName, triggerProps.accessibilityLabel, triggerProps.label].find(
+    (name): name is string => typeof name === 'string' && name !== '',
+  );
   const accessibleName = heading ?? triggerName;
+
+  React.useEffect(() => {
+    if (__DEV__ && !triggerIsElement) {
+      console.warn(
+        'Popover: `trigger` must be exactly one element (not a fragment, a string or nothing); it is cloned with the toggle handler, so any other trigger never opens the panel.',
+      );
+    }
+  }, [triggerIsElement]);
 
   React.useEffect(() => {
     if (__DEV__ && accessibleName === undefined) {
       console.warn(
-        'Popover: without `heading`, the trigger needs an `accessibleName` or a string `label` to name the panel; the panel has no accessible name.',
+        'Popover: without `heading`, the trigger needs an `accessibleName`, `accessibilityLabel` or string `label` to name the panel; the panel has no accessible name.',
       );
     }
   }, [accessibleName]);
@@ -355,9 +368,13 @@ export function Popover({
     if (isOpen) {
       if (triggerRect === null || panelSize === null || hasEnteredRef.current) return undefined;
       hasEnteredRef.current = true;
+      // `none`: the composer moves focus in itself once the panel is shown.
+      const focusIn = (): void => {
+        if (initialFocus === 'first') focusNode(bodyRef.current);
+      };
       if (reducedMotion) {
         progress.setValue(1);
-        focusNode(bodyRef.current);
+        focusIn();
         return undefined;
       }
       const animation = Animated.timing(progress, {
@@ -368,7 +385,7 @@ export function Popover({
         useNativeDriver: false,
       });
       animation.start(({ finished }) => {
-        if (finished) focusNode(bodyRef.current);
+        if (finished) focusIn();
       });
       return () => animation.stop();
     }
@@ -395,28 +412,32 @@ export function Popover({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, isPhoneWidth, mounted, triggerRect, panelSize, reducedMotion]);
 
-  const clonedTrigger = React.cloneElement(trigger as React.ReactElement<Record<string, unknown>>, {
-    onPress: handleTriggerPress,
-    expanded: isOpen,
-  });
+  const clonedTrigger = triggerIsElement
+    ? React.cloneElement(trigger as React.ReactElement<Record<string, unknown>>, {
+        onPress: handleTriggerPress,
+        expanded: isOpen,
+      })
+    : trigger;
 
   const triggerView = (
     // `collapsable={false}` keeps this View in the native tree on Android so measureInWindow stays reliable.
-    <View ref={triggerRef} collapsable={false} testID="Popover.trigger">
+    <View ref={triggerRef} collapsable={false}>
       {clonedTrigger}
     </View>
   );
 
   if (isPhoneWidth) {
-    // Popover's resolved value for every shared binding; `layer` alone is forwarded only
-    // when overridden, so the sheet otherwise keeps its own `layer.sheet`.
-    const sheetOverrides: Partial<Record<BottomSheetOverridableBinding, TokenRef | undefined>> = {};
-    for (const binding of SHEET_BINDINGS) {
-      sheetOverrides[binding] = overrides?.[binding] ?? SHEET_DEFAULTS[binding];
+    const sheetOverrides: Partial<Record<BottomSheetOverridableBinding, TokenRef | undefined>> = {
+      shadow: overrides?.shadow ?? SHEET_DEFAULTS.shadow,
+      radius: overrides?.radius ?? SHEET_DEFAULTS.radius,
+      inset: overrides?.inset ?? SHEET_DEFAULTS.inset,
+      partGap: overrides?.partGap ?? SHEET_DEFAULTS.partGap,
+    };
+    for (const binding of SHEET_OVERRIDE_ONLY) {
+      if (overrides?.[binding] !== undefined) sheetOverrides[binding] = overrides[binding];
     }
-    if (overrides?.layer !== undefined) sheetOverrides.layer = overrides.layer;
     return (
-      <View ref={ref}>
+      <View>
         {triggerView}
         <BottomSheet
           open={isOpen}
@@ -433,7 +454,15 @@ export function Popover({
 
   const position =
     triggerRect !== null
-      ? computePopoverPosition(triggerRect, panelSize?.width ?? maxWidth, panelSize?.height ?? 0, placement, windowSize, offset)
+      ? computePopoverPosition(
+          triggerRect,
+          panelSize?.width ?? maxWidth,
+          panelSize?.height ?? 0,
+          placement,
+          windowSize,
+          offset,
+          gutter,
+        )
       : null;
   const edge: ArrowEdge = position?.edge ?? 'top';
 
@@ -482,7 +511,7 @@ export function Popover({
   };
 
   return (
-    <View ref={ref}>
+    <View>
       {triggerView}
       <Modal
         visible={mounted}
@@ -507,7 +536,9 @@ export function Popover({
               onLayout={handlePanelLayout}
               role="dialog"
               accessibilityLabel={accessibleName}
+              aria-label={accessibleName}
               accessibilityViewIsModal={modal}
+              aria-modal={modal}
               testID="Popover"
             >
               <View style={surfaceStyle}>

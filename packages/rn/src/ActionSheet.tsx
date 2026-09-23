@@ -35,8 +35,8 @@ export type ActionSheetActionTone = 'default' | 'danger';
 
 /**
  * One row. `danger` actions are visually distinct and rendered as a group after the
- * others, regardless of their position in the array. Every optional field also accepts
- * an explicit `undefined`, since `Menu` builds these objects that way under
+ * others, whatever their position in the array. Every optional field also accepts an
+ * explicit `undefined`, since `Menu` builds these objects that way under
  * `exactOptionalPropertyTypes`.
  */
 export type ActionSheetAction = {
@@ -66,6 +66,7 @@ export type ActionSheetOverridableBinding =
   | 'titleSize'
   | 'fontFamily'
   | 'fontSize'
+  | 'itemIconSize'
   | 'lineHeight'
   | 'divider'
   | 'dividerWidth'
@@ -78,8 +79,8 @@ export interface ActionSheetProps {
   open: boolean;
   /** What the actions apply to ("Photo.jpg"), shown muted above the list. Also the accessible name; when omitted the name is `copy.defaultLabel`. */
   heading?: string | undefined;
-  /** Two to about eight actions. `danger` actions are visually distinct and grouped last. The count is guidance, not enforced: no dev warning outside that range. */
-  actions: ActionSheetAction[];
+  /** Two to about eight actions. `danger` actions are visually distinct and grouped last: the default actions render in the order given, then the danger ones in the order given. The count is guidance, not enforced: no dev warning outside that range. */
+  actions: { id: string; label: string; icon?: IconName | undefined; tone?: 'default' | 'danger' | undefined; disabled?: boolean | undefined }[];
   /** Escape, the scrim, the cancel row and the drag all request close. When false the Cancel row, the divider above it and the drag handle are not rendered, the scrim and the drag do nothing, and Escape still reports through `onClose`; with no `heading` either, the header is not rendered at all. */
   dismissible?: boolean | undefined;
   /** Label of the explicit cancel row. Defaults to `copy.cancelLabel`. */
@@ -101,6 +102,7 @@ const COPY = {
 const CONSTANTS = {
   dismissDistance: 0.25, // literal-ok: schema constant dismissDistance (ratio of sheet height)
   dismissVelocity: 1.5, // literal-ok: schema constant dismissVelocity (px/ms)
+  contentCap: 0.9, // literal-ok: BottomSheet's `height: content` cap (ratio of the window)
 } as const;
 
 interface DragSample {
@@ -109,60 +111,48 @@ interface DragSample {
 }
 
 /**
- * ActionSheet — "what can I do with this?" A short list of verbs for one item,
- * reached from an overflow button or a long-press, with the dangerous ones grouped
- * last and an explicit Cancel because thumbs miss.
+ * ActionSheet — "what can I do with this?" A short list of verbs for one item, reached
+ * from an overflow button or a long-press, with the dangerous ones grouped last and an
+ * explicit Cancel because thumbs miss.
  *
  * When to use: contextual actions on an item — share, rename, duplicate, delete —
  * opened from an overflow `Button` (`iconOnly`, label "More actions") or a long-press.
  * Keep it to what fits without scrolling; more than eight actions means the item needs
- * its own screen. Put destructive actions last with `tone: "danger"`. Not for
- * navigation, for settings with state, for choosing a value, or for confirming — a
- * danger row opens an `AlertDialog`, it does not itself confirm.
+ * its own screen. Not for navigation, for settings with state, for choosing a value, or
+ * for confirming — a danger row opens an `AlertDialog`, it does not itself confirm.
  *
  * Renders a native `Modal` (`visible`, `transparent`, `onRequestClose`,
  * `statusBarTranslucent`) holding a scrim `Pressable` and, inside a `FocusScope`
  * (`trapped`, `restoreFocus`, `autoFocus="none"`, `active` following `open`), an
- * `Animated.View` surface anchored to the bottom that carries `testID="ActionSheet"`,
- * `role="menu"`, `accessibilityViewIsModal` and
- * `accessibilityLabel={heading ?? copy.defaultLabel}` — there is no separate
- * `ActionSheet.surface`. It slides up with `enter` and `motion.easing.standard` and
- * down with `exit` and `motion.easing.exit`, the scrim fading with the same duration
- * and easing, instantly under reduced motion. The sheet sizes to its content up to 90%
- * of the window and the list scrolls inside it.
+ * `Animated.View` surface anchored to the bottom carrying `testID="ActionSheet"` and
+ * `accessibilityViewIsModal`. The `list` — the scroll region, so the header and Cancel
+ * row stay pinned — carries `role="menu"` and the accessible name
+ * (`heading ?? copy.defaultLabel`); the heading and the Cancel row are outside it. The
+ * surface slides up with `enter` and `motion.easing.standard` and down with `exit` and
+ * `motion.easing.exit`, the scrim fading with the same duration and easing, instantly
+ * under reduced motion. Once the enter ends, accessibility focus moves to the first
+ * enabled row in display order (the default group, then danger).
  *
- * The heading composes `Text` (`size="sm"`, `tone="muted"`) with `fontFamily`,
- * `titleSize` and `lineHeight` always passed through its `overrides` as the resolved
- * token — the default or the caller's — since `Text` otherwise sets its own; `Icon`
- * draws each row's glyph and `Button` (`variant="secondary"`) the Cancel row, each in a
- * wrapping View carrying the part's testID. Rows are `Pressable`s with `role="menuitem"`
- * and `accessibilityState={{ disabled }}`; a press guard, not the native `disabled`
- * prop, makes a disabled row inert so it stays reachable and is announced as disabled.
- * Once the enter transition ends, accessibility focus moves to the first enabled action
- * in display order (the default group, then danger). Two dividers, two rules: the
- * danger-group divider sits among the rows as `role="separator"` and is drawn only when
- * both groups exist; the cancel divider sits above the Cancel row whenever that row is
- * rendered and is hidden from assistive technology.
+ * Rows are `Pressable`s with `role="menuitem"` and `accessibilityState={{ disabled }}`;
+ * a press guard, not the native `disabled` prop, makes a disabled row inert so it stays
+ * reachable and is announced as disabled. Choosing an action never closes the sheet
+ * itself. The danger-group divider sits among the rows as `role="separator"` when both
+ * groups exist; the cancel divider sits above the Cancel row and is hidden from
+ * assistive technology.
  *
- * A `PanResponder` on the header (handle and heading) claims a move once it passes
- * `dragSlop` (`space.1`) downward, so a tap is not a drag and nothing fires; the offset
- * counts from where the slop was crossed, so the surface does not jump, and it follows
- * the finger even under reduced motion. On release past `dismissDistance` of the
- * measured surface height, or faster than `dismissVelocity` between the last two move
- * samples (from `nativeEvent.timestamp`, not PanResponder's averaged `vy`), it fires
- * `onClose('drag')` and holds the released offset until the consumer's update renders:
+ * A `PanResponder` on the header (handle and heading) claims a move past `dragSlop`
+ * (`space.1`) downward; on release past `dismissDistance` of the surface height, or
+ * faster than `dismissVelocity` between the last two move samples, it fires
+ * `onClose('drag')` and holds the released offset until the consumer's next render:
  * `open` false plays the exit from there, `open` still true springs back over `exit`
- * with `motion.easing.standard`. `dismissible={false}` removes the handle, the drag, the
- * Cancel row and its divider and makes the scrim inert; `onRequestClose` (Android back,
- * a hardware Escape) and the VoiceOver escape gesture always report `onClose('escape')`.
- * Choosing an action never closes the sheet itself.
+ * with `motion.easing.standard`. `onRequestClose` (Android back, a hardware Escape) and
+ * the VoiceOver escape gesture always report `onClose('escape')`.
  *
- * Native limits: `Pressable` has no key events, so there are no arrow keys, no Home/End
- * and no roving tabindex — each row is its own accessibility focus stop reached by swipe
- * and Enter/Space are the platform's own activation. There is no wide presentation: the
- * package's `Menu` renders its own trigger and cannot anchor to an external element, so
- * tablets above `maxWidth` get the sheet too and `maxWidth` has no effect here. Rooted
- * in a native `Modal`, the sheet exposes no ref; callers ref their opener.
+ * Native limits: no arrow keys, Home/End or roving tabindex (`Pressable` has no key
+ * events) — each row is its own accessibility focus stop. No wide presentation: `Menu`
+ * cannot anchor to an external element, so `maxWidth` has no effect. No ref and no
+ * focus restore: the Modal hides the opener from FocusScope, so a caller that needs
+ * focus back exactly moves it in its `onClose`.
  */
 export function ActionSheet({
   open,
@@ -227,10 +217,7 @@ export function ActionSheet({
   // The schema constant `dragSlop`; a constant, not an overridable binding.
   const dragSlop = t.space1;
 
-  // The handle and the drag only exist where dismissing does something, so no affordance lies.
-  const canDrag = dismissible;
-
-  // Display order: the default group, then the danger group, whatever the array order.
+  // Display order: the default group, then the danger group, each in the order given.
   const defaultActions = actions.filter((action) => action.tone !== 'danger');
   const dangerActions = actions.filter((action) => action.tone === 'danger');
 
@@ -243,18 +230,27 @@ export function ActionSheet({
     }
   };
 
+  // Back to rest from wherever a drag left the surface; also finishes an enter the drag interrupted.
   const springBack = (): void => {
     if (reducedMotion || exitDuration === 0) {
       dragY.setValue(0);
+      if (open) {
+        progress.setValue(1);
+      }
       return;
     }
     // A timing animation, not a spring: the theme's motion never bounces.
-    Animated.timing(dragY, {
+    const config = {
       toValue: 0,
       duration: exitDuration,
       easing: toEasing(t.motionEasingStandard),
       useNativeDriver: false,
-    }).start();
+    };
+    const toRest = [Animated.timing(dragY, config)];
+    if (open) {
+      toRest.push(Animated.timing(progress, { ...config, toValue: 1 }));
+    }
+    Animated.parallel(toRest).start();
   };
 
   React.useEffect(() => {
@@ -262,19 +258,24 @@ export function ActionSheet({
       return undefined;
     }
     if (open) {
-      dragY.setValue(0);
       if (reducedMotion || enterDuration === 0) {
         progress.setValue(1);
+        dragY.setValue(0);
         focusFirstEnabledAction();
         return undefined;
       }
-      const animation = Animated.timing(progress, {
+      const enterConfig = {
         toValue: 1,
         duration: enterDuration,
         easing: toEasing(t.motionEasingStandard),
         // react-native-web has no native animated module.
         useNativeDriver: false,
-      });
+      };
+      // A reopen that interrupts a drag-dismiss exit also brings any held offset back to rest.
+      const animation = Animated.parallel([
+        Animated.timing(progress, enterConfig),
+        Animated.timing(dragY, { ...enterConfig, toValue: 0 }),
+      ]);
       animation.start(({ finished }) => {
         if (finished) {
           focusFirstEnabledAction();
@@ -282,9 +283,13 @@ export function ActionSheet({
       });
       return () => animation.stop();
     }
-    if (reducedMotion || exitDuration === 0) {
+    const unmount = (): void => {
       progress.setValue(0);
+      dragY.setValue(0);
       setMounted(false);
+    };
+    if (reducedMotion || exitDuration === 0) {
+      unmount();
       return undefined;
     }
     // Plays from wherever the surface is, including the offset a drag dismiss left it at.
@@ -296,7 +301,7 @@ export function ActionSheet({
     });
     animation.start(({ finished }) => {
       if (finished) {
-        setMounted(false);
+        unmount();
       }
     });
     return () => animation.stop();
@@ -307,8 +312,7 @@ export function ActionSheet({
 
   React.useEffect(() => {
     // The release and the consumer's `setState` batch into one render, so `open` here is
-    // the consumer's answer to the dismiss: still true means spring back to rest, which
-    // also finishes an enter animation the drag interrupted.
+    // the consumer's answer to the dismiss: still true means spring back to rest.
     if (dragReleases > 0 && open) {
       springBack();
     }
@@ -317,8 +321,8 @@ export function ActionSheet({
   }, [dragReleases]);
 
   // The responder is created once; it reads the current render's values through this ref.
-  const latest = React.useRef({ dragSlop, windowHeight, onClose, springBack });
-  latest.current = { dragSlop, windowHeight, onClose, springBack };
+  const latest = React.useRef({ open, dragSlop, windowHeight, onClose, springBack });
+  latest.current = { open, dragSlop, windowHeight, onClose, springBack };
 
   const panResponder = React.useRef<PanResponderInstance | null>(null);
   if (panResponder.current === null) {
@@ -332,6 +336,8 @@ export function ActionSheet({
       onPanResponderGrant: (_: GestureResponderEvent, g: PanResponderGestureState) => {
         samplesRef.current = [];
         grantDyRef.current = g.dy;
+        // An enter still running holds where it is; the release's spring-back finishes it.
+        progress.stopAnimation();
       },
       // Follows the finger even under reduced motion: the drag is user-driven.
       onPanResponderMove: (event: GestureResponderEvent, g: PanResponderGestureState) => {
@@ -351,7 +357,8 @@ export function ActionSheet({
             : 0;
         const sheetHeight = surfaceHeightRef.current > 0 ? surfaceHeightRef.current : latest.current.windowHeight;
         const dismiss = offset > sheetHeight * CONSTANTS.dismissDistance || velocity > CONSTANTS.dismissVelocity;
-        if (!dismiss) {
+        // A close that raced the gesture: spring back and report nothing the sheet did not cause.
+        if (!dismiss || !latest.current.open) {
           latest.current.springBack();
           return;
         }
@@ -402,8 +409,8 @@ export function ActionSheet({
 
   const surfaceStyle: Animated.WithAnimatedValue<ViewStyle> = {
     width: '100%',
-    // The sheet sizes to its content up to BottomSheet's `height: content` cap.
-    maxHeight: windowHeight * 0.9, // literal-ok: 90% of the window, BottomSheet's content cap
+    // Sizes to its content up to BottomSheet's `height: content` cap.
+    maxHeight: windowHeight * CONSTANTS.contentCap,
     borderTopLeftRadius: radius,
     borderTopRightRadius: radius,
     ...shadow,
@@ -431,7 +438,7 @@ export function ActionSheet({
     backgroundColor: t.colorForegroundMuted,
   };
 
-  // Everything past the cap scrolls; below it the list is exactly as tall as its rows.
+  // The scroll region: exactly as tall as its rows until the cap, then it scrolls between the pinned parts.
   const listStyle: ViewStyle = { flexGrow: 0, flexShrink: 1 };
 
   const dividerStyle: ViewStyle = {
@@ -439,7 +446,7 @@ export function ActionSheet({
     borderBottomColor: dividerColor,
   };
 
-  // Its vertical padding is headerPaddingBlock, its inline padding the rows'.
+  // Its block padding is headerPaddingBlock, its inline padding the rows'.
   const cancelRowStyle: ViewStyle = {
     paddingHorizontal: itemPaddingInline,
     paddingVertical: headerPaddingBlock,
@@ -475,6 +482,9 @@ export function ActionSheet({
       else itemRefs.current.delete(id);
     };
 
+  // Always sent: Icon otherwise keeps its own default size, so the glyph tracks the row's type.
+  const iconOverrides = { size: overrides?.itemIconSize ?? ('font.size.md' as TokenRef) };
+
   const renderAction = (action: ActionSheetAction): React.JSX.Element => {
     const danger = action.tone === 'danger';
     return (
@@ -485,6 +495,7 @@ export function ActionSheet({
         rowStyle={itemRowStyle}
         labelStyle={itemLabelStyle(danger)}
         iconColor={danger ? t.colorForegroundDanger : t.colorForeground}
+        iconOverrides={iconOverrides}
         onActivate={handleActionPress}
       />
     );
@@ -498,6 +509,8 @@ export function ActionSheet({
     lineHeight: overrides?.lineHeight ?? 'font.lineHeight.normal',
   };
 
+  // The handle and the drag only exist where dismissing does something, so no affordance lies.
+  const canDrag = dismissible;
   // With nothing to show the header is not rendered at all — no empty padded strip.
   const showHeader = canDrag || heading !== undefined;
 
@@ -517,9 +530,7 @@ export function ActionSheet({
             <Animated.View
               style={surfaceStyle}
               onLayout={handleSurfaceLayout}
-              role="menu"
               accessibilityViewIsModal
-              accessibilityLabel={accessibleName}
               onAccessibilityEscape={handleEscape}
               testID="ActionSheet"
             >
@@ -534,6 +545,7 @@ export function ActionSheet({
                       style={handleStyle}
                       accessibilityElementsHidden
                       importantForAccessibility="no"
+                      aria-hidden
                       testID="ActionSheet.handle"
                     />
                   ) : null}
@@ -546,7 +558,13 @@ export function ActionSheet({
                   ) : null}
                 </View>
               ) : null}
-              <ScrollView style={listStyle} testID="ActionSheet.list">
+              <ScrollView
+                style={listStyle}
+                role="menu"
+                accessibilityLabel={accessibleName}
+                aria-label={accessibleName}
+                testID="ActionSheet.list"
+              >
                 {defaultActions.map(renderAction)}
                 {/* Drawn only when both groups exist, and exposed: it separates the menu's rows. */}
                 {dangerActions.length > 0 && defaultActions.length > 0 ? (
@@ -556,11 +574,12 @@ export function ActionSheet({
               </ScrollView>
               {dismissible ? (
                 <>
-                  {/* Decorative: it only sets the Cancel row apart from the actions. */}
+                  {/* Decorative: it only sets the Cancel row apart from the menu. */}
                   <View
                     style={dividerStyle}
                     accessibilityElementsHidden
-                    importantForAccessibility="no"
+                    importantForAccessibility="no-hide-descendants"
+                    aria-hidden
                     testID="ActionSheet.divider"
                   />
                   <View style={cancelRowStyle} testID="ActionSheet.cancelButton">
@@ -582,6 +601,7 @@ interface ActionSheetItemRowProps {
   rowStyle: (highlighted: boolean, focused: boolean, disabled: boolean) => ViewStyle;
   labelStyle: TextStyle;
   iconColor: string;
+  iconOverrides: { size: TokenRef };
   onActivate: (id: string) => void;
 }
 
@@ -592,6 +612,7 @@ function ActionSheetItemRow({
   rowStyle,
   labelStyle,
   iconColor,
+  iconOverrides,
   onActivate,
 }: ActionSheetItemRowProps): React.JSX.Element {
   const [focused, setFocused] = React.useState(false);
@@ -603,7 +624,9 @@ function ActionSheetItemRow({
       ref={registerRef}
       role="menuitem"
       accessibilityLabel={action.label}
+      aria-label={action.label}
       accessibilityState={{ disabled }}
+      aria-disabled={disabled}
       // Never the native `disabled` prop: it would drop the row from the focus order.
       onPress={() => {
         if (!disabled) onActivate(action.id);
@@ -618,8 +641,13 @@ function ActionSheetItemRow({
     >
       {action.icon !== undefined ? (
         // The glyph is hidden inside the control, never the control itself: the label names the row.
-        <View accessibilityElementsHidden importantForAccessibility="no" testID="ActionSheet.itemIcon">
-          <Icon name={action.icon} color={iconColor} />
+        <View
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          aria-hidden
+          testID="ActionSheet.itemIcon"
+        >
+          <Icon name={action.icon} color={iconColor} overrides={iconOverrides} />
         </View>
       ) : null}
       <RNText style={labelStyle}>{action.label}</RNText>

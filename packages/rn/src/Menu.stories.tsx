@@ -46,11 +46,23 @@ export const TriggerIconEllipsis: Story = { args: { triggerIcon: 'ellipsis' } };
 export const TriggerIconChevronDown: Story = { args: { triggerIcon: 'chevron-down' } };
 export const TriggerIconNone: Story = { args: { triggerIcon: 'none' } };
 
-// placement
-export const PlacementBottomStart: Story = { args: { placement: 'bottom-start' } };
-export const PlacementBottomEnd: Story = { args: { placement: 'bottom-end' } };
-export const PlacementTopStart: Story = { args: { placement: 'top-start' } };
-export const PlacementTopEnd: Story = { args: { placement: 'top-end' } };
+/**
+ * Renders the menu open through a wrapper that owns `open`, starting true, and writes
+ * onOpenChange back, acting as the consumer.
+ */
+const renderOpen: NonNullable<Story['render']> =(args) => {
+  function Open(): React.JSX.Element {
+    const [open, setOpen] = React.useState(true);
+    return <Menu {...args} open={open} onOpenChange={(next) => setOpen(next)} />;
+  }
+  return <Open />;
+};
+
+// placement — rendered open: a closed story shows nothing of the placement rule.
+export const PlacementBottomStart: Story = { args: { placement: 'bottom-start' }, render: renderOpen };
+export const PlacementBottomEnd: Story = { args: { placement: 'bottom-end' }, render: renderOpen };
+export const PlacementTopStart: Story = { args: { placement: 'top-start' }, render: renderOpen };
+export const PlacementTopEnd: Story = { args: { placement: 'top-end' }, render: renderOpen };
 
 // examples
 /** The icon-only overflow button on a row, with the destructive action last after a separator. */
@@ -130,12 +142,4 @@ export const WithOverrides: Story = {
  * Open with its trigger and several focusable items, for the axe gate and manual keyboard
  * checks. A wrapper owns `open`, starting true, and writes onOpenChange back.
  */
-export const Keyboard: Story = {
-  render: (args) => {
-    function Open(): React.JSX.Element {
-      const [open, setOpen] = React.useState(true);
-      return <Menu {...args} open={open} onOpenChange={(next) => setOpen(next)} />;
-    }
-    return <Open />;
-  },
-};
+export const Keyboard: Story = { render: renderOpen };

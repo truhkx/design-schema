@@ -108,7 +108,10 @@ describe('SidePanel', () => {
 
   /* derived: a11y.requires */
   it('has-accessible-name', () => {
+    // Default rests closed, and a closed panel has no name to compute (the doc's
+    // accessible-name note), so the name is checked on the shown panel, opened by its trigger.
     const d = setup();
-    expect(screen.getByLabelText(d.props.heading)).toBeTruthy();
+    fireEvent.press(screen.getByLabelText('Menu'));
+    expect(screen.getByTestId('SidePanel.surface').props.accessibilityLabel).toBe(d.props.heading);
   });
 });

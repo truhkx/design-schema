@@ -25,18 +25,19 @@
     }
   },
   "ActionSheet.rn": {
-    "hash": "ff3ae6851cf6a340",
-    "lastAttemptHash": "ff3ae6851cf6a340",
-    "generatedAt": "2026-09-21T13:48:08+00:00",
+    "hash": "539f575e6e1690e5",
+    "lastAttemptHash": "539f575e6e1690e5",
+    "generatedAt": "2026-09-23T18:21:44+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.9314,
+    "costUsd": 1.3432,
     "files": [
       "packages/rn/src/ActionSheet.stories.tsx",
+      "packages/rn/src/ActionSheet.test.tsx",
       "packages/rn/src/ActionSheet.tsx"
     ],
-    "gaps": 9,
+    "gaps": 10,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -71,13 +72,13 @@
     }
   },
   "AlertDialog.rn": {
-    "hash": "4a1ce2149a4ea85c",
-    "lastAttemptHash": "4a1ce2149a4ea85c",
-    "generatedAt": "2026-09-21T11:13:58+00:00",
+    "hash": "402c0bbdded72a22",
+    "lastAttemptHash": "402c0bbdded72a22",
+    "generatedAt": "2026-09-23T18:11:26+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.8452,
+    "costUsd": 1.2502,
     "files": [
       "packages/rn/src/AlertDialog.stories.tsx",
       "packages/rn/src/AlertDialog.tsx"
@@ -94,15 +95,18 @@
     }
   },
   "BottomSheet.rn": {
-    "hash": "041ab8e894196da5",
-    "lastAttemptHash": "041ab8e894196da5",
-    "generatedAt": "2026-09-21T13:09:37+00:00",
+    "hash": "17f27f9c0b8986cc",
+    "lastAttemptHash": "17f27f9c0b8986cc",
+    "generatedAt": "2026-09-23T18:18:50+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.2841,
+    "costUsd": 1.1306,
     "files": [
-      "packages/rn/src/BottomSheet.tsx"
+      "packages/rn/src/BottomSheet.stories.tsx",
+      "packages/rn/src/BottomSheet.test.tsx",
+      "packages/rn/src/BottomSheet.tsx",
+      "packages/rn/src/index.ts"
     ],
     "gaps": 8,
     "gates": {
@@ -349,18 +353,20 @@
     }
   },
   "Dialog.rn": {
-    "hash": "842bea891a62a004",
-    "lastAttemptHash": "842bea891a62a004",
-    "generatedAt": "2026-09-21T10:53:44+00:00",
+    "hash": "5725ca44088f45c6",
+    "lastAttemptHash": "5725ca44088f45c6",
+    "generatedAt": "2026-09-23T18:09:04+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 2.0818,
+    "costUsd": 0.69,
     "files": [
       "packages/rn/src/Dialog.stories.tsx",
-      "packages/rn/src/Dialog.tsx"
+      "packages/rn/src/Dialog.test.tsx",
+      "packages/rn/src/Dialog.tsx",
+      "packages/rn/src/index.ts"
     ],
-    "gaps": 14,
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -657,17 +663,17 @@
     }
   },
   "Menu.rn": {
-    "hash": "6e28eec48079f96d",
-    "lastAttemptHash": "6e28eec48079f96d",
-    "generatedAt": "2026-09-21T11:45:56+00:00",
+    "hash": "96e9ee22fd73ca30",
+    "lastAttemptHash": "96e9ee22fd73ca30",
+    "generatedAt": "2026-09-23T18:13:44+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 1,
-    "costUsd": 2.516,
+    "rounds": 2,
+    "costUsd": 1.4126,
     "files": [
       "packages/rn/src/Menu.tsx"
     ],
-    "gaps": 12,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -750,19 +756,15 @@
     }
   },
   "Popover.rn": {
-    "hash": "c7928aeca6d25b93",
-    "lastAttemptHash": "c7928aeca6d25b93",
-    "generatedAt": "2026-09-21T12:36:07+00:00",
+    "hash": "723c546d13dd7b4a",
+    "lastAttemptHash": "723c546d13dd7b4a",
+    "generatedAt": "2026-09-23T18:16:28+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 4.5654,
-    "files": [
-      "packages/rn/src/Popover.stories.tsx",
-      "packages/rn/src/Popover.test.tsx",
-      "packages/rn/src/Popover.tsx"
-    ],
-    "gaps": 13,
+    "costUsd": 1.265,
+    "files": [],
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -887,17 +889,15 @@
     }
   },
   "SidePanel.rn": {
-    "hash": "ae6c1369454d9670",
-    "lastAttemptHash": "ae6c1369454d9670",
-    "generatedAt": "2026-09-21T15:11:52+00:00",
+    "hash": "d2a7e97a50a5c7d4",
+    "lastAttemptHash": "d2a7e97a50a5c7d4",
+    "generatedAt": "2026-09-23T18:23:29+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 3.0526,
-    "files": [
-      "packages/rn/src/SidePanel.tsx"
-    ],
-    "gaps": 10,
+    "costUsd": 0.7161,
+    "files": [],
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,

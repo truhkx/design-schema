@@ -3,10 +3,12 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ActionSheet } from './ActionSheet';
 import type { ActionSheetAction, ActionSheetProps } from './ActionSheet';
 import { Button } from './Button';
+import { Icon } from './Icon';
 import { Stack } from './Stack';
 import { withTheme } from './decorators';
+import { useTheme } from './theme';
 
-const ACTIONS: ActionSheetAction[] = [
+const PHOTO_ACTIONS: ActionSheetAction[] = [
   { id: 'share', label: 'Share', icon: 'external' },
   { id: 'rename', label: 'Rename' },
   { id: 'duplicate', label: 'Duplicate' },
@@ -15,28 +17,40 @@ const ACTIONS: ActionSheetAction[] = [
 
 /**
  * Acts as the consumer: owns `open` (starting from the args), calls the story's own
- * handler first and then closes, on both `onAction` and `onClose`. It renders no trigger
- * — there is no copy key for one — except in `Keyboard`, which needs an opener to check
- * focus restore.
+ * handler first and then closes, on both `onAction` and `onClose`. Only `Keyboard`
+ * renders a trigger — there is no copy key for one elsewhere.
  */
 function ActionSheetConsumer({ trigger = false, ...args }: ActionSheetProps & { trigger?: boolean }): React.JSX.Element {
+  const { tokens: t } = useTheme();
   const [open, setOpen] = React.useState(args.open);
   React.useEffect(() => setOpen(args.open), [args.open]);
+  const sheet = (
+    <ActionSheet
+      {...args}
+      open={open}
+      onAction={(id) => {
+        args.onAction?.(id);
+        setOpen(false);
+      }}
+      onClose={(reason) => {
+        args.onClose?.(reason);
+        setOpen(false);
+      }}
+    />
+  );
+  if (!trigger) {
+    return sheet;
+  }
   return (
     <Stack gap="loose" align="start">
-      {trigger ? <Button label="More actions" onPress={() => setOpen(true)} /> : null}
-      <ActionSheet
-        {...args}
-        open={open}
-        onAction={(id) => {
-          args.onAction?.(id);
-          setOpen(false);
-        }}
-        onClose={(reason) => {
-          args.onClose?.(reason);
-          setOpen(false);
-        }}
+      <Button
+        label="More actions"
+        variant="secondary"
+        iconOnly
+        leadingIcon={<Icon name="ellipsis" color={t.colorActionSecondaryForeground} />}
+        onPress={() => setOpen(true)}
       />
+      {sheet}
     </Stack>
   );
 }
@@ -46,10 +60,11 @@ const meta: Meta<typeof ActionSheet> = {
   component: ActionSheet,
   decorators: [withTheme()],
   render: (args) => <ActionSheetConsumer {...args} />,
+  // The photo-actions example.
   args: {
     open: true,
     heading: 'Photo.jpg',
-    actions: ACTIONS,
+    actions: PHOTO_ACTIONS,
   },
 };
 
@@ -99,13 +114,7 @@ export const WithAnUnavailableAction: Story = {
 // notable states
 export const Closed: Story = { args: { open: false } };
 
-export const NotDismissible: Story = { args: { dismissible: false } };
-
-export const WithOverrides: Story = {
-  args: {
-    overrides: { radius: 'radius.md', itemPaddingBlock: 'space.md', headerGap: 'layout.gap.normal' },
-  },
-};
+export const DismissibleFalse: Story = { args: { dismissible: false } };
 
 /** Open with its trigger, four rows and the Cancel row, for the axe gate and manual keyboard checks. */
 export const Keyboard: Story = {

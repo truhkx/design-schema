@@ -117,6 +117,17 @@ describe('Popover', () => {
     expect(screen.getByTestId('Popover')).toBeOnTheScreen();
   });
 
+  /* derived: props.initialFocus */
+  it('renders-initial-focus-first', () => {
+    setup({ initialFocus: 'first' });
+    expect(screen.getByTestId('Popover')).toBeOnTheScreen();
+  });
+
+  it('renders-initial-focus-none', () => {
+    setup({ initialFocus: 'none' });
+    expect(screen.getByTestId('Popover')).toBeOnTheScreen();
+  });
+
   /* derived: a11y.requires — the open Default panel is named */
   it('has-accessible-name', () => {
     setup();

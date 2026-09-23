@@ -178,17 +178,19 @@ function computeMenuPosition(
     vertical = 'bottom';
   }
 
-  const alignStart = I18nManager.isRTL ? horiz === 'end' : horiz === 'start';
-  const preferredLeft = alignStart ? anchor.x : anchor.x + anchor.width - popupWidth;
-  // A popup too wide for the gutters still starts at the leading gutter rather than off-screen.
-  const maxLeft = Math.max(gutter, windowSize.width - gutter - popupWidth);
-  const left = Math.min(Math.max(preferredLeft, gutter), maxLeft);
+  const rtl = I18nManager.isRTL;
+  const alignLeft = rtl ? horiz === 'end' : horiz === 'start';
+  const preferredLeft = alignLeft ? anchor.x : anchor.x + anchor.width - popupWidth;
+  const maxLeft = windowSize.width - gutter - popupWidth;
+  // Too wide for both gutters: the leading edge wins, clamped to `gutter` on the start side.
+  const left =
+    maxLeft < gutter ? (rtl ? maxLeft : gutter) : Math.min(Math.max(preferredLeft, gutter), maxLeft);
 
-  return {
-    top: vertical === 'bottom' ? anchor.y + anchor.height + offset : anchor.y - offset - popupHeight,
-    left,
-    side: vertical,
-  };
+  const preferredTop = vertical === 'bottom' ? anchor.y + anchor.height + offset : anchor.y - offset - popupHeight;
+  // `gutter` is kept from the block edges too, so a flipped popup near an edge is clamped.
+  const top = Math.max(gutter, Math.min(preferredTop, windowSize.height - gutter - popupHeight));
+
+  return { top, left, side: vertical };
 }
 
 /**
@@ -204,11 +206,13 @@ function computeMenuPosition(
  * At or below `layout.maxWidth.prose` (phones) the popup is the package's `ActionSheet`
  * with the items flattened: group labels, separators and shortcut hints are dropped.
  * Above it (tablets and react-native-web) a transparent `Modal` holds a
- * full-screen scrim `Pressable` and a popup `View` (`role="menu"`) positioned from the
- * trigger's (or `anchor`'s) `measureInWindow()` rect: the block side flips on overflow
- * against `useWindowDimensions()`, the inline side never does and is shifted to stay
- * `gutter` from each edge. The list scrolls within `maxHeight`, itself capped at the
- * window height less a `gutter` at each edge. The popup fades and
+ * full-screen transparent backdrop `Pressable` (not a scrim) and a popup `View`
+ * (`role="menu"`) positioned from the trigger's (or `anchor`'s) `measureInWindow()` rect:
+ * the block side flips on overflow against `useWindowDimensions()`, the inline side never
+ * does and is shifted to stay `gutter` from each edge. The popup is capped at `maxHeight`,
+ * itself capped at the window height less a `gutter` at each edge, and the list scrolls
+ * inside it. The popup is held at opacity 0 until both the anchor and its own layout have
+ * been measured, so it never jumps from a placeholder width. It then fades and
  * slides `enterDistance` from the trigger side over `enter`; under reduced motion it
  * appears at once. The Modal is not modal: nothing is trapped, the backdrop closes.
  *
@@ -435,16 +439,19 @@ export function Menu({
   const position = anchorRect
     ? computeMenuPosition(anchorRect, popupWidth, popupSize?.height ?? 0, placement, windowSize, popupOffset, gutter)
     : { top: 0, left: 0, side: placement.startsWith('top') ? ('top' as const) : ('bottom' as const) };
-  // `gutter` at each viewport edge caps the block size; past it the list scrolls.
-  const maxListHeight = Math.max(0, Math.min(maxHeightCap, windowSize.height - 2 * gutter));
+  // `gutter` at each viewport edge caps the popup's block size (border and padding included);
+  // past it the list scrolls.
+  const popupMaxHeight = Math.max(0, Math.min(maxHeightCap, windowSize.height - 2 * gutter));
   const lineHeight = toLineHeight(fontSize, lineHeightMultiplier);
 
-  // Rendered (transparent) before it is measured, so its own size is known before it is placed.
+  // Held at opacity 0 (progress starts at 0) until the anchor measurement and the popup's own
+  // layout have both reported, so an `end` placement never jumps once its real width is known.
   const popupStyle: Animated.WithAnimatedValue<ViewStyle> = {
     position: 'absolute',
     top: position.top,
     left: position.left,
     minWidth: popupMinWidth,
+    maxHeight: popupMaxHeight,
     borderRadius: radius,
     borderWidth,
     borderColor: border,
@@ -463,6 +470,8 @@ export function Menu({
     ],
   };
 
+  // Shrinks inside the capped popup so the list, not the popup, scrolls.
+  const listStyle: ViewStyle = { flexGrow: 0, flexShrink: 1 };
   const listContentStyle: ViewStyle = { padding: popupPadding };
 
   const groupLabelStyle: TextStyle = {
@@ -533,7 +542,7 @@ export function Menu({
     }
     if ('group' in node) {
       return (
-        <View key={key} role="group" accessibilityLabel={node.group} testID="Menu.group">
+        <View key={key} role="group" accessibilityLabel={node.group} aria-label={node.group} testID="Menu.group">
           <RNText style={groupLabelStyle} testID="Menu.groupLabel">
             {node.group}
           </RNText>
@@ -550,15 +559,23 @@ export function Menu({
       {trigger}
       <Modal visible={isOpen} transparent animationType="none" onRequestClose={() => closeMenu('escape')} statusBarTranslucent>
         <View style={StyleSheet.absoluteFill}>
+          {/* A transparent backdrop, not a scrim: a non-modal menu has no scrim colour. */}
           <Pressable
             style={StyleSheet.absoluteFill}
             onPress={() => closeMenu('outside')}
             accessible={false}
-            testID="Menu.scrim"
+            testID="Menu.backdrop"
           />
           {/* Non-modal: no FocusScope trap and no accessibilityViewIsModal. */}
-          <Animated.View style={popupStyle} onLayout={handlePopupLayout} role="menu" accessibilityLabel={label} testID="Menu.popup">
-            <ScrollView style={{ maxHeight: maxListHeight }} contentContainerStyle={listContentStyle} testID="Menu.list">
+          <Animated.View
+            style={popupStyle}
+            onLayout={handlePopupLayout}
+            role="menu"
+            accessibilityLabel={label}
+            aria-label={label}
+            testID="Menu.popup"
+          >
+            <ScrollView style={listStyle} contentContainerStyle={listContentStyle} testID="Menu.list">
               {items.map((item, index) => renderNode(item, String(index)))}
             </ScrollView>
           </Animated.View>
@@ -596,8 +613,11 @@ function MenuActionRow({
     <Pressable
       ref={registerRef}
       role="menuitem"
+      accessibilityRole="menuitem"
       accessibilityLabel={action.label}
+      aria-label={action.label}
       accessibilityState={{ disabled }}
+      aria-disabled={disabled}
       // Never the native `disabled` prop: it would drop the row from the focus order.
       onPress={() => {
         if (!disabled) onActivate(action.id);

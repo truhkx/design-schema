@@ -73,9 +73,9 @@ describe('ActionSheet', () => {
         { id: 'rename', label: 'Rename' },
       ],
     });
-    // The surface must not be `accessible` (that would merge its rows into one element),
-    // so RNTL's role query skips it; assert the role prop on the surface instead.
-    expect(screen.getByTestId('ActionSheet').props.role).toBe('menu');
+    // The list must not be `accessible` (that would merge its rows into one element),
+    // so RNTL's role query skips it; assert the role prop on the list instead.
+    expect(screen.getByTestId('ActionSheet.list').props.role).toBe('menu');
     expect(screen.getAllByRole('menuitem')).toHaveLength(2);
   });
 
@@ -94,6 +94,7 @@ describe('ActionSheet', () => {
   /* derived: a11y.requires */
   it('has-accessible-name', () => {
     const d = setup();
-    expect(screen.getByTestId('ActionSheet').props.accessibilityLabel).toBe(d.props.heading);
+    // The name sits on the `role="menu"` list, not the surface.
+    expect(screen.getByTestId('ActionSheet.list').props.accessibilityLabel).toBe(d.props.heading);
   });
 });

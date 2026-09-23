@@ -232,7 +232,8 @@ function pushSample(samples: readonly DragSample[], sample: DragSample): DragSam
  * reproduced under `Modal`, which intercepts every touch, so only tap-outside-to-close is
  * possible; there is no Tab order to stitch or wrap; the Modal window itself stands in for
  * the inert page and scroll lock has no meaning, with `accessibilityViewIsModal` confining
- * screen-reader users. `role` is not exposed in overlay mode, no ref is exposed at all, and
+ * screen-reader users. `role` is not exposed in overlay mode (a modal panel is a `dialog`,
+ * a non-modal one carries only its label), no ref is exposed at all, and
  * crossing the persistent breakpoint changes the root between `Modal` and `View`, so the
  * children remount and lose their state.
  */
@@ -316,19 +317,28 @@ export function SidePanel({
   const widthToken = width === 'narrow' ? widthNarrow : width === 'wide' ? widthWide : widthDefault;
   const overlayPanelWidth = Math.min(widthToken, windowWidth - edgeGutter);
 
+  // Back to rest from wherever a swipe left the surface; also finishes an enter the swipe interrupted.
   const springBack = (): void => {
     if (reducedMotion || exitDuration === 0) {
       dragX.setValue(0);
+      if (isOpen) {
+        progress.setValue(1);
+      }
       return;
     }
     // A timing animation, not a spring: the theme's motion never bounces.
-    Animated.timing(dragX, {
+    const config = {
       toValue: 0,
       duration: exitDuration,
       easing: toEasing(t.motionEasingStandard),
       // react-native-web has no native animated module.
       useNativeDriver: false,
-    }).start();
+    };
+    const toRest = [Animated.timing(dragX, config)];
+    if (isOpen) {
+      toRest.push(Animated.timing(progress, { ...config, toValue: 1 }));
+    }
+    Animated.parallel(toRest).start();
   };
 
   React.useEffect(() => {
@@ -467,6 +477,8 @@ export function SidePanel({
       onPanResponderGrant: (_: GestureResponderEvent, g: PanResponderGestureState) => {
         samplesRef.current = [];
         grantAwayRef.current = latest.current.isPhysicalLeft ? -g.dx : g.dx;
+        // An enter still running holds where it is; the release's spring-back finishes it.
+        progress.stopAnimation();
       },
       // Follows the finger even under reduced motion: the drag is user-driven.
       onPanResponderMove: (event: GestureResponderEvent, g: PanResponderGestureState) => {
@@ -494,12 +506,18 @@ export function SidePanel({
     });
   }
 
-  const triggerChild = React.isValidElement(trigger) ? (trigger as React.ReactElement<Record<string, unknown>>) : null;
+  // Exactly one element: a fragment or a bare string cannot carry the toggle.
+  const triggerChild =
+    React.isValidElement(trigger) && trigger.type !== React.Fragment
+      ? (trigger as React.ReactElement<Record<string, unknown>>)
+      : null;
 
-  if (__DEV__ && trigger !== undefined && triggerChild === null) {
+  const warnedTriggerRef = React.useRef(false);
+  if (__DEV__ && trigger !== undefined && triggerChild === null && !warnedTriggerRef.current) {
+    warnedTriggerRef.current = true;
     // eslint-disable-next-line no-console
     console.warn(
-      'SidePanel: `trigger` must be a single element so it can carry the toggle and the expanded state. It is rendered as given, but it will not open or close the panel.',
+      'SidePanel: `trigger` must be a single element (not a fragment or a string) so it can carry the toggle and the expanded state. It is rendered as given, but it will not open or close the panel.',
     );
   }
 
@@ -550,30 +568,31 @@ export function SidePanel({
     ) : null;
 
   if (isPersistentActive) {
-    // The sidebar View is itself the parts column: it carries the gap and the block padding.
     const sidebarStyle: ViewStyle = {
       width: widthToken,
       backgroundColor: t.colorOverlaySurface,
-      gap: partGap,
-      paddingVertical: inset,
       // The border is on the inner edge, the one facing the content; the shadow is overlay-only.
       ...(isPhysicalLeft
         ? { borderRightWidth: borderWidth, borderRightColor: borderColor }
         : { borderLeftWidth: borderWidth, borderLeftColor: borderColor }),
     };
+    // The parts column: the gap and the block padding, as in the overlay.
+    const sidebarColumnStyle: ViewStyle = { gap: partGap, paddingVertical: inset };
     const sidebarHeaderStyle: ViewStyle = { paddingHorizontal: inset };
 
     return (
       // No safe-area padding: the screen's own layout owns that beside the content.
-      <View style={sidebarStyle} role={role} accessibilityLabel={heading} testID="SidePanel">
-        {/* There is no close button here, so a hidden title leaves the header empty: not rendered. */}
-        {headingPart !== null ? (
-          <View style={sidebarHeaderStyle} testID="SidePanel.header">
-            {headingPart}
-          </View>
-        ) : null}
-        <View testID="SidePanel.body">{bodyPart}</View>
-        {footerPart}
+      <View style={sidebarStyle} role={role} accessibilityLabel={heading} aria-label={heading} testID="SidePanel">
+        <View style={sidebarColumnStyle} testID="SidePanel.focusScope">
+          {/* There is no close button here, so a hidden title leaves the header empty: not rendered. */}
+          {headingPart !== null ? (
+            <View style={sidebarHeaderStyle} testID="SidePanel.header">
+              {headingPart}
+            </View>
+          ) : null}
+          <View testID="SidePanel.body">{bodyPart}</View>
+          {footerPart}
+        </View>
       </View>
     );
   }
@@ -627,7 +646,8 @@ export function SidePanel({
 
   const headerStyle: ViewStyle = {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    // `headingGap` turns the Heading's margin off so the title centers against the close button.
+    alignItems: 'center',
     // With the title hidden the close button is end-aligned in the header.
     justifyContent: hideHeading ? 'flex-end' : 'space-between',
     gap: headerGap,
@@ -670,8 +690,12 @@ export function SidePanel({
               <Animated.View
                 style={surfaceStyle}
                 onLayout={handleSurfaceLayout}
+                // Non-modal overlays expose no region role, only their label; a modal panel is a dialog.
+                role={modal ? 'dialog' : undefined}
                 accessibilityViewIsModal={modal}
+                aria-modal={modal}
                 accessibilityLabel={heading}
+                aria-label={heading}
                 onAccessibilityEscape={handleEscape}
                 testID="SidePanel.surface"
               >

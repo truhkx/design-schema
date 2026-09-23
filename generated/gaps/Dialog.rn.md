@@ -81,3 +81,20 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Dialog: the locked bindings `focusRing`/`focusRingWidth` are part-bound to `heading`, but the rn notes say rn draws no ring at all. They are absent from the overridable union and unused on this platform.
 - Dialog: `a11y.requires` lists `target-24px`, but Dialog's only control is the composed close Button, whose target comes from Button's own `size: sm`. Dialog adds no minWidth/minHeight or hitSlop of its own — flagging in case the floor is meant to be asserted here.
 - Dialog: the swiftui notes reference a `size: full` value that the `size` enum (sm | md | lg) does not contain.
+
+## 2026-09-23 14:08 — round 1
+
+- Dialog: the rn notes make `description` the surface's accessibilityHint, but the rule to mirror every accessibility prop as aria-* has no aria spelling for a hint, and RN's View types have no `aria-describedby`. So react-native-web exposes no accessible description. Chose: accessibilityHint only; the doc should say whether rn-web should put a nativeID on the description Text and point an aria-describedby at it.
+- Dialog: `enter` says the surface fades and rises, and `exit` says fade only. One shared progress value can't do both, because interpolating the rise from it also plays the rise backwards on close. Chose: a second Animated.Value for the translateY, animated only on enter; the doc could say this outright for rn.
+- Dialog: the rn notes don't say whether the surface should carry `aria-modal`. Chose: `aria-modal` next to accessibilityViewIsModal, because the web platform lists aria-modal among its attributes and the axe gate runs on react-native-web.
+- Dialog: the Escape keyboard rule on react-native-web depends on RNW's Modal sending Escape to onRequestClose, which the doc never says. The non-dismissible-still-reports-escape scenario covers only web and lit, so rn has no test for Escape (Android back / onAccessibilityEscape).
+- Dialog: initial-focus-lands-on-the-close-button covers only web and lit, so on rn `initialFocus: close` is only checked by the renders-initial-focus-close test. setAccessibilityFocus can't be observed under Jest's test renderer.
+
+## 2026-09-23 14:09 — round 1
+
+- Dialog: rn has no aria-describedby for an id-less description; the spec maps description to accessibilityHint only, and there is no aria-* mirror for a hint (RN has no aria-description prop), so on react-native-web the axe gate sees no accessible description. Chose accessibilityHint alone.
+- Dialog: the exit is 'fade only' but the spec does not say what the rise does if the dialog reopens mid-exit. Chose: rise resets to space.2 only after the exit finishes and the content unmounts, so an interrupted reopen fades back in with no movement.
+- Dialog: the enter reduced-motion path says 'on the next frame after focus moves in', but rn focus is setAccessibilityFocus on a wrapper View, which gives no signal that focus arrived. Chose: call setAccessibilityFocus, then requestAnimationFrame(onOpened), cancelled on close.
+- Dialog: `footer` is content; the spec says the footer wrapper is 'not rendered when there is no footer' without saying whether null counts as no footer. Chose to skip it for both undefined and null.
+- Dialog: 'Focus restore runs when `open` becomes false' is delegated to FocusScope (active={open}, restoreFocus); the spec does not say how FocusScope restores on native, where there is no focus to capture, so rn restore is only as good as FocusScope's.
+- Dialog: the keyboard Tab-wrap rules and initial-focus-lands-on-the-close-button are web and Lit only; the Keyboard story exposes them on react-native-web, but Jest has no scenario that checks them.

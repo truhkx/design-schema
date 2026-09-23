@@ -1,5 +1,6 @@
 import * as React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { ButtonProps } from './Button';
 import type { SidePanelProps } from './SidePanel';
 import { Button } from './Button';
 import { Card } from './Card';
@@ -12,7 +13,10 @@ import { Text } from './Text';
 import { useTheme } from './theme';
 import { withTheme } from './decorators';
 
-/** Stories that start open act as the consumer: they own `open`, starting from the arg, and write `onOpenChange` back. */
+/**
+ * Acts as the consumer: with an `open` arg it owns `open`, starting from the arg, and writes
+ * `onOpenChange` back; without one the panel is uncontrolled and its trigger opens it.
+ */
 function Controlled(args: SidePanelProps): React.JSX.Element {
   const [open, setOpen] = React.useState(args.open);
   React.useEffect(() => setOpen(args.open), [args.open]);
@@ -30,26 +34,38 @@ function Controlled(args: SidePanelProps): React.JSX.Element {
   );
 }
 
-function MenuTrigger(): React.JSX.Element {
+/** The icon-only `menu` trigger. It forwards the props SidePanel clones onto it (`onPress`, `expanded`). */
+function MenuTrigger(props: Partial<ButtonProps>): React.JSX.Element {
   const { tokens: t } = useTheme();
-  return <Button label="Menu" variant="ghost" iconOnly leadingIcon={<Icon name="menu" color={t.colorActionGhostForeground} />} />;
+  return (
+    <Button
+      {...props}
+      label="Menu"
+      variant="ghost"
+      iconOnly
+      leadingIcon={<Icon name="menu" color={t.colorActionGhostForeground} />}
+    />
+  );
 }
+
+const navLinks = (
+  <Stack gap="tight" align="start">
+    <Link href="#" label="Home" current />
+    <Link href="#" label="Products" />
+    <Link href="#" label="About" />
+  </Stack>
+);
 
 const meta: Meta<typeof SidePanel> = {
   title: 'SidePanel/React Native',
   component: SidePanel,
   decorators: [withTheme()],
   render: (args) => <Controlled {...args} />,
+  // The resting state: closed behind its trigger, uncontrolled.
   args: {
-    open: true,
+    trigger: <MenuTrigger />,
     heading: 'Menu',
-    children: (
-      <Stack gap="tight" align="start">
-        <Link href="#" label="Home" />
-        <Link href="#" label="Products" />
-        <Link href="#" label="About" />
-      </Stack>
-    ),
+    children: navLinks,
     side: 'start',
     width: 'default',
     persistent: 'never',
@@ -58,6 +74,7 @@ const meta: Meta<typeof SidePanel> = {
     scrim: true,
     dismissible: true,
     swipeable: true,
+    hideHeading: false,
   },
 };
 
@@ -69,18 +86,12 @@ export const Default: Story = {};
 
 // side
 export const SideStart: Story = { args: { side: 'start' } };
-export const SideEnd: Story = { args: { side: 'end', heading: 'Your cart', children: <Text>Cart contents go here.</Text> } };
+export const SideEnd: Story = { args: { side: 'end' } };
 
 // width
 export const WidthNarrow: Story = { args: { width: 'narrow' } };
 export const WidthDefault: Story = { args: { width: 'default' } };
-export const WidthWide: Story = {
-  args: {
-    width: 'wide',
-    heading: 'Filters',
-    children: <Text>A wider panel for a form of filters.</Text>,
-  },
-};
+export const WidthWide: Story = { args: { width: 'wide' } };
 
 // persistent
 export const PersistentNever: Story = { args: { persistent: 'never' } };
@@ -96,32 +107,12 @@ export const Modal: Story = { args: { modal: true } };
 export const NoScrim: Story = { args: { scrim: false } };
 export const NotDismissible: Story = { args: { dismissible: false } };
 export const NotSwipeable: Story = { args: { swipeable: false } };
-export const HideHeading: Story = {
-  args: {
-    heading: 'Menu',
-    hideHeading: true,
-  },
-};
-export const WithFooter: Story = {
-  args: {
-    heading: 'Filters',
-    children: <Text>Narrow results by price, distance and rating.</Text>,
-    footer: (
-      <>
-        <Button label="Apply" variant="primary" />
-        <Button label="Clear" variant="secondary" />
-      </>
-    ),
-  },
-};
-
+export const HideHeading: Story = { args: { hideHeading: true } };
 export const WithOverrides: Story = {
-  args: {
-    overrides: { width: 'layout.maxWidth.content', scrim: 'color.overlay.scrim' },
-  },
+  args: { overrides: { width: 'layout.maxWidth.content', partGap: 'layout.gap.normal' } },
 };
 
-// examples
+// examples — each restates its `given` and the defaults it relies on, as if from blank args.
 
 /** The phone hamburger menu that becomes the permanent sidebar on desktop, with a self-explanatory list. */
 export const NavigationDrawer: Story = {
@@ -129,16 +120,15 @@ export const NavigationDrawer: Story = {
     open: undefined,
     trigger: <MenuTrigger />,
     heading: 'Menu',
-    children: (
-      <Stack gap="tight" align="start">
-        <Link href="#" label="Home" />
-        <Link href="#" label="Products" />
-        <Link href="#" label="About" />
-      </Stack>
-    ),
+    children: navLinks,
+    footer: undefined,
     hideHeading: true,
     role: 'navigation',
     persistent: 'content',
+    side: 'start',
+    width: 'default',
+    modal: false,
+    scrim: true,
   },
 };
 
@@ -161,6 +151,12 @@ export const Filters: Story = {
       </>
     ),
     width: 'wide',
+    hideHeading: false,
+    role: 'complementary',
+    persistent: 'never',
+    side: 'start',
+    modal: false,
+    scrim: true,
   },
 };
 
@@ -168,6 +164,7 @@ export const Filters: Story = {
 export const Cart: Story = {
   args: {
     open: true,
+    trigger: undefined,
     heading: 'Your cart',
     children: (
       <Stack gap="normal">
@@ -182,6 +179,10 @@ export const Cart: Story = {
     footer: <Button label="Checkout" variant="primary" />,
     side: 'end',
     modal: true,
+    width: 'default',
+    persistent: 'never',
+    hideHeading: false,
+    scrim: true,
   },
 };
 
@@ -189,6 +190,7 @@ export const Cart: Story = {
 export const DetailPanel: Story = {
   args: {
     open: true,
+    trigger: undefined,
     heading: 'Order details',
     children: (
       <Stack gap="tight">
@@ -197,9 +199,13 @@ export const DetailPanel: Story = {
         <Text>Total: $72.00</Text>
       </Stack>
     ),
+    footer: undefined,
     side: 'end',
     width: 'narrow',
     scrim: false,
+    modal: false,
+    persistent: 'never',
+    hideHeading: false,
   },
 };
 
@@ -209,12 +215,7 @@ export const Keyboard: Story = {
     function Open(): React.JSX.Element {
       const [open, setOpen] = React.useState(true);
       return (
-        <SidePanel
-          {...args}
-          trigger={<Button label="Menu" variant="secondary" />}
-          open={open}
-          onOpenChange={(next) => setOpen(next)}
-        >
+        <SidePanel {...args} trigger={<MenuTrigger />} open={open} onOpenChange={(next) => setOpen(next)}>
           <Stack gap="tight" align="start">
             <Link href="#" label="Home" />
             <Link href="#" label="Products" />

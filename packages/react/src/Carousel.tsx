@@ -311,16 +311,21 @@ export function Carousel({
 
   const reducedMotion = useReducedMotion();
   const effectiveInterval = Math.max(interval, MIN_INTERVAL);
-  // stopped: the user pressed pause; only play clears it. The interruptions last as long as the
-  // hover, focus or touch does. Reaching the end without loop also counts as stopped.
+  // stopped: the user pressed pause, or rotation reached the last page without loop; only play
+  // clears it. The interruptions last as long as the hover, focus or touch does.
   const [stopped, setStopped] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
   const [touched, setTouched] = useState(false);
   const canRotate = autoplay && !reducedMotion;
-  const atEnd = total <= pageSize || (!loop && current >= lastStart);
-  const playing = canRotate && !stopped && !atEnd;
-  const rotating = playing && !hovered && !focused && !touched;
+  const playing = canRotate && !stopped;
+  const rotating = playing && total > pageSize && !hovered && !focused && !touched;
+
+  // Reaching the last page without loop counts as stopped however it was reached (an autoplay
+  // tick, an arrow, the picker or a swipe), so moving back never restarts rotation on its own.
+  useEffect(() => {
+    if (playing && !loop && current >= lastStart) setStopped(true);
+  }, [playing, loop, current, lastStart]);
 
   const [announcement, setAnnouncement] = useState('');
   const [pickerFocus, setPickerFocus] = useState<number | null>(null);

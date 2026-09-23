@@ -84,3 +84,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Carousel: the doc does not say whether the viewport's own focus should count as a focus pause for autoplay. The root's focus handling pauses on any focus inside the region, the viewport tab stop included; I kept that.
 - Carousel: the tab panels (role=tabpanel when picker is tabs) are named by copy.slideLabel through aria-label, as the doc says, rather than aria-labelledby pointing at their tab as the Tabs pattern would. I followed the doc; the difference from Tabs is not explained.
 - Carousel: `the-picker-jumps-straight-to-a-slide` fixes activeIndex at 1 but does not say whether the carousel shows index 0 afterwards. It is controlled, so it stays at 1 until the parent changes the prop; the test asserts only onChange(0, 'picker').
+
+## 2026-09-23 16:23 — round 1
+
+- Carousel: 'Reaching the last page without loop counts as stopped' does not say whether it applies when every slide fits on one page (total ≤ page) — chose: yes, rotation shows copy.play at once and a timer is never started.
+- Carousel: pressing play in a controlled carousel stopped at the end fires onChange(0, 'autoplay'), but if the parent keeps activeIndex it is still on the last page and rotation stops again right away — the doc doesn't say whether play should wait for the index to change; left as immediate re-stop.
+- Carousel: the missing-label development warning is only described for the tabs picker's text; chose to warn only when picker is 'tabs', since dots and none never show the label.
+- Carousel: the `@container (max-width: 572px)` breakpoint copies layout.maxWidth.prose from the built tokens (same in calm-precise and warm-sleek); the doc says to duplicate it but doesn't give the value per theme.

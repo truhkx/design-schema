@@ -83,3 +83,12 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Table: cellMutedColor is locked with part `cell`, but secondary values are 'rendered with Text tone muted', so Text's own tone paints them and no Table rule can read `--ds-table-cell-muted-color`. I declare the hook to meet the contract, but it styles nothing on web; the doc should say whether Table must use this hook to style muted cell text or whether the binding describes Text's tone.
 - Table: rowSelected and rowStripe share a token, and the doc doesn't say which wins on an even, selected row in a striped table. The striped rule is more specific in both layouts, so if a page re-themes `--ds-table-row-selected`, even-numbered selected rows show the stripe color instead. I kept that order; the start-edge bar still marks selection.
 - Table: the Lit package fails the same check (13 locked bindings without a hook in packages/lit/src/Table). It is outside this web job and was left untouched.
+
+## 2026-09-23 16:24 — round 1
+
+- Table: the web notes say each theme's CSS build stamps its own prose and content widths into the container queries, but nothing in tools/ does that. Table.css hard-codes calm-precise's 572px and 960px, and warm-sleek builds layout.maxWidth.content as 1040px, so a warm-sleek table hides `hideBelow: content` columns at the wrong width. I kept the calm-precise numbers with `literal-ok`.
+- Table: 'Below' is strictly less, so I used `@container (width < Npx)` range syntax instead of `max-width`. The spec doesn't name the CSS form, and Carousel and Stepper still use the inclusive `max-width: 572px`.
+- Table: with `selectable: single`, the header's empty <td role=cell> selection spacer has no rule for the stacked header row. It stays visible as an empty cell in that row; I left it as is.
+- Table: the keyboard rule says the scroll region is focusable 'below the breakpoint', but the guidance says the region exists whenever `responsive: scroll`. I followed the guidance: the region is always present and focusable, and arrows scroll it at any width.
+- Table: `aria-selected` on a role=row inside a role=table (not a grid) is what the spec asks for, but ARIA only defines it for rows in grid or treegrid. I kept it as specified; an axe aria-allowed-attr check may flag it.
+- Table: TableColumn's optional fields are written as the schema `shape` verbatim (`abbr?: string`), without the package's `| undefined` convention. Under exactOptionalPropertyTypes a caller can't pass `abbr: undefined`. I kept the shape verbatim, as the rules require.

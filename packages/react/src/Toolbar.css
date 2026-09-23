@@ -114,6 +114,12 @@
   min-inline-size: 0;
 }
 
+/* A group takes its wrapping from the toolbar: under wrap it may shrink to the line and wrap inside. */
+.ds-toolbar--overflow-wrap .ds-toolbar__group {
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+}
+
 .ds-toolbar--vertical .ds-toolbar__group {
   flex-direction: column;
   align-items: stretch;

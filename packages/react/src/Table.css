@@ -259,14 +259,15 @@
   padding-block-start: var(--ds-table-cell-padding-block);
 }
 
-/* Container conditions cannot read custom properties; the numbers are the built tokens. */
-@container (max-width: 960px) { /* literal-ok: breakpoint from layout.maxWidth.content */
+/* Container conditions cannot read custom properties; the numbers are the built tokens. "Below"
+   is strictly less: at exactly the token width the table is still columnar. */
+@container (width < 960px) { /* literal-ok: breakpoint from layout.maxWidth.content */
   .ds-table--stack .ds-table__cell--hide-below-content {
     display: none;
   }
 }
 
-@container (max-width: 572px) { /* literal-ok: breakpoint from layout.maxWidth.prose */
+@container (width < 572px) { /* literal-ok: breakpoint from layout.maxWidth.prose */
   .ds-table--stack .ds-table__cell--hide-below-prose {
     display: none;
   }

@@ -253,18 +253,17 @@
     }
   },
   "Carousel.web": {
-    "hash": "29b9abf1abc15934",
-    "lastAttemptHash": "29b9abf1abc15934",
-    "generatedAt": "2026-09-21T22:48:26+00:00",
+    "hash": "f68b4712f17c992f",
+    "lastAttemptHash": "f68b4712f17c992f",
+    "generatedAt": "2026-09-23T20:23:42+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 4.8503,
+    "rounds": 1,
+    "costUsd": 0.7114,
     "files": [
-      "packages/react/src/Carousel.css",
       "packages/react/src/Carousel.tsx"
     ],
-    "gaps": 22,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -272,6 +271,7 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true
@@ -1217,18 +1217,21 @@
     }
   },
   "Table.web": {
-    "hash": "1419eaa7fd386761",
-    "lastAttemptHash": "1419eaa7fd386761",
-    "generatedAt": "2026-09-21T23:19:15+00:00",
+    "hash": "26bad26ca4de7705",
+    "lastAttemptHash": "26bad26ca4de7705",
+    "generatedAt": "2026-09-23T20:25:24+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 5.4569,
+    "costUsd": 0.9804,
     "files": [
       "packages/react/src/Table.css",
-      "packages/react/src/Table.tsx"
+      "packages/react/src/Table.stories.tsx",
+      "packages/react/src/Table.test.tsx",
+      "packages/react/src/Table.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 7,
+    "gaps": 6,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1236,6 +1239,7 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true
@@ -1330,13 +1334,13 @@
     }
   },
   "Toolbar.web": {
-    "hash": "fcf62b5ef3e603dc",
-    "lastAttemptHash": "fcf62b5ef3e603dc",
-    "generatedAt": "2026-09-21T22:18:34+00:00",
+    "hash": "9526ca0147782f56",
+    "lastAttemptHash": "9526ca0147782f56",
+    "generatedAt": "2026-09-23T20:22:17+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.8447,
+    "costUsd": 0.726,
     "files": [
       "packages/react/src/Toolbar.css",
       "packages/react/src/Toolbar.stories.tsx",
@@ -1344,7 +1348,7 @@
       "packages/react/src/Toolbar.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 10,
+    "gaps": 7,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1352,6 +1356,7 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true

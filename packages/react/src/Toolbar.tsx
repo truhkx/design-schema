@@ -276,7 +276,6 @@ export function Toolbar({
   onKeyDown,
   ...rest
 }: ToolbarProps & { ref?: Ref<HTMLDivElement> | undefined }): ReactElement {
-  const containerRef = useRef<HTMLDivElement | null>(null);
   // The row inside the toolbar's padding: it lays out, scrolls, clips and is masked, so the fade never
   // clouds the border or the padding.
   const rowRef = useRef<HTMLDivElement | null>(null);
@@ -294,12 +293,6 @@ export function Toolbar({
 
   // null = measuring: every entry is rendered so its size is known; otherwise the collapsed keys.
   const [hiddenKeys, setHiddenKeys] = useState<string[] | null>(null);
-
-  const setContainerRef = (node: HTMLDivElement | null) => {
-    containerRef.current = node;
-    if (typeof ref === 'function') ref(node);
-    else if (ref) (ref as { current: HTMLDivElement | null }).current = node;
-  };
 
   const entries = buildEntries(children);
   const entriesKey = entries.map((entry) => `${entry.kind}:${entry.key}:${entry.collapsible ? 1 : 0}`).join('|');
@@ -552,7 +545,7 @@ export function Toolbar({
   return (
     <div
       {...rest}
-      ref={setContainerRef}
+      ref={ref}
       role="toolbar"
       aria-label={label}
       aria-orientation={orientation}

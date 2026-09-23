@@ -119,8 +119,20 @@ export class DsCheckbox extends LitElement {
       --ds-checkbox-line-height: var(--font-line-height-normal);
       --ds-checkbox-disabled-opacity: var(--opacity-disabled);
       --ds-checkbox-transition: var(--motion-duration-fast);
-      /* indicator, indicatorStroke, helperSize, descriptionText and errorText have no hook: the
-         composed Icon and Texts realise them through their own props and overrides. */
+      /* Locked: closed to the overrides API, still themeable from page CSS. */
+      --ds-checkbox-control-border: var(--color-control-border);
+      --ds-checkbox-control-selected-background: var(--color-control-selected-background);
+      --ds-checkbox-label-color: var(--color-foreground);
+      --ds-checkbox-focus-ring: var(--color-border-focus);
+      --ds-checkbox-focus-ring-width: var(--border-width-focus);
+      --ds-checkbox-min-target: var(--size-target-comfortable);
+      /* indicatorStroke, descriptionText and errorText are realised by the composed Icon and Texts;
+         these hooks reach them only through the children's documented hooks (below), on the same
+         tokens those children already use, so page CSS can still re-theme or rename them. */
+      --ds-checkbox-indicator-stroke: var(--border-width-focus);
+      --ds-checkbox-description-text: var(--color-foreground-muted);
+      --ds-checkbox-error-text: var(--color-foreground-danger);
+      /* indicator and helperSize have no hook: they are forwarded to the children's overrides. */
 
       /* The label's first line box; the control centres on it and the row is padded around it. */
       --ds-checkbox-line-box: calc(var(--ds-checkbox-label-size) * var(--ds-checkbox-line-height));
@@ -141,10 +153,17 @@ export class DsCheckbox extends LitElement {
        the cross axis and the padding makes a single-line row exactly minTarget tall, so a wrapping
        label or a description grows the row downwards without pulling the control off the first line. */
     .row {
+      box-sizing: border-box;
       display: flex;
       align-items: flex-start;
       gap: var(--ds-checkbox-gap);
-      padding-block: calc((var(--size-target-comfortable) - var(--ds-checkbox-line-box)) / 2);
+      /* Clamped at zero (a zero length, written without a literal) so a line box taller than the
+         target grows the row instead of producing a negative padding. */
+      padding-block: max(
+        calc(var(--ds-checkbox-min-target) * 0),
+        calc((var(--ds-checkbox-min-target) - var(--ds-checkbox-line-box)) / 2)
+      );
+      min-block-size: var(--ds-checkbox-min-target);
       cursor: pointer;
     }
 
@@ -169,7 +188,7 @@ export class DsCheckbox extends LitElement {
       padding: 0;
       border-width: var(--ds-checkbox-control-border-width);
       border-style: solid;
-      border-color: var(--color-control-border);
+      border-color: var(--ds-checkbox-control-border);
       border-radius: var(--ds-checkbox-control-radius);
       background-color: var(--ds-checkbox-control-background);
       cursor: pointer;
@@ -185,8 +204,8 @@ export class DsCheckbox extends LitElement {
     /* controlSelectedBackground: checked and indeterminate fill; the border takes the same color */
     .control:checked,
     .control:indeterminate {
-      border-color: var(--color-control-selected-background);
-      background-color: var(--color-control-selected-background);
+      border-color: var(--ds-checkbox-control-selected-background);
+      background-color: var(--ds-checkbox-control-selected-background);
     }
 
     /* controlBorderInvalid: replaces the border color in every state; the selected fill is unchanged */
@@ -199,21 +218,33 @@ export class DsCheckbox extends LitElement {
     .row:not(.disabled) .control:active:not(:checked):not(:indeterminate) {
       background-color: color-mix(
         in srgb,
-        var(--color-control-selected-background) calc(var(--ds-checkbox-pressed-overlay) * 100%),
+        var(--ds-checkbox-control-selected-background) calc(var(--ds-checkbox-pressed-overlay) * 100%),
         var(--ds-checkbox-control-background)
       );
     }
 
     /* focusRing, focusRingWidth: a separate outline, so an invalid box keeps controlBorderInvalid */
     .control:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: var(--border-width-focus);
+      outline: var(--ds-checkbox-focus-ring-width) solid var(--ds-checkbox-focus-ring);
+      outline-offset: var(--ds-checkbox-focus-ring-width);
     }
 
     /* indicator: the Icon centred over the control; clicks fall through to the input */
     .indicator {
       display: inline-flex;
       pointer-events: none;
+    }
+
+    /* indicatorStroke, descriptionText, errorText: set through each child's documented hook, never
+       by styling its shadow tree. */
+    .indicator ds-icon {
+      --ds-icon-stroke-width: var(--ds-checkbox-indicator-stroke);
+    }
+    .description {
+      --ds-text-color: var(--ds-checkbox-description-text);
+    }
+    .error {
+      --ds-text-color: var(--ds-checkbox-error-text);
     }
 
     /* transition: fill and border only — the indicator is mounted and unmounted, never animated */
@@ -231,13 +262,20 @@ export class DsCheckbox extends LitElement {
       min-inline-size: 0;
     }
 
+    /* hideLabel: the hidden label still sets the line box, so a description starts below the
+       empty label line (where the control sits) rather than beside the control. */
+    .text.label-hidden::before {
+      content: '';
+      block-size: var(--ds-checkbox-line-box);
+    }
+
     /* labelColor, labelSize, labelWeight, fontFamily, lineHeight: the label's own rule */
     .label {
       font-family: var(--ds-checkbox-font-family);
       font-size: var(--ds-checkbox-label-size);
       font-weight: var(--ds-checkbox-label-weight);
       line-height: var(--ds-checkbox-line-height);
-      color: var(--color-foreground);
+      color: var(--ds-checkbox-label-color);
       cursor: pointer;
     }
 
@@ -457,7 +495,7 @@ export class DsCheckbox extends LitElement {
                 ></span>`
               : nothing}
           </span>
-          <div class="text">
+          <div class=${classMap({ text: true, 'label-hidden': this.hideLabel })}>
             <label
               class=${classMap({ label: true, 'visually-hidden': this.hideLabel })}
               part="label"
@@ -468,6 +506,7 @@ export class DsCheckbox extends LitElement {
             ${this.description
               ? html`<ds-text
                   id="description"
+                  class="description"
                   part="description"
                   data-part="description"
                   element="p"

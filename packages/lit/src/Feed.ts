@@ -39,6 +39,7 @@ export type FeedOverridableBinding =
   | 'itemGap'
   | 'articleInset'
   | 'articleBodyGap'
+  | 'articleRadius'
   | 'timestampSize'
   | 'newItemsOffset'
   | 'newItemsLayer'
@@ -53,6 +54,7 @@ const HOOKS: Record<FeedOverridableBinding, string> = {
   itemGap: '--ds-feed-item-gap',
   articleInset: '--ds-feed-article-inset',
   articleBodyGap: '--ds-feed-article-body-gap',
+  articleRadius: '--ds-feed-article-radius',
   timestampSize: '--ds-feed-timestamp-size',
   newItemsOffset: '--ds-feed-new-items-offset',
   newItemsLayer: '--ds-feed-new-items-layer',
@@ -252,13 +254,19 @@ export class DsFeed extends LitElement {
       --ds-feed-article-body-gap: var(--layout-gap-tight);
       --ds-feed-unread-border: var(--color-control-selected-background);
       --ds-feed-unread-border-width: var(--border-width-focus);
+      --ds-feed-article-radius: var(--radius-lg);
+      --ds-feed-focus-ring: var(--color-border-focus);
+      --ds-feed-focus-ring-width: var(--border-width-focus);
+      --ds-feed-timestamp-color: var(--color-foreground-muted);
       --ds-feed-timestamp-size: var(--font-size-xs);
       --ds-feed-new-items-offset: var(--space-3);
       --ds-feed-new-items-layer: var(--layer-raised);
       --ds-feed-loading-inset: var(--layout-inset-md);
       --ds-feed-end-message-inset: var(--layout-inset-md);
+      --ds-feed-end-message-color: var(--color-foreground-muted);
       --ds-feed-end-message-size: var(--font-size-sm);
       --ds-feed-empty-state-inset: var(--layout-inset-md);
+      --ds-feed-empty-state-color: var(--color-foreground-muted);
       --ds-feed-empty-state-size: var(--font-size-sm);
       --ds-feed-font-family: var(--font-family-body);
     }
@@ -300,16 +308,17 @@ export class DsFeed extends LitElement {
        that host's whole flat-tree subtree out of sequential focus navigation, so a focusable
        <ds-card> would make every link and button inside an article unreachable by Tab. A plain
        div does not, so the wrapper is the role="article", the focus target and the ring. */
+    /* articleRadius: radius.lg, Card's own default radius, so the ring follows the Card's corners */
     [data-part='article'] {
       position: relative;
-      border-radius: var(--radius-lg);
+      border-radius: var(--ds-feed-article-radius);
       outline: none;
     }
 
     /* focusRing / focusRingWidth (locked): an outline of focusRingWidth in focusRing sitting on the
        card's edge, no offset — the treatment a composed Card draws for itself. */
     [data-part='article']:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
+      outline: var(--ds-feed-focus-ring-width) solid var(--ds-feed-focus-ring);
     }
 
     /* articleInset: layout.inset.md, forwarded to the Card's own padding hooks rather than
@@ -328,6 +337,8 @@ export class DsFeed extends LitElement {
       inset-inline-start: 0;
       inline-size: var(--ds-feed-unread-border-width);
       background: var(--ds-feed-unread-border);
+      border-start-start-radius: var(--ds-feed-article-radius);
+      border-end-start-radius: var(--ds-feed-article-radius);
       pointer-events: none;
     }
 
@@ -336,9 +347,11 @@ export class DsFeed extends LitElement {
       --ds-stack-gap: var(--ds-feed-article-body-gap);
     }
 
-    /* timestampSize: font.size.xs through Text's hook; timestampColor is Text tone="muted" (locked) */
+    /* timestampSize: font.size.xs through Text's hook. timestampColor (locked) is Text tone="muted";
+       its hook feeds the Text's color hook with the same token, so it stays re-themeable from CSS. */
     .timestamp-text {
       --ds-text-font-size: var(--ds-feed-timestamp-size);
+      --ds-text-color: var(--ds-feed-timestamp-color);
     }
 
     /* fontFamily: font.family.body, reaching every composed Text and the new-items Button
@@ -363,6 +376,7 @@ export class DsFeed extends LitElement {
 
     [data-part='endMessage'] > ds-text {
       --ds-text-font-size: var(--ds-feed-end-message-size);
+      --ds-text-color: var(--ds-feed-end-message-color);
     }
 
     /* emptyStateInset / emptyStateSize; emptyStateColor is Text tone="muted" (locked) */
@@ -372,6 +386,7 @@ export class DsFeed extends LitElement {
 
     [data-part='emptyState'] > ds-text {
       --ds-text-font-size: var(--ds-feed-empty-state-size);
+      --ds-text-color: var(--ds-feed-empty-state-color);
     }
 
     .visually-hidden {
@@ -432,7 +447,10 @@ export class DsFeed extends LitElement {
   override connectedCallback(): void {
     super.connectedCallback();
     this.setAttribute('data-ds', 'Feed');
+    // Once per mount: a reconnected feed warns again.
+    this.warnedLabel = false;
     if (this.hasUpdated) {
+      this.warnMissingLabel();
       // Rebuild from scratch: disconnectedCallback dropped the observers.
       this.loadMoreKey = null;
       this.syncVisibilityObserver();
@@ -685,17 +703,21 @@ export class DsFeed extends LitElement {
   private warnMissingLabel(): void {
     if (import.meta.env.DEV && this.label.trim() === '' && !this.warnedLabel) {
       this.warnedLabel = true;
-      console.warn('Feed: `label` is the accessible name of the feed and must not be empty.');
+      console.warn('Feed: label is the accessible name of the feed and must not be empty.');
     }
   }
 
-  /** An empty feed has no last article to observe, so it asks for its first page itself, once. */
+  /**
+   * An empty feed has no last article to observe, so it asks for its first page itself, once per
+   * change: filling or clearing `items`, turning `hasMore` on, or a `loading` cycle that ended
+   * still empty (a failed page can be asked for again) each re-arm the request.
+   */
   private askForFirstPage(): void {
-    if (this.items.length > 0) {
+    if (this.items.length > 0 || !this.hasMore || this.loading) {
       this.askedForFirstPage = false;
       return;
     }
-    if (this.hasMore && !this.loading && !this.askedForFirstPage) {
+    if (!this.askedForFirstPage) {
       this.askedForFirstPage = true;
       this.dispatchLoadMore();
     }

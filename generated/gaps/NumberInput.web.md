@@ -82,3 +82,8 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 
 - NumberInput: descriptionText and errorText are locked bindings, so check_hooks requires a --ds-number-input-* hook for each, but both parts are the composed Text (tone muted / danger), which draws the colour itself and must never be restyled. Declared both hooks on the root; the description wrapper reads its hook as `color`, but the Text inside covers it, so re-theming it from page CSS does nothing. The doc should say whether these two bindings are forwarded to Text (tone, making them exempt like helperSize) or whether Text should read an inherited hook.
 - NumberInput: errorMessage has no NumberInput-owned wrapper (the Text carries data-part itself), unlike description, so --ds-number-input-error-text is declared but no rule reads it. The doc should either give errorMessage a wrapper like description or mark errorText as forwarded to Text's tone.
+
+## 2026-09-23 19:23 — round 1
+
+- NumberInput: the spec says `disabledOpacity` dims the label, description, input and affix parts and that every element that dims carries `aria-disabled="true"`, but then names only the root group and the input as carrying it. I put it on those two and left the label, description wrapper and affixes without it, so the wording is ambiguous.
+- NumberInput: the spec says the Enter key submits inside a Form, but a Form here submits through its own `onSubmit`. I commit on Enter and leave the submission to native implicit form submission, which needs a submit button or a single text field, so a Form with several fields and no submit button would not submit on Enter. The spec doesn't say whether NumberInput should call the Form's submit itself.

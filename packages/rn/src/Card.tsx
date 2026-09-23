@@ -440,7 +440,9 @@ export function Card({
       ref={ref}
       accessibilityRole={target.role}
       accessibilityLabel={target.label}
+      aria-label={target.label}
       accessibilityState={{ disabled: target.disabled }}
+      aria-disabled={target.disabled}
       onPress={() => {
         if (!target.disabled) {
           target.activate();

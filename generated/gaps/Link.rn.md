@@ -200,3 +200,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Link: the spec doesn't say whether a `Current` story is required (it isn't an example and has no enum). Added `Current` under 'notable states' with `current: false` in the meta args, since the web examples note says meta args hold the schema defaults.
 - Link: the current-marks-the-page scenario narrows its `then` to web and Lit, so the native accessibilityState.selected expectation is covered only by a platform-own test; the scenario could carry an rn expectation (selected: true).
 - Link: the rn conventions require aria-label alongside accessibilityLabel, but on react-native-web aria-label overrides the anchor's text content as the accessible name. It matches the visible label (+ suffix), so it's harmless, but the Link doc could say whether the mirror is wanted here, given the web platform deliberately avoids aria-label.
+
+## 2026-09-23 18:54 — round 1
+
+- Link: `current` has no example or `given` story in the spec, so I kept the existing `Current` state story on native, but the doc does not say whether a state story is wanted.
+- Link: the spec says the `focus-visible` requirement is met natively only under react-native-web, but gives no test or scenario for it, so nothing verifies it.
+- Link: `LINK_EXTERNAL_SUFFIX` is described as 'package-internal' but the doc does not say how to keep it out of the public entry point; I export it from Link.tsx and leave it out of index.ts.

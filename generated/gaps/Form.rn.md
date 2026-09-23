@@ -149,3 +149,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Form: errorSummaryLineHeight cannot reach the item Links by inheritance on native, since there is no cascade. It is passed as the `lineHeight` override to each summary Text, and the nested Links inherit it through TextStyleContext. The doc describes only the web inheritance.
 - Form: labelledBy is limited to web and lit, and RN has no ids, so there is no rn way to name the form from a visible Heading. Only accessibilityLabel/aria-label is supported; the doc could say so explicitly.
 - Form: the doc gives no Default-story content. Default renders two Inputs (Full name, Email address) with a horizontal Stack of a primary submit Button and a secondary Cancel, following the action-order rule.
+
+## 2026-09-23 18:56 — round 1
+
+- Form: the spec says the summary box sets line height for the item Links to inherit, but RN has no cascade; the doc never says how to express errorSummaryLineHeight on native. I pass `lineHeight: 'font.lineHeight.normal'` through Text's `overrides` to the heading and to each item's wrapping Text.
+- Form: the copy block lists `summaryHeadingOne` and `invalidSummary`, but the Guidance says RN does not render them. I kept them in a COPY constant only for completeness and never render them.
+- Form: the RN spec never says whether `validateMode` in the context should read `change` after a failed submit or stay as configured. I report `change` after failure alongside `submitFailed`, so a field that reads only the mode still re-validates.
+- Form: `name` is inert on RN per the spec, so it is destructured to an unused `_name`; the spec does not say whether a lint-clean pattern is preferred for that.

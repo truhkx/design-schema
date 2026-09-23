@@ -211,3 +211,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Button: `expanded` says 'when an aria-expanded also arrives through ...rest, the prop wins', but the RN Button has no rest spread (only the forwarded props are named), so that precedence rule is moot on rn. I added no rest spread; the doc could mark the ...rest clause as web/Lit only.
 - Button: the icon-only-in-a-toolbar example gives `leadingIcon: "Icon name=close"` as a string, but on rn the Icon's `color` needs the ghost foreground token, which a Storybook arg literal cannot resolve. The story uses a small helper that reads the token from useTheme; the example could say the rn story needs a themed wrapper.
 - Button: disabled-stays-focusable is web/Lit only, and the rn test for disabled-does-not-fire checks `toBeDisabled()` (from accessibilityState), not focusability. As the rn notes say, nothing tests that disabled is kept off Pressable; that guarantee rests on the code alone.
+
+## 2026-09-23 18:54 — round 1
+
+- Button: the spec does not say whether the loading spinner wrapper should carry `aria-hidden`. I hid it like the other decorative icon wrappers, since it has no label and is not an anatomy part.
+- Button: `iconOnly` with `loading` and no `leadingIcon` is not spelled out for rn. I render the spinner alone and the label is absent, which matches 'replaces the sole glyph'.
+- Button: `inverseHoverOpacity` is `opacity.disabled × 0.25`, but the doc does not say whether an override of `inverseBackgroundHover` applies when `inverse` is set on a non-ghost variant. I applied it to inverse ghost only, per 'Only ghost changes its fill'.
+- Button: the doc names Tooltip's forwarded props (`accessibilityHint`, `accessibilityLabel`, `onHoverIn`, `onHoverOut`, `onLongPress`, `onPressOut`, `onFocus`, `onBlur`) only in prose. They are not in the `props` schema, so their types are my choice: the matching `PressableProps` entries.

@@ -489,11 +489,11 @@ export function Button({
       <Animated.View style={backgroundFillStyle}>
         {loading ? (
           // The spinner only takes the leadingIcon position; it is not an anatomy part and carries no part name.
-          <View style={iconSlotStyle} accessibilityElementsHidden importantForAccessibility="no">
+          <View style={iconSlotStyle} aria-hidden accessibilityElementsHidden importantForAccessibility="no">
             <Animated.View style={spinnerStyle} />
           </View>
         ) : leadingIcon !== undefined && leadingIcon !== null ? (
-          <View testID="Button.leadingIcon" style={iconSlotStyle} accessibilityElementsHidden importantForAccessibility="no">
+          <View testID="Button.leadingIcon" style={iconSlotStyle} aria-hidden accessibilityElementsHidden importantForAccessibility="no">
             {leadingIcon}
           </View>
         ) : null}
@@ -503,7 +503,7 @@ export function Button({
           </RNText>
         )}
         {!iconOnly && !loading && trailingIcon !== undefined && trailingIcon !== null ? (
-          <View testID="Button.trailingIcon" style={iconSlotStyle} accessibilityElementsHidden importantForAccessibility="no">
+          <View testID="Button.trailingIcon" style={iconSlotStyle} aria-hidden accessibilityElementsHidden importantForAccessibility="no">
             {trailingIcon}
           </View>
         ) : null}

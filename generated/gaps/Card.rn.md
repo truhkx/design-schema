@@ -132,3 +132,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Card: `focusable` needs `tabIndex`/`onFocus`/`onBlur` on a View, which RN 0.87's core types do not declare (react-native-web supports them). I widened View through a local prop alias rather than casting at each use; the doc concedes the feature is inert on iOS/Android but not that it is untyped.
 - Card: `border` override on a subtle card is documented as a no-op, but an interactive or focusable subtle card still reserves a border colored `transparent` at rest. I kept the override a no-op there (transparent wins), which the doc implies but does not state.
 - Card: behavior scenarios `interactive-adds-no-focus-stop`, `focusable-takes-scripted-focus-only` and `a-card-with-a-heading-is-an-article` are scoped to web/lit and have no RNTL expression (no tab order, no tabindex attribute, no article role in the native tree), so the rn test file has 12 tests, not 15.
+
+## 2026-09-23 18:57 — round 1
+
+- Card: the whole-card-is-a-link example gives `children` as a plain string but says to render a Link labelled with it; the story renders `<Link href="#" label="A Link to the invoice" />` by hand rather than with exactly its `given` args, so a generator has to guess the string-to-Link translation.
+- Card: the spec doesn't say whether the interactive Pressable's aria-* mirrors (aria-label, aria-disabled) are expected, since the `rn.props` list only names accessibilityRole and accessibilityLabel; I mirrored them per the package convention.
+- Card: the `heading` anatomy part has no testID of its own and the spec says it keeps Heading's own hook; header, headerActions, body and footer testIDs (`Card.header` etc.) are inferred from the anatomy-names rule, not stated for this component.
+- Card: the `focusable` behavior scenarios (tabindex -1, focusable: true) are web/lit only, so nothing tests the rn `focusable` path (tabIndex -1, focus ring) in Jest.

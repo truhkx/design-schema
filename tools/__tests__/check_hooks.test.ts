@@ -35,6 +35,27 @@ describe('checkComponent', () => {
     expect(checkComponent(root, 'web', { name: 'Button', styles })).toBeNull();
   });
 
+  test('a locked binding on a composed child\'s part is exempt, like a forward', () => {
+    withCss('.ds-button { color: var(--color-foreground); }\n');
+    const f = checkComponent(root, 'web', {
+      name: 'Button',
+      composition: { errorMessage: { component: 'Text', props: { tone: 'danger' } } },
+      styles: { errorText: { token: 'color.foreground.danger', part: 'errorMessage', locked: true } },
+    });
+    expect(f?.missing).toEqual([]);
+    expect(f?.forwarded).toEqual(['errorText']);
+  });
+
+  test('a locked binding on a part the component draws itself still needs its hook', () => {
+    withCss('.ds-button { color: var(--color-foreground); }\n');
+    const f = checkComponent(root, 'web', {
+      name: 'Button',
+      composition: { label: { component: 'Text' } },
+      styles: { tickColor: { token: 'color.foreground.muted', part: 'tickMarks', locked: true } },
+    });
+    expect(f?.missing).toEqual(['tickColor']);
+  });
+
   test('a locked binding scoped to this platform still needs its hook', () => {
     withCss('.ds-button { color: var(--color-foreground); }\n');
     const styles = { outline: { token: 'color.border.focus', platforms: ['web', 'lit'], locked: true } };

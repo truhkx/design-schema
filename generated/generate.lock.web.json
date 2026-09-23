@@ -343,20 +343,21 @@
     }
   },
   "DataGrid.web": {
-    "hash": "28cc3c5569455c89",
-    "lastAttemptHash": "28cc3c5569455c89",
-    "generatedAt": "2026-09-23T20:36:34+00:00",
-    "model": "opus",
+    "hash": "b9f5db1c12855adb",
+    "lastAttemptHash": "b9f5db1c12855adb",
+    "generatedAt": "2026-09-23T23:33:11+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 3.3188,
+    "costUsd": 0.5787,
     "files": [
       "packages/react/src/DataGrid.css",
       "packages/react/src/DataGrid.stories.tsx",
       "packages/react/src/DataGrid.test.tsx",
-      "packages/react/src/DataGrid.tsx"
+      "packages/react/src/DataGrid.tsx",
+      "packages/react/src/index.ts"
     ],
-    "gaps": 19,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1349,21 +1350,20 @@
     }
   },
   "Tree.web": {
-    "hash": "5354dc8ed8438102",
-    "lastAttemptHash": "5354dc8ed8438102",
-    "generatedAt": "2026-09-23T20:41:00+00:00",
-    "model": "opus",
+    "hash": "8792767b9bac69fd",
+    "lastAttemptHash": "8792767b9bac69fd",
+    "generatedAt": "2026-09-23T23:35:12+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.0066,
+    "costUsd": 0.3375,
     "files": [
       "packages/react/src/Tree.css",
       "packages/react/src/Tree.stories.tsx",
       "packages/react/src/Tree.test.tsx",
-      "packages/react/src/Tree.tsx",
-      "packages/react/src/index.ts"
+      "packages/react/src/Tree.tsx"
     ],
-    "gaps": 6,
+    "gaps": 3,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1378,13 +1378,13 @@
     }
   },
   "TreeGrid.web": {
-    "hash": "e9fbd0fcc2425a36",
-    "lastAttemptHash": "e9fbd0fcc2425a36",
-    "generatedAt": "2026-09-23T20:38:50+00:00",
-    "model": "opus",
+    "hash": "6f4726d9f05272ec",
+    "lastAttemptHash": "6f4726d9f05272ec",
+    "generatedAt": "2026-09-23T23:34:18+00:00",
+    "model": "sonnet",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 1.3562,
+    "costUsd": 0.412,
     "files": [
       "packages/react/src/TreeGrid.css",
       "packages/react/src/TreeGrid.stories.tsx",
@@ -1392,7 +1392,7 @@
       "packages/react/src/TreeGrid.tsx",
       "packages/react/src/index.ts"
     ],
-    "gaps": 6,
+    "gaps": 0,
     "gates": {
       "parse": true,
       "contrast": true,

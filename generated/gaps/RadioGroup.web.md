@@ -61,3 +61,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 
 - RadioGroup: the schema says descriptionText and errorText are 'realised by the composed Text's tone … no --ds-radio-group-* hook', but the hooks gate (tools/check_hooks.ts) requires every locked binding that isn't passed on to a child to declare its hook, and these two are realised through a tone, not passed on. I followed the gate and Checkbox's precedent: both hooks are declared on the root, defaulting to their tokens, and nothing reads them, because the Texts take their colour from their tones and restyling a child isn't allowed. Either the doc should drop 'no hook', or the gate should also exempt bindings realised by a composed child's props.
 - RadioGroup: the round-2 axe failure was infrastructure, not the component: ERR_CONNECTION_REFUSED on localhost:6007, with no Storybook running. Rerun scoped to RadioGroup with a webServer config (logs/radiogroup-axe.config.ts), light and dark both pass with no code change.
+
+## 2026-09-23 19:02 — round 1
+
+- RadioGroup: the spec says `validate: blur` runs on focus-out of the whole group and `validate: change` on each change, but not whether blur also runs under `validate: change`. I followed the package convention that blur validation also runs under `change`, as Input does.
+- RadioGroup: the spec does not say what `latest.current.selected` should hold when a controlled `value` prop does not accept the change. I set it to the clicked value for the synchronous validate call, and the next render restores it from the prop.
+- RadioGroup: `Form` supplies `idBase` and `disabled`, but the RadioGroup spec never mentions them. The existing code uses `form.idBase` for the group id and `form.disabled` to fold Fieldset-style disabling into the group, and I kept both.

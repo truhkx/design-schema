@@ -248,8 +248,9 @@ export function RadioGroup({
   // `validate: change` validates on each change, `blur` when focus leaves the whole group; after a
   // failed submit every mode re-validates on both, so a fixed group stops being flagged.
   const validateMode = form ? (form.validateMode ?? form.validate) : undefined;
-  const validatesOnChange = validateMode === 'change' || (form?.submitFailed ?? false);
-  const validatesOnBlur = validateMode === 'blur' || (form?.submitFailed ?? false);
+  const afterFailedSubmit = form?.submitFailed ?? false;
+  const validatesOnChange = validateMode === 'change' || afterFailedSubmit;
+  const validatesOnBlur = validateMode === 'blur' || validateMode === 'change' || afterFailedSubmit;
 
   // Roving tabindex, arrows, Space and Tab are the native radio group's; nothing is reimplemented.
   // Group `disabled` keeps the radios focusable (aria-disabled) and guards every way native radios select.
@@ -267,6 +268,8 @@ export function RadioGroup({
     if (isDisabled || option.disabled) return;
     if (!isControlled) setInternalValue(option.value);
     onChange?.(option.value);
+    // validateField runs validate() before the re-render: hand it the value just chosen, not the one it replaces.
+    latest.current.selected = option.value;
     if (form && validatesOnChange) form.validateField(name);
   };
 

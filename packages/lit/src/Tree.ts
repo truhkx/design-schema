@@ -305,7 +305,8 @@ export class DsTree extends LitElement {
       outline-offset: calc(-1 * var(--ds-tree-focus-ring-width));
     }
 
-    [data-part='nodeRow'] {
+    [data-part='nodeRow'],
+    .placeholder {
       position: relative;
       display: flex;
       align-items: center;
@@ -348,7 +349,8 @@ export class DsTree extends LitElement {
     }
 
     /* indent: space.5 per level, reserved on the row itself */
-    [data-part='indent'] {
+    [data-part='indent'],
+    .placeholder-indent {
       flex: none;
       inline-size: calc(var(--ds-tree-indent) * var(--ds-tree-level));
     }
@@ -469,6 +471,7 @@ export class DsTree extends LitElement {
 
     .placeholder {
       cursor: default;
+      transition: none;
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -1143,7 +1146,10 @@ export class DsTree extends LitElement {
       </li>`;
   }
 
-  /** The lazy placeholder: a treeitem the arrows never land on, under an `aria-busy` parent. */
+  /**
+   * The lazy placeholder: a treeitem the arrows never land on, under an `aria-busy` parent. It is not a node,
+   * so it carries no data-part (a part locator never resolves to it) and no tabindex.
+   */
   private renderLoading(level: number, context: RenderContext): TemplateResult {
     return html`<li
       role="treeitem"
@@ -1152,10 +1158,9 @@ export class DsTree extends LitElement {
       aria-setsize="1"
       aria-posinset="1"
       aria-disabled="true"
-      tabindex="-1"
     >
-      <div data-part="nodeRow" class="placeholder">
-        <span data-part="indent" aria-hidden="true"></span>
+      <div class="placeholder">
+        <span class="placeholder-indent" aria-hidden="true"></span>
         <span class="content">
           <span class="expand-spacer" aria-hidden="true"></span>
           <ds-text element="span" tone="muted" .overrides=${context.labelOverrides}>${COPY.loading}</ds-text>

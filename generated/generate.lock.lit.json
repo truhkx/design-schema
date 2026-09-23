@@ -348,17 +348,20 @@
     }
   },
   "DataGrid.lit": {
-    "hash": "2137d2cb0bfb2b8d",
-    "lastAttemptHash": "2137d2cb0bfb2b8d",
-    "generatedAt": "2026-09-22T00:59:40+00:00",
+    "hash": "40d9c9697b506d36",
+    "lastAttemptHash": "40d9c9697b506d36",
+    "generatedAt": "2026-09-23T19:38:07+00:00",
     "model": "opus",
     "runner": "cli",
-    "rounds": 2,
-    "costUsd": 13.8515,
+    "rounds": 1,
+    "costUsd": 1.9632,
     "files": [
-      "packages/lit/src/DataGrid.ts"
+      "packages/lit/src/DataGrid.stories.ts",
+      "packages/lit/src/DataGrid.test.ts",
+      "packages/lit/src/DataGrid.ts",
+      "packages/lit/src/index.ts"
     ],
-    "gaps": 17,
+    "gaps": 11,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -366,6 +369,7 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true
@@ -1330,18 +1334,17 @@
     }
   },
   "Tree.lit": {
-    "hash": "237829599960185f",
-    "lastAttemptHash": "237829599960185f",
-    "generatedAt": "2026-09-22T02:20:45+00:00",
+    "hash": "501fcb692ce7203c",
+    "lastAttemptHash": "501fcb692ce7203c",
+    "generatedAt": "2026-09-23T19:42:00+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 6.3394,
+    "costUsd": 1.108,
     "files": [
-      "packages/lit/src/Tree.stories.ts",
       "packages/lit/src/Tree.ts"
     ],
-    "gaps": 15,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1349,24 +1352,24 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true
     }
   },
   "TreeGrid.lit": {
-    "hash": "89bbfc7b35b93094",
-    "lastAttemptHash": "89bbfc7b35b93094",
-    "generatedAt": "2026-09-22T06:01:08+00:00",
+    "hash": "5b24989e50a571b7",
+    "lastAttemptHash": "5b24989e50a571b7",
+    "generatedAt": "2026-09-23T19:40:11+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 9.46,
+    "costUsd": 1.1713,
     "files": [
-      "packages/lit/src/TreeGrid.stories.ts",
       "packages/lit/src/TreeGrid.ts"
     ],
-    "gaps": 10,
+    "gaps": 8,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -1374,6 +1377,7 @@
       "typecheck": true,
       "deps": true,
       "modules": true,
+      "hooks": true,
       "keyboard": true,
       "keyboard-run": true,
       "axe": true

@@ -88,3 +88,14 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - TreeGrid: expandButtonSize and minTarget both resolve to size.target.min. I used the expandButtonSize hook for the expand button wrapper, the leaf spacer and the guide-line centre offset, and the minTarget hook for the row-height floor, the select column width and the select Checkbox size. The doc doesn't say which binding the selection column's width, and so the guide lines' start offset, should follow.
 - TreeGrid: carried over from round 1, the behavior scenarios a-collapsed-parent-row-reports-it, an-expanded-parent-row-reports-it and a-selected-row-is-marked-selected are marked `platforms: [web]` but hold for Lit's DOM, so TreeGrid.test.ts keeps them.
 - TreeGrid: carried over from round 1, `height: viewport` says only 'as DataGrid', and the element keeps DataGrid's height of 100vh minus two layout.gap.section, which DataGrid's doc doesn't name either.
+
+## 2026-09-23 15:39 — round 1
+
+- TreeGrid: Shift+Space extends 'from the last plain-Space anchor', but the doc never says whether a Checkbox click, Ctrl/Cmd+click or Enter on the select cell also move that anchor, or where a Shift+click range starts; chose one shared anchor that every non-range row toggle moves.
+- TreeGrid: the web notes give the caption Heading 'marginBlockEnd space.0' as if it were a forwarded override, but no Parts section lists forwards to Heading; chose to set Heading's documented --ds-heading-margin-block-end hook (and DataGrid's caption size and weight hooks) from the caption span, as ds-data-grid does.
+- TreeGrid: the caption part is a span (per the notes) wrapping a block-level heading; chose display: block on the span so the caption gap applies. The doc could say the span is block-level.
+- TreeGrid: the lazy placeholder row has one real cell per column, but the doc doesn't say what goes in the select column when selectable is row; chose an empty, unlabelled select gridcell with no Checkbox, since the placeholder can't be selected.
+- TreeGrid: when `sort` is controlled the doc only says 'as DataGrid' for who orders siblings; chose the DataGrid rule that the caller orders `data` and the grid sorts siblings itself only when uncontrolled.
+- TreeGrid: copy.expand/collapse/selectRow take rowName 'from its row-header cell', but the doc doesn't cover an empty row-header value or a column `render`; chose the raw value as text, falling back to the row id when it is empty.
+- TreeGrid: `height: viewport` says 'as DataGrid' without restating the size; chose DataGrid's calc(100vh - 2 * layout.gap.section) for the whole component.
+- TreeGrid: the loadingColor binding says 'It reaches the composed Text as tone="muted"', but the composition map (caption, sortButton, expandButton, selectCell, selectAllCell, emptyState, statusBar) doesn't list the placeholder's Text as a composed part; chose a ds-text carrying data-part="cellContent".

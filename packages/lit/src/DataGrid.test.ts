@@ -70,7 +70,8 @@ describe('ds-data-grid', () => {
         { id: 'b', sku: 'B-2', price: 20 },
       ],
     });
-    s.part('sortButton')!.shadowRoot!.querySelector('button')!.click();
+    // sortButton is the span the grid owns around the composed Button.
+    s.part('sortButton')!.querySelector('ds-button')!.shadowRoot!.querySelector('button')!.click();
     await s.el.updateComplete;
     expect(s.sortChange).toHaveBeenCalledTimes(1);
     expect(s.sortChange.mock.calls[0]![0].detail).toEqual({ column: 'price', direction: 'ascending' });

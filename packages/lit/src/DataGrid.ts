@@ -150,12 +150,6 @@ const COPY_LOADING = 'Loading';
 const COPY_EMPTY = 'Nothing to show.';
 const COPY_SCROLL_HINT = 'Scroll sideways to see more columns';
 
-/**
- * The `columnWidth` binding before the probe has been measured (literal-ok: the doc's pixel default, a multiple of
- * space.1). The live value is read from `.probe-column`, so an override of the hook changes it.
- */
-const DEFAULT_COLUMN_WIDTH = 160;
-
 /** Rows rendered before one has been measured; they are positioned from the row-size token (literal-ok: the doc's cap). */
 const UNMEASURED_ROW_CAP = 50;
 
@@ -371,6 +365,8 @@ export class DsDataGrid extends LitElement {
       --ds-data-grid-row-height: var(--size-target-min);
       --ds-data-grid-row-height-comfortable: var(--size-target-comfortable);
       --ds-data-grid-select-column-width: var(--size-target-min);
+      /* minTarget (locked): the resize floor; the select Checkboxes receive it through their own overrides. */
+      --ds-data-grid-min-target: var(--size-target-min);
       /* The other locked bindings: themeable from page CSS, never through the overrides property. */
       --ds-data-grid-surface: var(--color-background);
       --ds-data-grid-header-surface: var(--color-background-subtle);
@@ -488,21 +484,26 @@ export class DsDataGrid extends LitElement {
       outline: none;
     }
 
+    /*
+     * The header sticks to the grid's own scroll region, never to the page: always when virtualized, and with
+     * height content the region does not scroll vertically, so stickyHeader changes nothing either way.
+     */
     [data-part='header'] {
-      z-index: 3;
-    }
-    [data-part='header'].sticky {
       position: sticky;
       inset-block-start: 0;
+      z-index: 3;
     }
     /* headerShadow: once the body has scrolled */
     [data-part='header'].raised {
       box-shadow: var(--ds-data-grid-header-shadow);
     }
 
+    /* Tracks and the row width are internal variables the grid sets on its grid element from the column model. */
     .row-layout {
       display: grid;
       box-sizing: border-box;
+      grid-template-columns: var(--ds-data-grid-tracks);
+      inline-size: var(--ds-data-grid-row-width);
     }
 
     /* rowHeight / rowHeightComfortable (locked) */
@@ -572,6 +573,10 @@ export class DsDataGrid extends LitElement {
     }
     /* headerWeight / headerSize forwarded to the composed sort Button through its own hooks */
     [data-part='sortButton'] {
+      display: inline-flex;
+      min-inline-size: 0;
+    }
+    [data-part='sortButton'] ds-button {
       --ds-button-font-weight: var(--ds-data-grid-header-weight);
       --ds-button-font-size: var(--ds-data-grid-header-size);
     }
@@ -621,10 +626,26 @@ export class DsDataGrid extends LitElement {
       z-index: 4;
       background: var(--ds-data-grid-header-surface);
     }
+    /* rowHover over opaque pinned cells (the select cell included), layered on the surface they must keep */
+    [data-part='row']:hover > .pinned-start,
+    [data-part='row']:hover > .pinned-end {
+      background-color: var(--ds-data-grid-surface);
+      background-image: linear-gradient(var(--ds-data-grid-row-hover), var(--ds-data-grid-row-hover));
+    }
+    /* a selected row keeps rowSelected, pinned cells included */
+    [data-part='row'][aria-selected='true'] > .pinned-start,
+    [data-part='row'][aria-selected='true'] > .pinned-end {
+      background: var(--ds-data-grid-row-selected);
+    }
     /* pinnedShadow: once the body has scrolled sideways */
     .x-scrolled .pinned-start,
     .x-scrolled .pinned-end {
       box-shadow: var(--ds-data-grid-pinned-shadow);
+    }
+    .x-scrolled [data-part='row'][aria-selected='true'] > .pinned-start:first-child {
+      box-shadow:
+        inset var(--ds-data-grid-row-selected-border-width) 0 0 0 var(--ds-data-grid-row-selected-border),
+        var(--ds-data-grid-pinned-shadow);
     }
 
     /* cellFocusRing / cellFocusRingWidth (locked): inset, so neighbors and the scroll region never clip it */
@@ -694,7 +715,7 @@ export class DsDataGrid extends LitElement {
       display: flex;
       align-items: center;
       justify-content: center;
-      min-block-size: var(--size-target-comfortable);
+      min-block-size: var(--ds-data-grid-row-size);
       padding-inline: var(--ds-data-grid-cell-padding-inline);
     }
 
@@ -715,21 +736,20 @@ export class DsDataGrid extends LitElement {
       --ds-text-font-size: var(--ds-data-grid-status-bar-size);
     }
 
-    /* minTarget (locked) and the overridable resizeStep / columnWidth read as lengths, never as numbers in code. */
+    /*
+     * minTarget (locked) and the overridable resizeStep, measured as lengths from a hidden probe, never hard-coded
+     * as numbers in code, so an override still moves them.
+     */
     .probe {
       position: absolute;
       visibility: hidden;
       pointer-events: none;
-      block-size: var(--size-target-min);
+      block-size: var(--ds-data-grid-min-target);
     }
     .probe-step {
       display: block;
+      block-size: var(--space-0);
       inline-size: var(--ds-data-grid-resize-step);
-    }
-    /* columnWidth: an override replaces the base; the × 2 stays in the rule. */
-    .probe-column {
-      display: block;
-      inline-size: var(--ds-data-grid-column-size);
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -824,7 +844,6 @@ export class DsDataGrid extends LitElement {
   @query('[data-part="grid"]') private accessor gridEl!: HTMLElement | null;
   @query('.probe') private accessor probeEl!: HTMLElement | null;
   @query('.probe-step') private accessor probeStepEl!: HTMLElement | null;
-  @query('.probe-column') private accessor probeColumnEl!: HTMLElement | null;
 
   private sortCache: { data: DataGridRow[]; sort: DataGridSort; rows: DataGridRow[] } | undefined;
   private rowAnchorId: string | undefined;
@@ -930,7 +949,11 @@ export class DsDataGrid extends LitElement {
             data-part="grid"
             role="grid"
             tabindex="0"
-            style=${styleMap({ inlineSize: `max(100%, ${layout.width})` })}
+            style=${styleMap({
+              '--ds-data-grid-tracks': layout.columns,
+              '--ds-data-grid-row-width': layout.width,
+              inlineSize: `max(100%, ${layout.width})`,
+            })}
             aria-labelledby="caption"
             aria-describedby=${ifDefined(
               this.showStatusBar && this.overflowX && !this.scrolledX ? 'scroll-hint' : undefined,
@@ -952,41 +975,28 @@ export class DsDataGrid extends LitElement {
             @pointercancel=${this.handlePointerup}
             @dblclick=${this.handleDblclick}
           >
-            ${this.renderHeader(layout)}
+            ${this.renderHeader()}
             <div role="rowgroup" data-part="body" style=${styleMap(bodyStyle)}>
               ${rows.length === 0 && !this.loading ? this.renderEmpty() : nothing} ${this.renderRangeOverlay(rows)}
               ${repeat(
                 this.windowIndexes(rows.length),
                 (index) => rows[index]!.id,
-                (index) => this.renderRow(rows[index]!, index, layout),
+                (index) => this.renderRow(rows[index]!, index),
               )}
             </div>
           </div>
         </div>
         ${this.renderStatusBar(rows, total)}
-        <span class="probe" aria-hidden="true">
-          <span class="probe-step"></span><span class="probe-column"></span>
-        </span>
+        <span class="probe" aria-hidden="true"><span class="probe-step"></span></span>
       </div>
     `;
   }
 
   /* ---------- rendering ---------- */
 
-  private renderHeader(layout: { columns: string; width: string }): TemplateResult {
-    const sticky = this.stickyHeader || this.height !== 'content';
-    return html`<div
-      role="rowgroup"
-      data-part="header"
-      class=${classMap({ sticky, raised: sticky && this.bodyScrollTop > 0 })}
-    >
-      <div
-        role="row"
-        data-part="headerRow"
-        class="row-layout"
-        aria-rowindex="1"
-        style=${styleMap({ gridTemplateColumns: layout.columns, inlineSize: layout.width })}
-      >
+  private renderHeader(): TemplateResult {
+    return html`<div role="rowgroup" data-part="header" class=${classMap({ raised: this.bodyScrollTop > 0 })}>
+      <div role="row" data-part="headerRow" class="row-layout" aria-rowindex="1">
         ${this.hasSelectColumn ? this.renderSelectAllCell() : nothing}
         ${this.columns.map((column, index) => this.renderColumnHeader(column, index + this.colOffset))}
       </div>
@@ -1035,7 +1045,7 @@ export class DsDataGrid extends LitElement {
      * aria-valuenow is set only once the column has a pixel width — an explicit `width` or one the user has
      * resized — and omitted while it sits at the columnWidth token, whose pixel value is not known at render.
      */
-    const pixelWidth = this.columnWidths[column.key] ?? column.width;
+    const pixelWidth = this.pixelWidthOf(column);
     return html`<div
       role="columnheader"
       id="h-${col}"
@@ -1049,8 +1059,7 @@ export class DsDataGrid extends LitElement {
       style=${styleMap(this.pinStyle(column))}
     >
       ${column.sortable
-        ? html`<ds-button
-            data-part="sortButton"
+        ? html`<span data-part="sortButton"><ds-button
             tabindex="-1"
             variant="ghost"
             size="sm"
@@ -1068,7 +1077,7 @@ export class DsDataGrid extends LitElement {
             ${sorted
               ? html`<ds-icon slot="trailing-icon" name=${sorted === 'ascending' ? 'chevron-up' : 'chevron-down'} inline></ds-icon>`
               : nothing}
-          </ds-button>`
+          </ds-button></span>`
         : column.abbr
           ? // The visible header is aria-hidden beside the spoken `abbr`.
             html`<span data-part="cellContent" aria-hidden="true">${column.header}</span>
@@ -1079,7 +1088,7 @@ export class DsDataGrid extends LitElement {
             class=${classMap({ 'resize-handle': true, dragging: this.draggingColumn === column.key })}
             role="separator"
             aria-orientation="vertical"
-            aria-valuenow=${ifDefined(pixelWidth === undefined ? undefined : this.widthOf(column))}
+            aria-valuenow=${ifDefined(pixelWidth)}
             aria-valuemin=${this.minWidthOf(column)}
             aria-label=${COPY_RESIZE(column.header)}
             @pointerdown=${(event: PointerEvent) => this.handleResizeDown(event, column)}
@@ -1099,7 +1108,7 @@ export class DsDataGrid extends LitElement {
     </div>`;
   }
 
-  private renderRow(row: DataGridRow, index: number, layout: { columns: string; width: string }): TemplateResult {
+  private renderRow(row: DataGridRow, index: number): TemplateResult {
     const rowMode = this.selectable === 'row';
     const isSelected = rowMode && this.currentSelected.includes(row.id);
     const virtual = this.height !== 'content';
@@ -1110,8 +1119,6 @@ export class DsDataGrid extends LitElement {
       aria-rowindex=${index + 2}
       aria-selected=${ifDefined(rowMode ? String(isSelected) : undefined)}
       style=${styleMap({
-        gridTemplateColumns: layout.columns,
-        inlineSize: layout.width,
         /* Until a row has been measured, offsets come from the row-size token. */
         transform: virtual
           ? this.rowHeightPx
@@ -1296,14 +1303,14 @@ export class DsDataGrid extends LitElement {
     if (bottom < top) {
       return nothing;
     }
-    let left = 0;
-    let width = 0;
+    const before: DataGridColumn[] = [];
+    const spanned: DataGridColumn[] = [];
     this.columns.forEach((column, i) => {
       const col = i + this.colOffset;
       if (col < rect.colStart) {
-        left += this.widthOf(column);
+        before.push(column);
       } else if (col <= rect.colEnd) {
-        width += this.widthOf(column);
+        spanned.push(column);
       }
     });
     return html`<div
@@ -1311,8 +1318,8 @@ export class DsDataGrid extends LitElement {
       aria-hidden="true"
       style=${styleMap({
         insetBlockStart: `${top * rowH}px`,
-        insetInlineStart: `${left}px`,
-        inlineSize: `${width}px`,
+        insetInlineStart: this.sumOf(before),
+        inlineSize: this.sumOf(spanned),
         blockSize: `${(bottom - top + 1) * rowH}px`,
       })}
     ></div>`;
@@ -1396,32 +1403,58 @@ export class DsDataGrid extends LitElement {
     return col < this.colOffset ? undefined : this.columns[col - this.colOffset];
   }
 
+  /**
+   * The column's width in pixels once it has one — an explicit `width` or one the user has resized — floored at
+   * its `minWidth`; undefined while it sits at the columnWidth token, whose pixel value is not known at render.
+   */
+  private pixelWidthOf(column: DataGridColumn): number | undefined {
+    const width = this.columnWidths[column.key] ?? column.width;
+    return width === undefined ? undefined : Math.max(width, this.minWidthOf(column));
+  }
+
+  /** The column's rendered width in pixels: its pixel width, else its header cell measured. */
   private widthOf(column: DataGridColumn): number {
-    const width = this.columnWidths[column.key] ?? column.width ?? this.defaultColumnWidth;
-    return Math.max(width, this.minWidthOf(column));
+    const pixel = this.pixelWidthOf(column);
+    if (pixel !== undefined) {
+      return pixel;
+    }
+    const col = this.columns.indexOf(column) + this.colOffset;
+    const header = this.renderRoot.querySelector<HTMLElement>(`#h-${col}`);
+    return Math.max(header?.offsetWidth ?? 0, this.minWidthOf(column));
   }
 
-  /** The `columnWidth` binding as a length, so an override of its hook changes it. */
-  private get defaultColumnWidth(): number {
-    return this.probeColumnEl?.offsetWidth || DEFAULT_COLUMN_WIDTH;
-  }
-
-  /** The floor for both resize paths: never below `size.target.min`, which is also the default. */
+  /** The floor for both resize paths: never below minTarget, which is also the default. */
   private minWidthOf(column: DataGridColumn): number {
     return Math.max(column.minWidth ?? 0, this.probeEl?.offsetHeight ?? 0);
   }
 
-  private rowLayout(): { columns: string; width: string } {
-    const widths = this.columns.map((column) => this.widthOf(column));
-    const sum = widths.reduce((total, width) => total + width, 0);
-    const tracks = widths.map((width) => `${width}px`);
-    if (this.hasSelectColumn) {
-      return {
-        columns: ['var(--ds-data-grid-select-column-size)', ...tracks].join(' '),
-        width: `calc(var(--ds-data-grid-select-column-size) + ${sum}px)`,
-      };
+  /**
+   * The column's track as CSS: its pixel width, else the columnWidth binding (doubled in the internal
+   * `--ds-data-grid-column-size`), never below minTarget or its own `minWidth`.
+   */
+  private trackOf(column: DataGridColumn): string {
+    const width = this.columnWidths[column.key] ?? column.width;
+    const base = width === undefined ? 'var(--ds-data-grid-column-size)' : `${width}px`;
+    const floor = column.minWidth === undefined ? '' : `, ${column.minWidth}px`;
+    return `max(${base}, var(--ds-data-grid-min-target)${floor})`;
+  }
+
+  /** The summed width of `columns` as one CSS length, with `lead` (the selection column) first. */
+  private sumOf(columns: DataGridColumn[], lead?: string): string {
+    const parts = columns.map((column) => this.trackOf(column));
+    if (lead) {
+      parts.unshift(lead);
     }
-    return { columns: tracks.join(' '), width: `${sum}px` };
+    return parts.length === 0 ? 'var(--space-0)' : `calc(${parts.join(' + ')})`;
+  }
+
+  private rowLayout(): { columns: string; width: string } {
+    const lead = this.hasSelectColumn ? 'var(--ds-data-grid-select-column-size)' : undefined;
+    const tracks = this.columns.map((column) => this.trackOf(column));
+    return {
+      columns: (lead ? [lead, ...tracks] : tracks).join(' '),
+      width: this.sumOf(this.columns, lead),
+    };
   }
 
   private cellClasses(column: DataGridColumn): Record<string, boolean> {
@@ -1438,28 +1471,13 @@ export class DsDataGrid extends LitElement {
   private pinStyle(column: DataGridColumn): Record<string, string> {
     const index = this.columns.indexOf(column);
     if (column.pinned === 'start') {
-      let offset = 0;
-      for (let i = 0; i < index; i += 1) {
-        const other = this.columns[i]!;
-        if (other.pinned === 'start') {
-          offset += this.widthOf(other);
-        }
-      }
-      return {
-        insetInlineStart: this.hasSelectColumn
-          ? `calc(var(--ds-data-grid-select-column-size) + ${offset}px)`
-          : `${offset}px`,
-      };
+      const before = this.columns.slice(0, index).filter((other) => other.pinned === 'start');
+      const lead = this.hasSelectColumn ? 'var(--ds-data-grid-select-column-size)' : undefined;
+      return { insetInlineStart: this.sumOf(before, lead) };
     }
     if (column.pinned === 'end') {
-      let offset = 0;
-      for (let i = index + 1; i < this.columns.length; i += 1) {
-        const other = this.columns[i]!;
-        if (other.pinned === 'end') {
-          offset += this.widthOf(other);
-        }
-      }
-      return { insetInlineEnd: `${offset}px` };
+      const after = this.columns.slice(index + 1).filter((other) => other.pinned === 'end');
+      return { insetInlineEnd: this.sumOf(after) };
     }
     return {};
   }

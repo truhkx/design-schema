@@ -387,6 +387,7 @@ export class DsTreeGrid extends LitElement {
     }
 
     [data-part='caption'] {
+      display: block;
       padding-block-end: var(--space-2);
     }
     [data-part='caption'] ds-heading {
@@ -600,10 +601,10 @@ export class DsTreeGrid extends LitElement {
     .cell.parent [data-part='cellContent'] {
       font-weight: var(--ds-tree-grid-parent-weight);
     }
-    /* loadingColor (locked): the lazy-loading placeholder text */
-    .loading-text {
-      color: var(--ds-tree-grid-loading-color);
-    }
+    /*
+     * loadingColor (locked): the lazy-loading placeholder text is a composed Text with tone="muted", which
+     * resolves to this token; Text.color is locked, so the hook above is never forwarded as a colour.
+     */
 
     /* minTarget (locked) */
     .select-cell,
@@ -936,9 +937,9 @@ export class DsTreeGrid extends LitElement {
 
     return html`
       <div data-part="container">
-        <div data-part="caption" class=${classMap({ 'visually-hidden': this.hideCaption })}>
+        <span data-part="caption" class=${classMap({ 'visually-hidden': this.hideCaption })}>
           <ds-heading id="caption" level=${this.captionLevel} size="md">${this.caption}</ds-heading>
-        </div>
+        </span>
         <div
           data-part="scrollRegion"
           class=${classMap({ 'x-scrolled': this.scrolledX })}
@@ -1183,7 +1184,7 @@ export class DsTreeGrid extends LitElement {
     const raw = row?.[column.key];
     const content = !row
       ? isRowHeader
-        ? html`<span data-part="cellContent" class="loading-text">${COPY_LOADING}</span>`
+        ? html`<ds-text data-part="cellContent" element="span" tone="muted">${COPY_LOADING}</ds-text>`
         : nothing
       : editing
         ? this.renderEditor(column, row, editing)

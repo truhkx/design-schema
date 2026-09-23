@@ -118,18 +118,18 @@
   "Box.rn": {
     "hash": "888d4593811cc9a1",
     "lastAttemptHash": "888d4593811cc9a1",
-    "generatedAt": "2026-09-23T17:42:54+00:00",
+    "generatedAt": "2026-09-23T17:42:59+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.1659,
+    "costUsd": 0.4354,
     "files": [
       "packages/rn/src/Box.stories.tsx",
       "packages/rn/src/Box.test.tsx",
       "packages/rn/src/Box.tsx",
       "packages/rn/src/index.ts"
     ],
-    "gaps": 5,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -168,15 +168,15 @@
   "Button.rn": {
     "hash": "d6710554b2a7d9b6",
     "lastAttemptHash": "d6710554b2a7d9b6",
-    "generatedAt": "2026-09-23T17:44:15+00:00",
+    "generatedAt": "2026-09-23T17:44:14+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.7487,
+    "costUsd": 0.5001,
     "files": [
       "packages/rn/src/Button.tsx"
     ],
-    "gaps": 6,
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -483,15 +483,19 @@
   "Form.rn": {
     "hash": "50829f202157ac9d",
     "lastAttemptHash": "50829f202157ac9d",
-    "generatedAt": "2026-09-23T17:48:13+00:00",
+    "generatedAt": "2026-09-23T17:48:23+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.6391,
+    "costUsd": 0.7769,
     "files": [
-      "packages/rn/src/Form.tsx"
+      "packages/rn/src/Form.stories.tsx",
+      "packages/rn/src/Form.test.tsx",
+      "packages/rn/src/Form.tsx",
+      "packages/rn/src/FormContext.ts",
+      "packages/rn/src/index.ts"
     ],
-    "gaps": 5,
+    "gaps": 6,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -505,18 +509,18 @@
   "Heading.rn": {
     "hash": "d25d2615748acffd",
     "lastAttemptHash": "d25d2615748acffd",
-    "generatedAt": "2026-09-23T17:40:43+00:00",
+    "generatedAt": "2026-09-23T17:40:46+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.4676,
+    "costUsd": 0.2165,
     "files": [
       "packages/rn/src/Heading.stories.tsx",
       "packages/rn/src/Heading.test.tsx",
       "packages/rn/src/Heading.tsx",
       "packages/rn/src/index.ts"
     ],
-    "gaps": 5,
+    "gaps": 4,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -555,15 +559,18 @@
   "Input.rn": {
     "hash": "bf9e87dbdda32505",
     "lastAttemptHash": "bf9e87dbdda32505",
-    "generatedAt": "2026-09-23T17:46:58+00:00",
+    "generatedAt": "2026-09-23T17:46:57+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.7311,
+    "costUsd": 0.4608,
     "files": [
-      "packages/rn/src/Input.tsx"
+      "packages/rn/src/Input.stories.tsx",
+      "packages/rn/src/Input.test.tsx",
+      "packages/rn/src/Input.tsx",
+      "packages/rn/src/index.ts"
     ],
-    "gaps": 4,
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -599,17 +606,17 @@
   "Link.rn": {
     "hash": "c85f815660a7e8da",
     "lastAttemptHash": "c85f815660a7e8da",
-    "generatedAt": "2026-09-23T17:45:37+00:00",
+    "generatedAt": "2026-09-23T17:45:45+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.4333,
+    "costUsd": 0.7464,
     "files": [
       "packages/rn/src/Link.stories.tsx",
       "packages/rn/src/Link.test.tsx",
       "packages/rn/src/Link.tsx"
     ],
-    "gaps": 6,
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,
@@ -936,18 +943,18 @@
   "Stack.rn": {
     "hash": "ef28a8e8c84d49be",
     "lastAttemptHash": "ef28a8e8c84d49be",
-    "generatedAt": "2026-09-23T17:41:54+00:00",
+    "generatedAt": "2026-09-23T17:41:48+00:00",
     "model": "opus",
     "runner": "cli",
     "rounds": 1,
-    "costUsd": 0.4636,
+    "costUsd": 0.216,
     "files": [
       "packages/rn/src/Stack.stories.tsx",
       "packages/rn/src/Stack.test.tsx",
       "packages/rn/src/Stack.tsx",
       "packages/rn/src/index.ts"
     ],
-    "gaps": 6,
+    "gaps": 5,
     "gates": {
       "parse": true,
       "contrast": true,

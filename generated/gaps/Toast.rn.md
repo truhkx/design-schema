@@ -98,3 +98,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Toast (carried over): for non-danger tones the root has no role but has aria-label, which under react-native-web is aria-label on a div with no role. axe only lets it through because the toast has text content. The `role` prop does accept 'status'; I kept the doc's 'no role' because the danger scenario reads accessibilityRole.
 - Toast (carried over): with the region keys as no-ops on a standalone Toast, the single ToastOverridableBinding type is shared by Toast and ToastProvider, and each ignores the other's keys. The doc says the region keys form their own group but gives RN only one union type.
 - Toast (carried over): escape-dismiss, F6 and the focus-restore model have no native equivalent. 'escape' stays in the reason type but never fires on RN, and the Tab rule needs no code.
+
+## 2026-09-23 14:07 — round 2
+
+- Toast: no edits from this session. ds-regen-rn-85 finished Toast.tsx (and the Keyboard story); I verified it: tsc --noEmit is clean and 13/13 Toast jest tests pass. The act() warnings come from useReducedMotion (theme.tsx:150), not Toast.
+- Toast: onDismiss now fires when the exit starts, but the spec only says 'removed once the transition ends' for a toast inside the region. For a Toast rendered on its own on native, the code renders null after the exit. The doc should say so.
+- Toast: the rn notes don't say to write `aria-live` alongside `accessibilityLiveRegion`. The code writes both, under the package rule to mirror every accessibility prop as aria-*; the doc should state it.
+- Toast: `styles.text` says the foreground is re-scoped on the `toast` container, but the rn notes say the message part. The code wraps the whole toast, following styles.text; the rn notes should match.

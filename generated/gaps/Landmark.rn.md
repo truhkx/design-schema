@@ -50,3 +50,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Landmark: the label on complementary and search is dropped on RN, yet the doc requires RoleComplementary/RoleSearch stories to carry a label (for the web duplicate check). Kept the labels in the stories for parity with web, with a comment; on RN they have no effect.
 - Landmark: a11y.requires lists landmark-role, but the RN rules only cover accessible-name, keyboard, target and heading, so nothing says how landmark-role maps. Used the platform notes (role prop, legacy accessibilityRole for search).
 - Landmark: the has-accessible-name scenario gives only a label and relies on Default's role (navigation) being one of the roles that take a label. On RN the scenario would fail if Default's role changed to banner, main, contentinfo, complementary or search; the doc could pin the role in that scenario's given.
+
+## 2026-09-23 19:02 — round 1
+
+- Landmark: The spec has no Keyboard block, so no Keyboard story was added.
+- Landmark: The RN `aria-label` mirror is applied only where `accessibilityLabel` is, matching the notes. The doc does not say whether `aria-label` should follow the same restriction. I assumed it should.
+- Landmark: The Default story uses role navigation with label Main, per the guidance. The spec does not say whether the RN stories must model two same-role landmarks for the shared-label duplicate check, which does not run on native. I did not add one.

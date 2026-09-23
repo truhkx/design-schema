@@ -250,7 +250,7 @@ function Radio({
       style={rowStyle}
     >
       <View style={controlSlotStyle}>
-        <Animated.View style={controlStyle} accessibilityElementsHidden importantForAccessibility="no">
+        <Animated.View style={controlStyle} aria-hidden accessibilityElementsHidden importantForAccessibility="no">
           <Animated.View testID="RadioGroup.radioIndicator" style={dotStyle} />
         </Animated.View>
       </View>

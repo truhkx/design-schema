@@ -104,3 +104,10 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Checkbox: minTarget says the hidden label 'still sets the line box'; on native an empty View one label line tall (testID Checkbox.label) stands in for the label; the doc does not say whether that placeholder carries the label part's testID
 - Checkbox: the transition binding says the invalid and focus border colors cross-fade, but not where a fade interrupted mid-way should start; the implementation starts from the previous target color
 - Checkbox: the color cross-fade on every state change makes Animated update after fireEvent.press, so the RN tests log act() warnings; the doc's 'instant under reduced motion' gives tests no hook to disable the fade
+
+## 2026-09-23 18:59 — round 1
+
+- Checkbox: the rn notes say the drawn control is hidden with accessibilityElementsHidden and importantForAccessibility="no" but do not mention aria-hidden, which react-native-web needs to hide it in the DOM; I added it per the package conventions.
+- Checkbox: the rn platform notes list `aria-checked` and `aria-disabled` as the react-native-web mirrors but say nothing about `aria-label`, `aria-required` or `aria-describedby` for description/error; I mirrored only `aria-label` and `aria-checked` (plus `aria-disabled` set on the DOM node in an effect) and left `aria-required`/`aria-describedby` out.
+- Checkbox: the spec says the error's live region is "none" inside a Form with errorSummary, but does not say whether to use `assertive` or `polite` otherwise; I kept `assertive`, matching Input.
+- Checkbox: the behavior scenarios are platform-neutral 'click' interactions, and 'click control' on RN needs the control queried by testID even though the control is hidden from accessibility; the tests use `getByTestId('Checkbox.control', { includeHiddenElements: true })` and `fireEvent.press`.

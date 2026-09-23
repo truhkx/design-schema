@@ -135,9 +135,8 @@ export interface TreeGridProps {
 }
 
 /**
- * The component's user-facing strings, from the doc's `copy` block. `cellLabel` is DataGrid's:
- * the rn notes ask every cell for "{column}: {value}" but TreeGrid's copy block declares no
- * string for it, so DataGrid's is reused verbatim.
+ * The component's user-facing strings, from the doc's `copy` block (`cellLabel` included, which
+ * the rn notes ask of every cell).
  */
 const COPY = {
   expand: (rowName: string): string => `Expand ${rowName}`,
@@ -1087,7 +1086,9 @@ export function TreeGrid({
       <Pressable
         key={column.key}
         testID="TreeGrid.cell"
-        role="cell"
+        // `aria-selected` is not allowed on a plain `cell`; a selectable cell is a `gridcell`,
+        // which react-native-web passes to the DOM but RN's `Role` union does not list.
+        role={selectable === 'cell' ? ('gridcell' as 'cell') : 'cell'}
         accessibilityLabel={COPY.cellLabel(column.header, cellText(row, column.key))}
         aria-label={COPY.cellLabel(column.header, cellText(row, column.key))}
         accessibilityHint={editableHere ? COPY.editHint : undefined}

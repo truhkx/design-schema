@@ -119,3 +119,14 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Tree: selectOnFocus is 'wired to the Pressable's onFocus', but the selectOnFocus description says Tab entry never selects. On react-native-web, tabbing onto a row fires onFocus and selects it. The rn note was followed.
 - Tree: the navigation-sidebar example uses app-relative hrefs, which the rn notes say Linking.openURL cannot open; the story renders them as given and no __DEV__ warning is asked for.
 - Tree: this round was fixed by the concurrent session ds-regen-rn-19 re-adding ICON_COLOR, not by this session; two generator sessions are writing the same file in one worktree.
+
+## 2026-09-23 19:45 — round 1
+
+- Tree: the guideLine description says a line runs 'down that parent's group', but rn flattens groups, so each row draws one full-height line per open ancestor. The result looks the same, but the doc never says how a flattened platform should draw it, and I kept the existing approach.
+- Tree: Enter is listed with no platforms, so it applies to rn, but the rn notes say a tap does what Enter does and give no separate Enter path. I treated it as satisfied by the tap.
+- Tree: the doc does not say whether the selected-count live region is rendered when `selectable` is `multiple` and `nodes` is empty. The existing code renders it ('0 selected'), following the web guidance, and I kept that.
+
+## 2026-09-23 19:46 — round 2
+
+- Tree: the rn notes require accessibilityState.selected/checked on rows of role button/link, and the conventions say to mirror every accessibility prop as aria-*. But aria-selected and aria-checked are not allowed on those roles, so axe's aria-allowed-attr fails, and react-native-web ignores accessibilityState. I kept native accessibilityState and dropped the DOM mirrors, so on react-native-web selection and checked state are visual only. The doc should either pick a role that allows them (a treeitem-like role that Role lacks) or allow aria-current/aria-pressed as the DOM form.
+- Tree: the row's `aria-label` on the Pressable is still emitted; if the doc's reading of 'level n' in the label conflicts with aria-level on web, that is unspecified for rn.

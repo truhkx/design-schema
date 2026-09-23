@@ -189,13 +189,15 @@ component:
         `onAction` is not a stand-in for either — in dark mode it is near-white while
         the inverse foreground is near-black. A control that paints its own selected
         text (a DatePicker day) draws that text itself rather than asking Text for
-        a colour it has no tone for. Being locked, it has no `--ds-text-color` hook
-        on web or Lit: the tone rule reads the token''s own custom property directly
+        a colour it has no tone for. Locked, it still keeps its `--ds-text-color`
+        hook on web and Lit, as every locked binding does, and the tone rule reads
+        the hook. Each tone sets the hook''s default to the token''s own custom property
         — `default` is the bare `var(--color-foreground)` an inverse surface re-scopes,
-        and `onAction` is `var(--color-foreground-on-action)` (camelCase to kebab-case).
-        `TextForegroundContext` exists on React Native only: it is exported from the
-        rn Text.tsx for sibling components and not re-exported from the package index.
-        The web Text.tsx has no such export.'
+        and `onAction` is `var(--color-foreground-on-action)` (camelCase to kebab-case)
+        — so re-scoping `--color-foreground` on a container still recolours the default
+        tone. `TextForegroundContext` exists on React Native only: it is exported
+        from the rn Text.tsx for sibling components and not re-exported from the package
+        index. The web Text.tsx has no such export.'
       locked: true
   a11y:
     role: generic

@@ -14676,7 +14676,7 @@
         },
         "color": {
           "token": "color.foreground.strong",
-          "description": "Locked by the AAA pair, so it has no `--ds-heading-color` hook: the rule reads `var(--color-foreground-strong)` directly and consumer CSS has no hook to break the pair with.",
+          "description": "Locked by the AAA pair, so it is absent from the overrides type; it keeps its `--ds-heading-color` hook, defaulting to `var(--color-foreground-strong)`, and the rule reads the hook, as every locked binding does.",
           "locked": true
         },
         "marginBlockEnd": {
@@ -15863,13 +15863,13 @@
         },
         "errorText": {
           "token": "color.foreground.danger",
-          "description": "Realised by the composed Text's `danger` tone; no --ds-input-* hook, since a hook could not reach the child without restyling it.",
+          "description": "Realised by the composed Text's `danger` tone. Locked, so absent from the overrides type, but it keeps its `--ds-input-error-text` hook on the root, defaulting to `var(--color-foreground-danger)`, as every locked binding does.",
           "locked": true
         },
         "descriptionText": {
           "token": "color.foreground.muted",
           "part": "description",
-          "description": "Realised by the composed Text's `muted` tone; no --ds-input-* hook, as for errorText.",
+          "description": "Realised by the composed Text's `muted` tone. Keeps its `--ds-input-description-text` hook on the root, defaulting to `var(--color-foreground-muted)`, as for errorText.",
           "locked": true
         },
         "borderWidth": {
@@ -31555,7 +31555,7 @@
         },
         "color": {
           "token": "color.foreground.{tone}",
-          "description": "Locked, and locked means absent from the overridable type — so a composing parent that forwards `{ color: … }` gets a compile error, not a silent no-op. A surface with its own foreground (Toast, Tooltip, Slider's value bubble on `color.inverse.foreground`) therefore does not recolour Text at all: on web and Lit it re-scopes `--color-foreground` on its own container, which the tone resolves through and which touches no part of the child; on React Native, where there is no cascade, it provides the package-internal `TextForegroundContext`, which Text reads only while `tone` is `default`. `onAction` is not a stand-in for either — in dark mode it is near-white while the inverse foreground is near-black. A control that paints its own selected text (a DatePicker day) draws that text itself rather than asking Text for a colour it has no tone for. Being locked, it has no `--ds-text-color` hook on web or Lit: the tone rule reads the token's own custom property directly — `default` is the bare `var(--color-foreground)` an inverse surface re-scopes, and `onAction` is `var(--color-foreground-on-action)` (camelCase to kebab-case). `TextForegroundContext` exists on React Native only: it is exported from the rn Text.tsx for sibling components and not re-exported from the package index. The web Text.tsx has no such export.",
+          "description": "Locked, and locked means absent from the overridable type — so a composing parent that forwards `{ color: … }` gets a compile error, not a silent no-op. A surface with its own foreground (Toast, Tooltip, Slider's value bubble on `color.inverse.foreground`) therefore does not recolour Text at all: on web and Lit it re-scopes `--color-foreground` on its own container, which the tone resolves through and which touches no part of the child; on React Native, where there is no cascade, it provides the package-internal `TextForegroundContext`, which Text reads only while `tone` is `default`. `onAction` is not a stand-in for either — in dark mode it is near-white while the inverse foreground is near-black. A control that paints its own selected text (a DatePicker day) draws that text itself rather than asking Text for a colour it has no tone for. Locked, it still keeps its `--ds-text-color` hook on web and Lit, as every locked binding does, and the tone rule reads the hook. Each tone sets the hook's default to the token's own custom property — `default` is the bare `var(--color-foreground)` an inverse surface re-scopes, and `onAction` is `var(--color-foreground-on-action)` (camelCase to kebab-case) — so re-scoping `--color-foreground` on a container still recolours the default tone. `TextForegroundContext` exists on React Native only: it is exported from the rn Text.tsx for sibling components and not re-exported from the package index. The web Text.tsx has no such export.",
           "locked": true
         }
       },

@@ -32,7 +32,7 @@ component:
     fontWeight: { token: font.weight.semibold }
     fontSize: { token: 'font.size.{size}' }
     lineHeight: { token: font.lineHeight.tight }
-    color: { token: color.foreground.strong, description: 'Locked by the AAA pair, so it has no `--ds-heading-color` hook: the rule reads `var(--color-foreground-strong)` directly and consumer CSS has no hook to break the pair with.' }
+    color: { token: color.foreground.strong, description: 'Locked by the AAA pair, so it is absent from the overrides type; it keeps its `--ds-heading-color` hook, defaulting to `var(--color-foreground-strong)`, and the rule reads the hook, as every locked binding does.' }
     marginBlockEnd: { token: space.sm, description: 'Space below the heading (marginBottom on React Native — the one margin the system allows, because a heading owns the gap to its own first paragraph). It is unconditional: a container that owns its own rhythm turns it off with `overrides={{ marginBlockEnd: ''space.0'' }}`, as Table does. That override is written out as a margin of 0, never omitted.' }
   a11y:
     role: heading

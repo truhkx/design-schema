@@ -145,9 +145,9 @@ component:
       locked: false
     color:
       token: color.foreground.strong
-      description: 'Locked by the AAA pair, so it has no `--ds-heading-color` hook:
-        the rule reads `var(--color-foreground-strong)` directly and consumer CSS
-        has no hook to break the pair with.'
+      description: Locked by the AAA pair, so it is absent from the overrides type;
+        it keeps its `--ds-heading-color` hook, defaulting to `var(--color-foreground-strong)`,
+        and the rule reads the hook, as every locked binding does.
       locked: true
     marginBlockEnd:
       token: space.sm

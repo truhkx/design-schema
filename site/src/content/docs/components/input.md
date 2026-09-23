@@ -91,8 +91,8 @@ component:
     border: { token: color.border.strong }
     borderFocus: { token: color.border.focus }
     borderInvalid: { token: color.border.danger }
-    errorText: { token: color.foreground.danger, description: 'Realised by the composed Text''s `danger` tone; no --ds-input-* hook, since a hook could not reach the child without restyling it.' }
-    descriptionText: { token: color.foreground.muted, part: description, description: 'Realised by the composed Text''s `muted` tone; no --ds-input-* hook, as for errorText.' }
+    errorText: { token: color.foreground.danger, description: 'Realised by the composed Text''s `danger` tone. Locked, so absent from the overrides type, but it keeps its `--ds-input-error-text` hook on the root, defaulting to `var(--color-foreground-danger)`, as every locked binding does.' }
+    descriptionText: { token: color.foreground.muted, part: description, description: 'Realised by the composed Text''s `muted` tone. Keeps its `--ds-input-description-text` hook on the root, defaulting to `var(--color-foreground-muted)`, as for errorText.' }
     borderWidth: { token: border.width.thin }
     radius: { token: radius.md }
     paddingInline: { token: space.md, by: size, values: { sm: space.2 } }

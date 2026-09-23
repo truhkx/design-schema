@@ -36,8 +36,7 @@ const MIN_INTERVAL = 5000;
 /** The share of a slide that must be inside the viewport for it to count as visible. */
 const VISIBLE_THRESHOLD = 0.6;
 
-/** Settle delay for a user scroll where `scrollend` is not supported. */
-const SCROLL_SETTLE_FALLBACK = 150;
+/** A user scroll settles on `scrollend` where the engine has it, and on the next IntersectionObserver delivery otherwise. */
 const SCROLLEND_SUPPORTED: boolean = typeof window !== 'undefined' && 'onscrollend' in window;
 
 /** layout.maxWidth.prose from the built token JSON: `@container` conditions cannot read custom properties, so the
@@ -114,8 +113,11 @@ export class DsCarouselSlide extends LitElement {
     }
   `;
 
-  /** The slide's name in the tabs picker. A plain string, never read from the slide's content. */
-  @property() accessor label: string | undefined;
+  /**
+   * The slide's name in the tabs picker. A plain string, never read from the slide's content. Reflected so the
+   * carousel, which observes its slides' `label` attribute, sees a property write too.
+   */
+  @property({ reflect: true }) accessor label: string | undefined;
 
   override connectedCallback(): void {
     super.connectedCallback();
@@ -173,6 +175,17 @@ export class DsCarousel extends LitElement {
       --ds-carousel-tab-padding-inline: var(--space-md);
       --ds-carousel-font-family: var(--font-family-body);
       --ds-carousel-transition: var(--motion-duration-base);
+      /* Locked: not in the overrides property, but still hooks, so page CSS can re-theme or rename them. */
+      --ds-carousel-control-background: var(--color-overlay-surface);
+      --ds-carousel-dot: var(--color-border-strong);
+      --ds-carousel-dot-active: var(--color-control-selected-background);
+      --ds-carousel-dot-target: var(--size-target-min);
+      --ds-carousel-tab-color: var(--color-foreground-muted);
+      --ds-carousel-tab-selected-color: var(--color-foreground-strong);
+      --ds-carousel-tab-indicator-thickness: var(--border-width-focus);
+      --ds-carousel-min-target: var(--size-target-comfortable);
+      --ds-carousel-focus-ring: var(--color-border-focus);
+      --ds-carousel-focus-ring-width: var(--border-width-focus);
     }
 
     :host([hidden]) {
@@ -232,8 +245,8 @@ export class DsCarousel extends LitElement {
     /* The viewport is a keyboard-reachable scroll container, so its tab stop shows a ring. The arrows
        overlay its inline edges, so the ring is drawn inside the box rather than outside it. */
     [data-part='viewport']:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: calc(-1 * var(--border-width-focus));
+      outline: var(--ds-carousel-focus-ring-width) solid var(--ds-carousel-focus-ring);
+      outline-offset: calc(-1 * var(--ds-carousel-focus-ring-width));
     }
 
     :host([no-snap]) [data-part='viewport'] {
@@ -269,9 +282,9 @@ export class DsCarousel extends LitElement {
       align-items: center;
       justify-content: center;
       align-self: center;
-      min-inline-size: var(--size-target-comfortable);
-      min-block-size: var(--size-target-comfortable);
-      background: var(--color-overlay-surface);
+      min-inline-size: var(--ds-carousel-min-target);
+      min-block-size: var(--ds-carousel-min-target);
+      background: var(--ds-carousel-control-background);
       box-shadow: var(--ds-carousel-control-shadow);
       border-radius: var(--ds-carousel-control-radius);
     }
@@ -327,8 +340,8 @@ export class DsCarousel extends LitElement {
     /* dotTarget (locked): the hit area; dotSize: the visible dot.
        dotRadius: dots are round, and the focus ring follows the same radius. */
     .dot {
-      inline-size: var(--size-target-min);
-      block-size: var(--size-target-min);
+      inline-size: var(--ds-carousel-dot-target);
+      block-size: var(--ds-carousel-dot-target);
       padding: 0;
       border-radius: var(--ds-carousel-dot-radius);
     }
@@ -340,41 +353,41 @@ export class DsCarousel extends LitElement {
       block-size: var(--ds-carousel-dot-size);
       border-radius: var(--ds-carousel-dot-radius);
       /* dot: locked */
-      background: var(--color-border-strong);
+      background: var(--ds-carousel-dot);
       transition: background-color var(--ds-carousel-transition) var(--motion-easing-standard);
     }
 
     /* dotActive: locked; aria-current carries the state too */
     .dot[aria-current='true']::before {
-      background: var(--color-control-selected-background);
+      background: var(--ds-carousel-dot-active);
     }
 
     /* tabColor (locked), tabFontSize, tabFontWeight, tabLineHeight, tabPaddingBlock, tabPaddingInline,
        fontFamily, minTarget (locked). A tab has no radius, so its focus ring is square, and no minimum
        inline size — that comes from tabPaddingInline alone; minTarget is only its minimum block size. */
     .tab {
-      min-block-size: var(--size-target-comfortable);
+      min-block-size: var(--ds-carousel-min-target);
       padding-block: var(--ds-carousel-tab-padding-block);
       padding-inline: var(--ds-carousel-tab-padding-inline);
       font-family: var(--ds-carousel-font-family);
       font-size: var(--ds-carousel-tab-font-size);
       font-weight: var(--ds-carousel-tab-font-weight);
       line-height: var(--ds-carousel-tab-line-height);
-      color: var(--color-foreground-muted);
+      color: var(--ds-carousel-tab-color);
       white-space: nowrap;
       transition: color var(--ds-carousel-transition) var(--motion-easing-standard);
     }
 
     /* tabSelectedColor (locked); tabIndicatorThickness (locked) drawn in dotActive inside the tab's box */
     .tab[aria-selected='true'] {
-      color: var(--color-foreground-strong);
-      box-shadow: inset 0 calc(-1 * var(--border-width-focus)) 0 var(--color-control-selected-background);
+      color: var(--ds-carousel-tab-selected-color);
+      box-shadow: inset 0 calc(-1 * var(--ds-carousel-tab-indicator-thickness)) 0 var(--ds-carousel-dot-active);
     }
 
     /* focusRing / focusRingWidth: locked */
     button[data-part='pickerItem']:focus-visible {
-      outline: var(--border-width-focus) solid var(--color-border-focus);
-      outline-offset: calc(-1 * var(--border-width-focus));
+      outline: var(--ds-carousel-focus-ring-width) solid var(--ds-carousel-focus-ring);
+      outline-offset: calc(-1 * var(--ds-carousel-focus-ring-width));
     }
 
     .visually-hidden {
@@ -445,10 +458,11 @@ export class DsCarousel extends LitElement {
 
   private intersectionObserver: IntersectionObserver | undefined;
   private resizeObserver: ResizeObserver | undefined;
+  /** Watches each slide's `label` attribute, so renaming a slide updates the tabs picker. */
+  private labelObserver: MutationObserver | undefined;
   private reducedMotionQuery: MediaQueryList | undefined;
   private timer: number | undefined;
   private timerInterval: number | undefined;
-  private settleTimeout: number | undefined;
   /** True after pointerdown, touchstart or wheel on the viewport: the next settled scroll is a swipe. */
   private userScroll = false;
   /** The first positioning is instant. */
@@ -542,8 +556,9 @@ export class DsCarousel extends LitElement {
     this.intersectionObserver = undefined;
     this.resizeObserver?.disconnect();
     this.resizeObserver = undefined;
+    this.labelObserver?.disconnect();
+    this.labelObserver = undefined;
     this.clearTimer();
-    window.clearTimeout(this.settleTimeout);
   }
 
   protected override willUpdate(changed: PropertyValues): void {
@@ -551,6 +566,18 @@ export class DsCarousel extends LitElement {
     if (changed.has('label')) {
       if (this.label) this.setAttribute('aria-label', this.label);
       else this.removeAttribute('aria-label');
+    }
+    // Reaching the last page without loop counts as stopped however it was reached (autoplay, an arrow, the
+    // picker or a swipe), as long as rotation was on. Checked only when the index moves, so a play press that
+    // asks a controlled parent for slide 0 is not undone before the parent answers.
+    if (
+      (changed.has('activeIndex') || changed.has('internalIndex')) &&
+      this.rotationOn &&
+      !this.loop &&
+      this.slideCount > this.page &&
+      this.currentIndex >= this.lastStart
+    ) {
+      this.stopped = true;
     }
   }
 
@@ -626,8 +653,7 @@ export class DsCarousel extends LitElement {
           @pointerdown=${this.armUserScroll}
           @touchstart=${this.armUserScroll}
           @wheel=${this.armUserScroll}
-          @scroll=${this.handleScroll}
-          @scrollend=${this.handleScrollEnd}
+          @scrollend=${this.settleSwipe}
         >
           <div data-part="track" part="track" style="--ds-carousel-per-view: ${this.perViewInt}">
             <slot @slotchange=${this.handleSlotChange}></slot>
@@ -644,7 +670,9 @@ export class DsCarousel extends LitElement {
     const slides = this.slideElements();
     const current = this.currentIndex;
     const page = this.page;
-    const roving = this.focusedPickerIndex ?? current;
+    // The roving tab stop is the focused item while it is on the current page, the current slide's item otherwise.
+    const focused = this.focusedPickerIndex;
+    const roving = focused !== null && focused >= current && focused < current + page ? focused : current;
     if (this.picker === 'tabs') {
       return html`
         <div
@@ -802,20 +830,15 @@ export class DsCarousel extends LitElement {
   private readonly handleSlotChange = (): void => {
     this.syncSlides();
     this.observeSlides();
+    this.observeLabels();
   };
 
   private readonly armUserScroll = (): void => {
     this.userScroll = true;
   };
 
-  private readonly handleScroll = (): void => {
-    if (!this.userScroll || SCROLLEND_SUPPORTED) return;
-    window.clearTimeout(this.settleTimeout);
-    this.settleTimeout = window.setTimeout(this.handleScrollEnd, SCROLL_SETTLE_FALLBACK);
-  };
-
-  /** A scroll the user started has settled: the first visible slide is the new index. */
-  private readonly handleScrollEnd = (): void => {
+  /** A scroll the user started has settled: the first visible slide is the new index. Never on a timer. */
+  private readonly settleSwipe = (): void => {
     if (!this.userScroll) return;
     this.userScroll = false;
     const first = this.firstVisibleIndex();
@@ -829,21 +852,34 @@ export class DsCarousel extends LitElement {
       const hidden = !(entry.isIntersecting && entry.intersectionRatio >= VISIBLE_THRESHOLD);
       setHidden(entry.target, hidden);
     }
+    // Without `scrollend`, a user scroll settles on the next observer delivery.
+    if (!SCROLLEND_SUPPORTED) this.settleSwipe();
   };
 
   private readonly handleResize = (entries: ResizeObserverEntry[]): void => {
     const entry = entries[0];
-    if (!entry) return;
-    const width = entry.contentRect.width;
-    const wide = width > this.proseBreakpoint();
+    const viewport = this.viewportEl;
+    if (!entry || !viewport) return;
+    const breakpoint = this.proseBreakpoint(viewport);
+    // When the token cannot be read, `perView` stands as given.
+    const wide = breakpoint === null || entry.contentRect.width > breakpoint;
     if (this.viewportWide !== wide) this.viewportWide = wide;
     if (!this.measured) this.measured = true;
   };
 
-  /** layout.maxWidth.prose, read from the token; the built value when the token stylesheet is absent. */
-  private proseBreakpoint(): number {
-    const value = parseFloat(getComputedStyle(this).getPropertyValue('--layout-max-width-prose'));
-    return Number.isFinite(value) ? value : PROSE_BREAKPOINT;
+  private readonly handleLabelMutation = (): void => {
+    this.requestUpdate();
+  };
+
+  /** layout.maxWidth.prose from its built custom property on the viewport, px or rem; null when unreadable. */
+  private proseBreakpoint(viewport: HTMLElement): number | null {
+    const raw = getComputedStyle(viewport).getPropertyValue('--layout-max-width-prose').trim();
+    const match = /^(\d*\.?\d+)(px|rem)$/.exec(raw);
+    if (!match) return null;
+    const value = parseFloat(match[1]!);
+    if (match[2] === 'px') return value;
+    const rootSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
+    return Number.isFinite(rootSize) ? value * rootSize : null;
   }
 
   private firstVisibleIndex(): number {
@@ -959,6 +995,7 @@ export class DsCarousel extends LitElement {
       this.resizeObserver.observe(viewport);
     }
     this.observeSlides();
+    this.observeLabels();
   }
 
   private observeSlides(): void {
@@ -970,6 +1007,15 @@ export class DsCarousel extends LitElement {
       threshold: [0, VISIBLE_THRESHOLD],
     });
     for (const slide of this.slideElements()) this.intersectionObserver.observe(slide);
+  }
+
+  private observeLabels(): void {
+    if (typeof MutationObserver === 'undefined') return;
+    this.labelObserver?.disconnect();
+    this.labelObserver = new MutationObserver(this.handleLabelMutation);
+    for (const slide of this.slideElements()) {
+      this.labelObserver.observe(slide, { attributes: true, attributeFilter: ['label'] });
+    }
   }
 
   private get effectiveInterval(): number {
@@ -1001,9 +1047,8 @@ export class DsCarousel extends LitElement {
       this.stopped = true;
       return;
     }
+    // Without loop, reaching the last page stops rotation (see willUpdate): play shows and announcements return.
     this.moveTo(target, 'autoplay');
-    // Without loop, reaching the last page counts as stopped: the control shows play and announcements return.
-    if (!this.loop && target >= this.lastStart) this.stopped = true;
   };
 
   private warnMissingSlideLabel(slide: Element, index: number): void {

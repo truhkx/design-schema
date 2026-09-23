@@ -75,7 +75,7 @@ export const ToneDefault: Story = { args: { tone: 'default' } };
 export const ToneStrong: Story = { args: { tone: 'strong' } };
 export const ToneMuted: Story = { args: { tone: 'muted' } };
 export const ToneDanger: Story = {
-  args: { tone: 'danger', children: 'Error: enter an email address like name@example.com.' },
+  args: { tone: 'danger', children: 'Error: enter an email address like name@example.com' },
 };
 /** `onAction` is only for text on an action background, so the story paints color.action.primary.background behind it. */
 export const ToneOnAction: Story = {

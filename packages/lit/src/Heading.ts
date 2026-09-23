@@ -7,7 +7,10 @@ import type { TextAlign } from './Text.js';
 export type HeadingLevel = '1' | '2' | '3' | '4' | '5' | '6';
 export type HeadingSize = '4xl' | '3xl' | '2xl' | 'xl' | 'lg' | 'md';
 
-/** Overridable style hooks; see the `overrides` property. `color` is locked and excluded. */
+/**
+ * Overridable style hooks; see the `overrides` property. `color` is locked and excluded here,
+ * though it keeps its `--ds-heading-color` hook on `:host`.
+ */
 export type HeadingOverridableBinding = 'fontFamily' | 'fontWeight' | 'fontSize' | 'lineHeight' | 'marginBlockEnd';
 
 const HOOKS: Record<HeadingOverridableBinding, string> = {
@@ -83,6 +86,9 @@ export class DsHeading extends LitElement {
       --ds-heading-font-size: var(--font-size-3xl);
       --ds-heading-line-height: var(--font-line-height-tight);
       --ds-heading-margin-block-end: var(--space-sm);
+      /* color: color.foreground.strong, locked (AAA against color.background) — out of
+         the overrides type, but keeps its hook so page CSS and the naming codemod reach it */
+      --ds-heading-color: var(--color-foreground-strong);
     }
 
     :host([hidden]) {
@@ -98,8 +104,7 @@ export class DsHeading extends LitElement {
       font-weight: var(--ds-heading-font-weight);
       font-size: var(--ds-heading-font-size);
       line-height: var(--ds-heading-line-height);
-      /* color: color.foreground.strong, locked (AAA against color.background) — no override hook */
-      color: var(--color-foreground-strong);
+      color: var(--ds-heading-color);
       text-align: start;
     }
 

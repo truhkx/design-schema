@@ -71,3 +71,17 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 ## 2026-09-19 05:57 — round 3
 
 - Heading: round 3 got the same keyboard-run and axe output as round 2, and neither involves Heading. The latest full run (logs/playwright.json, 2026-09-19T09:51Z) has no Heading/Lit/ entries, there is no generated/keyboard/Heading spec because the doc has no keyboard block, and a Heading-only axe run including the AAA tags (logs/heading-axe.spec.ts) has no violations in any of the 19 stories, light or dark. The failures belong to Tabs, TreeGrid, Combobox, Select, SegmentedControl, Tree, Toast and other components. No Heading change can clear them, so repeating the round won't converge until the gates run only the component being generated or are re-baselined.
+
+## 2026-09-23 13:44 — round 1
+
+- Heading: the lit conventions say a locked binding keeps its `:host` hook, but the doc's `color` description says there is no `--ds-heading-color` hook and the rule reads `var(--color-foreground-strong)` directly; I followed the component doc (no hook).
+- Heading: platforms.web.notes says 'on web and Lit one element takes both hooks' (data-ds and data-part="text"), but on Lit data-ds must be on the host while platforms.lit.notes puts part/data-part="text" on the inner <hN>; I followed the lit notes (data-ds on the host, data-part on the inner heading).
+- Heading: `level` reflects with `type: String`, so a numeric property value (`.level = 4`) reflects as the attribute `"4"` while the property keeps the number 4; the doc does not say whether the property should be normalised to the canonical string, so I left it as set.
+- Heading: the doc says the Default story has level 2, 'Account settings' and 'no other args', while `align` has a doc default of `start`; the Default args omit align (the element's own default applies and reflects `align="start"`).
+
+## 2026-09-23 13:45 — round 2
+
+- Heading: the `color` binding's description says it 'has no `--ds-heading-color` hook: the rule reads `var(--color-foreground-strong)` directly', which contradicts the Overrides contract, the lit conventions and the hooks gate (a locked binding leaves the overrides type but keeps its `:host` hook). I declared `--ds-heading-color: var(--color-foreground-strong)` on `:host` and made the rule read it; `color` stays out of `HeadingOverridableBinding`. The doc sentence should be rewritten to say the hook exists but `overrides` cannot reach it.
+- Heading: platforms.web.notes says 'on web and Lit one element takes both hooks' (data-ds and data-part="text"), but on Lit data-ds must be on the host while platforms.lit.notes puts part/data-part="text" on the inner <hN>; I followed the lit notes (data-ds on the host, data-part on the inner heading).
+- Heading: `level` reflects with `type: String`, so a numeric property value (`.level = 4`) reflects as the attribute `"4"` while the property keeps the number 4; the doc does not say whether the property should be normalised to the canonical string, so I left it as set.
+- Heading: the doc says the Default story has level 2, 'Account settings' and 'no other args', while `align` has a doc default of `start`; the Default args omit align (the element's own default applies and reflects `align="start"`).

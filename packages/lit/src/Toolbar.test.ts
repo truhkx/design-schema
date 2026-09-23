@@ -111,3 +111,57 @@ describe('ds-toolbar', () => {
     expect(el).toHaveAccessibleName(props.label);
   });
 });
+
+/* Not scenarios (they need slotted children and a resize): the doc leaves them to each platform's own tests. */
+const frames = async (n = 2): Promise<void> => {
+  for (let i = 0; i < n; i += 1) await new Promise((resolve) => requestAnimationFrame(resolve));
+};
+
+describe('ds-toolbar structure', () => {
+  it('draws a separator between adjacent top-level groups only', async () => {
+    document.body.innerHTML = `
+      <ds-toolbar label="Formatting" overflow="wrap">
+        <ds-toolbar-group label="A"><ds-button label="One"></ds-button>
+          <ds-toolbar-group label="Nested"><ds-button label="Two"></ds-button></ds-toolbar-group>
+        </ds-toolbar-group>
+        <ds-toolbar-group label="B"><ds-button label="Three"></ds-button></ds-toolbar-group>
+        <ds-button label="Four"></ds-button>
+      </ds-toolbar>`;
+    const el = document.querySelector('ds-toolbar')!;
+    await el.updateComplete;
+    await frames();
+    expect(el.shadowRoot!.querySelectorAll('[data-part="separator"]')).toHaveLength(1);
+  });
+
+  it('sizes members one level deep and leaves wrapped and pre-sized controls alone', async () => {
+    document.body.innerHTML = `
+      <ds-toolbar label="Formatting" size="sm" overflow="wrap">
+        <ds-toolbar-group label="A">
+          <ds-button id="member" label="One"></ds-button>
+          <ds-toolbar-group label="Nested"><ds-button id="nested" label="Two" size="md"></ds-button></ds-toolbar-group>
+        </ds-toolbar-group>
+        <div><ds-button id="wrapped" label="Three" size="md"></ds-button></div>
+      </ds-toolbar>`;
+    const el = document.querySelector('ds-toolbar')!;
+    await el.updateComplete;
+    expect(document.getElementById('member')).toHaveAttribute('size', 'sm');
+    expect(document.getElementById('nested')).toHaveAttribute('size', 'md');
+    expect(document.getElementById('wrapped')).toHaveAttribute('size', 'md');
+  });
+
+  it('collapses trailing Buttons into the More menu when the row does not fit', async () => {
+    document.body.innerHTML = `
+      <div style="inline-size: 10rem">
+        <ds-toolbar label="Table actions" overflow="menu">
+          ${['Filter', 'Sort', 'Export', 'Delete'].map((l) => `<ds-button label="${l}" overflow-label="${l}">${l}</ds-button>`).join('')}
+        </ds-toolbar>
+      </div>`;
+    const el = document.querySelector('ds-toolbar')!;
+    await el.updateComplete;
+    await frames(4);
+    const collapsed = el.querySelectorAll('[data-ds-toolbar-collapsed]');
+    expect(collapsed.length).toBeGreaterThan(0);
+    expect(collapsed[collapsed.length - 1]).toHaveAttribute('label', 'Delete');
+    expect(el.shadowRoot!.querySelector('ds-menu')).not.toHaveAttribute('hidden');
+  });
+});

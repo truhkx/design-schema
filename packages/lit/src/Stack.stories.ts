@@ -16,9 +16,9 @@ interface StackArgs {
   element: StackElement;
 }
 
-/* A container capped at `layout.maxWidth.prose`, so a horizontal row wraps (`Wrap`, `WrappingFilters`). */
+/* A container capped at `layout.maxWidth.prose × 0.5`, narrow enough that the eight filters wrap in every theme (`Wrap`, `WrappingFilters`). */
 const proseWidth: Decorator = (story) =>
-  html`<div style="max-inline-size: var(--layout-max-width-prose)">${story()}</div>`;
+  html`<div style="max-inline-size: calc(var(--layout-max-width-prose) * 0.5)">${story()}</div>`;
 
 /* Three Text children, per the doc. Story scaffolding, not copy. */
 const items: TemplateResult = html`

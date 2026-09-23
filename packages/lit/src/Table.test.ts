@@ -3,6 +3,7 @@
  * Runs in headless Chromium (Vitest browser mode).
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { userEvent } from 'vitest/browser';
 import './Table.js';
 import type {
   DsTable,
@@ -57,11 +58,6 @@ async function setup(given: Given = {}) {
   };
 }
 
-/** The native checkbox inside a selection cell's ds-checkbox. */
-function checkboxIn(cell: HTMLElement | null | undefined): HTMLInputElement {
-  return cell!.querySelector('ds-checkbox')!.shadowRoot!.querySelector<HTMLInputElement>('input')!;
-}
-
 beforeEach(() => {
   document.body.replaceChildren();
 });
@@ -78,8 +74,7 @@ describe('ds-table', () => {
         { id: 'b', invoice: 'INV-2', amount: 200 },
       ],
     });
-    const sortButton = s.part('sortButton')!;
-    sortButton.shadowRoot!.querySelector('button')!.click();
+    await userEvent.click(s.part('sortButton')!);
     await s.el.updateComplete;
     expect(s.sortChange).toHaveBeenCalledTimes(1);
     expect(s.sortChange.mock.calls[0]![0].detail).toEqual({ column: 'amount', direction: 'ascending' });
@@ -94,7 +89,7 @@ describe('ds-table', () => {
         { id: 'b', invoice: 'INV-2' },
       ],
     });
-    checkboxIn(s.parts('selectCell')[0]).click();
+    await userEvent.click(s.parts('selectCell')[0]!);
     await s.el.updateComplete;
     expect(s.selectionChange).toHaveBeenCalledTimes(1);
     expect(s.selectionChange.mock.calls[0]![0].detail).toEqual({ selected: ['a'] });
@@ -109,7 +104,7 @@ describe('ds-table', () => {
         { id: 'b', invoice: 'INV-2' },
       ],
     });
-    checkboxIn(s.part('selectAllCell')).click();
+    await userEvent.click(s.part('selectAllCell')!);
     await s.el.updateComplete;
     expect(s.selectionChange).toHaveBeenCalledTimes(1);
     expect(s.selectionChange.mock.calls[0]![0].detail).toEqual({ selected: ['a', 'b'] });

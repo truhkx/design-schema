@@ -58,7 +58,7 @@ const SIZED_TAGS: ReadonlyMap<string, ReadonlySet<ToolbarSize>> = new Map<string
 const BUTTON_TAG = 'ds-button';
 const GROUP_TAG = 'ds-toolbar-group';
 /** Design-system elements that are structure or decoration, not controls. */
-const STRUCTURE_TAGS: ReadonlySet<string> = new Set([GROUP_TAG, 'ds-divider']);
+const STRUCTURE_TAGS: ReadonlySet<string> = new Set([GROUP_TAG, 'ds-divider', 'ds-icon', 'ds-text']);
 
 const NATIVE_FOCUSABLE = 'button, select, input, textarea, a[href], [tabindex]';
 /** Input types that are not text entry, so the toolbar may take their arrow, Home and End keys. */
@@ -101,6 +101,7 @@ export class DsToolbarGroup extends LitElement {
       display: flex;
       /* set by the Toolbar on itself; these inherit through the flattened tree */
       flex-direction: var(--ds-toolbar-group-direction, row);
+      flex-wrap: var(--ds-toolbar-group-wrap, nowrap);
       align-items: var(--ds-toolbar-group-align, center);
       gap: var(--ds-toolbar-item-gap, var(--layout-gap-normal));
     }
@@ -219,8 +220,20 @@ export class DsToolbar extends LitElement {
       align-items: stretch;
     }
 
+    /* A vertical toolbar wraps onto more columns, which needs a bounded height from the parent. */
+    :host([overflow='wrap']) {
+      --ds-toolbar-group-wrap: wrap;
+    }
+
     :host([overflow='wrap']) [data-part='container'] {
       flex-wrap: wrap;
+    }
+
+    /* menu: when the walk runs out of collapsible entries the row clips at the toolbar's edge (never scrolls);
+       the clip margin keeps a child's outset focus ring (width + offset) visible. */
+    :host([orientation='horizontal'][overflow='menu']) [data-part='container'] {
+      overflow: clip;
+      overflow-clip-margin: calc(var(--border-width-focus) * 2);
     }
 
     /* separator: a wrapper of separatorLength along the cross axis; groupGap replaces itemGap either side, so the
@@ -243,39 +256,36 @@ export class DsToolbar extends LitElement {
       padding-block: max(0px, calc(var(--ds-toolbar-group-gap) - var(--ds-toolbar-item-gap)));
     }
 
-    /* scroll (and menu on a vertical toolbar): each edge fades only while content is hidden past it */
+    /* scroll (and menu on a vertical toolbar): each physical edge — left/right, or top/bottom when vertical — fades
+       only while content is hidden past it, so RTL needs no rule of its own. */
     :host([overflow='scroll']) [data-part='container'],
     :host([orientation='vertical'][overflow='menu']) [data-part='container'] {
-      --fade-start: 0px;
-      --fade-end: 0px;
+      --fade-before: 0px;
+      --fade-after: 0px;
       scrollbar-width: none;
     }
 
-    :host([overflow='scroll']) [data-part='container'][data-fade-start],
-    :host([orientation='vertical'][overflow='menu']) [data-part='container'][data-fade-start] {
-      --fade-start: var(--ds-toolbar-fade-width);
+    :host([overflow='scroll']) [data-part='container'][data-fade-before],
+    :host([orientation='vertical'][overflow='menu']) [data-part='container'][data-fade-before] {
+      --fade-before: var(--ds-toolbar-fade-width);
     }
 
-    :host([overflow='scroll']) [data-part='container'][data-fade-end],
-    :host([orientation='vertical'][overflow='menu']) [data-part='container'][data-fade-end] {
-      --fade-end: var(--ds-toolbar-fade-width);
+    :host([overflow='scroll']) [data-part='container'][data-fade-after],
+    :host([orientation='vertical'][overflow='menu']) [data-part='container'][data-fade-after] {
+      --fade-after: var(--ds-toolbar-fade-width);
     }
 
     :host([orientation='horizontal'][overflow='scroll']) [data-part='container'] {
       overflow-x: auto;
       overflow-y: hidden;
-      mask-image: linear-gradient(to right, transparent, black var(--fade-start), black calc(100% - var(--fade-end)), transparent); /* literal-ok: mask alpha stops, not a color */
-    }
-
-    :host([orientation='horizontal'][overflow='scroll']:dir(rtl)) [data-part='container'] {
-      mask-image: linear-gradient(to left, transparent, black var(--fade-start), black calc(100% - var(--fade-end)), transparent); /* literal-ok: mask alpha stops, not a color */
+      mask-image: linear-gradient(to right, transparent, black var(--fade-before), black calc(100% - var(--fade-after)), transparent); /* literal-ok: mask alpha stops, not a color */
     }
 
     :host([orientation='vertical'][overflow='scroll']) [data-part='container'],
     :host([orientation='vertical'][overflow='menu']) [data-part='container'] {
       overflow-x: hidden;
       overflow-y: auto;
-      mask-image: linear-gradient(to bottom, transparent, black var(--fade-start), black calc(100% - var(--fade-end)), transparent); /* literal-ok: mask alpha stops, not a color */
+      mask-image: linear-gradient(to bottom, transparent, black var(--fade-before), black calc(100% - var(--fade-after)), transparent); /* literal-ok: mask alpha stops, not a color */
     }
 
     [data-part='container']::-webkit-scrollbar {
@@ -397,7 +407,7 @@ export class DsToolbar extends LitElement {
   protected override render(): TemplateResult {
     const dividerOrientation = this.orientation === 'vertical' ? 'horizontal' : 'vertical';
     return html`
-      <span class="target-probe" aria-hidden="true"></span>
+      ${this.usesMenu() ? html`<span class="target-probe" aria-hidden="true"></span>` : nothing}
       <div part="container" data-part="container" @scroll=${this.syncFades}>
         ${this.entrySlots.map(
           (entry, index) =>
@@ -443,11 +453,12 @@ export class DsToolbar extends LitElement {
 
   /**
    * The focusable control an element stands for: itself when it is a design-system element or natively focusable,
-   * otherwise the first such descendant — an arbitrary wrapper makes what it holds one bare control.
+   * otherwise the first such descendant — an arbitrary wrapper, and a group nested inside a group, make what they
+   * hold one bare control.
    */
   private controlOf(el: HTMLElement): HTMLElement | null {
-    if (STRUCTURE_TAGS.has(el.localName)) return null;
-    if (el.localName.startsWith('ds-') || el.matches(NATIVE_FOCUSABLE)) return el;
+    if (STRUCTURE_TAGS.has(el.localName) && !this.isGroup(el)) return null;
+    if (!this.isGroup(el) && (el.localName.startsWith('ds-') || el.matches(NATIVE_FOCUSABLE))) return el;
     for (const node of Array.from(el.querySelectorAll<HTMLElement>('*'))) {
       if (STRUCTURE_TAGS.has(node.localName)) continue;
       if (node.localName.startsWith('ds-') || node.matches(NATIVE_FOCUSABLE)) return node;
@@ -455,12 +466,18 @@ export class DsToolbar extends LitElement {
     return null;
   }
 
-  /** The controls of one entry: a group's children one level down, or the entry itself. */
-  private controlsOf(entry: HTMLElement): HTMLElement[] {
-    const candidates = this.isGroup(entry)
+  /** The direct children of one entry, exactly one level deep: a group's element children, or the entry itself. */
+  private membersOf(entry: HTMLElement): HTMLElement[] {
+    return this.isGroup(entry)
       ? Array.from(entry.children).filter((el): el is HTMLElement => el instanceof HTMLElement)
       : [entry];
-    return candidates.map((el) => this.controlOf(el)).filter((el): el is HTMLElement => el !== null);
+  }
+
+  /** The controls of one entry: each member, or a wrapper member's first focusable descendant. */
+  private controlsOf(entry: HTMLElement): HTMLElement[] {
+    return this.membersOf(entry)
+      .map((el) => this.controlOf(el))
+      .filter((el): el is HTMLElement => el !== null);
   }
 
   /** Every control, in order, one level into groups; a control's own internals are never descended into. */
@@ -600,7 +617,8 @@ export class DsToolbar extends LitElement {
   /** A Button, SegmentedControl, Select or Search without a `size` attribute when first discovered takes the toolbar's;
       its own `size` wins, and a size the control has no value for leaves it at its own default. */
   private applyDefaultSizes(): void {
-    for (const el of this.controls()) {
+    // Members only: a control inside any other wrapper, or inside a group nested in a group, is not reached into.
+    for (const el of this.entries().flatMap((entry) => this.membersOf(entry))) {
       const accepted = SIZED_TAGS.get(el.localName);
       if (!accepted) continue;
       const owned = el.hasAttribute(SIZED);
@@ -625,12 +643,10 @@ export class DsToolbar extends LitElement {
     });
   }
 
-  /** An entry collapses only if every control in it is a Button. */
+  /** An entry collapses only if every member of it is a Button: a wrapper (or nested group) never collapses. */
   private isCollapsible(entry: HTMLElement): boolean {
-    if (entry.localName === BUTTON_TAG) return true;
-    if (!this.isGroup(entry)) return false;
-    const controls = this.controlsOf(entry);
-    return controls.length > 0 && controls.every((el) => el.localName === BUTTON_TAG);
+    const members = this.membersOf(entry);
+    return members.length > 0 && members.every((el) => el.localName === BUTTON_TAG);
   }
 
   private recalcOverflow(): void {
@@ -733,27 +749,35 @@ export class DsToolbar extends LitElement {
     this.overflowTargets.get(event.detail.id)?.click();
   };
 
-  /** Marks which edges have content hidden past them; re-checked on scroll and after every size or children change. */
+  /**
+   * Marks which physical edge (left/right, top/bottom when vertical) has content hidden past it, by comparing the
+   * entries' extent with the row's box — no scroll-offset sign convention, so RTL takes the same path.
+   * Re-checked on scroll and after every size or children change.
+   */
   private readonly syncFades = (): void => {
     const container = this.containerEl;
     if (!container) return;
     const vertical = this.orientation === 'vertical';
     const scrolls = this.overflow === 'scroll' || (vertical && this.overflow === 'menu');
-    let hiddenStart = false;
-    let hiddenEnd = false;
+    let hiddenBefore = false;
+    let hiddenAfter = false;
     if (scrolls) {
-      const offset = Math.abs(vertical ? container.scrollTop : container.scrollLeft);
-      const extent = vertical
-        ? container.scrollHeight - container.clientHeight
-        : container.scrollWidth - container.clientWidth;
-      hiddenStart = offset > 1;
-      hiddenEnd = extent - offset > 1;
+      const box = container.getBoundingClientRect();
+      const rects = this.entries()
+        .filter((el) => !el.hidden)
+        .map((el) => el.getBoundingClientRect());
+      if (rects.length > 0) {
+        const first = Math.min(...rects.map((r) => (vertical ? r.top : r.left)));
+        const last = Math.max(...rects.map((r) => (vertical ? r.bottom : r.right)));
+        hiddenBefore = first < (vertical ? box.top : box.left) - 1;
+        hiddenAfter = last > (vertical ? box.bottom : box.right) + 1;
+      }
     }
-    if (container.hasAttribute('data-fade-start') !== hiddenStart) {
-      container.toggleAttribute('data-fade-start', hiddenStart);
+    if (container.hasAttribute('data-fade-before') !== hiddenBefore) {
+      container.toggleAttribute('data-fade-before', hiddenBefore);
     }
-    if (container.hasAttribute('data-fade-end') !== hiddenEnd) {
-      container.toggleAttribute('data-fade-end', hiddenEnd);
+    if (container.hasAttribute('data-fade-after') !== hiddenAfter) {
+      container.toggleAttribute('data-fade-after', hiddenAfter);
     }
   };
 

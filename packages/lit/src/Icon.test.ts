@@ -245,6 +245,23 @@ describe('ds-icon unknown name', () => {
     expect(warn.mock.calls.length).toBe(before + 1);
   });
 
+  it('treats a prototype key as unknown', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { glyph } = await setup({ name: 'toString' as IconName });
+    expect(glyph.childElementCount).toBe(0);
+    expect(glyph.textContent!.trim()).toBe('');
+    expect(warn).toHaveBeenCalledWith('Icon: unknown name "toString"');
+  });
+
+  it('keeps the size, viewBox and fill of the root svg', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { glyph } = await setup({ name: 'nope' as IconName });
+    expect(glyph.getAttribute('viewBox')).toBe('0 0 16 16');
+    expect(glyph.getAttribute('width')).toBe('1em');
+    expect(glyph.getAttribute('height')).toBe('1em');
+    expect(glyph.getAttribute('fill')).toBe('none');
+  });
+
   it('keeps the decorative accessibility props when unlabelled', async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { glyph } = await setup({ name: 'nope' as IconName });

@@ -24,6 +24,13 @@
   --ds-combobox-chip-size: var(--font-size-sm);
   --ds-combobox-line-height: var(--font-line-height-normal);
   --ds-combobox-min-target: var(--size-target-comfortable);
+  --ds-combobox-input-min-target: var(--size-target-min);
+  /* descriptionText, errorText and iconColor paint composed children (Text tone muted/danger, Icon
+     overrides.color), which the combobox never restyles. The hooks are declared so the bindings stay
+     themeable from page CSS and renameable by the naming codemod, as Select's are. */
+  --ds-combobox-description-text: var(--color-foreground-muted);
+  --ds-combobox-error-text: var(--color-foreground-danger);
+  --ds-combobox-icon-color: var(--color-foreground-muted);
   --ds-combobox-focus-ring-width: var(--border-width-focus);
   --ds-combobox-disabled-opacity: var(--opacity-disabled);
   --ds-combobox-enter: var(--motion-duration-fast);
@@ -110,6 +117,8 @@
 .ds-combobox__input {
   flex: 1 1 var(--size-target-comfortable);
   min-inline-size: var(--size-target-comfortable);
+  /* inputMinTarget: the input's own floor, since with `multiple` it is one row of several. */
+  min-block-size: var(--ds-combobox-input-min-target);
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -163,14 +172,13 @@
   border: var(--ds-combobox-popup-border-width) solid var(--ds-combobox-popup-border);
   border-radius: var(--ds-combobox-popup-radius);
   box-shadow: var(--ds-combobox-popup-shadow);
-  opacity: 1;
+  opacity: 0;
   transition: opacity var(--ds-combobox-enter) var(--motion-easing-standard);
 }
 
-@starting-style {
-  .ds-combobox__popup {
-    opacity: 0;
-  }
+/* Turned on a frame after the surface mounts, so the fade-in always runs. */
+.ds-combobox__popup--visible {
+  opacity: 1;
 }
 
 /* popupOffset: the gap between the field and the popup, on whichever side it opened. */

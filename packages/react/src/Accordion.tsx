@@ -73,7 +73,10 @@ export interface AccordionProps
   /**
    * Opening one section closes the others. Off by default: users usually want to compare, and forced-closing is a
    * common frustration. Turning it on while several sections are open trims the open set to the first open id
-   * without firing any event (the same as several ids in `value`/`defaultValue`).
+   * without firing any event. "First" is array order: the order of `value`/`defaultValue`, and for uncontrolled
+   * state the order the sections were opened. Uncontrolled, the trim is permanent; controlled, it only affects what
+   * is shown, so turning `exclusive` off shows the full `value` again, still without events. A declared set of
+   * several ids warns in development, once per distinct id list.
    */
   exclusive?: boolean | undefined;
   /**
@@ -81,11 +84,11 @@ export interface AccordionProps
    * string means nothing is open. Events always report an array, with zero or one entry when `exclusive`.
    */
   value?: string | string[] | undefined;
-  /** Initially open ids; the same shapes as `value`. */
+  /** Initially open ids; the same shapes as `value`. Given both, `value` controls and `defaultValue` is ignored. */
   defaultValue?: string | string[] | undefined;
   /** A hairline between items. */
   divided?: boolean | undefined;
-  /** Passed to every Disclosure; required when panels contain form fields. */
+  /** Passed to every Disclosure; required when panels contain form fields. Accordion-wide, like `headingLevel`. */
   keepMounted?: boolean | undefined;
   /**
    * Per-instance style overrides. `itemGap` sets the root hook; the trigger bindings are forwarded to each composed
@@ -147,14 +150,15 @@ export function Accordion({
   const openIds = limitExclusive(isControlled ? (toIdArray(value) ?? []) : internalOpenIds, exclusive);
   const valueKey = isControlled ? JSON.stringify(toIdArray(value) ?? []) : null;
 
-  // Development warning: several ids under `exclusive` open only the first. Warned once per distinct input.
+  // Development warning: a declared `value`/`defaultValue` holding several ids under `exclusive` opens only the first.
+  // Warned once per distinct id list; the trim of sections a user opened while uncontrolled never warns.
   const requestedIds = toIdArray(isControlled ? value : defaultValue) ?? [];
-  const warnedRef = useRef<string | null>(null);
+  const warnedRef = useRef(new Set<string>());
   useEffect(() => {
     if (!isDev || !exclusive || requestedIds.length <= 1) return;
-    const key = requestedIds.join(' ');
-    if (warnedRef.current === key) return;
-    warnedRef.current = key;
+    const key = JSON.stringify(requestedIds);
+    if (warnedRef.current.has(key)) return;
+    warnedRef.current.add(key);
     const source = isControlled ? 'value' : 'defaultValue';
     console.warn(
       `Accordion: \`exclusive\` opens one section, but \`${source}\` has ${requestedIds.length} ids. Opening "${requestedIds[0]}"; ignoring ${requestedIds.slice(1).join(', ')}.`,
@@ -176,7 +180,7 @@ export function Accordion({
     if (previous.valueKey === valueKey) return;
     const emitted = lastEmittedRef.current;
     lastEmittedRef.current = null;
-    if (emitted !== null && sameSet(emitted, openIds)) return;
+    if (emitted !== null && sameSet(emitted, requestedIds)) return;
     for (const item of items) {
       const was = previous.openIds.includes(item.id);
       const is = openIds.includes(item.id);

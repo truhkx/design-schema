@@ -5,6 +5,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type ChangeEvent,
   type ComponentPropsWithoutRef,
   type CSSProperties,
@@ -29,11 +30,13 @@ import {
 import { useFormContext } from './FormContext';
 import './Select.css';
 
+declare const process: { env: { NODE_ENV?: string } };
+
 export type SelectValue = string | string[];
 export type SelectNative = 'auto' | 'always' | 'never';
 export type SelectSize = 'sm' | 'md';
 
-/** copy.* — used verbatim; `{label}` is replaced by the visible label, `{count}` by the selection count. */
+/** copy.* — used verbatim; `{label}` is replaced by the visible label, `{count}` by the formatted selection count. */
 const COPY = {
   placeholder: 'Select…',
   selectedCount: '{count} selected',
@@ -47,7 +50,7 @@ const COPY = {
  * Style bindings that can be overridden per instance; accessibility-bearing bindings are never in
  * this list. `labelWeight` and `helperSize` reach only the composed Text parts' own `overrides`
  * (no --ds-select-* hook); `fontFamily`, `fontSize`, `fontWeight` and `lineHeight` are forwarded
- * into the composed parts as the schema lists, and keep a root hook for the native <select>.
+ * into the composed parts and keep a root hook for the trigger and the native <select>.
  */
 export type SelectOverridableBinding =
   | 'triggerBorderInvalid'
@@ -125,16 +128,15 @@ function resolveOverrides(
   for (const binding of Object.keys(given) as SelectOverridableBinding[]) {
     const ref = given[binding];
     if (!ref) continue;
-    // Locked bindings have no hook, so they are ignored if passed.
+    // Locked bindings have no hook in either table, so they are ignored if passed.
     const rootHook = ROOT_OVERRIDE_HOOK[binding];
     if (rootHook) rootStyle[rootHook] = cssVar(ref);
     const popupHook = POPUP_OVERRIDE_HOOK[binding];
     if (popupHook) popupStyle[popupHook] = cssVar(ref);
   }
-  // Every forward carries the resolved token — the consumer's override, else the Select default —
-  // because the composed Text has no size prop of its own. fontSize is font.size.{size}, so the
-  // label and value follow `size` unless overridden.
-  const fontSize: TokenRef = given.fontSize ?? (`font.size.${size}` as TokenRef);
+  // Every forward carries the resolved token — the consumer's override, else the Select default with
+  // {size} resolved — because the composed Text has no size prop of its own.
+  const fontSize: TokenRef = given.fontSize ?? (size === 'sm' ? 'font.size.sm' : 'font.size.md');
   const shared: TextOverrides = {
     fontFamily: given.fontFamily ?? 'font.family.body', // literal-ok: a TokenRef forwarded to Text, not a font stack
     lineHeight: given.lineHeight ?? 'font.lineHeight.normal',
@@ -145,22 +147,13 @@ function resolveOverrides(
     label: { ...shared, fontSize, fontWeight: given.labelWeight ?? 'font.weight.medium' },
     value: { ...shared, fontSize, fontWeight: given.fontWeight ?? 'font.weight.regular' },
     helper: { ...shared, fontSize: given.helperSize ?? 'font.size.sm' },
-    // fontSize is not forwarded: the popup does not follow `size`, so options keep Listbox's own.
+    // Neither fontSize nor fontWeight reaches the popup: options keep Listbox's own type.
     listbox: shared,
   };
 }
 
-/** The locked `chevron` binding, realised through the composed Icon's color. */
-const CHEVRON_OVERRIDES: Partial<Record<'color', TokenRef>> = { color: 'color.foreground.muted' as TokenRef };
-
-declare const process: { env: { NODE_ENV?: string } };
-
-/** jsdom (and older browsers) have no `matchMedia`; treat that as "no preference". */
-function prefersReducedMotion(): boolean {
-  return typeof window !== 'undefined' && typeof window.matchMedia === 'function'
-    ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    : false;
-}
+/** The locked `chevron` binding, always forwarded as the composed Icon's `overrides.color`. */
+const CHEVRON_OVERRIDES: Partial<Record<'color', TokenRef>> = { color: 'color.foreground.muted' };
 
 type SelectRow = { value: string; label: string; disabled?: boolean | undefined };
 
@@ -168,11 +161,11 @@ function isGroup(option: ListboxItem): option is ListboxGroup {
   return 'group' in option;
 }
 
-/** Depth-first rows, dropping group wrappers — used to resolve a value to its label. */
+/** Rows in document order, dropping group wrappers (groups do not nest). */
 function flattenRows(options: ListboxItem[]): SelectRow[] {
   const result: SelectRow[] = [];
   for (const option of options) {
-    if (isGroup(option)) result.push(...flattenRows(option.options));
+    if (isGroup(option)) result.push(...option.options);
     else result.push(option);
   }
   return result;
@@ -182,6 +175,14 @@ function toArray(value: SelectValue | undefined): string[] {
   if (Array.isArray(value)) return value;
   return value === undefined || value === '' ? [] : [value];
 }
+
+/** Listbox's own order: option order, with values that match no option appended. */
+function inListboxOrder(values: string[], rows: SelectRow[]): string[] {
+  const known = rows.map((row) => row.value);
+  return [...known.filter((v) => values.includes(v)), ...values.filter((v) => !known.includes(v))];
+}
+
+const subscribeNothing = (): (() => void) => () => {};
 
 type ResolvedPosition = { style: CSSProperties; vertical: 'top' | 'bottom' };
 
@@ -200,17 +201,20 @@ function computePosition(triggerRect: DOMRect, popupRect: DOMRect): ResolvedPosi
 }
 
 function displayText(
-  selected: SelectValue | undefined,
+  values: string[],
   rows: SelectRow[],
   multiple: boolean,
   placeholder: string,
 ): { text: string; isPlaceholder: boolean } {
   const labelFor = (v: string) => rows.find((row) => row.value === v)?.label ?? v;
-  const values = toArray(selected);
   if (values.length === 0) return { text: placeholder, isPlaceholder: true };
   if (!multiple) return { text: labelFor(values[0]!), isPlaceholder: false };
+  // Two or fewer are joined with a literal comma and a space (deliberately not Intl.ListFormat).
   if (values.length <= 2) return { text: values.map(labelFor).join(', '), isPlaceholder: false };
-  return { text: COPY.selectedCount.replace('{count}', String(values.length)), isPlaceholder: false };
+  return {
+    text: COPY.selectedCount.replace('{count}', new Intl.NumberFormat().format(values.length)),
+    isPlaceholder: false,
+  };
 }
 
 export interface SelectProps
@@ -268,7 +272,11 @@ export interface SelectProps
   description?: string | undefined;
   /** Must have a value to submit. Shown in the label, not only by color. */
   required?: boolean | undefined;
-  /** Not openable and not submitted. Stays visible and focusable. */
+  /**
+   * Not openable and not submitted. Stays visible and focusable. Wins over a controlled `open`: a
+   * disabled Select never shows its popup — it forces the popup closed locally, reports
+   * `aria-expanded="false"`, and fires no `onOpenChange` to correct the caller's prop.
+   */
   disabled?: boolean | undefined;
   /** Marks the field invalid. Usually set by the Form. */
   invalid?: boolean | undefined;
@@ -276,9 +284,9 @@ export interface SelectProps
   error?: string | undefined;
   /**
    * Use the platform's own picker instead of the popup Listbox: `auto` means never on web (the
-   * styled popup) and always on native phones (the OS wheel/dialog is what users expect); `always`
-   * forces a native <select> on web too (forms that must work without JS); `never` forces the popup
-   * everywhere.
+   * styled popup) and always on native phones; `always` forces a native <select> on web too (forms
+   * that must work without JS); `never` forces the popup everywhere. On web `auto` and `never`
+   * render identically.
    */
   native?: SelectNative | undefined;
   /** Portal target for the popup. Defaults to `document.body`. A platform prop, not a schema prop. */
@@ -299,6 +307,9 @@ const OPEN_KEYS: ReadonlySet<string> = new Set(['Enter', ' ', 'ArrowDown', 'Arro
  *
  * When to use:
  * Use a Select for a form field with about seven to fifty options that people recognise on sight — country, role, status, time zone from a short list, a category. Use `multiple` for tags or memberships when a set of Checkboxes would be too long. Use `native: always` on web for forms that must work without JavaScript. Use Combobox instead when the list is long enough that typing to filter is faster than scrolling, or when free text is allowed.
+ *
+ * The root is the field group (`data-ds="Select"`, `data-ds-field`); `ref` reaches the control —
+ * the trigger button, or the native <select> with `native: always`.
  */
 export function Select({
   ref,
@@ -348,26 +359,36 @@ export function Select({
     [isNativeSelect],
   );
 
+  // False on the server and through hydration; the portal renders only once this is true.
+  const hydrated = useSyncExternalStore(
+    subscribeNothing,
+    () => true,
+    () => false,
+  );
+
   const isControlled = value !== undefined;
   const [internalValue, setInternalValue] = useState<SelectValue | undefined>(defaultValue);
   const selected = isControlled ? value : internalValue;
-  const selectedValues = toArray(selected);
+  const selectedValues = multiple ? toArray(selected) : toArray(selected).slice(0, 1);
 
+  const isDisabled = disabled || (form?.disabled ?? false);
   const isOpenControlled = openProp !== undefined;
   const [internalOpen, setInternalOpen] = useState(false);
-  const open = !isNativeSelect && (isOpenControlled ? openProp : internalOpen);
+  // Disabled wins over a controlled `open`: the popup is forced closed locally, with no onOpenChange.
+  const isOpen = !isNativeSelect && !isDisabled && (isOpenControlled ? openProp : internalOpen);
   // Guards close against running twice in one event (a Listbox commit and the key that caused it).
-  const openRef = useRef(open);
-  openRef.current = open;
-  // Set while a trigger key is being replayed on the Listbox, so the popup's own handler skips it.
-  const forwarding = useRef(false);
+  const openRef = useRef(isOpen);
+  openRef.current = isOpen;
+
+  useEffect(() => {
+    if (isDisabled && internalOpen) setInternalOpen(false);
+  }, [isDisabled, internalOpen]);
 
   const [activeValue, setActiveValue] = useState<string | null>(null);
   const [popupPosition, setPopupPosition] = useState<CSSProperties>();
   const [vertical, setVertical] = useState<'top' | 'bottom'>('bottom');
-  const [entered, setEntered] = useState(false);
+  const [visible, setVisible] = useState(false);
 
-  const isDisabled = disabled || (form?.disabled ?? false);
   // The error region shows `error`, then the Form's message, then `copy.invalid` while `invalid` (as Input).
   const resolvedError =
     (error !== undefined && error !== '' ? error : undefined) ??
@@ -375,9 +396,15 @@ export function Select({
     (invalid ? COPY.invalid.replace('{label}', label) : undefined);
   const isInvalid = invalid || resolvedError !== undefined;
 
+  const validateMode = form ? (form.validateMode ?? form.validate) : undefined;
+  const afterFailedSubmit = form?.submitFailed ?? false;
+  const validatesOnChange = validateMode === 'change' || afterFailedSubmit;
+  const validatesOnBlur = validateMode === 'blur' || validateMode === 'change' || afterFailedSubmit;
+
   const rows = flattenRows(options);
+  const enabledRows = rows.filter((row) => !row.disabled);
   const resolvedPlaceholder = placeholder ?? COPY.placeholder;
-  const { text: triggerText, isPlaceholder } = displayText(selected, rows, multiple, resolvedPlaceholder);
+  const { text: triggerText, isPlaceholder } = displayText(selectedValues, rows, multiple, resolvedPlaceholder);
 
   useEffect(() => {
     if (process.env.NODE_ENV !== 'production' && !label) {
@@ -385,8 +412,8 @@ export function Select({
     }
   }, [label]);
 
-  const latest = useRef({ label, required, disabled: isDisabled, selected, multiple, invalid, error });
-  latest.current = { label, required, disabled: isDisabled, selected, multiple, invalid, error };
+  const latest = useRef({ label, required, disabled: isDisabled, selectedValues, multiple, invalid, error });
+  latest.current = { label, required, disabled: isDisabled, selectedValues, multiple, invalid, error };
 
   useEffect(() => {
     if (!form) return undefined;
@@ -396,19 +423,18 @@ export function Select({
       get label() {
         return latest.current.label;
       },
-      // valueType string[]: every selected value with `multiple`, the value otherwise; no key when empty.
+      // A string for single, a string[] with `multiple`; nothing (no key) when empty.
       getValue: () => {
-        const values = toArray(latest.current.selected);
+        const values = latest.current.selectedValues;
         if (values.length === 0) return undefined;
         return latest.current.multiple ? values : values[0];
       },
       isDisabled: () => latest.current.disabled,
       validate: () => {
-        const { label: currentLabel, required: isRequired, selected: current, invalid: isInvalidProp, error: errorProp } =
-          latest.current;
-        if (errorProp !== undefined) return errorProp;
-        if (isRequired && toArray(current).length === 0) return COPY.required.replace('{label}', currentLabel);
-        if (isInvalidProp) return COPY.invalid.replace('{label}', currentLabel);
+        const current = latest.current;
+        if (current.error !== undefined && current.error !== '') return current.error;
+        if (current.required && current.selectedValues.length === 0) return COPY.required.replace('{label}', current.label);
+        if (current.invalid) return COPY.invalid.replace('{label}', current.label);
         return null;
       },
       focus: () => (isNativeSelect ? selectRef.current?.focus() : triggerRef.current?.focus()),
@@ -416,10 +442,14 @@ export function Select({
   }, [form, name, id, isNativeSelect]);
 
   const commitValue = (next: SelectValue) => {
-    if (!Array.isArray(next) && next === selected) return;
+    if (Array.isArray(next)) {
+      if (next.length === selectedValues.length && next.every((v, i) => v === selectedValues[i])) return;
+    } else if (next === selectedValues[0]) {
+      return;
+    }
     if (!isControlled) setInternalValue(next);
     onChange?.(next);
-    if (form && form.validate === 'change') form.validateField(name);
+    if (form && validatesOnChange) form.validateField(name);
   };
 
   const changeOpen = (next: boolean) => {
@@ -435,21 +465,26 @@ export function Select({
 
   const closeSelect = (focusTrigger: boolean) => {
     if (!openRef.current) return;
-    setActiveValue(null);
     if (focusTrigger) triggerRef.current?.focus();
     changeOpen(false);
   };
 
-  /** The option Enter and Tab commit: the active one, else the selected, else the first enabled. */
-  const resolveActive = (): string | undefined =>
-    activeValue ??
-    rows.find((row) => !row.disabled && selectedValues.includes(row.value))?.value ??
-    rows.find((row) => !row.disabled)?.value;
+  /** The option the popup opens on: the selection (the array's first with `multiple`), else the first enabled. */
+  const openingActive = (): string | null =>
+    selectedValues.find((v) => enabledRows.some((row) => row.value === v)) ?? enabledRows[0]?.value ?? null;
 
-  // Position the popup on open and keep it anchored while scrolling or resizing.
+  // Select drives Listbox's `activeValue`: the opening option on open, whatever it reports while open, null on close.
+  const openingActiveRef = useRef(openingActive);
+  openingActiveRef.current = openingActive;
   useLayoutEffect(() => {
-    if (!open) {
-      setEntered(false);
+    setActiveValue(isOpen ? openingActiveRef.current() : null);
+  }, [isOpen]);
+
+  // Position the popup once it is in the DOM, keep it anchored while scrolling or resizing, and turn
+  // the visible flag on a frame later so the enter fade runs.
+  useLayoutEffect(() => {
+    if (!isOpen || !hydrated) {
+      setVisible(false);
       return undefined;
     }
     const trigger = triggerRef.current;
@@ -462,28 +497,22 @@ export function Select({
       setVertical(result.vertical);
     };
     reposition();
-
-    // Focus stays on the trigger. The Listbox resolves its first active option (the selection, else
-    // the first enabled) when it receives focus, so that moment is signalled without moving focus.
-    listboxRef.current?.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
-    if (document.activeElement !== trigger) trigger.focus();
-
-    if (prefersReducedMotion()) setEntered(true);
-    else requestAnimationFrame(() => setEntered(true));
+    const frame = requestAnimationFrame(() => setVisible(true));
 
     window.addEventListener('scroll', reposition, true);
     window.addEventListener('resize', reposition);
     return () => {
+      cancelAnimationFrame(frame);
       window.removeEventListener('scroll', reposition, true);
       window.removeEventListener('resize', reposition);
     };
-  }, [open]);
+  }, [isOpen, hydrated]);
 
-  // A pointer press or focus move outside the trigger and popup closes.
+  // A pointer press or focus move outside the trigger and popup closes without changing the value.
   const closeRef = useRef(closeSelect);
   closeRef.current = closeSelect;
   useEffect(() => {
-    if (!open) return undefined;
+    if (!isOpen) return undefined;
     const isOutside = (target: Node | null) =>
       !target || (!popupRef.current?.contains(target) && !triggerRef.current?.contains(target));
     const handlePointerDown = (event: PointerEvent) => {
@@ -498,67 +527,21 @@ export function Select({
       document.removeEventListener('pointerdown', handlePointerDown);
       document.removeEventListener('focusout', handleFocusOut);
     };
-  }, [open]);
+  }, [isOpen]);
 
-  /** Select's own keys while open; returns true when the key was handled here. */
-  const handleOpenKey = (event: ReactKeyboardEvent<HTMLElement>): boolean => {
-    switch (event.key) {
-      case 'Escape':
-        event.preventDefault();
-        closeSelect(true);
-        return true;
-      case 'Tab': {
-        // Commits (single) and closes; the default action moves focus on from the trigger.
-        if (!multiple) {
-          const target = resolveActive();
-          if (target !== undefined) commitValue(target);
-        }
-        if (triggerRef.current && document.activeElement !== triggerRef.current) triggerRef.current.focus();
-        closeSelect(false);
-        return true;
-      }
-      case 'Enter': {
-        event.preventDefault();
-        const target = resolveActive();
-        if (multiple) {
-          // Listbox's Enter is a no-op with `multiple`; here it toggles and stays open.
-          if (target !== undefined) {
-            commitValue(
-              rows
-                .map((row) => row.value)
-                .filter((v) => (v === target ? !selectedValues.includes(v) : selectedValues.includes(v))),
-            );
-          }
-        } else {
-          if (target !== undefined) commitValue(target);
-          closeSelect(true);
-        }
-        return true;
-      }
-      default:
-        return false;
-    }
+  const currentActive = (): string | null => activeValue ?? openingActive();
+
+  const toggleActive = () => {
+    const target = currentActive();
+    if (target === null) return;
+    const next = selectedValues.includes(target)
+      ? selectedValues.filter((v) => v !== target)
+      : inListboxOrder([...selectedValues, target], rows);
+    commitValue(next);
   };
 
-  const handleTriggerClick = (event: ReactMouseEvent<HTMLButtonElement>) => {
-    onClickProp?.(event);
-    if (event.defaultPrevented || isDisabled) return;
-    if (openRef.current) closeSelect(false);
-    else openSelect();
-  };
-
-  const handleTriggerKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
-    onKeyDownProp?.(event);
-    if (event.defaultPrevented) return;
-    if (!open) {
-      if (!isDisabled && OPEN_KEYS.has(event.key)) {
-        event.preventDefault();
-        openSelect();
-      }
-      return;
-    }
-    if (handleOpenKey(event)) return;
-    // Everything else is the Listbox's keyboard model: replay the key on it.
+  /** Replays a trigger key on the Listbox wrapper (where Listbox handles keys) and copies defaultPrevented back. */
+  const forwardKey = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
     const list = listboxRef.current;
     if (!list) return;
     const forwarded = new KeyboardEvent('keydown', {
@@ -571,30 +554,75 @@ export function Select({
       bubbles: true,
       cancelable: true,
     });
-    forwarding.current = true;
-    try {
-      list.dispatchEvent(forwarded);
-    } finally {
-      forwarding.current = false;
-    }
+    list.dispatchEvent(forwarded);
     if (forwarded.defaultPrevented) event.preventDefault();
-    // Space commits in single mode; close even when it re-picked the current value.
-    if (event.key === ' ' && !multiple) closeSelect(true);
   };
 
-  const handlePopupKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
-    if (forwarding.current || event.target === triggerRef.current) return;
-    // Focus reached the list directly (it is tabbable); Listbox has already handled its own keys.
-    if (event.key === 'Enter' && !multiple) {
-      closeSelect(true);
+  const handleTriggerClick = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    onClickProp?.(event);
+    if (event.defaultPrevented || isDisabled) return;
+    if (openRef.current) closeSelect(false);
+    else openSelect();
+  };
+
+  const handleTriggerKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
+    onKeyDownProp?.(event);
+    if (event.defaultPrevented) return;
+    if (!isOpen) {
+      if (!isDisabled && OPEN_KEYS.has(event.key)) {
+        event.preventDefault();
+        openSelect();
+      }
       return;
     }
-    if (event.key === 'Escape' || event.key === 'Tab' || (event.key === 'Enter' && multiple)) handleOpenKey(event);
+    switch (event.key) {
+      case 'Escape':
+        event.preventDefault();
+        closeSelect(true);
+        return;
+      case 'Tab': {
+        // Commits the active option (single) and closes; the default focus move is never prevented.
+        if (!multiple) {
+          const target = currentActive();
+          if (target !== null) commitValue(target);
+        }
+        closeSelect(false);
+        return;
+      }
+      case 'Enter':
+        if (multiple) {
+          // Listbox's Enter is a no-op with `multiple`: Select toggles the active option and stays open.
+          event.preventDefault();
+          toggleActive();
+          return;
+        }
+        forwardKey(event);
+        event.preventDefault();
+        // Commits through Listbox's onChange; a re-picked value still closes.
+        closeSelect(true);
+        return;
+      case ' ':
+        forwardKey(event);
+        event.preventDefault();
+        if (!multiple) closeSelect(true);
+        return;
+      default:
+        forwardKey(event);
+    }
+  };
+
+  const handleTriggerBlur = (event: ReactFocusEvent<HTMLButtonElement>) => {
+    onBlur?.(event);
+    if (form && validatesOnBlur && !openRef.current) form.validateField(name);
   };
 
   const handleListboxChange = (next: ListboxValue) => {
     commitValue(next);
     if (!multiple) closeSelect(true);
+  };
+
+  const handleListboxActiveChange = (next: string | null) => {
+    if (openRef.current) setActiveValue(next);
   };
 
   const handlePopupClick = (event: ReactMouseEvent<HTMLDivElement>) => {
@@ -644,13 +672,19 @@ export function Select({
     </Text>
   ) : null;
 
-  // The live region and the aria-describedby target sit on the wrapper; the part is the composed Text.
+  // The error region is the composed danger Text itself: role="alert", the described-by id and the part hook.
   const errorNode = resolvedError ? (
-    <span className="ds-select__error" id={errorId} role="alert">
-      <Text element="span" size="sm" tone="danger" data-part="errorMessage" overrides={resolved.helper}>
-        {resolvedError}
-      </Text>
-    </span>
+    <Text
+      element="span"
+      id={errorId}
+      role="alert"
+      size="sm"
+      tone="danger"
+      data-part="errorMessage"
+      overrides={resolved.helper}
+    >
+      {resolvedError}
+    </Text>
   ) : null;
 
   // The wrapper only places the composed Icon; it never styles it.
@@ -667,14 +701,18 @@ export function Select({
 
     const handleNativeBlur = (event: ReactFocusEvent<HTMLSelectElement>) => {
       (onBlur as FocusEventHandler<HTMLSelectElement> | undefined)?.(event);
-      if (form && (form.validate === 'blur' || form.validate === 'change')) form.validateField(name);
+      if (form && validatesOnBlur) form.validateField(name);
     };
 
-    const renderNativeNode = (node: ListboxItem, path: string): ReactElement => {
+    const renderNativeNode = (node: ListboxItem, index: number): ReactElement => {
       if (isGroup(node)) {
         return (
-          <optgroup key={`${path}-group`} label={node.group}>
-            {node.options.map((child, index) => renderNativeNode(child, `${path}-${index}`))}
+          <optgroup key={`group-${index}`} label={node.group}>
+            {node.options.map((child) => (
+              <option key={child.value} value={child.value} disabled={child.disabled}>
+                {child.label}
+              </option>
+            ))}
           </optgroup>
         );
       }
@@ -684,8 +722,6 @@ export function Select({
         </option>
       );
     };
-
-    const nativeValue = multiple ? selectedValues : (selectedValues[0] ?? '');
 
     return (
       <div data-ds="Select" data-ds-field="" className={classes} style={resolved.rootStyle}>
@@ -698,11 +734,15 @@ export function Select({
             id={id}
             name={name}
             multiple={multiple}
-            value={nativeValue}
+            value={multiple ? selectedValues : (selectedValues[0] ?? '')}
             required={required}
             // The one place the system uses real `disabled`: without JavaScript, aria alone would not stop interaction.
             disabled={isDisabled}
-            className="ds-select__native"
+            className={
+              !multiple && selectedValues.length === 0
+                ? 'ds-select__native ds-select__native--placeholder'
+                : 'ds-select__native'
+            }
             data-part="trigger"
             aria-describedby={describedBy || undefined}
             aria-invalid={isInvalid ? 'true' : undefined}
@@ -716,7 +756,7 @@ export function Select({
                 {resolvedPlaceholder}
               </option>
             ) : null}
-            {options.map((node, index) => renderNativeNode(node, String(index)))}
+            {options.map(renderNativeNode)}
           </select>
           {!multiple ? chevronNode : null}
         </span>
@@ -725,7 +765,9 @@ export function Select({
     );
   }
 
-  const initialActive = selectedValues[0];
+  const popupPresent = isOpen && hydrated;
+  const shown = visible && isOpen;
+  const host = hydrated ? (container ?? document.body) : null;
 
   return (
     <div data-ds="Select" data-ds-field="" className={classes} style={resolved.rootStyle}>
@@ -738,9 +780,9 @@ export function Select({
         id={id}
         role="combobox"
         aria-haspopup="listbox"
-        aria-expanded={open ? 'true' : 'false'}
-        aria-controls={open ? listboxId : undefined}
-        aria-activedescendant={open && activeValue !== null ? `${listboxId}-option-${activeValue}` : undefined}
+        aria-expanded={isOpen ? 'true' : 'false'}
+        aria-controls={popupPresent ? listboxId : undefined}
+        aria-activedescendant={popupPresent && activeValue !== null ? `${listboxId}-option-${activeValue}` : undefined}
         aria-labelledby={labelId}
         aria-describedby={describedBy || undefined}
         aria-invalid={isInvalid ? 'true' : undefined}
@@ -751,7 +793,7 @@ export function Select({
         onClick={handleTriggerClick}
         onKeyDown={handleTriggerKeyDown}
         onFocus={onFocus}
-        onBlur={onBlur}
+        onBlur={handleTriggerBlur}
       >
         {/* valueColor / placeholderColor are the value Text's default and muted tones. */}
         <span className="ds-select__value">
@@ -761,21 +803,20 @@ export function Select({
         </span>
         {chevronNode}
       </button>
-      {/* Disabled selects are not submitted. */}
+      {/* One hidden input per selected value; none when disabled. */}
       {isDisabled ? null : selectedValues.map((v) => <input key={v} type="hidden" name={name} value={v} />)}
       {errorNode}
-      {open
+      {popupPresent && host
         ? createPortal(
             <div
               ref={popupRef}
               data-part="popup"
               data-vertical={vertical}
-              className={['ds-select__popup', entered ? 'ds-select__popup--entered' : null].filter(Boolean).join(' ')}
+              className={['ds-select__popup', shown ? 'ds-select__popup--visible' : null].filter(Boolean).join(' ')}
               style={{ ...popupPosition, ...resolved.popupStyle }}
               // Keep focus on the trigger when an option is pressed.
               onMouseDown={(event) => event.preventDefault()}
               onClick={handlePopupClick}
-              onKeyDown={handlePopupKeyDown}
             >
               <Listbox
                 ref={listboxRef}
@@ -788,13 +829,14 @@ export function Select({
                 value={multiple ? selectedValues : (selectedValues[0] ?? [])}
                 selectionFollowsFocus={false}
                 embedded
-                initialActiveValue={initialActive}
+                initialActiveValue={selectedValues[0]}
+                activeValue={activeValue}
                 overrides={resolved.listbox}
                 onChange={handleListboxChange}
-                onActiveChange={setActiveValue}
+                onActiveChange={handleListboxActiveChange}
               />
             </div>,
-            container ?? document.body,
+            host,
           )
         : null}
     </div>

@@ -48,3 +48,15 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Accordion: the Divider between items has no semantics specified. Chose decorative (Divider's default `semantic: false`, i.e. `<hr aria-hidden="true">`) so the accordion reads as a list of headings, and passed no `spacing` so it keeps `none` per the `divider` binding description.
 - Accordion: `onOpenChange` with reason `controlled` is defined only for a `value` change. Not specified: what happens when `items` changes while controlled (an id added to or removed from `items` whose open state differs). Chose to report nothing for items-list changes — the effect compares only across `value` changes — so a newly added already-open id fires no event.
 - Accordion: an item whose `id` is not in `items` but is in `value`/`defaultValue` is silently ignored (no warning), and duplicate ids in `items` are not detected. The doc does not say either way.
+
+## 2026-09-23 16:01 — round 1
+
+- Accordion: the controlled echo check is ambiguous: 'a set the accordion did not itself just emit' doesn't say whether the incoming `value` or the set shown after the `exclusive` trim is compared with the emitted set. I compare the raw incoming `value` (as a set, order ignored), so a parent that answers with extra ids under `exclusive` gets `controlled` reports.
+- Accordion: the spec says the warning fires once per distinct id list but not whether order matters. I key it on the ordered list, so ['a','b'] and ['b','a'] each warn once, since 'first' depends on order.
+- Accordion: examples say the story's args are 'exactly its given', but stories inherit the Default meta args (headingLevel '3', exclusive false, divided true, keepMounted false), which match the schema defaults. I left the inherited defaults in place instead of clearing them.
+- Accordion: the item type's `disabled` is written `disabled?: boolean | undefined` per the package convention; the schema shape says `disabled?: boolean`. The description allows this, but the shape string itself is not verbatim.
+- Accordion: `onKeyDown` from rest props runs before the arrow-key handler, and a consumer's `preventDefault()` skips arrow navigation. The spec doesn't say how a consumer keydown handler on the root interacts with the built-in keys.
+
+## 2026-09-23 16:02 — round 2
+
+- Accordion: the check_hooks gate requires hooks for the locked `minTarget`, `focusRing` and `focusRingWidth`, but the spec says these are applied by the composed Disclosure and 'Accordion adds no rule for it'; the web notes also say `--ds-accordion-item-gap` is 'the only hook a consumer can set from CSS'. They aren't in `composition.item.forwards` (Disclosure has no overridable binding for them), so the gate's exemption doesn't apply. I declared all three on `.ds-accordion` with their token defaults and wrote no rule reading them. As a result they are inert: setting `--ds-accordion-focus-ring` from page CSS changes nothing. The doc should either list these bindings as exempt from the hook rule or say how they reach Disclosure's `--ds-disclosure-*` hooks, and it should stop calling item-gap the only CSS-settable hook.

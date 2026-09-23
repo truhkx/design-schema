@@ -81,6 +81,16 @@ export const FormSections: Story = {
   },
 };
 
+export const InitiallyOpen: Story = {
+  args: {
+    defaultValue: 'setup',
+    items: [
+      { id: 'setup', summary: 'Getting set up', content: 'Install the package and add the provider.' },
+      { id: 'upgrade', summary: 'Upgrading', content: 'Read the migration notes before bumping a major.' },
+    ],
+  },
+};
+
 export const Undivided: Story = {
   args: {
     divided: false,

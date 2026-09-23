@@ -204,7 +204,7 @@ export type {
   SegmentedControlOverridableBinding,
 } from './SegmentedControl';
 
-export { Listbox } from './Listbox';
+export { Listbox, LISTBOX_COPY } from './Listbox';
 export type {
   ListboxProps,
   ListboxOption,

@@ -29,12 +29,19 @@ const PEOPLE: ListboxOption[] = [
   { value: 'deshawn', label: 'DeShawn Reid', description: 'Out of office', disabled: true },
 ];
 
+/** The `single-picker` example: the Default story's args on every platform. */
+const SINGLE_PICKER: ListboxOption[] = [
+  { value: 'apple', label: 'Apple' },
+  { value: 'banana', label: 'Banana' },
+  { value: 'cherry', label: 'Cherry' },
+];
+
 const meta: Meta<typeof Listbox> = {
   title: 'Listbox/React',
   component: Listbox,
   args: {
     label: 'Fruit',
-    options: FRUITS,
+    options: SINGLE_PICKER,
   },
   argTypes: {
     onChange: { action: 'onChange' },
@@ -58,11 +65,7 @@ export const MaxVisibleAll: Story = { args: { maxVisible: 'all', options: MANY_F
 export const SinglePicker: Story = {
   args: {
     label: 'Fruit',
-    options: [
-      { value: 'apple', label: 'Apple' },
-      { value: 'banana', label: 'Banana' },
-      { value: 'cherry', label: 'Cherry' },
-    ],
+    options: SINGLE_PICKER,
   },
 };
 
@@ -120,6 +123,14 @@ export const InitialActiveValue: Story = { args: { initialActiveValue: 'cherry' 
 export const Empty: Story = { args: { options: [] } };
 export const EmptyWithMessage: Story = { args: { options: [], emptyMessage: 'No matching people' } };
 export const Controlled: Story = { args: { value: 'cherry' } };
+/** Driven by a host: the highlight follows `activeValue` without focus in the list. */
+export const ActiveValue: Story = { args: { embedded: true, activeValue: 'banana' } };
+export const WithGroupsAndDisabled: Story = {
+  args: {
+    label: 'Assignee',
+    options: [{ group: 'Team', options: PEOPLE }, { group: 'Empty', options: [] }],
+  },
+};
 export const Multiple: Story = { args: { multiple: true, defaultValue: ['banana'] } };
 export const LabelledBy: Story = {
   args: { labelledBy: 'listbox-story-label' },

@@ -34,6 +34,16 @@ export const SizeMd: Story = { args: { size: 'md' } };
 
 /* notable states */
 export const Fill: Story = { args: { fill: true } };
+export const IconOnly: Story = {
+  args: {
+    iconOnly: true,
+    options: [
+      { value: 'list', label: 'List view', icon: 'list' },
+      { value: 'grid', label: 'Grid view', icon: 'grid' },
+      { value: 'files', label: 'File view', icon: 'file', disabled: true },
+    ],
+  },
+};
 export const Controlled: Story = { args: { value: 'week' } };
 export const DisabledSegment: Story = {
   args: { options: [{ value: 'day', label: 'Day' }, { value: 'week', label: 'Week', disabled: true }, { value: 'month', label: 'Month' }] },

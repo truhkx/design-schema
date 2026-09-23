@@ -32,6 +32,9 @@
   --ds-listbox-focus-ring-width: var(--border-width-focus);
   --ds-listbox-disabled-opacity: var(--opacity-disabled);
   --ds-listbox-typeahead-reset: var(--motion-duration-loop);
+  /* errorText / emptyColor: locked; realised by the composed Text's tone, re-bound on its wrapper below. */
+  --ds-listbox-error-text: var(--color-foreground-danger);
+  --ds-listbox-empty-color: var(--color-foreground-muted);
   /* The border drawn around the list: absent (a zero length) while embedded. */
   --ds-listbox-frame-width: var(--ds-listbox-border-width);
   display: flex;
@@ -207,7 +210,16 @@
   font-size: var(--ds-listbox-option-description-size);
 }
 
+/*
+ * The composed Texts keep their own tone; the hook reaches them by re-binding the token that tone
+ * reads on a wrapper the list owns (the hook itself resolves on the root, so there is no cycle).
+ */
 .ds-listbox__empty {
+  --color-foreground-muted: var(--ds-listbox-empty-color);
   padding-block: var(--ds-listbox-option-padding-block);
   padding-inline: var(--ds-listbox-option-padding-inline);
+}
+
+.ds-listbox__error {
+  --color-foreground-danger: var(--ds-listbox-error-text);
 }

@@ -4,6 +4,11 @@
    composed Disclosure and Divider through their own `overrides`, never restyled here. */
 .ds-accordion {
   --ds-accordion-item-gap: var(--layout-gap-none);
+  /* Locked bindings keep their hook (re-themable from page CSS, renameable by the naming codemod). The composed
+     Disclosure trigger applies the target minimum and focus ring itself, so no Accordion rule reads these. */
+  --ds-accordion-min-target: var(--size-target-min);
+  --ds-accordion-focus-ring: var(--color-border-focus);
+  --ds-accordion-focus-ring-width: var(--border-width-focus);
   display: flex;
   flex-direction: column;
   gap: var(--ds-accordion-item-gap);

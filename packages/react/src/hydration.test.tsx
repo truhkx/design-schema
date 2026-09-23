@@ -12,9 +12,11 @@ import { ActionSheet } from './ActionSheet';
 import { AlertDialog } from './AlertDialog';
 import { BottomSheet } from './BottomSheet';
 import { Button } from './Button';
+import { Combobox } from './Combobox';
 import { Dialog } from './Dialog';
 import { Menu } from './Menu';
 import { Popover } from './Popover';
+import { Select } from './Select';
 import { SidePanel } from './SidePanel';
 import { ToastRegion } from './Toast';
 import { Tooltip } from './Tooltip';
@@ -138,6 +140,24 @@ describe('hydration', () => {
       expect(errors).toEqual([]);
       expect(document.querySelector('[data-ds="Tooltip"]')).not.toBeNull();
       expect(document.querySelector('[data-part="popup"]') !== null).toBe(open);
+    });
+
+    it(`Select (open: ${open}) hydrates without a mismatch and portals afterwards`, async () => {
+      const errors = await hydrate(
+        <Select label="Country" name="country" open={open} options={[{ value: 'ca', label: 'Canada' }]} />,
+      );
+      expect(errors).toEqual([]);
+      expect(document.querySelector('[data-ds="Select"]')).not.toBeNull();
+      expect(document.querySelector('[role="listbox"]') !== null).toBe(open);
+    });
+
+    it(`Combobox (open: ${open}) hydrates without a mismatch and portals afterwards`, async () => {
+      const errors = await hydrate(
+        <Combobox label="Fruit" name="fruit" open={open} options={[{ value: 'apple', label: 'Apple' }]} />,
+      );
+      expect(errors).toEqual([]);
+      expect(document.querySelector('[data-ds="Combobox"]')).not.toBeNull();
+      expect(document.querySelector('[role="listbox"]') !== null).toBe(open);
     });
   }
 

@@ -182,6 +182,17 @@ export const InitialActiveValue: Story = { args: { initialActiveValue: 'cherry' 
 export const Empty: Story = { args: { options: [] } };
 export const EmptyWithMessage: Story = { args: { options: [], emptyMessage: 'No matching people' } };
 export const Controlled: Story = { args: { value: 'cherry' } };
+/** Driven by a host: the highlight follows `activeValue` without focus in the list. */
+export const ActiveValue: Story = { args: { embedded: true, activeValue: 'banana' } };
+export const WithGroupsAndDisabled: Story = {
+  args: {
+    label: 'Assignee',
+    options: [
+      { group: 'Team', options: PEOPLE },
+      { group: 'Empty', options: [] },
+    ],
+  },
+};
 export const Multiple: Story = { args: { multiple: true, defaultValue: ['banana'] } };
 
 /**

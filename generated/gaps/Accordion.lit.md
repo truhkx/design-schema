@@ -73,3 +73,7 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Accordion: the spec does not say whether a warning 'id list' is compared by content or by array identity. I compare by content (JSON of the array), so reassigning an equal array does not warn again.
 - Accordion: `a11y.requires` lists focus-visible and the rules ask for `delegatesFocus: true`, but the host is a container whose focusable parts are Disclosure triggers. delegatesFocus would move focus to the first trigger when someone clicks non-focusable panel text, so I left it off and rely on Disclosure's own focus ring.
 - Accordion: the spec says nothing about a section without an `id` (slotted `<ds-disclosure>` with no id attribute). It can't be named in `value` or events, so the element ignores its toggles and warns once in development; the doc could say this outright.
+
+## 2026-09-23 19:28 — round 1
+
+- Accordion: none of the spec's contradictions or ambiguities blocked the existing implementation; unchanged.

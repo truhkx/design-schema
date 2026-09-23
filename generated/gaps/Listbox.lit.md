@@ -86,3 +86,9 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Listbox: with a controlled `activeValue` and selectionFollowsFocus true, the doc does not say whether a forwarded arrow that 'moves nothing' should still select the option it reports; I select it (the hosts in this repo all pass selectionFollowsFocus false).
 - Listbox: the doc does not say whether a disabled list fires `active-change` null on blur; since it 'reports nothing while disabled' I fire nothing on blur while disabled and keep the stored active option.
 - Listbox: the `activeValue` controlled pair has no named default; I treat undefined as uncontrolled and null as controlled 'no active option'.
+
+## 2026-09-23 19:24 — round 1
+
+- Listbox: the `error` doc says a Form message is shown on web/RN but Lit's ds-form pushes none; I show only `error`, then copy.required/copy.invalid, which the doc states. No ambiguity beyond that.
+- Listbox: `Enter` action text says 'inside a Select or Combobox, also closes the popup' but Listbox has no popup; I select only and leave closing to the host, which sees the `change` event.
+- Listbox: the keyboard rules `when: multiple` (Shift+Arrow, Control+a) can only be exercised by the `Keyboard` story with `multiple=true` passed via URL args; the doc does not say whether the story should default to multiple, so it stays single-select.

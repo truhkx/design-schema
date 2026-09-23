@@ -82,3 +82,16 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - Combobox: `descriptionText` and `errorText` are locked bindings on composed Text parts with no forwarding rule; chose Input's pattern — a combobox hook that sets Text's documented `--ds-text-color` on the Text host.
 - Combobox: `popupOffset` is the popup's block margin, but flipping above the field needs its length in pixels; read the popup's computed `margin-block-start`. The doc does not say whether the flip test should count the offset.
 - Combobox: `open` claims focus for the input when opened through the property, but the doc does not cover a disabled combobox with `open` set; chose: claim focus only on a closed→open change caused by the `open` property, skip when focus is anywhere inside the field, and apply it even when disabled (disabled stays focusable).
+
+## 2026-09-23 19:27 — round 1
+
+- Combobox: the `iconColor` binding says forwarded to Icon's `overrides.color` with no hook, but the general Overrides text says locked bindings keep a `:host` hook. I followed the binding's own description (no hook, forwarded as `color.foreground.muted`), as ds-search does.
+- Combobox: the doc says `open` is mirrored to the attribute by hand and that a consumer's attribute write makes the element controlled. It does not say whether removing the attribute returns to uncontrolled, so I left `open` as `boolean | undefined` with `type: Boolean`, where an absent attribute leaves it uncontrolled.
+- Combobox: the Text `--ds-text-color` hook used to colour description and error text from the locked `descriptionText` and `errorText` bindings is not named in the doc. I set it on the part element; Text's own tone (muted/danger) already gives the same colour.
+- Combobox: the Lit notes say the toggle stays tabbable because ds-button has no way to leave the tab order. No `tabindex` prop is documented on Button, so the toggle is a second tab stop inside the field.
+
+## 2026-09-23 19:27 — round 2
+
+- Combobox: the `iconColor` binding says it has no --ds-combobox-* hook because it is forwarded to Icon's overrides.color, but check_hooks requires every locked binding without a `part` to declare a hook and does not treat it as forwarded. I forward to Icon per the spec and also declare an unused --ds-combobox-icon-color on :host to pass the gate; either the gate should exempt forwarded bindings that have no part, or the doc should stop saying there is no hook.
+- Text (lit): check_hooks also fails on Text's locked `--ds-text-color` binding (not touched here; outside Combobox).
+- Combobox: the description and error text colours (descriptionText/errorText) are set through Text's undocumented --ds-text-color hook; the spec does not name how a parent tints a composed Text.

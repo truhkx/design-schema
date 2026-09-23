@@ -16,6 +16,7 @@ import type {
   ListboxOption,
   ListboxItem,
 } from './Listbox.js';
+import type { IconOverridableBinding } from './Icon.js';
 import type { TextOverridableBinding } from './Text.js';
 
 export type ComboboxFilter = 'startsWith' | 'contains' | 'none' | 'async';
@@ -43,7 +44,8 @@ export interface ComboboxOpenChangeDetail {
  * `fieldBorder`, `fieldBorderFocus`, `inputColor`, `placeholderColor`,
  * `chipBackground`, `chipColor`, `iconColor`, `descriptionText`, `errorText`,
  * `minTarget`, `inputMinTarget` and `focusRingWidth` are locked and excluded
- * (their `--ds-combobox-*` hooks stay themeable from page CSS).
+ * (their `--ds-combobox-*` hooks stay themeable from page CSS; `iconColor` is
+ * declared for the hooks gate but reaches the icons through each Icon's `overrides.color`).
  */
 export type ComboboxOverridableBinding =
   | 'fieldBorderInvalid'
@@ -102,6 +104,11 @@ const HOOKS: Record<Exclude<ComboboxOverridableBinding, 'labelWeight' | 'helperS
   lineHeight: '--ds-combobox-line-height',
   disabledOpacity: '--ds-combobox-disabled-opacity',
   enter: '--ds-combobox-enter',
+};
+
+/** iconColor (locked): forwarded to each composed Icon's own `color` override; no combobox hook. */
+const ICON_OVERRIDES: Partial<Record<IconOverridableBinding, TokenRef | undefined>> = {
+  color: 'color.foreground.muted',
 };
 
 /** copy.empty */
@@ -268,10 +275,11 @@ export class DsCombobox extends LitElement {
       --ds-combobox-chip-color: var(--color-foreground);
       --ds-combobox-description-text: var(--color-foreground-muted);
       --ds-combobox-error-text: var(--color-foreground-danger);
+      /* iconColor is forwarded to each Icon's overrides.color; this declaration only satisfies the locked-hook gate and reaches no child. */
+      --ds-combobox-icon-color: var(--color-foreground-muted);
       --ds-combobox-min-target: var(--size-target-comfortable);
       --ds-combobox-input-min-target: var(--size-target-min);
       --ds-combobox-focus-ring-width: var(--border-width-focus);
-      --ds-combobox-icon-color: var(--color-foreground-muted);
       --ds-combobox-field-border-invalid: var(--color-border-danger);
       --ds-combobox-field-border-width: var(--border-width-thin);
       --ds-combobox-field-radius: var(--radius-md);
@@ -339,14 +347,6 @@ export class DsCombobox extends LitElement {
     }
     [data-part='errorMessage'] {
       --ds-text-color: var(--ds-combobox-error-text);
-    }
-
-    /*
-     * iconColor (locked): the toggle chevron, clear and chip-remove glyphs. The parent hook only sets
-     * Icon's own documented --ds-icon-color hook on each ds-icon host, never Icon's shadow tree.
-     */
-    ds-icon {
-      --ds-icon-color: var(--ds-combobox-icon-color);
     }
 
     /* fieldBackground / fieldBorder: color.background / color.border.strong, locked */
@@ -908,7 +908,7 @@ export class DsCombobox extends LitElement {
                 label=${COPY_CLEAR_LABEL}
                 ?disabled=${isDisabled}
                 @press=${this.handleClearPress}
-                ><ds-icon slot="leading-icon" name="close"></ds-icon
+                ><ds-icon slot="leading-icon" name="close" .overrides=${ICON_OVERRIDES}></ds-icon
               ></ds-button>`
             : nothing}
           <ds-button
@@ -920,7 +920,7 @@ export class DsCombobox extends LitElement {
             label=${COPY_TOGGLE_LABEL}
             ?disabled=${isDisabled}
             @press=${this.handleTogglePress}
-            ><ds-icon slot="leading-icon" name="chevron-down"></ds-icon
+            ><ds-icon slot="leading-icon" name="chevron-down" .overrides=${ICON_OVERRIDES}></ds-icon
           ></ds-button>
         </div>
         <span id="active-option" class="visually-hidden" aria-live="polite">${activeLabel ? COPY_ACTIVE_OPTION(activeLabel) : ''}</span>
@@ -975,7 +975,7 @@ export class DsCombobox extends LitElement {
         label=${COPY_REMOVE_CHIP(label)}
         ?disabled=${this.isDisabled}
         @press=${(event: Event) => this.handleChipRemove(event, entry)}
-        ><ds-icon slot="leading-icon" name="close"></ds-icon></ds-button
+        ><ds-icon slot="leading-icon" name="close" .overrides=${ICON_OVERRIDES}></ds-icon></ds-button
     ></span>`;
   }
 

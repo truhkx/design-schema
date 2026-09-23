@@ -55,3 +55,11 @@ Each entry is a place the doc made the generator guess. Fix the doc, re-run pars
 - SegmentedControl: the toolbar lookup 'starts at the group's parentElement'; on Lit the group is a shadow-root child, so its parent is null and the lookup starts at the host itself. A host carrying role="toolbar" would therefore count. Chose that literal reading.
 - SegmentedControl: `defaultValue` changed after the first render with options is ignored (the uncontrolled state is seeded once); the doc doesn't say whether a late `default-value` should re-seed. Chose seed-once, like a native defaultValue.
 - SegmentedControl: the doc names no copy for the development warnings (empty `label`, `iconOnly` option without icon) and calls the wording non-contractual; the empty-label warning's wording is my own.
+
+## 2026-09-23 19:23 — round 1
+
+- SegmentedControl: the `part` attribute (as opposed to `data-part`) is not called for by the doc or conventions; I kept `part=` on group, segment, segmentLabel, segmentIcon, tooltip and indicator as the existing element has it, even though conventions say 'No ::part for styling'. Doc should state whether `part` is wanted at all.
+- SegmentedControl: Icon colour is forwarded as fixed token refs ('color.foreground.muted' / 'color.foreground.strong') because the doc says segmentColor/segmentSelectedColor are forwarded but does not say how a page-level CSS re-theme of the locked hooks (--ds-segmented-control-segment-color) reaches the Icon; I chose the token refs, so a page override of the hook recolours the label but not the icon.
+- SegmentedControl: doc gives no Lit-specific story list beyond the three examples; `Fill`, `Controlled`, `DisabledSegment` are extras I kept from the existing file for parity guesswork, since React's story set was not stated in the prompt.
+- SegmentedControl: the disabled-segment-is-not-selectable scenario clicks an `aria-disabled` button; Playwright's actionability check refuses it, so the test must pass `force: true`. The doc could note this for Lit.
+- SegmentedControl: on Lit the toolbar lookup crosses shadow roots via each root's host; the doc says so but the Toolbar element's own role attribute (attribute vs ElementInternals role) is not stated, and the check reads the `role` attribute only.

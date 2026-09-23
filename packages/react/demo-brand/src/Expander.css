@@ -22,7 +22,22 @@
   --demo-disclosure-transition: var(--motion-duration-base);
   display: flex;
   flex-direction: column;
+  /* minTarget: the trigger is start-aligned in its column, so the hover fill hugs the summary. */
+  align-items: flex-start;
   min-inline-size: 0;
+}
+
+/* fullWidth: the trigger (and its heading, when present) spans the row as a block-level flex box. */
+.demo-expander--full-width > .demo-expander__heading,
+.demo-expander--full-width > .demo-expander__trigger,
+.demo-expander--full-width > .demo-expander__heading > .demo-expander__trigger {
+  align-self: stretch;
+}
+
+.demo-expander--full-width > .demo-expander__trigger,
+.demo-expander--full-width > .demo-expander__heading > .demo-expander__trigger {
+  display: flex;
+  inline-size: 100%;
 }
 
 /* headingLevel: the heading has no styling of its own; the button carries it. */
@@ -79,10 +94,9 @@
    size; the Icon draws in currentColor, which this wrapper sets. Pointing right when closed and down when open. */
 .demo-expander__icon {
   display: inline-flex;
+  flex: none;
   align-items: center;
-  flex: 0 0 auto;
   color: var(--demo-disclosure-icon);
-  line-height: 0;
   /* transition: chevron rotation only; the panel does not animate. Instant under reduced motion. */
   transition: transform var(--demo-disclosure-transition) var(--motion-easing-standard);
 }
@@ -108,6 +122,8 @@
 
 /* panel: follows the trigger in reading order; rendered only while open. */
 .demo-expander__panel {
+  box-sizing: border-box;
+  align-self: stretch;
   padding-block: var(--demo-disclosure-panel-padding-block);
   padding-inline: var(--demo-disclosure-panel-padding-inline);
   color: var(--demo-disclosure-panel-color);

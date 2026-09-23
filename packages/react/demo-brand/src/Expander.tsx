@@ -94,6 +94,12 @@ export interface ExpanderProps
    */
   keepMounted?: boolean | undefined;
   /**
+   * The trigger spans the width of its row, so the whole row is the hit area (and the hover fill runs edge to edge)
+   * rather than ending at the summary text. The icon and summary stay at the start; the rest of the row is empty
+   * trigger.
+   */
+  fullWidth?: boolean | undefined;
+  /**
    * When set, the trigger is wrapped in a heading of this level so the disclosure appears in the document outline —
    * use for FAQ and accordion sections.
    */
@@ -127,6 +133,7 @@ export function Expander({
   defaultOpen = false,
   disabled = false,
   keepMounted = false,
+  fullWidth = false,
   headingLevel,
   overrides,
   onToggle,
@@ -219,9 +226,13 @@ export function Expander({
   // The heading has no styling of its own; the button carries it.
   const HeadingTag = headingLevel !== undefined ? (`h${headingLevel}` as ElementType) : null;
 
+  const rootClass = ['demo-expander', isOpen && 'demo-expander--open', fullWidth && 'demo-expander--full-width']
+    .filter(Boolean)
+    .join(' ');
+
   return (
     <div
-      className={isOpen ? 'demo-expander demo-expander--open' : 'demo-expander'}
+      className={rootClass}
       data-ds="Disclosure"
       style={overrides ? overridesToStyle(overrides) : undefined}
     >

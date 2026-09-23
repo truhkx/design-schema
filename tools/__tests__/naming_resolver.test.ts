@@ -825,10 +825,12 @@ describe('enum value renames', () => {
       expect(rn).toContain("kind = 'cta',");
       expect(rn).toContain("kind === 'ghost' && inverse");
       const lit = moved['lit/CtaButton.ts'] as string;
-      // The regenerated Lit element styles the container part per variant: the background/foreground
-      // bindings are locked in the schema (no hook), so the variant reads its tokens directly.
-      expect(lit).toMatch(/:host\(\[kind='cta'\]\) \[data-part='container'\] \{[^}]*background: var\(--color-action-primary-background\);/);
-      expect(lit).toMatch(/:host\(\[kind='destructive'\]\) \[data-part='container'\] \{[^}]*background: var\(--color-action-danger-background\);/);
+      // A locked binding keeps its hook, so the variant selector assigns the hook on the host and the
+      // part rule reads it — the element no longer reads the token directly under `[data-part]`. This
+      // resolution renames components and values but not the CSS prefix, so the hook stays `--ds-`;
+      // what must move is the value in the selector, and the token custom property must not.
+      expect(lit).toMatch(/:host\(\[kind='cta'\]\) \{[^}]*--ds-button-background: var\(--color-action-primary-background\);/);
+      expect(lit).toMatch(/:host\(\[kind='destructive'\]\) \{[^}]*--ds-button-background: var\(--color-action-danger-background\);/);
       expect(lit).toContain("accessor kind: CtaButtonVariant = 'cta';");
     });
   });

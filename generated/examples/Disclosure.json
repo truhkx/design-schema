@@ -15,6 +15,7 @@
         "defaultOpen": false,
         "disabled": false,
         "keepMounted": false,
+        "fullWidth": false,
         "children": {
           "$element": "Text",
           "props": {},
@@ -48,6 +49,7 @@
         "defaultOpen": false,
         "disabled": false,
         "keepMounted": false,
+        "fullWidth": false,
         "children": {
           "$element": "Text",
           "props": {},
@@ -85,6 +87,7 @@
         "defaultOpen": false,
         "disabled": false,
         "keepMounted": false,
+        "fullWidth": false,
         "children": {
           "$element": "Text",
           "props": {},
@@ -122,6 +125,7 @@
         "defaultOpen": false,
         "disabled": false,
         "keepMounted": false,
+        "fullWidth": false,
         "children": {
           "$element": "Text",
           "props": {},
@@ -159,6 +163,7 @@
         "defaultOpen": false,
         "disabled": false,
         "keepMounted": false,
+        "fullWidth": false,
         "children": {
           "$element": "Text",
           "props": {},
@@ -196,6 +201,7 @@
         "defaultOpen": false,
         "disabled": false,
         "keepMounted": false,
+        "fullWidth": false,
         "children": {
           "$element": "Text",
           "props": {},
@@ -233,6 +239,7 @@
         "defaultOpen": false,
         "disabled": false,
         "keepMounted": false,
+        "fullWidth": false,
         "children": "You keep access until the end of the current billing period.",
         "headingLevel": "3"
       },
@@ -264,6 +271,7 @@
         "defaultOpen": false,
         "disabled": false,
         "keepMounted": false,
+        "fullWidth": false,
         "children": "Retry limit, timeout and proxy settings."
       },
       "snippets": {
@@ -291,6 +299,7 @@
         "defaultOpen": true,
         "disabled": false,
         "keepMounted": true,
+        "fullWidth": false,
         "children": "Street, city and postcode fields."
       },
       "snippets": {
@@ -318,6 +327,7 @@
         "defaultOpen": false,
         "disabled": true,
         "keepMounted": false,
+        "fullWidth": false,
         "children": "Choose a delivery address first."
       },
       "snippets": {
@@ -348,6 +358,7 @@
         "defaultOpen": true,
         "disabled": false,
         "keepMounted": false,
+        "fullWidth": false,
         "children": {
           "$element": "Text",
           "props": {},
@@ -384,6 +395,7 @@
         "defaultOpen": false,
         "disabled": false,
         "keepMounted": false,
+        "fullWidth": false,
         "children": {
           "$element": "Text",
           "props": {},
@@ -421,6 +433,7 @@
         "defaultOpen": false,
         "disabled": false,
         "keepMounted": true,
+        "fullWidth": false,
         "children": {
           "$element": "Text",
           "props": {},
@@ -451,12 +464,50 @@
       "primary": false
     },
     {
+      "title": "Full Width",
+      "args": {
+        "summary": "What happens if I cancel?",
+        "defaultOpen": false,
+        "disabled": false,
+        "keepMounted": false,
+        "fullWidth": true,
+        "children": {
+          "$element": "Text",
+          "props": {},
+          "children": [
+            "You keep access until the end of the current billing period. Your data is kept for 30 days after that, then deleted."
+          ]
+        }
+      },
+      "snippets": {
+        "react": "import { Disclosure, Text } from '@design-schema/react';\n\nconst panel = (\n  <Text>\n    You keep access until the end of the current billing period. Your data is kept for 30 days after that, then\n    deleted.\n  </Text>\n);\n\n<Disclosure summary=\"What happens if I cancel?\" fullWidth>{panel}</Disclosure>",
+        "lit": "<ds-disclosure summary=\"What happens if I cancel?\" full-width>\n  <ds-text>You keep access until the end of the current billing period. Your data is kept for 30 days after that, then deleted.</ds-text>\n</ds-disclosure>",
+        "rn": "import { Disclosure } from '@design-schema/rn';\n\n<Disclosure summary=\"Advanced options\" fullWidth>Retry limit, timeout and proxy settings.</Disclosure>",
+        "swift": null
+      },
+      "stories": {
+        "react": "FullWidth",
+        "lit": "FullWidth",
+        "rn": "FullWidth",
+        "swift": null
+      },
+      "storyId": "disclosure-react--full-width",
+      "sweep": {
+        "prop": "fullWidth",
+        "value": true
+      },
+      "decorated": false,
+      "harness": null,
+      "primary": false
+    },
+    {
       "title": "Accordion",
       "args": {
         "summary": "What happens if I cancel?",
         "defaultOpen": false,
         "disabled": false,
         "keepMounted": false,
+        "fullWidth": false,
         "children": {
           "$element": "Text",
           "props": {},

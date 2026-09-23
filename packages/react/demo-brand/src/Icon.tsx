@@ -160,7 +160,8 @@ export interface IconProps
    * Which glyph. The set is deliberately small and grows only when a component needs a shape;
    * `info`, `success`, `warning` and `danger` are the four status shapes (circle-i, circle-check,
    * triangle-!, octagon-x) so tone is never carried by color alone. `name` has no default; the
-   * Default story renders `check`.
+   * Default story renders `check`. Enum stories for hyphenated names capitalise each segment and
+   * join them: `NameChevronRight`, `NameArrowLeft`.
    */
   name: IconName;
   /** Rendered size, from the font-size scale so icons line up with text of the same size. */

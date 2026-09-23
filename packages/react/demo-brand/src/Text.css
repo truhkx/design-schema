@@ -9,6 +9,7 @@
   font-size: var(--demo-text-font-size);
   font-weight: var(--demo-text-font-weight);
   line-height: var(--demo-text-line-height);
+  color: var(--demo-text-color);
 }
 
 /* size → font.size.{size} */
@@ -25,14 +26,15 @@
 .demo-text--weight-bold { --demo-text-font-weight: var(--font-weight-bold); }
 
 /* tone → color.foreground.{tone} */
-/* `color` is locked, so it has no `--demo-text-color` hook: each tone reads the token's own custom
- * property. `default` is the bare `--color-foreground`, which an inverse surface (Toast, Tooltip)
- * re-scopes on its own container. */
-.demo-text--tone-default { color: var(--color-foreground); }
-.demo-text--tone-strong { color: var(--color-foreground-strong); }
-.demo-text--tone-muted { color: var(--color-foreground-muted); }
-.demo-text--tone-danger { color: var(--color-foreground-danger); }
-.demo-text--tone-on-action { color: var(--color-foreground-on-action); }
+/* `color` is locked: it is absent from `overrides` but keeps its `--demo-text-color` hook, so page CSS
+ * and the naming codemod can still reach it. The hook is set on the Text element itself, so
+ * `default` still resolves the `--color-foreground` it inherits — an inverse surface (Toast,
+ * Tooltip) that re-scopes that property on its own container recolours default Text as before. */
+.demo-text--tone-default { --demo-text-color: var(--color-foreground); }
+.demo-text--tone-strong { --demo-text-color: var(--color-foreground-strong); }
+.demo-text--tone-muted { --demo-text-color: var(--color-foreground-muted); }
+.demo-text--tone-danger { --demo-text-color: var(--color-foreground-danger); }
+.demo-text--tone-on-action { --demo-text-color: var(--color-foreground-on-action); }
 
 .demo-text--align-start { text-align: start; }
 .demo-text--align-center { text-align: center; }

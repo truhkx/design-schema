@@ -15,7 +15,8 @@
         "label": "View the billing history",
         "external": false,
         "tone": "default",
-        "download": false
+        "download": false,
+        "current": false
       },
       "snippets": {
         "react": "import { Link } from '@design-schema/react';\n\n<Link href=\"/billing/history\" label=\"View the billing history\" />",
@@ -42,7 +43,8 @@
         "label": "View the billing history",
         "external": false,
         "tone": "default",
-        "download": false
+        "download": false,
+        "current": false
       },
       "snippets": {
         "react": "import { Link } from '@design-schema/react';\n\n<Link href=\"/billing/history\" label=\"View the billing history\" tone=\"default\" />",
@@ -72,7 +74,8 @@
         "label": "View the billing history",
         "external": false,
         "tone": "inherit",
-        "download": false
+        "download": false,
+        "current": false
       },
       "snippets": {
         "react": "import { Link, Text } from '@design-schema/react';\n\n<Text tone=\"muted\">\n  For how charges are calculated, read <Link\n    href=\"/billing/history\"\n    label=\"View the billing history\"\n    tone=\"inherit\"\n  />.\n</Text>",
@@ -99,7 +102,8 @@
         "label": "View the billing history",
         "external": false,
         "tone": "default",
-        "download": false
+        "download": false,
+        "current": false
       },
       "snippets": {
         "react": "import { Link, Text } from '@design-schema/react';\n\n<Text>\n  Invoices from the last twelve months are kept. <Link href=\"/billing/history\" label=\"View the billing history\" />.\n</Text>",
@@ -126,7 +130,8 @@
         "label": "Status page",
         "external": true,
         "tone": "default",
-        "download": false
+        "download": false,
+        "current": false
       },
       "snippets": {
         "react": "import { Link } from '@design-schema/react';\n\n<Link href=\"https://status.example.com\" label=\"Status page\" external />",
@@ -156,7 +161,8 @@
         "label": "the billing guide",
         "external": false,
         "tone": "inherit",
-        "download": false
+        "download": false,
+        "current": false
       },
       "snippets": {
         "react": "import { Link, Text } from '@design-schema/react';\n\n<Text tone=\"muted\">\n  For how charges are calculated, read <Link\n    href=\"/help/billing\"\n    label=\"the billing guide\"\n    tone=\"inherit\"\n  />.\n</Text>",
@@ -183,7 +189,8 @@
         "label": "Download the September invoice",
         "external": false,
         "tone": "default",
-        "download": true
+        "download": true,
+        "current": false
       },
       "snippets": {
         "react": "import { Link } from '@design-schema/react';\n\n<Link\n  href=\"/invoices/2026-09.pdf\"\n  label=\"Download the September invoice\"\n  download\n/>",

@@ -336,6 +336,161 @@
       "primary": false
     },
     {
+      "title": "Haspopup Menu",
+      "args": {
+        "label": "Actions",
+        "variant": "secondary",
+        "size": "md",
+        "type": "button",
+        "disabled": false,
+        "iconOnly": false,
+        "loading": false,
+        "inverse": false,
+        "haspopup": "menu"
+      },
+      "snippets": {
+        "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Actions\" variant=\"secondary\" haspopup=\"menu\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-button\n    label=\"Actions\"\n    variant=\"secondary\"\n    .haspopup=${'menu'}\n    ></ds-button>\n`;",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "HaspopupMenu",
+        "lit": "HaspopupMenu",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "button-react--haspopup-menu",
+      "sweep": null,
+      "decorated": false,
+      "harness": null,
+      "primary": true
+    },
+    {
+      "title": "Haspopup Listbox",
+      "args": {
+        "label": "Choose sort",
+        "variant": "secondary",
+        "size": "md",
+        "type": "button",
+        "disabled": false,
+        "iconOnly": false,
+        "loading": false,
+        "inverse": false,
+        "haspopup": "listbox"
+      },
+      "snippets": {
+        "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Choose sort\" variant=\"secondary\" haspopup=\"listbox\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-button\n    label=\"Choose a country\"\n    variant=\"secondary\"\n    .haspopup=${'listbox'}\n    ></ds-button>\n`;",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "HaspopupListbox",
+        "lit": "HaspopupListbox",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "button-react--haspopup-listbox",
+      "sweep": null,
+      "decorated": false,
+      "harness": null,
+      "primary": true
+    },
+    {
+      "title": "Haspopup Tree",
+      "args": {
+        "label": "Choose folder",
+        "variant": "secondary",
+        "size": "md",
+        "type": "button",
+        "disabled": false,
+        "iconOnly": false,
+        "loading": false,
+        "inverse": false,
+        "haspopup": "tree"
+      },
+      "snippets": {
+        "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Choose folder\" variant=\"secondary\" haspopup=\"tree\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-button\n    label=\"Choose a folder\"\n    variant=\"secondary\"\n    .haspopup=${'tree'}\n    ></ds-button>\n`;",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "HaspopupTree",
+        "lit": "HaspopupTree",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "button-react--haspopup-tree",
+      "sweep": null,
+      "decorated": false,
+      "harness": null,
+      "primary": true
+    },
+    {
+      "title": "Haspopup Grid",
+      "args": {
+        "label": "Choose date",
+        "variant": "secondary",
+        "size": "md",
+        "type": "button",
+        "disabled": false,
+        "iconOnly": false,
+        "loading": false,
+        "inverse": false,
+        "haspopup": "grid"
+      },
+      "snippets": {
+        "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Choose date\" variant=\"secondary\" haspopup=\"grid\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-button\n    label=\"Choose a date\"\n    variant=\"secondary\"\n    .haspopup=${'grid'}\n    ></ds-button>\n`;",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "HaspopupGrid",
+        "lit": "HaspopupGrid",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "button-react--haspopup-grid",
+      "sweep": null,
+      "decorated": false,
+      "harness": null,
+      "primary": true
+    },
+    {
+      "title": "Haspopup Dialog",
+      "args": {
+        "label": "Edit details",
+        "variant": "secondary",
+        "size": "md",
+        "type": "button",
+        "disabled": false,
+        "iconOnly": false,
+        "loading": false,
+        "inverse": false,
+        "haspopup": "dialog"
+      },
+      "snippets": {
+        "react": "import { Button } from '@design-schema/react';\n\n<Button label=\"Edit details\" variant=\"secondary\" haspopup=\"dialog\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-button\n    label=\"Edit profile\"\n    variant=\"secondary\"\n    .haspopup=${'dialog'}\n    ></ds-button>\n`;",
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "HaspopupDialog",
+        "lit": "HaspopupDialog",
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "button-react--haspopup-dialog",
+      "sweep": null,
+      "decorated": false,
+      "harness": null,
+      "primary": true
+    },
+    {
       "title": "Disabled",
       "args": {
         "label": "Save changes",
@@ -366,7 +521,7 @@
       },
       "decorated": false,
       "harness": null,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Loading",
@@ -399,7 +554,7 @@
       },
       "decorated": false,
       "harness": null,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Loading Icon Only",
@@ -437,7 +592,7 @@
       "sweep": null,
       "decorated": false,
       "harness": null,
-      "primary": true
+      "primary": false
     },
     {
       "title": "With Icons",
@@ -483,7 +638,7 @@
       "sweep": null,
       "decorated": false,
       "harness": null,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Icon Only",
@@ -521,7 +676,7 @@
       "sweep": null,
       "decorated": false,
       "harness": null,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Expanded",

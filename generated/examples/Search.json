@@ -152,7 +152,7 @@
       "snippets": {
         "react": "import { Search } from '@design-schema/react';\n\n<Search\n  label=\"Search products\"\n  suggestions={[\n    { value: 'invoices-march', label: 'Invoices from March' },\n    { value: 'invoices-april', label: 'Invoices from April' },\n  ]}\n/>",
         "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n      <ds-search\n        label=\"Search products\"\n        .suggestions=${[\n    { value: 'invoices-march', label: 'Invoices from March' },\n    { value: 'invoices-april', label: 'Invoices from April' },\n  ]}\n      ></ds-search>\n`;",
-        "rn": "import { Search } from '@design-schema/rn';\n\n<Search\n  label=\"Search products\"\n  placeholder={'Try \"invoices from March\"'}\n  suggestions={[\n    { value: 'invoices-march', label: 'Invoices from March' },\n    { value: 'invoices-april', label: 'Invoices from April' },\n  ]}\n/>",
+        "rn": "import { Search } from '@design-schema/rn';\n\nconst SUGGESTIONS = [\n  { value: 'invoices-march', label: 'Invoices from March' },\n  { value: 'invoices-april', label: 'Invoices from April' },\n];\n\n<Search\n  label=\"Search products\"\n  placeholder={'Try \"invoices from March\"'}\n  suggestions={SUGGESTIONS}\n/>",
         "swift": null
       },
       "stories": {
@@ -317,6 +317,33 @@
       },
       "storyId": "search-react--suggestions-from-on-change",
       "sweep": null,
+      "decorated": false,
+      "harness": null,
+      "primary": false
+    },
+    {
+      "title": "Landmark Off",
+      "args": {
+        "label": "Search products",
+        "landmark": false
+      },
+      "snippets": {
+        "react": "import { Search } from '@design-schema/react';\n\n<Search label=\"Search products\" landmark={false} />",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "LandmarkOff",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "search-react--landmark-off",
+      "sweep": {
+        "prop": "landmark",
+        "value": false
+      },
       "decorated": false,
       "harness": null,
       "primary": false

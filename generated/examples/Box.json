@@ -11,12 +11,12 @@
     {
       "title": "Default",
       "args": {
+        "border": false,
+        "element": "div",
         "children": "A panel of settings",
         "inset": "md",
         "surface": "subtle",
-        "border": false,
-        "radius": "md",
-        "element": "div"
+        "radius": "md"
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
@@ -39,12 +39,12 @@
     {
       "title": "Inset None",
       "args": {
+        "border": false,
+        "element": "div",
         "children": "A panel of settings",
         "inset": "none",
         "surface": "subtle",
-        "border": false,
-        "radius": "md",
-        "element": "div"
+        "radius": "md"
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"none\" surface=\"subtle\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
@@ -59,23 +59,20 @@
         "swift": null
       },
       "storyId": "box-react--inset-none",
-      "sweep": {
-        "prop": "inset",
-        "value": "none"
-      },
+      "sweep": null,
       "decorated": false,
       "harness": null,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Inset Sm",
       "args": {
+        "border": false,
+        "element": "div",
         "children": "A panel of settings",
         "inset": "sm",
         "surface": "subtle",
-        "border": false,
-        "radius": "md",
-        "element": "div"
+        "radius": "md"
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"sm\" surface=\"subtle\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
@@ -90,23 +87,20 @@
         "swift": null
       },
       "storyId": "box-react--inset-sm",
-      "sweep": {
-        "prop": "inset",
-        "value": "sm"
-      },
+      "sweep": null,
       "decorated": false,
       "harness": null,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Inset Md",
       "args": {
+        "border": false,
+        "element": "div",
         "children": "A panel of settings",
         "inset": "md",
         "surface": "subtle",
-        "border": false,
-        "radius": "md",
-        "element": "div"
+        "radius": "md"
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
@@ -121,23 +115,20 @@
         "swift": null
       },
       "storyId": "box-react--inset-md",
-      "sweep": {
-        "prop": "inset",
-        "value": "md"
-      },
+      "sweep": null,
       "decorated": false,
       "harness": null,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Inset Lg",
       "args": {
+        "border": false,
+        "element": "div",
         "children": "A panel of settings",
         "inset": "lg",
         "surface": "subtle",
-        "border": false,
-        "radius": "md",
-        "element": "div"
+        "radius": "md"
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"lg\" surface=\"subtle\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
@@ -152,23 +143,20 @@
         "swift": null
       },
       "storyId": "box-react--inset-lg",
-      "sweep": {
-        "prop": "inset",
-        "value": "lg"
-      },
+      "sweep": null,
       "decorated": false,
       "harness": null,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Inset Xl",
       "args": {
+        "border": false,
+        "element": "div",
         "children": "A panel of settings",
         "inset": "xl",
         "surface": "subtle",
-        "border": false,
-        "radius": "md",
-        "element": "div"
+        "radius": "md"
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"xl\" surface=\"subtle\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
@@ -183,29 +171,26 @@
         "swift": null
       },
       "storyId": "box-react--inset-xl",
-      "sweep": {
-        "prop": "inset",
-        "value": "xl"
-      },
+      "sweep": null,
       "decorated": false,
       "harness": null,
-      "primary": false
+      "primary": true
     },
     {
       "title": "Inset Block None",
       "args": {
+        "border": false,
+        "element": "div",
         "children": "A panel of settings",
         "inset": "md",
         "surface": "subtle",
-        "border": false,
         "radius": "md",
-        "element": "div",
         "insetBlock": "none"
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" insetBlock=\"none\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
         "lit": "<ds-box inset=\"md\" inset-block=\"none\" surface=\"subtle\" radius=\"md\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"none\" insetInline=\"md\" surface=\"subtle\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box surface=\"subtle\" insetBlock=\"none\" insetInline=\"md\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
@@ -215,10 +200,7 @@
         "swift": null
       },
       "storyId": "box-react--inset-block-none",
-      "sweep": {
-        "prop": "insetBlock",
-        "value": "none"
-      },
+      "sweep": null,
       "decorated": false,
       "harness": null,
       "primary": false
@@ -226,18 +208,18 @@
     {
       "title": "Inset Block Sm",
       "args": {
+        "border": false,
+        "element": "div",
         "children": "A panel of settings",
         "inset": "md",
         "surface": "subtle",
-        "border": false,
         "radius": "md",
-        "element": "div",
         "insetBlock": "sm"
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" insetBlock=\"sm\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
         "lit": "<ds-box inset=\"md\" inset-block=\"sm\" surface=\"subtle\" radius=\"md\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"sm\" insetInline=\"md\" surface=\"subtle\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box surface=\"subtle\" insetBlock=\"sm\" insetInline=\"md\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
@@ -247,10 +229,7 @@
         "swift": null
       },
       "storyId": "box-react--inset-block-sm",
-      "sweep": {
-        "prop": "insetBlock",
-        "value": "sm"
-      },
+      "sweep": null,
       "decorated": false,
       "harness": null,
       "primary": false
@@ -258,18 +237,18 @@
     {
       "title": "Inset Block Md",
       "args": {
+        "border": false,
+        "element": "div",
         "children": "A panel of settings",
         "inset": "md",
         "surface": "subtle",
-        "border": false,
         "radius": "md",
-        "element": "div",
         "insetBlock": "md"
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" insetBlock=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
         "lit": "<ds-box inset=\"md\" inset-block=\"md\" surface=\"subtle\" radius=\"md\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"md\" insetInline=\"md\" surface=\"subtle\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box surface=\"subtle\" insetBlock=\"md\" insetInline=\"md\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
@@ -279,10 +258,7 @@
         "swift": null
       },
       "storyId": "box-react--inset-block-md",
-      "sweep": {
-        "prop": "insetBlock",
-        "value": "md"
-      },
+      "sweep": null,
       "decorated": false,
       "harness": null,
       "primary": false
@@ -290,18 +266,18 @@
     {
       "title": "Inset Block Lg",
       "args": {
+        "border": false,
+        "element": "div",
         "children": "A panel of settings",
         "inset": "md",
         "surface": "subtle",
-        "border": false,
         "radius": "md",
-        "element": "div",
         "insetBlock": "lg"
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" insetBlock=\"lg\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
         "lit": "<ds-box inset=\"md\" inset-block=\"lg\" surface=\"subtle\" radius=\"md\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"lg\" insetInline=\"md\" surface=\"subtle\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box surface=\"subtle\" insetBlock=\"lg\" insetInline=\"md\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
@@ -311,10 +287,7 @@
         "swift": null
       },
       "storyId": "box-react--inset-block-lg",
-      "sweep": {
-        "prop": "insetBlock",
-        "value": "lg"
-      },
+      "sweep": null,
       "decorated": false,
       "harness": null,
       "primary": false
@@ -322,18 +295,18 @@
     {
       "title": "Inset Block Xl",
       "args": {
+        "border": false,
+        "element": "div",
         "children": "A panel of settings",
         "inset": "md",
         "surface": "subtle",
-        "border": false,
         "radius": "md",
-        "element": "div",
         "insetBlock": "xl"
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" insetBlock=\"xl\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
         "lit": "<ds-box inset=\"md\" inset-block=\"xl\" surface=\"subtle\" radius=\"md\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"xl\" insetInline=\"md\" surface=\"subtle\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box surface=\"subtle\" insetBlock=\"xl\" insetInline=\"md\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
@@ -343,10 +316,7 @@
         "swift": null
       },
       "storyId": "box-react--inset-block-xl",
-      "sweep": {
-        "prop": "insetBlock",
-        "value": "xl"
-      },
+      "sweep": null,
       "decorated": false,
       "harness": null,
       "primary": false
@@ -354,18 +324,18 @@
     {
       "title": "Inset Inline None",
       "args": {
+        "border": false,
+        "element": "div",
         "children": "A panel of settings",
         "inset": "md",
         "surface": "subtle",
-        "border": false,
         "radius": "md",
-        "element": "div",
         "insetInline": "none"
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" insetInline=\"none\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
         "lit": "<ds-box inset=\"md\" inset-inline=\"none\" surface=\"subtle\" radius=\"md\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"md\" insetInline=\"none\" surface=\"subtle\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box surface=\"subtle\" insetInline=\"none\" insetBlock=\"md\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
@@ -375,10 +345,7 @@
         "swift": null
       },
       "storyId": "box-react--inset-inline-none",
-      "sweep": {
-        "prop": "insetInline",
-        "value": "none"
-      },
+      "sweep": null,
       "decorated": false,
       "harness": null,
       "primary": false
@@ -386,18 +353,18 @@
     {
       "title": "Inset Inline Sm",
       "args": {
+        "border": false,
+        "element": "div",
         "children": "A panel of settings",
         "inset": "md",
         "surface": "subtle",
-        "border": false,
         "radius": "md",
-        "element": "div",
         "insetInline": "sm"
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" insetInline=\"sm\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
         "lit": "<ds-box inset=\"md\" inset-inline=\"sm\" surface=\"subtle\" radius=\"md\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"md\" insetInline=\"sm\" surface=\"subtle\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box surface=\"subtle\" insetInline=\"sm\" insetBlock=\"md\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
@@ -407,10 +374,7 @@
         "swift": null
       },
       "storyId": "box-react--inset-inline-sm",
-      "sweep": {
-        "prop": "insetInline",
-        "value": "sm"
-      },
+      "sweep": null,
       "decorated": false,
       "harness": null,
       "primary": false
@@ -418,18 +382,18 @@
     {
       "title": "Inset Inline Md",
       "args": {
+        "border": false,
+        "element": "div",
         "children": "A panel of settings",
         "inset": "md",
         "surface": "subtle",
-        "border": false,
         "radius": "md",
-        "element": "div",
         "insetInline": "md"
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" insetInline=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
         "lit": "<ds-box inset=\"md\" inset-inline=\"md\" surface=\"subtle\" radius=\"md\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"md\" insetInline=\"md\" surface=\"subtle\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box surface=\"subtle\" insetInline=\"md\" insetBlock=\"md\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
@@ -439,10 +403,7 @@
         "swift": null
       },
       "storyId": "box-react--inset-inline-md",
-      "sweep": {
-        "prop": "insetInline",
-        "value": "md"
-      },
+      "sweep": null,
       "decorated": false,
       "harness": null,
       "primary": false
@@ -450,18 +411,18 @@
     {
       "title": "Inset Inline Lg",
       "args": {
+        "border": false,
+        "element": "div",
         "children": "A panel of settings",
         "inset": "md",
         "surface": "subtle",
-        "border": false,
         "radius": "md",
-        "element": "div",
         "insetInline": "lg"
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" insetInline=\"lg\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
         "lit": "<ds-box inset=\"md\" inset-inline=\"lg\" surface=\"subtle\" radius=\"md\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"md\" insetInline=\"lg\" surface=\"subtle\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box surface=\"subtle\" insetInline=\"lg\" insetBlock=\"md\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
@@ -471,10 +432,7 @@
         "swift": null
       },
       "storyId": "box-react--inset-inline-lg",
-      "sweep": {
-        "prop": "insetInline",
-        "value": "lg"
-      },
+      "sweep": null,
       "decorated": false,
       "harness": null,
       "primary": false
@@ -482,18 +440,18 @@
     {
       "title": "Inset Inline Xl",
       "args": {
+        "border": false,
+        "element": "div",
         "children": "A panel of settings",
         "inset": "md",
         "surface": "subtle",
-        "border": false,
         "radius": "md",
-        "element": "div",
         "insetInline": "xl"
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" insetInline=\"xl\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
         "lit": "<ds-box inset=\"md\" inset-inline=\"xl\" surface=\"subtle\" radius=\"md\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"md\" insetInline=\"xl\" surface=\"subtle\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box surface=\"subtle\" insetInline=\"xl\" insetBlock=\"md\">{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
       },
       "stories": {
@@ -503,10 +461,7 @@
         "swift": null
       },
       "storyId": "box-react--inset-inline-xl",
-      "sweep": {
-        "prop": "insetInline",
-        "value": "xl"
-      },
+      "sweep": null,
       "decorated": false,
       "harness": null,
       "primary": false
@@ -514,12 +469,12 @@
     {
       "title": "Surface None",
       "args": {
+        "border": false,
+        "element": "div",
         "children": "A panel of settings",
         "inset": "md",
         "surface": "none",
-        "border": false,
-        "radius": "md",
-        "element": "div"
+        "radius": "md"
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"none\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
@@ -534,10 +489,7 @@
         "swift": null
       },
       "storyId": "box-react--surface-none",
-      "sweep": {
-        "prop": "surface",
-        "value": "none"
-      },
+      "sweep": null,
       "decorated": false,
       "harness": null,
       "primary": false
@@ -545,12 +497,12 @@
     {
       "title": "Surface Default",
       "args": {
+        "border": false,
+        "element": "div",
         "children": "A panel of settings",
         "inset": "md",
         "surface": "default",
-        "border": false,
-        "radius": "md",
-        "element": "div"
+        "radius": "md"
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"default\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
@@ -565,10 +517,7 @@
         "swift": null
       },
       "storyId": "box-react--surface-default",
-      "sweep": {
-        "prop": "surface",
-        "value": "default"
-      },
+      "sweep": null,
       "decorated": false,
       "harness": null,
       "primary": false
@@ -576,12 +525,12 @@
     {
       "title": "Surface Subtle",
       "args": {
+        "border": false,
+        "element": "div",
         "children": "A panel of settings",
         "inset": "md",
         "surface": "subtle",
-        "border": false,
-        "radius": "md",
-        "element": "div"
+        "radius": "md"
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
@@ -596,10 +545,7 @@
         "swift": null
       },
       "storyId": "box-react--surface-subtle",
-      "sweep": {
-        "prop": "surface",
-        "value": "subtle"
-      },
+      "sweep": null,
       "decorated": false,
       "harness": null,
       "primary": false
@@ -607,12 +553,12 @@
     {
       "title": "Surface Strong",
       "args": {
+        "border": false,
+        "element": "div",
         "children": "A panel of settings",
         "inset": "md",
         "surface": "strong",
-        "border": false,
-        "radius": "md",
-        "element": "div"
+        "radius": "md"
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"strong\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
@@ -627,10 +573,7 @@
         "swift": null
       },
       "storyId": "box-react--surface-strong",
-      "sweep": {
-        "prop": "surface",
-        "value": "strong"
-      },
+      "sweep": null,
       "decorated": false,
       "harness": null,
       "primary": false
@@ -638,15 +581,15 @@
     {
       "title": "Border",
       "args": {
+        "border": true,
+        "element": "div",
         "children": "A panel of settings",
         "inset": "md",
         "surface": "subtle",
-        "border": true,
-        "radius": "md",
-        "element": "div"
+        "radius": "md"
       },
       "snippets": {
-        "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" border radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
+        "react": "import { Box, Text } from '@design-schema/react';\n\n<Box border inset=\"md\" surface=\"subtle\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
         "lit": "<ds-box inset=\"md\" surface=\"subtle\" border radius=\"md\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
         "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"md\" border>{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
         "swift": null
@@ -658,23 +601,20 @@
         "swift": null
       },
       "storyId": "box-react--border",
-      "sweep": {
-        "prop": "border",
-        "value": true
-      },
+      "sweep": null,
       "decorated": false,
       "harness": null,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Radius None",
       "args": {
+        "border": false,
+        "element": "div",
         "children": "A panel of settings",
         "inset": "md",
         "surface": "subtle",
-        "border": false,
-        "radius": "none",
-        "element": "div"
+        "radius": "none"
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"none\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
@@ -689,10 +629,7 @@
         "swift": null
       },
       "storyId": "box-react--radius-none",
-      "sweep": {
-        "prop": "radius",
-        "value": "none"
-      },
+      "sweep": null,
       "decorated": false,
       "harness": null,
       "primary": false
@@ -700,12 +637,12 @@
     {
       "title": "Radius Sm",
       "args": {
+        "border": false,
+        "element": "div",
         "children": "A panel of settings",
         "inset": "md",
         "surface": "subtle",
-        "border": false,
-        "radius": "sm",
-        "element": "div"
+        "radius": "sm"
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"sm\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
@@ -720,10 +657,7 @@
         "swift": null
       },
       "storyId": "box-react--radius-sm",
-      "sweep": {
-        "prop": "radius",
-        "value": "sm"
-      },
+      "sweep": null,
       "decorated": false,
       "harness": null,
       "primary": false
@@ -731,12 +665,12 @@
     {
       "title": "Radius Md",
       "args": {
+        "border": false,
+        "element": "div",
         "children": "A panel of settings",
         "inset": "md",
         "surface": "subtle",
-        "border": false,
-        "radius": "md",
-        "element": "div"
+        "radius": "md"
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
@@ -751,10 +685,7 @@
         "swift": null
       },
       "storyId": "box-react--radius-md",
-      "sweep": {
-        "prop": "radius",
-        "value": "md"
-      },
+      "sweep": null,
       "decorated": false,
       "harness": null,
       "primary": false
@@ -762,12 +693,12 @@
     {
       "title": "Radius Lg",
       "args": {
+        "border": false,
+        "element": "div",
         "children": "A panel of settings",
         "inset": "md",
         "surface": "subtle",
-        "border": false,
-        "radius": "lg",
-        "element": "div"
+        "radius": "lg"
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"lg\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
@@ -782,10 +713,7 @@
         "swift": null
       },
       "storyId": "box-react--radius-lg",
-      "sweep": {
-        "prop": "radius",
-        "value": "lg"
-      },
+      "sweep": null,
       "decorated": false,
       "harness": null,
       "primary": false
@@ -793,12 +721,12 @@
     {
       "title": "Radius Full",
       "args": {
+        "border": false,
+        "element": "div",
         "children": "A panel of settings",
         "inset": "md",
         "surface": "subtle",
-        "border": false,
-        "radius": "full",
-        "element": "div"
+        "radius": "full"
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"full\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
@@ -813,10 +741,7 @@
         "swift": null
       },
       "storyId": "box-react--radius-full",
-      "sweep": {
-        "prop": "radius",
-        "value": "full"
-      },
+      "sweep": null,
       "decorated": false,
       "harness": null,
       "primary": false
@@ -824,15 +749,15 @@
     {
       "title": "Element Div",
       "args": {
+        "border": false,
+        "element": "div",
         "children": "A panel of settings",
         "inset": "md",
         "surface": "subtle",
-        "border": false,
-        "radius": "md",
-        "element": "div"
+        "radius": "md"
       },
       "snippets": {
-        "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"div\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
+        "react": "import { Box, Text } from '@design-schema/react';\n\n<Box element=\"div\" inset=\"md\" surface=\"subtle\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
         "lit": "<ds-box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"div\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
         "rn": null,
         "swift": null
@@ -844,10 +769,7 @@
         "swift": null
       },
       "storyId": "box-react--element-div",
-      "sweep": {
-        "prop": "element",
-        "value": "div"
-      },
+      "sweep": null,
       "decorated": false,
       "harness": null,
       "primary": false
@@ -855,15 +777,15 @@
     {
       "title": "Element Section",
       "args": {
+        "border": false,
+        "element": "section",
         "children": "A panel of settings",
         "inset": "md",
         "surface": "subtle",
-        "border": false,
-        "radius": "md",
-        "element": "section"
+        "radius": "md"
       },
       "snippets": {
-        "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"section\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
+        "react": "import { Box, Text } from '@design-schema/react';\n\n<Box element=\"section\" inset=\"md\" surface=\"subtle\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
         "lit": "<ds-box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"section\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
         "rn": null,
         "swift": null
@@ -875,10 +797,7 @@
         "swift": null
       },
       "storyId": "box-react--element-section",
-      "sweep": {
-        "prop": "element",
-        "value": "section"
-      },
+      "sweep": null,
       "decorated": false,
       "harness": null,
       "primary": false
@@ -886,15 +805,15 @@
     {
       "title": "Element Article",
       "args": {
+        "border": false,
+        "element": "article",
         "children": "A panel of settings",
         "inset": "md",
         "surface": "subtle",
-        "border": false,
-        "radius": "md",
-        "element": "article"
+        "radius": "md"
       },
       "snippets": {
-        "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"article\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
+        "react": "import { Box, Text } from '@design-schema/react';\n\n<Box element=\"article\" inset=\"md\" surface=\"subtle\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
         "lit": "<ds-box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"article\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
         "rn": null,
         "swift": null
@@ -906,10 +825,7 @@
         "swift": null
       },
       "storyId": "box-react--element-article",
-      "sweep": {
-        "prop": "element",
-        "value": "article"
-      },
+      "sweep": null,
       "decorated": false,
       "harness": null,
       "primary": false
@@ -917,15 +833,15 @@
     {
       "title": "Element Aside",
       "args": {
+        "border": false,
+        "element": "aside",
         "children": "A panel of settings",
         "inset": "md",
         "surface": "subtle",
-        "border": false,
-        "radius": "md",
-        "element": "aside"
+        "radius": "md"
       },
       "snippets": {
-        "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"aside\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
+        "react": "import { Box, Text } from '@design-schema/react';\n\n<Box element=\"aside\" inset=\"md\" surface=\"subtle\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
         "lit": "<ds-box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"aside\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
         "rn": null,
         "swift": null
@@ -937,10 +853,7 @@
         "swift": null
       },
       "storyId": "box-react--element-aside",
-      "sweep": {
-        "prop": "element",
-        "value": "aside"
-      },
+      "sweep": null,
       "decorated": false,
       "harness": null,
       "primary": false
@@ -948,15 +861,15 @@
     {
       "title": "Element Header",
       "args": {
+        "border": false,
+        "element": "header",
         "children": "A panel of settings",
         "inset": "md",
         "surface": "subtle",
-        "border": false,
-        "radius": "md",
-        "element": "header"
+        "radius": "md"
       },
       "snippets": {
-        "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"header\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
+        "react": "import { Box, Text } from '@design-schema/react';\n\n<Box element=\"header\" inset=\"md\" surface=\"subtle\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
         "lit": "<ds-box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"header\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
         "rn": null,
         "swift": null
@@ -968,10 +881,7 @@
         "swift": null
       },
       "storyId": "box-react--element-header",
-      "sweep": {
-        "prop": "element",
-        "value": "header"
-      },
+      "sweep": null,
       "decorated": false,
       "harness": null,
       "primary": false
@@ -979,15 +889,15 @@
     {
       "title": "Element Footer",
       "args": {
+        "border": false,
+        "element": "footer",
         "children": "A panel of settings",
         "inset": "md",
         "surface": "subtle",
-        "border": false,
-        "radius": "md",
-        "element": "footer"
+        "radius": "md"
       },
       "snippets": {
-        "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"footer\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
+        "react": "import { Box, Text } from '@design-schema/react';\n\n<Box element=\"footer\" inset=\"md\" surface=\"subtle\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
         "lit": "<ds-box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"footer\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
         "rn": null,
         "swift": null
@@ -999,10 +909,7 @@
         "swift": null
       },
       "storyId": "box-react--element-footer",
-      "sweep": {
-        "prop": "element",
-        "value": "footer"
-      },
+      "sweep": null,
       "decorated": false,
       "harness": null,
       "primary": false
@@ -1010,15 +917,15 @@
     {
       "title": "Element Main",
       "args": {
+        "border": false,
+        "element": "main",
         "children": "A panel of settings",
         "inset": "md",
         "surface": "subtle",
-        "border": false,
-        "radius": "md",
-        "element": "main"
+        "radius": "md"
       },
       "snippets": {
-        "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"main\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
+        "react": "import { Box, Text } from '@design-schema/react';\n\n<Box element=\"main\" inset=\"md\" surface=\"subtle\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
         "lit": "<ds-box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"main\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
         "rn": null,
         "swift": null
@@ -1030,10 +937,7 @@
         "swift": null
       },
       "storyId": "box-react--element-main",
-      "sweep": {
-        "prop": "element",
-        "value": "main"
-      },
+      "sweep": null,
       "decorated": false,
       "harness": null,
       "primary": false
@@ -1041,15 +945,15 @@
     {
       "title": "Element Nav",
       "args": {
+        "border": false,
+        "element": "nav",
         "children": "A panel of settings",
         "inset": "md",
         "surface": "subtle",
-        "border": false,
-        "radius": "md",
-        "element": "nav"
+        "radius": "md"
       },
       "snippets": {
-        "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"nav\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
+        "react": "import { Box, Text } from '@design-schema/react';\n\n<Box element=\"nav\" inset=\"md\" surface=\"subtle\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
         "lit": "<ds-box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"nav\">\n  <ds-text>A panel of settings</ds-text>\n</ds-box>",
         "rn": null,
         "swift": null
@@ -1061,10 +965,40 @@
         "swift": null
       },
       "storyId": "box-react--element-nav",
-      "sweep": {
-        "prop": "element",
-        "value": "nav"
+      "sweep": null,
+      "decorated": false,
+      "harness": null,
+      "primary": false
+    },
+    {
+      "title": "With Overrides",
+      "args": {
+        "border": true,
+        "element": "div",
+        "children": "A panel of settings",
+        "inset": "md",
+        "surface": "subtle",
+        "radius": "md",
+        "overrides": {
+          "paddingBlock": "layout.inset.lg",
+          "border": "color.border.strong",
+          "radius": "radius.sm"
+        }
       },
+      "snippets": {
+        "react": "import { Box, Text } from '@design-schema/react';\n\n<Box\n  border\n  inset=\"md\"\n  surface=\"subtle\"\n  radius=\"md\"\n  overrides={{\n    paddingBlock: 'layout.inset.lg',\n    border: 'color.border.strong',\n    radius: 'radius.sm',\n  }}\n>{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n      <ds-box\n        inset=\"md\"\n        surface=\"subtle\"\n        border\n        radius=\"md\"\n        .overrides=${{\n    paddingBlock: 'layout.inset.lg',\n    border: 'color.border.focus',\n    borderWidth: 'border.width.focus',\n    radius: 'radius.lg',\n  }}\n      >\n        <ds-text>A panel of settings</ds-text>\n      </ds-box>\n`;",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box\n  inset=\"md\"\n  border\n  radius=\"sm\"\n  overrides={{ paddingBlock: 'layout.inset.xl', radius: 'radius.lg', border: 'color.border.strong' }}\n>{typeof 'Box content' === 'string' ? <Text>{'Box content'}</Text> : 'Box content'}</Box>",
+        "swift": null
+      },
+      "stories": {
+        "react": "WithOverrides",
+        "lit": "WithOverrides",
+        "rn": "WithOverrides",
+        "swift": null
+      },
+      "storyId": "box-react--with-overrides",
+      "sweep": null,
       "decorated": false,
       "harness": null,
       "primary": false
@@ -1072,12 +1006,12 @@
     {
       "title": "Highlighted Panel",
       "args": {
+        "border": false,
+        "element": "div",
         "children": "A panel of settings",
         "inset": "md",
         "surface": "subtle",
-        "border": false,
-        "radius": "md",
-        "element": "div"
+        "radius": "md"
       },
       "snippets": {
         "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\">{typeof 'A panel of settings' === 'string' ? <Text>{'A panel of settings'}</Text> : 'A panel of settings'}</Box>",
@@ -1095,20 +1029,18 @@
       "sweep": null,
       "decorated": false,
       "harness": null,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Bordered Row",
       "args": {
-        "children": "A row of data",
-        "inset": "sm",
-        "surface": "subtle",
         "border": true,
-        "radius": "md",
-        "element": "div"
+        "element": "div",
+        "children": "A row of data",
+        "inset": "sm"
       },
       "snippets": {
-        "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"sm\" surface=\"subtle\" border radius=\"md\">{typeof 'A row of data' === 'string' ? <Text>{'A row of data'}</Text> : 'A row of data'}</Box>",
+        "react": "import { Box, Text } from '@design-schema/react';\n\n<Box border inset=\"sm\">{typeof 'A row of data' === 'string' ? <Text>{'A row of data'}</Text> : 'A row of data'}</Box>",
         "lit": "<ds-box inset=\"sm\" border>\n  <ds-text>A row of data</ds-text>\n</ds-box>",
         "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box inset=\"sm\" border>{typeof 'A row of data' === 'string' ? <Text>{'A row of data'}</Text> : 'A row of data'}</Box>",
         "swift": null
@@ -1123,24 +1055,22 @@
       "sweep": null,
       "decorated": false,
       "harness": null,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Hero Band",
       "args": {
-        "children": "A hero band",
-        "inset": "md",
-        "surface": "strong",
         "border": false,
-        "radius": "md",
         "element": "div",
+        "children": "A hero band",
         "insetBlock": "xl",
-        "insetInline": "lg"
+        "insetInline": "lg",
+        "surface": "strong"
       },
       "snippets": {
-        "react": "import { Box, Text } from '@design-schema/react';\n\n<Box\n  inset=\"md\"\n  surface=\"strong\"\n  radius=\"md\"\n  insetBlock=\"xl\"\n  insetInline=\"lg\"\n>{typeof 'A hero band' === 'string' ? <Text>{'A hero band'}</Text> : 'A hero band'}</Box>",
+        "react": "import { Box, Text } from '@design-schema/react';\n\n<Box insetBlock=\"xl\" insetInline=\"lg\" surface=\"strong\">{typeof 'A hero band' === 'string' ? <Text>{'A hero band'}</Text> : 'A hero band'}</Box>",
         "lit": "<ds-box inset-block=\"xl\" inset-inline=\"lg\" surface=\"strong\">\n  <ds-text>A hero band</ds-text>\n</ds-box>",
-        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box insetBlock=\"xl\" insetInline=\"lg\" surface=\"strong\">{typeof 'A hero band' === 'string' ? <Text>{'A hero band'}</Text> : 'A hero band'}</Box>",
+        "rn": "import { Box, Text } from '@design-schema/rn';\n\n<Box surface=\"strong\" insetBlock=\"xl\" insetInline=\"lg\">{typeof 'A hero band' === 'string' ? <Text>{'A hero band'}</Text> : 'A hero band'}</Box>",
         "swift": null
       },
       "stories": {
@@ -1153,20 +1083,18 @@
       "sweep": null,
       "decorated": false,
       "harness": null,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Navigation Region",
       "args": {
-        "children": "The sidebar links",
-        "inset": "md",
-        "surface": "subtle",
         "border": false,
-        "radius": "md",
-        "element": "nav"
+        "element": "nav",
+        "children": "The sidebar links",
+        "inset": "md"
       },
       "snippets": {
-        "react": "import { Box, Text } from '@design-schema/react';\n\n<Box inset=\"md\" surface=\"subtle\" radius=\"md\" element=\"nav\">{typeof 'The sidebar links' === 'string' ? <Text>{'The sidebar links'}</Text> : 'The sidebar links'}</Box>",
+        "react": "import { Box, Text } from '@design-schema/react';\n\n<Box element=\"nav\" inset=\"md\">{typeof 'The sidebar links' === 'string' ? <Text>{'The sidebar links'}</Text> : 'The sidebar links'}</Box>",
         "lit": "<ds-box inset=\"md\" element=\"nav\">\n  <ds-text>The sidebar links</ds-text>\n</ds-box>",
         "rn": null,
         "swift": null
@@ -1181,7 +1109,7 @@
       "sweep": null,
       "decorated": false,
       "harness": null,
-      "primary": true
+      "primary": false
     }
   ]
 }

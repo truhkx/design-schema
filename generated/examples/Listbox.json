@@ -24,21 +24,13 @@
           {
             "value": "cherry",
             "label": "Cherry"
-          },
-          {
-            "value": "date",
-            "label": "Date"
-          },
-          {
-            "value": "elderberry",
-            "label": "Elderberry"
           }
         ]
       },
       "snippets": {
-        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\n<Listbox label=\"Fruit\" options={FRUITS} />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\nhtml`\n  <ds-listbox label=\"Fruit\" .options=${FRUITS}></ds-listbox>\n`;",
-        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Assignee\"\n  options={[\n    { value: 'alex', label: 'Alex Kim', description: 'Design' },\n    { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n    { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n    { value: 'lee', label: 'Lee Chen', description: 'Product' },\n  ]}\n  defaultValue=\"sam\"\n/>",
+        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst SINGLE_PICKER: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n];\n\n<Listbox label=\"Fruit\" options={SINGLE_PICKER} />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst SINGLE_PICKER: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n];\n\nhtml`\n  <ds-listbox label=\"Fruit\" .options=${SINGLE_PICKER}></ds-listbox>\n`;",
+        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Fruit\"\n  options={[\n    { value: 'apple', label: 'Apple' },\n    { value: 'banana', label: 'Banana' },\n    { value: 'cherry', label: 'Cherry' },\n  ]}\n/>",
         "swift": null
       },
       "stories": {
@@ -120,7 +112,7 @@
       "snippets": {
         "react": "import { Listbox, type ListboxItem, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\nconst MANY_FRUITS: ListboxItem[] = [\n  ...FRUITS,\n  { value: 'fig', label: 'Fig' },\n  { value: 'grape', label: 'Grape' },\n  { value: 'honeydew', label: 'Honeydew' },\n  { value: 'kiwi', label: 'Kiwi' },\n  { value: 'lemon', label: 'Lemon' },\n  { value: 'mango', label: 'Mango' },\n  { value: 'nectarine', label: 'Nectarine' },\n  { value: 'orange', label: 'Orange' },\n  { value: 'papaya', label: 'Papaya' },\n];\n\n<Listbox label=\"Fruit\" options={MANY_FRUITS} maxVisible=\"5\" />",
         "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxItem, ListboxOption } from '@design-schema/lit';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\nconst MANY_FRUITS: ListboxItem[] = [\n  ...FRUITS,\n  { value: 'fig', label: 'Fig' },\n  { value: 'grape', label: 'Grape' },\n  { value: 'honeydew', label: 'Honeydew' },\n  { value: 'kiwi', label: 'Kiwi' },\n  { value: 'lemon', label: 'Lemon' },\n  { value: 'mango', label: 'Mango' },\n  { value: 'nectarine', label: 'Nectarine' },\n  { value: 'orange', label: 'Orange' },\n  { value: 'papaya', label: 'Papaya' },\n];\n\nhtml`\n  <ds-listbox label=\"Fruit\" .options=${MANY_FRUITS} max-visible=\"5\"></ds-listbox>\n`;",
-        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Assignee\"\n  options={[\n    { value: 'alex', label: 'Alex Kim', description: 'Design' },\n    { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n    { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n    { value: 'lee', label: 'Lee Chen', description: 'Product' },\n  ]}\n  defaultValue=\"sam\"\n  maxVisible=\"5\"\n/>",
+        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Fruit\"\n  options={[\n    { value: 'apple', label: 'Apple' },\n    { value: 'banana', label: 'Banana' },\n    { value: 'cherry', label: 'Cherry' },\n  ]}\n  maxVisible=\"5\"\n/>",
         "swift": null
       },
       "stories": {
@@ -202,7 +194,7 @@
       "snippets": {
         "react": "import { Listbox, type ListboxItem, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\nconst MANY_FRUITS: ListboxItem[] = [\n  ...FRUITS,\n  { value: 'fig', label: 'Fig' },\n  { value: 'grape', label: 'Grape' },\n  { value: 'honeydew', label: 'Honeydew' },\n  { value: 'kiwi', label: 'Kiwi' },\n  { value: 'lemon', label: 'Lemon' },\n  { value: 'mango', label: 'Mango' },\n  { value: 'nectarine', label: 'Nectarine' },\n  { value: 'orange', label: 'Orange' },\n  { value: 'papaya', label: 'Papaya' },\n];\n\n<Listbox label=\"Fruit\" options={MANY_FRUITS} maxVisible=\"8\" />",
         "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxItem, ListboxOption } from '@design-schema/lit';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\nconst MANY_FRUITS: ListboxItem[] = [\n  ...FRUITS,\n  { value: 'fig', label: 'Fig' },\n  { value: 'grape', label: 'Grape' },\n  { value: 'honeydew', label: 'Honeydew' },\n  { value: 'kiwi', label: 'Kiwi' },\n  { value: 'lemon', label: 'Lemon' },\n  { value: 'mango', label: 'Mango' },\n  { value: 'nectarine', label: 'Nectarine' },\n  { value: 'orange', label: 'Orange' },\n  { value: 'papaya', label: 'Papaya' },\n];\n\nhtml`\n  <ds-listbox label=\"Fruit\" .options=${MANY_FRUITS} max-visible=\"8\"></ds-listbox>\n`;",
-        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Assignee\"\n  options={[\n    { value: 'alex', label: 'Alex Kim', description: 'Design' },\n    { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n    { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n    { value: 'lee', label: 'Lee Chen', description: 'Product' },\n  ]}\n  defaultValue=\"sam\"\n  maxVisible=\"8\"\n/>",
+        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Fruit\"\n  options={[\n    { value: 'apple', label: 'Apple' },\n    { value: 'banana', label: 'Banana' },\n    { value: 'cherry', label: 'Cherry' },\n  ]}\n  maxVisible=\"8\"\n/>",
         "swift": null
       },
       "stories": {
@@ -284,7 +276,7 @@
       "snippets": {
         "react": "import { Listbox, type ListboxItem, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\nconst MANY_FRUITS: ListboxItem[] = [\n  ...FRUITS,\n  { value: 'fig', label: 'Fig' },\n  { value: 'grape', label: 'Grape' },\n  { value: 'honeydew', label: 'Honeydew' },\n  { value: 'kiwi', label: 'Kiwi' },\n  { value: 'lemon', label: 'Lemon' },\n  { value: 'mango', label: 'Mango' },\n  { value: 'nectarine', label: 'Nectarine' },\n  { value: 'orange', label: 'Orange' },\n  { value: 'papaya', label: 'Papaya' },\n];\n\n<Listbox label=\"Fruit\" options={MANY_FRUITS} maxVisible=\"12\" />",
         "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxItem, ListboxOption } from '@design-schema/lit';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\nconst MANY_FRUITS: ListboxItem[] = [\n  ...FRUITS,\n  { value: 'fig', label: 'Fig' },\n  { value: 'grape', label: 'Grape' },\n  { value: 'honeydew', label: 'Honeydew' },\n  { value: 'kiwi', label: 'Kiwi' },\n  { value: 'lemon', label: 'Lemon' },\n  { value: 'mango', label: 'Mango' },\n  { value: 'nectarine', label: 'Nectarine' },\n  { value: 'orange', label: 'Orange' },\n  { value: 'papaya', label: 'Papaya' },\n];\n\nhtml`\n  <ds-listbox label=\"Fruit\" .options=${MANY_FRUITS} max-visible=\"12\"></ds-listbox>\n`;",
-        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Assignee\"\n  options={[\n    { value: 'alex', label: 'Alex Kim', description: 'Design' },\n    { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n    { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n    { value: 'lee', label: 'Lee Chen', description: 'Product' },\n  ]}\n  defaultValue=\"sam\"\n  maxVisible=\"12\"\n/>",
+        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Fruit\"\n  options={[\n    { value: 'apple', label: 'Apple' },\n    { value: 'banana', label: 'Banana' },\n    { value: 'cherry', label: 'Cherry' },\n  ]}\n  maxVisible=\"12\"\n/>",
         "swift": null
       },
       "stories": {
@@ -366,7 +358,7 @@
       "snippets": {
         "react": "import { Listbox, type ListboxItem, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\nconst MANY_FRUITS: ListboxItem[] = [\n  ...FRUITS,\n  { value: 'fig', label: 'Fig' },\n  { value: 'grape', label: 'Grape' },\n  { value: 'honeydew', label: 'Honeydew' },\n  { value: 'kiwi', label: 'Kiwi' },\n  { value: 'lemon', label: 'Lemon' },\n  { value: 'mango', label: 'Mango' },\n  { value: 'nectarine', label: 'Nectarine' },\n  { value: 'orange', label: 'Orange' },\n  { value: 'papaya', label: 'Papaya' },\n];\n\n<Listbox label=\"Fruit\" options={MANY_FRUITS} maxVisible=\"all\" />",
         "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxItem, ListboxOption } from '@design-schema/lit';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\nconst MANY_FRUITS: ListboxItem[] = [\n  ...FRUITS,\n  { value: 'fig', label: 'Fig' },\n  { value: 'grape', label: 'Grape' },\n  { value: 'honeydew', label: 'Honeydew' },\n  { value: 'kiwi', label: 'Kiwi' },\n  { value: 'lemon', label: 'Lemon' },\n  { value: 'mango', label: 'Mango' },\n  { value: 'nectarine', label: 'Nectarine' },\n  { value: 'orange', label: 'Orange' },\n  { value: 'papaya', label: 'Papaya' },\n];\n\nhtml`\n  <ds-listbox label=\"Fruit\" .options=${MANY_FRUITS} max-visible=\"all\"></ds-listbox>\n`;",
-        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Assignee\"\n  options={[\n    { value: 'alex', label: 'Alex Kim', description: 'Design' },\n    { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n    { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n    { value: 'lee', label: 'Lee Chen', description: 'Product' },\n  ]}\n  defaultValue=\"sam\"\n  maxVisible=\"all\"\n/>",
+        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Fruit\"\n  options={[\n    { value: 'apple', label: 'Apple' },\n    { value: 'banana', label: 'Banana' },\n    { value: 'cherry', label: 'Cherry' },\n  ]}\n  maxVisible=\"all\"\n/>",
         "swift": null
       },
       "stories": {
@@ -401,9 +393,9 @@
         ]
       },
       "snippets": {
-        "react": "import { Listbox } from '@design-schema/react';\n\n<Listbox\n  label=\"Fruit\"\n  options={[\n    { value: 'apple', label: 'Apple' },\n    { value: 'banana', label: 'Banana' },\n    { value: 'cherry', label: 'Cherry' },\n  ]}\n/>",
+        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst SINGLE_PICKER: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n];\n\n<Listbox label=\"Fruit\" options={SINGLE_PICKER} />",
         "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n      <ds-listbox\n        label=\"Fruit\"\n        .options=${[\n    { value: 'apple', label: 'Apple' },\n    { value: 'banana', label: 'Banana' },\n    { value: 'cherry', label: 'Cherry' },\n  ]}\n      ></ds-listbox>\n`;",
-        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Fruit\"\n  options={[\n    { value: 'apple', label: 'Apple' },\n    { value: 'banana', label: 'Banana' },\n    { value: 'cherry', label: 'Cherry' },\n  ]}\n  defaultValue=\"sam\"\n/>",
+        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Fruit\"\n  options={[\n    { value: 'apple', label: 'Apple' },\n    { value: 'banana', label: 'Banana' },\n    { value: 'cherry', label: 'Cherry' },\n  ]}\n/>",
         "swift": null
       },
       "stories": {
@@ -444,7 +436,7 @@
       "snippets": {
         "react": "import { Listbox } from '@design-schema/react';\n\n<Listbox\n  label=\"Roles\"\n  options={[\n    { value: 'frontend', label: 'Frontend' },\n    { value: 'backend', label: 'Backend' },\n    { value: 'design', label: 'Design' },\n  ]}\n  multiple\n  defaultValue={['frontend']}\n/>",
         "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n      <ds-listbox\n        label=\"Roles\"\n        .options=${[\n    { value: 'frontend', label: 'Frontend' },\n    { value: 'backend', label: 'Backend' },\n    { value: 'design', label: 'Design' },\n  ]}\n        multiple\n        .defaultValue=${['frontend']}\n      ></ds-listbox>\n`;",
-        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Roles\"\n  options={[\n    { value: 'frontend', label: 'Frontend' },\n    { value: 'backend', label: 'Backend' },\n    { value: 'design', label: 'Design' },\n  ]}\n  defaultValue={['frontend']}\n  multiple\n/>",
+        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Roles\"\n  options={[\n    { value: 'frontend', label: 'Frontend' },\n    { value: 'backend', label: 'Backend' },\n    { value: 'design', label: 'Design' },\n  ]}\n  multiple\n  defaultValue={['frontend']}\n/>",
         "swift": null
       },
       "stories": {
@@ -491,7 +483,7 @@
       "snippets": {
         "react": "import { Listbox } from '@design-schema/react';\n\n<Listbox\n  label=\"Role\"\n  options={[\n    {\n      group: 'Engineering',\n      options: [\n        { value: 'frontend', label: 'Frontend' },\n        { value: 'backend', label: 'Backend' },\n      ],\n    },\n    { group: 'Design', options: [{ value: 'product', label: 'Product design' }] },\n  ]}\n/>",
         "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n      <ds-listbox\n        label=\"Role\"\n        .options=${[\n    {\n      group: 'Engineering',\n      options: [\n  { value: 'frontend', label: 'Frontend' },\n  { value: 'backend', label: 'Backend' },\n      ],\n    },\n    { group: 'Design', options: [{ value: 'product', label: 'Product design' }] },\n  ]}\n      ></ds-listbox>\n`;",
-        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Role\"\n  options={[\n    {\n      group: 'Engineering',\n      options: [\n        { value: 'frontend', label: 'Frontend' },\n        { value: 'backend', label: 'Backend' },\n      ],\n    },\n    { group: 'Design', options: [{ value: 'product', label: 'Product design' }] },\n  ]}\n  defaultValue=\"sam\"\n/>",
+        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Role\"\n  options={[\n    {\n      group: 'Engineering',\n      options: [\n        { value: 'frontend', label: 'Frontend' },\n        { value: 'backend', label: 'Backend' },\n      ],\n    },\n    { group: 'Design', options: [{ value: 'product', label: 'Product design' }] },\n  ]}\n/>",
         "swift": null
       },
       "stories": {
@@ -530,7 +522,7 @@
       "snippets": {
         "react": "import { Listbox } from '@design-schema/react';\n\n<Listbox\n  label=\"Country\"\n  options={[\n    { value: 'ca', label: 'Canada' },\n    { value: 'fr', label: 'France' },\n    { value: 'jp', label: 'Japan' },\n  ]}\n  embedded\n  maxVisible=\"5\"\n/>",
         "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n      <ds-listbox\n        label=\"Country\"\n        .options=${[\n    { value: 'ca', label: 'Canada' },\n    { value: 'fr', label: 'France' },\n    { value: 'jp', label: 'Japan' },\n  ]}\n        embedded\n        max-visible=\"5\"\n      ></ds-listbox>\n`;",
-        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Country\"\n  options={[\n    { value: 'ca', label: 'Canada' },\n    { value: 'fr', label: 'France' },\n    { value: 'jp', label: 'Japan' },\n  ]}\n  defaultValue=\"sam\"\n  maxVisible=\"5\"\n  embedded\n/>",
+        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Country\"\n  options={[\n    { value: 'ca', label: 'Canada' },\n    { value: 'fr', label: 'France' },\n    { value: 'jp', label: 'Japan' },\n  ]}\n  maxVisible=\"5\"\n  embedded\n/>",
         "swift": null
       },
       "stories": {
@@ -608,21 +600,13 @@
           {
             "value": "cherry",
             "label": "Cherry"
-          },
-          {
-            "value": "date",
-            "label": "Date"
-          },
-          {
-            "value": "elderberry",
-            "label": "Elderberry"
           }
         ],
         "selectionFollowsFocus": false
       },
       "snippets": {
-        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\n<Listbox label=\"Fruit\" options={FRUITS} selectionFollowsFocus={false} />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\nhtml`\n  <ds-listbox label=\"Fruit\" .options=${FRUITS}></ds-listbox>\n`;",
+        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst SINGLE_PICKER: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n];\n\n<Listbox label=\"Fruit\" options={SINGLE_PICKER} selectionFollowsFocus={false} />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst SINGLE_PICKER: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n];\n\nhtml`\n  <ds-listbox label=\"Fruit\" .options=${SINGLE_PICKER}></ds-listbox>\n`;",
         "rn": null,
         "swift": null
       },
@@ -657,23 +641,15 @@
           {
             "value": "cherry",
             "label": "Cherry"
-          },
-          {
-            "value": "date",
-            "label": "Date"
-          },
-          {
-            "value": "elderberry",
-            "label": "Elderberry"
           }
         ],
         "required": true,
         "name": "fruit"
       },
       "snippets": {
-        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\n<Listbox label=\"Fruit\" options={FRUITS} required name=\"fruit\" />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\nhtml`\n  <ds-listbox label=\"Fruit\" .options=${FRUITS} required name=\"fruit\"></ds-listbox>\n`;",
-        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Assignee\"\n  options={[\n    { value: 'alex', label: 'Alex Kim', description: 'Design' },\n    { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n    { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n    { value: 'lee', label: 'Lee Chen', description: 'Product' },\n  ]}\n  required\n  name=\"assignee\"\n/>",
+        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst SINGLE_PICKER: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n];\n\n<Listbox label=\"Fruit\" options={SINGLE_PICKER} required name=\"fruit\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst SINGLE_PICKER: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n];\n\nhtml`\n  <ds-listbox label=\"Fruit\" .options=${SINGLE_PICKER} required name=\"fruit\"></ds-listbox>\n`;",
+        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Fruit\"\n  options={[\n    { value: 'apple', label: 'Apple' },\n    { value: 'banana', label: 'Banana' },\n    { value: 'cherry', label: 'Cherry' },\n  ]}\n  required\n  name=\"fruit\"\n/>",
         "swift": null
       },
       "stories": {
@@ -707,22 +683,14 @@
           {
             "value": "cherry",
             "label": "Cherry"
-          },
-          {
-            "value": "date",
-            "label": "Date"
-          },
-          {
-            "value": "elderberry",
-            "label": "Elderberry"
           }
         ],
         "invalid": true
       },
       "snippets": {
-        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\n<Listbox label=\"Fruit\" options={FRUITS} invalid />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\nhtml`\n  <ds-listbox label=\"Fruit\" .options=${FRUITS} invalid></ds-listbox>\n`;",
-        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Assignee\"\n  options={[\n    { value: 'alex', label: 'Alex Kim', description: 'Design' },\n    { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n    { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n    { value: 'lee', label: 'Lee Chen', description: 'Product' },\n  ]}\n  defaultValue=\"sam\"\n  invalid\n/>",
+        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst SINGLE_PICKER: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n];\n\n<Listbox label=\"Fruit\" options={SINGLE_PICKER} invalid />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst SINGLE_PICKER: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n];\n\nhtml`\n  <ds-listbox label=\"Fruit\" .options=${SINGLE_PICKER} invalid></ds-listbox>\n`;",
+        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Fruit\"\n  options={[\n    { value: 'apple', label: 'Apple' },\n    { value: 'banana', label: 'Banana' },\n    { value: 'cherry', label: 'Cherry' },\n  ]}\n  invalid\n/>",
         "swift": null
       },
       "stories": {
@@ -756,22 +724,14 @@
           {
             "value": "cherry",
             "label": "Cherry"
-          },
-          {
-            "value": "date",
-            "label": "Date"
-          },
-          {
-            "value": "elderberry",
-            "label": "Elderberry"
           }
         ],
         "error": "Fix this before continuing."
       },
       "snippets": {
-        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\n<Listbox label=\"Fruit\" options={FRUITS} error=\"Fix this before continuing.\" />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\nhtml`\n  <ds-listbox\n    label=\"Fruit\"\n    .options=${FRUITS}\n    .error=${'Fix this before continuing.'}\n  ></ds-listbox>\n`;",
-        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Assignee\"\n  options={[\n    { value: 'alex', label: 'Alex Kim', description: 'Design' },\n    { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n    { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n    { value: 'lee', label: 'Lee Chen', description: 'Product' },\n  ]}\n  defaultValue=\"sam\"\n  error=\"Choose an assignee before continuing.\"\n/>",
+        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst SINGLE_PICKER: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n];\n\n<Listbox\n  label=\"Fruit\"\n  options={SINGLE_PICKER}\n  error=\"Fix this before continuing.\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst SINGLE_PICKER: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n];\n\nhtml`\n  <ds-listbox\n    label=\"Fruit\"\n    .options=${SINGLE_PICKER}\n    .error=${'Fix this before continuing.'}\n  ></ds-listbox>\n`;",
+        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Fruit\"\n  options={[\n    { value: 'apple', label: 'Apple' },\n    { value: 'banana', label: 'Banana' },\n    { value: 'cherry', label: 'Cherry' },\n  ]}\n  error=\"Choose a fruit before continuing.\"\n/>",
         "swift": null
       },
       "stories": {
@@ -802,23 +762,15 @@
           {
             "value": "cherry",
             "label": "Cherry"
-          },
-          {
-            "value": "date",
-            "label": "Date"
-          },
-          {
-            "value": "elderberry",
-            "label": "Elderberry"
           }
         ],
         "disabled": true,
         "defaultValue": "banana"
       },
       "snippets": {
-        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\n<Listbox label=\"Fruit\" options={FRUITS} disabled defaultValue=\"banana\" />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\nhtml`\n  <ds-listbox\n    label=\"Fruit\"\n    .options=${FRUITS}\n    .defaultValue=${'banana'}\n    disabled\n  ></ds-listbox>\n`;",
-        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Assignee\"\n  options={[\n    { value: 'alex', label: 'Alex Kim', description: 'Design' },\n    { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n    { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n    { value: 'lee', label: 'Lee Chen', description: 'Product' },\n  ]}\n  defaultValue=\"sam\"\n  disabled\n/>",
+        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst SINGLE_PICKER: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n];\n\n<Listbox label=\"Fruit\" options={SINGLE_PICKER} disabled defaultValue=\"banana\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst SINGLE_PICKER: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n];\n\nhtml`\n  <ds-listbox\n    label=\"Fruit\"\n    .options=${SINGLE_PICKER}\n    .defaultValue=${'banana'}\n    disabled\n  ></ds-listbox>\n`;",
+        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Fruit\"\n  options={[\n    { value: 'apple', label: 'Apple' },\n    { value: 'banana', label: 'Banana' },\n    { value: 'cherry', label: 'Cherry' },\n  ]}\n  disabled\n  defaultValue=\"banana\"\n/>",
         "swift": null
       },
       "stories": {
@@ -843,7 +795,7 @@
       "snippets": {
         "react": "import { Listbox } from '@design-schema/react';\n\n<Listbox label=\"Fruit\" options={[]} loading />",
         "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-listbox label=\"Fruit\" .options=${[]} loading></ds-listbox>\n`;",
-        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox label=\"Assignee\" options={[]} defaultValue=\"sam\" loading />",
+        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox label=\"Fruit\" options={[]} loading />",
         "swift": null
       },
       "stories": {
@@ -874,22 +826,14 @@
           {
             "value": "cherry",
             "label": "Cherry"
-          },
-          {
-            "value": "date",
-            "label": "Date"
-          },
-          {
-            "value": "elderberry",
-            "label": "Elderberry"
           }
         ],
         "initialActiveValue": "cherry"
       },
       "snippets": {
-        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\n<Listbox label=\"Fruit\" options={FRUITS} initialActiveValue=\"cherry\" />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\nhtml`\n  <ds-listbox label=\"Fruit\" .options=${FRUITS} initial-active-value=\"cherry\"></ds-listbox>\n`;",
-        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Assignee\"\n  options={[\n    { value: 'alex', label: 'Alex Kim', description: 'Design' },\n    { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n    { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n    { value: 'lee', label: 'Lee Chen', description: 'Product' },\n  ]}\n  initialActiveValue=\"jo\"\n/>",
+        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst SINGLE_PICKER: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n];\n\n<Listbox label=\"Fruit\" options={SINGLE_PICKER} initialActiveValue=\"cherry\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst SINGLE_PICKER: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n];\n\nhtml`\n  <ds-listbox label=\"Fruit\" .options=${SINGLE_PICKER} initial-active-value=\"cherry\"></ds-listbox>\n`;",
+        "rn": "import { Listbox, type ListboxItem } from '@design-schema/rn';\n\nconst people: ListboxItem[] = [\n  { value: 'alex', label: 'Alex Kim', description: 'Design' },\n  { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n  { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n  { value: 'lee', label: 'Lee Chen', description: 'Product' },\n];\n\n<Listbox label=\"Assignee\" options={people} initialActiveValue=\"jo\" />",
         "swift": null
       },
       "stories": {
@@ -913,7 +857,7 @@
       "snippets": {
         "react": "import { Listbox } from '@design-schema/react';\n\n<Listbox label=\"Fruit\" options={[]} />",
         "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-listbox label=\"Fruit\" .options=${[]}></ds-listbox>\n`;",
-        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Assignee\"\n  options={[]}\n  defaultValue=\"sam\"\n  emptyMessage=\"No matching people\"\n/>",
+        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox label=\"Fruit\" options={[]} emptyMessage=\"No matching fruit\" />",
         "swift": null
       },
       "stories": {
@@ -969,21 +913,13 @@
           {
             "value": "cherry",
             "label": "Cherry"
-          },
-          {
-            "value": "date",
-            "label": "Date"
-          },
-          {
-            "value": "elderberry",
-            "label": "Elderberry"
           }
         ],
         "value": "cherry"
       },
       "snippets": {
-        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\n<Listbox label=\"Fruit\" options={FRUITS} value=\"cherry\" />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\nhtml`\n  <ds-listbox\n    label=\"Fruit\"\n    .options=${FRUITS}\n    .value=${'cherry'}\n  ></ds-listbox>\n`;",
+        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst SINGLE_PICKER: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n];\n\n<Listbox label=\"Fruit\" options={SINGLE_PICKER} value=\"cherry\" />",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst SINGLE_PICKER: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n];\n\nhtml`\n  <ds-listbox\n    label=\"Fruit\"\n    .options=${SINGLE_PICKER}\n    .value=${'cherry'}\n  ></ds-listbox>\n`;",
         "rn": null,
         "swift": null
       },
@@ -994,6 +930,101 @@
         "swift": null
       },
       "storyId": "listbox-react--controlled",
+      "sweep": null,
+      "decorated": false,
+      "harness": null,
+      "primary": false
+    },
+    {
+      "title": "Active Value",
+      "args": {
+        "label": "Fruit",
+        "options": [
+          {
+            "value": "apple",
+            "label": "Apple"
+          },
+          {
+            "value": "banana",
+            "label": "Banana"
+          },
+          {
+            "value": "cherry",
+            "label": "Cherry"
+          }
+        ],
+        "embedded": true,
+        "activeValue": "banana"
+      },
+      "snippets": {
+        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst SINGLE_PICKER: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n];\n\n<Listbox label=\"Fruit\" options={SINGLE_PICKER} embedded activeValue=\"banana\" />",
+        "lit": null,
+        "rn": "import { Listbox, type ListboxItem } from '@design-schema/rn';\n\nconst people: ListboxItem[] = [\n  { value: 'alex', label: 'Alex Kim', description: 'Design' },\n  { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n  { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n  { value: 'lee', label: 'Lee Chen', description: 'Product' },\n];\n\n<Listbox label=\"Assignee\" options={people} activeValue=\"jo\" />",
+        "swift": null
+      },
+      "stories": {
+        "react": "ActiveValue",
+        "lit": null,
+        "rn": "ActiveValue",
+        "swift": null
+      },
+      "storyId": "listbox-react--active-value",
+      "sweep": null,
+      "decorated": false,
+      "harness": null,
+      "primary": false
+    },
+    {
+      "title": "With Groups And Disabled",
+      "args": {
+        "label": "Assignee",
+        "options": [
+          {
+            "group": "Team",
+            "options": [
+              {
+                "value": "ana",
+                "label": "Ana Souza",
+                "description": "Product design"
+              },
+              {
+                "value": "bo",
+                "label": "Bo Lin",
+                "description": "Engineering"
+              },
+              {
+                "value": "cara",
+                "label": "Cara Nash",
+                "description": "Engineering",
+                "icon": "success"
+              },
+              {
+                "value": "deshawn",
+                "label": "DeShawn Reid",
+                "description": "Out of office",
+                "disabled": true
+              }
+            ]
+          },
+          {
+            "group": "Empty",
+            "options": []
+          }
+        ]
+      },
+      "snippets": {
+        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst PEOPLE: ListboxOption[] = [\n  { value: 'ana', label: 'Ana Souza', description: 'Product design' },\n  { value: 'bo', label: 'Bo Lin', description: 'Engineering' },\n  { value: 'cara', label: 'Cara Nash', description: 'Engineering', icon: 'success' },\n  { value: 'deshawn', label: 'DeShawn Reid', description: 'Out of office', disabled: true },\n];\n\n<Listbox\n  label=\"Assignee\"\n  options={[{ group: 'Team', options: PEOPLE }, { group: 'Empty', options: [] }]}\n/>",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "WithGroupsAndDisabled",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "listbox-react--with-groups-and-disabled",
       "sweep": null,
       "decorated": false,
       "harness": null,
@@ -1015,14 +1046,6 @@
           {
             "value": "cherry",
             "label": "Cherry"
-          },
-          {
-            "value": "date",
-            "label": "Date"
-          },
-          {
-            "value": "elderberry",
-            "label": "Elderberry"
           }
         ],
         "multiple": true,
@@ -1031,9 +1054,9 @@
         ]
       },
       "snippets": {
-        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\n<Listbox label=\"Fruit\" options={FRUITS} multiple defaultValue={['banana']} />",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\nhtml`\n  <ds-listbox\n    label=\"Fruit\"\n    .options=${FRUITS}\n    multiple\n    .defaultValue=${['banana']}\n  ></ds-listbox>\n`;",
-        "rn": "import { Listbox } from '@design-schema/rn';\n\n<Listbox\n  label=\"Reviewers\"\n  options={[\n    { value: 'alex', label: 'Alex Kim', description: 'Design' },\n    { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n    { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n    { value: 'lee', label: 'Lee Chen', description: 'Product' },\n  ]}\n  defaultValue={['sam', 'jo']}\n  multiple\n/>",
+        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst SINGLE_PICKER: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n];\n\n<Listbox\n  label=\"Fruit\"\n  options={SINGLE_PICKER}\n  multiple\n  defaultValue={['banana']}\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst SINGLE_PICKER: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n];\n\nhtml`\n  <ds-listbox\n    label=\"Fruit\"\n    .options=${SINGLE_PICKER}\n    multiple\n    .defaultValue=${['banana']}\n  ></ds-listbox>\n`;",
+        "rn": "import { Listbox, type ListboxItem } from '@design-schema/rn';\n\nconst people: ListboxItem[] = [\n  { value: 'alex', label: 'Alex Kim', description: 'Design' },\n  { value: 'sam', label: 'Sam Patel', description: 'Engineering' },\n  { value: 'jo', label: 'Jo Rivera', description: 'Engineering' },\n  { value: 'lee', label: 'Lee Chen', description: 'Product' },\n];\n\n<Listbox\n  label=\"Reviewers\"\n  options={people}\n  multiple\n  defaultValue={['sam', 'jo']}\n/>",
         "swift": null
       },
       "stories": {
@@ -1064,21 +1087,13 @@
           {
             "value": "cherry",
             "label": "Cherry"
-          },
-          {
-            "value": "date",
-            "label": "Date"
-          },
-          {
-            "value": "elderberry",
-            "label": "Elderberry"
           }
         ],
         "labelledBy": "listbox-story-label"
       },
       "snippets": {
-        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\n<div>\n  <p id=\"listbox-story-label\">Favourite fruit</p>\n  <Listbox\n    label=\"Fruit\"\n    options={FRUITS}\n    labelledBy=\"listbox-story-label\"\n  />\n</div>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst FRUITS: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n  { value: 'date', label: 'Date' },\n  { value: 'elderberry', label: 'Elderberry' },\n];\n\nhtml`\n  <div>\n    <p id=\"listbox-story-label\">Favourite fruit</p>\n    <ds-listbox label=\"Fruit\" labelled-by=\"listbox-story-label\" .options=${FRUITS}></ds-listbox>\n  </div>\n`;",
+        "react": "import { Listbox, type ListboxOption } from '@design-schema/react';\n\nconst SINGLE_PICKER: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n];\n\n<div>\n  <p id=\"listbox-story-label\">Favourite fruit</p>\n  <Listbox\n    label=\"Fruit\"\n    options={SINGLE_PICKER}\n    labelledBy=\"listbox-story-label\"\n  />\n</div>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { ListboxOption } from '@design-schema/lit';\n\nconst SINGLE_PICKER: ListboxOption[] = [\n  { value: 'apple', label: 'Apple' },\n  { value: 'banana', label: 'Banana' },\n  { value: 'cherry', label: 'Cherry' },\n];\n\nhtml`\n  <div>\n    <p id=\"listbox-story-label\">Favourite fruit</p>\n    <ds-listbox label=\"Fruit\" labelled-by=\"listbox-story-label\" .options=${SINGLE_PICKER}></ds-listbox>\n  </div>\n`;",
         "rn": null,
         "swift": null
       },

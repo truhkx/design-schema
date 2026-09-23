@@ -1,8 +1,15 @@
 /* Link — styled only through Design Schema token custom properties.
-   Locked bindings (the three colours and the focus ring) get no --demo-link-* hook: their rules read
-   the token directly, so consumer CSS cannot swap an accessibility-bearing colour. */
+   Locked bindings (the three colours and the focus ring) are not in the `overrides` type but keep
+   their --demo-link-* hook, so page CSS can re-theme them and tools/naming.ts can rename them. */
 
 .demo-link {
+  --demo-link-color: var(--color-link);
+  --demo-link-color-hover: var(--color-link-hover);
+  --demo-link-color-visited: var(--color-link-visited);
+  --demo-link-focus-ring: var(--color-border-focus);
+  --demo-link-focus-ring-width: var(--border-width-focus);
+  --demo-link-focus-ring-radius: var(--radius-sm);
+  --demo-link-focus-ring-offset: var(--border-width-focus);
   --demo-link-underline-thickness: var(--border-width-thin);
   --demo-link-underline-offset: var(--space-1);
   --demo-link-external-icon-gap: var(--space-1);
@@ -20,24 +27,24 @@
 /* tone → default uses the link colors. inherit applies none of color, colorHover or colorVisited:
    the anchor keeps the inherited color (the root rule above), and the underline and icon follow it. */
 .demo-link--tone-default {
-  color: var(--color-link);
+  color: var(--demo-link-color);
 }
 
 /* colorVisited (web and Lit only). Declared before :hover so hover wins on a visited link. */
 .demo-link--tone-default:visited {
-  color: var(--color-link-visited);
+  color: var(--demo-link-color-visited);
 }
 
 /* colorHover: plain pointer :hover, not :active, with no (hover: hover) guard. */
 .demo-link--tone-default:hover {
-  color: var(--color-link-hover);
+  color: var(--demo-link-color-hover);
 }
 
 /* focus-visible (locked): the radius applies only here, so a resting inline anchor is not rounded. */
 .demo-link:focus-visible {
-  outline: var(--border-width-focus) solid var(--color-border-focus);
-  outline-offset: var(--border-width-focus);
-  border-radius: var(--radius-sm);
+  outline: var(--demo-link-focus-ring-width) solid var(--demo-link-focus-ring);
+  outline-offset: var(--demo-link-focus-ring-offset);
+  border-radius: var(--demo-link-focus-ring-radius);
 }
 
 @media (prefers-reduced-motion: reduce) {

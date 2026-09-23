@@ -504,6 +504,45 @@
       "primary": true
     },
     {
+      "title": "Initially Open",
+      "args": {
+        "items": [
+          {
+            "id": "setup",
+            "summary": "Getting set up",
+            "content": "Install the package and add the provider."
+          },
+          {
+            "id": "upgrade",
+            "summary": "Upgrading",
+            "content": "Read the migration notes before bumping a major."
+          }
+        ],
+        "headingLevel": "3",
+        "exclusive": false,
+        "divided": true,
+        "keepMounted": false,
+        "defaultValue": "setup"
+      },
+      "snippets": {
+        "react": "import { Accordion } from '@design-schema/react';\n\n<Accordion\n  items={[\n    { id: 'setup', summary: 'Getting set up', content: 'Install the package and add the provider.' },\n    { id: 'upgrade', summary: 'Upgrading', content: 'Read the migration notes before bumping a major.' },\n  ]}\n  defaultValue=\"setup\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n      <ds-accordion\n        .items=${[\n    { id: 'setup', summary: 'Getting set up', content: 'Install the package and add the provider.' },\n    { id: 'upgrade', summary: 'Upgrading', content: 'Read the migration notes before bumping a major.' },\n  ].map(({ id, summary, disabled }) => ({ id, summary, disabled }))}\n        heading-level=3\n        ?exclusive=\n        .divided=\n        ?keep-mounted=\n        .value=\n        .defaultValue=setup\n      >\n        <div slot=\"setup\"><ds-text>Install the package and add the provider.</ds-text></div>\n        <div slot=\"upgrade\"><ds-text>Read the migration notes before bumping a major.</ds-text></div>\n      </ds-accordion>\n`;",
+        "rn": "import { Accordion } from '@design-schema/rn';\n\n<Accordion\n  items={[\n    { id: 'setup', summary: 'Getting set up', content: 'Install the package and add the provider.' },\n    { id: 'upgrade', summary: 'Upgrading', content: 'Read the migration notes before bumping a major.' },\n  ]}\n  defaultValue=\"setup\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "InitiallyOpen",
+        "lit": "InitiallyOpen",
+        "rn": "InitiallyOpen",
+        "swift": null
+      },
+      "storyId": "accordion-react--initially-open",
+      "sweep": null,
+      "decorated": false,
+      "harness": null,
+      "primary": true
+    },
+    {
       "title": "Undivided",
       "args": {
         "items": [
@@ -604,7 +643,7 @@
       "sweep": null,
       "decorated": false,
       "harness": null,
-      "primary": true
+      "primary": false
     },
     {
       "title": "Disabled Item",

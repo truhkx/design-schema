@@ -42,6 +42,12 @@ describe('Callout', () => {
     expect(root!.getAttribute('role')).toBeNull();
   });
 
+  it('an-empty-heading-falls-back-to-the-body', () => {
+    const { root } = setup({ heading: '', children: 'Your card was declined.' });
+    expect(screen.getByText('Your card was declined.')).toBeTruthy();
+    expect(root!.querySelector('[data-part="heading"]')).toBeNull();
+  });
+
   it('the-heading-is-rendered', () => {
     setup({ heading: 'Payment failed' });
     expect(screen.getByText('Payment failed')).toBeTruthy();
@@ -86,5 +92,41 @@ describe('Callout', () => {
   it('renders-live-off', () => {
     const { root } = setup({ live: 'off' });
     expect(root).not.toBeNull();
+  });
+});
+
+describe('Callout focus-onward on dismiss', () => {
+  function renderBetween(onDismiss: () => void) {
+    render(
+      <div>
+        <button type="button">Before</button>
+        <Callout dismissible onDismiss={onDismiss}>
+          Body
+        </Callout>
+        <button type="button" disabled>
+          Disabled
+        </button>
+        <button type="button">After</button>
+      </div>,
+    );
+    return screen.getByRole('button', { name: 'Dismiss' });
+  }
+
+  it('moves focus to the next focusable after the alert before onDismiss fires', () => {
+    let focusedInHandler: Element | null = null;
+    const dismiss = renderBetween(() => {
+      focusedInHandler = document.activeElement;
+    });
+    dismiss.focus();
+    fireEvent.click(dismiss);
+    expect(focusedInHandler).toBe(screen.getByRole('button', { name: 'After' }));
+  });
+
+  it('leaves focus alone when focus was not inside the alert', () => {
+    const dismiss = renderBetween(() => {});
+    const before = screen.getByRole('button', { name: 'Before' });
+    before.focus();
+    fireEvent.click(dismiss);
+    expect(document.activeElement).toBe(before);
   });
 });

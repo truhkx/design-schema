@@ -847,6 +847,58 @@
       "decorated": false,
       "harness": null,
       "primary": false
+    },
+    {
+      "title": "Disabled Open",
+      "args": {
+        "label": "Country",
+        "name": "country",
+        "options": [
+          {
+            "value": "ca",
+            "label": "Canada"
+          },
+          {
+            "value": "fr",
+            "label": "France"
+          },
+          {
+            "value": "de",
+            "label": "Germany"
+          },
+          {
+            "value": "jp",
+            "label": "Japan"
+          },
+          {
+            "value": "mx",
+            "label": "Mexico"
+          },
+          {
+            "value": "us",
+            "label": "United States"
+          }
+        ],
+        "disabled": true,
+        "open": true
+      },
+      "snippets": {
+        "react": "import { Select, type ListboxOption } from '@design-schema/react';\n\nconst COUNTRIES: ListboxOption[] = [\n  { value: 'ca', label: 'Canada' },\n  { value: 'fr', label: 'France' },\n  { value: 'de', label: 'Germany' },\n  { value: 'jp', label: 'Japan' },\n  { value: 'mx', label: 'Mexico' },\n  { value: 'us', label: 'United States' },\n];\n\n<Select label=\"Country\" name=\"country\" options={COUNTRIES} disabled open />",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "stories": {
+        "react": "DisabledOpen",
+        "lit": null,
+        "rn": null,
+        "swift": null
+      },
+      "storyId": "select-react--disabled-open",
+      "sweep": null,
+      "decorated": false,
+      "harness": null,
+      "primary": false
     }
   ]
 }

@@ -197,7 +197,7 @@
       "primary": true
     },
     {
-      "title": "With Value",
+      "title": "With A Value",
       "args": {
         "label": "Due date",
         "name": "due",
@@ -206,45 +206,97 @@
       "snippets": {
         "react": "import { DatePicker } from '@design-schema/react';\n\n<DatePicker label=\"Due date\" name=\"due\" defaultValue=\"2026-09-10\" />",
         "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-date-picker\n    label=\"Due date\"\n    name=\"due\"\n    .defaultValue=${'2026-09-10'}\n  ></ds-date-picker>\n`;",
-        "rn": "import { DatePicker } from '@design-schema/rn';\n\n<DatePicker label=\"Start date\" name=\"start-date\" defaultValue=\"2026-09-10\" />",
+        "rn": "import { DatePicker } from '@design-schema/rn';\n\n<DatePicker label=\"Due date\" name=\"due\" defaultValue=\"2026-09-10\" />",
         "swift": null
       },
       "stories": {
-        "react": "WithValue",
-        "lit": "WithValue",
-        "rn": "WithValue",
+        "react": "WithAValue",
+        "lit": "WithAValue",
+        "rn": "WithAValue",
         "swift": null
       },
-      "storyId": "datepicker-react--with-value",
+      "storyId": "datepicker-react--with-a-value",
       "sweep": null,
       "decorated": false,
       "harness": null,
       "primary": true
     },
     {
-      "title": "Range With Value",
+      "title": "Range With Dates",
       "args": {
-        "label": "Report period",
-        "name": "period",
+        "label": "Stay",
+        "name": "stay",
         "range": true,
         "defaultValue": {
-          "start": "2026-09-07",
-          "end": "2026-09-11"
+          "start": "2026-09-10",
+          "end": "2026-09-14"
         }
       },
       "snippets": {
-        "react": "import { DatePicker } from '@design-schema/react';\n\n<DatePicker\n  label=\"Report period\"\n  name=\"period\"\n  range\n  defaultValue={{ start: '2026-09-07', end: '2026-09-11' }}\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-date-picker\n    label=\"Report period\"\n    name=\"period\"\n    .defaultValue=${{ start: '2026-09-07', end: '2026-09-11' }}\n    range\n  ></ds-date-picker>\n`;",
-        "rn": null,
+        "react": "import { DatePicker } from '@design-schema/react';\n\n<DatePicker\n  label=\"Stay\"\n  name=\"stay\"\n  range\n  defaultValue={{ start: '2026-09-10', end: '2026-09-14' }}\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-date-picker\n    label=\"Stay\"\n    name=\"stay\"\n    .defaultValue=${{ start: '2026-09-10', end: '2026-09-14' }}\n    range\n  ></ds-date-picker>\n`;",
+        "rn": "import { DatePicker } from '@design-schema/rn';\n\n<DatePicker\n  label=\"Stay\"\n  name=\"stay\"\n  range\n  defaultValue={{ start: '2026-09-10', end: '2026-09-14' }}\n/>",
         "swift": null
       },
       "stories": {
-        "react": "RangeWithValue",
-        "lit": "RangeWithValue",
-        "rn": null,
+        "react": "RangeWithDates",
+        "lit": "RangeWithDates",
+        "rn": "RangeWithDates",
         "swift": null
       },
-      "storyId": "datepicker-react--range-with-value",
+      "storyId": "datepicker-react--range-with-dates",
+      "sweep": null,
+      "decorated": false,
+      "harness": null,
+      "primary": false
+    },
+    {
+      "title": "With An Error",
+      "args": {
+        "label": "Due date",
+        "name": "due",
+        "defaultValue": "2026-09-10",
+        "error": "Choose a date at least two days from now."
+      },
+      "snippets": {
+        "react": "import { DatePicker } from '@design-schema/react';\n\n<DatePicker\n  label=\"Due date\"\n  name=\"due\"\n  defaultValue=\"2026-09-10\"\n  error=\"Choose a date at least two days from now.\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-date-picker\n    label=\"Due date\"\n    name=\"due\"\n    .defaultValue=${'2026-09-10'}\n    error=\"Choose a date at least two days from now.\"\n  ></ds-date-picker>\n`;",
+        "rn": "import { DatePicker } from '@design-schema/rn';\n\n<DatePicker\n  label=\"Due date\"\n  name=\"due\"\n  defaultValue=\"2026-09-10\"\n  error=\"Choose a date at least two days from now.\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "WithAnError",
+        "lit": "WithAnError",
+        "rn": "WithAnError",
+        "swift": null
+      },
+      "storyId": "datepicker-react--with-an-error",
+      "sweep": null,
+      "decorated": false,
+      "harness": null,
+      "primary": false
+    },
+    {
+      "title": "German Locale",
+      "args": {
+        "label": "Fälligkeitsdatum",
+        "name": "due",
+        "locale": "de-DE",
+        "defaultValue": "2026-09-10"
+      },
+      "snippets": {
+        "react": "import { DatePicker } from '@design-schema/react';\n\n<DatePicker\n  label=\"Fälligkeitsdatum\"\n  name=\"due\"\n  locale=\"de-DE\"\n  defaultValue=\"2026-09-10\"\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-date-picker\n    label=\"Fälligkeitsdatum\"\n    name=\"due\"\n    .defaultValue=${'2026-09-10'}\n    locale=\"de-DE\"\n  ></ds-date-picker>\n`;",
+        "rn": "import { DatePicker } from '@design-schema/rn';\n\n<DatePicker\n  label=\"Fälligkeitsdatum\"\n  name=\"due\"\n  locale=\"de-DE\"\n  defaultValue=\"2026-09-10\"\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "GermanLocale",
+        "lit": "GermanLocale",
+        "rn": "GermanLocale",
+        "swift": null
+      },
+      "storyId": "datepicker-react--german-locale",
       "sweep": null,
       "decorated": false,
       "harness": null,
@@ -356,31 +408,6 @@
       "primary": false
     },
     {
-      "title": "With Error",
-      "args": {
-        "label": "Due date",
-        "name": "due",
-        "error": "Due date is required."
-      },
-      "snippets": {
-        "react": "import { DatePicker } from '@design-schema/react';\n\n<DatePicker label=\"Due date\" name=\"due\" error=\"Due date is required.\" />",
-        "lit": "<ds-date-picker label=\"Due date\" name=\"due\" error=\"Due date is required.\"></ds-date-picker>",
-        "rn": "import { DatePicker } from '@design-schema/rn';\n\n<DatePicker\n  label=\"Start date\"\n  name=\"start-date\"\n  error=\"Start date is required.\"\n/>",
-        "swift": null
-      },
-      "stories": {
-        "react": "WithError",
-        "lit": "WithError",
-        "rn": "WithError",
-        "swift": null
-      },
-      "storyId": "datepicker-react--with-error",
-      "sweep": null,
-      "decorated": false,
-      "harness": null,
-      "primary": false
-    },
-    {
       "title": "Weekends Disabled",
       "args": {
         "label": "Due date",
@@ -403,32 +430,6 @@
         "swift": null
       },
       "storyId": "datepicker-react--weekends-disabled",
-      "sweep": null,
-      "decorated": false,
-      "harness": null,
-      "primary": false
-    },
-    {
-      "title": "Locale De",
-      "args": {
-        "label": "Fälligkeitsdatum",
-        "name": "due",
-        "locale": "de-DE",
-        "defaultValue": "2026-09-10"
-      },
-      "snippets": {
-        "react": "import { DatePicker } from '@design-schema/react';\n\n<DatePicker\n  label=\"Fälligkeitsdatum\"\n  name=\"due\"\n  locale=\"de-DE\"\n  defaultValue=\"2026-09-10\"\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-date-picker\n    label=\"Fälligkeitsdatum\"\n    name=\"due\"\n    .defaultValue=${'2026-09-10'}\n    locale=\"de-DE\"\n  ></ds-date-picker>\n`;",
-        "rn": "import { DatePicker } from '@design-schema/rn';\n\n<DatePicker\n  label=\"Start date\"\n  name=\"start-date\"\n  defaultValue=\"2026-09-10\"\n  min=\"2026-09-01\"\n  max=\"2026-09-30\"\n/>",
-        "swift": null
-      },
-      "stories": {
-        "react": "LocaleDe",
-        "lit": "LocaleDe",
-        "rn": "WithMinMax",
-        "swift": null
-      },
-      "storyId": "datepicker-react--locale-de",
       "sweep": null,
       "decorated": false,
       "harness": null,

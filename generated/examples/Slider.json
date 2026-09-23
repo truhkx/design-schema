@@ -18,7 +18,7 @@
       "snippets": {
         "react": "import { Slider } from '@design-schema/react';\n\n<Slider label=\"Volume\" name=\"volume\" defaultValue={40} />",
         "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-slider label=\"Volume\" name=\"volume\" .defaultValue=${40}></ds-slider>\n`;",
-        "rn": "import { Slider } from '@design-schema/rn';\n\n<Slider label=\"Volume\" name=\"volume\" defaultValue={40} />",
+        "rn": "import { Slider } from '@design-schema/rn';\n\n<Slider label=\"Volume\" name=\"volume\" />",
         "swift": null
       },
       "stories": {
@@ -44,7 +44,7 @@
       "snippets": {
         "react": "import { Slider } from '@design-schema/react';\n\n<Slider label=\"Volume\" name=\"volume\" defaultValue={40} showValue=\"always\" />",
         "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-slider label=\"Volume\" name=\"volume\" .defaultValue=${40} show-value=\"always\"></ds-slider>\n`;",
-        "rn": "import { Slider } from '@design-schema/rn';\n\n<Slider label=\"Volume\" name=\"volume\" defaultValue={40} showValue=\"always\" />",
+        "rn": "import { Slider } from '@design-schema/rn';\n\n<Slider label=\"Volume\" name=\"volume\" showValue=\"always\" />",
         "swift": null
       },
       "stories": {
@@ -73,7 +73,7 @@
       "snippets": {
         "react": "import { Slider } from '@design-schema/react';\n\n<Slider label=\"Volume\" name=\"volume\" defaultValue={40} showValue=\"hover\" />",
         "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-slider label=\"Volume\" name=\"volume\" .defaultValue=${40} show-value=\"hover\"></ds-slider>\n`;",
-        "rn": "import { Slider } from '@design-schema/rn';\n\n<Slider label=\"Volume\" name=\"volume\" defaultValue={40} showValue=\"hover\" />",
+        "rn": "import { Slider } from '@design-schema/rn';\n\n<Slider label=\"Volume\" name=\"volume\" showValue=\"hover\" />",
         "swift": null
       },
       "stories": {
@@ -102,7 +102,7 @@
       "snippets": {
         "react": "import { Slider } from '@design-schema/react';\n\n<Slider label=\"Volume\" name=\"volume\" defaultValue={40} showValue=\"never\" />",
         "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-slider label=\"Volume\" name=\"volume\" .defaultValue=${40} show-value=\"never\"></ds-slider>\n`;",
-        "rn": "import { Slider } from '@design-schema/rn';\n\n<Slider label=\"Volume\" name=\"volume\" defaultValue={40} showValue=\"never\" />",
+        "rn": "import { Slider } from '@design-schema/rn';\n\n<Slider label=\"Volume\" name=\"volume\" showValue=\"never\" />",
         "swift": null
       },
       "stories": {
@@ -230,7 +230,7 @@
       "snippets": {
         "react": "import { Slider } from '@design-schema/react';\n\n<Slider\n  label=\"Zoom\"\n  name=\"zoom\"\n  defaultValue={100}\n  min={50}\n  max={200}\n  step={10}\n  showValue=\"never\"\n/>",
         "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-slider\n    label=\"Zoom\"\n    name=\"zoom\"\n    min=\"50\"\n    max=\"200\"\n    step=\"10\"\n    .defaultValue=${100}\n    show-value=\"never\"\n  ></ds-slider>\n`;",
-        "rn": "import { Slider } from '@design-schema/rn';\n\n<Slider label=\"Zoom\" name=\"zoom\" min={50} max={200} step={10} defaultValue={100} showValue=\"never\" />",
+        "rn": "import { Slider } from '@design-schema/rn';\n\n<Slider\n  label=\"Zoom\"\n  name=\"zoom\"\n  min={50}\n  max={200}\n  step={10}\n  defaultValue={100}\n  showValue=\"never\"\n/>",
         "swift": null
       },
       "stories": {
@@ -256,7 +256,7 @@
       "snippets": {
         "react": "import { Slider } from '@design-schema/react';\n\n<Slider label=\"Volume\" name=\"volume\" defaultValue={40} disabled />",
         "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-slider label=\"Volume\" name=\"volume\" .defaultValue=${40} disabled></ds-slider>\n`;",
-        "rn": "import { Slider } from '@design-schema/rn';\n\n<Slider label=\"Volume\" name=\"volume\" defaultValue={65} disabled />",
+        "rn": "import { Slider } from '@design-schema/rn';\n\n<Slider label=\"Volume\" name=\"volume\" disabled defaultValue={65} />",
         "swift": null
       },
       "stories": {
@@ -285,7 +285,7 @@
       "snippets": {
         "react": "import { Slider } from '@design-schema/react';\n\n<Slider label=\"Volume\" name=\"volume\" defaultValue={40} required />",
         "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-slider label=\"Volume\" name=\"volume\" required .defaultValue=${40}></ds-slider>\n`;",
-        "rn": "import { Slider } from '@design-schema/rn';\n\n<Slider label=\"Volume\" name=\"volume\" defaultValue={40} required />",
+        "rn": "import { Slider } from '@design-schema/rn';\n\n<Slider label=\"Volume\" name=\"volume\" required />",
         "swift": null
       },
       "stories": {
@@ -314,7 +314,7 @@
       "snippets": {
         "react": "import { Slider } from '@design-schema/react';\n\n<Slider label=\"Volume\" name=\"volume\" defaultValue={40} invalid />",
         "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-slider label=\"Volume\" name=\"volume\" invalid .defaultValue=${40}></ds-slider>\n`;",
-        "rn": "import { Slider } from '@design-schema/rn';\n\n<Slider label=\"Volume\" name=\"volume\" defaultValue={40} invalid />",
+        "rn": "import { Slider } from '@design-schema/rn';\n\n<Slider label=\"Volume\" name=\"volume\" invalid />",
         "swift": null
       },
       "stories": {
@@ -343,7 +343,7 @@
       "snippets": {
         "react": "import { Slider } from '@design-schema/react';\n\n<Slider\n  label=\"Volume\"\n  name=\"volume\"\n  defaultValue={40}\n  description=\"Applies to all notifications.\"\n/>",
         "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-slider\n    label=\"Volume\"\n    name=\"volume\"\n    .defaultValue=${40}\n    description=\"Applies to all notifications.\"\n  ></ds-slider>\n`;",
-        "rn": "import { Slider } from '@design-schema/rn';\n\n<Slider\n  label=\"Volume\"\n  name=\"volume\"\n  defaultValue={40}\n  description=\"Applies to notification sounds only.\"\n/>",
+        "rn": "import { Slider } from '@design-schema/rn';\n\n<Slider\n  label=\"Volume\"\n  name=\"volume\"\n  description=\"Applies to notification sounds only.\"\n/>",
         "swift": null
       },
       "stories": {
@@ -369,7 +369,7 @@
       "snippets": {
         "react": "import { Slider } from '@design-schema/react';\n\n<Slider\n  label=\"Volume\"\n  name=\"volume\"\n  defaultValue={40}\n  error=\"Fix this before continuing.\"\n/>",
         "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\n\nhtml`\n  <ds-slider label=\"Volume\" name=\"volume\" .defaultValue=${40} error=\"Fix this before continuing.\"></ds-slider>\n`;",
-        "rn": "import { Slider } from '@design-schema/rn';\n\n<Slider\n  label=\"Volume\"\n  name=\"volume\"\n  defaultValue={40}\n  error=\"Choose a volume above 0.\"\n/>",
+        "rn": "import { Slider } from '@design-schema/rn';\n\n<Slider label=\"Volume\" name=\"volume\" error=\"Choose a volume above 0.\" />",
         "swift": null
       },
       "stories": {

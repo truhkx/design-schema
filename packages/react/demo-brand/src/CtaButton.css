@@ -1,9 +1,20 @@
-/* CtaButton — styled only through Design Schema token custom properties. Locked bindings (background,
-   backgroundHover, foreground, focusRing, focusRingWidth, inverseForeground, inverseFocusRing,
-   minTarget) get no hook and read their token directly; spinnerStroke is the one locked binding
-   that keeps a hook. */
+/* CtaButton — styled only through Design Schema token custom properties. Every binding, locked ones
+   included, is a `--demo-button-*` hook on the root defaulting to its token, and the rules read the
+   hook: `locked` closes the `overrides` API, not the hook, so page CSS can still re-theme a locked
+   binding and tools/naming.ts can rename it. */
 
 .demo-cta-button {
+  /* locked (never in `overrides`) */
+  --demo-button-focus-ring: var(--color-border-focus);
+  --demo-button-focus-ring-width: var(--border-width-focus);
+  --demo-button-focus-ring-offset: var(--border-width-focus);
+  --demo-button-inverse-foreground: var(--color-inverse-link);
+  --demo-button-inverse-focus-ring: var(--color-inverse-focus);
+  --demo-button-min-target: var(--size-target-min);
+  /* touchTarget is an rn/swiftui binding (hitSlop, .contentShape); web applies only minTarget and
+     reads no rule from this hook. It is declared so the binding keeps its renameable hook. */
+  --demo-button-touch-target: var(--size-target-comfortable);
+  /* overridable */
   --demo-button-icon-gap: var(--space-2);
   --demo-button-padding-inline: var(--space-md);
   --demo-button-padding-block: var(--space-sm);
@@ -23,8 +34,10 @@
   align-items: center;
   justify-content: center;
   gap: var(--demo-button-icon-gap);
-  min-inline-size: var(--size-target-min);
-  min-block-size: var(--size-target-min);
+  min-inline-size: var(--demo-button-min-target);
+  min-block-size: var(--demo-button-min-target);
+  background-color: var(--demo-button-background);
+  color: var(--demo-button-foreground);
   padding-inline: var(--demo-button-padding-inline);
   padding-block: var(--demo-button-padding-block);
   margin: 0;
@@ -40,36 +53,31 @@
   appearance: none;
 }
 
-/* variant → color.action.{variant}.background / foreground (locked, read directly) */
+/* variant → color.action.{variant}.background / backgroundHover / foreground (locked hooks) */
 .demo-cta-button--primary {
-  background-color: var(--color-action-primary-background);
-  color: var(--color-action-primary-foreground);
+  --demo-button-background: var(--color-action-primary-background);
+  --demo-button-background-hover: var(--color-action-primary-background-hover);
+  --demo-button-foreground: var(--color-action-primary-foreground);
 }
 .demo-cta-button--secondary {
-  background-color: var(--color-action-secondary-background);
-  color: var(--color-action-secondary-foreground);
+  --demo-button-background: var(--color-action-secondary-background);
+  --demo-button-background-hover: var(--color-action-secondary-background-hover);
+  --demo-button-foreground: var(--color-action-secondary-foreground);
 }
 .demo-cta-button--ghost {
-  background-color: var(--color-action-ghost-background);
-  color: var(--color-action-ghost-foreground);
+  --demo-button-background: var(--color-action-ghost-background);
+  --demo-button-background-hover: var(--color-action-ghost-background-hover);
+  --demo-button-foreground: var(--color-action-ghost-foreground);
 }
 .demo-cta-button--danger {
-  background-color: var(--color-action-danger-background);
-  color: var(--color-action-danger-foreground);
+  --demo-button-background: var(--color-action-danger-background);
+  --demo-button-background-hover: var(--color-action-danger-background-hover);
+  --demo-button-foreground: var(--color-action-danger-foreground);
 }
 
 /* backgroundHover: pointer hover and pressed state, never while disabled or loading. */
-.demo-cta-button--primary:not([aria-disabled='true']):not([aria-busy='true']):is(:hover, :active) {
-  background-color: var(--color-action-primary-background-hover);
-}
-.demo-cta-button--secondary:not([aria-disabled='true']):not([aria-busy='true']):is(:hover, :active) {
-  background-color: var(--color-action-secondary-background-hover);
-}
-.demo-cta-button--ghost:not([aria-disabled='true']):not([aria-busy='true']):is(:hover, :active) {
-  background-color: var(--color-action-ghost-background-hover);
-}
-.demo-cta-button--danger:not([aria-disabled='true']):not([aria-busy='true']):is(:hover, :active) {
-  background-color: var(--color-action-danger-background-hover);
+.demo-cta-button:not([aria-disabled='true']):not([aria-busy='true']):is(:hover, :active) {
+  background-color: var(--demo-button-background-hover);
 }
 
 /* size → paddingInline: space.{size}; fontSize and spinnerSize: font.size.{size} */
@@ -97,7 +105,7 @@
 
 /* inverse: only ghost changes its text and fill. */
 .demo-cta-button--inverse.demo-cta-button--ghost {
-  color: var(--color-inverse-link);
+  color: var(--demo-button-inverse-foreground);
 }
 /* inverseBackgroundHover at inverseHoverOpacity (its token × 0.25). The second colour of the mix is
    `transparent`, never color.inverse.surface: ghost has no fill of its own, so whatever the Toast or
@@ -112,12 +120,12 @@
 
 /* focus-visible: never removed, only replaced by the token ring. */
 .demo-cta-button:focus-visible {
-  outline: var(--border-width-focus) solid var(--color-border-focus);
-  outline-offset: var(--border-width-focus);
+  outline: var(--demo-button-focus-ring-width) solid var(--demo-button-focus-ring);
+  outline-offset: var(--demo-button-focus-ring-offset);
 }
 /* inverse: the ring uses color.inverse.focus for every variant. */
 .demo-cta-button--inverse:focus-visible {
-  outline-color: var(--color-inverse-focus);
+  outline-color: var(--demo-button-inverse-focus-ring);
 }
 
 /* disabled: stays focusable and announced; the whole button dims, colors unchanged. */

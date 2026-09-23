@@ -15,6 +15,7 @@ import './CtaButton.css';
 export type CtaButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 export type CtaButtonSize = 'sm' | 'md' | 'lg';
 export type CtaButtonType = 'button' | 'submit';
+export type CtaButtonHaspopup = 'menu' | 'listbox' | 'tree' | 'grid' | 'dialog';
 
 /** Copy from the component doc, used verbatim. */
 const COPY: { loading: string } = { loading: 'Loading' };
@@ -67,7 +68,10 @@ export interface CtaButtonProps
     ComponentPropsWithoutRef<'button'>,
     'type' | 'disabled' | 'children' | 'aria-label' | 'onClick' | 'className' | 'style'
   > {
-  /** The button's text. Also its accessible name. */
+  /**
+   * The button's text. Also its accessible name. An empty string is allowed and warns on no
+   * platform: it renders a nameless button, and nothing enforces WCAG 4.1.2 at runtime.
+   */
   label: string;
   /**
    * Visual emphasis. One primary button per view. These four are the whole set: there is no
@@ -91,6 +95,13 @@ export interface CtaButtonProps
    */
   expanded?: boolean | undefined;
   /**
+   * Set by a parent whose popup the button opens (Menu's trigger takes `menu`): `aria-haspopup` on
+   * the button. No default: omitted means the button opens nothing and no aria-haspopup is written.
+   * The values are ARIA's own, without `true` (which means `menu`). When the prop is set and an
+   * `aria-haspopup` also arrives through `...rest`, the prop wins.
+   */
+  haspopup?: CtaButtonHaspopup | undefined;
+  /**
    * Prevents activation. The button stays in the tab order and is announced as disabled. A press
    * blocked by `disabled` or `loading` is not a press: onPress does not fire and nothing chained from
    * it (an extension's tracking) runs. Inside a disabled Form the button is disabled whatever this
@@ -99,7 +110,8 @@ export interface CtaButtonProps
   disabled?: boolean | undefined;
   /**
    * Overrides the accessible name when it must say more than the visible label ("Sort by Amount,
-   * ascending" on a header that shows "Amount"). The name must contain the visible label (WCAG 2.5.3
+   * ascending" on a header that shows "Amount"). It wins over `label` everywhere, `iconOnly` included,
+   * where it replaces the label as the aria-label. The name must contain the visible label (WCAG 2.5.3
    * label-in-name); starting with it is preferred but not required. Maps to aria-label.
    */
   accessibleName?: string | undefined;
@@ -161,6 +173,7 @@ export function CtaButton({
   trailingIcon,
   type = 'button',
   expanded,
+  haspopup,
   disabled = false,
   accessibleName,
   overflowLabel: _overflowLabel,
@@ -172,6 +185,7 @@ export function CtaButton({
   onClick,
   onTrack,
   'aria-expanded': ariaExpanded,
+  'aria-haspopup': ariaHaspopup,
   'aria-describedby': describedBy,
   ...props
 }: CtaButtonProps & { ref?: Ref<HTMLButtonElement> | undefined }): ReactElement {
@@ -231,6 +245,7 @@ export function CtaButton({
       aria-busy={loading ? 'true' : undefined}
       aria-label={accessibleName ?? (iconOnly ? label : undefined)}
       aria-expanded={expanded ?? ariaExpanded}
+      aria-haspopup={haspopup ?? ariaHaspopup}
       aria-describedby={describedByValue || undefined}
       onClick={handleClick}
     >

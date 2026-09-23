@@ -32,56 +32,56 @@
       "dir": "src",
       "canonical": "Alert.test.tsx",
       "brand": "Callout.test.tsx",
-      "names": 279,
-      "differ": 9
+      "names": 412,
+      "differ": 12
     },
     {
       "dir": "src",
       "canonical": "Alert.tsx",
       "brand": "Callout.tsx",
-      "names": 999,
+      "names": 1082,
       "differ": 41
     },
     {
       "dir": "src",
       "canonical": "Button.css",
       "brand": "CtaButton.css",
-      "names": 602,
-      "differ": 71
+      "names": 650,
+      "differ": 98
     },
     {
       "dir": "src",
       "canonical": "Button.stories.tsx",
       "brand": "CtaButton.stories.tsx",
-      "names": 379,
-      "differ": 19
+      "names": 439,
+      "differ": 24
     },
     {
       "dir": "src",
       "canonical": "Button.test.tsx",
       "brand": "CtaButton.test.tsx",
-      "names": 528,
+      "names": 591,
       "differ": 15
     },
     {
       "dir": "src",
       "canonical": "Button.tsx",
       "brand": "CtaButton.tsx",
-      "names": 1123,
-      "differ": 52
+      "names": 1233,
+      "differ": 54
     },
     {
       "dir": "src",
       "canonical": "Disclosure.css",
       "brand": "Expander.css",
-      "names": 358,
-      "differ": 57
+      "names": 416,
+      "differ": 69
     },
     {
       "dir": "src",
       "canonical": "Disclosure.stories.tsx",
       "brand": "Expander.stories.tsx",
-      "names": 298,
+      "names": 307,
       "differ": 10
     },
     {
@@ -95,7 +95,7 @@
       "dir": "src",
       "canonical": "Disclosure.tsx",
       "brand": "Expander.tsx",
-      "names": 957,
+      "names": 1017,
       "differ": 39
     },
     {
@@ -116,21 +116,21 @@
       "dir": "src",
       "canonical": "Icon.tsx",
       "brand": "Icon.tsx",
-      "names": 1154,
+      "names": 1167,
       "differ": 18
     },
     {
       "dir": "src",
       "canonical": "Link.css",
       "brand": "Link.css",
-      "names": 240,
-      "differ": 17
+      "names": 267,
+      "differ": 31
     },
     {
       "dir": "src",
       "canonical": "Link.tsx",
       "brand": "Link.tsx",
-      "names": 598,
+      "names": 697,
       "differ": 11
     },
     {
@@ -144,22 +144,22 @@
       "dir": "src",
       "canonical": "Stack.tsx",
       "brand": "Stack.tsx",
-      "names": 679,
+      "names": 700,
       "differ": 10
     },
     {
       "dir": "src",
       "canonical": "Text.css",
       "brand": "Text.css",
-      "names": 202,
-      "differ": 36
+      "names": 230,
+      "differ": 42
     },
     {
       "dir": "src",
       "canonical": "Text.tsx",
       "brand": "Text.tsx",
-      "names": 647,
-      "differ": 17
+      "names": 654,
+      "differ": 18
     },
     {
       "dir": "src",
@@ -195,7 +195,7 @@
       "category": "component name",
       "from": "Alert",
       "to": "Callout",
-      "count": 31
+      "count": 34
     },
     {
       "category": "component name",
@@ -226,6 +226,12 @@
       "from": "Button",
       "to": "CtaButton",
       "count": 35
+    },
+    {
+      "category": "component name",
+      "from": "ButtonHaspopup",
+      "to": "CtaButtonHaspopup",
+      "count": 2
     },
     {
       "category": "component name",
@@ -291,7 +297,7 @@
       "category": "prop name",
       "from": "variant",
       "to": "emphasis",
-      "count": 30
+      "count": 35
     },
     {
       "category": "class or custom-element name",
@@ -333,7 +339,7 @@
       "category": "class or custom-element name",
       "from": "ds-button",
       "to": "demo-cta-button",
-      "count": 29
+      "count": 26
     },
     {
       "category": "class or custom-element name",
@@ -369,13 +375,13 @@
       "category": "class or custom-element name",
       "from": "ds-disclosure",
       "to": "demo-expander",
-      "count": 5
+      "count": 10
     },
     {
       "category": "class or custom-element name",
       "from": "ds-disclosure__heading",
       "to": "demo-expander__heading",
-      "count": 2
+      "count": 5
     },
     {
       "category": "class or custom-element name",
@@ -399,7 +405,7 @@
       "category": "class or custom-element name",
       "from": "ds-disclosure__trigger",
       "to": "demo-expander__trigger",
-      "count": 8
+      "count": 12
     },
     {
       "category": "class or custom-element name",
@@ -559,9 +565,45 @@
     },
     {
       "category": "CSS custom-property prefix",
+      "from": "--ds-button",
+      "to": "--demo-button",
+      "count": 1
+    },
+    {
+      "category": "CSS custom-property prefix",
+      "from": "--ds-button-background",
+      "to": "--demo-button-background",
+      "count": 5
+    },
+    {
+      "category": "CSS custom-property prefix",
+      "from": "--ds-button-background-hover",
+      "to": "--demo-button-background-hover",
+      "count": 5
+    },
+    {
+      "category": "CSS custom-property prefix",
       "from": "--ds-button-disabled-opacity",
       "to": "--demo-button-disabled-opacity",
       "count": 3
+    },
+    {
+      "category": "CSS custom-property prefix",
+      "from": "--ds-button-focus-ring",
+      "to": "--demo-button-focus-ring",
+      "count": 2
+    },
+    {
+      "category": "CSS custom-property prefix",
+      "from": "--ds-button-focus-ring-offset",
+      "to": "--demo-button-focus-ring-offset",
+      "count": 2
+    },
+    {
+      "category": "CSS custom-property prefix",
+      "from": "--ds-button-focus-ring-width",
+      "to": "--demo-button-focus-ring-width",
+      "count": 2
     },
     {
       "category": "CSS custom-property prefix",
@@ -583,6 +625,12 @@
     },
     {
       "category": "CSS custom-property prefix",
+      "from": "--ds-button-foreground",
+      "to": "--demo-button-foreground",
+      "count": 5
+    },
+    {
+      "category": "CSS custom-property prefix",
       "from": "--ds-button-icon-gap",
       "to": "--demo-button-icon-gap",
       "count": 3
@@ -595,6 +643,18 @@
     },
     {
       "category": "CSS custom-property prefix",
+      "from": "--ds-button-inverse-focus-ring",
+      "to": "--demo-button-inverse-focus-ring",
+      "count": 2
+    },
+    {
+      "category": "CSS custom-property prefix",
+      "from": "--ds-button-inverse-foreground",
+      "to": "--demo-button-inverse-foreground",
+      "count": 2
+    },
+    {
+      "category": "CSS custom-property prefix",
       "from": "--ds-button-inverse-hover-opacity",
       "to": "--demo-button-inverse-hover-opacity",
       "count": 3
@@ -603,6 +663,12 @@
       "category": "CSS custom-property prefix",
       "from": "--ds-button-loading-spin",
       "to": "--demo-button-loading-spin",
+      "count": 3
+    },
+    {
+      "category": "CSS custom-property prefix",
+      "from": "--ds-button-min-target",
+      "to": "--demo-button-min-target",
       "count": 3
     },
     {
@@ -634,6 +700,12 @@
       "from": "--ds-button-spinner-stroke",
       "to": "--demo-button-spinner-stroke",
       "count": 2
+    },
+    {
+      "category": "CSS custom-property prefix",
+      "from": "--ds-button-touch-target",
+      "to": "--demo-button-touch-target",
+      "count": 1
     },
     {
       "category": "CSS custom-property prefix",
@@ -781,9 +853,51 @@
     },
     {
       "category": "CSS custom-property prefix",
+      "from": "--ds-link-color",
+      "to": "--demo-link-color",
+      "count": 2
+    },
+    {
+      "category": "CSS custom-property prefix",
+      "from": "--ds-link-color-hover",
+      "to": "--demo-link-color-hover",
+      "count": 2
+    },
+    {
+      "category": "CSS custom-property prefix",
+      "from": "--ds-link-color-visited",
+      "to": "--demo-link-color-visited",
+      "count": 2
+    },
+    {
+      "category": "CSS custom-property prefix",
       "from": "--ds-link-external-icon-gap",
       "to": "--demo-link-external-icon-gap",
       "count": 3
+    },
+    {
+      "category": "CSS custom-property prefix",
+      "from": "--ds-link-focus-ring",
+      "to": "--demo-link-focus-ring",
+      "count": 2
+    },
+    {
+      "category": "CSS custom-property prefix",
+      "from": "--ds-link-focus-ring-offset",
+      "to": "--demo-link-focus-ring-offset",
+      "count": 2
+    },
+    {
+      "category": "CSS custom-property prefix",
+      "from": "--ds-link-focus-ring-radius",
+      "to": "--demo-link-focus-ring-radius",
+      "count": 2
+    },
+    {
+      "category": "CSS custom-property prefix",
+      "from": "--ds-link-focus-ring-width",
+      "to": "--demo-link-focus-ring-width",
+      "count": 2
     },
     {
       "category": "CSS custom-property prefix",
@@ -813,7 +927,7 @@
       "category": "CSS custom-property prefix",
       "from": "--ds-text-color",
       "to": "--demo-text-color",
-      "count": 1
+      "count": 8
     },
     {
       "category": "CSS custom-property prefix",

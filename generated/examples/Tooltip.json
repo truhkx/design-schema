@@ -24,7 +24,7 @@
       "snippets": {
         "react": "import { Tooltip, Button } from '@design-schema/react';\n\n<Tooltip content=\"Includes archived items\"><Button label=\"Items\" variant=\"secondary\" /></Tooltip>",
         "lit": "<ds-tooltip content=\"Includes archived items\">\n  <ds-button label=\"Items\" variant=\"secondary\"></ds-button>\n</ds-tooltip>",
-        "rn": "import { Button, Tooltip } from '@design-schema/rn';\n\n<Tooltip content=\"Includes archived items\"><Button variant=\"ghost\" size=\"sm\" label=\"Items\" /></Tooltip>",
+        "rn": "import { Button, Tooltip } from '@design-schema/rn';\n\n<Tooltip content=\"Includes archived items\"><Button variant=\"secondary\" label=\"Items\" /></Tooltip>",
         "swift": null
       },
       "stories": {
@@ -57,7 +57,7 @@
       "snippets": {
         "react": "import { Tooltip, Button } from '@design-schema/react';\n\n<Tooltip content=\"Includes archived items\" placement=\"top\" open><Button label=\"Items\" variant=\"secondary\" /></Tooltip>",
         "lit": "<ds-tooltip content=\"Includes archived items\" placement=\"top\" open>\n  <ds-button label=\"Items\" variant=\"secondary\"></ds-button>\n</ds-tooltip>",
-        "rn": "import { Button, Tooltip } from '@design-schema/rn';\n\n<Tooltip content=\"Includes archived items\" placement=\"top\"><Button variant=\"ghost\" size=\"sm\" label=\"Items\" /></Tooltip>",
+        "rn": "import { Button, Tooltip } from '@design-schema/rn';\n\n<Tooltip content=\"Includes archived items\" placement=\"top\" open><Button variant=\"secondary\" label=\"Items\" /></Tooltip>",
         "swift": null
       },
       "stories": {
@@ -90,7 +90,7 @@
       "snippets": {
         "react": "import { Tooltip, Button } from '@design-schema/react';\n\n<Tooltip content=\"Includes archived items\" placement=\"bottom\" open><Button label=\"Items\" variant=\"secondary\" /></Tooltip>",
         "lit": "<ds-tooltip content=\"Includes archived items\" placement=\"bottom\" open>\n  <ds-button label=\"Items\" variant=\"secondary\"></ds-button>\n</ds-tooltip>",
-        "rn": "import { Button, Tooltip } from '@design-schema/rn';\n\n<Tooltip content=\"Includes archived items\" placement=\"bottom\"><Button variant=\"ghost\" size=\"sm\" label=\"Items\" /></Tooltip>",
+        "rn": "import { Button, Tooltip } from '@design-schema/rn';\n\n<Tooltip content=\"Includes archived items\" placement=\"bottom\" open><Button variant=\"secondary\" label=\"Items\" /></Tooltip>",
         "swift": null
       },
       "stories": {
@@ -123,7 +123,7 @@
       "snippets": {
         "react": "import { Tooltip, Button } from '@design-schema/react';\n\n<Tooltip content=\"Includes archived items\" placement=\"start\" open><Button label=\"Items\" variant=\"secondary\" /></Tooltip>",
         "lit": "<ds-tooltip content=\"Includes archived items\" placement=\"start\" open>\n  <ds-button label=\"Items\" variant=\"secondary\"></ds-button>\n</ds-tooltip>",
-        "rn": "import { Button, Tooltip } from '@design-schema/rn';\n\n<Tooltip content=\"Includes archived items\" placement=\"start\"><Button variant=\"ghost\" size=\"sm\" label=\"Items\" /></Tooltip>",
+        "rn": "import { Button, Tooltip } from '@design-schema/rn';\n\n<Tooltip content=\"Includes archived items\" placement=\"start\" open><Button variant=\"secondary\" label=\"Items\" /></Tooltip>",
         "swift": null
       },
       "stories": {
@@ -156,7 +156,7 @@
       "snippets": {
         "react": "import { Tooltip, Button } from '@design-schema/react';\n\n<Tooltip content=\"Includes archived items\" placement=\"end\" open><Button label=\"Items\" variant=\"secondary\" /></Tooltip>",
         "lit": "<ds-tooltip content=\"Includes archived items\" placement=\"end\" open>\n  <ds-button label=\"Items\" variant=\"secondary\"></ds-button>\n</ds-tooltip>",
-        "rn": "import { Button, Tooltip } from '@design-schema/rn';\n\n<Tooltip content=\"Includes archived items\" placement=\"end\"><Button variant=\"ghost\" size=\"sm\" label=\"Items\" /></Tooltip>",
+        "rn": "import { Button, Tooltip } from '@design-schema/rn';\n\n<Tooltip content=\"Includes archived items\" placement=\"end\" open><Button variant=\"secondary\" label=\"Items\" /></Tooltip>",
         "swift": null
       },
       "stories": {
@@ -188,7 +188,7 @@
       "snippets": {
         "react": "import { Tooltip, Button } from '@design-schema/react';\n\n<Tooltip content=\"Includes archived items\" delay=\"default\"><Button label=\"Items\" variant=\"secondary\" /></Tooltip>",
         "lit": "<ds-tooltip content=\"Includes archived items\" delay=\"default\">\n  <ds-button label=\"Items\" variant=\"secondary\"></ds-button>\n</ds-tooltip>",
-        "rn": "import { Button, Tooltip } from '@design-schema/rn';\n\n<Tooltip content=\"Includes archived items\" delay=\"default\"><Button variant=\"ghost\" size=\"sm\" label=\"Items\" /></Tooltip>",
+        "rn": "import { Button, Tooltip } from '@design-schema/rn';\n\n<Tooltip content=\"Includes archived items\" delay=\"default\"><Button variant=\"secondary\" label=\"Items\" /></Tooltip>",
         "swift": null
       },
       "stories": {
@@ -223,7 +223,7 @@
       "snippets": {
         "react": "import { Tooltip, Button } from '@design-schema/react';\n\n<Tooltip content=\"Includes archived items\" delay=\"none\"><Button label=\"Items\" variant=\"secondary\" /></Tooltip>",
         "lit": "<ds-tooltip content=\"Includes archived items\" delay=\"none\">\n  <ds-button label=\"Items\" variant=\"secondary\"></ds-button>\n</ds-tooltip>",
-        "rn": "import { Button, Tooltip } from '@design-schema/rn';\n\n<Tooltip content=\"Includes archived items\" delay=\"none\"><Button variant=\"ghost\" size=\"sm\" label=\"Items\" /></Tooltip>",
+        "rn": "import { Button, Tooltip } from '@design-schema/rn';\n\n<Tooltip content=\"Includes archived items\" delay=\"none\"><Button variant=\"secondary\" label=\"Items\" /></Tooltip>",
         "swift": null
       },
       "stories": {

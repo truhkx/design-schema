@@ -12,8 +12,7 @@
       "title": "Default",
       "args": {
         "level": "2",
-        "children": "Account settings",
-        "align": "start"
+        "children": "Account settings"
       },
       "snippets": {
         "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"2\">Account settings</Heading>",
@@ -37,8 +36,7 @@
       "title": "Level 1",
       "args": {
         "level": "1",
-        "children": "Account settings",
-        "align": "start"
+        "children": "Account settings"
       },
       "snippets": {
         "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"1\">Account settings</Heading>",
@@ -65,8 +63,7 @@
       "title": "Level 2",
       "args": {
         "level": "2",
-        "children": "Account settings",
-        "align": "start"
+        "children": "Account settings"
       },
       "snippets": {
         "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"2\">Account settings</Heading>",
@@ -93,8 +90,7 @@
       "title": "Level 3",
       "args": {
         "level": "3",
-        "children": "Account settings",
-        "align": "start"
+        "children": "Account settings"
       },
       "snippets": {
         "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"3\">Account settings</Heading>",
@@ -121,8 +117,7 @@
       "title": "Level 4",
       "args": {
         "level": "4",
-        "children": "Account settings",
-        "align": "start"
+        "children": "Account settings"
       },
       "snippets": {
         "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"4\">Account settings</Heading>",
@@ -149,8 +144,7 @@
       "title": "Level 5",
       "args": {
         "level": "5",
-        "children": "Account settings",
-        "align": "start"
+        "children": "Account settings"
       },
       "snippets": {
         "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"5\">Account settings</Heading>",
@@ -177,8 +171,7 @@
       "title": "Level 6",
       "args": {
         "level": "6",
-        "children": "Account settings",
-        "align": "start"
+        "children": "Account settings"
       },
       "snippets": {
         "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"6\">Account settings</Heading>",
@@ -206,7 +199,6 @@
       "args": {
         "level": "2",
         "children": "Account settings",
-        "align": "start",
         "size": "4xl"
       },
       "snippets": {
@@ -235,7 +227,6 @@
       "args": {
         "level": "2",
         "children": "Account settings",
-        "align": "start",
         "size": "3xl"
       },
       "snippets": {
@@ -264,7 +255,6 @@
       "args": {
         "level": "2",
         "children": "Account settings",
-        "align": "start",
         "size": "2xl"
       },
       "snippets": {
@@ -293,7 +283,6 @@
       "args": {
         "level": "2",
         "children": "Account settings",
-        "align": "start",
         "size": "xl"
       },
       "snippets": {
@@ -322,7 +311,6 @@
       "args": {
         "level": "2",
         "children": "Account settings",
-        "align": "start",
         "size": "lg"
       },
       "snippets": {
@@ -351,7 +339,6 @@
       "args": {
         "level": "2",
         "children": "Account settings",
-        "align": "start",
         "size": "md"
       },
       "snippets": {
@@ -463,8 +450,7 @@
       "title": "Page Title",
       "args": {
         "level": "1",
-        "children": "Account settings",
-        "align": "start"
+        "children": "Account settings"
       },
       "snippets": {
         "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"1\">Account settings</Heading>",
@@ -491,8 +477,7 @@
       "title": "Section Heading",
       "args": {
         "level": "2",
-        "children": "Billing",
-        "align": "start"
+        "children": "Billing"
       },
       "snippets": {
         "react": "import { Heading } from '@design-schema/react';\n\n<Heading level=\"2\">Billing</Heading>",
@@ -520,7 +505,6 @@
       "args": {
         "level": "4",
         "children": "Payment methods",
-        "align": "start",
         "size": "xl"
       },
       "snippets": {

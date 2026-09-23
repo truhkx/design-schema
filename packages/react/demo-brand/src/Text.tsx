@@ -11,7 +11,7 @@ export type TextElement = 'p' | 'span';
 /**
  * Style bindings that can be overridden per instance; accessibility-bearing bindings are never in
  * this list. `color` is locked: every tone is contrast-checked against the page background, so it
- * is not overridable and is ignored if passed.
+ * is not overridable and is ignored if passed. Its `--demo-text-color` hook stays, for page CSS.
  */
 export type TextOverridableBinding = 'fontFamily' | 'fontSize' | 'fontWeight' | 'lineHeight';
 

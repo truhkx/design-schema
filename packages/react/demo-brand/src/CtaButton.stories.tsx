@@ -42,6 +42,13 @@ export const SizeLg: Story = { args: { size: 'lg' } };
 export const TypeButton: Story = { args: { type: 'button' } };
 export const TypeSubmit: Story = { args: { type: 'submit', label: 'Sign in' } };
 
+/* haspopup */
+export const HaspopupMenu: Story = { args: { haspopup: 'menu', label: 'Actions', emphasis: 'secondary' } };
+export const HaspopupListbox: Story = { args: { haspopup: 'listbox', label: 'Choose sort', emphasis: 'secondary' } };
+export const HaspopupTree: Story = { args: { haspopup: 'tree', label: 'Choose folder', emphasis: 'secondary' } };
+export const HaspopupGrid: Story = { args: { haspopup: 'grid', label: 'Choose date', emphasis: 'secondary' } };
+export const HaspopupDialog: Story = { args: { haspopup: 'dialog', label: 'Edit details', emphasis: 'secondary' } };
+
 /* notable states */
 export const Disabled: Story = { args: { disabled: true } };
 

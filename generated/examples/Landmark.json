@@ -76,7 +76,7 @@
       "title": "Role Navigation",
       "args": {
         "role": "navigation",
-        "label": "Main",
+        "label": "Primary",
         "children": {
           "$element": "Text",
           "props": {},
@@ -86,9 +86,9 @@
         }
       },
       "snippets": {
-        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"navigation\" label=\"Main\"><Text>Primary links.</Text></Landmark>",
-        "lit": "<ds-landmark role=\"navigation\" aria-label=\"Main\">\n  <ds-text>Primary links.</ds-text>\n</ds-landmark>",
-        "rn": "import { Landmark } from '@design-schema/rn';\n\n<Landmark role=\"navigation\" label=\"Main\">Primary links.</Landmark>",
+        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"navigation\" label=\"Primary\"><Text>Primary links.</Text></Landmark>",
+        "lit": "<ds-landmark role=\"navigation\" aria-label=\"Primary\">\n  <ds-text>Primary links.</ds-text>\n</ds-landmark>",
+        "rn": "import { Landmark } from '@design-schema/rn';\n\n<Landmark role=\"navigation\" label=\"Primary\">Primary links.</Landmark>",
         "swift": null
       },
       "stories": {
@@ -143,6 +143,7 @@
       "title": "Role Complementary",
       "args": {
         "role": "complementary",
+        "label": "Related links",
         "children": {
           "$element": "Text",
           "props": {},
@@ -152,9 +153,9 @@
         }
       },
       "snippets": {
-        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"complementary\"><Text>Sidebar content</Text></Landmark>",
-        "lit": "<ds-landmark role=\"complementary\">\n  <ds-text>Sidebar content</ds-text>\n</ds-landmark>",
-        "rn": "import { Landmark } from '@design-schema/rn';\n\n<Landmark role=\"complementary\">Primary links.</Landmark>",
+        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"complementary\" label=\"Related links\"><Text>Sidebar content</Text></Landmark>",
+        "lit": "<ds-landmark role=\"complementary\" aria-label=\"Related links\">\n  <ds-text>Sidebar content</ds-text>\n</ds-landmark>",
+        "rn": "import { Landmark } from '@design-schema/rn';\n\n<Landmark role=\"complementary\" label=\"Related links\">Primary links.</Landmark>",
         "swift": null
       },
       "stories": {
@@ -243,6 +244,7 @@
       "title": "Role Search",
       "args": {
         "role": "search",
+        "label": "Site search",
         "children": {
           "$element": "Text",
           "props": {},
@@ -252,9 +254,9 @@
         }
       },
       "snippets": {
-        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"search\"><Text>Search form</Text></Landmark>",
-        "lit": "<ds-landmark role=\"search\">\n  <ds-text>Search form</ds-text>\n</ds-landmark>",
-        "rn": "import { Landmark } from '@design-schema/rn';\n\n<Landmark role=\"search\">Primary links.</Landmark>",
+        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"search\" label=\"Site search\"><Text>Search form</Text></Landmark>",
+        "lit": "<ds-landmark role=\"search\" aria-label=\"Site search\">\n  <ds-text>Search form</ds-text>\n</ds-landmark>",
+        "rn": "import { Landmark } from '@design-schema/rn';\n\n<Landmark role=\"search\" label=\"Site search\">Primary links.</Landmark>",
         "swift": null
       },
       "stories": {
@@ -341,7 +343,7 @@
       "title": "As Nav",
       "args": {
         "role": "navigation",
-        "label": "Footer",
+        "label": "Primary",
         "children": {
           "$element": "Text",
           "props": {},
@@ -352,7 +354,7 @@
         "as": "nav"
       },
       "snippets": {
-        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"navigation\" label=\"Footer\" as=\"nav\"><Text>Primary links.</Text></Landmark>",
+        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"navigation\" label=\"Primary\" as=\"nav\"><Text>Primary links.</Text></Landmark>",
         "lit": null,
         "rn": null,
         "swift": null
@@ -404,6 +406,7 @@
       "title": "As Aside",
       "args": {
         "role": "complementary",
+        "label": "Related links",
         "children": {
           "$element": "Text",
           "props": {},
@@ -414,7 +417,7 @@
         "as": "aside"
       },
       "snippets": {
-        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"complementary\" as=\"aside\"><Text>Primary links.</Text></Landmark>",
+        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"complementary\" label=\"Related links\" as=\"aside\"><Text>Primary links.</Text></Landmark>",
         "lit": null,
         "rn": null,
         "swift": null
@@ -497,7 +500,8 @@
     {
       "title": "As Form",
       "args": {
-        "role": "search",
+        "role": "form",
+        "label": "Sign in",
         "children": {
           "$element": "Text",
           "props": {},
@@ -508,7 +512,7 @@
         "as": "form"
       },
       "snippets": {
-        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"search\" as=\"form\"><Text>Primary links.</Text></Landmark>",
+        "react": "import { Landmark, Text } from '@design-schema/react';\n\n<Landmark role=\"form\" label=\"Sign in\" as=\"form\"><Text>Primary links.</Text></Landmark>",
         "lit": null,
         "rn": null,
         "swift": null

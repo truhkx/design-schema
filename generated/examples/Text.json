@@ -424,7 +424,7 @@
     {
       "title": "Tone Danger",
       "args": {
-        "children": "Error: enter an email address like name@example.com.",
+        "children": "Error: enter an email address like name@example.com",
         "size": "md",
         "weight": "regular",
         "tone": "danger",
@@ -433,8 +433,8 @@
         "element": "p"
       },
       "snippets": {
-        "react": "import { Text } from '@design-schema/react';\n\n<Text tone=\"danger\">Error: enter an email address like name@example.com.</Text>",
-        "lit": "<ds-text tone=\"danger\">Error: enter an email address like name@example.com.</ds-text>",
+        "react": "import { Text } from '@design-schema/react';\n\n<Text tone=\"danger\">Error: enter an email address like name@example.com</Text>",
+        "lit": "<ds-text tone=\"danger\">Error: enter an email address like name@example.com</ds-text>",
         "rn": "import { Text } from '@design-schema/rn';\n\n<Text tone=\"danger\">Error: enter an email address like name@example.com</Text>",
         "swift": null
       },

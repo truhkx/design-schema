@@ -255,6 +255,46 @@
       "primary": true
     },
     {
+      "title": "Ancestor Without Href",
+      "args": {
+        "items": [
+          {
+            "label": "Docs",
+            "href": "/docs"
+          },
+          {
+            "label": "Reference"
+          },
+          {
+            "label": "Tokens",
+            "href": "/docs/reference/tokens"
+          },
+          {
+            "label": "Color"
+          }
+        ],
+        "label": "Breadcrumb",
+        "collapse": true
+      },
+      "snippets": {
+        "react": "import { Breadcrumb } from '@design-schema/react';\n\n<Breadcrumb\n  items={[\n    { label: 'Docs', href: '/docs' },\n    { label: 'Reference' },\n    { label: 'Tokens', href: '/docs/reference/tokens' },\n    { label: 'Color' },\n  ]}\n/>",
+        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { BreadcrumbNavigateDetail } from '@design-schema/lit';\n\nhtml`\n      <ds-breadcrumb\n        .items=${[\n    { label: 'Docs', href: '/docs' },\n    { label: 'Reference' },\n    { label: 'Tokens', href: '/docs/reference/tokens' },\n    { label: 'Color' },\n  ]}\n        @navigate=${(event: CustomEvent<BreadcrumbNavigateDetail>) => event.preventDefault()}\n      ></ds-breadcrumb>\n`;",
+        "rn": "import { Breadcrumb } from '@design-schema/rn';\n\n<Breadcrumb\n  items={[\n    { label: 'Docs', href: '/docs' },\n    { label: 'Reference' },\n    { label: 'Tokens', href: '/docs/reference/tokens' },\n    { label: 'Color' },\n  ]}\n/>",
+        "swift": null
+      },
+      "stories": {
+        "react": "AncestorWithoutHref",
+        "lit": "AncestorWithoutHref",
+        "rn": "AncestorWithoutHref",
+        "swift": null
+      },
+      "storyId": "breadcrumb-react--ancestor-without-href",
+      "sweep": null,
+      "decorated": false,
+      "harness": null,
+      "primary": true
+    },
+    {
       "title": "Second Breadcrumb On A Page",
       "args": {
         "items": [
@@ -282,42 +322,6 @@
         "swift": null
       },
       "storyId": "breadcrumb-react--second-breadcrumb-on-a-page",
-      "sweep": null,
-      "decorated": false,
-      "harness": null,
-      "primary": true
-    },
-    {
-      "title": "Ancestor Without Href",
-      "args": {
-        "items": [
-          {
-            "label": "Docs",
-            "href": "/docs"
-          },
-          {
-            "label": "Guides"
-          },
-          {
-            "label": "Theming"
-          }
-        ],
-        "label": "Breadcrumb",
-        "collapse": true
-      },
-      "snippets": {
-        "react": "import { Breadcrumb } from '@design-schema/react';\n\n<Breadcrumb\n  items={[{ label: 'Docs', href: '/docs' }, { label: 'Guides' }, { label: 'Theming' }]}\n/>",
-        "lit": "import '@design-schema/lit';\nimport { html } from 'lit';\nimport type { BreadcrumbNavigateDetail } from '@design-schema/lit';\n\nhtml`\n  <ds-breadcrumb\n    .items=${[{ label: 'Docs', href: '/docs' }, { label: 'Guides' }, { label: 'Theming' }]}\n    @navigate=${(event: CustomEvent<BreadcrumbNavigateDetail>) => event.preventDefault()}\n  ></ds-breadcrumb>\n`;",
-        "rn": "import { Breadcrumb } from '@design-schema/rn';\n\n<Breadcrumb\n  items={[\n    { label: 'Docs', href: '/docs' },\n    { label: 'Reference' },\n    { label: 'Tokens' },\n  ]}\n/>",
-        "swift": null
-      },
-      "stories": {
-        "react": "AncestorWithoutHref",
-        "lit": "AncestorWithoutHref",
-        "rn": "AncestorWithoutHref",
-        "swift": null
-      },
-      "storyId": "breadcrumb-react--ancestor-without-href",
       "sweep": null,
       "decorated": false,
       "harness": null,

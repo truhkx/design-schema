@@ -93,7 +93,7 @@
       },
       "snippets": {
         "react": "import { Splitter, Stack, Text, Link } from '@design-schema/react';\n\nconst primaryContent = (\n  <Stack element=\"nav\" gap=\"normal\" align=\"start\">\n    <Text element=\"p\" weight=\"medium\">\n      Sections\n    </Text>\n    <Link href=\"#\" label=\"Overview\" />\n    <Link href=\"#\" label=\"Reports\" />\n    <Link href=\"#\" label=\"Settings\" />\n  </Stack>\n);\n\nconst secondaryContent = (\n  <Stack gap=\"normal\">\n    <Text element=\"p\" weight=\"medium\">\n      Overview\n    </Text>\n    <Text element=\"p\">Select a section from the sidebar to see its detail here.</Text>\n  </Stack>\n);\n\n<Splitter\n  label=\"Sidebar width\"\n  primary={primaryContent}\n  secondary={secondaryContent}\n/>",
-        "lit": "<div style=\"block-size: var(--layout-max-width-prose); border: var(--border-width-thin) solid var(--color-border);\">\n  <ds-splitter label=\"Sidebar width\">\n    <ds-box slot=\"primary\" inset=\"md\">A navigation tree</ds-box>\n    <ds-box slot=\"secondary\" inset=\"md\">The selected document</ds-box>\n  </ds-splitter>\n</div>",
+        "lit": "<div\n  style=\"inline-size: var(--layout-max-width-prose); block-size: var(--layout-max-width-prose); border: var(--border-width-thin) solid var(--color-border);\"\n>\n  <ds-splitter label=\"Sidebar width\">\n    <ds-box slot=\"primary\" inset=\"md\">A navigation tree</ds-box>\n    <ds-box slot=\"secondary\" inset=\"md\">The selected document</ds-box>\n  </ds-splitter>\n</div>",
         "rn": "import { Splitter } from '@design-schema/rn';\n\n<Splitter label=\"Sidebar width\" primary=\"Navigation\" secondary=\"Content\" />",
         "swift": null
       },
@@ -194,7 +194,7 @@
       },
       "snippets": {
         "react": "import { Splitter, Stack, Text, Link } from '@design-schema/react';\n\nconst primaryContent = (\n  <Stack element=\"nav\" gap=\"normal\" align=\"start\">\n    <Text element=\"p\" weight=\"medium\">\n      Sections\n    </Text>\n    <Link href=\"#\" label=\"Overview\" />\n    <Link href=\"#\" label=\"Reports\" />\n    <Link href=\"#\" label=\"Settings\" />\n  </Stack>\n);\n\nconst secondaryContent = (\n  <Stack gap=\"normal\">\n    <Text element=\"p\" weight=\"medium\">\n      Overview\n    </Text>\n    <Text element=\"p\">Select a section from the sidebar to see its detail here.</Text>\n  </Stack>\n);\n\n<Splitter\n  label=\"Sidebar width\"\n  orientation=\"horizontal\"\n  primary={primaryContent}\n  secondary={secondaryContent}\n/>",
-        "lit": "<div style=\"block-size: var(--layout-max-width-prose); border: var(--border-width-thin) solid var(--color-border);\">\n  <ds-splitter label=\"Sidebar width\" orientation=\"horizontal\">\n    <ds-box slot=\"primary\" inset=\"md\">A navigation tree</ds-box>\n    <ds-box slot=\"secondary\" inset=\"md\">The selected document</ds-box>\n  </ds-splitter>\n</div>",
+        "lit": "<div\n  style=\"inline-size: var(--layout-max-width-prose); block-size: var(--layout-max-width-prose); border: var(--border-width-thin) solid var(--color-border);\"\n>\n  <ds-splitter label=\"Sidebar width\" orientation=\"horizontal\">\n    <ds-box slot=\"primary\" inset=\"md\">A navigation tree</ds-box>\n    <ds-box slot=\"secondary\" inset=\"md\">The selected document</ds-box>\n  </ds-splitter>\n</div>",
         "rn": "import { Splitter } from '@design-schema/rn';\n\n<Splitter\n  label=\"Sidebar width\"\n  orientation=\"horizontal\"\n  primary=\"Navigation\"\n  secondary=\"Content\"\n/>",
         "swift": null
       },
@@ -245,7 +245,7 @@
       },
       "snippets": {
         "react": "import { Splitter, Text } from '@design-schema/react';\n\n<Splitter\n  label=\"Preview height\"\n  orientation=\"vertical\"\n  primary={<Text element=\"p\">Editor</Text>}\n  secondary={<Text element=\"p\">Preview</Text>}\n/>",
-        "lit": "<div style=\"block-size: var(--layout-max-width-prose); border: var(--border-width-thin) solid var(--color-border);\">\n  <ds-splitter label=\"Preview height\" orientation=\"vertical\">\n    <ds-box slot=\"primary\" inset=\"md\">Editor</ds-box>\n    <ds-box slot=\"secondary\" inset=\"md\">Preview</ds-box>\n  </ds-splitter>\n</div>",
+        "lit": "<div\n  style=\"inline-size: var(--layout-max-width-prose); block-size: var(--layout-max-width-prose); border: var(--border-width-thin) solid var(--color-border);\"\n>\n  <ds-splitter label=\"Preview height\" orientation=\"vertical\">\n    <ds-box slot=\"primary\" inset=\"md\">Editor</ds-box>\n    <ds-box slot=\"secondary\" inset=\"md\">Preview</ds-box>\n  </ds-splitter>\n</div>",
         "rn": "import { Splitter } from '@design-schema/rn';\n\n<Splitter\n  label=\"Preview height\"\n  orientation=\"vertical\"\n  primary=\"Navigation\"\n  secondary=\"Content\"\n/>",
         "swift": null
       },
@@ -349,7 +349,7 @@
       },
       "snippets": {
         "react": "import { Splitter, Stack, Text, Link } from '@design-schema/react';\n\nconst primaryContent = (\n  <Stack element=\"nav\" gap=\"normal\" align=\"start\">\n    <Text element=\"p\" weight=\"medium\">\n      Sections\n    </Text>\n    <Link href=\"#\" label=\"Overview\" />\n    <Link href=\"#\" label=\"Reports\" />\n    <Link href=\"#\" label=\"Settings\" />\n  </Stack>\n);\n\nconst secondaryContent = (\n  <Stack gap=\"normal\">\n    <Text element=\"p\" weight=\"medium\">\n      Overview\n    </Text>\n    <Text element=\"p\">Select a section from the sidebar to see its detail here.</Text>\n  </Stack>\n);\n\n<Splitter\n  label=\"Sidebar width\"\n  primary={primaryContent}\n  secondary={secondaryContent}\n  stackBelow=\"prose\"\n/>",
-        "lit": "<div style=\"block-size: var(--layout-max-width-prose); border: var(--border-width-thin) solid var(--color-border);\">\n  <ds-splitter label=\"Sidebar width\" stack-below=\"prose\">\n    <ds-box slot=\"primary\" inset=\"md\">A navigation tree</ds-box>\n    <ds-box slot=\"secondary\" inset=\"md\">The selected document</ds-box>\n  </ds-splitter>\n</div>",
+        "lit": "<div\n  style=\"inline-size: var(--layout-max-width-prose); block-size: var(--layout-max-width-prose); border: var(--border-width-thin) solid var(--color-border);\"\n>\n  <ds-splitter label=\"Sidebar width\" stack-below=\"prose\">\n    <ds-box slot=\"primary\" inset=\"md\">A navigation tree</ds-box>\n    <ds-box slot=\"secondary\" inset=\"md\">The selected document</ds-box>\n  </ds-splitter>\n</div>",
         "rn": "import { Splitter } from '@design-schema/rn';\n\n<Splitter\n  label=\"Sidebar width\"\n  stackBelow=\"prose\"\n  primary=\"Navigation\"\n  secondary=\"Content\"\n/>",
         "swift": null
       },
@@ -453,7 +453,7 @@
       },
       "snippets": {
         "react": "import { Splitter, Stack, Text, Link } from '@design-schema/react';\n\nconst primaryContent = (\n  <Stack element=\"nav\" gap=\"normal\" align=\"start\">\n    <Text element=\"p\" weight=\"medium\">\n      Sections\n    </Text>\n    <Link href=\"#\" label=\"Overview\" />\n    <Link href=\"#\" label=\"Reports\" />\n    <Link href=\"#\" label=\"Settings\" />\n  </Stack>\n);\n\nconst secondaryContent = (\n  <Stack gap=\"normal\">\n    <Text element=\"p\" weight=\"medium\">\n      Overview\n    </Text>\n    <Text element=\"p\">Select a section from the sidebar to see its detail here.</Text>\n  </Stack>\n);\n\n<Splitter\n  label=\"Sidebar width\"\n  primary={primaryContent}\n  secondary={secondaryContent}\n  stackBelow=\"content\"\n/>",
-        "lit": "<div style=\"block-size: var(--layout-max-width-prose); border: var(--border-width-thin) solid var(--color-border);\">\n  <ds-splitter label=\"Sidebar width\" stack-below=\"content\">\n    <ds-box slot=\"primary\" inset=\"md\">A navigation tree</ds-box>\n    <ds-box slot=\"secondary\" inset=\"md\">The selected document</ds-box>\n  </ds-splitter>\n</div>",
+        "lit": "<div\n  style=\"inline-size: var(--layout-max-width-prose); block-size: var(--layout-max-width-prose); border: var(--border-width-thin) solid var(--color-border);\"\n>\n  <ds-splitter label=\"Sidebar width\" stack-below=\"content\">\n    <ds-box slot=\"primary\" inset=\"md\">A navigation tree</ds-box>\n    <ds-box slot=\"secondary\" inset=\"md\">The selected document</ds-box>\n  </ds-splitter>\n</div>",
         "rn": "import { Splitter } from '@design-schema/rn';\n\n<Splitter\n  label=\"Sidebar width\"\n  stackBelow=\"content\"\n  primary=\"Navigation\"\n  secondary=\"Content\"\n/>",
         "swift": null
       },
@@ -557,7 +557,7 @@
       },
       "snippets": {
         "react": "import { Splitter, Stack, Text, Link } from '@design-schema/react';\n\nconst primaryContent = (\n  <Stack element=\"nav\" gap=\"normal\" align=\"start\">\n    <Text element=\"p\" weight=\"medium\">\n      Sections\n    </Text>\n    <Link href=\"#\" label=\"Overview\" />\n    <Link href=\"#\" label=\"Reports\" />\n    <Link href=\"#\" label=\"Settings\" />\n  </Stack>\n);\n\nconst secondaryContent = (\n  <Stack gap=\"normal\">\n    <Text element=\"p\" weight=\"medium\">\n      Overview\n    </Text>\n    <Text element=\"p\">Select a section from the sidebar to see its detail here.</Text>\n  </Stack>\n);\n\n<Splitter\n  label=\"Sidebar width\"\n  primary={primaryContent}\n  secondary={secondaryContent}\n  stackBelow=\"never\"\n/>",
-        "lit": "<div style=\"block-size: var(--layout-max-width-prose); border: var(--border-width-thin) solid var(--color-border);\">\n  <ds-splitter label=\"Sidebar width\" stack-below=\"never\">\n    <ds-box slot=\"primary\" inset=\"md\">A navigation tree</ds-box>\n    <ds-box slot=\"secondary\" inset=\"md\">The selected document</ds-box>\n  </ds-splitter>\n</div>",
+        "lit": "<div\n  style=\"inline-size: var(--layout-max-width-prose); block-size: var(--layout-max-width-prose); border: var(--border-width-thin) solid var(--color-border);\"\n>\n  <ds-splitter label=\"Sidebar width\" stack-below=\"never\">\n    <ds-box slot=\"primary\" inset=\"md\">A navigation tree</ds-box>\n    <ds-box slot=\"secondary\" inset=\"md\">The selected document</ds-box>\n  </ds-splitter>\n</div>",
         "rn": "import { Splitter } from '@design-schema/rn';\n\n<Splitter\n  label=\"Sidebar width\"\n  stackBelow=\"never\"\n  primary=\"Navigation\"\n  secondary=\"Content\"\n/>",
         "swift": null
       },
@@ -661,7 +661,7 @@
       },
       "snippets": {
         "react": "import { Splitter, Stack, Text, Link } from '@design-schema/react';\n\nconst primaryContent = (\n  <Stack element=\"nav\" gap=\"normal\" align=\"start\">\n    <Text element=\"p\" weight=\"medium\">\n      Sections\n    </Text>\n    <Link href=\"#\" label=\"Overview\" />\n    <Link href=\"#\" label=\"Reports\" />\n    <Link href=\"#\" label=\"Settings\" />\n  </Stack>\n);\n\nconst secondaryContent = (\n  <Stack gap=\"normal\">\n    <Text element=\"p\" weight=\"medium\">\n      Overview\n    </Text>\n    <Text element=\"p\">Select a section from the sidebar to see its detail here.</Text>\n  </Stack>\n);\n\n<Splitter\n  label=\"Sidebar width\"\n  primary={primaryContent}\n  secondary={secondaryContent}\n  collapsible\n/>",
-        "lit": "<div style=\"block-size: var(--layout-max-width-prose); border: var(--border-width-thin) solid var(--color-border);\">\n  <ds-splitter label=\"Sidebar width\" collapsible>\n    <ds-box slot=\"primary\" inset=\"md\">A navigation tree</ds-box>\n    <ds-box slot=\"secondary\" inset=\"md\">The selected document</ds-box>\n  </ds-splitter>\n</div>",
+        "lit": "<div\n  style=\"inline-size: var(--layout-max-width-prose); block-size: var(--layout-max-width-prose); border: var(--border-width-thin) solid var(--color-border);\"\n>\n  <ds-splitter label=\"Sidebar width\" collapsible>\n    <ds-box slot=\"primary\" inset=\"md\">A navigation tree</ds-box>\n    <ds-box slot=\"secondary\" inset=\"md\">The selected document</ds-box>\n  </ds-splitter>\n</div>",
         "rn": "import { Splitter } from '@design-schema/rn';\n\n<Splitter\n  label=\"Sidebar width\"\n  primary=\"Navigation\"\n  secondary=\"Content\"\n  collapsible\n/>",
         "swift": null
       },
@@ -766,7 +766,7 @@
       },
       "snippets": {
         "react": "import { Splitter, Stack, Text, Link } from '@design-schema/react';\n\nconst primaryContent = (\n  <Stack element=\"nav\" gap=\"normal\" align=\"start\">\n    <Text element=\"p\" weight=\"medium\">\n      Sections\n    </Text>\n    <Link href=\"#\" label=\"Overview\" />\n    <Link href=\"#\" label=\"Reports\" />\n    <Link href=\"#\" label=\"Settings\" />\n  </Stack>\n);\n\nconst secondaryContent = (\n  <Stack gap=\"normal\">\n    <Text element=\"p\" weight=\"medium\">\n      Overview\n    </Text>\n    <Text element=\"p\">Select a section from the sidebar to see its detail here.</Text>\n  </Stack>\n);\n\n<Splitter\n  label=\"Sidebar width\"\n  primary={primaryContent}\n  secondary={secondaryContent}\n  collapsible\n  defaultCollapsed\n/>",
-        "lit": "<div style=\"block-size: var(--layout-max-width-prose); border: var(--border-width-thin) solid var(--color-border);\">\n  <ds-splitter label=\"Sidebar width\" collapsible default-collapsed>\n    <ds-box slot=\"primary\" inset=\"md\">A navigation tree</ds-box>\n    <ds-box slot=\"secondary\" inset=\"md\">The selected document</ds-box>\n  </ds-splitter>\n</div>",
+        "lit": "<div\n  style=\"inline-size: var(--layout-max-width-prose); block-size: var(--layout-max-width-prose); border: var(--border-width-thin) solid var(--color-border);\"\n>\n  <ds-splitter label=\"Sidebar width\" collapsible default-collapsed>\n    <ds-box slot=\"primary\" inset=\"md\">A navigation tree</ds-box>\n    <ds-box slot=\"secondary\" inset=\"md\">The selected document</ds-box>\n  </ds-splitter>\n</div>",
         "rn": "import { Splitter } from '@design-schema/rn';\n\n<Splitter\n  label=\"Sidebar width\"\n  primary=\"Navigation\"\n  secondary=\"Content\"\n  collapsible\n  defaultCollapsed\n/>",
         "swift": null
       },
@@ -799,7 +799,7 @@
       },
       "snippets": {
         "react": "import { Splitter } from '@design-schema/react';\n\n<Splitter\n  label=\"Sidebar width\"\n  primary=\"A navigation tree\"\n  secondary=\"The selected document\"\n  defaultSize={25}\n  stackBelow=\"never\"\n  persistKey=\"app-sidebar\"\n/>",
-        "lit": "<div style=\"block-size: var(--layout-max-width-prose); border: var(--border-width-thin) solid var(--color-border);\">\n  <ds-splitter\n    label=\"Sidebar width\"\n    default-size=\"25\"\n    persist-key=\"app-sidebar\"\n    stack-below=\"never\"\n  >\n    <ds-box slot=\"primary\" inset=\"md\">A navigation tree</ds-box>\n    <ds-box slot=\"secondary\" inset=\"md\">The selected document</ds-box>\n  </ds-splitter>\n</div>",
+        "lit": "<div\n  style=\"inline-size: var(--layout-max-width-prose); block-size: var(--layout-max-width-prose); border: var(--border-width-thin) solid var(--color-border);\"\n>\n  <ds-splitter\n    label=\"Sidebar width\"\n    default-size=\"25\"\n    persist-key=\"app-sidebar\"\n    stack-below=\"never\"\n  >\n    <ds-box slot=\"primary\" inset=\"md\">A navigation tree</ds-box>\n    <ds-box slot=\"secondary\" inset=\"md\">The selected document</ds-box>\n  </ds-splitter>\n</div>",
         "rn": "import { Splitter } from '@design-schema/rn';\n\n<Splitter\n  label=\"Sidebar width\"\n  defaultSize={25}\n  stackBelow=\"never\"\n  primary=\"A navigation tree\"\n  secondary=\"The selected document\"\n  persistKey=\"app-sidebar\"\n/>",
         "swift": null
       },
@@ -831,7 +831,7 @@
       },
       "snippets": {
         "react": "import { Splitter } from '@design-schema/react';\n\n<Splitter\n  label=\"Sidebar width\"\n  primary=\"A navigation tree\"\n  secondary=\"The selected document\"\n  minSize={15}\n  collapsible\n/>",
-        "lit": "<div style=\"block-size: var(--layout-max-width-prose); border: var(--border-width-thin) solid var(--color-border);\">\n  <ds-splitter label=\"Sidebar width\" min-size=\"15\" collapsible>\n    <ds-box slot=\"primary\" inset=\"md\">A navigation tree</ds-box>\n    <ds-box slot=\"secondary\" inset=\"md\">The selected document</ds-box>\n  </ds-splitter>\n</div>",
+        "lit": "<div\n  style=\"inline-size: var(--layout-max-width-prose); block-size: var(--layout-max-width-prose); border: var(--border-width-thin) solid var(--color-border);\"\n>\n  <ds-splitter label=\"Sidebar width\" min-size=\"15\" collapsible>\n    <ds-box slot=\"primary\" inset=\"md\">A navigation tree</ds-box>\n    <ds-box slot=\"secondary\" inset=\"md\">The selected document</ds-box>\n  </ds-splitter>\n</div>",
         "rn": "import { Splitter } from '@design-schema/rn';\n\n<Splitter\n  label=\"Sidebar width\"\n  minSize={15}\n  primary=\"A navigation tree\"\n  secondary=\"The selected document\"\n  collapsible\n/>",
         "swift": null
       },
@@ -863,7 +863,7 @@
       },
       "snippets": {
         "react": "import { Splitter } from '@design-schema/react';\n\n<Splitter\n  label=\"Editor height\"\n  orientation=\"vertical\"\n  primary=\"The editor\"\n  secondary=\"The preview\"\n  defaultSize={60}\n/>",
-        "lit": "<div style=\"block-size: var(--layout-max-width-prose); border: var(--border-width-thin) solid var(--color-border);\">\n  <ds-splitter label=\"Editor height\" orientation=\"vertical\" default-size=\"60\">\n    <ds-box slot=\"primary\" inset=\"md\">The editor</ds-box>\n    <ds-box slot=\"secondary\" inset=\"md\">The preview</ds-box>\n  </ds-splitter>\n</div>",
+        "lit": "<div\n  style=\"inline-size: var(--layout-max-width-prose); block-size: var(--layout-max-width-prose); border: var(--border-width-thin) solid var(--color-border);\"\n>\n  <ds-splitter label=\"Editor height\" orientation=\"vertical\" default-size=\"60\">\n    <ds-box slot=\"primary\" inset=\"md\">The editor</ds-box>\n    <ds-box slot=\"secondary\" inset=\"md\">The preview</ds-box>\n  </ds-splitter>\n</div>",
         "rn": "import { Splitter } from '@design-schema/rn';\n\n<Splitter\n  label=\"Editor height\"\n  orientation=\"vertical\"\n  defaultSize={60}\n  primary=\"The editor\"\n  secondary=\"The preview\"\n/>",
         "swift": null
       },
@@ -895,7 +895,7 @@
       },
       "snippets": {
         "react": "import { Splitter } from '@design-schema/react';\n\n<Splitter\n  label=\"List width\"\n  primary=\"The result list\"\n  secondary=\"The detail view\"\n  step={5}\n  stackBelow=\"never\"\n/>",
-        "lit": "<div style=\"block-size: var(--layout-max-width-prose); border: var(--border-width-thin) solid var(--color-border);\">\n  <ds-splitter label=\"List width\" step=\"5\" stack-below=\"never\">\n    <ds-box slot=\"primary\" inset=\"md\">The result list</ds-box>\n    <ds-box slot=\"secondary\" inset=\"md\">The detail view</ds-box>\n  </ds-splitter>\n</div>",
+        "lit": "<div\n  style=\"inline-size: var(--layout-max-width-prose); block-size: var(--layout-max-width-prose); border: var(--border-width-thin) solid var(--color-border);\"\n>\n  <ds-splitter label=\"List width\" step=\"5\" stack-below=\"never\">\n    <ds-box slot=\"primary\" inset=\"md\">The result list</ds-box>\n    <ds-box slot=\"secondary\" inset=\"md\">The detail view</ds-box>\n  </ds-splitter>\n</div>",
         "rn": "import { Splitter } from '@design-schema/rn';\n\n<Splitter\n  label=\"List width\"\n  step={5}\n  stackBelow=\"never\"\n  primary=\"The result list\"\n  secondary=\"The detail view\"\n/>",
         "swift": null
       },
